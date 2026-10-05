@@ -35,3 +35,17 @@ contracts and ran `git diff --check` on the changed documentation/report. The
 previous published design commit `4d9048584cf60bfaa61c783eadcf909365f9670d`
 passed main CI run [37315448742](https://github.com/benwmaddox/AgentLang/actions/runs/37315448742).
 No allocator or native-memory performance claim is made.
+
+## Additional optional research candidates
+
+The subsequent discussion raised arena-only language allocation and a strictly
+single-threaded input/output mailbox with one arena per handled item or request.
+Neither is a firm requirement. The memory proposal now records both candidates
+without changing V1 behavior. Region-only allocation could reduce ownership
+bookkeeping but needs enforced non-escape and a retained-result policy; huge
+arenas can accumulate dead intermediates despite a small live stack. Sequential
+mailbox handling offers a clearer phase boundary, while queued outputs and
+mailbox state need storage independent of released item scratch. Queue budgets,
+failed-item behavior and synchronous-wait restrictions must be specified before
+implementation. No actor framework, asynchronous execution or allocator was
+added for this discussion.

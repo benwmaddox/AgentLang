@@ -69,6 +69,63 @@ A later LLVM backend can use concrete region allocations for eligible data, whil
 
 ## Evaluation and sequencing
 
+### Candidate: arena-only language allocation
+
+The user raised restricting language values to a data-model stack plus arenas,
+without independently freed heap objects. This is a research alternative, not
+an adopted change to V1. The physical host can still allocate arena chunks;
+the restriction concerns the language's retention and reclamation model.
+
+One coherent candidate gives each processing phase a region shared by its word
+calls, forbids retained references from an older region into a newer one, and
+permits exporting only inline values or bounded copies/transfers into a valid
+owner. This reduces lifetime bookkeeping to region boundaries rather than
+per-object reclamation, but still requires enforcement of the reference rule.
+Strict value-only copying can avoid general alias analysis at a measurable copy
+cost. A purely consumptive scalar stack is simpler; variable-sized nested data
+and returned collections require an explicit storage policy.
+
+Huge arenas do not establish bounded working memory: repeated short-lived
+allocations remain charged until reset, and a live operand stack can be tiny
+while its region grows. Evaluate nested iteration/request regions, bounded
+allocation failure, retained outputs, state replacement, caches and interactive
+sessions. Persistent dictionaries/history/snapshots and long-lived application
+state need separate retained owners or host serialization; they cannot point
+into released evaluation scratch. Do not silently remove these PRD requirements
+to make an arena-only experiment pass.
+
 First finish the expression/dot frontend and maintain runtime value bounds. Then prototype one bounded scratch-region use with observable accounting before exposing general region operations. Before native implementation, define escaped return, nested-container, failed promotion, hot replacement, rollback/snapshot and resource-cleanup conformance cases.
+
+### Candidate: single-threaded mailbox processing
+
+The user proposed a mailbox with input/output and one arena per processed item,
+including requests, with single-threaded execution enforced. This is an optional
+thought, not a requirement or a change to V1's synchronous execution model.
+Evaluate it as a sequential host scheduling boundary before adding a language
+actor system or asynchronous semantics.
+
+A candidate lifecycle dequeues one retained input, invokes one handler with
+isolated scratch, validates/prepares its retained outputs, publishes those
+outputs, and then releases scratch on success or failure. Queue payloads,
+published responses and any mailbox state must own storage independent of the
+released scratch arena. Bounded copying/serialization is one policy; whole-arena
+transfer is another, with the cost of retaining unused intermediates. Nested
+word calls share the item region rather than creating independently reclaimable
+regions by default.
+
+Single-threading simplifies scheduling and removes concurrent mutation from
+this candidate, but it does not make queued references safe or reverse external
+effects. Require bounded queue count and payload bytes, explicit overflow/back
+pressure, a defined failed-item outcome, and a policy for output publication and
+state updates. A handler that synchronously waits for another mailbox handler
+cannot make progress under a strict non-reentrant single-handler scheduler;
+prefer publishing a follow-up item or returning a structured result. No retries,
+exactly-once delivery or transactional external effects are implied.
+
+The simplest experiment is stateless input-to-output handlers with one active
+item at a time. Stateful handlers need an additional retained-state ownership
+policy, measured separately from scratch reclamation. Inspectable mailbox/handler
+signatures, declared effects and per-item allocation metrics would preserve the
+project's existing comprehension and observability goals.
 
 Measure allocation throughput, cleanup time, used/reserved/peak memory, promotion cost and amount, repeated-evaluation growth, and long-lived mixed-lifetime workloads. Include cases where arenas retain dead intermediates; do not benchmark only phases favorable to bulk reclamation. Adopt region policies based on correct semantics and measured benefits. LLVM remains conditional later work; arenas are recorded as a proposed allocation direction, not current performance evidence.
