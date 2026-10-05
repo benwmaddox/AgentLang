@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "taskId": "R10",
+  "vectorStatus": "proposed-pending-host-review",
+  "executionStatus": "pending",
+  "adapters": {
+    "agentlang": "pending",
+    "conventional": "pending",
+    "referenceCrossCheck": "pending"
+  },
+  "provenance": {
+    "status": "proposed-pending-host-review",
+    "basis": [
+      "docs/BUSINESS.md",
+      "experiments/AgentLang.Business/Business.fs",
+      "docs/BUSINESS-LANGUAGE-PLAN.md"
+    ],
+    "note": "Existing reference operations have not been run against this vector. New policy outcomes are proposals under the public contract."
+  },
+  "cases": [
+    {
+      "id": "premium-annual",
+      "input": {
+        "kind": "premium",
+        "term": "annual",
+        "eligible": true,
+        "grossMinor": 10000
+      },
+      "expected": {
+        "result": {
+          "tag": "ok",
+          "value": {
+            "totalMinor": 9000
+          }
+        },
+        "errorCode": null,
+        "stateProjection": {
+          "invoiceCount": 1,
+          "subscriptionCount": 2,
+          "outboxCount": 1
+        }
+      }
+    },
+    {
+      "id": "regular-monthly",
+      "input": {
+        "kind": "regular",
+        "term": "monthly",
+        "eligible": true,
+        "grossMinor": 10000
+      },
+      "expected": {
+        "result": {
+          "tag": "ok",
+          "value": {
+            "totalMinor": 10000
+          }
+        },
+        "errorCode": null,
+        "stateProjection": {
+          "invoiceCount": 1,
+          "subscriptionCount": 2,
+          "outboxCount": 1
+        }
+      }
+    },
+    {
+      "id": "ineligible-unchanged",
+      "input": {
+        "kind": "premium",
+        "term": "annual",
+        "eligible": false,
+        "grossMinor": 10000
+      },
+      "expected": {
+        "result": null,
+        "errorCode": "SUBSCRIPTION_NOT_ELIGIBLE",
+        "stateProjection": {
+          "invoiceCount": 0,
+          "subscriptionCount": 1,
+          "outboxCount": 0
+        }
+      }
+    }
+  ],
+  "structuralWitness": {
+    "kind": "symbol-call-graph",
+    "helper": "renewal.create-package",
+    "calledBy": [
+      "renewal.run-one",
+      "renewal.run-batch"
+    ],
+    "conventionalStatus": "pending-callgraph-adapter",
+    "agentlangStatus": "pending-runtime-adapter",
+    "substringEvidenceAllowed": false
+  }
+}

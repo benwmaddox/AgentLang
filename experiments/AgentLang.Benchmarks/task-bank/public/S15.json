@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "S15",
+  "category": "simple",
+  "goal": "Match the exact bounded ASCII policy in docs/BUSINESS.md, including its 254-character maximum; do not claim full RFC validation. Implement the named public operation and attach tests for the listed behavior. Inspect available vocabulary first and preserve unrelated behavior.",
+  "initialContext": "The host supplies a deterministic in-memory business fixture, task types, and runtime vocabulary when this task is executable. Follow the supplied field mappings and public contract; preserve unrelated behavior.",
+  "requiredPublicContract": {
+    "symbol": "email.valid?",
+    "signature": "String -> Bool",
+    "behavior": "Match the exact bounded ASCII policy in docs/BUSINESS.md, including its 254-character maximum; do not claim full RFC validation."
+  }
+}

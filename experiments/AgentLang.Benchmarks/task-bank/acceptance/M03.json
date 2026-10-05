@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "taskId": "M03",
+  "vectorStatus": "proposed-pending-host-review",
+  "executionStatus": "pending",
+  "adapters": {
+    "agentlang": "pending",
+    "conventional": "pending",
+    "referenceCrossCheck": "pending"
+  },
+  "provenance": {
+    "status": "proposed-pending-host-review",
+    "basis": [
+      "docs/BUSINESS.md",
+      "experiments/AgentLang.Business/Business.fs",
+      "docs/BUSINESS-LANGUAGE-PLAN.md"
+    ],
+    "note": "Existing reference operations have not been run against this vector. New policy outcomes are proposals under the public contract."
+  },
+  "cases": [
+    {
+      "id": "mixed-preserve-order",
+      "input": {
+        "now": "2026-01-01T00:00:00+00:00",
+        "subscriptions": [
+          {
+            "id": "a",
+            "status": "Active",
+            "expiresAt": "2026-01-08T00:00:00+00:00"
+          },
+          {
+            "id": "b",
+            "status": "Cancelled",
+            "expiresAt": "2026-01-03T00:00:00+00:00"
+          },
+          {
+            "id": "c",
+            "status": "Active",
+            "expiresAt": "2026-01-02T00:00:00+00:00"
+          }
+        ]
+      },
+      "expected": {
+        "result": [
+          {
+            "id": "a"
+          },
+          {
+            "id": "c"
+          }
+        ],
+        "errorCode": null,
+        "stateProjection": {
+          "customers": [],
+          "products": [],
+          "subscriptions": [],
+          "invoices": [],
+          "payments": [],
+          "outbox": [],
+          "sentEmails": []
+        }
+      }
+    },
+    {
+      "id": "none-eligible",
+      "input": {
+        "now": "2026-01-01T00:00:00+00:00",
+        "subscriptions": [
+          {
+            "id": "a",
+            "status": "Active",
+            "expiresAt": "2026-01-10T00:00:00+00:00"
+          }
+        ]
+      },
+      "expected": {
+        "result": [],
+        "errorCode": null,
+        "stateProjection": {
+          "customers": [],
+          "products": [],
+          "subscriptions": [],
+          "invoices": [],
+          "payments": [],
+          "outbox": [],
+          "sentEmails": []
+        }
+      }
+    },
+    {
+      "id": "expires-now",
+      "input": {
+        "now": "2026-01-01T00:00:00+00:00",
+        "subscriptions": [
+          {
+            "id": "a",
+            "status": "Active",
+            "expiresAt": "2026-01-01T00:00:00+00:00"
+          }
+        ]
+      },
+      "expected": {
+        "result": [
+          {
+            "id": "a"
+          }
+        ],
+        "errorCode": null,
+        "stateProjection": {
+          "customers": [],
+          "products": [],
+          "subscriptions": [],
+          "invoices": [],
+          "payments": [],
+          "outbox": [],
+          "sentEmails": []
+        }
+      }
+    }
+  ]
+}

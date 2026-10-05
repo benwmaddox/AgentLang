@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "taskId": "M06",
+  "vectorStatus": "proposed-pending-host-review",
+  "executionStatus": "pending",
+  "adapters": {
+    "agentlang": "pending",
+    "conventional": "pending",
+    "referenceCrossCheck": "pending"
+  },
+  "provenance": {
+    "status": "proposed-pending-host-review",
+    "basis": [
+      "docs/BUSINESS.md",
+      "experiments/AgentLang.Business/Business.fs",
+      "docs/BUSINESS-LANGUAGE-PLAN.md"
+    ],
+    "note": "Existing reference operations have not been run against this vector. New policy outcomes are proposals under the public contract."
+  },
+  "cases": [
+    {
+      "id": "valid-successor",
+      "input": {
+        "source": {
+          "id": "s1",
+          "customerId": "c1",
+          "productId": "p1",
+          "term": "annual",
+          "status": "Active"
+        },
+        "newId": "s2",
+        "startedAt": "2026-01-03T00:00:00+00:00",
+        "expiresAt": "2027-01-03T00:00:00+00:00",
+        "existingIds": [
+          "s1"
+        ]
+      },
+      "expected": {
+        "result": {
+          "tag": "ok",
+          "value": {
+            "id": "s2",
+            "status": "Active",
+            "term": "annual"
+          }
+        },
+        "errorCode": null,
+        "stateProjection": {
+          "subscriptionIds": [
+            "s1",
+            "s2"
+          ]
+        }
+      }
+    },
+    {
+      "id": "duplicate-id",
+      "input": {
+        "source": {
+          "id": "s1",
+          "customerId": "c1",
+          "productId": "p1",
+          "term": "annual",
+          "status": "Active"
+        },
+        "newId": "s1",
+        "startedAt": "2026-01-03T00:00:00+00:00",
+        "expiresAt": "2027-01-03T00:00:00+00:00",
+        "existingIds": [
+          "s1"
+        ]
+      },
+      "expected": {
+        "result": null,
+        "errorCode": "DUPLICATE_SUBSCRIPTION",
+        "stateProjection": {
+          "subscriptionIds": [
+            "s1"
+          ]
+        }
+      }
+    },
+    {
+      "id": "expiry-not-after-start",
+      "input": {
+        "source": {
+          "id": "s1",
+          "customerId": "c1",
+          "productId": "p1",
+          "term": "annual",
+          "status": "Active"
+        },
+        "newId": "s2",
+        "startedAt": "2026-01-04T00:00:00+00:00",
+        "expiresAt": "2026-01-03T00:00:00+00:00",
+        "existingIds": [
+          "s1"
+        ]
+      },
+      "expected": {
+        "result": null,
+        "errorCode": "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START",
+        "stateProjection": {
+          "subscriptionIds": [
+            "s1"
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "taskId": "R05",
+  "vectorStatus": "proposed-pending-host-review",
+  "executionStatus": "pending",
+  "adapters": {
+    "agentlang": "pending",
+    "conventional": "pending",
+    "referenceCrossCheck": "pending"
+  },
+  "provenance": {
+    "status": "proposed-pending-host-review",
+    "basis": [
+      "docs/BUSINESS.md",
+      "experiments/AgentLang.Business/Business.fs",
+      "docs/BUSINESS-LANGUAGE-PLAN.md"
+    ],
+    "note": "Existing reference operations have not been run against this vector. New policy outcomes are proposals under the public contract."
+  },
+  "cases": [
+    {
+      "id": "last-entry-found",
+      "input": {
+        "subscriptions": [
+          {
+            "id": "s1",
+            "status": "Active"
+          },
+          {
+            "id": "s2",
+            "status": "Cancelled"
+          }
+        ],
+        "targetId": "s2"
+      },
+      "expected": {
+        "result": {
+          "tag": "some",
+          "value": {
+            "id": "s2",
+            "status": "Cancelled"
+          }
+        },
+        "errorCode": null,
+        "stateProjection": {
+          "customers": [],
+          "products": [],
+          "subscriptions": [],
+          "invoices": [],
+          "payments": [],
+          "outbox": [],
+          "sentEmails": []
+        }
+      }
+    },
+    {
+      "id": "missing",
+      "input": {
+        "subscriptions": [
+          {
+            "id": "s1"
+          }
+        ],
+        "targetId": "s9"
+      },
+      "expected": {
+        "result": {
+          "tag": "none"
+        },
+        "errorCode": null,
+        "stateProjection": {
+          "customers": [],
+          "products": [],
+          "subscriptions": [],
+          "invoices": [],
+          "payments": [],
+          "outbox": [],
+          "sentEmails": []
+        }
+      }
+    },
+    {
+      "id": "empty-list",
+      "input": {
+        "subscriptions": [],
+        "targetId": "s1"
+      },
+      "expected": {
+        "result": {
+          "tag": "none"
+        },
+        "errorCode": null,
+        "stateProjection": {
+          "customers": [],
+          "products": [],
+          "subscriptions": [],
+          "invoices": [],
+          "payments": [],
+          "outbox": [],
+          "sentEmails": []
+        }
+      }
+    }
+  ],
+  "structuralWitness": {
+    "kind": "symbol-call-graph",
+    "helper": "store.subscription",
+    "calledBy": [
+      "store.replace-subscription",
+      "subscription.renew",
+      "customer.cancel-active-subscriptions"
+    ],
+    "conventionalStatus": "pending-callgraph-adapter",
+    "agentlangStatus": "pending-runtime-adapter",
+    "substringEvidenceAllowed": false
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "R08",
+  "category": "refactoring",
+  "goal": "Build total aggregation from the shared selection word so customer/status filtering agrees. Implement the named public operation and attach tests for the listed behavior. Inspect available vocabulary first and preserve unrelated behavior.",
+  "initialContext": "The host supplies a deterministic in-memory business fixture, task types, and runtime vocabulary when this task is executable. Follow the supplied field mappings and public contract; preserve unrelated behavior.",
+  "requiredPublicContract": {
+    "symbol": "customer.open-invoices",
+    "signature": "Store CustomerId -> List<Invoice>",
+    "behavior": "Build total aggregation from the shared selection word so customer/status filtering agrees.",
+    "structuralRequirement": {
+      "helper": "customer.open-invoices",
+      "calledBy": [
+        "customer.open-invoice-total",
+        "customer.open-invoices"
+      ]
+    }
+  }
+}

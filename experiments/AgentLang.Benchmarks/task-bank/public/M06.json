@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "M06",
+  "category": "medium",
+  "goal": "Copy customer/product/term from an eligible source; use supplied dates, require expiry after start, reject duplicate IDs. Implement the named public operation and attach tests for the listed behavior. Inspect available vocabulary first and preserve unrelated behavior.",
+  "initialContext": "The host supplies a deterministic in-memory business fixture, task types, and runtime vocabulary when this task is executable. Follow the supplied field mappings and public contract; preserve unrelated behavior.",
+  "requiredPublicContract": {
+    "symbol": "subscription.renew",
+    "signature": "Store SubscriptionId Instant Instant -> Result<Store, BusinessError>",
+    "behavior": "Copy customer/product/term from an eligible source; use supplied dates, require expiry after start, reject duplicate IDs."
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "S11",
+  "category": "simple",
+  "goal": "Require quantity greater than zero and price nonnegative; multiply Int64 minor units with checked arithmetic. Implement the named public operation and attach tests for the listed behavior. Inspect available vocabulary first and preserve unrelated behavior.",
+  "initialContext": "The host supplies a deterministic in-memory business fixture, task types, and runtime vocabulary when this task is executable. Follow the supplied field mappings and public contract; preserve unrelated behavior.",
+  "requiredPublicContract": {
+    "symbol": "invoice.line-total",
+    "signature": "Money Int -> Result<Money, BusinessError>",
+    "behavior": "Require quantity greater than zero and price nonnegative; multiply Int64 minor units with checked arithmetic."
+  }
+}

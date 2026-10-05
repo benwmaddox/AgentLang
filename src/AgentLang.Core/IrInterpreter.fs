@@ -1,0 +1,503 @@
+namespace AgentLang
+
+open System
+open System.Globalization
+
+/// Operations that cross from the interpreter into Engine-owned virtual providers.
+/// Payloads deliberately contain only primitive values; nominal values never cross
+/// this boundary.
+type IrEffectCommand =
+    | ReadVirtualFile of operation: string * path: string
+    | VirtualFileExists of operation: string * path: string
+    | WriteVirtualFile of operation: string * path: string * contents: string
+    | ReadFixedClock of operation: string
+    | WriteVirtualConsole of operation: string * contents: string
+
+type IrEffectResult =
+    | EffectString of string
+    | EffectBool of bool
+    | EffectUnit
+
+/// Engine hooks for policy, trace, and virtual effects. The interpreter owns the
+/// executable semantics and calls these hooks only after verified-program checks.
+type IrInterpreterHost =
+    { PreflightEffects: Set<IrEffect> -> string option -> SourceSiteId option -> unit
+      ChargeInstruction: string -> SourceSiteId -> unit
+      RecordBranchOutcome: string -> SourceSiteId -> string -> unit
+      RecordUse: string -> unit
+      InvokeEffect: IrEffectCommand -> IrEffectResult
+      WordDefinitionSpan: string -> SourceSpan option
+      PrimitiveDefinitionSpan: string -> SourceSpan option }
+
+module IrInterpreter =
+    type private RuntimeValue =
+        | RuntimeInt of int64
+        | RuntimeFloat of double
+        | RuntimeBool of bool
+        | RuntimeString of string
+        | RuntimeUnit
+        | RuntimeList of IrType * RuntimeValue list
+        | RuntimeOption of IrType * RuntimeValue option
+        | RuntimeResult of IrType * IrType * Result<RuntimeValue, RuntimeValue>
+        | RuntimeRecord of ProgramTypeKey * RuntimeValue list
+        | RuntimeScalar of ProgramTypeKey * RuntimeValue
+
+    let private maxSteps = 10000
+    let private maxCallDepth = 64
+    let private maxCollectionLength = 10000
+
+    // This is intentionally a closed backend table. A compiler catalog entry by
+    // itself cannot create an implementation or authorize dispatch to one.
+    let private implementedPrimitiveOperations =
+        set [
+            "add"; "subtract"; "multiply"; "divide"
+            "float.add"; "float.subtract"; "float.multiply"; "float.divide"
+            "int.less-than"; "int.greater-than"; "int.less-or-equal"; "int.greater-or-equal"
+            "float.less-than"; "float.greater-than"; "float.less-or-equal"; "float.greater-or-equal"
+            "equals"; "bool.and"; "bool.or"; "bool.not"
+            "string.concat"; "string.contains"; "string.starts-with"; "string.ends-with"
+            "string.length"; "string.trim"; "string.to-lower"; "string.to-upper"
+            "int.abs"; "int.min"; "int.max"; "int.to-float"; "float.to-int"; "float.round"
+            "int.to-string"; "float.to-string"
+            "list.count"; "list.append"; "list.concat"; "list.get"; "list.is-empty?"
+            "dup"; "drop"; "swap"
+            "file.read"; "file.write"; "file.exists?"; "clock.now"; "console.write"
+        ]
+
+    let private implementedPrimitiveIds =
+        implementedPrimitiveOperations |> Set.map PrimitiveId
+
+    let private fail code message word span expected actual =
+        Diagnostics.raiseError code message word span expected actual
+
+    let private runtimeValueType = function
+        | RuntimeInt _ -> IrInt
+        | RuntimeFloat _ -> IrFloat
+        | RuntimeBool _ -> IrBool
+        | RuntimeString _ -> IrString
+        | RuntimeUnit -> IrUnit
+        | RuntimeList(itemType, _) -> IrList itemType
+        | RuntimeOption(itemType, _) -> IrOption itemType
+        | RuntimeResult(okType, errorType, _) -> IrResult(okType, errorType)
+        | RuntimeRecord(key, _) | RuntimeScalar(key, _) -> IrNominal key
+
+    let private typeName (program: IrProgram) key =
+        match program.NominalTypesByKey.TryFind key with
+        | Some(IrRecordDefinition record) -> record.TypeName
+        | Some(IrScalarDefinition scalar) -> scalar.TypeName
+        | None -> fail "IR_BACKEND_NOMINAL_UNKNOWN" "Executable value refers to a nominal type absent from its verified program." None None [] [ sprintf "%A" key ]
+
+    let rec private formatType (program: IrProgram) = function
+        | IrInt -> "Int"
+        | IrFloat -> "Float"
+        | IrBool -> "Bool"
+        | IrString -> "String"
+        | IrUnit -> "Unit"
+        | IrList item -> $"List<{formatType program item}>"
+        | IrOption item -> $"Option<{formatType program item}>"
+        | IrResult(okType, errorType) -> $"Result<{formatType program okType}, {formatType program errorType}>"
+        | IrNominal key -> typeName program key
+
+    let private runtimeTypeNames (program: IrProgram) values =
+        values |> List.map (runtimeValueType >> formatType program)
+
+    let private requireBackendRegistry (verified: VerifiedIrProgram) =
+        VerifiedIrProgram.requireBackendRegistry Compiler.primitiveIrCatalog verified
+        let catalogIds = Compiler.primitiveIrCatalog |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+        if catalogIds <> implementedPrimitiveIds then
+            fail "IR_BACKEND_IMPLEMENTATION_MISMATCH" "The trusted compiler primitive catalog and interpreter implementation table differ." None None
+                (implementedPrimitiveIds |> Set.toList |> List.map (sprintf "%A"))
+                (catalogIds |> Set.toList |> List.map (sprintf "%A"))
+
+    /// Check a program handle against this backend's fixed implementation
+    /// registry without executing a body or invoking any host hooks.
+    let validateProgram (verified: VerifiedIrProgram) =
+        requireBackendRegistry verified
+
+    let private sourceAt (sourceMap: Map<SourceSiteId, IrSourceSite>) site =
+        sourceMap.TryFind site |> Option.map (fun entry -> entry.SiteSpan)
+
+    let private checkedIntegerOperation (operation: string) (span: SourceSpan option) (functionValue: int64 -> int64 -> int64) left right =
+        try RuntimeInt(functionValue left right)
+        with :? OverflowException ->
+            fail "RUNTIME_OVERFLOW" $"'{operation}' overflowed its Int64 result." (Some operation) span [] [ string left; string right ]
+
+    let executeBody (host: IrInterpreterHost) (executionName: string) (verifiedBody: VerifiedIrBody) : Value list =
+        let verifiedProgram = VerifiedIrBody.program verifiedBody
+        requireBackendRegistry verifiedProgram
+        let program = VerifiedIrProgram.inspect verifiedProgram
+        let body = VerifiedIrBody.inspect verifiedBody
+        if not (List.isEmpty body.BodyInputTypes) then
+            fail "IR_BACKEND_BODY_INPUT_UNSUPPORTED" "The interpreter entry point accepts only bodies with an empty initial stack." (Some executionName) None [] (body.BodyInputTypes |> List.map (formatType program))
+        let sourceMap = Map.fold (fun found site source -> Map.add site source found) program.SourceMap body.BodySourceMap
+
+        let sourceSpan site = sourceAt sourceMap site
+        let mutable chargedSteps = 0
+        let chargeInstruction currentWord site =
+            chargedSteps <- chargedSteps + 1
+            host.ChargeInstruction currentWord site
+            if chargedSteps > maxSteps then
+                fail "RUNTIME_STEP_LIMIT" "Execution exceeded the 10,000 instruction limit." (Some currentWord) (sourceSpan site) [] []
+
+        let rec invokeResolved (depth: int) (call: IrResolvedCall) (arguments: RuntimeValue list) (site: SourceSiteId option) =
+            if depth > maxCallDepth then
+                fail "RUNTIME_CALL_DEPTH" "Execution exceeded the 64 word call-depth limit." (Some call.ResolvedName) (host.WordDefinitionSpan call.ResolvedName) [] []
+            host.PreflightEffects call.ResolvedEffects (Some call.ResolvedName) site
+            match call.ResolvedTarget with
+            | UserWordTarget(wordId, revision) ->
+                match program.FunctionsById.TryFind wordId with
+                | None -> fail "IR_BACKEND_TARGET_MISSING" "Verified call refers to a user word absent from its bound program." (Some call.ResolvedName) (site |> Option.bind sourceSpan) [] [ sprintf "%A" wordId ]
+                | Some functionValue when functionValue.FunctionRevision <> revision ->
+                    fail "IR_BACKEND_TARGET_REVISION" "Verified call revision differs from the function revision in its bound program." (Some call.ResolvedName) (site |> Option.bind sourceSpan) [ string revision ] [ string functionValue.FunctionRevision ]
+                | Some functionValue ->
+                    host.RecordUse functionValue.FunctionName
+                    executeFunction depth functionValue arguments
+            | GeneratedWordTarget(wordId, revision) ->
+                match program.GeneratedTargetsById.TryFind wordId with
+                | None -> fail "IR_BACKEND_TARGET_MISSING" "Verified call refers to a generated word absent from its bound program." (Some call.ResolvedName) (site |> Option.bind sourceSpan) [] [ sprintf "%A" wordId ]
+                | Some target when target.TargetRevision <> revision ->
+                    fail "IR_BACKEND_TARGET_REVISION" "Verified call revision differs from its generated target revision." (Some call.ResolvedName) (site |> Option.bind sourceSpan) [ string revision ] [ string target.TargetRevision ]
+                | Some target ->
+                    host.RecordUse target.TargetName
+                    executeGenerated depth target call.ResolvedName arguments site
+            | PrimitiveTarget(PrimitiveId operation) ->
+                if not (implementedPrimitiveOperations.Contains operation) then
+                    fail "IR_BACKEND_PRIMITIVE_UNIMPLEMENTED" "Verified program refers to a primitive with no fixed interpreter implementation." (Some call.ResolvedName) (site |> Option.bind sourceSpan) [] [ operation ]
+                host.RecordUse call.ResolvedName
+                executePrimitive operation call arguments
+
+        and executeFunction (callerDepth: int) (functionValue: IrFunction) (arguments: RuntimeValue list) =
+            let entryDepth = callerDepth + 1
+            if arguments.Length <> functionValue.InputTypes.Length then
+                fail "RUNTIME_INTERNAL_TYPE" $"'{functionValue.FunctionName}' received values outside its verified signature." (Some functionValue.FunctionName) None
+                    (functionValue.InputTypes |> List.map (formatType program)) (runtimeTypeNames program arguments)
+            let locals = Map.empty
+            let stack, _ = executeBlock entryDepth functionValue.FunctionName functionValue.LocalNames functionValue.FunctionBody arguments locals
+            stack
+
+        and executeGenerated (depth: int) (target: IrGeneratedTarget) (resolvedName: string) (arguments: RuntimeValue list) (site: SourceSiteId option) =
+            if depth > maxCallDepth then
+                fail "RUNTIME_CALL_DEPTH" "Execution exceeded the 64 word call-depth limit." (Some resolvedName) (host.WordDefinitionSpan resolvedName) [] []
+            match target.Operation, arguments with
+            | MakeRecordOperation key, values ->
+                let expectedFields =
+                    match program.NominalTypesByKey.TryFind key with
+                    | Some(IrRecordDefinition definition) -> definition.RecordFields |> List.sortBy (fun field -> field.FieldIndex)
+                    | _ -> fail "IR_BACKEND_RECORD_LAYOUT" "Generated record constructor refers to a non-record type." (Some resolvedName) (host.WordDefinitionSpan resolvedName) [ "record" ] []
+                if values.Length <> expectedFields.Length then
+                    fail "RUNTIME_INTERNAL_TYPE" "Record constructor received an invalid field count." (Some resolvedName) (host.WordDefinitionSpan resolvedName)
+                        [ string expectedFields.Length ] [ string values.Length ]
+                [ RuntimeRecord(key, values) ]
+            | GetRecordFieldOperation(key, fieldIndex), [ RuntimeRecord(actualKey, values) ] when actualKey = key ->
+                match program.NominalTypesByKey.TryFind key with
+                | Some(IrRecordDefinition definition) ->
+                    match definition.RecordFields |> List.tryFind (fun field -> field.FieldIndex = fieldIndex) with
+                    | Some _ when fieldIndex >= 0 && fieldIndex < values.Length -> [ values[fieldIndex] ]
+                    | _ -> fail "IR_BACKEND_RECORD_LAYOUT" "Generated record accessor refers to an absent verified field." (Some resolvedName) (host.WordDefinitionSpan resolvedName) [] [ string fieldIndex ]
+                | _ -> fail "IR_BACKEND_RECORD_LAYOUT" "Generated record accessor refers to a non-record type." (Some resolvedName) (host.WordDefinitionSpan resolvedName) [ "record" ] []
+            | GetRecordFieldOperation(key, _), _ ->
+                fail "RUNTIME_INTERNAL_TYPE" "Record accessor received an invalid record value." (Some resolvedName) None [ typeName program key ] (runtimeTypeNames program arguments)
+            | WrapScalarOperation key, [ value ] ->
+                let scalar =
+                    match program.NominalTypesByKey.TryFind key with
+                    | Some(IrScalarDefinition definition) -> definition
+                    | _ -> fail "IR_BACKEND_SCALAR_LAYOUT" "Generated scalar constructor refers to a non-scalar type." (Some resolvedName) (host.WordDefinitionSpan resolvedName) [ "scalar" ] []
+                match scalar.ValidatorCall with
+                | None -> [ RuntimeScalar(key, value) ]
+                | Some validator ->
+                    match invokeResolved (depth + 1) validator [ value ] site with
+                    | [ RuntimeBool true ] -> [ RuntimeScalar(key, value) ]
+                    | [ RuntimeBool false ] ->
+                        fail "REFINEMENT_FAILED" $"Value does not satisfy {scalar.TypeName}'s refinement validator." (Some resolvedName) (host.WordDefinitionSpan resolvedName) [ "validator returns true" ] [ "false" ]
+                    | checkedResult ->
+                        fail "RUNTIME_VALIDATOR_RESULT" "Scalar validator did not return one Bool." (Some validator.ResolvedName) None [ "Bool" ] (runtimeTypeNames program checkedResult)
+            | WrapScalarOperation key, _ ->
+                match program.NominalTypesByKey.TryFind key with
+                | Some(IrScalarDefinition scalar) ->
+                    fail "RUNTIME_INTERNAL_TYPE" "Scalar constructor received an invalid value." (Some resolvedName) (host.WordDefinitionSpan resolvedName)
+                        [ formatType program scalar.BaseType ] (runtimeTypeNames program arguments)
+                | _ -> fail "IR_BACKEND_SCALAR_LAYOUT" "Generated scalar constructor refers to a non-scalar type." (Some resolvedName) (host.WordDefinitionSpan resolvedName) [ "scalar" ] []
+            | UnwrapScalarOperation key, [ RuntimeScalar(actualKey, value) ] when actualKey = key -> [ value ]
+            | UnwrapScalarOperation key, _ ->
+                fail "RUNTIME_INTERNAL_TYPE" "Scalar unwrapping received an invalid nominal value." (Some resolvedName) None [ typeName program key ] (runtimeTypeNames program arguments)
+
+        and executePrimitive (operation: string) (call: IrResolvedCall) (arguments: RuntimeValue list) =
+            let sourceSpan = host.PrimitiveDefinitionSpan call.ResolvedName
+            let typedError () =
+                fail "RUNTIME_INTERNAL_TYPE" $"Builtin '{operation}' received a value outside its checked signature." (Some operation) None [] (runtimeTypeNames program arguments)
+            let finiteFloat value =
+                if not (Double.IsFinite value) then
+                    fail "RUNTIME_NONFINITE_FLOAT" "Float operation produced a nonfinite value." (Some operation) None [ "finite Float" ] [ string value ]
+                RuntimeFloat value
+            match operation, arguments with
+            | "dup", [ value ] -> [ value; value ]
+            | "drop", [ _ ] -> []
+            | "swap", [ first; second ] -> [ second; first ]
+            | "add", [ RuntimeInt left; RuntimeInt right ] -> [ checkedIntegerOperation operation sourceSpan Checked.(+) left right ]
+            | "subtract", [ RuntimeInt left; RuntimeInt right ] -> [ checkedIntegerOperation operation sourceSpan Checked.(-) left right ]
+            | "multiply", [ RuntimeInt left; RuntimeInt right ] -> [ checkedIntegerOperation operation sourceSpan Checked.(*) left right ]
+            | "divide", [ RuntimeInt _; RuntimeInt 0L ] -> fail "RUNTIME_DIVIDE_BY_ZERO" "Integer division by zero." (Some operation) None [] []
+            | "divide", [ RuntimeInt left; RuntimeInt right ] when left = Int64.MinValue && right = -1L -> fail "RUNTIME_OVERFLOW" "Integer division overflow." (Some operation) None [] []
+            | "divide", [ RuntimeInt left; RuntimeInt right ] -> [ RuntimeInt(left / right) ]
+            | "float.add", [ RuntimeFloat left; RuntimeFloat right ] -> [ finiteFloat (left + right) ]
+            | "float.subtract", [ RuntimeFloat left; RuntimeFloat right ] -> [ finiteFloat (left - right) ]
+            | "float.multiply", [ RuntimeFloat left; RuntimeFloat right ] -> [ finiteFloat (left * right) ]
+            | "float.divide", [ RuntimeFloat _; RuntimeFloat right ] when right = 0.0 -> fail "RUNTIME_DIVIDE_BY_ZERO" "Float division by zero." (Some operation) None [] []
+            | "float.divide", [ RuntimeFloat left; RuntimeFloat right ] -> [ finiteFloat (left / right) ]
+            | "int.less-than", [ RuntimeInt left; RuntimeInt right ] -> [ RuntimeBool(left < right) ]
+            | "int.greater-than", [ RuntimeInt left; RuntimeInt right ] -> [ RuntimeBool(left > right) ]
+            | "int.less-or-equal", [ RuntimeInt left; RuntimeInt right ] -> [ RuntimeBool(left <= right) ]
+            | "int.greater-or-equal", [ RuntimeInt left; RuntimeInt right ] -> [ RuntimeBool(left >= right) ]
+            | "float.less-than", [ RuntimeFloat left; RuntimeFloat right ] -> [ RuntimeBool(left < right) ]
+            | "float.greater-than", [ RuntimeFloat left; RuntimeFloat right ] -> [ RuntimeBool(left > right) ]
+            | "float.less-or-equal", [ RuntimeFloat left; RuntimeFloat right ] -> [ RuntimeBool(left <= right) ]
+            | "float.greater-or-equal", [ RuntimeFloat left; RuntimeFloat right ] -> [ RuntimeBool(left >= right) ]
+            | "equals", [ left; right ] -> [ RuntimeBool(left = right) ]
+            | "bool.and", [ RuntimeBool left; RuntimeBool right ] -> [ RuntimeBool(left && right) ]
+            | "bool.or", [ RuntimeBool left; RuntimeBool right ] -> [ RuntimeBool(left || right) ]
+            | "bool.not", [ RuntimeBool value ] -> [ RuntimeBool(not value) ]
+            | "string.concat", [ RuntimeString left; RuntimeString right ] -> [ RuntimeString(left + right) ]
+            | "string.contains", [ RuntimeString value; RuntimeString sub ] -> [ RuntimeBool(value.Contains(sub, StringComparison.Ordinal)) ]
+            | "string.starts-with", [ RuntimeString value; RuntimeString sub ] -> [ RuntimeBool(value.StartsWith(sub, StringComparison.Ordinal)) ]
+            | "string.ends-with", [ RuntimeString value; RuntimeString sub ] -> [ RuntimeBool(value.EndsWith(sub, StringComparison.Ordinal)) ]
+            | "string.length", [ RuntimeString value ] -> [ RuntimeInt(int64 value.Length) ]
+            | "string.trim", [ RuntimeString value ] -> [ RuntimeString(value.Trim()) ]
+            | "string.to-lower", [ RuntimeString value ] -> [ RuntimeString(value.ToLowerInvariant()) ]
+            | "string.to-upper", [ RuntimeString value ] -> [ RuntimeString(value.ToUpperInvariant()) ]
+            | "int.abs", [ RuntimeInt Int64.MinValue ] -> fail "RUNTIME_OVERFLOW" "Absolute value of Int64.MinValue overflows." (Some operation) None [] []
+            | "int.abs", [ RuntimeInt value ] -> [ RuntimeInt(abs value) ]
+            | "int.min", [ RuntimeInt left; RuntimeInt right ] -> [ RuntimeInt(min left right) ]
+            | "int.max", [ RuntimeInt left; RuntimeInt right ] -> [ RuntimeInt(max left right) ]
+            | "int.to-float", [ RuntimeInt value ] -> [ RuntimeFloat(float value) ]
+            | "float.to-int", [ RuntimeFloat value ] when not (Double.IsFinite value) || value >= 9223372036854775808.0 || value < -9223372036854775808.0 ->
+                fail "RUNTIME_RANGE" "Float value is outside the Int64 range." (Some operation) None [ "finite Int64 range" ] [ string value ]
+            | "float.to-int", [ RuntimeFloat value ] -> [ RuntimeInt(int64 value) ]
+            | "float.round", [ RuntimeFloat value ] when not (Double.IsFinite value) -> fail "RUNTIME_RANGE" "Float value is outside the Int64 range." (Some operation) None [ "finite Int64 range" ] [ string value ]
+            | "float.round", [ RuntimeFloat value ] ->
+                let rounded = Math.Round(value, MidpointRounding.AwayFromZero)
+                if rounded >= 9223372036854775808.0 || rounded < -9223372036854775808.0 then
+                    fail "RUNTIME_RANGE" "Rounded Float value is outside the Int64 range." (Some operation) None [ "finite Int64 range" ] [ string value ]
+                [ RuntimeInt(int64 rounded) ]
+            | "int.to-string", [ RuntimeInt value ] -> [ RuntimeString(string value) ]
+            | "float.to-string", [ RuntimeFloat value ] -> [ RuntimeString(value.ToString("G", CultureInfo.InvariantCulture)) ]
+            | "list.count", [ RuntimeList(_, values) ] -> [ RuntimeInt(int64 values.Length) ]
+            | "list.append", [ RuntimeList(_, values); _ ] when values.Length >= maxCollectionLength ->
+                fail "RUNTIME_VALUE_LIMIT" $"Lists cannot contain more than {maxCollectionLength} values." (Some operation) None [ string maxCollectionLength ] [ string values.Length ]
+            | "list.append", [ RuntimeList(itemType, values); value ] when runtimeValueType value = itemType ->
+                [ RuntimeList(itemType, values @ [ value ]) ]
+            | "list.concat", [ RuntimeList(_, left); RuntimeList(_, right) ] when int64 left.Length + int64 right.Length > int64 maxCollectionLength ->
+                fail "RUNTIME_VALUE_LIMIT" $"Lists cannot contain more than {maxCollectionLength} values." (Some operation) None [ string maxCollectionLength ] [ string (left.Length + right.Length) ]
+            | "list.concat", [ RuntimeList(itemType, left); RuntimeList(otherType, right) ] when itemType = otherType -> [ RuntimeList(itemType, left @ right) ]
+            | "list.get", [ RuntimeList(itemType, values); RuntimeInt index ] when index >= 0L && index < int64 values.Length -> [ RuntimeOption(itemType, Some values[int index]) ]
+            | "list.get", [ RuntimeList(itemType, _); RuntimeInt _ ] -> [ RuntimeOption(itemType, None) ]
+            | "list.is-empty?", [ RuntimeList(_, values) ] -> [ RuntimeBool(List.isEmpty values) ]
+            | "file.read", [ RuntimeString path ] ->
+                match host.InvokeEffect(ReadVirtualFile(operation, path)) with
+                | EffectString contents -> [ RuntimeString contents ]
+                | _ -> fail "IR_BACKEND_EFFECT_RESULT" "Virtual file read returned an invalid primitive result." (Some operation) None [ "String" ] []
+            | "file.exists?", [ RuntimeString path ] ->
+                match host.InvokeEffect(VirtualFileExists(operation, path)) with
+                | EffectBool exists -> [ RuntimeBool exists ]
+                | _ -> fail "IR_BACKEND_EFFECT_RESULT" "Virtual file existence check returned an invalid primitive result." (Some operation) None [ "Bool" ] []
+            | "file.write", [ RuntimeString path; RuntimeString contents ] ->
+                match host.InvokeEffect(WriteVirtualFile(operation, path, contents)) with
+                | EffectUnit -> [ RuntimeUnit ]
+                | _ -> fail "IR_BACKEND_EFFECT_RESULT" "Virtual file write returned an invalid primitive result." (Some operation) None [ "Unit" ] []
+            | "clock.now", [] ->
+                match host.InvokeEffect(ReadFixedClock operation) with
+                | EffectString value -> [ RuntimeString value ]
+                | _ -> fail "IR_BACKEND_EFFECT_RESULT" "Clock read returned an invalid primitive result." (Some operation) None [ "String" ] []
+            | "console.write", [ RuntimeString contents ] ->
+                match host.InvokeEffect(WriteVirtualConsole(operation, contents)) with
+                | EffectUnit -> [ RuntimeUnit ]
+                | _ -> fail "IR_BACKEND_EFFECT_RESULT" "Console write returned an invalid primitive result." (Some operation) None [ "Unit" ] []
+            | _ -> typedError ()
+
+        and executeBlock (depth: int) (currentWord: string) (localNames: Map<LocalSlot, string>) (block: IrBlock) (initialStack: RuntimeValue list) (initialLocals: Map<LocalSlot, RuntimeValue>) =
+            let mutable stack = initialStack
+            let mutable locals = initialLocals
+            let popArguments name (inputTypes: IrType list) =
+                if stack.Length < inputTypes.Length then
+                    fail "RUNTIME_STACK_UNDERFLOW" $"'{name}' requires {inputTypes.Length} value(s)." (Some name) None
+                        (inputTypes |> List.map (formatType program)) (runtimeTypeNames program stack)
+                let prefix = stack |> List.take (stack.Length - inputTypes.Length)
+                let arguments = stack |> List.skip (stack.Length - inputTypes.Length)
+                prefix, arguments
+            let popOne message word site expected =
+                match stack with
+                | [] -> fail "RUNTIME_STACK_UNDERFLOW" message (Some word) (sourceSpan site) expected []
+                | values -> values |> List.take (values.Length - 1), List.last values
+            for instruction in block.Code do
+                chargeInstruction currentWord instruction.Site
+                let instructionSpan = sourceSpan instruction.Site
+                match instruction.Operation with
+                | IrOperation.Constant(literal, _) ->
+                    let value =
+                        match literal with
+                        | LInt value -> RuntimeInt value
+                        | LFloat value -> RuntimeFloat value
+                        | LBool value -> RuntimeBool value
+                        | LString value -> RuntimeString value
+                        | LUnit -> RuntimeUnit
+                    stack <- stack @ [ value ]
+                | IrOperation.Call call ->
+                    let prefix, arguments = popArguments call.ResolvedName call.InputTypes
+                    let result = invokeResolved depth call arguments (Some instruction.Site)
+                    stack <- prefix @ result
+                | IrOperation.ListEmpty itemType -> stack <- stack @ [ RuntimeList(itemType, []) ]
+                | IrOperation.ListSingleton itemType ->
+                    let prefix, value = popOne "Typed container constructor requires one payload value." currentWord instruction.Site [ formatType program itemType ]
+                    stack <- prefix @ [ RuntimeList(itemType, [ value ]) ]
+                | IrOperation.OptionNone itemType -> stack <- stack @ [ RuntimeOption(itemType, None) ]
+                | IrOperation.OptionSome itemType ->
+                    let prefix, value = popOne "Typed container constructor requires one payload value." currentWord instruction.Site [ formatType program itemType ]
+                    stack <- prefix @ [ RuntimeOption(itemType, Some value) ]
+                | IrOperation.ResultOk(okType, errorType) ->
+                    let prefix, value = popOne "Typed result constructor requires one payload value." currentWord instruction.Site [ formatType program okType ]
+                    stack <- prefix @ [ RuntimeResult(okType, errorType, Ok value) ]
+                | IrOperation.ResultError(okType, errorType) ->
+                    let prefix, value = popOne "Typed result constructor requires one payload value." currentWord instruction.Site [ formatType program errorType ]
+                    stack <- prefix @ [ RuntimeResult(okType, errorType, Error value) ]
+                | IrOperation.StoreLocal slot ->
+                    match stack with
+                    | [] -> fail "RUNTIME_STACK_UNDERFLOW" "Local binding requires a stack value." (Some currentWord) instructionSpan [] []
+                    | values ->
+                        locals <- Map.add slot (List.last values) locals
+                        stack <- values |> List.take (values.Length - 1)
+                | IrOperation.LoadLocal slot ->
+                    match locals.TryFind slot with
+                    | Some value -> stack <- stack @ [ value ]
+                    | None ->
+                        let name = localNames.TryFind slot |> Option.defaultValue (sprintf "%A" slot)
+                        fail "RUNTIME_UNKNOWN_LOCAL" $"Local '${name}' has not been bound." (Some currentWord) instructionSpan [] [ name ]
+                | IrOperation.ListMap(callback, itemType, outputType) ->
+                    let prefix, input = popOne "List higher-order operation requires a list." currentWord instruction.Site []
+                    let values =
+                        match input with
+                        | RuntimeList(actualType, values) when actualType = itemType -> values
+                        | actual -> fail "RUNTIME_INTERNAL_TYPE" "List operation received a non-list after type checking." (Some currentWord) instructionSpan [ formatType program (IrList itemType) ] [ formatType program (runtimeValueType actual) ]
+                    host.PreflightEffects callback.ResolvedEffects (Some callback.ResolvedName) (Some instruction.Site)
+                    host.RecordUse "list.map"
+                    host.RecordBranchOutcome currentWord instruction.Site (if List.isEmpty values then "empty" else "nonempty")
+                    let outputValues = ResizeArray<RuntimeValue>()
+                    for value in values do
+                        chargeInstruction currentWord instruction.Site
+                        match invokeResolved (depth + 1) callback [ value ] (Some instruction.Site) with
+                        | [ mapped ] -> outputValues.Add mapped
+                        | result -> fail "RUNTIME_INTERNAL_TYPE" $"List callback '{callback.ResolvedName}' returned values outside its checked signature." (Some currentWord) instructionSpan [] (runtimeTypeNames program result)
+                    stack <- prefix @ [ RuntimeList(outputType, List.ofSeq outputValues) ]
+                | IrOperation.ListFilter(callback, itemType) ->
+                    let prefix, input = popOne "List higher-order operation requires a list." currentWord instruction.Site []
+                    let values =
+                        match input with
+                        | RuntimeList(actualType, values) when actualType = itemType -> values
+                        | actual -> fail "RUNTIME_INTERNAL_TYPE" "List operation received a non-list after type checking." (Some currentWord) instructionSpan [ formatType program (IrList itemType) ] [ formatType program (runtimeValueType actual) ]
+                    host.PreflightEffects callback.ResolvedEffects (Some callback.ResolvedName) (Some instruction.Site)
+                    host.RecordUse "list.filter"
+                    host.RecordBranchOutcome currentWord instruction.Site (if List.isEmpty values then "empty" else "nonempty")
+                    let outputValues = ResizeArray<RuntimeValue>()
+                    for value in values do
+                        chargeInstruction currentWord instruction.Site
+                        match invokeResolved (depth + 1) callback [ value ] (Some instruction.Site) with
+                        | [ RuntimeBool true ] -> outputValues.Add value; host.RecordBranchOutcome currentWord instruction.Site "keep"
+                        | [ RuntimeBool false ] -> host.RecordBranchOutcome currentWord instruction.Site "drop"
+                        | result -> fail "RUNTIME_INTERNAL_TYPE" $"List callback '{callback.ResolvedName}' returned values outside its checked signature." (Some currentWord) instructionSpan [] (runtimeTypeNames program result)
+                    stack <- prefix @ [ RuntimeList(itemType, List.ofSeq outputValues) ]
+                | IrOperation.ListEach(callback, itemType) ->
+                    let prefix, input = popOne "List higher-order operation requires a list." currentWord instruction.Site []
+                    let values =
+                        match input with
+                        | RuntimeList(actualType, values) when actualType = itemType -> values
+                        | actual -> fail "RUNTIME_INTERNAL_TYPE" "List operation received a non-list after type checking." (Some currentWord) instructionSpan [ formatType program (IrList itemType) ] [ formatType program (runtimeValueType actual) ]
+                    host.PreflightEffects callback.ResolvedEffects (Some callback.ResolvedName) (Some instruction.Site)
+                    host.RecordUse "list.each"
+                    host.RecordBranchOutcome currentWord instruction.Site (if List.isEmpty values then "empty" else "nonempty")
+                    for value in values do
+                        chargeInstruction currentWord instruction.Site
+                        match invokeResolved (depth + 1) callback [ value ] (Some instruction.Site) with
+                        | [ RuntimeUnit ] -> ()
+                        | result -> fail "RUNTIME_INTERNAL_TYPE" $"List callback '{callback.ResolvedName}' returned values outside its checked signature." (Some currentWord) instructionSpan [] (runtimeTypeNames program result)
+                    stack <- prefix @ [ RuntimeUnit ]
+                | IrOperation.If(thenBlock, elseBlock) ->
+                    match stack with
+                    | [] -> fail "RUNTIME_IF_REQUIRES_BOOL" "'if' requires a Bool at the top of the stack." (Some currentWord) instructionSpan [ "Bool" ] []
+                    | values ->
+                        match List.last values with
+                        | RuntimeBool condition ->
+                            let prefix = values |> List.take (values.Length - 1)
+                            host.RecordBranchOutcome currentWord instruction.Site (if condition then "true" else "false")
+                            let branch = if condition then thenBlock else elseBlock
+                            let branchStack, branchLocals = executeBlock depth currentWord localNames branch prefix locals
+                            stack <- branchStack
+                            locals <- branchLocals
+                        | actual -> fail "RUNTIME_IF_REQUIRES_BOOL" "'if' requires a Bool at the top of the stack." (Some currentWord) instructionSpan [ "Bool" ] [ formatType program (runtimeValueType actual) ]
+                | IrOperation.MatchOption(someLocal, someBlock, noneBlock) ->
+                    let prefix, input = popOne "match-option requires an Option<T>." currentWord instruction.Site []
+                    match input with
+                    | RuntimeOption(_, Some value) ->
+                        host.RecordBranchOutcome currentWord instruction.Site "some"
+                        let branchStack, branchLocals = executeBlock depth currentWord localNames someBlock prefix (Map.add someLocal value locals)
+                        stack <- branchStack
+                        locals <- Map.remove someLocal branchLocals
+                    | RuntimeOption(_, None) ->
+                        host.RecordBranchOutcome currentWord instruction.Site "none"
+                        let branchStack, branchLocals = executeBlock depth currentWord localNames noneBlock prefix locals
+                        stack <- branchStack
+                        locals <- branchLocals
+                    | actual -> fail "RUNTIME_INTERNAL_TYPE" "match-option received a non-option after type checking." (Some currentWord) instructionSpan [ "Option<T>" ] [ formatType program (runtimeValueType actual) ]
+                | IrOperation.MatchResult(okLocal, errorLocal, okBlock, errorBlock) ->
+                    let prefix, input = popOne "match-result requires a Result<T, E>." currentWord instruction.Site []
+                    match input with
+                    | RuntimeResult(_, _, Ok value) ->
+                        host.RecordBranchOutcome currentWord instruction.Site "ok"
+                        let branchStack, branchLocals = executeBlock depth currentWord localNames okBlock prefix (Map.add okLocal value locals)
+                        stack <- branchStack
+                        locals <- Map.remove okLocal branchLocals
+                    | RuntimeResult(_, _, Error value) ->
+                        host.RecordBranchOutcome currentWord instruction.Site "error"
+                        let branchStack, branchLocals = executeBlock depth currentWord localNames errorBlock prefix (Map.add errorLocal value locals)
+                        stack <- branchStack
+                        locals <- Map.remove errorLocal branchLocals
+                    | actual -> fail "RUNTIME_INTERNAL_TYPE" "match-result received a non-result after type checking." (Some currentWord) instructionSpan [ "Result<T, E>" ] [ formatType program (runtimeValueType actual) ]
+                | IrOperation.MakeRecord(call, _) | IrOperation.GetRecordField(call, _, _) | IrOperation.WrapScalar(call, _, _) | IrOperation.UnwrapScalar(call, _) ->
+                    let prefix, arguments = popArguments call.ResolvedName call.InputTypes
+                    let result = invokeResolved depth call arguments (Some instruction.Site)
+                    stack <- prefix @ result
+            stack, locals
+
+        host.PreflightEffects body.BodyInferredEffects None None
+        let result, _ = executeBlock 0 executionName body.BodyLocalNames body.BodyBlock [] Map.empty
+
+        let rec fromRuntimeValue = function
+            | RuntimeInt value -> IntValue value
+            | RuntimeFloat value -> FloatValue value
+            | RuntimeBool value -> BoolValue value
+            | RuntimeString value -> StringValue value
+            | RuntimeUnit -> UnitValue
+            | RuntimeList(itemType, values) -> ListValue(toLangType itemType, List.map fromRuntimeValue values)
+            | RuntimeOption(itemType, value) -> OptionValue(toLangType itemType, Option.map fromRuntimeValue value)
+            | RuntimeResult(okType, errorType, value) ->
+                ResultValue(toLangType okType, toLangType errorType, Result.map fromRuntimeValue value |> Result.mapError fromRuntimeValue)
+            | RuntimeRecord(key, values) ->
+                match program.NominalTypesByKey.TryFind key with
+                | Some(IrRecordDefinition definition) ->
+                    let fields = definition.RecordFields |> List.sortBy (fun field -> field.FieldIndex)
+                    if fields.Length <> values.Length then
+                        fail "IR_BACKEND_RECORD_LAYOUT" "Runtime record field count differs from its verified nominal layout." (Some definition.TypeName) None [ string fields.Length ] [ string values.Length ]
+                    RecordValue(definition.TypeName, List.zip fields values |> List.map (fun (field, value) -> field.FieldName, fromRuntimeValue value) |> Map.ofList)
+                | _ -> fail "IR_BACKEND_RECORD_LAYOUT" "Record value refers to a non-record nominal type." None None [ "record" ] [ typeName program key ]
+            | RuntimeScalar(key, value) ->
+                match program.NominalTypesByKey.TryFind key with
+                | Some(IrScalarDefinition definition) -> NamedValue(definition.TypeName, fromRuntimeValue value)
+                | _ -> fail "IR_BACKEND_SCALAR_LAYOUT" "Scalar value refers to a non-scalar nominal type." None None [ "scalar" ] [ typeName program key ]
+        and toLangType = function
+            | IrInt -> TInt
+            | IrFloat -> TFloat
+            | IrBool -> TBool
+            | IrString -> TString
+            | IrUnit -> TUnit
+            | IrList item -> TList(toLangType item)
+            | IrOption item -> TOption(toLangType item)
+            | IrResult(okType, errorType) -> TResult(toLangType okType, toLangType errorType)
+            | IrNominal key -> TNamed(typeName program key)
+        result |> List.map fromRuntimeValue

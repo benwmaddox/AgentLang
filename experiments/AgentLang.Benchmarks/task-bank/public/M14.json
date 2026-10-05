@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "M14",
+  "category": "medium",
+  "goal": "A delivery Error returns EMAIL_PROVIDER_FAILURE and leaves both FIFO lists unchanged. Implement the named public operation and attach tests for the listed behavior. Inspect available vocabulary first and preserve unrelated behavior.",
+  "initialContext": "The host supplies a deterministic in-memory business fixture, task types, and runtime vocabulary when this task is executable. Follow the supplied field mappings and public contract; preserve unrelated behavior.",
+  "requiredPublicContract": {
+    "symbol": "email.deliver-result",
+    "signature": "Store Result<Unit, BusinessError> -> Result<Store, BusinessError>",
+    "behavior": "A delivery Error returns EMAIL_PROVIDER_FAILURE and leaves both FIFO lists unchanged."
+  }
+}

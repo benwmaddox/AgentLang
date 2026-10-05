@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "R10",
+  "category": "refactoring",
+  "goal": "Replace duplicated premium/annual renewal sequences with one shared package operation used by one-at-a-time and batch entry points. Implement the named public operation and attach tests for the listed behavior. Inspect available vocabulary first and preserve unrelated behavior.",
+  "initialContext": "The host supplies a deterministic in-memory business fixture, task types, and runtime vocabulary when this task is executable. Follow the supplied field mappings and public contract; preserve unrelated behavior.",
+  "requiredPublicContract": {
+    "symbol": "renewal.create-package",
+    "signature": "Store SubscriptionId Instant InvoiceId -> Result<Store, BusinessError>",
+    "behavior": "Replace duplicated premium/annual renewal sequences with one shared package operation used by one-at-a-time and batch entry points.",
+    "structuralRequirement": {
+      "helper": "renewal.create-package",
+      "calledBy": [
+        "renewal.run-one",
+        "renewal.run-batch"
+      ]
+    }
+  }
+}

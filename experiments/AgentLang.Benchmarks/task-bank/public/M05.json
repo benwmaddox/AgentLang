@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "M05",
+  "category": "medium",
+  "goal": "Apply the reminder transition twice and retain exactly one queued/sent message per eligible subscription. Implement the named public operation and attach tests for the listed behavior. Inspect available vocabulary first and preserve unrelated behavior.",
+  "initialContext": "The host supplies a deterministic in-memory business fixture, task types, and runtime vocabulary when this task is executable. Follow the supplied field mappings and public contract; preserve unrelated behavior.",
+  "requiredPublicContract": {
+    "symbol": "store.schedule-renewal-reminder",
+    "signature": "Store Instant -> Result<Store, BusinessError>",
+    "behavior": "Apply the reminder transition twice and retain exactly one queued/sent message per eligible subscription."
+  }
+}

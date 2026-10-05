@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "taskId": "D05",
+  "vectorStatus": "proposed-pending-host-review",
+  "executionStatus": "pending",
+  "adapters": {
+    "agentlang": "pending",
+    "conventional": "pending",
+    "referenceCrossCheck": "pending"
+  },
+  "provenance": {
+    "status": "proposed-pending-host-review",
+    "basis": [
+      "docs/BUSINESS.md",
+      "experiments/AgentLang.Business/Business.fs",
+      "docs/BUSINESS-LANGUAGE-PLAN.md"
+    ],
+    "note": "Existing reference operations have not been run against this vector. New policy outcomes are proposals under the public contract."
+  },
+  "cases": [
+    {
+      "id": "first-cancel",
+      "input": {
+        "status": "Active",
+        "startedAt": "2026-01-01T00:00:00+00:00",
+        "at": "2026-01-03T00:00:00+00:00"
+      },
+      "expected": {
+        "result": {
+          "tag": "ok",
+          "value": {
+            "status": "Cancelled"
+          }
+        },
+        "errorCode": null,
+        "stateProjection": {
+          "status": "Cancelled",
+          "cancelledAt": "2026-01-03T00:00:00+00:00"
+        }
+      }
+    },
+    {
+      "id": "repeat-cancel",
+      "input": {
+        "status": "Cancelled",
+        "startedAt": "2026-01-01T00:00:00+00:00",
+        "cancelledAt": "2026-01-03T00:00:00+00:00",
+        "at": "2026-01-04T00:00:00+00:00"
+      },
+      "expected": {
+        "result": null,
+        "errorCode": "SUBSCRIPTION_ALREADY_CANCELLED",
+        "stateProjection": {
+          "status": "Cancelled",
+          "cancelledAt": "2026-01-03T00:00:00+00:00"
+        }
+      }
+    },
+    {
+      "id": "before-start",
+      "input": {
+        "status": "Active",
+        "startedAt": "2026-01-03T00:00:00+00:00",
+        "at": "2026-01-02T00:00:00+00:00"
+      },
+      "expected": {
+        "result": null,
+        "errorCode": "CANCEL_BEFORE_START",
+        "stateProjection": {
+          "status": "Active"
+        }
+      }
+    }
+  ],
+  "fixtureSetup": {
+    "kind": "single-defect",
+    "mutationId": "mutant-d05",
+    "status": "pending-host-fixture"
+  }
+}

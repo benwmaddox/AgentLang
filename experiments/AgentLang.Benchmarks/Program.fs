@@ -7,7 +7,7 @@ open AgentLang.Benchmarks
 
 module Program =
     let private usage () =
-        eprintfn "Usage: AgentLang.Benchmarks run --task task.json --provider scripted|openai [--model model] [--mode flat|growing] [--project-root path] [--run-dir path] [--seed-source file] [--script responses.json] [--max-turns n] [--max-tool-calls n] [--max-output-tokens n] [--context-budget-bytes n]"
+        eprintfn "Usage: AgentLang.Benchmarks run --task task.json --provider scripted|openai [--model model] [--mode flat|growing] [--baseline domain-seeded-control|primitive-only] [--project-root path] [--run-dir path] [--seed-source file] [--script responses.json] [--max-turns n] [--max-tool-calls n] [--max-output-tokens n] [--context-budget-bytes n]"
 
     let private arguments (values: string array) =
         if values.Length % 2 <> 0 then invalidArg "args" "Every option must have one value."
@@ -61,6 +61,12 @@ module Program =
             | "growing" -> Growing
             | _ -> invalidArg "mode" "--mode must be 'flat' or 'growing'."
 
+        let baselineProfile =
+            match option values "baseline" |> Option.defaultValue "domain-seeded-control" with
+            | "domain-seeded-control" -> BaselineProfile.DomainSeededControl
+            | "primitive-only" -> BaselineProfile.PrimitiveOnly
+            | _ -> invalidArg "baseline" "--baseline must be 'domain-seeded-control' or 'primitive-only'."
+
         let defaultRunDirectory =
             let stamp = DateTimeOffset.UtcNow.ToString("yyyyMMddTHHmmssfffZ")
             let shortId = Guid.NewGuid().ToString("N").Substring(0, 8)
@@ -80,7 +86,9 @@ module Program =
               Model = model
               ProjectDirectory = projectDirectory
               RunDirectory = runDirectory
+              BaselineProfile = baselineProfile
               SeedDictionarySource = seedSource
+              TestFailurePoint = None
               MaxTurns = number values "max-turns" 12
               MaxToolCalls = number values "max-tool-calls" 40
               MaxOutputTokens = number values "max-output-tokens" 4096

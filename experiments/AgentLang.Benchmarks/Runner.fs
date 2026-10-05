@@ -13,6 +13,17 @@ type RunMode =
     | Flat
     | Growing
 
+/// Baseline profile describes starting vocabulary, independently of retention mode.
+[<RequireQualifiedAccess>]
+type BaselineProfile =
+    | DomainSeededControl
+    | PrimitiveOnly
+
+[<RequireQualifiedAccess>]
+type HarnessTestFailurePoint =
+    | BeforeInitialLineageMarkerWrite
+    | AfterFinalLineageMarkerWrite
+
 type OracleStep =
     { Operation: string
       Arguments: JsonObject
@@ -34,7 +45,9 @@ type RunConfig =
       Model: string
       ProjectDirectory: string
       RunDirectory: string
+      BaselineProfile: BaselineProfile
       SeedDictionarySource: string option
+      TestFailurePoint: HarnessTestFailurePoint option
       MaxTurns: int
       MaxToolCalls: int
       MaxOutputTokens: int
@@ -72,7 +85,18 @@ type RunReport =
       OutputTokens: int option
       TotalTokens: int option
       Oracle: OracleOutcome list
+      BaselineAudit: JsonObject
       ProjectDirectory: string }
+
+type private BaselineLineage =
+    { Profile: BaselineProfile
+      OriginInventory: JsonObject
+      OriginCanonicalStateHash: string
+      LastCanonicalStateHash: string
+      SeedSourceHash: string option
+      SeedSourceApplied: bool }
+
+exception private BaselineGuardFailure of string * string
 
 module TaskFile =
     let private requiredString root key =
@@ -303,6 +327,425 @@ module Runner =
             totalBytes <- totalBytes + byteCount
             $"history/{Path.GetFileName path}", contents)
 
+    let private baselineProfileName = function
+        | BaselineProfile.DomainSeededControl -> "domain-seeded-control"
+        | BaselineProfile.PrimitiveOnly -> "primitive-only"
+
+    let private baselineLabel = function
+        | BaselineProfile.DomainSeededControl -> "Domain-seeded retention control"
+        | BaselineProfile.PrimitiveOnly -> "Primitive-only starting vocabulary"
+
+    let private hashBytes (bytes: byte array) =
+        SHA256.HashData(bytes) |> Convert.ToHexString |> fun value -> value.ToLowerInvariant()
+
+    let private hashText (value: string) =
+        hashBytes (UTF8Encoding(false, true).GetBytes value)
+
+    let private stringArray (values: string list) : JsonArray =
+        let result = JsonArray()
+        values |> List.iter (Json.text >> result.Add)
+        result
+
+    let private inventorySourceHash (loaded: StorageLoadResult) =
+        match loaded.Manifest with
+        | Some manifest -> Some manifest.ProjectSource.Hash
+        | None ->
+            match loaded.Authority with
+            | LegacyAuthority reference -> Some reference.Hash
+            | EmptyAuthority | ManifestAuthority _ -> None
+
+    let private authorityName = function
+        | EmptyAuthority -> "empty"
+        | LegacyAuthority _ -> "legacy"
+        | ManifestAuthority _ -> "manifest"
+
+    let private baselineInventory (loaded: StorageLoadResult) =
+        let source = loaded.ProjectSource |> Option.defaultValue ""
+        let parsed =
+            match Parser.parse "<baseline-audit>" source with
+            | Ok result -> result
+            | Error diagnostic ->
+                raise (BaselineGuardFailure("BASELINE_INVENTORY_UNAVAILABLE", $"Could not parse the authoritative project source for its starting inventory: {diagnostic.Code}: {diagnostic.Message}"))
+        let wordHeads =
+            loaded.Manifest
+            |> Option.map (fun manifest -> manifest.Words |> List.map (fun head -> head.CurrentName, head) |> Map.ofList)
+            |> Option.defaultValue Map.empty
+        let words = JsonArray()
+        parsed.Words
+        |> List.sortBy (fun word -> word.Name)
+        |> List.iter (fun definition ->
+            let item = JsonObject()
+            item["name"] <- Json.text definition.Name
+            item["stableId"] <- wordHeads.TryFind definition.Name |> Option.map (fun head -> Json.text head.WordId) |> nodeOption
+            item["inputs"] <- stringArray (definition.Inputs |> List.map Types.format)
+            item["outputs"] <- stringArray (definition.Outputs |> List.map Types.format)
+            item["effects"] <- stringArray (definition.Effects |> Set.toList)
+            item["maturity"] <- Json.text (if definition.Maturity = LibraryWord then "library" else "project")
+            let revision = wordHeads.TryFind definition.Name |> Option.map (fun head -> head.CurrentRevision) |> Option.defaultValue definition.Revision
+            item["revision"] <- Json.integer revision
+            item["deprecated"] <- Json.bool (wordHeads.TryFind definition.Name |> Option.exists (fun head -> head.Deprecated))
+            words.Add item)
+        let records = JsonArray()
+        parsed.Records
+        |> List.sortBy (fun record -> record.Name)
+        |> List.iter (fun definition ->
+            let item = JsonObject()
+            item["name"] <- Json.text definition.Name
+            let fields = JsonArray()
+            definition.Fields
+            |> List.iter (fun field ->
+                let fieldItem = JsonObject()
+                fieldItem["name"] <- Json.text field.Name
+                fieldItem["type"] <- Json.text (Types.format field.Type)
+                fields.Add fieldItem)
+            item["fields"] <- fields
+            records.Add item)
+        let scalars = JsonArray()
+        parsed.Scalars
+        |> List.sortBy (fun scalar -> scalar.Name)
+        |> List.iter (fun definition ->
+            let item = JsonObject()
+            item["name"] <- Json.text definition.Name
+            item["baseType"] <- Json.text (Types.format definition.BaseType)
+            item["validator"] <- definition.Validator |> Option.map Json.text |> nodeOption
+            scalars.Add item)
+        let tests = parsed.Tests |> List.map (fun definition -> definition.Name) |> List.sort |> stringArray
+        let examples = parsed.Examples |> List.map (fun definition -> definition.Name) |> List.sort |> stringArray
+        let result = JsonObject()
+        result["storageAuthority"] <- Json.text (authorityName loaded.Authority)
+        result["manifestHash"] <- loaded.ManifestHash |> Option.map Json.text |> nodeOption
+        result["projectSourceSha256"] <- inventorySourceHash loaded |> Option.map Json.text |> nodeOption
+        result["authoredWords"] <- words
+        result["records"] <- records
+        result["scalars"] <- scalars
+        result["tests"] <- tests
+        result["examples"] <- examples
+        result, parsed
+
+    let private inventoryHasAuthoredAlgorithms (parsed: ParsedSource) =
+        not parsed.Words.IsEmpty || not parsed.Tests.IsEmpty || not parsed.Examples.IsEmpty
+
+    let private inventoryViolations (parsed: ParsedSource) =
+        [ yield! parsed.Words |> List.map (fun word -> "word " + word.Name)
+          yield! parsed.Tests |> List.map (fun test -> "test " + test.Name)
+          yield! parsed.Examples |> List.map (fun example -> "example " + example.Name) ]
+
+    let private readSeedSourceBytes (path: string option) =
+        path
+        |> Option.map (fun value ->
+            if not (File.Exists value) then raise (BaselineGuardFailure("BASELINE_SEED_SOURCE_MISSING", $"Seed source does not exist: {value}"))
+            File.ReadAllBytes value)
+
+    let private decodeSeedSource (bytes: byte array) =
+        use stream = new MemoryStream(bytes, false)
+        use reader = new StreamReader(stream, UTF8Encoding(false, true), true)
+        reader.ReadToEnd()
+
+    let private injectTestFailure (config: RunConfig) (point: HarnessTestFailurePoint) =
+        if config.TestFailurePoint = Some point then
+            raise (InvalidOperationException($"Injected harness failure at {point}."))
+
+    let private canonicalDurableStateHash (projectDirectory: string) =
+        let loaded =
+            match Storage.load (Storage.create projectDirectory) with
+            | Ok result -> result
+            | Error error -> raise (ProjectSnapshotFailure error)
+        let authority = JsonObject()
+        match loaded.Authority with
+        | EmptyAuthority -> authority["kind"] <- Json.text "empty"
+        | LegacyAuthority reference ->
+            authority["kind"] <- Json.text "legacy"
+            authority["sourceHash"] <- Json.text reference.Hash
+        | ManifestAuthority manifestHash ->
+            authority["kind"] <- Json.text "manifest"
+            authority["manifestHash"] <- Json.text manifestHash
+        let history = JsonArray()
+        taskHistory projectDirectory
+        |> List.iter (fun (path, contents) ->
+            let item = JsonObject()
+            item["path"] <- Json.text path
+            item["content"] <- Json.text contents
+            history.Add item)
+        let state = JsonObject()
+        state["format"] <- Json.text "AgentLang.BenchmarkDurableState.v1"
+        state["authority"] <- authority
+        state["projectSourceSha256"] <- inventorySourceHash loaded |> Option.map Json.text |> nodeOption
+        state["taskHistory"] <- history
+        hashText (Json.compact state)
+
+    let private lineagePath (projectDirectory: string) =
+        Path.Combine(projectDirectory, ".agentlang-benchmark-lineage.json")
+
+    let private lineageNode (lineage: BaselineLineage) =
+        let result = JsonObject()
+        result["schemaVersion"] <- Json.integer 2
+        result["profile"] <- Json.text (baselineProfileName lineage.Profile)
+        result["originInventory"] <- lineage.OriginInventory.DeepClone()
+        result["originCanonicalDurableStateSha256"] <- Json.text lineage.OriginCanonicalStateHash
+        result["lastCanonicalDurableStateSha256"] <- Json.text lineage.LastCanonicalStateHash
+        result["seedSourceSha256"] <- lineage.SeedSourceHash |> Option.map Json.text |> nodeOption
+        result["seedSourceApplied"] <- Json.bool lineage.SeedSourceApplied
+        result
+
+    let private sameLineageOrigin (left: BaselineLineage) (right: BaselineLineage) =
+        left.Profile = right.Profile
+        && left.OriginCanonicalStateHash = right.OriginCanonicalStateHash
+        && left.SeedSourceHash = right.SeedSourceHash
+        && left.SeedSourceApplied = right.SeedSourceApplied
+        && Json.compact (left.OriginInventory :> JsonNode) = Json.compact (right.OriginInventory :> JsonNode)
+
+    let private parseBaselineProfile (value: string) =
+        match value with
+        | "domain-seeded-control" -> Some BaselineProfile.DomainSeededControl
+        | "primitive-only" -> Some BaselineProfile.PrimitiveOnly
+        | _ -> None
+
+    let private isLowerSha256 (value: string) =
+        value.Length = 64
+        && (value
+            |> Seq.forall (fun character ->
+                (character >= '0' && character <= '9')
+                || (character >= 'a' && character <= 'f')))
+
+    let private nonBlankStringProperty (node: JsonNode) (name: string) =
+        Json.tryProperty node name
+        |> Option.bind Json.tryString
+        |> Option.exists (String.IsNullOrWhiteSpace >> not)
+
+    let private nullableStringProperty (node: JsonNode) (name: string) =
+        match Json.tryProperty node name with
+        | Some value when isNull value -> true
+        | Some value -> Json.tryString value |> Option.exists (String.IsNullOrWhiteSpace >> not)
+        | None -> false
+
+    let private nullableHashProperty (node: JsonNode) (name: string) =
+        match Json.tryProperty node name with
+        | Some value when isNull value -> true
+        | Some value -> Json.tryString value |> Option.exists isLowerSha256
+        | None -> false
+
+    let private optionalHashValue (node: JsonNode) (name: string) =
+        Json.tryProperty node name
+        |> Option.map (fun value -> if isNull value then None else Json.tryString value)
+
+    let private boolProperty (node: JsonNode) (name: string) =
+        Json.tryProperty node name
+        |> Option.exists (fun value -> try value.GetValue<bool>() |> ignore; true with _ -> false)
+
+    let private positiveIntProperty (node: JsonNode) (name: string) =
+        Json.tryProperty node name
+        |> Option.exists (fun value -> try value.GetValue<int>() > 0 with _ -> false)
+
+    let private stringArrayProperty (node: JsonNode) (name: string) =
+        Json.tryProperty node name
+        |> Option.bind Json.asArray
+        |> Option.exists (fun items ->
+            items
+            |> Seq.forall (fun item ->
+                Json.tryString item
+                |> Option.exists (String.IsNullOrWhiteSpace >> not)))
+
+    let private validWordInventoryItem (item: JsonNode) =
+        let validStableId = nullableStringProperty item "stableId"
+        let validMaturity =
+            Json.tryProperty item "maturity"
+            |> Option.bind Json.tryString
+            |> Option.exists (fun value -> value = "project" || value = "library")
+        nonBlankStringProperty item "name"
+        && validStableId
+        && stringArrayProperty item "inputs"
+        && stringArrayProperty item "outputs"
+        && stringArrayProperty item "effects"
+        && validMaturity
+        && positiveIntProperty item "revision"
+        && boolProperty item "deprecated"
+
+    let private validRecordFieldInventoryItem (item: JsonNode) =
+        nonBlankStringProperty item "name" && nonBlankStringProperty item "type"
+
+    let private validRecordInventoryItem (item: JsonNode) =
+        nonBlankStringProperty item "name"
+        && (Json.tryProperty item "fields"
+            |> Option.bind Json.asArray
+            |> Option.exists (Seq.forall validRecordFieldInventoryItem))
+
+    let private validScalarInventoryItem (item: JsonNode) =
+        nonBlankStringProperty item "name"
+        && nonBlankStringProperty item "baseType"
+        && nullableStringProperty item "validator"
+
+    let private arrayItemsSatisfy (node: JsonObject) (name: string) (predicate: JsonNode -> bool) =
+        Json.tryProperty (node :> JsonNode) name
+        |> Option.bind Json.asArray
+        |> Option.exists (Seq.forall predicate)
+
+    let private arrayPropertyIsEmpty (node: JsonObject) (name: string) =
+        Json.tryProperty (node :> JsonNode) name
+        |> Option.bind Json.asArray
+        |> Option.exists (fun items -> items.Count = 0)
+
+    let private validOriginInventory (inventory: JsonObject) =
+        let authorityIsValid =
+            Json.tryProperty (inventory :> JsonNode) "storageAuthority"
+            |> Option.bind Json.tryString
+            |> Option.exists (fun value -> value = "empty" || value = "legacy" || value = "manifest")
+        let authority = Json.propertyString (inventory :> JsonNode) "storageAuthority" ""
+        let manifestHash = optionalHashValue (inventory :> JsonNode) "manifestHash"
+        let sourceHash = optionalHashValue (inventory :> JsonNode) "projectSourceSha256"
+        let authorityHashesMatch =
+            match authority, manifestHash, sourceHash with
+            | "empty", Some None, Some None ->
+                arrayPropertyIsEmpty inventory "authoredWords"
+                && arrayPropertyIsEmpty inventory "records"
+                && arrayPropertyIsEmpty inventory "scalars"
+                && arrayPropertyIsEmpty inventory "tests"
+                && arrayPropertyIsEmpty inventory "examples"
+            | "legacy", Some None, Some(Some _) -> true
+            | "manifest", Some(Some _), Some(Some _) -> true
+            | _ -> false
+        authorityIsValid
+        && nullableHashProperty (inventory :> JsonNode) "manifestHash"
+        && nullableHashProperty (inventory :> JsonNode) "projectSourceSha256"
+        && arrayItemsSatisfy inventory "authoredWords" validWordInventoryItem
+        && arrayItemsSatisfy inventory "records" validRecordInventoryItem
+        && arrayItemsSatisfy inventory "scalars" validScalarInventoryItem
+        && stringArrayProperty (inventory :> JsonNode) "tests"
+        && stringArrayProperty (inventory :> JsonNode) "examples"
+        && authorityHashesMatch
+
+    let private readLineage (projectDirectory: string) =
+        let path = lineagePath projectDirectory
+        if Directory.Exists path then
+            raise (BaselineGuardFailure("BASELINE_LINEAGE_INVALID", "The harness lineage marker path is a directory."))
+        if not (File.Exists path) then None
+        else
+            try
+                let node = JsonNode.Parse(File.ReadAllText(path, UTF8Encoding(false, true)))
+                let version = Json.propertyInt node "schemaVersion" |> Option.defaultValue -1
+                let profile = Json.propertyString node "profile" ""
+                let origin = Json.tryProperty node "originInventory" |> Option.bind Json.asObject
+                let originHash = Json.propertyString node "originCanonicalDurableStateSha256" ""
+                let lastHash = Json.propertyString node "lastCanonicalDurableStateSha256" ""
+                let seedHash =
+                    match Json.tryProperty node "seedSourceSha256" with
+                    | Some value when isNull value -> Some None
+                    | Some value -> Json.tryString value |> Option.filter isLowerSha256 |> Option.map Some
+                    | None -> None
+                let seedApplied = Json.tryProperty node "seedSourceApplied" |> Option.bind (fun value -> try value.GetValue<bool>() |> Some with _ -> None)
+                match version, parseBaselineProfile profile, origin with
+                | 2, Some parsedProfile, Some inventory when
+                    isLowerSha256 originHash
+                    && isLowerSha256 lastHash
+                    && seedHash.IsSome
+                    && seedApplied.IsSome
+                    && (not seedApplied.Value || seedHash.Value.IsSome)
+                    && validOriginInventory inventory ->
+                    Some
+                        { Profile = parsedProfile
+                          OriginInventory = inventory.DeepClone().AsObject()
+                          OriginCanonicalStateHash = originHash
+                          LastCanonicalStateHash = lastHash
+                          SeedSourceHash = seedHash.Value
+                          SeedSourceApplied = seedApplied.Value }
+                | _ -> raise (BaselineGuardFailure("BASELINE_LINEAGE_INVALID", "The harness lineage marker is malformed or uses an unsupported version."))
+            with
+            | BaselineGuardFailure _ as error -> raise error
+            | _ -> raise (BaselineGuardFailure("BASELINE_LINEAGE_INVALID", "The harness lineage marker could not be read."))
+
+    let private writeLineage (projectDirectory: string) (lineage: BaselineLineage) =
+        let path = lineagePath projectDirectory
+        if File.Exists path && (File.GetAttributes(path) &&& FileAttributes.ReparsePoint) <> enum<FileAttributes> 0 then
+            raise (BaselineGuardFailure("BASELINE_LINEAGE_INVALID", "The harness lineage marker cannot be a reparse point."))
+        let temporaryPath = path + "." + Guid.NewGuid().ToString("N") + ".tmp"
+        try
+            let bytes = Encoding.UTF8.GetBytes(Json.compact (lineageNode lineage))
+            do
+                use stream = new FileStream(temporaryPath, FileMode.CreateNew, FileAccess.Write, FileShare.None)
+                stream.Write(bytes, 0, bytes.Length)
+                stream.Flush(true)
+            if File.Exists path then File.Move(temporaryPath, path, true)
+            else File.Move(temporaryPath, path)
+        with ex ->
+            try if File.Exists temporaryPath then File.Delete temporaryPath with _ -> ()
+            raise (BaselineGuardFailure("BASELINE_LINEAGE_WRITE_FAILED", $"Could not atomically write the harness lineage marker ({ex.GetType().Name})."))
+
+    let private ensureGrowingLineage
+        (projectDirectory: string)
+        (profile: BaselineProfile)
+        (inventory: JsonObject)
+        (currentStateHash: string)
+        (seedHash: string option)
+        (seedApplied: bool)
+        (hasAuthoredAlgorithms: bool)
+        =
+        match readLineage projectDirectory with
+        | Some existing ->
+            if existing.Profile <> profile then
+                raise (BaselineGuardFailure("BASELINE_PROFILE_MISMATCH", "A Growing project cannot switch baseline profiles after its lineage is established."))
+            if existing.LastCanonicalStateHash <> currentStateHash then
+                raise (BaselineGuardFailure("BASELINE_LINEAGE_MISMATCH", "The authoritative durable vocabulary or task history does not match the previous Growing run's final state."))
+            if profile = BaselineProfile.PrimitiveOnly then
+                let originWords = Json.tryProperty existing.OriginInventory "authoredWords" |> Option.bind Json.asArray |> Option.defaultValue (JsonArray())
+                let originTests = Json.tryProperty existing.OriginInventory "tests" |> Option.bind Json.asArray |> Option.defaultValue (JsonArray())
+                let originExamples = Json.tryProperty existing.OriginInventory "examples" |> Option.bind Json.asArray |> Option.defaultValue (JsonArray())
+                if originWords.Count > 0 || originTests.Count > 0 || originExamples.Count > 0 then
+                    raise (BaselineGuardFailure("BASELINE_LINEAGE_INVALID", "Primitive-only lineage contains authored initial words, tests, or examples."))
+            match existing.SeedSourceHash, seedHash with
+            | Some expected, Some supplied when expected <> supplied ->
+                raise (BaselineGuardFailure("BASELINE_SEED_SOURCE_MISMATCH", "A Growing continuation supplied a different seed source than its audited baseline."))
+            | None, Some _ ->
+                raise (BaselineGuardFailure("BASELINE_SEED_SOURCE_MISMATCH", "This Growing lineage started without a seed source; a new seed source cannot be added during continuation."))
+            | _ -> ()
+            existing, "continued", Some existing.LastCanonicalStateHash
+        | None ->
+            let hasPriorHistory = not (List.isEmpty (taskHistory projectDirectory))
+            match profile with
+            | BaselineProfile.PrimitiveOnly when hasPriorHistory ->
+                raise (BaselineGuardFailure("BASELINE_LINEAGE_MISSING", "A Growing primitive-only project with task history but no harness lineage cannot be verified as a fresh primitive baseline."))
+            | BaselineProfile.PrimitiveOnly when hasAuthoredAlgorithms ->
+                raise (BaselineGuardFailure("BASELINE_INVENTORY_MISMATCH", "Primitive-only initialization contains authored words, tests, or examples."))
+            | _ ->
+                let status = if hasPriorHistory then "adopted-existing-control" else "fresh"
+                let lineage =
+                    { Profile = profile
+                      OriginInventory = inventory.DeepClone().AsObject()
+                      OriginCanonicalStateHash = currentStateHash
+                      LastCanonicalStateHash = currentStateHash
+                      SeedSourceHash = seedHash
+                      SeedSourceApplied = seedApplied }
+                lineage, status, None
+
+    let private baselineAuditNode
+        (profile: BaselineProfile)
+        (inventory: JsonObject)
+        (originInventory: JsonObject)
+        (currentStateHash: string)
+        (originStateHash: string)
+        (lineageStatus: string)
+        (previousStateHash: string option)
+        (seedSourceHash: string option)
+        =
+        let audit = JsonObject()
+        audit["profile"] <- Json.text (baselineProfileName profile)
+        audit["label"] <- Json.text (baselineLabel profile)
+        audit["schemaProvenance"] <-
+            if (Json.tryProperty inventory "records" |> Option.bind Json.asArray |> Option.exists (fun values -> values.Count > 0))
+               || (Json.tryProperty inventory "scalars" |> Option.bind Json.asArray |> Option.exists (fun values -> values.Count > 0)) then
+                Json.text "user-supplied schema; source hash and exact declarations are recorded"
+            else Json.text "empty schema"
+        audit["contractEquivalence"] <- Json.text "not established; this audit records declarations and source identity only"
+        audit["seedSourceSha256"] <- seedSourceHash |> Option.map Json.text |> nodeOption
+        audit["taskStartInventory"] <- inventory.DeepClone()
+        audit["originInventory"] <- originInventory.DeepClone()
+        audit["originCanonicalDurableStateSha256"] <- Json.text originStateHash
+        let lineage = JsonObject()
+        lineage["status"] <- Json.text lineageStatus
+        lineage["taskStartCanonicalDurableStateSha256"] <- Json.text currentStateHash
+        lineage["previousCanonicalDurableStateSha256"] <- previousStateHash |> Option.map Json.text |> nodeOption
+        lineage["hashScope"] <- Json.text "authoritative project source/manifest identity and harness task-history files; excludes virtual provider state, clock, and capabilities"
+        audit["lineage"] <- lineage
+        audit
+
     let private captureProjectState (projectDirectory: string) =
         let history = taskHistory projectDirectory
         match Storage.capture (Storage.create projectDirectory) with
@@ -508,6 +951,7 @@ module Runner =
         let oracle = JsonArray()
         report.Oracle |> List.iter (oracleJson >> oracle.Add)
         node["oracle"] <- oracle
+        node["baselineAudit"] <- report.BaselineAudit.DeepClone()
         node["projectDirectory"] <- Json.text report.ProjectDirectory
         node
 
@@ -521,6 +965,11 @@ module Runner =
         let node = JsonObject()
         node["sha256"] <- Json.text (stateDigest state)
         node["state"] <- state.DeepClone()
+        node
+
+    let private stateManifestWithAudit (state: JsonObject) (audit: JsonObject) =
+        let node = stateManifest state
+        node["baselineAudit"] <- audit.DeepClone()
         node
 
     let private logFile (writer: StreamWriter) (eventName: string) (fields: (string * JsonNode) list) =
@@ -562,11 +1011,20 @@ module Runner =
 
             use traceWriter = new StreamWriter(tracePath, false, UTF8Encoding(false))
             let log event fields = logFile traceWriter event fields
-            let dictionaryPath = Path.Combine(config.ProjectDirectory, "dictionary.agent")
             let mutable engineInstance: Runtime.Engine option = None
             let mutable failure: (string * string) option = None
             let mutable taskBegan = false
             let mutable initialStateSnapshot: ProjectCheckpoint option = None
+            let mutable baselineAudit = JsonObject()
+            baselineAudit["profile"] <- Json.text (baselineProfileName config.BaselineProfile)
+            baselineAudit["label"] <- Json.text (baselineLabel config.BaselineProfile)
+            baselineAudit["status"] <- Json.text "not-audited"
+            baselineAudit["guardPurpose"] <- Json.text "classification and inventory audit; not a security boundary"
+            let mutable growingLineage: BaselineLineage option = None
+            let mutable lineageMarkerPersisted = false
+            let mutable freshLineageMarkerCreated = false
+            let mutable baselineCheckpointAccepted = false
+            let mutable taskStartCanonicalStateHash: string option = None
             let mutable turns = 0
             let mutable calls = 0
             let mutable requestsSent = 0
@@ -582,14 +1040,30 @@ module Runner =
             try
                 let preSeedState = captureProjectState config.ProjectDirectory |> snapshotOrRaise
                 initialStateSnapshot <- Some preSeedState
-                writeJson initialStatePath (stateManifest (stateNode preSeedState))
+                taskStartCanonicalStateHash <- Some(canonicalDurableStateHash config.ProjectDirectory)
+                let priorLineage = if config.Mode = Growing then readLineage config.ProjectDirectory else None
+                growingLineage <- priorLineage
+                lineageMarkerPersisted <- priorLineage.IsSome
+                let hasPriorTaskHistory = config.Mode = Growing && not (List.isEmpty (taskHistory config.ProjectDirectory))
+                writeJson initialStatePath (stateManifestWithAudit (stateNode preSeedState) baselineAudit)
                 let engine = Runtime.Engine(config.ProjectDirectory, Set.empty, "2000-01-01T00:00:00Z")
                 engineInstance <- Some engine
-                if not (File.Exists dictionaryPath) then
-                    match config.SeedDictionarySource with
-                    | Some sourcePath when File.Exists sourcePath ->
+                let seedBytes = readSeedSourceBytes config.SeedDictionarySource
+                let seedHash = seedBytes |> Option.map hashBytes
+                let authoritativeProjectIsEmpty =
+                    match preSeedState.Storage.Authority with
+                    | EmptyAuthority -> true
+                    | LegacyAuthority _
+                    | ManifestAuthority _ -> false
+                let mayApplySeed =
+                    authoritativeProjectIsEmpty
+                    && (config.Mode = Flat || (priorLineage.IsNone && not hasPriorTaskHistory))
+                let mutable seedApplied = false
+                if mayApplySeed then
+                    match seedBytes with
+                    | Some bytes ->
                         let defineArgs = JsonObject()
-                        defineArgs["source"] <- Json.text (File.ReadAllText sourcePath)
+                        defineArgs["source"] <- Json.text (decodeSeedSource bytes)
                         let defined = engine.Dispatch("define", defineArgs)
                         log "seed-define" [ "response", defined ]
                         let defineError = Json.propertyString defined "text" "unknown error"
@@ -598,12 +1072,87 @@ module Runner =
                         log "seed-commit" [ "response", committed ]
                         let commitError = Json.propertyString committed "text" "unknown error"
                         if not (responseOk committed) then failwith $"Could not commit seed dictionary: {commitError}"
-                    | Some path -> failwith $"Seed dictionary source does not exist: {path}"
+                        seedApplied <- true
                     | None -> ()
 
+                let loaded =
+                    match Storage.load (Storage.create config.ProjectDirectory) with
+                    | Ok result -> result
+                    | Error error -> raise (ProjectSnapshotFailure error)
+                let inventory, parsed = baselineInventory loaded
+                let currentStateHash = canonicalDurableStateHash config.ProjectDirectory
+                let hasAuthoredAlgorithms = inventoryHasAuthoredAlgorithms parsed
+                let provisionalOriginInventory = priorLineage |> Option.map (fun lineage -> lineage.OriginInventory) |> Option.defaultValue inventory
+                let provisionalOriginHash = priorLineage |> Option.map (fun lineage -> lineage.OriginCanonicalStateHash) |> Option.defaultValue currentStateHash
+                let provisionalPreviousHash = priorLineage |> Option.map (fun lineage -> lineage.LastCanonicalStateHash)
+                baselineAudit <-
+                    baselineAuditNode
+                        config.BaselineProfile
+                        inventory
+                        provisionalOriginInventory
+                        currentStateHash
+                        provisionalOriginHash
+                        (if config.Mode = Growing then "pending" else "not-applicable-flat")
+                        provisionalPreviousHash
+                        (priorLineage |> Option.map (fun lineage -> lineage.SeedSourceHash) |> Option.defaultValue seedHash)
+                baselineAudit["guardPurpose"] <- Json.text "classification and inventory audit; not a security boundary"
+                baselineAudit["seedSourceProvidedSha256"] <- seedHash |> Option.map Json.text |> nodeOption
+                baselineAudit["seedSourceAppliedThisRun"] <- Json.bool seedApplied
+                baselineAudit["seedSourceAppliedAtOrigin"] <-
+                    Json.bool (priorLineage |> Option.map (fun lineage -> lineage.SeedSourceApplied) |> Option.defaultValue (seedApplied && config.Mode <> Growing))
+
+                if config.Mode = Flat && config.BaselineProfile = BaselineProfile.PrimitiveOnly && hasAuthoredAlgorithms then
+                    let violations = inventoryViolations parsed
+                    let details = JsonArray()
+                    violations |> List.iter (Json.text >> details.Add)
+                    baselineAudit["rejectionCode"] <- Json.text "BASELINE_INVENTORY_MISMATCH"
+                    baselineAudit["rejectedAuthoredInventory"] <- details
+                    let violationText = String.concat ", " violations
+                    raise (BaselineGuardFailure("BASELINE_INVENTORY_MISMATCH", $"Primitive-only initialization contains authored algorithms: {violationText}."))
+
+                if config.Mode = Growing then
+                    let lineage, status, previousHash =
+                        ensureGrowingLineage
+                            config.ProjectDirectory
+                            config.BaselineProfile
+                            inventory
+                            currentStateHash
+                            seedHash
+                            seedApplied
+                            hasAuthoredAlgorithms
+                    growingLineage <- Some lineage
+                    baselineAudit <-
+                        baselineAuditNode
+                            config.BaselineProfile
+                            inventory
+                            lineage.OriginInventory
+                            currentStateHash
+                            lineage.OriginCanonicalStateHash
+                            status
+                            previousHash
+                            lineage.SeedSourceHash
+                    baselineAudit["guardPurpose"] <- Json.text "classification and inventory audit; not a security boundary"
+                    baselineAudit["seedSourceProvidedSha256"] <- seedHash |> Option.map Json.text |> nodeOption
+                    baselineAudit["seedSourceAppliedThisRun"] <- Json.bool seedApplied
+                    baselineAudit["seedSourceAppliedAtOrigin"] <- Json.bool (priorLineage |> Option.map (fun prior -> prior.SeedSourceApplied) |> Option.defaultValue false)
+
+                let freshGrowingOrigin = config.Mode = Growing && priorLineage.IsNone
+                baselineAudit["status"] <- Json.text (if freshGrowingOrigin then "candidate" else "accepted")
                 let initialState = captureProjectState config.ProjectDirectory |> snapshotOrRaise
+                if config.Mode = Growing && priorLineage.IsNone then
+                    match growingLineage with
+                    | Some lineage ->
+                        injectTestFailure config HarnessTestFailurePoint.BeforeInitialLineageMarkerWrite
+                        writeLineage config.ProjectDirectory lineage
+                        lineageMarkerPersisted <- true
+                        freshLineageMarkerCreated <- true
+                        baselineAudit["status"] <- Json.text "accepted"
+                        baselineAudit["seedSourceAppliedAtOrigin"] <- Json.bool lineage.SeedSourceApplied
+                    | None -> ()
+                writeJson initialStatePath (stateManifestWithAudit (stateNode initialState) baselineAudit)
                 initialStateSnapshot <- Some initialState
-                writeJson initialStatePath (stateManifest (stateNode initialState))
+                taskStartCanonicalStateHash <- Some currentStateHash
+                baselineCheckpointAccepted <- true
                 let beginArgs = JsonObject()
                 beginArgs["goal"] <- Json.text config.Task.Goal
                 let begun = engine.Dispatch("task.begin", beginArgs)
@@ -697,6 +1246,29 @@ module Runner =
                             if not (responseOk committed) then failure <- Some("TASK_COMMIT_FAILED", Json.propertyString committed "text" "Task commit failed.")
                 if failure.IsNone then
                     taskBegan <- false
+                    match growingLineage with
+                    | Some lineage ->
+                        try
+                            let finalCanonicalHash = canonicalDurableStateHash config.ProjectDirectory
+                            let updated = { lineage with LastCanonicalStateHash = finalCanonicalHash }
+                            writeLineage config.ProjectDirectory updated
+                            lineageMarkerPersisted <- true
+                            growingLineage <- Some updated
+                            baselineAudit["finalCanonicalDurableStateSha256"] <- Json.text finalCanonicalHash
+                            match Json.tryProperty baselineAudit "lineage" |> Option.bind Json.asObject with
+                            | Some lineageAudit ->
+                                lineageAudit["finalCanonicalDurableStateSha256"] <- Json.text finalCanonicalHash
+                                lineageAudit["continuityVerified"] <- Json.bool true
+                            | None -> ()
+                            injectTestFailure config HarnessTestFailurePoint.AfterFinalLineageMarkerWrite
+                        with
+                        | BaselineGuardFailure(code, message) -> failure <- Some(code, message)
+                        | ProjectSnapshotFailure error -> failure <- Some(error.Code, storageErrorMessage error)
+                    | None ->
+                        try
+                            let finalCanonicalHash = canonicalDurableStateHash config.ProjectDirectory
+                            baselineAudit["finalCanonicalDurableStateSha256"] <- Json.text finalCanonicalHash
+                        with ProjectSnapshotFailure error -> failure <- Some(error.Code, storageErrorMessage error)
                 let finalStatus = engine.Dispatch("task.log", JsonObject())
                 runtimeLog <- finalStatus.DeepClone()
                 log "runtime-log" [ "response", finalStatus ]
@@ -712,8 +1284,20 @@ module Runner =
                     [ "code", Json.text error.Code
                       "message", Json.text (storageErrorMessage error)
                       "path", error.Path |> Option.map Json.text |> nodeOption ]
+            | BaselineGuardFailure(code, message) ->
+                if failure.IsNone then failure <- Some(code, message)
+                baselineAudit["status"] <- Json.text "rejected"
+                baselineAudit["rejectionCode"] <- Json.text code
+                baselineAudit["rejectionMessage"] <- Json.text message
+                log "baseline-guard-failure" [ "code", Json.text code; "message", Json.text message ]
             | ex ->
                 if failure.IsNone then failure <- Some("HARNESS_FAILURE", ex.Message)
+                if config.Mode = Growing
+                   && growingLineage.IsSome
+                   && not baselineCheckpointAccepted
+                   && (freshLineageMarkerCreated || not lineageMarkerPersisted) then
+                    baselineAudit["status"] <- Json.text "initialization-failed"
+                    baselineAudit["seedSourceAppliedAtOrigin"] <- Json.bool false
                 if requestsSent > 0 then
                     inputTokens <- None
                     outputTokens <- None
@@ -737,6 +1321,13 @@ module Runner =
                         | Some initial ->
                             let restoreResult = restoreState config.ProjectDirectory initial
                             let restored = captureProjectState config.ProjectDirectory |> snapshotOrRaise
+                            if config.Mode = Growing && freshLineageMarkerCreated && not baselineCheckpointAccepted then
+                                let markerPath = lineagePath config.ProjectDirectory
+                                if File.Exists markerPath then File.Delete markerPath
+                                freshLineageMarkerCreated <- false
+                                lineageMarkerPersisted <- false
+                                baselineAudit["status"] <- Json.text "initialization-failed"
+                                baselineAudit["seedSourceAppliedAtOrigin"] <- Json.bool false
                             let initialNode = stateNode initial
                             let restoredNode = stateNode restored
                             let expectedDigest = stateDigest initialNode
@@ -758,6 +1349,38 @@ module Runner =
                                 failure <- Some("ROLLBACK_FAILED", $"Project state digest did not match after storage restore.{detail}")
                             elif warning.IsSome then
                                 log "project-storage-restore-warning" [ "warning", Json.text warning.Value ]
+                            match taskStartCanonicalStateHash with
+                            | Some expectedHash ->
+                                let restoredHash = canonicalDurableStateHash config.ProjectDirectory
+                                baselineAudit["rollbackCanonicalDurableStateSha256"] <- Json.text restoredHash
+                                baselineAudit["rollbackContinuityVerified"] <- Json.bool (restoredHash = expectedHash)
+                                if restoredHash <> expectedHash && (failure |> Option.exists (fun (code, _) -> code <> "ROLLBACK_FAILED")) then
+                                    failure <- Some("ROLLBACK_FAILED", "Canonical durable project state did not match the task-start hash after rollback.")
+                                if restoredHash = expectedHash && baselineCheckpointAccepted then
+                                    match config.Mode, growingLineage, lineageMarkerPersisted with
+                                    | Growing, Some expectedLineage, true ->
+                                        let currentMarker = readLineage config.ProjectDirectory
+                                        match currentMarker with
+                                        | Some current when not (sameLineageOrigin current expectedLineage) ->
+                                            raise (BaselineGuardFailure("BASELINE_LINEAGE_INVALID", "The lineage origin changed while reconciling rollback."))
+                                        | _ -> ()
+                                        let reconciled = { expectedLineage with LastCanonicalStateHash = restoredHash }
+                                        writeLineage config.ProjectDirectory reconciled
+                                        lineageMarkerPersisted <- true
+                                        growingLineage <- Some reconciled
+                                        baselineAudit["lineageReconciledAfterRollback"] <- Json.bool true
+                                        baselineAudit["finalCanonicalDurableStateSha256"] <- Json.text restoredHash
+                                        baselineAudit["rollbackLineageContinuityVerified"] <- Json.bool true
+                                        match Json.tryProperty baselineAudit "lineage" |> Option.bind Json.asObject with
+                                        | Some lineageAudit ->
+                                            lineageAudit["finalCanonicalDurableStateSha256"] <- Json.text restoredHash
+                                            lineageAudit["continuityVerified"] <- Json.bool true
+                                            lineageAudit["reconciledAfterRollback"] <- Json.bool true
+                                        | None -> ()
+                                    | Growing, _, true ->
+                                        raise (BaselineGuardFailure("BASELINE_LINEAGE_INVALID", "A persisted Growing lineage has no in-memory origin for rollback reconciliation."))
+                                    | _ -> ()
+                            | None -> ()
                         | None -> ()
                     with
                     | ProjectSnapshotFailure error ->
@@ -780,7 +1403,7 @@ module Runner =
             let finalState =
                 try
                     match captureProjectState config.ProjectDirectory with
-                    | Ok snapshot -> stateManifest (stateNode snapshot)
+                    | Ok snapshot -> stateManifestWithAudit (stateNode snapshot) baselineAudit
                     | Error error ->
                         if failure.IsNone then failure <- Some("PROJECT_SNAPSHOT_FAILED", $"Could not capture final project state: {error.Code}: {storageErrorMessage error}")
                         let state = JsonObject()
@@ -789,7 +1412,7 @@ module Runner =
                         detail["message"] <- Json.text (storageErrorMessage error)
                         detail["path"] <- error.Path |> Option.map Json.text |> nodeOption
                         state["captureError"] <- detail
-                        stateManifest state
+                        stateManifestWithAudit state baselineAudit
                 with ex ->
                     if failure.IsNone then failure <- Some("PROJECT_SNAPSHOT_FAILED", $"Could not capture final project state: {ex.Message}")
                     let state = JsonObject()
@@ -797,8 +1420,11 @@ module Runner =
                     detail["code"] <- Json.text "STATE_CAPTURE_FAILED"
                     detail["message"] <- Json.text ex.Message
                     state["captureError"] <- detail
-                    stateManifest state
+                    stateManifestWithAudit state baselineAudit
             writeJson finalStatePath finalState
+            match initialStateSnapshot with
+            | Some initial -> writeJson initialStatePath (stateManifestWithAudit (stateNode initial) baselineAudit)
+            | None -> ()
             let savedRuntimeLog: JsonNode = if isNull runtimeLog then JsonObject() :> JsonNode else runtimeLog
             writeJson runtimeLogPath savedRuntimeLog
             timer.Stop()
@@ -830,6 +1456,7 @@ module Runner =
                   OutputTokens = outputTokens
                   TotalTokens = totalTokens
                   Oracle = oracleOutcomes
+                  BaselineAudit = baselineAudit
                   ProjectDirectory = config.ProjectDirectory }
             writeJson reportPath (makeReportNode report)
             return report

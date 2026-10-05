@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "M07",
+  "category": "medium",
+  "goal": "Create all-or-nothing, snapshot product details, check line totals, then discount the invoice total once. Implement the named public operation and attach tests for the listed behavior. Inspect available vocabulary first and preserve unrelated behavior.",
+  "initialContext": "The host supplies a deterministic in-memory business fixture, task types, and runtime vocabulary when this task is executable. Follow the supplied field mappings and public contract; preserve unrelated behavior.",
+  "requiredPublicContract": {
+    "symbol": "invoice.create-discounted",
+    "signature": "Store InvoiceId CustomerId List<CartLine> Instant -> Result<Store, BusinessError>",
+    "behavior": "Create all-or-nothing, snapshot product details, check line totals, then discount the invoice total once."
+  }
+}

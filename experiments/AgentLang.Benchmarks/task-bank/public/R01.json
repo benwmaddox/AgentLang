@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "R01",
+  "category": "refactoring",
+  "goal": "Extract one typed predicate; route discount-rate and discounted-balance operations through it without behavior changes. Implement the named public operation and attach tests for the listed behavior. Inspect available vocabulary first and preserve unrelated behavior.",
+  "initialContext": "The host supplies a deterministic in-memory business fixture, task types, and runtime vocabulary when this task is executable. Follow the supplied field mappings and public contract; preserve unrelated behavior.",
+  "requiredPublicContract": {
+    "symbol": "customer.premium?",
+    "signature": "Customer -> Bool",
+    "behavior": "Extract one typed predicate; route discount-rate and discounted-balance operations through it without behavior changes.",
+    "structuralRequirement": {
+      "helper": "customer.premium?",
+      "calledBy": [
+        "customer.discount-basis-points",
+        "customer.discounted-balance"
+      ]
+    }
+  }
+}

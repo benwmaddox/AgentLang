@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "taskId": "M09",
+  "vectorStatus": "proposed-pending-host-review",
+  "executionStatus": "pending",
+  "adapters": {
+    "agentlang": "pending",
+    "conventional": "pending",
+    "referenceCrossCheck": "pending"
+  },
+  "provenance": {
+    "status": "proposed-pending-host-review",
+    "basis": [
+      "docs/BUSINESS.md",
+      "experiments/AgentLang.Business/Business.fs",
+      "docs/BUSINESS-LANGUAGE-PLAN.md"
+    ],
+    "note": "Existing reference operations have not been run against this vector. New policy outcomes are proposals under the public contract."
+  },
+  "cases": [
+    {
+      "id": "mixed-owner-and-status",
+      "input": {
+        "customerId": "c1",
+        "invoices": [
+          {
+            "customerId": "c1",
+            "status": "Open",
+            "totalMinor": 100
+          },
+          {
+            "customerId": "c1",
+            "status": "Paid",
+            "totalMinor": 50
+          },
+          {
+            "customerId": "c2",
+            "status": "Open",
+            "totalMinor": 300
+          }
+        ]
+      },
+      "expected": {
+        "result": {
+          "tag": "ok",
+          "value": 100
+        },
+        "errorCode": null,
+        "stateProjection": {
+          "customers": [],
+          "products": [],
+          "subscriptions": [],
+          "invoices": [],
+          "payments": [],
+          "outbox": [],
+          "sentEmails": []
+        }
+      }
+    },
+    {
+      "id": "no-open-invoices",
+      "input": {
+        "customerId": "c1",
+        "invoices": [
+          {
+            "customerId": "c2",
+            "status": "Open",
+            "totalMinor": 300
+          }
+        ]
+      },
+      "expected": {
+        "result": {
+          "tag": "ok",
+          "value": 0
+        },
+        "errorCode": null,
+        "stateProjection": {
+          "customers": [],
+          "products": [],
+          "subscriptions": [],
+          "invoices": [],
+          "payments": [],
+          "outbox": [],
+          "sentEmails": []
+        }
+      }
+    },
+    {
+      "id": "checked-overflow",
+      "input": {
+        "customerId": "c1",
+        "invoices": [
+          {
+            "customerId": "c1",
+            "status": "Open",
+            "totalMinor": 9223372036854775807
+          },
+          {
+            "customerId": "c1",
+            "status": "Open",
+            "totalMinor": 1
+          }
+        ]
+      },
+      "expected": {
+        "result": null,
+        "errorCode": "MONEY_OVERFLOW",
+        "stateProjection": {
+          "customers": [],
+          "products": [],
+          "subscriptions": [],
+          "invoices": [],
+          "payments": [],
+          "outbox": [],
+          "sentEmails": []
+        }
+      }
+    }
+  ]
+}

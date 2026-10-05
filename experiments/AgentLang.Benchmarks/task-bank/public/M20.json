@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "M20",
+  "category": "medium",
+  "goal": "Compose eligibility, premium annual discount, invoice, successor subscription, and one reminder; any failed step preserves input Store. Implement the named public operation and attach tests for the listed behavior. Inspect available vocabulary first and preserve unrelated behavior.",
+  "initialContext": "The host supplies a deterministic in-memory business fixture, task types, and runtime vocabulary when this task is executable. Follow the supplied field mappings and public contract; preserve unrelated behavior.",
+  "requiredPublicContract": {
+    "symbol": "renewal.create-package",
+    "signature": "Store SubscriptionId Instant InvoiceId -> Result<Store, BusinessError>",
+    "behavior": "Compose eligibility, premium annual discount, invoice, successor subscription, and one reminder; any failed step preserves input Store."
+  }
+}

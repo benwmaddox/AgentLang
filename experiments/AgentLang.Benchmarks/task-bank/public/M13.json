@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "M13",
+  "category": "medium",
+  "goal": "On success remove exactly the first queued message and append it to sent emails, preserving order. Implement the named public operation and attach tests for the listed behavior. Inspect available vocabulary first and preserve unrelated behavior.",
+  "initialContext": "The host supplies a deterministic in-memory business fixture, task types, and runtime vocabulary when this task is executable. Follow the supplied field mappings and public contract; preserve unrelated behavior.",
+  "requiredPublicContract": {
+    "symbol": "email.deliver-next",
+    "signature": "Store Result<Unit, BusinessError> -> Result<Store, BusinessError>",
+    "behavior": "On success remove exactly the first queued message and append it to sent emails, preserving order."
+  }
+}

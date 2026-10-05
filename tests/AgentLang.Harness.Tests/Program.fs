@@ -97,7 +97,9 @@ module Program =
           Model = "scripted-test-model"
           ProjectDirectory = projectDir
           RunDirectory = runDir
+          BaselineProfile = BaselineProfile.DomainSeededControl
           SeedDictionarySource = None
+          TestFailurePoint = None
           MaxTurns = 8
           MaxToolCalls = 10
           MaxOutputTokens = 512
@@ -134,7 +136,9 @@ module Program =
         responses.Add(scriptedResponse "completed" [ outputMessage "The expression evaluated to 30." ] "The expression evaluated to 30." None)
         let scripted = ScriptedProvider(responses)
         let result = runWith settings (scripted :> IAgentProvider)
-        check result.Success "offline run passed its oracle"
+        let failureCode = result.FailureCode |> Option.defaultValue "none"
+        let failureMessage = result.FailureMessage |> Option.defaultValue "none"
+        check result.Success $"offline run passed its oracle (failure: {failureCode}: {failureMessage})"
         equal 2 result.RequestCount "two provider turns were sent"
         equal 1 result.ToolCalls "one runtime call was performed"
         equal None result.InputTokens "unknown input usage stays null"
@@ -406,6 +410,45 @@ end
         check (not (File.Exists(Path.Combine(incompleteSettings.ProjectDirectory, "dictionary.agent")))) "incomplete run leaves the project unchanged"
 
     let private testGrowingAndFlatRetention root =
+        let growingSeedPath = Path.Combine(root, "growing-schema.agent")
+        File.WriteAllText(
+            growingSeedPath,
+            """type RetainedCustomerId : String
+end
+
+        record RetainedCustomer
+    field id RetainedCustomerId
+end
+""",
+            UTF8Encoding(false))
+        let preMarkerFailureConfig =
+            { config root Growing "growing-pre-marker-failure" [ evalOracle "10 20 add" "30" ] with
+                BaselineProfile = BaselineProfile.PrimitiveOnly
+                SeedDictionarySource = Some growingSeedPath
+                TestFailurePoint = Some HarnessTestFailurePoint.BeforeInitialLineageMarkerWrite }
+        let noProvider = ScriptedProvider(JsonArray())
+        let preMarkerFailure = runWith preMarkerFailureConfig (noProvider :> IAgentProvider)
+        equal (Some "HARNESS_FAILURE") preMarkerFailure.FailureCode "injected fresh-marker failure is reported"
+        equal "initialization-failed" (preMarkerFailure.BaselineAudit["status"].GetValue<string>()) "failed marker initialization is not reported as an accepted origin"
+        equal true (preMarkerFailure.BaselineAudit["seedSourceAppliedThisRun"].GetValue<bool>()) "failed attempt accurately records that seed bytes were applied before rollback"
+        equal false (preMarkerFailure.BaselineAudit["seedSourceAppliedAtOrigin"].GetValue<bool>()) "failed attempt does not claim an uncommitted seed origin"
+        equal 0 noProvider.ResponsesConsumed "initial marker failure occurs before any provider turn"
+        check (not (File.Exists(Path.Combine(preMarkerFailureConfig.ProjectDirectory, ".agentlang-benchmark-lineage.json")))) "failed initial marker write leaves no lineage marker"
+        match AgentLang.Storage.load (AgentLang.Storage.create preMarkerFailureConfig.ProjectDirectory) with
+        | Ok loaded -> equal AgentLang.EmptyAuthority loaded.Authority "failed initial marker write restores the exact pre-seed empty authority"
+        | Error error -> failwith $"Could not check pre-marker rollback: {error.Code}"
+
+        let retryAfterMarkerFailure =
+            { config root Growing "growing-pre-marker-retry" [ evalOracle "10 20 add" "30" ] with
+                BaselineProfile = BaselineProfile.PrimitiveOnly
+                ProjectDirectory = preMarkerFailureConfig.ProjectDirectory
+                SeedDictionarySource = Some growingSeedPath }
+        let retryResponses = JsonArray()
+        retryResponses.Add(scriptedResponse "completed" [ outputMessage "The schema seed was applied once." ] "The schema seed was applied once." None)
+        let retryResult = runWith retryAfterMarkerFailure (provider retryResponses)
+        check retryResult.Success "fresh Growing retry succeeds after pre-marker rollback"
+        equal true (retryResult.BaselineAudit["seedSourceAppliedThisRun"].GetValue<bool>()) "retry audit records that the seed was actually applied"
+        equal true (retryResult.BaselineAudit["seedSourceAppliedAtOrigin"].GetValue<bool>()) "retry lineage preserves seed-applied origin provenance"
         let source = """word reused.increment : Int -> Int
     effects none
     1 add
@@ -416,21 +459,213 @@ test reused.increment/basic
     => 42
 end
 """
-        let growingOne = config root Growing "growing-one" [ step "test-all" (JsonObject()) None None (Some 1) ]
+        let growingOne =
+            { config root Growing "growing-one" [ step "test-all" (JsonObject()) None None (Some 1) ] with
+                BaselineProfile = BaselineProfile.PrimitiveOnly
+                SeedDictionarySource = Some growingSeedPath }
         let defineCall = functionCall "define" "agentlang_define" (System.Text.Json.JsonSerializer.Serialize({| source = source; lifetime = "candidate" |}))
         let firstResponses = JsonArray()
         firstResponses.Add(scriptedResponse "completed" [ defineCall ] "" None)
         firstResponses.Add(scriptedResponse "completed" [ outputMessage "I added and tested the reusable word." ] "I added and tested the reusable word." None)
         let first = runWith growingOne (provider firstResponses)
         check first.Success "first Growing run commits a tested abstraction"
+        equal "primitive-only" (first.BaselineAudit["profile"].GetValue<string>()) "Growing report records the strict primitive-only profile"
+        equal true (first.BaselineAudit["seedSourceAppliedThisRun"].GetValue<bool>()) "fresh Growing audit records that the supplied schema seed was applied on this run"
+        equal true (first.BaselineAudit["seedSourceAppliedAtOrigin"].GetValue<bool>()) "fresh Growing lineage records its seed application provenance"
+        let firstLineage = first.BaselineAudit["lineage"].AsObject()
+        let firstOriginInventory = first.BaselineAudit["originInventory"].AsObject()
+        let firstTaskStartInventory = first.BaselineAudit["taskStartInventory"].AsObject()
+        equal "fresh" (firstLineage["status"].GetValue<string>()) "first Growing task establishes an audited fresh lineage"
+        equal 0 (firstOriginInventory["authoredWords"].AsArray().Count) "primitive-only origin contains no authored algorithms"
+        equal 1 (firstOriginInventory["records"].AsArray().Count) "primitive-only origin may retain a user-supplied type declaration"
+        equal 0 (firstTaskStartInventory["authoredWords"].AsArray().Count) "first task began without seeded algorithms"
+        check (File.Exists(Path.Combine(growingOne.ProjectDirectory, ".agentlang-benchmark-lineage.json"))) "Growing profile marker is persisted with the project"
+        let firstManifest =
+            match AgentLang.Storage.load (AgentLang.Storage.create growingOne.ProjectDirectory) with
+            | Ok loaded -> loaded.Manifest |> Option.get
+            | Error error -> failwith $"Could not read committed first-run manifest: {error.Code}"
+        let originalHead = firstManifest.Words |> List.find (fun head -> head.CurrentName = "reused.increment")
+        let advisoryExport = Path.Combine(growingOne.ProjectDirectory, "dictionary.agent")
+        check (File.Exists advisoryExport) "successful commit created the human-readable export fixture"
+        File.Delete advisoryExport
 
         let existingArgs = JsonObject()
         existingArgs["word"] <- JsonValue.Create("reused.increment")
-        let growingTwo = config root Growing "growing-two" [ step "source" existingArgs (Some "word reused.increment") None None ]
+        let growingTwo =
+            { config root Growing "growing-two" [ step "source" existingArgs (Some "word reused.increment") None None ] with
+                BaselineProfile = BaselineProfile.PrimitiveOnly
+                ProjectDirectory = growingOne.ProjectDirectory
+                SeedDictionarySource = Some growingSeedPath }
         let secondResponses = JsonArray()
         secondResponses.Add(scriptedResponse "completed" [ outputMessage "The retained source is available." ] "The retained source is available." None)
         let second = runWith growingTwo (provider secondResponses)
         check second.Success "later Growing run discovers the committed word"
+        let secondLineage = second.BaselineAudit["lineage"].AsObject()
+        let secondOriginInventory = second.BaselineAudit["originInventory"].AsObject()
+        let secondTaskStartInventory = second.BaselineAudit["taskStartInventory"].AsObject()
+        equal "continued" (secondLineage["status"].GetValue<string>()) "later Growing task proves canonical lineage continuity"
+        equal false (second.BaselineAudit["seedSourceAppliedThisRun"].GetValue<bool>()) "existing manifest is not reseeded during continuation"
+        equal true (second.BaselineAudit["seedSourceAppliedAtOrigin"].GetValue<bool>()) "continuation preserves the origin seed application provenance"
+        equal 0 (secondOriginInventory["authoredWords"].AsArray().Count) "later report retains the original primitive-only origin inventory"
+        equal 1 (secondTaskStartInventory["authoredWords"].AsArray().Count) "later task sees the vocabulary grown by the first task"
+        let retainedWord = secondTaskStartInventory["authoredWords"].AsArray() |> Seq.find (fun item -> item["name"].GetValue<string>() = "reused.increment")
+        equal originalHead.WordId (retainedWord["stableId"].GetValue<string>()) "continuation preserves the retained word identity when the export is absent"
+        equal originalHead.CurrentRevision (retainedWord["revision"].GetValue<int>()) "continuation preserves the retained word revision when the export is absent"
+        let secondTrace = File.ReadAllLines(Path.Combine(growingTwo.RunDirectory, "trace.jsonl")) |> Array.map JsonNode.Parse
+        check (secondTrace |> Array.forall (fun item -> item["event"].GetValue<string>() <> "seed-define")) "a missing readable export never causes the supplied schema seed to be reapplied"
+
+        File.WriteAllText(advisoryExport, "word export.poison : Int -> Int\n    effects none\n    99 add\nend\n", UTF8Encoding(false))
+
+        let failedContinuation =
+            { config root Growing "growing-rollback" [ evalOracle "1 2 add" "3" ] with
+                BaselineProfile = BaselineProfile.PrimitiveOnly
+                ProjectDirectory = growingOne.ProjectDirectory
+                SeedDictionarySource = Some growingSeedPath }
+        let incompleteResponses = JsonArray()
+        incompleteResponses.Add(scriptedResponse "incomplete" [] "partial" None)
+        let incompleteProvider = ScriptedProvider(incompleteResponses)
+        let failedRun = runWith failedContinuation (incompleteProvider :> IAgentProvider)
+        check (not failedRun.Success) "an incomplete task is rolled back"
+        equal true (failedRun.BaselineAudit["rollbackContinuityVerified"].GetValue<bool>()) "rollback restores the task-start canonical durable state"
+        let failedTaskStartInventory = failedRun.BaselineAudit["taskStartInventory"].AsObject()
+        let auditedNames = failedTaskStartInventory["authoredWords"].AsArray() |> Seq.map (fun item -> item["name"].GetValue<string>()) |> Set.ofSeq
+        check (auditedNames.Contains "reused.increment") "the manifest-backed retained word remains in the task-start audit with a corrupt export"
+        check (not (auditedNames.Contains "export.poison")) "inventory ignores words forged only in the readable export"
+
+        let afterRollback =
+            { config root Growing "growing-after-rollback" [ step "source" existingArgs (Some "word reused.increment") None None ] with
+                BaselineProfile = BaselineProfile.PrimitiveOnly
+                ProjectDirectory = growingOne.ProjectDirectory
+                SeedDictionarySource = Some growingSeedPath }
+        let afterRollbackResponses = JsonArray()
+        afterRollbackResponses.Add(scriptedResponse "completed" [ outputMessage "The retained word remains available after rollback." ] "The retained word remains available after rollback." None)
+        let afterRollbackResult = runWith afterRollback (provider afterRollbackResponses)
+        check afterRollbackResult.Success "a failed task leaves the Growing lineage usable"
+        let afterRollbackLineage = afterRollbackResult.BaselineAudit["lineage"].AsObject()
+        equal "continued" (afterRollbackLineage["status"].GetValue<string>()) "post-rollback run continues the same lineage"
+
+        let postMarkerFailureConfig =
+            { config root Growing "growing-post-marker-failure" [ evalOracle "1 2 add" "3" ] with
+                BaselineProfile = BaselineProfile.PrimitiveOnly
+                ProjectDirectory = growingOne.ProjectDirectory
+                SeedDictionarySource = Some growingSeedPath
+                TestFailurePoint = Some HarnessTestFailurePoint.AfterFinalLineageMarkerWrite }
+        let postMarkerResponses = JsonArray()
+        postMarkerResponses.Add(scriptedResponse "completed" [ outputMessage "The task reached its final marker checkpoint." ] "The task reached its final marker checkpoint." None)
+        let postMarkerProvider = ScriptedProvider(postMarkerResponses)
+        let postMarkerFailure = runWith postMarkerFailureConfig (postMarkerProvider :> IAgentProvider)
+        equal (Some "HARNESS_FAILURE") postMarkerFailure.FailureCode "injected post-marker failure is reported"
+        equal true (postMarkerFailure.BaselineAudit["rollbackContinuityVerified"].GetValue<bool>()) "post-marker failure restores the task-start durable state"
+        equal true (postMarkerFailure.BaselineAudit["lineageReconciledAfterRollback"].GetValue<bool>()) "rollback reconciles the committed marker to its restored durable state"
+        equal true (postMarkerFailure.BaselineAudit["rollbackLineageContinuityVerified"].GetValue<bool>()) "rollback confirms the repaired lineage marker"
+        let rollbackHash = postMarkerFailure.BaselineAudit["rollbackCanonicalDurableStateSha256"].GetValue<string>()
+        let finalHash = postMarkerFailure.BaselineAudit["finalCanonicalDurableStateSha256"].GetValue<string>()
+        equal rollbackHash finalHash "reported final lineage hash matches the restored task-start hash"
+
+        let verifyReconciledMarker =
+            { config root Growing "growing-post-marker-recovery" [ step "source" existingArgs (Some "word reused.increment") None None ] with
+                BaselineProfile = BaselineProfile.PrimitiveOnly
+                ProjectDirectory = growingOne.ProjectDirectory
+                SeedDictionarySource = Some growingSeedPath }
+        let verifyMarkerResponses = JsonArray()
+        verifyMarkerResponses.Add(scriptedResponse "completed" [ outputMessage "The reconciled lineage accepts the next task." ] "The reconciled lineage accepts the next task." None)
+        let verifiedMarker = runWith verifyReconciledMarker (provider verifyMarkerResponses)
+        check verifiedMarker.Success "the next Growing task accepts the reconciled marker after rollback"
+
+        let lineageMarker = Path.Combine(growingOne.ProjectDirectory, ".agentlang-benchmark-lineage.json")
+        let savedLineage = File.ReadAllText(lineageMarker)
+        File.Delete lineageMarker
+        let missingLineageSettings =
+            { config root Growing "growing-missing-lineage" [ evalOracle "1 2 add" "3" ] with
+                BaselineProfile = BaselineProfile.PrimitiveOnly
+                ProjectDirectory = growingOne.ProjectDirectory }
+        let missingLineageProvider = ScriptedProvider(JsonArray())
+        let missingLineage = runWith missingLineageSettings (missingLineageProvider :> IAgentProvider)
+        equal (Some "BASELINE_LINEAGE_MISSING") missingLineage.FailureCode "primitive-only Growing refuses unverified prior history without its lineage marker"
+        equal 0 missingLineageProvider.ResponsesConsumed "missing-lineage refusal happens before provider invocation"
+        File.WriteAllText(lineageMarker, savedLineage, UTF8Encoding(false))
+
+        let malformedInventoryMarker = JsonNode.Parse(savedLineage).AsObject()
+        malformedInventoryMarker["originInventory"].AsObject().Remove("records") |> ignore
+        File.WriteAllText(lineageMarker, malformedInventoryMarker.ToJsonString(), UTF8Encoding(false))
+        let malformedInventoryConfig =
+            { config root Growing "growing-malformed-inventory-marker" [ evalOracle "1 2 add" "3" ] with
+                BaselineProfile = BaselineProfile.PrimitiveOnly
+                ProjectDirectory = growingOne.ProjectDirectory }
+        let malformedInventoryProvider = ScriptedProvider(JsonArray())
+        let malformedInventory = runWith malformedInventoryConfig (malformedInventoryProvider :> IAgentProvider)
+        equal (Some "BASELINE_LINEAGE_INVALID") malformedInventory.FailureCode "lineage marker requires every origin inventory collection"
+        equal 0 malformedInventoryProvider.ResponsesConsumed "malformed inventory is rejected before provider invocation"
+
+        let malformedHashMarker = JsonNode.Parse(savedLineage).AsObject()
+        malformedHashMarker["originCanonicalDurableStateSha256"] <- JsonValue.Create(String('A', 64))
+        File.WriteAllText(lineageMarker, malformedHashMarker.ToJsonString(), UTF8Encoding(false))
+        let malformedHashConfig =
+            { config root Growing "growing-malformed-hash-marker" [ evalOracle "1 2 add" "3" ] with
+                BaselineProfile = BaselineProfile.PrimitiveOnly
+                ProjectDirectory = growingOne.ProjectDirectory }
+        let malformedHashProvider = ScriptedProvider(JsonArray())
+        let malformedHash = runWith malformedHashConfig (malformedHashProvider :> IAgentProvider)
+        equal (Some "BASELINE_LINEAGE_INVALID") malformedHash.FailureCode "lineage marker requires lowercase hexadecimal SHA-256 hashes"
+        equal 0 malformedHashProvider.ResponsesConsumed "malformed hash is rejected before provider invocation"
+
+        let malformedSeedProvenanceMarker = JsonNode.Parse(savedLineage).AsObject()
+        malformedSeedProvenanceMarker["seedSourceSha256"] <- null
+        malformedSeedProvenanceMarker["seedSourceApplied"] <- JsonValue.Create(true)
+        File.WriteAllText(lineageMarker, malformedSeedProvenanceMarker.ToJsonString(), UTF8Encoding(false))
+        let malformedSeedProvenanceConfig =
+            { config root Growing "growing-malformed-seed-provenance-marker" [ evalOracle "1 2 add" "3" ] with
+                BaselineProfile = BaselineProfile.PrimitiveOnly
+                ProjectDirectory = growingOne.ProjectDirectory }
+        let malformedSeedProvenanceProvider = ScriptedProvider(JsonArray())
+        let malformedSeedProvenance = runWith malformedSeedProvenanceConfig (malformedSeedProvenanceProvider :> IAgentProvider)
+        equal (Some "BASELINE_LINEAGE_INVALID") malformedSeedProvenance.FailureCode "a lineage cannot claim a seed was applied without recording its source hash"
+        equal 0 malformedSeedProvenanceProvider.ResponsesConsumed "invalid seed provenance is rejected before provider invocation"
+        File.WriteAllText(lineageMarker, savedLineage, UTF8Encoding(false))
+
+        let switchedProfile =
+            { config root Growing "growing-profile-switch" [ evalOracle "1 2 add" "3" ] with
+                BaselineProfile = BaselineProfile.DomainSeededControl
+                ProjectDirectory = growingOne.ProjectDirectory }
+        let switchedProvider = ScriptedProvider(JsonArray())
+        let switched = runWith switchedProfile (switchedProvider :> IAgentProvider)
+        let switchFailureMessage = switched.FailureMessage |> Option.defaultValue "none"
+        equal (Some "BASELINE_PROFILE_MISMATCH") switched.FailureCode $"Growing lineage refuses a baseline profile switch ({switchFailureMessage})"
+        equal 0 switchedProvider.ResponsesConsumed "profile-switch refusal happens before provider invocation"
+
+        let external = AgentLang.Runtime.Engine(growingOne.ProjectDirectory, Set.empty, "2000-01-01T00:00:00Z")
+        let externalSource = """word external.change : Int -> Int
+    effects none
+    2 add
+end
+
+test external.change/basic
+    1 external.change
+    => 3
+end
+"""
+        let externalDefine = JsonObject()
+        externalDefine["source"] <- JsonValue.Create(externalSource)
+        let externalDefinitionResult = external.Dispatch("define", externalDefine)
+        check (externalDefinitionResult["ok"].GetValue<bool>()) "test fixture stages an external durable change"
+        let externalCommitResult = external.Dispatch("commit", JsonObject())
+        check (externalCommitResult["ok"].GetValue<bool>()) "test fixture commits an external durable change"
+        let mismatch =
+            { config root Growing "growing-lineage-mismatch" [ evalOracle "1 2 add" "3" ] with
+                BaselineProfile = BaselineProfile.PrimitiveOnly
+                ProjectDirectory = growingOne.ProjectDirectory }
+        let mismatchProvider = ScriptedProvider(JsonArray())
+        let mismatchResult = runWith mismatch (mismatchProvider :> IAgentProvider)
+        equal (Some "BASELINE_LINEAGE_MISMATCH") mismatchResult.FailureCode "untracked canonical durable edits invalidate Growing continuation"
+        equal 0 mismatchProvider.ResponsesConsumed "lineage mismatch is rejected before provider invocation"
+        let mismatchRetry =
+            { config root Growing "growing-lineage-mismatch-retry" [ evalOracle "1 2 add" "3" ] with
+                BaselineProfile = BaselineProfile.PrimitiveOnly
+                ProjectDirectory = growingOne.ProjectDirectory }
+        let mismatchRetryProvider = ScriptedProvider(JsonArray())
+        let mismatchRetryResult = runWith mismatchRetry (mismatchRetryProvider :> IAgentProvider)
+        equal (Some "BASELINE_LINEAGE_MISMATCH") mismatchRetryResult.FailureCode "rejected pre-task edits do not rewrite lineage to silently adopt them"
+        equal 0 mismatchRetryProvider.ResponsesConsumed "mismatched lineage remains rejected before the provider on retry"
 
         let flatOne = config root Flat "flat-one" [ step "test-all" (JsonObject()) None None (Some 1) ]
         let flatCall = functionCall "define-flat" "agentlang_define" (System.Text.Json.JsonSerializer.Serialize({| source = source; lifetime = "candidate" |}))
@@ -439,6 +674,9 @@ end
         flatResponses.Add(scriptedResponse "completed" [ outputMessage "Added in this flat run." ] "Added in this flat run." None)
         let flatResult = runWith flatOne (provider flatResponses)
         check flatResult.Success "Flat run can create and commit its own tested word"
+        let flatTaskStartInventory = flatResult.BaselineAudit["taskStartInventory"].AsObject()
+        equal 0 (flatTaskStartInventory["authoredWords"].AsArray().Count) "fresh Flat run reports an empty task-start word inventory"
+        equal "domain-seeded-control" (flatResult.BaselineAudit["profile"].GetValue<string>()) "baseline profile is independent from Flat retention mode"
 
         let missingArgs = JsonObject()
         missingArgs["word"] <- JsonValue.Create("reused.increment")
@@ -449,6 +687,85 @@ end
         missingResponses.Add(scriptedResponse "completed" [ outputMessage "The isolated dictionary has no earlier word." ] "The isolated dictionary has no earlier word." None)
         let missing = runWith flatTwo (provider missingResponses)
         check missing.Success "separate Flat run starts without definitions from another Flat run"
+
+    let private testBaselineInventoryGuard root =
+        let typeOnlyPath = Path.Combine(root, "type-only-baseline.agent")
+        let typeOnlySource = """type TrackingCode : String
+end
+
+record PilotSchema
+    field code TrackingCode
+end
+"""
+        File.WriteAllText(typeOnlyPath, typeOnlySource, Encoding.UTF8)
+        let typeOnlySettings =
+            { config root Flat "primitive-type-only" [ evalOracle "10 20 add" "30" ] with
+                BaselineProfile = BaselineProfile.PrimitiveOnly
+                SeedDictionarySource = Some typeOnlyPath }
+        let typeOnlyResponses = JsonArray()
+        typeOnlyResponses.Add(scriptedResponse "completed" [ outputMessage "The type-only baseline is ready." ] "The type-only baseline is ready." None)
+        let typeOnlyProvider = ScriptedProvider(typeOnlyResponses)
+        let typeOnly = runWith typeOnlySettings (typeOnlyProvider :> IAgentProvider)
+        check typeOnly.Success "primitive-only baseline accepts supplied record and nominal scalar declarations"
+        equal 1 typeOnlyProvider.ResponsesConsumed "accepted type-only baseline reaches the provider"
+        equal "primitive-only" (typeOnly.BaselineAudit["profile"].GetValue<string>()) "report names the primitive-only baseline profile"
+        equal "user-supplied schema; source hash and exact declarations are recorded" (typeOnly.BaselineAudit["schemaProvenance"].GetValue<string>()) "report does not imply the user-supplied schema is an official matched fixture"
+        equal "not established; this audit records declarations and source identity only" (typeOnly.BaselineAudit["contractEquivalence"].GetValue<string>()) "inventory hash does not claim semantic fixture equivalence"
+        equal true (typeOnly.BaselineAudit["seedSourceAppliedThisRun"].GetValue<bool>()) "Flat type-only audit records that the seed was applied on this run"
+        equal true (typeOnly.BaselineAudit["seedSourceAppliedAtOrigin"].GetValue<bool>()) "Flat type-only audit records the origin seed application"
+        let expectedSeedHash =
+            System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes typeOnlyPath)
+            |> Convert.ToHexString
+            |> fun value -> value.ToLowerInvariant()
+        equal expectedSeedHash (typeOnly.BaselineAudit["seedSourceSha256"].GetValue<string>()) "audit preserves the exact raw seed file hash"
+        let typeInventory = typeOnly.BaselineAudit["taskStartInventory"]
+        equal 0 (typeInventory["authoredWords"].AsArray().Count) "type-only inventory contains no authored words"
+        equal 1 (typeInventory["records"].AsArray().Count) "record declaration is captured in exact inventory"
+        equal 1 (typeInventory["scalars"].AsArray().Count) "nominal scalar declaration is captured in exact inventory"
+        equal 0 (typeInventory["tests"].AsArray().Count) "type-only baseline cannot conceal authored tests"
+        equal 0 (typeInventory["examples"].AsArray().Count) "type-only baseline cannot conceal authored examples"
+        let savedReport = JsonNode.Parse(File.ReadAllText(reportPath typeOnlySettings))
+        let savedReportBaselineAudit = savedReport["baselineAudit"].AsObject()
+        equal "primitive-only" (savedReportBaselineAudit["profile"].GetValue<string>()) "report.json persists the selected baseline profile"
+        let savedInitialState = JsonNode.Parse(File.ReadAllText(Path.Combine(typeOnlySettings.RunDirectory, "initial-state.json")))
+        let savedInitialStateBaselineAudit = savedInitialState["baselineAudit"].AsObject()
+        equal "primitive-only" (savedInitialStateBaselineAudit["profile"].GetValue<string>()) "initial-state.json persists the audited profile"
+
+        let businessSeed = Path.GetFullPath(Path.Combine(__SOURCE_DIRECTORY__, "..", "..", "examples", "customer.agent"))
+        let rejectedSettings =
+            { config root Flat "primitive-rejects-domain-seed" [ evalOracle "1 2 add" "3" ] with
+                BaselineProfile = BaselineProfile.PrimitiveOnly
+                SeedDictionarySource = Some businessSeed }
+        let rejectedProvider = ScriptedProvider(JsonArray())
+        let rejected = runWith rejectedSettings (rejectedProvider :> IAgentProvider)
+        check (not rejected.Success) "primitive-only baseline rejects an authored business algorithm seed"
+        equal (Some "BASELINE_INVENTORY_MISMATCH") rejected.FailureCode "authored-seed refusal has a machine-readable diagnostic"
+        equal 0 rejectedProvider.ResponsesConsumed "authored algorithms are rejected before the provider is called"
+        check rejectedProvider.RequestBodies.IsEmpty "rejected authored seed produced no provider request"
+        let rejectedTaskStartInventory = rejected.BaselineAudit["taskStartInventory"].AsObject()
+        let observedWords = rejectedTaskStartInventory["authoredWords"].AsArray()
+        check (observedWords |> Seq.exists (fun item -> item["name"].GetValue<string>() = "customer.premium?")) "rejection report publishes the exact observed authored word names"
+        equal 4 (rejectedTaskStartInventory["tests"].AsArray().Count) "rejection report counts and identifies authored tests"
+        equal 1 (rejectedTaskStartInventory["examples"].AsArray().Count) "rejection report identifies authored examples"
+        equal "BASELINE_INVENTORY_MISMATCH" (rejected.BaselineAudit["rejectionCode"].GetValue<string>()) "rejection artifact records the guard diagnostic"
+
+        let controlSettings =
+            { config root Flat "domain-seeded-control-audit" [ step "test-all" (JsonObject()) None None (Some 4) ] with
+                SeedDictionarySource = Some businessSeed }
+        let controlResponses = JsonArray()
+        controlResponses.Add(scriptedResponse "completed" [ outputMessage "The seeded control passes its tests." ] "The seeded control passes its tests." None)
+        let control = runWith controlSettings (provider controlResponses)
+        check control.Success "the default domain-seeded control remains available for legacy scripted experiments"
+        equal "domain-seeded-control" (control.BaselineAudit["profile"].GetValue<string>()) "legacy seed runs are labeled as a separate control"
+        let controlTaskStartInventory = control.BaselineAudit["taskStartInventory"].AsObject()
+        let controlWords = controlTaskStartInventory["authoredWords"].AsArray()
+        equal 2 controlWords.Count "domain-seeded control report records its exact authored word inventory"
+        check (controlWords |> Seq.forall (fun item -> not (isNull item["stableId"]))) "manifest-backed authored words include their stable identities"
+        let premiumWord = controlWords |> Seq.find (fun item -> item["name"].GetValue<string>() = "customer.premium?")
+        let premiumInputs = premiumWord["inputs"].AsArray()
+        equal "Customer" (premiumInputs[0].GetValue<string>()) "authored inventory records signatures"
+        equal "project" (premiumWord["maturity"].GetValue<string>()) "authored inventory records maturity"
+        equal 1 (premiumWord["revision"].GetValue<int>()) "authored inventory records current revision"
 
     let private testTemporaryDefinitionIsTaskScoped root =
         let settings = config root Growing "temporary-lifetime" [ evalOracle "41 task.local" "42" ]
@@ -547,6 +864,7 @@ end
             testEngineInitializationFailureIsReported root
             testContextCapAndIncompleteResponse root
             testGrowingAndFlatRetention root
+            testBaselineInventoryGuard root
             testTemporaryDefinitionIsTaskScoped root
             testOpenAiWireAndCredentialIsolation ()
             testOpenAiErrorBodyDoesNotLeakCredential root

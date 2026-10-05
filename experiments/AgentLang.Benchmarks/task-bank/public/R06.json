@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "R06",
+  "category": "refactoring",
+  "goal": "Route direct and result-provider paths through one pure receipt validator; keep failures atomic. Implement the named public operation and attach tests for the listed behavior. Inspect available vocabulary first and preserve unrelated behavior.",
+  "initialContext": "The host supplies a deterministic in-memory business fixture, task types, and runtime vocabulary when this task is executable. Follow the supplied field mappings and public contract; preserve unrelated behavior.",
+  "requiredPublicContract": {
+    "symbol": "payment.receipt-matches?",
+    "signature": "Money PaymentReceipt -> Bool",
+    "behavior": "Route direct and result-provider paths through one pure receipt validator; keep failures atomic.",
+    "structuralRequirement": {
+      "helper": "payment.receipt-matches?",
+      "calledBy": [
+        "payment.apply-receipt",
+        "payment.apply-result"
+      ]
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "D01",
+  "category": "debugging",
+  "goal": "Restore the ordinal Kind rule and preserve other customer behavior. Implement the named public operation and attach tests for the listed behavior. Inspect available vocabulary first and preserve unrelated behavior.",
+  "initialContext": "The host supplies a deterministic in-memory business fixture, task types, and runtime vocabulary when this task is executable. Follow the supplied field mappings and public contract; preserve unrelated behavior.",
+  "requiredPublicContract": {
+    "symbol": "customer.premium?",
+    "signature": "Customer -> Bool",
+    "behavior": "Restore the ordinal Kind rule and preserve other customer behavior."
+  }
+}

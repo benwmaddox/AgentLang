@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "taskId": "M05",
+  "vectorStatus": "proposed-pending-host-review",
+  "executionStatus": "pending",
+  "adapters": {
+    "agentlang": "pending",
+    "conventional": "pending",
+    "referenceCrossCheck": "pending"
+  },
+  "provenance": {
+    "status": "proposed-pending-host-review",
+    "basis": [
+      "docs/BUSINESS.md",
+      "experiments/AgentLang.Business/Business.fs",
+      "docs/BUSINESS-LANGUAGE-PLAN.md"
+    ],
+    "note": "Existing reference operations have not been run against this vector. New policy outcomes are proposals under the public contract."
+  },
+  "cases": [
+    {
+      "id": "first",
+      "input": {
+        "eligibleIds": [
+          "s1"
+        ],
+        "outbox": [],
+        "sentEmails": []
+      },
+      "expected": {
+        "result": {
+          "tag": "ok",
+          "value": {
+            "queued": 1
+          }
+        },
+        "errorCode": null,
+        "stateProjection": {
+          "outbox": [
+            {
+              "subscriptionId": "s1"
+            }
+          ],
+          "sentEmails": []
+        }
+      }
+    },
+    {
+      "id": "repeat",
+      "input": {
+        "eligibleIds": [
+          "s1"
+        ],
+        "outbox": [
+          {
+            "subscriptionId": "s1"
+          }
+        ],
+        "sentEmails": []
+      },
+      "expected": {
+        "result": {
+          "tag": "ok",
+          "value": {
+            "queued": 0
+          }
+        },
+        "errorCode": null,
+        "stateProjection": {
+          "outbox": [
+            {
+              "subscriptionId": "s1"
+            }
+          ],
+          "sentEmails": []
+        }
+      }
+    },
+    {
+      "id": "sent-already",
+      "input": {
+        "eligibleIds": [
+          "s1"
+        ],
+        "outbox": [],
+        "sentEmails": [
+          {
+            "subscriptionId": "s1"
+          }
+        ]
+      },
+      "expected": {
+        "result": {
+          "tag": "ok",
+          "value": {
+            "queued": 0
+          }
+        },
+        "errorCode": null,
+        "stateProjection": {
+          "outbox": [],
+          "sentEmails": [
+            {
+              "subscriptionId": "s1"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

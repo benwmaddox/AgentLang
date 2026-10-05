@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "taskId": "M07",
+  "vectorStatus": "proposed-pending-host-review",
+  "executionStatus": "pending",
+  "adapters": {
+    "agentlang": "pending",
+    "conventional": "pending",
+    "referenceCrossCheck": "pending"
+  },
+  "provenance": {
+    "status": "proposed-pending-host-review",
+    "basis": [
+      "docs/BUSINESS.md",
+      "experiments/AgentLang.Business/Business.fs",
+      "docs/BUSINESS-LANGUAGE-PLAN.md"
+    ],
+    "note": "Existing reference operations have not been run against this vector. New policy outcomes are proposals under the public contract."
+  },
+  "cases": [
+    {
+      "id": "two-lines-premium",
+      "input": {
+        "customerKind": "premium",
+        "pricesMinor": [
+          100,
+          250
+        ],
+        "quantities": [
+          2,
+          1
+        ]
+      },
+      "expected": {
+        "result": {
+          "tag": "ok",
+          "value": {
+            "lineTotalsMinor": [
+              200,
+              250
+            ],
+            "grossMinor": 450,
+            "totalMinor": 405
+          }
+        },
+        "errorCode": null,
+        "stateProjection": {
+          "invoiceTotalsMinor": [
+            405
+          ]
+        }
+      }
+    },
+    {
+      "id": "unknown-product",
+      "input": {
+        "customerKind": "regular",
+        "pricesMinor": [
+          100,
+          null
+        ],
+        "quantities": [
+          1,
+          1
+        ]
+      },
+      "expected": {
+        "result": null,
+        "errorCode": "PRODUCT_NOT_FOUND",
+        "stateProjection": {
+          "invoiceCount": 0
+        }
+      }
+    },
+    {
+      "id": "line-overflow",
+      "input": {
+        "customerKind": "regular",
+        "pricesMinor": [
+          9223372036854775807
+        ],
+        "quantities": [
+          2
+        ]
+      },
+      "expected": {
+        "result": null,
+        "errorCode": "MONEY_OVERFLOW",
+        "stateProjection": {
+          "invoiceCount": 0
+        }
+      }
+    }
+  ]
+}

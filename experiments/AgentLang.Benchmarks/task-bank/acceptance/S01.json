@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "taskId": "S01",
+  "vectorStatus": "proposed-pending-host-review",
+  "executionStatus": "pending",
+  "adapters": {
+    "agentlang": "pending",
+    "conventional": "pending",
+    "referenceCrossCheck": "pending"
+  },
+  "provenance": {
+    "status": "proposed-pending-host-review",
+    "basis": [
+      "docs/BUSINESS.md",
+      "experiments/AgentLang.Business/Business.fs",
+      "docs/BUSINESS-LANGUAGE-PLAN.md"
+    ],
+    "note": "Existing reference operations have not been run against this vector. New policy outcomes are proposals under the public contract."
+  },
+  "cases": [
+    {
+      "id": "exact-premium",
+      "input": {
+        "customer": {
+          "kind": "premium"
+        }
+      },
+      "expected": {
+        "result": true,
+        "errorCode": null,
+        "stateProjection": null
+      }
+    },
+    {
+      "id": "regular",
+      "input": {
+        "customer": {
+          "kind": "regular"
+        }
+      },
+      "expected": {
+        "result": false,
+        "errorCode": null,
+        "stateProjection": null
+      }
+    },
+    {
+      "id": "case-sensitive",
+      "input": {
+        "customer": {
+          "kind": "Premium"
+        }
+      },
+      "expected": {
+        "result": false,
+        "errorCode": null,
+        "stateProjection": null
+      }
+    }
+  ]
+}

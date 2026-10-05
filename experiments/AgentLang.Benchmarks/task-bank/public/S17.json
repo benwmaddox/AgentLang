@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "S17",
+  "category": "simple",
+  "goal": "Return true iff Active and expiry is less than or equal to the supplied instant. Implement the named public operation and attach tests for the listed behavior. Inspect available vocabulary first and preserve unrelated behavior.",
+  "initialContext": "The host supplies a deterministic in-memory business fixture, task types, and runtime vocabulary when this task is executable. Follow the supplied field mappings and public contract; preserve unrelated behavior.",
+  "requiredPublicContract": {
+    "symbol": "subscription.expired-at?",
+    "signature": "Subscription Instant -> Bool",
+    "behavior": "Return true iff Active and expiry is less than or equal to the supplied instant."
+  }
+}

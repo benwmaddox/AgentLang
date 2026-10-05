@@ -54,7 +54,10 @@ try {
             'conventional-acceptance' = 'AgentLang.Conventional.Tests'
             'discovery-acceptance' = 'AgentLang.Discovery.Tests'
             'ir-acceptance' = 'AgentLang.IR.Tests'
+            'ir-formatting-acceptance' = 'AgentLang.IR.Formatting.Tests'
+            'ir-interpreter-acceptance' = 'AgentLang.IR.Interpreter.Tests'
             'vocabulary-acceptance' = 'AgentLang.Vocabulary.Tests'
+            'task-bank-acceptance' = 'AgentLang.TaskBank.Tests'
         }
         foreach ($checkName in $acceptanceProjects.Keys) {
             $projectName = $acceptanceProjects[$checkName]

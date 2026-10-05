@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "M16",
+  "category": "medium",
+  "goal": "Cancel only that customer's Active subscriptions; retain others/order. Any invalid cancellation rejects the whole transition. Implement the named public operation and attach tests for the listed behavior. Inspect available vocabulary first and preserve unrelated behavior.",
+  "initialContext": "The host supplies a deterministic in-memory business fixture, task types, and runtime vocabulary when this task is executable. Follow the supplied field mappings and public contract; preserve unrelated behavior.",
+  "requiredPublicContract": {
+    "symbol": "customer.cancel-active-subscriptions",
+    "signature": "Store CustomerId Instant -> Result<Store, BusinessError>",
+    "behavior": "Cancel only that customer's Active subscriptions; retain others/order. Any invalid cancellation rejects the whole transition."
+  }
+}

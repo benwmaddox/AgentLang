@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "R02",
+  "category": "refactoring",
+  "goal": "Extract shared status/time logic; use it in candidate listing and reminder scheduling. Implement the named public operation and attach tests for the listed behavior. Inspect available vocabulary first and preserve unrelated behavior.",
+  "initialContext": "The host supplies a deterministic in-memory business fixture, task types, and runtime vocabulary when this task is executable. Follow the supplied field mappings and public contract; preserve unrelated behavior.",
+  "requiredPublicContract": {
+    "symbol": "subscription.renewable-within-seven-days?",
+    "signature": "Subscription Instant -> Bool",
+    "behavior": "Extract shared status/time logic; use it in candidate listing and reminder scheduling.",
+    "structuralRequirement": {
+      "helper": "subscription.renewable-within-seven-days?",
+      "calledBy": [
+        "store.renewal-candidates",
+        "store.renewal-reminders"
+      ]
+    }
+  }
+}

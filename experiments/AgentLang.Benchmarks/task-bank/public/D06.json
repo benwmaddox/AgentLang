@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "D06",
+  "category": "debugging",
+  "goal": "Exclude cancelled subscriptions inside the time window; preserve eligible active entries. Implement the named public operation and attach tests for the listed behavior. Inspect available vocabulary first and preserve unrelated behavior.",
+  "initialContext": "The host supplies a deterministic in-memory business fixture, task types, and runtime vocabulary when this task is executable. Follow the supplied field mappings and public contract; preserve unrelated behavior.",
+  "requiredPublicContract": {
+    "symbol": "store.renewal-candidates",
+    "signature": "Store Instant -> List<Subscription>",
+    "behavior": "Exclude cancelled subscriptions inside the time window; preserve eligible active entries."
+  }
+}

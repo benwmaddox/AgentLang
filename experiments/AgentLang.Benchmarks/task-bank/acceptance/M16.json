@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "taskId": "M16",
+  "vectorStatus": "proposed-pending-host-review",
+  "executionStatus": "pending",
+  "adapters": {
+    "agentlang": "pending",
+    "conventional": "pending",
+    "referenceCrossCheck": "pending"
+  },
+  "provenance": {
+    "status": "proposed-pending-host-review",
+    "basis": [
+      "docs/BUSINESS.md",
+      "experiments/AgentLang.Business/Business.fs",
+      "docs/BUSINESS-LANGUAGE-PLAN.md"
+    ],
+    "note": "Existing reference operations have not been run against this vector. New policy outcomes are proposals under the public contract."
+  },
+  "cases": [
+    {
+      "id": "mixed",
+      "input": {
+        "customerId": "c1",
+        "at": "2026-02-01T00:00:00+00:00",
+        "subscriptions": [
+          {
+            "id": "s1",
+            "customerId": "c1",
+            "status": "Active"
+          },
+          {
+            "id": "s2",
+            "customerId": "c1",
+            "status": "Cancelled"
+          },
+          {
+            "id": "s3",
+            "customerId": "c2",
+            "status": "Active"
+          }
+        ]
+      },
+      "expected": {
+        "result": {
+          "tag": "ok",
+          "value": {
+            "cancelledIds": [
+              "s1"
+            ]
+          }
+        },
+        "errorCode": null,
+        "stateProjection": {
+          "subscriptions": [
+            {
+              "id": "s1",
+              "status": "Cancelled"
+            },
+            {
+              "id": "s2",
+              "status": "Cancelled"
+            },
+            {
+              "id": "s3",
+              "status": "Active"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "no-matching-customer",
+      "input": {
+        "customerId": "c9",
+        "at": "2026-02-01T00:00:00+00:00",
+        "subscriptions": [
+          {
+            "id": "s1",
+            "customerId": "c1",
+            "status": "Active"
+          }
+        ]
+      },
+      "expected": {
+        "result": {
+          "tag": "ok",
+          "value": {
+            "cancelledIds": []
+          }
+        },
+        "errorCode": null,
+        "stateProjection": {
+          "subscriptions": [
+            {
+              "id": "s1",
+              "status": "Active"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "pre-start-rejects-all",
+      "input": {
+        "customerId": "c1",
+        "at": "2025-12-31T00:00:00+00:00",
+        "subscriptions": [
+          {
+            "id": "s1",
+            "customerId": "c1",
+            "status": "Active",
+            "startedAt": "2026-01-01T00:00:00+00:00"
+          }
+        ]
+      },
+      "expected": {
+        "result": null,
+        "errorCode": "CANCEL_BEFORE_START",
+        "stateProjection": {
+          "subscriptions": [
+            {
+              "id": "s1",
+              "status": "Active"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

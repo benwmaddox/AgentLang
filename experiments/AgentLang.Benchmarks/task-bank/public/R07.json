@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "R07",
+  "category": "refactoring",
+  "goal": "Use one constructor from direct queue and renewal-reminder creation; preserve trim and error rules. Implement the named public operation and attach tests for the listed behavior. Inspect available vocabulary first and preserve unrelated behavior.",
+  "initialContext": "The host supplies a deterministic in-memory business fixture, task types, and runtime vocabulary when this task is executable. Follow the supplied field mappings and public contract; preserve unrelated behavior.",
+  "requiredPublicContract": {
+    "symbol": "email.message-create",
+    "signature": "Email String String -> Result<EmailMessage, BusinessError>",
+    "behavior": "Use one constructor from direct queue and renewal-reminder creation; preserve trim and error rules.",
+    "structuralRequirement": {
+      "helper": "email.message-create",
+      "calledBy": [
+        "email.queue",
+        "store.renewal-reminders"
+      ]
+    }
+  }
+}

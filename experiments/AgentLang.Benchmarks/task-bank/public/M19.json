@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "M19",
+  "category": "medium",
+  "goal": "Return payments for that invoice ordered by paid-at then normalized PaymentId; do not mutate Store. Implement the named public operation and attach tests for the listed behavior. Inspect available vocabulary first and preserve unrelated behavior.",
+  "initialContext": "The host supplies a deterministic in-memory business fixture, task types, and runtime vocabulary when this task is executable. Follow the supplied field mappings and public contract; preserve unrelated behavior.",
+  "requiredPublicContract": {
+    "symbol": "invoice.payment-history",
+    "signature": "Store InvoiceId -> List<Payment>",
+    "behavior": "Return payments for that invoice ordered by paid-at then normalized PaymentId; do not mutate Store."
+  }
+}

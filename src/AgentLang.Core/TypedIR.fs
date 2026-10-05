@@ -471,13 +471,15 @@ module IrVerifier =
                 verifyIrType program (Some owner.FunctionName) (Some site) ty
                 if not (owner.LocalNames.ContainsKey slot) then
                     Diagnostics.raiseError "IR_UNKNOWN_LOCAL_SLOT" "Block shape contains a local slot absent from the function layout." (Some owner.FunctionName) (sourceSpan program site) [] [ sprintf "%A" slot ]
-        let rec verifyNested (instructions: IrInstruction list) shape =
-            match instructions with
-            | first :: _ -> verifyShape first.Site shape
-            | [] -> ()
-            match instructions with
-            | [] -> shape, Set.empty
-            | instruction :: rest ->
+        let rec verifyNested (instructions: IrInstruction list) (shape: IrShape) =
+            let mutable currentShape = shape
+            let mutable accumulatedEffects = Set.empty<IrEffect>
+            // Flat blocks can contain thousands of operations. Walk the list
+            // iteratively so valid generated IR cannot exhaust the host stack;
+            // structured branches still recurse through verifyBlockNested.
+            for instruction in instructions do
+                verifyShape instruction.Site currentShape
+                let shape = currentShape
                 let sourceOwner = Some owner.FunctionName
                 match program.SourceMap.TryFind instruction.Site with
                 | None -> Diagnostics.raiseError "IR_SOURCE_SITE_MISSING" "IR instruction has no source-map entry." sourceOwner None [ sprintf "%A" instruction.Site ] []
@@ -496,9 +498,6 @@ module IrVerifier =
                         | Some target when target.TargetRevision = revision && target.Operation = expected -> ()
                         | _ -> operationError "IR_GENERATED_OPERATION_MISMATCH" "Explicit generated operation does not match its linked generated target." [ sprintf "%A" expected ] [ call.ResolvedName ]
                     | _ -> operationError "IR_GENERATED_TARGET_REQUIRED" "Record and scalar operations must resolve to a generated target." [ sprintf "%A" expected ] [ call.ResolvedName ]
-                let finish next effects =
-                    let finalShape, tailEffects = verifyNested rest next
-                    finalShape, Set.union effects tailEffects
                 let nextShape, effects =
                     match instruction.Operation with
                     | IrOperation.Constant(literal, ty) ->
@@ -653,7 +652,9 @@ module IrVerifier =
                         let prefix, actual = pop 1
                         if actual <> call.InputTypes then operationError "IR_CALL_STACK_MISMATCH" "Scalar accessor input does not match the stack." (call.InputTypes |> List.map IrTypes.format) (actual |> List.map IrTypes.format)
                         { shape with StackTypes = prefix @ call.OutputTypes }, call.ResolvedEffects
-                finish nextShape effects
+                currentShape <- nextShape
+                accumulatedEffects <- Set.union accumulatedEffects effects
+            currentShape, accumulatedEffects
         and verifyBlockNested (program: IrProgram) (catalog: IrPrimitiveCatalog) (owner: IrFunction) (sourceOwnerId: WordId option) (parentSite: SourceSiteId) expectedEntry (block: IrBlock) =
             if block.EntryShape <> expectedEntry then
                 Diagnostics.raiseError "IR_BLOCK_ENTRY_MISMATCH" "Structured IR block entry shape does not match its control-flow edge." (Some owner.FunctionName) (sourceSpan program parentSite) (expectedEntry.StackTypes |> List.map IrTypes.format) (block.EntryShape.StackTypes |> List.map IrTypes.format)

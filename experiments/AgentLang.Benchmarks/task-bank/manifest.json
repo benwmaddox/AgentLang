@@ -1,0 +1,3009 @@
+{
+  "schemaVersion": 1,
+  "suiteId": "agentlang-business-60-v1",
+  "status": "planned",
+  "executable": false,
+  "description": "Proposed 60-task bank; vectors pending host review/execution.",
+  "categoryCounts": {
+    "simple": 20,
+    "medium": 20,
+    "debugging": 10,
+    "refactoring": 10
+  },
+  "modes": [
+    "flat",
+    "growing",
+    "conventional"
+  ],
+  "tasks": [
+    {
+      "id": "S01",
+      "category": "simple",
+      "difficulty": "simple",
+      "title": "Classify a premium customer",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 1,
+      "prerequisites": [],
+      "requiredPublicContract": {
+        "symbol": "customer.premium?",
+        "signature": "Customer -> Bool",
+        "behavior": "Return true exactly when Kind is the ordinal string \"premium\"; do not lowercase or trim raw data."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-S01",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/S01.json",
+      "acceptanceFile": "acceptance/S01.json"
+    },
+    {
+      "id": "S02",
+      "category": "simple",
+      "difficulty": "simple",
+      "title": "Classify an annual subscription",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 2,
+      "prerequisites": [],
+      "requiredPublicContract": {
+        "symbol": "subscription.annual?",
+        "signature": "Subscription -> Bool",
+        "behavior": "Return true exactly when Term is \"annual\"; term text remains raw data."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-S02",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/S02.json",
+      "acceptanceFile": "acceptance/S02.json"
+    },
+    {
+      "id": "S03",
+      "category": "simple",
+      "difficulty": "simple",
+      "title": "Check active subscription status",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 3,
+      "prerequisites": [],
+      "requiredPublicContract": {
+        "symbol": "subscription.active?",
+        "signature": "Subscription -> Bool",
+        "behavior": "Return true only for Active status."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-S03",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/S03.json",
+      "acceptanceFile": "acceptance/S03.json"
+    },
+    {
+      "id": "S04",
+      "category": "simple",
+      "difficulty": "simple",
+      "title": "Check whether an invoice is open",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 4,
+      "prerequisites": [],
+      "requiredPublicContract": {
+        "symbol": "invoice.open?",
+        "signature": "Invoice -> Bool",
+        "behavior": "Return true only for Open invoices."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-S04",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/S04.json",
+      "acceptanceFile": "acceptance/S04.json"
+    },
+    {
+      "id": "S05",
+      "category": "simple",
+      "difficulty": "simple",
+      "title": "Check nonnegative product prices",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 5,
+      "prerequisites": [],
+      "requiredPublicContract": {
+        "symbol": "product.nonnegative-price?",
+        "signature": "Product -> Bool",
+        "behavior": "Return true when signed Int64 unit price is zero or positive."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-S05",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/S05.json",
+      "acceptanceFile": "acceptance/S05.json"
+    },
+    {
+      "id": "S06",
+      "category": "simple",
+      "difficulty": "simple",
+      "title": "Return a customer discount rate",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 6,
+      "prerequisites": [
+        "S01"
+      ],
+      "requiredPublicContract": {
+        "symbol": "customer.discount-basis-points",
+        "signature": "Customer -> Int",
+        "behavior": "Return 1000 basis points for premium customers and zero for every other raw Kind."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-S06",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/S06.json",
+      "acceptanceFile": "acceptance/S06.json"
+    },
+    {
+      "id": "S07",
+      "category": "simple",
+      "difficulty": "simple",
+      "title": "Discount a premium customer balance",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 7,
+      "prerequisites": [
+        "S01",
+        "S06"
+      ],
+      "requiredPublicContract": {
+        "symbol": "customer.discounted-balance",
+        "signature": "Customer -> Money",
+        "behavior": "Apply a 10% discount only to premium balances; truncate fractional minor units toward zero."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-S07",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/S07.json",
+      "acceptanceFile": "acceptance/S07.json"
+    },
+    {
+      "id": "S08",
+      "category": "simple",
+      "difficulty": "simple",
+      "title": "Check whether a balance is nonnegative",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 8,
+      "prerequisites": [],
+      "requiredPublicContract": {
+        "symbol": "customer.balance-nonnegative?",
+        "signature": "Customer -> Bool",
+        "behavior": "Return true when signed Money balance is greater than or equal to zero."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-S08",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/S08.json",
+      "acceptanceFile": "acceptance/S08.json"
+    },
+    {
+      "id": "S09",
+      "category": "simple",
+      "difficulty": "simple",
+      "title": "Compare two instants",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 9,
+      "prerequisites": [],
+      "requiredPublicContract": {
+        "symbol": "instant.before?",
+        "signature": "Instant Instant -> Bool",
+        "behavior": "Compare DateTimeOffset instants, not source text; equality after UTC normalization is false."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-S09",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/S09.json",
+      "acceptanceFile": "acceptance/S09.json"
+    },
+    {
+      "id": "S10",
+      "category": "simple",
+      "difficulty": "simple",
+      "title": "Check the inclusive seven-day renewal window",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 10,
+      "prerequisites": [
+        "S03",
+        "S09"
+      ],
+      "requiredPublicContract": {
+        "symbol": "subscription.renewable-within-seven-days?",
+        "signature": "Subscription Instant -> Bool",
+        "behavior": "Return true iff Active and expiry is between now and seven days after now, inclusive at both ends."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-S10",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/S10.json",
+      "acceptanceFile": "acceptance/S10.json"
+    },
+    {
+      "id": "S11",
+      "category": "simple",
+      "difficulty": "simple",
+      "title": "Calculate a checked invoice line total",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 11,
+      "prerequisites": [],
+      "requiredPublicContract": {
+        "symbol": "invoice.line-total",
+        "signature": "Money Int -> Result<Money, BusinessError>",
+        "behavior": "Require quantity greater than zero and price nonnegative; multiply Int64 minor units with checked arithmetic."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-S11",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/S11.json",
+      "acceptanceFile": "acceptance/S11.json"
+    },
+    {
+      "id": "S12",
+      "category": "simple",
+      "difficulty": "simple",
+      "title": "Check invoice payment eligibility",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 12,
+      "prerequisites": [
+        "S04",
+        "S11"
+      ],
+      "requiredPublicContract": {
+        "symbol": "invoice.payable?",
+        "signature": "Invoice -> Bool",
+        "behavior": "Return true iff status is Open and total minor units are positive."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-S12",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/S12.json",
+      "acceptanceFile": "acceptance/S12.json"
+    },
+    {
+      "id": "S13",
+      "category": "simple",
+      "difficulty": "simple",
+      "title": "Validate a full payment receipt",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 13,
+      "prerequisites": [],
+      "requiredPublicContract": {
+        "symbol": "payment.receipt-matches?",
+        "signature": "Money PaymentReceipt -> Bool",
+        "behavior": "Require a nonblank reference and an exact match to the requested positive amount."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-S13",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/S13.json",
+      "acceptanceFile": "acceptance/S13.json"
+    },
+    {
+      "id": "S14",
+      "category": "simple",
+      "difficulty": "simple",
+      "title": "Create a normalized email message",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 14,
+      "prerequisites": [],
+      "requiredPublicContract": {
+        "symbol": "email.message-create",
+        "signature": "Email String String -> Result<EmailMessage, BusinessError>",
+        "behavior": "Use the reference constructor: reject whitespace-only subject/body with INVALID_EMAIL_MESSAGE and trim accepted fields."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-S14",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/S14.json",
+      "acceptanceFile": "acceptance/S14.json"
+    },
+    {
+      "id": "S15",
+      "category": "simple",
+      "difficulty": "simple",
+      "title": "Validate an email address under the fixture policy",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 15,
+      "prerequisites": [],
+      "requiredPublicContract": {
+        "symbol": "email.valid?",
+        "signature": "String -> Bool",
+        "behavior": "Match the exact bounded ASCII policy in docs/BUSINESS.md, including its 254-character maximum; do not claim full RFC validation."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-S15",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/S15.json",
+      "acceptanceFile": "acceptance/S15.json"
+    },
+    {
+      "id": "S16",
+      "category": "simple",
+      "difficulty": "simple",
+      "title": "Check whether a subscription can be cancelled at an instant",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 16,
+      "prerequisites": [
+        "S03",
+        "S09"
+      ],
+      "requiredPublicContract": {
+        "symbol": "subscription.cancelable-at?",
+        "signature": "Subscription Instant -> Bool",
+        "behavior": "Return true iff Active and cancellation time is not earlier than start; equality is allowed."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-S16",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/S16.json",
+      "acceptanceFile": "acceptance/S16.json"
+    },
+    {
+      "id": "S17",
+      "category": "simple",
+      "difficulty": "simple",
+      "title": "Detect an expired active subscription",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 17,
+      "prerequisites": [
+        "S03",
+        "S09"
+      ],
+      "requiredPublicContract": {
+        "symbol": "subscription.expired-at?",
+        "signature": "Subscription Instant -> Bool",
+        "behavior": "Return true iff Active and expiry is less than or equal to the supplied instant."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-S17",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/S17.json",
+      "acceptanceFile": "acceptance/S17.json"
+    },
+    {
+      "id": "S18",
+      "category": "simple",
+      "difficulty": "simple",
+      "title": "Calculate a premium invoice total",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 18,
+      "prerequisites": [
+        "S01",
+        "S06",
+        "S11"
+      ],
+      "requiredPublicContract": {
+        "symbol": "invoice.discounted-total",
+        "signature": "Customer Invoice -> Money",
+        "behavior": "Apply the 10% premium-only discount with integer truncation; leave regular totals unchanged."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-S18",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/S18.json",
+      "acceptanceFile": "acceptance/S18.json"
+    },
+    {
+      "id": "S19",
+      "category": "simple",
+      "difficulty": "simple",
+      "title": "Check whether an invoice contains lines",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 19,
+      "prerequisites": [],
+      "requiredPublicContract": {
+        "symbol": "invoice.has-lines?",
+        "signature": "Invoice -> Bool",
+        "behavior": "Return true for one or more lines and false for an empty list."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-S19",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/S19.json",
+      "acceptanceFile": "acceptance/S19.json"
+    },
+    {
+      "id": "S20",
+      "category": "simple",
+      "difficulty": "simple",
+      "title": "Compare customer identifiers by GUID identity",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 20,
+      "prerequisites": [],
+      "requiredPublicContract": {
+        "symbol": "customer.same-id?",
+        "signature": "Customer Customer -> Bool",
+        "behavior": "Compare parsed CustomerId values, not spelling; F# accepts Guid.TryParse forms and formats lowercase D."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-S20",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/S20.json",
+      "acceptanceFile": "acceptance/S20.json"
+    },
+    {
+      "id": "M01",
+      "category": "medium",
+      "difficulty": "medium",
+      "title": "Find a subscription by nominal ID",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 21,
+      "prerequisites": [
+        "S20"
+      ],
+      "requiredPublicContract": {
+        "symbol": "store.subscription",
+        "signature": "Store SubscriptionId -> Option<Subscription>",
+        "behavior": "Search the full collection by ID; return the matching record or None without changing Store."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-M01",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/M01.json",
+      "acceptanceFile": "acceptance/M01.json"
+    },
+    {
+      "id": "M02",
+      "category": "medium",
+      "difficulty": "medium",
+      "title": "Replace one subscription immutably",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 22,
+      "prerequisites": [
+        "M01"
+      ],
+      "requiredPublicContract": {
+        "symbol": "store.replace-subscription",
+        "signature": "Store Subscription -> Result<Store, BusinessError>",
+        "behavior": "Replace exactly the matching ID in place, preserving other records/order; missing ID returns SUBSCRIPTION_NOT_FOUND unchanged."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-M02",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/M02.json",
+      "acceptanceFile": "acceptance/M02.json"
+    },
+    {
+      "id": "M03",
+      "category": "medium",
+      "difficulty": "medium",
+      "title": "List renewal candidates",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 23,
+      "prerequisites": [
+        "S03",
+        "S09",
+        "S10",
+        "M01"
+      ],
+      "requiredPublicContract": {
+        "symbol": "store.renewal-candidates",
+        "signature": "Store Instant -> List<Subscription>",
+        "behavior": "Return Active subscriptions in the inclusive seven-day window, preserving source-list order."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-M03",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/M03.json",
+      "acceptanceFile": "acceptance/M03.json"
+    },
+    {
+      "id": "M04",
+      "category": "medium",
+      "difficulty": "medium",
+      "title": "Build renewal reminders without duplicates",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 24,
+      "prerequisites": [
+        "M03"
+      ],
+      "requiredPublicContract": {
+        "symbol": "store.renewal-reminders",
+        "signature": "Store Instant -> Store",
+        "behavior": "Queue one reminder per eligible subscription; preserve FIFO and do not duplicate queued or sent reminders."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-M04",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/M04.json",
+      "acceptanceFile": "acceptance/M04.json"
+    },
+    {
+      "id": "M05",
+      "category": "medium",
+      "difficulty": "medium",
+      "title": "Schedule renewal reminders idempotently",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 25,
+      "prerequisites": [
+        "M04"
+      ],
+      "requiredPublicContract": {
+        "symbol": "store.schedule-renewal-reminder",
+        "signature": "Store Instant -> Result<Store, BusinessError>",
+        "behavior": "Apply the reminder transition twice and retain exactly one queued/sent message per eligible subscription."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-M05",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/M05.json",
+      "acceptanceFile": "acceptance/M05.json"
+    },
+    {
+      "id": "M06",
+      "category": "medium",
+      "difficulty": "medium",
+      "title": "Create a successor subscription",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 26,
+      "prerequisites": [
+        "S02",
+        "S03",
+        "S10",
+        "M01",
+        "M02"
+      ],
+      "requiredPublicContract": {
+        "symbol": "subscription.renew",
+        "signature": "Store SubscriptionId Instant Instant -> Result<Store, BusinessError>",
+        "behavior": "Copy customer/product/term from an eligible source; use supplied dates, require expiry after start, reject duplicate IDs."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-M06",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/M06.json",
+      "acceptanceFile": "acceptance/M06.json"
+    },
+    {
+      "id": "M07",
+      "category": "medium",
+      "difficulty": "medium",
+      "title": "Create a discounted multi-line invoice",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 27,
+      "prerequisites": [
+        "S01",
+        "S06",
+        "S07",
+        "S11",
+        "M02"
+      ],
+      "requiredPublicContract": {
+        "symbol": "invoice.create-discounted",
+        "signature": "Store InvoiceId CustomerId List<CartLine> Instant -> Result<Store, BusinessError>",
+        "behavior": "Create all-or-nothing, snapshot product details, check line totals, then discount the invoice total once."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-M07",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/M07.json",
+      "acceptanceFile": "acceptance/M07.json"
+    },
+    {
+      "id": "M08",
+      "category": "medium",
+      "difficulty": "medium",
+      "title": "Reject an invalid cart without partial invoice state",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 28,
+      "prerequisites": [
+        "S11",
+        "M07"
+      ],
+      "requiredPublicContract": {
+        "symbol": "invoice.create-atomic",
+        "signature": "Store InvoiceId CustomerId List<CartLine> Instant -> Result<Store, BusinessError>",
+        "behavior": "Validate every cart line and total before publishing; a late invalid line leaves Store unchanged."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-M08",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/M08.json",
+      "acceptanceFile": "acceptance/M08.json"
+    },
+    {
+      "id": "M09",
+      "category": "medium",
+      "difficulty": "medium",
+      "title": "Sum open invoice balances for one customer",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 29,
+      "prerequisites": [
+        "S04",
+        "S11"
+      ],
+      "requiredPublicContract": {
+        "symbol": "customer.open-invoice-total",
+        "signature": "Store CustomerId -> Result<Money, BusinessError>",
+        "behavior": "Sum Open invoices for that customer with checked Int64 addition; ignore paid invoices and other customers."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-M09",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/M09.json",
+      "acceptanceFile": "acceptance/M09.json"
+    },
+    {
+      "id": "M10",
+      "category": "medium",
+      "difficulty": "medium",
+      "title": "List outstanding invoices for one customer",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 30,
+      "prerequisites": [
+        "S04",
+        "M09"
+      ],
+      "requiredPublicContract": {
+        "symbol": "customer.open-invoices",
+        "signature": "Store CustomerId -> List<Invoice>",
+        "behavior": "Return only Open invoices for that customer in deterministic projection order."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-M10",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/M10.json",
+      "acceptanceFile": "acceptance/M10.json"
+    },
+    {
+      "id": "M11",
+      "category": "medium",
+      "difficulty": "medium",
+      "title": "Apply an exact successful payment receipt",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 31,
+      "prerequisites": [
+        "S12",
+        "S13"
+      ],
+      "requiredPublicContract": {
+        "symbol": "payment.apply-receipt",
+        "signature": "Store PaymentId InvoiceId Money PaymentReceipt Instant -> Result<Store, BusinessError>",
+        "behavior": "On a positive exact receipt for an Open invoice, record one payment and mark Paid; mismatch/already-paid leave state unchanged."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-M11",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/M11.json",
+      "acceptanceFile": "acceptance/M11.json"
+    },
+    {
+      "id": "M12",
+      "category": "medium",
+      "difficulty": "medium",
+      "title": "Propagate payment decline atomically",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 32,
+      "prerequisites": [
+        "M11"
+      ],
+      "requiredPublicContract": {
+        "symbol": "payment.apply-result",
+        "signature": "Store PaymentId InvoiceId Money Result<PaymentReceipt, BusinessError> Instant -> Result<Store, BusinessError>",
+        "behavior": "Propagate provider Error by stable code and leave invoice/payment state unchanged."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-M12",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/M12.json",
+      "acceptanceFile": "acceptance/M12.json"
+    },
+    {
+      "id": "M13",
+      "category": "medium",
+      "difficulty": "medium",
+      "title": "Deliver the FIFO email at the head of the queue",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 33,
+      "prerequisites": [],
+      "requiredPublicContract": {
+        "symbol": "email.deliver-next",
+        "signature": "Store Result<Unit, BusinessError> -> Result<Store, BusinessError>",
+        "behavior": "On success remove exactly the first queued message and append it to sent emails, preserving order."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-M13",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/M13.json",
+      "acceptanceFile": "acceptance/M13.json"
+    },
+    {
+      "id": "M14",
+      "category": "medium",
+      "difficulty": "medium",
+      "title": "Keep the FIFO head when email delivery fails",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 34,
+      "prerequisites": [
+        "M13"
+      ],
+      "requiredPublicContract": {
+        "symbol": "email.deliver-result",
+        "signature": "Store Result<Unit, BusinessError> -> Result<Store, BusinessError>",
+        "behavior": "A delivery Error returns EMAIL_PROVIDER_FAILURE and leaves both FIFO lists unchanged."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-M14",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/M14.json",
+      "acceptanceFile": "acceptance/M14.json"
+    },
+    {
+      "id": "M15",
+      "category": "medium",
+      "difficulty": "medium",
+      "title": "Add a customer with duplicate-ID protection",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 35,
+      "prerequisites": [
+        "S20"
+      ],
+      "requiredPublicContract": {
+        "symbol": "store.add-customer-safe",
+        "signature": "Store Customer -> Result<Store, BusinessError>",
+        "behavior": "Add immutably; reject an existing nominal CustomerId with DUPLICATE_CUSTOMER and preserve state/order."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-M15",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/M15.json",
+      "acceptanceFile": "acceptance/M15.json"
+    },
+    {
+      "id": "M16",
+      "category": "medium",
+      "difficulty": "medium",
+      "title": "Cancel active subscriptions for one customer",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 36,
+      "prerequisites": [
+        "S03",
+        "S16",
+        "M02"
+      ],
+      "requiredPublicContract": {
+        "symbol": "customer.cancel-active-subscriptions",
+        "signature": "Store CustomerId Instant -> Result<Store, BusinessError>",
+        "behavior": "Cancel only that customer's Active subscriptions; retain others/order. Any invalid cancellation rejects the whole transition."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-M16",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/M16.json",
+      "acceptanceFile": "acceptance/M16.json"
+    },
+    {
+      "id": "M17",
+      "category": "medium",
+      "difficulty": "medium",
+      "title": "Report broken store references",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 37,
+      "prerequisites": [],
+      "requiredPublicContract": {
+        "symbol": "store.integrity-report",
+        "signature": "Store -> List<BusinessError>",
+        "behavior": "Return stable sorted findings for subscriptions/invoices with missing customer or product references; do not mutate Store."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-M17",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/M17.json",
+      "acceptanceFile": "acceptance/M17.json"
+    },
+    {
+      "id": "M18",
+      "category": "medium",
+      "difficulty": "medium",
+      "title": "Aggregate paid amounts for one customer",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 38,
+      "prerequisites": [
+        "S11",
+        "M09",
+        "M11"
+      ],
+      "requiredPublicContract": {
+        "symbol": "customer.paid-total",
+        "signature": "Store CustomerId -> Result<Money, BusinessError>",
+        "behavior": "Sum recorded payments linked through invoices to the customer using checked Int64 addition."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-M18",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/M18.json",
+      "acceptanceFile": "acceptance/M18.json"
+    },
+    {
+      "id": "M19",
+      "category": "medium",
+      "difficulty": "medium",
+      "title": "Build an invoice payment history",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 39,
+      "prerequisites": [
+        "S20",
+        "M11"
+      ],
+      "requiredPublicContract": {
+        "symbol": "invoice.payment-history",
+        "signature": "Store InvoiceId -> List<Payment>",
+        "behavior": "Return payments for that invoice ordered by paid-at then normalized PaymentId; do not mutate Store."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-M19",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/M19.json",
+      "acceptanceFile": "acceptance/M19.json"
+    },
+    {
+      "id": "M20",
+      "category": "medium",
+      "difficulty": "medium",
+      "title": "Create a premium annual renewal package",
+      "retentionTrack": "flat-and-growing",
+      "prerequisitePolicy": "growing-task-dependencies",
+      "growthOrder": 40,
+      "prerequisites": [
+        "S01",
+        "S02",
+        "S07",
+        "S10",
+        "M04",
+        "M06",
+        "M07"
+      ],
+      "requiredPublicContract": {
+        "symbol": "renewal.create-package",
+        "signature": "Store SubscriptionId Instant InvoiceId -> Result<Store, BusinessError>",
+        "behavior": "Compose eligibility, premium annual discount, invoice, successor subscription, and one reminder; any failed step preserves input Store."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "business-schema-flat-v1",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "growth-before-M20",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "business-fsharp-candidate-v1",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/M20.json",
+      "acceptanceFile": "acceptance/M20.json"
+    },
+    {
+      "id": "D01",
+      "category": "debugging",
+      "difficulty": "debugging",
+      "title": "Repair premium classification",
+      "retentionTrack": "isolated-adversarial",
+      "prerequisitePolicy": "known-good-fixture-recipe",
+      "growthOrder": null,
+      "prerequisites": [
+        "S01",
+        "S07"
+      ],
+      "requiredPublicContract": {
+        "symbol": "customer.premium?",
+        "signature": "Customer -> Bool",
+        "behavior": "Restore the ordinal Kind rule and preserve other customer behavior."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "debug-D01-flat-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "debug-D01-prerequisite-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "debug-D01-fsharp-fixture",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/D01.json",
+      "acceptanceFile": "acceptance/D01.json"
+    },
+    {
+      "id": "D02",
+      "category": "debugging",
+      "difficulty": "debugging",
+      "title": "Repair discount arithmetic",
+      "retentionTrack": "isolated-adversarial",
+      "prerequisitePolicy": "known-good-fixture-recipe",
+      "growthOrder": null,
+      "prerequisites": [
+        "S06",
+        "S07"
+      ],
+      "requiredPublicContract": {
+        "symbol": "customer.discounted-balance",
+        "signature": "Customer -> Money",
+        "behavior": "Restore the 10% premium discount with integer minor-unit arithmetic; preserve regular balances."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "debug-D02-flat-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "debug-D02-prerequisite-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "debug-D02-fsharp-fixture",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/D02.json",
+      "acceptanceFile": "acceptance/D02.json"
+    },
+    {
+      "id": "D03",
+      "category": "debugging",
+      "difficulty": "debugging",
+      "title": "Repair annual term classification",
+      "retentionTrack": "isolated-adversarial",
+      "prerequisitePolicy": "known-good-fixture-recipe",
+      "growthOrder": null,
+      "prerequisites": [
+        "S02",
+        "M06"
+      ],
+      "requiredPublicContract": {
+        "symbol": "subscription.annual?",
+        "signature": "Subscription -> Bool",
+        "behavior": "Return true only for exact \"annual\"; do not make monthly or case variants annual."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "debug-D03-flat-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "debug-D03-prerequisite-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "debug-D03-fsharp-fixture",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/D03.json",
+      "acceptanceFile": "acceptance/D03.json"
+    },
+    {
+      "id": "D04",
+      "category": "debugging",
+      "difficulty": "debugging",
+      "title": "Repair renewal-window boundary",
+      "retentionTrack": "isolated-adversarial",
+      "prerequisitePolicy": "known-good-fixture-recipe",
+      "growthOrder": null,
+      "prerequisites": [
+        "S03",
+        "S09",
+        "S10"
+      ],
+      "requiredPublicContract": {
+        "symbol": "subscription.renewable-within-seven-days?",
+        "signature": "Subscription Instant -> Bool",
+        "behavior": "Apply Active status and both inclusive seven-day bounds exactly."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "debug-D04-flat-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "debug-D04-prerequisite-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "debug-D04-fsharp-fixture",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/D04.json",
+      "acceptanceFile": "acceptance/D04.json"
+    },
+    {
+      "id": "D05",
+      "category": "debugging",
+      "difficulty": "debugging",
+      "title": "Repair duplicate cancellation handling",
+      "retentionTrack": "isolated-adversarial",
+      "prerequisitePolicy": "known-good-fixture-recipe",
+      "growthOrder": null,
+      "prerequisites": [
+        "S16",
+        "M02"
+      ],
+      "requiredPublicContract": {
+        "symbol": "subscription.cancel",
+        "signature": "Store SubscriptionId Instant -> Result<Store, BusinessError>",
+        "behavior": "A second cancellation returns SUBSCRIPTION_ALREADY_CANCELLED and leaves timestamp/state unchanged."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "debug-D05-flat-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "debug-D05-prerequisite-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "debug-D05-fsharp-fixture",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/D05.json",
+      "acceptanceFile": "acceptance/D05.json"
+    },
+    {
+      "id": "D06",
+      "category": "debugging",
+      "difficulty": "debugging",
+      "title": "Repair renewal status eligibility",
+      "retentionTrack": "isolated-adversarial",
+      "prerequisitePolicy": "known-good-fixture-recipe",
+      "growthOrder": null,
+      "prerequisites": [
+        "S03",
+        "S10",
+        "M03"
+      ],
+      "requiredPublicContract": {
+        "symbol": "store.renewal-candidates",
+        "signature": "Store Instant -> List<Subscription>",
+        "behavior": "Exclude cancelled subscriptions inside the time window; preserve eligible active entries."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "debug-D06-flat-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "debug-D06-prerequisite-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "debug-D06-fsharp-fixture",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/D06.json",
+      "acceptanceFile": "acceptance/D06.json"
+    },
+    {
+      "id": "D07",
+      "category": "debugging",
+      "difficulty": "debugging",
+      "title": "Repair cancellation lower boundary",
+      "retentionTrack": "isolated-adversarial",
+      "prerequisitePolicy": "known-good-fixture-recipe",
+      "growthOrder": null,
+      "prerequisites": [
+        "S09",
+        "S16"
+      ],
+      "requiredPublicContract": {
+        "symbol": "subscription.cancelable-at?",
+        "signature": "Subscription Instant -> Bool",
+        "behavior": "Reject cancellation before start but allow equality and later instants."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "debug-D07-flat-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "debug-D07-prerequisite-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "debug-D07-fsharp-fixture",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/D07.json",
+      "acceptanceFile": "acceptance/D07.json"
+    },
+    {
+      "id": "D08",
+      "category": "debugging",
+      "difficulty": "debugging",
+      "title": "Repair a list traversal that skips an endpoint",
+      "retentionTrack": "isolated-adversarial",
+      "prerequisitePolicy": "known-good-fixture-recipe",
+      "growthOrder": null,
+      "prerequisites": [
+        "M03"
+      ],
+      "requiredPublicContract": {
+        "symbol": "store.renewal-candidates",
+        "signature": "Store Instant -> List<Subscription>",
+        "behavior": "Visit every entry exactly once, including first and last, while retaining source order."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "debug-D08-flat-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "debug-D08-prerequisite-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "debug-D08-fsharp-fixture",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/D08.json",
+      "acceptanceFile": "acceptance/D08.json"
+    },
+    {
+      "id": "D09",
+      "category": "debugging",
+      "difficulty": "debugging",
+      "title": "Repair provider failure queue loss",
+      "retentionTrack": "isolated-adversarial",
+      "prerequisitePolicy": "known-good-fixture-recipe",
+      "growthOrder": null,
+      "prerequisites": [
+        "M13",
+        "M14"
+      ],
+      "requiredPublicContract": {
+        "symbol": "email.deliver-next",
+        "signature": "Store Result<Unit, BusinessError> -> Result<Store, BusinessError>",
+        "behavior": "On provider error retain the entire outbox and sent list unchanged."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "debug-D09-flat-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "debug-D09-prerequisite-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "debug-D09-fsharp-fixture",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/D09.json",
+      "acceptanceFile": "acceptance/D09.json"
+    },
+    {
+      "id": "D10",
+      "category": "debugging",
+      "difficulty": "debugging",
+      "title": "Repair unchecked invoice overflow",
+      "retentionTrack": "isolated-adversarial",
+      "prerequisitePolicy": "known-good-fixture-recipe",
+      "growthOrder": null,
+      "prerequisites": [
+        "S11",
+        "M07"
+      ],
+      "requiredPublicContract": {
+        "symbol": "invoice.line-total",
+        "signature": "Money Int -> Result<Money, BusinessError>",
+        "behavior": "Use checked Int64 multiplication, return MONEY_OVERFLOW, and publish no invoice state."
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "debug-D10-flat-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "debug-D10-prerequisite-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "debug-D10-fsharp-fixture",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/D10.json",
+      "acceptanceFile": "acceptance/D10.json"
+    },
+    {
+      "id": "R01",
+      "category": "refactoring",
+      "difficulty": "refactoring",
+      "title": "Share premium classification across customer operations",
+      "retentionTrack": "isolated-refactor",
+      "prerequisitePolicy": "known-good-fixture-recipe",
+      "growthOrder": null,
+      "prerequisites": [
+        "S01",
+        "S06",
+        "S07"
+      ],
+      "requiredPublicContract": {
+        "symbol": "customer.premium?",
+        "signature": "Customer -> Bool",
+        "behavior": "Extract one typed predicate; route discount-rate and discounted-balance operations through it without behavior changes.",
+        "structuralRequirement": {
+          "helper": "customer.premium?",
+          "calledBy": [
+            "customer.discount-basis-points",
+            "customer.discounted-balance"
+          ]
+        }
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "refactor-R01-flat-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "refactor-R01-prerequisite-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "refactor-R01-fsharp-fixture",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/R01.json",
+      "acceptanceFile": "acceptance/R01.json"
+    },
+    {
+      "id": "R02",
+      "category": "refactoring",
+      "difficulty": "refactoring",
+      "title": "Share renewal eligibility across queries and reminders",
+      "retentionTrack": "isolated-refactor",
+      "prerequisitePolicy": "known-good-fixture-recipe",
+      "growthOrder": null,
+      "prerequisites": [
+        "S03",
+        "S09",
+        "S10",
+        "M03",
+        "M04"
+      ],
+      "requiredPublicContract": {
+        "symbol": "subscription.renewable-within-seven-days?",
+        "signature": "Subscription Instant -> Bool",
+        "behavior": "Extract shared status/time logic; use it in candidate listing and reminder scheduling.",
+        "structuralRequirement": {
+          "helper": "subscription.renewable-within-seven-days?",
+          "calledBy": [
+            "store.renewal-candidates",
+            "store.renewal-reminders"
+          ]
+        }
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "refactor-R02-flat-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "refactor-R02-prerequisite-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "refactor-R02-fsharp-fixture",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/R02.json",
+      "acceptanceFile": "acceptance/R02.json"
+    },
+    {
+      "id": "R03",
+      "category": "refactoring",
+      "difficulty": "refactoring",
+      "title": "Share checked line arithmetic across invoice paths",
+      "retentionTrack": "isolated-refactor",
+      "prerequisitePolicy": "known-good-fixture-recipe",
+      "growthOrder": null,
+      "prerequisites": [
+        "S11",
+        "M07",
+        "M08"
+      ],
+      "requiredPublicContract": {
+        "symbol": "invoice.line-total",
+        "signature": "Money Int -> Result<Money, BusinessError>",
+        "behavior": "Route invoice creation and summary through one checked multiplication helper; retain atomic error behavior.",
+        "structuralRequirement": {
+          "helper": "invoice.line-total",
+          "calledBy": [
+            "invoice.create-discounted",
+            "invoice.create-atomic"
+          ]
+        }
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "refactor-R03-flat-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "refactor-R03-prerequisite-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "refactor-R03-fsharp-fixture",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/R03.json",
+      "acceptanceFile": "acceptance/R03.json"
+    },
+    {
+      "id": "R04",
+      "category": "refactoring",
+      "difficulty": "refactoring",
+      "title": "Share instant comparison across renewal/cancellation",
+      "retentionTrack": "isolated-refactor",
+      "prerequisitePolicy": "known-good-fixture-recipe",
+      "growthOrder": null,
+      "prerequisites": [
+        "S09",
+        "S10",
+        "S16",
+        "M03"
+      ],
+      "requiredPublicContract": {
+        "symbol": "instant.before?",
+        "signature": "Instant Instant -> Bool",
+        "behavior": "Route time-window checks through one instant comparison helper; normalize offsets and preserve each boundary policy.",
+        "structuralRequirement": {
+          "helper": "instant.before?",
+          "calledBy": [
+            "subscription.renewable-within-seven-days?",
+            "subscription.cancelable-at?"
+          ]
+        }
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "refactor-R04-flat-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "refactor-R04-prerequisite-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "refactor-R04-fsharp-fixture",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/R04.json",
+      "acceptanceFile": "acceptance/R04.json"
+    },
+    {
+      "id": "R05",
+      "category": "refactoring",
+      "difficulty": "refactoring",
+      "title": "Share subscription lookup before replacement",
+      "retentionTrack": "isolated-refactor",
+      "prerequisitePolicy": "known-good-fixture-recipe",
+      "growthOrder": null,
+      "prerequisites": [
+        "M01",
+        "M02",
+        "M06",
+        "M16"
+      ],
+      "requiredPublicContract": {
+        "symbol": "store.subscription",
+        "signature": "Store SubscriptionId -> Option<Subscription>",
+        "behavior": "Use one lookup word from cancellation, renewal, and replacement paths without changing missing-ID behavior.",
+        "structuralRequirement": {
+          "helper": "store.subscription",
+          "calledBy": [
+            "store.replace-subscription",
+            "subscription.renew",
+            "customer.cancel-active-subscriptions"
+          ]
+        }
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "refactor-R05-flat-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "refactor-R05-prerequisite-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "refactor-R05-fsharp-fixture",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/R05.json",
+      "acceptanceFile": "acceptance/R05.json"
+    },
+    {
+      "id": "R06",
+      "category": "refactoring",
+      "difficulty": "refactoring",
+      "title": "Share receipt validation across payment entry points",
+      "retentionTrack": "isolated-refactor",
+      "prerequisitePolicy": "known-good-fixture-recipe",
+      "growthOrder": null,
+      "prerequisites": [
+        "S13",
+        "M11",
+        "M12"
+      ],
+      "requiredPublicContract": {
+        "symbol": "payment.receipt-matches?",
+        "signature": "Money PaymentReceipt -> Bool",
+        "behavior": "Route direct and result-provider paths through one pure receipt validator; keep failures atomic.",
+        "structuralRequirement": {
+          "helper": "payment.receipt-matches?",
+          "calledBy": [
+            "payment.apply-receipt",
+            "payment.apply-result"
+          ]
+        }
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "refactor-R06-flat-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "refactor-R06-prerequisite-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "refactor-R06-fsharp-fixture",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/R06.json",
+      "acceptanceFile": "acceptance/R06.json"
+    },
+    {
+      "id": "R07",
+      "category": "refactoring",
+      "difficulty": "refactoring",
+      "title": "Share email normalization and validation",
+      "retentionTrack": "isolated-refactor",
+      "prerequisitePolicy": "known-good-fixture-recipe",
+      "growthOrder": null,
+      "prerequisites": [
+        "S14",
+        "S15",
+        "M04"
+      ],
+      "requiredPublicContract": {
+        "symbol": "email.message-create",
+        "signature": "Email String String -> Result<EmailMessage, BusinessError>",
+        "behavior": "Use one constructor from direct queue and renewal-reminder creation; preserve trim and error rules.",
+        "structuralRequirement": {
+          "helper": "email.message-create",
+          "calledBy": [
+            "email.queue",
+            "store.renewal-reminders"
+          ]
+        }
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "refactor-R07-flat-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "refactor-R07-prerequisite-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "refactor-R07-fsharp-fixture",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/R07.json",
+      "acceptanceFile": "acceptance/R07.json"
+    },
+    {
+      "id": "R08",
+      "category": "refactoring",
+      "difficulty": "refactoring",
+      "title": "Share open-invoice selection and aggregation",
+      "retentionTrack": "isolated-refactor",
+      "prerequisitePolicy": "known-good-fixture-recipe",
+      "growthOrder": null,
+      "prerequisites": [
+        "S04",
+        "M09",
+        "M10"
+      ],
+      "requiredPublicContract": {
+        "symbol": "customer.open-invoices",
+        "signature": "Store CustomerId -> List<Invoice>",
+        "behavior": "Build total aggregation from the shared selection word so customer/status filtering agrees.",
+        "structuralRequirement": {
+          "helper": "customer.open-invoices",
+          "calledBy": [
+            "customer.open-invoice-total",
+            "customer.open-invoices"
+          ]
+        }
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "refactor-R08-flat-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "refactor-R08-prerequisite-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "refactor-R08-fsharp-fixture",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/R08.json",
+      "acceptanceFile": "acceptance/R08.json"
+    },
+    {
+      "id": "R09",
+      "category": "refactoring",
+      "difficulty": "refactoring",
+      "title": "Share payment aggregation by invoice owner",
+      "retentionTrack": "isolated-refactor",
+      "prerequisitePolicy": "known-good-fixture-recipe",
+      "growthOrder": null,
+      "prerequisites": [
+        "M18",
+        "M19"
+      ],
+      "requiredPublicContract": {
+        "symbol": "customer.paid-total",
+        "signature": "Store CustomerId -> Result<Money, BusinessError>",
+        "behavior": "Use one owner-resolution and checked-sum path for account and dashboard summaries.",
+        "structuralRequirement": {
+          "helper": "customer.paid-total",
+          "calledBy": [
+            "customer.account-summary",
+            "store.customer-metrics"
+          ]
+        }
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "refactor-R09-flat-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "refactor-R09-prerequisite-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "refactor-R09-fsharp-fixture",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/R09.json",
+      "acceptanceFile": "acceptance/R09.json"
+    },
+    {
+      "id": "R10",
+      "category": "refactoring",
+      "difficulty": "refactoring",
+      "title": "Route package workflows through one renewal operation",
+      "retentionTrack": "isolated-refactor",
+      "prerequisitePolicy": "known-good-fixture-recipe",
+      "growthOrder": null,
+      "prerequisites": [
+        "M04",
+        "M06",
+        "M07",
+        "M20"
+      ],
+      "requiredPublicContract": {
+        "symbol": "renewal.create-package",
+        "signature": "Store SubscriptionId Instant InvoiceId -> Result<Store, BusinessError>",
+        "behavior": "Replace duplicated premium/annual renewal sequences with one shared package operation used by one-at-a-time and batch entry points.",
+        "structuralRequirement": {
+          "helper": "renewal.create-package",
+          "calledBy": [
+            "renewal.run-one",
+            "renewal.run-batch"
+          ]
+        }
+      },
+      "snapshotPins": {
+        "flat": {
+          "id": "refactor-R10-flat-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "growing": {
+          "id": "refactor-R10-prerequisite-fixture",
+          "sha256": null,
+          "status": "pending"
+        },
+        "conventional": {
+          "id": "refactor-R10-fsharp-fixture",
+          "sha256": null,
+          "status": "pending"
+        }
+      },
+      "status": "planned",
+      "executable": false,
+      "adapterEvidence": {
+        "agentlang": null,
+        "conventional": null,
+        "independentOracle": null
+      },
+      "acceptanceEvidence": {
+        "status": "pending",
+        "evidenceRef": null,
+        "sha256": null
+      },
+      "publicFile": "public/R10.json",
+      "acceptanceFile": "acceptance/R10.json"
+    }
+  ]
+}

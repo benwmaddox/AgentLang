@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "taskId": "S20",
+  "vectorStatus": "proposed-pending-host-review",
+  "executionStatus": "pending",
+  "adapters": {
+    "agentlang": "pending",
+    "conventional": "pending",
+    "referenceCrossCheck": "pending"
+  },
+  "provenance": {
+    "status": "proposed-pending-host-review",
+    "basis": [
+      "docs/BUSINESS.md",
+      "experiments/AgentLang.Business/Business.fs",
+      "docs/BUSINESS-LANGUAGE-PLAN.md"
+    ],
+    "note": "Existing reference operations have not been run against this vector. New policy outcomes are proposals under the public contract."
+  },
+  "cases": [
+    {
+      "id": "same-guid",
+      "input": {
+        "leftId": "10000000-0000-0000-0000-000000000001",
+        "rightId": "10000000-0000-0000-0000-000000000001"
+      },
+      "expected": {
+        "result": true,
+        "errorCode": null,
+        "stateProjection": null
+      }
+    },
+    {
+      "id": "uppercase-guid",
+      "input": {
+        "leftId": "10000000-0000-0000-0000-000000000001",
+        "rightId": "10000000-0000-0000-0000-000000000001"
+      },
+      "expected": {
+        "result": true,
+        "errorCode": null,
+        "stateProjection": null
+      }
+    },
+    {
+      "id": "different-guid",
+      "input": {
+        "leftId": "10000000-0000-0000-0000-000000000001",
+        "rightId": "10000000-0000-0000-0000-000000000002"
+      },
+      "expected": {
+        "result": false,
+        "errorCode": null,
+        "stateProjection": null
+      }
+    }
+  ]
+}

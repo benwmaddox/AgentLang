@@ -634,6 +634,37 @@ let private testIdentityAndCallGraphGuards () =
     let cyclicTypeProgram = program [] [] [ unknownKey, selfType ] [] []
     expectDiagnostic "scalar declaration graph cannot contain a self cycle" "IR_SCALAR_CYCLE" (fun () -> verify Map.empty cyclicTypeProgram)
 
+let private testFlatVerifierStackSafety () =
+    let instructionCount = 10002
+    let owner = WordId "flat-verifier"
+    let notId, notContract = primitiveContract "bool.not" [ PatternBool ] [ PatternBool ] noEffects
+    let catalog = Map.ofList [ notId, notContract ]
+    let notCall = resolved (PrimitiveTarget notId) "bool.not" [ IrBool ] [ IrBool ] noEffects
+    let code =
+        instruction owner 0 (IrOperation.Constant(LBool true, IrBool))
+        :: [ for ordinal in 1 .. instructionCount - 1 -> instruction owner ordinal (IrOperation.Call notCall) ]
+    let validFunction =
+        functionWithCode owner 1 [] [ IrBool ] noEffects noEffects Map.empty code
+    let executable =
+        program [ owner, validFunction ] [] []
+            [ for ordinal in 0 .. instructionCount - 1 -> source owner ordinal "flat-operation" ]
+            [ owner, coverage owner [ 0 .. instructionCount - 1 ] [] ]
+
+    let verified = IrVerifier.verify catalog executable
+    check "large flat block verifies without consuming the host call stack"
+        ((VerifiedIrProgram.inspect verified).FunctionsById[owner].FunctionBody.Code.Length = instructionCount)
+
+    let malformedCode =
+        List.take (instructionCount - 1) code
+        @ [ instruction owner (instructionCount - 1) (IrOperation.ListSingleton IrInt) ]
+    let malformedFunction =
+        { validFunction with
+            FunctionBody = block [] Map.empty malformedCode [ IrBool ] Map.empty }
+    let malformed =
+        { executable with
+            FunctionsById = Map.add owner malformedFunction executable.FunctionsById }
+    expectDiagnostic "late malformed instruction retains its specific verifier diagnostic" "IR_CONTAINER_PAYLOAD" (fun () -> verify catalog malformed)
+
 let private testCompilerLowering () =
     let line number = testSpan "lowering.agent" number
     let record =
@@ -845,6 +876,7 @@ let private tests =
       "generated record and scalar operations", testGeneratedRecordAndScalarOperations
       "static callbacks and effects", testStaticCallbacksAndEffects
       "identity and call-graph guards", testIdentityAndCallGraphGuards
+      "flat verifier stack safety", testFlatVerifierStackSafety
       "compiler lowering and detached bodies", testCompilerLowering
       "compiler snapshot identity", testCompilerSnapshotIdentity ]
 

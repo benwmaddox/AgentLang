@@ -1,6 +1,6 @@
 # AgentLang small-business fixture plan
 
-Status: design only. No language implementation or behavioral equivalence is claimed by this document. The conventional reference is documented in [BUSINESS.md](BUSINESS.md); the container syntax below is present in the current Core worktree and still needs integrated acceptance evidence.
+Status: business fixture design only. No full language-domain implementation or behavioral equivalence is claimed by this document. The conventional reference is documented in [BUSINESS.md](BUSINESS.md). Closed containers, static callbacks/cases, record fields and their persistence have integrated acceptance evidence in milestones 002/003; the proposed fold and additional helpers remain unimplemented.
 
 ## Recommendation
 
@@ -10,7 +10,7 @@ Keep business state transitions pure. The current runtime provides a virtual fil
 
 ## Current language surface
 
-Current Core represents nested `List<T>`, `Option<T>`, and `Result<T,E>` values with their closed types retained at runtime. The source supports explicit constructors such as `list.empty<Customer>`, `option.none<Customer>`, `result.ok<Invoice, BusinessError>`, and `result.error<Invoice, BusinessError>`. `match-option` and `match-result` require both cases and isolate payload locals. `list.map <word>`, `list.filter <word>`, and `list.each <word>` invoke static one-argument callbacks and include callback effects/dependencies in checking. Recent Runtime work allows closed collection types in record fields; integration tests must confirm that behavior through persistence and reload.
+Current Core represents nested `List<T>`, `Option<T>`, and `Result<T,E>` values with their closed types retained at runtime. The source supports explicit constructors such as `list.empty<Customer>`, `option.none<Customer>`, `result.ok<Invoice, BusinessError>`, and `result.error<Invoice, BusinessError>`. `match-option` and `match-result` require both cases and isolate payload locals. `list.map <word>`, `list.filter <word>`, and `list.each <word>` invoke static one-argument callbacks and include callback effects/dependencies in checking. Runtime supports closed collection types in record fields, with persistence/reload covered by existing container and storage acceptance. This does not establish equivalence of the proposed full Store fixture.
 
 Two gaps constrain the fixture:
 

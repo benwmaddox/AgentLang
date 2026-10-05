@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "R09",
+  "category": "refactoring",
+  "goal": "Use one owner-resolution and checked-sum path for account and dashboard summaries. Implement the named public operation and attach tests for the listed behavior. Inspect available vocabulary first and preserve unrelated behavior.",
+  "initialContext": "The host supplies a deterministic in-memory business fixture, task types, and runtime vocabulary when this task is executable. Follow the supplied field mappings and public contract; preserve unrelated behavior.",
+  "requiredPublicContract": {
+    "symbol": "customer.paid-total",
+    "signature": "Store CustomerId -> Result<Money, BusinessError>",
+    "behavior": "Use one owner-resolution and checked-sum path for account and dashboard summaries.",
+    "structuralRequirement": {
+      "helper": "customer.paid-total",
+      "calledBy": [
+        "customer.account-summary",
+        "store.customer-metrics"
+      ]
+    }
+  }
+}

@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "taskId": "D09",
+  "vectorStatus": "proposed-pending-host-review",
+  "executionStatus": "pending",
+  "adapters": {
+    "agentlang": "pending",
+    "conventional": "pending",
+    "referenceCrossCheck": "pending"
+  },
+  "provenance": {
+    "status": "proposed-pending-host-review",
+    "basis": [
+      "docs/BUSINESS.md",
+      "experiments/AgentLang.Business/Business.fs",
+      "docs/BUSINESS-LANGUAGE-PLAN.md"
+    ],
+    "note": "Existing reference operations have not been run against this vector. New policy outcomes are proposals under the public contract."
+  },
+  "cases": [
+    {
+      "id": "provider-error",
+      "input": {
+        "outbox": [
+          {
+            "id": "e1"
+          },
+          {
+            "id": "e2"
+          }
+        ],
+        "sentEmails": [],
+        "providerResult": "error"
+      },
+      "expected": {
+        "result": null,
+        "errorCode": "EMAIL_PROVIDER_FAILURE",
+        "stateProjection": {
+          "outbox": [
+            {
+              "id": "e1"
+            },
+            {
+              "id": "e2"
+            }
+          ],
+          "sentEmails": []
+        }
+      }
+    },
+    {
+      "id": "success",
+      "input": {
+        "outbox": [
+          {
+            "id": "e1"
+          }
+        ],
+        "sentEmails": [],
+        "providerResult": "ok"
+      },
+      "expected": {
+        "result": {
+          "tag": "ok",
+          "value": {
+            "delivered": "e1"
+          }
+        },
+        "errorCode": null,
+        "stateProjection": {
+          "outbox": [],
+          "sentEmails": [
+            {
+              "id": "e1"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "empty",
+      "input": {
+        "outbox": [],
+        "sentEmails": [],
+        "providerResult": "error"
+      },
+      "expected": {
+        "result": null,
+        "errorCode": "NO_PENDING_EMAIL",
+        "stateProjection": {
+          "outbox": [],
+          "sentEmails": []
+        }
+      }
+    }
+  ],
+  "fixtureSetup": {
+    "kind": "single-defect",
+    "mutationId": "mutant-d09",
+    "status": "pending-host-fixture"
+  }
+}

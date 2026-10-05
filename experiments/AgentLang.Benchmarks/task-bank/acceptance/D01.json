@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "taskId": "D01",
+  "vectorStatus": "proposed-pending-host-review",
+  "executionStatus": "pending",
+  "adapters": {
+    "agentlang": "pending",
+    "conventional": "pending",
+    "referenceCrossCheck": "pending"
+  },
+  "provenance": {
+    "status": "proposed-pending-host-review",
+    "basis": [
+      "docs/BUSINESS.md",
+      "experiments/AgentLang.Business/Business.fs",
+      "docs/BUSINESS-LANGUAGE-PLAN.md"
+    ],
+    "note": "Existing reference operations have not been run against this vector. New policy outcomes are proposals under the public contract."
+  },
+  "cases": [
+    {
+      "id": "exact-premium",
+      "input": {
+        "customer": {
+          "kind": "premium"
+        }
+      },
+      "expected": {
+        "result": true,
+        "errorCode": null,
+        "stateProjection": {
+          "unchanged": true
+        }
+      }
+    },
+    {
+      "id": "regular",
+      "input": {
+        "customer": {
+          "kind": "regular"
+        }
+      },
+      "expected": {
+        "result": false,
+        "errorCode": null,
+        "stateProjection": {
+          "unchanged": true
+        }
+      }
+    },
+    {
+      "id": "case-sensitive",
+      "input": {
+        "customer": {
+          "kind": "Premium"
+        }
+      },
+      "expected": {
+        "result": false,
+        "errorCode": null,
+        "stateProjection": {
+          "unchanged": true
+        }
+      }
+    }
+  ],
+  "fixtureSetup": {
+    "kind": "single-defect",
+    "mutationId": "mutant-d01",
+    "status": "pending-host-fixture"
+  }
+}

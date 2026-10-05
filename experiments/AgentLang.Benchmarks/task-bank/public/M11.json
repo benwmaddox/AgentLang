@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "M11",
+  "category": "medium",
+  "goal": "On a positive exact receipt for an Open invoice, record one payment and mark Paid; mismatch/already-paid leave state unchanged. Implement the named public operation and attach tests for the listed behavior. Inspect available vocabulary first and preserve unrelated behavior.",
+  "initialContext": "The host supplies a deterministic in-memory business fixture, task types, and runtime vocabulary when this task is executable. Follow the supplied field mappings and public contract; preserve unrelated behavior.",
+  "requiredPublicContract": {
+    "symbol": "payment.apply-receipt",
+    "signature": "Store PaymentId InvoiceId Money PaymentReceipt Instant -> Result<Store, BusinessError>",
+    "behavior": "On a positive exact receipt for an Open invoice, record one payment and mark Paid; mismatch/already-paid leave state unchanged."
+  }
+}

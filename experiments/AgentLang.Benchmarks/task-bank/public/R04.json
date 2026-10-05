@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "R04",
+  "category": "refactoring",
+  "goal": "Route time-window checks through one instant comparison helper; normalize offsets and preserve each boundary policy. Implement the named public operation and attach tests for the listed behavior. Inspect available vocabulary first and preserve unrelated behavior.",
+  "initialContext": "The host supplies a deterministic in-memory business fixture, task types, and runtime vocabulary when this task is executable. Follow the supplied field mappings and public contract; preserve unrelated behavior.",
+  "requiredPublicContract": {
+    "symbol": "instant.before?",
+    "signature": "Instant Instant -> Bool",
+    "behavior": "Route time-window checks through one instant comparison helper; normalize offsets and preserve each boundary policy.",
+    "structuralRequirement": {
+      "helper": "instant.before?",
+      "calledBy": [
+        "subscription.renewable-within-seven-days?",
+        "subscription.cancelable-at?"
+      ]
+    }
+  }
+}

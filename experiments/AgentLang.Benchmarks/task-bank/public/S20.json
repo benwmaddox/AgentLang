@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "S20",
+  "category": "simple",
+  "goal": "Compare parsed CustomerId values, not spelling; F# accepts Guid.TryParse forms and formats lowercase D. Implement the named public operation and attach tests for the listed behavior. Inspect available vocabulary first and preserve unrelated behavior.",
+  "initialContext": "The host supplies a deterministic in-memory business fixture, task types, and runtime vocabulary when this task is executable. Follow the supplied field mappings and public contract; preserve unrelated behavior.",
+  "requiredPublicContract": {
+    "symbol": "customer.same-id?",
+    "signature": "Customer Customer -> Bool",
+    "behavior": "Compare parsed CustomerId values, not spelling; F# accepts Guid.TryParse forms and formats lowercase D."
+  }
+}

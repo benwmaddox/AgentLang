@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "S14",
+  "category": "simple",
+  "goal": "Use the reference constructor: reject whitespace-only subject/body with INVALID_EMAIL_MESSAGE and trim accepted fields. Implement the named public operation and attach tests for the listed behavior. Inspect available vocabulary first and preserve unrelated behavior.",
+  "initialContext": "The host supplies a deterministic in-memory business fixture, task types, and runtime vocabulary when this task is executable. Follow the supplied field mappings and public contract; preserve unrelated behavior.",
+  "requiredPublicContract": {
+    "symbol": "email.message-create",
+    "signature": "Email String String -> Result<EmailMessage, BusinessError>",
+    "behavior": "Use the reference constructor: reject whitespace-only subject/body with INVALID_EMAIL_MESSAGE and trim accepted fields."
+  }
+}

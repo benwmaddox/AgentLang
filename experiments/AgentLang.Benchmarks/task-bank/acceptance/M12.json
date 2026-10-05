@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "taskId": "M12",
+  "vectorStatus": "proposed-pending-host-review",
+  "executionStatus": "pending",
+  "adapters": {
+    "agentlang": "pending",
+    "conventional": "pending",
+    "referenceCrossCheck": "pending"
+  },
+  "provenance": {
+    "status": "proposed-pending-host-review",
+    "basis": [
+      "docs/BUSINESS.md",
+      "experiments/AgentLang.Business/Business.fs",
+      "docs/BUSINESS-LANGUAGE-PLAN.md"
+    ],
+    "note": "Existing reference operations have not been run against this vector. New policy outcomes are proposals under the public contract."
+  },
+  "cases": [
+    {
+      "id": "provider-decline",
+      "input": {
+        "invoice": {
+          "id": "i1",
+          "status": "Open",
+          "totalMinor": 500
+        },
+        "providerResult": {
+          "tag": "error",
+          "errorCode": "PAYMENT_PROVIDER_FAILURE"
+        },
+        "paymentId": "p1"
+      },
+      "expected": {
+        "result": null,
+        "errorCode": "PAYMENT_PROVIDER_FAILURE",
+        "stateProjection": {
+          "invoices": [
+            {
+              "id": "i1",
+              "status": "Open"
+            }
+          ],
+          "payments": []
+        }
+      }
+    },
+    {
+      "id": "invalid-receipt",
+      "input": {
+        "invoice": {
+          "id": "i1",
+          "status": "Open",
+          "totalMinor": 500
+        },
+        "providerResult": {
+          "tag": "ok",
+          "reference": "r1",
+          "amountMinor": 499
+        },
+        "paymentId": "p1"
+      },
+      "expected": {
+        "result": null,
+        "errorCode": "INVALID_PROVIDER_RECEIPT",
+        "stateProjection": {
+          "invoices": [
+            {
+              "id": "i1",
+              "status": "Open"
+            }
+          ],
+          "payments": []
+        }
+      }
+    },
+    {
+      "id": "provider-success",
+      "input": {
+        "invoice": {
+          "id": "i1",
+          "status": "Open",
+          "totalMinor": 500
+        },
+        "providerResult": {
+          "tag": "ok",
+          "reference": "r1",
+          "amountMinor": 500
+        },
+        "paymentId": "p1"
+      },
+      "expected": {
+        "result": {
+          "tag": "ok",
+          "value": {
+            "paymentId": "p1"
+          }
+        },
+        "errorCode": null,
+        "stateProjection": {
+          "invoices": [
+            {
+              "id": "i1",
+              "status": "Paid"
+            }
+          ],
+          "payments": [
+            {
+              "id": "p1",
+              "invoiceId": "i1",
+              "amountMinor": 500
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

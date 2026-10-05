@@ -14,6 +14,8 @@ Exploratory external-agent evidence: [the subagent pilot](../reports/004-subagen
 
 Discovery and IR-foundation evidence: [Milestone 005](../reports/005-discovery-and-typed-ir.md), Release build with zero warnings/errors, 27 language groups/465 assertions, 53 discovery assertions, 8 IR verifier groups/37 assertions, all existing suites and 99 fresh-process persistence checks. Nine discovery commands are integrated. Lowering and vocabulary-analysis evidence is recorded in [milestone 006](../reports/006-ir-lowering-and-execution.md) and [milestone 007](../reports/007-vocabulary-analysis-foundation.md): full Release validation with 67 IR and 32 vocabulary assertions plus all existing suites and 99 persistence checks. Runtime still executes the AST. A 314-check baseline self-comparison validates parity infrastructure only. Runtime warnings and measured reuse metrics remain pending.
 
+Standalone backend and baseline-audit evidence: [milestone 008](../reports/008-standalone-ir-backend.md) and [milestone 009](../reports/009-experiment-baselines-and-task-bank.md), fresh full Release validation with zero warnings/errors, 185 harness, 69 IR, 36 formatter, 13 interpreter and 2,114 task-bank assertions, all existing suites and 99 persistence checks. Runtime cutover and executable benchmark trials remain pending.
+
 | Original section | Requirement / disposition | Current evidence and outstanding work |
 | --- | --- | --- |
 | 1 | Partial: small extensible typed environment | Runtime and words exist; complete values/providers/evaluation remain |
@@ -48,7 +50,7 @@ Discovery and IR-foundation evidence: [Milestone 005](../reports/005-discovery-a
 | 30 | Verified: small agent command interface foundation | Engine.Dispatch and Protocol; live LLM integration pending |
 | 31 | Design: suggested F# solution organization | Existing Core/CLI/Acceptance projects; add host/harness/domain boundaries as needed |
 | 32 | Partial: strongly typed internal concepts | Value/type/AST unions and closed ten-case IR effect union; source/runtime effect metadata still checked strings |
-| 33 | Partial: closed typed IR model, verifier and source lowerer | Current source forms lower with linked identity/type/effect/source/coverage checks; executable IR printing and interpreter cutover pending |
+| 33 | Partial: verified typed IR, lowering, standalone interpreter and formatter | Fixed primitive dispatch, snapshot-scoped nominal values, local execution bounds and structured inspection exist; Runtime integration and all-path parity remain pending |
 | 34 | Partial: bounded runtime and turnaround | Step/depth bounds exist; timing goals unmeasured |
 | 35 | Partial: small parser with spans/incomplete detection | Spans and interactive buffering; parse-stage API/incomplete classification pending |
 | 36 | Pending: parse/ast/types/ir stage debugging | Current ir accurately labels checked tree; richer stage representations pending |
@@ -72,11 +74,11 @@ Discovery and IR-foundation evidence: [Milestone 005](../reports/005-discovery-a
 | 54 | Partial: structural duplicate analysis | Stable-ID structural fingerprints and sorted candidates verified; commit warnings pending |
 | 55 | Partial: deprecate/rename/replace | Stable-ID semantic rename/deprecation and caller-gated implementation replacement verified; replace OLD NEW pending; frozen validator rename refused |
 | 56 | Verified: committed snapshot save/load | Hash integrity, project/provider restoration and retention of current host capabilities verified |
-| 57 | Partial: model-provider harness | Scripted/canned HTTP adapter, traces/usage/state/oracles verified; snapshot selection, conventional runner and live trials pending |
+| 57 | Partial: model-provider harness | Scripted/canned HTTP adapter, traces/usage/state/oracles and audited starting profiles with Growing lineage; snapshot selection, conventional runner and live trials pending |
 | 58 | Partial: compact system prompt | Mandatory compact primer and per-run prompt artifact verified; live usage pending |
 | 59 | Partial: small initial context strategy | Prompt avoids dictionary dump; full requests include retrieval history and byte caps, exact token accounting pending |
 | 60 | Partial: conventional tool baseline | Path-confined read/search/CAS edit/fixed validation tools verified; actual same-model comparison pending; validation is not an OS sandbox |
-| 61 | Pending: 60 deterministic benchmark tasks | 20 simple, 20 medium, 10 debugging, 10 refactoring and independent acceptance tests |
+| 61 | Partial: 60-task artifact bank | 20 simple, 20 medium, 10 debugging, 10 refactoring tasks and 180 proposed hidden cases; all execution adapters, matched fixtures, authenticated evidence and snapshot pins remain pending |
 | 62 | Partial: vocabulary-building task sequence | Initial premium demo; sequence and comparable costs pending |
 | 63 | Partial: CLI observability | task status/log, words and bounded graph; recent-words/metrics pending; GUI optional |
 | 64 | Verified: direct and transitive dependency graph | Stable closures, callbacks/refinement validator edges, cycle/reuse markers and explicit graph limits |
@@ -115,4 +117,4 @@ User addition: the typed semantic IR must become the authoritative executable re
 4. Full business fixture and independent acceptance suite, compact prompts, live pilot and conventional baseline.
 5. Freeze reproducible fixtures; run and report Flat/Growing/Conventional trials and context-budget variations.
 
-Each validated milestone gets a saved report and Git commit pushed to the private repository. Reports distinguish implemented behavior, directly observed tests, remaining requirements, and research findings. Live-provider usage may require account credentials; continue all independent implementation/validation while identifying that constraint, and never invent usage or benchmark outcomes.
+Each validated milestone includes updated saved reports in its Git commit, is pushed to the private repository, and is merged into main. Reports distinguish implemented behavior, directly observed tests, remaining requirements, and research findings. Live-provider usage may require account credentials; continue all independent implementation/validation while identifying that constraint, and never invent usage or benchmark outcomes.

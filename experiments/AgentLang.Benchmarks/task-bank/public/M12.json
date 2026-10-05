@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "M12",
+  "category": "medium",
+  "goal": "Propagate provider Error by stable code and leave invoice/payment state unchanged. Implement the named public operation and attach tests for the listed behavior. Inspect available vocabulary first and preserve unrelated behavior.",
+  "initialContext": "The host supplies a deterministic in-memory business fixture, task types, and runtime vocabulary when this task is executable. Follow the supplied field mappings and public contract; preserve unrelated behavior.",
+  "requiredPublicContract": {
+    "symbol": "payment.apply-result",
+    "signature": "Store PaymentId InvoiceId Money Result<PaymentReceipt, BusinessError> Instant -> Result<Store, BusinessError>",
+    "behavior": "Propagate provider Error by stable code and leave invoice/payment state unchanged."
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "M01",
+  "category": "medium",
+  "goal": "Search the full collection by ID; return the matching record or None without changing Store. Implement the named public operation and attach tests for the listed behavior. Inspect available vocabulary first and preserve unrelated behavior.",
+  "initialContext": "The host supplies a deterministic in-memory business fixture, task types, and runtime vocabulary when this task is executable. Follow the supplied field mappings and public contract; preserve unrelated behavior.",
+  "requiredPublicContract": {
+    "symbol": "store.subscription",
+    "signature": "Store SubscriptionId -> Option<Subscription>",
+    "behavior": "Search the full collection by ID; return the matching record or None without changing Store."
+  }
+}

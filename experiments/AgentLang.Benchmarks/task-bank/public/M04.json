@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "M04",
+  "category": "medium",
+  "goal": "Queue one reminder per eligible subscription; preserve FIFO and do not duplicate queued or sent reminders. Implement the named public operation and attach tests for the listed behavior. Inspect available vocabulary first and preserve unrelated behavior.",
+  "initialContext": "The host supplies a deterministic in-memory business fixture, task types, and runtime vocabulary when this task is executable. Follow the supplied field mappings and public contract; preserve unrelated behavior.",
+  "requiredPublicContract": {
+    "symbol": "store.renewal-reminders",
+    "signature": "Store Instant -> Store",
+    "behavior": "Queue one reminder per eligible subscription; preserve FIFO and do not duplicate queued or sent reminders."
+  }
+}

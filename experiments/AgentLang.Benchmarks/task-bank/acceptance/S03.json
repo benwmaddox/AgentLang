@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "taskId": "S03",
+  "vectorStatus": "proposed-pending-host-review",
+  "executionStatus": "pending",
+  "adapters": {
+    "agentlang": "pending",
+    "conventional": "pending",
+    "referenceCrossCheck": "pending"
+  },
+  "provenance": {
+    "status": "proposed-pending-host-review",
+    "basis": [
+      "docs/BUSINESS.md",
+      "experiments/AgentLang.Business/Business.fs",
+      "docs/BUSINESS-LANGUAGE-PLAN.md"
+    ],
+    "note": "Existing reference operations have not been run against this vector. New policy outcomes are proposals under the public contract."
+  },
+  "cases": [
+    {
+      "id": "active",
+      "input": {
+        "subscription": {
+          "status": "Active"
+        }
+      },
+      "expected": {
+        "result": true,
+        "errorCode": null,
+        "stateProjection": null
+      }
+    },
+    {
+      "id": "cancelled",
+      "input": {
+        "subscription": {
+          "status": "Cancelled"
+        }
+      },
+      "expected": {
+        "result": false,
+        "errorCode": null,
+        "stateProjection": null
+      }
+    },
+    {
+      "id": "cancelled-with-date",
+      "input": {
+        "subscription": {
+          "status": "Cancelled",
+          "cancelledAt": "2026-01-03T00:00:00+00:00"
+        }
+      },
+      "expected": {
+        "result": false,
+        "errorCode": null,
+        "stateProjection": null
+      }
+    }
+  ]
+}

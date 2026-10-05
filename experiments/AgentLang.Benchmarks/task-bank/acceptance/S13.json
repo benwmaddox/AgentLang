@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "taskId": "S13",
+  "vectorStatus": "proposed-pending-host-review",
+  "executionStatus": "pending",
+  "adapters": {
+    "agentlang": "pending",
+    "conventional": "pending",
+    "referenceCrossCheck": "pending"
+  },
+  "provenance": {
+    "status": "proposed-pending-host-review",
+    "basis": [
+      "docs/BUSINESS.md",
+      "experiments/AgentLang.Business/Business.fs",
+      "docs/BUSINESS-LANGUAGE-PLAN.md"
+    ],
+    "note": "Existing reference operations have not been run against this vector. New policy outcomes are proposals under the public contract."
+  },
+  "cases": [
+    {
+      "id": "exact-match",
+      "input": {
+        "requestedMinor": 500,
+        "receipt": {
+          "reference": "ref-1",
+          "amountMinor": 500
+        }
+      },
+      "expected": {
+        "result": true,
+        "errorCode": null,
+        "stateProjection": null
+      }
+    },
+    {
+      "id": "amount-mismatch",
+      "input": {
+        "requestedMinor": 500,
+        "receipt": {
+          "reference": "ref-1",
+          "amountMinor": 499
+        }
+      },
+      "expected": {
+        "result": false,
+        "errorCode": null,
+        "stateProjection": null
+      }
+    },
+    {
+      "id": "blank-reference",
+      "input": {
+        "requestedMinor": 500,
+        "receipt": {
+          "reference": " ",
+          "amountMinor": 500
+        }
+      },
+      "expected": {
+        "result": false,
+        "errorCode": null,
+        "stateProjection": null
+      }
+    }
+  ]
+}
