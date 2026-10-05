@@ -101,8 +101,26 @@ module FlowLint =
                                 let binding = newBinding name declarationSpan statementIndex
                                 analyzeExpression outerFrames visibleBindings statementIndex initializer
                                 visibleBindings <- Map.add name binding visibleBindings
+                            | FlowStatement.LetMany(pattern, initializer, _) ->
+                                // Reserve all diagnostics in source order before walking
+                                // the initializer, while keeping every new name hidden
+                                // until the complete initializer has been visited.
+                                let newBindings =
+                                    pattern
+                                    |> List.map (fun (name, declarationSpan) ->
+                                        name, newBinding name declarationSpan statementIndex)
+
+                                analyzeExpression outerFrames visibleBindings statementIndex initializer
+
+                                // Destructured names become visible together after the
+                                // initializer, and each binding keeps its own source span.
+                                for name, binding in newBindings do
+                                    visibleBindings <- Map.add name binding visibleBindings
                             | FlowStatement.Evaluate expression ->
-                                analyzeExpression outerFrames visibleBindings statementIndex expression)
+                                analyzeExpression outerFrames visibleBindings statementIndex expression
+                            | FlowStatement.Return(expressions, _) ->
+                                for expression in expressions do
+                                    analyzeExpression outerFrames visibleBindings statementIndex expression)
 
                 and analyzeExpression (outerFrames: ScopeFrame list) (localBindings: Map<string, BindingInfo>) statementIndex expression =
                     withinDepth (fun () ->

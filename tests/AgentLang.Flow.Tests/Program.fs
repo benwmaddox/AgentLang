@@ -210,7 +210,7 @@ let private testIterativeAstDepthLimit () =
     let hostWord body =
         { Name = "host-built.depth"
           Parameters = []
-          Output = TInt
+          Outputs = [ TInt ]
           Effects = Set.empty
           Documentation = ""
           Body = [ FlowStatement.Evaluate body ]
@@ -273,7 +273,7 @@ let private testIterativeAstDepthLimit () =
             Parameters = [ { Name = "value"; Type = tooDeepType; Span = sourceSpan } ] }
     expectLanguageError "word renderer bounds host-built parameter types" "FLOW_NESTING_LIMIT" (fun () -> FlowSource.renderWord tooDeepInputTypeWord |> ignore)
     expectLanguageError "word lowerer bounds host-built parameter types" "FLOW_NESTING_LIMIT" (fun () -> FlowLowering.lowerWord safeContext tooDeepInputTypeWord |> ignore)
-    let tooDeepOutputTypeWord = { hostWord (FlowExpression.Literal(LUnit, sourceSpan)) with Output = tooDeepType }
+    let tooDeepOutputTypeWord = { hostWord (FlowExpression.Literal(LUnit, sourceSpan)) with Outputs = [ tooDeepType ] }
     expectLanguageError "word renderer bounds host-built output types" "FLOW_NESTING_LIMIT" (fun () -> FlowSource.renderWord tooDeepOutputTypeWord |> ignore)
     expectLanguageError "word lowerer bounds host-built output types" "FLOW_NESTING_LIMIT" (fun () -> FlowLowering.lowerWord safeContext tooDeepOutputTypeWord |> ignore)
 
@@ -854,6 +854,414 @@ let private testLoweringAndExecution () =
          && second.Context.SourceOrigins.Count > first.Context.SourceOrigins.Count
          && (secondProgram.SourceMap |> Map.toList |> List.exists (fun (_, source) -> source.SiteOwner = Some(WordId "user-increment") && source.SiteSpan.Column < 1000)))
 
+let private testFlowOutputVectors () =
+    let context = loweringContext [] Map.empty
+    let splitSource =
+        """word vector.split(value: Int) -> (Int, String) {
+    effects none
+    return (value, "label")
+}"""
+    let splitWord = parseWord splitSource
+    equal "multi-output signature preserves its declared order" [ TInt; TString ] splitWord.Outputs
+    let splitCanonical = FlowSource.renderWord splitWord
+    equal "multi-output signature and Return round-trip deterministically" splitCanonical (splitCanonical |> parseWord |> FlowSource.renderWord)
+    let compiledSplit = FlowLowering.compileWord context (WordId "user-vector-split") splitWord
+
+    let invoke (compiled: FlowLowering.CompiledWord) body =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+            compiled.Context.CompilerContext
+            compiled.Program
+            "invoke-flow-vector"
+            []
+            body
+            compiled.Context.SourceOrigins
+
+    let reversed =
+        parseWord
+            """word vector.reversed(value: Int) -> (String, Int) {
+    effects none
+    let (number, label) = vector::split(value)
+    return (label, number)
+}"""
+    let reversedBindings =
+        reversed.Body
+        |> List.pick (function
+            | FlowStatement.LetMany(bindings, _, _) -> Some bindings
+            | _ -> None)
+    let compiledReversed = FlowLowering.compileWord compiledSplit.Context (WordId "user-vector-reversed") reversed
+    let reversedResult =
+        [ Push(LInt 7L, sourceSpan); Call("vector.reversed", sourceSpan) ]
+        |> invoke compiledReversed
+        |> IrInterpreter.executeBody (host (ResizeArray())) "vector-reversed"
+    equal "destructuring and explicit Return preserve and reorder output positions"
+        [ StringValue "label"; IntValue 7L ] reversedResult
+    for _, nameSpan in reversedBindings do
+        check "generated destructuring store retains its authored name span" (compiledReversed.SiteOrigins |> Map.exists (fun _ origin -> origin = nameSpan))
+    let returnSpans =
+        reversed.Body
+        |> List.pick (function
+            | FlowStatement.Return(values, _) ->
+                values
+                |> List.map (function
+                    | FlowExpression.Literal(_, source) | FlowExpression.Local(_, source) -> source
+                    | FlowExpression.Call(_, _, source) | FlowExpression.DotCall(_, _, _, source)
+                    | FlowExpression.If(_, _, _, source) | FlowExpression.Container(_, _, _, source)
+                    | FlowExpression.MatchOption(_, _, _, source) | FlowExpression.MatchResult(_, _, _, source) -> source)
+                |> Some
+            | _ -> None)
+    for memberSpan in returnSpans do
+        check "each Return member retains an authored source site" (compiledReversed.SiteOrigins |> Map.exists (fun _ origin -> origin = memberSpan))
+    check "Flow output source sites contain no private marker coordinates"
+        (compiledReversed.SiteOrigins |> Map.forall (fun _ origin -> origin.Column < 1000))
+
+    let genericDuplicate =
+        parseWord
+            """word vector.generic-duplicate(value: Int) -> (Int, Int) {
+    effects none
+    let (left, right) = dup(value)
+    return (right, left)
+}"""
+    let compiledGeneric = FlowLowering.compileWord compiledReversed.Context (WordId "user-vector-generic") genericDuplicate
+    equal "generic primitive output substitution is preserved"
+        [ IntValue 12L; IntValue 12L ]
+        ([ Push(LInt 12L, sourceSpan); Call("vector.generic-duplicate", sourceSpan) ]
+         |> invoke compiledGeneric
+         |> IrInterpreter.executeBody (host (ResizeArray())) "vector-generic-duplicate")
+
+    let afterBranch =
+        parseWord
+            """word vector.after-branch(value: Int) -> (Int, String) {
+    effects none
+    let (number, label) = if equals(value, 0) {
+        return (value, "zero")
+    } else {
+        return (value, "other")
+    };
+    let incremented = add(number, 1)
+    return (incremented, label)
+}"""
+    let compiledAfterBranch = FlowLowering.compileWord compiledGeneric.Context (WordId "user-vector-after-branch") afterBranch
+    let runAfterBranch value =
+        [ Push(LInt value, sourceSpan); Call("vector.after-branch", sourceSpan) ]
+        |> invoke compiledAfterBranch
+        |> IrInterpreter.executeBody (host (ResizeArray())) "vector-after-branch"
+    equal "If Return vectors bind before the enclosing block continues" [ IntValue 1L; StringValue "zero" ] (runAfterBranch 0L)
+    equal "the other If vector arm also continues with its bindings" [ IntValue 6L; StringValue "other" ] (runAfterBranch 5L)
+    let afterBranchCoverage = (VerifiedIrProgram.inspect compiledAfterBranch.Program).CoverageByWord[WordId "user-vector-after-branch"]
+    let ifOutcomes =
+        afterBranchCoverage.BranchOutcomes
+        |> Map.toList |> List.collect snd |> Set.ofList
+    equal "vector If keeps both existing coverage outcomes" (Set.ofList [ "true"; "false" ]) ifOutcomes
+
+    let optionPair =
+        parseWord
+            """word vector.option-pair(value: Option<Int>) -> (Int, String) {
+    effects none
+    let (number, label) = match value {
+        some item => { return (item, "some") }
+        none => { return (0, "none") }
+    };
+    return (number, label)
+}"""
+    let compiledOption = FlowLowering.compileWord compiledAfterBranch.Context (WordId "user-vector-option") optionPair
+    equal "Option match accepts equal output vectors"
+        [ IntValue 9L; StringValue "some" ]
+        ([ Push(LInt 9L, sourceSpan); ConstructContainer(OptionSome, [ TInt ], sourceSpan); Call("vector.option-pair", sourceSpan) ]
+         |> invoke compiledOption
+         |> IrInterpreter.executeBody (host (ResizeArray())) "vector-option-some")
+    equal "Option none arm returns its declared vector"
+        [ IntValue 0L; StringValue "none" ]
+        ([ ConstructContainer(OptionNone, [ TInt ], sourceSpan); Call("vector.option-pair", sourceSpan) ]
+         |> invoke compiledOption
+         |> IrInterpreter.executeBody (host (ResizeArray())) "vector-option-none")
+    let optionCoverage = (VerifiedIrProgram.inspect compiledOption.Program).CoverageByWord[WordId "user-vector-option"]
+    let optionOutcomes =
+        optionCoverage.BranchOutcomes
+        |> Map.toList |> List.collect snd |> Set.ofList
+    check "vector Option match retains both coverage outcomes" (Set.isSubset (Set.ofList [ "some"; "none" ]) optionOutcomes)
+
+    let resultPair =
+        parseWord
+            """word vector.result-pair(value: Result<Int, String>) -> (Int, String) {
+    effects none
+    let (number, label) = match value {
+        ok item => { return (item, "ok") }
+        error problem => { return (0, problem) }
+    };
+    return (number, label)
+}"""
+    let compiledResult = FlowLowering.compileWord compiledOption.Context (WordId "user-vector-result") resultPair
+    equal "Result ok arm returns its declared vector"
+        [ IntValue 8L; StringValue "ok" ]
+        ([ Push(LInt 8L, sourceSpan); ConstructContainer(ResultOk, [ TInt; TString ], sourceSpan); Call("vector.result-pair", sourceSpan) ]
+         |> invoke compiledResult
+         |> IrInterpreter.executeBody (host (ResizeArray())) "vector-result-ok")
+    equal "Result error arm returns its declared vector"
+        [ IntValue 0L; StringValue "failed" ]
+        ([ Push(LString "failed", sourceSpan); ConstructContainer(ResultError, [ TInt; TString ], sourceSpan); Call("vector.result-pair", sourceSpan) ]
+         |> invoke compiledResult
+         |> IrInterpreter.executeBody (host (ResizeArray())) "vector-result-error")
+    let resultCoverage = (VerifiedIrProgram.inspect compiledResult.Program).CoverageByWord[WordId "user-vector-result"]
+    let resultOutcomes =
+        resultCoverage.BranchOutcomes
+        |> Map.toList |> List.collect snd |> Set.ofList
+    check "vector Result match retains both coverage outcomes" (Set.isSubset (Set.ofList [ "ok"; "error" ]) resultOutcomes)
+
+    let effectfulPair =
+        parseWord
+            """word vector.effectful(value: Int) -> (Int, String) {
+    effects console.write
+    console::write("once")
+    return (value, "done")
+}"""
+    let compiledEffectful = FlowLowering.compileWord compiledResult.Context (WordId "user-vector-effectful") effectfulPair
+    let effectConsumer =
+        parseWord
+            """word vector.effect-consumer(value: Int) -> (Int, String) {
+    effects console.write
+    let (number, label) = vector::effectful(value)
+    return (number, label)
+}"""
+    let compiledEffectConsumer = FlowLowering.compileWord compiledEffectful.Context (WordId "user-vector-effect-consumer") effectConsumer
+    let effectEvents = ResizeArray<string>()
+    equal "effectful multi-output initializer yields every declared value"
+        [ IntValue 14L; StringValue "done" ]
+        ([ Push(LInt 14L, sourceSpan); Call("vector.effect-consumer", sourceSpan) ]
+         |> invoke compiledEffectConsumer
+         |> IrInterpreter.executeBody (host effectEvents) "vector-effect-consumer")
+    equal "effectful multi-output call executes exactly once" [ "once" ] (List.ofSeq effectEvents)
+
+    let scalarReturn =
+        parseWord
+            """word vector.scalar-return(value: Int) -> Int {
+    effects none
+    return value
+}"""
+    equal "scalar output declarations remain one-element vectors" [ TInt ] scalarReturn.Outputs
+    let scalarCanonical = FlowSource.renderWord scalarReturn
+    equal "unparenthesized scalar Return canonicalizes and round-trips" scalarCanonical (scalarCanonical |> parseWord |> FlowSource.renderWord)
+    let scalarCompiled = FlowLowering.compileWord compiledEffectConsumer.Context (WordId "user-vector-scalar") scalarReturn
+    equal "scalar Return executes as the legacy single result"
+        [ IntValue 3L ]
+        ([ Push(LInt 3L, sourceSpan); Call("vector.scalar-return", sourceSpan) ]
+         |> invoke scalarCompiled
+         |> IrInterpreter.executeBody (host (ResizeArray())) "vector-scalar-return")
+
+    let scalarContext = scalarCompiled.Context
+    let isolatedVector = parseExpression "dup(1)"
+    expectLanguageError "isolated Flow lowering requires exactly one result" "FLOW_CALL_OUTPUT_ARITY" (fun () ->
+        FlowLowering.lowerExpression scalarContext isolatedVector |> ignore)
+    expectLanguageError "isolated Flow checking rejects vector output" "FLOW_CALL_OUTPUT_ARITY" (fun () ->
+        FlowLowering.checkExpression scalarContext isolatedVector |> ignore)
+    expectLanguageError "isolated Flow compilation rejects vector output" "FLOW_CALL_OUTPUT_ARITY" (fun () ->
+        FlowLowering.compileExpression scalarContext isolatedVector |> ignore)
+    let scalarLetOfVector =
+        parseWord
+            """word vector.bad-scalar-let(value: Int) -> Int {
+    effects none
+    let only = dup(value)
+    only
+}"""
+    expectLanguageError "ordinary let is a scalar context" "FLOW_CALL_OUTPUT_ARITY" (fun () ->
+        FlowLowering.lowerWord scalarContext scalarLetOfVector |> ignore)
+    let partialDestructure =
+        parseWord
+            """word vector.partial(value: Int) -> Int {
+    effects none
+    let (only) = dup(value)
+    only
+}"""
+    expectLanguageError "destructuring must bind every output" "FLOW_DESTRUCTURE_ARITY" (fun () ->
+        FlowLowering.lowerWord scalarContext partialDestructure |> ignore)
+    let vectorInArgument =
+        parseWord
+            """word vector.scalar-argument(value: Int) -> Int {
+    effects none
+    add(vector::split(value), 1)
+}"""
+    expectLanguageError "multi-output call is rejected in an ordinary argument" "FLOW_CALL_OUTPUT_ARITY" (fun () ->
+        FlowLowering.lowerWord scalarContext vectorInArgument |> ignore)
+    let vectorAsReceiver =
+        parseWord
+            """word vector.scalar-receiver(value: Int) -> Int {
+    effects none
+    vector::split(value).abs()
+}"""
+    expectLanguageError "multi-output call is rejected as a dot receiver" "FLOW_CALL_OUTPUT_ARITY" (fun () ->
+        FlowLowering.lowerWord scalarContext vectorAsReceiver |> ignore)
+    let vectorAsPayload =
+        parseWord
+            """word vector.scalar-payload(value: Int) -> List<Int> {
+    effects none
+    list::singleton<Int>(vector::split(value))
+}"""
+    expectLanguageError "multi-output call is rejected as a container payload" "FLOW_CALL_OUTPUT_ARITY" (fun () ->
+        FlowLowering.lowerWord scalarContext vectorAsPayload |> ignore)
+
+    let vectorCandidate = wordEntry "second.lookup" [ TInt ] [ TInt; TString ] Set.empty [ Push(LString "label", sourceSpan) ]
+    let scalarCandidate = wordEntry "first.lookup" [ TInt ] [ TInt ] Set.empty [ Call("int.abs", sourceSpan) ]
+    let ambiguousContext = loweringContext [ scalarCandidate; vectorCandidate ] Map.empty
+    expectLanguageError "short-name ambiguity is resolved before scalar output arity filtering" "FLOW_AMBIGUOUS_CALL" (fun () ->
+        FlowLowering.checkExpression ambiguousContext (parseExpression "lookup(1)") |> ignore)
+
+    let badIfArity =
+        parseWord
+            """word vector.bad-if-arity(value: Int) -> Int {
+    effects none
+    let (left, right) = if true { return (1, 2) } else { return (1) }
+    left
+}"""
+    expectLanguageError "If arms must return vectors with equal arity" "FLOW_IF_BRANCH_TYPE" (fun () ->
+        FlowLowering.lowerWord scalarContext badIfArity |> ignore)
+    let badIfOrder =
+        parseWord
+            """word vector.bad-if-order(value: Int) -> Int {
+    effects none
+    let (left, right) = if true { return (1, "first") } else { return ("second", 1) }
+    left
+}"""
+    expectLanguageError "If arm output positions must have equal types" "FLOW_IF_BRANCH_TYPE" (fun () ->
+        FlowLowering.lowerWord scalarContext badIfOrder |> ignore)
+    let badOptionOrder =
+        parseWord
+            """word vector.bad-option(value: Option<Int>) -> Int {
+    effects none
+    let (left, right) = match value { some item => { return (item, "some") } none => { return ("none", 0) } }
+    left
+}"""
+    expectLanguageError "Option case output positions must have equal types" "FLOW_MATCH_BRANCH_TYPE" (fun () ->
+        FlowLowering.lowerWord scalarContext badOptionOrder |> ignore)
+    let badResultOrder =
+        parseWord
+            """word vector.bad-result(value: Result<Int, String>) -> Int {
+    effects none
+    let (left, right) = match value { ok item => { return (item, "ok") } error problem => { return (problem, 0) } }
+    left
+}"""
+    expectLanguageError "Result case output positions must have equal types" "FLOW_MATCH_BRANCH_TYPE" (fun () ->
+        FlowLowering.lowerWord scalarContext badResultOrder |> ignore)
+
+    let nominalContext = richTypeContext []
+    let nominalWord =
+        parseWord
+            """word vector.nominal(value: Email) -> (Email, String) {
+    effects none
+    return (value, Email::value(value))
+}"""
+    let compiledNominal = FlowLowering.compileWord nominalContext (WordId "user-vector-nominal") nominalWord
+    equal "strong nominal output positions survive vector compilation"
+        [ NamedValue("Email", StringValue "a@b"); StringValue "a@b" ]
+        ([ Push(LString "a@b", sourceSpan); Call("Email.new", sourceSpan); Call("vector.nominal", sourceSpan) ]
+         |> invoke compiledNominal
+         |> IrInterpreter.executeBody (host (ResizeArray())) "vector-nominal")
+    let badNominalOrder =
+        parseWord
+            """word vector.bad-nominal(value: Email) -> (Email, String) {
+    effects none
+    let (left, right) = if true { return (value, "label") } else { return ("label", value) }
+    return (left, right)
+}"""
+    expectLanguageError "nominal and base types cannot exchange vector positions" "FLOW_IF_BRANCH_TYPE" (fun () ->
+        FlowLowering.lowerWord compiledNominal.Context badNominalOrder |> ignore)
+
+    for source, code in
+        [ ("""word vector.empty-signature() -> () {
+    effects none
+    unit
+}""", "FLOW_OUTPUT_VECTOR_EMPTY");
+          ("""word vector.empty-pattern(value: Int) -> Int {
+    effects none
+    let () = value
+    value
+}""", "FLOW_DESTRUCTURE_EMPTY");
+          ("""word vector.underscore(value: Int) -> Int {
+    effects none
+    let (_, named) = dup(value)
+    named
+}""", "FLOW_DESTRUCTURE_NAME");
+          ("""word vector.duplicate-pattern(value: Int) -> Int {
+    effects none
+    let (same, same) = dup(value)
+    same
+}""", "FLOW_DESTRUCTURE_DUPLICATE");
+          ("""word vector.empty-return() -> Unit {
+    effects none
+    return ()
+}""", "FLOW_RETURN_EMPTY");
+          ("""word vector.trailing-return() -> Int {
+    effects none
+    return (1)
+    1
+}""", "FLOW_RETURN_NOT_TERMINAL");
+          ("""word vector.nested-trailing-return() -> Int {
+    effects none
+    if true { return (1); 1 } else { 1 }
+}""", "FLOW_RETURN_NOT_TERMINAL") ] do
+        expectError ("vector parser rejection " + code) code (FlowParser.parseWord "<invalid-vector>" source) |> ignore
+
+    let literal = FlowExpression.Literal(LInt 1L, sourceSpan)
+    let badNestedReturn =
+        FlowExpression.If(
+            FlowExpression.Literal(LBool true, sourceSpan),
+            [ FlowStatement.Return([ literal ], sourceSpan); FlowStatement.Evaluate literal ],
+            [ FlowStatement.Evaluate literal ],
+            sourceSpan)
+    let invalidNestedWord = { scalarReturn with Body = [ FlowStatement.Evaluate badNestedReturn ] }
+    for name, action in
+        [ "nested nonterminal Return renderer", fun () -> FlowSource.renderWord invalidNestedWord |> ignore
+          "nested nonterminal Return lowerer", fun () -> FlowLowering.lowerWord scalarContext invalidNestedWord |> ignore ] do
+        expectLanguageError name "FLOW_RETURN_NOT_TERMINAL" action
+    let emptyReturnWord = { scalarReturn with Body = [ FlowStatement.Return([], sourceSpan) ] }
+    expectLanguageError "empty host Return is rejected before render" "FLOW_RETURN_EMPTY" (fun () -> FlowSource.renderWord emptyReturnWord |> ignore)
+    expectLanguageError "empty host Return is rejected before lowering" "FLOW_RETURN_EMPTY" (fun () -> FlowLowering.lowerWord scalarContext emptyReturnWord |> ignore)
+    let emptyOutputWord = { scalarReturn with Outputs = [] }
+    expectLanguageError "empty host output declaration is rejected before render" "FLOW_OUTPUT_VECTOR_EMPTY" (fun () -> FlowSource.renderWord emptyOutputWord |> ignore)
+    expectLanguageError "empty host output declaration is rejected before lowering" "FLOW_OUTPUT_VECTOR_EMPTY" (fun () -> FlowLowering.lowerWord scalarContext emptyOutputWord |> ignore)
+    let badPatternWord =
+        { scalarReturn with
+            Body = [ FlowStatement.LetMany([ "_", sourceSpan; "named", sourceSpan ], literal, sourceSpan); FlowStatement.Evaluate literal ] }
+    expectLanguageError "host-built discard patterns fail closed before render" "FLOW_DESTRUCTURE_NAME" (fun () -> FlowSource.renderWord badPatternWord |> ignore)
+    expectLanguageError "host-built discard patterns fail closed before lowering" "FLOW_DESTRUCTURE_NAME" (fun () -> FlowLowering.lowerWord scalarContext badPatternWord |> ignore)
+    let duplicatePatternWord =
+        { scalarReturn with
+            Body = [ FlowStatement.LetMany([ "same", sourceSpan; "same", sourceSpan ], literal, sourceSpan); FlowStatement.Evaluate literal ] }
+    expectLanguageError "host-built duplicate patterns fail closed before render" "FLOW_DESTRUCTURE_DUPLICATE" (fun () -> FlowSource.renderWord duplicatePatternWord |> ignore)
+    expectLanguageError "host-built duplicate patterns fail closed before lowering" "FLOW_DESTRUCTURE_DUPLICATE" (fun () -> FlowLowering.lowerWord scalarContext duplicatePatternWord |> ignore)
+
+    let repeated = List.replicate 50001 literal
+    let returnBudgetExpression =
+        FlowExpression.If(
+            FlowExpression.Literal(LBool true, sourceSpan),
+            [ FlowStatement.Return(repeated, sourceSpan) ],
+            [ FlowStatement.Return(repeated, sourceSpan) ],
+            sourceSpan)
+    expectLanguageError "all vector Return members share one expanded-node budget" "FLOW_STRUCTURE_LIMIT" (fun () ->
+        FlowSource.renderExpression returnBudgetExpression |> ignore)
+    expectLanguageError "lowering shares the vector Return member budget" "FLOW_STRUCTURE_LIMIT" (fun () ->
+        FlowLowering.lowerExpression scalarContext returnBudgetExpression |> ignore)
+
+    let overLimit = FlowStructure.maxExpandedNodes + 1
+    let wideOutputsWord = { scalarReturn with Outputs = List.replicate overLimit TInt }
+    expectLanguageError "rendering streams output roots under the shared budget" "FLOW_STRUCTURE_LIMIT" (fun () ->
+        FlowSource.renderWord wideOutputsWord |> ignore)
+    expectLanguageError "lowering streams output roots under the shared budget" "FLOW_STRUCTURE_LIMIT" (fun () ->
+        FlowLowering.lowerWord scalarContext wideOutputsWord |> ignore)
+
+    let wideBindings = List.replicate overLimit ("duplicate", sourceSpan)
+    let wideBindingsWord =
+        { scalarReturn with
+            Body = [ FlowStatement.LetMany(wideBindings, literal, sourceSpan); FlowStatement.Evaluate literal ] }
+    expectLanguageError "rendering charges binding members before scanning names" "FLOW_STRUCTURE_LIMIT" (fun () ->
+        FlowSource.renderWord wideBindingsWord |> ignore)
+    expectLanguageError "lowering charges binding members before scanning names" "FLOW_STRUCTURE_LIMIT" (fun () ->
+        FlowLowering.lowerWord scalarContext wideBindingsWord |> ignore)
+
+    let wideBlockWord = { scalarReturn with Body = List.replicate overLimit (FlowStatement.Evaluate literal) }
+    expectLanguageError "rendering streams wide statement blocks under the shared budget" "FLOW_STRUCTURE_LIMIT" (fun () ->
+        FlowSource.renderWord wideBlockWord |> ignore)
+    expectLanguageError "lowering streams wide statement blocks under the shared budget" "FLOW_STRUCTURE_LIMIT" (fun () ->
+        FlowLowering.lowerWord scalarContext wideBlockWord |> ignore)
+
 let private testFlowDiagnostics () =
     let context = loweringContext [] Map.empty
     let ambiguous = parseExpression "1.unknown(2)"
@@ -884,6 +1292,7 @@ let main _ =
     testStaticListCallbacks ()
     testLoweringAndExecution ()
     testContainerAndMatchLowering ()
+    testFlowOutputVectors ()
     testFlowDiagnostics ()
     printfn "Flow tests passed: %d assertions" assertions
     0

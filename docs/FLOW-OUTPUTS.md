@@ -1,10 +1,21 @@
 # Flow output vectors and destructuring
 
-This document records the next opt-in Flow syntax slice. It is a design and acceptance contract; it does not wire Flow into Runtime, the protocol, or durable project storage.
+Status: the opt-in Flow AST, parser, renderer, and lowering support for output
+vectors is implemented. The Core Release build passed with zero warnings and
+errors, and the focused Flow suite passed with 261 assertions after one test
+fixture correction. Flow Lint passed 66 assertions, and the fresh 24-check
+Release gate passed; see report 030. Runtime/protocol attachment and durable project storage are outside
+this slice.
 
 ## Compatibility and syntax
 
-Extend `FlowWordDefinition` from one `Output` type to an ordered, nonempty `Outputs: LangType list`. Keep existing scalar declarations such as `-> Int` valid and render them the same way. Write multi-output signatures explicitly as `-> (Int, String)`. The parentheses mark a signature vector; they do not introduce tuple types or values. Empty output vectors are invalid. `Unit` remains an ordinary one-element output vector, so an effectful Unit-returning word still declares `-> Unit` and produces `unit` when a value is needed.
+`FlowWordDefinition` carries an ordered, nonempty `Outputs: LangType list`.
+Existing scalar declarations such as `-> Int` remain valid and render the same
+way. Write multi-output signatures explicitly as `-> (Int, String)`. The
+parentheses mark a signature vector; they do not introduce tuple types or
+values. Empty output vectors are invalid. `Unit` remains an ordinary one-element
+output vector, so an effectful Unit-returning word still declares `-> Unit` and
+produces `unit` when a value is needed.
 
 Add explicit vector binding and return forms:
 
@@ -23,7 +34,19 @@ word use(value: Int) -> String {
 
 `let (a, b) = expression` binds every output, in signature order. Its right side must produce exactly as many values as there are names. Each name must be a real, unique binding; `_` and partial destructuring are rejected. A one-output binding continues to use the existing `let name = expression` form.
 
-`return (a, b)` is a terminal result statement for the current lexical word, branch, or match-case block. It yields that block's result vector; it is not an early or nonlocal function exit. Thus, in `let (a, b) = if condition { return (1, 2) } else { return (3, 4) }`, the branch return supplies the `if` value, the `let` binds it, and execution continues with the next statement in the enclosing block. The return members are ordinary scalar expressions evaluated left to right; the parentheses do not create an expression-level tuple. The existing final scalar expression remains valid for one-output code. A multi-output call never spreads implicitly: bind all outputs with `let (...)` and then return the desired scalar expressions explicitly. Return vectors are nonempty, and a return followed by another statement in the same lexical block is invalid.
+`return expression` and `return (a, b)` are terminal result statements for the
+current lexical word, branch, or match-case block. A scalar expression is a
+one-element vector; the parenthesized form contains one or more scalar members.
+Return yields that block's result vector; it is not an early or nonlocal
+function exit. Thus, in `let (a, b) = if condition { return (1, 2) } else {
+return (3, 4) }`, the branch Return supplies the `if` value, the `let` binds it,
+and execution continues with the next statement in the enclosing block. Return
+members are ordinary scalar expressions evaluated left to right; parentheses do
+not create an expression-level tuple. The existing final scalar expression
+remains valid for one-output code. A multi-output call never spreads implicitly:
+bind all outputs with `let (...)` and then return the desired scalar
+expressions explicitly. Return vectors are nonempty, and a Return followed by
+another statement in the same lexical block is invalid.
 
 Flow is still pre-durable, so this additive grammar remains syntax version 1. Before stage 3 persists the first Flow source revision, freeze the grammar and version-selection contract and test it as a durable source-format contract.
 
@@ -42,7 +65,7 @@ Retain source provenance for each destructured name. Store an authored name span
 The implementation must update all exhaustive matches over Flow syntax:
 
 - `FlowSyntax.fs`: render output lists, parenthesized destructuring, and terminal return vectors, including nested branch and case blocks.
-- `FlowParser.fs`: parse scalar and vector signatures; parse binding and return vectors in both block readers; reject empty vectors, duplicate names, arity-incomplete patterns, and nonterminal returns; include every initializer and return member in `expressionsInStatements` and the iterative nesting traversal.
+- `FlowParser.fs`: parse scalar and vector signatures; parse binding and return vectors in both block readers; reject empty vectors, duplicate names, arity-incomplete patterns, and nonterminal returns; include every initializer and Return member in the iterative nesting traversal.
 - `FlowLowering.fs`: retain the scalar arity wrapper, add vector-aware call/output inference, infer terminal block vectors, require exact branch/case vector equality, validate the complete word output list, and lower stores in reverse stack order.
 - `FlowLint.fs`: visit every `LetMany` initializer before making its names visible, then register all bindings at that statement index; visit each return member at the return statement index. Lint remains advisory and does not rewrite the AST or source.
 - Flow and Flow-lint tests: update any hand-built AST fixtures to cover the new variants and source spans.

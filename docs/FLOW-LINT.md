@@ -24,15 +24,20 @@ locals are treated like locals introduced immediately before the first case
 statement. Formal parameters are deliberately excluded.
 
 An initializer is walked before its `let` name becomes visible, so self-reads
-do not count as uses of that binding. Reads of an outer local anywhere inside
-an `if` or `match` expression are attributed to the statement containing that
-expression. Locals declared inside a branch or case use that branch or case's
-own statement positions. Calls, dot-call receivers and arguments, constructors,
+do not count as uses of that binding. A vector binding walks its initializer
+before exposing any of its names, then makes all names visible together. Each
+binding keeps its own authored name span, and diagnostics retain pattern order.
+Reads of an outer local anywhere inside an `if` or `match` expression are
+attributed to the statement containing that expression. Locals declared inside
+a branch or case use that branch or case's own statement positions. Every member
+of a terminal `return (...)` vector is visited in order at the return statement's
+position; reads of outer locals in nested returns are attributed to the enclosing
+`if` or `match` statement. Calls, dot-call receivers and arguments, constructors,
 conditions, scrutinees, and payload expressions are all visited. Static callback
 word references are dictionary targets rather than local reads; their receivers
-are still visited. Match cases
-are traversed in source-span order; warnings otherwise follow syntax traversal
-order, so repeated analysis of the same tree returns the same results.
+are still visited. Match cases are traversed in source-span order; warnings
+otherwise follow syntax traversal order, so repeated analysis of the same tree
+returns the same results. Output signatures do not change lint behavior.
 
 The linter is syntax-only: it does not resolve call targets, infer effects, or
 judge whether a local is semantically used through runtime behavior. Directly

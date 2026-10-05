@@ -18,12 +18,41 @@ word customer.discounted-balance(customer: Customer) -> Float {
 }
 ```
 
-Definitions use named, typed parameters and one output. Locals are immutable;
-branches have lexical scope, and each branch must produce one value of the same
-type. A branch-local name cannot escape. Calls are ordinary statically resolved
+Definitions use named, typed parameters and an ordered, nonempty output vector.
+The existing scalar form `-> Int` remains canonical for one output; multiple
+outputs are written `-> (Int, String)`. These parentheses describe the output
+vector and do not introduce tuple values. Locals are immutable; branches have
+lexical scope, and each branch must produce the same output types in the same
+order. A branch-local name cannot escape. Calls are ordinary statically resolved
 word calls. `value.stage(args)` supplies `value` as the stage's first input and
 evaluates it once before explicit arguments. Calls and stages reject unresolved
 or ambiguous names instead of falling back to a different interpretation.
+
+Destructure every output at once with `let (...)`; each binding retains the
+source span of its name and stores values in reverse stack-pop order so the
+declared order is preserved:
+
+```text
+word split(value: Int) -> (Int, String) {
+    effects none
+    return (value, "label")
+}
+
+word use(value: Int) -> String {
+    effects none
+    let (number, label) = split(value)
+    return label
+}
+```
+
+`return value` and `return (first, second)` finish the current lexical block
+with one or more scalar results. A Return is terminal within its word, branch,
+or match-case block, but a branch Return supplies the value of its enclosing
+expression: a following statement after `let (...) = if ...` continues in the
+outer block. Ordinary `let`, argument, receiver, condition, payload, and
+isolated-expression positions still require exactly one output. Multi-output
+calls never spread implicitly. An effect-only statement should call a word
+whose signature declares the single output `Unit`.
 
 `map`, `filter`, and `each` also accept one static callback reference:
 
@@ -102,8 +131,8 @@ match renewal {
 }
 ```
 
-Each arm must return exactly one value, and both arms must return the same
-closed type. A payload name exists only inside its arm and cannot shadow an
+Each arm must return one or more values, and both arms must return the same
+closed output vector in the same order. A payload name exists only inside its arm and cannot shadow an
 outer local. Result arms may use the same spelling because their bindings are
 independent. Every arm is type-checked and contributes its calls and effects,
 even when a particular runtime value selects the other arm. Branch coverage
@@ -113,12 +142,16 @@ The parser accepts LF, CRLF, and lone-CR line endings and records spans from
 absolute UTF-16 source offsets. Parser safety limits are one million source
 code units, one hundred thousand tokens, one hundred thousand code units per
 quoted string, 128 expression/type nesting levels, and 100,000 expanded
-expression/type nodes per Flow expression or word. The completed expression
-AST is traversed iteratively before recursive lowering or rendering, so
-postfix receiver chains and nesting combined across calls, conditionals,
-matches, and container types share the same depth bound. The same structural
-check runs at public rendering and lowering entry points, so host-built Flow
-ASTs receive both bounds before any recursive traversal too.
+syntax nodes per Flow expression or word. The shared budget includes expression
+nodes, type nodes (including every declared output), each destructuring name,
+and every expression member in a return vector. The completed expression AST is
+traversed iteratively before recursive lowering or rendering, so postfix
+receiver chains and nesting combined across calls, conditionals, matches, and
+container types share the same depth bound. Signature roots, statement blocks,
+and binding names are streamed through this bounded walk rather than copied
+into an unbounded intermediate collection. The same structural check runs at
+public rendering and lowering entry points, so host-built Flow ASTs receive
+both bounds before any recursive traversal too.
 
 `FlowParser.parseWord` and `FlowParser.parseExpression` are explicit entry
 points. A Flow parse error never invokes the legacy parser. The source renderer

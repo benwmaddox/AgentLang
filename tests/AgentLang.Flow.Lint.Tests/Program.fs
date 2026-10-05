@@ -292,6 +292,107 @@ let private testStaticCallbacksAreNotLocalReads () =
     let ordinary = lint FlowLint.defaultOptions (source "normalize")
     equal "ordinary value argument retains its lexical local read" [] ordinary
 
+let private testVectorBindingVisibilityAndDiagnostics () =
+    let shadowingSource =
+        """word vector_shadow(value: Int) -> (Int, Int) {
+    effects none
+    let first = value;
+    let second = value;
+    let (first, second) = combine(first, second);
+    first
+}"""
+
+    let shadowingDefinition = parseWord shadowingSource
+    let shadowingWarnings =
+        match FlowLint.analyze FlowLint.defaultOptions shadowingDefinition with
+        | Ok warnings -> warnings
+        | Error error -> failwith $"Unexpected lint error {error.Code}: {error.Message}"
+    equal "vector initializer reads outer bindings before shadowing both names" [ "second" ] (shadowingWarnings |> List.map (fun warning -> warning.Binding))
+    equal "the unused shadow binding keeps its own declaration span" "FLOW_LOCAL_UNUSED" shadowingWarnings.Head.Code
+    let secondPatternSpan =
+        shadowingDefinition.Body
+        |> List.pick (function
+            | FlowStatement.LetMany(pattern, _, _) -> pattern |> List.tryPick (fun (name, sourceSpan) -> if name = "second" then Some sourceSpan else None)
+            | _ -> None)
+    equal "vector warning retains that binding's authored name span" secondPatternSpan shadowingWarnings.Head.DeclarationSpan
+
+    let unusedSource =
+        """word unused_pair(value: Int) -> Int {
+    effects none
+    let (left, right) = combine(value, value);
+    0
+}"""
+    let unusedWarnings = lint FlowLint.defaultOptions unusedSource
+    equal "both unused vector bindings are reported in declaration order" [ "left"; "right" ] (unusedWarnings |> List.map (fun warning -> warning.Binding))
+    check "each vector binding has its own source span" (unusedWarnings[0].DeclarationSpan <> unusedWarnings[1].DeclarationSpan)
+
+    let distanceSource =
+        """word vector_gap(value: Int) -> Int {
+    effects none
+    let (near, unused) = combine(value, value);
+    0;
+    near
+}"""
+    let distanceWarnings = lint { MaxInterveningStatements = Some 0 } distanceSource
+    equal "vector first-use and unused warnings follow declaration order" [ "near"; "unused" ] (distanceWarnings |> List.map (fun warning -> warning.Binding))
+    equal "vector binding uses the destructuring statement as its position" (Some 1) distanceWarnings.Head.Gap
+    equal "the first vector binding is distance warned" "FLOW_LOCAL_FIRST_USE_TOO_DISTANT" distanceWarnings.Head.Code
+    equal "the second vector binding remains unused" "FLOW_LOCAL_UNUSED" distanceWarnings[1].Code
+
+let private testNestedBranchReturnReads () =
+    let source =
+        """word branch_return(value: Int) -> Int {
+    effects none
+    let outer = value;
+    let returned = value;
+    0;
+    if true {
+        let branch = outer;
+        return (branch)
+    } else {
+        return (returned)
+    }
+}"""
+    let warnings = lint { MaxInterveningStatements = Some 0 } source
+    equal "outer reads in branch initialization and return members use enclosing positions" [ "outer"; "returned" ] (warnings |> List.map (fun warning -> warning.Binding))
+    equal "outer branch read is measured at its enclosing if statement" (Some 2) warnings[0].Gap
+    equal "branch-local value is read by its terminal Return member" "outer" warnings[0].Binding
+    equal "return member reads are attributed to their enclosing if statement" (Some 1) warnings[1].Gap
+    equal "return member source span is preserved" (Some 10) (warnings[1].FirstUseSpan |> Option.map (fun sourceSpan -> sourceSpan.Line))
+
+let private testReturnVectorReadsKeepDeclarationAndSourceOrderDistinct () =
+    let source =
+        """word return_pair(value: Int) -> (Int, Int) {
+    effects none
+    let alpha = value;
+    let beta = value;
+    0;
+    return (beta, alpha)
+}"""
+    let definition = parseWord source
+    let returnMembers =
+        definition.Body
+        |> List.pick (function
+            | FlowStatement.Return(expressions, _) ->
+                expressions
+                |> List.choose (function
+                    | FlowExpression.Local(name, sourceSpan) -> Some(name, sourceSpan)
+                    | _ -> None)
+                |> Some
+            | _ -> None)
+        |> Map.ofList
+
+    let warnings =
+        match FlowLint.analyze { MaxInterveningStatements = Some 0 } definition with
+        | Ok values -> values
+        | Error error -> failwith $"Unexpected lint error {error.Code}: {error.Message}"
+
+    equal "return vector warnings retain declaration order instead of member order" [ "alpha"; "beta" ] (warnings |> List.map (fun warning -> warning.Binding))
+    equal "both return vector members receive distance warnings" [ "FLOW_LOCAL_FIRST_USE_TOO_DISTANT"; "FLOW_LOCAL_FIRST_USE_TOO_DISTANT" ] (warnings |> List.map (fun warning -> warning.Code))
+    equal "alpha warning uses alpha's later written return-member span" (Some(returnMembers["alpha"])) warnings[0].FirstUseSpan
+    equal "beta warning uses beta's earlier written return-member span" (Some(returnMembers["beta"])) warnings[1].FirstUseSpan
+    check "written Return member order differs from warning declaration order" (returnMembers["beta"].Column < returnMembers["alpha"].Column)
+
 [<EntryPoint>]
 let main _ =
     testDefaultThresholdAndDisableOption ()
@@ -305,5 +406,8 @@ let main _ =
     testLargeFlatBlock ()
     testTraversalLimitIsStructured ()
     testStaticCallbacksAreNotLocalReads ()
+    testVectorBindingVisibilityAndDiagnostics ()
+    testNestedBranchReturnReads ()
+    testReturnVectorReadsKeepDeclarationAndSourceOrderDistinct ()
     printfn $"AgentLang.Flow.Lint.Tests: {assertions} assertions passed."
     0

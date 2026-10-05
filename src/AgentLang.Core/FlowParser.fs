@@ -318,25 +318,78 @@ module FlowParser =
     and private parseBlock state =
         withDepth state (fun () ->
             expect state "{" |> ignore
-            let statements = ResizeArray<FlowStatement>()
-            while peek state <> Some "}" && not (atEnd state) do
-                let start = current state |> Option.get
-                let statement =
-                    if accept state "let" then
-                        let name = expectIdentifier state
-                        expect state "=" |> ignore
-                        let value = parseExpressionState state
-                        FlowStatement.Let(name.Text, value, sourceSpan state.File start (previous state))
-                    else FlowStatement.Evaluate(parseExpressionState state)
-                statements.Add statement
-                if accept state ";" then ()
-                else
-                    match current state, previous state with
-                    | Some next, Some last when next.Text <> "}" && next.Line <= last.Line ->
-                        fail state.File next.Line next.Column next.Text.Length "FLOW_EXPECTED_SEPARATOR" "Statements on one line must be separated by ';'."
-                    | _ -> ()
+            let statements = parseBlockStatements state
             expect state "}" |> ignore
-            List.ofSeq statements)
+            statements)
+
+    and private parseBlockStatements state =
+        let statements = ResizeArray<FlowStatement>()
+        while peek state <> Some "}" && not (atEnd state) do
+            let statement = parseStatement state
+            statements.Add statement
+            if accept state ";" then ()
+            else
+                match current state, previous state with
+                | Some next, Some last when next.Text <> "}" && next.Line <= last.Line ->
+                    fail state.File next.Line next.Column next.Text.Length "FLOW_EXPECTED_SEPARATOR" "Statements on one line must be separated by ';'."
+                | _ -> ()
+        let values = List.ofSeq statements
+        values
+        |> List.indexed
+        |> List.iter (fun (index, statement) ->
+            match statement with
+            | FlowStatement.Return(_, span) when index <> values.Length - 1 ->
+                fail span.File span.Line span.Column span.Length "FLOW_RETURN_NOT_TERMINAL" "A return vector must be the final statement in its lexical block."
+            | _ -> ())
+        values
+
+    and private parseStatement state =
+        let start = current state |> Option.defaultWith (fun () -> tokenError state "FLOW_INCOMPLETE_INPUT" "Expected a Flow statement.")
+        if accept state "let" then
+            if accept state "(" then
+                let bindings = ResizeArray<string * SourceSpan>()
+                if peek state = Some ")" then
+                    tokenError state "FLOW_DESTRUCTURE_EMPTY" "A destructuring binding must name every output."
+                let mutable more = true
+                while more do
+                    let name = expectIdentifier state
+                    bindings.Add(name.Text, sourceSpan state.File name (Some name))
+                    if accept state "," then
+                        if peek state = Some ")" then tokenError state "FLOW_DESTRUCTURE_ARITY" "A destructuring pattern cannot end with a missing name."
+                    else more <- false
+                expect state ")" |> ignore
+                let names = bindings |> Seq.map fst |> Seq.toList
+                if names |> List.exists ((=) "_") then
+                    let name, nameSpan = bindings |> Seq.find (fun (name, _) -> name = "_")
+                    fail state.File nameSpan.Line nameSpan.Column nameSpan.Length "FLOW_DESTRUCTURE_NAME" "'_' is not a discard pattern; every output must have a named local."
+                match names |> List.countBy id |> List.tryFind (fun (_, count) -> count > 1) with
+                | Some(duplicate, _) ->
+                    let _, duplicateSpan = bindings |> Seq.find (fun (name, _) -> name = duplicate)
+                    fail state.File duplicateSpan.Line duplicateSpan.Column duplicateSpan.Length "FLOW_DESTRUCTURE_DUPLICATE" $"Destructuring local '{duplicate}' is repeated."
+                | None -> ()
+                expect state "=" |> ignore
+                let value = parseExpressionState state
+                FlowStatement.LetMany(List.ofSeq bindings, value, sourceSpan state.File start (previous state))
+            else
+                let name = expectIdentifier state
+                expect state "=" |> ignore
+                let value = parseExpressionState state
+                FlowStatement.Let(name.Text, value, sourceSpan state.File start (previous state))
+        elif accept state "return" then
+            let values = ResizeArray<FlowExpression>()
+            if accept state "(" then
+                if peek state = Some ")" then
+                    tokenError state "FLOW_RETURN_EMPTY" "A return vector must contain at least one scalar expression."
+                let mutable more = true
+                while more do
+                    values.Add(parseExpressionState state)
+                    if accept state "," then
+                        if peek state = Some ")" then tokenError state "FLOW_RETURN_VALUE_REQUIRED" "A return vector cannot end with a missing value."
+                    else more <- false
+                expect state ")" |> ignore
+            else values.Add(parseExpressionState state)
+            FlowStatement.Return(List.ofSeq values, sourceSpan state.File start (previous state))
+        else FlowStatement.Evaluate(parseExpressionState state)
 
     and private parseConstructor state startToken kind =
         if not (accept state "<") then
@@ -542,7 +595,21 @@ module FlowParser =
             | Some(name, _) -> fail state.File nameSpan.Line nameSpan.Column nameSpan.Length "FLOW_DUPLICATE_PARAMETER" $"Parameter '{name}' is declared more than once."
             | None -> ()
             expect state "->" |> ignore
-            let output = parseType state
+            let outputs =
+                if accept state "(" then
+                    let openToken = previous state |> Option.get
+                    if peek state = Some ")" then
+                        let closeToken = current state |> Option.get
+                        fail state.File openToken.Line openToken.Column (closeToken.Offset + closeToken.Text.Length - openToken.Offset)
+                            "FLOW_OUTPUT_VECTOR_EMPTY" "A word must declare at least one output type."
+                    let values = ResizeArray<LangType>()
+                    values.Add(parseType state)
+                    while accept state "," do
+                        if peek state = Some ")" then tokenError state "FLOW_OUTPUT_TYPE_REQUIRED" "An output vector cannot end with a missing type."
+                        values.Add(parseType state)
+                    expect state ")" |> ignore
+                    List.ofSeq values
+                else [ parseType state ]
             expect state "{" |> ignore
             let mutable effects = None
             let mutable documentation = ""
@@ -570,7 +637,7 @@ module FlowParser =
             let span = sourceSpan state.File wordToken (Some endToken)
             { Name = name
               Parameters = List.ofSeq parameters
-              Output = output
+              Outputs = outputs
               Effects = declaredEffects
               Documentation = documentation
               Body = body
@@ -579,24 +646,7 @@ module FlowParser =
               SyntaxVersion = 1 })
 
     and private parseBlockBody state =
-        let statements = ResizeArray<FlowStatement>()
-        while peek state <> Some "}" && not (atEnd state) do
-            let start = current state |> Option.get
-            let statement =
-                if accept state "let" then
-                    let name = expectIdentifier state
-                    expect state "=" |> ignore
-                    let value = parseExpressionState state
-                    FlowStatement.Let(name.Text, value, sourceSpan state.File start (previous state))
-                else FlowStatement.Evaluate(parseExpressionState state)
-            statements.Add statement
-            if accept state ";" then ()
-            else
-                match current state, previous state with
-                | Some next, Some last when next.Text <> "}" && next.Line <= last.Line ->
-                    fail state.File next.Line next.Column next.Text.Length "FLOW_EXPECTED_SEPARATOR" "Statements on one line must be separated by ';'."
-                | _ -> ()
-        List.ofSeq statements
+        parseBlockStatements state
 
     let parseExpression file source =
         try

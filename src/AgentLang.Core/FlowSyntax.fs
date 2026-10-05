@@ -42,7 +42,9 @@ and [<RequireQualifiedAccess>] FlowArgument =
 
 and [<RequireQualifiedAccess>] FlowStatement =
     | Let of string * FlowExpression * SourceSpan
+    | LetMany of (string * SourceSpan) list * FlowExpression * SourceSpan
     | Evaluate of FlowExpression
+    | Return of FlowExpression list * SourceSpan
 
 and FlowCaseBlock =
     { Statements: FlowStatement list
@@ -59,12 +61,10 @@ type FlowParameter =
       Type: LangType
       Span: SourceSpan }
 
-/// The first frontend slice deliberately has one output. Explicit destructuring
-/// for multiple outputs is a later grammar extension.
 type FlowWordDefinition =
     { Name: string
       Parameters: FlowParameter list
-      Output: LangType
+      Outputs: LangType list
       Effects: Set<string>
       Documentation: string
       Body: FlowStatement list
@@ -114,22 +114,43 @@ module FlowStructure =
         | FlowExpression.MatchOption(_, _, _, span)
         | FlowExpression.MatchResult(_, _, _, span) -> span
 
-    let private validateStructure (expressionRoots: FlowExpression list) (typeRoots: (LangType * SourceSpan) list) (statementRoots: FlowStatement list) =
+    let private validateStructure (expressionRoots: FlowExpression list) (typeRoots: seq<LangType * SourceSpan>) (statementRoots: FlowStatement list) =
         let pending = Stack<Node>()
         let mutable scheduledNodes = 0
-        let schedule node source =
+        let charge source =
             if scheduledNodes >= maxExpandedNodes then
                 Diagnostics.raiseError "FLOW_STRUCTURE_LIMIT" $"Flow syntax exceeds the expanded structural-node budget of {maxExpandedNodes}." None (Some source) [] []
             scheduledNodes <- scheduledNodes + 1
+
+        let schedule node source =
+            charge source
             pending.Push node
         for expression in expressionRoots do schedule (ExpressionNode(expression, 1)) (expressionSpan expression)
         for typeValue, source in typeRoots do schedule (TypeNode(typeValue, 1, source)) source
+
+        let validateBindings bindings span =
+            if List.isEmpty bindings then
+                Diagnostics.raiseError "FLOW_DESTRUCTURE_EMPTY" "A destructuring binding must name every output." None (Some span) [ "one or more names" ] []
+
+            // Binding names are structural nodes too. Charge them in a first
+            // streaming pass so oversized host-built patterns fail before
+            // allocating a name list/set or scanning for duplicates.
+            for _, nameSpan in bindings do charge nameSpan
+
+            let names = HashSet<string>(System.StringComparer.Ordinal)
+            for name, nameSpan in bindings do
+                if System.String.IsNullOrEmpty name || name = "_" then
+                    Diagnostics.raiseError "FLOW_DESTRUCTURE_NAME" "Destructuring names must be real local names; '_' is not a discard pattern." None (Some nameSpan) [ "named local" ] [ name ]
+                elif not (names.Add name) then
+                    Diagnostics.raiseError "FLOW_DESTRUCTURE_DUPLICATE" $"Destructuring local '{name}' is repeated." None (Some nameSpan) [] [ name ]
+
         let scheduleStatement depth statement =
-            let expression =
-                match statement with
-                | FlowStatement.Let(_, value, _) | FlowStatement.Evaluate value -> value
-            schedule (ExpressionNode(expression, depth)) (expressionSpan expression)
-        for statement in statementRoots do scheduleStatement 1 statement
+            match statement with
+            | FlowStatement.Let(_, value, _)
+            | FlowStatement.LetMany(_, value, _)
+            | FlowStatement.Evaluate value -> schedule (ExpressionNode(value, depth)) (expressionSpan value)
+            | FlowStatement.Return(values, _) ->
+                for value in values do schedule (ExpressionNode(value, depth)) (expressionSpan value)
         let scheduleArguments depth arguments =
             for argument in arguments do
                 match argument with
@@ -137,7 +158,27 @@ module FlowStructure =
                 | FlowArgument.Named(_, expression, _) -> schedule (ExpressionNode(expression, depth)) (expressionSpan expression)
                 | FlowArgument.WordReference _ -> ()
         let scheduleStatements depth statements =
-            for statement in statements do scheduleStatement depth statement
+            let validateStatement isTerminal statement =
+                match statement with
+                | FlowStatement.LetMany(bindings, _, span) -> validateBindings bindings span
+                | FlowStatement.Return(values, span) when List.isEmpty values ->
+                    Diagnostics.raiseError "FLOW_RETURN_EMPTY" "A return vector must contain at least one scalar expression." None (Some span) [ "one or more values" ] []
+                | FlowStatement.Return(_, span) when not isTerminal ->
+                    Diagnostics.raiseError "FLOW_RETURN_NOT_TERMINAL" "A return vector must be the final statement in its lexical block." None (Some span) [ "terminal return" ] [ "following statement" ]
+                | _ -> ()
+
+            let rec scheduleRemaining remaining =
+                match remaining with
+                | [] -> ()
+                | statement :: following ->
+                    validateStatement (List.isEmpty following) statement
+                    scheduleStatement depth statement
+                    scheduleRemaining following
+
+            // Inspect one statement at a time. In particular, do not index or
+            // copy an entire attacker-sized block before charging its nodes.
+            scheduleRemaining statements
+        scheduleStatements 1 statementRoots
         let scheduleType depth typeValue source = schedule (TypeNode(typeValue, depth, source)) source
         while pending.Count > 0 do
             match pending.Pop() with
@@ -179,12 +220,18 @@ module FlowStructure =
                     scheduleStatements (depth + 1) errorCase.Statements
 
     let validateExpressionNesting (roots: FlowExpression list) =
-        validateStructure roots [] []
+        validateStructure roots Seq.empty []
 
     let validateWordNesting (definition: FlowWordDefinition) =
+        if List.isEmpty definition.Outputs then
+            Diagnostics.raiseError "FLOW_OUTPUT_VECTOR_EMPTY" "A Flow word must declare at least one output." (Some definition.Name) (Some definition.Span) [ "one or more output types" ] []
         let typeRoots =
-            (definition.Parameters |> List.map (fun parameter -> parameter.Type, parameter.Span))
-            @ [ definition.Output, definition.Span ]
+            seq {
+                for parameter in definition.Parameters do
+                    yield parameter.Type, parameter.Span
+                for output in definition.Outputs do
+                    yield output, definition.Span
+            }
         validateStructure [] typeRoots definition.Body
 
 /// Deterministic rendering for inspection and tests. Durable source storage is
@@ -252,7 +299,12 @@ module FlowSource =
             let suffix = if index < statements.Length - 1 then ";" else ""
             match statement with
             | FlowStatement.Let(name, value, _) -> indent depth + "let " + name + " = " + renderInlineExpression value + suffix
-            | FlowStatement.Evaluate value -> renderExpressionAt depth value + suffix)
+            | FlowStatement.LetMany(bindings, value, _) ->
+                let names = bindings |> List.map fst |> String.concat ", "
+                indent depth + "let (" + names + ") = " + renderInlineExpression value + suffix
+            | FlowStatement.Evaluate value -> renderExpressionAt depth value + suffix
+            | FlowStatement.Return(values, _) ->
+                indent depth + "return (" + (values |> List.map renderInlineExpression |> String.concat ", ") + ")" + suffix)
 
     and private renderContainer kind typeArguments payload =
         let name =
@@ -288,7 +340,11 @@ module FlowSource =
             |> String.concat ", "
         let effects = if Set.isEmpty definition.Effects then "none" else definition.Effects |> Set.toList |> String.concat ", "
         let lines = ResizeArray<string>()
-        lines.Add($"word {definition.Name}({parameters}) -> {Types.format definition.Output} {{")
+        let outputs =
+            match definition.Outputs with
+            | [ output ] -> Types.format output
+            | values -> "(" + (values |> List.map Types.format |> String.concat ", ") + ")"
+        lines.Add($"word {definition.Name}({parameters}) -> {outputs} {{")
         lines.Add("    effects " + effects)
         if not (System.String.IsNullOrEmpty definition.Documentation) then lines.Add("    doc " + JsonSerializer.Serialize(definition.Documentation))
         renderStatements 1 definition.Body |> List.iter lines.Add
