@@ -1,0 +1,7 @@
+{
+  "chunk_id": "1a530f",
+  "wall_time_seconds": 3.9364353,
+  "exit_code": 0,
+  "original_token_count": 135,
+  "output": "PASS closed effect vocabulary\r\nPASS concrete primitive specializations\r\nPASS closed container constructors\r\nPASS structured branches and coverage\r\nPASS closed synthetic source classifications\r\nPASS Option and Result payload scope\r\nPASS generated record and scalar operations\r\nPASS static callbacks and effects\r\nPASS identity and call-graph guards\r\nPASS flat verifier stack safety\r\nPASS compiler lowering and detached bodies\r\nPASS attached Flow source origins\r\nPASS compiler snapshot identity\r\nAgentLang.IR.Tests: 102 assertions passed.\r\n"
+}

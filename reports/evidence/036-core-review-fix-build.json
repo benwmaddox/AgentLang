@@ -1,0 +1,16 @@
+{
+  "initial": {
+    "chunk_id": "60c516",
+    "wall_time_seconds": 10.0142915,
+    "session_id": 79202,
+    "original_token_count": 21,
+    "output": "  Determining projects to restore...\r\n  All projects are up-to-date for restore.\r\n"
+  },
+  "terminal": {
+    "chunk_id": "8d9f1d",
+    "wall_time_seconds": 0.0000086,
+    "exit_code": 0,
+    "original_token_count": 45,
+    "output": "  AgentLang.Core -> D:\\code\\AgentLang\\src\\AgentLang.Core\\bin\\Release\\net9.0\\AgentLang.Core.dll\r\n\r\nBuild succeeded.\r\n    0 Warning(s)\r\n    0 Error(s)\r\n\r\nTime Elapsed 00:00:10.74\r\n"
+  }
+}

@@ -39,20 +39,52 @@ module FlowLowering =
           Body: VerifiedIrBody
           SiteOrigins: Map<SourceSiteId, SourceSpan> }
 
+    /// Host-supplied revision intent for one word in an atomic Flow batch.
+    /// Additions must use a previously unused stable ID and a nonnegative revision.
+    /// Replacements preserve the existing ID and entry metadata while advancing
+    /// the host-owned revision.
+    [<RequireQualifiedAccess>]
+    type FlowWordRevisionIntent =
+        | Add of WordId * revision: int
+        | Replace of WordId * expectedRevision: int * revision: int
+
+    type FlowWordChange =
+        { Definition: FlowWordDefinition
+          RevisionIntent: FlowWordRevisionIntent }
+
+    type FlowBatchCompilation =
+        { LoweredWords: FlowLoweredWord list
+          Context: Context
+          Program: VerifiedIrProgram
+          SiteOrigins: Map<SourceSiteId, SourceSpan> }
+
     type private Binding =
         { InternalName: string
           Type: LangType }
+
+    [<RequireQualifiedAccess>]
+    type private SignatureKind =
+        | TrustedPrimitive of string
+        | Generated of Builtin
+        | UserWord
+
+    type private Candidate =
+        { Name: string
+          Inputs: LangType list
+          Outputs: LangType list
+          Effects: Set<string>
+          Kind: SignatureKind
+          ParameterNames: string list option
+          Identity: WordId option
+          Revision: int
+          Span: SourceSpan }
 
     type private LoweringState =
         { mutable NextTemporary: int
           mutable NextSyntheticMarker: int64
           mutable AuthoredSpans: Set<SourceSpan>
-          mutable SyntheticOrigins: Map<SourceSpan, SourceSpan> }
-
-    type private Candidate =
-        { Name: string
-          Entry: WordEntry
-          ParameterNames: string list option }
+          mutable SyntheticOrigins: Map<SourceSpan, SourceSpan>
+          Signatures: Map<string, Candidate> }
 
     [<RequireQualifiedAccess>]
     type private ListCallbackOperation =
@@ -91,19 +123,6 @@ module FlowLowering =
         | FlowExpression.MatchOption(_, _, _, span)
         | FlowExpression.MatchResult(_, _, _, span) -> span
 
-    let private freshState (retainedOrigins: Map<SourceSpan, SourceSpan>) =
-        let highestRetainedIndex =
-            retainedOrigins
-            |> Map.toSeq
-            |> Seq.choose (fun (marker, _) ->
-                if marker.Length = 0 && marker.Column > 0 then Some(int64 Int32.MaxValue - int64 marker.Column)
-                else None)
-            |> Seq.fold max -1L
-        { NextTemporary = 0
-          NextSyntheticMarker = highestRetainedIndex + 1L
-          AuthoredSpans = Set.empty
-          SyntheticOrigins = Map.empty }
-
     let private rememberSpan state span =
         state.AuthoredSpans <- Set.add span state.AuthoredSpans
 
@@ -141,42 +160,70 @@ module FlowLowering =
             |> Option.map (fun definition -> definition.Fields |> List.map (fun field -> field.Name))
         | _ -> context.ParameterNames.TryFind name
 
-    let private candidatesFor (context: Context) requestedName =
-        let words = context.CompilerContext.Words
+    let private candidateFromEntry (context: Context) name (entry: WordEntry) =
+        let kind =
+            match entry.Builtin with
+            | Some(BuiltinOp operation) -> SignatureKind.TrustedPrimitive operation
+            | Some generated -> SignatureKind.Generated generated
+            | None -> SignatureKind.UserWord
+        { Name = name
+          Inputs = entry.Definition.Inputs
+          Outputs = entry.Definition.Outputs
+          Effects = entry.Definition.Effects
+          Kind = kind
+          ParameterNames = entryParameterNames context name entry
+          Identity = context.CompilerContext.WordIds.TryFind name
+          Revision = entry.Revision
+          Span = entry.Definition.Span }
+
+    let private signatureCatalog (context: Context) =
+        context.CompilerContext.Words
+        |> Map.map (candidateFromEntry context)
+
+    let private freshStateWith (retainedOrigins: Map<SourceSpan, SourceSpan>) signatures =
+        let highestRetainedIndex =
+            retainedOrigins
+            |> Map.toSeq
+            |> Seq.choose (fun (marker, _) ->
+                if marker.Length = 0 && marker.Column > 0 then Some(int64 Int32.MaxValue - int64 marker.Column)
+                else None)
+            |> Seq.fold max -1L
+        { NextTemporary = 0
+          NextSyntheticMarker = highestRetainedIndex + 1L
+          AuthoredSpans = Set.empty
+          SyntheticOrigins = Map.empty
+          Signatures = signatures }
+
+    let private freshState (context: Context) =
+        freshStateWith context.SourceOrigins (signatureCatalog context)
+
+    let private candidatesFor (state: LoweringState) (context: Context) requestedName =
         let generatedTypeCandidates =
             let matchingType =
                 context.CompilerContext.Records.ContainsKey requestedName
                 || context.CompilerContext.Scalars.ContainsKey requestedName
             if not matchingType then []
             else
-                words
+                state.Signatures
                 |> Map.toList
-                |> List.choose (fun (name, entry) ->
-                    match entry.Builtin with
-                    | Some(RecordConstructor typeName) when typeName = requestedName -> Some(name, entry)
-                    | Some(ScalarConstructor typeName) when typeName = requestedName -> Some(name, entry)
+                |> List.choose (fun (name, candidate) ->
+                    match candidate.Kind with
+                    | SignatureKind.Generated(RecordConstructor typeName) when typeName = requestedName -> Some(name, candidate)
+                    | SignatureKind.Generated(ScalarConstructor typeName) when typeName = requestedName -> Some(name, candidate)
                     | _ -> None)
         let namedCandidates =
             if requestedName.Contains('.') then
-                words.TryFind requestedName |> Option.map (fun entry -> [ requestedName, entry ]) |> Option.defaultValue []
+                state.Signatures.TryFind requestedName |> Option.map (fun candidate -> [ requestedName, candidate ]) |> Option.defaultValue []
             else
-                words
+                state.Signatures
                 |> Map.toList
                 |> List.filter (fun (name, _) -> shortName name = requestedName)
-        let all = List.distinctBy fst (generatedTypeCandidates @ namedCandidates)
-        all
-        |> List.map (fun (name, entry) ->
-            { Name = name
-              Entry = entry
-              ParameterNames = entryParameterNames context name entry })
+        List.distinctBy fst (generatedTypeCandidates @ namedCandidates)
+        |> List.map snd
         |> List.sortBy (fun candidate -> candidate.Name)
 
-    let private exactCandidateFor (context: Context) name =
-        context.CompilerContext.Words.TryFind name
-        |> Option.map (fun entry ->
-            { Name = name
-              Entry = entry
-              ParameterNames = entryParameterNames context name entry })
+    let private exactCandidateFor (state: LoweringState) name =
+        state.Signatures.TryFind name
 
     let private validateClosedTypeArgument (context: Context) (argument: FlowTypeArgument) =
         let known = knownTypes context
@@ -282,24 +329,17 @@ module FlowLowering =
             fail "FLOW_CALLBACK_REFERENCE_SHAPE" "Static callback reference qualification does not match its name shape." None (Some reference.Span) [ "namespace::word"; "word shortName"; "::rootName" ] [ reference.Name ]
         rememberSpan state reference.Span
 
-    let private callbackCandidates (context: Context) (reference: FlowWordReference) =
-        let entries =
-            match reference.Qualification with
-            | FlowWordReferenceQualification.ExplicitShort ->
-                context.CompilerContext.Words
-                |> Map.toList
-                |> List.filter (fun (name, _) -> shortName name = reference.Name)
-            | FlowWordReferenceQualification.NamespaceQualified
-            | FlowWordReferenceQualification.AbsoluteRoot ->
-                context.CompilerContext.Words.TryFind reference.Name
-                |> Option.map (fun entry -> [ reference.Name, entry ])
-                |> Option.defaultValue []
-        entries
-        |> List.sortBy fst
-        |> List.map (fun (name, entry) ->
-            { Name = name
-              Entry = entry
-              ParameterNames = entryParameterNames context name entry })
+    let private callbackCandidates (state: LoweringState) (reference: FlowWordReference) =
+        match reference.Qualification with
+        | FlowWordReferenceQualification.ExplicitShort ->
+            state.Signatures
+            |> Map.toList
+            |> List.filter (fun (name, _) -> shortName name = reference.Name)
+            |> List.map snd
+            |> List.sortBy (fun candidate -> candidate.Name)
+        | FlowWordReferenceQualification.NamespaceQualified
+        | FlowWordReferenceQualification.AbsoluteRoot ->
+            state.Signatures.TryFind reference.Name |> Option.toList
 
     let private resolveListCallback
         (context: Context)
@@ -309,15 +349,15 @@ module FlowLowering =
         (requiredOutput: LangType option)
         : Candidate * LangType =
         validateWordReferenceShape state reference
-        let candidates = callbackCandidates context reference
+        let candidates = callbackCandidates state reference
         if List.isEmpty candidates then
             fail "FLOW_UNKNOWN_CALLBACK" $"No static callback word matches '{reference.Name}'." None (Some reference.Span) [] [ reference.Name ]
         if candidates.Length > 1 then
             fail "FLOW_AMBIGUOUS_CALLBACK" $"Static callback '{reference.Name}' resolves to more than one word; use a qualified reference." None (Some reference.Span) [] (candidates |> List.map (fun candidate -> candidate.Name))
 
         let candidate = candidates.Head
-        let inputs = candidate.Entry.Definition.Inputs
-        let outputs = candidate.Entry.Definition.Outputs
+        let inputs = candidate.Inputs
+        let outputs = candidate.Outputs
         if inputs.Length <> 1 then
             fail "FLOW_CALLBACK_INPUT_ARITY" $"Callback '{candidate.Name}' must have exactly one input." (Some candidate.Name) (Some reference.Span) [ "one input" ] (inputs |> List.map Types.format)
         if outputs.Length <> 1 then
@@ -341,7 +381,7 @@ module FlowLowering =
         fail "FLOW_CALLBACK_REFERENCE_CONTEXT" "A static callback word reference is not a first-class value and is valid only as the sole argument to a list callback stage." None (Some reference.Span) [] [ reference.Name ]
 
     let rec private mapArguments (context: Context) (state: LoweringState) (environment: Map<string, Binding>) (candidate: Candidate) (receiverType: LangType option) (arguments: FlowArgument list) (callSpan: SourceSpan) =
-        let signature = candidate.Entry.Definition.Inputs
+        let signature = candidate.Inputs
         let offset = if receiverType.IsSome then 1 else 0
         let expectedArgumentCount = signature.Length - offset
         if expectedArgumentCount < 0 then
@@ -403,7 +443,7 @@ module FlowLowering =
                     | Some(index, expected, actual) ->
                         Error(diagnostic "FLOW_ARGUMENT_TYPE" $"Argument {index + 1} to '{candidate.Name}' has an incompatible type." (Some callSpan) [ Types.format expected ] [ Types.format actual ])
                     | None ->
-                        let outputs = candidate.Entry.Definition.Outputs |> List.map (substituteType substitutions)
+                        let outputs = candidate.Outputs |> List.map (substituteType substitutions)
                         Ok({ ByParameter = byParameter; HasNamedArguments = hasNamed }, outputs)
 
     and private inferExpression (context: Context) (state: LoweringState) (environment: Map<string, Binding>) expression =
@@ -550,7 +590,7 @@ module FlowLowering =
         finalValue
 
     and private selectCallOutputs context state environment requestedName receiverType arguments callSpan =
-        let candidates = candidatesFor context requestedName
+        let candidates = candidatesFor state context requestedName
         if List.isEmpty candidates then
             let code = if receiverType.IsSome then "FLOW_UNKNOWN_DOT_STAGE" else "FLOW_UNKNOWN_CALL"
             fail code $"No word matches '{requestedName}'." None (Some callSpan) [] [ requestedName ]
@@ -569,7 +609,7 @@ module FlowLowering =
 
     and private selectRootCallOutputs context state environment (target: FlowRootTarget) arguments callSpan =
         let candidate =
-            exactCandidateFor context target.Name
+            exactCandidateFor state target.Name
             |> Option.defaultWith (fun () ->
                 fail "FLOW_UNKNOWN_ROOT_CALL" $"No exact dictionary key '{target.Name}' exists." None (Some target.Span) [ target.Name ] [])
         match mapArguments context state environment candidate None arguments callSpan with
@@ -673,7 +713,7 @@ module FlowLowering =
                 | FlowArgument.Positional _ -> let current = positional in positional <- positional + 1; current
                 | FlowArgument.Named(name, _, _) ->
                     match candidate.ParameterNames with
-                    | Some names when names.Length = candidate.Entry.Definition.Inputs.Length ->
+                    | Some names when names.Length = candidate.Inputs.Length ->
                         names |> List.skip offset |> List.tryFindIndex ((=) name) |> Option.map (fun value -> value + offset) |> Option.defaultValue -1
                     | _ -> -1
                 | FlowArgument.WordReference reference -> rejectWordReferenceContext reference)
@@ -709,7 +749,7 @@ module FlowLowering =
                 setup.Add(Let(temporary, tempSpan))
                 tempByParameter <- Map.add formalIndex temporary tempByParameter
             let loads =
-                [ 0 .. candidate.Entry.Definition.Inputs.Length - 1 ]
+                [ 0 .. candidate.Inputs.Length - 1 ]
                 |> List.map (fun parameterIndex ->
                     match tempByParameter.TryFind parameterIndex with
                     | Some temporary -> Load(temporary, syntheticSpan state callSpan)
@@ -781,7 +821,7 @@ module FlowLowering =
         sourceMap |> Map.map (fun _ source -> source.SiteSpan)
 
     let private lowerExpressionBody context expression : FlowLoweredExpression =
-        let state = freshState context.SourceOrigins
+        let state = freshState context
         inferExpression context state Map.empty expression |> ignore
         let lowered = lowerFlowExpression context state Map.empty expression
         { Expressions = lowered
@@ -812,12 +852,12 @@ module FlowLowering =
           Body = body
           SiteOrigins = sourceSites bodyData.BodySourceMap }
 
-    let lowerWord context (flowWord: FlowWordDefinition) : FlowLoweredWord =
+    let private lowerWordWithSignatures context signatures retainedOrigins (flowWord: FlowWordDefinition) : FlowLoweredWord =
         FlowStructure.validateWordNesting flowWord
         if flowWord.SyntaxVersion <> 1 then fail "FLOW_VERSION_UNSUPPORTED" "Only Flow syntax version 1 is supported by this compiler slice." (Some flowWord.Name) (Some flowWord.Span) [ "1" ] [ string flowWord.SyntaxVersion ]
         let names = flowWord.Parameters |> List.map (fun parameter -> parameter.Name)
         if names.Length <> (Set.ofList names).Count then fail "FLOW_DUPLICATE_PARAMETER" "Flow word parameters must have unique names." (Some flowWord.Name) (Some flowWord.Span) [] names
-        let state = freshState context.SourceOrigins
+        let state = freshStateWith retainedOrigins signatures
         rememberSpan state flowWord.Span
         let environment =
             flowWord.Parameters
@@ -847,6 +887,9 @@ module FlowLowering =
           SourceText = flowWord.SourceText
           SyntaxVersion = flowWord.SyntaxVersion
           Projection = makeProjection state }
+
+    let lowerWord context (flowWord: FlowWordDefinition) : FlowLoweredWord =
+        lowerWordWithSignatures context (signatureCatalog context) context.SourceOrigins flowWord
 
     let checkWord context flowWord =
         let lowered = lowerWord context flowWord
@@ -882,13 +925,284 @@ module FlowLowering =
             |> sourceSites
         { Lowered = lowered; Context = nextContext; Program = program; SiteOrigins = sites }
 
+    let private zeroWidthMarkers (expressions: Expr list) =
+        let rec collect body =
+            body
+            |> List.fold (fun found expression ->
+                let span =
+                    match expression with
+                    | Push(_, span) | Call(_, span) | ConstructContainer(_, _, span)
+                    | MapList(_, span) | FilterList(_, span) | EachList(_, span)
+                    | Let(_, span) | Load(_, span) | If(_, _, span) | Scope(_, span)
+                    | MatchOption(_, _, _, span) | MatchResult(_, _, _, _, span) -> span
+                let found = if span.Length = 0 then Set.add span found else found
+                match expression with
+                | If(thenBranch, elseBranch, _) -> Set.union found (Set.union (collect thenBranch) (collect elseBranch))
+                | Scope(innerBody, _) -> Set.union found (collect innerBody)
+                | MatchOption(_, someBranch, noneBranch, _) -> Set.union found (Set.union (collect someBranch) (collect noneBranch))
+                | MatchResult(_, _, okBranch, errorBranch, _) -> Set.union found (Set.union (collect okBranch) (collect errorBranch))
+                | _ -> found) Set.empty
+        collect expressions
+
+    let private contextZeroWidthMarkers (compilerContext: Compiler.IrLoweringContext) =
+        compilerContext.Words
+        |> Map.toSeq
+        |> Seq.fold (fun found (_, entry) -> Set.union found (zeroWidthMarkers entry.Definition.Body)) Set.empty
+
+    let private requireExactBatchOrigins (context: Context) =
+        let markers = contextZeroWidthMarkers context.CompilerContext
+        let origins = context.SourceOrigins |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+        let missing = Set.difference markers origins
+        let extra = Set.difference origins markers
+        if not (Set.isEmpty missing) then
+            fail "IR_SOURCE_ORIGIN_MISSING" "The base compiler snapshot has Flow source markers without authored origins." None None
+                [ "one source origin per zero-width marker" ] [ sprintf "missing marker count=%d" missing.Count ]
+        if not (Set.isEmpty extra) then
+            fail "IR_SOURCE_ORIGIN_SET_MISMATCH" "The base source-origin snapshot contains stale markers." None None
+                [ "no stale source markers" ] [ sprintf "extra marker count=%d" extra.Count ]
+        for KeyValue(marker, origin) in context.SourceOrigins do
+            if marker.Length <> 0 || origin.Length <= 0 || String.IsNullOrWhiteSpace origin.File || origin.Line < 1 || origin.Column < 1 then
+                fail "IR_SOURCE_ORIGIN_INVALID" "Base source-origin overrides must map a zero-width private marker to a valid authored span." None None
+                    [ "private marker -> authored source span" ] [ "invalid mapping" ]
+
+    let private validateBatchType (knownTypes: Set<string>) (word: string) (span: SourceSpan) (allowVariables: bool) (typeValue: LangType) =
+        let rec visit (depth: int) (typeValue: LangType) =
+            match typeValue with
+            | _ when depth > FlowStructure.maxExpressionDepth ->
+                fail "FLOW_NESTING_LIMIT" "Batch signature type nesting exceeds the Flow structural limit." (Some word) (Some span)
+                    [ string FlowStructure.maxExpressionDepth ] [ string depth ]
+            | TInt | TFloat | TBool | TString | TUnit -> ()
+            | TList item | TOption item -> visit (depth + 1) item
+            | TResult(okType, errorType) -> visit (depth + 1) okType; visit (depth + 1) errorType
+            | TNamed name when knownTypes.Contains name -> ()
+            | TNamed name -> fail "FLOW_BATCH_UNKNOWN_TYPE" $"Batch word '{word}' refers to undeclared type '{name}'." (Some word) (Some span) [ "declared record or scalar" ] [ name ]
+            | TVar name when allowVariables -> ()
+            | TVar name -> fail "FLOW_BATCH_OPEN_TYPE" $"Batch word '{word}' uses type variable '{name}', which is only permitted in trusted primitive signatures." (Some word) (Some span) [ "closed source type" ] [ name ]
+        visit 0 typeValue
+
+    let private validParameterName (name: string) =
+        not (String.IsNullOrEmpty name)
+        && (Char.IsLetter name[0] || name[0] = '_')
+        && (name |> Seq.skip 1 |> Seq.forall (fun character -> Char.IsLetterOrDigit character || character = '_' || character = '-' || character = '?' || character = '!'))
+
+    let private validateParameterNames (word: string) (span: SourceSpan) (inputCount: int) (parameterNames: string list) =
+        if parameterNames.Length <> inputCount then
+            fail "FLOW_BATCH_PARAMETER_ARITY" $"Parameter names for '{word}' do not match its input signature." (Some word) (Some span)
+                [ string inputCount ] [ string parameterNames.Length ]
+        if parameterNames |> List.exists (validParameterName >> not) then
+            fail "FLOW_BATCH_PARAMETER_NAME" $"Parameter catalog for '{word}' contains an invalid name." (Some word) (Some span)
+                [ "valid identifier names" ] parameterNames
+        let duplicates = parameterNames |> List.groupBy id |> List.tryFind (fun (_, values) -> values.Length > 1)
+        match duplicates with
+        | Some(name, _) -> fail "FLOW_BATCH_PARAMETER_DUPLICATE" $"Parameter catalog for '{word}' repeats '{name}'." (Some word) (Some span) [ "unique parameter names" ] [ name ]
+        | None -> ()
+
+    let private validateContextCatalog (context: Context) =
+        let compilerContext = context.CompilerContext
+        let wordNames = compilerContext.Words |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+        let idNames = compilerContext.WordIds |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+        if wordNames <> idNames then
+            fail "FLOW_BATCH_BASE_ID_MAP" "The base word dictionary and stable-ID catalog must have identical keys." None None
+                (wordNames |> Set.toList) (idNames |> Set.toList)
+        let ids = compilerContext.WordIds |> Map.toList |> List.map snd
+        if ids |> List.exists (function WordId raw -> String.IsNullOrWhiteSpace raw) then
+            fail "FLOW_BATCH_BASE_ID_INVALID" "Every base word must have a nonempty stable identity." None None [ "nonempty WordId values" ] [ "empty identity" ]
+        let duplicateIds = ids |> List.groupBy id |> List.tryFind (fun (_, entries) -> entries.Length > 1)
+        match duplicateIds with
+        | Some(wordId, _) -> fail "FLOW_BATCH_BASE_ID_DUPLICATE" "Base dictionary words must have globally unique stable identities." None None [ "unique WordId values" ] [ sprintf "%A" wordId ]
+        | None -> ()
+        let unknownParameterKeys = context.ParameterNames |> Map.toSeq |> Seq.map fst |> Set.ofSeq |> Set.difference <| wordNames
+        if not (Set.isEmpty unknownParameterKeys) then
+            fail "FLOW_BATCH_PARAMETER_CATALOG_KEY" "Parameter metadata must refer only to words in the base dictionary." None None
+                (wordNames |> Set.toList) (unknownParameterKeys |> Set.toList)
+        let known = knownTypes context
+        let recordNames = compilerContext.Records |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+        let scalarNames = compilerContext.Scalars |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+        let typeCollision = Set.intersect recordNames scalarNames
+        if not (Set.isEmpty typeCollision) then
+            fail "FLOW_BATCH_TYPE_CATALOG_COLLISION" "Record and scalar type names must be globally unique." None None [] (typeCollision |> Set.toList)
+        for KeyValue(name, record) in compilerContext.Records do
+            if record.Name <> name then fail "FLOW_BATCH_TYPE_CATALOG_KEY" "Record map keys must match their declared names." (Some name) (Some record.Span) [ name ] [ record.Name ]
+            for (field: RecordField) in record.Fields do validateBatchType known name record.Span false field.Type
+        for KeyValue(name, scalar) in compilerContext.Scalars do
+            if scalar.Name <> name then fail "FLOW_BATCH_TYPE_CATALOG_KEY" "Scalar map keys must match their declared names." (Some name) (Some scalar.Span) [ name ] [ scalar.Name ]
+            validateBatchType known name scalar.Span false scalar.BaseType
+        for KeyValue(name, entry) in compilerContext.Words do
+            if entry.Definition.Name <> name then fail "FLOW_BATCH_WORD_CATALOG_KEY" "Word map keys must match their declared names." (Some name) (Some entry.Definition.Span) [ name ] [ entry.Definition.Name ]
+            if entry.Revision < 0 || entry.Definition.Revision <> entry.Revision then
+                fail "FLOW_BATCH_BASE_REVISION" "Base word and definition revisions must be equal and nonnegative." (Some name) (Some entry.Definition.Span)
+                    [ string entry.Revision ] [ string entry.Definition.Revision ]
+            for effect in entry.Definition.Effects do
+                if IrEffects.ofName effect |> Option.isNone then
+                    fail "FLOW_BATCH_UNKNOWN_EFFECT" $"Base word '{name}' declares an effect outside the closed effect vocabulary." (Some name) (Some entry.Definition.Span) (IrEffects.names Set.empty) [ effect ]
+            let isPrimitive = match entry.Builtin with | Some(BuiltinOp _) -> true | _ -> false
+            for typeValue in entry.Definition.Inputs @ entry.Definition.Outputs do
+                validateBatchType known name entry.Definition.Span isPrimitive typeValue
+            match entryParameterNames context name entry with
+            | Some names -> validateParameterNames name entry.Definition.Span entry.Definition.Inputs.Length names
+            | None -> ()
+            match context.ParameterNames.TryFind name with
+            | Some names -> validateParameterNames name entry.Definition.Span entry.Definition.Inputs.Length names
+            | None -> ()
+        requireExactBatchOrigins context
+
+    let private validateProposedSignature (context: Context) (flowWord: FlowWordDefinition) =
+        FlowStructure.validateWordNesting flowWord
+        let nameSegments = if String.IsNullOrEmpty flowWord.Name then [||] else flowWord.Name.Split('.')
+        if nameSegments.Length = 0 || (nameSegments |> Array.exists (validParameterName >> not)) then
+            fail "FLOW_BATCH_WORD_NAME_INVALID" "A batch Flow word name must be a canonical dotted dictionary name." (Some flowWord.Name) (Some flowWord.Span)
+                [ "identifier(.identifier)*" ] [ flowWord.Name ]
+        let names = flowWord.Parameters |> List.map (fun parameter -> parameter.Name)
+        validateParameterNames flowWord.Name flowWord.Span flowWord.Parameters.Length names
+        let known = knownTypes context
+        for parameter in flowWord.Parameters do validateBatchType known flowWord.Name parameter.Span false parameter.Type
+        for output in flowWord.Outputs do validateBatchType known flowWord.Name flowWord.Span false output
+        for effect in flowWord.Effects do
+            if IrEffects.ofName effect |> Option.isNone then
+                fail "FLOW_BATCH_UNKNOWN_EFFECT" $"Batch word '{flowWord.Name}' declares an effect outside the closed effect vocabulary." (Some flowWord.Name) (Some flowWord.Span) (IrEffects.names Set.empty) [ effect ]
+
+    type private PreparedBatchChange =
+        { Definition: FlowWordDefinition
+          Identity: WordId
+          Revision: int
+          Previous: WordEntry option }
+
+    let compileBatchWords (context: Context) (changes: FlowWordChange list) : FlowBatchCompilation =
+        validateContextCatalog context
+        if List.isEmpty changes then fail "FLOW_BATCH_EMPTY" "A Flow word batch must contain at least one change." None None [ "one or more word changes" ] []
+
+        // Validate every intent against the immutable input before creating any
+        // overlay map, so duplicate or stale requests cannot partly mutate state.
+        let prepared = ResizeArray<PreparedBatchChange>()
+        let changedNames = System.Collections.Generic.HashSet<string>(StringComparer.Ordinal)
+        let addedIds = System.Collections.Generic.HashSet<WordId>()
+        let baseIds = context.CompilerContext.WordIds |> Map.toSeq |> Seq.map snd |> Set.ofSeq
+        for change in changes do
+            let flowWord = change.Definition
+            validateProposedSignature context flowWord
+            if not (changedNames.Add flowWord.Name) then
+                fail "FLOW_BATCH_DUPLICATE_NAME" "A word name may appear only once in one batch." (Some flowWord.Name) (Some flowWord.Span) [ "one change per word name" ] [ flowWord.Name ]
+            match change.RevisionIntent with
+            | FlowWordRevisionIntent.Add(identity, revision) ->
+                if context.CompilerContext.Words.ContainsKey flowWord.Name || context.CompilerContext.WordIds.ContainsKey flowWord.Name then
+                    fail "FLOW_BATCH_ADD_EXISTS" $"Cannot add '{flowWord.Name}' because that word already exists." (Some flowWord.Name) (Some flowWord.Span) [ "unused dictionary name" ] [ flowWord.Name ]
+                let rawIdentity = match identity with | WordId value -> value
+                if String.IsNullOrWhiteSpace rawIdentity then fail "FLOW_BATCH_ID_INVALID" "New words require a nonempty stable ID." (Some flowWord.Name) (Some flowWord.Span) [ "nonempty WordId" ] [ rawIdentity ]
+                if revision < 0 then fail "FLOW_BATCH_REVISION_INVALID" "New word revisions must be nonnegative." (Some flowWord.Name) (Some flowWord.Span) [ "nonnegative revision" ] [ string revision ]
+                if baseIds.Contains identity || not (addedIds.Add identity) then
+                    fail "FLOW_BATCH_ID_COLLISION" "A new word must use a stable ID not assigned to any base or other added word." (Some flowWord.Name) (Some flowWord.Span) [ "unused WordId" ] [ rawIdentity ]
+                prepared.Add { Definition = flowWord; Identity = identity; Revision = revision; Previous = None }
+            | FlowWordRevisionIntent.Replace(identity, expectedRevision, revision) ->
+                let previous =
+                    context.CompilerContext.Words.TryFind flowWord.Name
+                    |> Option.defaultWith (fun () -> fail "FLOW_BATCH_REPLACE_MISSING" $"Cannot replace missing word '{flowWord.Name}'." (Some flowWord.Name) (Some flowWord.Span) [ "existing user word" ] [])
+                let expectedIdentity = context.CompilerContext.WordIds[flowWord.Name]
+                if previous.Builtin.IsSome || previous.Status = Primitive then
+                    fail "FLOW_BATCH_REPLACE_PROTECTED" $"Built-in or generated word '{flowWord.Name}' cannot be replaced by Flow." (Some flowWord.Name) (Some flowWord.Span) [ "user-defined word" ] [ flowWord.Name ]
+                if identity <> expectedIdentity then
+                    fail "FLOW_BATCH_REPLACE_ID_MISMATCH" "Replacing a word must preserve its stable identity." (Some flowWord.Name) (Some flowWord.Span) [ sprintf "%A" expectedIdentity ] [ sprintf "%A" identity ]
+                if expectedRevision <> previous.Revision then
+                    fail "FLOW_BATCH_STALE_REVISION" "Replacement intent does not match the current word revision." (Some flowWord.Name) (Some flowWord.Span) [ string previous.Revision ] [ string expectedRevision ]
+                if revision <= expectedRevision then
+                    fail "FLOW_BATCH_REVISION_NOT_ADVANCED" "Replacement revision must advance beyond the revision it replaces." (Some flowWord.Name) (Some flowWord.Span) [ $"> {expectedRevision}" ] [ string revision ]
+                prepared.Add { Definition = flowWord; Identity = identity; Revision = revision; Previous = Some previous }
+
+        let baseSignatures = signatureCatalog context
+        let signatureOverlay =
+            prepared
+            |> Seq.fold (fun signatures item ->
+                let flowWord = item.Definition
+                let candidate =
+                    { Name = flowWord.Name
+                      Inputs = flowWord.Parameters |> List.map (fun parameter -> parameter.Type)
+                      Outputs = flowWord.Outputs
+                      Effects = flowWord.Effects
+                      Kind = SignatureKind.UserWord
+                      ParameterNames = Some(flowWord.Parameters |> List.map (fun parameter -> parameter.Name))
+                      Identity = Some item.Identity
+                      Revision = item.Revision
+                      Span = flowWord.Span }
+                Map.add flowWord.Name candidate signatures) baseSignatures
+
+        let mutable allocationOrigins = context.SourceOrigins
+        let loweredChanges =
+            prepared
+            |> Seq.map (fun item ->
+                let lowered = lowerWordWithSignatures context signatureOverlay allocationOrigins item.Definition
+                let collision = lowered.Projection.SyntheticOrigins |> Map.toSeq |> Seq.tryFind (fun (marker, _) -> allocationOrigins.ContainsKey marker)
+                match collision with
+                | Some(marker, _) -> fail "FLOW_SOURCE_ORIGIN_COLLISION" "Batch Flow source markers must remain unique across words." (Some item.Definition.Name) (Some item.Definition.Span) [] [ sprintf "%A" marker ]
+                | None -> ()
+                allocationOrigins <- Map.fold (fun found marker origin -> Map.add marker origin found) allocationOrigins lowered.Projection.SyntheticOrigins
+                let definition =
+                    match item.Previous with
+                    | Some previous -> { lowered.Definition with Revision = item.Revision; Maturity = previous.Maturity }
+                    | None -> { lowered.Definition with Revision = item.Revision }
+                { lowered with Definition = definition })
+            |> Seq.toList
+
+        let loweredByName = loweredChanges |> List.map (fun lowered -> lowered.Definition.Name, lowered) |> Map.ofList
+        let finalWords =
+            loweredChanges
+            |> List.fold (fun words lowered ->
+                let name = lowered.Definition.Name
+                let preparedChange = prepared |> Seq.find (fun item -> item.Definition.Name = name)
+                let entry =
+                    match preparedChange.Previous with
+                    | Some previous ->
+                        { previous with
+                            Definition = lowered.Definition
+                            Revision = preparedChange.Revision }
+                    | None ->
+                        { Definition = lowered.Definition
+                          Builtin = None
+                          Status = Candidate
+                          Maturity = ProjectWord
+                          Revision = preparedChange.Revision }
+                Map.add name entry words) context.CompilerContext.Words
+        let finalIds =
+            prepared
+            |> Seq.fold (fun ids item -> Map.add item.Definition.Name item.Identity ids) context.CompilerContext.WordIds
+        let finalCompilerContext =
+            { context.CompilerContext with
+                Words = finalWords
+                WordIds = finalIds }
+        let finalParameterNames =
+            loweredChanges
+            |> List.fold (fun parameters lowered -> Map.add lowered.Definition.Name lowered.ParameterNames parameters) context.ParameterNames
+        let finalMarkers = contextZeroWidthMarkers finalCompilerContext
+        let retainedOrigins = allocationOrigins |> Map.filter (fun marker _ -> finalMarkers.Contains marker)
+        let retainedKeys = retainedOrigins |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+        let missingFinalOrigins = Set.difference finalMarkers retainedKeys
+        if not (Set.isEmpty missingFinalOrigins) then
+            fail "IR_SOURCE_ORIGIN_MISSING" "Final batch words contain a private Flow marker without an authored source origin." None None
+                [ "one source origin per final marker" ] [ sprintf "missing marker count=%d" missingFinalOrigins.Count ]
+        let finalContext =
+            { CompilerContext = finalCompilerContext
+              ParameterNames = finalParameterNames
+              SourceOrigins = retainedOrigins }
+        // This is the single authoritative check of all real bodies. It sees
+        // forward references, final effects, scalar validators and call cycles.
+        let program = Compiler.compileIrProgramWithSourceOrigins finalCompilerContext retainedOrigins
+        let programData = VerifiedIrProgram.inspect program
+        let changedIds = prepared |> Seq.map (fun item -> item.Identity) |> Set.ofSeq
+        let sites =
+            programData.SourceMap
+            |> Map.filter (fun _ source -> source.SiteOwner |> Option.exists changedIds.Contains)
+            |> sourceSites
+        let _ = loweredByName
+        { LoweredWords = loweredChanges
+          Context = finalContext
+          Program = program
+          SiteOrigins = sites }
+
     let private requireAttachmentVersion kind word span version =
         if version <> 1 then fail "FLOW_VERSION_UNSUPPORTED" $"Only Flow syntax version 1 is supported for Flow {kind} attachments." (Some word) (Some span) [ "1" ] [ string version ]
 
     let lowerTest (context: Context) (flowTest: FlowTestDefinition) : FlowLoweredTest =
         FlowStructure.validateTestNesting flowTest
         requireAttachmentVersion "test" flowTest.Word flowTest.Span flowTest.SyntaxVersion
-        let state = freshState context.SourceOrigins
+        let state = freshState context
         rememberSpan state flowTest.Span
         rememberSpan state flowTest.HeaderSpan
         rememberSpan state flowTest.ExpectationSpan
@@ -922,7 +1236,7 @@ module FlowLowering =
     let lowerExample (context: Context) (flowExample: FlowExampleDefinition) : FlowLoweredExample =
         FlowStructure.validateExampleNesting flowExample
         requireAttachmentVersion "example" flowExample.Word flowExample.Span flowExample.SyntaxVersion
-        let state = freshState context.SourceOrigins
+        let state = freshState context
         rememberSpan state flowExample.Span
         rememberSpan state flowExample.HeaderSpan
         rememberSpan state flowExample.ExpectationSpan

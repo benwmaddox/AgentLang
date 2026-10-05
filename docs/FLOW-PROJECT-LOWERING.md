@@ -1,6 +1,6 @@
 # Complete Flow project lowering
 
-Status: read-only compiler investigation and implementation contract. No batch Flow API is implemented by this document. Extend the frontend through this path before durable storage/default cutover; do not treat per-word compilation as a replacement for a complete proposed snapshot.
+Status: opt-in Flow batch lowering is implemented as a compiler prerequisite. It does not change the default frontend or provide durable project editing/publication. Authored call-binding metadata remains a required follow-on before batch changes can be treated as a complete project update.
 
 ## Existing compiler authority
 
@@ -8,22 +8,27 @@ Status: read-only compiler investigation and implementation contract. No batch F
 
 `FlowLowering.compileWord` lowers one candidate using the existing context, rejects existing names/IDs, inserts it, and recompiles. It cannot resolve forward Flow declarations or represent replacement. Detached body APIs compile eval/test bodies against a fingerprint-identical verified program; they do not add functions. There is no `compileIrWordAgainstProgram` API.
 
-## Required batch path
+## Implemented batch path
 
-1. Validate the complete proposed source set, rejecting duplicate names and invalid named-parameter catalogs before building maps. Retain ordered input/output signatures, declared effects, and stable target identities.
-2. Build a type-distinct, signature-only resolution catalog for trusted/generated/stack words plus every proposed Flow word. It contains no executable placeholder body. Refactor Flow resolution to consume that catalog while preserving name/input resolution and scalar/vector output checks.
-3. Lower every actual Flow body against the complete catalog. Capture resolved authored calls and thread one source-marker allocator through the whole batch. Replacement removes the old body before final assembly; preserve existing stable IDs and host-assigned revision metadata.
-4. Assemble the final context from real lowered definitions and retained real base definitions. `WordIds` must cover the exact word-name set with globally unique, nonempty IDs. Generated and primitive effective names remain included. The host/storage boundary assigns new IDs once.
-5. Rebuild the exact origin map for zero-width markers in the final bodies, dropping markers of deleted/replaced bodies. Invoke `compileIrProgramWithSourceOrigins` once. Signature-only catalog entries must never become executable compiler authority.
-6. Compile each test/example only against that final verified snapshot, with full context origins plus disjoint actual/expected case markers. Preserve pure expected-expression and coverage isolation.
+`FlowLowering.compileBatchWords` accepts an immutable `Context` and an ordered, nonempty list of `FlowWordChange` values. Each change carries a `FlowWordDefinition` and explicit host revision intent: `Add(WordId, revision)` or `Replace(WordId, expectedRevision, revision)`. It returns lowered projections, the complete final context, one verified program, and source-site origins. Additions and replacements are the only supported changes in this slice.
+
+Before it constructs the overlay, the API checks that base `Words` and `WordIds` have the same keys, IDs are globally unique and nonempty, revisions are synchronized, parameter metadata is well-formed, and base source-origin keys and values are exact and valid. It rejects duplicate proposed names, reused add IDs, missing or protected replacement targets, wrong IDs, stale revisions, non-advancing revisions, malformed host-built Flow names, open proposed signatures, unknown nominal types, and undeclared effect names. Replacements preserve the existing stable ID, status, and maturity, while keeping entry and definition revisions synchronized. New words begin as candidate project words.
+
+Resolution uses a body-free signature catalog with ordered inputs and outputs, effects, primitive-versus-generated-versus-user kind, named parameters, stable identity, revision, and declaration span. It includes all base dictionary entries and every proposed Flow declaration before any body is lowered. Trusted `BuiltinOp` signatures keep their existing generic variable relationships; generated constructors and accessors remain closed nominal signatures, with record constructor parameter names derived from record fields. No placeholder `WordEntry` or executable body is created for a proposed word.
+
+Every actual proposed definition is lowered against that same catalog. A shared source-marker allocator spans the batch. Final assembly contains only retained real base definitions and real lowered bodies. Origin keys are derived from zero-width markers in those final bodies; old replacement markers are pruned only after validating the entire input origin snapshot. The complete real context is then passed once to `Compiler.compileIrProgramWithSourceOrigins`. That compiler remains authoritative for final body types, effects, scalar validators, call cycles, IR verification, and exact final origins.
+
+This supports same-batch forward ordinary calls, dot-stage selection, static callbacks, generated constructors/accessors, scalar and vector signatures, and existing named-argument behavior. It rechecks untouched word bodies under the final signature set, so an incompatible replacement fails atomically before a result context is returned.
+
+The current result is an opt-in compilation artifact. It does not persist changes, assign project storage IDs, edit a manifest, publish a word, compile attachments, or provide the authored call-binding sidecar described below. A passing batch compile therefore does not establish safe durable publication.
 
 Flow named arguments need the complete external parameter-name catalog because `WordDefinition` has no parameter names. Validate names and arity rather than relying on `Map.ofList` to silently replace duplicates. Existing record constructor parameter names continue to derive from fields.
 
-## Authored call bindings
+## Required follow-on: authored call bindings
 
-The current lowerer records string targets; verified IR resolves them into primitive/generated/user identities. A batch result must also capture each authored call's owner stable ID, syntax-site identity/span, and selected target identity. Cover ordinary calls, selected dot stages, static list callbacks, and generated conversions/constructors. Verify the sidecar against the final IR's resolved targets and projected source map.
+The batch lowerer currently emits string targets; verified IR later resolves those into primitive/generated/user identities. A later project-editing slice must also capture each authored call's owner stable ID and revision, structural AST site, source span, call form, requested name, and selected target ID and revision. It must cover ordinary calls, selected dot stages, static list callbacks, and generated conversions/constructors, then verify the sidecar against final IR targets and projected source maps.
 
-Persist call bindings with their authoritative source revision. Before vocabulary changes, re-resolve unchanged retained source against the complete proposed dictionary and compare target identities. Report affected caller/spans if a target changes or becomes ambiguous. Recompilation alone is insufficient: an old dot call can still type-check while silently selecting a different word.
+Persist call bindings with their authoritative source revision. Before vocabulary changes, re-resolve unchanged retained source against the complete proposed dictionary and compare target identities. Report affected caller/spans if a target changes or becomes ambiguous. Recompilation alone is insufficient: an old dot call can still type-check while silently selecting a different word. This rebinding/collision check is intentionally not claimed by the current API.
 
 IR `SourceSiteId(owner, ordinal)` joins final source maps and operations, but its regenerated ordinal alone is not a stable authored-site identity across revisions. Rename preserves target identity and uses bindings to rewrite the appropriate source sites, followed by complete re-verification and existing caller/test/library gates.
 
@@ -44,26 +49,29 @@ acceptance checks cover same-suffix identities, callback signatures/effects,
 root calls with named arguments, receiver chaining, attachments, and spans;
 their validation results are recorded in report 033.
 
-## Future signature-only lowering boundary
+## Signature-only lowering boundary
 
 The existing Flow resolver makes its candidate decisions from word names,
 ordered input/output types, declared effects, builtin/generated kind, named
 parameter metadata, source spans, and stable target IDs. It does not inspect
-callee bodies to infer signatures. A future complete-snapshot lowerer can use a
-closed signature-only resolution catalog for these decisions, lower all real
-Flow bodies, and then defer final definition/scalar-validator checks to one
+callee bodies to infer signatures. `compileBatchWords` uses a closed,
+body-free signature catalog, lowers all real Flow bodies, and defers final
+definition/scalar-validator checks to one
 `Compiler.compileIrProgramWithSourceOrigins` call over the complete real
-dictionary. The catalog must not contain executable placeholder definitions.
+dictionary. The catalog contains no executable placeholder definitions.
 
-Before lowering, that future boundary should validate the closed type catalog,
-stable-ID coverage and uniqueness, parameter names and arity, and the declared
-effect vocabulary. There is no evidence yet for adding a generic compiler
-inference API; add one only if a focused batch-lowering case cannot be handled
-through the existing Flow resolver. This is a design contract for durable
-batch lowering, not a claim that a complete-batch API exists today.
+The current API validates the supplied base dictionary, closed proposed Flow
+signatures, stable-ID coverage/uniqueness, parameter names and arity, and the
+declared effect vocabulary. There is no evidence for adding a generic compiler
+inference API; the existing Flow resolver handles the tested forward-reference
+cases through its signature catalog.
 
-## Acceptance
+## Acceptance and limits
 
-Prove forward calls using declarations in the opposite order; preserve IDs on replacement; reject self/mutual cycles, duplicate names and invalid identity/catalog coverage. Validate multiple Flow words and attachments with disjoint projected markers, reject missing/extra/stale origins, and compare sidecar identities to verified IR. Exercise an unchanged dot-stage collision before publication and require explicit qualification rather than silent rebinding.
+The implemented prerequisite is exercised with reverse-order forward ordinary/dot/callback calls, primitive generics, generated targets, named-argument ordering, positional output-vector destructuring, replacement identity/revision preservation, incompatible retained callers, aggregate effects, validators, cycles, malformed catalogs, and exact origin pruning/rejection. It does not yet exercise attachments in the batch API.
 
-Run focused Flow, IR, interpreter, and language acceptance suites, then the full fresh Release validation gate. Durable publication adds the version/hash/history/rollback cases in [FLOW-DURABLE-INTEGRATION.md](FLOW-DURABLE-INTEGRATION.md). Exact root-word addressing remains a prerequisite before that integration.
+The focused Flow suite passes with 473 assertions. The fresh Release validation gate also passed all 24 checks locally: solution build with zero warnings/errors, Flow (473 assertions), Flow lint (68), IR (102), interpreter (22), language acceptance (34 groups / 583 assertions), storage (9 groups / 105 assertions), and the other acceptance, fixture, projection, parser-limit, and whitespace checks. The captured run is [the local validation evidence](../reports/evidence/036-flow-batch-validation.json). That evidence records revision `84611d5` with a dirty working tree, so this is local validation of the milestone state, not a clean committed-revision CI result.
+
+Before durable project editing, add the authored binding sidecar and unchanged-call rebinding test, then compile test/example attachments only against the returned final verified snapshot with exact, disjoint source origins. Rebinding must detect unchanged dot-stage collisions before publication. Durable work must also add version/hash/history/rollback behavior and enforce the host-assigned identity boundary.
+
+Durable publication adds the storage and history cases in [FLOW-DURABLE-INTEGRATION.md](FLOW-DURABLE-INTEGRATION.md). Exact root-word addressing remains a prerequisite before that integration.

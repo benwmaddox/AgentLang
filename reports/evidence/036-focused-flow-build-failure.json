@@ -1,0 +1,7 @@
+{
+  "chunk_id": "7150b2",
+  "wall_time_seconds": 1.6667877,
+  "exit_code": 1,
+  "original_token_count": 294,
+  "output": "D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs(2257,9): error FS0010: Unexpected symbol '[' in binding. Expected incomplete structured construct at or before this point or other token. [D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\AgentLang.Flow.Tests.fsproj]\r\nD:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs(2256,5): error FS3118: Incomplete value or function definition. If this is in an expression, the body of the expression must be indented to the same column as the 'let' keyword. [D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\AgentLang.Flow.Tests.fsproj]\r\nD:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs(2258,5): error FS0010: Incomplete structured construct at or before this point in binding. Expected incomplete structured construct at or before this point or other token. [D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\AgentLang.Flow.Tests.fsproj]\r\nD:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs(2308,1): error FS0010: Incomplete structured construct at or before this point in implementation file [D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\AgentLang.Flow.Tests.fsproj]\r\n\r\nThe build failed. Fix the build errors and run again.\r\n"
+}

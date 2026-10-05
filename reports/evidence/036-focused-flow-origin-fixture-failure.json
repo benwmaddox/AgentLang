@@ -1,0 +1,7 @@
+{
+  "chunk_id": "9cfa35",
+  "wall_time_seconds": 6.6795228,
+  "exit_code": 1,
+  "original_token_count": 199,
+  "output": "Unhandled exception. AgentLang.LanguageException: LanguageException\n  { Code = \"FLOW_BATCH_STALE_REVISION\"\n    Message = \"Replacement intent does not match the current word revision.\"\n    Word = Some \"batch.replace\"\n    Span = Some { File = \"<flow-test>\"\n                  Line = 1\n                  Column = 1\n                  Length = 76 }\n    Expected = [\"0\"]\n    Actual = [\"1\"] }\r\n   at AgentLang.FlowLowering.compileBatchWords(Context context, FSharpList`1 changes) in D:\\code\\AgentLang\\src\\AgentLang.Core\\FlowLowering.fs:line 1105\r\n   at AgentLang.Flow.Tests.testFlowBatchFinalValidationAndOrigins() in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs:line 2310\r\n   at AgentLang.Flow.Tests.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs:line 2373\n"
+}

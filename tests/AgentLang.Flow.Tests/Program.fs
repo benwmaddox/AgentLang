@@ -203,6 +203,26 @@ let private host (events: ResizeArray<string>) =
       WordDefinitionSpan = fun _ -> None
       PrimitiveDefinitionSpan = fun _ -> None }
 
+let private resolvedCallsInBlock (block: IrBlock) =
+    let rec visit (current: IrBlock) =
+        current.Code
+        |> List.collect (fun instruction ->
+            match instruction.Operation with
+            | IrOperation.Call call
+            | IrOperation.ListMap(call, _, _)
+            | IrOperation.ListFilter(call, _)
+            | IrOperation.ListEach(call, _)
+            | IrOperation.MakeRecord(call, _)
+            | IrOperation.GetRecordField(call, _, _)
+            | IrOperation.UnwrapScalar(call, _) -> [ call ]
+            | IrOperation.WrapScalar(call, _, validator) -> call :: Option.toList validator
+            | IrOperation.Scope nested -> visit nested
+            | IrOperation.If(thenBlock, elseBlock) -> visit thenBlock @ visit elseBlock
+            | IrOperation.MatchOption(_, someBlock, noneBlock) -> visit someBlock @ visit noneBlock
+            | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> visit okBlock @ visit errorBlock
+            | _ -> [])
+    visit block
+
 let private testIterativeAstDepthLimit () =
     let postfix stages = "1" + String.replicate stages ".stage()"
     let boundarySource = "1" + String.replicate 127 ".abs()"
@@ -1975,6 +1995,345 @@ let private testFlowAuthoredCases () =
     expectLanguageError "lowering shares the combined actual/expectation node budget" "FLOW_STRUCTURE_LIMIT" (fun () ->
         FlowLowering.lowerTest compiledChoice.Context sharedBudgetTest |> ignore)
 
+let private testFlowBatchForwardResolution () =
+    let context = loweringContext [] Map.empty
+    let added (source: string) (identity: string) : FlowLowering.FlowWordChange =
+        { Definition = parseWord source
+          RevisionIntent = FlowLowering.FlowWordRevisionIntent.Add(WordId identity, 1) }
+    let callbackConsumer =
+        added
+            """word batch.callback-consumer(items: List<Int>) -> List<Int> {
+    effects none
+    items.map(batch::increment)
+}"""
+            "batch-callback-consumer"
+    let dotConsumer =
+        added
+            """word batch.dot-consumer(value: Int) -> Int {
+    effects none
+    value.bump(2)
+}"""
+            "batch-dot-consumer"
+    let forwardConsumer =
+        added
+            """word batch.forward-consumer(value: Int) -> Int {
+    effects none
+    batch::increment(value)
+}"""
+            "batch-forward-consumer"
+    let bump =
+        added
+            """word batch.bump(value: Int, amount: Int) -> Int {
+    effects none
+    add(value, amount)
+}"""
+            "batch-bump"
+    let increment =
+        added
+            """word batch.increment(value: Int) -> Int {
+    effects none
+    add(value, 1)
+}"""
+            "batch-increment"
+    let compiled = FlowLowering.compileBatchWords context [ callbackConsumer; dotConsumer; forwardConsumer; bump; increment ]
+    equal "batch lowering preserves host change order" [ "batch.callback-consumer"; "batch.dot-consumer"; "batch.forward-consumer"; "batch.bump"; "batch.increment" ]
+        (compiled.LoweredWords |> List.map (fun word -> word.Definition.Name))
+
+    let invoke name body =
+        let executable =
+            Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+                compiled.Context.CompilerContext compiled.Program ("batch-invoke-" + name) [] body compiled.Context.SourceOrigins
+        IrInterpreter.executeBody (host (ResizeArray())) ("batch-invoke-" + name) executable
+
+    equal "forward ordinary batch call executes" [ IntValue 6L ]
+        (invoke "ordinary" [ Push(LInt 5L, sourceSpan); Call("batch.forward-consumer", sourceSpan) ])
+    equal "forward dot-stage batch call executes" [ IntValue 7L ]
+        (invoke "dot" [ Push(LInt 5L, sourceSpan); Call("batch.dot-consumer", sourceSpan) ])
+    equal "forward callback batch call executes" [ ListValue(TInt, [ IntValue 6L ]) ]
+        (invoke "callback" [ Push(LInt 5L, sourceSpan); ConstructContainer(ListSingleton, [ TInt ], sourceSpan); Call("batch.callback-consumer", sourceSpan) ])
+
+    let verified = VerifiedIrProgram.inspect compiled.Program
+    let callTarget name =
+        verified.FunctionsById[WordId name].FunctionBody
+        |> resolvedCallsInBlock
+        |> List.tryFind (fun call -> call.ResolvedName.StartsWith("batch.", StringComparison.Ordinal))
+        |> Option.map (fun call -> call.ResolvedTarget)
+    equal "forward ordinary call binds to the batch identity" (Some(UserWordTarget(WordId "batch-increment", 1))) (callTarget "batch-forward-consumer")
+    equal "dot-stage call binds to the exact batch identity" (Some(UserWordTarget(WordId "batch-bump", 1))) (callTarget "batch-dot-consumer")
+    equal "static callback binds to the exact batch identity" (Some(UserWordTarget(WordId "batch-increment", 1))) (callTarget "batch-callback-consumer")
+
+let private testFlowBatchSignatureKindsAndNamedArguments () =
+    let context = loweringContextWith Map.empty Map.empty [] (Map.ofList [ "add", [ "left"; "right" ] ])
+    let added (source: string) (identity: string) : FlowLowering.FlowWordChange =
+        { Definition = parseWord source
+          RevisionIntent = FlowLowering.FlowWordRevisionIntent.Add(WordId identity, 1) }
+    let namedConsumer =
+        added
+            """word batch.named-consumer() -> Int {
+    effects console.write
+    batch::pair(second = batch::mark-right(), first = batch::mark-left())
+}"""
+            "batch-named-consumer"
+    let pair =
+        added
+            """word batch.pair(first: Int, second: Int) -> Int {
+    effects none
+    add(first, second)
+}"""
+            "batch-pair"
+    let markLeft =
+        added
+            """word batch.mark-left() -> Int {
+    effects console.write
+    console::write("left");
+    1
+}"""
+            "batch-mark-left"
+    let markRight =
+        added
+            """word batch.mark-right() -> Int {
+    effects console.write
+    console::write("right");
+    2
+}"""
+            "batch-mark-right"
+    let sameText =
+        added
+            """word batch.same-text(left: String, right: String) -> Bool {
+    effects none
+    equals(left, right)
+}"""
+            "batch-same-text"
+    let compiled = FlowLowering.compileBatchWords context [ namedConsumer; pair; markLeft; markRight; sameText ]
+    let events = ResizeArray<string>()
+    let invoke name body =
+        let executable = Compiler.compileIrBodyAgainstProgramWithSourceOrigins compiled.Context.CompilerContext compiled.Program name [] body compiled.Context.SourceOrigins
+        IrInterpreter.executeBody (host events) name executable
+
+    equal "generic primitive variables unify in proposed word signatures" [ BoolValue true ]
+        (invoke "same-text" [ Push(LString "same", sourceSpan); Push(LString "same", sourceSpan); Call("batch.same-text", sourceSpan) ])
+    equal "named argument signature is available before its declaration is lowered" [ IntValue 3L ]
+        (invoke "named-consumer" [ Call("batch.named-consumer", sourceSpan) ])
+    equal "batch named arguments preserve written evaluation order" [ "right"; "left" ] (List.ofSeq events)
+
+    let typedContext = richTypeContext []
+    let recordContext =
+        { typedContext with
+            ParameterNames = Map.ofList [ "customer.new", [ "host-provided-name" ] ] }
+    let malformedRecordContext =
+        { typedContext with
+            ParameterNames = Map.ofList [ "customer.new", [ "email"; "extra" ] ] }
+    let makeCustomer =
+        added
+            """word batch.make-customer(address: String) -> Email {
+    effects none
+    let customer = customer::new(email = Email::new(address));
+    customer.email()
+}"""
+            "batch-make-customer"
+    expectLanguageError "explicit generated-constructor metadata is validated even though field names remain authoritative" "FLOW_BATCH_PARAMETER_ARITY" (fun () ->
+        FlowLowering.compileBatchWords malformedRecordContext [ makeCustomer ] |> ignore)
+    let compiledTypes = FlowLowering.compileBatchWords recordContext [ makeCustomer ]
+    let typedProgram = VerifiedIrProgram.inspect compiledTypes.Program
+    let makeFunction = typedProgram.FunctionsById[WordId "batch-make-customer"]
+    let generatedCalls = resolvedCallsInBlock makeFunction.FunctionBody
+    check "batch signature catalog uses generated record/scalar constructors and accessors"
+        ((generatedCalls |> List.exists (fun call -> call.ResolvedTarget = GeneratedWordTarget(WordId "generated-customer.new", 1)))
+         && (generatedCalls |> List.exists (fun call -> call.ResolvedTarget = GeneratedWordTarget(WordId "generated-customer.email", 1)))
+         && (generatedCalls |> List.exists (fun call -> call.ResolvedTarget = GeneratedWordTarget(WordId "generated-Email.new", 1))))
+    let customerBody =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins compiledTypes.Context.CompilerContext compiledTypes.Program "invoke-customer" []
+            [ Push(LString "a@b", sourceSpan); Call("batch.make-customer", sourceSpan) ] compiledTypes.Context.SourceOrigins
+    equal "record constructor keeps field-derived named parameters" [ NamedValue("Email", StringValue "a@b") ]
+        (IrInterpreter.executeBody (host (ResizeArray())) "invoke-customer" customerBody)
+
+let private testFlowBatchReplacementAndValidation () =
+    let oldEntryBase = wordEntry "batch.transform" [ TInt ] [ TInt ] Set.empty [ Call("int.abs", sourceSpan) ]
+    let oldEntry =
+        { oldEntryBase with
+            Definition = { oldEntryBase.Definition with Maturity = LibraryWord }
+            Maturity = LibraryWord
+            Status = Persistent }
+    let baseContext = loweringContext [ oldEntry ] (Map.ofList [ "batch.transform", [ "value" ] ])
+    let replaceWithString: FlowLowering.FlowWordChange =
+        { Definition = parseWord "word batch.transform(value: String) -> String {\n    effects none\n    string::trim(value)\n}"
+          RevisionIntent = FlowLowering.FlowWordRevisionIntent.Replace(WordId "user-batch.transform", 1, 2) }
+    let consumer: FlowLowering.FlowWordChange =
+        { Definition = parseWord "word batch.consumer(value: String) -> String {\n    effects none\n    batch::transform(value)\n}"
+          RevisionIntent = FlowLowering.FlowWordRevisionIntent.Add(WordId "batch-consumer", 1) }
+    let successful = FlowLowering.compileBatchWords baseContext [ replaceWithString; consumer ]
+    let replacement = successful.Context.CompilerContext.Words["batch.transform"]
+    equal "replacement preserves persistent status" Persistent replacement.Status
+    equal "replacement preserves library maturity" LibraryWord replacement.Maturity
+    equal "replacement keeps definition maturity synchronized" LibraryWord replacement.Definition.Maturity
+    equal "replacement advances the entry revision" 2 replacement.Revision
+    equal "replacement advances the definition revision" 2 replacement.Definition.Revision
+    equal "replacement preserves stable identity" (WordId "user-batch.transform") successful.Context.CompilerContext.WordIds["batch.transform"]
+    let updatedCall =
+        VerifiedIrProgram.inspect successful.Program
+        |> fun program -> program.FunctionsById[WordId "batch-consumer"].FunctionBody |> resolvedCallsInBlock
+        |> List.find (fun call -> call.ResolvedName = "batch.transform")
+    equal "changed replacement signature is visible to a sibling in the same batch" (UserWordTarget(WordId "user-batch.transform", 2)) updatedCall.ResolvedTarget
+    let invoke =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins successful.Context.CompilerContext successful.Program "invoke-replaced" []
+            [ Push(LString "  trimmed  ", sourceSpan); Call("batch.consumer", sourceSpan) ] successful.Context.SourceOrigins
+    equal "sibling executes against the replacement body" [ StringValue "trimmed" ]
+        (IrInterpreter.executeBody (host (ResizeArray())) "invoke-replaced" invoke)
+
+    let retainedCaller =
+        wordEntry "batch.retained-caller" [ TInt ] [ TInt ] Set.empty [ Call("batch.transform", sourceSpan) ]
+    let incompatibleContext =
+        loweringContext [ oldEntry; retainedCaller ] (Map.ofList [ "batch.transform", [ "value" ]; "batch.retained-caller", [ "value" ] ])
+    let immutableSnapshot = incompatibleContext
+    let retainedError = captureLanguageError "replacement rechecks unchanged callers against the complete new signatures" "TYPE_STACK_MISMATCH" (fun () ->
+        FlowLowering.compileBatchWords incompatibleContext [ replaceWithString ] |> ignore)
+    equal "retained-call mismatch identifies the resolved callee" (Some "batch.transform") retainedError.Word
+    check "retained-call mismatch retains its source location" retainedError.Span.IsSome
+    check "failed batch compilation leaves the input snapshot unchanged" (incompatibleContext = immutableSnapshot)
+
+    let newWord = parseWord "word batch.added(value: Int) -> Int {\n    effects none\n    add(value, 1)\n}"
+    let addChange (id: string) (revision: int) : FlowLowering.FlowWordChange =
+        { Definition = newWord
+          RevisionIntent = FlowLowering.FlowWordRevisionIntent.Add(WordId id, revision) }
+    expectLanguageError "an add cannot reuse an existing name" "FLOW_BATCH_ADD_EXISTS" (fun () ->
+        FlowLowering.compileBatchWords baseContext [ { addChange "fresh-id" 1 with Definition = parseWord "word batch.transform(value: Int) -> Int {\n    effects none\n    value\n}" } ] |> ignore)
+    expectLanguageError "an add cannot reuse an existing stable identity" "FLOW_BATCH_ID_COLLISION" (fun () ->
+        FlowLowering.compileBatchWords baseContext [ addChange "user-batch.transform" 1 ] |> ignore)
+    expectLanguageError "two additions cannot share one identity" "FLOW_BATCH_ID_COLLISION" (fun () ->
+        FlowLowering.compileBatchWords baseContext [ addChange "reused-id" 1; { addChange "reused-id" 1 with Definition = parseWord "word batch.other(value: Int) -> Int {\n    effects none\n    value\n}" } ] |> ignore)
+    expectLanguageError "duplicate batch dictionary names fail before insertion" "FLOW_BATCH_DUPLICATE_NAME" (fun () ->
+        FlowLowering.compileBatchWords baseContext [ addChange "first-id" 1; addChange "second-id" 1 ] |> ignore)
+    expectLanguageError "replacement requires an existing user word" "FLOW_BATCH_REPLACE_MISSING" (fun () ->
+        FlowLowering.compileBatchWords baseContext [ { replaceWithString with Definition = parseWord "word missing(value: String) -> String {\n    effects none\n    value\n}" } ] |> ignore)
+    expectLanguageError "primitive replacement is protected" "FLOW_BATCH_REPLACE_PROTECTED" (fun () ->
+        FlowLowering.compileBatchWords baseContext [ { replaceWithString with Definition = parseWord "word add(left: String, right: String) -> String {\n    effects none\n    string::concat(left, right)\n}"; RevisionIntent = FlowLowering.FlowWordRevisionIntent.Replace(WordId "primitive-add", 1, 2) } ] |> ignore)
+    expectLanguageError "replacement identity must match the current dictionary identity" "FLOW_BATCH_REPLACE_ID_MISMATCH" (fun () ->
+        FlowLowering.compileBatchWords baseContext [ { replaceWithString with RevisionIntent = FlowLowering.FlowWordRevisionIntent.Replace(WordId "other-id", 1, 2) } ] |> ignore)
+    expectLanguageError "replacement expected revision must match the snapshot" "FLOW_BATCH_STALE_REVISION" (fun () ->
+        FlowLowering.compileBatchWords baseContext [ { replaceWithString with RevisionIntent = FlowLowering.FlowWordRevisionIntent.Replace(WordId "user-batch.transform", 0, 2) } ] |> ignore)
+    expectLanguageError "replacement revision must advance" "FLOW_BATCH_REVISION_NOT_ADVANCED" (fun () ->
+        FlowLowering.compileBatchWords baseContext [ { replaceWithString with RevisionIntent = FlowLowering.FlowWordRevisionIntent.Replace(WordId "user-batch.transform", 1, 1) } ] |> ignore)
+
+    let basicContext = loweringContext [] Map.empty
+    let basicAdd = addChange "new-id" 1
+    expectLanguageError "an empty batch is rejected explicitly" "FLOW_BATCH_EMPTY" (fun () ->
+        FlowLowering.compileBatchWords basicContext [] |> ignore)
+    expectLanguageError "base dictionary and identity keys must match exactly" "FLOW_BATCH_BASE_ID_MAP" (fun () ->
+        let malformed = { basicContext with CompilerContext = { basicContext.CompilerContext with WordIds = Map.remove "add" basicContext.CompilerContext.WordIds } }
+        FlowLowering.compileBatchWords malformed [ basicAdd ] |> ignore)
+    expectLanguageError "base IDs must be globally unique" "FLOW_BATCH_BASE_ID_DUPLICATE" (fun () ->
+        let ids = Map.add "subtract" (WordId "primitive-add") basicContext.CompilerContext.WordIds
+        let malformed = { basicContext with CompilerContext = { basicContext.CompilerContext with WordIds = ids } }
+        FlowLowering.compileBatchWords malformed [ basicAdd ] |> ignore)
+    expectLanguageError "parameter metadata keys must exist in the base dictionary" "FLOW_BATCH_PARAMETER_CATALOG_KEY" (fun () ->
+        let malformed = { basicContext with ParameterNames = Map.ofList [ "ghost.word", [ "value" ] ] }
+        FlowLowering.compileBatchWords malformed [ basicAdd ] |> ignore)
+    expectLanguageError "base parameter names must be unique and match arity" "FLOW_BATCH_PARAMETER_DUPLICATE" (fun () ->
+        let malformed = { basicContext with ParameterNames = Map.ofList [ "add", [ "value"; "value" ] ] }
+        FlowLowering.compileBatchWords malformed [ basicAdd ] |> ignore)
+    expectLanguageError "base parameter names must match input arity" "FLOW_BATCH_PARAMETER_ARITY" (fun () ->
+        let malformed = { basicContext with ParameterNames = Map.ofList [ "add", [ "value" ] ] }
+        FlowLowering.compileBatchWords malformed [ basicAdd ] |> ignore)
+    expectLanguageError "base word and definition revisions must be synchronized" "FLOW_BATCH_BASE_REVISION" (fun () ->
+        let inconsistentWords = basicContext.CompilerContext.Words |> Map.add "add" { basicContext.CompilerContext.Words["add"] with Definition = { basicContext.CompilerContext.Words["add"].Definition with Revision = 0 } }
+        let malformed = { basicContext with CompilerContext = { basicContext.CompilerContext with Words = inconsistentWords } }
+        FlowLowering.compileBatchWords malformed [ basicAdd ] |> ignore)
+    for malformedName in [ ""; "bad name"; "a..b"; ".leading"; "trailing." ] do
+        let malformedDefinition = { newWord with Name = malformedName }
+        let malformedChange: FlowLowering.FlowWordChange =
+            { Definition = malformedDefinition
+              RevisionIntent = FlowLowering.FlowWordRevisionIntent.Add(WordId "bad-name", 1) }
+        expectLanguageError ("host-built malformed batch word name " + malformedName) "FLOW_BATCH_WORD_NAME_INVALID" (fun () ->
+            FlowLowering.compileBatchWords basicContext [ malformedChange ] |> ignore)
+    let unknownTypeWord =
+        { newWord with Parameters = [ { newWord.Parameters.Head with Type = TNamed "MissingType" } ] }
+    expectLanguageError "proposed signatures must use types present in the immutable type catalog" "FLOW_BATCH_UNKNOWN_TYPE" (fun () ->
+        FlowLowering.compileBatchWords basicContext
+            [ { Definition = unknownTypeWord; RevisionIntent = FlowLowering.FlowWordRevisionIntent.Add(WordId "unknown-type", 1) } ]
+        |> ignore)
+    let openTypeWord =
+        { newWord with Parameters = [ { newWord.Parameters.Head with Type = TVar "a" } ] }
+    expectLanguageError "Flow batch declarations cannot introduce generic type variables" "FLOW_BATCH_OPEN_TYPE" (fun () ->
+        FlowLowering.compileBatchWords basicContext
+            [ { Definition = openTypeWord; RevisionIntent = FlowLowering.FlowWordRevisionIntent.Add(WordId "open-type", 1) } ]
+        |> ignore)
+    let unknownEffectWord = { newWord with Effects = Set.singleton "memory.allocate" }
+    expectLanguageError "proposed effects must belong to the closed host effect vocabulary" "FLOW_BATCH_UNKNOWN_EFFECT" (fun () ->
+        FlowLowering.compileBatchWords basicContext
+            [ { Definition = unknownEffectWord; RevisionIntent = FlowLowering.FlowWordRevisionIntent.Add(WordId "unknown-effect", 1) } ]
+        |> ignore)
+
+let private testFlowBatchFinalValidationAndOrigins () =
+    let context = loweringContext [] Map.empty
+    let added (source: string) (identity: string) : FlowLowering.FlowWordChange =
+        { Definition = parseWord source
+          RevisionIntent = FlowLowering.FlowWordRevisionIntent.Add(WordId identity, 1) }
+    let effectfulButUnderdeclared =
+        added "word batch.underdeclared() -> Unit {\n    effects none\n    console::write(\"hello\")\n}" "batch-underdeclared"
+    expectLanguageError "final compiler checks the aggregate body effect surface" "EFFECT_UNDECLARED" (fun () ->
+        FlowLowering.compileBatchWords context [ effectfulButUnderdeclared ] |> ignore)
+    let cycleA = added "word batch.cycle-a(value: Int) -> Int {\n    effects none\n    batch::cycle-b(value)\n}" "batch-cycle-a"
+    let cycleB = added "word batch.cycle-b(value: Int) -> Int {\n    effects none\n    batch::cycle-a(value)\n}" "batch-cycle-b"
+    expectLanguageError "final compiler checks cycles across the complete batch" "IR_RECURSIVE_CALL_GRAPH" (fun () ->
+        FlowLowering.compileBatchWords context [ cycleA; cycleB ] |> ignore)
+
+    let vectorProducer = added "word batch.split(value: Int) -> (Int, String) {\n    effects none\n    return(value, \"label\")\n}" "batch-split"
+    let vectorConsumer = added "word batch.take-first(value: Int) -> Int {\n    effects none\n    let (number, label) = batch::split(value);\n    number\n}" "batch-take-first"
+    let vectors = FlowLowering.compileBatchWords context [ vectorConsumer; vectorProducer ]
+    let invokeVector =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+            vectors.Context.CompilerContext vectors.Program "invoke-vector" []
+            [ Push(LInt 17L, sourceSpan); Call("batch.take-first", sourceSpan) ] vectors.Context.SourceOrigins
+    equal "batch vector outputs destructure positionally from forward producers" [ IntValue 17L ]
+        (IrInterpreter.executeBody (host (ResizeArray())) "invoke-vector" invokeVector)
+    let badVectorConsumer = added "word batch.vector-as-scalar(value: Int) -> Int {\n    effects none\n    batch::split(value)\n}" "batch-vector-as-scalar"
+    expectLanguageError "a multi-output batch word cannot be used in a scalar expression position" "FLOW_CALL_OUTPUT_ARITY" (fun () ->
+        FlowLowering.compileBatchWords context [ vectorProducer; badVectorConsumer ] |> ignore)
+
+    let rich = richTypeContext []
+    let badValidator: FlowLowering.FlowWordChange =
+        { Definition = parseWord "word email.valid?(value: String) -> String {\n    effects none\n    string::trim(value)\n}"
+          RevisionIntent = FlowLowering.FlowWordRevisionIntent.Replace(WordId "user-email.valid?", 1, 2) }
+    expectLanguageError "aggregate compilation rechecks record and scalar validators" "TYPE_VALIDATOR_SIGNATURE" (fun () ->
+        FlowLowering.compileBatchWords rich [ badValidator ] |> ignore)
+
+    let firstWord = parseWord "word batch.replace(value: Int) -> Int {\n    effects none\n    value\n}"
+    let retainedWord = parseWord "word batch.retained(value: Int) -> Int {\n    effects none\n    add(value, 1)\n}"
+    let first = FlowLowering.compileWord context (WordId "batch-replace") firstWord
+    let second = FlowLowering.compileWord first.Context (WordId "batch-retained") retainedWord
+    let oldMarkers = first.Lowered.Projection.SyntheticOrigins |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+    let retainedMarkers = second.Lowered.Projection.SyntheticOrigins |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+    let oldOriginKeys = second.Context.SourceOrigins |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+    let replacement: FlowLowering.FlowWordChange =
+        { Definition = parseWord "word batch.replace(value: Int) -> Int {\n    effects none\n    add(value, 2)\n}"
+          RevisionIntent = FlowLowering.FlowWordRevisionIntent.Replace(WordId "batch-replace", 0, 1) }
+    let compiled = FlowLowering.compileBatchWords second.Context [ replacement ]
+    let replacementMarkers = compiled.LoweredWords.Head.Projection.SyntheticOrigins |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+    let finalOriginKeys = compiled.Context.SourceOrigins |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+    check "replacement pruning removes exactly old body markers and retains untouched markers"
+        (Set.isSubset retainedMarkers finalOriginKeys
+         && Set.isEmpty(Set.intersect oldMarkers finalOriginKeys)
+         && Set.isSubset (Set.difference oldOriginKeys oldMarkers) finalOriginKeys)
+    check "new batch markers are disjoint from every input marker"
+        (Set.isEmpty(Set.intersect oldOriginKeys replacementMarkers))
+    check "successful final compile proves the retained origin map has exactly final IR markers" (not finalOriginKeys.IsEmpty)
+
+    let missingMarker = second.Context.SourceOrigins |> Map.toSeq |> Seq.head |> fst
+    let missingOrigin = { second.Context with SourceOrigins = Map.remove missingMarker second.Context.SourceOrigins }
+    expectLanguageError "missing input origins fail before a replacement can hide them" "IR_SOURCE_ORIGIN_MISSING" (fun () ->
+        FlowLowering.compileBatchWords missingOrigin [ replacement ] |> ignore)
+    let extraMarker = { File = "<stale>"; Line = 1; Column = Int32.MaxValue; Length = 0 }
+    let extraOrigin = { File = "<stale-origin>"; Line = 1; Column = 1; Length = 1 }
+    let staleOrigin = { second.Context with SourceOrigins = Map.add extraMarker extraOrigin second.Context.SourceOrigins }
+    expectLanguageError "stale input origins fail before replacement pruning" "IR_SOURCE_ORIGIN_SET_MISMATCH" (fun () ->
+        FlowLowering.compileBatchWords staleOrigin [ replacement ] |> ignore)
+    let invalidOwnedOrigin =
+        let marker = oldMarkers |> Set.toList |> List.head
+        let invalidSpan = { File = ""; Line = 0; Column = 0; Length = 0 }
+        { second.Context with SourceOrigins = Map.add marker invalidSpan second.Context.SourceOrigins }
+    expectLanguageError "invalid origin values on replaced words cannot be pruned away" "IR_SOURCE_ORIGIN_INVALID" (fun () ->
+        FlowLowering.compileBatchWords invalidOwnedOrigin [ replacement ] |> ignore)
+
 let private testFlowDiagnostics () =
     let context = loweringContext [] Map.empty
     let ambiguous = parseExpression "1.unknown(2)"
@@ -2008,6 +2367,10 @@ let main _ =
     testContainerAndMatchLowering ()
     testFlowOutputVectors ()
     testFlowAuthoredCases ()
+    testFlowBatchForwardResolution ()
+    testFlowBatchSignatureKindsAndNamedArguments ()
+    testFlowBatchReplacementAndValidation ()
+    testFlowBatchFinalValidationAndOrigins ()
     testFlowDiagnostics ()
     printfn "Flow tests passed: %d assertions" assertions
     0

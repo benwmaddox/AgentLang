@@ -1,0 +1,7 @@
+{
+  "chunk_id": "1550a4",
+  "wall_time_seconds": 8.9280161,
+  "exit_code": 0,
+  "original_token_count": 343,
+  "output": "PASS JSON-lines protocol and eval\r\nPASS checked numeric boundaries\r\nPASS effects and capability boundary\r\nPASS Customer records, locals, and branches\r\nPASS test-gated project commits\r\nPASS candidate dependency persistence\r\nPASS selected metadata dependency closure\r\nPASS temporary metadata dependency rejection\r\nPASS temporary session isolation\r\nPASS scoped replacement and discard\r\nPASS scoped test metadata persistence\r\nPASS replacement caller tests gate durable updates\r\nPASS stable word identity lifecycle\r\nPASS runtime error test expectations\r\nPASS typed value-expression expectations\r\nPASS expectation-only dependency persistence\r\nPASS expected-expression rename and coverage isolation\r\nPASS strict structured eval and publication\r\nPASS nominal and refined types\r\nPASS validator rejection\r\nPASS type-only commit\r\nPASS frozen validator replacement\r\nPASS raw source-site coverage identity\r\nPASS library coverage gate\r\nPASS task abort rollback\r\nPASS task commit temporary cleanup\r\nPASS task logs survive reload\r\nPASS task log failures remain truthful warnings\r\nPASS named snapshot restores project and providers\r\nPASS semantic rename and deprecation\r\nPASS typed containers and syntax metadata\r\nPASS container library coverage\r\nPASS live bounded Discovery commands\r\nPASS verified IR runtime snapshots and formatter\r\nAll 34 acceptance groups passed (583 assertions).\r\n"
+}
