@@ -8,8 +8,12 @@ module Parser =
     type private Line = { Text: string; Number: int }
     type private Token = { Text: string; Column: int }
 
-    let private reservedWordNames = set [ "if"; "else"; "end"; "let"; "true"; "false"; "unit" ]
-    let private reservedTypeNames = set [ "Int"; "Float"; "Bool"; "String"; "Unit"; "a"; "b"; "c" ]
+    let private reservedWordNames =
+        set [ "if"; "else"; "end"; "let"; "true"; "false"; "unit"
+              "match-option"; "match-result"; "some"; "none"; "ok"; "error"
+              "list.empty"; "list.singleton"; "option.none"; "option.some"; "result.ok"; "result.error"
+              "list.map"; "list.filter"; "list.each" ]
+    let private reservedTypeNames = set [ "Int"; "Float"; "Bool"; "String"; "Unit"; "List"; "Option"; "Result"; "a"; "b"; "c" ]
 
     let private validWordName (name: string) =
         not (String.IsNullOrWhiteSpace name)
@@ -64,7 +68,17 @@ module Parser =
                         index <- index + 1
                     if not closed then fail file line.Number (start + 1) "PARSE_UNTERMINATED_STRING" "String literal is missing its closing quote."
                 else
-                    while index < text.Length && not (Char.IsWhiteSpace text[index]) do index <- index + 1
+                    // Keep whitespace inside a closed generic constructor token, e.g.
+                    // result.ok<Int, String>, together so the type arguments remain exact.
+                    let mutable genericDepth = 0
+                    let mutable scanning = true
+                    while index < text.Length && scanning do
+                        let ch = text[index]
+                        if Char.IsWhiteSpace ch && genericDepth = 0 then scanning <- false
+                        else
+                            if ch = '<' then genericDepth <- genericDepth + 1
+                            elif ch = '>' then genericDepth <- genericDepth - 1
+                            index <- index + 1
                 result.Add { Text = text.Substring(start, index - start); Column = start + 1 }
         List.ofSeq result
 
@@ -97,21 +111,49 @@ module Parser =
 
     let private parseType file line (source: string) =
         let text = source.Trim()
-        let rec parse (text: string) =
-            let value = text.Trim()
-            match value with
-            | "Int" -> TInt
-            | "Float" -> TFloat
-            | "Bool" -> TBool
-            | "String" -> TString
-            | "Unit" -> TUnit
-            | _ ->
-                let genericStart = value.IndexOf('<')
-                if genericStart > 0 && value.EndsWith(">", StringComparison.Ordinal) then
-                    fail file line 1 "PARSE_UNSUPPORTED_TYPE" $"Generic type syntax '{value}' is reserved but not implemented in this prototype."
-                elif String.IsNullOrWhiteSpace value then fail file line 1 "PARSE_INVALID_TYPE" "Expected a type name."
-                else TNamed value
-        parse text
+        let mutable cursor = 0
+        let skipWhitespace () =
+            while cursor < text.Length && Char.IsWhiteSpace text[cursor] do cursor <- cursor + 1
+        let parseName () =
+            let start = cursor
+            while cursor < text.Length && Char.IsLetterOrDigit text[cursor] do cursor <- cursor + 1
+            if start = cursor then fail file line (cursor + 1) "PARSE_INVALID_TYPE" "Expected a type name."
+            text.Substring(start, cursor - start)
+        let rec parse () =
+            skipWhitespace ()
+            let name = parseName ()
+            skipWhitespace ()
+            let arguments =
+                if cursor < text.Length && text[cursor] = '<' then
+                    cursor <- cursor + 1
+                    let values = ResizeArray<LangType>()
+                    let mutable needsArgument = true
+                    while needsArgument do
+                        values.Add(parse ())
+                        skipWhitespace ()
+                        if cursor >= text.Length then fail file line (cursor + 1) "PARSE_INVALID_TYPE" $"Type '{text}' is missing a closing '>'."
+                        elif text[cursor] = ',' then cursor <- cursor + 1
+                        elif text[cursor] = '>' then cursor <- cursor + 1; needsArgument <- false
+                        else fail file line (cursor + 1) "PARSE_INVALID_TYPE" $"Expected ',' or '>' in type '{text}'."
+                    Some(List.ofSeq values)
+                else None
+            match name, arguments with
+            | "Int", None -> TInt
+            | "Float", None -> TFloat
+            | "Bool", None -> TBool
+            | "String", None -> TString
+            | "Unit", None -> TUnit
+            | "List", Some [ item ] -> TList item
+            | "Option", Some [ item ] -> TOption item
+            | "Result", Some [ ok; error ] -> TResult(ok, error)
+            | ("List" | "Option" | "Result"), _ -> fail file line 1 "PARSE_INVALID_TYPE_ARITY" $"Type '{name}' has the wrong number of type arguments."
+            | _, Some _ -> fail file line 1 "PARSE_UNSUPPORTED_TYPE" $"Parameterized type '{name}' is not part of the closed built-in type set."
+            | _, None when name = "Int" || name = "Float" || name = "Bool" || name = "String" || name = "Unit" -> fail file line 1 "PARSE_INVALID_TYPE" $"Type '{name}' cannot have type arguments."
+            | _, None -> TNamed name
+        let result = parse ()
+        skipWhitespace ()
+        if cursor <> text.Length then fail file line (cursor + 1) "PARSE_INVALID_TYPE" $"Unexpected text in type '{text}'."
+        result
 
     let private parseHeader file (line: Line) (prefix: string) =
         let tokens = tokenize file line
@@ -123,10 +165,56 @@ module Parser =
         let pieces = source.Split([| "->" |], StringSplitOptions.None)
         if pieces.Length <> 2 then fail file line.Number 1 "PARSE_INVALID_SIGNATURE" "Word signature must use 'Inputs -> Outputs'."
         let parseSide (part: string) =
-            part.Split([| ' '; '\t' |], StringSplitOptions.RemoveEmptyEntries)
-            |> Array.toList
-            |> List.map (parseType file line.Number)
+            let values = ResizeArray<string>()
+            let mutable start = -1
+            let mutable depth = 0
+            for index = 0 to part.Length - 1 do
+                let ch = part[index]
+                if start < 0 && not (Char.IsWhiteSpace ch) then start <- index
+                if start >= 0 then
+                    if ch = '<' then depth <- depth + 1
+                    elif ch = '>' then depth <- depth - 1
+                    if depth < 0 then fail file line.Number (index + 1) "PARSE_INVALID_TYPE" "Unexpected '>' in signature type."
+                    if Char.IsWhiteSpace ch && depth = 0 then
+                        let value = part.Substring(start, index - start).Trim()
+                        if value <> "" then values.Add value
+                        start <- -1
+            if start >= 0 then values.Add(part.Substring(start).Trim())
+            if depth <> 0 then fail file line.Number 1 "PARSE_INVALID_TYPE" "A signature type is missing a matching angle bracket."
+            values |> Seq.map (parseType file line.Number) |> Seq.toList
         parseSide pieces[0], parseSide pieces[1]
+
+    let private parseGenericArguments file line (text: string) =
+        let values = ResizeArray<string>()
+        let mutable depth = 0
+        let mutable start = 0
+        for index = 0 to text.Length - 1 do
+            match text[index] with
+            | '<' -> depth <- depth + 1
+            | '>' -> depth <- depth - 1
+            | ',' when depth = 0 ->
+                values.Add(text.Substring(start, index - start).Trim())
+                start <- index + 1
+            | _ -> ()
+        values.Add(text.Substring(start).Trim())
+        if values |> Seq.exists String.IsNullOrWhiteSpace then fail file line.Number 1 "PARSE_INVALID_CONTAINER_CONSTRUCTOR" "Every container constructor type argument must be specified."
+        values |> Seq.map (parseType file line.Number) |> Seq.toList
+
+    let private parseContainerConstructor file (line: Line) (token: Token) =
+        let constructors =
+            [ "list.empty", ListEmpty; "list.singleton", ListSingleton
+              "option.none", OptionNone; "option.some", OptionSome
+              "result.ok", ResultOk; "result.error", ResultError ]
+        constructors
+        |> List.tryPick (fun (prefix, kind) ->
+            if token.Text.StartsWith(prefix + "<", StringComparison.Ordinal) && token.Text.EndsWith(">", StringComparison.Ordinal) then
+                let arguments = token.Text.Substring(prefix.Length + 1, token.Text.Length - prefix.Length - 2) |> parseGenericArguments file line
+                let expected = match kind with ListEmpty | ListSingleton | OptionNone | OptionSome -> 1 | ResultOk | ResultError -> 2
+                if arguments.Length <> expected then fail file line.Number token.Column "PARSE_INVALID_CONTAINER_CONSTRUCTOR" $"'{prefix}' requires {expected} explicit type argument(s)."
+                Some(ConstructContainer(kind, arguments, span file line.Number token.Column token.Text.Length))
+            elif token.Text.StartsWith(prefix, StringComparison.Ordinal) then
+                fail file line.Number token.Column "PARSE_INVALID_CONTAINER_CONSTRUCTOR" $"Use '{prefix}<...>' with explicit closed type arguments."
+            else None)
 
     let private parseOps file (line: Line) =
         let tokens = tokenize file line
@@ -142,12 +230,34 @@ module Parser =
                     match rest with
                     | name :: remaining -> Let(name.Text, span file line.Number token.Column (name.Column + name.Text.Length - token.Column)) :: convert remaining
                     | [] -> fail file line.Number token.Column "PARSE_EXPECTED_LOCAL_NAME" "'let' must be followed by a local name."
-                | None -> Call(token.Text, span file line.Number token.Column token.Text.Length) :: convert rest
+                | None when token.Text = "list.map" || token.Text = "list.filter" || token.Text = "list.each" ->
+                    match rest with
+                    | target :: remaining when validWordName target.Text ->
+                        let expressionSpan = span file line.Number token.Column (target.Column + target.Text.Length - token.Column)
+                        let operation = if token.Text = "list.map" then MapList(target.Text, expressionSpan) elif token.Text = "list.filter" then FilterList(target.Text, expressionSpan) else EachList(target.Text, expressionSpan)
+                        operation :: convert remaining
+                    | target :: _ -> fail file line.Number target.Column "PARSE_INVALID_WORD_NAME" "List higher-order operations require a static word name argument."
+                    | [] -> fail file line.Number token.Column "PARSE_EXPECTED_WORD_NAME" $"'{token.Text}' must be followed by a static word name."
+                | None ->
+                    match parseContainerConstructor file line token with
+                    | Some expression -> expression :: convert rest
+                    | None -> Call(token.Text, span file line.Number token.Column token.Text.Length) :: convert rest
         convert tokens
 
     /// Parse expression lines. If blocks use standalone `if`, optional `else`, and `end` lines.
     let private parseExpressionLines file (lines: Line list) =
-        let rec parseBlock index allowElse =
+        let skipBlank index =
+            let mutable cursor = index
+            while cursor < lines.Length && String.IsNullOrWhiteSpace(stripComment lines[cursor].Text) do cursor <- cursor + 1
+            cursor
+
+        let parseLocalHeader (line: Line) keyword =
+            let tokens = tokenize file line
+            match tokens with
+            | [ head; name ] when head.Text = keyword && validWordName name.Text -> name.Text
+            | _ -> fail file line.Number 1 "PARSE_INVALID_MATCH_CASE" $"Expected '{keyword} <local-name>'."
+
+        let rec parseBlock index (stops: Set<string>) =
             let expressions = ResizeArray<Expr>()
             let mutable cursor = index
             let mutable terminator = "eof"
@@ -156,8 +266,8 @@ module Parser =
                 let line = lines[cursor]
                 let content = stripComment line.Text |> fun value -> value.Trim()
                 match content with
-                | "else" when allowElse ->
-                    terminator <- "else"
+                | value when stops.Contains value || (stops.Contains "error" && value.StartsWith("error ", StringComparison.Ordinal)) ->
+                    terminator <- if value.StartsWith("error ", StringComparison.Ordinal) then "error" else value
                     cursor <- cursor + 1
                     running <- false
                 | "end" ->
@@ -165,23 +275,46 @@ module Parser =
                     cursor <- cursor + 1
                     running <- false
                 | "if" ->
-                    let thenBranch, afterThen, endKind = parseBlock (cursor + 1) true
+                    let thenBranch, afterThen, endKind = parseBlock (cursor + 1) (Set.ofList [ "else"; "end" ])
                     let elseBranch, afterElse =
                         if endKind = "else" then
-                            let branch, next, finalKind = parseBlock afterThen false
+                            let branch, next, finalKind = parseBlock afterThen (Set.singleton "end")
                             if finalKind <> "end" then fail file line.Number 1 "PARSE_UNCLOSED_IF" "The if branch is missing its closing 'end'."
                             branch, next
                         elif endKind = "end" then [], afterThen
                         else fail file line.Number 1 "PARSE_UNCLOSED_IF" "The if branch is missing its closing 'end'."
                     expressions.Add(If(thenBranch, elseBranch, span file line.Number 1 line.Text.Length))
                     cursor <- afterElse
+                | "match-option" ->
+                    let someHeader = skipBlank (cursor + 1)
+                    if someHeader >= lines.Length then fail file line.Number 1 "PARSE_UNCLOSED_MATCH" "The option match requires a some case, a none case, and a closing 'end'."
+                    let someName = parseLocalHeader lines[someHeader] "some"
+                    let someBranch, afterSome, someTerminator = parseBlock (someHeader + 1) (Set.ofList [ "none"; "end" ])
+                    if someTerminator <> "none" then fail file line.Number 1 "PARSE_MISSING_MATCH_CASE" "An option match requires both 'some <name>' and 'none' cases."
+                    let noneBranch, afterNone, finalTerminator = parseBlock afterSome (Set.singleton "end")
+                    if finalTerminator <> "end" then fail file line.Number 1 "PARSE_UNCLOSED_MATCH" "The option match is missing its closing 'end'."
+                    expressions.Add(MatchOption(someName, someBranch, noneBranch, span file line.Number 1 line.Text.Length))
+                    cursor <- afterNone
+                | "match-result" ->
+                    let okHeader = skipBlank (cursor + 1)
+                    if okHeader >= lines.Length then fail file line.Number 1 "PARSE_UNCLOSED_MATCH" "The result match requires ok and error cases and a closing 'end'."
+                    let okName = parseLocalHeader lines[okHeader] "ok"
+                    let okBranch, afterOk, okTerminator = parseBlock (okHeader + 1) (Set.ofList [ "error"; "end" ])
+                    if okTerminator <> "error" then fail file line.Number 1 "PARSE_MISSING_MATCH_CASE" "A result match requires both 'ok <name>' and 'error <name>' cases."
+                    let errorName = parseLocalHeader lines[afterOk - 1] "error"
+                    let errorBranch, afterError, finalTerminator = parseBlock afterOk (Set.singleton "end")
+                    if finalTerminator <> "end" then fail file line.Number 1 "PARSE_UNCLOSED_MATCH" "The result match is missing its closing 'end'."
+                    expressions.Add(MatchResult(okName, errorName, okBranch, errorBranch, span file line.Number 1 line.Text.Length))
+                    cursor <- afterError
                 | "else" -> fail file line.Number 1 "PARSE_UNEXPECTED_ELSE" "'else' has no matching 'if'."
+                | "none" | "error" | "some" | "ok" -> fail file line.Number 1 "PARSE_UNEXPECTED_MATCH_CASE" $"'{content}' has no matching option or result match."
+                | value when value.StartsWith("error ", StringComparison.Ordinal) -> fail file line.Number 1 "PARSE_UNEXPECTED_MATCH_CASE" $"'{content}' has no matching result match."
                 | "" -> cursor <- cursor + 1
                 | _ ->
                     for expression in parseOps file line do expressions.Add expression
                     cursor <- cursor + 1
             List.ofSeq expressions, cursor, terminator
-        let expressions, next, terminator = parseBlock 0 false
+        let expressions, next, terminator = parseBlock 0 Set.empty
         if terminator = "end" then
             let line = lines[min (next - 1) (lines.Length - 1)]
             fail file line.Number 1 "PARSE_UNEXPECTED_END" "Unexpected 'end'."
@@ -192,7 +325,7 @@ module Parser =
         let mutable cursor = start + 1
         while cursor < lines.Length && depth > 0 do
             let content = stripComment lines[cursor].Text |> fun value -> value.Trim()
-            if content = "if" then depth <- depth + 1
+            if content = "if" || content = "match-option" || content = "match-result" then depth <- depth + 1
             elif content = "end" then depth <- depth - 1
             cursor <- cursor + 1
         if depth <> 0 then fail file lines[start].Number 1 "PARSE_UNCLOSED_BLOCK" "Definition is missing its closing 'end'."
@@ -314,10 +447,20 @@ module Parser =
                     for index = cursor + 1 to finish - 1 do
                         let line = lines[index]
                         if not (String.IsNullOrWhiteSpace(stripComment line.Text)) then
-                            let tokens = tokenize file line
-                            match tokens with
-                            | field :: fieldName :: fieldType :: [] when field.Text = "field" ->
-                                fields.Add { Name = fieldName.Text; Type = parseType file line.Number fieldType.Text }
+                            let fieldText = stripComment line.Text |> fun value -> value.Trim()
+                            let prefixValid =
+                                fieldText.StartsWith("field", StringComparison.Ordinal)
+                                && fieldText.Length > "field".Length
+                                && Char.IsWhiteSpace fieldText["field".Length]
+                            if not prefixValid then fail file line.Number 1 "PARSE_INVALID_FIELD" "Record fields use 'field name Type'."
+                            let rest = fieldText.Substring("field".Length).Trim()
+                            let separator = rest |> Seq.tryFindIndex Char.IsWhiteSpace
+                            match separator with
+                            | Some index when index > 0 ->
+                                let fieldName = rest.Substring(0, index)
+                                let typeText = rest.Substring(index).Trim()
+                                if not (validWordName fieldName) || typeText = "" then fail file line.Number 1 "PARSE_INVALID_FIELD" "Record fields use 'field name Type' with a valid field name and a closed type."
+                                fields.Add { Name = fieldName; Type = parseType file line.Number typeText }
                             | _ -> fail file line.Number 1 "PARSE_INVALID_FIELD" "Record fields use 'field name Type'."
                     if fields.Count = 0 then fail file lines[cursor].Number 1 "PARSE_EMPTY_RECORD" "A record must declare at least one field."
                     let duplicate = fields |> Seq.groupBy (fun field -> field.Name) |> Seq.tryFind (fun (_, values) -> Seq.length values > 1)

@@ -6,6 +6,8 @@ Status: **verified** means the listed scoped behavior has observed acceptance ev
 
 Baseline evidence: [Milestone 001 report](../reports/001-first-usable-prototype.md), Core/Parser/Compiler/Runtime/Protocol modules, CLI, examples, and the 16-group/154-assertion acceptance runner. The detailed acceptance source is authoritative for what the baseline tests actually exercise.
 
+Current milestone evidence: [Milestone 002 report](../reports/002-next-milestone.md), fresh Release build with zero warnings/errors, 18 language groups/256 assertions, 82 offline harness assertions, and 7 business groups/113 assertions. No live model comparison has been run.
+
 | Original section | Requirement / disposition | Current evidence and outstanding work |
 | --- | --- | --- |
 | 1 | Partial: small extensible typed environment | Runtime and words exist; complete values/providers/evaluation remain |
@@ -15,12 +17,12 @@ Baseline evidence: [Milestone 001 report](../reports/001-first-usable-prototype.
 | 5 | Design: explicit inspectable deterministic behavior | Apply to every feature and review; discovery still incomplete |
 | 6 | Partial: complete word metadata | Signatures/source/effects/tests/dependencies present; IDs/provenance/history incomplete |
 | 7 | Verified: concatenative execution | Basic eval and user-word acceptance groups |
-| 8 | Verified: typed scalar/nominal stack | Type mismatch and no-effects-on-type-error checks; containers pending |
-| 9 | Partial: Int/Float/Bool/String/Unit/List/Option/Result/Record | Scalars and records verified; container surface pending |
+| 8 | Verified: typed scalar/nominal stack | Type mismatch and no-effects-on-type-error checks; closed container types independently probed |
+| 9 | Verified: Int/Float/Bool/String/Unit/List/Option/Result/Record foundation | Closed nested containers, static callbacks/cases, persistence and coverage checks |
 | 10 | Verified: nominal refined scalar types | Email/unit distinctions, validators, reload and freeze checks |
 | 11 | Partial: explicit effect vocabulary | Declarations and transitive checks; complete providers pending |
 | 12 | Partial: effect capability restrictions | Default denial verified; resource/path-scoped policy pending |
-| 13 | Partial: 50–100 boring primitives | Initial 45; lists/results/JSON/process/environment/introspection primitives incomplete |
+| 13 | Partial: 50–100 boring primitives | Baseline 44, current dictionary 49; syntax constructs counted separately. JSON/process/environment/introspection primitives incomplete |
 | 14 | Verified: no arbitrary .NET escape | Only host builtins invoke host code; no reflection/call escape surface |
 | 15 | Verified: interactive REPL foundation | Multiline CLI smoke and expressions; additional commands tracked below |
 | 16 | Partial: required introspection commands | words/describe/source/dependencies/callers/search/effects/tests/test/examples; type-of/recent-words pending |
@@ -49,10 +51,10 @@ Baseline evidence: [Milestone 001 report](../reports/001-first-usable-prototype.
 | 39 | Verified: typed local bindings | Local/branch joins and demo checks |
 | 40 | Partial: structural search | Text search exists; search-type/output/effect/dependency pending |
 | 41 | Pending: compact dependency/type context | context command and bounded deterministic representation missing |
-| 42 | Pending: context/token accounting | Needs provider usage plus harness request/retrieval accounting |
-| 43 | Partial: complete small-business fixture | Customer demo only; ten types, stateful domain, 40–60 words and 50–100 tests pending |
+| 42 | Partial: context/token accounting | Harness records complete prepared/sent request bytes and returned provider usage; exact token budget/retrieval breakdown pending |
+| 43 | Partial: complete small-business fixture | Customer language demo and conventional typed business foundation; full language domain, 40–60 words and 50–100 tests pending |
 | 44 | Excluded from first domain: optional later simulation | Preserve for later generalization, not a V1 blocker |
-| 45 | Pending: equivalent conventional environment | F# baseline and matching acceptance oracles missing |
+| 45 | Partial: equivalent conventional environment | F# business foundation passes 7 groups/113 assertions; language parity and matching task oracles missing |
 | 46 | Pending: fresh/growing/debugging/discovery/refactoring experiments | Categories require tasks and runner |
 | 47 | Pending: all task metrics | Runtime aggregates are a subset; harness and event sources required |
 | 48 | Pending: Vocabulary Reuse Ratio | Define start-of-task words and distinguish domain/test/primitive executions |
@@ -64,9 +66,9 @@ Baseline evidence: [Milestone 001 report](../reports/001-first-usable-prototype.
 | 54 | Pending: structural duplicate warnings | Commit warning and deterministic fingerprints missing |
 | 55 | Pending: deprecate/rename/replace | Stable identity and caller-safe durable edits required |
 | 56 | Pending: reproducible snapshot save/load | Snapshot integrity and restoration tests missing |
-| 57 | Pending: model-provider harness | API adapter, traces/usage/final state/oracles; no live runs yet |
-| 58 | Pending: compact system prompt | Harness prompt artifact and actual usage required |
-| 59 | Pending: small initial context strategy | Enforce without dumping dictionary, track retrieval costs |
+| 57 | Partial: model-provider harness | Scripted/canned HTTP adapter, traces/usage/state/oracles verified; snapshot selection, conventional runner and live trials pending |
+| 58 | Partial: compact system prompt | Mandatory compact primer and per-run prompt artifact verified; live usage pending |
+| 59 | Partial: small initial context strategy | Prompt avoids dictionary dump; full requests include retrieval history and byte caps, exact token accounting pending |
 | 60 | Pending: conventional tool baseline | Confined read/search/edit/test tools and same provider/model |
 | 61 | Pending: 60 deterministic benchmark tasks | 20 simple, 20 medium, 10 debugging, 10 refactoring and independent acceptance tests |
 | 62 | Partial: vocabulary-building task sequence | Initial premium demo; sequence and comparable costs pending |

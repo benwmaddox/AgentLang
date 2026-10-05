@@ -13,6 +13,8 @@ The hypothesis is that accumulated, discoverable vocabulary reduces the marginal
 
 The environment favors agent comprehension, explicit behavior, deterministic introspection, and testability over syntax terseness, compiler sophistication, and throughput. Named words are the primary unit of development. Plain source files remain the durable representation; agents interact through definition-level commands.
 
+AI coding agents are external users and builders of programs, not language entities or runtime internals. The parser, compiler, dictionary, interpreter, tests, and capability enforcement operate deterministically without an LLM or API credential. A developer or ordinary script can use the same interfaces. Task sessions are transactions and observability records, not autonomous agents. Any model integration belongs to a separate optional experiment harness that consumes the public command protocol; the runtime must not depend on that harness or expose built-in AI behavior.
+
 ## Scope and release boundaries
 
 The first usable release is a vertical slice of the original milestones. It must let an agent **inspect, define, run, test, commit, reload, and reuse** a word without directly editing project files.

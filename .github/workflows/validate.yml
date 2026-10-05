@@ -1,0 +1,29 @@
+name: Validate prototype
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+      - name: Build and run acceptance checks
+        shell: pwsh
+        run: ./scripts/Validate.ps1
+      - name: Save validation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-evidence
+          path: .agentlang/reports/validation.json
+          include-hidden-files: true
+          if-no-files-found: warn

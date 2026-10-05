@@ -1,0 +1,44 @@
+{
+  "responses": [
+    {
+      "status": "completed",
+      "output": [
+        {
+          "type": "function_call",
+          "id": "fc_offline_1",
+          "call_id": "offline_1",
+          "name": "agentlang_inspect",
+          "arguments": "{\"operation\":\"describe\",\"name\":\"customer.discounted-balance\"}"
+        }
+      ]
+    },
+    {
+      "status": "completed",
+      "output": [
+        {
+          "type": "function_call",
+          "id": "fc_offline_2",
+          "call_id": "offline_2",
+          "name": "agentlang_eval",
+          "arguments": "{\"code\":\"\\\"premium\\\" 100.0 customer.new customer.discounted-balance\"}"
+        }
+      ]
+    },
+    {
+      "status": "completed",
+      "output": [
+        {
+          "type": "message",
+          "role": "assistant",
+          "content": [
+            {
+              "type": "output_text",
+              "text": "The existing customer vocabulary returns 90 for a premium balance of 100; the regular-customer and test oracles also passed."
+            }
+          ]
+        }
+      ],
+      "output_text": "The existing customer vocabulary returns 90 for a premium balance of 100; the regular-customer and test oracles also passed."
+    }
+  ]
+}

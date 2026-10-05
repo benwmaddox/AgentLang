@@ -101,9 +101,9 @@ Human REPL commands:
     let private readSubmission (firstLine: string) =
         let start = firstLine.Trim()
         let declaration =
-            [ "record "; "type "; "word "; "test "; "example " ]
+            [ "record "; "type "; "word "; "temp word "; "test "; "example " ]
             |> List.exists (fun prefix -> start.StartsWith(prefix, StringComparison.Ordinal))
-        let expressionBlock = start = "if"
+        let expressionBlock = start = "if" || start = "match-option" || start = "match-result"
         if not declaration && not expressionBlock then firstLine, false
         else
             let source = StringBuilder()
@@ -118,7 +118,7 @@ Human REPL commands:
                 else
                     source.AppendLine(line) |> ignore
                     match line.Trim() with
-                    | "if" -> depth <- depth + 1
+                    | "if" | "match-option" | "match-result" -> depth <- depth + 1
                     | "end" -> depth <- depth - 1
                     | _ -> ()
             source.ToString(), declaration
@@ -142,7 +142,13 @@ Human REPL commands:
                         let response =
                             if isDefinition then
                                 let args = newArgs ()
-                                args["source"] <- jsonString source
+                                let temporary = source.TrimStart().StartsWith("temp word ", StringComparison.Ordinal)
+                                let definitionSource =
+                                    if temporary then
+                                        source.Remove(source.IndexOf("temp word ", StringComparison.Ordinal), "temp ".Length)
+                                    else source
+                                args["source"] <- jsonString definitionSource
+                                if temporary then args["temporary"] <- JsonValue.Create(true)
                                 engine.Dispatch("define", args)
                             else
                                 humanRequest engine source

@@ -27,9 +27,11 @@ type Value =
     | BoolValue of bool
     | StringValue of string
     | UnitValue
-    | ListValue of Value list
-    | OptionValue of Value option
-    | ResultValue of Result<Value, Value>
+    // Container element types are stored with the value so empty/inactive cases
+    // never need to infer a type from their payload.
+    | ListValue of LangType * Value list
+    | OptionValue of LangType * Value option
+    | ResultValue of LangType * LangType * Result<Value, Value>
     | RecordValue of string * Map<string, Value>
     | NamedValue of string * Value
 
@@ -40,12 +42,26 @@ type Literal =
     | LString of string
     | LUnit
 
+type ContainerConstructor =
+    | ListEmpty
+    | ListSingleton
+    | OptionNone
+    | OptionSome
+    | ResultOk
+    | ResultError
+
 type Expr =
     | Push of Literal * SourceSpan
     | Call of string * SourceSpan
+    | ConstructContainer of ContainerConstructor * LangType list * SourceSpan
+    | MapList of string * SourceSpan
+    | FilterList of string * SourceSpan
+    | EachList of string * SourceSpan
     | Let of string * SourceSpan
     | Load of string * SourceSpan
     | If of Expr list * Expr list * SourceSpan
+    | MatchOption of string * Expr list * Expr list * SourceSpan
+    | MatchResult of string * string * Expr list * Expr list * SourceSpan
 
 type WordMaturity = ProjectWord | LibraryWord
 
@@ -154,11 +170,11 @@ module Types =
         | BoolValue value -> if value then "true" else "false"
         | StringValue value -> System.Text.Json.JsonSerializer.Serialize(value)
         | UnitValue -> "unit"
-        | ListValue values -> values |> List.map formatValue |> String.concat ", " |> sprintf "[%s]"
-        | OptionValue None -> "none"
-        | OptionValue(Some value) -> $"some {formatValue value}"
-        | ResultValue(Ok value) -> $"ok {formatValue value}"
-        | ResultValue(Error error) -> $"error {formatValue error}"
+        | ListValue(_, values) -> values |> List.map formatValue |> String.concat ", " |> sprintf "[%s]"
+        | OptionValue(_, None) -> "none"
+        | OptionValue(_, Some value) -> $"some {formatValue value}"
+        | ResultValue(_, _, Ok value) -> $"ok {formatValue value}"
+        | ResultValue(_, _, Error error) -> $"error {formatValue error}"
         | RecordValue(name, fields) ->
             fields
             |> Map.toList
@@ -180,12 +196,9 @@ module Types =
         | BoolValue _ -> TBool
         | StringValue _ -> TString
         | UnitValue -> TUnit
-        | ListValue [] -> TList(TVar "a")
-        | ListValue(head :: _) -> TList(ofValue head)
-        | OptionValue None -> TOption(TVar "a")
-        | OptionValue(Some value) -> TOption(ofValue value)
-        | ResultValue(Ok value) -> TResult(ofValue value, TVar "e")
-        | ResultValue(Error value) -> TResult(TVar "a", ofValue value)
+        | ListValue(itemType, _) -> TList itemType
+        | OptionValue(itemType, _) -> TOption itemType
+        | ResultValue(okType, errorType, _) -> TResult(okType, errorType)
         | RecordValue(name, _) -> TNamed name
         | NamedValue(name, _) -> TNamed name
 

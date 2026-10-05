@@ -59,6 +59,10 @@ module Program =
         let values = stackNode.AsArray()
         values.[index].GetValue<string>()
 
+    let private stackType (response: JsonObject) (index: int) =
+        let values = (response["data"]["stackTypes"]).AsArray()
+        values.[index].GetValue<string>()
+
     let private assertAllTestsPassed label expectedCount (response: JsonObject) =
         let results = (response["data"]["results"]).AsArray()
         equal expectedCount results.Count $"{label} result count"
@@ -707,6 +711,352 @@ end
         dispatch runtime "task.begin" [ "goal", jsonString "empty task" ] |> expectOk "begin empty task" |> ignore
         dispatch runtime "task.commit" [] |> expectOk "commit empty task" |> ignore
 
+    let private testTypedContainersAndLanguageConstructs root =
+        let projectPath = makeProject root "typed-containers"
+        let runtime = engine projectPath [ "fs.read"; "fs.write" ]
+        let source = exampleSource "refined-types.agent" + Environment.NewLine + exampleSource "containers.agent"
+        define runtime source |> expectOk "define container example" |> ignore
+
+        let emptyList = evaluate runtime "list.empty<Int>" |> expectOk "construct typed empty list"
+        equal "[]" (stackValue emptyList 0) "empty list display"
+        equal "List<Int>" (stackType emptyList 0) "empty list retains its explicit item type"
+        let nestedEmptyList = evaluate runtime "list.empty<List<Int>>" |> expectOk "construct nested typed empty list"
+        equal "List<List<Int>>" (stackType nestedEmptyList 0) "nested container type arguments parse recursively"
+        let nestedNone = evaluate runtime "option.none<List<Email>>" |> expectOk "construct nested typed none"
+        equal "Option<List<Email>>" (stackType nestedNone 0) "option metadata retains nested nominal element types"
+        let emptyMap = evaluate runtime "list.empty<Email> list.map Email.value" |> expectOk "map over empty nominal list"
+        equal "List<String>" (stackType emptyMap 0) "empty map retains the callback output type"
+        let none = evaluate runtime "option.none<Email>" |> expectOk "construct typed none"
+        equal "Option<Email>" (stackType none 0) "none retains its explicit item type"
+        let errorResult = evaluate runtime "\"offline\" result.error<List<Int>, String>" |> expectOk "construct typed error result"
+        equal "Result<List<Int>, String>" (stackType errorResult 0) "error result retains its inactive success type"
+        let missingIndex = evaluate runtime "list.empty<Email> 0 list.get" |> expectOk "get from empty nominal list"
+        equal "Option<Email>" (stackType missingIndex 0) "out-of-range lookup retains the element type"
+        let singleton = evaluate runtime "\"dev@example.com\" Email.new list.singleton<Email>" |> expectOk "construct nominal list"
+        equal "List<Email>" (stackType singleton 0) "singleton retains its nominal element type"
+        expectError "TYPE_STACK_MISMATCH" (evaluate runtime "\"dev@example.com\" Email.new list.singleton<Email> \"plain string\" list.append") |> ignore
+        expectError "TYPE_CONTAINER_PAYLOAD" (evaluate runtime "\"dev@example.com\" Email.new list.singleton<String>") |> ignore
+        expectError "TYPE_CONTAINER_PAYLOAD" (evaluate runtime "42 option.some<String>") |> ignore
+        expectError "TYPE_CONTAINER_PAYLOAD" (evaluate runtime "\"not an int\" result.ok<Int, String>") |> ignore
+
+        let listOps = evaluate runtime "2 list.singleton<Int> 3 list.append 4 list.singleton<Int> list.concat list.count" |> expectOk "append, concatenate, and count lists"
+        equal "3" (stackValue listOps 0) "list operations preserve values"
+        let mapped = evaluate runtime "2 list.singleton<Int> 3 list.append list.map container.increment" |> expectOk "map callback over values"
+        equal "[3, 4]" (stackValue mapped 0) "map executes its statically named callback"
+        equal "List<Int>" (stackType mapped 0) "map reports callback result type"
+        let filtered = evaluate runtime "-1 list.singleton<Int> 2 list.append list.filter container.negative? list.count" |> expectOk "filter callback over values"
+        equal "1" (stackValue filtered 0) "filter keeps true results and drops false results"
+        let visited = evaluate runtime "list.empty<Int> list.each container.ignore-int" |> expectOk "each over empty list"
+        equal "unit" (stackValue visited 0) "each returns Unit"
+        equal "Unit" (stackType visited 0) "each has a typed Unit output"
+
+        let tests = dispatch runtime "test-all" [] |> expectOk "run container example tests"
+        assertAllTestsPassed "container example" 21 tests
+
+        let mapDescriptor = dispatch runtime "describe" [ "word", jsonString "list.map" ] |> expectOk "describe map syntax"
+        equal "syntax" ((mapDescriptor["data"]["kind"]).GetValue<string>()) "map form is identified as syntax"
+        equal "inherits callback word effects" ((mapDescriptor["data"]["effectRule"]).GetValue<string>()) "map describes its effect rule"
+        check (((mapDescriptor["data"]["documentation"]).GetValue<string>()).Contains("before any element is visited", StringComparison.Ordinal)) "map description explains static preflight"
+        let sourceDescriptor = dispatch runtime "source" [ "word", jsonString "result.error" ] |> expectOk "show result constructor syntax"
+        check ((sourceDescriptor["data"].GetValue<string>()).Contains("result.error<T, E>", StringComparison.Ordinal)) "source exposes the typed constructor form"
+        let search = dispatch runtime "search" [ "query", jsonString "List<T>" ] |> expectOk "search container constructs"
+        check (search["data"].ToJsonString().Contains("list.map", StringComparison.Ordinal)) "search finds typed syntax forms"
+        let words = dispatch runtime "words" [] |> expectOk "inspect words and constructs"
+        let constructs = (words["data"]["constructs"]).AsArray()
+        let wordEntries = (words["data"]["words"]).AsArray()
+        let hasFilterConstruct = constructs |> Seq.exists (fun item -> (item["name"].GetValue<string>()) = "list.filter")
+        let hasFilterWord = wordEntries |> Seq.exists (fun item -> (item["name"].GetValue<string>()) = "list.filter")
+        check hasFilterConstruct "words exposes syntax metadata separately"
+        check (not hasFilterWord) "syntax forms are not phantom executable words"
+
+        let reservedSyntaxWord = """word list.map : List<Int> -> List<Int>
+    effects none
+    dup
+end
+"""
+        expectError "PARSE_INVALID_WORD_NAME" (define runtime reservedSyntaxWord) |> ignore
+        let malformedField = """record MalformedField
+xxxxx value Int
+end
+"""
+        expectError "PARSE_INVALID_FIELD" (define runtime malformedField) |> ignore
+        let shortField = """record ShortField
+x
+end
+"""
+        expectError "PARSE_INVALID_FIELD" (define runtime shortField) |> ignore
+        let fieldCollision = """record FieldCollision
+    field new Int
+end
+"""
+        expectError "NAME_GENERATED_COLLISION" (define runtime fieldCollision) |> ignore
+        let caseCollision = """record Customer
+    field id Int
+end
+record customer
+    field id Int
+end
+"""
+        expectError "NAME_GENERATED_COLLISION" (define runtime caseCollision) |> ignore
+        let syntaxCollision = """record list
+    field map Int
+end
+"""
+        expectError "NAME_GENERATED_COLLISION" (define runtime syntaxCollision) |> ignore
+
+        let reverseCollision = engine (makeProject root "reverse-generated-collision") []
+        let reverseWordSource = """word box.new : Int -> Int
+    effects none
+    dup drop
+end
+"""
+        define reverseCollision reverseWordSource |> expectOk "define word before its generated-name owner" |> ignore
+        let reverseRecordSource = """record Box
+    field value Int
+end
+"""
+        expectError "NAME_GENERATED_COLLISION" (define reverseCollision reverseRecordSource) |> ignore
+        let survivingWord = evaluate reverseCollision "7 box.new" |> expectOk "failed record definition rolls back atomically"
+        equal "7" (stackValue survivingWord 0) "preexisting user word remains intact after collision"
+
+        let reloadCollisionPath = makeProject root "reload-generated-collision"
+        let collisionDictionary = """word box.new : Int -> Int
+    effects none
+    dup drop
+end
+
+record Box
+    field value Int
+end
+"""
+        File.WriteAllText(Path.Combine(reloadCollisionPath, "dictionary.agent"), collisionDictionary)
+        let mutable reloadCollisionCode = ""
+        try Runtime.Engine(reloadCollisionPath, Set.empty) |> ignore
+        with LanguageException diagnostic -> reloadCollisionCode <- diagnostic.Code
+        equal "NAME_GENERATED_COLLISION" reloadCollisionCode "dictionary reload rejects generated/user word collision"
+
+        let badType = engine (makeProject root "free-container-type") []
+        let unsupportedType = """word unsupported : List<a> -> List<a>
+    effects none
+end
+"""
+        expectError "TYPE_UNKNOWN_NAMED_TYPE" (define badType unsupportedType) |> ignore
+
+        let oversized =
+            [ "1"; "list.singleton<Int>" ] @ (List.replicate 14 "dup list.concat")
+            |> String.concat " "
+        expectError "RUNTIME_VALUE_LIMIT" (evaluate runtime oversized) |> ignore
+
+        let preflightPath = makeProject root "container-effect-preflight"
+        let preflight = engine preflightPath [ "fs.read"; "fs.write" ]
+        let effectfulCallbacks =
+            """word container.clock-touch : Int -> Unit
+    effects clock.read
+    drop clock.now drop unit
+end
+
+word container.clock-string : Int -> String
+    effects clock.read
+    drop clock.now
+end
+"""
+        define preflight effectfulCallbacks |> expectOk "define effectful callbacks" |> ignore
+        expectError "TYPE_CONTAINER_PAYLOAD" (evaluate preflight "\"bad-constructor\" \"value\" file.write \"not an int\" option.some<Int>") |> ignore
+        let constructorAbsent = evaluate preflight "\"bad-constructor\" file.exists?" |> expectOk "check constructor type failure did not write"
+        equal "false" (stackValue constructorAbsent 0) "constructor payload validation precedes earlier effects"
+        expectError "CAPABILITY_DENIED" (evaluate preflight "\"guarded-write\" \"value\" file.write list.empty<Int> list.map container.clock-string") |> ignore
+        let absent = evaluate preflight "\"guarded-write\" file.exists?" |> expectOk "check preflight did not write"
+        equal "false" (stackValue absent 0) "an empty map callback still participates in effect preflight"
+        expectError "CAPABILITY_DENIED" (evaluate preflight "\"guarded-each\" \"value\" file.write list.empty<Int> list.each container.clock-touch") |> ignore
+        let eachAbsent = evaluate preflight "\"guarded-each\" file.exists?" |> expectOk "check each preflight did not write"
+        equal "false" (stackValue eachAbsent 0) "an empty each callback still participates in effect preflight"
+
+        dispatch runtime "commit" [ "word", jsonString "container.envelope-email-count" ]
+        |> expectOk "commit nested-container word and referenced nominal types"
+        |> ignore
+        let reloaded = engine projectPath [ "fs.read"; "fs.write" ]
+        let persisted =
+            evaluate reloaded "\"dev@example.com\" Email.new list.singleton<Email> option.none<Email> \"unused\" result.error<List<Int>, String> containerEnvelope.new container.envelope-email-count"
+            |> expectOk "run nested record word after fresh engine reload"
+        equal "1" (stackValue persisted 0) "nested generic record field and signature persist"
+
+        dispatch reloaded "task.begin" [ "goal", jsonString "temporary nested container word" ] |> expectOk "begin temporary-container task" |> ignore
+        let temporary =
+            """word container.temporary-nested : List<Result<Int, String>> -> List<Result<Int, String>>
+    effects none
+    dup drop
+end
+"""
+        dispatch reloaded "define" [ "source", jsonString temporary; "temporary", jsonBool true ]
+        |> expectOk "define temporary nested container word"
+        |> ignore
+        dispatch reloaded "task.abort" [] |> expectOk "abort temporary-container task" |> ignore
+        expectError "NAME_UNKNOWN_WORD" (dispatch reloaded "source" [ "word", jsonString "container.temporary-nested" ]) |> ignore
+
+    let private testContainerLibraryCoverage root =
+        let runtime = engine (makeProject root "container-library-coverage") []
+        let optionWord =
+            """word option.library-default : Option<Int> -> Int
+    effects none
+    match-option
+    some value
+        $value
+    none
+        0
+    end
+end
+
+test option.library-default/some
+    3 option.some<Int> option.library-default
+    => 3
+end
+"""
+        define runtime optionWord |> expectOk "define partially covered option library word" |> ignore
+        let optionCommit = [ "word", jsonString "option.library-default"; "library", jsonBool true ]
+        let missingNone = dispatch runtime "commit" optionCommit |> expectError "LIBRARY_COVERAGE_INCOMPLETE"
+        check ((missingNone["error"]["actual"]).ToJsonString().Contains("none", StringComparison.Ordinal)) "option coverage reports the missing none outcome"
+        let optionNoneTest = """test option.library-default/none
+    option.none<Int> option.library-default
+    => 0
+end
+"""
+        define runtime optionNoneTest |> expectOk "add none case test" |> ignore
+        dispatch runtime "commit" optionCommit |> expectOk "commit option library after both cases" |> ignore
+        let optionCoverage = dispatch runtime "describe" [ "word", jsonString "option.library-default" ] |> expectOk "inspect option coverage"
+        let optionCoverageData = (optionCoverage["data"]["coverage"]).AsObject()
+        let optionCoveredCases = optionCoverageData["branchesCovered"].GetValue<int>()
+        equal 2 optionCoveredCases "option library covers both cases"
+
+        let resultWord =
+            """word result.library-value : Result<Int, String> -> Int
+    effects none
+    match-result
+    ok value
+        $value
+    error message
+        0
+    end
+end
+
+test result.library-value/ok
+    3 result.ok<Int, String> result.library-value
+    => 3
+end
+"""
+        define runtime resultWord |> expectOk "define partially covered result library word" |> ignore
+        let resultCommit = [ "word", jsonString "result.library-value"; "library", jsonBool true ]
+        let missingError = dispatch runtime "commit" resultCommit |> expectError "LIBRARY_COVERAGE_INCOMPLETE"
+        check ((missingError["error"]["actual"]).ToJsonString().Contains("error", StringComparison.Ordinal)) "result coverage reports the missing error outcome"
+        let resultErrorTest = """test result.library-value/error
+    "failure" result.error<Int, String> result.library-value
+    => 0
+end
+"""
+        define runtime resultErrorTest |> expectOk "add error case test" |> ignore
+        dispatch runtime "commit" resultCommit |> expectOk "commit result library after both cases" |> ignore
+
+        let mapDefinitions =
+            """word coverage.increment : Int -> Int
+    effects none
+    1 add
+end
+
+test coverage.increment/basic
+    1 coverage.increment
+    => 2
+end
+
+word coverage.map-count : List<Int> -> Int
+    effects none
+    list.map coverage.increment
+    list.count
+end
+
+test coverage.map-count/empty
+    list.empty<Int> coverage.map-count
+    => 0
+end
+"""
+        define runtime mapDefinitions |> expectOk "define map library word with empty test" |> ignore
+        let mapCommit = [ "word", jsonString "coverage.map-count"; "library", jsonBool true ]
+        let missingNonemptyMap = dispatch runtime "commit" mapCommit |> expectError "LIBRARY_COVERAGE_INCOMPLETE"
+        check ((missingNonemptyMap["error"]["actual"]).ToJsonString().Contains("nonempty", StringComparison.Ordinal)) "map coverage reports nonempty iteration"
+        let mapNonemptyTest = """test coverage.map-count/nonempty
+    3 list.singleton<Int> coverage.map-count
+    => 1
+end
+"""
+        define runtime mapNonemptyTest |> expectOk "add nonempty map test" |> ignore
+        dispatch runtime "commit" mapCommit |> expectOk "commit fully exercised map library word" |> ignore
+
+        let filterDefinitions =
+            """word coverage.negative? : Int -> Bool
+    effects none
+    0 int.less-than
+end
+
+test coverage.negative?/negative
+    -1 coverage.negative?
+    => true
+end
+
+word coverage.negative-count : List<Int> -> Int
+    effects none
+    list.filter coverage.negative?
+    list.count
+end
+
+test coverage.negative-count/empty
+    list.empty<Int> coverage.negative-count
+    => 0
+end
+"""
+        define runtime filterDefinitions |> expectOk "define filter library word with empty test" |> ignore
+        let filterCommit = [ "word", jsonString "coverage.negative-count"; "library", jsonBool true ]
+        let missingFilterOutcomes = dispatch runtime "commit" filterCommit |> expectError "LIBRARY_COVERAGE_INCOMPLETE"
+        for outcome in [ "nonempty"; "keep"; "drop" ] do
+            check ((missingFilterOutcomes["error"]["actual"]).ToJsonString().Contains(outcome, StringComparison.Ordinal)) $"filter coverage reports {outcome}"
+        let filterOutcomesTest = """test coverage.negative-count/keep-and-drop
+    -1 list.singleton<Int> 2 list.append coverage.negative-count
+    => 1
+end
+"""
+        define runtime filterOutcomesTest |> expectOk "add filter keep and drop test" |> ignore
+        dispatch runtime "commit" filterCommit |> expectOk "commit filter after all iteration outcomes" |> ignore
+
+        let eachDefinitions =
+            """word coverage.ignore : Int -> Unit
+    effects none
+    drop unit
+end
+
+test coverage.ignore/basic
+    1 coverage.ignore
+    => unit
+end
+
+word coverage.each : List<Int> -> Unit
+    effects none
+    list.each coverage.ignore
+end
+
+test coverage.each/empty
+    list.empty<Int> coverage.each
+    => unit
+end
+"""
+        define runtime eachDefinitions |> expectOk "define each library word with empty test" |> ignore
+        let eachCommit = [ "word", jsonString "coverage.each"; "library", jsonBool true ]
+        let missingEachIteration = dispatch runtime "commit" eachCommit |> expectError "LIBRARY_COVERAGE_INCOMPLETE"
+        check ((missingEachIteration["error"]["actual"]).ToJsonString().Contains("nonempty", StringComparison.Ordinal)) "each coverage reports nonempty iteration"
+        let eachNonemptyTest = """test coverage.each/nonempty
+    1 list.singleton<Int> coverage.each
+    => unit
+end
+"""
+        define runtime eachNonemptyTest |> expectOk "add nonempty each test" |> ignore
+        dispatch runtime "commit" eachCommit |> expectOk "commit each after empty and nonempty tests" |> ignore
+
     [<EntryPoint>]
     let main _ =
         let temporaryRoot = Path.Combine(Path.GetTempPath(), "agentlang-acceptance-" + Guid.NewGuid().ToString("N"))
@@ -727,7 +1077,9 @@ end
               "frozen validator replacement", testValidatorTemporaryOverrideRejected
               "library coverage gate", testLibraryCoverageGate
               "task abort rollback", testTaskAbortRollsBackDictionary
-              "task commit temporary cleanup", testTaskCommitClearsSessionWords ]
+              "task commit temporary cleanup", testTaskCommitClearsSessionWords
+              "typed containers and syntax metadata", testTypedContainersAndLanguageConstructs
+              "container library coverage", testContainerLibraryCoverage ]
         let failures = ResizeArray<string>()
         try
             for name, run in cases do

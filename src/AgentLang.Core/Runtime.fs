@@ -55,6 +55,17 @@ module Runtime =
           CoverageTarget: string option
           Isolated: bool }
 
+    type private SyntaxDescriptor =
+        { Name: string
+          Syntax: string
+          Inputs: string list
+          Outputs: string list
+          TypeParameters: string list
+          Effects: string list
+          EffectRule: string
+          Documentation: string
+          Coverage: string list }
+
     let private jsonNode<'T> (value: 'T) : JsonNode = JsonSerializer.SerializeToNode<'T>(value)
     let private jstr (value: string) = JsonValue.Create(value) :> JsonNode
     let private jbool (value: bool) = JsonValue.Create(value) :> JsonNode
@@ -114,6 +125,33 @@ module Runtime =
         let projectRoot = if String.IsNullOrWhiteSpace projectDirectory then None else Some(Path.GetFullPath projectDirectory)
         let dictionaryPath = projectRoot |> Option.map (fun path -> Path.Combine(path, "dictionary.agent"))
         let fixedClock = defaultArg clockValue "2000-01-01T00:00:00Z"
+        let maxCollectionLength = 10000
+        let syntaxDescriptors =
+            [ { Name = "list.empty"; Syntax = "list.empty<T>"; Inputs = []; Outputs = [ "List<T>" ]; TypeParameters = [ "T" ]; Effects = []; EffectRule = "none"; Documentation = "Constructs an empty List<T>. T must be a declared closed type."; Coverage = [] }
+              { Name = "list.singleton"; Syntax = "T list.singleton<T>"; Inputs = [ "T" ]; Outputs = [ "List<T>" ]; TypeParameters = [ "T" ]; Effects = []; EffectRule = "none"; Documentation = "Constructs a one-element List<T> after checking the payload against the explicit T."; Coverage = [] }
+              { Name = "option.none"; Syntax = "option.none<T>"; Inputs = []; Outputs = [ "Option<T>" ]; TypeParameters = [ "T" ]; Effects = []; EffectRule = "none"; Documentation = "Constructs a typed none; the element type is always explicit."; Coverage = [] }
+              { Name = "option.some"; Syntax = "T option.some<T>"; Inputs = [ "T" ]; Outputs = [ "Option<T>" ]; TypeParameters = [ "T" ]; Effects = []; EffectRule = "none"; Documentation = "Constructs a typed some after checking the payload against the explicit T."; Coverage = [] }
+              { Name = "result.ok"; Syntax = "T result.ok<T, E>"; Inputs = [ "T" ]; Outputs = [ "Result<T, E>" ]; TypeParameters = [ "T"; "E" ]; Effects = []; EffectRule = "none"; Documentation = "Constructs a typed ok; both result type parameters are always explicit."; Coverage = [] }
+              { Name = "result.error"; Syntax = "E result.error<T, E>"; Inputs = [ "E" ]; Outputs = [ "Result<T, E>" ]; TypeParameters = [ "T"; "E" ]; Effects = []; EffectRule = "none"; Documentation = "Constructs a typed error; the inactive success type remains explicit."; Coverage = [] }
+              { Name = "list.map"; Syntax = "list.map <word>"; Inputs = [ "List<T>" ]; Outputs = [ "List<U>" ]; TypeParameters = [ "T"; "U" ]; Effects = []; EffectRule = "inherits callback word effects"; Documentation = "Statically names one callback word with signature T -> U. The callback is type checked before any element is visited."; Coverage = [ "empty"; "nonempty" ] }
+              { Name = "list.filter"; Syntax = "list.filter <word>"; Inputs = [ "List<T>" ]; Outputs = [ "List<T>" ]; TypeParameters = [ "T" ]; Effects = []; EffectRule = "inherits callback word effects"; Documentation = "Statically names one callback word with signature T -> Bool. Retains elements for true and drops them for false."; Coverage = [ "empty"; "nonempty"; "keep"; "drop" ] }
+              { Name = "list.each"; Syntax = "list.each <word>"; Inputs = [ "List<T>" ]; Outputs = [ "Unit" ]; TypeParameters = [ "T" ]; Effects = []; EffectRule = "inherits callback word effects"; Documentation = "Statically names one callback word with signature T -> Unit and visits each element."; Coverage = [ "empty"; "nonempty" ] }
+              { Name = "match-option"; Syntax = "match-option / some <local> / none / end"; Inputs = [ "Option<T> (top of stack)" ]; Outputs = [ "same stack from both cases" ]; TypeParameters = [ "T" ]; Effects = []; EffectRule = "union of both case effects"; Documentation = "Requires both cases. The some payload local exists only inside its case; both cases must leave identical stack and outer-local types."; Coverage = [ "some"; "none" ] }
+              { Name = "match-result"; Syntax = "match-result / ok <local> / error <local> / end"; Inputs = [ "Result<T, E> (top of stack)" ]; Outputs = [ "same stack from both cases" ]; TypeParameters = [ "T"; "E" ]; Effects = []; EffectRule = "union of both case effects"; Documentation = "Requires both cases. Each payload local exists only inside its own case; both cases must leave identical stack and outer-local types."; Coverage = [ "ok"; "error" ] } ]
+
+        let syntaxDescriptorJson (descriptor: SyntaxDescriptor) =
+            let node = JsonObject()
+            node["name"] <- jstr descriptor.Name
+            node["kind"] <- jstr "syntax"
+            node["syntax"] <- jstr descriptor.Syntax
+            node["inputs"] <- jsonNode descriptor.Inputs
+            node["outputs"] <- jsonNode descriptor.Outputs
+            node["typeParameters"] <- jsonNode descriptor.TypeParameters
+            node["effects"] <- jsonNode descriptor.Effects
+            node["effectRule"] <- jstr descriptor.EffectRule
+            node["documentation"] <- jstr descriptor.Documentation
+            node["coverageOutcomes"] <- jsonNode descriptor.Coverage
+            node
         let mutable data =
             { Words = Compiler.primitives
               Records = Map.empty
@@ -167,13 +205,29 @@ module Runtime =
                     let accessor = wordDef accessorName [ TNamed name ] [ scalar.BaseType ] Set.empty "Explicitly unwraps a nominal scalar to its underlying value." scalar.SourceText
                     [ constructorName, entry constructor (Some(ScalarConstructor name)) scalarEntry.Status LibraryWord 1
                       accessorName, entry accessor (Some(ScalarAccessor name)) scalarEntry.Status LibraryWord 1 ])
-            Map.ofList (recordWords @ scalarWords)
+            let generatedWords = recordWords @ scalarWords
+            match generatedWords |> List.groupBy fst |> List.tryFind (fun (_, entries) -> entries.Length > 1) with
+            | Some(name, _) -> error "NAME_GENERATED_COLLISION" $"Generated type word '{name}' has more than one owner. Rename the type or record field." (Some name) None [] []
+            | None ->
+                let syntaxNames = syntaxDescriptors |> List.map (fun descriptor -> descriptor.Name) |> Set.ofList
+                match generatedWords |> List.tryFind (fun (name, _) -> syntaxNames.Contains name) with
+                | Some(name, _) -> error "NAME_GENERATED_COLLISION" $"Generated type word '{name}' collides with reserved language syntax." (Some name) None [] []
+                | None -> Map.ofList generatedWords
 
         let effectiveWords (state: DictionaryState) : Map<string, WordEntry> =
             let generated = makeGenerated state
             let baseWords = Compiler.primitives
             let collisions = generated |> Map.exists (fun name _ -> baseWords.ContainsKey name)
             if collisions then error "NAME_GENERATED_COLLISION" "A generated record/type word collides with a standard primitive." None None [] []
+            let userCollisions =
+                generated
+                |> Map.tryPick (fun name _ ->
+                    state.Words.TryFind name
+                    |> Option.filter (fun value -> value.Builtin.IsNone)
+                    |> Option.map (fun _ -> name))
+            match userCollisions with
+            | Some name -> error "NAME_GENERATED_COLLISION" $"Generated type word '{name}' collides with a user-defined word." (Some name) None [] []
+            | None -> ()
             let withGenerated = Map.fold (fun found name value -> Map.add name value found) baseWords generated
             Map.fold (fun found name value ->
                 if value.Builtin.IsNone then Map.add name value found else found) withGenerated state.Words
@@ -197,11 +251,17 @@ module Runtime =
                 body
                 |> List.fold (fun sites expression ->
                     match expression with
-                    | Push(_, span) | Call(_, span) | Let(_, span) | Load(_, span) | If(_, _, span) -> Set.add (instructionId span) sites) Set.empty
+                    | Push(_, span) | Call(_, span) | ConstructContainer(_, _, span)
+                    | MapList(_, span) | FilterList(_, span) | EachList(_, span)
+                    | Let(_, span) | Load(_, span) | If(_, _, span)
+                    | MatchOption(_, _, _, span) | MatchResult(_, _, _, _, span) -> Set.add (instructionId span) sites) Set.empty
             body
             |> List.fold (fun sites expression ->
                 match expression with
-                | If(thenBranch, elseBranch, _) -> Set.union sites (Set.union (collectInstructionSites thenBranch) (collectInstructionSites elseBranch))
+                | If(thenBranch, elseBranch, _) | MatchOption(_, thenBranch, elseBranch, _) ->
+                    Set.union sites (Set.union (collectInstructionSites thenBranch) (collectInstructionSites elseBranch))
+                | MatchResult(_, _, okBranch, errorBranch, _) ->
+                    Set.union sites (Set.union (collectInstructionSites okBranch) (collectInstructionSites errorBranch))
                 | _ -> sites) own
 
         let rec collectBranchSites (body: Expr list) =
@@ -212,6 +272,20 @@ module Runtime =
                     let site = instructionId span
                     let withBranches = Set.add (site + ":true") (Set.add (site + ":false") sites)
                     Set.union withBranches (Set.union (collectBranchSites thenBranch) (collectBranchSites elseBranch))
+                | MatchOption(_, someBranch, noneBranch, span) ->
+                    let site = instructionId span
+                    let withCases = Set.add (site + ":some") (Set.add (site + ":none") sites)
+                    Set.union withCases (Set.union (collectBranchSites someBranch) (collectBranchSites noneBranch))
+                | MatchResult(_, _, okBranch, errorBranch, span) ->
+                    let site = instructionId span
+                    let withCases = Set.add (site + ":ok") (Set.add (site + ":error") sites)
+                    Set.union withCases (Set.union (collectBranchSites okBranch) (collectBranchSites errorBranch))
+                | MapList(_, span) | EachList(_, span) ->
+                    let site = instructionId span
+                    Set.add (site + ":empty") (Set.add (site + ":nonempty") sites)
+                | FilterList(_, span) ->
+                    let site = instructionId span
+                    Set.add (site + ":drop") (Set.add (site + ":keep") (Set.add (site + ":empty") (Set.add (site + ":nonempty") sites)))
                 | _ -> sites) Set.empty
 
         let mutateEffect (trace: Trace) name =
@@ -242,6 +316,10 @@ module Runtime =
             if trace.Steps > 10000 then error "RUNTIME_STEP_LIMIT" "Execution exceeded the 10,000 instruction limit." (Some currentWord) (Some span) [] []
             if trace.CoverageTarget = Some currentWord then trace.CoverageInstructions <- Set.add (instructionId span) trace.CoverageInstructions
 
+        let countBranchOutcome trace currentWord span outcome =
+            if trace.CoverageTarget = Some currentWord then
+                trace.CoverageBranches <- Set.add (instructionId span + ":" + outcome) trace.CoverageBranches
+
         let checkedIntOperation (name: string) (span: SourceSpan) (operation: int64 -> int64 -> int64) (left: int64) (right: int64) =
             try IntValue(operation left right)
             with :? OverflowException -> error "RUNTIME_OVERFLOW" $"'{name}' overflowed its Int64 result." (Some name) (Some span) [] [ string left; string right ]
@@ -255,76 +333,85 @@ module Runtime =
                 let stack, _ = runBody state words trace (depth + 1) entry.Definition.Name arguments Map.empty entry.Definition.Body
                 stack
             | Some(BuiltinOp name) ->
-                let result =
-                    match name, arguments with
-                    | "add", [ IntValue a; IntValue b ] -> checkedIntOperation name entry.Definition.Span (Checked.(+)) a b
-                    | "subtract", [ IntValue a; IntValue b ] -> checkedIntOperation name entry.Definition.Span (Checked.(-)) a b
-                    | "multiply", [ IntValue a; IntValue b ] -> checkedIntOperation name entry.Definition.Span (Checked.(*)) a b
-                    | "divide", [ IntValue _; IntValue 0L ] -> error "RUNTIME_DIVIDE_BY_ZERO" "Integer division by zero." (Some name) None [] []
-                    | "divide", [ IntValue a; IntValue b ] when a = Int64.MinValue && b = -1L -> error "RUNTIME_OVERFLOW" "Integer division overflow." (Some name) None [] []
-                    | "divide", [ IntValue a; IntValue b ] -> IntValue(a / b)
-                    | "float.add", [ FloatValue a; FloatValue b ] -> FloatValue(a + b)
-                    | "float.subtract", [ FloatValue a; FloatValue b ] -> FloatValue(a - b)
-                    | "float.multiply", [ FloatValue a; FloatValue b ] -> FloatValue(a * b)
-                    | "float.divide", [ FloatValue _; FloatValue b ] when b = 0.0 -> error "RUNTIME_DIVIDE_BY_ZERO" "Float division by zero." (Some name) None [] []
-                    | "float.divide", [ FloatValue a; FloatValue b ] -> FloatValue(a / b)
-                    | "int.less-than", [ IntValue a; IntValue b ] -> BoolValue(a < b)
-                    | "int.greater-than", [ IntValue a; IntValue b ] -> BoolValue(a > b)
-                    | "int.less-or-equal", [ IntValue a; IntValue b ] -> BoolValue(a <= b)
-                    | "int.greater-or-equal", [ IntValue a; IntValue b ] -> BoolValue(a >= b)
-                    | "float.less-than", [ FloatValue a; FloatValue b ] -> BoolValue(a < b)
-                    | "float.greater-than", [ FloatValue a; FloatValue b ] -> BoolValue(a > b)
-                    | "float.less-or-equal", [ FloatValue a; FloatValue b ] -> BoolValue(a <= b)
-                    | "float.greater-or-equal", [ FloatValue a; FloatValue b ] -> BoolValue(a >= b)
-                    | "equals", [ a; b ] -> BoolValue(a = b)
-                    | "bool.and", [ BoolValue a; BoolValue b ] -> BoolValue(a && b)
-                    | "bool.or", [ BoolValue a; BoolValue b ] -> BoolValue(a || b)
-                    | "bool.not", [ BoolValue value ] -> BoolValue(not value)
-                    | "string.concat", [ StringValue a; StringValue b ] -> StringValue(a + b)
-                    | "string.contains", [ StringValue value; StringValue sub ] -> BoolValue(value.Contains(sub, StringComparison.Ordinal))
-                    | "string.starts-with", [ StringValue value; StringValue sub ] -> BoolValue(value.StartsWith(sub, StringComparison.Ordinal))
-                    | "string.ends-with", [ StringValue value; StringValue sub ] -> BoolValue(value.EndsWith(sub, StringComparison.Ordinal))
-                    | "string.length", [ StringValue value ] -> IntValue(int64 value.Length)
-                    | "string.trim", [ StringValue value ] -> StringValue(value.Trim())
-                    | "string.to-lower", [ StringValue value ] -> StringValue(value.ToLowerInvariant())
-                    | "string.to-upper", [ StringValue value ] -> StringValue(value.ToUpperInvariant())
-                    | "int.abs", [ IntValue Int64.MinValue ] -> error "RUNTIME_OVERFLOW" "Absolute value of Int64.MinValue overflows." (Some name) None [] []
-                    | "int.abs", [ IntValue value ] -> IntValue(abs value)
-                    | "int.min", [ IntValue a; IntValue b ] -> IntValue(min a b)
-                    | "int.max", [ IntValue a; IntValue b ] -> IntValue(max a b)
-                    | "int.to-float", [ IntValue value ] -> FloatValue(float value)
-                    | "float.to-int", [ FloatValue value ] when not (Double.IsFinite value) || value >= 9223372036854775808.0 || value < -9223372036854775808.0 -> error "RUNTIME_RANGE" "Float value is outside the Int64 range." (Some name) None [ "finite Int64 range" ] [ string value ]
-                    | "float.to-int", [ FloatValue value ] -> IntValue(int64 value)
-                    | "float.round", [ FloatValue value ] when not (Double.IsFinite value) -> error "RUNTIME_RANGE" "Float value is outside the Int64 range." (Some name) None [ "finite Int64 range" ] [ string value ]
-                    | "float.round", [ FloatValue value ] ->
-                        let rounded = Math.Round(value, MidpointRounding.AwayFromZero)
-                        if rounded >= 9223372036854775808.0 || rounded < -9223372036854775808.0 then error "RUNTIME_RANGE" "Rounded Float value is outside the Int64 range." (Some name) None [ "finite Int64 range" ] [ string value ]
-                        IntValue(int64 rounded)
-                    | "int.to-string", [ IntValue value ] -> StringValue(string value)
-                    | "float.to-string", [ FloatValue value ] -> StringValue(value.ToString("G", CultureInfo.InvariantCulture))
-                    | "dup", [ value ] -> ListValue [ value; value ]
-                    | "drop", [ _ ] -> ListValue []
-                    | "swap", [ first; second ] -> ListValue [ second; first ]
-                    | "file.read", [ StringValue path ] ->
-                        mutateEffect trace "fs.read"
-                        match trace.FileSystem.TryFind path with
-                        | Some contents -> StringValue contents
-                        | None -> error "EFFECT_FILE_NOT_FOUND" $"Virtual file '{path}' does not exist." (Some name) None [] [ path ]
-                    | "file.exists?", [ StringValue path ] ->
-                        mutateEffect trace "fs.read"
-                        BoolValue(trace.FileSystem.ContainsKey path)
-                    | "file.write", [ StringValue path; StringValue contents ] ->
-                        mutateEffect trace "fs.write"
-                        trace.FileSystem <- Map.add path contents trace.FileSystem
-                        UnitValue
-                    | "clock.now", [] -> mutateEffect trace "clock.read"; StringValue fixedClock
-                    | "console.write", [ StringValue contents ] -> mutateEffect trace "console.write"; trace.Console <- trace.Console @ [ contents ]; UnitValue
-                    | _ -> error "RUNTIME_INTERNAL_TYPE" $"Builtin '{name}' received a value outside its checked signature." (Some name) None [] (arguments |> List.map (Types.ofValue >> Types.format))
-                match result with
-                | ListValue values when name = "dup" || name = "drop" || name = "swap" -> values
-                | UnitValue -> [ UnitValue ]
-                | FloatValue value when not (Double.IsFinite value) -> error "RUNTIME_NONFINITE_FLOAT" "Float operation produced a nonfinite value." (Some name) None [ "finite Float" ] [ string value ]
-                | value -> [ value ]
+                match name, arguments with
+                | "dup", [ value ] -> [ value; value ]
+                | "drop", [ _ ] -> []
+                | "swap", [ first; second ] -> [ second; first ]
+                | _ ->
+                    let result =
+                        match name, arguments with
+                        | "add", [ IntValue a; IntValue b ] -> checkedIntOperation name entry.Definition.Span (Checked.(+)) a b
+                        | "subtract", [ IntValue a; IntValue b ] -> checkedIntOperation name entry.Definition.Span (Checked.(-)) a b
+                        | "multiply", [ IntValue a; IntValue b ] -> checkedIntOperation name entry.Definition.Span (Checked.(*)) a b
+                        | "divide", [ IntValue _; IntValue 0L ] -> error "RUNTIME_DIVIDE_BY_ZERO" "Integer division by zero." (Some name) None [] []
+                        | "divide", [ IntValue a; IntValue b ] when a = Int64.MinValue && b = -1L -> error "RUNTIME_OVERFLOW" "Integer division overflow." (Some name) None [] []
+                        | "divide", [ IntValue a; IntValue b ] -> IntValue(a / b)
+                        | "float.add", [ FloatValue a; FloatValue b ] -> FloatValue(a + b)
+                        | "float.subtract", [ FloatValue a; FloatValue b ] -> FloatValue(a - b)
+                        | "float.multiply", [ FloatValue a; FloatValue b ] -> FloatValue(a * b)
+                        | "float.divide", [ FloatValue _; FloatValue b ] when b = 0.0 -> error "RUNTIME_DIVIDE_BY_ZERO" "Float division by zero." (Some name) None [] []
+                        | "float.divide", [ FloatValue a; FloatValue b ] -> FloatValue(a / b)
+                        | "int.less-than", [ IntValue a; IntValue b ] -> BoolValue(a < b)
+                        | "int.greater-than", [ IntValue a; IntValue b ] -> BoolValue(a > b)
+                        | "int.less-or-equal", [ IntValue a; IntValue b ] -> BoolValue(a <= b)
+                        | "int.greater-or-equal", [ IntValue a; IntValue b ] -> BoolValue(a >= b)
+                        | "float.less-than", [ FloatValue a; FloatValue b ] -> BoolValue(a < b)
+                        | "float.greater-than", [ FloatValue a; FloatValue b ] -> BoolValue(a > b)
+                        | "float.less-or-equal", [ FloatValue a; FloatValue b ] -> BoolValue(a <= b)
+                        | "float.greater-or-equal", [ FloatValue a; FloatValue b ] -> BoolValue(a >= b)
+                        | "equals", [ a; b ] -> BoolValue(a = b)
+                        | "bool.and", [ BoolValue a; BoolValue b ] -> BoolValue(a && b)
+                        | "bool.or", [ BoolValue a; BoolValue b ] -> BoolValue(a || b)
+                        | "bool.not", [ BoolValue value ] -> BoolValue(not value)
+                        | "string.concat", [ StringValue a; StringValue b ] -> StringValue(a + b)
+                        | "string.contains", [ StringValue value; StringValue sub ] -> BoolValue(value.Contains(sub, StringComparison.Ordinal))
+                        | "string.starts-with", [ StringValue value; StringValue sub ] -> BoolValue(value.StartsWith(sub, StringComparison.Ordinal))
+                        | "string.ends-with", [ StringValue value; StringValue sub ] -> BoolValue(value.EndsWith(sub, StringComparison.Ordinal))
+                        | "string.length", [ StringValue value ] -> IntValue(int64 value.Length)
+                        | "string.trim", [ StringValue value ] -> StringValue(value.Trim())
+                        | "string.to-lower", [ StringValue value ] -> StringValue(value.ToLowerInvariant())
+                        | "string.to-upper", [ StringValue value ] -> StringValue(value.ToUpperInvariant())
+                        | "int.abs", [ IntValue Int64.MinValue ] -> error "RUNTIME_OVERFLOW" "Absolute value of Int64.MinValue overflows." (Some name) None [] []
+                        | "int.abs", [ IntValue value ] -> IntValue(abs value)
+                        | "int.min", [ IntValue a; IntValue b ] -> IntValue(min a b)
+                        | "int.max", [ IntValue a; IntValue b ] -> IntValue(max a b)
+                        | "int.to-float", [ IntValue value ] -> FloatValue(float value)
+                        | "float.to-int", [ FloatValue value ] when not (Double.IsFinite value) || value >= 9223372036854775808.0 || value < -9223372036854775808.0 -> error "RUNTIME_RANGE" "Float value is outside the Int64 range." (Some name) None [ "finite Int64 range" ] [ string value ]
+                        | "float.to-int", [ FloatValue value ] -> IntValue(int64 value)
+                        | "float.round", [ FloatValue value ] when not (Double.IsFinite value) -> error "RUNTIME_RANGE" "Float value is outside the Int64 range." (Some name) None [ "finite Int64 range" ] [ string value ]
+                        | "float.round", [ FloatValue value ] ->
+                            let rounded = Math.Round(value, MidpointRounding.AwayFromZero)
+                            if rounded >= 9223372036854775808.0 || rounded < -9223372036854775808.0 then error "RUNTIME_RANGE" "Rounded Float value is outside the Int64 range." (Some name) None [ "finite Int64 range" ] [ string value ]
+                            IntValue(int64 rounded)
+                        | "int.to-string", [ IntValue value ] -> StringValue(string value)
+                        | "float.to-string", [ FloatValue value ] -> StringValue(value.ToString("G", CultureInfo.InvariantCulture))
+                        | "list.count", [ ListValue(_, values) ] -> IntValue(int64 values.Length)
+                        | "list.append", [ ListValue(itemType, values); _ ] when values.Length >= maxCollectionLength -> error "RUNTIME_VALUE_LIMIT" $"Lists cannot contain more than {maxCollectionLength} values." (Some name) None [ string maxCollectionLength ] [ string values.Length ]
+                        | "list.append", [ ListValue(itemType, values); value ] when Types.ofValue value = itemType -> ListValue(itemType, values @ [ value ])
+                        | "list.concat", [ ListValue(itemType, left); ListValue(otherType, right) ] when int64 left.Length + int64 right.Length > int64 maxCollectionLength -> error "RUNTIME_VALUE_LIMIT" $"Lists cannot contain more than {maxCollectionLength} values." (Some name) None [ string maxCollectionLength ] [ string (left.Length + right.Length) ]
+                        | "list.concat", [ ListValue(itemType, left); ListValue(otherType, right) ] when itemType = otherType -> ListValue(itemType, left @ right)
+                        | "list.get", [ ListValue(itemType, values); IntValue index ] when index >= 0L && index < int64 values.Length -> OptionValue(itemType, Some values[int index])
+                        | "list.get", [ ListValue(itemType, _); IntValue _ ] -> OptionValue(itemType, None)
+                        | "list.is-empty?", [ ListValue(_, values) ] -> BoolValue(List.isEmpty values)
+                        | "file.read", [ StringValue path ] ->
+                            mutateEffect trace "fs.read"
+                            match trace.FileSystem.TryFind path with
+                            | Some contents -> StringValue contents
+                            | None -> error "EFFECT_FILE_NOT_FOUND" $"Virtual file '{path}' does not exist." (Some name) None [] [ path ]
+                        | "file.exists?", [ StringValue path ] ->
+                            mutateEffect trace "fs.read"
+                            BoolValue(trace.FileSystem.ContainsKey path)
+                        | "file.write", [ StringValue path; StringValue contents ] ->
+                            mutateEffect trace "fs.write"
+                            trace.FileSystem <- Map.add path contents trace.FileSystem
+                            UnitValue
+                        | "clock.now", [] -> mutateEffect trace "clock.read"; StringValue fixedClock
+                        | "console.write", [ StringValue contents ] -> mutateEffect trace "console.write"; trace.Console <- trace.Console @ [ contents ]; UnitValue
+                        | _ -> error "RUNTIME_INTERNAL_TYPE" $"Builtin '{name}' received a value outside its checked signature." (Some name) None [] (arguments |> List.map (Types.ofValue >> Types.format))
+                    match result with
+                    | UnitValue -> [ UnitValue ]
+                    | FloatValue value when not (Double.IsFinite value) -> error "RUNTIME_NONFINITE_FLOAT" "Float operation produced a nonfinite value." (Some name) None [ "finite Float" ] [ string value ]
+                    | value -> [ value ]
             | Some(RecordConstructor typeName) ->
                 let definition = state.Records[typeName].Definition
                 let values = List.zip definition.Fields arguments |> List.map (fun (field, value) -> field.Name, value) |> Map.ofList
@@ -358,10 +445,27 @@ module Runtime =
             for expression in body do
                 let sourceSpan =
                     match expression with
-                    | Push(_, span) | Call(_, span) | Let(_, span) | Load(_, span) | If(_, _, span) -> span
+                    | Push(_, span) | Call(_, span) | ConstructContainer(_, _, span)
+                    | MapList(_, span) | FilterList(_, span) | EachList(_, span)
+                    | Let(_, span) | Load(_, span) | If(_, _, span)
+                    | MatchOption(_, _, _, span) | MatchResult(_, _, _, _, span) -> span
                 countInstruction trace currentWord sourceSpan
                 match expression with
                 | Push(literal, _) -> stack <- stack @ [ Types.literalValue literal ]
+                | ConstructContainer(kind, types, span) ->
+                    let push value = stack <- stack @ [ value ]
+                    let consume () =
+                        if List.isEmpty stack then error "RUNTIME_STACK_UNDERFLOW" "Typed container constructor requires one payload value." (Some currentWord) (Some span) [] []
+                        let value = List.last stack
+                        stack <- stack |> List.take (stack.Length - 1)
+                        value
+                    match kind with
+                    | ListEmpty -> push (ListValue(types.Head, []))
+                    | ListSingleton -> push (ListValue(types.Head, [ consume () ]))
+                    | OptionNone -> push (OptionValue(types.Head, None))
+                    | OptionSome -> push (OptionValue(types.Head, Some(consume ())))
+                    | ResultOk -> push (ResultValue(types[0], types[1], Ok(consume ())))
+                    | ResultError -> push (ResultValue(types[0], types[1], Error(consume ())))
                 | Load(name, span) ->
                     match locals.TryFind name with
                     | Some value -> stack <- stack @ [ value ]
@@ -377,19 +481,78 @@ module Runtime =
                         let prefix, arguments = popArguments name target.Definition.Inputs stack
                         let result = invoke state words trace depth target arguments
                         stack <- prefix @ result
+                | (MapList(targetName, span) | FilterList(targetName, span) | EachList(targetName, span)) as operation ->
+                    if List.isEmpty stack then error "RUNTIME_STACK_UNDERFLOW" "List higher-order operation requires a list." (Some currentWord) (Some span) [] []
+                    let itemType, values, prefix =
+                        match List.last stack with
+                        | ListValue(itemType, values) -> itemType, values, stack |> List.take (stack.Length - 1)
+                        | actual -> error "RUNTIME_INTERNAL_TYPE" "List operation received a non-list after type checking." (Some currentWord) (Some span) [ "List<T>" ] [ Types.ofValue actual |> Types.format ]
+                    let callback =
+                        match words.TryFind targetName with
+                        | Some entry -> entry
+                        | None -> error "RUNTIME_UNKNOWN_WORD" $"List callback '{targetName}' is no longer defined." (Some currentWord) (Some span) [] [ targetName ]
+                    let operationName = match operation with MapList _ -> "list.map" | FilterList _ -> "list.filter" | _ -> "list.each"
+                    log "use" operationName
+                    countBranchOutcome trace currentWord span (if List.isEmpty values then "empty" else "nonempty")
+                    let outputs = ResizeArray<Value>()
+                    for value in values do
+                        // Charge each iteration against the same instruction budget as ordinary code.
+                        countInstruction trace currentWord span
+                        let result = invoke state words trace (depth + 1) callback [ value ]
+                        match operation, result with
+                        | MapList _, [ mapped ] -> outputs.Add mapped
+                        | FilterList _, [ BoolValue true ] -> outputs.Add value; countBranchOutcome trace currentWord span "keep"
+                        | FilterList _, [ BoolValue false ] -> countBranchOutcome trace currentWord span "drop"
+                        | EachList _, [ UnitValue ] -> ()
+                        | _ -> error "RUNTIME_INTERNAL_TYPE" $"List callback '{targetName}' returned values outside its checked signature." (Some currentWord) (Some span) [] (result |> List.map (Types.ofValue >> Types.format))
+                    match operation with
+                    | MapList _ ->
+                        let outputType = Compiler.listCallbackOutputType (knownTypes state) words targetName span itemType
+                        stack <- prefix @ [ ListValue(outputType, List.ofSeq outputs) ]
+                    | FilterList _ -> stack <- prefix @ [ ListValue(itemType, List.ofSeq outputs) ]
+                    | EachList _ -> stack <- prefix @ [ UnitValue ]
+                    | _ -> failwith "unreachable"
                 | If(thenBranch, elseBranch, span) ->
                     match stack with
                     | _ when not (List.isEmpty stack) && (match List.last stack with BoolValue _ -> true | _ -> false) ->
                         let condition = match List.last stack with BoolValue value -> value | _ -> false
                         stack <- stack |> List.take (stack.Length - 1)
-                        if trace.CoverageTarget = Some currentWord then
-                            let branchId = instructionId span + (if condition then ":true" else ":false")
-                            trace.CoverageBranches <- Set.add branchId trace.CoverageBranches
+                        countBranchOutcome trace currentWord span (if condition then "true" else "false")
                         let branch = if condition then thenBranch else elseBranch
                         let branchStack, branchLocals = runBody state words trace depth currentWord stack locals branch
                         stack <- branchStack
                         locals <- branchLocals
                     | _ -> error "RUNTIME_IF_REQUIRES_BOOL" "'if' requires a Bool at the top of the stack." (Some currentWord) (Some span) [ "Bool" ] (stack |> List.tryLast |> Option.map (Types.ofValue >> Types.format) |> Option.toList)
+                | MatchOption(someName, someBranch, noneBranch, span) ->
+                    if List.isEmpty stack then error "RUNTIME_STACK_UNDERFLOW" "match-option requires an Option<T>." (Some currentWord) (Some span) [] []
+                    let prefix = stack |> List.take (stack.Length - 1)
+                    match List.last stack with
+                    | OptionValue(_, Some value) ->
+                        countBranchOutcome trace currentWord span "some"
+                        let branchStack, branchLocals = runBody state words trace depth currentWord prefix (Map.add someName value locals) someBranch
+                        stack <- branchStack
+                        locals <- Map.remove someName branchLocals
+                    | OptionValue(_, None) ->
+                        countBranchOutcome trace currentWord span "none"
+                        let branchStack, branchLocals = runBody state words trace depth currentWord prefix locals noneBranch
+                        stack <- branchStack
+                        locals <- branchLocals
+                    | actual -> error "RUNTIME_INTERNAL_TYPE" "match-option received a non-option after type checking." (Some currentWord) (Some span) [ "Option<T>" ] [ Types.ofValue actual |> Types.format ]
+                | MatchResult(okName, errorName, okBranch, errorBranch, span) ->
+                    if List.isEmpty stack then error "RUNTIME_STACK_UNDERFLOW" "match-result requires a Result<T, E>." (Some currentWord) (Some span) [] []
+                    let prefix = stack |> List.take (stack.Length - 1)
+                    match List.last stack with
+                    | ResultValue(_, _, Ok value) ->
+                        countBranchOutcome trace currentWord span "ok"
+                        let branchStack, branchLocals = runBody state words trace depth currentWord prefix (Map.add okName value locals) okBranch
+                        stack <- branchStack
+                        locals <- Map.remove okName branchLocals
+                    | ResultValue(_, _, Error value) ->
+                        countBranchOutcome trace currentWord span "error"
+                        let branchStack, branchLocals = runBody state words trace depth currentWord prefix (Map.add errorName value locals) errorBranch
+                        stack <- branchStack
+                        locals <- Map.remove errorName branchLocals
+                    | actual -> error "RUNTIME_INTERNAL_TYPE" "match-result received a non-result after type checking." (Some currentWord) (Some span) [ "Result<T, E>" ] [ Types.ofValue actual |> Types.format ]
             stack, locals
 
         let createTrace coverageTarget fileSystem =
@@ -535,11 +698,14 @@ module Runtime =
             let user = userWords state
             for entry in user |> Map.toSeq |> Seq.map snd do Compiler.checkDefinition (knownTypes state) words entry.Definition |> ignore
             for record in state.Records |> Map.toSeq |> Seq.map (fun (_, item) -> item.Definition) do
-                for field in record.Fields do
-                    match field.Type with
-                    | TNamed name when not ((knownTypes state).Contains name) -> error "TYPE_UNKNOWN_FIELD_TYPE" $"Field '{record.Name}.{field.Name}' uses undeclared type '{name}'." (Some record.Name) (Some record.Span) [ "declared record or scalar type" ] [ name ]
-                    | TList _ | TOption _ | TResult _ | TVar _ -> error "TYPE_UNSUPPORTED_FIELD_TYPE" "Record fields currently support primitive and nominal scalar/record types only." (Some record.Name) (Some record.Span) [] [ Types.format field.Type ]
+                let rec validateFieldType (field: RecordField) = function
+                    | TNamed name when not ((knownTypes state).Contains name) ->
+                        error "TYPE_UNKNOWN_FIELD_TYPE" $"Field '{record.Name}.{field.Name}' uses undeclared type '{name}'." (Some record.Name) (Some record.Span) [ "declared record or scalar type" ] [ name ]
+                    | TList item | TOption item -> validateFieldType field item
+                    | TResult(ok, failure) -> validateFieldType field ok; validateFieldType field failure
+                    | TVar _ -> error "TYPE_UNSUPPORTED_GENERIC" "Record fields cannot contain free generic variables." (Some record.Name) (Some record.Span) [] [ Types.format field.Type ]
                     | _ -> ()
+                for field in record.Fields do validateFieldType field field.Type
             for scalar in state.Scalars |> Map.toSeq |> Seq.map (fun (_, item) -> item.Definition) do
                 let deps = Compiler.checkScalarValidator (knownTypes state) words scalar
                 match scalar.Validator with
@@ -1051,7 +1217,7 @@ module Runtime =
                     let uncovered = Set.difference requiredInstructions coveredInstructions
                     let missingBranches = Set.difference requiredBranches coveredBranches
                     if not (Set.isEmpty uncovered && Set.isEmpty missingBranches && not (List.isEmpty result)) then
-                        error "LIBRARY_COVERAGE_INCOMPLETE" $"Library word '{name}' requires every instruction and both outcomes of every if to be exercised by attached tests." (Some name) None [] (Set.toList uncovered @ Set.toList missingBranches)
+                        error "LIBRARY_COVERAGE_INCOMPLETE" $"Library word '{name}' requires every instruction, case, and declared iteration outcome to be exercised by its own attached tests." (Some name) None [] (Set.toList uncovered @ Set.toList missingBranches)
             let history =
                 selectedWords
                 |> Set.fold (fun (found: Map<string, WordDefinition list>) name ->
@@ -1076,8 +1242,13 @@ module Runtime =
             | value -> try value.GetValue<bool>() with _ -> defaultValue
 
         let describeJson word =
-            let words = effectiveWords data
-            availableDescription data words word
+            match syntaxDescriptors |> List.tryFind (fun descriptor -> descriptor.Name = word) with
+            | Some descriptor ->
+                log "inspect" word
+                syntaxDescriptorJson descriptor
+            | None ->
+                let words = effectiveWords data
+                availableDescription data words word
 
         let resultList (kind: string) (text: string) (results: TestCaseResult list) (target: string option) =
             let array = JsonArray()
@@ -1110,6 +1281,7 @@ module Runtime =
                             result |> List.iter (fun value -> values.Add(toJsonValue value))
                             let dataNode = JsonObject()
                             dataNode["stack"] <- values
+                            dataNode["stackTypes"] <- jsonNode (result |> List.map (Types.ofValue >> Types.format))
                             dataNode["console"] <- jsonNode trace.Console
                             dataNode["effects"] <- jsonNode (trace.Effects |> Map.toSeq |> Map.ofSeq)
                             success "eval" (result |> List.map Types.formatValue |> String.concat " ") (Some dataNode)
@@ -1136,6 +1308,9 @@ module Runtime =
                         array.Add value)
                     let payload = JsonObject()
                     payload["words"] <- array
+                    let constructs = JsonArray()
+                    syntaxDescriptors |> List.iter (syntaxDescriptorJson >> constructs.Add)
+                    payload["constructs"] <- constructs
                     success "words" $"{entries.Length} word(s)." (Some payload)
                 | "describe" ->
                     let name = readString args "word" ""
@@ -1144,27 +1319,45 @@ module Runtime =
                     let query = readString args "query" (readString args "text" "")
                     let words = effectiveWords data
                     let matches =
-                        words |> Map.toList |> List.map snd |> List.filter (fun item ->
-                            item.Definition.Name.Contains(query, StringComparison.OrdinalIgnoreCase) || item.Definition.Documentation.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                            (item.Definition.Inputs @ item.Definition.Outputs |> List.exists (fun ty -> (Types.format ty).Contains(query, StringComparison.OrdinalIgnoreCase))))
+                        let wordNames =
+                            words |> Map.toList |> List.map snd |> List.filter (fun item ->
+                                item.Definition.Name.Contains(query, StringComparison.OrdinalIgnoreCase) || item.Definition.Documentation.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                                (item.Definition.Inputs @ item.Definition.Outputs |> List.exists (fun ty -> (Types.format ty).Contains(query, StringComparison.OrdinalIgnoreCase))))
+                            |> List.map (fun item -> item.Definition.Name)
+                        let syntaxNames =
+                            syntaxDescriptors
+                            |> List.filter (fun item ->
+                                item.Name.Contains(query, StringComparison.OrdinalIgnoreCase)
+                                || item.Syntax.Contains(query, StringComparison.OrdinalIgnoreCase)
+                                || item.Documentation.Contains(query, StringComparison.OrdinalIgnoreCase)
+                                || (item.Inputs @ item.Outputs @ item.TypeParameters @ item.Effects @ item.Coverage
+                                    |> List.exists (fun value -> value.Contains(query, StringComparison.OrdinalIgnoreCase))))
+                            |> List.map (fun item -> item.Name)
+                        List.append wordNames syntaxNames |> List.distinct |> List.sort
                     let result = JsonArray()
-                    matches |> List.sortBy (fun item -> item.Definition.Name) |> List.iter (fun item -> result.Add(jstr item.Definition.Name))
+                    matches |> List.iter (fun name -> result.Add(jstr name))
                     success "search" $"{matches.Length} match(es)." (Some(result :> JsonNode))
                 | "source" ->
                     let name = readString args "word" ""
-                    let words = effectiveWords data
-                    match words.TryFind name with
-                    | None -> error "NAME_UNKNOWN_WORD" $"Word '{name}' is not defined." (Some name) None [] []
-                    | Some item ->
+                    match syntaxDescriptors |> List.tryFind (fun descriptor -> descriptor.Name = name) with
+                    | Some descriptor ->
                         log "inspect" name
-                        let inputText = String.concat " " (item.Definition.Inputs |> List.map Types.format)
-                        let outputText = String.concat " " (item.Definition.Outputs |> List.map Types.format)
-                        let source =
-                            match item.Builtin with
-                            | Some(BuiltinOp _) -> $"primitive {name} : {inputText} -> {outputText}"
-                            | Some _ -> sourceForAgent item.Definition.SourceText
-                            | None -> sourceForAgent item.Definition.SourceText
+                        let source = "syntax " + descriptor.Syntax + " : " + (String.concat " " descriptor.Inputs) + " -> " + (String.concat " " descriptor.Outputs)
                         success "source" source (Some(jstr source))
+                    | None ->
+                        let words = effectiveWords data
+                        match words.TryFind name with
+                        | None -> error "NAME_UNKNOWN_WORD" $"Word '{name}' is not defined." (Some name) None [] []
+                        | Some item ->
+                            log "inspect" name
+                            let inputText = String.concat " " (item.Definition.Inputs |> List.map Types.format)
+                            let outputText = String.concat " " (item.Definition.Outputs |> List.map Types.format)
+                            let source =
+                                match item.Builtin with
+                                | Some(BuiltinOp _) -> $"primitive {name} : {inputText} -> {outputText}"
+                                | Some _ -> sourceForAgent item.Definition.SourceText
+                                | None -> sourceForAgent item.Definition.SourceText
+                            success "source" source (Some(jstr source))
                 | "dependencies" ->
                     let name = readString args "word" ""
                     let words = effectiveWords data

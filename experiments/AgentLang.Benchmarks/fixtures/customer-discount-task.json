@@ -1,0 +1,30 @@
+{
+  "id": "customer-discount-smoke",
+  "goal": "Confirm that premium customers receive the expected discount and regular customers keep their balance. Reuse the existing customer vocabulary.",
+  "systemPrompt": "You work inside AgentLang. Inspect relevant words before calling them. Use only the runtime tools, run tests, and finish with a short result.",
+  "initialContext": "The project contains the small Customer example. Discover its vocabulary through introspection instead of assuming its implementation.",
+  "oracle": [
+    {
+      "operation": "eval",
+      "args": {
+        "code": "\"premium\" 100.0 customer.new customer.discounted-balance"
+      },
+      "data": {
+        "stack": ["90"]
+      }
+    },
+    {
+      "operation": "eval",
+      "args": {
+        "code": "\"regular\" 100.0 customer.new customer.discounted-balance"
+      },
+      "data": {
+        "stack": ["100"]
+      }
+    },
+    {
+      "operation": "test-all",
+      "minimumPassingTests": 4
+    }
+  ]
+}

@@ -2,7 +2,9 @@
 
 AgentLang is a small F# prototype for building a persistent, typed vocabulary through inspectable words. A host agent can discover available operations, stage definitions, evaluate and test them, then commit tested vocabulary for the next session.
 
-This repository implements a prototype slice. The compiler checks and lowers definitions to a checked expression tree, and the runtime interprets that tree directly. Effectful primitives use virtual providers only; there is no host filesystem, network, or database access. There is no model harness or experiment result yet. The Customer demo uses binary floating point and is not suitable for exact money. The Email validator below demonstrates a modest local policy and does not claim conformance with the full Internet email standard.
+AI agents are external coding tools that use the language. The language runtime contains no AI agents or model calls and works without an API key. Humans and ordinary scripts use the same commands. Model integration is an optional, separate experiment harness under `experiments/`; task sessions are dictionary transactions and logs.
+
+This repository implements a prototype slice. The compiler checks definitions into a checked expression tree, and the runtime interprets that tree directly. Effectful language primitives use virtual providers only; there is no host filesystem, network, or database access from language programs. An optional external experiment harness and a conventional business foundation are included; no measured agent comparison is claimed. The Customer demo uses binary floating point and is not suitable for exact money. The Email validator below demonstrates a modest local policy and does not claim conformance with the full Internet email standard.
 
 The decisions and scope live in [docs/PRD.md](docs/PRD.md) and [docs/DECISIONS.md](docs/DECISIONS.md).
 
@@ -43,7 +45,7 @@ dotnet run --project src/AgentLang.Cli -- --project .agentlang --eval '"premium"
 
 The result is 90. This example uses binary floating point to keep the prototype small; it does not model exact financial amounts.
 
-The REPL accepts single-line expressions and buffers multiline declarations and standalone if blocks. Use :define FILE to load a file containing several declarations. The :help command lists available controls.
+The REPL accepts single-line expressions and buffers multiline declarations, if blocks, and Option/Result matches. Use :define FILE to load a file containing several declarations. The :help command lists available controls.
 
 ## Language syntax
 
@@ -137,7 +139,11 @@ The dispatcher supports evaluation and definition, vocabulary discovery (words, 
 :describe customer.discounted-balance
 ~~~
 
-A failed gate returns LIBRARY_COVERAGE_INCOMPLETE with uncovered instruction and branch locations. A successful description reports coverage and the selected maturity. Library maturity survives reload and later replacements.
+A failed gate returns LIBRARY_COVERAGE_INCOMPLETE with uncovered instruction and outcome locations. Library tests must cover both conditional branches, both Option/Result cases, empty and nonempty iteration, and kept/dropped filter outcomes where used. A successful description reports coverage and the selected maturity. Library maturity survives reload and later replacements. See [testing policy](docs/TESTING.md).
+
+Temporary describes a word's lifetime, while library describes its quality requirements. A temporary word can be tried within a session and discarded; promoting it makes it a candidate for persistence. A project word requires attached passing tests to commit. A library word additionally requires complete instruction and supported control-flow coverage. A local binding created by `let` is a value within one invocation, not a dictionary word.
+
+Closed `List<T>`, `Option<T>`, and `Result<T,E>` values preserve their declared types even when empty or unsuccessful. Static callbacks and exhaustive case blocks are described in [docs/CONTAINERS.md](docs/CONTAINERS.md), with runnable examples in [examples/containers.agent](examples/containers.agent).
 
 ## Effect permissions
 
@@ -149,10 +155,22 @@ dotnet run --project src/AgentLang.Cli -- --allow fs.read,fs.write,console.write
 
 The initial file and clock providers are deterministic and virtual. The --clock flag sets the value returned by clock.now.
 
-## First-slice limits
+## External experiment harness
 
-The runtime interprets a checked expression tree; it does not emit bytecode. Record and nominal scalar types are supported, while List, Option, and Result values, generic definitions, and local file, database, network, or process access are not. The file and console effects use in-memory providers, and the clock is fixed by the host.
+The optional harness consumes the public runtime interface. Its offline smoke run needs no model credential:
 
-Dictionary definitions and their current revision numbers persist in `dictionary.agent`. `history` and `diff` retain source snapshots only for the current Engine process, so a fresh process can report the current revision but does not restore the prior revision contents. Stable word IDs, rename tooling, a model harness, token/latency measurements, and benchmark results are not implemented. Task logs report runtime vocabulary, test, error, and simulated effect counts; they do not measure model turns or tokens.
+~~~powershell
+dotnet run --project experiments/AgentLang.Benchmarks -- run --task experiments/AgentLang.Benchmarks/fixtures/customer-discount-task.json --provider scripted --script experiments/AgentLang.Benchmarks/fixtures/customer-discount-script.json --seed-source examples/customer.agent
+~~~
+
+This checks protocol orchestration and existing customer vocabulary. It is a scripted infrastructure check, not evidence that an AI agent implemented a task. [docs/HARNESS.md](docs/HARNESS.md) documents live-provider configuration, retention modes, request limits, saved traces, and independent task oracles. [docs/BUSINESS.md](docs/BUSINESS.md) describes the conventional business foundation and its exact-money contract.
+
+## Current limits
+
+The runtime interprets a checked expression tree; it does not emit bytecode. Records, nominal scalar types, and closed containers are supported. Generic user definitions and local file, database, network, or process access are not implemented. The file and console effects use in-memory providers, and the clock is fixed by the host.
+
+Dictionary definitions and their current revision numbers persist in `dictionary.agent`. `history` and `diff` retain source snapshots only for the current Engine process, so a fresh process can report the current revision but does not restore prior revision contents. Stable word IDs, rename tooling, the full business language fixture, conventional repository tools, and controlled benchmark results remain pending. Task logs report runtime vocabulary, test, error, and simulated effect counts. Model measurements belong to the separate [experiment harness](docs/HARNESS.md).
+
+The [requirements ledger](docs/REQUIREMENTS.md) tracks the full PRD beyond this slice. [Milestone reports](reports/README.md) distinguish validation evidence from research results. Run `./scripts/Validate.ps1` for the same fresh Release build and checks used by CI.
 
 Use `--project .agentlang` to keep the prototype dictionary and task logs in the ignored project-local directory instead of the current working directory.
