@@ -4,12 +4,28 @@ namespace AgentLang
 /// are authoring metadata only; executable expressions lower to the existing
 /// Expr and verified semantic IR.
 [<RequireQualifiedAccess>]
+type FlowContainerConstructor =
+    | ListEmpty
+    | ListSingleton
+    | OptionNone
+    | OptionSome
+    | ResultOk
+    | ResultError
+
+type FlowTypeArgument =
+    { Type: LangType
+      Span: SourceSpan }
+
+[<RequireQualifiedAccess>]
 type FlowExpression =
     | Literal of Literal * SourceSpan
     | Local of string * SourceSpan
     | Call of string * FlowArgument list * SourceSpan
     | DotCall of FlowExpression * string * FlowArgument list * SourceSpan
     | If of FlowExpression * FlowStatement list * FlowStatement list * SourceSpan
+    | Container of FlowContainerConstructor * FlowTypeArgument list * FlowExpression option * SourceSpan
+    | MatchOption of FlowExpression * FlowPayloadCase * FlowCaseBlock * SourceSpan
+    | MatchResult of FlowExpression * FlowPayloadCase * FlowPayloadCase * SourceSpan
 
 and [<RequireQualifiedAccess>] FlowArgument =
     | Positional of FlowExpression
@@ -18,6 +34,16 @@ and [<RequireQualifiedAccess>] FlowArgument =
 and [<RequireQualifiedAccess>] FlowStatement =
     | Let of string * FlowExpression * SourceSpan
     | Evaluate of FlowExpression
+
+and FlowCaseBlock =
+    { Statements: FlowStatement list
+      Span: SourceSpan }
+
+and FlowPayloadCase =
+    { Name: string
+      NameSpan: SourceSpan
+      Statements: FlowStatement list
+      Span: SourceSpan }
 
 type FlowParameter =
     { Name: string
@@ -82,6 +108,8 @@ module FlowSource =
             prefix + shownName + "(" + (arguments |> List.map renderArgument |> String.concat ", ") + ")"
         | FlowExpression.DotCall(receiver, stage, arguments, _) ->
             renderExpressionAt depth receiver + "." + stage + "(" + (arguments |> List.map renderArgument |> String.concat ", ") + ")"
+        | FlowExpression.Container(kind, typeArguments, payload, _) ->
+            prefix + renderContainer kind typeArguments payload
         | FlowExpression.If(condition, thenBranch, elseBranch, _) ->
             let lines = ResizeArray<string>()
             lines.Add(prefix + "if " + renderInlineExpression condition + " {")
@@ -90,16 +118,25 @@ module FlowSource =
             renderStatements (depth + 1) elseBranch |> List.iter lines.Add
             lines.Add(prefix + "}")
             String.concat "\n" lines
+        | FlowExpression.MatchOption(scrutinee, someCase, noneCase, _) ->
+            renderMatchBlock depth scrutinee
+                (renderMatchCase (depth + 1) ("some " + someCase.Name) someCase.Statements
+                 @ renderMatchCase (depth + 1) "none" noneCase.Statements)
+        | FlowExpression.MatchResult(scrutinee, okCase, errorCase, _) ->
+            renderMatchBlock depth scrutinee
+                (renderMatchCase (depth + 1) ("ok " + okCase.Name) okCase.Statements
+                 @ renderMatchCase (depth + 1) ("error " + errorCase.Name) errorCase.Statements)
     and private renderInlineExpression expression =
         match expression with
         | FlowExpression.Literal(value, _) -> renderLiteral value
         | FlowExpression.Local(name, _) -> name
+        | FlowExpression.Container(kind, typeArguments, payload, _) -> renderContainer kind typeArguments payload
         | FlowExpression.Call(name, arguments, _) ->
             let shownName = renderQualifiedName name
             shownName + "(" + (arguments |> List.map renderArgument |> String.concat ", ") + ")"
         | FlowExpression.DotCall(receiver, stage, arguments, _) ->
             renderInlineExpression receiver + "." + stage + "(" + (arguments |> List.map renderArgument |> String.concat ", ") + ")"
-        | FlowExpression.If _ -> renderExpressionAt 0 expression
+        | FlowExpression.If _ | FlowExpression.MatchOption _ | FlowExpression.MatchResult _ -> renderExpressionAt 0 expression
     and private renderArgument = function
         | FlowArgument.Positional expression -> renderInlineExpression expression
         | FlowArgument.Named(name, expression, _) -> name + " = " + renderInlineExpression expression
@@ -110,6 +147,28 @@ module FlowSource =
             match statement with
             | FlowStatement.Let(name, value, _) -> indent depth + "let " + name + " = " + renderInlineExpression value + suffix
             | FlowStatement.Evaluate value -> renderExpressionAt depth value + suffix)
+
+    and private renderContainer kind typeArguments payload =
+        let name =
+            match kind with
+            | FlowContainerConstructor.ListEmpty -> "list::empty"
+            | FlowContainerConstructor.ListSingleton -> "list::singleton"
+            | FlowContainerConstructor.OptionNone -> "option::none"
+            | FlowContainerConstructor.OptionSome -> "option::some"
+            | FlowContainerConstructor.ResultOk -> "result::ok"
+            | FlowContainerConstructor.ResultError -> "result::error"
+        let genericArguments = typeArguments |> List.map (fun argument -> Types.format argument.Type) |> String.concat ", "
+        let argument = payload |> Option.map renderInlineExpression |> Option.defaultValue ""
+        name + "<" + genericArguments + ">(" + argument + ")"
+
+    and private renderMatchBlock depth scrutinee lines =
+        let prefix = indent depth
+        prefix + "match " + renderInlineExpression scrutinee + " {\n" + String.concat "\n" lines + "\n" + prefix + "}"
+
+    and private renderMatchCase depth header statements =
+        [ indent depth + header + " => {" ]
+        @ renderStatements (depth + 1) statements
+        @ [ indent depth + "}" ]
 
     let renderExpression expression = renderExpressionAt 0 expression
 

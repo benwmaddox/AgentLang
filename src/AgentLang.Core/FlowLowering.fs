@@ -31,7 +31,7 @@ module FlowLowering =
 
     type private LoweringState =
         { mutable NextTemporary: int
-          mutable NextSyntheticMarker: int
+          mutable NextSyntheticMarker: int64
           mutable AuthoredSpans: Set<SourceSpan>
           mutable SyntheticOrigins: Map<SourceSpan, SourceSpan> }
 
@@ -65,11 +65,21 @@ module FlowLowering =
         | FlowExpression.Local(_, span)
         | FlowExpression.Call(_, _, span)
         | FlowExpression.DotCall(_, _, _, span)
-        | FlowExpression.If(_, _, _, span) -> span
+        | FlowExpression.If(_, _, _, span)
+        | FlowExpression.Container(_, _, _, span)
+        | FlowExpression.MatchOption(_, _, _, span)
+        | FlowExpression.MatchResult(_, _, _, span) -> span
 
-    let private freshState firstSyntheticMarker =
+    let private freshState (retainedOrigins: Map<SourceSpan, SourceSpan>) =
+        let highestRetainedIndex =
+            retainedOrigins
+            |> Map.toSeq
+            |> Seq.choose (fun (marker, _) ->
+                if marker.Length = 0 && marker.Column > 0 then Some(int64 Int32.MaxValue - int64 marker.Column)
+                else None)
+            |> Seq.fold max -1L
         { NextTemporary = 0
-          NextSyntheticMarker = firstSyntheticMarker
+          NextSyntheticMarker = highestRetainedIndex + 1L
           AuthoredSpans = Set.empty
           SyntheticOrigins = Map.empty }
 
@@ -78,8 +88,10 @@ module FlowLowering =
 
     let private syntheticSpan state origin =
         rememberSpan state origin
-        let markerColumn = Int32.MaxValue - state.NextSyntheticMarker
-        state.NextSyntheticMarker <- state.NextSyntheticMarker + 1
+        if state.NextSyntheticMarker < 0L || state.NextSyntheticMarker >= int64 Int32.MaxValue then
+            fail "FLOW_SOURCE_MARKER_EXHAUSTED" "Flow lowering exhausted its bounded private source-marker range." None (Some origin) [ "available source marker" ] [ string state.NextSyntheticMarker ]
+        let markerColumn = int32 (int64 Int32.MaxValue - state.NextSyntheticMarker)
+        state.NextSyntheticMarker <- state.NextSyntheticMarker + 1L
         let generated = { origin with Column = markerColumn; Length = 0 }
         state.SyntheticOrigins <- Map.add generated origin state.SyntheticOrigins
         generated
@@ -137,6 +149,36 @@ module FlowLowering =
               Entry = entry
               ParameterNames = entryParameterNames context name entry })
         |> List.sortBy (fun candidate -> candidate.Name)
+
+    let private validateClosedTypeArgument (context: Context) (argument: FlowTypeArgument) =
+        let known = knownTypes context
+        let rec validate typeValue =
+            match typeValue with
+            | TInt | TFloat | TBool | TString | TUnit -> ()
+            | TList item | TOption item -> validate item
+            | TResult(okType, errorType) -> validate okType; validate errorType
+            | TNamed name when known.Contains name -> ()
+            | TNamed name -> fail "FLOW_CONSTRUCTOR_UNKNOWN_TYPE" $"Container constructor refers to undeclared type '{name}'." None (Some argument.Span) [ "known record or refined type" ] [ name ]
+            | TVar name -> fail "FLOW_CONSTRUCTOR_OPEN_TYPE" "Container constructors require fully closed type arguments." None (Some argument.Span) [ "closed type" ] [ name ]
+        validate argument.Type
+
+    let private constructorTypeArguments (context: Context) (kind: FlowContainerConstructor) (typeArguments: FlowTypeArgument list) (span: SourceSpan) =
+        let expected =
+            match kind with
+            | FlowContainerConstructor.ResultOk | FlowContainerConstructor.ResultError -> 2
+            | _ -> 1
+        if typeArguments.Length <> expected then
+            fail "FLOW_CONSTRUCTOR_TYPE_ARITY" "Container constructor has the wrong number of explicit type arguments." None (Some span) [ string expected ] [ string typeArguments.Length ]
+        typeArguments |> List.iter (validateClosedTypeArgument context)
+        typeArguments |> List.map (fun argument -> argument.Type)
+
+    let private coreConstructor = function
+        | FlowContainerConstructor.ListEmpty -> ListEmpty
+        | FlowContainerConstructor.ListSingleton -> ListSingleton
+        | FlowContainerConstructor.OptionNone -> OptionNone
+        | FlowContainerConstructor.OptionSome -> OptionSome
+        | FlowContainerConstructor.ResultOk -> ResultOk
+        | FlowContainerConstructor.ResultError -> ResultError
 
     let private unifyType (expected: LangType) (actual: LangType) (substitutions: Map<string, LangType>) =
         let rec unify (expected: LangType) (actual: LangType) (substitutions: Map<string, LangType>) =
@@ -261,6 +303,57 @@ module FlowLowering =
             | [ _, output ] -> output
             | [] -> fail "FLOW_NO_MATCHING_DOT_STAGE" $"No '{stage}' stage accepts receiver type {Types.format receiverType} and these arguments." None (Some span) [ Types.format receiverType ] (candidates |> List.map (fun candidate -> candidate.Name))
             | _ -> fail "FLOW_AMBIGUOUS_DOT_STAGE" $"Dot stage '{stage}' has more than one applicable first-input word; qualify the call explicitly." None (Some span) [] (successful |> List.map (fun (candidate, _) -> candidate.Name))
+        | FlowExpression.Container(kind, typeArguments, payload, constructorSpan) ->
+            let types = constructorTypeArguments context kind typeArguments constructorSpan
+            let outputType, requiredPayloadType =
+                match kind, types with
+                | FlowContainerConstructor.ListEmpty, [ item ] -> TList item, None
+                | FlowContainerConstructor.ListSingleton, [ item ] -> TList item, Some item
+                | FlowContainerConstructor.OptionNone, [ item ] -> TOption item, None
+                | FlowContainerConstructor.OptionSome, [ item ] -> TOption item, Some item
+                | FlowContainerConstructor.ResultOk, [ okType; errorType ] -> TResult(okType, errorType), Some okType
+                | FlowContainerConstructor.ResultError, [ okType; errorType ] -> TResult(okType, errorType), Some errorType
+                | _ -> fail "FLOW_CONSTRUCTOR_TYPE_ARITY" "Container constructor type arguments do not match its closed type contract." None (Some constructorSpan) [] (types |> List.map Types.format)
+            match requiredPayloadType, payload with
+            | None, None -> outputType
+            | Some expected, Some expression ->
+                let actual = inferExpression context state environment expression
+                if expected <> actual then
+                    fail "FLOW_CONSTRUCTOR_PAYLOAD_TYPE" "Container constructor payload must exactly match its declared nominal type." None (Some(spanOfExpression expression)) [ Types.format expected ] [ Types.format actual ]
+                outputType
+            | None, Some expression -> fail "FLOW_CONSTRUCTOR_ARITY" "This container constructor does not accept a payload." None (Some(spanOfExpression expression)) [ "no payload" ] [ "payload supplied" ]
+            | Some _, None -> fail "FLOW_CONSTRUCTOR_ARITY" "This container constructor requires a payload." None (Some constructorSpan) [ "one payload" ] []
+        | FlowExpression.MatchOption(scrutinee, someCase, noneCase, matchSpan) ->
+            let itemType =
+                match inferExpression context state environment scrutinee with
+                | TOption item -> item
+                | actual -> fail "FLOW_MATCH_REQUIRES_OPTION" "Option match requires an Option<T> scrutinee." None (Some matchSpan) [ "Option<T>" ] [ Types.format actual ]
+            if environment.ContainsKey someCase.Name then
+                fail "FLOW_MATCH_PAYLOAD_SHADOW" $"Option payload local '{someCase.Name}' cannot shadow an outer local." None (Some someCase.NameSpan) [] [ someCase.Name ]
+            let someEnvironment = Map.add someCase.Name { InternalName = someCase.Name; Type = itemType } environment
+            let someType = inferStatements context state someEnvironment someCase.Statements
+            let noneType = inferStatements context state environment noneCase.Statements
+            match someType, noneType with
+            | Some someValue, Some noneValue when someValue = noneValue -> someValue
+            | Some someValue, Some noneValue -> fail "FLOW_MATCH_BRANCH_TYPE" "Option match cases must produce the same single output type." None (Some matchSpan) [ Types.format someValue ] [ Types.format noneValue ]
+            | _ -> fail "FLOW_MATCH_BRANCH_VALUE" "Both Option match cases must end with one value expression." None (Some matchSpan) [ "one value from Some and None" ] []
+        | FlowExpression.MatchResult(scrutinee, okCase, errorCase, matchSpan) ->
+            let okType, errorType =
+                match inferExpression context state environment scrutinee with
+                | TResult(okValue, errorValue) -> okValue, errorValue
+                | actual -> fail "FLOW_MATCH_REQUIRES_RESULT" "Result match requires a Result<T, E> scrutinee." None (Some matchSpan) [ "Result<T, E>" ] [ Types.format actual ]
+            if environment.ContainsKey okCase.Name then
+                fail "FLOW_MATCH_PAYLOAD_SHADOW" $"Result ok payload local '{okCase.Name}' cannot shadow an outer local." None (Some okCase.NameSpan) [] [ okCase.Name ]
+            if environment.ContainsKey errorCase.Name then
+                fail "FLOW_MATCH_PAYLOAD_SHADOW" $"Result error payload local '{errorCase.Name}' cannot shadow an outer local." None (Some errorCase.NameSpan) [] [ errorCase.Name ]
+            let okEnvironment = Map.add okCase.Name { InternalName = okCase.Name; Type = okType } environment
+            let errorEnvironment = Map.add errorCase.Name { InternalName = errorCase.Name; Type = errorType } environment
+            let okOutput = inferStatements context state okEnvironment okCase.Statements
+            let errorOutput = inferStatements context state errorEnvironment errorCase.Statements
+            match okOutput, errorOutput with
+            | Some okValue, Some errorValue when okValue = errorValue -> okValue
+            | Some okValue, Some errorValue -> fail "FLOW_MATCH_BRANCH_TYPE" "Result match cases must produce the same single output type." None (Some matchSpan) [ Types.format okValue ] [ Types.format errorValue ]
+            | _ -> fail "FLOW_MATCH_BRANCH_VALUE" "Both Result match cases must end with one value expression." None (Some matchSpan) [ "one value from Ok and Error" ] []
         | FlowExpression.If(condition, thenBody, elseBody, _) ->
             let conditionType = inferExpression context state environment condition
             if conditionType <> TBool then fail "FLOW_IF_CONDITION_TYPE" "Flow if condition must have type Bool." None (Some(spanOfExpression condition)) [ "Bool" ] [ Types.format conditionType ]
@@ -312,6 +405,32 @@ module FlowLowering =
             let receiverType = inferExpression context state environment receiver
             let candidate, bound = selectCall context state environment stage (Some receiverType) arguments callSpan
             lowerResolvedCall context state environment candidate bound (Some receiver) arguments callSpan
+        | FlowExpression.Container(kind, typeArguments, payload, constructorSpan) ->
+            inferExpression context state environment expression |> ignore
+            let payloadCode = payload |> Option.map (lowerFlowExpression context state environment) |> Option.defaultValue []
+            payloadCode @ [ ConstructContainer(coreConstructor kind, typeArguments |> List.map (fun argument -> argument.Type), constructorSpan) ]
+        | FlowExpression.MatchOption(scrutinee, someCase, noneCase, matchSpan) ->
+            inferExpression context state environment expression |> ignore
+            let someType = inferExpression context state environment scrutinee |> function | TOption item -> item | _ -> failwith "validated option match changed type"
+            let someEnvironment = Map.add someCase.Name { InternalName = someCase.Name; Type = someType } environment
+            let someCode, _ = lowerStatements context state someEnvironment someCase.Statements
+            let noneCode, _ = lowerStatements context state environment noneCase.Statements
+            let someScope = Scope(someCode, syntheticSpan state someCase.Span)
+            let noneScope = Scope(noneCode, syntheticSpan state noneCase.Span)
+            lowerFlowExpression context state environment scrutinee @ [ MatchOption(someCase.Name, [ someScope ], [ noneScope ], matchSpan) ]
+        | FlowExpression.MatchResult(scrutinee, okCase, errorCase, matchSpan) ->
+            inferExpression context state environment expression |> ignore
+            let okType, errorType =
+                match inferExpression context state environment scrutinee with
+                | TResult(okValue, errorValue) -> okValue, errorValue
+                | _ -> failwith "validated result match changed type"
+            let okEnvironment = Map.add okCase.Name { InternalName = okCase.Name; Type = okType } environment
+            let errorEnvironment = Map.add errorCase.Name { InternalName = errorCase.Name; Type = errorType } environment
+            let okCode, _ = lowerStatements context state okEnvironment okCase.Statements
+            let errorCode, _ = lowerStatements context state errorEnvironment errorCase.Statements
+            let okScope = Scope(okCode, syntheticSpan state okCase.Span)
+            let errorScope = Scope(errorCode, syntheticSpan state errorCase.Span)
+            lowerFlowExpression context state environment scrutinee @ [ MatchResult(okCase.Name, errorCase.Name, [ okScope ], [ errorScope ], matchSpan) ]
         | FlowExpression.If(condition, thenStatements, elseStatements, ifSpan) ->
             let conditionType = inferExpression context state environment condition
             if conditionType <> TBool then fail "FLOW_IF_CONDITION_TYPE" "Flow if condition must have type Bool." None (Some(spanOfExpression condition)) [ "Bool" ] [ Types.format conditionType ]
@@ -429,7 +548,7 @@ module FlowLowering =
         sourceMap |> Map.map (fun _ source -> source.SiteSpan)
 
     let private lowerExpressionBody context expression =
-        let state = freshState context.SourceOrigins.Count
+        let state = freshState context.SourceOrigins
         let lowered = lowerFlowExpression context state Map.empty expression
         { Expressions = lowered
           SourceText = FlowSource.renderExpression expression
@@ -461,7 +580,7 @@ module FlowLowering =
         if flowWord.SyntaxVersion <> 1 then fail "FLOW_VERSION_UNSUPPORTED" "Only Flow syntax version 1 is supported by this compiler slice." (Some flowWord.Name) (Some flowWord.Span) [ "1" ] [ string flowWord.SyntaxVersion ]
         let names = flowWord.Parameters |> List.map (fun parameter -> parameter.Name)
         if names.Length <> (Set.ofList names).Count then fail "FLOW_DUPLICATE_PARAMETER" "Flow word parameters must have unique names." (Some flowWord.Name) (Some flowWord.Span) [] names
-        let state = freshState context.SourceOrigins.Count
+        let state = freshState context.SourceOrigins
         rememberSpan state flowWord.Span
         let environment =
             flowWord.Parameters

@@ -1,0 +1,19 @@
+{
+  "command": "dotnet build src/AgentLang.Core/AgentLang.Core.fsproj -c Release",
+  "startedAt": "2026-10-05T17:12:11.0220793+00:00",
+  "completedAt": "2026-10-05T17:12:26.6972159+00:00",
+  "revision": "87f8fadccf9d65ebf3adcabe35ef3102f055f863",
+  "dirty": true,
+  "exitCode": 0,
+  "output": [
+    "  Determining projects to restore...",
+    "  All projects are up-to-date for restore.",
+    "  AgentLang.Core -> D:\\code\\AgentLang\\src\\AgentLang.Core\\bin\\Release\\net9.0\\AgentLang.Core.dll",
+    "",
+    "Build succeeded.",
+    "    0 Warning(s)",
+    "    0 Error(s)",
+    "",
+    "Time Elapsed 00:00:15.37"
+  ]
+}

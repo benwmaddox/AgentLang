@@ -1,6 +1,7 @@
 namespace AgentLang
 
 open System
+open System.Collections.Generic
 open System.Globalization
 open System.Text.Json
 
@@ -123,10 +124,11 @@ module FlowParser =
                         if exponentStart = offset then fail file startLine startColumn (offset - startOffset) "FLOW_INVALID_FLOAT" "Float exponent must contain at least one digit."
                     add Number startOffset startLine startColumn
                 else
+                    let pair = if offset + 1 < source.Length then source.Substring(offset, 2) else ""
                     let symbol =
-                        if offset + 1 < source.Length && (source.Substring(offset, 2) = "->" || source.Substring(offset, 2) = "::") then
-                            source.Substring(offset, 2)
-                        else string source[offset]
+                        match pair with
+                        | "->" | "::" | "=>" -> pair
+                        | _ -> string source[offset]
                     for _ in symbol do advance ()
                     add Symbol startOffset startLine startColumn
         tokens.ToArray(), line, column
@@ -221,6 +223,24 @@ module FlowParser =
         while accept state "::" do parts.Add((expectIdentifier state).Text)
         String.concat "." parts
 
+    let private constructorKind = function
+        | "list.empty" -> Some FlowContainerConstructor.ListEmpty
+        | "list.singleton" -> Some FlowContainerConstructor.ListSingleton
+        | "option.none" -> Some FlowContainerConstructor.OptionNone
+        | "option.some" -> Some FlowContainerConstructor.OptionSome
+        | "result.ok" -> Some FlowContainerConstructor.ResultOk
+        | "result.error" -> Some FlowContainerConstructor.ResultError
+        | _ -> None
+
+    let private constructorTypeArity = function
+        | FlowContainerConstructor.ResultOk | FlowContainerConstructor.ResultError -> 2
+        | _ -> 1
+
+    let private constructorHasPayload = function
+        | FlowContainerConstructor.ListEmpty | FlowContainerConstructor.OptionNone -> false
+        | FlowContainerConstructor.ListSingleton | FlowContainerConstructor.OptionSome
+        | FlowContainerConstructor.ResultOk | FlowContainerConstructor.ResultError -> true
+
     let rec private parseArguments state =
         withDepth state (fun () ->
             expect state "(" |> ignore
@@ -262,6 +282,98 @@ module FlowParser =
             expect state "}" |> ignore
             List.ofSeq statements)
 
+    and private parseConstructor state startToken kind =
+        if not (accept state "<") then
+            fail state.File startToken.Line startToken.Column startToken.Text.Length "FLOW_CONSTRUCTOR_TYPE_ARGUMENTS_REQUIRED" "Container constructors require explicit closed type arguments."
+        if peek state = Some ">" then
+            tokenError state "FLOW_CONSTRUCTOR_TYPE_ARGUMENTS_REQUIRED" "Container constructors require one or more explicit type arguments."
+        let typeArguments = ResizeArray<FlowTypeArgument>()
+        let parseTypeArgument () =
+            let typeStart = current state |> Option.defaultWith (fun () -> tokenError state "FLOW_INCOMPLETE_INPUT" "Expected a constructor type argument.")
+            let typeValue = parseType state
+            { Type = typeValue; Span = sourceSpan state.File typeStart (previous state) }
+        typeArguments.Add(parseTypeArgument ())
+        while accept state "," do typeArguments.Add(parseTypeArgument ())
+        expect state ">" |> ignore
+        let requiredTypeArity = constructorTypeArity kind
+        if typeArguments.Count <> requiredTypeArity then
+            fail state.File startToken.Line startToken.Column (max 1 (previous state |> Option.map (fun token -> token.Offset + token.Text.Length - startToken.Offset) |> Option.defaultValue startToken.Text.Length))
+                "FLOW_CONSTRUCTOR_TYPE_ARITY" "Container constructor has the wrong number of explicit type arguments."
+        if peek state <> Some "(" then
+            tokenError state "FLOW_CONSTRUCTOR_CALL_REQUIRED" "Container constructors must be followed by a parenthesized payload list."
+        let arguments = parseArguments state
+        let payload =
+            match constructorHasPayload kind, arguments with
+            | false, [] -> None
+            | true, [ FlowArgument.Positional expression ] -> Some expression
+            | _ ->
+                let expected = if constructorHasPayload kind then "one positional payload" else "no payload"
+                fail state.File startToken.Line startToken.Column startToken.Text.Length "FLOW_CONSTRUCTOR_ARITY" $"Container constructor expects {expected}; received {arguments.Length} argument(s)."
+        FlowExpression.Container(kind, List.ofSeq typeArguments, payload, sourceSpan state.File startToken (previous state))
+
+    and private parsePayloadCase state labelToken =
+        let name = expectIdentifier state
+        expect state "=>" |> ignore
+        let statements = parseBlock state
+        { Name = name.Text
+          NameSpan = sourceSpan state.File name (Some name)
+          Statements = statements
+          Span = sourceSpan state.File labelToken (previous state) }
+
+    and private parseBlockCase state labelToken =
+        expect state "=>" |> ignore
+        let statements = parseBlock state
+        { Statements = statements
+          Span = sourceSpan state.File labelToken (previous state) }
+
+    and private parseMatch state matchToken =
+        let scrutinee = parseExpressionState state
+        expect state "{" |> ignore
+        let mutable caseKind: string option = None
+        let mutable someCase: FlowPayloadCase option = None
+        let mutable noneCase: FlowCaseBlock option = None
+        let mutable okCase: FlowPayloadCase option = None
+        let mutable errorCase: FlowPayloadCase option = None
+        let setCaseKind kind labelToken =
+            match caseKind with
+            | None -> caseKind <- Some kind
+            | Some existing when existing = kind -> ()
+            | Some _ -> fail state.File labelToken.Line labelToken.Column labelToken.Text.Length "FLOW_MATCH_CASE_KIND" "Option and Result case labels cannot be mixed in one match."
+        while peek state <> Some "}" && not (atEnd state) do
+            let label = expectIdentifier state
+            match label.Text with
+            | "some" ->
+                setCaseKind "option" label
+                if someCase.IsSome then fail state.File label.Line label.Column label.Text.Length "FLOW_MATCH_CASE_DUPLICATE" "Option match contains the 'some' case more than once."
+                someCase <- Some(parsePayloadCase state label)
+            | "none" ->
+                setCaseKind "option" label
+                if noneCase.IsSome then fail state.File label.Line label.Column label.Text.Length "FLOW_MATCH_CASE_DUPLICATE" "Option match contains the 'none' case more than once."
+                noneCase <- Some(parseBlockCase state label)
+            | "ok" ->
+                setCaseKind "result" label
+                if okCase.IsSome then fail state.File label.Line label.Column label.Text.Length "FLOW_MATCH_CASE_DUPLICATE" "Result match contains the 'ok' case more than once."
+                okCase <- Some(parsePayloadCase state label)
+            | "error" ->
+                setCaseKind "result" label
+                if errorCase.IsSome then fail state.File label.Line label.Column label.Text.Length "FLOW_MATCH_CASE_DUPLICATE" "Result match contains the 'error' case more than once."
+                errorCase <- Some(parsePayloadCase state label)
+            | _ -> fail state.File label.Line label.Column label.Text.Length "FLOW_MATCH_CASE_UNKNOWN" $"Unknown match case '{label.Text}'."
+            accept state ";" |> ignore
+        expect state "}" |> ignore
+        let matchSpan = sourceSpan state.File matchToken (previous state)
+        match someCase, noneCase, okCase, errorCase with
+        | Some someValue, Some noneValue, None, None -> FlowExpression.MatchOption(scrutinee, someValue, noneValue, matchSpan)
+        | None, None, Some okValue, Some errorValue -> FlowExpression.MatchResult(scrutinee, okValue, errorValue, matchSpan)
+        | Some _, None, None, None | None, Some _, None, None ->
+            fail state.File matchSpan.Line matchSpan.Column matchSpan.Length "FLOW_MATCH_CASE_MISSING" "Option matches require exactly one 'some' and one 'none' case."
+        | None, None, Some _, None | None, None, None, Some _ ->
+            fail state.File matchSpan.Line matchSpan.Column matchSpan.Length "FLOW_MATCH_CASE_MISSING" "Result matches require exactly one 'ok' and one 'error' case."
+        | None, None, None, None ->
+            fail state.File matchSpan.Line matchSpan.Column matchSpan.Length "FLOW_MATCH_CASE_MISSING" "A match must contain both cases for Option or Result."
+        | _ ->
+            fail state.File matchSpan.Line matchSpan.Column matchSpan.Length "FLOW_MATCH_CASE_KIND" "Match cases must form exactly the Option pair or the Result pair."
+
     and private parseExpressionState state =
         withDepth state (fun () ->
             let first = current state |> Option.defaultWith (fun () -> tokenError state "FLOW_INCOMPLETE_INPUT" "Expected a Flow expression.")
@@ -284,6 +396,7 @@ module FlowParser =
                 | Identifier, "true" -> consume state |> ignore; FlowExpression.Literal(LBool true, sourceSpan state.File first (Some first))
                 | Identifier, "false" -> consume state |> ignore; FlowExpression.Literal(LBool false, sourceSpan state.File first (Some first))
                 | Identifier, "unit" -> consume state |> ignore; FlowExpression.Literal(LUnit, sourceSpan state.File first (Some first))
+                | Identifier, "match" -> consume state |> ignore; parseMatch state first
                 | Identifier, "if" ->
                     consume state |> ignore
                     let condition = parseExpressionState state
@@ -293,12 +406,14 @@ module FlowParser =
                     FlowExpression.If(condition, thenBranch, elseBranch, sourceSpan state.File first (previous state))
                 | Identifier, _ ->
                     let name = parseNamespaceName state
-                    if peek state = Some "(" then
+                    match constructorKind name with
+                    | Some kind -> parseConstructor state first kind
+                    | None when peek state = Some "(" ->
                         let args = parseArguments state
                         FlowExpression.Call(name, args, sourceSpan state.File first (previous state))
-                    elif name.Contains('.') then
+                    | None when name.Contains('.') ->
                         fail state.File first.Line first.Column first.Text.Length "FLOW_QUALIFIED_CALL_REQUIRES_ARGUMENTS" "A qualified word reference must be called with parentheses."
-                    else FlowExpression.Local(name, sourceSpan state.File first (Some first))
+                    | None -> FlowExpression.Local(name, sourceSpan state.File first (Some first))
                 | _ ->
                     fail state.File first.Line first.Column first.Text.Length "FLOW_EXPECTED_EXPRESSION" $"Token '{first.Text}' cannot begin an expression."
             let mutable result = primary
@@ -425,12 +540,64 @@ module FlowParser =
                 | _ -> ()
         List.ofSeq statements
 
+    let private expressionSpan = function
+        | FlowExpression.Literal(_, span)
+        | FlowExpression.Local(_, span)
+        | FlowExpression.Call(_, _, span)
+        | FlowExpression.DotCall(_, _, _, span)
+        | FlowExpression.If(_, _, _, span)
+        | FlowExpression.Container(_, _, _, span)
+        | FlowExpression.MatchOption(_, _, _, span)
+        | FlowExpression.MatchResult(_, _, _, span) -> span
+
+    let private expressionsInStatements statements =
+        statements
+        |> List.choose (function
+            | FlowStatement.Let(_, expression, _) -> Some expression
+            | FlowStatement.Evaluate expression -> Some expression)
+
+    /// The recursive parser limit does not count the iterative postfix loop.
+    /// Validate the resulting AST iteratively so a long receiver chain and its
+    /// nested arguments cannot reach recursive lowering/rendering without a
+    /// bound on their combined expression depth.
+    let private validateExpressionNesting (roots: FlowExpression list) =
+        let pending = Stack<FlowExpression * int>()
+        for root in List.rev roots do pending.Push((root, 1))
+        let argumentChildren arguments =
+            arguments
+            |> List.map (function
+                | FlowArgument.Positional expression -> expression
+                | FlowArgument.Named(_, expression, _) -> expression)
+        let statementChildren statements = expressionsInStatements statements
+        let children = function
+            | FlowExpression.Literal _ | FlowExpression.Local _ -> []
+            | FlowExpression.Call(_, arguments, _) -> argumentChildren arguments
+            | FlowExpression.DotCall(receiver, _, arguments, _) -> receiver :: argumentChildren arguments
+            | FlowExpression.If(condition, thenBody, elseBody, _) ->
+                condition :: (statementChildren thenBody @ statementChildren elseBody)
+            | FlowExpression.Container(_, _, payload, _) -> payload |> Option.toList
+            | FlowExpression.MatchOption(scrutinee, someCase, noneCase, _) ->
+                scrutinee :: (statementChildren someCase.Statements @ statementChildren noneCase.Statements)
+            | FlowExpression.MatchResult(scrutinee, okCase, errorCase, _) ->
+                scrutinee :: (statementChildren okCase.Statements @ statementChildren errorCase.Statements)
+        while pending.Count > 0 do
+            let expression, depth = pending.Pop()
+            if depth > maxNesting then
+                let source = expressionSpan expression
+                fail source.File source.Line source.Column source.Length "FLOW_NESTING_LIMIT" $"Flow syntax exceeds the nesting limit of {maxNesting}."
+            else
+                for child in List.rev (children expression) do pending.Push((child, depth + 1))
+
+    let private validateWordNesting (definition: FlowWordDefinition) =
+        validateExpressionNesting (expressionsInStatements definition.Body)
+
     let parseExpression file source =
         try
             let tokens, endLine, endColumn = tokenize file source
             let state = { File = file; Source = source; Tokens = tokens; Index = 0; Depth = 0; EndLine = endLine; EndColumn = endColumn }
             let expression = parseExpressionState state
             if not (atEnd state) then tokenError state "FLOW_TRAILING_INPUT" "Unexpected token follows the Flow expression."
+            validateExpressionNesting [ expression ]
             Ok expression
         with LanguageException error -> Error error
 
@@ -439,5 +606,6 @@ module FlowParser =
             let tokens, endLine, endColumn = tokenize file source
             let state = { File = file; Source = source; Tokens = tokens; Index = 0; Depth = 0; EndLine = endLine; EndColumn = endColumn }
             let definition = parseWordState state
+            validateWordNesting definition
             Ok definition
         with LanguageException error -> Error error

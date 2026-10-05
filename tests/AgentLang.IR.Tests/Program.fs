@@ -19,6 +19,31 @@ let private expectDiagnostic name code (action: unit -> unit) =
     | LanguageException diagnostic ->
         failwith $"{name}: expected {code}, got {diagnostic.Code}: {diagnostic.Message}"
 
+let private expectDiagnosticRedactsMarkers name code (privateMarkers: SourceSpan list) (action: unit -> unit) =
+    try
+        action ()
+        failwith $"{name}: expected diagnostic {code}"
+    with
+    | LanguageException diagnostic when diagnostic.Code = code ->
+        assertions <- assertions + 1
+        let rendered = sprintf "%A" diagnostic
+        check $"{name} does not expose private marker coordinates"
+            (privateMarkers |> List.forall (fun marker -> not (rendered.Contains(sprintf "%A" marker))))
+    | LanguageException diagnostic ->
+        failwith $"{name}: expected {code}, got {diagnostic.Code}: {diagnostic.Message}"
+
+let private expectDiagnosticDetails name code span expected actual (action: unit -> unit) =
+    try
+        action ()
+        failwith $"{name}: expected diagnostic {code}"
+    with
+    | LanguageException diagnostic when diagnostic.Code = code ->
+        assertions <- assertions + 1
+        check $"{name} preserves authored diagnostic details"
+            (diagnostic.Span = span && diagnostic.Expected = expected && diagnostic.Actual = actual)
+    | LanguageException diagnostic ->
+        failwith $"{name}: expected {code}, got {diagnostic.Code}: {diagnostic.Message}"
+
 let private noEffects = Set.empty<IrEffect>
 
 let private sourceSpan file line =
@@ -26,6 +51,15 @@ let private sourceSpan file line =
       Line = line
       Column = 1
       Length = 1 }
+
+let private noOpIrHost () : IrInterpreterHost =
+    { PreflightEffects = fun _ _ _ -> ()
+      ChargeInstruction = fun _ _ -> ()
+      RecordBranchOutcome = fun _ _ _ -> ()
+      RecordUse = ignore
+      InvokeEffect = fun _ -> EffectUnit
+      WordDefinitionSpan = fun _ -> None
+      PrimitiveDefinitionSpan = fun _ -> None }
 
 let private site owner ordinal = SourceSiteId(Some owner, ordinal)
 
@@ -876,6 +910,188 @@ let private testCompilerLowering () =
     let runtimeErrorExpectedContext = context
     check "fingerprint regression fixture keeps candidate ID and revision fixed" (runtimeErrorExpectedContext.WordIds["local-join"] = wordId "local-join" && (functionByName "local-join").FunctionRevision = 1)
 
+let private testAttachedSourceOrigins () =
+    let file = "attached-flow.ir"
+    let authored line = sourceSpan file line
+    let privateMarker (origin: SourceSpan) ordinal =
+        { origin with Column = Int32.MaxValue - ordinal; Length = 0 }
+    let scopeBody marker valueSpan value = [ Scope([ Push(LInt value, valueSpan) ], marker) ]
+    let siteSpans (body: VerifiedIrBody) =
+        VerifiedIrBody.inspect body
+        |> fun inspected -> inspected.BodySourceMap |> Map.toList |> List.map (fun (_, site) -> site.SiteSpan) |> Set.ofList
+    let sourceValues (sources: Map<SourceSiteId, IrSourceSite>) = sources |> Map.toList |> List.map snd
+    let allAuthored (sources: IrSourceSite list) =
+        sources
+        |> List.forall (fun site -> site.SiteSpan.Length > 0 && site.SiteSpan.Column < Int32.MaxValue - 1000)
+
+    let contextOrigin = authored 10
+    let contextMarker = privateMarker contextOrigin 1
+    let contextValueSpan = authored 11
+    let contextWord =
+        wordEntry "flow-base" [] [ TInt ] Set.empty
+            [ Scope([ Push(LInt 5L, contextValueSpan) ], contextMarker) ] 1 Candidate
+    let context = loweringContext (Map.ofList [ "flow-base", contextWord ]) Map.empty Map.empty
+    let contextOrigins = Map.ofList [ contextMarker, contextOrigin ]
+    let verified = Compiler.compileIrProgramWithSourceOrigins context contextOrigins
+    let verifiedData = VerifiedIrProgram.inspect verified
+    check "Flow-like context Scope markers are remapped before program verification"
+        (allAuthored (sourceValues verifiedData.SourceMap) && (sourceValues verifiedData.SourceMap |> List.exists (fun site -> site.SiteSpan = contextOrigin)))
+
+    let actualOrigin = authored 20
+    let actualMarker = privateMarker actualOrigin 2
+    let actualValueSpan = authored 21
+    let expectedOrigin = authored 30
+    let expectedMarker = privateMarker expectedOrigin 3
+    let expectedValueSpan = authored 31
+    let attachedTest: TestDefinition =
+        { Name = "scope-value"
+          Word = "flow-base"
+          Body = scopeBody actualMarker actualValueSpan 7L
+          Expected = ExpectedExpression(scopeBody expectedMarker expectedValueSpan 7L)
+          SourceText = "test scope-value"
+          Span = authored 19 }
+    let testOrigins = Map.ofList [ contextMarker, contextOrigin; actualMarker, actualOrigin; expectedMarker, expectedOrigin ]
+    let actualBody, expectedBodyOption =
+        Compiler.compileIrTestWithExpectationAgainstProgramWithSourceOrigins context verified attachedTest testOrigins
+    let expectedBody = expectedBodyOption |> Option.defaultWith (fun () -> failwith "Expected Flow value body was not compiled.")
+    check "origin-aware test and expectation remain attached to the exact verified snapshot"
+        (Object.ReferenceEquals(VerifiedIrBody.program actualBody, verified) && Object.ReferenceEquals(VerifiedIrBody.program expectedBody, verified))
+    check "actual Flow-like Scope and authored sites are the only actual-body spans"
+        (siteSpans actualBody = Set.ofList [ actualOrigin; actualValueSpan ] && allAuthored (VerifiedIrBody.inspect actualBody |> fun body -> sourceValues body.BodySourceMap))
+    check "expected Flow-like Scope and authored sites are the only expectation spans"
+        (siteSpans expectedBody = Set.ofList [ expectedOrigin; expectedValueSpan ] && allAuthored (VerifiedIrBody.inspect expectedBody |> fun body -> sourceValues body.BodySourceMap))
+    check "actual and expected source-origin bodies execute separately through verified IR"
+        (IrInterpreter.executeBody (noOpIrHost ()) "flow-test-body" actualBody = [ IntValue 7L ] &&
+         IrInterpreter.executeBody (noOpIrHost ()) "flow-test-expectation" expectedBody = [ IntValue 7L ])
+
+    let exampleOrigin = authored 40
+    let exampleMarker = privateMarker exampleOrigin 4
+    let exampleValueSpan = authored 41
+    let example: ExampleDefinition =
+        { Name = "scope-example"
+          Word = "flow-base"
+          Body = scopeBody exampleMarker exampleValueSpan 9L
+          Expected = LInt 9L
+          SourceText = "example scope-example"
+          Span = authored 39 }
+    let exampleOrigins = Map.ofList [ contextMarker, contextOrigin; exampleMarker, exampleOrigin ]
+    let compiledExample = Compiler.compileIrExampleAgainstProgramWithSourceOrigins context verified example exampleOrigins
+    check "origin-aware example keeps its program binding and remaps every private scope site"
+        (Object.ReferenceEquals(VerifiedIrBody.program compiledExample, verified) &&
+         siteSpans compiledExample = Set.ofList [ exampleOrigin; exampleValueSpan ] &&
+         allAuthored (VerifiedIrBody.inspect compiledExample |> fun body -> sourceValues body.BodySourceMap))
+    check "origin-aware example executes through verified IR" (IrInterpreter.executeBody (noOpIrHost ()) "flow-example" compiledExample = [ IntValue 9L ])
+
+    expectDiagnosticRedactsMarkers "attached test origin map rejects a missing expected marker" "IR_SOURCE_ORIGIN_MISSING" [ expectedMarker ] (fun () ->
+        Compiler.compileIrTestWithExpectationAgainstProgramWithSourceOrigins context verified attachedTest (Map.remove expectedMarker testOrigins) |> ignore)
+
+    let extraOrigin = authored 60
+    let extraMarker = privateMarker extraOrigin 60
+    expectDiagnosticRedactsMarkers "attached test origin map rejects an unrelated marker" "IR_SOURCE_ORIGIN_SET_MISMATCH" [ extraMarker ] (fun () ->
+        Compiler.compileIrTestWithExpectationAgainstProgramWithSourceOrigins context verified attachedTest (Map.add extraMarker extraOrigin testOrigins) |> ignore)
+
+    let testWithActualExpectedCollision =
+        { attachedTest with Expected = ExpectedExpression(scopeBody actualMarker expectedValueSpan 7L) }
+    let actualExpectedOrigins = Map.ofList [ contextMarker, contextOrigin; actualMarker, actualOrigin ]
+    expectDiagnosticRedactsMarkers "attached test rejects actual-to-expectation marker reuse" "IR_SOURCE_ORIGIN_MARKER_COLLISION" [ actualMarker ] (fun () ->
+        Compiler.compileIrTestWithExpectationAgainstProgramWithSourceOrigins context verified testWithActualExpectedCollision actualExpectedOrigins |> ignore)
+
+    let testWithContextActualCollision = { attachedTest with Body = scopeBody contextMarker actualValueSpan 7L }
+    let contextActualOrigins = Map.ofList [ contextMarker, contextOrigin; expectedMarker, expectedOrigin ]
+    expectDiagnosticRedactsMarkers "attached test rejects context-to-actual marker reuse" "IR_SOURCE_ORIGIN_MARKER_COLLISION" [ contextMarker ] (fun () ->
+        Compiler.compileIrTestWithExpectationAgainstProgramWithSourceOrigins context verified testWithContextActualCollision contextActualOrigins |> ignore)
+
+    let testWithContextExpectedCollision =
+        { attachedTest with Expected = ExpectedExpression(scopeBody contextMarker expectedValueSpan 7L) }
+    let contextExpectedOrigins = Map.ofList [ contextMarker, contextOrigin; actualMarker, actualOrigin ]
+    expectDiagnosticRedactsMarkers "attached test rejects context-to-expectation marker reuse" "IR_SOURCE_ORIGIN_MARKER_COLLISION" [ contextMarker ] (fun () ->
+        Compiler.compileIrTestWithExpectationAgainstProgramWithSourceOrigins context verified testWithContextExpectedCollision contextExpectedOrigins |> ignore)
+
+    let changedContextWord =
+        { contextWord with Definition = { contextWord.Definition with Body = [ Scope([ Push(LInt 6L, contextValueSpan) ], contextMarker) ] } }
+    let changedContext = { context with Words = Map.add "flow-base" changedContextWord context.Words }
+    expectDiagnosticRedactsMarkers "attached test still fails closed for a stale fingerprint" "IR_STALE_COMPILER_SNAPSHOT" [ contextMarker ] (fun () ->
+        Compiler.compileIrTestWithExpectationAgainstProgramWithSourceOrigins changedContext verified attachedTest testOrigins |> ignore)
+
+    let badActualScopeOrigin = authored 70
+    let badActualScopeMarker = privateMarker badActualScopeOrigin 70
+    let badActualLoadOrigin = authored 71
+    let badActualLoadMarker = privateMarker badActualLoadOrigin 71
+    let badActualTest =
+        { attachedTest with
+            Name = "missing-actual-local"
+            Body = [ Scope([ Load("$flow$missing", badActualLoadMarker) ], badActualScopeMarker) ]
+            Expected = ExpectedRuntimeError "NAME_UNKNOWN_LOCAL" }
+    let badActualOrigins = Map.ofList [ contextMarker, contextOrigin; badActualScopeMarker, badActualScopeOrigin; badActualLoadMarker, badActualLoadOrigin ]
+    expectDiagnosticDetails "actual-body type errors map private markers to authored spans without changing payload" "NAME_UNKNOWN_LOCAL"
+        (Some badActualLoadOrigin) [] [ "$flow$missing" ] (fun () ->
+            Compiler.compileIrTestWithExpectationAgainstProgramWithSourceOrigins context verified badActualTest badActualOrigins |> ignore)
+
+    let badExpectedScopeOrigin = authored 72
+    let badExpectedScopeMarker = privateMarker badExpectedScopeOrigin 72
+    let badExpectedLoadOrigin = authored 73
+    let badExpectedLoadMarker = privateMarker badExpectedLoadOrigin 73
+    let badExpectedTest =
+        { attachedTest with
+            Name = "missing-expected-local"
+            Expected = ExpectedExpression([ Scope([ Load("$flow$expected-missing", badExpectedLoadMarker) ], badExpectedScopeMarker) ]) }
+    let badExpectedOrigins =
+        Map.ofList [ contextMarker, contextOrigin; actualMarker, actualOrigin;
+                     badExpectedScopeMarker, badExpectedScopeOrigin; badExpectedLoadMarker, badExpectedLoadOrigin ]
+    expectDiagnosticDetails "expectation type errors map private markers to authored spans without changing payload" "NAME_UNKNOWN_LOCAL"
+        (Some badExpectedLoadOrigin) [] [ "$flow$expected-missing" ] (fun () ->
+            Compiler.compileIrTestWithExpectationAgainstProgramWithSourceOrigins context verified badExpectedTest badExpectedOrigins |> ignore)
+
+    let badExampleScopeOrigin = authored 74
+    let badExampleScopeMarker = privateMarker badExampleScopeOrigin 74
+    let badExampleLoadOrigin = authored 75
+    let badExampleLoadMarker = privateMarker badExampleLoadOrigin 75
+    let badExample =
+        { example with
+            Name = "missing-example-local"
+            Body = [ Scope([ Load("$flow$example-missing", badExampleLoadMarker) ], badExampleScopeMarker) ] }
+    let badExampleOrigins = Map.ofList [ contextMarker, contextOrigin; badExampleScopeMarker, badExampleScopeOrigin; badExampleLoadMarker, badExampleLoadOrigin ]
+    expectDiagnosticDetails "example type errors map private markers to authored spans without changing payload" "NAME_UNKNOWN_LOCAL"
+        (Some badExampleLoadOrigin) [] [ "$flow$example-missing" ] (fun () ->
+            Compiler.compileIrExampleAgainstProgramWithSourceOrigins context verified badExample badExampleOrigins |> ignore)
+
+    let effectfulExpectedOrigin = authored 80
+    let effectfulExpectedMarker = privateMarker effectfulExpectedOrigin 80
+    let effectfulExpected: TestDefinition =
+        { attachedTest with
+            Name = "effectful-expected"
+            Expected = ExpectedExpression([ Scope([ Push(LString "unexpected", authored 81); Call("console.write", authored 82) ], effectfulExpectedMarker) ]) }
+    let effectfulOrigins = Map.ofList [ contextMarker, contextOrigin; actualMarker, actualOrigin; effectfulExpectedMarker, effectfulExpectedOrigin ]
+    expectDiagnosticRedactsMarkers "origin-aware attached tests preserve the pure-expectation gate" "TEST_EXPECTED_VALUE_EFFECTS" [ effectfulExpectedMarker ] (fun () ->
+        Compiler.compileIrTestWithExpectationAgainstProgramWithSourceOrigins context verified effectfulExpected effectfulOrigins |> ignore)
+
+    let plainContext = loweringContext Map.empty Map.empty Map.empty
+    let plainProgram = Compiler.compileIrProgram plainContext
+    let plainTest: TestDefinition =
+        { Name = "plain-value"
+          Word = "plain"
+          Body = [ Push(LInt 2L, authored 90); Push(LInt 3L, authored 91); Call("add", authored 92) ]
+          Expected = ExpectedExpression([ Push(LInt 5L, authored 93) ])
+          SourceText = "test plain-value"
+          Span = authored 89 }
+    let inspectTestPair (actual, expected) =
+        VerifiedIrBody.inspect actual, expected |> Option.map VerifiedIrBody.inspect
+    let legacyTestPair = Compiler.compileIrTestWithExpectationAgainstProgram plainContext plainProgram plainTest
+    let emptyOriginTestPair = Compiler.compileIrTestWithExpectationAgainstProgramWithSourceOrigins plainContext plainProgram plainTest Map.empty
+    check "empty-origin attached test API matches the legacy context snapshot" (inspectTestPair legacyTestPair = inspectTestPair emptyOriginTestPair)
+
+    let plainExample =
+        { Name = "plain-example"
+          Word = "plain"
+          Body = [ Push(LInt 4L, authored 94) ]
+          Expected = LInt 4L
+          SourceText = "example plain-example"
+          Span = authored 94 }
+    let legacyPlainExample = Compiler.compileIrExampleAgainstProgram plainContext plainProgram plainExample
+    let emptyOriginPlainExample = Compiler.compileIrExampleAgainstProgramWithSourceOrigins plainContext plainProgram plainExample Map.empty
+    check "empty-origin attached example API matches the legacy context snapshot"
+        (VerifiedIrBody.inspect legacyPlainExample = VerifiedIrBody.inspect emptyOriginPlainExample)
+
 let private testCompilerSnapshotIdentity () =
     let span = testSpan "snapshot.agent" 1
     let stableId = WordId "candidate-stable-id"
@@ -928,6 +1144,7 @@ let private tests =
       "identity and call-graph guards", testIdentityAndCallGraphGuards
       "flat verifier stack safety", testFlatVerifierStackSafety
       "compiler lowering and detached bodies", testCompilerLowering
+      "attached Flow source origins", testAttachedSourceOrigins
       "compiler snapshot identity", testCompilerSnapshotIdentity ]
 
 [<EntryPoint>]

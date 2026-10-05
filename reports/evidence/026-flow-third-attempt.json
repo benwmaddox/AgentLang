@@ -1,0 +1,14 @@
+{
+  "command": "dotnet run --project tests/AgentLang.Flow.Tests -c Release",
+  "startedAt": "2026-10-05T17:50:57.0909169+00:00",
+  "completedAt": "2026-10-05T17:51:03.2208664+00:00",
+  "revision": "87f8fadccf9d65ebf3adcabe35ef3102f055f863",
+  "dirty": true,
+  "exitCode": -532462766,
+  "output": [
+    "Unhandled exception. System.Exception: FLOW_EFFECTS_TRAILING at <flow-test>:1:46: 'none' cannot be combined with named effects.",
+    "   at AgentLang.Flow.Tests.parseWord(String source) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs:line 36",
+    "   at AgentLang.Flow.Tests.testSparseFlowSourceMarkerAllocation() in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs:line 209",
+    "   at AgentLang.Flow.Tests.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs:line 608"
+  ]
+}

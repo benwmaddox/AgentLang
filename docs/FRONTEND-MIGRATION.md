@@ -1,6 +1,6 @@
 # Early migration to explicit data-flow source
 
-Status: implementation plan, 2026-10-05. The user requested an early switch away from RPN after finding it difficult to read. Dot chaining is the preferred authoring notation. This supersedes the earlier plan to defer frontend changes until after initial agent experiments. RPN is still the currently executable frontend; the following syntax is a target, not an implemented feature.
+Status: migration in progress, 2026-10-05. The user requested an early switch away from RPN after finding it difficult to read. Dot chaining is the preferred authoring notation. This supersedes the earlier plan to defer frontend changes until after initial agent experiments. The opt-in Flow parser and verified-IR lowering now support named typed inputs, immutable locals, ordinary/named/dot calls and conditional expressions. Runtime and protocol authoring still default to RPN; the complete semantic surface, durable Flow source and default cutover remain required. See report 021 for validated foundation evidence.
 
 ## Architecture and target syntax
 

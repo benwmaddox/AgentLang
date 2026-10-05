@@ -1,10 +1,10 @@
 # Flow stage-2 semantic surface
 
-Status: implementation plan only. This document records the remaining Flow frontend work for `FRONTEND-MIGRATION` stage 2; it does not claim that these forms are implemented or executable.
+Status: stage 2 partially implemented. Explicit typed containers and exhaustive Option/Result cases passed the focused Flow suite (122 assertions); origin-aware attached compiler APIs passed the focused IR suite (102 assertions). Full integrated validation is recorded separately in report 026. Static callbacks, output vectors, and Flow-native test/example syntax remain proposed work.
 
 ## Current boundary
 
-`FlowSyntax.fs` currently models literals, locals, named calls, dot calls, `if`, single-name `let`, and one output type per word. `FlowParser.fs` parses that slice. `FlowLowering.fs` lowers it to the existing checked `Expr` model and verified IR. It deliberately rejects calls with more than one output (`FLOW_CALL_OUTPUT_ARITY`).
+`FlowSyntax.fs` now models literals, locals, named calls, dot calls, `if`, typed container constructors, exhaustive Option/Result cases, single-name `let`, and one output type per word. `FlowParser.fs` parses that slice and bounds completed expression-tree depth, including postfix chains. `FlowLowering.fs` lowers it to the existing checked `Expr` model and verified IR, using collision-free private markers for sparse retained origins. It still rejects calls with more than one output (`FLOW_CALL_OUTPUT_ARITY`).
 
 The backend already has the main target operations: `ConstructContainer`, `MapList`, `FilterList`, `EachList`, `MatchOption`, and `MatchResult`. `Compiler.inferBody` validates constructor payloads, callback arity and types, case-local scope, branch output/local joins, dependencies, and inferred effects. A `WordDefinition` and IR function already support multiple outputs. Stage 2 should extend source syntax and lowering to these contracts rather than add another runtime or synthesize helper words.
 
@@ -70,7 +70,7 @@ Flow tests and examples are also part of stage 2. Add source objects with word i
 2. Extend `FlowParser.fs` for the constructor spellings, case blocks, static callback references, output vectors, destructuring patterns, tests, and examples. Preserve the existing source/token/depth bounds. Malformed generic arguments, missing/duplicate cases, incomplete matches, and bad destructuring must fail with structured source spans.
 3. Extend `FlowSource` rendering and round-trip tests for every new form. Canonical rendering must preserve qualified constructor and callback names, explicit type arguments, case ordering, output-vector ordering, documentation, tests, and examples.
 4. Extend `FlowLowering.fs` inference to carry output vectors and enforce single-output contexts. Map Flow constructors and cases directly to the corresponding existing `Expr` operations. Map static callbacks to `MapList`/`FilterList`/`EachList`. Lower destructuring by binding the stack outputs in reverse pop order so source names still correspond to signature order. Preserve written argument evaluation order and the current one-time dot receiver rule.
-5. Compile tests and examples against the exact verified program snapshot. Add origin-aware compiler APIs: current `compileIrTestWithExpectationAgainstProgram` and `compileIrExampleAgainstProgram` fingerprint with `Map.empty` and build bodies through `bodyFromInference context Map.empty`. Flow artifacts need APIs that validate the exact combined source-origin map and compile actual, expected, and example bodies with their own spans. Keep the pure expected body separately traced and exclude its sites from the tested word's coverage credit.
+5. Compile tests and examples against the exact verified program snapshot. Wire the implemented origin-aware `WithSourceOrigins` compiler APIs into Flow test/example lowering; legacy entry points intentionally delegate with `Map.empty`. Flow artifacts need APIs that validate the exact combined source-origin map and compile actual, expected, and example bodies with their own spans. Keep the pure expected body separately traced and exclude its sites from the tested word's coverage credit.
 6. Reuse the compiler's existing type/effect/coverage semantics. Change `Compiler.fs` or `Core.fs` only if a focused parity test demonstrates an actual backend gap. Never generate new named helper words for containers, matches, callbacks, or destructuring.
 
 Source-origin projections must give each synthetic scope, temporary, and load a distinct private marker mapped to the authored origin. Markers must never escape into displayed spans. Inspect the verified program's raw source map and coverage obligations; do not infer coverage from source substrings or generated instruction counts. Inferred effects from every possible case and from static callbacks must be included before capability checks, including for an empty runtime list.
@@ -98,4 +98,4 @@ dotnet run --project tests/AgentLang.Acceptance -c Release
 ./scripts/Validate.ps1 -Configuration Release -ReportPath .agentlang/reports/flow-cutover-validation.json
 ```
 
-No implementation or validation result is implied by this plan document.
+The remaining plan is not implementation evidence. Use the scoped results and limitations in report 026; complete frontend migration is still required.

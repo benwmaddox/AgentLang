@@ -134,3 +134,5 @@ compound values and reporting retention/copying limits and measured memory.
 Research is required; adopting this memory policy in V1 is not.
 
 Integrated foundation evidence: [report 021](../reports/021-integrated-flow-foundation.md) records a fresh 23-check Release gate and 314 selected pinned CLI parity checks. Flow remains opt-in; complete semantic surface, durable integration and default cutover are still required.
+
+Flow semantic extension evidence: [report 026](../reports/026-flow-semantic-integration.md) records focused checks for closed typed constructors, exhaustive Option/Result cases, actual AST-depth bounds, sparse source-marker allocation, attached test/example compiler origins, and advisory binding lint. Flow passed 122 assertions; IR passed 102; lint passed 42. Full integrated validation is tracked in that report. This does not complete static callback syntax, output vectors, Flow-native test/example parsing, durable source integration, default authoring cutover, or controlled agent evaluation.

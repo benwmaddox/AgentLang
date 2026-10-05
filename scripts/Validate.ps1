@@ -53,6 +53,7 @@ try {
             'value-inspection-acceptance' = 'AgentLang.ValueInspection.Tests'
             'source-acceptance' = 'AgentLang.Source.Tests'
             'flow-acceptance' = 'AgentLang.Flow.Tests'
+            'flow-lint-acceptance' = 'AgentLang.Flow.Lint.Tests'
             'storage-acceptance' = 'AgentLang.Storage.Tests'
             'conventional-acceptance' = 'AgentLang.Conventional.Tests'
             'conventional-cli-acceptance' = 'AgentLang.Conventional.Cli.Tests'

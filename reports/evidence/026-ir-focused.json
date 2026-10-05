@@ -1,0 +1,24 @@
+{
+  "command": "dotnet run --project tests/AgentLang.IR.Tests -c Release",
+  "startedAt": "2026-10-05T17:15:18.2489410+00:00",
+  "completedAt": "2026-10-05T17:15:22.4959212+00:00",
+  "revision": "87f8fadccf9d65ebf3adcabe35ef3102f055f863",
+  "dirty": true,
+  "exitCode": 0,
+  "output": [
+    "PASS closed effect vocabulary",
+    "PASS concrete primitive specializations",
+    "PASS closed container constructors",
+    "PASS structured branches and coverage",
+    "PASS closed synthetic source classifications",
+    "PASS Option and Result payload scope",
+    "PASS generated record and scalar operations",
+    "PASS static callbacks and effects",
+    "PASS identity and call-graph guards",
+    "PASS flat verifier stack safety",
+    "PASS compiler lowering and detached bodies",
+    "PASS attached Flow source origins",
+    "PASS compiler snapshot identity",
+    "AgentLang.IR.Tests: 102 assertions passed."
+  ]
+}

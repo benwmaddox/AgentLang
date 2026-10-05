@@ -1,0 +1,20 @@
+{
+  "command": "dotnet run --project tests/AgentLang.Flow.Tests -c Release",
+  "startedAt": "2026-10-05T17:38:47.9916849+00:00",
+  "completedAt": "2026-10-05T17:38:59.5807946+00:00",
+  "revision": "87f8fadccf9d65ebf3adcabe35ef3102f055f863",
+  "dirty": true,
+  "exitCode": 1,
+  "output": [
+    "D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs(178,5): warning FS0020: The result of this expression has type 'Diagnostic' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'. [D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\AgentLang.Flow.Tests.fsproj]",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs(186,5): warning FS0020: The result of this expression has type 'Diagnostic' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'. [D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\AgentLang.Flow.Tests.fsproj]",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs(194,5): warning FS0020: The result of this expression has type 'Diagnostic' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'. [D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\AgentLang.Flow.Tests.fsproj]",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs(336,9): warning FS0020: The result of this expression has type 'Diagnostic' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'. [D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\AgentLang.Flow.Tests.fsproj]",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs(357,5): warning FS0020: The result of this expression has type 'Diagnostic' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'. [D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\AgentLang.Flow.Tests.fsproj]",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs(458,10): error FS0001: Type mismatch. Expecting a\u001d    '(unit -> FlowLoweredWord * Compiler.CheckedWord) -> unit -> 'a'    \u001dbut given a\u001d    '(unit -> FlowLoweredWord * Compiler.CheckedWord) -> unit'    \u001dThe type 'unit -> 'a' does not match the type 'unit' [D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\AgentLang.Flow.Tests.fsproj]",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs(464,10): error FS0001: Type mismatch. Expecting a\u001d    '(unit -> FlowLoweredWord * Compiler.CheckedWord) -> unit -> 'a'    \u001dbut given a\u001d    '(unit -> FlowLoweredWord * Compiler.CheckedWord) -> unit'    \u001dThe type 'unit -> 'a' does not match the type 'unit' [D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\AgentLang.Flow.Tests.fsproj]",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs(594,5): warning FS0020: The result of this expression has type 'Diagnostic' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'. [D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\AgentLang.Flow.Tests.fsproj]",
+    "",
+    "The build failed. Fix the build errors and run again."
+  ]
+}

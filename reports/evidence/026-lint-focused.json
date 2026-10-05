@@ -1,0 +1,11 @@
+{
+  "command": "dotnet run --project tests/AgentLang.Flow.Lint.Tests -c Release",
+  "startedAt": "2026-10-05T17:40:30.6185685+00:00",
+  "completedAt": "2026-10-05T17:40:33.8315076+00:00",
+  "revision": "87f8fadccf9d65ebf3adcabe35ef3102f055f863",
+  "dirty": true,
+  "exitCode": 0,
+  "output": [
+    "AgentLang.Flow.Lint.Tests: 42 assertions passed."
+  ]
+}
