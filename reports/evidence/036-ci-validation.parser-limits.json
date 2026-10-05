@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "runtimeFiles": [
+    {
+      "sha256": "BE2B5C552C88AE78E6CFD9F6EA223D1761AFD2DD41D6A0BFA244F064EF099D80",
+      "name": "AgentLang.Cli.deps.json"
+    },
+    {
+      "sha256": "8F7CDE37622D232AFB1507793518701FA19EC341AA452D80AC3FC35A6BC87822",
+      "name": "AgentLang.Cli.dll"
+    },
+    {
+      "sha256": "3C0BF772B95C93363A0A14E5DF78E4EC408C90F04CB7103205AF97B2D276FAB0",
+      "name": "AgentLang.Cli.runtimeconfig.json"
+    },
+    {
+      "sha256": "31A1F1B813AAB3B81F02D706E05000BAD687F780032768768973B619A2A37583",
+      "name": "AgentLang.Core.dll"
+    },
+    {
+      "sha256": "39B0B7F06C11BEDD93F94B6F101FFFD645F1C4437A5A6D3EE79259F855AEB11A",
+      "name": "FSharp.Core.dll"
+    }
+  ],
+  "verificationFiles": [
+    {
+      "sha256": "370664722DDDF30663E5E5C59329FAA361E23F5BECA61E7CAC644B50F886E9F0",
+      "path": "D:\\a\\AgentLang\\AgentLang\\scripts\\Verify-ParserLimits.ps1"
+    },
+    {
+      "sha256": "19F0AC0EAE21E928DD6606A4DE7BE32D21338D31E21E499A50524099786F813F",
+      "path": "D:\\a\\AgentLang\\AgentLang\\scripts\\Start-SubagentTrialHost.ps1"
+    }
+  ],
+  "trace": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\reports\\015-parser-probe-ae644927de7f4cda95ad3b5964ef8970.jsonl",
+  "hostExit": 0,
+  "requestBytes": [
+    24082,
+    9092,
+    32
+  ],
+  "bounds": {
+    "requestBytes": 65536,
+    "exchangeMilliseconds": 15000,
+    "exchanges": 3,
+    "responseBytes": 16384
+  },
+  "responses": [
+    {
+      "ok": false,
+      "kind": "error",
+      "text": "PARSE_TYPE_NESTING_LIMIT at <definition>:1:1800: Type nesting exceeds the source limit of 256.",
+      "error": {
+        "code": "PARSE_TYPE_NESTING_LIMIT",
+        "message": "Type nesting exceeds the source limit of 256.",
+        "span": {
+          "file": "<definition>",
+          "line": 1,
+          "column": 1800,
+          "length": 1
+        },
+        "expected": [],
+        "actual": []
+      }
+    },
+    {
+      "ok": false,
+      "kind": "error",
+      "text": "PARSE_BLOCK_NESTING_LIMIT at <definition>:68:1: Block nesting exceeds the source limit of 64.",
+      "error": {
+        "code": "PARSE_BLOCK_NESTING_LIMIT",
+        "message": "Block nesting exceeds the source limit of 64.",
+        "span": {
+          "file": "<definition>",
+          "line": 68,
+          "column": 1,
+          "length": 1
+        },
+        "expected": [],
+        "actual": []
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "30",
+      "data": {
+        "stack": [
+          "30"
+        ],
+        "stackTypes": [
+          "Int"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    }
+  ],
+  "checks": [
+    {
+      "passed": true,
+      "name": "bounded host exited cleanly"
+    },
+    {
+      "passed": true,
+      "name": "exactly three responses"
+    },
+    {
+      "passed": true,
+      "name": "deep type rejected structurally"
+    },
+    {
+      "passed": true,
+      "name": "deep block rejected structurally"
+    },
+    {
+      "passed": true,
+      "name": "process remains usable after errors"
+    }
+  ],
+  "passed": true
+}

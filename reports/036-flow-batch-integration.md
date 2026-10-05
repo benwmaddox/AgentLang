@@ -207,3 +207,17 @@ the constructor metadata regression was confirmed non-vacuous. Word-batch
 compilation is one prerequisite. Authored source-object binding capture and
 unchanged-source re-resolution, complete attachment assembly, durable Flow
 storage/history, default authoring cutover and controlled trials remain required.
+
+## Committed CI publication
+
+[CI run 37382878387](https://github.com/benwmaddox/AgentLang/actions/runs/37382878387)
+passed for exact source commit `0db29dd4760cbce4cf9ef3d7b2d195b163312d3a`.
+Downloaded evidence identifies a clean checkout and all 24 Release checks with
+exit code zero. Saved [run identity](evidence/036-ci-run.json),
+[validation](evidence/036-ci-validation.json) and four adjacent reports.
+This is distinct from the earlier dirty local validation.
+
+The publication update adds reports/evidence only. Before pushing it to both
+prototype and main, verify the executable/test/workflow diff against the tested
+source is empty, refresh main ancestry and confirm private repository visibility.
+The new post-publication CI run is separate evidence and is not claimed here.
