@@ -71,6 +71,10 @@ A later LLVM backend can use concrete region allocations for eligible data, whil
 
 ### Candidate: arena-only language allocation
 
+The separate [stack-only research track](STACK-ONLY-RESEARCH.md) is now explicitly
+requested. Its program data stack may itself be arena-backed; general arena-only
+allocation and strict LIFO data-stack storage must not be conflated.
+
 The user raised restricting language values to a data-model stack plus arenas,
 without independently freed heap objects. This is a research alternative, not
 an adopted change to V1. The physical host can still allocate arena chunks;

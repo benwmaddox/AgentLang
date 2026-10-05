@@ -126,3 +126,9 @@ User addition: the typed semantic IR must become the authoritative executable re
 5. Freeze reproducible fixtures; run and report Flat/Growing/Conventional trials and context-budget variations.
 
 Each validated milestone includes updated saved reports in its Git commit, is pushed to the private repository, and is merged into main. Reports distinguish implemented behavior, directly observed tests, remaining requirements, and research findings. Live-provider usage may require account credentials; continue all independent implementation/validation while identifying that constraint, and never invent usage or benchmark outcomes.
+
+User-requested later research: [no language heap; program data stack only](STACK-ONLY-RESEARCH.md).
+The data stack is not the CPU stack and may live within an arena. Investigate
+strict LIFO storage separately from arena-only allocation, preserving typed
+compound values and reporting retention/copying limits and measured memory.
+Research is required; adopting this memory policy in V1 is not.

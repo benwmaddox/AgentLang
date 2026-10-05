@@ -49,3 +49,15 @@ mailbox state need storage independent of released item scratch. Queue budgets,
 failed-item behavior and synchronous-wait restrictions must be specified before
 implementation. No actor framework, asynchronous execution or allocator was
 added for this discussion.
+
+## Explicit stack-only research request
+
+The user subsequently required research into **no language heap and only a
+program data stack**, and clarified that the data stack may live in an arena.
+This is now a distinct named track in the PRD/requirements and
+[STACK-ONLY-RESEARCH.md](../docs/STACK-ONLY-RESEARCH.md), rather than being treated
+as synonymous with general arena-only allocation. The investigation is required;
+adopting its restriction remains undecided. Its acceptance covers compound
+values, aliases/returns, adverse retention patterns, persistent project state,
+cleanup safety, measured copying/compaction and agent usability. No allocator
+implementation or completed experimental result is claimed.

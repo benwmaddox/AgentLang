@@ -260,6 +260,13 @@ The experiment must answer whether agents create reusable words, whether later a
 
 ## Late research: syntax and stack locality
 
+Required research addition: evaluate **no language heap; program data stack
+only**, distinct from the CPU stack. The data stack may be arena-backed.
+Compare strict LIFO compound-value storage with processing-arena variants,
+including cleanup, escaping outputs, retained state, memory growth and agent
+comprehension. This requires a research investigation, not adoption of the
+restriction in V1. See [the scope and acceptance criteria](STACK-ONLY-RESEARCH.md).
+
 The user subsequently requested an early switch away from RPN after finding it difficult to read. Expression/dot source is now the next authoring milestone, retaining words and verified semantic IR; see [the migration plan](FRONTEND-MIGRATION.md). Remaining later research compares presentation/locality instead of postponing that switch. Preserve strong types, effects, inspection and library test/coverage gates.
 
 The stack model has a potentially useful property independent of notation: it encourages a word to operate on recently produced values in a local flow instead of repeatedly reaching into distant state. Compare current RPN with a small alternative using named inputs, local bindings, or expression/pipeline notation that retains this property and lowers to the same semantic IR. Do not assume either RPN or conventional syntax wins.
