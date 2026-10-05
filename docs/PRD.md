@@ -1,6 +1,6 @@
 # AgentLang: Agent-Oriented Extensible Language Prototype
 
-- Status: prototype specification, refined 2026-10-04
+- Status: prototype specification, refined 2026-10-05
 - Implementation: F# on .NET
 - Primary user: an AI coding agent
 - Secondary user: a developer inspecting and controlling that agent
@@ -38,7 +38,11 @@ The full research domain remains a small-business backend: Customer, Subscriptio
 
 ### Values and stack signatures
 
-Use a concatenative execution model, with signatures listing stack elements from bottom to top. `Int Int -> Int` consumes two integers and produces one. Evaluation compiles the entire submitted expression before executing it. A type error must prevent every effect in that expression.
+Use an explicit data-flow authoring model with named typed inputs, ordinary calls, immutable locals and dot chaining. Dot chains are statically resolved first-input calls with pipeline semantics, not OOP or .NET invocation. Words remain the named unit of composition. The verified semantic IR may retain stack operations internally. RPN is the current executable frontend, but an early migration is now required before further controlled agent experiments; see [the migration contract and acceptance plan](FRONTEND-MIGRATION.md).
+
+Evaluation compiles the entire submitted expression before executing it. Type errors prevent every effect. Internal `Int Int -> Int` consumes two integers and produces one; new source supplies named parameters/call arguments without exposing anonymous stack positions.
+
+Preserve stack-inspired discipline through explicit consumed/produced values and minimal hidden state. No mutable language globals are introduced. Immutable constants remain inspectable typed pure definitions; application state is passed explicitly where practical, and external mutable state is accessed only through declared host effects. Definitions precede use lexically; closeness to first use is lint rather than a type/syntax requirement. A stack representation does not by itself guarantee these policies or low memory use.
 
 Initial scalar types are `Int`, `Float`, `Bool`, `String`, and `Unit`. Integers are signed 64-bit values with defined overflow errors. Floats are floating-point values, not financial decimals. The demo must describe its numeric limitations; a real billing fixture needs an explicit decimal or integer-minor-unit Money type.
 
@@ -67,7 +71,7 @@ Freeze the validator's complete transitive word dependency closure when its type
 
 ### Source representation
 
-The initial syntax is deliberately line-oriented. Strings use quoted literals with documented escaping. Source locations contain file/source identifier, line, and column. The parser must distinguish incomplete interactive input from invalid complete input.
+The current legacy syntax is line-oriented RPN. The example below records executable legacy syntax, not the new target. The next authoring milestone implements expression/dot source with explicit syntax versions; the README must distinguish implemented behavior from the target. Strings use quoted literals with documented escaping. Source locations contain file/source identifier, line, and column. The parser distinguishes incomplete interactive input from invalid complete input. Source/history/editing and coverage preserve the authored frontend.
 
 ```text
 record Customer
@@ -108,7 +112,7 @@ The implementation README is the authoritative executable syntax reference, incl
 
 Use F# discriminated unions for types, values, effects, AST nodes, diagnostics, and IR. Keep parser, compiler, runtime, and protocol concerns separate without requiring a separate assembly for every module. The initial usable slice historically interpreted a checked expression tree. The required executable boundary is now a verified typed semantic IR shared by the interpreter and any later native backend. Source ASTs remain authoring and diagnostic representations; runtime execution must not fall back to them.
 
-The intended compilation stages are lexing/parsing, name resolution, stack checking, effect checking, and lowering to a small printable IR. Initially, the runtime may interpret the checked tree. No JIT or native backend is required. Expose source, signatures, effects, dependencies, and execution representation through introspection; deeper compiler-stage queries can follow later.
+Compilation parses a versioned authoring AST, resolves names/arguments, checks types/effects, and lowers into verified semantic IR. The runtime executes that IR, not the AST. No JIT/native backend is required. Expose source, signatures, named inputs, effects, dependencies and IR through introspection; deeper compiler-stage queries remain planned.
 
 The runtime must bound execution steps and call depth and return structured errors when limits are exceeded. Define division-by-zero, overflow, invalid conversion, and stack-underflow behavior. Runtime errors are not host stack traces.
 
@@ -256,9 +260,11 @@ The experiment must answer whether agents create reusable words, whether later a
 
 ## Late research: syntax and stack locality
 
-After the initial agent-oriented experiments, investigate whether RPN should remain the source syntax throughout the language. Preserve the authoritative typed semantic IR, strong types, explicit effects, inspection, and library test/coverage gates. This is a later research item, not a requirement to replace the current frontend during V1.
+The user subsequently requested an early switch away from RPN after finding it difficult to read. Expression/dot source is now the next authoring milestone, retaining words and verified semantic IR; see [the migration plan](FRONTEND-MIGRATION.md). Remaining later research compares presentation/locality instead of postponing that switch. Preserve strong types, effects, inspection and library test/coverage gates.
 
 The stack model has a potentially useful property independent of notation: it encourages a word to operate on recently produced values in a local flow instead of repeatedly reaching into distant state. Compare current RPN with a small alternative using named inputs, local bindings, or expression/pipeline notation that retains this property and lowers to the same semantic IR. Do not assume either RPN or conventional syntax wins.
+
+The user's subsequent discussion favors strong encouragement of data flow rather than compulsory Forth-style source. The leading candidate for research is an expression-oriented frontend with explicit pipelines, named typed inputs, immutable nearby locals, and ordinary calls/branches when needed. Prefer guidance and inspectable diagnostics over hard locality restrictions. Implicit current-value blocks, rebinding, and first-class function composition require separate justification. [The discussion review](../reports/017-data-flow-syntax-review.md) records the recommendation, semantic questions, and experiment boundary; the frontend is not yet a settled or implemented contract.
 
 Use equivalent tasks, domain vocabulary, acceptance oracles, semantic behavior, and backend. Measure success, stack-order/type errors, error recovery, inspection/context cost, generated code, and tool interactions. Review whether source makes value flow easier to follow and whether the alternative causes more distant variable/state references. Separate frontend results from vocabulary-retention results.
 
@@ -268,9 +274,10 @@ Also investigate memory behavior under the later LLVM development/release backen
 
 1. Ship and validate the first usable slice and demo.
 2. Run a fresh external subagent through the small protocol; record supplied context, interactions, independent results, and available usage.
-3. Run a pilot against flat and conventional modes before expanding language features.
-4. Add only capabilities justified by pilot failures, then freeze fixtures and harness versions.
-5. Run the controlled suite and publish outcomes, uncertainty, and limitations.
+3. Complete the user-directed expression/dot frontend migration and validate source/persistence/IR conformance before further controlled agent trials. Close-to-first-use is lint; retain explicit values/effects and no mutable language globals.
+4. Freeze equivalent new-frontend fixtures and run a pilot against flat and conventional modes before optional language expansion.
+5. Add capabilities justified by task requirements and pilot failures, then freeze fixtures and harness versions.
+6. Run the controlled suite and publish outcomes, uncertainty, and limitations.
 
 Future curator agents, synthesized context, maturity levels, contracts, and a second game/simulation domain remain hypotheses for later work. They must not delay the first measured agent task.
 
@@ -280,4 +287,4 @@ If the initial experiments support the hypothesis, evolve toward separate develo
 
 The typed semantic IR is the authoritative executable representation from the initial architecture. Source and AST are authoring representations; type/effect checking lowers them to this IR before execution. Interpreter, JIT, and AOT must share type identities, numeric/error behavior, control flow, effects, and value semantics. Native performance, memory use, and startup approaching Rust or C are later evaluation goals, not current guarantees.
 
-LLVM implementation remains outside V1 and is conditional on successful experiments. The current checked-AST interpreter is a transitional implementation and does not satisfy the semantic-IR requirement. V1 must introduce a small inspectable typed IR and validate its interpreter without adding LLVM.
+LLVM implementation remains outside V1 and is conditional on successful experiments. The Runtime now executes the small verified semantic IR through its interpreter, as recorded in report 010. The source frontend migration must preserve that boundary without adding LLVM.
