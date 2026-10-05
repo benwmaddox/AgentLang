@@ -132,4 +132,25 @@ policy, measured separately from scratch reclamation. Inspectable mailbox/handle
 signatures, declared effects and per-item allocation metrics would preserve the
 project's existing comprehension and observability goals.
 
+### Candidate: declared retained data plus mailbox scratch
+
+The user proposed a statically defined set of data outside arenas, using Stasis
+as an analogy, with all other language allocation restricted to an arena-backed
+data stack. This is an optional memory-policy candidate, not an adopted V1
+requirement or a claim about Stasis internals. A fixed typed retained layout can
+make long-lived roots and capacity inspectable while each mailbox item uses
+reclaimable scratch. Access remains explicit handler state or declared effects;
+this proposal does not introduce unrestricted mutable language globals.
+
+Specify fixed-size versus bounded variable-size retained fields, queue storage,
+build-time versus startup-selected capacity, and checked copies into retained
+slots. A retained pointer into item scratch must be rejected before reset. A
+static root pointing to an independently growing heap does not satisfy this
+candidate. Overflow needs a structured outcome and defined state/output
+publication behavior; external effects still require separate handling. Include
+schema upgrades, interactive reload, snapshots and rollback in conformance
+tests. Compare this model with retained arenas instead of silently adding arena
+transfer when static capacity is insufficient. See candidate 4 in
+[the stack-only research plan](STACK-ONLY-RESEARCH.md).
+
 Measure allocation throughput, cleanup time, used/reserved/peak memory, promotion cost and amount, repeated-evaluation growth, and long-lived mixed-lifetime workloads. Include cases where arenas retain dead intermediates; do not benchmark only phases favorable to bulk reclamation. Adopt region policies based on correct semantics and measured benefits. LLVM remains conditional later work; arenas are recorded as a proposed allocation direction, not current performance evidence.

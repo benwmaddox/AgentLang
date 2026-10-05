@@ -290,6 +290,13 @@ Future curator agents, synthesized context, maturity levels, contracts, and a se
 
 ## Conditional development and release backends
 
+Optional mailbox memory candidate: declare a bounded typed retained-data layout
+outside processing arenas, and allow arena-backed program data stack allocation
+for transient values without an independent language object heap. Research
+checked transfers, capacity failure, queued data, retained state and reload/
+snapshot semantics; do not adopt this restriction or expose mutable globals
+implicitly. See [candidate 4](STACK-ONLY-RESEARCH.md#candidates-to-compare).
+
 Proposed allocation direction: scoped arenas with bulk reclamation for suitable phases, plus a separate lifetime strategy for retained data. Specify escape/promotion, nested value ownership, old executable generations, rollback/snapshot retention, capacity accounting and resource cleanup before native allocation. Arena reset is distinct from effect rollback and may retain backing capacity; measure allocation/cleanup time and used/reserved/peak memory. The current managed runtime does not implement arenas. See [the region contract](MEMORY-REGIONS.md) and [assessment](../reports/020-arena-allocation-assessment.md). Keep the early frontend migration ahead of general allocator implementation.
 
 If the initial experiments support the hypothesis, evolve toward separate development and release runtimes. Development retains the interpreter, REPL, introspection, and hot word replacement, and may use LLVM JIT compilation for stable or frequently executed words. Release uses LLVM AOT to emit optimized native code with a minimal runtime and ships neither the interpreter nor compiler.

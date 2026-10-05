@@ -29,6 +29,23 @@ returning and retaining a compound value do to both data and storage.
    not reclaim individual payloads; reclaim together at a phase boundary.
 3. Nested processing arenas with explicit retained results. This relaxes strict
    stack-only retention and must be reported as a different candidate.
+4. Sequential mailbox processing with a declared, bounded retained-data layout
+   outside processing arenas, and an arena-backed data stack for all transient
+   language values. This is the user's proposed static-data alternative, using
+   Stasis as an analogy rather than adopting its implementation. No independent
+   language object heap is available for other values. Define whether retained
+   capacity is fixed at build time or selected once at startup; compare these
+   variants separately from dynamically growing retained storage.
+
+For candidate 4, handlers access typed retained state explicitly through their
+inputs/outputs or declared host operations, rather than unrestricted mutable
+globals. Retained fields and queue slots cannot hold references into a scratch
+arena. Fixed-size values can be copied inline; strings, lists and nested records
+need specified bounded representations, validated copies and structured capacity
+failure. A fixed root holding an arbitrarily allocated object is not static-only
+retention. Whole-arena retention is a separate candidate, not an unnoticed escape
+from this restriction. Specify state/output publication on handler failure,
+schema changes, reload, snapshots and rollback before claiming useful coverage.
 
 Specify allowed aliases and region-reference direction, stack marks, lexical
 locals, variable-sized strings/lists/records, Option/Result payloads, callbacks,

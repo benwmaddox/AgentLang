@@ -61,3 +61,25 @@ adopting its restriction remains undecided. Its acceptance covers compound
 values, aliases/returns, adverse retention patterns, persistent project state,
 cleanup safety, measured copying/compaction and agent usability. No allocator
 implementation or completed experimental result is claimed.
+
+## Declared retained-state mailbox option
+
+The user added an optional candidate: a declared static set of retained data
+outside processing arenas, with no independent language object heap for other
+values and an arena-backed program data stack for transient work. The research
+plan now compares this with strict LIFO storage and retained arenas. Stasis is
+the user's analogy; its implementation has not been evaluated here.
+
+The promising part is explicit, inspectable long-lived capacity combined with
+per-item scratch reclamation. The unresolved part is variable-sized retained
+data: strings, lists, queue payloads and nested values need bounded layouts and
+validated copying, rather than pointers into reclaimed scratch. Capacity
+failure, state/output publication, schema changes, reload and snapshots require
+defined behavior. This remains a proposed experiment, not an allocator change,
+memory-use result or exception to the explicit-state/no-mutable-globals plan.
+
+Publication check: GitHub reported this repository as public during preparation
+of this update, contrary to the user's private-repository requirement. The
+coordinator changed visibility to private and confirmed `isPrivate: true` before
+pushing. This corrects current access; it does not prove that previously public
+content was never accessed.
