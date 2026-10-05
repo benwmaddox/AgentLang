@@ -105,6 +105,8 @@ Runtime cutover evidence: [report 010](../reports/010-runtime-ir-cutover.md) rec
 
 ## Named-command completion checklist
 
+Late user-added research, pending after initial experiments: compare RPN with a small alternative frontend that preserves local interaction with recently produced values and lowers to the same authoritative typed semantic IR. Evaluate agent success/error recovery/context/tool cost separately from later LLVM allocation/layout and memory measurements. This does not require a V1 syntax replacement or establish native memory gains. See [the research scope](PRD.md#late-research-syntax-and-stack-locality) and [design assessment](../reports/016-design-value-assessment.md).
+
 Verified foundation: eval, define, words, describe, type-of, source, dependencies, callers, search, search-type, search-output, search-effect, search-dependency, transitive-dependencies, transitive-callers, graph, context, effects, ir (verified IR/primitive contract), tests, test, test-all, failed-tests, examples (names only), commit/commit-word, replace-word, promote, discard, task.begin/status/commit/abort/log, stack, durable history/diff, rename, deprecate, snapshot.save/load and storage.status.
 
 Still required or incomplete: recent-words, parse, ast, types, metrics, replace OLD NEW, full example/test metadata, definition-level documentation/test/example edits, agent-run with model/task/snapshot selection.

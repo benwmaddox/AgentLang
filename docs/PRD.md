@@ -254,6 +254,16 @@ Investigate contrary evidence: ignored vocabulary, duplicate growth, expensive d
 
 The experiment must answer whether agents create reusable words, whether later agents find them, whether retention changes cost/latency/correctness, whether metadata helps recovery, whether smaller contexts remain viable, and whether vocabulary quality degrades.
 
+## Late research: syntax and stack locality
+
+After the initial agent-oriented experiments, investigate whether RPN should remain the source syntax throughout the language. Preserve the authoritative typed semantic IR, strong types, explicit effects, inspection, and library test/coverage gates. This is a later research item, not a requirement to replace the current frontend during V1.
+
+The stack model has a potentially useful property independent of notation: it encourages a word to operate on recently produced values in a local flow instead of repeatedly reaching into distant state. Compare current RPN with a small alternative using named inputs, local bindings, or expression/pipeline notation that retains this property and lowers to the same semantic IR. Do not assume either RPN or conventional syntax wins.
+
+Use equivalent tasks, domain vocabulary, acceptance oracles, semantic behavior, and backend. Measure success, stack-order/type errors, error recovery, inspection/context cost, generated code, and tool interactions. Review whether source makes value flow easier to follow and whether the alternative causes more distant variable/state references. Separate frontend results from vocabulary-retention results.
+
+Also investigate memory behavior under the later LLVM development/release backend design. LLVM would replace or supplement interpreted execution; F# may remain the host/compiler implementation. Allocation strategy, value representation, ownership/lifetimes, runtime services, and retained metadata determine memory usage. RPN, an operand stack, or LLVM alone does not establish a lower-memory system. Compare footprint, startup, allocation rate, and peak memory on equivalent workloads, changing one relevant factor at a time where practical. Any frontend change must pass shared semantic conformance and preserve source-mapped diagnostics and coverage.
+
 ## Delivery sequence
 
 1. Ship and validate the first usable slice and demo.
