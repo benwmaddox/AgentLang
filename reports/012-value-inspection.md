@@ -38,3 +38,7 @@ No Runtime or Protocol payload has been switched to this format. No refinement p
 ## Integrated validation and publication
 
 The independent full Release gate passed all 18 checks, including this suite, with zero build warnings/errors. [Report 010](010-runtime-ir-cutover.md) records the shared working-tree evidence and selected IR parity result. This code and report are published with the Runtime cutover; exact committed CI evidence follows publication.
+
+## Committed CI evidence
+
+Implementation/report revision `f1836d1f3a097b6bfa9dcde41d047a0a5da00187` passed [CI run 37306481981](https://github.com/benwmaddox/AgentLang/actions/runs/37306481981). The downloaded report identifies that exact revision, `dirty: false`, all 18 checks passing, and 99 passing fresh-process persistence checks. Saved evidence: [clean committed validation](evidence/010-committed-ci-validation.json) and [clean persistence projection](evidence/010-committed-ci-projection.json). This publication update accompanies the implementation when merged into main. The pinned 314-check AST-versus-IR comparison remains the separately recorded working-tree run; CI does not repeat that historical-binary comparison.

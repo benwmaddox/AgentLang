@@ -73,3 +73,6 @@ Independent read-only review found no AST fallback or dictionary/program pairing
 ## Publication
 
 Code, reports 010–012, architecture/PRD updates, and the working-tree evidence are published together. Exact committed CI evidence will be recorded after publication. Controlled experiments and native backends remain outside this milestone.
+## Committed CI evidence
+
+Implementation/report revision `f1836d1f3a097b6bfa9dcde41d047a0a5da00187` passed [CI run 37306481981](https://github.com/benwmaddox/AgentLang/actions/runs/37306481981). The downloaded report identifies that exact revision, `dirty: false`, all 18 checks passing, and 99 passing fresh-process persistence checks. Saved evidence: [clean committed validation](evidence/010-committed-ci-validation.json) and [clean persistence projection](evidence/010-committed-ci-projection.json). This publication update accompanies the implementation when merged into main. The pinned 314-check AST-versus-IR comparison remains the separately recorded working-tree run; CI does not repeat that historical-binary comparison.
