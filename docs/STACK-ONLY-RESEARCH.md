@@ -55,6 +55,36 @@ a model ownership-free if it merely hides lifetime tracking in the runtime.
 
 ## Acceptance and evidence
 
+### Declared retained-state mailbox fixtures
+
+For candidate 4, specify an inspectable retained layout with fixed customer
+slots, bounded text/list payloads, and a bounded input/output queue. Keep the
+capacity selected once for a run; report build-time and startup-selected
+variants separately. The following are research acceptance cases, not existing
+runtime features:
+
+- Process repeated messages with nested transient values. After each handler,
+  clear scratch and prove retained state and queued outputs remain valid, while
+  used scratch storage returns to its baseline. Measure reserved capacity too.
+- Attempt to retain a scratch reference inside a nested record, list, Option or
+  Result. Reject the escape, or perform an explicitly specified bounded deep
+  copy before publication; no payload may silently fall back to a language heap.
+- Fill retained text/list capacity and queue capacity, then exceed each by one.
+  Return a structured capacity error and verify the chosen publication contract
+  leaves state/output consistent. Compare prepare-then-publish atomic updates
+  with explicit partial-update semantics rather than assuming transactions.
+- Delete and reuse a retained slot. If typed handles are allowed, an old handle
+  must fail rather than resolve to a different object after slot reuse. Compare
+  generation-checked handles with a copy-only retained representation.
+- Fail midway through handling, reload code, restore a snapshot, and change the
+  retained schema. Specify which state survives each boundary, and reject
+  incompatible live state before activating the new schema.
+
+Track queue/state storage, deep-copy bytes, unused fixed capacity, overflow
+frequency and handler complexity alongside memory use. Include a workload whose
+retained demand exceeds its declared capacity: bounded failure is correct, but
+the frequency/cost determines whether this policy is useful for that workload.
+
 Use identical semantic fixtures for nested values, repeated transforms, large
 lists, early errors, returned results and shared inputs. Include awkward
 lifetimes, not only streaming scalar pipelines. Test that cleanup never leaves

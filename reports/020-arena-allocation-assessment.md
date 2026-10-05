@@ -83,3 +83,11 @@ of this update, contrary to the user's private-repository requirement. The
 coordinator changed visibility to private and confirmed `isPrivate: true` before
 pushing. This corrects current access; it does not prove that previously public
 content was never accessed.
+
+The retained-state candidate now has concrete research fixtures for repeated
+scratch reset, nested escaped payloads, retained/queue capacity exhaustion,
+slot reuse and stale handles, failed handlers, schema reload and snapshots.
+The plan compares generation-checked handles with copy-only representations
+and records publication semantics explicitly. These are acceptance requirements
+for a future experiment; none has been implemented or measured. Documentation
+validation is `git diff --check`; no runtime changes accompany this refinement.
