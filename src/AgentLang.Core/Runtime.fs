@@ -1684,6 +1684,80 @@ module Runtime =
             | null -> defaultValue
             | value -> try value.GetValue<bool>() with _ -> defaultValue
 
+        let discoveryArgumentKind (value: JsonNode) : string =
+            match value with
+            | null -> "null"
+            | :? JsonObject -> "object"
+            | :? JsonArray -> "array"
+            | :? JsonValue as scalar ->
+                let mutable stringValue: string = ""
+                let mutable boolValue: bool = false
+                let mutable numberValue: int = 0
+                if scalar.TryGetValue<string>(&stringValue) then "string"
+                elif scalar.TryGetValue<bool>(&boolValue) then "boolean"
+                elif scalar.TryGetValue<int>(&numberValue) then "number"
+                else "number"
+            | _ -> "value"
+
+        let invalidDiscoveryArgument (name: string) (expected: string) (actual: string) : 'T =
+            error "DISCOVERY_INVALID_ARGUMENT" $"Discovery argument '{name}' must be {expected}." None None [ expected ] [ actual ]
+
+        let requiredDiscoveryString (arguments: JsonObject) (name: string) : string =
+            if not (arguments.ContainsKey name) then
+                invalidDiscoveryArgument name "a string" "missing"
+            match arguments[name] with
+            | :? JsonValue as value ->
+                let mutable parsed = ""
+                if value.TryGetValue<string>(&parsed) then parsed
+                else invalidDiscoveryArgument name "a string" (discoveryArgumentKind value)
+            | value -> invalidDiscoveryArgument name "a string" (discoveryArgumentKind value)
+
+        let optionalDiscoveryInt (arguments: JsonObject) (name: string) (defaultValue: int) (hardMaximum: int) : int =
+            if not (arguments.ContainsKey name) then defaultValue
+            else
+                match arguments[name] with
+                | :? JsonValue as value ->
+                    let mutable parsed = 0
+                    if not (value.TryGetValue<int>(&parsed)) then
+                        invalidDiscoveryArgument name "an integer" (discoveryArgumentKind value)
+                    if parsed > hardMaximum then
+                        error "DISCOVERY_BUDGET_LIMIT" $"Discovery argument '{name}' cannot exceed {hardMaximum}." None None [ $"<= {hardMaximum}" ] [ string parsed ]
+                    parsed
+                | value -> invalidDiscoveryArgument name "an integer" (discoveryArgumentKind value)
+
+        let buildDiscoveryIndex () : Map<string, WordEntry> * DiscoveryIndex =
+            let words = effectiveWords data
+            words, Discovery.build words data.Records data.Scalars
+
+        let ensureKnownDiscoveryType (typeValue: LangType) : unit =
+            let rec names = function
+                | TNamed name -> Set.singleton name
+                | TList item | TOption item -> names item
+                | TResult(ok, error) -> Set.union (names ok) (names error)
+                | TInt | TFloat | TBool | TString | TUnit | TVar _ -> Set.empty
+            match Set.difference (names typeValue) (knownTypes data) |> Set.toList |> List.tryHead with
+            | Some name -> error "DISCOVERY_UNKNOWN_TYPE" $"Type query refers to undeclared nominal type '{name}'." (Some name) None [ "declared record or scalar type" ] [ name ]
+            | None -> ()
+
+        let queryDiscoveryType (arguments: JsonObject) : LangType =
+            let source = requiredDiscoveryString arguments "type"
+            match Parser.parseClosedType source with
+            | Error diagnostic -> raise (LanguageException diagnostic)
+            | Ok typeValue ->
+                ensureKnownDiscoveryType typeValue
+                typeValue
+
+        let logDiscoveryQuery (operation: string) (query: string) (words: string list) =
+            log "inspect" $"{operation}:{query}"
+            words |> List.iter (log "inspect")
+
+        let discoveryWordsPayload (queryKey: string) (query: string) (words: string list) : JsonObject =
+            let payload = JsonObject()
+            payload[queryKey] <- jstr query
+            payload["words"] <- jsonNode words
+            payload["count"] <- jint words.Length
+            payload
+
         let describeJson word =
             match syntaxDescriptors |> List.tryFind (fun descriptor -> descriptor.Name = word) with
             | Some descriptor ->
@@ -1760,6 +1834,10 @@ module Runtime =
                 | "describe" ->
                     let name = readString args "word" ""
                     success "describe" $"Description for {name}." (Some(describeJson name))
+                | "type-of" ->
+                    let name = requiredDiscoveryString args "word"
+                    buildDiscoveryIndex () |> ignore
+                    success "type-of" $"Type metadata for {name}." (Some(describeJson name))
                 | "search" ->
                     let query = readString args "query" (readString args "text" "")
                     let words = effectiveWords data
@@ -1782,6 +1860,70 @@ module Runtime =
                     let result = JsonArray()
                     matches |> List.iter (fun name -> result.Add(jstr name))
                     success "search" $"{matches.Length} match(es)." (Some(result :> JsonNode))
+                | "search-type" | "search-output" ->
+                    let target = queryDiscoveryType args
+                    let _, index = buildDiscoveryIndex ()
+                    let query = Types.format target
+                    let matches = if operation = "search-type" then Discovery.searchType index target else Discovery.searchOutput index target
+                    logDiscoveryQuery operation query matches
+                    let payload = discoveryWordsPayload "type" query matches
+                    success operation $"{matches.Length} match(es) for {query}." (Some payload)
+                | "search-effect" ->
+                    let effect = requiredDiscoveryString args "effect"
+                    let _, index = buildDiscoveryIndex ()
+                    let matches = Discovery.searchEffect index effect
+                    logDiscoveryQuery operation effect matches
+                    let payload = discoveryWordsPayload "effect" effect matches
+                    success operation $"{matches.Length} word(s) declare effect '{effect}'." (Some payload)
+                | "search-dependency" ->
+                    let dependency = requiredDiscoveryString args "word"
+                    let words, index = buildDiscoveryIndex ()
+                    if not (words.ContainsKey dependency) then
+                        error "DISCOVERY_UNKNOWN_WORD" $"Unknown dependency word '{dependency}'." (Some dependency) None [ "known word" ] [ dependency ]
+                    let matches = Discovery.searchDependency index dependency
+                    logDiscoveryQuery operation dependency matches
+                    let payload = discoveryWordsPayload "dependency" dependency matches
+                    success operation $"{matches.Length} word(s) depend directly on '{dependency}'." (Some payload)
+                | "transitive-dependencies" | "transitive-callers" ->
+                    let root = requiredDiscoveryString args "word"
+                    let _, index = buildDiscoveryIndex ()
+                    let matches =
+                        if operation = "transitive-dependencies" then Discovery.transitiveDependencies index root
+                        else Discovery.transitiveCallers index root
+                    logDiscoveryQuery operation root (root :: matches)
+                    let key = if operation = "transitive-dependencies" then "dependencies" else "callers"
+                    let payload = JsonObject()
+                    payload["word"] <- jstr root
+                    payload[key] <- jsonNode matches
+                    payload["count"] <- jint matches.Length
+                    success operation $"{matches.Length} transitive {key} for '{root}'." (Some payload)
+                | "graph" ->
+                    let root = requiredDiscoveryString args "word"
+                    let maxDepth = optionalDiscoveryInt args "maxDepth" 8 32
+                    let maxNodes = optionalDiscoveryInt args "maxNodes" 128 512
+                    let _, index = buildDiscoveryIndex ()
+                    let graph = Discovery.graphText index root maxDepth maxNodes
+                    logDiscoveryQuery operation root graph.ExpandedWords
+                    let payload = JsonObject()
+                    payload["word"] <- jstr root
+                    payload["text"] <- jstr graph.Text
+                    payload["expandedWords"] <- jsonNode graph.ExpandedWords
+                    payload["omittedWords"] <- jint graph.OmittedWords
+                    payload["truncated"] <- jbool graph.Truncated
+                    success operation $"Dependency graph for '{root}'." (Some payload)
+                | "context" ->
+                    let root = requiredDiscoveryString args "word"
+                    let maxDepth = optionalDiscoveryInt args "maxDepth" 6 32
+                    let maxWords = optionalDiscoveryInt args "maxWords" 24 512
+                    let maxUtf8Bytes = optionalDiscoveryInt args "maxUtf8Bytes" 12000 262144
+                    let _, index = buildDiscoveryIndex ()
+                    let context = Discovery.context index root maxDepth maxWords maxUtf8Bytes
+                    logDiscoveryQuery operation root context.WordsIncluded
+                    context.TypesIncluded |> List.iter (log "inspect")
+                    // Content is already the complete compact, budgeted data document.
+                    // Keep its own byte count untouched; the fixed protocol envelope
+                    // is not part of that payload budget.
+                    success operation $"Budgeted context for '{root}'." (Some(JsonNode.Parse context.Content))
                 | "source" ->
                     let name = readString args "word" ""
                     match syntaxDescriptors |> List.tryFind (fun descriptor -> descriptor.Name = name) with

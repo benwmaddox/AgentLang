@@ -2,6 +2,8 @@ namespace AgentLang.Acceptance
 
 open System
 open System.IO
+open System.Text
+open System.Text.Json
 open System.Text.Json.Nodes
 open AgentLang
 
@@ -1793,6 +1795,168 @@ end
         define runtime eachNonemptyTest |> expectOk "add nonempty each test" |> ignore
         dispatch runtime "commit" eachCommit |> expectOk "commit each after empty and nonempty tests" |> ignore
 
+    let private testDiscoveryCommands root =
+        let runtime = engine (makeProject root "discovery-commands") [ "fs.read"; "fs.write" ]
+        let definitions =
+            """type Email : String
+    validate email.valid?
+end
+
+record Contact
+    field address Email
+end
+
+word email.valid? : String -> Bool
+    effects none
+    drop true
+end
+
+word email.echo : Email -> Email
+    effects none
+    dup drop
+end
+
+word email.boxed : Option<List<Email>> -> Option<List<Email>>
+    effects none
+    dup drop
+end
+
+word email.is-valid? : Email -> Bool
+    effects none
+    drop true
+end
+
+word email.filter : List<Email> -> List<Email>
+    effects none
+    list.filter email.is-valid?
+    doc "Filter café addresses: Ω."
+end
+
+word discovery.write : Unit -> Unit
+    effects fs.write
+    drop
+    "discovery-ran" "yes" file.write
+end
+
+word discovery.live : Email -> Email
+    effects none
+    dup drop
+end
+"""
+        define runtime definitions |> expectOk "define discovery vocabulary" |> ignore
+
+        let syntax = dispatch runtime "type-of" [ "word", jsonString "list.map" ] |> expectOk "type-of syntax descriptor"
+        equal "syntax" ((syntax["data"]["kind"]).GetValue<string>()) "type-of uses the syntax descriptor shape"
+        let metadata = dispatch runtime "type-of" [ "word", jsonString "email.echo" ] |> expectOk "type-of current word"
+        equal "Email" (((metadata["data"]["inputs"]).[0]).GetValue<string>()) "type-of preserves nominal input type"
+        expectError "NAME_UNKNOWN_WORD" (dispatch runtime "type-of" [ "word", jsonString "discovery.missing" ]) |> ignore
+
+        let queryType value = dispatch runtime "search-type" [ "type", jsonString value ] |> expectOk $"search-type {value}"
+        let nested = queryType "Option<List<Email>>"
+        let nestedNames = ((nested["data"]["words"]).AsArray() |> Seq.map (fun item -> item.GetValue<string>()) |> Seq.toList)
+        equal [ "email.boxed" ] nestedNames "nested nominal structural query is exact"
+        let emailNames = queryType "Email" |> fun result -> (result["data"]["words"]).AsArray() |> Seq.map (fun item -> item.GetValue<string>()) |> Seq.toList
+        check (emailNames |> List.contains "email.echo") "nominal query finds a direct Email signature"
+        check (emailNames |> List.contains "email.filter") "nominal query descends through List"
+        check (not (emailNames |> List.contains "email.valid?")) "nominal Email does not coerce to its String base"
+        let stringNames = queryType "String" |> fun result -> (result["data"]["words"]).AsArray() |> Seq.map (fun item -> item.GetValue<string>()) |> Seq.toList
+        check (stringNames |> List.contains "email.valid?") "String query finds the scalar validator signature"
+        check (not (stringNames |> List.contains "email.echo")) "String query does not match nominal Email"
+        let outputNames = dispatch runtime "search-output" [ "type", jsonString "Email" ] |> expectOk "search-output Email" |> fun result -> (result["data"]["words"]).AsArray() |> Seq.map (fun item -> item.GetValue<string>()) |> Seq.toList
+        check (outputNames |> List.contains "email.echo") "output query finds Email result"
+        check (not (outputNames |> List.contains "email.valid?")) "output query does not coerce validator Bool to Email"
+
+        let effectMatches = dispatch runtime "search-effect" [ "effect", jsonString "fs.write" ] |> expectOk "search declared effect"
+        let effectNames = (effectMatches["data"]["words"]).AsArray() |> Seq.map (fun item -> item.GetValue<string>()) |> Seq.toList
+        check (effectNames |> List.contains "discovery.write") "effect search sees a live candidate"
+        check (effectNames |> List.contains "file.write") "effect search sees the primitive declaration"
+        equal 0 (dispatch runtime "search-effect" [ "effect", jsonString "unknown.effect" ] |> expectOk "unknown effect is an empty query" |> fun result -> (result["data"]["count"]).GetValue<int>()) "unknown nonempty effect returns no matches"
+
+        let validatorEdges = dispatch runtime "search-dependency" [ "word", jsonString "email.valid?" ] |> expectOk "search scalar validator edge"
+        let validatorNames = (validatorEdges["data"]["words"]).AsArray() |> Seq.map (fun item -> item.GetValue<string>()) |> Seq.toList
+        check (validatorNames |> List.contains "Email.new") "generated scalar constructor has a validator edge"
+        let callbackEdges = dispatch runtime "search-dependency" [ "word", jsonString "email.is-valid?" ] |> expectOk "search callback edge"
+        let callbackNames = (callbackEdges["data"]["words"]).AsArray() |> Seq.map (fun item -> item.GetValue<string>()) |> Seq.toList
+        check (callbackNames |> List.contains "email.filter") "static filter callback is a dependency edge"
+        expectError "DISCOVERY_UNKNOWN_WORD" (dispatch runtime "search-dependency" [ "word", jsonString "discovery.missing" ]) |> ignore
+        let dependencies = dispatch runtime "transitive-dependencies" [ "word", jsonString "email.filter" ] |> expectOk "transitive dependency closure"
+        check (((dependencies["data"]["dependencies"]).ToJsonString()).Contains("email.is-valid?", StringComparison.Ordinal)) "transitive dependencies include static callback"
+        let callers = dispatch runtime "transitive-callers" [ "word", jsonString "email.is-valid?" ] |> expectOk "transitive caller closure"
+        check (((callers["data"]["callers"]).ToJsonString()).Contains("email.filter", StringComparison.Ordinal)) "transitive callers include static callback owner"
+        expectError "DISCOVERY_UNKNOWN_ROOT" (dispatch runtime "transitive-dependencies" [ "word", jsonString "discovery.missing" ]) |> ignore
+
+        let graph = dispatch runtime "graph" [ "word", jsonString "email.filter"; "maxDepth", JsonValue.Create(0) :> JsonNode; "maxNodes", JsonValue.Create(1) :> JsonNode ] |> expectOk "bounded graph"
+        check ((graph["data"]["truncated"]).GetValue<bool>()) "graph reports depth truncation"
+        equal 1 ((graph["data"]["expandedWords"]).AsArray().Count) "graph expands no more than the depth-zero root"
+        check ((graph["data"]["text"]).GetValue<string>().Contains("depth limit", StringComparison.Ordinal)) "graph identifies depth-limited edges"
+
+        let contextArgs = [ "word", jsonString "email.filter"; "maxDepth", JsonValue.Create(4) :> JsonNode; "maxWords", JsonValue.Create(12) :> JsonNode; "maxUtf8Bytes", JsonValue.Create(12000) :> JsonNode ]
+        let context = dispatch runtime "context" contextArgs |> expectOk "bounded context"
+        let contextData = context["data"]
+        let compactOptions = JsonSerializerOptions(WriteIndented = false)
+        let contextPayload = contextData.ToJsonString(compactOptions)
+        equal ((contextData["utf8Bytes"]).GetValue<int>()) (Encoding.UTF8.GetByteCount(contextPayload)) "context utf8Bytes equals exact compact data payload bytes"
+        use wireResponse = JsonDocument.Parse(Protocol.serializeResponse context)
+        let wireDataPayload = wireResponse.RootElement.GetProperty("data").GetRawText()
+        equal ((contextData["utf8Bytes"]).GetValue<int>()) (Encoding.UTF8.GetByteCount(wireDataPayload)) "context utf8Bytes matches the actual protocol data payload"
+        let tightContextArgs = [ "word", jsonString "email.filter"; "maxDepth", JsonValue.Create(0) :> JsonNode; "maxWords", JsonValue.Create(1) :> JsonNode; "maxUtf8Bytes", JsonValue.Create(900) :> JsonNode ]
+        let tightContext = dispatch runtime "context" tightContextArgs |> expectOk "context at tight UTF-8 budget"
+        let tightData = tightContext["data"]
+        let tightPayload = tightData.ToJsonString(compactOptions)
+        let tightBytes = Encoding.UTF8.GetByteCount(tightPayload)
+        check (tightBytes <= 900) "tight context stays within its UTF-8 budget"
+        equal ((tightData["utf8Bytes"]).GetValue<int>()) tightBytes "tight context reports the serialized data bytes"
+        use tightWireResponse = JsonDocument.Parse(Protocol.serializeResponse tightContext)
+        let tightWirePayload = tightWireResponse.RootElement.GetProperty("data").GetRawText()
+        equal ((tightData["utf8Bytes"]).GetValue<int>()) (Encoding.UTF8.GetByteCount(tightWirePayload)) "tight context matches the actual protocol payload"
+        check ((tightData["truncated"]).GetValue<bool>()) "tight context reports omitted dependencies"
+        let repeatedContext = dispatch runtime "context" contextArgs |> expectOk "repeat bounded context"
+        equal contextPayload ((repeatedContext["data"]).ToJsonString(compactOptions)) "repeated context is deterministic"
+        let contextWords = (contextData["words"]).AsArray()
+        check (contextWords |> Seq.exists (fun item -> (item["name"]).GetValue<string>() = "email.filter")) "context contains the root word"
+        let allWords = dispatch runtime "words" [] |> expectOk "inspect whole dictionary for comparison" |> fun result -> (result["data"]["words"]).AsArray()
+        check (contextWords.Count < allWords.Count) "context is not an unbounded dictionary dump"
+        check (not (contextPayload.Contains("discovery.write", StringComparison.Ordinal))) "context excludes unrelated words"
+
+        expectError "DISCOVERY_UNKNOWN_TYPE" (dispatch runtime "search-type" [ "type", jsonString "NotDeclared" ]) |> ignore
+        expectError "PARSE_OPEN_TYPE" (dispatch runtime "search-type" [ "type", jsonString "Option<a>" ]) |> ignore
+        expectError "PARSE_INVALID_TYPE" (dispatch runtime "search-type" [ "type", jsonString "List<Email" ]) |> ignore
+        expectError "DISCOVERY_INVALID_ARGUMENT" (dispatch runtime "search-type" [ "type", JsonValue.Create(7) :> JsonNode ]) |> ignore
+        expectError "DISCOVERY_INVALID_ARGUMENT" (dispatch runtime "search-effect" [ "effect", jsonBool true ]) |> ignore
+        expectError "DISCOVERY_INVALID_ARGUMENT" (dispatch runtime "graph" [ "word", jsonString "email.filter"; "maxNodes", jsonString "2" ]) |> ignore
+        expectError "DISCOVERY_INVALID_ARGUMENT" (dispatch runtime "context" [ "word", jsonString "email.filter"; "maxWords", jsonString "12" ]) |> ignore
+        expectError "DISCOVERY_INVALID_BUDGET" (dispatch runtime "graph" [ "word", jsonString "email.filter"; "maxDepth", JsonValue.Create(-1) :> JsonNode ]) |> ignore
+        expectError "DISCOVERY_INVALID_BUDGET" (dispatch runtime "context" [ "word", jsonString "email.filter"; "maxWords", JsonValue.Create(0) :> JsonNode ]) |> ignore
+        expectError "DISCOVERY_BUDGET_LIMIT" (dispatch runtime "graph" [ "word", jsonString "email.filter"; "maxNodes", JsonValue.Create(513) :> JsonNode ]) |> ignore
+        expectError "DISCOVERY_BUDGET_LIMIT" (dispatch runtime "context" [ "word", jsonString "email.filter"; "maxDepth", JsonValue.Create(33) :> JsonNode ]) |> ignore
+        expectError "DISCOVERY_CONTEXT_BUDGET_TOO_SMALL" (dispatch runtime "context" [ "word", jsonString "email.filter"; "maxUtf8Bytes", JsonValue.Create(1) :> JsonNode ]) |> ignore
+        expectError "DISCOVERY_INVALID_ARGUMENT" (dispatch runtime "context" [ "maxWords", JsonValue.Create(1) :> JsonNode ]) |> ignore
+
+        let protocol = Protocol.dispatchLine runtime "{\"op\":\"search-type\",\"type\":\"Option<List<Email>>\"}" |> expectOk "JSON-lines Discovery request"
+        equal "search-type" ((protocol["kind"]).GetValue<string>()) "JSON-lines routes Discovery commands"
+
+        define runtime
+            """word discovery.live : String -> String
+    effects none
+    dup drop
+end
+"""
+        |> expectOk "replace live candidate signature" |> ignore
+        let liveEmail = queryType "Email" |> fun result -> (result["data"]["words"]).ToJsonString()
+        let liveString = queryType "String" |> fun result -> (result["data"]["words"]).ToJsonString()
+        check (not (liveEmail.Contains("discovery.live", StringComparison.Ordinal))) "fresh index drops the replaced candidate's old type"
+        check (liveString.Contains("discovery.live", StringComparison.Ordinal)) "fresh index sees the current candidate replacement"
+
+        dispatch runtime "task.begin" [ "goal", jsonString "verify discovery is read-only" ] |> expectOk "begin read-only discovery task" |> ignore
+        dispatch runtime "search-effect" [ "effect", jsonString "fs.write" ] |> expectOk "inspect effect without running it" |> ignore
+        let status = dispatch runtime "task.status" [] |> expectOk "inspect task after query"
+        equal 0 ((status["data"]["effects"]).AsObject().Count) "discovery does not record provider effects"
+        equal 0 ((status["data"]["wordsUsed"]).AsArray().Count) "discovery does not invoke words"
+        check ((status["data"]["wordsInspected"]).AsArray().Count > 0) "discovery records inspection activity"
+        let missingFile = evaluate runtime "\"discovery-ran\" file.exists?" |> expectOk "check provider after discovery query"
+        equal "false" (stackValue missingFile 0) "discovery did not run the effectful candidate"
+        dispatch runtime "task.abort" [] |> expectOk "abort read-only discovery task" |> ignore
+
     [<EntryPoint>]
     let main _ =
         let temporaryRoot = Path.Combine(Path.GetTempPath(), "agentlang-acceptance-" + Guid.NewGuid().ToString("N"))
@@ -1823,7 +1987,8 @@ end
               "named snapshot restores project and providers", testNamedSnapshotRestoresProjectAndProviders
               "semantic rename and deprecation", testSemanticRenameAndDeprecation
               "typed containers and syntax metadata", testTypedContainersAndLanguageConstructs
-              "container library coverage", testContainerLibraryCoverage ]
+              "container library coverage", testContainerLibraryCoverage
+              "live bounded Discovery commands", testDiscoveryCommands ]
         let failures = ResizeArray<string>()
         try
             for name, run in cases do

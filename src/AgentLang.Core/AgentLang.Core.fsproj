@@ -9,8 +9,10 @@
     <Compile Include="Core.fs" />
     <Compile Include="Storage.fs" />
     <Compile Include="Parser.fs" />
+    <Compile Include="TypedIR.fs" />
     <Compile Include="Compiler.fs" />
     <Compile Include="Source.fs" />
+    <Compile Include="Discovery.fs" />
     <Compile Include="Runtime.fs" />
     <Compile Include="Protocol.fs" />
   </ItemGroup>

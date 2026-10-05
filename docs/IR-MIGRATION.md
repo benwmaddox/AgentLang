@@ -1,7 +1,7 @@
 # Typed semantic IR migration plan
 
-Status: proposal for review. This document describes a migration; it does not
-claim that the IR interpreter exists. The first backend is an interpreter over
+Status: in progress. The typed IR model and verifier exist; AST lowering and
+the IR interpreter are still pending. The first backend is an interpreter over
 the typed IR. LLVM remains conditional follow-on work and is not a dependency
 of this migration.
 
@@ -13,6 +13,29 @@ The language currently parses to `Expr`, infers types and effects in
 interpreted directly; it is not executable IR. This migration is complete only
 when REPL evaluation, words, callbacks, tests, candidate validation, and reload
 all execute compiled IR and there is no runtime AST fallback.
+
+## Implementation status
+
+`TypedIR.fs` now defines closed executable types, snapshot-scoped nominal keys,
+stable linked word targets, per-call concrete primitive instantiations, typed
+stack/local block shapes, explicit structured cases, generated record/scalar
+operations, source maps, and coverage obligations. IR effects use a closed
+ten-case `IrEffect` union; `IrEffects` maps validated source effect names at
+the planned compiler boundary and formats them deterministically. The source
+name conversion helper exists, but no AST lowering uses it yet.
+`IrVerifier.verify` checks call identity/revision/signatures, primitive
+specializations, effect consistency, container and generated operation types,
+callback signatures and effects, branch joins, case-local scope, source
+ownership, exact coverage categories, and acyclic user/generated call graphs
+before returning a verified program handle.
+
+`tests/AgentLang.IR.Tests` exercises the verifier with constructed executable
+snapshots. This establishes the data model and verifier contract only. The
+existing compiler does not lower `Expr` to this IR, and `Runtime` still
+executes the source AST. The current `ir` command is not yet a rendering of
+verified executable IR. No claim of IR execution, interpreter parity, or
+backend cutover is made until later migration stages pass their acceptance
+criteria.
 
 Keep `Expr` as the source AST used by parsing, canonical source rendering,
 diagnostics, and semantic edits. Add one closed, typed, resolved representation

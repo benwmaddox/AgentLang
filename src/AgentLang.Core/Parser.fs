@@ -155,6 +155,40 @@ module Parser =
         if cursor <> text.Length then fail file line (cursor + 1) "PARSE_INVALID_TYPE" $"Unexpected text in type '{text}'."
         result
 
+    /// Parse one closed type expression supplied by a Discovery query.
+    /// The signature parser also accepts reserved type-variable names through
+    /// its shared type parser, but query types must be fully concrete.
+    let parseClosedType (source: string) : Result<LangType, Diagnostic> =
+        let rec openVariable = function
+            | TVar name -> Some name
+            | TNamed name when reservedTypeNames.Contains name -> Some name
+            | TList item | TOption item -> openVariable item
+            | TResult(ok, error) -> openVariable ok |> Option.orElseWith (fun () -> openVariable error)
+            | TInt | TFloat | TBool | TString | TUnit | TNamed _ -> None
+
+        try
+            let parsed = parseType "<type-query>" 1 source
+            match openVariable parsed with
+            | Some name ->
+                Error
+                    { Code = "PARSE_OPEN_TYPE"
+                      Message = $"Type query must be closed; '{name}' is a reserved type variable."
+                      Word = None
+                      Span = Some { File = "<type-query>"; Line = 1; Column = 1; Length = max 1 source.Length }
+                      Expected = [ "closed type" ]
+                      Actual = [ name ] }
+            | None -> Ok parsed
+        with
+        | LanguageException diagnostic -> Error diagnostic
+        | ex ->
+            Error
+                { Code = "PARSE_FAILURE"
+                  Message = ex.Message
+                  Word = None
+                  Span = None
+                  Expected = []
+                  Actual = [] }
+
     let private parseHeader file (line: Line) (prefix: string) =
         let tokens = tokenize file line
         match tokens with

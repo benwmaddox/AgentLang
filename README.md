@@ -145,6 +145,8 @@ Temporary describes a word's lifetime, while library describes its quality requi
 
 Closed `List<T>`, `Option<T>`, and `Result<T,E>` values preserve their declared types even when empty or unsuccessful. Static callbacks and exhaustive case blocks are described in [docs/CONTAINERS.md](docs/CONTAINERS.md), with runnable examples in [examples/containers.agent](examples/containers.agent).
 
+Structural discovery supports `type-of`, `search-type`, `search-output`, `search-effect`, `search-dependency`, transitive dependencies/callers, bounded `graph`, and compact `context`. Queries see the current staged vocabulary and preserve nominal distinctions such as Email versus String. Context reports exact compact JSON `data` bytes with explicit limits and omissions; byte counts are not model tokens. See [the command and budget contract](docs/DISCOVERY.md).
+
 ## Effect permissions
 
 Language programs can invoke only trusted primitives. A primitive's declared effect does not grant permission to perform it. The host denies effects by default; pass explicit capabilities to enable them:
@@ -168,6 +170,8 @@ This checks protocol orchestration and existing customer vocabulary. It is a scr
 ## Current limits
 
 The runtime interprets a checked expression tree; it does not emit bytecode. Records, nominal scalar types, and closed containers are supported. Generic user definitions and local file, database, network, or process access are not implemented. The file and console effects use in-memory providers, and the clock is fixed by the host.
+
+The typed semantic IR model and verifier are available, with closed executable types/effects and linked call identities. Source lowering and IR execution remain pending; [the migration plan](docs/IR-MIGRATION.md) defines the required cutover before this IR becomes authoritative. LLVM development JIT and release AOT remain conditional follow-ons.
 
 Committed projects use hashed manifests and source objects under `.agentlang/store`; `dictionary.agent` remains the readable export and legacy import format. Stable word IDs and prior revision sources survive reload. `history` and `diff` inspect those durable revisions. `rename` rewrites semantic calls and attached cases while preserving identity; `deprecate` retains callable behavior; `replace-word` commits a staged replacement after its own and affected caller tests pass. Named `snapshot.save`/`snapshot.load` operations restore committed vocabulary and virtual provider state while retaining current host capabilities. See [storage](docs/STORAGE.md), [canonical source](docs/SOURCE.md), and [expected-error tests](docs/TEST-ERRORS.md).
 

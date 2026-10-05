@@ -12,6 +12,8 @@ Durable-state milestone evidence: [Milestone 003 report](../reports/003-durable-
 
 Exploratory external-agent evidence: [the subagent pilot](../reports/004-subagent-vocabulary-pilot.md) records a fresh agent building two tested library words and a different agent discovering/reusing them for a later task. Independent host checks passed 16 and 17 cases respectively. The second agent retained earlier repository context; exact model usage is unavailable. This proves a scoped workflow, not the required controlled performance comparison.
 
+Discovery and IR-foundation evidence: [Milestone 005](../reports/005-discovery-and-typed-ir.md), Release build with zero warnings/errors, 27 language groups/465 assertions, 53 discovery assertions, 8 IR verifier groups/37 assertions, all existing suites and 99 fresh-process persistence checks. Nine discovery commands are integrated; source lowering and execution through IR remain pending.
+
 | Original section | Requirement / disposition | Current evidence and outstanding work |
 | --- | --- | --- |
 | 1 | Partial: small extensible typed environment | Runtime and words exist; complete values/providers/evaluation remain |
@@ -29,7 +31,7 @@ Exploratory external-agent evidence: [the subagent pilot](../reports/004-subagen
 | 13 | Partial: 50–100 boring primitives | Baseline 44, current dictionary 49; syntax constructs counted separately. JSON/process/environment/introspection primitives incomplete |
 | 14 | Verified: no arbitrary .NET escape | Only host builtins invoke host code; no reflection/call escape surface |
 | 15 | Verified: interactive REPL foundation | Multiline CLI smoke and expressions; additional commands tracked below |
-| 16 | Partial: required introspection commands | words/describe/source/dependencies/callers/search/effects/tests/test/examples; type-of/recent-words pending |
+| 16 | Partial: required introspection commands | words/describe/source/dependencies/callers/search/effects/tests/test/examples/type-of; recent-words and fuller metadata pending |
 | 17 | Verified: machine-readable command transport | JSON-lines protocol and diagnostic acceptance checks |
 | 18 | Partial: first-class tests | Tests/test-all/failed-tests and gates; exact runtime-error expectations verified; structured-value expectations pending |
 | 19 | Partial: examples as metadata | Persisted cases; query currently returns names rather than full example details |
@@ -45,16 +47,16 @@ Exploratory external-agent evidence: [the subagent pilot](../reports/004-subagen
 | 29 | Partial: replaceable simulated effects | Isolated virtual file/clock tests; provider interfaces and other domains pending |
 | 30 | Verified: small agent command interface foundation | Engine.Dispatch and Protocol; live LLM integration pending |
 | 31 | Design: suggested F# solution organization | Existing Core/CLI/Acceptance projects; add host/harness/domain boundaries as needed |
-| 32 | Partial: strongly typed internal concepts | Value/type/AST unions; effect identifiers currently checked strings |
-| 33 | Pending: small lowered printable IR | Checked-tree interpreter is explicitly an initial implementation step |
+| 32 | Partial: strongly typed internal concepts | Value/type/AST unions and closed ten-case IR effect union; source/runtime effect metadata still checked strings |
+| 33 | Partial: closed typed IR model and verifier | Constructed-program verifier checks exist; source lowering, executable IR printing and interpreter cutover pending |
 | 34 | Partial: bounded runtime and turnaround | Step/depth bounds exist; timing goals unmeasured |
 | 35 | Partial: small parser with spans/incomplete detection | Spans and interactive buffering; parse-stage API/incomplete classification pending |
 | 36 | Pending: parse/ast/types/ir stage debugging | Current ir accurately labels checked tree; richer stage representations pending |
 | 37 | Verified: stack checking and branch joins | Compiler and negative acceptance cases |
 | 38 | Verified: minimal stack gymnastics | dup/drop/swap; no extended stack operation assortment |
 | 39 | Verified: typed local bindings | Local/branch joins and demo checks |
-| 40 | Partial: structural search | Text search exists; search-type/output/effect/dependency pending |
-| 41 | Pending: compact dependency/type context | context command and bounded deterministic representation missing |
+| 40 | Verified: deterministic structural search | Exact nested nominal input/output types, declared effects and direct dependency queries; no embeddings |
+| 41 | Verified: compact bounded dependency/type context | Complete JSON entries, recursive nominal declarations, concise docs, hard budgets/omissions and exact transported data bytes; not inferred task relevance |
 | 42 | Partial: context/token accounting | Harness records complete prepared/sent request bytes and returned provider usage; exact token budget/retrieval breakdown pending |
 | 43 | Partial: complete small-business fixture | Customer language demo and conventional typed business foundation; full language domain, 40–60 words and 50–100 tests pending |
 | 44 | Excluded from first domain: optional later simulation | Preserve for later generalization, not a V1 blocker |
@@ -76,8 +78,8 @@ Exploratory external-agent evidence: [the subagent pilot](../reports/004-subagen
 | 60 | Partial: conventional tool baseline | Path-confined read/search/CAS edit/fixed validation tools verified; actual same-model comparison pending; validation is not an OS sandbox |
 | 61 | Pending: 60 deterministic benchmark tasks | 20 simple, 20 medium, 10 debugging, 10 refactoring and independent acceptance tests |
 | 62 | Partial: vocabulary-building task sequence | Initial premium demo; sequence and comparable costs pending |
-| 63 | Partial: CLI observability | task status/log and words; recent-words/graph/metrics pending; GUI optional |
-| 64 | Partial: runtime dependency graph | Direct dependencies/callers exist; complete transitive graph APIs pending |
+| 63 | Partial: CLI observability | task status/log, words and bounded graph; recent-words/metrics pending; GUI optional |
+| 64 | Verified: direct and transitive dependency graph | Stable closures, callbacks/refinement validator edges, cycle/reuse markers and explicit graph limits |
 | 65 | Verified: definition-level word editing | define stages source; replace-word commits after current word and transitive caller tests pass |
 | 66 | Partial: semantic change boundaries | Scoped word/test metadata checked; dedicated type/test/example/doc operations pending |
 | 67 | Verified: stable word IDs | Preserve across temporary promotion, replacement, semantic rename, history and reload; milestone-003 identity checks |
@@ -99,9 +101,9 @@ Exploratory external-agent evidence: [the subagent pilot](../reports/004-subagen
 
 ## Named-command completion checklist
 
-Verified foundation: eval, define, words, describe, source, dependencies, callers, search, effects, ir (checked-tree representation only), tests, test, test-all, failed-tests, examples (names only), commit/commit-word, replace-word, promote, discard, task.begin/status/commit/abort/log, stack, durable history/diff, rename, deprecate, snapshot.save/load and storage.status.
+Verified foundation: eval, define, words, describe, type-of, source, dependencies, callers, search, search-type, search-output, search-effect, search-dependency, transitive-dependencies, transitive-callers, graph, context, effects, ir (checked-tree representation only), tests, test, test-all, failed-tests, examples (names only), commit/commit-word, replace-word, promote, discard, task.begin/status/commit/abort/log, stack, durable history/diff, rename, deprecate, snapshot.save/load and storage.status.
 
-Still required or incomplete: type-of, recent-words, search-type, search-output, search-effect, search-dependency, context, parse, ast, types, lowered ir, graph, metrics, transitive-dependencies, transitive-callers, replace OLD NEW, full example/test metadata, definition-level documentation/test/example edits, agent-run with model/task/snapshot selection.
+Still required or incomplete: recent-words, parse, ast, types, lowered ir, metrics, replace OLD NEW, full example/test metadata, definition-level documentation/test/example edits, agent-run with model/task/snapshot selection.
 
 ## Planned implementation order
 

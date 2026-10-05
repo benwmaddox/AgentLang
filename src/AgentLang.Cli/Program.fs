@@ -25,6 +25,19 @@ Human REPL commands:
   :define FILE       Stage declarations from a .agent file
   :words             List available words
   :describe WORD     Show a word's metadata
+  :type-of WORD      Show the same type and declaration metadata
+  :search-type TYPE  Find words whose input or output contains TYPE
+  :search-output TYPE Find words whose output contains TYPE
+  :search-effect EFFECT Find words declaring EFFECT
+  :search-dependency WORD Find direct callers of WORD
+  :transitive-dependencies WORD
+                     List the full dependency closure
+  :transitive-callers WORD
+                     List the full caller closure
+  :graph WORD [--max-depth N] [--max-nodes N]
+                     Render a bounded dependency graph
+  :context WORD [--max-depth N] [--max-words N] [--max-utf8-bytes N]
+                     Return a bounded compact JSON context
   :test [WORD]       Run attached tests
   :test-all          Run every attached test
   :commit WORD       Commit candidates after their tests pass
@@ -40,6 +53,11 @@ Human REPL commands:
 """
 
     let private jsonString (value: string) = JsonValue.Create(value) :> JsonNode
+
+    let private jsonIntegerOrString (value: string) =
+        match Int32.TryParse value with
+        | true, parsed -> JsonValue.Create(parsed) :> JsonNode
+        | _ -> jsonString value
 
     let private newArgs () = JsonObject()
 
@@ -81,6 +99,52 @@ Human REPL commands:
             | "search" ->
                 args["query"] <- jsonString rest
                 engine.Dispatch("search", args)
+            | "type-of" | "search-dependency" | "transitive-dependencies" | "transitive-callers" ->
+                args["word"] <- jsonString rest
+                engine.Dispatch(command, args)
+            | "search-type" | "search-output" ->
+                args["type"] <- jsonString rest
+                engine.Dispatch(command, args)
+            | "search-effect" ->
+                args["effect"] <- jsonString rest
+                engine.Dispatch(command, args)
+            | "graph" | "context" ->
+                let parts = rest.Split([| ' '; '\t' |], StringSplitOptions.RemoveEmptyEntries)
+                let mutable position = 0
+                let mutable invalidOption: string option = None
+                if parts.Length > 0 && not (parts[0].StartsWith("--", StringComparison.Ordinal)) then
+                    args["word"] <- jsonString parts[0]
+                    position <- 1
+                while position < parts.Length && invalidOption.IsNone do
+                    let key =
+                        match command, parts[position] with
+                        | "graph", ("--max-depth" | "--maxDepth") -> Some "maxDepth"
+                        | "graph", ("--max-nodes" | "--maxNodes") -> Some "maxNodes"
+                        | "context", ("--max-depth" | "--maxDepth") -> Some "maxDepth"
+                        | "context", ("--max-words" | "--maxWords") -> Some "maxWords"
+                        | "context", ("--max-utf8-bytes" | "--maxUtf8Bytes") -> Some "maxUtf8Bytes"
+                        | _ -> None
+                    match key with
+                    | None -> invalidOption <- Some parts[position]
+                    | Some name when position + 1 >= parts.Length ->
+                        args[name] <- jsonString ""
+                        position <- parts.Length
+                    | Some name ->
+                        args[name] <- jsonIntegerOrString parts[position + 1]
+                        position <- position + 2
+                match invalidOption with
+                | Some optionName ->
+                    let response = JsonObject()
+                    response["ok"] <- JsonValue.Create(false)
+                    response["kind"] <- jsonString "error"
+                    let message = $"Unknown {command} option '{optionName}'."
+                    response["text"] <- jsonString message
+                    let problem = JsonObject()
+                    problem["code"] <- jsonString "DISCOVERY_INVALID_ARGUMENT"
+                    problem["message"] <- jsonString message
+                    response["error"] <- problem
+                    response
+                | None -> engine.Dispatch(command, args)
             | "task.begin" ->
                 args["goal"] <- jsonString rest
                 engine.Dispatch("task.begin", args)
