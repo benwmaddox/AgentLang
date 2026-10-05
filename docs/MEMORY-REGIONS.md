@@ -20,6 +20,36 @@ These are candidate boundaries, not a declaration that every task or word owns o
 
 ## Required safety contract
 
+### What Forth supplies, and what we would add
+
+Standard Forth's operand-stack discipline does not establish ownership of
+referenced storage. [`DROP`](https://forth-standard.org/standard/core/DROP)
+removes a stack item; dropping an address does not free its allocation. The
+optional [memory-allocation word set](https://forth-standard.org/standard/memory)
+provides `ALLOCATE`, `RESIZE` and `FREE`, and permits access only while the
+allocated region remains live. The program is responsible for obeying that
+restriction; this is not a standard static lifetime/escape checker.
+
+For inline scalar values, stack-space reuse needs no heap lifetime analysis.
+The harder case is an address or reference copied into another live stack item,
+local, container or retained state. A manually reset arena is safe only if all
+remaining references obey its lifetime, whether the programmer establishes
+that fact or the language enforces it.
+
+The design requirement is therefore **enforced lifetime safety**, not a mandate
+for one analysis algorithm or a Rust-style annotation system. Candidate
+mechanisms include conservative scoped-region types, ownership transfer,
+bounded copying of escaping results, and checked handles at dynamic boundaries.
+Rejecting an unsupported escape is preferable to inferring an unsafe lifetime.
+Any automatic promotion must be specified, inspectable and accounted for;
+silently copying arbitrary retained graphs would undermine predictable cost.
+
+The simplest first region experiment should allow short-lived internal values,
+permit borrowing longer-lived immutable inputs, and require a valid longer-lived
+owner for exported results before reset. Test nested aliases, early errors and
+retained results, not only scalar pipelines. This remains a proposal; lexical
+scope in the new frontend does not itself allocate or reset an arena.
+
 1. No reference may remain usable after its backing region is reset/released. Use static escape/lifetime checking where tractable and checked opaque handles where dynamic boundaries require it; do not expose raw pointers or unchecked lifetime casts to programs.
 2. Promotion/copy must recursively preserve nominal identities, closed container types, value contents and graph sharing where applicable. Moving only an outer record while leaving its fields in a shorter-lived arena is invalid. Preserve validated value semantics; do not rebind a frozen type validator.
 3. Promotion must be bounded and fail with a structured error. Account for copied bytes/nodes separately from execution fuel and do not publish a partial retained graph after failure.
