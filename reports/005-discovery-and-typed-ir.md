@@ -1,6 +1,6 @@
 # Milestone 005: bounded discovery and typed IR foundation
 
-Status: validated implementation slice, ready for publication. Authoritative IR execution and the full PRD remain in progress.
+Status: published and validated implementation slice. Authoritative IR execution and the full PRD remain in progress.
 
 This slice delivers deterministic structural search, transitive graph traversal, compact bounded context, and a typed semantic IR model/verifier. The current runtime still executes the checked AST; LLVM JIT/AOT remain conditional follow-ons.
 
@@ -13,5 +13,7 @@ The IR model/verifier is wired into Core and the validation runner, but remains 
 Publication review found that the context builder's Unicode serialization settings differed from the JSON-lines transport. An independent serialization probe measured **85 versus 95 bytes** for the same JSON containing accented text, Japanese text, a generic type signature and an emoji. The builder now uses the protocol's default compact serializer. Passing regressions extract the literal `data` JSON from the serialized response and measure that transported representation, including Unicode documentation and a tight context budget. The independent review found no additional concrete defect in its scoped discovery/argument/visibility/logging audit.
 
 Coordinating validation ran `./scripts/Validate.ps1 -Configuration Release -ReportPath .agentlang/reports/milestone-005-publication.json`: Release solution build **zero warnings/errors**, language **27 groups / 465 assertions**, harness **98**, business **113**, source **57**, storage **64**, conventional tools **63**, discovery **53**, and IR verifier **8 groups / 37**. The [saved validation](evidence/005-working-tree-validation.json) and [fresh-process evidence](evidence/005-working-tree-projection.json) record passing checks, including **8 subprocesses / 31 exchanges / 99 persistence checks** and both whitespace gates. These files identify a dirty working tree based on `9fa7b59`; they are pre-publication evidence, not a clean committed-revision claim.
+
+Code, reports and local evidence were merged and pushed to private `main` in **019d7540fbfe0d69aaebd4978dfad553d873fb93**. [CI passed](https://github.com/benwmaddox/AgentLang/actions/runs/37258379171). Downloaded [committed-revision validation](evidence/005-committed-ci-validation.json) confirms that exact revision, `dirty: false` and passing checks; [committed fresh-process evidence](evidence/005-committed-ci-projection.json) confirms 99 passing persistence checks. The subsequent report-only publication records this evidence without changing runtime behavior.
 
 Lowering source definitions and detached eval/test/example bodies, retaining the verified primitive catalog, printing executable IR, and switching all execution paths to IR remain required. The [migration plan](../docs/IR-MIGRATION.md) keeps the checked AST interpreter explicitly transitional. No LLVM, native-performance, token-saving or controlled research result is claimed.
