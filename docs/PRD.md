@@ -283,6 +283,8 @@ Future curator agents, synthesized context, maturity levels, contracts, and a se
 
 ## Conditional development and release backends
 
+Proposed allocation direction: scoped arenas with bulk reclamation for suitable phases, plus a separate lifetime strategy for retained data. Specify escape/promotion, nested value ownership, old executable generations, rollback/snapshot retention, capacity accounting and resource cleanup before native allocation. Arena reset is distinct from effect rollback and may retain backing capacity; measure allocation/cleanup time and used/reserved/peak memory. The current managed runtime does not implement arenas. See [the region contract](MEMORY-REGIONS.md) and [assessment](../reports/020-arena-allocation-assessment.md). Keep the early frontend migration ahead of general allocator implementation.
+
 If the initial experiments support the hypothesis, evolve toward separate development and release runtimes. Development retains the interpreter, REPL, introspection, and hot word replacement, and may use LLVM JIT compilation for stable or frequently executed words. Release uses LLVM AOT to emit optimized native code with a minimal runtime and ships neither the interpreter nor compiler.
 
 The typed semantic IR is the authoritative executable representation from the initial architecture. Source and AST are authoring representations; type/effect checking lowers them to this IR before execution. Interpreter, JIT, and AOT must share type identities, numeric/error behavior, control flow, effects, and value semantics. Native performance, memory use, and startup approaching Rust or C are later evaluation goals, not current guarantees.

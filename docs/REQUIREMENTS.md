@@ -113,6 +113,8 @@ Still required or incomplete: recent-words, parse, ast, types, metrics, replace 
 
 ## Planned implementation order
 
+Proposed memory follow-on: [scoped arena lifetime contract](MEMORY-REGIONS.md), including escape/promotion, generation/snapshot retention, cleanup, capacity and used/reserved/peak measurements. This is pending design/implementation and must not be confused with existing temporary words, managed GC or the value-size safety bounds. It follows the early authoring migration; native allocator integration remains conditional later work.
+
 User-directed early frontend migration now precedes further controlled agent experiments: [expression/dot source plan](FRONTEND-MIGRATION.md). Preserve words, strong types, effects, library gates and authoritative semantic IR; implement named inputs/locals, static first-input dot calls, explicit versioned source/persistence, complete legacy semantic coverage and default cutover. Close-to-first-use is lint. Do not introduce mutable language globals; retain explicit values/effects. The currently executable frontend is still RPN, and the migration acceptance criteria are pending.
 
 User addition: the typed semantic IR must become the authoritative executable representation. Runtime now routes through the verified IR interpreter; report 010 records cutover validation. Further source-stage inspection remains pending; LLVM development JIT and release AOT remain conditional follow-ons after successful agent experiments. See [the backend plan](BACKENDS.md).

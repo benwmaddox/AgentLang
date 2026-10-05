@@ -10,6 +10,8 @@ Use named typed parameters, immutable lexical locals, ordinary calls, expression
 
 Keep the useful stack discipline prominent through explicit consumed/produced types, visible value flow and minimal hidden state. Do not introduce mutable language globals. Immutable constants may be represented by ordinary typed pure definitions with discoverable dependencies. Pass application state explicitly as typed values when practical; stateful external services remain host providers accessed only through declared and authorized effects. Dictionary metadata, task logs and capability configuration are host state, not unrestricted program globals. Stack execution alone does not enforce this boundary.
 
+Preserve the original memory motivation too: clear short-lived working data and reasonable bulk-cleanup boundaries. Named locals/dot chains still lower to analyzable typed value operations. They must not introduce uncontrolled retained roots or make allocation lifetime depend on punctuation. Future region analysis considers all uses/escapes, not just operand-stack pops; see [the arena contract](MEMORY-REGIONS.md).
+
 ```text
 word customer.discounted-balance(customer: Customer) -> Float {
     effects none
