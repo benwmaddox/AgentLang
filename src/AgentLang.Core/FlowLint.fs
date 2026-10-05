@@ -164,6 +164,7 @@ module FlowLint =
                     match argument with
                     | FlowArgument.Positional expression -> analyzeExpression outerFrames localBindings statementIndex expression
                     | FlowArgument.Named(_, expression, _) -> analyzeExpression outerFrames localBindings statementIndex expression
+                    | FlowArgument.WordReference _ -> ()
 
                 let parameterFrame =
                     { Bindings = Map.empty

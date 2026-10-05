@@ -281,6 +281,17 @@ let private testTraversalLimitIsStructured () =
     | Error error -> equal "hand-built excessive nesting has a structured error" "FLOW_LINT_NESTING_LIMIT" error.Code
     | Ok _ -> failwith "nesting over the bound was analyzed"
 
+let private testStaticCallbacksAreNotLocalReads () =
+    let source callback =
+        $"word callbacks(value: Int) -> List<Int> {{\n    effects none\n    let normalize = value; let values = list::singleton<Int>(value); values.map({callback})\n}}"
+    // Word targets live in the dictionary, even when a local shares their name.
+    for callback in [ "word normalize"; "customer::normalize" ] do
+        let warnings = lint FlowLint.defaultOptions (source callback)
+        equal "static callback target does not credit a same-named local" [ "normalize" ] (warnings |> List.map (fun warning -> warning.Binding))
+        equal "callback receiver counts as a local read" "FLOW_LOCAL_UNUSED" warnings.Head.Code
+    let ordinary = lint FlowLint.defaultOptions (source "normalize")
+    equal "ordinary value argument retains its lexical local read" [] ordinary
+
 [<EntryPoint>]
 let main _ =
     testDefaultThresholdAndDisableOption ()
@@ -293,5 +304,6 @@ let main _ =
     testUnusedBindingsAndDeterministicOrder ()
     testLargeFlatBlock ()
     testTraversalLimitIsStructured ()
+    testStaticCallbacksAreNotLocalReads ()
     printfn $"AgentLang.Flow.Lint.Tests: {assertions} assertions passed."
     0

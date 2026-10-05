@@ -40,6 +40,12 @@ module FlowLowering =
           Entry: WordEntry
           ParameterNames: string list option }
 
+    [<RequireQualifiedAccess>]
+    type private ListCallbackOperation =
+        | Map
+        | Filter
+        | Each
+
     type private BoundArguments =
         { ByParameter: Map<int, FlowExpression>
           HasNamedArguments: bool }
@@ -206,6 +212,107 @@ module FlowLowering =
             | other -> other
         substitute typeValue
 
+    let private listCallbackOperation = function
+        | "map" -> Some ListCallbackOperation.Map
+        | "filter" -> Some ListCallbackOperation.Filter
+        | "each" -> Some ListCallbackOperation.Each
+        | _ -> None
+
+    let private callbackRequiredOutput = function
+        | ListCallbackOperation.Map -> None
+        | ListCallbackOperation.Filter -> Some TBool
+        | ListCallbackOperation.Each -> Some TUnit
+
+    let private callbackResultType operation itemType outputType =
+        match operation with
+        | ListCallbackOperation.Map -> TList outputType
+        | ListCallbackOperation.Filter -> TList itemType
+        | ListCallbackOperation.Each -> TUnit
+
+    let private containsOpenType typeValue =
+        let rec visit = function
+            | TVar _ -> true
+            | TList item | TOption item -> visit item
+            | TResult(okType, errorType) -> visit okType || visit errorType
+            | _ -> false
+        visit typeValue
+
+    let private validateWordReferenceShape (state: LoweringState) (reference: FlowWordReference) =
+        let pieces = if String.IsNullOrEmpty reference.Name then [||] else reference.Name.Split('.')
+        let validSegment (piece: string) =
+            piece.Length > 0
+            && (Char.IsLetter piece[0] || piece[0] = '_')
+            && (piece
+                |> Seq.skip 1
+                |> Seq.forall (fun character ->
+                    Char.IsLetterOrDigit character
+                    || character = '_'
+                    || character = '-'
+                    || character = '?'
+                    || character = '!'))
+        let hasValidSegments = pieces.Length > 0 && (pieces |> Array.forall validSegment)
+        if not hasValidSegments
+           || (reference.IsExplicitShort && pieces.Length <> 1)
+           || (not reference.IsExplicitShort && pieces.Length < 2) then
+            fail "FLOW_CALLBACK_REFERENCE_SHAPE" "Static callback references must be either namespace-qualified or explicitly marked short names." None (Some reference.Span) [ "qualified name or `word shortName`" ] [ reference.Name ]
+        rememberSpan state reference.Span
+
+    let private callbackCandidates (context: Context) (reference: FlowWordReference) =
+        let entries =
+            if reference.IsExplicitShort then
+                context.CompilerContext.Words
+                |> Map.toList
+                |> List.filter (fun (name, _) -> shortName name = reference.Name)
+            else
+                context.CompilerContext.Words.TryFind reference.Name
+                |> Option.map (fun entry -> [ reference.Name, entry ])
+                |> Option.defaultValue []
+        entries
+        |> List.sortBy fst
+        |> List.map (fun (name, entry) ->
+            { Name = name
+              Entry = entry
+              ParameterNames = entryParameterNames context name entry })
+
+    let private resolveListCallback
+        (context: Context)
+        (state: LoweringState)
+        (reference: FlowWordReference)
+        (itemType: LangType)
+        (requiredOutput: LangType option)
+        : Candidate * LangType =
+        validateWordReferenceShape state reference
+        let candidates = callbackCandidates context reference
+        if List.isEmpty candidates then
+            fail "FLOW_UNKNOWN_CALLBACK" $"No static callback word matches '{reference.Name}'." None (Some reference.Span) [] [ reference.Name ]
+        if candidates.Length > 1 then
+            fail "FLOW_AMBIGUOUS_CALLBACK" $"Static callback '{reference.Name}' resolves to more than one word; use a qualified reference." None (Some reference.Span) [] (candidates |> List.map (fun candidate -> candidate.Name))
+
+        let candidate = candidates.Head
+        let inputs = candidate.Entry.Definition.Inputs
+        let outputs = candidate.Entry.Definition.Outputs
+        if inputs.Length <> 1 then
+            fail "FLOW_CALLBACK_INPUT_ARITY" $"Callback '{candidate.Name}' must have exactly one input." (Some candidate.Name) (Some reference.Span) [ "one input" ] (inputs |> List.map Types.format)
+        if outputs.Length <> 1 then
+            fail "FLOW_CALLBACK_OUTPUT_ARITY" $"Callback '{candidate.Name}' must have exactly one output." (Some candidate.Name) (Some reference.Span) [ "one output" ] (outputs |> List.map Types.format)
+        let substitutions =
+            match unifyType inputs.Head itemType Map.empty with
+            | Some values -> values
+            | None -> fail "FLOW_CALLBACK_INPUT_TYPE" $"Callback '{candidate.Name}' cannot accept list elements of type {Types.format itemType}." (Some candidate.Name) (Some reference.Span) [ Types.format itemType ] [ Types.format inputs.Head ]
+        let outputType = substituteType substitutions outputs.Head
+        match requiredOutput with
+        | Some expected when expected <> outputType ->
+            fail "FLOW_CALLBACK_RESULT_TYPE" $"Callback '{candidate.Name}' must return {Types.format expected}." (Some candidate.Name) (Some reference.Span) [ Types.format expected ] [ Types.format outputType ]
+        | _ when containsOpenType outputType ->
+            fail "FLOW_CALLBACK_OPEN_OUTPUT" $"Callback '{candidate.Name}' has an output type that cannot be resolved from the list element." (Some candidate.Name) (Some reference.Span) [ "closed output type" ] [ Types.format outputType ]
+        | _ -> candidate, outputType
+
+    let private callbackReferenceIn arguments =
+        arguments |> List.tryPick (function FlowArgument.WordReference reference -> Some reference | _ -> None)
+
+    let private rejectWordReferenceContext (reference: FlowWordReference) =
+        fail "FLOW_CALLBACK_REFERENCE_CONTEXT" "A static callback word reference is not a first-class value and is valid only as the sole argument to a list callback stage." None (Some reference.Span) [] [ reference.Name ]
+
     let rec private mapArguments (context: Context) (state: LoweringState) (environment: Map<string, Binding>) (candidate: Candidate) (receiverType: LangType option) (arguments: FlowArgument list) (callSpan: SourceSpan) =
         let signature = candidate.Entry.Definition.Inputs
         let offset = if receiverType.IsSome then 1 else 0
@@ -237,6 +344,8 @@ module FlowLowering =
                         match names |> List.tryFindIndex ((=) name) with
                         | None -> error <- Some(diagnostic "FLOW_UNKNOWN_ARGUMENT" $"'{name}' is not a parameter of '{candidate.Name}'." (Some nameSpan) names [ name ])
                         | Some index -> indexed.Add(index + offset, expression)
+                | FlowArgument.WordReference reference ->
+                    error <- Some(diagnostic "FLOW_CALLBACK_REFERENCE_CONTEXT" "A static callback word reference is not an ordinary value argument." (Some reference.Span) [] [ reference.Name ])
             match error with
             | Some diagnostic -> Error diagnostic
             | None ->
@@ -281,6 +390,9 @@ module FlowLowering =
             | Some binding -> binding.Type
             | None -> fail "FLOW_UNKNOWN_LOCAL" $"Local '{name}' is not available before its immutable binding." None (Some span) [] [ name ]
         | FlowExpression.Call(name, arguments, _) ->
+            match callbackReferenceIn arguments with
+            | Some reference -> rejectWordReferenceContext reference
+            | None -> ()
             let candidates = candidatesFor context name
             if List.isEmpty candidates then fail "FLOW_UNKNOWN_CALL" $"No word matches '{name}'." None (Some span) [] [ name ]
             let attempts = candidates |> List.map (fun candidate -> candidate, mapArguments context state environment candidate None arguments span)
@@ -295,14 +407,29 @@ module FlowLowering =
             | _ -> fail "FLOW_AMBIGUOUS_CALL" $"Call '{name}' matches more than one word; use namespace::word qualification." None (Some span) [] (successful |> List.map (fun (candidate, _) -> candidate.Name))
         | FlowExpression.DotCall(receiver, stage, arguments, _) ->
             let receiverType = inferExpression context state environment receiver
-            let candidates = candidatesFor context stage
-            if List.isEmpty candidates then fail "FLOW_UNKNOWN_DOT_STAGE" $"No first-input word matches dot stage '{stage}'." None (Some span) [] [ stage ]
-            let attempts = candidates |> List.map (fun candidate -> candidate, mapArguments context state environment candidate (Some receiverType) arguments span)
-            let successful = attempts |> List.choose (fun (candidate, result) -> result |> Result.toOption |> Option.map (fun (_, output) -> candidate, output))
-            match successful with
-            | [ _, output ] -> output
-            | [] -> fail "FLOW_NO_MATCHING_DOT_STAGE" $"No '{stage}' stage accepts receiver type {Types.format receiverType} and these arguments." None (Some span) [ Types.format receiverType ] (candidates |> List.map (fun candidate -> candidate.Name))
-            | _ -> fail "FLOW_AMBIGUOUS_DOT_STAGE" $"Dot stage '{stage}' has more than one applicable first-input word; qualify the call explicitly." None (Some span) [] (successful |> List.map (fun (candidate, _) -> candidate.Name))
+            match listCallbackOperation stage, arguments with
+            | Some operation, [ FlowArgument.WordReference reference ] ->
+                validateWordReferenceShape state reference
+                match receiverType with
+                | TList itemType ->
+                    let _, outputType = resolveListCallback context state reference itemType (callbackRequiredOutput operation)
+                    callbackResultType operation itemType outputType
+                | actual -> fail "FLOW_CALLBACK_REQUIRES_LIST" $"Static '{stage}' callback stages require a List<T> receiver." None (Some reference.Span) [ "List<T>" ] [ Types.format actual ]
+            | _, _ when Option.isSome (callbackReferenceIn arguments) ->
+                match callbackReferenceIn arguments with
+                | Some reference when listCallbackOperation stage |> Option.isSome ->
+                    fail "FLOW_CALLBACK_ARGUMENT_ARITY" $"Static '{stage}' callback syntax requires exactly one positional word reference." None (Some reference.Span) [ "one callback reference" ] [ string arguments.Length ]
+                | Some reference -> rejectWordReferenceContext reference
+                | None -> failwith "unreachable"
+            | _ ->
+                let candidates = candidatesFor context stage
+                if List.isEmpty candidates then fail "FLOW_UNKNOWN_DOT_STAGE" $"No first-input word matches dot stage '{stage}'." None (Some span) [] [ stage ]
+                let attempts = candidates |> List.map (fun candidate -> candidate, mapArguments context state environment candidate (Some receiverType) arguments span)
+                let successful = attempts |> List.choose (fun (candidate, result) -> result |> Result.toOption |> Option.map (fun (_, output) -> candidate, output))
+                match successful with
+                | [ _, output ] -> output
+                | [] -> fail "FLOW_NO_MATCHING_DOT_STAGE" $"No '{stage}' stage accepts receiver type {Types.format receiverType} and these arguments." None (Some span) [ Types.format receiverType ] (candidates |> List.map (fun candidate -> candidate.Name))
+                | _ -> fail "FLOW_AMBIGUOUS_DOT_STAGE" $"Dot stage '{stage}' has more than one applicable first-input word; qualify the call explicitly." None (Some span) [] (successful |> List.map (fun (candidate, _) -> candidate.Name))
         | FlowExpression.Container(kind, typeArguments, payload, constructorSpan) ->
             let types = constructorTypeArguments context kind typeArguments constructorSpan
             let outputType, requiredPayloadType =
@@ -399,12 +526,38 @@ module FlowLowering =
             | Some binding -> [ Load(binding.InternalName, sourceSpan) ]
             | None -> fail "FLOW_UNKNOWN_LOCAL" $"Local '{name}' is not available before its immutable binding." None (Some sourceSpan) [] [ name ]
         | FlowExpression.Call(name, arguments, callSpan) ->
+            match callbackReferenceIn arguments with
+            | Some reference -> rejectWordReferenceContext reference
+            | None -> ()
             let candidate, bound = selectCall context state environment name None arguments callSpan
             lowerResolvedCall context state environment candidate bound None arguments callSpan
         | FlowExpression.DotCall(receiver, stage, arguments, callSpan) ->
-            let receiverType = inferExpression context state environment receiver
-            let candidate, bound = selectCall context state environment stage (Some receiverType) arguments callSpan
-            lowerResolvedCall context state environment candidate bound (Some receiver) arguments callSpan
+            match listCallbackOperation stage, arguments with
+            | Some operation, [ FlowArgument.WordReference reference ] ->
+                validateWordReferenceShape state reference
+                let receiverType = inferExpression context state environment receiver
+                match receiverType with
+                | TList itemType ->
+                    let candidate, _ = resolveListCallback context state reference itemType (callbackRequiredOutput operation)
+                    let receiverCode = lowerFlowExpression context state environment receiver
+                    let listOperation =
+                        match operation with
+                        | ListCallbackOperation.Map -> MapList(candidate.Name, reference.Span)
+                        | ListCallbackOperation.Filter -> FilterList(candidate.Name, reference.Span)
+                        | ListCallbackOperation.Each -> EachList(candidate.Name, reference.Span)
+                    rememberSpan state reference.Span
+                    receiverCode @ [ listOperation ]
+                | actual -> fail "FLOW_CALLBACK_REQUIRES_LIST" $"Static '{stage}' callback stages require a List<T> receiver." None (Some reference.Span) [ "List<T>" ] [ Types.format actual ]
+            | _, _ when Option.isSome (callbackReferenceIn arguments) ->
+                match callbackReferenceIn arguments with
+                | Some reference when listCallbackOperation stage |> Option.isSome ->
+                    fail "FLOW_CALLBACK_ARGUMENT_ARITY" $"Static '{stage}' callback syntax requires exactly one positional word reference." None (Some reference.Span) [ "one callback reference" ] [ string arguments.Length ]
+                | Some reference -> rejectWordReferenceContext reference
+                | None -> failwith "unreachable"
+            | _ ->
+                let receiverType = inferExpression context state environment receiver
+                let candidate, bound = selectCall context state environment stage (Some receiverType) arguments callSpan
+                lowerResolvedCall context state environment candidate bound (Some receiver) arguments callSpan
         | FlowExpression.Container(kind, typeArguments, payload, constructorSpan) ->
             inferExpression context state environment expression |> ignore
             let payloadCode = payload |> Option.map (lowerFlowExpression context state environment) |> Option.defaultValue []
@@ -475,11 +628,16 @@ module FlowLowering =
                     match candidate.ParameterNames with
                     | Some names when names.Length = candidate.Entry.Definition.Inputs.Length ->
                         names |> List.skip offset |> List.tryFindIndex ((=) name) |> Option.map (fun value -> value + offset) |> Option.defaultValue -1
-                    | _ -> -1)
+                    | _ -> -1
+                | FlowArgument.WordReference reference -> rejectWordReferenceContext reference)
         let targetName = candidate.Name
         if not bound.HasNamedArguments then
             let receiverCode = receiver |> Option.map (lowerFlowExpression context state environment) |> Option.defaultValue []
-            let explicitCode = arguments |> List.collect (function FlowArgument.Positional value | FlowArgument.Named(_, value, _) -> lowerFlowExpression context state environment value)
+            let explicitCode =
+                arguments
+                |> List.collect (function
+                    | FlowArgument.Positional value | FlowArgument.Named(_, value, _) -> lowerFlowExpression context state environment value
+                    | FlowArgument.WordReference reference -> rejectWordReferenceContext reference)
             receiverCode @ explicitCode @ [ Call(targetName, callSpan) ]
         else
             let wrapperSpan = syntheticSpan state callSpan
@@ -494,7 +652,10 @@ module FlowLowering =
                 tempByParameter <- Map.add 0 temporary tempByParameter
             | None -> ()
             for argument, formalIndex in List.zip arguments argumentFormalIndexes do
-                let value = match argument with | FlowArgument.Positional value | FlowArgument.Named(_, value, _) -> value
+                let value =
+                    match argument with
+                    | FlowArgument.Positional value | FlowArgument.Named(_, value, _) -> value
+                    | FlowArgument.WordReference reference -> rejectWordReferenceContext reference
                 let origin = match argument with | FlowArgument.Named(_, _, namedSpan) -> namedSpan | _ -> spanOfExpression value
                 let temporary, tempSpan = freshTemporary state origin
                 setup.AddRange(lowerFlowExpression context state environment value)
@@ -555,7 +716,9 @@ module FlowLowering =
           SyntaxVersion = 1
           Projection = makeProjection state }
 
-    let lowerExpression context expression = lowerExpressionBody context expression
+    let lowerExpression context expression =
+        FlowStructure.validateExpressionNesting [ expression ]
+        lowerExpressionBody context expression
 
     let checkExpression context expression =
         let lowered = lowerExpression context expression
@@ -577,6 +740,7 @@ module FlowLowering =
           SiteOrigins = sourceSites bodyData.BodySourceMap }
 
     let lowerWord context (flowWord: FlowWordDefinition) =
+        FlowStructure.validateWordNesting flowWord
         if flowWord.SyntaxVersion <> 1 then fail "FLOW_VERSION_UNSUPPORTED" "Only Flow syntax version 1 is supported by this compiler slice." (Some flowWord.Name) (Some flowWord.Span) [ "1" ] [ string flowWord.SyntaxVersion ]
         let names = flowWord.Parameters |> List.map (fun parameter -> parameter.Name)
         if names.Length <> (Set.ofList names).Count then fail "FLOW_DUPLICATE_PARAMETER" "Flow word parameters must have unique names." (Some flowWord.Name) (Some flowWord.Span) [] names

@@ -1,5 +1,7 @@
 namespace AgentLang
 
+open System.Collections.Generic
+
 /// Versioned source syntax for the explicit data-flow frontend. These nodes
 /// are authoring metadata only; executable expressions lower to the existing
 /// Expr and verified semantic IR.
@@ -16,6 +18,12 @@ type FlowTypeArgument =
     { Type: LangType
       Span: SourceSpan }
 
+type FlowWordReference =
+    { Name: string
+      /// Short word names require the explicit `word name` callback marker.
+      IsExplicitShort: bool
+      Span: SourceSpan }
+
 [<RequireQualifiedAccess>]
 type FlowExpression =
     | Literal of Literal * SourceSpan
@@ -30,6 +38,7 @@ type FlowExpression =
 and [<RequireQualifiedAccess>] FlowArgument =
     | Positional of FlowExpression
     | Named of string * FlowExpression * SourceSpan
+    | WordReference of FlowWordReference
 
 and [<RequireQualifiedAccess>] FlowStatement =
     | Let of string * FlowExpression * SourceSpan
@@ -83,6 +92,100 @@ type FlowLoweredWord =
       SourceText: string
       SyntaxVersion: int
       Projection: FlowSourceProjection }
+
+/// Shared structural limits and validation for source-authored and host-built
+/// Flow trees. This walk is iterative so recursive consumers can rely on the
+/// same bound before rendering or lowering an expression.
+module FlowStructure =
+    let maxExpressionDepth = 128
+    let maxExpandedNodes = 100000
+
+    type private Node =
+        | ExpressionNode of FlowExpression * int
+        | TypeNode of LangType * int * SourceSpan
+
+    let private expressionSpan = function
+        | FlowExpression.Literal(_, span)
+        | FlowExpression.Local(_, span)
+        | FlowExpression.Call(_, _, span)
+        | FlowExpression.DotCall(_, _, _, span)
+        | FlowExpression.If(_, _, _, span)
+        | FlowExpression.Container(_, _, _, span)
+        | FlowExpression.MatchOption(_, _, _, span)
+        | FlowExpression.MatchResult(_, _, _, span) -> span
+
+    let private validateStructure (expressionRoots: FlowExpression list) (typeRoots: (LangType * SourceSpan) list) (statementRoots: FlowStatement list) =
+        let pending = Stack<Node>()
+        let mutable scheduledNodes = 0
+        let schedule node source =
+            if scheduledNodes >= maxExpandedNodes then
+                Diagnostics.raiseError "FLOW_STRUCTURE_LIMIT" $"Flow syntax exceeds the expanded structural-node budget of {maxExpandedNodes}." None (Some source) [] []
+            scheduledNodes <- scheduledNodes + 1
+            pending.Push node
+        for expression in expressionRoots do schedule (ExpressionNode(expression, 1)) (expressionSpan expression)
+        for typeValue, source in typeRoots do schedule (TypeNode(typeValue, 1, source)) source
+        let scheduleStatement depth statement =
+            let expression =
+                match statement with
+                | FlowStatement.Let(_, value, _) | FlowStatement.Evaluate value -> value
+            schedule (ExpressionNode(expression, depth)) (expressionSpan expression)
+        for statement in statementRoots do scheduleStatement 1 statement
+        let scheduleArguments depth arguments =
+            for argument in arguments do
+                match argument with
+                | FlowArgument.Positional expression -> schedule (ExpressionNode(expression, depth)) (expressionSpan expression)
+                | FlowArgument.Named(_, expression, _) -> schedule (ExpressionNode(expression, depth)) (expressionSpan expression)
+                | FlowArgument.WordReference _ -> ()
+        let scheduleStatements depth statements =
+            for statement in statements do scheduleStatement depth statement
+        let scheduleType depth typeValue source = schedule (TypeNode(typeValue, depth, source)) source
+        while pending.Count > 0 do
+            match pending.Pop() with
+            | TypeNode(typeValue, depth, source) ->
+                if depth > maxExpressionDepth then
+                    Diagnostics.raiseError "FLOW_NESTING_LIMIT" $"Flow syntax exceeds the nesting limit of {maxExpressionDepth}." None (Some source) [] []
+                match typeValue with
+                | TList item | TOption item -> scheduleType (depth + 1) item source
+                | TResult(okType, errorType) ->
+                    scheduleType (depth + 1) okType source
+                    scheduleType (depth + 1) errorType source
+                | TInt | TFloat | TBool | TString | TUnit | TNamed _ | TVar _ -> ()
+            | ExpressionNode(expression, depth) ->
+                if depth > maxExpressionDepth then
+                    let source = expressionSpan expression
+                    Diagnostics.raiseError "FLOW_NESTING_LIMIT" $"Flow syntax exceeds the nesting limit of {maxExpressionDepth}." None (Some source) [] []
+                match expression with
+                | FlowExpression.Literal _ | FlowExpression.Local _ -> ()
+                | FlowExpression.Call(_, arguments, _) -> scheduleArguments (depth + 1) arguments
+                | FlowExpression.DotCall(receiver, _, arguments, _) ->
+                    schedule (ExpressionNode(receiver, depth + 1)) (expressionSpan receiver)
+                    scheduleArguments (depth + 1) arguments
+                | FlowExpression.If(condition, thenBody, elseBody, _) ->
+                    schedule (ExpressionNode(condition, depth + 1)) (expressionSpan condition)
+                    scheduleStatements (depth + 1) thenBody
+                    scheduleStatements (depth + 1) elseBody
+                | FlowExpression.Container(_, typeArguments, payload, _) ->
+                    for argument in typeArguments do scheduleType 1 argument.Type argument.Span
+                    match payload with
+                    | Some value -> schedule (ExpressionNode(value, depth + 1)) (expressionSpan value)
+                    | None -> ()
+                | FlowExpression.MatchOption(scrutinee, someCase, noneCase, _) ->
+                    schedule (ExpressionNode(scrutinee, depth + 1)) (expressionSpan scrutinee)
+                    scheduleStatements (depth + 1) someCase.Statements
+                    scheduleStatements (depth + 1) noneCase.Statements
+                | FlowExpression.MatchResult(scrutinee, okCase, errorCase, _) ->
+                    schedule (ExpressionNode(scrutinee, depth + 1)) (expressionSpan scrutinee)
+                    scheduleStatements (depth + 1) okCase.Statements
+                    scheduleStatements (depth + 1) errorCase.Statements
+
+    let validateExpressionNesting (roots: FlowExpression list) =
+        validateStructure roots [] []
+
+    let validateWordNesting (definition: FlowWordDefinition) =
+        let typeRoots =
+            (definition.Parameters |> List.map (fun parameter -> parameter.Type, parameter.Span))
+            @ [ definition.Output, definition.Span ]
+        validateStructure [] typeRoots definition.Body
 
 /// Deterministic rendering for inspection and tests. Durable source storage is
 /// intentionally not wired to this frontend in the current phase.
@@ -140,6 +243,9 @@ module FlowSource =
     and private renderArgument = function
         | FlowArgument.Positional expression -> renderInlineExpression expression
         | FlowArgument.Named(name, expression, _) -> name + " = " + renderInlineExpression expression
+        | FlowArgument.WordReference reference ->
+            let name = renderQualifiedName reference.Name
+            if reference.IsExplicitShort then "word " + name else name
     and private renderStatements depth statements =
         statements
         |> List.mapi (fun index statement ->
@@ -170,9 +276,12 @@ module FlowSource =
         @ renderStatements (depth + 1) statements
         @ [ indent depth + "}" ]
 
-    let renderExpression expression = renderExpressionAt 0 expression
+    let renderExpression expression =
+        FlowStructure.validateExpressionNesting [ expression ]
+        renderExpressionAt 0 expression
 
     let renderWord (definition: FlowWordDefinition) =
+        FlowStructure.validateWordNesting definition
         let parameters =
             definition.Parameters
             |> List.map (fun parameter -> parameter.Name + ": " + Types.format parameter.Type)

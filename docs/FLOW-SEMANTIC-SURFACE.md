@@ -1,10 +1,10 @@
 # Flow stage-2 semantic surface
 
-Status: stage 2 partially implemented. Explicit typed containers and exhaustive Option/Result cases passed the focused Flow suite (122 assertions); origin-aware attached compiler APIs passed the focused IR suite (102 assertions). Full integrated validation is recorded separately in report 026. Static callbacks, output vectors, and Flow-native test/example syntax remain proposed work.
+Status: stage 2 remains partial. Static list callbacks now lower through existing verified IR operations. Shared iterative `FlowStructure` preflight limits expression and type nesting to 128 and expanded expression/type nodes to 100,000 across each word or expression, including host-built ASTs. After this change, Core Release built cleanly and Flow passed 198 assertions. The final fresh 24-check Release gate also passed Flow Lint (47), IR (102), IR Interpreter (22), and Acceptance (583); see report 028 for evidence. Output vectors and Flow-native test/example source syntax remain follow-on work.
 
 ## Current boundary
 
-`FlowSyntax.fs` now models literals, locals, named calls, dot calls, `if`, typed container constructors, exhaustive Option/Result cases, single-name `let`, and one output type per word. `FlowParser.fs` parses that slice and bounds completed expression-tree depth, including postfix chains. `FlowLowering.fs` lowers it to the existing checked `Expr` model and verified IR, using collision-free private markers for sparse retained origins. It still rejects calls with more than one output (`FLOW_CALL_OUTPUT_ARITY`).
+`FlowSyntax.fs` now models literals, locals, named calls, dot calls, `if`, typed container constructors, exhaustive Option/Result cases, static callback word references, single-name `let`, and one output type per word. `FlowParser.fs` parses that slice and bounds completed expression-tree depth, including postfix chains. Shared `FlowStructure` validation also checks host-built expression and word trees before public rendering or lowering. `FlowLowering.fs` lowers into the existing checked `Expr` model and verified IR, using collision-free private markers for sparse retained origins. It rejects calls with more than one output (`FLOW_CALL_OUTPUT_ARITY`).
 
 The backend already has the main target operations: `ConstructContainer`, `MapList`, `FilterList`, `EachList`, `MatchOption`, and `MatchResult`. `Compiler.inferBody` validates constructor payloads, callback arity and types, case-local scope, branch output/local joins, dependencies, and inferred effects. A `WordDefinition` and IR function already support multiple outputs. Stage 2 should extend source syntax and lowering to these contracts rather than add another runtime or synthesize helper words.
 
@@ -39,7 +39,7 @@ match invoice.create(customer) {
 
 The two cases must be present exactly once. Payload names are immutable and local to their own case. Both cases must return the same output-type vector and the same outer locals.
 
-Keep list callbacks statically named and closure-free:
+Static list callbacks are implemented as statically named, closure-free references:
 
 ```text
 customers.map(customer::normalize)
@@ -47,7 +47,7 @@ customers.filter(customer::active?)
 customers.each(email::send)
 ```
 
-Parse the callback as a word reference, not as a value expression. Resolve it against the current dictionary and lower directly to the existing static list operation. `map` requires one callback input and one output; `filter` requires one `Bool` output; `each` requires one `Unit` output. Reject callback expressions, missing or ambiguous targets, and multi-output callbacks.
+The exact forms parse a callback as a word reference, not a value expression. A qualified dictionary name is explicit; short names use `word name`. Ordinary value arguments such as `.map(localValue)` remain ordinary dot calls. Callback identity is resolved against dictionary entries before validating its signature, and generated constructor aliases do not participate. Lowering emits the existing static list operations. `map` requires one callback input and one output; `filter` requires one `Bool` output; `each` requires one `Unit` output. Missing, ambiguous, malformed, and multi-output callbacks are rejected. Callback dependencies and effects remain visible for empty lists, and the existing runtime preflights effects before invoking any provider.
 
 Represent multiple outputs as a type vector, not a tuple value:
 

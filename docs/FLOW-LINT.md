@@ -28,7 +28,9 @@ do not count as uses of that binding. Reads of an outer local anywhere inside
 an `if` or `match` expression are attributed to the statement containing that
 expression. Locals declared inside a branch or case use that branch or case's
 own statement positions. Calls, dot-call receivers and arguments, constructors,
-conditions, scrutinees, and payload expressions are all visited. Match cases
+conditions, scrutinees, and payload expressions are all visited. Static callback
+word references are dictionary targets rather than local reads; their receivers
+are still visited. Match cases
 are traversed in source-span order; warnings otherwise follow syntax traversal
 order, so repeated analysis of the same tree returns the same results.
 

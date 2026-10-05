@@ -204,6 +204,102 @@ let private testIterativeAstDepthLimit () =
     let overdeepWord = "word deep() -> Int {\n    effects none\n    " + postfix 128 + "\n}"
     expectError "Flow word bodies receive the same iterative AST depth validation" "FLOW_NESTING_LIMIT" (FlowParser.parseWord "<depth>" overdeepWord) |> ignore
 
+    let hostNested depth =
+        [ 1 .. depth - 1 ]
+        |> List.fold (fun inner _ -> FlowExpression.Call("int.abs", [ FlowArgument.Positional inner ], sourceSpan)) (FlowExpression.Literal(LInt 1L, sourceSpan))
+    let hostWord body =
+        { Name = "host-built.depth"
+          Parameters = []
+          Output = TInt
+          Effects = Set.empty
+          Documentation = ""
+          Body = [ FlowStatement.Evaluate body ]
+          SourceText = "host-built AST"
+          Span = sourceSpan
+          SyntaxVersion = 1 }
+    let safeContext = loweringContext [] Map.empty
+    let hostBoundary = hostNested FlowStructure.maxExpressionDepth
+    let hostBoundaryWord = hostWord hostBoundary
+    let renderedBoundary = FlowSource.renderExpression hostBoundary
+    check "host-built expression at the exact boundary renders" (not (String.IsNullOrWhiteSpace renderedBoundary))
+    check "host-built word at the exact boundary renders" (not (String.IsNullOrWhiteSpace (FlowSource.renderWord hostBoundaryWord)))
+    FlowLowering.lowerExpression safeContext hostBoundary |> ignore
+    FlowLowering.lowerWord safeContext hostBoundaryWord |> ignore
+    equal "host-built expression at the exact boundary lowers and executes" [ IntValue 1L ]
+        (let compiled = FlowLowering.compileExpression safeContext hostBoundary
+         IrInterpreter.executeBody (host (ResizeArray())) "host-depth-boundary" compiled.Body)
+
+    let hostTooDeep = hostNested (FlowStructure.maxExpressionDepth + 1)
+    let hostTooDeepWord = hostWord hostTooDeep
+    let renderedError = captureLanguageError "public expression renderer bounds host-built trees" "FLOW_NESTING_LIMIT" (fun () -> FlowSource.renderExpression hostTooDeep |> ignore)
+    equal "renderer reports the over-limit node's source span" (Some sourceSpan) renderedError.Span
+    let loweringError = captureLanguageError "public expression lowerer bounds host-built trees" "FLOW_NESTING_LIMIT" (fun () -> FlowLowering.lowerExpression safeContext hostTooDeep |> ignore)
+    equal "lowerer reports the over-limit node's source span" (Some sourceSpan) loweringError.Span
+    expectLanguageError "expression checking inherits the public lowering bound" "FLOW_NESTING_LIMIT" (fun () -> FlowLowering.checkExpression safeContext hostTooDeep |> ignore)
+    expectLanguageError "expression compilation inherits the public lowering bound" "FLOW_NESTING_LIMIT" (fun () -> FlowLowering.compileExpression safeContext hostTooDeep |> ignore)
+    expectLanguageError "word renderer bounds host-built body trees" "FLOW_NESTING_LIMIT" (fun () -> FlowSource.renderWord hostTooDeepWord |> ignore)
+    expectLanguageError "word lowerer bounds host-built body trees" "FLOW_NESTING_LIMIT" (fun () -> FlowLowering.lowerWord safeContext hostTooDeepWord |> ignore)
+    expectLanguageError "word checking inherits the lowerer bound" "FLOW_NESTING_LIMIT" (fun () -> FlowLowering.checkWord safeContext hostTooDeepWord |> ignore)
+    expectLanguageError "word compilation inherits the lowerer bound" "FLOW_NESTING_LIMIT" (fun () -> FlowLowering.compileWord safeContext (WordId "user-host-too-deep") hostTooDeepWord |> ignore)
+
+    let sharedResultType levels =
+        let mutable currentType = TInt
+        for _ in 1 .. levels do currentType <- TResult(currentType, currentType)
+        currentType
+    let nestedListType levels =
+        let mutable currentType = TInt
+        for _ in 1 .. levels do currentType <- TList currentType
+        currentType
+    let typeExpression typeValue =
+        FlowExpression.Container(FlowContainerConstructor.ListEmpty, [ { Type = typeValue; Span = sourceSpan } ], None, sourceSpan)
+    let boundaryType = nestedListType (FlowStructure.maxExpressionDepth - 1)
+    let boundaryTypeExpression = typeExpression boundaryType
+    check "container type argument at the exact depth boundary renders"
+        (not (String.IsNullOrWhiteSpace (FlowSource.renderExpression boundaryTypeExpression)))
+    FlowLowering.lowerExpression safeContext boundaryTypeExpression |> ignore
+    let boundaryTypeWord =
+        { hostWord (FlowExpression.Literal(LUnit, sourceSpan)) with
+            Parameters = [ { Name = "value"; Type = boundaryType; Span = sourceSpan } ] }
+    check "word signature type at the exact depth boundary renders" (not (String.IsNullOrWhiteSpace (FlowSource.renderWord boundaryTypeWord)))
+    FlowLowering.lowerWord safeContext boundaryTypeWord |> ignore
+
+    let tooDeepType = nestedListType FlowStructure.maxExpressionDepth
+    let tooDeepTypeExpression = typeExpression tooDeepType
+    let typeRenderError = captureLanguageError "container type renderer bounds host-built types" "FLOW_NESTING_LIMIT" (fun () -> FlowSource.renderExpression tooDeepTypeExpression |> ignore)
+    equal "container type depth error points to the type argument" (Some sourceSpan) typeRenderError.Span
+    expectLanguageError "container type lowerer bounds host-built types" "FLOW_NESTING_LIMIT" (fun () -> FlowLowering.lowerExpression safeContext tooDeepTypeExpression |> ignore)
+    let tooDeepInputTypeWord =
+        { hostWord (FlowExpression.Literal(LUnit, sourceSpan)) with
+            Parameters = [ { Name = "value"; Type = tooDeepType; Span = sourceSpan } ] }
+    expectLanguageError "word renderer bounds host-built parameter types" "FLOW_NESTING_LIMIT" (fun () -> FlowSource.renderWord tooDeepInputTypeWord |> ignore)
+    expectLanguageError "word lowerer bounds host-built parameter types" "FLOW_NESTING_LIMIT" (fun () -> FlowLowering.lowerWord safeContext tooDeepInputTypeWord |> ignore)
+    let tooDeepOutputTypeWord = { hostWord (FlowExpression.Literal(LUnit, sourceSpan)) with Output = tooDeepType }
+    expectLanguageError "word renderer bounds host-built output types" "FLOW_NESTING_LIMIT" (fun () -> FlowSource.renderWord tooDeepOutputTypeWord |> ignore)
+    expectLanguageError "word lowerer bounds host-built output types" "FLOW_NESTING_LIMIT" (fun () -> FlowLowering.lowerWord safeContext tooDeepOutputTypeWord |> ignore)
+
+    let sharedExpression levels =
+        let mutable currentExpression = FlowExpression.Literal(LInt 1L, sourceSpan)
+        for _ in 1 .. levels do
+            currentExpression <- FlowExpression.Call("add", [ FlowArgument.Positional currentExpression; FlowArgument.Positional currentExpression ], sourceSpan)
+        currentExpression
+    let expressionDagUnderBudget = sharedExpression 15
+    FlowStructure.validateExpressionNesting [ expressionDagUnderBudget ]
+    let typeDagUnderBudget = typeExpression (sharedResultType 15)
+    FlowStructure.validateExpressionNesting [ typeDagUnderBudget ]
+    let expressionDagOverBudget = sharedExpression 16
+    expectLanguageError "shared expression DAG expansion is bounded before rendering" "FLOW_STRUCTURE_LIMIT" (fun () ->
+        FlowSource.renderExpression expressionDagOverBudget |> ignore)
+    expectLanguageError "shared expression DAG expansion is bounded before lowering" "FLOW_STRUCTURE_LIMIT" (fun () ->
+        FlowLowering.lowerExpression safeContext expressionDagOverBudget |> ignore)
+    let typeDagOverBudget = typeExpression (sharedResultType 16)
+    expectLanguageError "shared type DAG expansion is bounded before rendering" "FLOW_STRUCTURE_LIMIT" (fun () ->
+        FlowSource.renderExpression typeDagOverBudget |> ignore)
+    let combinedDagWord =
+        { hostWord expressionDagUnderBudget with
+            Parameters = [ { Name = "value"; Type = sharedResultType 15; Span = sourceSpan } ] }
+    expectLanguageError "word parameters and body share one expanded-node budget" "FLOW_STRUCTURE_LIMIT" (fun () ->
+        FlowSource.renderWord combinedDagWord |> ignore)
+
 let private testSparseFlowSourceMarkerAllocation () =
     let context = loweringContext [] (Map.ofList [ "add", [ "left"; "right" ] ])
     let flowWord =
@@ -483,6 +579,179 @@ let private testContainerAndMatchLowering () =
     expectLanguageError "each case must produce one value" "FLOW_MATCH_BRANCH_VALUE" (fun () ->
         FlowLowering.checkExpression context (parseExpression "match option::none<Int>() { some item => { let ignored = item; } none => { 0 } }") |> ignore)
 
+let private testStaticListCallbacks () =
+    let increment = wordEntry "math.increment" [ TInt ] [ TInt ] Set.empty [ Push(LInt 1L, sourceSpan); Call("add", sourceSpan) ]
+    let isTwo = wordEntry "math.is-two?" [ TInt ] [ TBool ] Set.empty [ Push(LInt 2L, sourceSpan); Call("equals", sourceSpan) ]
+    let emit =
+        wordEntry "effects.emit" [ TInt ] [ TUnit ] (Set.singleton "console.write")
+            [ Call("drop", sourceSpan); Push(LString "item", sourceSpan); Call("console.write", sourceSpan) ]
+    let customerMap =
+        wordEntry "customer.map" [ TNamed "Customer"; TInt ] [ TString ] Set.empty
+            [ Call("drop", sourceSpan); Call("drop", sourceSpan); Push(LString "ordinary-stage", sourceSpan) ]
+    let sameShortInt = wordEntry "one.select" [ TInt ] [ TInt ] Set.empty [ Call("int.abs", sourceSpan) ]
+    let sameShortBool = wordEntry "two.select" [ TInt ] [ TBool ] Set.empty [ Push(LInt 2L, sourceSpan); Call("equals", sourceSpan) ]
+    let sameShortOtherInput =
+        wordEntry "three.select" [ TString ] [ TBool ] Set.empty
+            [ Call("string.length", sourceSpan); Push(LInt 0L, sourceSpan); Call("equals", sourceSpan) ]
+    let multiOutput = wordEntry "bad.multi" [ TInt ] [ TInt; TInt ] Set.empty [ Call("dup", sourceSpan) ]
+    let twoInputs = wordEntry "bad.two-inputs" [ TInt; TInt ] [ TInt ] Set.empty [ Call("add", sourceSpan) ]
+    let stringInput = wordEntry "bad.string-input" [ TString ] [ TInt ] Set.empty [ Call("string.length", sourceSpan) ]
+    let context = richTypeContext [ increment; isTwo; emit; customerMap; sameShortInt; sameShortBool; sameShortOtherInput; multiOutput; twoInputs; stringInput ]
+    let compile source = FlowLowering.compileExpression context (parseExpression source)
+    let evaluate source = IrInterpreter.executeBody (host (ResizeArray())) source (compile source).Body
+
+    for source in
+        [ "list::empty<Int>().map(math::increment)"
+          "list::empty<Int>().map(word increment)"
+          "list::empty<Int>().filter(math::is-two?)"
+          "list::empty<Int>().each(effects::emit)" ] do
+        let canonical = source |> parseExpression |> FlowSource.renderExpression
+        equal ("static callback source round-trips: " + source) canonical (canonical |> parseExpression |> FlowSource.renderExpression)
+
+    match parseExpression "1.map(value)" with
+    | FlowExpression.DotCall(_, "map", [ FlowArgument.Positional(FlowExpression.Local("value", _)) ], _) ->
+        check "ordinary map(value) remains a value argument, not a callback reference" true
+    | other -> failwithf "Expected an ordinary local argument, got %A" other
+    match parseExpression "list::map(1)" with
+    | FlowExpression.Call("list.map", [ FlowArgument.Positional(FlowExpression.Literal(LInt 1L, _)) ], _) ->
+        check "qualified namespace calls remain ordinary calls" true
+    | other -> failwithf "Expected a qualified ordinary call, got %A" other
+    match FlowParser.parseExpression "<callback-named>" "list::empty<Int>().map(callback = math::increment)" with
+    | Error diagnostic -> equal "named arguments cannot smuggle a static callback reference" "FLOW_CALLBACK_NAMED_REFERENCE" diagnostic.Code
+    | Ok _ -> failwith "Expected named callback reference syntax to be rejected."
+
+    let mapEmpty = compile "list::empty<Int>().map(math::increment)"
+    let mapEmptyCoverage = (VerifiedIrBody.inspect mapEmpty.Body).BodyCoverage.BranchOutcomes |> Map.toList |> List.collect snd |> Set.ofList
+    equal "map exposes empty and nonempty coverage outcomes" (Set.ofList [ "empty"; "nonempty" ]) mapEmptyCoverage
+    equal "map empty input keeps its static output element type" [ ListValue(TInt, []) ] (IrInterpreter.executeBody (host (ResizeArray())) "map-empty" mapEmpty.Body)
+    equal "map invokes the statically named callback for each item"
+        [ ListValue(TInt, [ IntValue 2L; IntValue 3L ]) ] (evaluate "list::append(list::singleton<Int>(1), 2).map(math::increment)")
+    let mapSource = parseExpression "list::singleton<Int>(1).map(math::increment)"
+    let callbackSpan =
+        match mapSource with
+        | FlowExpression.DotCall(_, "map", [ FlowArgument.WordReference reference ], _) -> reference.Span
+        | _ -> failwith "Expected static map callback syntax."
+    let mapBody = compile (FlowSource.renderExpression mapSource) |> fun compiled -> VerifiedIrBody.inspect compiled.Body
+    let mapSites = mapBody.BodySourceMap |> Map.toList |> List.choose (fun (_, site) -> if site.SourceKind = "list-map" then Some site else None)
+    equal "map lowers to one direct list operation with its authored callback span" 1 mapSites.Length
+    equal "map callback operation source origin is the callback reference" callbackSpan mapSites.Head.SiteSpan
+    match mapBody.BodyBlock.Code |> List.tryPick (fun instruction -> match instruction.Operation with | IrOperation.ListMap(call, _, _) -> Some call | _ -> None) with
+    | Some call ->
+        equal "callback dependency resolves to its stable dictionary identity" (UserWordTarget(WordId "user-math.increment", 1)) call.ResolvedTarget
+    | None -> failwith "Expected verified ListMap operation in the detached body."
+
+    let filterEmpty = compile "list::empty<Int>().filter(math::is-two?)"
+    let filterCoverage = (VerifiedIrBody.inspect filterEmpty.Body).BodyCoverage.BranchOutcomes |> Map.toList |> List.collect snd |> Set.ofList
+    equal "filter exposes empty, nonempty, keep, and drop outcomes" (Set.ofList [ "empty"; "nonempty"; "keep"; "drop" ]) filterCoverage
+    equal "filter handles an empty list" [ ListValue(TInt, []) ] (IrInterpreter.executeBody (host (ResizeArray())) "filter-empty" filterEmpty.Body)
+    equal "filter keeps and drops according to callback results" [ ListValue(TInt, [ IntValue 2L ]) ]
+        (evaluate "list::append(list::singleton<Int>(1), 2).filter(math::is-two?)")
+    equal "each handles an empty list" [ UnitValue ] (evaluate "list::empty<Int>().each(effects::emit)")
+    let eachEvents = ResizeArray<string>()
+    let eachExpression = compile "list::append(list::singleton<Int>(1), 2).each(effects::emit)"
+    let eachCoverage = (VerifiedIrBody.inspect eachExpression.Body).BodyCoverage.BranchOutcomes |> Map.toList |> List.collect snd |> Set.ofList
+    equal "each exposes empty and nonempty outcomes" (Set.ofList [ "empty"; "nonempty" ]) eachCoverage
+    equal "each returns Unit and calls the callback for every item" [ UnitValue ] (IrInterpreter.executeBody (host eachEvents) "each-many" eachExpression.Body)
+    equal "each callback effects run once per item" [ "item"; "item" ] (List.ofSeq eachEvents)
+
+    let effectEmpty = compile "list::empty<Int>().each(effects::emit)"
+    let effectBody = VerifiedIrBody.inspect effectEmpty.Body
+    equal "static callback effects are inferred even for an empty list" (Set.singleton IrEffect.ConsoleWrite) effectBody.BodyInferredEffects
+    let deniedEvents = ResizeArray<string>()
+    let preflightChecks = ResizeArray<Set<IrEffect>>()
+    let deniedHost =
+        { host deniedEvents with
+            PreflightEffects = fun effects _ _ ->
+                preflightChecks.Add effects
+                if effects.Contains IrEffect.ConsoleWrite then
+                    raise (LanguageException { Code = "CAPABILITY_DENIED"; Message = "denied by test provider"; Word = None; Span = None; Expected = []; Actual = [] }) }
+    expectLanguageError "callback capability is checked before empty-list iteration" "CAPABILITY_DENIED" (fun () ->
+        IrInterpreter.executeBody deniedHost "empty-each-denied" effectEmpty.Body |> ignore)
+    equal "empty callback preflight includes the denied effect" [ Set.singleton IrEffect.ConsoleWrite ] (List.ofSeq preflightChecks)
+    equal "empty callback denial invokes no provider" [] (List.ofSeq deniedEvents)
+
+    let ambiguousMap = parseExpression "list::empty<Int>().map(word select)"
+    expectLanguageError "short callback lookup rejects identity ambiguity before output filtering" "FLOW_AMBIGUOUS_CALLBACK" (fun () ->
+        FlowLowering.checkExpression context ambiguousMap |> ignore)
+    let ambiguousFilter = parseExpression "list::empty<Int>().filter(word select)"
+    expectLanguageError "filter cannot select an overload by its required Bool output" "FLOW_AMBIGUOUS_CALLBACK" (fun () ->
+        FlowLowering.checkExpression context ambiguousFilter |> ignore)
+    equal "a qualified Bool callback resolves directly for filter" [ ListValue(TInt, [ IntValue 2L ]) ]
+        (evaluate "list::append(list::singleton<Int>(1), 2).filter(two::select)")
+    expectLanguageError "callback input types must accept the list element" "FLOW_CALLBACK_INPUT_TYPE" (fun () ->
+        FlowLowering.checkExpression context (parseExpression "list::empty<Int>().map(bad::string-input)") |> ignore)
+    expectLanguageError "callbacks must have one output" "FLOW_CALLBACK_OUTPUT_ARITY" (fun () ->
+        FlowLowering.checkExpression context (parseExpression "list::empty<Int>().map(bad::multi)") |> ignore)
+    expectLanguageError "callbacks must have one input" "FLOW_CALLBACK_INPUT_ARITY" (fun () ->
+        FlowLowering.checkExpression context (parseExpression "list::empty<Int>().map(bad::two-inputs)") |> ignore)
+    expectLanguageError "filter callback result must be Bool" "FLOW_CALLBACK_RESULT_TYPE" (fun () ->
+        FlowLowering.checkExpression context (parseExpression "list::empty<Int>().filter(one::select)") |> ignore)
+    expectLanguageError "each callback result must be Unit" "FLOW_CALLBACK_RESULT_TYPE" (fun () ->
+        FlowLowering.checkExpression context (parseExpression "list::empty<Int>().each(math::increment)") |> ignore)
+    expectLanguageError "explicit callback references require a List receiver" "FLOW_CALLBACK_REQUIRES_LIST" (fun () ->
+        FlowLowering.checkExpression context (parseExpression "5.map(math::increment)") |> ignore)
+
+    equal "ordinary Customer.map(value) keeps normal strict dot resolution" [ StringValue "ordinary-stage" ]
+        (evaluate "customer::new(Email::new(\"a@b\")).map(7)")
+    expectLanguageError "record constructor aliases are not callback word identities" "FLOW_UNKNOWN_CALLBACK" (fun () ->
+        FlowLowering.checkExpression context (parseExpression "list::empty<Email>().map(word Email)") |> ignore)
+    expectLanguageError "List<Email> does not implicitly coerce to String for a callback" "FLOW_CALLBACK_INPUT_TYPE" (fun () ->
+        FlowLowering.checkExpression context (parseExpression "list::empty<Email>().map(string::length)") |> ignore)
+    equal "a nominal accessor can map List<Email> to List<String>" [ ListValue(TString, [ StringValue "a@b" ]) ]
+        (evaluate "list::singleton<Email>(Email::new(\"a@b\")).map(Email::value)")
+
+    let undeclaredEmptyCallback =
+        parseWord "word empty-callback() -> Unit {\n    effects none\n    list::empty<Int>().each(effects::emit)\n}"
+    expectLanguageError "effectful callback effects are checked even in an empty-list word" "EFFECT_UNDECLARED" (fun () ->
+        FlowLowering.checkWord context undeclaredEmptyCallback |> ignore)
+    let declaredEmptyCallback =
+        parseWord "word empty-callback() -> Unit {\n    effects console.write\n    list::empty<Int>().each(effects::emit)\n}"
+    let _, checkedEmptyCallback = FlowLowering.checkWord context declaredEmptyCallback
+    check "empty-list callback dependency remains visible on the checked word" (checkedEmptyCallback.Dependencies.Contains "effects.emit")
+    let compiledEmptyCallback = FlowLowering.compileWord context (WordId "user-empty-callback") declaredEmptyCallback
+    let verifiedEmptyCallback = (VerifiedIrProgram.inspect compiledEmptyCallback.Program).FunctionsById[WordId "user-empty-callback"]
+    equal "empty-list callback effects remain declared and inferred on the authored word"
+        (Set.singleton IrEffect.ConsoleWrite) verifiedEmptyCallback.FunctionInferredEffects
+    match verifiedEmptyCallback.FunctionBody.Code |> List.tryPick (fun instruction -> match instruction.Operation with | IrOperation.ListEach(call, _) -> Some call | _ -> None) with
+    | Some call ->
+        equal "empty-list callback target remains a static dependency" "effects.emit" call.ResolvedName
+        let hasGeneratedCallbackHelper =
+            (VerifiedIrProgram.inspect compiledEmptyCallback.Program).FunctionsById
+            |> Map.exists (fun _ fn -> fn.FunctionName.StartsWith("$flow$", StringComparison.Ordinal))
+        equal "no generated callback helper words are introduced" false hasGeneratedCallbackHelper
+    | None -> failwith "Expected a direct verified ListEach operation."
+
+    match FlowParser.parseExpression "<callback-eof>" "list::empty<Int>().map(word abs, 1" with
+    | Error diagnostic -> equal "mixed callback reference EOF has a structured arity diagnostic" "FLOW_CALLBACK_ARGUMENT_ARITY" diagnostic.Code
+    | Ok _ -> failwith "Expected an incomplete mixed callback argument to be rejected."
+
+    match FlowParser.parseExpression "<callback-closure>" "list::empty<Int>().map(value => value)" with
+    | Error diagnostic -> check "inline callback closures fail with a structured parser diagnostic" (not (String.IsNullOrWhiteSpace diagnostic.Code))
+    | Ok _ -> failwith "Inline callback closures are not supported."
+    for source in
+        [ "list::empty<Int>().map(math::increment"
+          "list::empty<Int>().map(word increment" ] do
+        match FlowParser.parseExpression "<callback-incomplete>" source with
+        | Error diagnostic -> equal ("callback prefix remains incomplete: " + source) "FLOW_INCOMPLETE_INPUT" diagnostic.Code
+        | Ok _ -> failwithf "Expected incomplete callback syntax to remain incomplete: %s" source
+
+    let shortReference = { Name = "increment"; IsExplicitShort = true; Span = sourceSpan }
+    let callWithReference = FlowExpression.Call("math.increment", [ FlowArgument.WordReference shortReference ], sourceSpan)
+    expectLanguageError "direct AST word references in ordinary calls are rejected" "FLOW_CALLBACK_REFERENCE_CONTEXT" (fun () ->
+        FlowLowering.checkExpression context callWithReference |> ignore)
+    let nonCallbackDot =
+        FlowExpression.DotCall(FlowExpression.Literal(LInt 2L, sourceSpan), "abs", [ FlowArgument.WordReference shortReference ], sourceSpan)
+    expectLanguageError "direct AST word references on ordinary dot stages are rejected" "FLOW_CALLBACK_REFERENCE_CONTEXT" (fun () ->
+        FlowLowering.checkExpression context nonCallbackDot |> ignore)
+    let malformedReference = { shortReference with Name = "math::increment" }
+    let malformed = FlowExpression.DotCall(FlowExpression.Container(FlowContainerConstructor.ListEmpty, [ { Type = TInt; Span = sourceSpan } ], None, sourceSpan), "map", [ FlowArgument.WordReference malformedReference ], sourceSpan)
+    expectLanguageError "host AST references must follow the explicit canonical shape" "FLOW_CALLBACK_REFERENCE_SHAPE" (fun () ->
+        FlowLowering.checkExpression context malformed |> ignore)
+    let emptyReference = { shortReference with Name = "" }
+    let malformedEmpty = FlowExpression.DotCall(FlowExpression.Container(FlowContainerConstructor.ListEmpty, [ { Type = TInt; Span = sourceSpan } ], None, sourceSpan), "map", [ FlowArgument.WordReference emptyReference ], sourceSpan)
+    expectLanguageError "host AST references reject empty names without throwing" "FLOW_CALLBACK_REFERENCE_SHAPE" (fun () ->
+        FlowLowering.checkExpression context malformedEmpty |> ignore)
+
 let private testLoweringAndExecution () =
     let effect = Set.singleton "console.write"
     let emit name payload value =
@@ -612,6 +881,7 @@ let main _ =
     testFlowSourceCanonicalRoundTrip ()
     testContainerAndMatchSyntaxRoundTrip ()
     testContainerAndMatchDiagnostics ()
+    testStaticListCallbacks ()
     testLoweringAndExecution ()
     testContainerAndMatchLowering ()
     testFlowDiagnostics ()

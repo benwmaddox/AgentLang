@@ -28,7 +28,7 @@ module FlowParser =
 
     let private maxSourceLength = 1_000_000
     let private maxTokens = 100_000
-    let private maxNesting = 128
+    let private maxNesting = FlowStructure.maxExpressionDepth
     let private maxStringLength = 100_000
 
     let private diagnostic code message file line column length =
@@ -241,7 +241,53 @@ module FlowParser =
         | FlowContainerConstructor.ListSingleton | FlowContainerConstructor.OptionSome
         | FlowContainerConstructor.ResultOk | FlowContainerConstructor.ResultError -> true
 
-    let rec private parseArguments state =
+    let private callbackStage = function
+        | "map" | "filter" | "each" -> true
+        | _ -> false
+
+    let private currentIs state index text =
+        index >= 0 && index < state.Tokens.Length && state.Tokens[index].Text = text
+
+    let private isArgumentTerminator state index =
+        currentIs state index ")" || currentIs state index ","
+
+    let private explicitShortReferenceAhead (state: State) =
+        state.Index + 1 < state.Tokens.Length
+        && state.Tokens[state.Index].Kind = Identifier
+        && state.Tokens[state.Index].Text = "word"
+        && state.Tokens[state.Index + 1].Kind = Identifier
+        && (state.Index + 2 = state.Tokens.Length || isArgumentTerminator state (state.Index + 2))
+
+    let private qualifiedReferenceAhead (state: State) =
+        if state.Index >= state.Tokens.Length || state.Tokens[state.Index].Kind <> Identifier then false
+        else
+            let mutable cursor = state.Index + 1
+            let mutable qualified = false
+            let mutable scanning = true
+            while scanning && cursor < state.Tokens.Length do
+                if state.Tokens[cursor].Text = "::"
+                   && cursor + 1 < state.Tokens.Length
+                   && state.Tokens[cursor + 1].Kind = Identifier then
+                    qualified <- true
+                    cursor <- cursor + 2
+                else scanning <- false
+            qualified && (cursor = state.Tokens.Length || isArgumentTerminator state cursor)
+
+    let private parseStaticWordReference (state: State) explicitShort =
+        let first =
+            if explicitShort then expect state "word"
+            else current state |> Option.defaultWith (fun () -> tokenError state "FLOW_INCOMPLETE_INPUT" "Expected a qualified callback word reference.")
+        let name = parseNamespaceName state
+        if explicitShort && name.Contains('.') then
+            fail state.File first.Line first.Column (max first.Text.Length (previous state |> Option.map (fun token -> token.Offset + token.Text.Length - first.Offset) |> Option.defaultValue first.Text.Length))
+                "FLOW_CALLBACK_SHORT_REFERENCE_QUALIFIED" "The `word` marker is for short callback names; use a bare qualified reference for namespaced words."
+        if not explicitShort && not (name.Contains('.')) then
+            fail state.File first.Line first.Column first.Text.Length "FLOW_CALLBACK_REFERENCE_QUALIFIED" "A bare callback reference must be namespace-qualified; use `word name` for a short name."
+        { Name = name
+          IsExplicitShort = explicitShort
+          Span = sourceSpan state.File first (previous state) }
+
+    let rec private parseArguments state allowStaticWordReferences =
         withDepth state (fun () ->
             expect state "(" |> ignore
             let values = ResizeArray<FlowArgument>()
@@ -252,10 +298,20 @@ module FlowParser =
                     | Some name, true when name.Kind = Identifier ->
                         consume state |> ignore
                         expect state "=" |> ignore
+                        if allowStaticWordReferences && (explicitShortReferenceAhead state || qualifiedReferenceAhead state) then
+                            fail state.File name.Line name.Column name.Text.Length "FLOW_CALLBACK_NAMED_REFERENCE" "A static list callback must be one positional word reference."
                         let expression = parseExpressionState state
                         values.Add(FlowArgument.Named(name.Text, expression, sourceSpan state.File name (previous state)))
+                    | _ when allowStaticWordReferences && explicitShortReferenceAhead state ->
+                        values.Add(FlowArgument.WordReference(parseStaticWordReference state true))
+                    | _ when allowStaticWordReferences && qualifiedReferenceAhead state ->
+                        values.Add(FlowArgument.WordReference(parseStaticWordReference state false))
                     | _ -> values.Add(FlowArgument.Positional(parseExpressionState state))
                     if accept state "," then () else more <- false
+                let hasReference = values |> Seq.exists (function FlowArgument.WordReference _ -> true | _ -> false)
+                if hasReference && values.Count <> 1 then
+                    let referenceSpan = values |> Seq.pick (function FlowArgument.WordReference reference -> Some reference.Span | _ -> None)
+                    fail state.File referenceSpan.Line referenceSpan.Column referenceSpan.Length "FLOW_CALLBACK_ARGUMENT_ARITY" "A static list callback must be the only positional argument."
                 expect state ")" |> ignore
             List.ofSeq values)
 
@@ -301,7 +357,7 @@ module FlowParser =
                 "FLOW_CONSTRUCTOR_TYPE_ARITY" "Container constructor has the wrong number of explicit type arguments."
         if peek state <> Some "(" then
             tokenError state "FLOW_CONSTRUCTOR_CALL_REQUIRED" "Container constructors must be followed by a parenthesized payload list."
-        let arguments = parseArguments state
+        let arguments = parseArguments state false
         let payload =
             match constructorHasPayload kind, arguments with
             | false, [] -> None
@@ -397,6 +453,8 @@ module FlowParser =
                 | Identifier, "false" -> consume state |> ignore; FlowExpression.Literal(LBool false, sourceSpan state.File first (Some first))
                 | Identifier, "unit" -> consume state |> ignore; FlowExpression.Literal(LUnit, sourceSpan state.File first (Some first))
                 | Identifier, "match" -> consume state |> ignore; parseMatch state first
+                | Identifier, "word" when explicitShortReferenceAhead state ->
+                    fail state.File first.Line first.Column first.Text.Length "FLOW_CALLBACK_REFERENCE_CONTEXT" "Short word references are allowed only as static list callback arguments; use `word name` inside `.map`, `.filter`, or `.each`."
                 | Identifier, "if" ->
                     consume state |> ignore
                     let condition = parseExpressionState state
@@ -409,7 +467,7 @@ module FlowParser =
                     match constructorKind name with
                     | Some kind -> parseConstructor state first kind
                     | None when peek state = Some "(" ->
-                        let args = parseArguments state
+                        let args = parseArguments state false
                         FlowExpression.Call(name, args, sourceSpan state.File first (previous state))
                     | None when name.Contains('.') ->
                         fail state.File first.Line first.Column first.Text.Length "FLOW_QUALIFIED_CALL_REQUIRES_ARGUMENTS" "A qualified word reference must be called with parentheses."
@@ -421,7 +479,7 @@ module FlowParser =
                 let stage = expectIdentifier state
                 if peek state <> Some "(" then
                     tokenError state "FLOW_DOT_CALL_REQUIRES_ARGUMENTS" "A dot stage must be a statically named call with parentheses."
-                let arguments = parseArguments state
+                let arguments = parseArguments state (callbackStage stage.Text)
                 result <- FlowExpression.DotCall(result, stage.Text, arguments, sourceSpan state.File first (previous state))
             result)
 
@@ -540,64 +598,13 @@ module FlowParser =
                 | _ -> ()
         List.ofSeq statements
 
-    let private expressionSpan = function
-        | FlowExpression.Literal(_, span)
-        | FlowExpression.Local(_, span)
-        | FlowExpression.Call(_, _, span)
-        | FlowExpression.DotCall(_, _, _, span)
-        | FlowExpression.If(_, _, _, span)
-        | FlowExpression.Container(_, _, _, span)
-        | FlowExpression.MatchOption(_, _, _, span)
-        | FlowExpression.MatchResult(_, _, _, span) -> span
-
-    let private expressionsInStatements statements =
-        statements
-        |> List.choose (function
-            | FlowStatement.Let(_, expression, _) -> Some expression
-            | FlowStatement.Evaluate expression -> Some expression)
-
-    /// The recursive parser limit does not count the iterative postfix loop.
-    /// Validate the resulting AST iteratively so a long receiver chain and its
-    /// nested arguments cannot reach recursive lowering/rendering without a
-    /// bound on their combined expression depth.
-    let private validateExpressionNesting (roots: FlowExpression list) =
-        let pending = Stack<FlowExpression * int>()
-        for root in List.rev roots do pending.Push((root, 1))
-        let argumentChildren arguments =
-            arguments
-            |> List.map (function
-                | FlowArgument.Positional expression -> expression
-                | FlowArgument.Named(_, expression, _) -> expression)
-        let statementChildren statements = expressionsInStatements statements
-        let children = function
-            | FlowExpression.Literal _ | FlowExpression.Local _ -> []
-            | FlowExpression.Call(_, arguments, _) -> argumentChildren arguments
-            | FlowExpression.DotCall(receiver, _, arguments, _) -> receiver :: argumentChildren arguments
-            | FlowExpression.If(condition, thenBody, elseBody, _) ->
-                condition :: (statementChildren thenBody @ statementChildren elseBody)
-            | FlowExpression.Container(_, _, payload, _) -> payload |> Option.toList
-            | FlowExpression.MatchOption(scrutinee, someCase, noneCase, _) ->
-                scrutinee :: (statementChildren someCase.Statements @ statementChildren noneCase.Statements)
-            | FlowExpression.MatchResult(scrutinee, okCase, errorCase, _) ->
-                scrutinee :: (statementChildren okCase.Statements @ statementChildren errorCase.Statements)
-        while pending.Count > 0 do
-            let expression, depth = pending.Pop()
-            if depth > maxNesting then
-                let source = expressionSpan expression
-                fail source.File source.Line source.Column source.Length "FLOW_NESTING_LIMIT" $"Flow syntax exceeds the nesting limit of {maxNesting}."
-            else
-                for child in List.rev (children expression) do pending.Push((child, depth + 1))
-
-    let private validateWordNesting (definition: FlowWordDefinition) =
-        validateExpressionNesting (expressionsInStatements definition.Body)
-
     let parseExpression file source =
         try
             let tokens, endLine, endColumn = tokenize file source
             let state = { File = file; Source = source; Tokens = tokens; Index = 0; Depth = 0; EndLine = endLine; EndColumn = endColumn }
             let expression = parseExpressionState state
             if not (atEnd state) then tokenError state "FLOW_TRAILING_INPUT" "Unexpected token follows the Flow expression."
-            validateExpressionNesting [ expression ]
+            FlowStructure.validateExpressionNesting [ expression ]
             Ok expression
         with LanguageException error -> Error error
 
@@ -606,6 +613,6 @@ module FlowParser =
             let tokens, endLine, endColumn = tokenize file source
             let state = { File = file; Source = source; Tokens = tokens; Index = 0; Depth = 0; EndLine = endLine; EndColumn = endColumn }
             let definition = parseWordState state
-            validateWordNesting definition
+            FlowStructure.validateWordNesting definition
             Ok definition
         with LanguageException error -> Error error

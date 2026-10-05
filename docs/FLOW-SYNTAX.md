@@ -25,6 +25,26 @@ word calls. `value.stage(args)` supplies `value` as the stage's first input and
 evaluates it once before explicit arguments. Calls and stages reject unresolved
 or ambiguous names instead of falling back to a different interpretation.
 
+`map`, `filter`, and `each` also accept one static callback reference:
+
+```text
+customers.map(customer::normalize)
+customers.filter(customer::active?)
+customers.each(email::send)
+customers.map(word normalize)
+```
+
+A qualified reference uses `::`; a short callback name must use `word name`.
+The reference is dictionary metadata, not a value or local variable, and is
+valid only as the sole positional argument to one of these three list stages.
+Ordinary arguments such as `.map(localValue)` remain normal calls and are
+never reinterpreted as callback names. Resolution selects a dictionary word by
+identity first, then checks that it accepts one list element and returns one
+value. `map` returns a list of the callback output type, `filter` requires a
+`Bool` result and preserves the input element type, and `each` requires `Unit`
+and returns `Unit`. Callback dependencies and effects are checked even for an
+empty list; no callback executes until effect preflight succeeds.
+
 The source namespace separator is `::`; dictionary identities use dots. For
 example, `billing::invoice::total(invoice)` resolves to
 `billing.invoice.total`. A dot stage is intentionally a distinct syntax:
@@ -32,8 +52,9 @@ example, `billing::invoice::total(invoice)` resolves to
 word. Its name and input type must resolve uniquely.
 
 The frontend handles scalar, record/refinement, ordinary, named, and dot calls,
-`if` expressions, typed container constructors, and exhaustive `Option` and
-`Result` matches. It has no closures, infix operators, reassignment, globals,
+`if` expressions, typed container constructors, exhaustive `Option` and
+`Result` matches, and statically named list callbacks. It has no closures,
+infix operators, reassignment, globals,
 implicit method dispatch, or arbitrary .NET calls. Named arguments require
 parameter metadata; authored Flow words provide it directly, record
 constructors use declared field names, and trusted words require an explicit
@@ -91,10 +112,13 @@ records both outcomes (`some`/`none` or `ok`/`error`) for library-quality gates.
 The parser accepts LF, CRLF, and lone-CR line endings and records spans from
 absolute UTF-16 source offsets. Parser safety limits are one million source
 code units, one hundred thousand tokens, one hundred thousand code units per
-quoted string, and 128 expression-nesting levels. The completed expression AST
-is traversed iteratively before recursive lowering or rendering, so postfix
-receiver chains and nesting combined across calls, conditionals, and matches
-share the same bound.
+quoted string, 128 expression/type nesting levels, and 100,000 expanded
+expression/type nodes per Flow expression or word. The completed expression
+AST is traversed iteratively before recursive lowering or rendering, so
+postfix receiver chains and nesting combined across calls, conditionals,
+matches, and container types share the same depth bound. The same structural
+check runs at public rendering and lowering entry points, so host-built Flow
+ASTs receive both bounds before any recursive traversal too.
 
 `FlowParser.parseWord` and `FlowParser.parseExpression` are explicit entry
 points. A Flow parse error never invokes the legacy parser. The source renderer

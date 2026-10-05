@@ -79,3 +79,7 @@ Use canonical checkout and bounded non-overlapping ownership; freeze shared Core
 - Update executable examples, compact primers, PRD and reports with code. Publish together and distinguish implementation checks from actual agent evidence.
 
 Make the new frontend default before further controlled vocabulary experiments. Later research can still compare dot/pipe/RPN presentations and native memory, but it no longer delays the requested authoring improvement.
+
+## Exact root identity addressing
+
+The current opt-in name grammar cannot explicitly select an unqualified authored dictionary key when another namespaced word has the same suffix: short lookup becomes ambiguous, while qualified source requires namespace segments. This fails closed, but leaves a naming gap. Before durable/default cutover, provide and test an explicit exact-root identity spelling or a complete namespace migration that preserves existing stable IDs and historical source. Do not resolve the gap through expected output, dictionary order, or silent rebinding. Include ordinary calls and static callbacks in the conformance fixtures.
