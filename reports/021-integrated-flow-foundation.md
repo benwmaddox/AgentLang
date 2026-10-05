@@ -45,7 +45,7 @@ claim follows from this milestone.
 
 Implementation commit fe55c4c29b70a719ff36699c1dca22685018b8b8 was pushed to
 prototype. CI run 37337744955 failed only the bounded host verifier's partial
-response assertion; the remaining checks passed. Main has not received this
+response assertion; the remaining checks passed. At that failed checkpoint, main had not received this
 milestone. The failure detail records exit 124 and overall elapsed 4786 ms,
 but the assertion also checks exact partial bytes and request/response state;
 elapsed time alone does not establish the cause. The artifact omitted the
@@ -77,3 +77,13 @@ report and bounded host evidence are saved in `reports/evidence/023-ci-run.json`
 `023-committed-ci-validation.json` and `023-committed-ci-subagent-host.json`.
 This closes the failed publication gate for the implementation; complete Flow
 semantic coverage, durable integration and default cutover remain required.
+## Main publication
+
+The foundation and repair were fast-forwarded and pushed to main at
+d3f6e8ebcd0bce0efdcbf7f6a6441eddcedda31e. Publication CI run
+[37342562608](https://github.com/benwmaddox/AgentLang/actions/runs/37342562608)
+completed successfully on that exact revision with a clean checkout and all
+23 required checks passing. Its identity and validation report are saved as
+`reports/evidence/023-published-main-ci-run.json` and
+`023-published-main-ci-validation.json`. Work now continues on the required
+Flow semantic surface; this milestone does not complete the PRD.

@@ -31,3 +31,13 @@ report and bounded host evidence are saved in `reports/evidence/023-ci-run.json`
 `023-committed-ci-validation.json` and `023-committed-ci-subagent-host.json`.
 This closes the failed publication gate for the implementation; complete Flow
 semantic coverage, durable integration and default cutover remain required.
+## Main publication
+
+The foundation and repair were fast-forwarded and pushed to main at
+d3f6e8ebcd0bce0efdcbf7f6a6441eddcedda31e. Publication CI run
+[37342562608](https://github.com/benwmaddox/AgentLang/actions/runs/37342562608)
+completed successfully on that exact revision with a clean checkout and all
+23 required checks passing. Its identity and validation report are saved as
+`reports/evidence/023-published-main-ci-run.json` and
+`023-published-main-ci-validation.json`. Work now continues on the required
+Flow semantic surface; this milestone does not complete the PRD.
