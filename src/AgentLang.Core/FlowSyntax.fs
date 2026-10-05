@@ -18,10 +18,20 @@ type FlowTypeArgument =
     { Type: LangType
       Span: SourceSpan }
 
+[<RequireQualifiedAccess>]
+type FlowWordReferenceQualification =
+    | ExplicitShort
+    | NamespaceQualified
+    | AbsoluteRoot
+
+type FlowRootTarget =
+    { Name: string
+      /// Authored span of the leading `::` and its unqualified name.
+      Span: SourceSpan }
+
 type FlowWordReference =
     { Name: string
-      /// Short word names require the explicit `word name` callback marker.
-      IsExplicitShort: bool
+      Qualification: FlowWordReferenceQualification
       Span: SourceSpan }
 
 [<RequireQualifiedAccess>]
@@ -29,6 +39,7 @@ type FlowExpression =
     | Literal of Literal * SourceSpan
     | Local of string * SourceSpan
     | Call of string * FlowArgument list * SourceSpan
+    | RootCall of FlowRootTarget * FlowArgument list * SourceSpan
     | DotCall of FlowExpression * string * FlowArgument list * SourceSpan
     | If of FlowExpression * FlowStatement list * FlowStatement list * SourceSpan
     | Container of FlowContainerConstructor * FlowTypeArgument list * FlowExpression option * SourceSpan
@@ -149,6 +160,7 @@ module FlowStructure =
         | FlowExpression.Literal(_, span)
         | FlowExpression.Local(_, span)
         | FlowExpression.Call(_, _, span)
+        | FlowExpression.RootCall(_, _, span)
         | FlowExpression.DotCall(_, _, _, span)
         | FlowExpression.If(_, _, _, span)
         | FlowExpression.Container(_, _, _, span)
@@ -159,6 +171,28 @@ module FlowStructure =
         not (System.String.IsNullOrEmpty value)
         && (System.Char.IsLetter value[0] || value[0] = '_')
         && (value |> Seq.skip 1 |> Seq.forall (fun ch -> System.Char.IsLetterOrDigit ch || ch = '_' || ch = '-' || ch = '?' || ch = '!'))
+
+    let private validateRootTarget (target: FlowRootTarget) =
+        if not (isIdentifierName target.Name) then
+            Diagnostics.raiseError "FLOW_ROOT_TARGET_INVALID" "An absolute-root call must name one unqualified dictionary key." (Some target.Name) (Some target.Span) [ "::identifier" ] [ target.Name ]
+        if target.Span.Length < target.Name.Length + 2 then
+            Diagnostics.raiseError "FLOW_ROOT_TARGET_SPAN_INVALID" "An absolute-root target span must cover its leading `::` and identifier." (Some target.Name) (Some target.Span) [ string (target.Name.Length + 2) ] [ string target.Span.Length ]
+
+    let private validateWordReference (reference: FlowWordReference) =
+        let pieces = if System.String.IsNullOrEmpty reference.Name then [||] else reference.Name.Split('.')
+        let validName = pieces.Length > 0 && (pieces |> Array.forall isIdentifierName)
+        let validQualification =
+            match reference.Qualification with
+            | FlowWordReferenceQualification.ExplicitShort
+            | FlowWordReferenceQualification.AbsoluteRoot -> pieces.Length = 1
+            | FlowWordReferenceQualification.NamespaceQualified -> pieces.Length >= 2
+        if not validName || not validQualification then
+            let expected =
+                match reference.Qualification with
+                | FlowWordReferenceQualification.ExplicitShort -> "word shortName"
+                | FlowWordReferenceQualification.NamespaceQualified -> "namespace::word"
+                | FlowWordReferenceQualification.AbsoluteRoot -> "::rootName"
+            Diagnostics.raiseError "FLOW_CALLBACK_REFERENCE_SHAPE" "Static callback references must preserve a valid qualification kind and matching name shape." None (Some reference.Span) [ expected ] [ reference.Name ]
 
     let private validateCaseHeader kind word caseName span =
         let validWord =
@@ -211,7 +245,7 @@ module FlowStructure =
                 match argument with
                 | FlowArgument.Positional expression -> schedule (ExpressionNode(expression, depth)) (expressionSpan expression)
                 | FlowArgument.Named(_, expression, _) -> schedule (ExpressionNode(expression, depth)) (expressionSpan expression)
-                | FlowArgument.WordReference _ -> ()
+                | FlowArgument.WordReference reference -> validateWordReference reference
         let scheduleStatements depth statements =
             let validateStatement isTerminal statement =
                 match statement with
@@ -253,6 +287,9 @@ module FlowStructure =
                 match expression with
                 | FlowExpression.Literal _ | FlowExpression.Local _ -> ()
                 | FlowExpression.Call(_, arguments, _) -> scheduleArguments (depth + 1) arguments
+                | FlowExpression.RootCall(target, arguments, _) ->
+                    validateRootTarget target
+                    scheduleArguments (depth + 1) arguments
                 | FlowExpression.DotCall(receiver, _, arguments, _) ->
                     schedule (ExpressionNode(receiver, depth + 1)) (expressionSpan receiver)
                     scheduleArguments (depth + 1) arguments
@@ -331,6 +368,8 @@ module FlowSource =
         | FlowExpression.Call(name, arguments, _) ->
             let shownName = renderQualifiedName name
             prefix + shownName + "(" + (arguments |> List.map renderArgument |> String.concat ", ") + ")"
+        | FlowExpression.RootCall(target, arguments, _) ->
+            prefix + "::" + target.Name + "(" + (arguments |> List.map renderArgument |> String.concat ", ") + ")"
         | FlowExpression.DotCall(receiver, stage, arguments, _) ->
             renderExpressionAt depth receiver + "." + stage + "(" + (arguments |> List.map renderArgument |> String.concat ", ") + ")"
         | FlowExpression.Container(kind, typeArguments, payload, _) ->
@@ -359,6 +398,8 @@ module FlowSource =
         | FlowExpression.Call(name, arguments, _) ->
             let shownName = renderQualifiedName name
             shownName + "(" + (arguments |> List.map renderArgument |> String.concat ", ") + ")"
+        | FlowExpression.RootCall(target, arguments, _) ->
+            "::" + target.Name + "(" + (arguments |> List.map renderArgument |> String.concat ", ") + ")"
         | FlowExpression.DotCall(receiver, stage, arguments, _) ->
             renderInlineExpression receiver + "." + stage + "(" + (arguments |> List.map renderArgument |> String.concat ", ") + ")"
         | FlowExpression.If _ | FlowExpression.MatchOption _ | FlowExpression.MatchResult _ -> renderExpressionAt 0 expression
@@ -367,7 +408,10 @@ module FlowSource =
         | FlowArgument.Named(name, expression, _) -> name + " = " + renderInlineExpression expression
         | FlowArgument.WordReference reference ->
             let name = renderQualifiedName reference.Name
-            if reference.IsExplicitShort then "word " + name else name
+            match reference.Qualification with
+            | FlowWordReferenceQualification.ExplicitShort -> "word " + name
+            | FlowWordReferenceQualification.NamespaceQualified -> name
+            | FlowWordReferenceQualification.AbsoluteRoot -> "::" + name
     and private renderStatements depth statements =
         statements
         |> List.mapi (fun index statement ->

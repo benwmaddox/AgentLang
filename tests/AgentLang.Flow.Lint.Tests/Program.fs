@@ -196,6 +196,22 @@ let private testCallArgumentsConstructorsAndMatches () =
     equal "unused Option and Result payload locals are reported" [ "unused_option"; "unused_ok"; "unused_error" ] (payloadWarnings |> List.map (fun warning -> warning.Binding))
     check "unused payload warnings carry their declaration spans" (payloadWarnings |> List.forall (fun warning -> warning.DeclarationSpan.Length > 0 && warning.FirstUseSpan.IsNone))
 
+let private testAbsoluteRootCallArgumentsCountAsReads () =
+    let source =
+        """word root_arguments(value: Int) -> Int {
+    effects none
+    let remembered = value;
+    ::consume(payload = remembered);
+    remembered
+}"""
+    let definition = parseWord source
+    let warnings = lint { MaxInterveningStatements = Some 0 } source
+    equal "locals used in named arguments of absolute-root calls are traversed" [] warnings
+    match definition.Body |> List.tryItem 1 with
+    | Some(FlowStatement.Evaluate(FlowExpression.RootCall({ Name = "consume" }, [ FlowArgument.Named("payload", FlowExpression.Local("remembered", readSpan), _) ], _))) ->
+        equal "root call local read retains its authored source span" (Some 4) (Some readSpan.Line)
+    | other -> failwithf "Expected a named local argument in a root call, got %A" other
+
 let private testUnusedEffectfulInitializerIsOnlyReported () =
     let source =
         """word effects_are_preserved(value: Int) -> Int {
@@ -401,6 +417,7 @@ let main _ =
     testNestedScopesAndOuterReads ()
     testMultiLevelBranchUsesKeepTheirOwningPositions ()
     testCallArgumentsConstructorsAndMatches ()
+    testAbsoluteRootCallArgumentsCountAsReads ()
     testUnusedEffectfulInitializerIsOnlyReported ()
     testUnusedBindingsAndDeterministicOrder ()
     testLargeFlatBlock ()

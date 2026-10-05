@@ -28,6 +28,16 @@ word calls. `value.stage(args)` supplies `value` as the stage's first input and
 evaluates it once before explicit arguments. Calls and stages reject unresolved
 or ambiguous names instead of falling back to a different interpretation.
 
+For an unqualified dictionary identity, `::identity(value)` is an
+absolute-root call that selects only the exact key `identity`. This is useful
+when both `identity` and `math.identity` exist. The forms `identity(value)` and
+`word identity` retain short-name lookup and remain ambiguous in that case;
+`math::identity(value)` selects `math.identity`. Absolute-root names contain
+one identifier only, so `::math::identity(value)` is rejected rather than
+silently becoming another qualification form. Root calls accept positional or
+named arguments and can be chained as receivers, for example
+`::identity(value).abs()`.
+
 Destructure every output at once with `let (...)`; each binding retains the
 source span of its name and stores values in reverse stack-pop order so the
 declared order is preserved:
@@ -97,9 +107,12 @@ customers.map(customer::normalize)
 customers.filter(customer::active?)
 customers.each(email::send)
 customers.map(word normalize)
+customers.map(::normalize)
 ```
 
-A qualified reference uses `::`; a short callback name must use `word name`.
+A namespace-qualified reference uses `::`, a short callback name must use
+`word name`, and `::name` selects one exact root dictionary key. For example,
+`customers.map(::normalize)` is exact even if `customer.normalize` also exists.
 The reference is dictionary metadata, not a value or local variable, and is
 valid only as the sole positional argument to one of these three list stages.
 Ordinary arguments such as `.map(localValue)` remain normal calls and are

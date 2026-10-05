@@ -27,11 +27,40 @@ Persist call bindings with their authoritative source revision. Before vocabular
 
 IR `SourceSiteId(owner, ordinal)` joins final source maps and operations, but its regenerated ordinal alone is not a stable authored-site identity across revisions. Rename preserves target identity and uses bindings to rewrite the appropriate source sites, followed by complete re-verification and existing caller/test/library gates.
 
-## Exact root addressing proposal
+## Exact root addressing
 
-Add an absolute-root spelling before durable source versions are frozen: `::identity(value)` and `items.map(::identity)` select the exact dictionary key `identity`. Existing `identity(value)` and `word identity` keep suffix lookup; `ns::identity(value)` retains namespace qualification. Avoid a pseudo-namespace such as `root::identity`, which could collide with a real word named `root.identity`.
+The Flow frontend now preserves an absolute-root target as a distinct AST node
+and callback-reference qualification. `::identity(value)` and
+`items.map(::identity)` select only the exact dictionary key `identity`;
+`identity(value)` and `word identity` retain suffix lookup, and
+`ns::identity(value)` retains namespace qualification. Absolute-root targets
+contain one simple identifier. No pseudo-namespace is introduced, and exact
+root calls do not consider generated aliases or suffix candidates.
 
-Preserve the qualification kind in the AST instead of stripping the leading marker into an ordinary short name. Extend parser lookahead, rendering, resolver, callback reference validation, and all AST consumers together. With both `identity` and `ns.identity` present, tests must prove exact-root and namespace forms select their own identities while both short forms remain ambiguous. This spelling is proposed, not implemented by the output-vector slice.
+The parser, source renderer, lowering resolver, callback validation, and lint
+traversal retain this qualification through their respective stages. Manual
+ASTs receive the same shape validation before rendering or lowering. Focused
+acceptance checks cover same-suffix identities, callback signatures/effects,
+root calls with named arguments, receiver chaining, attachments, and spans;
+their validation results are recorded in report 033.
+
+## Future signature-only lowering boundary
+
+The existing Flow resolver makes its candidate decisions from word names,
+ordered input/output types, declared effects, builtin/generated kind, named
+parameter metadata, source spans, and stable target IDs. It does not inspect
+callee bodies to infer signatures. A future complete-snapshot lowerer can use a
+closed signature-only resolution catalog for these decisions, lower all real
+Flow bodies, and then defer final definition/scalar-validator checks to one
+`Compiler.compileIrProgramWithSourceOrigins` call over the complete real
+dictionary. The catalog must not contain executable placeholder definitions.
+
+Before lowering, that future boundary should validate the closed type catalog,
+stable-ID coverage and uniqueness, parameter names and arity, and the declared
+effect vocabulary. There is no evidence yet for adding a generic compiler
+inference API; add one only if a focused batch-lowering case cannot be handled
+through the existing Flow resolver. This is a design contract for durable
+batch lowering, not a claim that a complete-batch API exists today.
 
 ## Acceptance
 

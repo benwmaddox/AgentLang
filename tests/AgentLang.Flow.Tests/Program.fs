@@ -66,6 +66,29 @@ let private testParserLocationsAndQualification () =
     | FlowExpression.Call(name, _, _) -> equal "multi-segment namespace maps to dictionary identity" "outer.middle.inner" name
     | other -> failwithf "Expected qualified call AST, got %A" other
 
+    let rootCallSource = "::identity(1)"
+    match parseExpression rootCallSource with
+    | FlowExpression.RootCall(target, _, callSpan) ->
+        equal "absolute-root call retains exact dictionary key" "identity" target.Name
+        equal "absolute-root target span includes the prefix and name" (span "<flow-test>" 1 1 "::identity".Length) target.Span
+        equal "absolute-root call span includes the arguments" (span "<flow-test>" 1 1 rootCallSource.Length) callSpan
+        equal "absolute-root call rendering is canonical" rootCallSource (FlowSource.renderExpression (parseExpression (FlowSource.renderExpression (parseExpression rootCallSource))))
+    | other -> failwithf "Expected absolute-root call AST, got %A" other
+
+    let rootCallbackSource = "items.map(::identity)"
+    match parseExpression rootCallbackSource with
+    | FlowExpression.DotCall(_, "map", [ FlowArgument.WordReference reference ], _) ->
+        equal "absolute-root callback preserves its qualifier" FlowWordReferenceQualification.AbsoluteRoot reference.Qualification
+        equal "absolute-root callback retains the exact key" "identity" reference.Name
+        equal "absolute-root callback span includes prefix and key" (span "<flow-test>" 1 11 "::identity".Length) reference.Span
+        equal "root callback source round-trips" rootCallbackSource (rootCallbackSource |> parseExpression |> FlowSource.renderExpression |> parseExpression |> FlowSource.renderExpression)
+    | other -> failwithf "Expected an absolute-root callback AST, got %A" other
+
+    expectError "absolute root refuses a namespace suffix" "FLOW_ROOT_TARGET_QUALIFIED"
+        (FlowParser.parseExpression "<root-qualified>" "::namespace::identity(1)") |> ignore
+    expectError "absolute root must be called" "FLOW_ROOT_CALL_REQUIRES_ARGUMENTS"
+        (FlowParser.parseExpression "<root-not-call>" "::identity") |> ignore
+
     match parseExpression "make().stage(2)" with
     | FlowExpression.DotCall(FlowExpression.Call("make", _, _), "stage", _, callSpan) ->
         equal "dot call includes complete source range" (span "<flow-test>" 1 1 "make().stage(2)".Length) callSpan
@@ -745,7 +768,7 @@ let private testStaticListCallbacks () =
         | Error diagnostic -> equal ("callback prefix remains incomplete: " + source) "FLOW_INCOMPLETE_INPUT" diagnostic.Code
         | Ok _ -> failwithf "Expected incomplete callback syntax to remain incomplete: %s" source
 
-    let shortReference = { Name = "increment"; IsExplicitShort = true; Span = sourceSpan }
+    let shortReference = { Name = "increment"; Qualification = FlowWordReferenceQualification.ExplicitShort; Span = sourceSpan }
     let callWithReference = FlowExpression.Call("math.increment", [ FlowArgument.WordReference shortReference ], sourceSpan)
     expectLanguageError "direct AST word references in ordinary calls are rejected" "FLOW_CALLBACK_REFERENCE_CONTEXT" (fun () ->
         FlowLowering.checkExpression context callWithReference |> ignore)
@@ -761,6 +784,175 @@ let private testStaticListCallbacks () =
     let malformedEmpty = FlowExpression.DotCall(FlowExpression.Container(FlowContainerConstructor.ListEmpty, [ { Type = TInt; Span = sourceSpan } ], None, sourceSpan), "map", [ FlowArgument.WordReference emptyReference ], sourceSpan)
     expectLanguageError "host AST references reject empty names without throwing" "FLOW_CALLBACK_REFERENCE_SHAPE" (fun () ->
         FlowLowering.checkExpression context malformedEmpty |> ignore)
+
+    let malformedRootReference =
+        { shortReference with Name = "math.increment"; Qualification = FlowWordReferenceQualification.AbsoluteRoot }
+    let malformedRootCallback =
+        FlowExpression.DotCall(
+            FlowExpression.Container(FlowContainerConstructor.ListEmpty, [ { Type = TInt; Span = sourceSpan } ], None, sourceSpan),
+            "map",
+            [ FlowArgument.WordReference malformedRootReference ],
+            sourceSpan)
+    expectLanguageError "host AST root callbacks cannot smuggle a dotted namespace key" "FLOW_CALLBACK_REFERENCE_SHAPE" (fun () ->
+        FlowSource.renderExpression malformedRootCallback |> ignore)
+    expectLanguageError "lowering rejects malformed host-built root callback references" "FLOW_CALLBACK_REFERENCE_SHAPE" (fun () ->
+        FlowLowering.checkExpression context malformedRootCallback |> ignore)
+
+    let malformedRootCall =
+        FlowExpression.RootCall({ Name = "namespace.increment"; Span = sourceSpan }, [], sourceSpan)
+    expectLanguageError "host AST root calls reject namespace-shaped keys before rendering" "FLOW_ROOT_TARGET_INVALID" (fun () ->
+        FlowSource.renderExpression malformedRootCall |> ignore)
+    expectLanguageError "lowering rejects namespace-shaped host root calls" "FLOW_ROOT_TARGET_INVALID" (fun () ->
+        FlowLowering.checkExpression context malformedRootCall |> ignore)
+    let shortRootSpan = { Name = "increment"; Span = sourceSpan }
+    let malformedRootCallSpan = FlowExpression.RootCall(shortRootSpan, [], sourceSpan)
+    expectLanguageError "host AST root call spans must cover the :: prefix" "FLOW_ROOT_TARGET_SPAN_INVALID" (fun () ->
+        FlowSource.renderExpression malformedRootCallSpan |> ignore)
+
+let private testAbsoluteRootAddressing () =
+    let rootIdentity = wordEntry "identity" [ TInt ] [ TInt ] Set.empty []
+    let namespacedIdentity = wordEntry "one.identity" [ TInt ] [ TBool ] Set.empty [ Call("drop", sourceSpan); Push(LBool true, sourceSpan) ]
+    let rootPair = wordEntry "pair" [ TInt; TInt ] [ TInt ] Set.empty [ Call("add", sourceSpan) ]
+    let namespacedPair = wordEntry "branch.pair" [ TInt; TInt ] [ TBool ] Set.empty [ Call("drop", sourceSpan); Call("drop", sourceSpan); Push(LBool true, sourceSpan) ]
+    let hiddenNamespaceWord = wordEntry "there.hidden" [ TInt ] [ TInt ] Set.empty []
+    let rootMulti = wordEntry "multi-root" [ TInt ] [ TInt; TInt ] Set.empty [ Call("dup", sourceSpan) ]
+    let rootString = wordEntry "string-root" [ TString ] [ TString ] Set.empty []
+    let rootTwoInputs = wordEntry "two-input-root" [ TInt; TInt ] [ TInt ] Set.empty [ Call("add", sourceSpan) ]
+    let effect = Set.singleton "console.write"
+    let emitValue name text value =
+        wordEntry name [] [ TInt ] effect
+            [ Push(LString text, sourceSpan); Call("console.write", sourceSpan); Call("drop", sourceSpan); Push(LInt value, sourceSpan) ]
+    let rootEmitter =
+        wordEntry "emit-root" [ TInt ] [ TUnit ] effect
+            [ Call("drop", sourceSpan); Push(LString "root-emitter", sourceSpan); Call("console.write", sourceSpan) ]
+    let namespacedEmitter =
+        wordEntry "effect.emit-root" [ TInt ] [ TUnit ] Set.empty
+            [ Call("drop", sourceSpan); Push(LUnit, sourceSpan) ]
+    let parameters = Map.ofList [ "pair", [ "first"; "second" ]; "branch.pair", [ "first"; "second" ] ]
+    let makeValue = wordEntry "make-value" [] [ TInt ] Set.empty [ Push(LInt -7L, sourceSpan) ]
+    let context =
+        loweringContext
+            [ rootIdentity; namespacedIdentity; rootPair; namespacedPair; hiddenNamespaceWord; rootMulti; rootString; rootTwoInputs
+              emitValue "effect.left-value" "left" 10L; emitValue "effect.right-value" "right" 20L
+              rootEmitter; namespacedEmitter; makeValue ]
+            parameters
+    let compile source = FlowLowering.compileExpression context (parseExpression source)
+    let evaluate source events = IrInterpreter.executeBody (host events) source (compile source).Body
+    let resolvedCalls (body: IrExecutableBody) =
+        body.BodyBlock.Code
+        |> List.choose (fun instruction ->
+            match instruction.Operation with
+            | IrOperation.Call call -> Some call.ResolvedTarget
+            | _ -> None)
+
+    let exactRoot = compile "::identity(4)"
+    equal "absolute-root call resolves the unqualified dictionary entry exactly"
+        [ UserWordTarget(WordId "user-identity", 1) ]
+        (resolvedCalls (VerifiedIrBody.inspect exactRoot.Body))
+    equal "absolute-root identity call executes its exact target" [ IntValue 4L ]
+        (IrInterpreter.executeBody (host (ResizeArray())) "root-identity" exactRoot.Body)
+    let namespaced = compile "one::identity(4)"
+    equal "namespace qualification selects the namespace dictionary entry"
+        [ UserWordTarget(WordId "user-one.identity", 1) ]
+        (resolvedCalls (VerifiedIrBody.inspect namespaced.Body))
+    equal "namespace identity keeps its distinct result type and behavior" [ BoolValue true ]
+        (IrInterpreter.executeBody (host (ResizeArray())) "namespace-identity" namespaced.Body)
+    expectLanguageError "ordinary short calls remain ambiguous between root and namespace keys" "FLOW_AMBIGUOUS_CALL" (fun () ->
+        FlowLowering.checkExpression context (parseExpression "identity(4)") |> ignore)
+    expectLanguageError "explicit short callback references remain ambiguous across root and namespace" "FLOW_AMBIGUOUS_CALLBACK" (fun () ->
+        FlowLowering.checkExpression context (parseExpression "list::empty<Int>().map(word identity)") |> ignore)
+
+    let rootCallback = compile "list::singleton<Int>(4).map(::identity)"
+    equal "absolute-root callback executes the exact root identity" [ ListValue(TInt, [ IntValue 4L ]) ]
+        (IrInterpreter.executeBody (host (ResizeArray())) "root-callback" rootCallback.Body)
+    match (VerifiedIrBody.inspect rootCallback.Body).BodyBlock.Code |> List.tryPick (function | { Operation = IrOperation.ListMap(call, _, _) } -> Some call | _ -> None) with
+    | Some call ->
+        equal "absolute-root callback IR retains the root target identity" (UserWordTarget(WordId "user-identity", 1)) call.ResolvedTarget
+        equal "absolute-root callback IR retains the exact resolved name" "identity" call.ResolvedName
+    | None -> failwith "Expected root-qualified callback to lower as a direct ListMap operation."
+    expectLanguageError "root callback signature is checked after exact identity selection" "FLOW_CALLBACK_RESULT_TYPE" (fun () ->
+        FlowLowering.checkExpression context (parseExpression "list::empty<Int>().filter(::identity)") |> ignore)
+    expectLanguageError "root callbacks retain the one-output contract" "FLOW_CALLBACK_OUTPUT_ARITY" (fun () ->
+        FlowLowering.checkExpression context (parseExpression "list::empty<Int>().map(::multi-root)") |> ignore)
+    expectLanguageError "root callback input types are checked against the exact target" "FLOW_CALLBACK_INPUT_TYPE" (fun () ->
+        FlowLowering.checkExpression context (parseExpression "list::empty<Int>().map(::string-root)") |> ignore)
+    expectLanguageError "root callbacks retain the one-input contract" "FLOW_CALLBACK_INPUT_ARITY" (fun () ->
+        FlowLowering.checkExpression context (parseExpression "list::empty<Int>().map(::two-input-root)") |> ignore)
+    expectLanguageError "multi-output root calls remain invalid in scalar expression position" "FLOW_CALL_OUTPUT_ARITY" (fun () ->
+        FlowLowering.checkExpression context (parseExpression "::multi-root(1)") |> ignore)
+    equal "namespace-qualified Bool callback still satisfies filter"
+        [ ListValue(TInt, [ IntValue 3L ]) ]
+        (IrInterpreter.executeBody (host (ResizeArray())) "namespace-filter"
+            (compile "list::singleton<Int>(3).filter(one::identity)").Body)
+    expectLanguageError "root calls do not fall back to a same-suffix namespaced candidate" "FLOW_UNKNOWN_ROOT_CALL" (fun () ->
+        FlowLowering.checkExpression context (parseExpression "::hidden(1)") |> ignore)
+    expectLanguageError "root callback references do not fall back to a same-suffix namespaced candidate" "FLOW_UNKNOWN_CALLBACK" (fun () ->
+        FlowLowering.checkExpression context (parseExpression "list::empty<Int>().map(::hidden)") |> ignore)
+
+    let rootPairSource = "::pair(second = effect::right-value(), first = effect::left-value())"
+    let rootPairExpression = parseExpression rootPairSource
+    match rootPairExpression with
+    | FlowExpression.RootCall(target, [ FlowArgument.Named("second", _, _); FlowArgument.Named("first", _, _) ], callSpan) ->
+        equal "root call preserves the root target source span" (span "<flow-test>" 1 1 "::pair".Length) target.Span
+        equal "root call preserves its full named-argument call span" (span "<flow-test>" 1 1 rootPairSource.Length) callSpan
+    | other -> failwithf "Expected a root call with named arguments, got %A" other
+    let orderedEvents = ResizeArray<string>()
+    equal "root named-argument expressions are evaluated in written order" [ IntValue 30L ] (evaluate rootPairSource orderedEvents)
+    equal "root named-argument effects occur in written order" [ "right"; "left" ] (List.ofSeq orderedEvents)
+    equal "absolute-root call bypasses suffix overload selection"
+        [ UserWordTarget(WordId "user-pair", 1) ]
+        (resolvedCalls (VerifiedIrBody.inspect (compile "::pair(1, 2)").Body))
+    expectLanguageError "ordinary short pair calls remain ambiguous before output filtering" "FLOW_AMBIGUOUS_CALL" (fun () ->
+        FlowLowering.checkExpression context (parseExpression "pair(1, 2)") |> ignore)
+
+    match parseExpression "::make-value().abs()" with
+    | FlowExpression.DotCall(FlowExpression.RootCall({ Name = "make-value" }, _, _), "abs", _, _) ->
+        equal "root calls compose as dot-stage receivers" [ IntValue 7L ]
+            (IrInterpreter.executeBody (host (ResizeArray())) "root-receiver-chain"
+                (compile "::make-value().abs()" |> fun expression -> expression.Body))
+    | other -> failwithf "Expected a root call as the dot receiver, got %A" other
+
+    let rootEmitEvents = ResizeArray<string>()
+    let rootEach = compile "list::singleton<Int>(1).each(::emit-root)"
+    let rootEachBody = VerifiedIrBody.inspect rootEach.Body
+    equal "absolute-root callback effects remain explicit in verified IR" (Set.singleton IrEffect.ConsoleWrite) rootEachBody.BodyInferredEffects
+    equal "root-qualified callback call executes" [ UnitValue ] (IrInterpreter.executeBody (host rootEmitEvents) "root-each" rootEach.Body)
+    equal "exact root callback identity invokes its provider" [ "root-emitter" ] (List.ofSeq rootEmitEvents)
+    match rootEachBody.BodyBlock.Code |> List.tryPick (function | { Operation = IrOperation.ListEach(call, _) } -> Some call | _ -> None) with
+    | Some call -> equal "effectful root callback operation targets exact root identity" (UserWordTarget(WordId "user-emit-root", 1)) call.ResolvedTarget
+    | None -> failwith "Expected root-qualified callback to lower as a direct ListEach operation."
+
+    let namespacedEach = compile "list::singleton<Int>(1).each(effect::emit-root)"
+    let namespacedEachBody = VerifiedIrBody.inspect namespacedEach.Body
+    equal "namespace-qualified same-suffix callback selects its pure signature" Set.empty namespacedEachBody.BodyInferredEffects
+    match namespacedEachBody.BodyBlock.Code |> List.tryPick (function | { Operation = IrOperation.ListEach(call, _) } -> Some call | _ -> None) with
+    | Some call -> equal "namespace-qualified callback retains its own target identity" (UserWordTarget(WordId "user-effect.emit-root", 1)) call.ResolvedTarget
+    | None -> failwith "Expected namespace-qualified callback to lower as a direct ListEach operation."
+
+    let emptyRootEach = compile "list::empty<Int>().each(::emit-root)"
+    equal "empty list keeps the exact root callback effect in its type metadata"
+        (Set.singleton IrEffect.ConsoleWrite) (VerifiedIrBody.inspect emptyRootEach.Body).BodyInferredEffects
+    let deniedPreflight = ResizeArray<Set<IrEffect>>()
+    let deniedProviders = ResizeArray<string>()
+    let mutable instructionStartedBeforeDeniedPreflight = false
+    let deniedRootHost =
+        { host deniedProviders with
+            PreflightEffects = fun effects _ _ ->
+                deniedPreflight.Add effects
+                if effects.Contains IrEffect.ConsoleWrite then
+                    raise (LanguageException { Code = "CAPABILITY_DENIED"; Message = "root callback denied before execution"; Word = None; Span = None; Expected = []; Actual = [] })
+            ChargeInstruction = fun _ _ ->
+                if deniedPreflight.Count = 0 then instructionStartedBeforeDeniedPreflight <- true }
+    expectLanguageError "exact root callback cannot escape a denied effect via a pure same-suffix word" "CAPABILITY_DENIED" (fun () ->
+        IrInterpreter.executeBody deniedRootHost "denied-empty-root-each" emptyRootEach.Body |> ignore)
+    equal "root callback capability preflight receives its exact effect" [ Set.singleton IrEffect.ConsoleWrite ] (List.ofSeq deniedPreflight)
+    equal "root callback denial occurs before any instruction executes" false instructionStartedBeforeDeniedPreflight
+    equal "empty root callback denial invokes no provider" [] (List.ofSeq deniedProviders)
+
+    let listSource = "word root_receiver(value: Int) -> Int {\n    effects none\n    let list = list::singleton<Int>(value);\n    list.map(::identity).first()\n}"
+    let lintWord = parseWord listSource
+    check "Flow lint sees local reads nested inside root-call receiver chains"
+        (FlowLint.analyze FlowLint.defaultOptions lintWord |> Result.map List.isEmpty |> Result.defaultValue false)
 
 let private testLoweringAndExecution () =
     let effect = Set.singleton "console.write"
@@ -914,7 +1106,7 @@ let private testFlowOutputVectors () =
                 values
                 |> List.map (function
                     | FlowExpression.Literal(_, source) | FlowExpression.Local(_, source) -> source
-                    | FlowExpression.Call(_, _, source) | FlowExpression.DotCall(_, _, _, source)
+                    | FlowExpression.Call(_, _, source) | FlowExpression.RootCall(_, _, source) | FlowExpression.DotCall(_, _, _, source)
                     | FlowExpression.If(_, _, _, source) | FlowExpression.Container(_, _, _, source)
                     | FlowExpression.MatchOption(_, _, _, source) | FlowExpression.MatchResult(_, _, _, source) -> source)
                 |> Some
@@ -1320,6 +1512,49 @@ let private testFlowAuthoredCases () =
          && compiledLiteral.Lowered.Projection.AuthoredSpans.Contains literalTest.ExpectationSpan)
     check "test body source sites map to authored spans"
         (compiledLiteral.BodySiteOrigins |> Map.forall (fun _ source -> source.File = "authored/storefront.flow" && source.Column < 1000))
+
+    let rootCaseWord =
+        parseWord
+            """word root_case_identity(value: Int) -> Int {
+    effects none
+    value
+}"""
+    let compiledRootCaseWord = FlowLowering.compileWord (loweringContext [] Map.empty) (WordId "user-root_case_identity") rootCaseWord
+    let rootTestSource =
+        "test root_case_identity/root-addressed {\n"
+        + "    ::root_case_identity(7)\n"
+        + "    => value ::root_case_identity(7)\n"
+        + "}"
+    let rootTest = parseTest rootTestSource
+    let canonicalRootTest = FlowSource.renderTest rootTest
+    equal "Flow test attachment renders root calls in actual and expected bodies"
+        canonicalRootTest
+        (canonicalRootTest |> parseTest |> FlowSource.renderTest)
+    let compiledRootTest = FlowLowering.compileTest compiledRootCaseWord.Context compiledRootCaseWord.Program rootTest
+    equal "Flow test attachment preserves its exact root-qualified actual result" [ IntValue 7L ]
+        (IrInterpreter.executeBody (host (ResizeArray())) "root-test-actual" compiledRootTest.Body)
+    equal "Flow test attachment preserves its exact root-qualified expected result" [ IntValue 7L ]
+        (compiledRootTest.ExpectationBody
+         |> Option.defaultWith (fun () -> failwith "Expected the root-qualified value expectation body.")
+         |> IrInterpreter.executeBody (host (ResizeArray())) "root-test-expected")
+    equal "root-call Flow test attachment retains authored source bytes" rootTestSource compiledRootTest.Lowered.Definition.SourceText
+    check "root-call test attachment retains target source spans in both traces"
+        (compiledRootTest.BodySiteOrigins |> Map.exists (fun _ source -> source.Line = 2 && source.Column = 5)
+         && (compiledRootTest.ExpectationSiteOrigins |> Option.exists (Map.exists (fun _ source -> source.Line = 3 && source.Column = 14))))
+
+    let rootExampleSource =
+        "example root_case_identity/root-literal {\n"
+        + "    ::root_case_identity(9)\n"
+        + "    => 9\n"
+        + "}"
+    let rootExample = parseExample rootExampleSource
+    equal "Flow example attachment renders root calls canonically"
+        (FlowSource.renderExample rootExample)
+        (rootExampleSource |> parseExample |> FlowSource.renderExample)
+    let compiledRootExample = FlowLowering.compileExample compiledRootCaseWord.Context compiledRootCaseWord.Program rootExample
+    equal "Flow example attachment executes its root call" [ IntValue 9L ]
+        (IrInterpreter.executeBody (host (ResizeArray())) "root-example-actual" compiledRootExample.Body)
+    equal "root-call Flow example attachment retains authored source bytes" rootExampleSource compiledRootExample.Lowered.Definition.SourceText
 
     let valueSource =
         "test storefront.select/value-expression {\n"
@@ -1768,6 +2003,7 @@ let main _ =
     testContainerAndMatchSyntaxRoundTrip ()
     testContainerAndMatchDiagnostics ()
     testStaticListCallbacks ()
+    testAbsoluteRootAddressing ()
     testLoweringAndExecution ()
     testContainerAndMatchLowering ()
     testFlowOutputVectors ()

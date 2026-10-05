@@ -142,6 +142,8 @@ module FlowLint =
                                 findOuter outerFrames
                         | FlowExpression.Call(_, arguments, _) ->
                             for argument in arguments do analyzeArgument outerFrames localBindings statementIndex argument
+                        | FlowExpression.RootCall(_, arguments, _) ->
+                            for argument in arguments do analyzeArgument outerFrames localBindings statementIndex argument
                         | FlowExpression.DotCall(receiver, _, arguments, _) ->
                             analyzeExpression outerFrames localBindings statementIndex receiver
                             for argument in arguments do analyzeArgument outerFrames localBindings statementIndex argument

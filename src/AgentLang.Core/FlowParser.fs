@@ -30,6 +30,7 @@ module FlowParser =
         | FlowExpression.Literal(_, span)
         | FlowExpression.Local(_, span)
         | FlowExpression.Call(_, _, span)
+        | FlowExpression.RootCall(_, _, span)
         | FlowExpression.DotCall(_, _, _, span)
         | FlowExpression.If(_, _, _, span)
         | FlowExpression.Container(_, _, _, span)
@@ -233,6 +234,15 @@ module FlowParser =
         while accept state "::" do parts.Add((expectIdentifier state).Text)
         String.concat "." parts
 
+    let private parseRootTarget state =
+        let rootPrefix = expect state "::"
+        let name = expectIdentifier state
+        if peek state = Some "::" then
+            fail state.File rootPrefix.Line rootPrefix.Column (name.Offset + name.Text.Length - rootPrefix.Offset)
+                "FLOW_ROOT_TARGET_QUALIFIED" "An absolute-root spelling selects one unqualified dictionary key; do not append namespace segments."
+        { Name = name.Text
+          Span = sourceSpan state.File rootPrefix (Some name) }
+
     let private constructorKind = function
         | "list.empty" -> Some FlowContainerConstructor.ListEmpty
         | "list.singleton" -> Some FlowContainerConstructor.ListSingleton
@@ -283,19 +293,37 @@ module FlowParser =
                 else scanning <- false
             qualified && (cursor = state.Tokens.Length || isArgumentTerminator state cursor)
 
-    let private parseStaticWordReference (state: State) explicitShort =
+    let private absoluteRootReferenceAhead (state: State) =
+        state.Index + 1 < state.Tokens.Length
+        && state.Tokens[state.Index].Text = "::"
+        && state.Tokens[state.Index + 1].Kind = Identifier
+        && (state.Index + 2 = state.Tokens.Length || isArgumentTerminator state (state.Index + 2))
+
+    let private parseStaticWordReference (state: State) qualification =
         let first =
-            if explicitShort then expect state "word"
-            else current state |> Option.defaultWith (fun () -> tokenError state "FLOW_INCOMPLETE_INPUT" "Expected a qualified callback word reference.")
-        let name = parseNamespaceName state
-        if explicitShort && name.Contains('.') then
+            match qualification with
+            | FlowWordReferenceQualification.ExplicitShort -> expect state "word"
+            | FlowWordReferenceQualification.NamespaceQualified ->
+                current state |> Option.defaultWith (fun () -> tokenError state "FLOW_INCOMPLETE_INPUT" "Expected a qualified callback word reference.")
+            | FlowWordReferenceQualification.AbsoluteRoot ->
+                current state |> Option.defaultWith (fun () -> tokenError state "FLOW_INCOMPLETE_INPUT" "Expected an absolute-root callback reference.")
+        let name, referenceSpan =
+            match qualification with
+            | FlowWordReferenceQualification.AbsoluteRoot ->
+                let target = parseRootTarget state
+                target.Name, target.Span
+            | FlowWordReferenceQualification.ExplicitShort
+            | FlowWordReferenceQualification.NamespaceQualified ->
+                let name = parseNamespaceName state
+                name, sourceSpan state.File first (previous state)
+        if qualification = FlowWordReferenceQualification.ExplicitShort && name.Contains('.') then
             fail state.File first.Line first.Column (max first.Text.Length (previous state |> Option.map (fun token -> token.Offset + token.Text.Length - first.Offset) |> Option.defaultValue first.Text.Length))
                 "FLOW_CALLBACK_SHORT_REFERENCE_QUALIFIED" "The `word` marker is for short callback names; use a bare qualified reference for namespaced words."
-        if not explicitShort && not (name.Contains('.')) then
+        if qualification = FlowWordReferenceQualification.NamespaceQualified && not (name.Contains('.')) then
             fail state.File first.Line first.Column first.Text.Length "FLOW_CALLBACK_REFERENCE_QUALIFIED" "A bare callback reference must be namespace-qualified; use `word name` for a short name."
         { Name = name
-          IsExplicitShort = explicitShort
-          Span = sourceSpan state.File first (previous state) }
+          Qualification = qualification
+          Span = referenceSpan }
 
     let rec private parseArguments state allowStaticWordReferences =
         withDepth state (fun () ->
@@ -308,14 +336,16 @@ module FlowParser =
                     | Some name, true when name.Kind = Identifier ->
                         consume state |> ignore
                         expect state "=" |> ignore
-                        if allowStaticWordReferences && (explicitShortReferenceAhead state || qualifiedReferenceAhead state) then
+                        if allowStaticWordReferences && (explicitShortReferenceAhead state || qualifiedReferenceAhead state || absoluteRootReferenceAhead state) then
                             fail state.File name.Line name.Column name.Text.Length "FLOW_CALLBACK_NAMED_REFERENCE" "A static list callback must be one positional word reference."
                         let expression = parseExpressionState state
                         values.Add(FlowArgument.Named(name.Text, expression, sourceSpan state.File name (previous state)))
                     | _ when allowStaticWordReferences && explicitShortReferenceAhead state ->
-                        values.Add(FlowArgument.WordReference(parseStaticWordReference state true))
+                        values.Add(FlowArgument.WordReference(parseStaticWordReference state FlowWordReferenceQualification.ExplicitShort))
                     | _ when allowStaticWordReferences && qualifiedReferenceAhead state ->
-                        values.Add(FlowArgument.WordReference(parseStaticWordReference state false))
+                        values.Add(FlowArgument.WordReference(parseStaticWordReference state FlowWordReferenceQualification.NamespaceQualified))
+                    | _ when allowStaticWordReferences && absoluteRootReferenceAhead state ->
+                        values.Add(FlowArgument.WordReference(parseStaticWordReference state FlowWordReferenceQualification.AbsoluteRoot))
                     | _ -> values.Add(FlowArgument.Positional(parseExpressionState state))
                     if accept state "," then () else more <- false
                 let hasReference = values |> Seq.exists (function FlowArgument.WordReference _ -> true | _ -> false)
@@ -532,6 +562,13 @@ module FlowParser =
                     expect state "else" |> ignore
                     let elseBranch = parseBlock state
                     FlowExpression.If(condition, thenBranch, elseBranch, sourceSpan state.File first (previous state))
+                | Symbol, "::" ->
+                    let target = parseRootTarget state
+                    if peek state <> Some "(" then
+                        fail state.File first.Line first.Column (previous state |> Option.map (fun token -> token.Offset + token.Text.Length - first.Offset) |> Option.defaultValue first.Text.Length)
+                            "FLOW_ROOT_CALL_REQUIRES_ARGUMENTS" "An absolute-root dictionary name must be called with parentheses."
+                    let arguments = parseArguments state false
+                    FlowExpression.RootCall(target, arguments, sourceSpan state.File first (previous state))
                 | Identifier, _ ->
                     let name = parseNamespaceName state
                     match constructorKind name with

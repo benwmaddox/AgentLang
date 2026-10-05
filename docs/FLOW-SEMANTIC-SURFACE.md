@@ -1,10 +1,10 @@
 # Flow stage-2 semantic surface
 
-Status: stage 2 remains partial. Static list callbacks and output vectors lower through existing verified IR operations. Shared iterative `FlowStructure` preflight limits expression and type nesting to 128 and expanded syntax nodes to 100,000 across each word or expression, including host-built ASTs; that budget includes every declared output type, return member, and destructuring binding. The vector slice carries ordered word outputs, vector-aware call inference, `let (...)`, and terminal lexical `return` values. Standalone Flow test/example source objects, parsing, rendering, lowering, and compilation against verified programs are implemented; the focused Flow suite passed with 354 assertions. Report 030 retains earlier callback/vector validation; report 031 records authored-case validation. Durable Flow storage and frontend cutover remain follow-on work.
+Status: stage 2 remains partial. Static list callbacks, output vectors, authored cases, and exact-root addressing lower through existing verified IR operations. Shared iterative `FlowStructure` preflight limits expression and type nesting to 128 and expanded syntax nodes to 100,000 across each word or expression, including host-built ASTs; that budget includes every declared output type, return member, and destructuring binding. The vector slice carries ordered word outputs, vector-aware call inference, `let (...)`, and terminal lexical `return` values. Standalone Flow test/example source objects, parsing, rendering, lowering, and compilation against verified programs are implemented. The authored-case milestone passed 354 assertions; the exact-root milestone passed 413 focused Flow assertions and 68 lint assertions. Report 030 retains earlier callback/vector validation; report 031 records authored-case validation and report 033 records root addressing. The coordinating agent's full Release gate is in progress. Durable Flow storage and frontend cutover remain follow-on work.
 
 ## Current boundary
 
-`FlowSyntax.fs` now models literals, locals, named calls, dot calls, `if`, typed container constructors, exhaustive Option/Result cases, static callback word references, scalar and destructuring `let`, terminal Return vectors, ordered nonempty word outputs, and standalone Flow test/example objects. `FlowParser.fs` parses scalar and parenthesized output signatures, test/example expectation forms, and bounds completed expression-tree depth, including postfix chains. Shared `FlowStructure` validation also checks host-built expressions, words, and attachments before public rendering or lowering, including combined actual/expected trees, Return members in nested lexical blocks, and source-name metadata. `FlowLowering.fs` lowers into the existing checked `Expr` model and verified IR, using collision-free private markers for sparse retained origins. Multi-output calls are allowed only in vector contexts; scalar positions require exactly one output (`FLOW_CALL_OUTPUT_ARITY`).
+`FlowSyntax.fs` now models literals, locals, named calls, absolute-root calls, dot calls, `if`, typed container constructors, exhaustive Option/Result cases, static callback word references, scalar and destructuring `let`, terminal Return vectors, ordered nonempty word outputs, and standalone Flow test/example objects. `FlowParser.fs` parses scalar and parenthesized output signatures, exact-root syntax, test/example expectation forms, and bounds completed expression-tree depth, including postfix chains. Shared `FlowStructure` validation also checks host-built expressions, words, and attachments before public rendering or lowering, including combined actual/expected trees, Return members in nested lexical blocks, and source-name metadata. `FlowLowering.fs` lowers into the existing checked `Expr` model and verified IR, using collision-free private markers for sparse retained origins. Multi-output calls are allowed only in vector contexts; scalar positions require exactly one output (`FLOW_CALL_OUTPUT_ARITY`).
 
 The backend already has the main target operations: `ConstructContainer`, `MapList`, `FilterList`, `EachList`, `MatchOption`, and `MatchResult`. `Compiler.inferBody` validates constructor payloads, callback arity and types, case-local scope, branch output/local joins, dependencies, and inferred effects. A `WordDefinition` and IR function already support multiple outputs. Flow test/example compilation uses the existing origin-aware Core APIs and validates against the exact supplied verified program; this adds no new runtime or generated helper words.
 
@@ -45,9 +45,17 @@ Static list callbacks are implemented as statically named, closure-free referenc
 customers.map(customer::normalize)
 customers.filter(customer::active?)
 customers.each(email::send)
+customers.map(::normalize)
 ```
 
 The exact forms parse a callback as a word reference, not a value expression. A qualified dictionary name is explicit; short names use `word name`. Ordinary value arguments such as `.map(localValue)` remain ordinary dot calls. Callback identity is resolved against dictionary entries before validating its signature, and generated constructor aliases do not participate. Lowering emits the existing static list operations. `map` requires one callback input and one output; `filter` requires one `Bool` output; `each` requires one `Unit` output. Missing, ambiguous, malformed, and multi-output callbacks are rejected. Callback dependencies and effects remain visible for empty lists, and the existing runtime preflights effects before invoking any provider.
+
+For ordinary calls, `::identity(value)` likewise selects only the exact
+one-segment key `identity`; it does not perform suffix lookup. Namespace calls
+such as `customer::normalize(value)` keep their existing behavior, while
+unqualified short names still report ambiguity when multiple suffix matches
+exist. The `AbsoluteRoot` qualifier is retained in the AST and validated for
+both parsed and host-built callback references.
 
 Represent multiple outputs as a type vector, not a tuple value:
 

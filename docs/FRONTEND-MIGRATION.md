@@ -30,6 +30,7 @@ This example preserves the existing toy Float policy, not an exact-money busines
 ## Calls and resolution
 
 - Ordinary calls name dictionary words. Use `::` for expression namespace qualification, for example `customer::balance(customer)`; displayed dictionary identities remain `customer.balance`. Unique unqualified names such as `add(10, 20)` are also possible. Namespace qualification and receiver chaining must not be syntactically ambiguous.
+- Use the absolute-root spelling `::identity(value)` when the exact one-segment dictionary key is intended. This bypasses suffix lookup; `identity(value)` and `word identity` retain their existing short-name rules, while `ns::identity(value)` explicitly selects `ns.identity`. Root callback references use the same exact rule, as in `items.map(::identity)`. Preserve qualification as a closed AST kind and reject root spellings with namespace suffixes.
 - `value.operation(args)` is a statically resolved first-input call. Evaluate the receiver once, then explicit argument expressions in written order; invoke the resolved word with the receiver as input one.
 - If exposed, `value |> operation(args)` is exactly equivalent: same resolution, evaluation order, types, effects and lowered calls. Dot is the default presentation. Neither spelling introduces closures or implicit partial application.
 - Resolve short stages from first-input type, stage name and explicit argument types using strict type compatibility. Zero or multiple candidates yield deterministic diagnostics. Do not select by dictionary order, docs, runtime value shape or expected output. A qualified ordinary call is the author's explicit way to resolve ambiguity; the parser never falls back from a receiver chain into a namespace call.
@@ -82,4 +83,11 @@ Make the new frontend default before further controlled vocabulary experiments. 
 
 ## Exact root identity addressing
 
-The current opt-in name grammar cannot explicitly select an unqualified authored dictionary key when another namespaced word has the same suffix: short lookup becomes ambiguous, while qualified source requires namespace segments. This fails closed, but leaves a naming gap. Before durable/default cutover, provide and test an explicit exact-root identity spelling or a complete namespace migration that preserves existing stable IDs and historical source. Do not resolve the gap through expected output, dictionary order, or silent rebinding. Include ordinary calls and static callbacks in the conformance fixtures.
+The implemented absolute-root form closes the short-name gap without adding a
+special namespace: `::identity(value)` addresses only the exact key `identity`,
+and `items.map(::identity)` carries that same identity into static callback
+resolution. Existing short spellings keep suffix ambiguity behavior. Flow
+tests cover root/namespace collisions, output signatures, effects, argument
+order, callback selection, receiver chaining, attachment round-trips, spans,
+and malformed host-built nodes. See report 033 for focused validation and the
+full-gate handoff.

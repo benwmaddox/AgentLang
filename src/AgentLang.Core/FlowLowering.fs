@@ -84,6 +84,7 @@ module FlowLowering =
         | FlowExpression.Literal(_, span)
         | FlowExpression.Local(_, span)
         | FlowExpression.Call(_, _, span)
+        | FlowExpression.RootCall(_, _, span)
         | FlowExpression.DotCall(_, _, _, span)
         | FlowExpression.If(_, _, _, span)
         | FlowExpression.Container(_, _, _, span)
@@ -169,6 +170,13 @@ module FlowLowering =
               Entry = entry
               ParameterNames = entryParameterNames context name entry })
         |> List.sortBy (fun candidate -> candidate.Name)
+
+    let private exactCandidateFor (context: Context) name =
+        context.CompilerContext.Words.TryFind name
+        |> Option.map (fun entry ->
+            { Name = name
+              Entry = entry
+              ParameterNames = entryParameterNames context name entry })
 
     let private validateClosedTypeArgument (context: Context) (argument: FlowTypeArgument) =
         let known = knownTypes context
@@ -265,19 +273,24 @@ module FlowLowering =
                     || character = '?'
                     || character = '!'))
         let hasValidSegments = pieces.Length > 0 && (pieces |> Array.forall validSegment)
-        if not hasValidSegments
-           || (reference.IsExplicitShort && pieces.Length <> 1)
-           || (not reference.IsExplicitShort && pieces.Length < 2) then
-            fail "FLOW_CALLBACK_REFERENCE_SHAPE" "Static callback references must be either namespace-qualified or explicitly marked short names." None (Some reference.Span) [ "qualified name or `word shortName`" ] [ reference.Name ]
+        let validQualification =
+            match reference.Qualification with
+            | FlowWordReferenceQualification.ExplicitShort
+            | FlowWordReferenceQualification.AbsoluteRoot -> pieces.Length = 1
+            | FlowWordReferenceQualification.NamespaceQualified -> pieces.Length >= 2
+        if not hasValidSegments || not validQualification then
+            fail "FLOW_CALLBACK_REFERENCE_SHAPE" "Static callback reference qualification does not match its name shape." None (Some reference.Span) [ "namespace::word"; "word shortName"; "::rootName" ] [ reference.Name ]
         rememberSpan state reference.Span
 
     let private callbackCandidates (context: Context) (reference: FlowWordReference) =
         let entries =
-            if reference.IsExplicitShort then
+            match reference.Qualification with
+            | FlowWordReferenceQualification.ExplicitShort ->
                 context.CompilerContext.Words
                 |> Map.toList
                 |> List.filter (fun (name, _) -> shortName name = reference.Name)
-            else
+            | FlowWordReferenceQualification.NamespaceQualified
+            | FlowWordReferenceQualification.AbsoluteRoot ->
                 context.CompilerContext.Words.TryFind reference.Name
                 |> Option.map (fun entry -> [ reference.Name, entry ])
                 |> Option.defaultValue []
@@ -402,6 +415,7 @@ module FlowLowering =
             let code =
                 match expression with
                 | FlowExpression.Call _ | FlowExpression.DotCall _ -> "FLOW_CALL_OUTPUT_ARITY"
+                | FlowExpression.RootCall _ -> "FLOW_CALL_OUTPUT_ARITY"
                 | _ -> "FLOW_EXPRESSION_OUTPUT_ARITY"
             fail code "This Flow expression position requires exactly one output." None (Some span) [ "one output" ] (values |> List.map Types.format)
 
@@ -419,6 +433,12 @@ module FlowLowering =
             | Some reference -> rejectWordReferenceContext reference
             | None -> ()
             let _, _, outputs = selectCallOutputs context state environment name None arguments span
+            outputs
+        | FlowExpression.RootCall(target, arguments, _) ->
+            match callbackReferenceIn arguments with
+            | Some reference -> rejectWordReferenceContext reference
+            | None -> ()
+            let _, _, outputs = selectRootCallOutputs context state environment target arguments span
             outputs
         | FlowExpression.DotCall(receiver, stage, arguments, _) ->
             let receiverType = inferExpression context state environment receiver
@@ -547,6 +567,15 @@ module FlowLowering =
         | _ when receiverType.IsSome -> fail "FLOW_AMBIGUOUS_DOT_STAGE" $"Dot stage '{requestedName}' has more than one applicable first-input word; qualify the call explicitly." None (Some callSpan) [] (successful |> List.map (fun (candidate, _, _) -> candidate.Name))
         | _ -> fail "FLOW_AMBIGUOUS_CALL" $"Call '{requestedName}' matches more than one word; use namespace::word qualification." None (Some callSpan) [] (successful |> List.map (fun (candidate, _, _) -> candidate.Name))
 
+    and private selectRootCallOutputs context state environment (target: FlowRootTarget) arguments callSpan =
+        let candidate =
+            exactCandidateFor context target.Name
+            |> Option.defaultWith (fun () ->
+                fail "FLOW_UNKNOWN_ROOT_CALL" $"No exact dictionary key '{target.Name}' exists." None (Some target.Span) [ target.Name ] [])
+        match mapArguments context state environment candidate None arguments callSpan with
+        | Ok(bound, outputs) -> candidate, bound, outputs
+        | Error problem -> raise (LanguageException { problem with Word = Some candidate.Name })
+
     let private createOrigin state span =
         rememberSpan state span
         span
@@ -565,6 +594,12 @@ module FlowLowering =
             | Some reference -> rejectWordReferenceContext reference
             | None -> ()
             let candidate, bound, _ = selectCallOutputs context state environment name None arguments callSpan
+            lowerResolvedCall context state environment candidate bound None arguments callSpan
+        | FlowExpression.RootCall(target, arguments, callSpan) ->
+            match callbackReferenceIn arguments with
+            | Some reference -> rejectWordReferenceContext reference
+            | None -> ()
+            let candidate, bound, _ = selectRootCallOutputs context state environment target arguments callSpan
             lowerResolvedCall context state environment candidate bound None arguments callSpan
         | FlowExpression.DotCall(receiver, stage, arguments, callSpan) ->
             match listCallbackOperation stage, arguments with
