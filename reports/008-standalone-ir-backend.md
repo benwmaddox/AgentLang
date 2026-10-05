@@ -25,3 +25,7 @@ Fresh `./scripts/Validate.ps1 -Configuration Release` passed all 16 checks with 
 [Validation evidence](evidence/008-working-tree-validation.json) and [persistence evidence](evidence/008-working-tree-projection.json) record base revision `3acd8e2decf95f15755ae182827cea991a04932b` with `dirty: true`. This is reviewed working-tree evidence, not clean committed CI evidence.
 
 The public Runtime still executes AST, including tests. These standalone tests do not establish complete primitive/branch parity, integration of the formatter into `ir`, or authoritative IR execution. The next gate pairs every active dictionary with its exact verified program, migrates evaluation and durable-projection tests, preserves providers/coverage/diagnostics across commit/reload/abort, then compares against the pinned AST runtime. LLVM remains conditional later work.
+
+## Published revision and clean CI
+
+Code and reports shipped together at `246dba27dfe0da619423bdf7781c8493596e42fa`. [Exact-revision CI run 37299454080](https://github.com/benwmaddox/AgentLang/actions/runs/37299454080) passed. Downloaded [validation](evidence/008-committed-ci-validation.json) confirms `dirty: false`, all 16 checks passed and the expected revision; [persistence evidence](evidence/008-committed-ci-projection.json) passed 99 checks. This checkpoint is merged and pushed to private `main`; runtime migration and actual benchmark execution remain pending.

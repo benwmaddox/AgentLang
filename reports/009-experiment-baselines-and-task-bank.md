@@ -21,3 +21,7 @@ The task bank contains all 60 proposed public tasks (20 simple, 20 medium, 10 de
 Final report-artifact capture can fail after the task and matching lineage have committed. That reporting phase is not a transaction with dictionary publication; a failed/incomplete run must be reviewed or reset before inclusion in a controlled sequence. The harness is not an OS sandbox. The domain-seeded profile remains the CLI default for existing scripts; original mode A requires explicit `--baseline primitive-only`.
 
 These are infrastructure and specification results, not live model outcomes or performance gains. Exact framework usage remains unavailable. The full executable suite and Flat/Growing/Conventional comparison remain open in the requirements ledger.
+
+## Published revision and clean CI
+
+Code and reports shipped together at `246dba27dfe0da619423bdf7781c8493596e42fa`. [Exact-revision CI run 37299454080](https://github.com/benwmaddox/AgentLang/actions/runs/37299454080) passed. Downloaded [validation](evidence/008-committed-ci-validation.json) confirms `dirty: false`, all 16 checks passed and the expected revision; [persistence evidence](evidence/008-committed-ci-projection.json) passed 99 checks. This checkpoint is merged and pushed to private `main`; runtime migration and actual benchmark execution remain pending.
