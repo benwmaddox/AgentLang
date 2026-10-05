@@ -191,6 +191,19 @@ type IrProgram =
       SourceMap: Map<SourceSiteId, IrSourceSite>
       CoverageByWord: Map<WordId, IrCoverageObligations> }
 
+/// A standalone executable body (eval, test, or example) is verified against
+/// one complete program snapshot but is not inserted into its word dictionary.
+type IrExecutableBody =
+    { BodyName: string
+      BodyInputTypes: IrType list
+      BodyOutputTypes: IrType list
+      BodyDeclaredEffects: Set<IrEffect>
+      BodyInferredEffects: Set<IrEffect>
+      BodyLocalNames: Map<LocalSlot, string>
+      BodyBlock: IrBlock
+      BodySourceMap: Map<SourceSiteId, IrSourceSite>
+      BodyCoverage: IrCoverageObligations }
+
 type private IrCallGraphNode =
     | IrFunctionNode of WordId
     | IrGeneratedNode of WordId
@@ -218,15 +231,40 @@ type IrPrimitiveCatalog = Map<PrimitiveId, IrPrimitiveContract>
 
 /// Immutable verified-program handle. The constructor is assembly-internal so
 /// host backends outside AgentLang.Core cannot forge an executable snapshot.
-/// Production code must obtain instances from IrVerifier.verify.
+/// Backends accept only instances minted by Compiler lowering and must match
+/// the retained catalog against their canonical host registry.
 [<Sealed>]
-type VerifiedIrProgram internal (program: IrProgram) =
+type VerifiedIrProgram internal (program: IrProgram, catalog: IrPrimitiveCatalog, backendExecutable: bool, compilerSnapshotFingerprint: string option) =
     member internal _.Program = program
+    member internal _.Catalog = catalog
+    member internal _.BackendExecutable = backendExecutable
+    member internal _.CompilerSnapshotFingerprint = compilerSnapshotFingerprint
 
 module VerifiedIrProgram =
     /// Read-only inspection does not grant execution authority; backends must
     /// still accept a VerifiedIrProgram rather than a raw IrProgram.
     let inspect (verified: VerifiedIrProgram) = verified.Program
+
+    /// Whether the compiler's trusted lowering path verified this snapshot.
+    /// This flag alone does not grant host access; backends must also compare
+    /// the retained catalog with their canonical registry.
+    let isBackendExecutable (verified: VerifiedIrProgram) = verified.BackendExecutable
+
+    let requireBackendRegistry (canonicalCatalog: IrPrimitiveCatalog) (verified: VerifiedIrProgram) =
+        if not verified.BackendExecutable then
+            Diagnostics.raiseError "IR_BACKEND_UNTRUSTED_PROGRAM" "A model-only verifier result cannot be executed by a backend." None None [ "compiler-lowered verified snapshot" ] [ "verifier-only snapshot" ]
+        if verified.Catalog <> canonicalCatalog then
+            Diagnostics.raiseError "IR_BACKEND_CATALOG_MISMATCH" "Verified primitive contracts do not match the backend's canonical host registry." None None [ "canonical primitive catalog" ] [ "different primitive catalog" ]
+
+[<Sealed>]
+type VerifiedIrBody internal (program: VerifiedIrProgram, body: IrExecutableBody) =
+    member internal _.Program = program
+    member internal _.Body = body
+
+module VerifiedIrBody =
+    /// Read-only body and program inspection does not create backend authority.
+    let inspect (verified: VerifiedIrBody) = verified.Body
+    let program (verified: VerifiedIrBody) = verified.Program
 
 module IrTypes =
     let rec format = function
@@ -426,7 +464,7 @@ module IrVerifier =
               ResolvedEffects = target.TargetEffects }
         verifyCall program catalog target.TargetName sourceSite call
 
-    let private verifyBlock (program: IrProgram) (catalog: IrPrimitiveCatalog) (owner: IrFunction) (block: IrBlock) =
+    let private verifyBlock (program: IrProgram) (catalog: IrPrimitiveCatalog) (owner: IrFunction) (sourceOwnerId: WordId option) (block: IrBlock) =
         let verifyShape site shape =
             shape.StackTypes |> List.iter (verifyIrType program (Some owner.FunctionName) (Some site))
             for KeyValue(slot, ty) in shape.LocalTypes do
@@ -443,7 +481,7 @@ module IrVerifier =
                 let sourceOwner = Some owner.FunctionName
                 match program.SourceMap.TryFind instruction.Site with
                 | None -> Diagnostics.raiseError "IR_SOURCE_SITE_MISSING" "IR instruction has no source-map entry." sourceOwner None [ sprintf "%A" instruction.Site ] []
-                | Some source when source.SiteOwner <> Some owner.FunctionId ->
+                | Some source when source.SiteOwner <> sourceOwnerId ->
                     Diagnostics.raiseError "IR_SOURCE_OWNER_MISMATCH" "IR instruction source map belongs to a different word." sourceOwner (Some source.SiteSpan) [ sprintf "%A" owner.FunctionId ] [ sprintf "%A" source.SiteOwner ]
                 | _ -> ()
                 let at = sourceSpan program instruction.Site
@@ -465,6 +503,10 @@ module IrVerifier =
                     match instruction.Operation with
                     | IrOperation.Constant(literal, ty) ->
                         verifyIrType program sourceOwner (Some instruction.Site) ty
+                        match literal with
+                        | LFloat value when not (Double.IsFinite value) -> operationError "IR_CONSTANT_LITERAL_INVALID" "IR floating constants must be finite, matching source literal validation." [ "finite Float" ] [ value.ToString("R", Globalization.CultureInfo.InvariantCulture) ]
+                        | LString value when isNull value -> operationError "IR_CONSTANT_LITERAL_INVALID" "IR string constants cannot be null." [ "non-null String" ] [ "null" ]
+                        | _ -> ()
                         if valueType literal <> ty then operationError "IR_CONSTANT_TYPE_MISMATCH" "Constant type does not match its literal." [ IrTypes.format (valueType literal) ] [ IrTypes.format ty ]
                         { shape with StackTypes = shape.StackTypes @ [ ty ] }, Set.empty
                     | IrOperation.Call call ->
@@ -537,8 +579,8 @@ module IrVerifier =
                         let prefix, condition = pop 1
                         if condition <> [ IrBool ] then operationError "IR_IF_CONDITION_TYPE" "IR if requires Bool on top of stack." [ "Bool" ] (condition |> List.map IrTypes.format)
                         let expectedEntry = { shape with StackTypes = prefix }
-                        let thenShape, thenEffects = verifyBlockNested program catalog owner instruction.Site expectedEntry thenBlock
-                        let elseShape, elseEffects = verifyBlockNested program catalog owner instruction.Site expectedEntry elseBlock
+                        let thenShape, thenEffects = verifyBlockNested program catalog owner sourceOwnerId instruction.Site expectedEntry thenBlock
+                        let elseShape, elseEffects = verifyBlockNested program catalog owner sourceOwnerId instruction.Site expectedEntry elseBlock
                         if thenShape <> elseShape then operationError "IR_BRANCH_JOIN_MISMATCH" "IR if arms do not have the same output stack and local shape." (thenShape.StackTypes |> List.map IrTypes.format) (elseShape.StackTypes |> List.map IrTypes.format)
                         thenShape, Set.union thenEffects elseEffects
                     | IrOperation.MatchOption(someLocal, someBlock, noneBlock) ->
@@ -548,8 +590,8 @@ module IrVerifier =
                         if shape.LocalTypes.ContainsKey someLocal then operationError "IR_CASE_LOCAL_SHADOW" "Option match payload slot shadows an outer local." [] [ sprintf "%A" someLocal ]
                         let someEntry = { StackTypes = prefix; LocalTypes = Map.add someLocal item shape.LocalTypes }
                         let noneEntry = { StackTypes = prefix; LocalTypes = shape.LocalTypes }
-                        let someShape, someEffects = verifyBlockNested program catalog owner instruction.Site someEntry someBlock
-                        let noneShape, noneEffects = verifyBlockNested program catalog owner instruction.Site noneEntry noneBlock
+                        let someShape, someEffects = verifyBlockNested program catalog owner sourceOwnerId instruction.Site someEntry someBlock
+                        let noneShape, noneEffects = verifyBlockNested program catalog owner sourceOwnerId instruction.Site noneEntry noneBlock
                         if noneShape.LocalTypes.ContainsKey someLocal then operationError "IR_CASE_LOCAL_ESCAPE" "Option payload slot escaped into the None arm." [] [ sprintf "%A" someLocal ]
                         let someJoin = { someShape with LocalTypes = Map.remove someLocal someShape.LocalTypes }
                         if someJoin <> noneShape then operationError "IR_BRANCH_JOIN_MISMATCH" "Option match arms do not have the same output stack and outer-local shape." (someJoin.StackTypes |> List.map IrTypes.format) (noneShape.StackTypes |> List.map IrTypes.format)
@@ -561,8 +603,8 @@ module IrVerifier =
                         if shape.LocalTypes.ContainsKey okLocal || shape.LocalTypes.ContainsKey errorLocal then operationError "IR_CASE_LOCAL_SHADOW" "Result match payload slot shadows an outer local." [] [ sprintf "%A" (okLocal, errorLocal) ]
                         let okEntry = { StackTypes = prefix; LocalTypes = Map.add okLocal okType shape.LocalTypes }
                         let errorEntry = { StackTypes = prefix; LocalTypes = Map.add errorLocal errorType shape.LocalTypes }
-                        let okShape, okEffects = verifyBlockNested program catalog owner instruction.Site okEntry okBlock
-                        let errorShape, errorEffects = verifyBlockNested program catalog owner instruction.Site errorEntry errorBlock
+                        let okShape, okEffects = verifyBlockNested program catalog owner sourceOwnerId instruction.Site okEntry okBlock
+                        let errorShape, errorEffects = verifyBlockNested program catalog owner sourceOwnerId instruction.Site errorEntry errorBlock
                         if okShape.LocalTypes.ContainsKey errorLocal || errorShape.LocalTypes.ContainsKey okLocal then operationError "IR_CASE_LOCAL_ESCAPE" "Result case payload escaped into the other case arm." [] [ sprintf "%A" (okLocal, errorLocal) ]
                         let okJoin = { okShape with LocalTypes = Map.remove okLocal okShape.LocalTypes }
                         let errorJoin = { errorShape with LocalTypes = Map.remove errorLocal errorShape.LocalTypes }
@@ -612,7 +654,7 @@ module IrVerifier =
                         if actual <> call.InputTypes then operationError "IR_CALL_STACK_MISMATCH" "Scalar accessor input does not match the stack." (call.InputTypes |> List.map IrTypes.format) (actual |> List.map IrTypes.format)
                         { shape with StackTypes = prefix @ call.OutputTypes }, call.ResolvedEffects
                 finish nextShape effects
-        and verifyBlockNested (program: IrProgram) (catalog: IrPrimitiveCatalog) (owner: IrFunction) (parentSite: SourceSiteId) expectedEntry (block: IrBlock) =
+        and verifyBlockNested (program: IrProgram) (catalog: IrPrimitiveCatalog) (owner: IrFunction) (sourceOwnerId: WordId option) (parentSite: SourceSiteId) expectedEntry (block: IrBlock) =
             if block.EntryShape <> expectedEntry then
                 Diagnostics.raiseError "IR_BLOCK_ENTRY_MISMATCH" "Structured IR block entry shape does not match its control-flow edge." (Some owner.FunctionName) (sourceSpan program parentSite) (expectedEntry.StackTypes |> List.map IrTypes.format) (block.EntryShape.StackTypes |> List.map IrTypes.format)
             let actualExit, effects = verifyNested block.Code block.EntryShape
@@ -746,9 +788,9 @@ module IrVerifier =
         let coverage = program.CoverageByWord.TryFind id |> Option.defaultValue { CoveredSites = Set.empty; BranchOutcomes = Map.empty }
         if coverage.CoveredSites <> sites || coverage.BranchOutcomes <> branches then
             failure "IR_COVERAGE_MAP_MISMATCH" $"Function '{fn.FunctionName}' coverage obligations do not match its source operations." [ string sites.Count; string branches.Count ] [ string coverage.CoveredSites.Count; string coverage.BranchOutcomes.Count ]
-        verifyBlock program catalog fn fn.FunctionBody
+        verifyBlock program catalog fn (Some id) fn.FunctionBody
 
-    let verify (catalog: IrPrimitiveCatalog) (program: IrProgram) =
+    let private verifyProgram (catalog: IrPrimitiveCatalog) (program: IrProgram) =
         verifyCatalog catalog
         verifyNominalTypes program catalog
         let duplicateIds = Set.intersect (program.FunctionsById |> Map.toSeq |> Seq.map fst |> Set.ofSeq) (program.GeneratedTargetsById |> Map.toSeq |> Seq.map fst |> Set.ofSeq)
@@ -768,7 +810,6 @@ module IrVerifier =
             |> List.choose (fun (site, count) -> if count > 1 then Some(site, count) else None)
         if not (List.isEmpty duplicateSites) then
             failure "IR_DUPLICATE_SOURCE_SITE" "Each source expression must have one executable instruction identity across all nested blocks." [ "unique source-site ID per executable instruction" ] (duplicateSites |> List.map (fun (site, count) -> sprintf "%A (%d instructions)" site count))
-        verifyAcyclicCallGraph program
         for KeyValue(site, source) in program.SourceMap do
             let (SourceSiteId(siteOwner, ordinal)) = site
             if ordinal < 0 then failure "IR_SOURCE_SITE_INVALID" "Source-site ordinals must be nonnegative." [ "nonnegative ordinal" ] [ string ordinal ]
@@ -781,5 +822,68 @@ module IrVerifier =
             match source.SiteOwner with
             | Some owner when not (program.FunctionsById.ContainsKey owner || program.GeneratedTargetsById.ContainsKey owner) ->
                 failure "IR_SOURCE_OWNER_UNKNOWN" "Source map refers to an unknown owner identity." [] [ sprintf "%A" owner ]
+            | None -> failure "IR_SOURCE_OWNER_UNKNOWN" "A complete executable program cannot contain standalone source-map entries." [ "word or generated owner" ] []
             | _ -> ()
-        VerifiedIrProgram(program)
+        verifyAcyclicCallGraph program
+
+    /// Verify manually supplied IR for conformance tests and structural tooling.
+    /// The result deliberately cannot be executed by a host backend.
+    let verify (catalog: IrPrimitiveCatalog) (program: IrProgram) =
+        verifyProgram catalog program
+        VerifiedIrProgram(program, catalog, false, None)
+
+    /// The compiler alone uses this path after lowering with its fixed host
+    /// primitive registry. Public raw-IR verification remains non-executable.
+    let internal verifyCompilerProgram (catalog: IrPrimitiveCatalog) snapshotFingerprint (program: IrProgram) =
+        verifyProgram catalog program
+        VerifiedIrProgram(program, catalog, true, Some snapshotFingerprint)
+
+    let coverageObligations (block: IrBlock) =
+        let coveredSites, branchOutcomes = expectedCoverage block
+        { CoveredSites = coveredSites; BranchOutcomes = branchOutcomes }
+
+    let verifyBody (verifiedProgram: VerifiedIrProgram) (body: IrExecutableBody) =
+        if String.IsNullOrWhiteSpace body.BodyName then
+            failure "IR_BODY_NAME_MISSING" "A detached executable body must have a display name." [ "nonempty body name" ] [ body.BodyName ]
+        let sourceMap =
+            Map.fold (fun merged site source ->
+                if Map.containsKey site merged then
+                    Diagnostics.raiseError "IR_SOURCE_SITE_COLLISION" "Detached body source sites collide with the compiled program snapshot." (Some body.BodyName) (Some source.SiteSpan) [] [ sprintf "%A" site ]
+                Map.add site source merged) verifiedProgram.Program.SourceMap body.BodySourceMap
+        if body.BodySourceMap |> Map.toList |> List.exists (fun (_, source) -> source.SiteOwner.IsSome) then
+            failure "IR_BODY_SOURCE_OWNER" "Detached body source sites must use the standalone owner." [ "SiteOwner=None" ] (body.BodySourceMap |> Map.toList |> List.map (fun (site, source) -> sprintf "%A=%A" site source.SiteOwner))
+        let program = { verifiedProgram.Program with SourceMap = sourceMap }
+        let sites, branches = expectedCoverage body.BodyBlock
+        let obligations = { CoveredSites = sites; BranchOutcomes = branches }
+        if body.BodyCoverage <> obligations then
+            failure "IR_BODY_COVERAGE_MISMATCH" "Detached body coverage metadata does not match its executable structure." [ string obligations.CoveredSites.Count; string obligations.BranchOutcomes.Count ] [ string body.BodyCoverage.CoveredSites.Count; string body.BodyCoverage.BranchOutcomes.Count ]
+        if body.BodySourceMap |> Map.toSeq |> Seq.map fst |> Set.ofSeq <> sites then
+            failure "IR_BODY_SOURCE_MAP_MISMATCH" "Detached body source map must contain exactly the body's own operation sites." (sites |> Set.toList |> List.map (sprintf "%A")) (body.BodySourceMap |> Map.toList |> List.map (fun (site, _) -> sprintf "%A" site))
+        let pseudoOwner =
+            { FunctionId = WordId("detached:" + body.BodyName)
+              FunctionRevision = 0
+              FunctionName = body.BodyName
+              InputTypes = body.BodyInputTypes
+              OutputTypes = body.BodyOutputTypes
+              FunctionDeclaredEffects = body.BodyDeclaredEffects
+              FunctionInferredEffects = body.BodyInferredEffects
+              LocalNames = body.BodyLocalNames
+              FunctionBody = body.BodyBlock }
+        body.BodyInputTypes @ body.BodyOutputTypes |> List.iter (verifyIrType program (Some body.BodyName) None)
+        for KeyValue(slot, name) in body.BodyLocalNames do
+            let (LocalSlot value) = slot
+            if value < 0 || String.IsNullOrWhiteSpace name then
+                failure "IR_LOCAL_LAYOUT_INVALID" "Detached body local slots must be nonnegative and have nonempty names." [ "valid local slot/name" ] [ sprintf "%A=%s" slot name ]
+        if body.BodyBlock.EntryShape.StackTypes <> body.BodyInputTypes || body.BodyBlock.ExitShape.StackTypes <> body.BodyOutputTypes then
+            failure "IR_BODY_SIGNATURE_MISMATCH" "Detached body block stack shape differs from its signature." (body.BodyInputTypes |> List.map IrTypes.format) (body.BodyBlock.ExitShape.StackTypes |> List.map IrTypes.format)
+        if body.BodyBlock.EntryShape.LocalTypes |> Map.exists (fun _ _ -> true) then
+            failure "IR_BODY_ENTRY_LOCALS" "Detached execution bodies must begin with no initialized locals." [] []
+        for KeyValue(site, source) in body.BodySourceMap do
+            let (SourceSiteId(siteOwner, ordinal)) = site
+            if ordinal < 0 then failure "IR_SOURCE_SITE_INVALID" "Source-site ordinals must be nonnegative." [ "nonnegative ordinal" ] [ string ordinal ]
+            if siteOwner.IsSome || source.SiteOwner.IsSome then
+                failure "IR_BODY_SOURCE_OWNER" "Detached body source sites must use the standalone owner." [ "SiteOwner=None" ] [ sprintf "%A=%A" site source.SiteOwner ]
+            if String.IsNullOrWhiteSpace source.SourceKind || String.IsNullOrWhiteSpace source.SiteSpan.File || source.SiteSpan.Line < 1 || source.SiteSpan.Column < 1 || source.SiteSpan.Length < 0 then
+                failure "IR_SOURCE_SPAN_INVALID" "Detached body source map must contain a valid source kind and span." [ "valid SourceSpan and source kind" ] [ sprintf "%A" source.SiteSpan ]
+        verifyBlock program verifiedProgram.Catalog pseudoOwner None body.BodyBlock
+        VerifiedIrBody(verifiedProgram, body)

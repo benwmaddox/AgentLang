@@ -160,7 +160,8 @@ module Compiler =
                 for expected, actual in List.zip definition.Inputs args do substitutions <- unify substitutions expected actual
             with _ ->
                 Diagnostics.raiseError "TYPE_STACK_MISMATCH" $"Arguments passed to '{wordName}' do not match its signature." (Some wordName) (Some span) (definition.Inputs |> List.map Types.format) (args |> List.map Types.format)
-            prefix @ (definition.Outputs |> List.map (substitute substitutions)), entry
+            let callOutputs = definition.Outputs |> List.map (substitute substitutions)
+            prefix @ callOutputs, entry, args, callOutputs
 
     let private higherOrderCall (knownTypes: Set<string>) (words: Map<string, WordEntry>) (wordName: string) (span: SourceSpan) (itemType: LangType) (requiredOutput: LangType option) =
         match words.TryFind wordName with
@@ -185,13 +186,43 @@ module Compiler =
         let outputType, _ = higherOrderCall knownTypes words wordName span itemType None
         outputType
 
+    type private TypedCallSignature =
+        { CallInputs: LangType list
+          CallOutputs: LangType list }
+
+    type private TypedNode =
+        { SourceExpression: Expr
+          InputStack: LangType list
+          OutputStack: LangType list
+          InputLocals: Map<string, LangType>
+          OutputLocals: Map<string, LangType>
+          CallSignature: TypedCallSignature option
+          ChildBodies: TypedBody list }
+
+    and private TypedBody =
+        { EntryStack: LangType list
+          ExitStack: LangType list
+          EntryLocals: Map<string, LangType>
+          ExitLocals: Map<string, LangType>
+          Nodes: TypedNode list }
+
+    type private BodyInference =
+        { InferredBody: TypedBody
+          Dependencies: Set<string>
+          Effects: Set<string> }
+
     let private inferBody (knownTypes: Set<string>) (words: Map<string, WordEntry>) (wordName: string) (wordSpan: SourceSpan option) (initialStack: LangType list) (initialLocals: Map<string, LangType>) (body: Expr list) =
         let mutable dependencies = Set.empty
         let mutable effects = Set.empty
-        let rec visit (stack: LangType list) (locals: Map<string, LangType>) (expressions: Expr list) =
-            match expressions with
-            | [] -> stack, locals
-            | expression :: rest ->
+        let rec visit (entryStack: LangType list) (entryLocals: Map<string, LangType>) (expressions: Expr list) =
+            let mutable stack = entryStack
+            let mutable locals = entryLocals
+            let nodes = ResizeArray<TypedNode>()
+            for expression in expressions do
+                let inputStack = stack
+                let inputLocals = locals
+                let mutable callSignature = None
+                let mutable childBodies = []
                 let nextStack, nextLocals =
                     match expression with
                     | Push(literal, _) -> stack @ [ literal |> Types.literalValue |> Types.ofValue ], locals
@@ -203,7 +234,8 @@ module Compiler =
                         if List.isEmpty stack then Diagnostics.raiseError "TYPE_STACK_UNDERFLOW" $"Binding '{name}' requires one stack value." (Some wordName) (Some expressionSpan) [ "value" ] []
                         stack |> List.take (stack.Length - 1), Map.add name (List.last stack) locals
                     | Call(name, expressionSpan) ->
-                        let output, entry = inferCall knownTypes words name expressionSpan stack
+                        let output, entry, callInputs, callOutputs = inferCall knownTypes words name expressionSpan stack
+                        callSignature <- Some { CallInputs = callInputs; CallOutputs = callOutputs }
                         dependencies <- Set.add name dependencies
                         effects <- Set.union effects entry.Definition.Effects
                         output, locals
@@ -254,6 +286,7 @@ module Compiler =
                             | EachList _ -> Some TUnit
                             | _ -> failwith "unreachable"
                         let callbackOutput, entry = higherOrderCall knownTypes words target expressionSpan itemType requiredOutput
+                        callSignature <- Some { CallInputs = [ itemType ]; CallOutputs = [ callbackOutput ] }
                         dependencies <- Set.add target dependencies
                         effects <- Set.union effects entry.Definition.Effects
                         let output =
@@ -268,11 +301,12 @@ module Compiler =
                             let actual = stack |> List.tryLast |> Option.map Types.format |> Option.defaultValue "<empty>"
                             Diagnostics.raiseError "TYPE_IF_REQUIRES_BOOL" "'if' consumes a Bool from the top of the stack." (Some wordName) (Some expressionSpan) [ "Bool" ] [ actual ]
                         let before = stack |> List.take (stack.Length - 1)
-                        let thenStack, thenLocals = visit before locals thenBranch
-                        let elseStack, elseLocals = visit before locals elseBranch
-                        if thenStack <> elseStack then Diagnostics.raiseError "TYPE_BRANCH_STACK_MISMATCH" "Both branches of an if expression must leave the same stack types." (Some wordName) (Some expressionSpan) (thenStack |> List.map Types.format) (elseStack |> List.map Types.format)
-                        if thenLocals <> elseLocals then Diagnostics.raiseError "TYPE_BRANCH_LOCAL_MISMATCH" "Both branches of an if expression must bind the same locals with the same types." (Some wordName) (Some expressionSpan) (thenLocals |> Map.toList |> List.map (fun (name, ty) -> $"{name}:{Types.format ty}")) (elseLocals |> Map.toList |> List.map (fun (name, ty) -> $"{name}:{Types.format ty}"))
-                        thenStack, thenLocals
+                        let thenBody = visit before locals thenBranch
+                        let elseBody = visit before locals elseBranch
+                        if thenBody.ExitStack <> elseBody.ExitStack then Diagnostics.raiseError "TYPE_BRANCH_STACK_MISMATCH" "Both branches of an if expression must leave the same stack types." (Some wordName) (Some expressionSpan) (thenBody.ExitStack |> List.map Types.format) (elseBody.ExitStack |> List.map Types.format)
+                        if thenBody.ExitLocals <> elseBody.ExitLocals then Diagnostics.raiseError "TYPE_BRANCH_LOCAL_MISMATCH" "Both branches of an if expression must bind the same locals with the same types." (Some wordName) (Some expressionSpan) (thenBody.ExitLocals |> Map.toList |> List.map (fun (name, ty) -> $"{name}:{Types.format ty}")) (elseBody.ExitLocals |> Map.toList |> List.map (fun (name, ty) -> $"{name}:{Types.format ty}"))
+                        childBodies <- [ thenBody; elseBody ]
+                        thenBody.ExitStack, thenBody.ExitLocals
                     | MatchOption(someName, someBranch, noneBranch, expressionSpan) ->
                         if List.isEmpty stack then
                             Diagnostics.raiseError "TYPE_MATCH_REQUIRES_OPTION" "match-option consumes an Option<T> from the top of the stack." (Some wordName) (Some expressionSpan) [ "Option<T>" ] []
@@ -282,14 +316,15 @@ module Compiler =
                             | actual -> Diagnostics.raiseError "TYPE_MATCH_REQUIRES_OPTION" "match-option consumes an Option<T> from the top of the stack." (Some wordName) (Some expressionSpan) [ "Option<T>" ] [ Types.format actual ]
                         if locals.ContainsKey someName then
                             Diagnostics.raiseError "TYPE_MATCH_LOCAL_SHADOW" $"Match payload local {someName} cannot shadow an existing local." (Some wordName) (Some expressionSpan) [] [ someName ]
-                        let someStack, someLocals = visit before (Map.add someName itemType locals) someBranch
-                        let someLocals = Map.remove someName someLocals
-                        let noneStack, noneLocals = visit before locals noneBranch
-                        if someStack <> noneStack then
-                            Diagnostics.raiseError "TYPE_MATCH_STACK_MISMATCH" "Both option match cases must leave the same stack types." (Some wordName) (Some expressionSpan) (someStack |> List.map Types.format) (noneStack |> List.map Types.format)
-                        if someLocals <> noneLocals then
-                            Diagnostics.raiseError "TYPE_MATCH_LOCAL_MISMATCH" "Both option match cases must leave the same outer locals with the same types." (Some wordName) (Some expressionSpan) (someLocals |> Map.toList |> List.map (fun (name, ty) -> $"{name}:{Types.format ty}")) (noneLocals |> Map.toList |> List.map (fun (name, ty) -> $"{name}:{Types.format ty}"))
-                        someStack, someLocals
+                        let someBody = visit before (Map.add someName itemType locals) someBranch
+                        let someLocals = Map.remove someName someBody.ExitLocals
+                        let noneBody = visit before locals noneBranch
+                        if someBody.ExitStack <> noneBody.ExitStack then
+                            Diagnostics.raiseError "TYPE_MATCH_STACK_MISMATCH" "Both option match cases must leave the same stack types." (Some wordName) (Some expressionSpan) (someBody.ExitStack |> List.map Types.format) (noneBody.ExitStack |> List.map Types.format)
+                        if someLocals <> noneBody.ExitLocals then
+                            Diagnostics.raiseError "TYPE_MATCH_LOCAL_MISMATCH" "Both option match cases must leave the same outer locals with the same types." (Some wordName) (Some expressionSpan) (someLocals |> Map.toList |> List.map (fun (name, ty) -> $"{name}:{Types.format ty}")) (noneBody.ExitLocals |> Map.toList |> List.map (fun (name, ty) -> $"{name}:{Types.format ty}"))
+                        childBodies <- [ someBody; noneBody ]
+                        someBody.ExitStack, someLocals
                     | MatchResult(okName, errorName, okBranch, errorBranch, expressionSpan) ->
                         if List.isEmpty stack then
                             Diagnostics.raiseError "TYPE_MATCH_REQUIRES_RESULT" "match-result consumes a Result<T, E> from the top of the stack." (Some wordName) (Some expressionSpan) [ "Result<T, E>" ] []
@@ -299,56 +334,85 @@ module Compiler =
                             | actual -> Diagnostics.raiseError "TYPE_MATCH_REQUIRES_RESULT" "match-result consumes a Result<T, E> from the top of the stack." (Some wordName) (Some expressionSpan) [ "Result<T, E>" ] [ Types.format actual ]
                         if locals.ContainsKey okName || locals.ContainsKey errorName then
                             Diagnostics.raiseError "TYPE_MATCH_LOCAL_SHADOW" "Result match payload locals cannot shadow existing locals." (Some wordName) (Some expressionSpan) [] [ okName; errorName ]
-                        let okStack, okLocals = visit before (Map.add okName okType locals) okBranch
-                        let okLocals = Map.remove okName okLocals
-                        let errorStack, errorLocals = visit before (Map.add errorName errorType locals) errorBranch
-                        let errorLocals = Map.remove errorName errorLocals
-                        if okStack <> errorStack then
-                            Diagnostics.raiseError "TYPE_MATCH_STACK_MISMATCH" "Both result match cases must leave the same stack types." (Some wordName) (Some expressionSpan) (okStack |> List.map Types.format) (errorStack |> List.map Types.format)
+                        let okBody = visit before (Map.add okName okType locals) okBranch
+                        let okLocals = Map.remove okName okBody.ExitLocals
+                        let errorBody = visit before (Map.add errorName errorType locals) errorBranch
+                        let errorLocals = Map.remove errorName errorBody.ExitLocals
+                        if okBody.ExitStack <> errorBody.ExitStack then
+                            Diagnostics.raiseError "TYPE_MATCH_STACK_MISMATCH" "Both result match cases must leave the same stack types." (Some wordName) (Some expressionSpan) (okBody.ExitStack |> List.map Types.format) (errorBody.ExitStack |> List.map Types.format)
                         if okLocals <> errorLocals then
                             Diagnostics.raiseError "TYPE_MATCH_LOCAL_MISMATCH" "Both result match cases must leave the same outer locals with the same types." (Some wordName) (Some expressionSpan) (okLocals |> Map.toList |> List.map (fun (name, ty) -> $"{name}:{Types.format ty}")) (errorLocals |> Map.toList |> List.map (fun (name, ty) -> $"{name}:{Types.format ty}"))
-                        okStack, okLocals
-                visit nextStack nextLocals rest
-        let finalStack, _ = visit initialStack initialLocals body
-        { Stack = finalStack; Dependencies = dependencies; Effects = effects }
+                        childBodies <- [ okBody; errorBody ]
+                        okBody.ExitStack, okLocals
+                nodes.Add
+                    { SourceExpression = expression
+                      InputStack = inputStack
+                      OutputStack = nextStack
+                      InputLocals = inputLocals
+                      OutputLocals = nextLocals
+                      CallSignature = callSignature
+                      ChildBodies = childBodies }
+                stack <- nextStack
+                locals <- nextLocals
+            { EntryStack = entryStack
+              ExitStack = stack
+              EntryLocals = entryLocals
+              ExitLocals = locals
+              Nodes = List.ofSeq nodes }
+        { InferredBody = visit initialStack initialLocals body
+          Dependencies = dependencies
+          Effects = effects }
+
+    let private checkedExpression (inferred: BodyInference) =
+        { Stack = inferred.InferredBody.ExitStack
+          Dependencies = inferred.Dependencies
+          Effects = inferred.Effects }
 
     let checkExpression knownTypes words body =
-        let inferred = inferBody knownTypes words "<eval>" None [] Map.empty body
-        { Stack = inferred.Stack; Dependencies = inferred.Dependencies; Effects = inferred.Effects }
+        inferBody knownTypes words "<eval>" None [] Map.empty body |> checkedExpression
 
-    let checkDefinition knownTypes words definition =
+    let private checkDefinitionDetailed knownTypes words definition =
         for typeValue in definition.Inputs @ definition.Outputs do validateType false knownTypes (Some definition.Span) definition.Name typeValue
         let inferred = inferBody knownTypes words definition.Name (Some definition.Span) definition.Inputs Map.empty definition.Body
-        if inferred.Stack <> definition.Outputs then
-            Diagnostics.raiseError "TYPE_WORD_OUTPUT_MISMATCH" $"Word '{definition.Name}' does not leave its declared output stack." (Some definition.Name) (Some definition.Span) (definition.Outputs |> List.map Types.format) (inferred.Stack |> List.map Types.format)
+        if inferred.InferredBody.ExitStack <> definition.Outputs then
+            Diagnostics.raiseError "TYPE_WORD_OUTPUT_MISMATCH" $"Word '{definition.Name}' does not leave its declared output stack." (Some definition.Name) (Some definition.Span) (definition.Outputs |> List.map Types.format) (inferred.InferredBody.ExitStack |> List.map Types.format)
         let undeclared = Set.difference inferred.Effects definition.Effects
         if not (Set.isEmpty undeclared) then
             let missing = String.concat ", " undeclared
             Diagnostics.raiseError "EFFECT_UNDECLARED" $"Word '{definition.Name}' uses effects absent from its declaration: {missing}." (Some definition.Name) (Some definition.Span) (definition.Effects |> Set.toList) (inferred.Effects |> Set.toList)
-        { Definition = definition; Dependencies = inferred.Dependencies; InferredEffects = inferred.Effects }
+        { Definition = definition; Dependencies = inferred.Dependencies; InferredEffects = inferred.Effects }, inferred.InferredBody
 
-    let checkTest knownTypes words (test: TestDefinition) =
+    let checkDefinition knownTypes words definition =
+        checkDefinitionDetailed knownTypes words definition |> fst
+
+    let private checkTestDetailed knownTypes words (test: TestDefinition) =
         match test.Expected with
         | ExpectedRuntimeError _ when List.isEmpty test.Body ->
             Diagnostics.raiseError "TEST_EXPECTED_ERROR_BODY_EMPTY" $"Runtime-error test '{test.Name}' must contain an expression to execute." (Some test.Word) (Some test.Span) [ "nonempty test body" ] []
         | ExpectedRuntimeError code when not (TestExpectation.isValidRuntimeErrorCode code) ->
             Diagnostics.raiseError "TEST_INVALID_EXPECTED_ERROR_CODE" $"Runtime-error test '{test.Name}' uses an invalid diagnostic code." (Some test.Word) (Some test.Span) [ "[A-Z][A-Z0-9_]*" ] [ code ]
         | _ -> ()
-        let checkedExpression = checkExpression knownTypes words test.Body
+        let inferred = inferBody knownTypes words (test.Word + "/" + test.Name) (Some test.Span) [] Map.empty test.Body
+        let checkedExpression = checkedExpression inferred
         match test.Expected with
         | ExpectedValue literal ->
             let expectedType = literal |> Types.literalValue |> Types.ofValue
             if checkedExpression.Stack <> [ expectedType ] then
                 Diagnostics.raiseError "TEST_EXPECTED_STACK" $"Test '{test.Name}' must leave exactly one value matching its expected literal." (Some test.Word) (Some test.Span) [ Types.format expectedType ] (checkedExpression.Stack |> List.map Types.format)
         | ExpectedRuntimeError _ -> ()
-        checkedExpression
+        checkedExpression, inferred.InferredBody
 
-    let checkExample knownTypes words (example: ExampleDefinition) =
-        let checkedExpression = checkExpression knownTypes words example.Body
+    let checkTest knownTypes words test = checkTestDetailed knownTypes words test |> fst
+
+    let private checkExampleDetailed knownTypes words (example: ExampleDefinition) =
+        let inferred = inferBody knownTypes words (example.Word + "/" + example.Name) (Some example.Span) [] Map.empty example.Body
+        let checkedExpression = checkedExpression inferred
         let expectedType = example.Expected |> Types.literalValue |> Types.ofValue
         if checkedExpression.Stack <> [ expectedType ] then
             Diagnostics.raiseError "EXAMPLE_EXPECTED_STACK" $"Example '{example.Name}' must leave exactly one value matching its expected literal." (Some example.Word) (Some example.Span) [ Types.format expectedType ] (checkedExpression.Stack |> List.map Types.format)
-        checkedExpression
+        checkedExpression, inferred.InferredBody
+
+    let checkExample knownTypes words example = checkExampleDetailed knownTypes words example |> fst
 
     let dependencies (body: Expr list) =
         let rec collect expressions =
@@ -414,3 +478,702 @@ module Compiler =
                 | MatchResult(okName, errorName, okBranch, errorBranch, _) ->
                     "match-result\nok " + okName + "\n" + sourceExpressions okBranch + "\nerror " + errorName + "\n" + sourceExpressions errorBranch + "\nend"
             String.concat "\n" [ current; sourceExpressions rest ] |> fun text -> text.Trim('\n')
+
+    /// Complete source snapshot used by compiler lowering. Every effective
+    /// dictionary word, including primitives and generated words, has an ID.
+    type IrLoweringContext =
+        { Words: Map<string, WordEntry>
+          Records: Map<string, RecordDefinition>
+          Scalars: Map<string, ScalarTypeDefinition>
+          WordIds: Map<string, WordId> }
+
+    let private irFailure code message word span expected actual =
+        Diagnostics.raiseError code message word span expected actual
+
+    let private irEffectsForWord word span (effects: Set<string>) =
+        effects
+        |> Set.fold (fun found name ->
+            match IrEffects.ofName name with
+            | Some effect -> Set.add effect found
+            | None -> irFailure "IR_UNKNOWN_EFFECT" $"Effect '{name}' is not in the closed executable effect vocabulary." (Some word) span (IrEffects.names Set.empty) [ name ]) Set.empty
+
+    let private typePatternOfLangType word (typeValue: LangType) =
+        let variables = System.Collections.Generic.Dictionary<string, int>()
+        let mutable nextVariable = 0
+        let rec pattern = function
+            | TInt -> PatternInt
+            | TFloat -> PatternFloat
+            | TBool -> PatternBool
+            | TString -> PatternString
+            | TUnit -> PatternUnit
+            | TList item -> PatternList(pattern item)
+            | TOption item -> PatternOption(pattern item)
+            | TResult(ok, error) -> PatternResult(pattern ok, pattern error)
+            | TVar name ->
+                match variables.TryGetValue name with
+                | true, index -> PatternVariable index
+                | _ ->
+                    let index = nextVariable
+                    nextVariable <- nextVariable + 1
+                    variables[name] <- index
+                    PatternVariable index
+            | TNamed name ->
+                irFailure "IR_PRIMITIVE_TYPE_UNSUPPORTED" $"Trusted primitive '{word}' cannot use nominal type '{name}' in its generic contract." (Some word) None [] [ name ]
+        pattern typeValue
+
+    let private primitiveContractOfEntry (entry: WordEntry) operation =
+        let definition = entry.Definition
+        let typeVariables = System.Collections.Generic.Dictionary<string, int>()
+        let mutable nextVariable = 0
+        let rec pattern = function
+            | TInt -> PatternInt
+            | TFloat -> PatternFloat
+            | TBool -> PatternBool
+            | TString -> PatternString
+            | TUnit -> PatternUnit
+            | TList item -> PatternList(pattern item)
+            | TOption item -> PatternOption(pattern item)
+            | TResult(ok, error) -> PatternResult(pattern ok, pattern error)
+            | TVar name ->
+                match typeVariables.TryGetValue name with
+                | true, index -> PatternVariable index
+                | _ ->
+                    let index = nextVariable
+                    nextVariable <- nextVariable + 1
+                    typeVariables[name] <- index
+                    PatternVariable index
+            | TNamed name ->
+                irFailure "IR_PRIMITIVE_TYPE_UNSUPPORTED" $"Trusted primitive '{definition.Name}' cannot use nominal type '{name}' in its generic contract." (Some definition.Name) (Some definition.Span) [] [ name ]
+        let effects = irEffectsForWord definition.Name (Some definition.Span) definition.Effects
+        let primitive = PrimitiveId operation
+        { Primitive = primitive
+          InputPatterns = definition.Inputs |> List.map pattern
+          OutputPatterns = definition.Outputs |> List.map pattern
+          PrimitiveEffects = effects }
+
+    /// Fixed host contract catalog. Source aliases resolve through BuiltinOp,
+    /// so display names never select a host primitive implementation.
+    let primitiveIrCatalog: IrPrimitiveCatalog =
+        let grouped =
+            primitives
+            |> Map.toList
+            |> List.choose (fun (_, entry) ->
+                match entry.Builtin with
+                | Some(BuiltinOp operation) -> Some(operation, entry)
+                | _ -> None)
+            |> List.groupBy fst
+        grouped
+        |> List.map (fun (operation, members) ->
+            let entries = members |> List.map snd |> List.sortBy (fun entry -> entry.Definition.Name)
+            let canonical = entries.Head
+            for alias in entries.Tail do
+                if alias.Definition.Inputs <> canonical.Definition.Inputs
+                   || alias.Definition.Outputs <> canonical.Definition.Outputs
+                   || alias.Definition.Effects <> canonical.Definition.Effects then
+                    irFailure "IR_PRIMITIVE_REGISTRY_CONFLICT" $"Trusted BuiltinOp '{operation}' has aliases with different signatures or effects." (Some alias.Definition.Name) (Some alias.Definition.Span) [ canonical.Definition.Name ] [ alias.Definition.Name ]
+            PrimitiveId operation, primitiveContractOfEntry canonical operation)
+        |> Map.ofList
+
+    let private verifyBuiltinMetadata (words: Map<string, WordEntry>) name (entry: WordEntry) =
+        match entry.Builtin with
+        | Some(BuiltinOp operation) ->
+            match primitiveIrCatalog.TryFind(PrimitiveId operation),
+                  (primitives |> Map.toList |> List.tryPick (fun (_, standard) -> if standard.Builtin = Some(BuiltinOp operation) then Some standard else None)) with
+            | Some _, Some canonical ->
+                if entry.Definition.Inputs <> canonical.Definition.Inputs
+                   || entry.Definition.Outputs <> canonical.Definition.Outputs
+                   || entry.Definition.Effects <> canonical.Definition.Effects then
+                    irFailure "IR_PRIMITIVE_METADATA_MISMATCH" $"Primitive alias '{name}' does not match the trusted contract for BuiltinOp '{operation}'." (Some name) (Some entry.Definition.Span) [ String.concat " " (canonical.Definition.Inputs |> List.map Types.format) + " -> " + String.concat " " (canonical.Definition.Outputs |> List.map Types.format); String.concat ", " canonical.Definition.Effects ] [ String.concat " " (entry.Definition.Inputs |> List.map Types.format) + " -> " + String.concat " " (entry.Definition.Outputs |> List.map Types.format); String.concat ", " entry.Definition.Effects ]
+            | _ ->
+                irFailure "IR_UNKNOWN_PRIMITIVE_ID" $"BuiltinOp '{operation}' is not in the fixed trusted primitive registry." (Some name) (Some entry.Definition.Span) (primitiveIrCatalog |> Map.toList |> List.map (fun (id, _) -> sprintf "%A" id)) [ operation ]
+        | _ -> ()
+        if entry.Definition.Name <> name then
+            irFailure "IR_WORD_NAME_MISMATCH" "Dictionary key differs from its source word name." (Some name) (Some entry.Definition.Span) [ name ] [ entry.Definition.Name ]
+        words |> ignore
+
+    let private closedIrType (typeKeys: Map<string, ProgramTypeKey>) word span (typeValue: LangType) =
+        let rec convert = function
+            | TInt -> IrInt
+            | TFloat -> IrFloat
+            | TBool -> IrBool
+            | TString -> IrString
+            | TUnit -> IrUnit
+            | TList item -> IrList(convert item)
+            | TOption item -> IrOption(convert item)
+            | TResult(ok, error) -> IrResult(convert ok, convert error)
+            | TNamed name ->
+                match typeKeys.TryFind name with
+                | Some key -> IrNominal key
+                | None -> irFailure "TYPE_UNKNOWN_NAMED_TYPE" $"Type '{name}' has not been declared." (Some word) span [ "declared record or scalar" ] [ name ]
+            | TVar name -> irFailure "TYPE_UNSUPPORTED_GENERIC" $"Generic type variable '{name}' cannot appear in closed executable IR." (Some word) span [] [ name ]
+        convert typeValue
+
+    let private contextTypes (context: IrLoweringContext) =
+        let duplicateNames = Set.intersect (context.Records |> Map.toSeq |> Seq.map fst |> Set.ofSeq) (context.Scalars |> Map.toSeq |> Seq.map fst |> Set.ofSeq)
+        if not (Set.isEmpty duplicateNames) then
+            irFailure "IR_TYPE_NAME_COLLISION" "A source snapshot cannot declare a record and scalar with the same nominal name." None None [] (duplicateNames |> Set.toList)
+        for KeyValue(name, record) in context.Records do
+            if record.Name <> name then irFailure "IR_TYPE_NAME_MISMATCH" "Record map key differs from its definition name." (Some name) (Some record.Span) [ name ] [ record.Name ]
+        for KeyValue(name, scalar) in context.Scalars do
+            if scalar.Name <> name then irFailure "IR_TYPE_NAME_MISMATCH" "Scalar map key differs from its definition name." (Some name) (Some scalar.Span) [ name ] [ scalar.Name ]
+        Set.union (context.Records |> Map.toSeq |> Seq.map fst |> Set.ofSeq) (context.Scalars |> Map.toSeq |> Seq.map fst |> Set.ofSeq)
+
+    let private validateLoweringContext (context: IrLoweringContext) =
+        let names = context.Words |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+        let idNames = context.WordIds |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+        if names <> idNames then
+            irFailure "IR_WORD_ID_MAP_INCOMPLETE" "Every effective dictionary word must have exactly one supplied stable ID." None None (names |> Set.toList) (idNames |> Set.toList)
+        let duplicateIds =
+            context.WordIds
+            |> Map.toList
+            |> List.groupBy snd
+            |> List.choose (fun (wordId, values) -> if values.Length > 1 then Some(sprintf "%A: %s" wordId (values |> List.map fst |> String.concat ", ")) else None)
+        if not (List.isEmpty duplicateIds) then
+            irFailure "IR_WORD_ID_COLLISION" "Effective dictionary words must have globally unique stable IDs." None None [ "unique WordId values" ] duplicateIds
+        for KeyValue(name, WordId rawId) in context.WordIds do
+            if String.IsNullOrWhiteSpace rawId then irFailure "IR_WORD_ID_INVALID" "Stable word IDs must be nonempty." (Some name) None [ "nonempty WordId" ] [ rawId ]
+        for KeyValue(name, entry) in context.Words do
+            verifyBuiltinMetadata context.Words name entry
+            if entry.Revision < 0 then irFailure "IR_INVALID_REVISION" "Dictionary word revisions cannot be negative." (Some name) (Some entry.Definition.Span) [ "nonnegative revision" ] [ string entry.Revision ]
+        contextTypes context
+
+    let private snapshotFingerprint (context: IrLoweringContext) =
+        let builder = System.Text.StringBuilder()
+        let appendText (value: string) =
+            if isNull value then builder.Append("N;") |> ignore
+            else builder.Append('S').Append(value.Length).Append(':').Append(value).Append(';') |> ignore
+        let appendInt (value: int) = builder.Append('I').Append(value.ToString(System.Globalization.CultureInfo.InvariantCulture)).Append(';') |> ignore
+        let appendInt64 (value: int64) = builder.Append('L').Append(value.ToString(System.Globalization.CultureInfo.InvariantCulture)).Append(';') |> ignore
+        let appendBool (value: bool) = builder.Append(if value then "B1;" else "B0;") |> ignore
+        let appendSpan (span: SourceSpan) =
+            appendText span.File
+            appendInt span.Line
+            appendInt span.Column
+            appendInt span.Length
+        let rec appendType (typeValue: LangType) =
+            match typeValue with
+            | TInt -> appendText "int"
+            | TFloat -> appendText "float"
+            | TBool -> appendText "bool"
+            | TString -> appendText "string"
+            | TUnit -> appendText "unit"
+            | TList item -> appendText "list"; appendType item
+            | TOption item -> appendText "option"; appendType item
+            | TResult(ok, error) -> appendText "result"; appendType ok; appendType error
+            | TNamed name -> appendText "named"; appendText name
+            | TVar name -> appendText "variable"; appendText name
+        let appendTypes (values: LangType list) =
+            appendInt values.Length
+            values |> List.iter appendType
+        let appendEffects (values: Set<string>) =
+            let names = values |> Set.toList |> List.sort
+            appendInt names.Length
+            names |> List.iter appendText
+        let appendLiteral (literal: Literal) =
+            match literal with
+            | LInt value -> appendText "int-literal"; appendInt64 value
+            | LFloat value -> appendText "float-literal"; appendInt64 (BitConverter.DoubleToInt64Bits value)
+            | LBool value -> appendText "bool-literal"; appendBool value
+            | LString value -> appendText "string-literal"; appendText value
+            | LUnit -> appendText "unit-literal"
+        let rec appendExpressions (expressions: Expr list) =
+            appendInt expressions.Length
+            for expression in expressions do
+                match expression with
+                | Push(literal, span) -> appendText "push"; appendLiteral literal; appendSpan span
+                | Call(name, span) -> appendText "call"; appendText name; appendSpan span
+                | ConstructContainer(kind, typeValues, span) ->
+                    appendText "construct-container"
+                    appendText
+                        (match kind with
+                         | ListEmpty -> "list-empty"
+                         | ListSingleton -> "list-singleton"
+                         | OptionNone -> "option-none"
+                         | OptionSome -> "option-some"
+                         | ResultOk -> "result-ok"
+                         | ResultError -> "result-error")
+                    appendTypes typeValues
+                    appendSpan span
+                | MapList(name, span) -> appendText "map-list"; appendText name; appendSpan span
+                | FilterList(name, span) -> appendText "filter-list"; appendText name; appendSpan span
+                | EachList(name, span) -> appendText "each-list"; appendText name; appendSpan span
+                | Let(name, span) -> appendText "let"; appendText name; appendSpan span
+                | Load(name, span) -> appendText "load"; appendText name; appendSpan span
+                | If(thenBranch, elseBranch, span) -> appendText "if"; appendExpressions thenBranch; appendExpressions elseBranch; appendSpan span
+                | MatchOption(name, someBranch, noneBranch, span) -> appendText "match-option"; appendText name; appendExpressions someBranch; appendExpressions noneBranch; appendSpan span
+                | MatchResult(okName, errorName, okBranch, errorBranch, span) ->
+                    appendText "match-result"
+                    appendText okName
+                    appendText errorName
+                    appendExpressions okBranch
+                    appendExpressions errorBranch
+                    appendSpan span
+        let appendBuiltin = function
+            | None -> appendText "user-word"
+            | Some(BuiltinOp operation) -> appendText "primitive"; appendText operation
+            | Some(RecordConstructor name) -> appendText "record-constructor"; appendText name
+            | Some(RecordAccessor(name, field)) -> appendText "record-accessor"; appendText name; appendText field
+            | Some(ScalarConstructor name) -> appendText "scalar-constructor"; appendText name
+            | Some(ScalarAccessor name) -> appendText "scalar-accessor"; appendText name
+        let appendMaturity = function | ProjectWord -> appendText "project" | LibraryWord -> appendText "library"
+        let appendStatus = function | Primitive -> appendText "primitive" | Candidate -> appendText "candidate" | Temporary -> appendText "temporary" | Persistent -> appendText "persistent"
+        appendText "agentlang-ir-snapshot-v1"
+        for KeyValue(name, entry) in context.Words do
+            appendText "word"
+            appendText name
+            let (WordId value) = context.WordIds[name]
+            appendText value
+            appendInt entry.Revision
+            appendBuiltin entry.Builtin
+            appendStatus entry.Status
+            appendMaturity entry.Maturity
+            appendText entry.Definition.Name
+            appendTypes entry.Definition.Inputs
+            appendTypes entry.Definition.Outputs
+            appendEffects entry.Definition.Effects
+            appendMaturity entry.Definition.Maturity
+            appendInt entry.Definition.Revision
+            appendText entry.Definition.Documentation
+            appendText entry.Definition.SourceText
+            appendSpan entry.Definition.Span
+            appendExpressions entry.Definition.Body
+        for KeyValue(name, record) in context.Records do
+            appendText "record"
+            appendText name
+            appendText record.Name
+            appendText record.SourceText
+            appendSpan record.Span
+            appendInt record.Fields.Length
+            for field in record.Fields do
+                appendText field.Name
+                appendType field.Type
+        for KeyValue(name, scalar) in context.Scalars do
+            appendText "scalar"
+            appendText name
+            appendText scalar.Name
+            appendText scalar.SourceText
+            appendSpan scalar.Span
+            appendType scalar.BaseType
+            match scalar.Validator with
+            | None -> appendText "no-validator"
+            | Some validator -> appendText "validator"; appendText validator
+        let digest = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(builder.ToString()))
+        Convert.ToHexString(digest)
+
+    let private typeKeysForContext (context: IrLoweringContext) =
+        let names =
+            Seq.append (context.Records |> Map.toSeq |> Seq.map fst) (context.Scalars |> Map.toSeq |> Seq.map fst)
+            |> Seq.sort
+            |> Seq.toList
+        names |> List.mapi (fun index name -> name, ProgramTypeKey index) |> Map.ofList
+
+    let private buildGeneratedTargets (context: IrLoweringContext) (typeKeys: Map<string, ProgramTypeKey>) =
+        let sourceMap = ResizeArray<SourceSiteId * IrSourceSite>()
+        let targets =
+            context.Words
+            |> Map.toList
+            |> List.choose (fun (name, entry) ->
+                let id = context.WordIds[name]
+                let definition = entry.Definition
+                let effects = irEffectsForWord name (Some definition.Span) definition.Effects
+                let makeTarget operation inputs outputs sourceSpan sourceKind =
+                    let site = SourceSiteId(Some id, 0)
+                    sourceMap.Add(site, { SiteOwner = Some id; SiteSpan = sourceSpan; SourceKind = sourceKind })
+                    Some
+                        (name,
+                         { TargetId = id
+                           TargetRevision = entry.Revision
+                           TargetName = name
+                           Operation = operation
+                           InputTypes = inputs
+                           OutputTypes = outputs
+                           TargetDeclaredEffects = effects
+                           TargetEffects = effects
+                           SourceSite = Some site })
+                match entry.Builtin with
+                | Some(RecordConstructor typeName) ->
+                    match context.Records.TryFind typeName, typeKeys.TryFind typeName with
+                    | Some record, Some key ->
+                        let inputs = record.Fields |> List.map (fun field -> closedIrType typeKeys name (Some record.Span) field.Type)
+                        makeTarget (MakeRecordOperation key) inputs [ IrNominal key ] record.Span "record-declaration"
+                    | _ -> irFailure "IR_GENERATED_TYPE_UNKNOWN" $"Generated constructor '{name}' has no matching record type." (Some name) (Some definition.Span) [] [ typeName ]
+                | Some(RecordAccessor(typeName, fieldName)) ->
+                    match context.Records.TryFind typeName, typeKeys.TryFind typeName with
+                    | Some record, Some key ->
+                        match record.Fields |> List.tryFindIndex (fun field -> field.Name = fieldName) with
+                        | Some index ->
+                            let fieldType = closedIrType typeKeys name (Some record.Span) record.Fields[index].Type
+                            makeTarget (GetRecordFieldOperation(key, index)) [ IrNominal key ] [ fieldType ] record.Span "record-field"
+                        | None -> irFailure "IR_GENERATED_FIELD_UNKNOWN" $"Generated accessor '{name}' refers to missing field '{fieldName}'." (Some name) (Some definition.Span) [] [ fieldName ]
+                    | _ -> irFailure "IR_GENERATED_TYPE_UNKNOWN" $"Generated accessor '{name}' has no matching record type." (Some name) (Some definition.Span) [] [ typeName ]
+                | Some(ScalarConstructor typeName) ->
+                    match context.Scalars.TryFind typeName, typeKeys.TryFind typeName with
+                    | Some scalar, Some key ->
+                        let baseType = closedIrType typeKeys name (Some scalar.Span) scalar.BaseType
+                        makeTarget (WrapScalarOperation key) [ baseType ] [ IrNominal key ] scalar.Span "scalar-declaration"
+                    | _ -> irFailure "IR_GENERATED_TYPE_UNKNOWN" $"Generated scalar constructor '{name}' has no matching scalar type." (Some name) (Some definition.Span) [] [ typeName ]
+                | Some(ScalarAccessor typeName) ->
+                    match context.Scalars.TryFind typeName, typeKeys.TryFind typeName with
+                    | Some scalar, Some key ->
+                        let baseType = closedIrType typeKeys name (Some scalar.Span) scalar.BaseType
+                        makeTarget (UnwrapScalarOperation key) [ IrNominal key ] [ baseType ] scalar.Span "scalar-declaration"
+                    | _ -> irFailure "IR_GENERATED_TYPE_UNKNOWN" $"Generated scalar accessor '{name}' has no matching scalar type." (Some name) (Some definition.Span) [] [ typeName ]
+                | _ -> None)
+        let duplicateIds = targets |> List.groupBy (fun (_, target) -> target.TargetId) |> List.choose (fun (id, values) -> if values.Length > 1 then Some(sprintf "%A" id) else None)
+        if not (List.isEmpty duplicateIds) then irFailure "IR_WORD_ID_COLLISION" "Generated executable targets must have unique stable word IDs." None None [] duplicateIds
+        let targetsByName = Map.ofList targets
+        let targetsById = targets |> List.map (fun (_, target) -> target.TargetId, target) |> Map.ofList
+        targetsByName, targetsById, Map.ofSeq sourceMap
+
+    let private resolveIrCall (context: IrLoweringContext) (typeKeys: Map<string, ProgramTypeKey>) (generatedByName: Map<string, IrGeneratedTarget>) name span inputTypes outputTypes =
+        match context.Words.TryFind name with
+        | None -> irFailure "NAME_UNKNOWN_WORD" $"Word '{name}' is not defined." (Some name) span [] []
+        | Some entry ->
+            let id = context.WordIds[name]
+            match entry.Builtin with
+            | Some(BuiltinOp operation) ->
+                verifyBuiltinMetadata context.Words name entry
+                let contract = primitiveIrCatalog[PrimitiveId operation]
+                { ResolvedTarget = PrimitiveTarget(PrimitiveId operation)
+                  ResolvedName = name
+                  InputTypes = inputTypes |> List.map (closedIrType typeKeys name span)
+                  OutputTypes = outputTypes |> List.map (closedIrType typeKeys name span)
+                  ResolvedDeclaredEffects = contract.PrimitiveEffects
+                  ResolvedEffects = contract.PrimitiveEffects }
+            | None ->
+                let effects = irEffectsForWord name span entry.Definition.Effects
+                { ResolvedTarget = UserWordTarget(id, entry.Revision)
+                  ResolvedName = name
+                  InputTypes = inputTypes |> List.map (closedIrType typeKeys name span)
+                  OutputTypes = outputTypes |> List.map (closedIrType typeKeys name span)
+                  ResolvedDeclaredEffects = effects
+                  ResolvedEffects = effects }
+            | Some(RecordConstructor _ | RecordAccessor _ | ScalarConstructor _ | ScalarAccessor _) ->
+                match generatedByName.TryFind name with
+                | None -> irFailure "IR_GENERATED_TARGET_MISSING" $"Generated word '{name}' has no compiled operation target." (Some name) span [] []
+                | Some target ->
+                    { ResolvedTarget = GeneratedWordTarget(target.TargetId, target.TargetRevision)
+                      ResolvedName = name
+                      InputTypes = inputTypes |> List.map (closedIrType typeKeys name span)
+                      OutputTypes = outputTypes |> List.map (closedIrType typeKeys name span)
+                      ResolvedDeclaredEffects = target.TargetDeclaredEffects
+                      ResolvedEffects = target.TargetEffects }
+
+    let private buildNominalTypes (context: IrLoweringContext) (typeKeys: Map<string, ProgramTypeKey>) generatedByName =
+        let recordTypes =
+            context.Records
+            |> Map.toList
+            |> List.map (fun (name, record) ->
+                let key = typeKeys[name]
+                let fields =
+                    record.Fields
+                    |> List.mapi (fun index field ->
+                        { FieldIndex = index
+                          FieldName = field.Name
+                          FieldType = closedIrType typeKeys name (Some record.Span) field.Type })
+                key, IrRecordDefinition { TypeKey = key; TypeName = name; RecordFields = fields })
+        let scalarTypes =
+            context.Scalars
+            |> Map.toList
+            |> List.map (fun (name, scalar) ->
+                let key = typeKeys[name]
+                let baseType = closedIrType typeKeys name (Some scalar.Span) scalar.BaseType
+                let validator =
+                    scalar.Validator
+                    |> Option.map (fun validatorName ->
+                        resolveIrCall context typeKeys generatedByName validatorName (Some scalar.Span) [ scalar.BaseType ] [ TBool ])
+                key, IrScalarDefinition { TypeKey = key; TypeName = name; BaseType = baseType; ValidatorCall = validator })
+        Map.ofList (recordTypes @ scalarTypes)
+
+    let private expressionSpan = function
+        | Push(_, span) | Call(_, span) | ConstructContainer(_, _, span)
+        | MapList(_, span) | FilterList(_, span) | EachList(_, span)
+        | Let(_, span) | Load(_, span) | If(_, _, span)
+        | MatchOption(_, _, _, span) | MatchResult(_, _, _, _, span) -> span
+
+    let private expressionKind = function
+        | Push _ -> "constant"
+        | Call _ -> "call"
+        | ConstructContainer(ListEmpty, _, _) -> "list-empty"
+        | ConstructContainer(ListSingleton, _, _) -> "list-singleton"
+        | ConstructContainer(OptionNone, _, _) -> "option-none"
+        | ConstructContainer(OptionSome, _, _) -> "option-some"
+        | ConstructContainer(ResultOk, _, _) -> "result-ok"
+        | ConstructContainer(ResultError, _, _) -> "result-error"
+        | MapList _ -> "list-map"
+        | FilterList _ -> "list-filter"
+        | EachList _ -> "list-each"
+        | Let _ -> "store-local"
+        | Load _ -> "load-local"
+        | If _ -> "if"
+        | MatchOption _ -> "match-option"
+        | MatchResult _ -> "match-result"
+
+    let private lowerTypedBody (context: IrLoweringContext) (typeKeys: Map<string, ProgramTypeKey>) (nominalTypes: Map<ProgramTypeKey, IrNominalDefinition>) (generatedByName: Map<string, IrGeneratedTarget>) (ownerName: string) (ownerId: WordId option) (initialStack: LangType list) (effects: Set<string>) (typedBody: TypedBody) =
+        let allNodes =
+            let rec visit (body: TypedBody) =
+                body.Nodes |> List.collect (fun node -> node :: (node.ChildBodies |> List.collect visit))
+            visit typedBody
+        let normalLocalNames =
+            allNodes
+            |> List.choose (fun node -> match node.SourceExpression with | Let(name, _) -> Some name | _ -> None)
+            |> List.distinct
+        let mutable nextSlot = 0
+        let mutable localNames = Map.empty
+        let mutable nextSite = 0
+        let mutable sourceMap = Map.empty
+        let normalSlots =
+            normalLocalNames
+            |> List.map (fun name ->
+                let slot = LocalSlot nextSlot
+                nextSlot <- nextSlot + 1
+                localNames <- Map.add slot name localNames
+                name, slot)
+            |> Map.ofList
+        let freshSlot name =
+            let slot = LocalSlot nextSlot
+            nextSlot <- nextSlot + 1
+            localNames <- Map.add slot name localNames
+            slot
+        let siteFor span kind =
+            let site = SourceSiteId(ownerId, nextSite)
+            nextSite <- nextSite + 1
+            sourceMap <- Map.add site { SiteOwner = ownerId; SiteSpan = span; SourceKind = kind } sourceMap
+            site
+        let irType word span typeValue = closedIrType typeKeys word span typeValue
+        let shape word (env: Map<string, LocalSlot>) (stack: LangType list) (locals: Map<string, LangType>) =
+            let localTypes =
+                locals
+                |> Map.toList
+                |> List.map (fun (name, typeValue) ->
+                    match env.TryFind name with
+                    | Some slot -> slot, irType word None typeValue
+                    | None -> irFailure "IR_LOCAL_SLOT_MISSING" $"Local '{name}' has no compiler-assigned slot." (Some word) None [] [ name ])
+                |> Map.ofList
+            { StackTypes = stack |> List.map (irType word None)
+              LocalTypes = localTypes }
+        let resolvedForNode name span signature =
+            match signature with
+            | None -> irFailure "IR_CALL_ANNOTATION_MISSING" $"Typed inference did not retain the concrete signature for '{name}'." (Some ownerName) (Some span) [] [ name ]
+            | Some signature -> resolveIrCall context typeKeys generatedByName name (Some span) signature.CallInputs signature.CallOutputs
+        let rec lowerBlock (env: Map<string, LocalSlot>) (typed: TypedBody) =
+            let entryShape = shape ownerName env typed.EntryStack typed.EntryLocals
+            let instructions =
+                typed.Nodes
+                |> List.map (fun node ->
+                    let span = expressionSpan node.SourceExpression
+                    let kind = expressionKind node.SourceExpression
+                    let site = siteFor span kind
+                    let operation =
+                        match node.SourceExpression with
+                        | Push(literal, _) ->
+                            let outputType = node.OutputStack |> List.tryLast |> Option.defaultValue TUnit
+                            IrOperation.Constant(literal, irType ownerName (Some span) outputType)
+                        | Call(name, _) ->
+                            let call = resolvedForNode name span node.CallSignature
+                            match context.Words[name].Builtin with
+                            | Some(RecordConstructor typeName) ->
+                                match typeKeys.TryFind typeName with
+                                | Some key -> IrOperation.MakeRecord(call, key)
+                                | None -> irFailure "IR_GENERATED_TYPE_UNKNOWN" $"Record constructor '{name}' has no nominal type key." (Some name) (Some span) [] [ typeName ]
+                            | Some(RecordAccessor(typeName, fieldName)) ->
+                                match context.Records.TryFind typeName, typeKeys.TryFind typeName with
+                                | Some record, Some key ->
+                                    match record.Fields |> List.tryFindIndex (fun field -> field.Name = fieldName) with
+                                    | Some index -> IrOperation.GetRecordField(call, key, index)
+                                    | None -> irFailure "IR_GENERATED_FIELD_UNKNOWN" $"Record accessor '{name}' refers to missing field '{fieldName}'." (Some name) (Some span) [] [ fieldName ]
+                                | _ -> irFailure "IR_GENERATED_TYPE_UNKNOWN" $"Record accessor '{name}' has no nominal type key." (Some name) (Some span) [] [ typeName ]
+                            | Some(ScalarConstructor typeName) ->
+                                match typeKeys.TryFind typeName with
+                                | Some key ->
+                                    match nominalTypes.TryFind key with
+                                    | Some(IrScalarDefinition scalar) -> IrOperation.WrapScalar(call, key, scalar.ValidatorCall)
+                                    | _ -> irFailure "IR_GENERATED_TYPE_UNKNOWN" $"Scalar constructor '{name}' has no scalar type definition." (Some name) (Some span) [] [ typeName ]
+                                | None -> irFailure "IR_GENERATED_TYPE_UNKNOWN" $"Scalar constructor '{name}' has no nominal type key." (Some name) (Some span) [] [ typeName ]
+                            | Some(ScalarAccessor typeName) ->
+                                match typeKeys.TryFind typeName with
+                                | Some key -> IrOperation.UnwrapScalar(call, key)
+                                | None -> irFailure "IR_GENERATED_TYPE_UNKNOWN" $"Scalar accessor '{name}' has no nominal type key." (Some name) (Some span) [] [ typeName ]
+                            | Some(BuiltinOp _) -> IrOperation.Call call
+                            | None -> IrOperation.Call call
+                        | ConstructContainer(kind, arguments, _) ->
+                            let args = arguments |> List.map (irType ownerName (Some span))
+                            match kind, args with
+                            | ListEmpty, [ item ] -> IrOperation.ListEmpty item
+                            | ListSingleton, [ item ] -> IrOperation.ListSingleton item
+                            | OptionNone, [ item ] -> IrOperation.OptionNone item
+                            | OptionSome, [ item ] -> IrOperation.OptionSome item
+                            | ResultOk, [ ok; error ] -> IrOperation.ResultOk(ok, error)
+                            | ResultError, [ ok; error ] -> IrOperation.ResultError(ok, error)
+                            | _ -> irFailure "IR_CONTAINER_ANNOTATION_INVALID" "Typed inference produced malformed constructor arguments." (Some ownerName) (Some span) [] (args |> List.map IrTypes.format)
+                        | MapList(name, _) ->
+                            let itemType = match List.last node.InputStack with | TList item -> item | _ -> irFailure "IR_LIST_ANNOTATION_INVALID" "Map lowering lost its input List<T> annotation." (Some ownerName) (Some span) [ "List<T>" ] []
+                            let callback = resolvedForNode name span node.CallSignature
+                            match callback.OutputTypes with
+                            | [ output ] -> IrOperation.ListMap(callback, irType ownerName (Some span) itemType, output)
+                            | _ -> irFailure "IR_CALLBACK_ANNOTATION_INVALID" "Map lowering requires one concrete callback output." (Some name) (Some span) [ "T -> U" ] (callback.OutputTypes |> List.map IrTypes.format)
+                        | FilterList(name, _) ->
+                            let itemType = match List.last node.InputStack with | TList item -> item | _ -> irFailure "IR_LIST_ANNOTATION_INVALID" "Filter lowering lost its input List<T> annotation." (Some ownerName) (Some span) [ "List<T>" ] []
+                            let callback = resolvedForNode name span node.CallSignature
+                            IrOperation.ListFilter(callback, irType ownerName (Some span) itemType)
+                        | EachList(name, _) ->
+                            let itemType = match List.last node.InputStack with | TList item -> item | _ -> irFailure "IR_LIST_ANNOTATION_INVALID" "Each lowering lost its input List<T> annotation." (Some ownerName) (Some span) [ "List<T>" ] []
+                            let callback = resolvedForNode name span node.CallSignature
+                            IrOperation.ListEach(callback, irType ownerName (Some span) itemType)
+                        | Let(name, _) ->
+                            match env.TryFind name with
+                            | Some slot -> IrOperation.StoreLocal slot
+                            | None -> irFailure "IR_LOCAL_SLOT_MISSING" $"Local '{name}' has no compiler-assigned slot." (Some ownerName) (Some span) [] [ name ]
+                        | Load(name, _) ->
+                            match env.TryFind name with
+                            | Some slot -> IrOperation.LoadLocal slot
+                            | None -> irFailure "IR_LOCAL_SLOT_MISSING" $"Local '{name}' has no compiler-assigned slot." (Some ownerName) (Some span) [] [ name ]
+                        | If(_, _, _) ->
+                            match node.ChildBodies with
+                            | [ thenBody; elseBody ] -> IrOperation.If(lowerBlock env thenBody, lowerBlock env elseBody)
+                            | _ -> irFailure "IR_BRANCH_ANNOTATION_INVALID" "If lowering requires exactly two checked branches." (Some ownerName) (Some span) [ "2 branches" ] [ string node.ChildBodies.Length ]
+                        | MatchOption(someName, _, _, _) ->
+                            match node.ChildBodies, List.last node.InputStack with
+                            | [ someBody; noneBody ], TOption itemType ->
+                                let someSlot = freshSlot someName
+                                let someEnv = Map.add someName someSlot env
+                                IrOperation.MatchOption(someSlot, lowerBlock someEnv someBody, lowerBlock env noneBody)
+                            | _ -> irFailure "IR_MATCH_ANNOTATION_INVALID" "Option match lowering requires a checked Option<T> and both case bodies." (Some ownerName) (Some span) [ "Option<T> with Some and None cases" ] []
+                        | MatchResult(okName, errorName, _, _, _) ->
+                            match node.ChildBodies, List.last node.InputStack with
+                            | [ okBody; errorBody ], TResult _ ->
+                                let okSlot = freshSlot okName
+                                let errorSlot = freshSlot errorName
+                                IrOperation.MatchResult(okSlot, errorSlot, lowerBlock (Map.add okName okSlot env) okBody, lowerBlock (Map.add errorName errorSlot env) errorBody)
+                            | _ -> irFailure "IR_MATCH_ANNOTATION_INVALID" "Result match lowering requires a checked Result<T, E> and both case bodies." (Some ownerName) (Some span) [ "Result<T, E> with Ok and Error cases" ] []
+                    { Site = site; Operation = operation })
+            let exitShape = shape ownerName env typed.ExitStack typed.ExitLocals
+            { EntryShape = entryShape; ExitShape = exitShape; Code = instructions }
+        let initialSlots = normalSlots
+        let block = lowerBlock initialSlots typedBody
+        let declaredAndInferred = irEffectsForWord ownerName None effects
+        block, localNames, sourceMap, declaredAndInferred
+
+    let private typeKeysFromProgram (program: IrProgram) =
+        program.NominalTypesByKey
+        |> Map.toList
+        |> List.map (fun (key, definition) ->
+            match definition with
+            | IrRecordDefinition record -> record.TypeName, key
+            | IrScalarDefinition scalar -> scalar.TypeName, key)
+        |> Map.ofList
+
+    let private generatedByNameFromProgram (program: IrProgram) =
+        program.GeneratedTargetsById |> Map.toList |> List.map (fun (_, target) -> target.TargetName, target) |> Map.ofList
+
+    let private compileProgram (context: IrLoweringContext) =
+        validateLoweringContext context |> ignore
+        let knownTypes = contextTypes context
+        for KeyValue(_, scalar) in context.Scalars do checkScalarValidator knownTypes context.Words scalar |> ignore
+        let typeKeys = typeKeysForContext context
+        let generatedByName, generatedById, generatedSourceMap = buildGeneratedTargets context typeKeys
+        let nominalTypes = buildNominalTypes context typeKeys generatedByName
+        let functions = ResizeArray<WordId * IrFunction>()
+        let coverage = ResizeArray<WordId * IrCoverageObligations>()
+        let sourceMap = ResizeArray<SourceSiteId * IrSourceSite>()
+        generatedSourceMap |> Map.iter (fun site value -> sourceMap.Add(site, value))
+        for KeyValue(name, entry) in context.Words do
+            if entry.Builtin.IsNone then
+                let checkedWord, typed = checkDefinitionDetailed knownTypes context.Words entry.Definition
+                let ownerId = context.WordIds[name]
+                let block, localNames, wordSources, inferredEffects =
+                    lowerTypedBody context typeKeys nominalTypes generatedByName name (Some ownerId) entry.Definition.Inputs checkedWord.InferredEffects typed
+                wordSources |> Map.iter (fun site value -> sourceMap.Add(site, value))
+                let inputTypes = entry.Definition.Inputs |> List.map (closedIrType typeKeys name (Some entry.Definition.Span))
+                let outputTypes = entry.Definition.Outputs |> List.map (closedIrType typeKeys name (Some entry.Definition.Span))
+                let declaredEffects = irEffectsForWord name (Some entry.Definition.Span) entry.Definition.Effects
+                let functionValue =
+                    { FunctionId = ownerId
+                      FunctionRevision = entry.Revision
+                      FunctionName = name
+                      InputTypes = inputTypes
+                      OutputTypes = outputTypes
+                      FunctionDeclaredEffects = declaredEffects
+                      FunctionInferredEffects = inferredEffects
+                      LocalNames = localNames
+                      FunctionBody = block }
+                functions.Add(ownerId, functionValue)
+                coverage.Add(ownerId, IrVerifier.coverageObligations block)
+        let program =
+            { NominalTypesByKey = nominalTypes
+              FunctionsById = Map.ofSeq functions
+              GeneratedTargetsById = generatedById
+              SourceMap = Map.ofSeq sourceMap
+              CoverageByWord = Map.ofSeq coverage }
+        program, snapshotFingerprint context
+
+    let compileIrProgram (context: IrLoweringContext) =
+        let program, fingerprint = compileProgram context
+        IrVerifier.verifyCompilerProgram primitiveIrCatalog fingerprint program
+
+    let private bodyFromInference (context: IrLoweringContext) (verifiedProgram: VerifiedIrProgram) (name: string) (initialStack: LangType list) (effects: Set<string>) (typed: TypedBody) =
+        validateLoweringContext context |> ignore
+        VerifiedIrProgram.requireBackendRegistry primitiveIrCatalog verifiedProgram
+        match verifiedProgram.CompilerSnapshotFingerprint with
+        | Some fingerprint when fingerprint = snapshotFingerprint context -> ()
+        | _ -> irFailure "IR_STALE_COMPILER_SNAPSHOT" "Detached body context does not match the exact program snapshot it will call." (Some name) None [ "same compiler snapshot fingerprint" ] []
+        let program = VerifiedIrProgram.inspect verifiedProgram
+        let typeKeys = typeKeysFromProgram program
+        let generatedByName = generatedByNameFromProgram program
+        let block, localNames, sourceMap, inferredEffects = lowerTypedBody context typeKeys program.NominalTypesByKey generatedByName name None initialStack effects typed
+        let inputTypes = initialStack |> List.map (closedIrType typeKeys name None)
+        let outputTypes = typed.ExitStack |> List.map (closedIrType typeKeys name None)
+        let body =
+            { BodyName = name
+              BodyInputTypes = inputTypes
+              BodyOutputTypes = outputTypes
+              BodyDeclaredEffects = inferredEffects
+              BodyInferredEffects = inferredEffects
+              BodyLocalNames = localNames
+              BodyBlock = block
+              BodySourceMap = sourceMap
+              BodyCoverage = IrVerifier.coverageObligations block }
+        IrVerifier.verifyBody verifiedProgram body
+
+    let compileIrBodyAgainstProgram context verifiedProgram name initialStack expressions =
+        validateLoweringContext context |> ignore
+        VerifiedIrProgram.requireBackendRegistry primitiveIrCatalog verifiedProgram
+        match verifiedProgram.CompilerSnapshotFingerprint with
+        | Some fingerprint when fingerprint = snapshotFingerprint context -> ()
+        | _ -> irFailure "IR_STALE_COMPILER_SNAPSHOT" "Detached body context does not match the exact program snapshot it will call." (Some name) None [ "same compiler snapshot fingerprint" ] []
+        let knownTypes = contextTypes context
+        for typeValue in initialStack do validateType false knownTypes None name typeValue
+        let inferred = inferBody knownTypes context.Words name None initialStack Map.empty expressions
+        bodyFromInference context verifiedProgram name initialStack inferred.Effects inferred.InferredBody
+
+    let compileIrBody context name initialStack expressions =
+        let verifiedProgram = compileIrProgram context
+        compileIrBodyAgainstProgram context verifiedProgram name initialStack expressions
+
+    let compileIrTestAgainstProgram context verifiedProgram (test: TestDefinition) =
+        validateLoweringContext context |> ignore
+        VerifiedIrProgram.requireBackendRegistry primitiveIrCatalog verifiedProgram
+        match verifiedProgram.CompilerSnapshotFingerprint with
+        | Some fingerprint when fingerprint = snapshotFingerprint context -> ()
+        | _ -> irFailure "IR_STALE_COMPILER_SNAPSHOT" "Test context does not match the exact program snapshot it will call." (Some test.Word) (Some test.Span) [ "same compiler snapshot fingerprint" ] []
+        let knownTypes = contextTypes context
+        let checkedTest, typed = checkTestDetailed knownTypes context.Words test
+        bodyFromInference context verifiedProgram (test.Word + "/" + test.Name) [] checkedTest.Effects typed
+
+    let compileIrTest context test =
+        let verifiedProgram = compileIrProgram context
+        compileIrTestAgainstProgram context verifiedProgram test
+
+    let compileIrExampleAgainstProgram context verifiedProgram (example: ExampleDefinition) =
+        validateLoweringContext context |> ignore
+        VerifiedIrProgram.requireBackendRegistry primitiveIrCatalog verifiedProgram
+        match verifiedProgram.CompilerSnapshotFingerprint with
+        | Some fingerprint when fingerprint = snapshotFingerprint context -> ()
+        | _ -> irFailure "IR_STALE_COMPILER_SNAPSHOT" "Example context does not match the exact program snapshot it will call." (Some example.Word) (Some example.Span) [ "same compiler snapshot fingerprint" ] []
+        let knownTypes = contextTypes context
+        let checkedExample, typed = checkExampleDetailed knownTypes context.Words example
+        bodyFromInference context verifiedProgram (example.Word + "/" + example.Name) [] checkedExample.Effects typed
+
+    let compileIrExample context example =
+        let verifiedProgram = compileIrProgram context
+        compileIrExampleAgainstProgram context verifiedProgram example

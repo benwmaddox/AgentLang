@@ -1,18 +1,20 @@
 # Typed semantic IR migration plan
 
-Status: in progress. The typed IR model and verifier exist; AST lowering and
-the IR interpreter are still pending. The first backend is an interpreter over
-the typed IR. LLVM remains conditional follow-on work and is not a dependency
-of this migration.
+Status: in progress. The typed IR model, verifier, and compiler-side lowering
+exist. The IR interpreter and runtime cutover are still pending. The first
+backend is an interpreter over the typed IR. LLVM remains conditional follow-on
+work and is not a dependency of this migration.
 
 ## Current gap and boundary
 
 The language currently parses to `Expr`, infers types and effects in
-`Compiler.inferBody`, then interprets the same AST in `Runtime.runBody`. The
-`ir` command currently says it displays a checked expression tree that is
-interpreted directly; it is not executable IR. This migration is complete only
-when REPL evaluation, words, callbacks, tests, candidate validation, and reload
-all execute compiled IR and there is no runtime AST fallback.
+`Compiler.inferBody`, then interprets the same AST in `Runtime.runBody`.
+`Compiler.compileIrProgram` and the detached body/test/example APIs now lower
+checked source trees to verified executable IR, but the runtime still uses the
+AST path. The `ir` command is not yet a rendering of verified IR. This
+migration is complete only when REPL evaluation, words, callbacks, tests,
+candidate validation, and reload all execute compiled IR and there is no
+runtime AST fallback.
 
 ## Implementation status
 
@@ -22,17 +24,26 @@ stack/local block shapes, explicit structured cases, generated record/scalar
 operations, source maps, and coverage obligations. IR effects use a closed
 ten-case `IrEffect` union; `IrEffects` maps validated source effect names at
 the planned compiler boundary and formats them deterministically. The source
-name conversion helper exists, but no AST lowering uses it yet.
-`IrVerifier.verify` checks call identity/revision/signatures, primitive
+name conversion is used by the compiler lowering boundary.
+`Compiler` now produces complete executable snapshots from an authoritative
+word/type/identity context. Lowering covers all current expression forms,
+generated record/scalar operations, concrete primitive instances, static
+callbacks, structured cases, locals, effects, source maps, and own-body
+coverage. The compiler retains a fixed primitive catalog derived from the
+host primitive definitions; caller-supplied display names cannot authorize
+backend dispatch. Detached eval/test/example bodies are bound to the exact
+verified snapshot and its exhaustive structural fingerprint, so edits beyond
+debug-format truncation cannot reuse stale linked code. `IrVerifier.verify`
+checks call identity/revision/signatures, primitive
 specializations, effect consistency, container and generated operation types,
 callback signatures and effects, branch joins, case-local scope, source
 ownership, exact coverage categories, and acyclic user/generated call graphs
 before returning a verified program handle.
 
-`tests/AgentLang.IR.Tests` exercises the verifier with constructed executable
-snapshots. This establishes the data model and verifier contract only. The
-existing compiler does not lower `Expr` to this IR, and `Runtime` still
-executes the source AST. The current `ir` command is not yet a rendering of
+`tests/AgentLang.IR.Tests` exercises both constructed verifier inputs and
+compiler lowering, including stale-snapshot and invalid-constant regressions.
+This establishes compiler output and verifier contracts only. `Runtime` still
+executes the source AST, and the current `ir` command is not yet a rendering of
 verified executable IR. No claim of IR execution, interpreter parity, or
 backend cutover is made until later migration stages pass their acceptance
 criteria.

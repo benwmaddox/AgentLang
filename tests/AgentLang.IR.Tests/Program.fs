@@ -75,6 +75,66 @@ let private program functions generated nominalTypes sourceMap coverageByWord =
       SourceMap = Map.ofList sourceMap
       CoverageByWord = Map.ofList coverageByWord }
 
+let private testSpan file line =
+    { File = file; Line = line; Column = 1; Length = 1 }
+
+let private wordEntry name inputs outputs effects body revision status =
+    let span = testSpan (name + ".agent") 1
+    let definition =
+        { Name = name
+          Inputs = inputs
+          Outputs = outputs
+          Effects = effects
+          Maturity = LibraryWord
+          Revision = revision
+          Documentation = "IR lowering test word."
+          Body = body
+          SourceText = "same-authoring-text"
+          Span = span }
+    { Definition = definition
+      Builtin = None
+      Status = status
+      Maturity = LibraryWord
+      Revision = revision }
+
+let private generatedEntry name builtin inputs outputs =
+    let definition =
+        { Name = name
+          Inputs = inputs
+          Outputs = outputs
+          Effects = Set.empty
+          Maturity = LibraryWord
+          Revision = 1
+          Documentation = "Generated test word."
+          Body = []
+          SourceText = "generated"
+          Span = testSpan (name + ".agent") 1 }
+    { Definition = definition
+      Builtin = Some builtin
+      Status = Persistent
+      Maturity = LibraryWord
+      Revision = 1 }
+
+let private loweringContext
+    (words: Map<string, WordEntry>)
+    (records: Map<string, RecordDefinition>)
+    (scalars: Map<string, ScalarTypeDefinition>)
+    : Compiler.IrLoweringContext =
+    let allWords =
+        Map.fold (fun found name entry -> Map.add name entry found) Compiler.primitives words
+    let identity name entry =
+        let prefix =
+            match entry.Builtin with
+            | Some(BuiltinOp _) -> "primitive-"
+            | Some _ -> "generated-"
+            | None -> "user-"
+        name, WordId(prefix + name)
+    let ids = allWords |> Map.toList |> List.map (fun (name, entry) -> identity name entry) |> Map.ofList
+    { Words = allWords
+      Records = records
+      Scalars = scalars
+      WordIds = ids }
+
 let private resolved target name inputs outputs effects =
     { ResolvedTarget = target
       ResolvedName = name
@@ -135,6 +195,8 @@ let private testPrimitiveSpecializations () =
             [ intWord, coverage intWord [ 0 ] []; stringWord, coverage stringWord [ 0 ] [] ]
     let verified = IrVerifier.verify catalog executable
     check "one primitive supports independent Int and String call-site instances" (VerifiedIrProgram.inspect verified = executable)
+    check "public model verification does not authorize backend execution" (not (VerifiedIrProgram.isBackendExecutable verified))
+    expectDiagnostic "verifier-only snapshot is rejected before backend dispatch" "IR_BACKEND_UNTRUSTED_PROGRAM" (fun () -> VerifiedIrProgram.requireBackendRegistry catalog verified)
 
     let malformedCall = { intCall with InputTypes = [ IrInt; IrString ] }
     let malformedFunction = { intFunction with FunctionBody = block [ IrInt; IrInt ] Map.empty [ { Site = intSite; Operation = IrOperation.Call malformedCall } ] [ IrBool ] Map.empty }
@@ -205,6 +267,24 @@ let private testClosedContainerConstructors () =
     let unknownFunction = functionWithCode unknownWord 0 [ IrList unknown ] [] noEffects noEffects Map.empty []
     let unknownProgram = program [ unknownWord, unknownFunction ] [] [] [] [ unknownWord, coverage unknownWord [] [] ]
     expectDiagnostic "function signature rejects unresolved nominal keys" "IR_UNKNOWN_TYPE_KEY" (fun () -> verify Map.empty unknownProgram)
+
+    let verifyInvalidConstant name literal ty =
+        let word = WordId name
+        let literalSite, literalSource = source word 0 "literal"
+        let fn =
+            functionWithCode word 1 [] [ ty ] noEffects noEffects Map.empty
+                [ { Site = literalSite; Operation = IrOperation.Constant(literal, ty) } ]
+        let malformed =
+            program [ word, fn ] [] [] [ literalSite, literalSource ] [ word, coverage word [ 0 ] [] ]
+        expectDiagnostic (name + " is rejected by the verified IR boundary") "IR_CONSTANT_LITERAL_INVALID" (fun () -> verify Map.empty malformed)
+
+    verifyInvalidConstant "nan-constant" (LFloat Double.NaN) IrFloat
+    verifyInvalidConstant "infinite-constant" (LFloat Double.PositiveInfinity) IrFloat
+    verifyInvalidConstant "null-string-constant" (LString null) IrString
+
+    let hostContext = loweringContext Map.empty Map.empty Map.empty
+    expectDiagnostic "host AST compilation rejects nonfinite constants before backend authority" "IR_CONSTANT_LITERAL_INVALID" (fun () ->
+        Compiler.compileIrBody hostContext "host-nan" [] [ Push(LFloat Double.NaN, testSpan "host.agent" 1) ] |> ignore)
 
 let private testStructuredBranchesAndCoverage () =
     let chooseWord = WordId "choose-int"
@@ -554,6 +634,208 @@ let private testIdentityAndCallGraphGuards () =
     let cyclicTypeProgram = program [] [] [ unknownKey, selfType ] [] []
     expectDiagnostic "scalar declaration graph cannot contain a self cycle" "IR_SCALAR_CYCLE" (fun () -> verify Map.empty cyclicTypeProgram)
 
+let private testCompilerLowering () =
+    let line number = testSpan "lowering.agent" number
+    let record =
+        { Name = "Customer"
+          Fields = [ { Name = "id"; Type = TInt }; { Name = "active"; Type = TBool } ]
+          SourceText = "record Customer"
+          Span = line 1 }
+    let scalar =
+        { Name = "Email"
+          BaseType = TString
+          Validator = None
+          SourceText = "type Email = String"
+          Span = line 2 }
+    let generated =
+        [ "customer.new", generatedEntry "customer.new" (RecordConstructor "Customer") [ TInt; TBool ] [ TNamed "Customer" ]
+          "customer.id", generatedEntry "customer.id" (RecordAccessor("Customer", "id")) [ TNamed "Customer" ] [ TInt ]
+          "customer.active", generatedEntry "customer.active" (RecordAccessor("Customer", "active")) [ TNamed "Customer" ] [ TBool ]
+          "Email.new", generatedEntry "Email.new" (ScalarConstructor "Email") [ TString ] [ TNamed "Email" ]
+          "Email.value", generatedEntry "Email.value" (ScalarAccessor "Email") [ TNamed "Email" ] [ TString ] ]
+        |> Map.ofList
+    let pureEffects = Set.empty<string>
+    let console = Set.singleton "console.write"
+    let userWords =
+        [ "customer.active?", wordEntry "customer.active?" [ TNamed "Customer" ] [ TBool ] pureEffects
+              [ Call("customer.active", line 10)
+                If([ Push(LBool true, line 11) ], [ Push(LBool false, line 12) ], line 13) ] 1 Candidate
+          "int-positive?", wordEntry "int-positive?" [ TInt ] [ TBool ] pureEffects
+              [ Push(LInt 0L, line 20); Call("int.greater-than", line 21) ] 1 Candidate
+          "int-text", wordEntry "int-text" [ TInt ] [ TString ] pureEffects [ Call("int.to-string", line 30) ] 1 Candidate
+          "int-print", wordEntry "int-print" [ TInt ] [ TUnit ] console
+              [ Call("int.to-string", line 40); Call("console.write", line 41) ] 1 Candidate
+          "list-to-text", wordEntry "list-to-text" [ TList TInt ] [ TList TString ] pureEffects [ MapList("int.to-string", line 50) ] 1 Candidate
+          "list-positive", wordEntry "list-positive" [ TList TInt ] [ TList TInt ] pureEffects [ FilterList("int-positive?", line 60) ] 1 Candidate
+          "list-print", wordEntry "list-print" [ TList TInt ] [ TUnit ] console [ EachList("int-print", line 70) ] 1 Candidate
+          "local-join", wordEntry "local-join" [ TInt ] [ TInt ] pureEffects
+              [ Let("amount", line 80)
+                Push(LBool true, line 81)
+                If([ Load("amount", line 82); Push(LInt 1L, line 83); Call("add", line 84); Let("amount", line 85) ],
+                   [ Load("amount", line 86); Let("amount", line 87) ], line 88)
+                Load("amount", line 89) ] 1 Candidate
+          "option-value", wordEntry "option-value" [ TOption TInt ] [ TInt ] pureEffects
+              [ MatchOption("some-value", [ Load("some-value", line 91) ], [ Push(LInt 0L, line 92) ], line 93) ] 1 Candidate
+          "result-value", wordEntry "result-value" [ TResult(TInt, TString) ] [ TInt ] pureEffects
+              [ MatchResult("ok-value", "error-value", [ Load("ok-value", line 94) ], [ Push(LInt -1L, line 95) ], line 96) ] 1 Candidate
+          "container-constructors", wordEntry "container-constructors" []
+              [ TList TInt; TList TInt; TOption TInt; TOption TInt; TResult(TString, TInt); TResult(TString, TInt) ] pureEffects
+              [ ConstructContainer(ListEmpty, [ TInt ], line 100)
+                Push(LInt 1L, line 101); ConstructContainer(ListSingleton, [ TInt ], line 102)
+                ConstructContainer(OptionNone, [ TInt ], line 103)
+                Push(LInt 2L, line 104); ConstructContainer(OptionSome, [ TInt ], line 105)
+                Push(LString "ok", line 106); ConstructContainer(ResultOk, [ TString; TInt ], line 107)
+                Push(LInt 3L, line 108); ConstructContainer(ResultError, [ TString; TInt ], line 109) ] 1 Candidate
+          "email-wrap", wordEntry "email-wrap" [ TString ] [ TNamed "Email" ] pureEffects [ Call("Email.new", line 110) ] 1 Candidate
+          "email-unwrap", wordEntry "email-unwrap" [ TNamed "Email" ] [ TString ] pureEffects [ Call("Email.value", line 111) ] 1 Candidate
+          "customer-build", wordEntry "customer-build" [ TInt; TBool ] [ TNamed "Customer" ] pureEffects [ Call("customer.new", line 112) ] 1 Candidate
+          "customer-id", wordEntry "customer-id" [ TNamed "Customer" ] [ TInt ] pureEffects [ Call("customer.id", line 113) ] 1 Candidate
+          "branch-read", wordEntry "branch-read" [ TBool ] [ TString ] (Set.singleton "fs.read")
+              [ If([ Push(LString "left", line 114); Call("file.read", line 115) ],
+                   [ Push(LString "right", line 116); Call("file.read", line 117) ], line 118) ] 1 Candidate
+          "equal-int", wordEntry "equal-int" [ TInt; TInt ] [ TBool ] pureEffects [ Call("equals", line 119) ] 1 Candidate
+          "equal-string", wordEntry "equal-string" [ TString; TString ] [ TBool ] pureEffects [ Call("equals", line 120) ] 1 Candidate ]
+        |> Map.ofList
+    let allGeneratedAndUserWords = Map.fold (fun found name entry -> Map.add name entry found) generated userWords
+    let context = loweringContext allGeneratedAndUserWords (Map.ofList [ "Customer", record ]) (Map.ofList [ "Email", scalar ])
+    let verified = Compiler.compileIrProgram context
+    VerifiedIrProgram.requireBackendRegistry Compiler.primitiveIrCatalog verified
+    check "compiler lowering returns a backend-authorized snapshot" (VerifiedIrProgram.isBackendExecutable verified)
+    let executable = VerifiedIrProgram.inspect verified
+    check "nominal table contains sorted Customer and Email definitions" (executable.NominalTypesByKey.Count = 2)
+    let wordId name = context.WordIds[name]
+    let functionByName name = executable.FunctionsById[wordId name]
+    let instructions (block: IrBlock) =
+        let rec collect code =
+            code
+            |> List.collect (fun instruction ->
+                let nested =
+                    match instruction.Operation with
+                    | IrOperation.If(left, right) -> collect left.Code @ collect right.Code
+                    | IrOperation.MatchOption(_, someBlock, noneBlock) -> collect someBlock.Code @ collect noneBlock.Code
+                    | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> collect okBlock.Code @ collect errorBlock.Code
+                    | _ -> []
+                instruction :: nested)
+        collect block.Code
+    let operations name = functionByName name |> fun fn -> instructions fn.FunctionBody |> List.map (fun instruction -> instruction.Operation)
+    let calls name =
+        operations name
+        |> List.choose (function | IrOperation.Call call -> Some call | _ -> None)
+    let intEquals = calls "equal-int" |> List.exactlyOne
+    let stringEquals = calls "equal-string" |> List.exactlyOne
+    check "polymorphic equals is instantiated as Int at one callsite" (intEquals.ResolvedTarget = PrimitiveTarget(PrimitiveId "equals") && intEquals.InputTypes = [ IrInt; IrInt ])
+    check "polymorphic equals is independently instantiated as String" (stringEquals.ResolvedTarget = PrimitiveTarget(PrimitiveId "equals") && stringEquals.InputTypes = [ IrString; IrString ])
+    check "map has a concrete Int-to-String callback and List<String> result" (operations "list-to-text" |> List.exists (function | IrOperation.ListMap(call, IrInt, IrString) when call.ResolvedTarget = PrimitiveTarget(PrimitiveId "int.to-string") -> true | _ -> false))
+    check "filter has a concrete Bool callback and List<Int> result" (operations "list-positive" |> List.exists (function | IrOperation.ListFilter(call, IrInt) when call.InputTypes = [ IrInt ] && call.OutputTypes = [ IrBool ] -> true | _ -> false))
+    check "each retains callback effects even for an empty list" (functionByName "list-print" |> fun fn -> fn.FunctionInferredEffects = Set.singleton IrEffect.ConsoleWrite)
+    check "if join lowers both branches and preserves source coverage" (functionByName "customer.active?" |> fun fn -> fn.FunctionBody.Code |> List.exists (fun instruction -> match instruction.Operation with | IrOperation.If _ -> true | _ -> false) && executable.CoverageByWord[wordId "customer.active?"].BranchOutcomes.Count = 1)
+    check "same local name across both if arms resolves to one slot" (operations "local-join" |> List.choose (function | IrOperation.StoreLocal slot | IrOperation.LoadLocal slot -> Some slot | _ -> None) |> List.distinct |> List.length = 1)
+    let optionMatch = operations "option-value" |> List.choose (function | IrOperation.MatchOption(slot, _, _) -> Some slot | _ -> None) |> List.exactlyOne
+    let resultMatches = operations "result-value" |> List.choose (function | IrOperation.MatchResult(okSlot, errorSlot, _, _) -> Some(okSlot, errorSlot) | _ -> None)
+    check "Option and Result branches lower with payload slots" (not (List.isEmpty resultMatches) && (let okSlot, errorSlot = List.exactlyOne resultMatches in okSlot <> errorSlot) && functionByName "option-value" |> fun fn -> Map.containsKey optionMatch fn.LocalNames)
+    check "all closed container constructors preserve exact type arguments" (operations "container-constructors" |> List.choose (function | IrOperation.ListEmpty IrInt | IrOperation.ListSingleton IrInt | IrOperation.OptionNone IrInt | IrOperation.OptionSome IrInt | IrOperation.ResultOk(IrString, IrInt) | IrOperation.ResultError(IrString, IrInt) -> Some true | _ -> None) |> List.length = 6)
+    let usesGeneratedRecordTarget =
+        operations "customer-build"
+        |> List.exists (function
+            | IrOperation.MakeRecord(call, _) ->
+                match call.ResolvedTarget with
+                | GeneratedWordTarget _ -> true
+                | _ -> false
+            | _ -> false)
+    let usesGeneratedScalarTarget =
+        operations "email-wrap"
+        |> List.exists (function
+            | IrOperation.WrapScalar(call, _, None) ->
+                match call.ResolvedTarget with
+                | GeneratedWordTarget _ -> true
+                | _ -> false
+            | _ -> false)
+    check "generated record and scalar operations use resolved stable targets" (usesGeneratedRecordTarget && usesGeneratedScalarTarget)
+    check "declared effects include both branches of a conditional" (functionByName "branch-read" |> fun fn -> fn.FunctionInferredEffects = Set.singleton IrEffect.FileRead)
+
+    let detached = Compiler.compileIrBodyAgainstProgram context verified "<agent-eval>" [ TInt ] [ Push(LInt 4L, line 130); Call("add", line 131) ]
+    check "detached body retains the exact verified snapshot object" (Object.ReferenceEquals(VerifiedIrBody.program detached, verified))
+    check "detached body has its own ownerless source map and coverage" (VerifiedIrBody.inspect detached |> fun body -> body.BodySourceMap.Count = 2 && body.BodyCoverage.CoveredSites.Count = 2 && body.BodySourceMap |> Map.forall (fun site source -> (let (SourceSiteId(owner, _)) = site in owner.IsNone) && source.SiteOwner.IsNone))
+    let throwingTest: TestDefinition =
+        { Name = "division-error"
+          Word = "math"
+          Body = [ Push(LInt 1L, line 132); Push(LInt 0L, line 133); Call("divide", line 134) ]
+          Expected = ExpectedRuntimeError "RUNTIME_DIVIDE_BY_ZERO"
+          SourceText = "test division-error"
+          Span = line 132 }
+    let compiledTest = Compiler.compileIrTestAgainstProgram context verified throwingTest |> VerifiedIrBody.inspect
+    check "expected-runtime-error test wrapper keeps a fully typed body" (compiledTest.BodyOutputTypes = [ IrInt ] && compiledTest.BodyBlock.Code.Length = 3)
+    let example =
+        { Name = "one"
+          Word = "math"
+          Body = [ Push(LInt 1L, line 135) ]
+          Expected = LInt 1L
+          SourceText = "example one"
+          Span = line 135 }
+    check "example wrapper keeps value-checking stack semantics" (Compiler.compileIrExampleAgainstProgram context verified example |> VerifiedIrBody.inspect |> fun body -> body.BodyOutputTypes = [ IrInt ])
+
+    let equalsEntry = Compiler.primitives["equals"]
+    let aliasDefinition = { equalsEntry.Definition with Name = "value.same?"; SourceText = "word value.same?" }
+    let aliasEntry = { equalsEntry with Definition = aliasDefinition }
+    let aliasCaller = wordEntry "equal-alias" [ TInt; TInt ] [ TBool ] pureEffects [ Call("value.same?", line 136) ] 1 Candidate
+    let aliasContext = loweringContext (Map.ofList [ "value.same?", aliasEntry; "equal-alias", aliasCaller ]) Map.empty Map.empty
+    let aliasProgram = Compiler.compileIrProgram aliasContext |> VerifiedIrProgram.inspect
+    let aliasFunction = aliasProgram.FunctionsById[aliasContext.WordIds["equal-alias"]]
+    match aliasFunction.FunctionBody.Code with
+    | [ { Operation = IrOperation.Call call } ] -> check "primitive alias dispatches by BuiltinOp ID" (call.ResolvedName = "value.same?" && call.ResolvedTarget = PrimitiveTarget(PrimitiveId "equals"))
+    | _ -> failwith "primitive alias did not lower to one call"
+    let badAlias = { aliasEntry with Definition = { aliasDefinition with Effects = Set.singleton "process.execute" } }
+    let badAliasContext = loweringContext (Map.ofList [ "value.same?", badAlias; "equal-alias", aliasCaller ]) Map.empty Map.empty
+    expectDiagnostic "primitive alias cannot forge effects" "IR_PRIMITIVE_METADATA_MISMATCH" (fun () -> Compiler.compileIrProgram badAliasContext |> ignore)
+    let spoofDefinition = { aliasDefinition with Name = "evil.delete"; Effects = Set.empty }
+    let spoofEntry = { aliasEntry with Definition = spoofDefinition; Builtin = Some(BuiltinOp "System.IO.File.Delete") }
+    let spoofCaller = wordEntry "try-delete" [ TString ] [ TUnit ] pureEffects [ Push(LUnit, line 137) ] 1 Candidate
+    let spoofContext = loweringContext (Map.ofList [ "evil.delete", spoofEntry; "try-delete", spoofCaller ]) Map.empty Map.empty
+    expectDiagnostic "unknown process-like BuiltinOp cannot enter the executable catalog" "IR_UNKNOWN_PRIMITIVE_ID" (fun () -> Compiler.compileIrProgram spoofContext |> ignore)
+
+    let runtimeErrorExpectedContext = context
+    check "fingerprint regression fixture keeps candidate ID and revision fixed" (runtimeErrorExpectedContext.WordIds["local-join"] = wordId "local-join" && (functionByName "local-join").FunctionRevision = 1)
+
+let private testCompilerSnapshotIdentity () =
+    let span = testSpan "snapshot.agent" 1
+    let stableId = WordId "candidate-stable-id"
+    let buildContext (body: Expr list) : Compiler.IrLoweringContext =
+        let candidate = wordEntry "candidate" [ TInt ] [ TInt ] Set.empty body 5 Candidate
+        let context = loweringContext (Map.ofList [ "candidate", candidate ]) Map.empty Map.empty
+        let withStableId: Compiler.IrLoweringContext = { context with WordIds = Map.add "candidate" stableId context.WordIds }
+        withStableId
+    let repeatedBody changedTail =
+        [ for index in 0 .. 119 do
+              let number = if index = 119 then changedTail else int64 index
+              yield Push(LInt number, span)
+              yield Call("add", span) ]
+    let first = buildContext (repeatedBody 299L)
+    let second = buildContext (repeatedBody 999999L)
+    let verified = Compiler.compileIrProgram first
+    expectDiagnostic "same-ID same-revision long candidate body cannot reuse stale IR" "IR_STALE_COMPILER_SNAPSHOT" (fun () -> Compiler.compileIrBodyAgainstProgram second verified "eval" [] [] |> ignore)
+
+    let makeRecord lastFieldType =
+        let fields =
+            [ for index in 0 .. 159 do
+                  yield { Name = if index = 159 then "tail" else "field" + string index
+                          Type = if index = 159 then lastFieldType else TInt } ]
+        { Name = "Wide"
+          Fields = fields
+          SourceText = "record Wide"
+          Span = span }
+    let recordContext fieldType = loweringContext Map.empty (Map.ofList [ "Wide", makeRecord fieldType ]) Map.empty
+    let recordSnapshot = Compiler.compileIrProgram (recordContext TInt)
+    expectDiagnostic "record layout after the hundredth field invalidates cached body" "IR_STALE_COMPILER_SNAPSHOT" (fun () -> Compiler.compileIrBodyAgainstProgram (recordContext TBool) recordSnapshot "eval" [] [] |> ignore)
+
+    let deepType = [ 1 .. 140 ] |> List.fold (fun current _ -> TList current) TInt
+    let deepEntry = wordEntry "deep" [ deepType ] [ deepType ] Set.empty [] 1 Candidate
+    let deepContext = loweringContext (Map.ofList [ "deep", deepEntry ]) Map.empty Map.empty
+    let deepSnapshot = Compiler.compileIrProgram deepContext
+    let changedDeepType = [ 1 .. 139 ] |> List.fold (fun current _ -> TList current) TString |> fun item -> TList item
+    let changedDeepEntry = wordEntry "deep" [ changedDeepType ] [ changedDeepType ] Set.empty [] 1 Candidate
+    let changedDeepContext = loweringContext (Map.ofList [ "deep", changedDeepEntry ]) Map.empty Map.empty
+    expectDiagnostic "deep nested signatures are fully fingerprinted" "IR_STALE_COMPILER_SNAPSHOT" (fun () -> Compiler.compileIrBodyAgainstProgram changedDeepContext deepSnapshot "eval" [] [] |> ignore)
+
 let private tests =
     [ "closed effect vocabulary", testClosedEffects
       "concrete primitive specializations", testPrimitiveSpecializations
@@ -562,7 +844,9 @@ let private tests =
       "Option and Result payload scope", testOptionAndResultCaseLocals
       "generated record and scalar operations", testGeneratedRecordAndScalarOperations
       "static callbacks and effects", testStaticCallbacksAndEffects
-      "identity and call-graph guards", testIdentityAndCallGraphGuards ]
+      "identity and call-graph guards", testIdentityAndCallGraphGuards
+      "compiler lowering and detached bodies", testCompilerLowering
+      "compiler snapshot identity", testCompilerSnapshotIdentity ]
 
 [<EntryPoint>]
 let main _ =

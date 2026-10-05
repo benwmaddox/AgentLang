@@ -14,9 +14,13 @@ Use the same provider, explicit model, reasoning configuration, task intent, det
 
 | Mode | Starting environment | Accepted changes after a task |
 | --- | --- | --- |
-| Flat | AgentLang primitives plus fixed domain fixture | Restore the starting fixture before the next task |
-| Growing | The same initial AgentLang fixture | Retain passing vocabulary for subsequent tasks in a sequence |
-| Conventional | Equivalent F# domain fixture | Retain passing code for subsequent tasks in a sequence |
+| Flat (original PRD mode A) | Trusted primitives plus declared input types/data and their generated constructors/accessors; no authored domain algorithms | Restore this primitive baseline before the next task |
+| Growing (original PRD mode B) | The same primitive baseline at the beginning of the sequence | Retain passing agent-created vocabulary for subsequent tasks |
+| Conventional (original PRD mode C) | Equivalent F# types/data and basic capabilities, without supplying task solutions or additional domain algorithms absent from the language baseline | Retain passing code for subsequent tasks |
+
+The original primitive-only Flat mode must not be replaced by a resettable, authored business library and then reported as mode A. A domain-seeded retention comparison is a useful additional control, but must be labeled separately and publish its initial authored words. The complete business-language fixture remains a required application deliverable; exposing all its algorithms to every mode is a separate experimental condition, not evidence for primitive-only Flat versus Growing. Debugging/refactoring trials necessarily supply defective or duplicated implementations; record these task-specific starting snapshots and report those trials separately from primitive-baseline sequence results.
+
+The generic harness currently permits arbitrary `--seed-source` fixtures. This infrastructure flexibility does not enforce the experimental mode-A contract. A controlled primitive-baseline trial still needs an audited starting-word inventory and a guard rejecting authored domain algorithms; prior seeded scripted checks remain infrastructure evidence only.
 
 A task's success is determined by the independent oracle, not the agent's final claim or its own test suite. Preserve failed runs, tool errors, timeouts, and unavailable provider usage. Keep agent-visible tests separate from hidden task acceptance tests. Verify fixture equivalence before making mode comparisons.
 

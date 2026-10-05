@@ -1,0 +1,19 @@
+word parity.metadata-helper : Int -> Int
+    effects none
+    1 add
+end
+
+test parity.metadata-helper/basic
+    1 parity.metadata-helper
+    => 2
+end
+
+word parity.metadata-target : Int -> Int
+    effects none
+    40 add
+end
+
+test parity.metadata-target/metadata-helper
+    1 parity.metadata-helper parity.metadata-target
+    => 42
+end

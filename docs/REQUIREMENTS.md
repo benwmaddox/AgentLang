@@ -12,7 +12,7 @@ Durable-state milestone evidence: [Milestone 003 report](../reports/003-durable-
 
 Exploratory external-agent evidence: [the subagent pilot](../reports/004-subagent-vocabulary-pilot.md) records a fresh agent building two tested library words and a different agent discovering/reusing them for a later task. Independent host checks passed 16 and 17 cases respectively. The second agent retained earlier repository context; exact model usage is unavailable. This proves a scoped workflow, not the required controlled performance comparison.
 
-Discovery and IR-foundation evidence: [Milestone 005](../reports/005-discovery-and-typed-ir.md), Release build with zero warnings/errors, 27 language groups/465 assertions, 53 discovery assertions, 8 IR verifier groups/37 assertions, all existing suites and 99 fresh-process persistence checks. Nine discovery commands are integrated; source lowering and execution through IR remain pending.
+Discovery and IR-foundation evidence: [Milestone 005](../reports/005-discovery-and-typed-ir.md), Release build with zero warnings/errors, 27 language groups/465 assertions, 53 discovery assertions, 8 IR verifier groups/37 assertions, all existing suites and 99 fresh-process persistence checks. Nine discovery commands are integrated. Lowering and vocabulary-analysis evidence is recorded in [milestone 006](../reports/006-ir-lowering-and-execution.md) and [milestone 007](../reports/007-vocabulary-analysis-foundation.md): full Release validation with 67 IR and 32 vocabulary assertions plus all existing suites and 99 persistence checks. Runtime still executes the AST. A 314-check baseline self-comparison validates parity infrastructure only. Runtime warnings and measured reuse metrics remain pending.
 
 | Original section | Requirement / disposition | Current evidence and outstanding work |
 | --- | --- | --- |
@@ -48,7 +48,7 @@ Discovery and IR-foundation evidence: [Milestone 005](../reports/005-discovery-a
 | 30 | Verified: small agent command interface foundation | Engine.Dispatch and Protocol; live LLM integration pending |
 | 31 | Design: suggested F# solution organization | Existing Core/CLI/Acceptance projects; add host/harness/domain boundaries as needed |
 | 32 | Partial: strongly typed internal concepts | Value/type/AST unions and closed ten-case IR effect union; source/runtime effect metadata still checked strings |
-| 33 | Partial: closed typed IR model and verifier | Constructed-program verifier checks exist; source lowering, executable IR printing and interpreter cutover pending |
+| 33 | Partial: closed typed IR model, verifier and source lowerer | Current source forms lower with linked identity/type/effect/source/coverage checks; executable IR printing and interpreter cutover pending |
 | 34 | Partial: bounded runtime and turnaround | Step/depth bounds exist; timing goals unmeasured |
 | 35 | Partial: small parser with spans/incomplete detection | Spans and interactive buffering; parse-stage API/incomplete classification pending |
 | 36 | Pending: parse/ast/types/ir stage debugging | Current ir accurately labels checked tree; richer stage representations pending |
@@ -64,12 +64,12 @@ Discovery and IR-foundation evidence: [Milestone 005](../reports/005-discovery-a
 | 46 | Pending: fresh/growing/debugging/discovery/refactoring experiments | Categories require tasks and runner |
 | 47 | Pending: all task metrics | Runtime aggregates are a subset; harness and event sources required |
 | 48 | Pending: Vocabulary Reuse Ratio | Define start-of-task words and distinguish domain/test/primitive executions |
-| 49 | Pending: Primitive Distance | Static dependency expansion, cycle definition, and actual calls separately |
+| 49 | Partial: static primitive distance analysis | Arbitrary-precision multiplicity and cycle errors verified; runtime/task integration and actual invocation metrics pending |
 | 50 | Pending: 2k/4k/8k/16k/32k context trials | Enforced harness budgets and recorded outcomes required |
 | 51 | Pending: error recovery metrics | Link attempts/errors/resolutions and provider usage, include unresolved errors |
 | 52 | Pending: vocabulary quality metrics | Reuse/callers/lifetime/downstream acceptance evidence required |
 | 53 | Pending: pollution metrics | Unused/duplicate/short-lived words and growth traces required |
-| 54 | Pending: structural duplicate warnings | Commit warning and deterministic fingerprints missing |
+| 54 | Partial: structural duplicate analysis | Stable-ID structural fingerprints and sorted candidates verified; commit warnings pending |
 | 55 | Partial: deprecate/rename/replace | Stable-ID semantic rename/deprecation and caller-gated implementation replacement verified; replace OLD NEW pending; frozen validator rename refused |
 | 56 | Verified: committed snapshot save/load | Hash integrity, project/provider restoration and retention of current host capabilities verified |
 | 57 | Partial: model-provider harness | Scripted/canned HTTP adapter, traces/usage/state/oracles verified; snapshot selection, conventional runner and live trials pending |

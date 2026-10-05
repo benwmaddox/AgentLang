@@ -1,0 +1,9 @@
+word parity.abort-me : Int -> Int
+    effects none
+    1 add
+end
+
+test parity.abort-me/basic
+    1 parity.abort-me
+    => 2
+end

@@ -1,0 +1,80 @@
+word parity.double : Int -> Int
+    effects none
+    2 multiply
+end
+
+word parity.positive? : Int -> Bool
+    effects none
+    0 int.greater-than
+end
+
+word parity.ignore : Int -> Unit
+    effects none
+    drop unit
+end
+
+word parity.effectful : Int -> Unit
+    effects fs.write
+    drop
+    "callback.txt"
+    "visited"
+    file.write
+end
+
+word parity.map-first-doubled : List<Int> -> Int
+    effects none
+    list.map parity.double
+    0 list.get
+    match-option
+    some value
+        $value
+    none
+        0
+    end
+end
+
+word parity.filter-count : List<Int> -> Int
+    effects none
+    list.filter parity.positive?
+    list.count
+end
+
+word parity.visit-ignored : List<Int> -> Unit
+    effects none
+    list.each parity.ignore
+end
+
+word parity.visit : List<Int> -> Unit
+    effects fs.write
+    list.each parity.effectful
+end
+
+test parity.map-first-doubled/empty
+    list.empty<Int> parity.map-first-doubled
+    => 0
+end
+
+test parity.map-first-doubled/nonempty
+    2 list.singleton<Int> parity.map-first-doubled
+    => 4
+end
+
+test parity.filter-count/empty
+    list.empty<Int> parity.filter-count
+    => 0
+end
+
+test parity.filter-count/keep-and-drop
+    -1 list.singleton<Int> 2 list.append 0 list.append parity.filter-count
+    => 1
+end
+
+test parity.visit-ignored/empty
+    list.empty<Int> parity.visit-ignored
+    => unit
+end
+
+test parity.visit-ignored/nonempty
+    3 list.singleton<Int> parity.visit-ignored
+    => unit
+end

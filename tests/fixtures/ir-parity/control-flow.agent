@@ -1,0 +1,70 @@
+word parity.local : Int -> Int
+    effects none
+    let original
+    $original
+    1 add
+end
+
+word parity.choose : Bool -> Int
+    effects none
+    if
+        10
+    else
+        20
+    end
+end
+
+word parity.option-value : Option<Int> -> Int
+    effects none
+    match-option
+    some value
+        $value
+    none
+        0
+    end
+end
+
+word parity.result-value : Result<Int, String> -> Int
+    effects none
+    match-result
+    ok number
+        $number
+    error reason
+        0
+    end
+end
+
+test parity.local/basic
+    8 parity.local
+    => 9
+end
+
+test parity.choose/false
+    false parity.choose
+    => 20
+end
+
+test parity.choose/true
+    true parity.choose
+    => 10
+end
+
+test parity.option-value/none
+    option.none<Int> parity.option-value
+    => 0
+end
+
+test parity.option-value/some
+    7 option.some<Int> parity.option-value
+    => 7
+end
+
+test parity.result-value/error
+    "failure" result.error<Int, String> parity.result-value
+    => 0
+end
+
+test parity.result-value/ok
+    9 result.ok<Int, String> parity.result-value
+    => 9
+end

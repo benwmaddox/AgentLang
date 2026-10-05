@@ -1,0 +1,14 @@
+word parity.divide : Int Int -> Int
+    effects none
+    divide
+end
+
+test parity.divide/exact-error
+    1 0 parity.divide
+    => error RUNTIME_DIVIDE_BY_ZERO
+end
+
+test parity.divide/wrong-error-code
+    1 0 parity.divide
+    => error RUNTIME_OVERFLOW
+end

@@ -1,0 +1,9 @@
+test parity.library-filter-count/b-drop
+    -1 list.singleton<Int> parity.library-filter-count
+    => 0
+end
+
+test parity.library-filter-count/c-keep
+    1 list.singleton<Int> parity.library-filter-count
+    => 1
+end

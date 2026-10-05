@@ -1,0 +1,36 @@
+word parity.email-valid? : String -> Bool
+    effects none
+    let address
+    $address "@" string.contains
+    $address "." string.contains
+    bool.and
+end
+
+type Email : String
+    validate parity.email-valid?
+end
+
+type MetersPerSecond : Float
+end
+
+type KilometersPerHour : Float
+end
+
+record Motion
+    field speed MetersPerSecond
+    field direction String
+end
+
+word parity.accept-speed : MetersPerSecond -> MetersPerSecond
+    effects none
+end
+
+test parity.email-valid?/valid
+    "ada@example.test" parity.email-valid?
+    => true
+end
+
+test parity.email-valid?/missing-at
+    "invalid" parity.email-valid?
+    => false
+end

@@ -1,0 +1,537 @@
+{
+  "schemaVersion": 1,
+  "fixtures": [
+    {
+      "name": "numeric-and-error-contracts",
+      "sessions": [
+        {
+          "name": "numeric-cases",
+          "requests": [
+            {
+              "request": { "op": "eval", "code": "2 3 add" },
+              "expect": {
+                "subset": {
+                  "ok": true,
+                  "kind": "eval",
+                  "data": { "stack": ["5"], "stackTypes": ["Int"] }
+                },
+                "exact": [ { "path": "data.effects", "value": {} } ]
+              }
+            },
+            {
+              "request": { "op": "eval", "code": "9223372036854775807 1 add" },
+              "expect": {
+                "subset": {
+                  "ok": false,
+                  "kind": "error",
+                  "error": {
+                    "code": "RUNTIME_OVERFLOW",
+                    "word": "add",
+                    "actual": ["9223372036854775807", "1"]
+                  }
+                }
+              }
+            },
+            {
+              "request": { "op": "eval", "code": "1 0 divide" },
+              "expect": {
+                "subset": {
+                  "ok": false,
+                  "kind": "error",
+                  "error": {
+                    "code": "RUNTIME_DIVIDE_BY_ZERO",
+                    "word": "divide",
+                    "expected": [],
+                    "actual": []
+                  }
+                }
+              }
+            },
+            {
+              "request": { "op": "eval", "code": "1e308 1e308 float.multiply" },
+              "expect": {
+                "subset": {
+                  "ok": false,
+                  "kind": "error",
+                  "error": {
+                    "code": "RUNTIME_NONFINITE_FLOAT",
+                    "word": "float.multiply",
+                    "expected": ["finite Float"],
+                    "actual": ["Infinity"]
+                  }
+                }
+              }
+            },
+            {
+              "request": { "op": "define", "sourceFile": "numeric.agent" },
+              "expect": { "subset": { "ok": true, "kind": "defined" } }
+            },
+            {
+              "request": { "op": "test", "word": "parity.divide" },
+              "expect": {
+                "subset": {
+                  "ok": true,
+                  "kind": "test",
+                  "data": {
+                    "results": [
+                      {
+                        "name": "exact-error",
+                        "word": "parity.divide",
+                        "passed": true,
+                        "expectedErrorCode": "RUNTIME_DIVIDE_BY_ZERO",
+                        "actual": []
+                      },
+                      {
+                        "name": "wrong-error-code",
+                        "word": "parity.divide",
+                        "passed": false,
+                        "expectedErrorCode": "RUNTIME_OVERFLOW",
+                        "errorCode": "RUNTIME_DIVIDE_BY_ZERO",
+                        "actual": []
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "locals-and-closed-branch-cases",
+      "sessions": [
+        {
+          "name": "define-and-test-branches",
+          "requests": [
+            {
+              "request": { "op": "define", "sourceFile": "control-flow.agent" },
+              "expect": { "subset": { "ok": true, "kind": "defined" } }
+            },
+            {
+              "request": { "op": "test", "word": "parity.local" },
+              "expect": {
+                "subset": {
+                  "ok": true,
+                  "data": { "results": [ { "name": "basic", "word": "parity.local", "passed": true, "actual": ["9"] } ] }
+                }
+              }
+            },
+            {
+              "request": { "op": "test", "word": "parity.choose" },
+              "expect": {
+                "subset": {
+                  "ok": true,
+                  "data": {
+                    "results": [
+                      { "name": "false", "word": "parity.choose", "passed": true, "actual": ["20"] },
+                      { "name": "true", "word": "parity.choose", "passed": true, "actual": ["10"] }
+                    ],
+                    "coverage": { "branchesCovered": 2, "branchesTotal": 2 }
+                  }
+                }
+              }
+            },
+            {
+              "request": { "op": "test", "word": "parity.option-value" },
+              "expect": {
+                "subset": {
+                  "ok": true,
+                  "data": {
+                    "results": [
+                      { "name": "none", "word": "parity.option-value", "passed": true, "actual": ["0"] },
+                      { "name": "some", "word": "parity.option-value", "passed": true, "actual": ["7"] }
+                    ],
+                    "coverage": { "branchesCovered": 2, "branchesTotal": 2 }
+                  }
+                }
+              }
+            },
+            {
+              "request": { "op": "test", "word": "parity.result-value" },
+              "expect": {
+                "subset": {
+                  "ok": true,
+                  "data": {
+                    "results": [
+                      { "name": "error", "word": "parity.result-value", "passed": true, "actual": ["0"] },
+                      { "name": "ok", "word": "parity.result-value", "passed": true, "actual": ["9"] }
+                    ],
+                    "coverage": { "branchesCovered": 2, "branchesTotal": 2 }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "nominal-record-and-refinement-contracts",
+      "sessions": [
+        {
+          "name": "typed-values-and-mismatch",
+          "requests": [
+            {
+              "request": { "op": "define", "sourceFile": "nominal.agent" },
+              "expect": { "subset": { "ok": true, "kind": "defined" } }
+            },
+            {
+              "request": { "op": "test", "word": "parity.email-valid?" },
+              "expect": {
+                "subset": {
+                  "ok": true,
+                  "data": {
+                    "results": [
+                      { "name": "missing-at", "word": "parity.email-valid?", "passed": true, "actual": ["false"] },
+                      { "name": "valid", "word": "parity.email-valid?", "passed": true, "actual": ["true"] }
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "request": { "op": "eval", "code": "\"ada@example.test\" Email.new" },
+              "expect": {
+                "subset": { "ok": true, "data": { "stack": ["Email(\"ada@example.test\")"], "stackTypes": ["Email"] } },
+                "exact": [ { "path": "data.effects", "value": {} } ]
+              }
+            },
+            {
+              "request": { "op": "eval", "code": "\"invalid\" Email.new" },
+              "expect": {
+                "subset": {
+                  "ok": false,
+                  "error": {
+                    "code": "REFINEMENT_FAILED",
+                    "word": "Email.new",
+                    "expected": ["validator returns true"],
+                    "actual": ["false"],
+                    "span": { "file": "<generated>", "line": 1, "column": 1, "length": 9 }
+                  }
+                }
+              }
+            },
+            {
+              "request": { "op": "eval", "code": "3.5 MetersPerSecond.new \"north\" motion.new motion.speed" },
+              "expect": {
+                "subset": { "ok": true, "data": { "stack": ["MetersPerSecond(3.5)"], "stackTypes": ["MetersPerSecond"] } }
+              }
+            },
+            {
+              "request": { "op": "eval", "code": "4.0 KilometersPerHour.new parity.accept-speed" },
+              "expect": {
+                "subset": {
+                  "ok": false,
+                  "error": {
+                    "code": "TYPE_STACK_MISMATCH",
+                    "word": "parity.accept-speed",
+                    "expected": ["MetersPerSecond"],
+                    "actual": ["KilometersPerHour"],
+                    "span": { "file": "<eval>", "line": 1, "column": 27, "length": 19 }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "static-callbacks-and-capabilities",
+      "sessions": [
+        {
+          "name": "collection-cases",
+          "requests": [
+            {
+              "request": { "op": "define", "sourceFile": "callbacks.agent" },
+              "expect": { "subset": { "ok": true, "kind": "defined" } }
+            },
+            {
+              "request": { "op": "test", "word": "parity.map-first-doubled" },
+              "expect": {
+                "subset": {
+                  "ok": true,
+                  "data": {
+                    "results": [
+                      { "name": "empty", "word": "parity.map-first-doubled", "passed": true, "actual": ["0"] },
+                      { "name": "nonempty", "word": "parity.map-first-doubled", "passed": true, "actual": ["4"] }
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "request": { "op": "test", "word": "parity.filter-count" },
+              "expect": {
+                "subset": {
+                  "ok": true,
+                  "data": {
+                    "results": [
+                      { "name": "empty", "word": "parity.filter-count", "passed": true, "actual": ["0"] },
+                      { "name": "keep-and-drop", "word": "parity.filter-count", "passed": true, "actual": ["1"] }
+                    ],
+                    "coverage": { "branchesCovered": 4, "branchesTotal": 4 }
+                  }
+                }
+              }
+            },
+            {
+              "request": { "op": "test", "word": "parity.visit-ignored" },
+              "expect": {
+                "subset": {
+                  "ok": true,
+                  "data": {
+                    "results": [
+                      { "name": "empty", "word": "parity.visit-ignored", "passed": true, "actual": ["unit"] },
+                      { "name": "nonempty", "word": "parity.visit-ignored", "passed": true, "actual": ["unit"] }
+                    ],
+                    "coverage": { "branchesCovered": 2, "branchesTotal": 2 }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "denied-empty-effectful-callback",
+          "capabilities": [],
+          "requests": [
+            {
+              "request": { "op": "define", "sourceFile": "callbacks.agent" },
+              "expect": { "subset": { "ok": true, "kind": "defined" } }
+            },
+            {
+              "request": { "op": "task.begin", "goal": "deny callback effects before an empty iteration" },
+              "expect": { "subset": { "ok": true, "data": { "active": true } } }
+            },
+            {
+              "request": { "op": "eval", "code": "list.empty<Int> parity.visit" },
+              "expect": {
+                "subset": {
+                  "ok": false,
+                  "error": {
+                    "code": "CAPABILITY_DENIED",
+                    "expected": ["fs.write"],
+                    "actual": []
+                  }
+                }
+              }
+            },
+            {
+              "request": { "op": "task.status" },
+              "expect": {
+                "subset": { "ok": true, "data": { "active": true, "effects": {}, "wordsUsed": [] } },
+                "exact": [ { "path": "data.effects", "value": {} } ]
+              }
+            },
+            {
+              "request": { "op": "task.abort" },
+              "expect": { "subset": { "ok": true, "data": { "active": false } } }
+            }
+          ]
+        },
+        {
+          "name": "allowed-empty-and-nonempty-callback",
+          "capabilities": ["fs.write"],
+          "requests": [
+            {
+              "request": { "op": "define", "sourceFile": "callbacks.agent" },
+              "expect": { "subset": { "ok": true, "kind": "defined" } }
+            },
+            {
+              "request": { "op": "task.begin", "goal": "compare empty and nonempty callback provider use" },
+              "expect": { "subset": { "ok": true, "data": { "active": true } } }
+            },
+            {
+              "request": { "op": "eval", "code": "list.empty<Int> parity.visit" },
+              "expect": {
+                "subset": { "ok": true, "kind": "eval", "data": { "stack": ["unit"], "stackTypes": ["Unit"] } },
+                "exact": [ { "path": "data.effects", "value": {} } ]
+              }
+            },
+            {
+              "request": { "op": "eval", "code": "3 list.singleton<Int> parity.visit" },
+              "expect": {
+                "subset": { "ok": true, "kind": "eval", "data": { "stack": ["unit"], "stackTypes": ["Unit"], "effects": { "fs.write": 1 } } }
+              }
+            },
+            {
+              "request": { "op": "task.status" },
+              "expect": {
+                "subset": { "ok": true, "data": { "active": true, "effects": { "fs.write": 1 } } },
+                "exact": [ { "path": "data.effects", "value": { "fs.write": 1 } } ]
+              }
+            },
+            {
+              "request": { "op": "task.abort" },
+              "expect": { "subset": { "ok": true, "data": { "active": false } } }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "library-coverage-gate",
+      "sessions": [
+        {
+          "name": "incomplete-then-complete",
+          "requests": [
+            {
+              "request": { "op": "define", "sourceFile": "coverage-word.agent" },
+              "expect": { "subset": { "ok": true, "kind": "defined" } }
+            },
+            {
+              "request": { "op": "commit", "word": "parity.library-filter-count", "library": true },
+              "expect": {
+                "subset": {
+                  "ok": false,
+                  "error": { "code": "LIBRARY_COVERAGE_INCOMPLETE", "word": "parity.library-filter-count" }
+                }
+              }
+            },
+            {
+              "request": { "op": "define", "sourceFile": "coverage-cases.agent" },
+              "expect": { "subset": { "ok": true, "kind": "defined" } }
+            },
+            {
+              "request": { "op": "test", "word": "parity.library-filter-count" },
+              "expect": {
+                "subset": {
+                  "ok": true,
+                  "data": {
+                    "results": [
+                      { "name": "a-empty", "word": "parity.library-filter-count", "passed": true, "actual": ["0"] },
+                      { "name": "b-drop", "word": "parity.library-filter-count", "passed": true, "actual": ["0"] },
+                      { "name": "c-keep", "word": "parity.library-filter-count", "passed": true, "actual": ["1"] }
+                    ],
+                    "coverage": {
+                      "instructionsCovered": 2,
+                      "instructionsTotal": 2,
+                      "branchesCovered": 4,
+                      "branchesTotal": 4,
+                      "uncoveredInstructions": [],
+                      "uncoveredBranchOutcomes": []
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "request": { "op": "commit", "word": "parity.library-filter-count", "library": true },
+              "expect": { "subset": { "ok": true, "kind": "commit" } }
+            }
+          ]
+        },
+        {
+          "name": "fresh-library-reload",
+          "requests": [
+            {
+              "request": { "op": "test", "word": "parity.library-filter-count" },
+              "expect": {
+                "subset": {
+                  "ok": true,
+                  "data": {
+                    "results": [
+                      { "name": "a-empty", "passed": true },
+                      { "name": "b-drop", "passed": true },
+                      { "name": "c-keep", "passed": true }
+                    ],
+                    "coverage": { "instructionsCovered": 2, "instructionsTotal": 2, "branchesCovered": 4, "branchesTotal": 4 }
+                  }
+                }
+              }
+            },
+            {
+              "request": { "op": "describe", "word": "parity.library-filter-count" },
+              "expect": {
+                "subset": {
+                  "ok": true,
+                  "data": { "status": "persistent", "maturity": "library", "revision": 1, "testCount": 3 }
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "metadata-commit-and-task-abort",
+      "sessions": [
+        {
+          "name": "commit-selected-metadata-helper",
+          "requests": [
+            {
+              "request": { "op": "define", "sourceFile": "persistence.agent" },
+              "expect": { "subset": { "ok": true, "kind": "defined" } }
+            },
+            {
+              "request": { "op": "commit", "word": "parity.metadata-target" },
+              "expect": { "subset": { "ok": true, "kind": "commit" } }
+            }
+          ]
+        },
+        {
+          "name": "fresh-metadata-reload",
+          "requests": [
+            {
+              "request": { "op": "describe", "word": "parity.metadata-helper" },
+              "expect": { "subset": { "ok": true, "data": { "status": "persistent", "revision": 1, "testCount": 1 } } }
+            },
+            {
+              "request": { "op": "describe", "word": "parity.metadata-target" },
+              "expect": { "subset": { "ok": true, "data": { "status": "persistent", "revision": 1, "testCount": 1 } } }
+            },
+            {
+              "request": { "op": "eval", "code": "1 parity.metadata-target" },
+              "expect": { "subset": { "ok": true, "data": { "stack": ["41"], "stackTypes": ["Int"] } } }
+            },
+            {
+              "request": { "op": "test", "word": "parity.metadata-target" },
+              "expect": {
+                "subset": {
+                  "ok": true,
+                  "data": { "results": [ { "name": "metadata-helper", "word": "parity.metadata-target", "passed": true, "actual": ["42"] } ] }
+                }
+              }
+            },
+            {
+              "request": { "op": "source", "word": "parity.metadata-helper" },
+              "expect": { "subset": { "ok": true, "kind": "source" } }
+            }
+          ]
+        },
+        {
+          "name": "abort-uncommitted-task",
+          "requests": [
+            {
+              "request": { "op": "task.begin", "goal": "abort a candidate definition" },
+              "expect": { "subset": { "ok": true, "data": { "active": true } } }
+            },
+            {
+              "request": { "op": "define", "sourceFile": "abort.agent" },
+              "expect": { "subset": { "ok": true, "kind": "defined" } }
+            },
+            {
+              "request": { "op": "task.abort" },
+              "expect": { "subset": { "ok": true, "data": { "active": false } } }
+            }
+          ]
+        },
+        {
+          "name": "fresh-after-abort",
+          "requests": [
+            {
+              "request": { "op": "source", "word": "parity.abort-me" },
+              "expect": { "subset": { "ok": false, "error": { "code": "NAME_UNKNOWN_WORD", "word": "parity.abort-me" } } }
+            },
+            {
+              "request": { "op": "storage.status" },
+              "expect": { "subset": { "ok": true, "data": { "authority": "manifest" } } }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
