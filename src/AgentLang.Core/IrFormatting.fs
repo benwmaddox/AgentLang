@@ -166,7 +166,9 @@ module IrFormatting =
         | GeneratedDocument of GeneratedDocumentDto
         | PrimitiveContractDocument of PrimitiveContractDocumentDto
 
-    let private formatVersion = 1
+    // Version 2 adds the verified lexical Scope operation. Emit one global
+    // version so consumers never misread an extended document as v1.
+    let private formatVersion = 2
     // The formatter rejects deep documents before JsonSerializer or the outer
     // Protocol response can throw. This conservative estimate reserves ten
     // JSON levels for the response envelope and fixed DTO nesting.
@@ -372,6 +374,9 @@ module IrFormatting =
         | IrOperation.LoadLocal slot ->
             addString node "kind" "load-local"
             addLocal "local" slot
+        | IrOperation.Scope innerBlock ->
+            addString node "kind" "scope"
+            addNode node "body" (toNode (blockDto program names innerBlock))
         | IrOperation.If(thenBlock, elseBlock) ->
             addString node "kind" "if"
             addNode node "then" (toNode (blockDto program names thenBlock))
@@ -425,6 +430,7 @@ module IrFormatting =
                 let nested =
                     match instruction.Operation with
                     | IrOperation.If(left, right) -> gather left.Code @ gather right.Code
+                    | IrOperation.Scope innerBlock -> gather innerBlock.Code
                     | IrOperation.MatchOption(_, someBlock, noneBlock) -> gather someBlock.Code @ gather noneBlock.Code
                     | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> gather okBlock.Code @ gather errorBlock.Code
                     | _ -> []
@@ -469,12 +475,13 @@ module IrFormatting =
         | IrOperation.WrapScalar(call, _, validator) ->
             call.InputTypes @ call.OutputTypes @ (validator |> Option.map (fun item -> item.InputTypes @ item.OutputTypes) |> Option.defaultValue [])
         | IrOperation.If _ | IrOperation.MatchOption _ | IrOperation.MatchResult _
-        | IrOperation.StoreLocal _ | IrOperation.LoadLocal _ -> []
+        | IrOperation.StoreLocal _ | IrOperation.LoadLocal _ | IrOperation.Scope _ -> []
 
     let rec private collectBlockTypes (block: IrBlock) =
         let nested (instruction: IrInstruction) =
             match instruction.Operation with
             | IrOperation.If(left, right) -> collectBlockTypes left @ collectBlockTypes right
+            | IrOperation.Scope innerBlock -> collectBlockTypes innerBlock
             | IrOperation.MatchOption(_, someBlock, noneBlock) -> collectBlockTypes someBlock @ collectBlockTypes noneBlock
             | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> collectBlockTypes okBlock @ collectBlockTypes errorBlock
             | _ -> []
@@ -501,6 +508,7 @@ module IrFormatting =
         |> List.map (fun instruction ->
             match instruction.Operation with
             | IrOperation.If(left, right) -> 1 + max (blockBranchDepth left) (blockBranchDepth right)
+            | IrOperation.Scope innerBlock -> 1 + blockBranchDepth innerBlock
             | IrOperation.MatchOption(_, someBlock, noneBlock) -> 1 + max (blockBranchDepth someBlock) (blockBranchDepth noneBlock)
             | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> 1 + max (blockBranchDepth okBlock) (blockBranchDepth errorBlock)
             | _ -> 0)
@@ -542,9 +550,10 @@ module IrFormatting =
                     validator |> Option.map (collectCallTypeKeys withCall) |> Option.defaultValue withCall
                 | IrOperation.UnwrapScalar(call, key) -> collectCallTypeKeys (Set.add key found) call
                 | IrOperation.If _ | IrOperation.MatchOption _ | IrOperation.MatchResult _
-                | IrOperation.StoreLocal _ | IrOperation.LoadLocal _ -> found
+                | IrOperation.StoreLocal _ | IrOperation.LoadLocal _ | IrOperation.Scope _ -> found
             match instruction.Operation with
             | IrOperation.If(left, right) -> collectBlockTypeKeys (collectBlockTypeKeys found left) right
+            | IrOperation.Scope innerBlock -> collectBlockTypeKeys found innerBlock
             | IrOperation.MatchOption(_, someBlock, noneBlock) -> collectBlockTypeKeys (collectBlockTypeKeys found someBlock) noneBlock
             | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> collectBlockTypeKeys (collectBlockTypeKeys found okBlock) errorBlock
             | _ -> found) initial

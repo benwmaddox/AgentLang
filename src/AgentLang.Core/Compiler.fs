@@ -307,6 +307,10 @@ module Compiler =
                         if thenBody.ExitLocals <> elseBody.ExitLocals then Diagnostics.raiseError "TYPE_BRANCH_LOCAL_MISMATCH" "Both branches of an if expression must bind the same locals with the same types." (Some wordName) (Some expressionSpan) (thenBody.ExitLocals |> Map.toList |> List.map (fun (name, ty) -> $"{name}:{Types.format ty}")) (elseBody.ExitLocals |> Map.toList |> List.map (fun (name, ty) -> $"{name}:{Types.format ty}"))
                         childBodies <- [ thenBody; elseBody ]
                         thenBody.ExitStack, thenBody.ExitLocals
+                    | Scope(innerBody, _) ->
+                        let scopedBody = visit stack locals innerBody
+                        childBodies <- [ scopedBody ]
+                        scopedBody.ExitStack, locals
                     | MatchOption(someName, someBranch, noneBranch, expressionSpan) ->
                         if List.isEmpty stack then
                             Diagnostics.raiseError "TYPE_MATCH_REQUIRES_OPTION" "match-option consumes an Option<T> from the top of the stack." (Some wordName) (Some expressionSpan) [ "Option<T>" ] []
@@ -391,18 +395,38 @@ module Compiler =
             Diagnostics.raiseError "TEST_EXPECTED_ERROR_BODY_EMPTY" $"Runtime-error test '{test.Name}' must contain an expression to execute." (Some test.Word) (Some test.Span) [ "nonempty test body" ] []
         | ExpectedRuntimeError code when not (TestExpectation.isValidRuntimeErrorCode code) ->
             Diagnostics.raiseError "TEST_INVALID_EXPECTED_ERROR_CODE" $"Runtime-error test '{test.Name}' uses an invalid diagnostic code." (Some test.Word) (Some test.Span) [ "[A-Z][A-Z0-9_]*" ] [ code ]
+        | ExpectedExpression _ when List.isEmpty test.Body ->
+            Diagnostics.raiseError "TEST_EXPECTED_VALUE_BODY_EMPTY" $"Value-expectation test '{test.Name}' must contain an expression to test." (Some test.Word) (Some test.Span) [ "nonempty test body" ] []
         | _ -> ()
         let inferred = inferBody knownTypes words (test.Word + "/" + test.Name) (Some test.Span) [] Map.empty test.Body
         let checkedExpression = checkedExpression inferred
+        let expectedInference =
+            match test.Expected with
+            | ExpectedExpression expressions ->
+                if List.isEmpty expressions then
+                    Diagnostics.raiseError "TEST_EXPECTED_VALUE_EMPTY" $"Value expectation in test '{test.Name}' must contain an expression." (Some test.Word) (Some test.Span) [ "nonempty expected expression" ] []
+                let expected = inferBody knownTypes words (test.Word + "/" + test.Name + "/expected") (Some test.Span) [] Map.empty expressions
+                match expected.InferredBody.ExitStack with
+                | [ expectedType ] ->
+                    validateType false knownTypes (Some test.Span) (test.Word + "/" + test.Name + "/expected") expectedType
+                    if not (Set.isEmpty expected.Effects) then
+                        Diagnostics.raiseError "TEST_EXPECTED_VALUE_EFFECTS" $"Value expectation in test '{test.Name}' must be pure." (Some test.Word) (Some test.Span) [] (Set.toList expected.Effects)
+                    if checkedExpression.Stack <> [ expectedType ] then
+                        Diagnostics.raiseError "TEST_EXPECTED_STACK" $"Test '{test.Name}' and its value expectation must each leave exactly one value of the same closed type." (Some test.Word) (Some test.Span) [ Types.format expectedType ] (checkedExpression.Stack |> List.map Types.format)
+                | actual ->
+                    Diagnostics.raiseError "TEST_EXPECTED_VALUE_STACK" $"Value expectation in test '{test.Name}' must leave exactly one value." (Some test.Word) (Some test.Span) [ "one value" ] (actual |> List.map Types.format)
+                Some expected
+            | _ -> None
         match test.Expected with
         | ExpectedValue literal ->
             let expectedType = literal |> Types.literalValue |> Types.ofValue
             if checkedExpression.Stack <> [ expectedType ] then
                 Diagnostics.raiseError "TEST_EXPECTED_STACK" $"Test '{test.Name}' must leave exactly one value matching its expected literal." (Some test.Word) (Some test.Span) [ Types.format expectedType ] (checkedExpression.Stack |> List.map Types.format)
         | ExpectedRuntimeError _ -> ()
-        checkedExpression, inferred.InferredBody
+        | ExpectedExpression _ -> ()
+        checkedExpression, inferred.InferredBody, expectedInference
 
-    let checkTest knownTypes words test = checkTestDetailed knownTypes words test |> fst
+    let checkTest knownTypes words test = checkTestDetailed knownTypes words test |> fun (checkedExpression, _, _) -> checkedExpression
 
     let private checkExampleDetailed knownTypes words (example: ExampleDefinition) =
         let inferred = inferBody knownTypes words (example.Word + "/" + example.Name) (Some example.Span) [] Map.empty example.Body
@@ -423,6 +447,7 @@ module Compiler =
                 | MapList(name, _) | FilterList(name, _) | EachList(name, _) -> Set.add name found
                 | If(thenBranch, elseBranch, _) | MatchOption(_, thenBranch, elseBranch, _) ->
                     Set.union found (Set.union (collect thenBranch) (collect elseBranch))
+                | Scope(innerBody, _) -> Set.union found (collect innerBody)
                 | MatchResult(_, _, thenBranch, elseBranch, _) -> Set.union found (Set.union (collect thenBranch) (collect elseBranch))
                 | _ -> found) Set.empty
         collect body
@@ -473,6 +498,7 @@ module Compiler =
                     let thenText = sourceExpressions thenBranch
                     let elseText = sourceExpressions elseBranch
                     if List.isEmpty elseBranch then "if\n" + thenText + "\nend" else "if\n" + thenText + "\nelse\n" + elseText + "\nend"
+                | Scope(innerBody, _) -> "scope\n" + sourceExpressions innerBody + "\nend"
                 | MatchOption(name, someBranch, noneBranch, _) ->
                     "match-option\nsome " + name + "\n" + sourceExpressions someBranch + "\nnone\n" + sourceExpressions noneBranch + "\nend"
                 | MatchResult(okName, errorName, okBranch, errorBranch, _) ->
@@ -637,7 +663,7 @@ module Compiler =
             if entry.Revision < 0 then irFailure "IR_INVALID_REVISION" "Dictionary word revisions cannot be negative." (Some name) (Some entry.Definition.Span) [ "nonnegative revision" ] [ string entry.Revision ]
         contextTypes context
 
-    let private snapshotFingerprint (context: IrLoweringContext) =
+    let private snapshotFingerprint (context: IrLoweringContext) (sourceOrigins: Map<SourceSpan, SourceSpan>) =
         let builder = System.Text.StringBuilder()
         let appendText (value: string) =
             if isNull value then builder.Append("N;") |> ignore
@@ -700,6 +726,7 @@ module Compiler =
                 | Let(name, span) -> appendText "let"; appendText name; appendSpan span
                 | Load(name, span) -> appendText "load"; appendText name; appendSpan span
                 | If(thenBranch, elseBranch, span) -> appendText "if"; appendExpressions thenBranch; appendExpressions elseBranch; appendSpan span
+                | Scope(innerBody, span) -> appendText "scope"; appendExpressions innerBody; appendSpan span
                 | MatchOption(name, someBranch, noneBranch, span) -> appendText "match-option"; appendText name; appendExpressions someBranch; appendExpressions noneBranch; appendSpan span
                 | MatchResult(okName, errorName, okBranch, errorBranch, span) ->
                     appendText "match-result"
@@ -717,7 +744,7 @@ module Compiler =
             | Some(ScalarAccessor name) -> appendText "scalar-accessor"; appendText name
         let appendMaturity = function | ProjectWord -> appendText "project" | LibraryWord -> appendText "library"
         let appendStatus = function | Primitive -> appendText "primitive" | Candidate -> appendText "candidate" | Temporary -> appendText "temporary" | Persistent -> appendText "persistent"
-        appendText "agentlang-ir-snapshot-v1"
+        appendText "agentlang-ir-snapshot-v2"
         for KeyValue(name, entry) in context.Words do
             appendText "word"
             appendText name
@@ -757,6 +784,11 @@ module Compiler =
             match scalar.Validator with
             | None -> appendText "no-validator"
             | Some validator -> appendText "validator"; appendText validator
+        appendText "source-origin-map"
+        appendInt sourceOrigins.Count
+        for KeyValue(marker, origin) in sourceOrigins do
+            appendSpan marker
+            appendSpan origin
         let digest = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(builder.ToString()))
         Convert.ToHexString(digest)
 
@@ -888,7 +920,7 @@ module Compiler =
     let private expressionSpan = function
         | Push(_, span) | Call(_, span) | ConstructContainer(_, _, span)
         | MapList(_, span) | FilterList(_, span) | EachList(_, span)
-        | Let(_, span) | Load(_, span) | If(_, _, span)
+        | Let(_, span) | Load(_, span) | If(_, _, span) | Scope(_, span)
         | MatchOption(_, _, _, span) | MatchResult(_, _, _, _, span) -> span
 
     let private expressionKind = function
@@ -906,10 +938,49 @@ module Compiler =
         | Let _ -> "store-local"
         | Load _ -> "load-local"
         | If _ -> "if"
+        | Scope _ -> "scope"
         | MatchOption _ -> "match-option"
         | MatchResult _ -> "match-result"
 
-    let private lowerTypedBody (context: IrLoweringContext) (typeKeys: Map<string, ProgramTypeKey>) (nominalTypes: Map<ProgramTypeKey, IrNominalDefinition>) (generatedByName: Map<string, IrGeneratedTarget>) (ownerName: string) (ownerId: WordId option) (initialStack: LangType list) (effects: Set<string>) (typedBody: TypedBody) =
+    let private zeroWidthMarkers (expressions: Expr list) =
+        let rec collect (body: Expr list) =
+            body
+            |> List.fold (fun found expression ->
+                let span = expressionSpan expression
+                let found = if span.Length = 0 then Set.add span found else found
+                match expression with
+                | If(thenBranch, elseBranch, _) -> Set.union found (Set.union (collect thenBranch) (collect elseBranch))
+                | Scope(innerBody, _) -> Set.union found (collect innerBody)
+                | MatchOption(_, someBranch, noneBranch, _) -> Set.union found (Set.union (collect someBranch) (collect noneBranch))
+                | MatchResult(_, _, okBranch, errorBranch, _) -> Set.union found (Set.union (collect okBranch) (collect errorBranch))
+                | _ -> found) Set.empty
+        collect expressions
+
+    let private contextZeroWidthMarkers (context: IrLoweringContext) =
+        context.Words
+        |> Map.toSeq
+        |> Seq.fold (fun found (_, entry) -> Set.union found (zeroWidthMarkers entry.Definition.Body)) Set.empty
+
+    let private ensureExactOriginKeys expectedKeys sourceOrigins owner span =
+        let actualKeys = sourceOrigins |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+        let missing = Set.difference expectedKeys actualKeys
+        let extra = Set.difference actualKeys expectedKeys
+        if not (Set.isEmpty missing) then
+            irFailure "IR_SOURCE_ORIGIN_MISSING" "Every private Flow source marker must have an authored source origin." owner span
+                [ "one source origin per private marker" ] [ sprintf "missing marker count=%d" missing.Count ]
+        elif not (Set.isEmpty extra) then
+            irFailure "IR_SOURCE_ORIGIN_SET_MISMATCH" "Private source-origin mappings must not contain markers outside this compilation unit." owner span
+                [ "no unrelated source-origin mappings" ] [ sprintf "extra marker count=%d" extra.Count ]
+
+    let private contextOriginsFromMap (context: IrLoweringContext) (sourceOrigins: Map<SourceSpan, SourceSpan>) =
+        let markers = contextZeroWidthMarkers context
+        let missing = Set.difference markers (sourceOrigins |> Map.toSeq |> Seq.map fst |> Set.ofSeq)
+        if not (Set.isEmpty missing) then
+            irFailure "IR_SOURCE_ORIGIN_MISSING" "The compiler snapshot contains private Flow markers without authored source origins." None None
+                [ "one origin per compiler marker" ] [ sprintf "missing marker count=%d" missing.Count ]
+        sourceOrigins |> Map.filter (fun marker _ -> markers.Contains marker)
+
+    let private lowerTypedBody (context: IrLoweringContext) (sourceOrigins: Map<SourceSpan, SourceSpan>) (typeKeys: Map<string, ProgramTypeKey>) (nominalTypes: Map<ProgramTypeKey, IrNominalDefinition>) (generatedByName: Map<string, IrGeneratedTarget>) (ownerName: string) (ownerId: WordId option) (initialStack: LangType list) (effects: Set<string>) (typedBody: TypedBody) =
         let allNodes =
             let rec visit (body: TypedBody) =
                 body.Nodes |> List.collect (fun node -> node :: (node.ChildBodies |> List.collect visit))
@@ -938,7 +1009,24 @@ module Compiler =
         let siteFor span kind =
             let site = SourceSiteId(ownerId, nextSite)
             nextSite <- nextSite + 1
-            sourceMap <- Map.add site { SiteOwner = ownerId; SiteSpan = span; SourceKind = kind } sourceMap
+            let sourceKind =
+                if span.Length <> 0 then kind
+                else
+                    match kind with
+                    | "scope" -> "synthetic-scope"
+                    | "store-local" -> "synthetic-store-local"
+                    | "load-local" -> "synthetic-load-local"
+                    | _ -> irFailure "IR_SYNTHETIC_SOURCE_KIND_INVALID" "A zero-length source span is reserved for internal lexical-scope and temporary-local operations." (Some ownerName) None [ "Scope | StoreLocal | LoadLocal" ] [ kind ]
+            let displaySpan =
+                if span.Length = 0 then
+                    match sourceOrigins.TryFind span with
+                    | Some origin -> origin
+                    | None -> irFailure "IR_SOURCE_ORIGIN_MISSING" "A private zero-width source marker must be mapped to its authored Flow origin before verified IR is created." (Some ownerName) None [ "registered authored source origin" ] []
+                else
+                    if sourceOrigins.ContainsKey span then
+                        irFailure "IR_SOURCE_ORIGIN_INVALID" "Only private zero-width markers can be remapped to an authored source origin." (Some ownerName) (Some span) [ "zero-width source marker" ] []
+                    span
+            sourceMap <- Map.add site { SiteOwner = ownerId; SiteSpan = displaySpan; SourceKind = sourceKind } sourceMap
             site
         let irType word span typeValue = closedIrType typeKeys word span typeValue
         let shape word (env: Map<string, LocalSlot>) (stack: LangType list) (locals: Map<string, LangType>) =
@@ -1032,6 +1120,10 @@ module Compiler =
                             match node.ChildBodies with
                             | [ thenBody; elseBody ] -> IrOperation.If(lowerBlock env thenBody, lowerBlock env elseBody)
                             | _ -> irFailure "IR_BRANCH_ANNOTATION_INVALID" "If lowering requires exactly two checked branches." (Some ownerName) (Some span) [ "2 branches" ] [ string node.ChildBodies.Length ]
+                        | Scope(_, _) ->
+                            match node.ChildBodies with
+                            | [ scopedBody ] -> IrOperation.Scope(lowerBlock env scopedBody)
+                            | _ -> irFailure "IR_SCOPE_ANNOTATION_INVALID" "Scope lowering requires exactly one checked child block." (Some ownerName) (Some span) [ "1 child block" ] [ string node.ChildBodies.Length ]
                         | MatchOption(someName, _, _, _) ->
                             match node.ChildBodies, List.last node.InputStack with
                             | [ someBody; noneBody ], TOption itemType ->
@@ -1066,8 +1158,15 @@ module Compiler =
     let private generatedByNameFromProgram (program: IrProgram) =
         program.GeneratedTargetsById |> Map.toList |> List.map (fun (_, target) -> target.TargetName, target) |> Map.ofList
 
-    let private compileProgram (context: IrLoweringContext) =
+    let private validateSourceOrigins (sourceOrigins: Map<SourceSpan, SourceSpan>) =
+        for KeyValue(marker, origin) in sourceOrigins do
+            if marker.Length <> 0 || origin.Length <= 0 || String.IsNullOrWhiteSpace origin.File || origin.Line < 1 || origin.Column < 1 then
+                irFailure "IR_SOURCE_ORIGIN_INVALID" "Source-origin overrides must map a zero-width private marker to a valid authored span." None None [ "private marker -> authored span" ] [ "invalid mapping" ]
+
+    let private compileProgram (context: IrLoweringContext) (sourceOrigins: Map<SourceSpan, SourceSpan>) =
         validateLoweringContext context |> ignore
+        validateSourceOrigins sourceOrigins
+        ensureExactOriginKeys (contextZeroWidthMarkers context) sourceOrigins None None
         let knownTypes = contextTypes context
         for KeyValue(_, scalar) in context.Scalars do checkScalarValidator knownTypes context.Words scalar |> ignore
         let typeKeys = typeKeysForContext context
@@ -1082,7 +1181,7 @@ module Compiler =
                 let checkedWord, typed = checkDefinitionDetailed knownTypes context.Words entry.Definition
                 let ownerId = context.WordIds[name]
                 let block, localNames, wordSources, inferredEffects =
-                    lowerTypedBody context typeKeys nominalTypes generatedByName name (Some ownerId) entry.Definition.Inputs checkedWord.InferredEffects typed
+                    lowerTypedBody context sourceOrigins typeKeys nominalTypes generatedByName name (Some ownerId) entry.Definition.Inputs checkedWord.InferredEffects typed
                 wordSources |> Map.iter (fun site value -> sourceMap.Add(site, value))
                 let inputTypes = entry.Definition.Inputs |> List.map (closedIrType typeKeys name (Some entry.Definition.Span))
                 let outputTypes = entry.Definition.Outputs |> List.map (closedIrType typeKeys name (Some entry.Definition.Span))
@@ -1098,29 +1197,38 @@ module Compiler =
                       LocalNames = localNames
                       FunctionBody = block }
                 functions.Add(ownerId, functionValue)
-                coverage.Add(ownerId, IrVerifier.coverageObligations block)
+                coverage.Add(ownerId, IrVerifier.coverageObligationsWithSourceMap wordSources block)
         let program =
             { NominalTypesByKey = nominalTypes
               FunctionsById = Map.ofSeq functions
               GeneratedTargetsById = generatedById
               SourceMap = Map.ofSeq sourceMap
               CoverageByWord = Map.ofSeq coverage }
-        program, snapshotFingerprint context
+        program, snapshotFingerprint context sourceOrigins
 
     let compileIrProgram (context: IrLoweringContext) =
-        let program, fingerprint = compileProgram context
+        let program, fingerprint = compileProgram context Map.empty
         IrVerifier.verifyCompilerProgram primitiveIrCatalog fingerprint program
 
-    let private bodyFromInference (context: IrLoweringContext) (verifiedProgram: VerifiedIrProgram) (name: string) (initialStack: LangType list) (effects: Set<string>) (typed: TypedBody) =
+    /// Compile a source snapshot with explicit private-marker to authored-span
+    /// mappings. Only the verified source map is exported; marker coordinates
+    /// remain part of the compiler input fingerprint but never reach IR.
+    let compileIrProgramWithSourceOrigins (context: IrLoweringContext) sourceOrigins =
+        let program, fingerprint = compileProgram context sourceOrigins
+        IrVerifier.verifyCompilerProgram primitiveIrCatalog fingerprint program
+
+    let private bodyFromInference (context: IrLoweringContext) (sourceOrigins: Map<SourceSpan, SourceSpan>) (verifiedProgram: VerifiedIrProgram) (name: string) (initialStack: LangType list) (effects: Set<string>) (typed: TypedBody) =
         validateLoweringContext context |> ignore
+        validateSourceOrigins sourceOrigins
         VerifiedIrProgram.requireBackendRegistry primitiveIrCatalog verifiedProgram
+        let programOrigins = contextOriginsFromMap context sourceOrigins
         match verifiedProgram.CompilerSnapshotFingerprint with
-        | Some fingerprint when fingerprint = snapshotFingerprint context -> ()
+        | Some fingerprint when fingerprint = snapshotFingerprint context programOrigins -> ()
         | _ -> irFailure "IR_STALE_COMPILER_SNAPSHOT" "Detached body context does not match the exact program snapshot it will call." (Some name) None [ "same compiler snapshot fingerprint" ] []
         let program = VerifiedIrProgram.inspect verifiedProgram
         let typeKeys = typeKeysFromProgram program
         let generatedByName = generatedByNameFromProgram program
-        let block, localNames, sourceMap, inferredEffects = lowerTypedBody context typeKeys program.NominalTypesByKey generatedByName name None initialStack effects typed
+        let block, localNames, sourceMap, inferredEffects = lowerTypedBody context sourceOrigins typeKeys program.NominalTypesByKey generatedByName name None initialStack effects typed
         let inputTypes = initialStack |> List.map (closedIrType typeKeys name None)
         let outputTypes = typed.ExitStack |> List.map (closedIrType typeKeys name None)
         let body =
@@ -1132,33 +1240,52 @@ module Compiler =
               BodyLocalNames = localNames
               BodyBlock = block
               BodySourceMap = sourceMap
-              BodyCoverage = IrVerifier.coverageObligations block }
+              BodyCoverage = IrVerifier.coverageObligationsWithSourceMap sourceMap block }
         IrVerifier.verifyBody verifiedProgram body
 
-    let compileIrBodyAgainstProgram context verifiedProgram name initialStack expressions =
+    let compileIrBodyAgainstProgramWithSourceOrigins context verifiedProgram name initialStack expressions sourceOrigins =
         validateLoweringContext context |> ignore
+        validateSourceOrigins sourceOrigins
         VerifiedIrProgram.requireBackendRegistry primitiveIrCatalog verifiedProgram
+        let contextMarkers = contextZeroWidthMarkers context
+        let bodyMarkers = zeroWidthMarkers expressions
+        let overlap = Set.intersect contextMarkers bodyMarkers
+        if not (Set.isEmpty overlap) then
+            irFailure "IR_SOURCE_ORIGIN_MARKER_COLLISION" "Detached Flow markers must be unique from compiler-snapshot markers." (Some name) None [] [ sprintf "collision count=%d" overlap.Count ]
+        ensureExactOriginKeys (Set.union contextMarkers bodyMarkers) sourceOrigins (Some name) None
+        let programOrigins = contextOriginsFromMap context sourceOrigins
         match verifiedProgram.CompilerSnapshotFingerprint with
-        | Some fingerprint when fingerprint = snapshotFingerprint context -> ()
+        | Some fingerprint when fingerprint = snapshotFingerprint context programOrigins -> ()
         | _ -> irFailure "IR_STALE_COMPILER_SNAPSHOT" "Detached body context does not match the exact program snapshot it will call." (Some name) None [ "same compiler snapshot fingerprint" ] []
         let knownTypes = contextTypes context
         for typeValue in initialStack do validateType false knownTypes None name typeValue
         let inferred = inferBody knownTypes context.Words name None initialStack Map.empty expressions
-        bodyFromInference context verifiedProgram name initialStack inferred.Effects inferred.InferredBody
+        bodyFromInference context sourceOrigins verifiedProgram name initialStack inferred.Effects inferred.InferredBody
+
+    let compileIrBodyAgainstProgram context verifiedProgram name initialStack expressions =
+        compileIrBodyAgainstProgramWithSourceOrigins context verifiedProgram name initialStack expressions Map.empty
 
     let compileIrBody context name initialStack expressions =
         let verifiedProgram = compileIrProgram context
         compileIrBodyAgainstProgram context verifiedProgram name initialStack expressions
 
-    let compileIrTestAgainstProgram context verifiedProgram (test: TestDefinition) =
+    let compileIrTestWithExpectationAgainstProgram context verifiedProgram (test: TestDefinition) =
         validateLoweringContext context |> ignore
         VerifiedIrProgram.requireBackendRegistry primitiveIrCatalog verifiedProgram
         match verifiedProgram.CompilerSnapshotFingerprint with
-        | Some fingerprint when fingerprint = snapshotFingerprint context -> ()
+        | Some fingerprint when fingerprint = snapshotFingerprint context Map.empty -> ()
         | _ -> irFailure "IR_STALE_COMPILER_SNAPSHOT" "Test context does not match the exact program snapshot it will call." (Some test.Word) (Some test.Span) [ "same compiler snapshot fingerprint" ] []
         let knownTypes = contextTypes context
-        let checkedTest, typed = checkTestDetailed knownTypes context.Words test
-        bodyFromInference context verifiedProgram (test.Word + "/" + test.Name) [] checkedTest.Effects typed
+        let checkedTest, typed, expected = checkTestDetailed knownTypes context.Words test
+        let actualBody = bodyFromInference context Map.empty verifiedProgram (test.Word + "/" + test.Name) [] checkedTest.Effects typed
+        let expectedBody =
+            expected
+            |> Option.map (fun inferred ->
+                bodyFromInference context Map.empty verifiedProgram (test.Word + "/" + test.Name + "/expected") [] Set.empty inferred.InferredBody)
+        actualBody, expectedBody
+
+    let compileIrTestAgainstProgram context verifiedProgram test =
+        compileIrTestWithExpectationAgainstProgram context verifiedProgram test |> fst
 
     let compileIrTest context test =
         let verifiedProgram = compileIrProgram context
@@ -1168,11 +1295,11 @@ module Compiler =
         validateLoweringContext context |> ignore
         VerifiedIrProgram.requireBackendRegistry primitiveIrCatalog verifiedProgram
         match verifiedProgram.CompilerSnapshotFingerprint with
-        | Some fingerprint when fingerprint = snapshotFingerprint context -> ()
+        | Some fingerprint when fingerprint = snapshotFingerprint context Map.empty -> ()
         | _ -> irFailure "IR_STALE_COMPILER_SNAPSHOT" "Example context does not match the exact program snapshot it will call." (Some example.Word) (Some example.Span) [ "same compiler snapshot fingerprint" ] []
         let knownTypes = contextTypes context
         let checkedExample, typed = checkExampleDetailed knownTypes context.Words example
-        bodyFromInference context verifiedProgram (example.Word + "/" + example.Name) [] checkedExample.Effects typed
+        bodyFromInference context Map.empty verifiedProgram (example.Word + "/" + example.Name) [] checkedExample.Effects typed
 
     let compileIrExample context example =
         let verifiedProgram = compileIrProgram context

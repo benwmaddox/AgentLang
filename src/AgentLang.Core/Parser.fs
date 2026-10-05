@@ -109,6 +109,9 @@ module Parser =
                     else None
         literal
 
+    let private maxSourceTypeNestingDepth = 256
+    let private maxSourceBlockNestingDepth = 64
+
     let private parseType file line (source: string) =
         let text = source.Trim()
         let mutable cursor = 0
@@ -119,7 +122,9 @@ module Parser =
             while cursor < text.Length && Char.IsLetterOrDigit text[cursor] do cursor <- cursor + 1
             if start = cursor then fail file line (cursor + 1) "PARSE_INVALID_TYPE" "Expected a type name."
             text.Substring(start, cursor - start)
-        let rec parse () =
+        let rec parse depth =
+            if depth > maxSourceTypeNestingDepth then
+                fail file line (cursor + 1) "PARSE_TYPE_NESTING_LIMIT" $"Type nesting exceeds the source limit of {maxSourceTypeNestingDepth}."
             skipWhitespace ()
             let name = parseName ()
             skipWhitespace ()
@@ -129,7 +134,7 @@ module Parser =
                     let values = ResizeArray<LangType>()
                     let mutable needsArgument = true
                     while needsArgument do
-                        values.Add(parse ())
+                        values.Add(parse (depth + 1))
                         skipWhitespace ()
                         if cursor >= text.Length then fail file line (cursor + 1) "PARSE_INVALID_TYPE" $"Type '{text}' is missing a closing '>'."
                         elif text[cursor] = ',' then cursor <- cursor + 1
@@ -150,7 +155,7 @@ module Parser =
             | _, Some _ -> fail file line 1 "PARSE_UNSUPPORTED_TYPE" $"Parameterized type '{name}' is not part of the closed built-in type set."
             | _, None when name = "Int" || name = "Float" || name = "Bool" || name = "String" || name = "Unit" -> fail file line 1 "PARSE_INVALID_TYPE" $"Type '{name}' cannot have type arguments."
             | _, None -> TNamed name
-        let result = parse ()
+        let result = parse 0
         skipWhitespace ()
         if cursor <> text.Length then fail file line (cursor + 1) "PARSE_INVALID_TYPE" $"Unexpected text in type '{text}'."
         result
@@ -252,31 +257,40 @@ module Parser =
 
     let private parseOps file (line: Line) =
         let tokens = tokenize file line
-        let rec convert (items: Token list) =
-            match items with
-            | [] -> []
+        let expressions = ResizeArray<Expr>()
+        let mutable remaining = tokens
+        while not remaining.IsEmpty do
+            match remaining with
             | token :: rest ->
                 match parseLiteral file line.Number token with
-                | Some literal -> Push(literal, span file line.Number token.Column token.Text.Length) :: convert rest
+                | Some literal ->
+                    expressions.Add(Push(literal, span file line.Number token.Column token.Text.Length))
+                    remaining <- rest
                 | None when token.Text.StartsWith("$", StringComparison.Ordinal) && token.Text.Length > 1 ->
-                    Load(token.Text.Substring(1), span file line.Number token.Column token.Text.Length) :: convert rest
+                    expressions.Add(Load(token.Text.Substring(1), span file line.Number token.Column token.Text.Length))
+                    remaining <- rest
                 | None when token.Text = "let" ->
                     match rest with
-                    | name :: remaining -> Let(name.Text, span file line.Number token.Column (name.Column + name.Text.Length - token.Column)) :: convert remaining
+                    | name :: next ->
+                        expressions.Add(Let(name.Text, span file line.Number token.Column (name.Column + name.Text.Length - token.Column)))
+                        remaining <- next
                     | [] -> fail file line.Number token.Column "PARSE_EXPECTED_LOCAL_NAME" "'let' must be followed by a local name."
                 | None when token.Text = "list.map" || token.Text = "list.filter" || token.Text = "list.each" ->
                     match rest with
-                    | target :: remaining when validWordName target.Text ->
+                    | target :: next when validWordName target.Text ->
                         let expressionSpan = span file line.Number token.Column (target.Column + target.Text.Length - token.Column)
                         let operation = if token.Text = "list.map" then MapList(target.Text, expressionSpan) elif token.Text = "list.filter" then FilterList(target.Text, expressionSpan) else EachList(target.Text, expressionSpan)
-                        operation :: convert remaining
+                        expressions.Add(operation)
+                        remaining <- next
                     | target :: _ -> fail file line.Number target.Column "PARSE_INVALID_WORD_NAME" "List higher-order operations require a static word name argument."
                     | [] -> fail file line.Number token.Column "PARSE_EXPECTED_WORD_NAME" $"'{token.Text}' must be followed by a static word name."
                 | None ->
                     match parseContainerConstructor file line token with
-                    | Some expression -> expression :: convert rest
-                    | None -> Call(token.Text, span file line.Number token.Column token.Text.Length) :: convert rest
-        convert tokens
+                    | Some expression -> expressions.Add(expression)
+                    | None -> expressions.Add(Call(token.Text, span file line.Number token.Column token.Text.Length))
+                    remaining <- rest
+            | [] -> ()
+        List.ofSeq expressions
 
     /// Parse expression lines. If blocks use standalone `if`, optional `else`, and `end` lines.
     let private parseExpressionLines file (lines: Line list) =
@@ -291,7 +305,12 @@ module Parser =
             | [ head; name ] when head.Text = keyword && validWordName name.Text -> name.Text
             | _ -> fail file line.Number 1 "PARSE_INVALID_MATCH_CASE" $"Expected '{keyword} <local-name>'."
 
-        let rec parseBlock index (stops: Set<string>) =
+        let rec parseBlock depth index (stops: Set<string>) =
+            if depth > maxSourceBlockNestingDepth then
+                let diagnosticLine =
+                    if lines.IsEmpty then 1
+                    else lines[min (max 0 index) (lines.Length - 1)].Number
+                fail file diagnosticLine 1 "PARSE_BLOCK_NESTING_LIMIT" $"Block nesting exceeds the source limit of {maxSourceBlockNestingDepth}."
             let expressions = ResizeArray<Expr>()
             let mutable cursor = index
             let mutable terminator = "eof"
@@ -309,10 +328,10 @@ module Parser =
                     cursor <- cursor + 1
                     running <- false
                 | "if" ->
-                    let thenBranch, afterThen, endKind = parseBlock (cursor + 1) (Set.ofList [ "else"; "end" ])
+                    let thenBranch, afterThen, endKind = parseBlock (depth + 1) (cursor + 1) (Set.ofList [ "else"; "end" ])
                     let elseBranch, afterElse =
                         if endKind = "else" then
-                            let branch, next, finalKind = parseBlock afterThen (Set.singleton "end")
+                            let branch, next, finalKind = parseBlock (depth + 1) afterThen (Set.singleton "end")
                             if finalKind <> "end" then fail file line.Number 1 "PARSE_UNCLOSED_IF" "The if branch is missing its closing 'end'."
                             branch, next
                         elif endKind = "end" then [], afterThen
@@ -323,9 +342,9 @@ module Parser =
                     let someHeader = skipBlank (cursor + 1)
                     if someHeader >= lines.Length then fail file line.Number 1 "PARSE_UNCLOSED_MATCH" "The option match requires a some case, a none case, and a closing 'end'."
                     let someName = parseLocalHeader lines[someHeader] "some"
-                    let someBranch, afterSome, someTerminator = parseBlock (someHeader + 1) (Set.ofList [ "none"; "end" ])
+                    let someBranch, afterSome, someTerminator = parseBlock (depth + 1) (someHeader + 1) (Set.ofList [ "none"; "end" ])
                     if someTerminator <> "none" then fail file line.Number 1 "PARSE_MISSING_MATCH_CASE" "An option match requires both 'some <name>' and 'none' cases."
-                    let noneBranch, afterNone, finalTerminator = parseBlock afterSome (Set.singleton "end")
+                    let noneBranch, afterNone, finalTerminator = parseBlock (depth + 1) afterSome (Set.singleton "end")
                     if finalTerminator <> "end" then fail file line.Number 1 "PARSE_UNCLOSED_MATCH" "The option match is missing its closing 'end'."
                     expressions.Add(MatchOption(someName, someBranch, noneBranch, span file line.Number 1 line.Text.Length))
                     cursor <- afterNone
@@ -333,10 +352,10 @@ module Parser =
                     let okHeader = skipBlank (cursor + 1)
                     if okHeader >= lines.Length then fail file line.Number 1 "PARSE_UNCLOSED_MATCH" "The result match requires ok and error cases and a closing 'end'."
                     let okName = parseLocalHeader lines[okHeader] "ok"
-                    let okBranch, afterOk, okTerminator = parseBlock (okHeader + 1) (Set.ofList [ "error"; "end" ])
+                    let okBranch, afterOk, okTerminator = parseBlock (depth + 1) (okHeader + 1) (Set.ofList [ "error"; "end" ])
                     if okTerminator <> "error" then fail file line.Number 1 "PARSE_MISSING_MATCH_CASE" "A result match requires both 'ok <name>' and 'error <name>' cases."
                     let errorName = parseLocalHeader lines[afterOk - 1] "error"
-                    let errorBranch, afterError, finalTerminator = parseBlock afterOk (Set.singleton "end")
+                    let errorBranch, afterError, finalTerminator = parseBlock (depth + 1) afterOk (Set.singleton "end")
                     if finalTerminator <> "end" then fail file line.Number 1 "PARSE_UNCLOSED_MATCH" "The result match is missing its closing 'end'."
                     expressions.Add(MatchResult(okName, errorName, okBranch, errorBranch, span file line.Number 1 line.Text.Length))
                     cursor <- afterError
@@ -348,7 +367,7 @@ module Parser =
                     for expression in parseOps file line do expressions.Add expression
                     cursor <- cursor + 1
             List.ofSeq expressions, cursor, terminator
-        let expressions, next, terminator = parseBlock 0 Set.empty
+        let expressions, next, terminator = parseBlock 0 0 Set.empty
         if terminator = "end" then
             let line = lines[min (next - 1) (lines.Length - 1)]
             fail file line.Number 1 "PARSE_UNEXPECTED_END" "Unexpected 'end'."
@@ -445,32 +464,80 @@ module Parser =
         let content = if finish > start + 1 then lines[start + 1 .. finish - 1] |> Array.toList else []
         let meaningful = content |> List.filter (fun line -> not (String.IsNullOrWhiteSpace(stripComment line.Text)))
         if List.isEmpty meaningful then fail file header.Number 1 "PARSE_MISSING_EXPECTED" "Test and example blocks require a final '=> literal' line (tests may also use '=> error CODE')."
-        let expectedLine = List.last meaningful
-        let expectedText = stripComment expectedLine.Text |> fun value -> value.Trim()
-        let expectedTokens = tokenize file expectedLine
-        let parseArrowExpectation (rest: string) : TestExpectation =
-            let parts: string array = rest.Split([| ' '; '\t' |], StringSplitOptions.RemoveEmptyEntries)
-            if parts.Length > 0 && parts[0] = "error" then
+        let expectationMarker (line: Line) =
+            let text = stripComment line.Text |> fun value -> value.Trim()
+            if text.StartsWith("=>", StringComparison.Ordinal)
+               && text.Length > 2 && Char.IsWhiteSpace text[2] then
+                let rest = text.Substring(2).TrimStart()
+                rest = "value"
+                || (rest.StartsWith("value", StringComparison.Ordinal)
+                    && rest.Length > "value".Length
+                    && Char.IsWhiteSpace rest["value".Length])
+            else false
+        let valueMarker = meaningful |> List.tryFindIndex expectationMarker
+        let body, expected =
+            match valueMarker with
+            | Some markerIndex ->
                 if isExample then
-                    fail file expectedLine.Number 1 "PARSE_ERROR_EXPECTATION_NOT_ALLOWED" "Examples must end with a literal value expectation; runtime-error expectations are available only in tests."
-                match parts with
-                | [| "error"; code |] when TestExpectation.isValidRuntimeErrorCode code -> ExpectedRuntimeError code
-                | _ -> fail file expectedLine.Number 1 "PARSE_INVALID_EXPECTED_ERROR" "Runtime-error expectations use '=> error UPPERCASE_CODE' with a stable uppercase diagnostic code."
-            else
-                let token = { Text = rest; Column = expectedLine.Text.IndexOf(rest, StringComparison.Ordinal) + 1 }
-                ExpectedValue(parseExpected file expectedLine [ token ])
-        let expected =
-            if expectedText.StartsWith("=>", StringComparison.Ordinal) then
-                let rest = expectedText.Substring(2).Trim()
-                parseArrowExpectation rest
-            elif expectedText.StartsWith("expect ", StringComparison.Ordinal) then
-                ExpectedValue(parseExpected file expectedLine (expectedTokens |> List.tail))
-            else fail file expectedLine.Number 1 "PARSE_MISSING_EXPECTED" "Final test line must be '=> literal' or 'expect literal'; tests may use '=> error CODE'."
-        let bodyLines = meaningful |> List.take (meaningful.Length - 1)
-        let body = parseExpressionLines file bodyLines
+                    let marker = meaningful[markerIndex]
+                    fail file marker.Number 1 "PARSE_VALUE_EXPECTATION_NOT_ALLOWED" "Examples use literal expectations; typed value-expression expectations are available only in tests."
+                let marker = meaningful[markerIndex]
+                let markerText = stripComment marker.Text |> fun value -> value.Trim()
+                let rest = markerText.Substring(2).Trim()
+                let inlineExpression = rest.Substring("value".Length).Trim()
+                let bodyLines = meaningful |> List.take markerIndex
+                let body = parseExpressionLines file bodyLines
+                if List.isEmpty body then
+                    fail file header.Number 1 "PARSE_EMPTY_VALUE_EXPECTATION_BODY" "A typed value expectation requires an expression to test."
+                let expectedExpressions =
+                    if String.IsNullOrEmpty inlineExpression then
+                        meaningful |> List.skip (markerIndex + 1) |> parseExpressionLines file
+                    else
+                        if markerIndex <> meaningful.Length - 1 then
+                            fail file marker.Number 1 "PARSE_VALUE_EXPECTATION_NOT_FINAL" "An inline '=> value <expression>' expectation must be the last meaningful test line."
+                        let rawLine = stripComment marker.Text
+                        let arrowIndex = rawLine.IndexOf("=>", StringComparison.Ordinal)
+                        let restIndex = rawLine.IndexOf(rest, max 0 (arrowIndex + 2), StringComparison.Ordinal)
+                        if arrowIndex < 0 || restIndex < 0 then
+                            fail file marker.Number 1 "PARSE_INVALID_VALUE_EXPECTATION" "Could not locate the typed value expectation in its source line."
+                        let expressionOffset = rest.IndexOf(inlineExpression, "value".Length, StringComparison.Ordinal)
+                        let expressionColumn = restIndex + expressionOffset
+                        let expressionLine =
+                            { Text = String(' ', expressionColumn) + inlineExpression
+                              Number = marker.Number }
+                        parseExpressionLines file [ expressionLine ]
+                if List.isEmpty expectedExpressions then
+                    fail file marker.Number 1 "PARSE_EMPTY_VALUE_EXPECTATION" "Typed value expectations require a nonempty expression."
+                body, ExpectedExpression expectedExpressions
+            | None ->
+                let expectedLine = List.last meaningful
+                let expectedText = stripComment expectedLine.Text |> fun value -> value.Trim()
+                let expectedTokens = tokenize file expectedLine
+                let parseArrowExpectation (rest: string) : TestExpectation =
+                    let parts: string array = rest.Split([| ' '; '\t' |], StringSplitOptions.RemoveEmptyEntries)
+                    if parts.Length > 0 && parts[0] = "error" then
+                        if isExample then
+                            fail file expectedLine.Number 1 "PARSE_ERROR_EXPECTATION_NOT_ALLOWED" "Examples must end with a literal value expectation; runtime-error expectations are available only in tests."
+                        match parts with
+                        | [| "error"; code |] when TestExpectation.isValidRuntimeErrorCode code -> ExpectedRuntimeError code
+                        | _ -> fail file expectedLine.Number 1 "PARSE_INVALID_EXPECTED_ERROR" "Runtime-error expectations use '=> error UPPERCASE_CODE' with a stable uppercase diagnostic code."
+                    else
+                        let token = { Text = rest; Column = expectedLine.Text.IndexOf(rest, StringComparison.Ordinal) + 1 }
+                        ExpectedValue(parseExpected file expectedLine [ token ])
+                let expected =
+                    if expectedText.StartsWith("=>", StringComparison.Ordinal) then
+                        let rest = expectedText.Substring(2).Trim()
+                        parseArrowExpectation rest
+                    elif expectedText.StartsWith("expect ", StringComparison.Ordinal) then
+                        ExpectedValue(parseExpected file expectedLine (expectedTokens |> List.tail))
+                    else fail file expectedLine.Number 1 "PARSE_MISSING_EXPECTED" "Final test line must be '=> literal' or 'expect literal'; tests may use '=> error CODE' or '=> value <expression>'."
+                let bodyLines = meaningful |> List.take (meaningful.Length - 1)
+                parseExpressionLines file bodyLines, expected
         match expected with
         | ExpectedRuntimeError _ when List.isEmpty body ->
             fail file header.Number 1 "PARSE_EMPTY_ERROR_TEST_BODY" "A runtime-error test must execute at least one expression before asserting an error."
+        | ExpectedExpression _ when List.isEmpty body ->
+            fail file header.Number 1 "PARSE_EMPTY_VALUE_EXPECTATION_BODY" "A typed value expectation requires an expression to test."
         | _ -> ()
         pieces[1], pieces[0], body, expected, blockSource lines start finish, span file header.Number 1 header.Text.Length
 
@@ -558,6 +625,7 @@ module Parser =
                     match expected with
                     | ExpectedValue literal -> examples.Add { Name = name; Word = word; Body = body; Expected = literal; SourceText = sourceText; Span = sourceSpan }
                     | ExpectedRuntimeError _ -> fail file lines[cursor].Number 1 "PARSE_ERROR_EXPECTATION_NOT_ALLOWED" "Examples must end with a literal value expectation; runtime-error expectations are available only in tests."
+                    | ExpectedExpression _ -> fail file lines[cursor].Number 1 "PARSE_VALUE_EXPECTATION_NOT_ALLOWED" "Examples use literal expectations; typed value-expression expectations are available only in tests."
                     cursor <- finish + 1
                 else fail file lines[cursor].Number 1 "PARSE_UNKNOWN_DECLARATION" $"Unknown declaration '{content}'."
             Ok { Records = List.ofSeq records; Scalars = List.ofSeq scalars; Words = List.ofSeq words; Tests = List.ofSeq tests; Examples = List.ofSeq examples }

@@ -325,6 +325,55 @@ let private testStructuredBranchesAndCoverage () =
             CoverageByWord = Map.add chooseWord (coverage chooseWord [ 0; 1 ] [ 0, [ "true"; "false" ] ]) executable.CoverageByWord }
     expectDiagnostic "nested branch instructions cannot reuse source-site identities" "IR_DUPLICATE_SOURCE_SITE" (fun () -> verify Map.empty duplicateProgram)
 
+let private testClosedSyntheticSourceKinds () =
+    let owner = WordId "synthetic-scope-owner"
+    let scopeSite, scopeSource = source owner 0 "synthetic-scope"
+    let childSite, childSource = source owner 1 "constant"
+    let child =
+        block [] Map.empty
+            [ { Site = childSite; Operation = IrOperation.Constant(LInt 7L, IrInt) } ]
+            [ IrInt ] Map.empty
+    let body = block [] Map.empty [ { Site = scopeSite; Operation = IrOperation.Scope child } ] [ IrInt ] Map.empty
+    let functionValue = functionDefinition owner 1 [] [ IrInt ] noEffects noEffects Map.empty body
+    let valid =
+        program [ owner, functionValue ] [] []
+            [ scopeSite, scopeSource; childSite, childSource ]
+            [ owner, coverage owner [ 1 ] [] ]
+    verify Map.empty valid
+    check "Scope classification is exact and the nested authored instruction retains coverage" true
+
+    let constantFunction site =
+        let body = block [] Map.empty [ { Site = site; Operation = IrOperation.Constant(LInt 1L, IrInt) } ] [ IrInt ] Map.empty
+        functionDefinition owner 1 [] [ IrInt ] noEffects noEffects Map.empty body
+    let scopeSpoofSource = { childSource with SourceKind = "synthetic-scope" }
+    let spoofedOpcode =
+        program [ owner, constantFunction childSite ] [] [] [ childSite, scopeSpoofSource ]
+            [ owner, coverage owner [] [] ]
+    expectDiagnostic "synthetic Scope cannot hide a real constant instruction" "IR_SYNTHETIC_SOURCE_KIND_INVALID" (fun () -> verify Map.empty spoofedOpcode)
+
+    let unknownSource = { childSource with SourceKind = "synthetic-unreviewed" }
+    let unknownKind =
+        program [ owner, constantFunction childSite ] [] [] [ childSite, unknownSource ]
+            [ owner, coverage owner [ 1 ] [] ]
+    expectDiagnostic "unknown synthetic classifications fail closed" "IR_SYNTHETIC_SOURCE_KIND_INVALID" (fun () -> verify Map.empty unknownKind)
+
+    let verified = Compiler.compileIrProgram (loweringContext Map.empty Map.empty Map.empty)
+    let detachedSite = SourceSiteId(None, 0)
+    let detachedSource = { childSource with SiteOwner = None; SourceKind = "synthetic-store-local" }
+    let detachedBlock =
+        block [] Map.empty [ { Site = detachedSite; Operation = IrOperation.Constant(LInt 1L, IrInt) } ] [ IrInt ] Map.empty
+    let detachedBody =
+        { BodyName = "synthetic-source-kind"
+          BodyInputTypes = []
+          BodyOutputTypes = [ IrInt ]
+          BodyDeclaredEffects = noEffects
+          BodyInferredEffects = noEffects
+          BodyLocalNames = Map.empty
+          BodyBlock = detachedBlock
+          BodySourceMap = Map.ofList [ detachedSite, { detachedSource with SiteSpan = testSpan "detached.agent" 1 } ]
+          BodyCoverage = { CoveredSites = Set.empty; BranchOutcomes = Map.empty } }
+    expectDiagnostic "detached body verifier applies the same closed opcode/source contract" "IR_SYNTHETIC_SOURCE_KIND_INVALID" (fun () -> IrVerifier.verifyBody verified detachedBody |> ignore)
+
 let private testOptionAndResultCaseLocals () =
     let optionWord = WordId "option-value"
     let optionSome = LocalSlot 0
@@ -872,6 +921,7 @@ let private tests =
       "concrete primitive specializations", testPrimitiveSpecializations
       "closed container constructors", testClosedContainerConstructors
       "structured branches and coverage", testStructuredBranchesAndCoverage
+      "closed synthetic source classifications", testClosedSyntheticSourceKinds
       "Option and Result payload scope", testOptionAndResultCaseLocals
       "generated record and scalar operations", testGeneratedRecordAndScalarOperations
       "static callbacks and effects", testStaticCallbacksAndEffects

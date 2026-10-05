@@ -133,6 +133,31 @@ let private testPublicBoundaryAndEmptyEntryOnly () =
         IrInterpreter.executeBody host "requires-input" nonemptyInputBody |> ignore)
     check "unsupported public input is rejected before any host hook" (preflightCount = 0 && chargeCount = 0)
 
+let private testScopeRestoresOverwrittenOuterLocal () =
+    let context = defaultContext ()
+    let source = span "scope-restore.agent"
+    let marker = { source with Column = Int32.MaxValue; Length = 0 }
+    let program = Compiler.compileIrProgram context
+    let body =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins context program "scope-restores-local" [] [
+            Push(LInt 10L, source)
+            Let("outer", source)
+            Scope(
+                [ Push(LInt 99L, source)
+                  Let("outer", source)
+                  Load("outer", source) ],
+                marker)
+            Load("outer", source)
+        ] (Map.ofList [ marker, source ])
+    let verifiedBody = VerifiedIrBody.inspect body
+    check "private Scope marker is mapped to the authored source location" (
+        verifiedBody.BodySourceMap |> Map.exists (fun _ site -> site.SourceKind = "synthetic-scope" && site.SiteSpan = source))
+    let mutable charges = 0
+    let countingHost = host (fun _ _ _ -> ()) (fun _ _ -> charges <- charges + 1) (fun _ -> EffectUnit) ignore
+    check "Scope preserves its result stack and restores an overwritten outer local" (
+        IrInterpreter.executeBody countingHost "scope-restores-local" body = [ IntValue 99L; IntValue 10L ])
+    check "all instructions, including Scope and its body, consume fuel" (charges = 7)
+
 let private testInterpreterOwnsFuel () =
     let context = defaultContext ()
     let expressionSpan = span "fuel.agent"
@@ -203,11 +228,92 @@ let private testEmptyEffectfulCallbackPreflight () =
         IrInterpreter.executeBody host "empty-callback" body |> ignore)
     check "effect denial precedes body instructions and provider effects" (preflightCount = 1 && instructionCount = 0 && effectCount = 0)
 
+let private testBoundedRuntimeValues () =
+    let site = span "bounded-values.agent"
+    let chainRecord =
+        { Name = "Chain"
+          Fields = [ { Name = "tail"; Type = TOption(TNamed "Chain") } ]
+          SourceText = "record Chain"
+          Span = site }
+    let chainConstructor =
+        wordEntry "chain.new" [ TOption(TNamed "Chain") ] [ TNamed "Chain" ] Set.empty [] (Some(RecordConstructor "Chain"))
+    let chainContext = contextWith (Map.ofList [ "Chain", chainRecord ]) [ chainConstructor ]
+    let buildChain depth =
+        let expressions = ResizeArray<Expr>()
+        expressions.Add(ConstructContainer(OptionNone, [ TNamed "Chain" ], site))
+        expressions.Add(Call("chain.new", site))
+        for _ in 1 .. depth do
+            expressions.Add(ConstructContainer(OptionSome, [ TNamed "Chain" ], site))
+            expressions.Add(Call("chain.new", site))
+        List.ofSeq expressions
+
+    let expectedChain depth =
+        let rec create remaining =
+            let tail =
+                if remaining = 0 then OptionValue(TNamed "Chain", None)
+                else OptionValue(TNamed "Chain", Some(create (remaining - 1)))
+            RecordValue("Chain", Map.ofList [ "tail", tail ])
+        create depth
+
+    let _, ordinaryChain = compileBody chainContext "ordinary-chain" [] (buildChain 20)
+    check "a nested nominal value below the configured depth limit preserves its shape" (
+        IrInterpreter.executeBody (noOpHost ()) "ordinary-chain" ordinaryChain = [ expectedChain 20 ])
+
+    let _, deepChain = compileBody chainContext "deep-chain" [] (buildChain 1200)
+    expectDiagnostic "the reported 1,200-level recursive record chain fails with a bounded value diagnostic" "RUNTIME_VALUE_LIMIT" (fun () ->
+        IrInterpreter.executeBody (noOpHost ()) "deep-chain" deepChain |> ignore)
+
+    let treeRecord =
+        { Name = "Tree"
+          Fields =
+            [ { Name = "left"; Type = TOption(TNamed "Tree") }
+              { Name = "right"; Type = TOption(TNamed "Tree") } ]
+          SourceText = "record Tree"
+          Span = site }
+    let treeConstructor =
+        wordEntry "tree.new"
+            [ TOption(TNamed "Tree"); TOption(TNamed "Tree") ]
+            [ TNamed "Tree" ] Set.empty [] (Some(RecordConstructor "Tree"))
+    let treeContext = contextWith (Map.ofList [ "Tree", treeRecord ]) [ treeConstructor ]
+    let sharedTreeExpressions = ResizeArray<Expr>()
+    sharedTreeExpressions.Add(ConstructContainer(OptionNone, [ TNamed "Tree" ], site))
+    sharedTreeExpressions.Add(ConstructContainer(OptionNone, [ TNamed "Tree" ], site))
+    sharedTreeExpressions.Add(Call("tree.new", site))
+    for _ in 1 .. 40 do
+        sharedTreeExpressions.Add(Call("dup", site))
+        sharedTreeExpressions.Add(ConstructContainer(OptionSome, [ TNamed "Tree" ], site))
+        sharedTreeExpressions.Add(Call("swap", site))
+        sharedTreeExpressions.Add(ConstructContainer(OptionSome, [ TNamed "Tree" ], site))
+        sharedTreeExpressions.Add(Call("tree.new", site))
+    sharedTreeExpressions.Add(Push(LString "must-not-be-written", site))
+    sharedTreeExpressions.Add(Push(LString "bounded output", site))
+    sharedTreeExpressions.Add(Call("file.write", site))
+    let _, sharedTree = compileBody treeContext "shared-tree" [] (List.ofSeq sharedTreeExpressions)
+    let mutable effectCount = 0
+    let guardedHost = host (fun _ _ _ -> ()) (fun _ _ -> ()) (fun _ -> effectCount <- effectCount + 1; EffectUnit) ignore
+    expectDiagnostic "shared recursive children are charged by expanded output size" "RUNTIME_VALUE_LIMIT" (fun () ->
+        IrInterpreter.executeBody guardedHost "shared-tree" sharedTree |> ignore)
+    check "an oversized shared value is rejected before the following host effect" (effectCount = 0)
+
+    let oversizedString = String.replicate 1_400_000 "x"
+    let _, largeText = compileBody (defaultContext ()) "large-text" [] [ Push(LString oversizedString, site) ]
+    let mutable outputDiagnostic: Diagnostic option = None
+    try
+        IrInterpreter.executeBody (noOpHost ()) "large-text" largeText |> ignore
+    with LanguageException diagnostic -> outputDiagnostic <- Some diagnostic
+    match outputDiagnostic with
+    | Some diagnostic ->
+        check "oversized string output diagnostic code" (diagnostic.Code = "RUNTIME_VALUE_LIMIT")
+        check "oversized string diagnostic names the output-size bound" (diagnostic.Expected |> List.exists (fun value -> value.Contains("output bytes", StringComparison.Ordinal)))
+    | None -> failwith "oversized string output should be rejected before public conversion"
+
 [<EntryPoint>]
 let main _ =
     testProgramTrustAndSnapshotBinding ()
     testPublicBoundaryAndEmptyEntryOnly ()
+    testScopeRestoresOverwrittenOuterLocal ()
     testInterpreterOwnsFuel ()
     testEmptyEffectfulCallbackPreflight ()
+    testBoundedRuntimeValues ()
     printfn "IR Interpreter tests passed (%d assertions)." assertions
     0

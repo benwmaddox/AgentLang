@@ -52,8 +52,10 @@ try {
             'business-contracts-acceptance' = 'AgentLang.Business.Contracts.Tests'
             'value-inspection-acceptance' = 'AgentLang.ValueInspection.Tests'
             'source-acceptance' = 'AgentLang.Source.Tests'
+            'flow-acceptance' = 'AgentLang.Flow.Tests'
             'storage-acceptance' = 'AgentLang.Storage.Tests'
             'conventional-acceptance' = 'AgentLang.Conventional.Tests'
+            'conventional-cli-acceptance' = 'AgentLang.Conventional.Cli.Tests'
             'discovery-acceptance' = 'AgentLang.Discovery.Tests'
             'ir-acceptance' = 'AgentLang.IR.Tests'
             'ir-formatting-acceptance' = 'AgentLang.IR.Formatting.Tests'
@@ -64,15 +66,23 @@ try {
         foreach ($checkName in $acceptanceProjects.Keys) {
             $projectName = $acceptanceProjects[$checkName]
             $projectDirectory = "tests/$projectName"
-            if (Test-Path -LiteralPath "$projectDirectory/$projectName.fsproj") {
-                $null = Invoke-ValidationCheck $checkName 'dotnet' @('run', '--no-build', '--configuration', $Configuration, '--project', $projectDirectory)
-            }
+            # Every listed acceptance project is required. Let dotnet report a
+            # missing project as a failed check instead of silently omitting it.
+            $null = Invoke-ValidationCheck $checkName 'dotnet' @('run', '--no-build', '--configuration', $Configuration, '--project', $projectDirectory)
         }
-        if (Test-Path -LiteralPath 'scripts/Verify-PersistenceProjection.ps1') {
-            $projectionReportPath = [System.IO.Path]::ChangeExtension($ReportPath, 'projection.json')
-            $cliBinaryPath = "src/AgentLang.Cli/bin/$Configuration/net9.0/AgentLang.Cli.dll"
-            $null = Invoke-ValidationCheck 'fresh-process-projection' 'pwsh' @('-NoProfile', '-File', 'scripts/Verify-PersistenceProjection.ps1', '-CliDll', $cliBinaryPath, '-EvidencePath', $projectionReportPath)
-        }
+        $projectionReportPath = [System.IO.Path]::ChangeExtension($ReportPath, 'projection.json')
+        $cliBinaryPath = "src/AgentLang.Cli/bin/$Configuration/net9.0/AgentLang.Cli.dll"
+        $null = Invoke-ValidationCheck 'fresh-process-projection' 'pwsh' @('-NoProfile', '-File', 'scripts/Verify-PersistenceProjection.ps1', '-CliDll', $cliBinaryPath, '-EvidencePath', $projectionReportPath)
+        $fixtureReportPath = [System.IO.Path]::ChangeExtension($ReportPath, 'matched-fixtures.json')
+        $cliBinaryPath = "src/AgentLang.Cli/bin/$Configuration/net9.0/AgentLang.Cli.dll"
+        $conventionalBinaryPath = "experiments/AgentLang.SubagentTrials/matched-renewal-001/fixtures/conventional/bin/$Configuration/net9.0/MatchedRenewal.dll"
+        $null = Invoke-ValidationCheck 'matched-renewal-fixtures' 'pwsh' @('-NoProfile', '-File', 'scripts/Verify-MatchedRenewalFixtures.ps1', '-CliDll', $cliBinaryPath, '-ConventionalDll', $conventionalBinaryPath, '-EvidencePath', $fixtureReportPath)
+        $hostReportPath = [System.IO.Path]::ChangeExtension($ReportPath, 'subagent-host.json')
+        $cliBinaryPath = "src/AgentLang.Cli/bin/$Configuration/net9.0/AgentLang.Cli.dll"
+        $null = Invoke-ValidationCheck 'subagent-trial-host' 'pwsh' @('-NoProfile', '-File', 'scripts/Verify-SubagentTrialHost.ps1', '-CliDll', $cliBinaryPath, '-EvidencePath', $hostReportPath)
+        $parserReportPath = [System.IO.Path]::ChangeExtension($ReportPath, 'parser-limits.json')
+        $cliBinaryPath = "src/AgentLang.Cli/bin/$Configuration/net9.0/AgentLang.Cli.dll"
+        $null = Invoke-ValidationCheck 'parser-process-limits' 'pwsh' @('-NoProfile', '-File', 'scripts/Verify-ParserLimits.ps1', '-CliDll', $cliBinaryPath, '-EvidencePath', $parserReportPath)
     }
     $null = Invoke-ValidationCheck 'diff-whitespace' 'git' @('diff', '--check')
     $null = Invoke-ValidationCheck 'staged-diff-whitespace' 'git' @('diff', '--cached', '--check')

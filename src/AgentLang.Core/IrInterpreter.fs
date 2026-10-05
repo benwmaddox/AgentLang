@@ -1,7 +1,10 @@
 namespace AgentLang
 
 open System
+open System.Collections.Generic
 open System.Globalization
+open System.Runtime.CompilerServices
+open System.Text
 
 /// Operations that cross from the interpreter into Engine-owned virtual providers.
 /// Payloads deliberately contain only primitive values; nominal values never cross
@@ -30,6 +33,8 @@ type IrInterpreterHost =
       PrimitiveDefinitionSpan: string -> SourceSpan option }
 
 module IrInterpreter =
+    type private TypeFormatTask = FormatType of IrType | FormatText of string
+
     type private RuntimeValue =
         | RuntimeInt of int64
         | RuntimeFloat of double
@@ -42,9 +47,19 @@ module IrInterpreter =
         | RuntimeRecord of ProgramTypeKey * RuntimeValue list
         | RuntimeScalar of ProgramTypeKey * RuntimeValue
 
+    type private RuntimeValueMetrics =
+        { ExpandedNodes: int64
+          Depth: int
+          EstimatedOutputBytes: int64 }
+
     let private maxSteps = 10000
     let private maxCallDepth = 64
     let private maxCollectionLength = 10000
+    let private maxRuntimeValueDepth = 256
+    let private maxRuntimeValueNodes = 100000L
+    // Six bytes per UTF-16 code unit bounds JSON escaping (including surrogate
+    // pairs). The node budget separately accounts for structural punctuation.
+    let private maxRuntimeValueOutputBytes = 8000000L
 
     // This is intentionally a closed backend table. A compiler catalog entry by
     // itself cannot create an implementation or authorize dispatch to one.
@@ -87,16 +102,43 @@ module IrInterpreter =
         | Some(IrScalarDefinition scalar) -> scalar.TypeName
         | None -> fail "IR_BACKEND_NOMINAL_UNKNOWN" "Executable value refers to a nominal type absent from its verified program." None None [] [ sprintf "%A" key ]
 
-    let rec private formatType (program: IrProgram) = function
-        | IrInt -> "Int"
-        | IrFloat -> "Float"
-        | IrBool -> "Bool"
-        | IrString -> "String"
-        | IrUnit -> "Unit"
-        | IrList item -> $"List<{formatType program item}>"
-        | IrOption item -> $"Option<{formatType program item}>"
-        | IrResult(okType, errorType) -> $"Result<{formatType program okType}, {formatType program errorType}>"
-        | IrNominal key -> typeName program key
+    let private formatTypeOutputLimit = 8000000L
+
+    let private formatType (program: IrProgram) rootType =
+        let pending = Stack<TypeFormatTask>()
+        let output = StringBuilder()
+        let append (text: string) =
+            if int64 output.Length + int64 text.Length > formatTypeOutputLimit then
+                fail "RUNTIME_VALUE_LIMIT" "Type formatting exceeded the bounded output limit." None None
+                    [ $"formatted type length <= {formatTypeOutputLimit}" ] [ string (int64 output.Length + int64 text.Length) ]
+            output.Append(text) |> ignore
+        pending.Push(FormatType rootType)
+        while pending.Count > 0 do
+            match pending.Pop() with
+            | FormatText text -> append text
+            | FormatType current ->
+                match current with
+                | IrInt -> append "Int"
+                | IrFloat -> append "Float"
+                | IrBool -> append "Bool"
+                | IrString -> append "String"
+                | IrUnit -> append "Unit"
+                | IrNominal key -> append (typeName program key)
+                | IrList item ->
+                    pending.Push(FormatText ">")
+                    pending.Push(FormatType item)
+                    pending.Push(FormatText "List<")
+                | IrOption item ->
+                    pending.Push(FormatText ">")
+                    pending.Push(FormatType item)
+                    pending.Push(FormatText "Option<")
+                | IrResult(okType, errorType) ->
+                    pending.Push(FormatText ">")
+                    pending.Push(FormatType errorType)
+                    pending.Push(FormatText ", ")
+                    pending.Push(FormatType okType)
+                    pending.Push(FormatText "Result<")
+        output.ToString()
 
     let private runtimeTypeNames (program: IrProgram) values =
         values |> List.map (runtimeValueType >> formatType program)
@@ -132,6 +174,140 @@ module IrInterpreter =
         let sourceMap = Map.fold (fun found site source -> Map.add site source found) program.SourceMap body.BodySourceMap
 
         let sourceSpan site = sourceAt sourceMap site
+        let failValueLimit currentWord site dimension expected actual =
+            fail "RUNTIME_VALUE_LIMIT" $"Runtime value exceeds the {dimension} safety limit." (Some currentWord) (site |> Option.bind sourceSpan) [ expected ] [ actual ]
+
+        let saturatingAdd limit left right =
+            if left > limit || right > limit || left > limit - right then limit + 1L
+            else left + right
+
+        let checkValueMetrics currentWord site metrics =
+            if metrics.Depth > maxRuntimeValueDepth then
+                failValueLimit currentWord site "depth" $"depth <= {maxRuntimeValueDepth}" (string metrics.Depth)
+            if metrics.ExpandedNodes > maxRuntimeValueNodes then
+                failValueLimit currentWord site "expanded-node" $"expanded nodes <= {maxRuntimeValueNodes}" (string metrics.ExpandedNodes)
+            if metrics.EstimatedOutputBytes > maxRuntimeValueOutputBytes then
+                failValueLimit currentWord site "output-size" $"estimated UTF-8 output bytes <= {maxRuntimeValueOutputBytes}" (string metrics.EstimatedOutputBytes)
+
+        let typeFootprint currentWord site rootType =
+            let pending = Stack<IrType * int>()
+            pending.Push((rootType, 1))
+            let mutable nodes = 0L
+            let mutable depth = 0
+            let mutable outputBytes = 0L
+            while pending.Count > 0 do
+                let current, currentDepth = pending.Pop()
+                nodes <- saturatingAdd maxRuntimeValueNodes nodes 1L
+                if currentDepth > maxRuntimeValueDepth then
+                    failValueLimit currentWord site "type-depth" $"type depth <= {maxRuntimeValueDepth}" (string currentDepth)
+                if nodes > maxRuntimeValueNodes then
+                    failValueLimit currentWord site "type-description" $"type nodes <= {maxRuntimeValueNodes}" (string nodes)
+                depth <- max depth currentDepth
+                outputBytes <- saturatingAdd maxRuntimeValueOutputBytes outputBytes 32L
+                let push child = pending.Push((child, currentDepth + 1))
+                match current with
+                | IrList item | IrOption item -> push item
+                | IrResult(okType, errorType) -> push errorType; push okType
+                | IrNominal key ->
+                    let name = typeName program key
+                    outputBytes <- saturatingAdd maxRuntimeValueOutputBytes outputBytes (int64 name.Length * 6L)
+                | IrInt | IrFloat | IrBool | IrString | IrUnit -> ()
+                if outputBytes > maxRuntimeValueOutputBytes then
+                    failValueLimit currentWord site "type-description output" $"estimated UTF-8 output bytes <= {maxRuntimeValueOutputBytes}" (string outputBytes)
+            depth, outputBytes
+
+        let valueMetricsCache = ConditionalWeakTable<RuntimeValue, RuntimeValueMetrics>()
+
+        let tryCachedMetrics value =
+            let mutable cached = Unchecked.defaultof<RuntimeValueMetrics>
+            if valueMetricsCache.TryGetValue(value, &cached) then Some cached else None
+
+        let valueChildren = function
+            | RuntimeList(_, values) | RuntimeRecord(_, values) -> values
+            | RuntimeOption(_, Some value) -> [ value ]
+            | RuntimeResult(_, _, Ok value) | RuntimeResult(_, _, Error value) -> [ value ]
+            | RuntimeScalar(_, value) -> [ value ]
+            | RuntimeInt _ | RuntimeFloat _ | RuntimeBool _ | RuntimeString _ | RuntimeUnit
+            | RuntimeOption(_, None) -> []
+
+        let runtimeValueOwnOutputBytes currentWord site value =
+            let typeDepth, typeBytes = typeFootprint currentWord site (runtimeValueType value)
+            let valueBytes =
+                match value with
+                | RuntimeString text -> 64L + int64 text.Length * 6L
+                | RuntimeList(_, values) -> 64L + int64 values.Length * 2L
+                | RuntimeRecord(key, _) ->
+                    match program.NominalTypesByKey.TryFind key with
+                    | Some(IrRecordDefinition record) ->
+                        64L + (int64 record.TypeName.Length + (record.RecordFields |> List.sumBy (fun field -> int64 field.FieldName.Length))) * 6L
+                    | _ -> fail "IR_BACKEND_RECORD_LAYOUT" "Record value refers to a non-record nominal type." None None [ "record" ] [ typeName program key ]
+                | RuntimeScalar(key, _) ->
+                    match program.NominalTypesByKey.TryFind key with
+                    | Some(IrScalarDefinition scalar) -> 64L + int64 scalar.TypeName.Length * 6L
+                    | _ -> fail "IR_BACKEND_SCALAR_LAYOUT" "Scalar value refers to a non-scalar nominal type." None None [ "scalar" ] [ typeName program key ]
+                | RuntimeInt _ | RuntimeFloat _ | RuntimeBool _ | RuntimeUnit
+                | RuntimeOption _ | RuntimeResult _ -> 64L
+            max typeDepth 1, saturatingAdd maxRuntimeValueOutputBytes valueBytes typeBytes
+
+        let runtimeMetrics currentWord site root =
+            match tryCachedMetrics root with
+            | Some cached -> cached
+            | None ->
+                let pending = Stack<RuntimeValue * bool>()
+                pending.Push((root, false))
+                while pending.Count > 0 do
+                    let value, expanded = pending.Pop()
+                    if tryCachedMetrics value |> Option.isNone then
+                        let children = valueChildren value
+                        let ownDepth, ownBytes = runtimeValueOwnOutputBytes currentWord site value
+                        if expanded then
+                            let mutable nodes = 1L
+                            let mutable depth = ownDepth
+                            let mutable outputBytes = ownBytes
+                            for child in children do
+                                let childMetrics = tryCachedMetrics child |> Option.defaultWith (fun () -> fail "RUNTIME_VALUE_ACCOUNTING" "Value graph metrics are unavailable for a child node." (Some currentWord) (site |> Option.bind sourceSpan) [] [])
+                                nodes <- saturatingAdd maxRuntimeValueNodes nodes childMetrics.ExpandedNodes
+                                depth <- max depth (childMetrics.Depth + 1)
+                                outputBytes <- saturatingAdd maxRuntimeValueOutputBytes outputBytes childMetrics.EstimatedOutputBytes
+                            let metrics =
+                                { ExpandedNodes = nodes
+                                  Depth = depth
+                                  EstimatedOutputBytes = outputBytes }
+                            checkValueMetrics currentWord site metrics
+                            valueMetricsCache.Add(value, metrics)
+                        elif List.isEmpty children then
+                            let metrics =
+                                { ExpandedNodes = 1L
+                                  Depth = ownDepth
+                                  EstimatedOutputBytes = ownBytes }
+                            checkValueMetrics currentWord site metrics
+                            valueMetricsCache.Add(value, metrics)
+                        else
+                            pending.Push((value, true))
+                            for child in children do
+                                if tryCachedMetrics child |> Option.isNone then pending.Push((child, false))
+                tryCachedMetrics root |> Option.defaultWith (fun () -> fail "RUNTIME_VALUE_ACCOUNTING" "Value graph metrics were not produced for a root node." (Some currentWord) (site |> Option.bind sourceSpan) [] [])
+
+        let aggregateRuntimeValues currentWord site (values: seq<RuntimeValue>) =
+            let mutable nodes = 0L
+            let mutable depth = 0
+            let mutable outputBytes = 0L
+            for value in values do
+                let metrics = runtimeMetrics currentWord site value
+                nodes <- saturatingAdd maxRuntimeValueNodes nodes metrics.ExpandedNodes
+                depth <- max depth metrics.Depth
+                outputBytes <- saturatingAdd maxRuntimeValueOutputBytes outputBytes metrics.EstimatedOutputBytes
+                checkValueMetrics currentWord site
+                    { ExpandedNodes = nodes
+                      Depth = depth
+                      EstimatedOutputBytes = outputBytes }
+            { ExpandedNodes = nodes
+              Depth = depth
+              EstimatedOutputBytes = outputBytes }
+
+        let checkRuntimeValueRoots currentWord site values =
+            aggregateRuntimeValues currentWord site values |> ignore
+
         let mutable chargedSteps = 0
         let chargeInstruction currentWord site =
             chargedSteps <- chargedSteps + 1
@@ -164,7 +340,7 @@ module IrInterpreter =
                 if not (implementedPrimitiveOperations.Contains operation) then
                     fail "IR_BACKEND_PRIMITIVE_UNIMPLEMENTED" "Verified program refers to a primitive with no fixed interpreter implementation." (Some call.ResolvedName) (site |> Option.bind sourceSpan) [] [ operation ]
                 host.RecordUse call.ResolvedName
-                executePrimitive operation call arguments
+                executePrimitive operation call arguments site
 
         and executeFunction (callerDepth: int) (functionValue: IrFunction) (arguments: RuntimeValue list) =
             let entryDepth = callerDepth + 1
@@ -221,7 +397,8 @@ module IrInterpreter =
             | UnwrapScalarOperation key, _ ->
                 fail "RUNTIME_INTERNAL_TYPE" "Scalar unwrapping received an invalid nominal value." (Some resolvedName) None [ typeName program key ] (runtimeTypeNames program arguments)
 
-        and executePrimitive (operation: string) (call: IrResolvedCall) (arguments: RuntimeValue list) =
+        and executePrimitive (operation: string) (call: IrResolvedCall) (arguments: RuntimeValue list) (site: SourceSiteId option) =
+            let currentWord = call.ResolvedName
             let sourceSpan = host.PrimitiveDefinitionSpan call.ResolvedName
             let typedError () =
                 fail "RUNTIME_INTERNAL_TYPE" $"Builtin '{operation}' received a value outside its checked signature." (Some operation) None [] (runtimeTypeNames program arguments)
@@ -256,7 +433,14 @@ module IrInterpreter =
             | "bool.and", [ RuntimeBool left; RuntimeBool right ] -> [ RuntimeBool(left && right) ]
             | "bool.or", [ RuntimeBool left; RuntimeBool right ] -> [ RuntimeBool(left || right) ]
             | "bool.not", [ RuntimeBool value ] -> [ RuntimeBool(not value) ]
-            | "string.concat", [ RuntimeString left; RuntimeString right ] -> [ RuntimeString(left + right) ]
+            | "string.concat", [ RuntimeString left; RuntimeString right ] ->
+                let typeDepth, typeBytes = typeFootprint currentWord site IrString
+                let estimatedBytes = saturatingAdd maxRuntimeValueOutputBytes (64L + typeBytes) (int64 left.Length * 6L + int64 right.Length * 6L)
+                checkValueMetrics currentWord site
+                    { ExpandedNodes = 1L
+                      Depth = max 1 typeDepth
+                      EstimatedOutputBytes = estimatedBytes }
+                [ RuntimeString(left + right) ]
             | "string.contains", [ RuntimeString value; RuntimeString sub ] -> [ RuntimeBool(value.Contains(sub, StringComparison.Ordinal)) ]
             | "string.starts-with", [ RuntimeString value; RuntimeString sub ] -> [ RuntimeBool(value.StartsWith(sub, StringComparison.Ordinal)) ]
             | "string.ends-with", [ RuntimeString value; RuntimeString sub ] -> [ RuntimeBool(value.EndsWith(sub, StringComparison.Ordinal)) ]
@@ -316,6 +500,7 @@ module IrInterpreter =
         and executeBlock (depth: int) (currentWord: string) (localNames: Map<LocalSlot, string>) (block: IrBlock) (initialStack: RuntimeValue list) (initialLocals: Map<LocalSlot, RuntimeValue>) =
             let mutable stack = initialStack
             let mutable locals = initialLocals
+            checkRuntimeValueRoots currentWord None (Seq.append stack (locals |> Map.toSeq |> Seq.map snd))
             let popArguments name (inputTypes: IrType list) =
                 if stack.Length < inputTypes.Length then
                     fail "RUNTIME_STACK_UNDERFLOW" $"'{name}' requires {inputTypes.Length} value(s)." (Some name) None
@@ -380,10 +565,35 @@ module IrInterpreter =
                     host.RecordUse "list.map"
                     host.RecordBranchOutcome currentWord instruction.Site (if List.isEmpty values then "empty" else "nonempty")
                     let outputValues = ResizeArray<RuntimeValue>()
+                    let prefixMetrics = aggregateRuntimeValues currentWord (Some instruction.Site) prefix
+                    let inputMetrics = runtimeMetrics currentWord (Some instruction.Site) input
+                    let outputListBase = runtimeMetrics currentWord (Some instruction.Site) (RuntimeList(outputType, []))
+                    let mutable outputNodes =
+                        saturatingAdd maxRuntimeValueNodes
+                            (saturatingAdd maxRuntimeValueNodes prefixMetrics.ExpandedNodes inputMetrics.ExpandedNodes)
+                            outputListBase.ExpandedNodes
+                    let mutable outputDepth = max prefixMetrics.Depth (max inputMetrics.Depth outputListBase.Depth)
+                    let mutable outputBytes =
+                        saturatingAdd maxRuntimeValueOutputBytes
+                            (saturatingAdd maxRuntimeValueOutputBytes prefixMetrics.EstimatedOutputBytes inputMetrics.EstimatedOutputBytes)
+                            outputListBase.EstimatedOutputBytes
+                    checkValueMetrics currentWord (Some instruction.Site)
+                        { ExpandedNodes = outputNodes
+                          Depth = outputDepth
+                          EstimatedOutputBytes = outputBytes }
                     for value in values do
                         chargeInstruction currentWord instruction.Site
                         match invokeResolved (depth + 1) callback [ value ] (Some instruction.Site) with
-                        | [ mapped ] -> outputValues.Add mapped
+                        | [ mapped ] ->
+                            let mappedMetrics = runtimeMetrics currentWord (Some instruction.Site) mapped
+                            outputNodes <- saturatingAdd maxRuntimeValueNodes outputNodes mappedMetrics.ExpandedNodes
+                            outputDepth <- max outputDepth (mappedMetrics.Depth + 1)
+                            outputBytes <- saturatingAdd maxRuntimeValueOutputBytes outputBytes mappedMetrics.EstimatedOutputBytes
+                            checkValueMetrics currentWord (Some instruction.Site)
+                                { ExpandedNodes = outputNodes
+                                  Depth = outputDepth
+                                  EstimatedOutputBytes = outputBytes }
+                            outputValues.Add mapped
                         | result -> fail "RUNTIME_INTERNAL_TYPE" $"List callback '{callback.ResolvedName}' returned values outside its checked signature." (Some currentWord) instructionSpan [] (runtimeTypeNames program result)
                     stack <- prefix @ [ RuntimeList(outputType, List.ofSeq outputValues) ]
                 | IrOperation.ListFilter(callback, itemType) ->
@@ -431,6 +641,9 @@ module IrInterpreter =
                             stack <- branchStack
                             locals <- branchLocals
                         | actual -> fail "RUNTIME_IF_REQUIRES_BOOL" "'if' requires a Bool at the top of the stack." (Some currentWord) instructionSpan [ "Bool" ] [ formatType program (runtimeValueType actual) ]
+                | IrOperation.Scope innerBlock ->
+                    let scopedStack, _ = executeBlock depth currentWord localNames innerBlock stack locals
+                    stack <- scopedStack
                 | IrOperation.MatchOption(someLocal, someBlock, noneBlock) ->
                     let prefix, input = popOne "match-option requires an Option<T>." currentWord instruction.Site []
                     match input with
@@ -463,10 +676,12 @@ module IrInterpreter =
                     let prefix, arguments = popArguments call.ResolvedName call.InputTypes
                     let result = invokeResolved depth call arguments (Some instruction.Site)
                     stack <- prefix @ result
+                checkRuntimeValueRoots currentWord (Some instruction.Site) (Seq.append stack (locals |> Map.toSeq |> Seq.map snd))
             stack, locals
 
         host.PreflightEffects body.BodyInferredEffects None None
         let result, _ = executeBlock 0 executionName body.BodyLocalNames body.BodyBlock [] Map.empty
+        checkRuntimeValueRoots executionName None result
 
         let rec fromRuntimeValue = function
             | RuntimeInt value -> IntValue value

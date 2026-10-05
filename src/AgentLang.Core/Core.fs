@@ -42,20 +42,6 @@ type Literal =
     | LString of string
     | LUnit
 
-type TestExpectation =
-    | ExpectedValue of Literal
-    | ExpectedRuntimeError of string
-
-module TestExpectation =
-    /// Error assertions name a stable diagnostic code, not message text.
-    let isValidRuntimeErrorCode (code: string) =
-        not (String.IsNullOrEmpty code)
-        && code[0] >= 'A' && code[0] <= 'Z'
-        && (code |> Seq.forall (fun character ->
-            (character >= 'A' && character <= 'Z')
-            || (character >= '0' && character <= '9')
-            || character = '_'))
-
 type ContainerConstructor =
     | ListEmpty
     | ListSingleton
@@ -74,8 +60,26 @@ type Expr =
     | Let of string * SourceSpan
     | Load of string * SourceSpan
     | If of Expr list * Expr list * SourceSpan
+    /// Internal lexical block used by explicit authoring frontends. It keeps
+    /// the resulting stack while restoring the entry local environment.
+    | Scope of Expr list * SourceSpan
     | MatchOption of string * Expr list * Expr list * SourceSpan
     | MatchResult of string * string * Expr list * Expr list * SourceSpan
+
+type TestExpectation =
+    | ExpectedValue of Literal
+    | ExpectedRuntimeError of string
+    | ExpectedExpression of Expr list
+
+module TestExpectation =
+    /// Error assertions name a stable diagnostic code, not message text.
+    let isValidRuntimeErrorCode (code: string) =
+        not (String.IsNullOrEmpty code)
+        && code[0] >= 'A' && code[0] <= 'Z'
+        && (code |> Seq.forall (fun character ->
+            (character >= 'A' && character <= 'Z')
+            || (character >= '0' && character <= '9')
+            || character = '_'))
 
 type WordMaturity = ProjectWord | LibraryWord
 

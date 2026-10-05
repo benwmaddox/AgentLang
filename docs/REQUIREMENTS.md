@@ -35,7 +35,7 @@ Standalone backend and baseline-audit evidence: [milestone 008](../reports/008-s
 | 15 | Verified: interactive REPL foundation | Multiline CLI smoke and expressions; additional commands tracked below |
 | 16 | Partial: required introspection commands | words/describe/source/dependencies/callers/search/effects/tests/test/examples/type-of; recent-words and fuller metadata pending |
 | 17 | Verified: machine-readable command transport | JSON-lines protocol and diagnostic acceptance checks |
-| 18 | Partial: first-class tests | Tests/test-all/failed-tests and gates; exact runtime-error expectations verified; structured-value expectations pending |
+| 18 | Partial: first-class tests | Tests/test-all/failed-tests and gates; runtime-error expectations and typed pure expected-expression focused checks passed (report 013); complete Flow test integration pending |
 | 19 | Partial: examples as metadata | Persisted cases; query currently returns names rather than full example details |
 | 20 | Verified: attached documentation | Word doc source, describe, persistence and rollback checks |
 | 21 | Verified: incremental word declarations | Parser and user-word acceptance checks |
@@ -52,7 +52,7 @@ Standalone backend and baseline-audit evidence: [milestone 008](../reports/008-s
 | 32 | Partial: strongly typed internal concepts | Value/type/AST unions and closed ten-case IR effect union; source/runtime effect metadata still checked strings |
 | 33 | Partial: authoritative typed IR execution and inspection | Runtime cutover now routes eval, calls, tests and state transitions through verified IR; full Release validation passed 18 checks and pinned parity passed 314 selected contracts (report 010). LLVM remains excluded from V1 |
 | 34 | Partial: bounded runtime and turnaround | Step/depth bounds exist; timing goals unmeasured |
-| 35 | Partial: small parser with spans/incomplete detection | Spans and interactive buffering; parse-stage API/incomplete classification pending |
+| 35 | Partial: small parser with spans/incomplete detection | Spans, buffering and source nesting limits verified by 84 Source assertions and bounded fresh-process probe (report 015); parse-stage API/incomplete classification pending |
 | 36 | Partial: lowered ir stage inspection | ir renders verified functions/generated operations or canonical primitive contracts; parse/ast/types stage commands remain pending |
 | 37 | Verified: stack checking and branch joins | Compiler and negative acceptance cases |
 | 38 | Verified: minimal stack gymnastics | dup/drop/swap; no extended stack operation assortment |
@@ -105,7 +105,7 @@ Runtime cutover evidence: [report 010](../reports/010-runtime-ir-cutover.md) rec
 
 ## Named-command completion checklist
 
-Late user-added research, pending after initial experiments: compare RPN with a small alternative frontend that preserves local interaction with recently produced values and lowers to the same authoritative typed semantic IR. Evaluate agent success/error recovery/context/tool cost separately from later LLVM allocation/layout and memory measurements. This does not require a V1 syntax replacement or establish native memory gains. See [the research scope](PRD.md#late-research-syntax-and-stack-locality) and [design assessment](../reports/016-design-value-assessment.md).
+The earlier late-only syntax research plan is superseded by the user-directed early [expression/dot frontend migration](FRONTEND-MIGRATION.md). Completing that migration is required before further controlled agent experiments. Preserve local interaction with recently produced values and the authoritative typed semantic IR, then evaluate agent success, error recovery, context and tool cost. Later LLVM allocation/layout and memory measurements remain separate research; changing source notation does not establish native memory gains. [Report 016](../reports/016-design-value-assessment.md) records the earlier assessment, not the current implementation order.
 
 Verified foundation: eval, define, words, describe, type-of, source, dependencies, callers, search, search-type, search-output, search-effect, search-dependency, transitive-dependencies, transitive-callers, graph, context, effects, ir (verified IR/primitive contract), tests, test, test-all, failed-tests, examples (names only), commit/commit-word, replace-word, promote, discard, task.begin/status/commit/abort/log, stack, durable history/diff, rename, deprecate, snapshot.save/load and storage.status.
 
@@ -115,7 +115,7 @@ Still required or incomplete: recent-words, parse, ast, types, metrics, replace 
 
 Proposed memory follow-on: [scoped arena lifetime contract](MEMORY-REGIONS.md), including escape/promotion, generation/snapshot retention, cleanup, capacity and used/reserved/peak measurements. This is pending design/implementation and must not be confused with existing temporary words, managed GC or the value-size safety bounds. It follows the early authoring migration; native allocator integration remains conditional later work.
 
-User-directed early frontend migration now precedes further controlled agent experiments: [expression/dot source plan](FRONTEND-MIGRATION.md). Preserve words, strong types, effects, library gates and authoritative semantic IR; implement named inputs/locals, static first-input dot calls, explicit versioned source/persistence, complete legacy semantic coverage and default cutover. Close-to-first-use is lint. Do not introduce mutable language globals; retain explicit values/effects. The currently executable frontend is still RPN, and the migration acceptance criteria are pending.
+User-directed early frontend migration now precedes further controlled agent experiments: [expression/dot source plan](FRONTEND-MIGRATION.md). Preserve words, strong types, effects, library gates and authoritative semantic IR; implement named inputs/locals, static first-input dot calls, explicit versioned source/persistence, complete legacy semantic coverage and default cutover. Close-to-first-use is lint. Do not introduce mutable language globals; retain explicit values/effects. The default Runtime/protocol frontend is still RPN. An opt-in Flow parser and typed lowering foundation now exist (report 019); complete containers/cases, test/example integration, durable authored metadata and default cutover remain required. Focused compiler checks do not establish the migration acceptance criteria.
 
 User addition: the typed semantic IR must become the authoritative executable representation. Runtime now routes through the verified IR interpreter; report 010 records cutover validation. Further source-stage inspection remains pending; LLVM development JIT and release AOT remain conditional follow-ons after successful agent experiments. See [the backend plan](BACKENDS.md).
 
@@ -132,3 +132,5 @@ The data stack is not the CPU stack and may live within an arena. Investigate
 strict LIFO storage separately from arena-only allocation, preserving typed
 compound values and reporting retention/copying limits and measured memory.
 Research is required; adopting this memory policy in V1 is not.
+
+Integrated foundation evidence: [report 021](../reports/021-integrated-flow-foundation.md) records a fresh 23-check Release gate and 314 selected pinned CLI parity checks. Flow remains opt-in; complete semantic surface, durable integration and default cutover are still required.

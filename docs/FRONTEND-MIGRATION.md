@@ -63,7 +63,7 @@ Preserve word IDs, ownership, dependencies, maturity, revisions, frozen validato
 ## Delivery plan
 
 1. **Contract and typed authoring model:** Core/Parser/Compiler/Source implement versioned flow AST, named inputs, calls, locals, dot resolution and lowering. Start scalar, record/refined and conditional programs. Check complete types/effects before executing. Continue interpreter value-safety repairs independently.
-2. **Complete semantic surface:** closed containers, static callbacks, Option/Result cases, test expectations/examples and multi-output bindings. Preserve all branch coverage/errors. Adapt the in-progress structured expectations and eval work instead of discarding it.
+2. **Complete semantic surface:** follow the [stage-2 implementation map](FLOW-SEMANTIC-SURFACE.md) for closed containers, static callbacks, Option/Result cases, test expectations/examples and multi-output bindings. Preserve all branch coverage/errors. Adapt the in-progress structured expectations and eval work instead of discarding it.
 3. **Durable integration:** Runtime/Storage/Source preserve versions/parameters, canonical source, reload/history/diff, rename/replacement, library gates, frozen validators, snapshots and abort. Audit related format versions/fixtures. Keep explicit legacy loading.
 4. **Default cutover and trial reset:** CLI/Protocol/README/examples/primers/fixtures adopt flow/dot after conformance. Freeze equivalent snapshots and run external subagent pilots. Retain the conventional baseline and update matching language fixtures. No new trials on an intermediate mixed frontend.
 

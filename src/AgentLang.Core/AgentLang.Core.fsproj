@@ -7,10 +7,13 @@
 
   <ItemGroup>
     <Compile Include="Core.fs" />
+    <Compile Include="FlowSyntax.fs" />
     <Compile Include="Storage.fs" />
     <Compile Include="Parser.fs" />
+    <Compile Include="FlowParser.fs" />
     <Compile Include="TypedIR.fs" />
     <Compile Include="Compiler.fs" />
+    <Compile Include="FlowLowering.fs" />
     <Compile Include="IrFormatting.fs" />
     <Compile Include="IrInterpreter.fs" />
     <Compile Include="ValueInspection.fs" />

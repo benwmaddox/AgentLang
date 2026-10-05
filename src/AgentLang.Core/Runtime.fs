@@ -32,6 +32,7 @@ module Runtime =
           Context: Compiler.IrLoweringContext
           Program: VerifiedIrProgram
           TestBodies: Map<string, VerifiedIrBody>
+          TestExpectationBodies: Map<string, VerifiedIrBody>
           ExampleBodies: Map<string, VerifiedIrBody> }
 
     type private TaskSession =
@@ -61,13 +62,14 @@ module Runtime =
           Error: Diagnostic option
           Actual: Value list
           Expected: TestExpectation
-          Instructions: Set<string>
-          BranchOutcomes: Set<string> }
+          ExpectedValue: Value option
+          Instructions: Set<SourceSiteId>
+          BranchOutcomes: Set<SourceSiteId * string> }
 
     type private Trace =
         { mutable Steps: int
-          mutable CoverageInstructions: Set<string>
-          mutable CoverageBranches: Set<string>
+          mutable CoverageInstructions: Set<SourceSiteId>
+          mutable CoverageBranches: Set<SourceSiteId * string>
           mutable FileSystem: Map<string, string>
           mutable Effects: Map<string, int>
           mutable Console: string list
@@ -90,6 +92,7 @@ module Runtime =
                     |> List.map namedTypeReferences
                     |> Set.unionMany
                     |> Set.union found
+                | Scope(body, _) -> Set.union found (collect body)
                 | If(thenBranch, elseBranch, _)
                 | MatchOption(_, thenBranch, elseBranch, _) ->
                     Set.union found (Set.union (collect thenBranch) (collect elseBranch))
@@ -97,6 +100,29 @@ module Runtime =
                     Set.union found (Set.union (collect okBranch) (collect errorBranch))
                 | _ -> found) Set.empty
         collect body
+
+    let private testExpressions (test: TestDefinition) =
+        match test.Expected with
+        | ExpectedExpression expected -> test.Body @ expected
+        | _ -> test.Body
+
+    let private isValueInspectionLimit (diagnostic: Diagnostic) =
+        diagnostic.Code.StartsWith("VALUE_INSPECTION_", StringComparison.Ordinal)
+        && diagnostic.Code.EndsWith("_LIMIT", StringComparison.Ordinal)
+
+    let private inspectStructuredValues (program: VerifiedIrProgram) (values: Value list) =
+        try
+            Choice1Of2(ValueInspection.toData program values)
+        with
+        | LanguageException diagnostic when isValueInspectionLimit diagnostic -> Choice2Of2 diagnostic
+
+    let private preflightStructuredTestResults (program: VerifiedIrProgram) (results: TestCaseResult list) =
+        for result in results do
+            match result.Expected with
+            | ExpectedExpression _ ->
+                inspectStructuredValues program result.Actual |> ignore
+                result.ExpectedValue |> Option.iter (fun value -> inspectStructuredValues program [ value ] |> ignore)
+            | _ -> ()
 
     type private SyntaxDescriptor =
         { Name: string
@@ -317,14 +343,15 @@ module Runtime =
             // Test effects run against isolated virtual providers and are not task effects.
             if not trace.Isolated then log "effect" name
 
-        let countInstruction trace currentWord span =
+        let countInstruction (trace: Trace) (currentWord: string) (site: SourceSiteId) (span: SourceSpan) (isAuthoredSite: bool) =
             trace.Steps <- trace.Steps + 1
             if trace.Steps > 10000 then error "RUNTIME_STEP_LIMIT" "Execution exceeded the 10,000 instruction limit." (Some currentWord) (Some span) [] []
-            if trace.CoverageTarget = Some currentWord then trace.CoverageInstructions <- Set.add (instructionId span) trace.CoverageInstructions
+            if trace.CoverageTarget = Some currentWord && isAuthoredSite then
+                trace.CoverageInstructions <- Set.add site trace.CoverageInstructions
 
-        let countBranchOutcome trace currentWord span outcome =
-            if trace.CoverageTarget = Some currentWord then
-                trace.CoverageBranches <- Set.add (instructionId span + ":" + outcome) trace.CoverageBranches
+        let countBranchOutcome (trace: Trace) (currentWord: string) (site: SourceSiteId) (outcome: string) (isAuthoredSite: bool) =
+            if trace.CoverageTarget = Some currentWord && isAuthoredSite then
+                trace.CoverageBranches <- Set.add (site, outcome) trace.CoverageBranches
 
         let createTrace coverageTarget fileSystem =
             { Steps = 0
@@ -389,7 +416,7 @@ module Runtime =
             let words = effectiveWords projected
             let isDurableCase target body = words.ContainsKey target && (Compiler.dependencies body |> Set.forall words.ContainsKey)
             { projected with
-                Tests = restored.Tests |> Map.filter (fun _ test -> isDurableCase test.Word test.Body)
+                Tests = restored.Tests |> Map.filter (fun _ test -> isDurableCase test.Word (testExpressions test))
                 Examples = restored.Examples |> Map.filter (fun _ example -> isDurableCase example.Word example.Body) }
 
         let serializeWord (word: WordEntry) =
@@ -668,9 +695,15 @@ module Runtime =
                   WordIds = words |> Map.map (fun _ item -> WordId(wordIdentity state item)) }
             let program = Compiler.compileIrProgram context
             IrInterpreter.validateProgram program
-            let testBodies =
+            let compiledTests =
                 state.Tests
-                |> Map.map (fun _ test -> Compiler.compileIrTestAgainstProgram context program test)
+                |> Map.map (fun _ test -> Compiler.compileIrTestWithExpectationAgainstProgram context program test)
+            let testBodies = compiledTests |> Map.map (fun _ (actual, _) -> actual)
+            let testExpectationBodies =
+                compiledTests
+                |> Map.toSeq
+                |> Seq.choose (fun (key, (_, expected)) -> expected |> Option.map (fun body -> key, body))
+                |> Map.ofSeq
             let exampleBodies =
                 state.Examples
                 |> Map.map (fun _ example -> Compiler.compileIrExampleAgainstProgram context program example)
@@ -679,9 +712,10 @@ module Runtime =
               Context = context
               Program = program
               TestBodies = testBodies
+              TestExpectationBodies = testExpectationBodies
               ExampleBodies = exampleBodies }
 
-        let siteSpan (snapshot: RuntimeSnapshot) (body: VerifiedIrBody option) (site: SourceSiteId) =
+        let sourceSite (snapshot: RuntimeSnapshot) (body: VerifiedIrBody option) (site: SourceSiteId) =
             let bodySource =
                 body
                 |> Option.map (VerifiedIrBody.inspect >> fun value -> value.BodySourceMap)
@@ -689,11 +723,31 @@ module Runtime =
             bodySource.TryFind site
             |> Option.orElseWith (fun () ->
                 (VerifiedIrProgram.inspect snapshot.Program).SourceMap.TryFind site)
-            |> Option.map (fun source -> source.SiteSpan)
             |> Option.defaultWith (fun () ->
                 error "IR_SOURCE_SITE_MISSING" "Verified executable source site has no source-map entry." None None [] [ sprintf "%A" site ])
 
-        let coverageObligations (snapshot: RuntimeSnapshot) (word: string) =
+        let siteSpan (snapshot: RuntimeSnapshot) (body: VerifiedIrBody option) (site: SourceSiteId) =
+            (sourceSite snapshot body site).SiteSpan
+
+        let isAuthoredCoverageSite (source: IrSourceSite) =
+            match source.SourceKind with
+            | "synthetic-scope"
+            | "synthetic-store-local"
+            | "synthetic-load-local" -> false
+            | _ -> true
+
+        let instructionCoverageLabel (snapshot: RuntimeSnapshot) site =
+            instructionId (siteSpan snapshot None site)
+
+        let branchCoverageLabel (snapshot: RuntimeSnapshot) (site, outcome) =
+            instructionCoverageLabel snapshot site + ":" + outcome
+
+        let coverageGapLabels (snapshot: RuntimeSnapshot) (instructions: Set<SourceSiteId>) (branches: Set<SourceSiteId * string>) =
+            let instructionLabels = instructions |> Set.toList |> List.map (instructionCoverageLabel snapshot) |> List.sort
+            let branchLabels = branches |> Set.toList |> List.map (branchCoverageLabel snapshot) |> List.sort
+            instructionLabels @ branchLabels
+
+        let coverageObligations (snapshot: RuntimeSnapshot) (word: string) : Set<SourceSiteId> * Set<SourceSiteId * string> =
             match snapshot.Words.TryFind word with
             | None -> Set.empty, Set.empty
             | Some entry ->
@@ -701,20 +755,16 @@ module Runtime =
                 match (VerifiedIrProgram.inspect snapshot.Program).CoverageByWord.TryFind id with
                 | None -> Set.empty, Set.empty
                 | Some obligations ->
-                    let instructionKeys =
-                        obligations.CoveredSites
-                        |> Set.map (fun site -> instructionId (siteSpan snapshot None site))
                     let branchKeys =
                         obligations.BranchOutcomes
                         |> Map.toList
                         |> List.collect (fun (site, outcomes) ->
-                            let source = instructionId (siteSpan snapshot None site)
-                            outcomes |> List.map (fun outcome -> source + ":" + outcome))
+                            outcomes |> List.map (fun outcome -> site, outcome))
                         |> Set.ofList
-                    instructionKeys, branchKeys
+                    obligations.CoveredSites, branchKeys
 
         let interpreterHost (snapshot: RuntimeSnapshot) (trace: Trace) (body: VerifiedIrBody option) =
-            let sourceSpan site = siteSpan snapshot body site
+            let source site = sourceSite snapshot body site
             let definitionSpan (name: string) =
                 snapshot.Words.TryFind name |> Option.map (fun entry -> entry.Definition.Span)
             { PreflightEffects = fun effects word _ ->
@@ -729,8 +779,12 @@ module Runtime =
                               $"Execution requires capabilities not granted by the host: {names}.", Some name, definitionSpan name
                           | None -> "The expression requires effects not granted by the host.", None, None
                       error "CAPABILITY_DENIED" message failureWord failureSpan expected (capabilities |> Set.toList)
-              ChargeInstruction = fun currentWord site -> countInstruction trace currentWord (sourceSpan site)
-              RecordBranchOutcome = fun currentWord site outcome -> countBranchOutcome trace currentWord (sourceSpan site) outcome
+              ChargeInstruction = fun currentWord site ->
+                  let sourceInfo = source site
+                  countInstruction trace currentWord site sourceInfo.SiteSpan (isAuthoredCoverageSite sourceInfo)
+              RecordBranchOutcome = fun currentWord site outcome ->
+                  let sourceInfo = source site
+                  countBranchOutcome trace currentWord site outcome (isAuthoredCoverageSite sourceInfo)
               RecordUse = fun name -> log "use" name
               InvokeEffect = fun command ->
                   match command with
@@ -864,22 +918,23 @@ module Runtime =
         let toJsonValue value = jsonNode (Types.formatValue value)
 
         let checkedByTest (snapshot: RuntimeSnapshot) (test: TestDefinition) =
-            let sites, _ = coverageObligations snapshot test.Word
+            let sites, branches = coverageObligations snapshot test.Word
             let trace = createTrace (Some test.Word) Map.empty
             let bodyKey = $"{test.Word}/{test.Name}"
             let body =
                 snapshot.TestBodies.TryFind bodyKey
                 |> Option.defaultWith (fun () ->
                     error "IR_TEST_BODY_MISSING" "Compiled test body is absent from its exact executable snapshot." (Some test.Word) (Some test.Span) [] [ bodyKey ])
-            let makeResult passed diagnostic actual =
+            let makeResult passed diagnostic actual expectedValue =
                 { Name = test.Name
                   Word = test.Word
                   Passed = passed
                   Error = diagnostic
                   Actual = actual
                   Expected = test.Expected
+                  ExpectedValue = expectedValue
                   Instructions = trace.CoverageInstructions |> Set.intersect sites
-                  BranchOutcomes = trace.CoverageBranches }
+                  BranchOutcomes = trace.CoverageBranches |> Set.intersect branches }
             try
                 let stack = executeIRBody snapshot "<test>" trace body
                 match test.Expected with
@@ -896,7 +951,7 @@ module Runtime =
                                   Span = Some test.Span
                                   Expected = [ Types.formatValue expected ]
                                   Actual = stack |> List.map Types.formatValue }
-                    makeResult passed diagnostic stack
+                    makeResult passed diagnostic stack (Some expected)
                 | ExpectedRuntimeError code ->
                     let diagnostic =
                         { Code = "TEST_EXPECTED_RUNTIME_ERROR"
@@ -905,23 +960,84 @@ module Runtime =
                           Span = Some test.Span
                           Expected = [ code ]
                           Actual = stack |> List.map Types.formatValue }
-                    makeResult false (Some diagnostic) stack
+                    makeResult false (Some diagnostic) stack None
+                | ExpectedExpression _ ->
+                    let expectedBody =
+                        snapshot.TestExpectationBodies.TryFind bodyKey
+                        |> Option.defaultWith (fun () ->
+                            error "IR_TEST_EXPECTATION_BODY_MISSING" "Compiled test expectation is absent from its exact executable snapshot." (Some test.Word) (Some test.Span) [] [ bodyKey ])
+                    let expectedTrace = { createTrace None Map.empty with Isolated = true }
+                    try
+                        let expectedStack = executeIRBody snapshot "<test-expectation>" expectedTrace expectedBody
+                        match expectedStack with
+                        | [ expectedValue ] ->
+                            let passed = stack = [ expectedValue ]
+                            let diagnostic =
+                                if passed then None
+                                else
+                                    Some
+                                        { Code = "TEST_ASSERTION_FAILED"
+                                          Message = "Actual value did not equal the value produced by the pure expectation expression."
+                                          Word = Some test.Word
+                                          Span = Some test.Span
+                                          Expected = [ Types.formatValue expectedValue ]
+                                          Actual = stack |> List.map Types.formatValue }
+                            makeResult passed diagnostic stack (Some expectedValue)
+                        | values ->
+                            let diagnostic =
+                                { Code = "TEST_EXPECTED_VALUE_STACK"
+                                  Message = "The verified value expectation returned an invalid stack shape."
+                                  Word = Some test.Word
+                                  Span = Some test.Span
+                                  Expected = [ "one value" ]
+                                  Actual = values |> List.map Types.formatValue }
+                            makeResult false (Some diagnostic) stack None
+                    with
+                    | LanguageException expectedDiagnostic ->
+                        let diagnostic =
+                            { Code = "TEST_EXPECTED_VALUE_RUNTIME_ERROR"
+                              Message = "The pure value expectation failed while being evaluated."
+                              Word = Some test.Word
+                              Span = expectedDiagnostic.Span |> Option.orElse (Some test.Span)
+                              Expected = [ "normal completion" ]
+                              Actual = [ expectedDiagnostic.Code ] }
+                        makeResult false (Some diagnostic) stack None
             with
             | LanguageException diagnostic ->
                 match test.Expected with
-                | ExpectedRuntimeError expectedCode when diagnostic.Code = expectedCode -> makeResult true None []
-                | _ -> makeResult false (Some diagnostic) []
+                | ExpectedRuntimeError expectedCode when diagnostic.Code = expectedCode -> makeResult true None [] None
+                | _ -> makeResult false (Some diagnostic) [] None
 
-        let resultJson (result: TestCaseResult) =
+        let resultJson (snapshot: RuntimeSnapshot) (result: TestCaseResult) =
             let node = JsonObject()
             node["name"] <- jstr result.Name
             node["word"] <- jstr result.Word
             node["passed"] <- jbool result.Passed
+            let addStructuredObservation (fieldName: string) (values: Value list) =
+                match inspectStructuredValues snapshot.Program values with
+                | Choice1Of2 value -> node[fieldName] <- value
+                | Choice2Of2 diagnostic ->
+                    node[fieldName] <- null
+                    let errorNode = JsonObject()
+                    errorNode["code"] <- jstr diagnostic.Code
+                    errorNode["message"] <- jstr diagnostic.Message
+                    errorNode["expected"] <- jsonNode diagnostic.Expected
+                    errorNode["actual"] <- jsonNode diagnostic.Actual
+                    node[fieldName + "Error"] <- errorNode
             match result.Expected with
             | ExpectedValue literal -> node["expected"] <- toJsonValue (Types.literalValue literal)
             | ExpectedRuntimeError code ->
                 node["expected"] <- jstr ("error " + code)
                 node["expectedErrorCode"] <- jstr code
+            | ExpectedExpression _ ->
+                node["expectedKind"] <- jstr "value-expression"
+                addStructuredObservation "actualStructured" result.Actual
+                match result.ExpectedValue with
+                | Some value ->
+                    node["expected"] <- toJsonValue value
+                    node["expectedType"] <- jstr (Types.ofValue value |> Types.format)
+                    addStructuredObservation "expectedStructured" [ value ]
+                | None -> node["expected"] <- jstr "value-expression"
             node["actual"] <- jsonNode (result.Actual |> List.map Types.formatValue)
             match result.Error with
             | Some diagnostic -> node["errorCode"] <- jstr diagnostic.Code; node["message"] <- jstr diagnostic.Message
@@ -948,8 +1064,8 @@ module Runtime =
             node["instructionsTotal"] <- jint requiredInstructions.Count
             node["branchesCovered"] <- jint actualBranches.Count
             node["branchesTotal"] <- jint requiredBranches.Count
-            node["uncoveredInstructions"] <- jsonNode (uncoveredInstructions |> Set.toList)
-            node["uncoveredBranchOutcomes"] <- jsonNode (uncoveredBranches |> Set.toList)
+            node["uncoveredInstructions"] <- jsonNode (uncoveredInstructions |> Set.toList |> List.map (instructionCoverageLabel snapshot) |> List.sort)
+            node["uncoveredBranchOutcomes"] <- jsonNode (uncoveredBranches |> Set.toList |> List.map (branchCoverageLabel snapshot) |> List.sort)
             node
 
         let requireProjectPath () =
@@ -1316,7 +1432,7 @@ module Runtime =
                     data.Tests
                     |> Map.toSeq
                     |> Seq.choose (fun (_, test) ->
-                        if owners.Contains test.Word then Some(test.Word, "test", test.Name, test.Body)
+                        if owners.Contains test.Word then Some(test.Word, "test", test.Name, testExpressions test)
                         else None)
                 let examples =
                     data.Examples
@@ -1482,6 +1598,7 @@ module Runtime =
                         error "REPLACE_CALLER_TESTS_REQUIRED" $"Replacing a dependency requires attached passing tests on persistent caller '{caller}'." (Some caller) None [ "attached passing test" ] []
                     runTestsFor durableSnapshot (Some caller))
             let results = selectedResults @ callerResults
+            preflightStructuredTestResults durableSnapshot.Program results
             lastResults <- results
             recordTestResults results
             let failed = results |> List.filter (fun result -> not result.Passed)
@@ -1498,7 +1615,7 @@ module Runtime =
                     let uncovered = Set.difference requiredInstructions coveredInstructions
                     let missingBranches = Set.difference requiredBranches coveredBranches
                     if not (Set.isEmpty uncovered && Set.isEmpty missingBranches && not (List.isEmpty result)) then
-                        error "LIBRARY_COVERAGE_INCOMPLETE" $"Library word '{name}' requires every instruction, case, and declared iteration outcome to be exercised by its own attached tests." (Some name) None [] (Set.toList uncovered @ Set.toList missingBranches)
+                        error "LIBRARY_COVERAGE_INCOMPLETE" $"Library word '{name}' requires every instruction, case, and declared iteration outcome to be exercised by its own attached tests." (Some name) None [] (coverageGapLabels durableSnapshot uncovered missingBranches)
             let history =
                 selectedWords
                 |> Set.fold (fun (found: Map<string, WordDefinition list>) name ->
@@ -1521,6 +1638,24 @@ module Runtime =
             match node[key] with
             | null -> defaultValue
             | value -> try value.GetValue<bool>() with _ -> defaultValue
+
+        let readOptionalStrictBool (node: JsonObject) (key: string) (defaultValue: bool) =
+            let actualKind (value: JsonNode) =
+                match value with
+                | null -> "null"
+                | :? JsonObject -> "object"
+                | :? JsonArray -> "array"
+                | :? JsonValue -> "non-boolean scalar"
+                | _ -> "unknown JSON value"
+            if not (node.ContainsKey key) then defaultValue
+            else
+                match node[key] with
+                | :? JsonValue as value ->
+                    let mutable parsed = false
+                    if value.TryGetValue<bool>(&parsed) then parsed
+                    else error "EVAL_INVALID_ARGUMENT" $"Argument '{key}' must be a JSON boolean." None None [ "boolean" ] [ actualKind (value :> JsonNode) ]
+                | value ->
+                    error "EVAL_INVALID_ARGUMENT" $"Argument '{key}' must be a JSON boolean." None None [ "boolean" ] [ actualKind value ]
 
         let discoveryArgumentKind (value: JsonNode) : string =
             match value with
@@ -1606,7 +1741,7 @@ module Runtime =
 
         let resultList (snapshot: RuntimeSnapshot) (kind: string) (text: string) (results: TestCaseResult list) (target: string option) =
             let array = JsonArray()
-            results |> List.iter (fun result -> array.Add(resultJson result))
+            results |> List.iter (fun result -> array.Add(resultJson snapshot result))
             let dataNode = JsonObject()
             dataNode["results"] <- array
             match target with Some word when snapshot.Words.ContainsKey word -> dataNode["coverage"] <- coverageJson snapshot word results | _ -> ()
@@ -1619,6 +1754,7 @@ module Runtime =
             try
                 match operation with
                 | "eval" ->
+                    let structured = readOptionalStrictBool args "structured" false
                     let code = readString args "code" ""
                     match Parser.parse "<eval>" code with
                     | Ok parsed when not (List.isEmpty parsed.Words && List.isEmpty parsed.Records && List.isEmpty parsed.Scalars && List.isEmpty parsed.Tests && List.isEmpty parsed.Examples) ->
@@ -1630,6 +1766,9 @@ module Runtime =
                         | Ok body ->
                             let snapshot = currentSnapshot ()
                             let result, trace = executeExpression snapshot None virtualFiles body
+                            let structuredStack =
+                                if structured then Some(ValueInspection.toData snapshot.Program result)
+                                else None
                             virtualFiles <- trace.FileSystem
                             let values = JsonArray()
                             result |> List.iter (fun value -> values.Add(toJsonValue value))
@@ -1638,6 +1777,7 @@ module Runtime =
                             dataNode["stackTypes"] <- jsonNode (result |> List.map (Types.ofValue >> Types.format))
                             dataNode["console"] <- jsonNode trace.Console
                             dataNode["effects"] <- jsonNode (trace.Effects |> Map.toSeq |> Map.ofSeq)
+                            match structuredStack with Some value -> dataNode["structuredStack"] <- value | None -> ()
                             success "eval" (result |> List.map Types.formatValue |> String.concat " ") (Some dataNode)
                 | "define" ->
                     let source = readString args "source" (readString args "code" "")
@@ -1923,6 +2063,15 @@ module Runtime =
                             let words =
                                 updates
                                 |> List.fold (fun found (_, name, item) -> Map.add name item found) (Map.remove oldName data.Words)
+                            let expectationOnlyTestOwners =
+                                data.Tests
+                                |> Map.toSeq
+                                |> Seq.choose (fun (_, test) ->
+                                    match test.Expected with
+                                    | ExpectedExpression expressions when (Compiler.dependencies expressions).Contains oldName ->
+                                        Some(if test.Word = oldName then newName else test.Word)
+                                    | _ -> None)
+                                |> Set.ofSeq
                             let tests = data.Tests |> Map.toSeq |> Seq.map (fun (_, item) -> Source.renameTestOwner oldName newName item) |> Seq.fold addTest Map.empty
                             let examples = data.Examples |> Map.toSeq |> Seq.map (fun (_, item) -> Source.renameExampleOwner oldName newName item) |> Seq.fold addExample Map.empty
                             let scalars =
@@ -1947,15 +2096,17 @@ module Runtime =
                             let proposed = { parsedProposed with History = history; Deprecated = deprecated }
                             let executable = compileRuntimeSnapshot proposed
                             let affectedNames = updates |> List.map (fun (_, name, _) -> name) |> Set.ofList
+                            let testOwnersToRun = Set.union affectedNames expectationOnlyTestOwners
                             let wordsAfter = executable.Words
                             let results =
-                                affectedNames
+                                testOwnersToRun
                                 |> Set.toList
                                 |> List.collect (fun name ->
                                     let attached = proposed.Tests |> Map.toSeq |> Seq.map snd |> Seq.filter (fun test -> test.Word = name) |> Seq.toList
                                     if List.isEmpty attached then
                                         error "RENAME_TESTS_REQUIRED" $"Renaming or rewriting '{name}' requires at least one attached test." (Some name) None [ "attached passing test" ] []
                                     runTestsFor executable (Some name))
+                            preflightStructuredTestResults executable.Program results
                             recordTestResults results
                             let failed = results |> List.filter (fun item -> not item.Passed)
                             if not (List.isEmpty failed) then
@@ -1970,7 +2121,7 @@ module Runtime =
                                     let uncovered = Set.difference requiredInstructions coveredInstructions
                                     let missingBranches = Set.difference requiredBranches coveredBranches
                                     if not (Set.isEmpty uncovered && Set.isEmpty missingBranches && not (List.isEmpty ownTests)) then
-                                        error "LIBRARY_COVERAGE_INCOMPLETE" $"Renamed library word '{name}' requires complete attached test coverage." (Some name) None [] (Set.toList uncovered @ Set.toList missingBranches)
+                                        error "LIBRARY_COVERAGE_INCOMPLETE" $"Renamed library word '{name}' requires complete attached test coverage." (Some name) None [] (coverageGapLabels executable uncovered missingBranches)
                             compileRuntimeSnapshot (durableState proposed) |> ignore
                             publish data proposed actor
                             activateRuntimeSnapshot executable

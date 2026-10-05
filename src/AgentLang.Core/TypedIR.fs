@@ -147,6 +147,7 @@ type IrOperation =
     | ListEach of IrResolvedCall * IrType
     | StoreLocal of LocalSlot
     | LoadLocal of LocalSlot
+    | Scope of IrBlock
     | If of IrBlock * IrBlock
     | MatchOption of SomeLocal: LocalSlot * SomeBlock: IrBlock * NoneBlock: IrBlock
     | MatchResult of OkLocal: LocalSlot * ErrorLocal: LocalSlot * OkBlock: IrBlock * ErrorBlock: IrBlock
@@ -488,6 +489,14 @@ module IrVerifier =
                 | _ -> ()
                 let at = sourceSpan program instruction.Site
                 let operationError code message expected actual = Diagnostics.raiseError code message sourceOwner at expected actual
+                let sourceKind = program.SourceMap[instruction.Site].SourceKind
+                match sourceKind, instruction.Operation with
+                | "synthetic-scope", IrOperation.Scope _ -> ()
+                | "synthetic-store-local", IrOperation.StoreLocal _ -> ()
+                | "synthetic-load-local", IrOperation.LoadLocal _ -> ()
+                | kind, _ when kind.StartsWith("synthetic", StringComparison.Ordinal) ->
+                    operationError "IR_SYNTHETIC_SOURCE_KIND_INVALID" "Synthetic source classifications are closed and must match their internal opcode." [ "synthetic-scope/Scope | synthetic-store-local/StoreLocal | synthetic-load-local/LoadLocal" ] [ kind; sprintf "%A" instruction.Operation ]
+                | _ -> ()
                 let pop count =
                     if shape.StackTypes.Length < count then operationError "IR_STACK_UNDERFLOW" "IR operation input shape underflows its block stack." [ string count ] [ string shape.StackTypes.Length ]
                     shape.StackTypes |> List.take (shape.StackTypes.Length - count), shape.StackTypes |> List.skip (shape.StackTypes.Length - count)
@@ -582,6 +591,9 @@ module IrVerifier =
                         let elseShape, elseEffects = verifyBlockNested program catalog owner sourceOwnerId instruction.Site expectedEntry elseBlock
                         if thenShape <> elseShape then operationError "IR_BRANCH_JOIN_MISMATCH" "IR if arms do not have the same output stack and local shape." (thenShape.StackTypes |> List.map IrTypes.format) (elseShape.StackTypes |> List.map IrTypes.format)
                         thenShape, Set.union thenEffects elseEffects
+                    | IrOperation.Scope innerBlock ->
+                        let innerShape, innerEffects = verifyBlockNested program catalog owner sourceOwnerId instruction.Site shape innerBlock
+                        { StackTypes = innerShape.StackTypes; LocalTypes = shape.LocalTypes }, innerEffects
                     | IrOperation.MatchOption(someLocal, someBlock, noneBlock) ->
                         if not (owner.LocalNames.ContainsKey someLocal) then operationError "IR_UNKNOWN_LOCAL_SLOT" "Option case local is absent from the function layout." [] [ sprintf "%A" someLocal ]
                         let prefix, input = pop 1
@@ -670,16 +682,25 @@ module IrVerifier =
         if not (Set.isSubset effects owner.FunctionDeclaredEffects) then
             Diagnostics.raiseError "IR_UNDECLARED_EFFECT" $"Function '{owner.FunctionName}' uses effects absent from its declaration." (Some owner.FunctionName) None (IrEffects.names owner.FunctionDeclaredEffects) (IrEffects.names effects)
 
-    let private expectedCoverage (block: IrBlock) =
+    let private expectedCoverage (sourceMap: Map<SourceSiteId, IrSourceSite>) (block: IrBlock) =
+        let isAuthoredSite site =
+            match sourceMap.TryFind site with
+            | Some source ->
+                not (
+                    source.SourceKind = "synthetic-scope"
+                    || source.SourceKind = "synthetic-store-local"
+                    || source.SourceKind = "synthetic-load-local")
+            | None -> true
         let rec collectBlock (instructions: IrInstruction list) (sites: Set<SourceSiteId>) (branches: Map<SourceSiteId, string list>) =
             instructions
             |> List.fold (fun (sites, branches) instruction ->
-                let sites = Set.add instruction.Site sites
+                let sites = if isAuthoredSite instruction.Site then Set.add instruction.Site sites else sites
                 match instruction.Operation with
                 | IrOperation.If(thenBlock, elseBlock) ->
                     let branches = Map.add instruction.Site [ "true"; "false" ] branches
                     let leftSites, leftBranches = collectBlock thenBlock.Code sites branches
                     collectBlock elseBlock.Code leftSites leftBranches
+                | IrOperation.Scope innerBlock -> collectBlock innerBlock.Code sites branches
                 | IrOperation.MatchOption(_, someBlock, noneBlock) ->
                     let branches = Map.add instruction.Site [ "some"; "none" ] branches
                     let leftSites, leftBranches = collectBlock someBlock.Code sites branches
@@ -700,6 +721,7 @@ module IrVerifier =
                 let nested =
                     match instruction.Operation with
                     | IrOperation.If(thenBlock, elseBlock) -> collect thenBlock.Code @ collect elseBlock.Code
+                    | IrOperation.Scope innerBlock -> collect innerBlock.Code
                     | IrOperation.MatchOption(_, someBlock, noneBlock) -> collect someBlock.Code @ collect noneBlock.Code
                     | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> collect okBlock.Code @ collect errorBlock.Code
                     | _ -> []
@@ -720,6 +742,7 @@ module IrVerifier =
                 let nested =
                     match instruction.Operation with
                     | IrOperation.If(thenBlock, elseBlock) -> collect thenBlock.Code @ collect elseBlock.Code
+                    | IrOperation.Scope innerBlock -> collect innerBlock.Code
                     | IrOperation.MatchOption(_, someBlock, noneBlock) -> collect someBlock.Code @ collect noneBlock.Code
                     | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> collect okBlock.Code @ collect errorBlock.Code
                     | _ -> []
@@ -785,7 +808,7 @@ module IrVerifier =
             failure "IR_FUNCTION_ENTRY_LOCALS" $"Function '{fn.FunctionName}' must begin with no initialized locals." [] (fn.FunctionBody.EntryShape.LocalTypes |> Map.toList |> List.map (fun (slot, _) -> sprintf "%A" slot))
         if fn.FunctionBody.EntryShape.StackTypes <> fn.InputTypes || fn.FunctionBody.ExitShape.StackTypes <> fn.OutputTypes then
             failure "IR_FUNCTION_SIGNATURE_MISMATCH" $"Function '{fn.FunctionName}' body stack shape differs from its signature." (fn.InputTypes |> List.map IrTypes.format) (fn.FunctionBody.ExitShape.StackTypes |> List.map IrTypes.format)
-        let sites, branches = expectedCoverage fn.FunctionBody
+        let sites, branches = expectedCoverage program.SourceMap fn.FunctionBody
         let coverage = program.CoverageByWord.TryFind id |> Option.defaultValue { CoveredSites = Set.empty; BranchOutcomes = Map.empty }
         if coverage.CoveredSites <> sites || coverage.BranchOutcomes <> branches then
             failure "IR_COVERAGE_MAP_MISMATCH" $"Function '{fn.FunctionName}' coverage obligations do not match its source operations." [ string sites.Count; string branches.Count ] [ string coverage.CoveredSites.Count; string coverage.BranchOutcomes.Count ]
@@ -840,7 +863,11 @@ module IrVerifier =
         VerifiedIrProgram(program, catalog, true, Some snapshotFingerprint)
 
     let coverageObligations (block: IrBlock) =
-        let coveredSites, branchOutcomes = expectedCoverage block
+        let coveredSites, branchOutcomes = expectedCoverage Map.empty block
+        { CoveredSites = coveredSites; BranchOutcomes = branchOutcomes }
+
+    let coverageObligationsWithSourceMap sourceMap (block: IrBlock) =
+        let coveredSites, branchOutcomes = expectedCoverage sourceMap block
         { CoveredSites = coveredSites; BranchOutcomes = branchOutcomes }
 
     let verifyBody (verifiedProgram: VerifiedIrProgram) (body: IrExecutableBody) =
@@ -854,12 +881,13 @@ module IrVerifier =
         if body.BodySourceMap |> Map.toList |> List.exists (fun (_, source) -> source.SiteOwner.IsSome) then
             failure "IR_BODY_SOURCE_OWNER" "Detached body source sites must use the standalone owner." [ "SiteOwner=None" ] (body.BodySourceMap |> Map.toList |> List.map (fun (site, source) -> sprintf "%A=%A" site source.SiteOwner))
         let program = { verifiedProgram.Program with SourceMap = sourceMap }
-        let sites, branches = expectedCoverage body.BodyBlock
+        let sites, branches = expectedCoverage sourceMap body.BodyBlock
         let obligations = { CoveredSites = sites; BranchOutcomes = branches }
         if body.BodyCoverage <> obligations then
             failure "IR_BODY_COVERAGE_MISMATCH" "Detached body coverage metadata does not match its executable structure." [ string obligations.CoveredSites.Count; string obligations.BranchOutcomes.Count ] [ string body.BodyCoverage.CoveredSites.Count; string body.BodyCoverage.BranchOutcomes.Count ]
-        if body.BodySourceMap |> Map.toSeq |> Seq.map fst |> Set.ofSeq <> sites then
-            failure "IR_BODY_SOURCE_MAP_MISMATCH" "Detached body source map must contain exactly the body's own operation sites." (sites |> Set.toList |> List.map (sprintf "%A")) (body.BodySourceMap |> Map.toList |> List.map (fun (site, _) -> sprintf "%A" site))
+        let bodySites = instructionsInBlock body.BodyBlock |> List.map (fun instruction -> instruction.Site) |> Set.ofList
+        if body.BodySourceMap |> Map.toSeq |> Seq.map fst |> Set.ofSeq <> bodySites then
+            failure "IR_BODY_SOURCE_MAP_MISMATCH" "Detached body source map must contain every operation site, including synthetic implementation details." (bodySites |> Set.toList |> List.map (sprintf "%A")) (body.BodySourceMap |> Map.toList |> List.map (fun (site, _) -> sprintf "%A" site))
         let pseudoOwner =
             { FunctionId = WordId("detached:" + body.BodyName)
               FunctionRevision = 0

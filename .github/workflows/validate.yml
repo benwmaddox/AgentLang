@@ -27,5 +27,8 @@ jobs:
           path: |
             .agentlang/reports/validation.json
             .agentlang/reports/validation.projection.json
+            .agentlang/reports/validation.matched-fixtures.json
+            .agentlang/reports/validation.subagent-host*.json
+            .agentlang/reports/validation.parser-limits*.json
           include-hidden-files: true
           if-no-files-found: warn

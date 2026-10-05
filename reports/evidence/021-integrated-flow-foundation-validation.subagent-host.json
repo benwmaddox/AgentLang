@@ -1,0 +1,312 @@
+{
+  "schemaVersion": 1,
+  "kind": "subagent-trial-host-wrapper-verification",
+  "outcome": "passed",
+  "createdUtc": "2026-10-05T15:58:34.7491029+00:00",
+  "repoRoot": "D:\\code\\AgentLang",
+  "testedHead": "998a8570da9de23eea213212f57fbd696e419b13",
+  "workingTreeDirty": true,
+  "cliFiles": [
+    {
+      "name": "AgentLang.Cli.deps.json",
+      "sha256": "6382f6dc29bb8f827824839010e313b266e51a3f87a4fdb8c382931d2549e97e"
+    },
+    {
+      "name": "AgentLang.Cli.dll",
+      "sha256": "6c277fc4a53731141147c0e46def06e2db3f6414f4182d8e10acf64a6aaeb15f"
+    },
+    {
+      "name": "AgentLang.Cli.runtimeconfig.json",
+      "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+    },
+    {
+      "name": "AgentLang.Core.dll",
+      "sha256": "2424d492a38bd70b6e461b1ce0fda980bc3f351107ee2e694bc58fb41e2f31df"
+    },
+    {
+      "name": "FSharp.Core.dll",
+      "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+    }
+  ],
+  "wrapperFiles": [
+    {
+      "path": "scripts\\Start-SubagentTrialHost.ps1",
+      "sha256": "19f0ac0eae21e928dd6606a4de7be32d21338d31e21e499a50524099786f813f"
+    },
+    {
+      "path": "scripts\\Verify-SubagentTrialHost.ps1",
+      "sha256": "add3b45cfdc13d1c0dcd6bea84f39c62ad3cc9978d87b91fc5a5c5472c64e6c4"
+    },
+    {
+      "path": "docs\\SUBAGENT-TRIAL-HOST.md",
+      "sha256": "f2971a28df77c5ff891a2a51d3f5991011765b79f57be0bd112cb7f9919b7a3c"
+    }
+  ],
+  "artifacts": "D:\\code\\AgentLang\\.agentlang\\subagent-host-verification-3a78333510c44f2ca2baeccf21085122",
+  "checks": [
+    {
+      "name": "language write session exits cleanly",
+      "passed": true,
+      "detail": "exit=0; stderr="
+    },
+    {
+      "name": "language write responses all succeed",
+      "passed": true,
+      "detail": "responses=5"
+    },
+    {
+      "name": "language write session confirms full request delivery",
+      "passed": true,
+      "detail": "All five forwarded exchanges have a confirmed complete line."
+    },
+    {
+      "name": "x64 JobObject ABI layout is recorded and validated",
+      "passed": true,
+      "detail": "{\"basicLimitInformationBytes\":64,\"basicLimitFlagsOffset\":16,\"ioCountersBytes\":48,\"extendedLimitInformationBytes\":144,\"extendedIoInfoOffset\":64,\"processMemoryLimitOffset\":112,\"jobMemoryLimitOffset\":120,\"peakProcessMemoryUsedOffset\":128,\"peakJobMemoryUsedOffset\":136}"
+    },
+    {
+      "name": "fresh process loads committed definition and tests",
+      "passed": true,
+      "detail": "exit=0; test=1/1 test(s) passed."
+    },
+    {
+      "name": "malformed request returns structured host error without forwarding",
+      "passed": true,
+      "detail": "Expected depth to be zero at the end of the JSON payload. There is an open JSON object or array that should be closed. LineNumber: 0 | BytePositionInLine: 6."
+    },
+    {
+      "name": "disallowed operation is denied before runtime execution",
+      "passed": true,
+      "detail": "Operation is not in the trial host's allowed protocol operation set."
+    },
+    {
+      "name": "oversized request is rejected before runtime forwarding",
+      "passed": true,
+      "detail": "exit=2; response=The request line exceeded the configured byte limit; the session is closing."
+    },
+    {
+      "name": "fake child build succeeds",
+      "passed": true,
+      "detail": "  Determining projects to restore...\r\n  Restored D:\\code\\AgentLang\\.agentlang\\subagent-host-verification-3a78333510c44f2ca2baeccf21085122\\fake-runtime-source\\FakeRuntime.csproj (in 51 ms).\r\n  FakeRuntime -> D:\\code\\AgentLang\\.agentlang\\subagent-host-verification-3a78333510c44f2ca2baeccf21085122\\fake-runtime-output\\FakeRuntime.dll\r\n\r\nBuild succeeded.\r\n    0 Warning(s)\r\n    0 Error(s)\r\n\r\nTime Elapsed 00:00:02.18\r\n"
+    },
+    {
+      "name": "verifier subprocess output capture enforces a hard byte cap and kills the child",
+      "passed": true,
+      "detail": "captured=1024; cleanupTimedOut=False"
+    },
+    {
+      "name": "partial runtime response is bounded by one exchange deadline",
+      "passed": true,
+      "detail": "exit=124; elapsed=3513.692ms"
+    },
+    {
+      "name": "non-reading child cannot block a large stdin write past deadline",
+      "passed": true,
+      "detail": "exit=124; elapsed=3690.565ms; attempted=250029"
+    },
+    {
+      "name": "oversized runtime response marks execution uncertain and forbids retry",
+      "passed": true,
+      "detail": "exit=2; prefixBytes=65"
+    },
+    {
+      "name": "invalid runtime JSON returns a structured uncertain host error and preserves exact bytes",
+      "passed": true,
+      "detail": "exit=4; executionState=uncertain"
+    },
+    {
+      "name": "lost child response never reports rollback or safe retry",
+      "passed": true,
+      "detail": "exit=3; executionState=uncertain"
+    },
+    {
+      "name": "conventional profile omits AgentLang-only clock and capability flags",
+      "passed": true,
+      "detail": "{\"ok\":true,\"hasClock\":false,\"hasAllow\":false,\"args\":[\"--project\",\"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\subagent-host-verification-3a78333510c44f2ca2baeccf21085122\\\\conventional-profile-args\",\"--fake-mode=inspect-args\",\"--jsonl\"]}"
+    }
+  ],
+  "runs": [
+    {
+      "name": "language-write-session",
+      "projectPath": "D:\\code\\AgentLang\\.agentlang\\subagent-host-verification-3a78333510c44f2ca2baeccf21085122\\language-write-session",
+      "tracePath": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-3a78333510c44f2ca2baeccf21085122-language-write-session.jsonl",
+      "runtimeDll": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+      "runtimeDllSha256": "6c277fc4a53731141147c0e46def06e2db3f6414f4182d8e10acf64a6aaeb15f",
+      "allowedOperations": [
+        "task.begin",
+        "define",
+        "test",
+        "commit",
+        "task.commit"
+      ],
+      "profile": "agentlang",
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMilliseconds": 1614.685,
+      "stdoutUtf8Bytes": 1155,
+      "stderrUtf8Bytes": 0,
+      "responseCount": 5
+    },
+    {
+      "name": "language-reload-session",
+      "projectPath": "D:\\code\\AgentLang\\.agentlang\\subagent-host-verification-3a78333510c44f2ca2baeccf21085122\\language-write-session",
+      "tracePath": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-3a78333510c44f2ca2baeccf21085122-language-reload-session.jsonl",
+      "runtimeDll": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+      "runtimeDllSha256": "6c277fc4a53731141147c0e46def06e2db3f6414f4182d8e10acf64a6aaeb15f",
+      "allowedOperations": [
+        "tests",
+        "test",
+        "describe"
+      ],
+      "profile": "agentlang",
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMilliseconds": 1395.959,
+      "stdoutUtf8Bytes": 1033,
+      "stderrUtf8Bytes": 0,
+      "responseCount": 3
+    },
+    {
+      "name": "malformed-denied",
+      "projectPath": "D:\\code\\AgentLang\\.agentlang\\subagent-host-verification-3a78333510c44f2ca2baeccf21085122\\malformed-denied",
+      "tracePath": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-3a78333510c44f2ca2baeccf21085122-malformed-denied.jsonl",
+      "runtimeDll": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+      "runtimeDllSha256": "6c277fc4a53731141147c0e46def06e2db3f6414f4182d8e10acf64a6aaeb15f",
+      "allowedOperations": [
+        "describe"
+      ],
+      "profile": "agentlang",
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMilliseconds": 1207.837,
+      "stdoutUtf8Bytes": 642,
+      "stderrUtf8Bytes": 0,
+      "responseCount": 2
+    },
+    {
+      "name": "oversized-request",
+      "projectPath": "D:\\code\\AgentLang\\.agentlang\\subagent-host-verification-3a78333510c44f2ca2baeccf21085122\\oversized-request",
+      "tracePath": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-3a78333510c44f2ca2baeccf21085122-oversized-request.jsonl",
+      "runtimeDll": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+      "runtimeDllSha256": "6c277fc4a53731141147c0e46def06e2db3f6414f4182d8e10acf64a6aaeb15f",
+      "allowedOperations": [
+        "describe"
+      ],
+      "profile": "agentlang",
+      "exitCode": 2,
+      "timedOut": false,
+      "durationMilliseconds": 1152.772,
+      "stdoutUtf8Bytes": 246,
+      "stderrUtf8Bytes": 0,
+      "responseCount": 1
+    },
+    {
+      "name": "timeout-partial-response",
+      "projectPath": "D:\\code\\AgentLang\\.agentlang\\subagent-host-verification-3a78333510c44f2ca2baeccf21085122\\timeout-partial-response",
+      "tracePath": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-3a78333510c44f2ca2baeccf21085122-timeout-partial-response.jsonl",
+      "runtimeDll": "D:\\code\\AgentLang\\.agentlang\\subagent-host-verification-3a78333510c44f2ca2baeccf21085122\\fake-runtime-output\\FakeRuntime.dll",
+      "runtimeDllSha256": "33d4abccddafd93a8a69b391f40e14c787774fb1a4a8d30b9154c4d4c4d3b717",
+      "allowedOperations": [
+        "fake.echo"
+      ],
+      "profile": "agentlang",
+      "exitCode": 124,
+      "timedOut": false,
+      "durationMilliseconds": 3513.692,
+      "stdoutUtf8Bytes": 467,
+      "stderrUtf8Bytes": 0,
+      "responseCount": 1
+    },
+    {
+      "name": "large-write-no-reader",
+      "projectPath": "D:\\code\\AgentLang\\.agentlang\\subagent-host-verification-3a78333510c44f2ca2baeccf21085122\\large-write-no-reader",
+      "tracePath": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-3a78333510c44f2ca2baeccf21085122-large-write-no-reader.jsonl",
+      "runtimeDll": "D:\\code\\AgentLang\\.agentlang\\subagent-host-verification-3a78333510c44f2ca2baeccf21085122\\fake-runtime-output\\FakeRuntime.dll",
+      "runtimeDllSha256": "33d4abccddafd93a8a69b391f40e14c787774fb1a4a8d30b9154c4d4c4d3b717",
+      "allowedOperations": [
+        "fake.echo"
+      ],
+      "profile": "agentlang",
+      "exitCode": 124,
+      "timedOut": false,
+      "durationMilliseconds": 3690.565,
+      "stdoutUtf8Bytes": 467,
+      "stderrUtf8Bytes": 0,
+      "responseCount": 1
+    },
+    {
+      "name": "oversized-response",
+      "projectPath": "D:\\code\\AgentLang\\.agentlang\\subagent-host-verification-3a78333510c44f2ca2baeccf21085122\\oversized-response",
+      "tracePath": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-3a78333510c44f2ca2baeccf21085122-oversized-response.jsonl",
+      "runtimeDll": "D:\\code\\AgentLang\\.agentlang\\subagent-host-verification-3a78333510c44f2ca2baeccf21085122\\fake-runtime-output\\FakeRuntime.dll",
+      "runtimeDllSha256": "33d4abccddafd93a8a69b391f40e14c787774fb1a4a8d30b9154c4d4c4d3b717",
+      "allowedOperations": [
+        "fake.echo"
+      ],
+      "profile": "agentlang",
+      "exitCode": 2,
+      "timedOut": false,
+      "durationMilliseconds": 999.007,
+      "stdoutUtf8Bytes": 411,
+      "stderrUtf8Bytes": 0,
+      "responseCount": 1
+    },
+    {
+      "name": "invalid-runtime-json",
+      "projectPath": "D:\\code\\AgentLang\\.agentlang\\subagent-host-verification-3a78333510c44f2ca2baeccf21085122\\invalid-runtime-json",
+      "tracePath": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-3a78333510c44f2ca2baeccf21085122-invalid-runtime-json.jsonl",
+      "runtimeDll": "D:\\code\\AgentLang\\.agentlang\\subagent-host-verification-3a78333510c44f2ca2baeccf21085122\\fake-runtime-output\\FakeRuntime.dll",
+      "runtimeDllSha256": "33d4abccddafd93a8a69b391f40e14c787774fb1a4a8d30b9154c4d4c4d3b717",
+      "allowedOperations": [
+        "fake.echo"
+      ],
+      "profile": "agentlang",
+      "exitCode": 4,
+      "timedOut": false,
+      "durationMilliseconds": 1007.37,
+      "stdoutUtf8Bytes": 419,
+      "stderrUtf8Bytes": 0,
+      "responseCount": 1
+    },
+    {
+      "name": "child-exits-after-request",
+      "projectPath": "D:\\code\\AgentLang\\.agentlang\\subagent-host-verification-3a78333510c44f2ca2baeccf21085122\\child-exits-after-request",
+      "tracePath": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-3a78333510c44f2ca2baeccf21085122-child-exits-after-request.jsonl",
+      "runtimeDll": "D:\\code\\AgentLang\\.agentlang\\subagent-host-verification-3a78333510c44f2ca2baeccf21085122\\fake-runtime-output\\FakeRuntime.dll",
+      "runtimeDllSha256": "33d4abccddafd93a8a69b391f40e14c787774fb1a4a8d30b9154c4d4c4d3b717",
+      "allowedOperations": [
+        "fake.echo"
+      ],
+      "profile": "agentlang",
+      "exitCode": 3,
+      "timedOut": false,
+      "durationMilliseconds": 1047.89,
+      "stdoutUtf8Bytes": 407,
+      "stderrUtf8Bytes": 0,
+      "responseCount": 1
+    },
+    {
+      "name": "conventional-profile-args",
+      "projectPath": "D:\\code\\AgentLang\\.agentlang\\subagent-host-verification-3a78333510c44f2ca2baeccf21085122\\conventional-profile-args",
+      "tracePath": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-3a78333510c44f2ca2baeccf21085122-conventional-profile-args.jsonl",
+      "runtimeDll": "D:\\code\\AgentLang\\.agentlang\\subagent-host-verification-3a78333510c44f2ca2baeccf21085122\\fake-runtime-output\\FakeRuntime.dll",
+      "runtimeDllSha256": "33d4abccddafd93a8a69b391f40e14c787774fb1a4a8d30b9154c4d4c4d3b717",
+      "allowedOperations": [
+        "fake.echo"
+      ],
+      "profile": "conventional",
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMilliseconds": 1121.242,
+      "stdoutUtf8Bytes": 227,
+      "stderrUtf8Bytes": 0,
+      "responseCount": 1
+    }
+  ],
+  "limitations": [
+    "This wrapper verifies transport and persistence mechanics; it does not run a model or measure model turns, tokens, or context windows.",
+    "A requested protocol whitelist is enforced at this broker only. External agents can have other host tools unless the surrounding platform restricts them.",
+    "Runtime child processes are not an OS sandbox. The wrapper launches only a host-selected DLL, project path, profile, and argument list.",
+    "Any request with uncertain delivery or response has an unknown execution result; the operator must inspect authoritative stored state before deciding what to do next."
+  ]
+}

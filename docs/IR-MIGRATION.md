@@ -184,6 +184,18 @@ host interface for primitive/effect operations; it must not call arbitrary
 
 ## Migration stages and acceptance
 
+### Scope-capable formatter schema
+
+Verified IR JSON version 2 is the canonical output for the Scope-capable
+operation set. Version 2 adds the explicit `scope` operation with a nested
+verified block; it does not reinterpret older operation tags or alter stored
+project data. Existing version 1 payloads remain historical representations
+without Scope. The formatter has no v1 write mode: emitting a v1 label for a
+document that can contain Scope would make consumers mistake the extended
+closed schema for the old one. Primitive contract documents also use the
+current top-level version, although their executable primitive contracts are
+unchanged.
+
 1. **Freeze semantics and establish snapshot keys.** Add before/after fixtures for
    arithmetic boundaries, containers, refinements, all branch outcomes,
    callback effects, generated records, tests, reload, and coverage. Add

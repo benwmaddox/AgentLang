@@ -132,6 +132,7 @@ let private testUserFunctionJson () =
     let context, verified = contextAndProgram ()
     let document = IrFormatting.toData verified (IrFormatTarget.UserWordName "customer.active?")
     check "user target serializes as function DTO" (stringField "kind" document = "function")
+    check "scope-capable formatter uses schema version 2 even for a scope-free function" (intField "formatVersion" document = 2)
     let (WordId activeId) = context.WordIds["customer.active?"]
     check "function retains stable ID and revision" (stringField "wordId" document = activeId && intField "revision" document = 2)
     check "function signature uses nominal display name" (document |> prop "inputs" |> at 0 |> stringField "display" = "Customer")
@@ -158,6 +159,19 @@ let private testUserFunctionJson () =
 
     let text = IrFormatting.toText verified (IrFormatTarget.UserWordName "customer.active?")
     check "human text renders function and nested branch" (text.Contains("word customer.active?", StringComparison.Ordinal) && text.Contains("then:", StringComparison.Ordinal) && text.Contains("else:", StringComparison.Ordinal))
+
+    let scoped =
+        wordEntry "customer.scoped" [ TNamed "Customer" ] [ TBool ] Set.empty
+            [ Scope([ Call("customer.active", span 30) ], span 31) ] 6 Candidate
+    let scopedContext =
+        { context with
+            Words = Map.add "customer.scoped" scoped context.Words
+            WordIds = Map.add "customer.scoped" (WordId "user-customer.scoped") context.WordIds }
+    let scopedProgram = Compiler.compileIrProgram scopedContext
+    let scopedDocument = IrFormatting.toData scopedProgram (IrFormatTarget.UserWordName "customer.scoped")
+    check "Scope operation is emitted under the explicit version 2 schema"
+        (intField "formatVersion" scopedDocument = 2
+         && (scopedDocument |> prop "body" |> prop "instructions" |> at 0 |> prop "operation" |> stringField "kind") = "scope")
 
 let private testCallbacksLocalsAndNominalClosure () =
     let context, verified = contextAndProgram ()
@@ -195,6 +209,7 @@ let private testGeneratedAndPrimitiveDocuments () =
     check "generated target includes source declaration location" (stringField "file" sourceSpanNode = "formatting.agent" && intField "line" sourceSpanNode = 2)
 
     let primitive = IrFormatting.toData verified (IrFormatTarget.PrimitiveContract(PrimitiveId "equals"))
+    check "primitive contracts use the same current top-level schema version" (intField "formatVersion" primitive = 2)
     check "primitive output is explicitly a contract, not executable code" (stringField "kind" primitive = "primitive-contract" && prop "body" primitive = null)
     let inputPatterns = primitive |> prop "inputs" |> fun node -> node.AsArray()
     check "primitive contract retains generic type variable pattern" (stringField "kind" inputPatterns[0] = "variable" && intField "variableIndex" inputPatterns[0] = 0 && intField "variableIndex" inputPatterns[1] = 0)

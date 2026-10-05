@@ -889,6 +889,8 @@ end
         check (matching["passed"].GetValue<bool>()) "exact runtime diagnostic code passes"
         equal "error RUNTIME_DIVIDE_BY_ZERO" (matching["expected"].GetValue<string>()) "expected-error JSON keeps an explicit expectation"
         equal "RUNTIME_DIVIDE_BY_ZERO" (matching["expectedErrorCode"].GetValue<string>()) "expected-error JSON exposes its code"
+        check (not (matching.AsObject().ContainsKey("actualStructured"))) "runtime-error JSON keeps its legacy shape"
+        check (not (matching.AsObject().ContainsKey("expectedStructured"))) "runtime-error JSON has no value-expression DTO"
         let completed = byName "completes"
         check (not (completed["passed"].GetValue<bool>())) "normal completion does not pass an expected-error test"
         equal "TEST_EXPECTED_RUNTIME_ERROR" (completed["errorCode"].GetValue<string>()) "normal completion reports an expected-error mismatch"
@@ -905,6 +907,320 @@ end
         expectError "TYPE_STACK_MISMATCH" (define runtime compileNegative) |> ignore
         let attached = dispatch runtime "tests" [ "word", jsonString "guarded-divide" ] |> expectOk "check compile-negative test was not staged"
         equal 3 ((attached["data"]).AsArray().Count) "compile-time mismatch cannot be staged as an expected runtime error"
+
+    let private testValueExpressionExpectations root =
+        let runtime = engine (makeProject root "value-expression-json") []
+        let source =
+            """record ExpectedMarker
+    field value Int
+end
+
+word marker-target : Unit -> Option<ExpectedMarker>
+    effects none
+    drop option.none<ExpectedMarker>
+end
+
+test marker-target/none
+    unit marker-target
+    => value
+        option.none<ExpectedMarker>
+end
+
+test marker-target/branch
+    unit marker-target
+    => value
+        true
+        if
+            option.none<ExpectedMarker>
+        else
+            option.none<ExpectedMarker>
+        end
+end
+
+word literal-target : Unit -> Int
+    effects none
+    drop 5
+end
+
+test literal-target/basic
+    unit literal-target
+    => 5
+end
+"""
+        define runtime source |> expectOk "define nominal value-expression tests" |> ignore
+
+        let response = dispatch runtime "test" [ "word", jsonString "marker-target" ] |> expectOk "run expression expectation tests"
+        assertAllTestsPassed "expression expectation" 2 response
+        let result = (response["data"]["results"]).AsArray()[0]
+        equal "value-expression" (result["expectedKind"].GetValue<string>()) "expression expectation kind is explicit"
+        equal "Option<ExpectedMarker>" (result["expectedType"].GetValue<string>()) "nominal container expectation type is visible"
+        check (not (isNull result["actualStructured"])) "actual value has a bounded structured DTO"
+        check (not (isNull result["expectedStructured"])) "expected value has a bounded structured DTO"
+        equal 1 ((result["actualStructured"]["formatVersion"]).GetValue<int>()) "actual DTO uses ValueInspection format version"
+        equal 1 ((result["expectedStructured"]["formatVersion"]).GetValue<int>()) "expected DTO uses ValueInspection format version"
+        let actualValue = (result["actualStructured"]["values"]).AsArray()[0]
+        let expectedValue = (result["expectedStructured"]["values"]).AsArray()[0]
+        equal "option" (actualValue["kind"].GetValue<string>()) "actual option DTO is typed"
+        equal "none" (actualValue["case"].GetValue<string>()) "actual none case is explicit"
+        equal "nominal" ((expectedValue["elementType"]["kind"]).GetValue<string>()) "expected option preserves its nominal element type"
+        equal "ExpectedMarker" ((expectedValue["elementType"]["name"]).GetValue<string>()) "nominal DTO names the exact type"
+        let expressionActual = (result["actual"]).AsArray()
+        equal "none" ((expressionActual[0]).GetValue<string>()) "legacy display actual stays available"
+
+        let literal = dispatch runtime "test" [ "word", jsonString "literal-target" ] |> expectOk "run literal expectation"
+        let literalResult = (literal["data"]["results"]).AsArray()[0]
+        equal "5" (literalResult["expected"].GetValue<string>()) "literal expectation JSON keeps its legacy value"
+        let literalActual = (literalResult["actual"]).AsArray()
+        equal "5" ((literalActual[0]).GetValue<string>()) "literal result display stays unchanged"
+        check (not (literalResult.AsObject().ContainsKey("expectedKind"))) "literal result has no expression discriminator"
+        check (not (literalResult.AsObject().ContainsKey("actualStructured"))) "literal result keeps its legacy DTO shape"
+
+        let mismatch = engine (makeProject root "value-expression-type-mismatch") []
+        let mismatchedSource =
+            """record ExpectedLeft
+    field value Int
+end
+record ExpectedRight
+    field value Int
+end
+word mismatch-target : Unit -> Option<ExpectedLeft>
+    effects none
+    drop option.none<ExpectedLeft>
+end
+test mismatch-target/wrong-nominal
+    unit mismatch-target
+    => value
+        option.none<ExpectedRight>
+end
+"""
+        expectError "TEST_EXPECTED_STACK" (define mismatch mismatchedSource) |> ignore
+        expectError "NAME_UNKNOWN_WORD" (dispatch mismatch "describe" [ "word", jsonString "mismatch-target" ])
+        |> ignore
+
+        let effectPath = makeProject root "value-expression-no-effects"
+        let effectful = engine effectPath [ "fs.read"; "fs.write" ]
+        let effectfulExpectation =
+            """word effect-target : Unit -> Unit
+    effects none
+    drop unit
+end
+test effect-target/writes-in-expectation
+    unit effect-target
+    => value
+        "/expected-expression-must-not-run" "bad" file.write
+end
+"""
+        expectError "TEST_EXPECTED_VALUE_EFFECTS" (define effectful effectfulExpectation) |> ignore
+        let absent = evaluate effectful "\"/expected-expression-must-not-run\" file.exists?" |> expectOk "check rejected expectation did not run"
+        equal "false" (stackValue absent 0) "effectful expected expression is rejected before it can write"
+
+    let private testExpectedExpressionDependencies root =
+        let projectPath = makeProject root "value-expression-metadata-closure"
+        let runtime = engine projectPath []
+        let source =
+            """record ExpectedOnlyType
+    field value Int
+end
+
+word expected-only-helper : Int -> Bool
+    effects none
+    drop true
+end
+
+test expected-only-helper/basic
+    1 expected-only-helper
+    => true
+end
+
+word metadata-target : Unit -> Bool
+    effects none
+    drop true
+end
+
+test metadata-target/helper-only
+    unit metadata-target
+    => value
+        1 expected-only-helper
+end
+
+test metadata-target/type-only
+    unit metadata-target
+    => value
+        option.none<ExpectedOnlyType>
+        drop
+        true
+end
+"""
+        define runtime source |> expectOk "define expected-only word and type dependencies" |> ignore
+        dispatch runtime "commit" [ "word", jsonString "metadata-target" ]
+        |> expectOk "commit target with value-expectation dependencies"
+        |> ignore
+
+        let persistedHelper = dispatch runtime "describe" [ "word", jsonString "expected-only-helper" ] |> expectOk "inspect expectation-only helper"
+        equal "persistent" ((persistedHelper["data"]["status"]).GetValue<string>()) "expected-only helper is included in the selected commit"
+        let reloaded = engine projectPath []
+        let typedNone = evaluate reloaded "option.none<ExpectedOnlyType>" |> expectOk "reload type referenced only by a test expectation"
+        equal "Option<ExpectedOnlyType>" (stackType typedNone 0) "expectation-only type survives persistence"
+        dispatch reloaded "test" [ "word", jsonString "metadata-target" ]
+        |> expectOk "run expectation-only metadata after reload"
+        |> assertAllTestsPassed "reloaded expectation dependencies" 2
+
+        let deepPath = makeProject root "value-expression-deep-inspection"
+        let deepRuntime = engine deepPath []
+        let nestedConstructors =
+            String.replicate 9 "    option.some<ObservationChain> observationChain.new\n"
+        let deepSource =
+            """record ObservationChain
+    field child Option<ObservationChain>
+end
+
+word deep-chain : Unit -> ObservationChain
+    effects none
+    drop
+    option.none<ObservationChain>
+    observationChain.new
+"""
+            + nestedConstructors
+            + """end
+
+test deep-chain/value-expression
+    unit deep-chain
+    => value
+        unit deep-chain
+end
+"""
+        define deepRuntime deepSource |> expectOk "define bounded-observation deep value test" |> ignore
+        dispatch deepRuntime "commit" [ "word", jsonString "deep-chain" ]
+        |> expectOk "commit passing test whose structured observation exceeds the DTO depth budget"
+        |> ignore
+        let checkDeepObservation label (response: JsonObject) =
+            assertAllTestsPassed label 1 response
+            let result = (response["data"]["results"]).AsArray()[0]
+            check (isNull (result["actualStructured"])) $"{label} actual DTO is omitted at the observation depth limit"
+            equal "VALUE_INSPECTION_DEPTH_LIMIT" ((result["actualStructuredError"]["code"]).GetValue<string>()) $"{label} actual observation limit is typed"
+            check (isNull (result["expectedStructured"])) $"{label} expected DTO is omitted at the observation depth limit"
+            equal "VALUE_INSPECTION_DEPTH_LIMIT" ((result["expectedStructuredError"]["code"]).GetValue<string>()) $"{label} expected observation limit is typed"
+        checkDeepObservation "committed deep value" (dispatch deepRuntime "test" [ "word", jsonString "deep-chain" ] |> expectOk "observe committed deep value")
+        let deepReload = engine deepPath []
+        checkDeepObservation "reloaded deep value" (dispatch deepReload "test" [ "word", jsonString "deep-chain" ] |> expectOk "observe reloaded deep value")
+
+        let temporary = engine (makeProject root "value-expression-temporary-reference") []
+        dispatch temporary "define"
+            [ "source", jsonString "word temporary-expected-helper : Unit -> Bool\n    effects none\n    drop true\nend\n"
+              "temporary", jsonBool true ]
+        |> expectOk "stage temporary helper used only in expected expression"
+        |> ignore
+        let temporarySource =
+            """word temporary-target : Unit -> Bool
+    effects none
+    drop true
+end
+test temporary-target/expected-helper
+    unit temporary-target
+    => value
+        unit temporary-expected-helper
+end
+"""
+        define temporary temporarySource |> expectOk "define test referring to temporary expectation helper" |> ignore
+        expectError "COMMIT_TEMPORARY_TEST_DEPENDENCY" (dispatch temporary "commit" [ "word", jsonString "temporary-target" ]) |> ignore
+        expectError "NAME_UNKNOWN_WORD" (dispatch (engine (makeProject root "value-expression-temporary-reference") []) "source" [ "word", jsonString "temporary-target" ])
+        |> ignore
+
+    let private testExpectedExpressionRenameAndCoverage root =
+        let renamePath = makeProject root "value-expression-rename"
+        let renameRuntime = engine renamePath []
+        let renameSource =
+            """word old-helper : Int -> Int
+    effects none
+    1 add
+end
+test old-helper/basic
+    1 old-helper
+    => 2
+end
+
+word rename-target : Unit -> Int
+    effects none
+    drop 2
+end
+test rename-target/expected-helper
+    unit rename-target
+    => value
+        1 old-helper
+end
+"""
+        define renameRuntime renameSource |> expectOk "define word referenced by another test expectation" |> ignore
+        dispatch renameRuntime "commit" [] |> expectOk "persist rename fixture" |> ignore
+        dispatch renameRuntime "rename" [ "word", jsonString "old-helper"; "to", jsonString "new-helper" ]
+        |> expectOk "rename word referenced only by another test expectation"
+        |> ignore
+        dispatch (engine renamePath []) "test" [ "word", jsonString "rename-target" ]
+        |> expectOk "run test owner after expected reference rename"
+        |> assertAllTestsPassed "renamed expectation owner" 1
+
+        let coverageRuntime = engine (makeProject root "value-expression-coverage") []
+        let coverageSource =
+            """word branchy : Bool -> Int
+    effects none
+    if
+        7
+    else
+        7
+    end
+end
+test branchy/expected-visits-other-outcome
+    true branchy
+    => value
+        false branchy
+end
+"""
+        define coverageRuntime coverageSource |> expectOk "define branch test with expectation-only second path" |> ignore
+        let coverageTest = dispatch coverageRuntime "test" [ "word", jsonString "branchy" ] |> expectOk "run isolated expectation branch"
+        assertAllTestsPassed "expectation branch comparison" 1 coverageTest
+        let coverage = coverageTest["data"]["coverage"]
+        equal 1 (coverage["branchesCovered"].GetValue<int>()) "only actual test-body branch execution counts"
+        check (coverage["branchesTotal"].GetValue<int>() > coverage["branchesCovered"].GetValue<int>()) "expected expression does not cover the other branch"
+        expectError "LIBRARY_COVERAGE_INCOMPLETE" (dispatch coverageRuntime "commit" [ "word", jsonString "branchy"; "library", jsonBool true ])
+        |> ignore
+        define coverageRuntime
+            "test branchy/false-outcome\n    false branchy\n    => 7\nend\n"
+        |> expectOk "add actual execution for the uncovered branch"
+        |> ignore
+        dispatch coverageRuntime "commit" [ "word", jsonString "branchy"; "library", jsonBool true ]
+        |> expectOk "library commit passes after both actual branch outcomes are tested"
+        |> ignore
+
+    let private testStructuredEvalStrictnessAndPublication root =
+        let runtime = engine (makeProject root "structured-eval-strictness") [ "fs.read"; "fs.write" ]
+        let malformedFlags =
+            [ "string", jsonString "true"
+              "number", JsonValue.Create(1) :> JsonNode
+              "object", JsonObject() :> JsonNode
+              "array", JsonArray() :> JsonNode
+              "null", null ]
+        for name, flag in malformedFlags do
+            let path = "/invalid-structured-flag-" + name
+            let response =
+                dispatch runtime "eval"
+                    [ "code", jsonString ($"\"{path}\" \"should-not-write\" file.write")
+                      "structured", flag ]
+            expectError "EVAL_INVALID_ARGUMENT" response |> ignore
+            let exists = evaluate runtime ($"\"{path}\" file.exists?") |> expectOk "check invalid structured flag did not run code"
+            equal "false" (stackValue exists 0) $"{name} structured flag fails before effects"
+
+        let inspectorPath = makeProject root "structured-eval-inspection-limit"
+        let inspector = engine inspectorPath [ "fs.read"; "fs.write" ]
+        define inspector "record InspectionChain\n    field child Option<InspectionChain>\nend\n" |> expectOk "define recursive record for structured-eval limit" |> ignore
+        let chain =
+            [ "option.none<InspectionChain> inspectionChain.new"
+              yield! List.replicate 9 "option.some<InspectionChain> inspectionChain.new" ]
+            |> String.concat " "
+        let expression = $"\"/structured-observation-unpublished\" \"never-save\" file.write {chain}"
+        expectError "VALUE_INSPECTION_DEPTH_LIMIT"
+            (dispatch inspector "eval" [ "code", jsonString expression; "structured", jsonBool true ])
+        |> ignore
+        let absent = evaluate inspector "\"/structured-observation-unpublished\" file.exists?" |> expectOk "check bounded inspector failure left virtual files unchanged"
+        equal "false" (stackValue absent 0) "structured observation limit is reported before virtual file publication"
 
     let private testRefinedTypesAndNominality root =
         let runtime = engine (makeProject root "refined-types") []
@@ -999,6 +1315,117 @@ end
 """
         let result = dispatch runtime "define" [ "source", jsonString replacement; "temporary", jsonBool true ]
         expectError "TYPE_VALIDATOR_FROZEN" result |> ignore
+
+    let private testRawCoverageSiteIdentity _root =
+        let authoredSpan =
+            { File = "same-span.agent"
+              Line = 1
+              Column = 1
+              Length = 20 }
+        let syntheticSpan = { authoredSpan with Length = 0 }
+        let definition : WordDefinition =
+            { Name = "same-span"
+              Inputs = []
+              Outputs = [ TInt ]
+              Effects = Set.empty
+              Maturity = LibraryWord
+              Revision = 1
+              Documentation = "Coverage identity regression fixture."
+              Body =
+                [ Push(LBool true, authoredSpan)
+                  If([ Push(LInt 1L, authoredSpan) ], [ Push(LInt 2L, authoredSpan) ], authoredSpan)
+                  Scope([], syntheticSpan) ]
+              SourceText = "same-span"
+              Span = authoredSpan }
+        let entry : WordEntry =
+            { Definition = definition
+              Builtin = None
+              Status = Persistent
+              Maturity = LibraryWord
+              Revision = 1 }
+        let words = Map.add "same-span" entry Compiler.primitives
+        let wordIds =
+            words
+            |> Map.toList
+            |> List.map (fun (name, word) ->
+                let prefix =
+                    match word.Builtin with
+                    | Some(BuiltinOp _) -> "primitive-"
+                    | Some _ -> "generated-"
+                    | None -> "user-"
+                name, WordId(prefix + name))
+            |> Map.ofList
+        let context : Compiler.IrLoweringContext =
+            { Words = words
+              Records = Map.empty
+              Scalars = Map.empty
+              WordIds = wordIds }
+        let sourceOrigins = Map.ofList [ syntheticSpan, authoredSpan ]
+        let verifiedProgram = Compiler.compileIrProgramWithSourceOrigins context sourceOrigins
+        let program = VerifiedIrProgram.inspect verifiedProgram
+        let wordId = wordIds["same-span"]
+        let wordSource =
+            program.SourceMap
+            |> Map.toList
+            |> List.filter (fun (_, source) -> source.SiteOwner = Some wordId)
+        let authoredSource =
+            wordSource
+            |> List.filter (fun (_, source) ->
+                source.SourceKind <> "synthetic-scope"
+                && source.SourceKind <> "synthetic-store-local"
+                && source.SourceKind <> "synthetic-load-local")
+        equal 4 authoredSource.Length "same-span authored instructions keep distinct source identities"
+        equal 1 (authoredSource |> List.map (fun (_, source) -> source.SiteSpan) |> Set.ofList |> Set.count) "same-span fixture shares one source location"
+        let obligations = program.CoverageByWord[wordId]
+        equal 4 obligations.CoveredSites.Count "coverage obligations count raw instruction identities"
+        let branchSite, branchOutcomes = obligations.BranchOutcomes |> Map.toList |> List.exactlyOne
+        check (obligations.CoveredSites.Contains branchSite) "branch operation has its own authored instruction identity"
+        equal (Set.ofList [ "false"; "true" ]) (Set.ofList branchOutcomes) "branch outcomes remain distinct for their raw source identity"
+        let syntheticSite, syntheticSource =
+            wordSource
+            |> List.find (fun (_, source) -> source.SourceKind = "synthetic-scope")
+        check (not (obligations.CoveredSites.Contains syntheticSite)) "synthetic Scope is excluded from authored coverage"
+        equal authoredSpan syntheticSource.SiteSpan "synthetic Scope keeps the remapped authored source span"
+
+        let collisionBody =
+            Compiler.compileIrBodyAgainstProgramWithSourceOrigins context verifiedProgram "same-span-body" []
+                [ Push(LBool true, authoredSpan)
+                  If([ Push(LInt 1L, authoredSpan) ], [ Push(LInt 2L, authoredSpan) ], authoredSpan) ] sourceOrigins
+        let body = VerifiedIrBody.inspect collisionBody
+        let mutable chargedSites = Set.empty<SourceSiteId>
+        let mutable branchOutcomes = Set.empty<SourceSiteId * string>
+        let interpreterHost : IrInterpreterHost =
+            { PreflightEffects = fun _ _ _ -> ()
+              ChargeInstruction = fun _ site -> chargedSites <- Set.add site chargedSites
+              RecordBranchOutcome = fun _ site outcome -> branchOutcomes <- Set.add (site, outcome) branchOutcomes
+              RecordUse = ignore
+              InvokeEffect = fun _ -> EffectUnit
+              WordDefinitionSpan = fun _ -> None
+              PrimitiveDefinitionSpan = fun _ -> None }
+        let output = IrInterpreter.executeBody interpreterHost "same-span-body" collisionBody
+        equal 1 output.Length "same-span branch body returns its selected value"
+        let constantSites =
+            body.BodySourceMap
+            |> Map.toList
+            |> List.choose (fun (site, source) -> if source.SourceKind = "constant" then Some site else None)
+        let siteOrdinal (SourceSiteId(_, ordinal)) = ordinal
+        let unexecutedBranchValueSite = List.maxBy siteOrdinal constantSites
+        check (not (chargedSites.Contains unexecutedBranchValueSite)) "unreached authored branch instruction stays uncovered despite sharing a span"
+        check (Set.difference body.BodyCoverage.CoveredSites chargedSites = Set.singleton unexecutedBranchValueSite) "only the unexecuted raw source identity remains uncovered"
+        let uncoveredSpan = body.BodySourceMap[unexecutedBranchValueSite].SiteSpan
+        check (chargedSites |> Set.exists (fun site -> body.BodySourceMap[site].SiteSpan = uncoveredSpan)) "an executed instruction shares the uncovered instruction's rendered span"
+        check (branchOutcomes |> Set.exists (fun (_, outcome) -> outcome = "true")) "executed branch outcome is recorded by site identity"
+        check (not (branchOutcomes |> Set.exists (fun (_, outcome) -> outcome = "false"))) "unexecuted branch outcome remains uncovered"
+
+        let detachedSyntheticSpan = { syntheticSpan with Column = syntheticSpan.Column + 1 }
+        let detachedOrigins = Map.add detachedSyntheticSpan authoredSpan sourceOrigins
+        let scopeBody = Compiler.compileIrBodyAgainstProgramWithSourceOrigins context verifiedProgram "scope-fuel" [] [ Scope([], detachedSyntheticSpan) ] detachedOrigins
+        let scope = VerifiedIrBody.inspect scopeBody
+        let chargedScope = scope.BodySourceMap |> Map.toList |> List.find (fun (_, source) -> source.SourceKind = "synthetic-scope") |> fst
+        chargedSites <- Set.empty
+        let scopeOutput = IrInterpreter.executeBody interpreterHost "scope-fuel" scopeBody
+        equal [] scopeOutput "empty synthetic Scope preserves the stack"
+        check (chargedSites.Contains chargedScope) "synthetic Scope is still charged as an executed instruction"
 
     let private testLibraryCoverageGate root =
         let runtime = engine (makeProject root "library-coverage") []
@@ -2093,10 +2520,15 @@ end
               "replacement caller tests gate durable updates", testReplacementCallerTests
               "stable word identity lifecycle", testWordIdentityLifecycle
               "runtime error test expectations", testRuntimeErrorExpectations
+              "typed value-expression expectations", testValueExpressionExpectations
+              "expectation-only dependency persistence", testExpectedExpressionDependencies
+              "expected-expression rename and coverage isolation", testExpectedExpressionRenameAndCoverage
+              "strict structured eval and publication", testStructuredEvalStrictnessAndPublication
               "nominal and refined types", testRefinedTypesAndNominality
               "validator rejection", testInvalidValidatorsRejected
               "type-only commit", testTypeOnlyCommit
               "frozen validator replacement", testValidatorTemporaryOverrideRejected
+              "raw source-site coverage identity", testRawCoverageSiteIdentity
               "library coverage gate", testLibraryCoverageGate
               "task abort rollback", testTaskAbortRollsBackDictionary
               "task commit temporary cleanup", testTaskCommitClearsSessionWords

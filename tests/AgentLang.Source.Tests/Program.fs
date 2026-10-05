@@ -116,12 +116,25 @@ test old.compute/expected-error
     old.compute
     => error DIVIDE_BY_ZERO
 end
+
+test old.compute/value-expression
+    "old.compute"
+    old.compute
+    => value
+        option.none<Int>
+        match-option
+            some value
+                $value
+            none
+                7
+        end
+end
 """
         let parsed = parse source
         equal 1 parsed.Records.Length "nested record parsed"
         equal 1 parsed.Scalars.Length "scalar parsed"
         equal 1 parsed.Words.Length "word parsed"
-        equal 2 parsed.Tests.Length "value and runtime-error tests parsed"
+        equal 3 parsed.Tests.Length "literal, runtime-error, and expression tests parsed"
 
         let withMetadata = roundTripDocument true parsed
         check (not (withMetadata.Contains('\r')) ) "canonical source uses LF line endings"
@@ -161,6 +174,17 @@ end
         match reparsedErrorTest.Expected with
         | ExpectedRuntimeError code -> equal "DIVIDE_BY_ZERO" code "runtime-error code is preserved exactly"
         | _ -> failwith "runtime-error expectation changed kind"
+
+        let expressionTest = parsed.Tests |> List.item 2
+        let renderedExpressionTest = Source.renderTest expressionTest
+        check (renderedExpressionTest.Contains("=> value\n", StringComparison.Ordinal)) "expression expectation uses canonical block form"
+        let reparsedExpressionTest = parse renderedExpressionTest |> fun document -> document.Tests.Head
+        equal renderedExpressionTest (Source.renderTest reparsedExpressionTest) "nested match expectation round-trips canonically"
+        match reparsedExpressionTest.Expected with
+        | ExpectedExpression [ ConstructContainer(OptionNone, [ TInt ], _); MatchOption("value", [ Load("value", _) ], [ Push(LInt 7L, _) ], _) ] ->
+            check true "nested expected option cases are preserved"
+        | ExpectedExpression _ -> failwith "nested option expectation changed AST shape"
+        | _ -> failwith "typed expectation changed kind"
 
         let plainExample = Source.renderExample parsed.Examples.Head
         let reparsedExample = parse plainExample |> fun document -> document.Examples.Head
@@ -246,6 +270,124 @@ end
         with
         | LanguageException diagnostic -> equal "TYPE_STACK_MISMATCH" diagnostic.Code "expected runtime error does not bypass static type checking"
 
+    let private testValueExpressionExpectationSyntax () =
+        let inlineSource =
+            """test checked.add/inline
+    1 2 checked.add
+    => value value
+end
+"""
+        let inlineTest = parse inlineSource |> fun document -> document.Tests.Head
+        match inlineTest.Expected with
+        | ExpectedExpression [ Call("value", span) ] -> equal 14 span.Column "inline expectation points at expression after duplicate marker word"
+        | _ -> failwith "inline value expectation did not parse as one call"
+
+        let tabbed =
+            """test checked.add/tabbed
+    1 2 checked.add
+    =>	value	value
+end
+"""
+            |> parse
+            |> fun document -> document.Tests.Head
+        match tabbed.Expected with
+        | ExpectedExpression [ Call("value", span) ] -> equal 14 span.Column "tabbed expectation preserves expression source span"
+        | _ -> failwith "tabbed value expectation did not parse as one call"
+
+        let branchSource =
+            """test checked.add/branch
+    1 2 checked.add
+    => value
+        true
+        if
+            1 2 add
+        else
+            3
+        end
+end
+"""
+        let branchTest = parse branchSource |> fun document -> document.Tests.Head
+        let branchCanonical = Source.renderTest branchTest
+        let branchReparsed = parse branchCanonical |> fun document -> document.Tests.Head
+        equal branchCanonical (Source.renderTest branchReparsed) "nested if value expectation round-trips canonically"
+        match branchReparsed.Expected with
+        | ExpectedExpression [ Push(LBool true, _); If(_, _, _) ] -> check true "block if expectation retains its typed AST"
+        | _ -> failwith "block if value expectation changed AST shape"
+
+        let expectParseError code source =
+            match Parser.parse "<value-expectation>" source with
+            | Error diagnostic -> equal code diagnostic.Code $"invalid value expectation reports {code}"
+            | Ok _ -> failwith $"source unexpectedly parsed; expected diagnostic {code}"
+
+        expectParseError "PARSE_VALUE_EXPECTATION_NOT_ALLOWED" """example sample/value
+    1
+    => value 1
+end
+"""
+        expectParseError "PARSE_EMPTY_VALUE_EXPECTATION" """test sample/value
+    1
+    => value
+end
+"""
+        expectParseError "PARSE_VALUE_EXPECTATION_NOT_FINAL" """test sample/value
+    1
+    => value 1
+    2
+end
+"""
+        expectParseError "PARSE_MISSING_EXPECTED" """test sample/value
+    1
+end
+"""
+
+        let typedWordDefinition =
+            { Name = "checked.add"
+              Inputs = [ TInt; TInt ]
+              Outputs = [ TInt ]
+              Effects = Set.empty
+              Maturity = ProjectWord
+              Revision = 1
+              Documentation = ""
+              Body = []
+              SourceText = ""
+              Span = { File = "<test>"; Line = 1; Column = 1; Length = 1 } }
+        let typedWord =
+            { Definition = typedWordDefinition
+              Builtin = None
+              Status = Persistent
+              Maturity = ProjectWord
+              Revision = 1 }
+        let invalidType =
+            parse """test checked.add/wrong-type
+    1 2 checked.add
+    => value
+        "not an Int"
+end
+"""
+            |> fun document -> document.Tests.Head
+        try
+            Compiler.checkTest Set.empty (Map.ofList [ "checked.add", typedWord ]) invalidType |> ignore
+            failwith "a wrong-typed value expectation was accepted"
+        with
+        | LanguageException diagnostic -> equal "TEST_EXPECTED_STACK" diagnostic.Code "expected expression must have the actual test output type"
+
+        let textWordDefinition = { typedWordDefinition with Name = "checked.text"; Inputs = [ TString ]; Outputs = [ TString ] }
+        let textWord = { typedWord with Definition = textWordDefinition }
+        let effectfulExpectation =
+            parse """test checked.text/effectful
+    "value" checked.text
+    => value
+        clock.now
+end
+"""
+            |> fun document -> document.Tests.Head
+        let words = Map.ofList [ "checked.text", textWord; "clock.now", Compiler.primitives["clock.now"] ]
+        try
+            Compiler.checkTest Set.empty words effectfulExpectation |> ignore
+            failwith "an effectful value expectation was accepted"
+        with
+        | LanguageException diagnostic -> equal "TEST_EXPECTED_VALUE_EFFECTS" diagnostic.Code "value expectations require an empty inferred effect set"
+
     let private recursiveWordCalls expressions =
         let rec collect = function
             | [] -> []
@@ -321,7 +463,11 @@ end
 
         let testSource = """test old.compute/works
     old.compute
-    => 1
+    => value
+        "old.compute"
+        list.empty<Int>
+        old.compute
+        list.map old.compute
 end
 """
         let test = parse testSource |> fun document -> document.Tests.Head
@@ -329,6 +475,15 @@ end
         equal "works" renamedTest.Name "test case name is unchanged"
         equal newName renamedTest.Word "attached test owner is renamed"
         equal [ newName ] (recursiveWordCalls renamedTest.Body) "test word calls are renamed"
+        match renamedTest.Expected with
+        | ExpectedExpression [ Push(LString literal, _); ConstructContainer(ListEmpty, [ TInt ], _); Call(callName, _); MapList(callbackName, _) ] ->
+            equal oldName literal "expected-expression string literal is unchanged during rename"
+            equal newName callName "expected-expression call is rewritten"
+            equal newName callbackName "expected-expression static callback is rewritten"
+        | _ -> failwith "expected-expression references were not rewritten semantically"
+        let renamedTestSource = Source.renderTest renamedTest
+        let reparsedRenamedTest = parse renamedTestSource |> fun document -> document.Tests.Head
+        equal renamedTestSource (Source.renderTest reparsedRenamedTest) "renamed expected AST remains canonically reloadable"
 
         let exampleSource = """example old.compute/sample
     old.compute
@@ -385,13 +540,69 @@ end
             try Directory.Delete(root, true)
             with _ -> ()
 
+    let private testParserNestingAndFlatInputLimits () =
+        let parseFailure expectedCode source =
+            match Parser.parse "<source-limit-test>" source with
+            | Error diagnostic ->
+                equal expectedCode diagnostic.Code "The parser should return the structured source-limit diagnostic."
+                match diagnostic.Span with
+                | Some sourceSpan ->
+                    equal "<source-limit-test>" sourceSpan.File "The source-limit diagnostic should retain its file."
+                    check (sourceSpan.Line > 0 && sourceSpan.Column > 0) "The source-limit diagnostic should retain a useful location."
+                | None -> failwith "The source-limit diagnostic should include a source span."
+            | Ok _ -> failwith $"Expected parser diagnostic {expectedCode}."
+
+        let makeWord signature body =
+            String.concat "\n" [ "word parser-limit : " + signature; "effects none"; body; "end" ]
+
+        let typeAtDepth depth =
+            String.replicate depth "Option<" + "Int" + String.replicate depth ">"
+
+        let atTypeBoundary = parse (makeWord (typeAtDepth 256 + " -> Unit") "")
+        equal 1 atTypeBoundary.Words.Length "Type nesting at the configured limit should parse."
+        parseFailure "PARSE_TYPE_NESTING_LIMIT" (makeWord (typeAtDepth 257 + " -> Unit") "")
+
+        let nestedIfWord depth =
+            let lines =
+                [ yield "word parser-limit : Bool -> Bool"
+                  yield "effects none"
+                  for _ in 1 .. depth do yield "if"
+                  yield "true"
+                  for _ in 1 .. depth do yield "end"
+                  yield "end" ]
+            String.concat "\n" lines
+
+        let atBlockBoundary = parse (nestedIfWord 64)
+        equal 1 atBlockBoundary.Words.Length "Block nesting at the configured limit should parse."
+        parseFailure "PARSE_BLOCK_NESTING_LIMIT" (nestedIfWord 65)
+
+        let operationPairs = 20_000
+        let flatBody = String.replicate operationPairs "1 drop "
+        let flatWord = parse (makeWord "Unit -> Unit" flatBody)
+        equal (operationPairs * 2) flatWord.Words.Head.Body.Length "A large flat operation line should parse iteratively without losing or reordering expressions."
+        let preservesPushCallOrder =
+            flatWord.Words.Head.Body
+            |> List.mapi (fun index expression ->
+                if index % 2 = 0 then
+                    match expression with
+                    | Push _ -> true
+                    | _ -> false
+                else
+                    match expression with
+                    | Call("drop", _) -> true
+                    | _ -> false)
+            |> List.forall id
+        check preservesPushCallOrder "A large flat operation line should preserve the source operation order."
+
     [<EntryPoint>]
     let main _ =
         try
             testCanonicalRoundTrip ()
             testExpectedRuntimeErrorSyntax ()
+            testValueExpressionExpectationSyntax ()
             testSemanticRename ()
             testRuntimeSemanticEquivalence ()
+            testParserNestingAndFlatInputLimits ()
             Console.WriteLine($"All source tests passed ({assertions} assertions).")
             0
         with error ->

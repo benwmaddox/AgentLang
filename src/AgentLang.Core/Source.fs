@@ -54,6 +54,12 @@ module Source =
                 renderBodyAt (depth + 1) elseBranch |> List.iter lines.Add
             lines.Add(prefix + "end")
             String.concat "\n" lines
+        | Scope(body, _) ->
+            let lines = ResizeArray<string>()
+            lines.Add(prefix + "scope")
+            renderBodyAt (depth + 1) body |> List.iter lines.Add
+            lines.Add(prefix + "end")
+            String.concat "\n" lines
         | MatchOption(someName, someBranch, noneBranch, _) ->
             let lines = ResizeArray<string>()
             lines.Add(prefix + "match-option")
@@ -110,19 +116,20 @@ module Source =
         let body = renderBodyAt 1 definition.Body
         String.concat "\n" ([ $"word {definition.Name} : {inputs} -> {outputs}"; indent 1 + effects ] @ (metadata |> List.map (fun line -> indent 1 + line)) @ (documentation |> List.map (fun line -> indent 1 + line)) @ body @ [ "end" ])
 
-    let private renderTestLike keyword name word body expectedLine =
+    let private renderTestLike keyword name word body expectedLines =
         let bodyLines = renderBodyAt 1 body
-        String.concat "\n" ([ $"{keyword} {word}/{name}" ] @ bodyLines @ [ indent 1 + expectedLine; "end" ])
+        String.concat "\n" ([ $"{keyword} {word}/{name}" ] @ bodyLines @ expectedLines @ [ "end" ])
 
     let renderTest (definition: TestDefinition) =
-        let expectedLine =
+        let expectedLines =
             match definition.Expected with
-            | ExpectedValue literal -> "=> " + renderLiteral literal
-            | ExpectedRuntimeError code -> "=> error " + code
-        renderTestLike "test" definition.Name definition.Word definition.Body expectedLine
+            | ExpectedValue literal -> [ indent 1 + "=> " + renderLiteral literal ]
+            | ExpectedRuntimeError code -> [ indent 1 + "=> error " + code ]
+            | ExpectedExpression expressions -> [ indent 1 + "=> value" ] @ renderBodyAt 2 expressions
+        renderTestLike "test" definition.Name definition.Word definition.Body expectedLines
 
     let renderExample (definition: ExampleDefinition) =
-        renderTestLike "example" definition.Name definition.Word definition.Body ("=> " + renderLiteral definition.Expected)
+        renderTestLike "example" definition.Name definition.Word definition.Body [ indent 1 + "=> " + renderLiteral definition.Expected ]
 
     /// Rewrite only executable word references. Literal values, locals, and metadata are unchanged.
     let rec renameReferences oldName newName expressions =
@@ -134,6 +141,7 @@ module Source =
             | FilterList(name, span) when name = oldName -> FilterList(newName, span)
             | EachList(name, span) when name = oldName -> EachList(newName, span)
             | If(thenBranch, elseBranch, span) -> If(rewrite thenBranch, rewrite elseBranch, span)
+            | Scope(body, span) -> Scope(rewrite body, span)
             | MatchOption(name, someBranch, noneBranch, span) -> MatchOption(name, rewrite someBranch, rewrite noneBranch, span)
             | MatchResult(okName, errorName, okBranch, errorBranch, span) -> MatchResult(okName, errorName, rewrite okBranch, rewrite errorBranch, span)
             | expression -> expression)
@@ -161,10 +169,15 @@ module Source =
 
     /// Rename the owning word and executable calls in an attached test.
     let renameTestOwner oldName newName (definition: TestDefinition) =
+        let expected =
+            match definition.Expected with
+            | ExpectedExpression expressions -> ExpectedExpression(renameReferences oldName newName expressions)
+            | other -> other
         let renamed =
             { definition with
                 Word = if definition.Word = oldName then newName else definition.Word
-                Body = renameReferences oldName newName definition.Body }
+                Body = renameReferences oldName newName definition.Body
+                Expected = expected }
         { renamed with SourceText = renderTest renamed }
 
     /// Rename the owning word and executable calls in an attached example.
