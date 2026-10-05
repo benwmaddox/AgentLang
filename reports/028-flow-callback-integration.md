@@ -57,3 +57,7 @@ The final fresh Release gate completed with exit code 0 and all 24 checks passin
 The mailbox static-data memory candidate remains recorded in the [PRD](../docs/PRD.md), [stack-only research plan](../docs/STACK-ONLY-RESEARCH.md), and [assessment report](020-arena-allocation-assessment.md). No allocator or memory-performance claim is included in this code milestone. Committed CI and publication are still required.
 
 Final independent read-only review found no remaining material issue in the structural guard: expanded occurrences are counted before enqueueing, types/body share the word budget, public render/lower/check/compile routes validate before recursion, and recursive parser limits remain intact. The review ran no builds and made no source edits.
+
+## Committed CI publication evidence
+
+Source/report commit 6cffcd1f04d3031f8d77ce970136b80d61ccb7d4 passed [CI run 37363667185](https://github.com/benwmaddox/AgentLang/actions/runs/37363667185). The downloaded artifact names that exact commit, reports a clean checkout, and passes all 24 checks. Saved evidence: [run identity](evidence/028-committed-ci-run.json) and [committed validation](evidence/028-committed-ci-validation.json). This follow-up changes only reports/evidence; executable source is unchanged.
