@@ -38,3 +38,9 @@ Exact gate output is retained in [integrated validation evidence](evidence/026-f
 The completed-AST parser depth check now rejects overdeep postfix/nested input before recursive consumers. An accepted 128-depth `.abs()` chain renders, reparses, lowers and executes in the focused suite. The sparse-marker regression uses a valid rebased identity definition whose parameter marker actually collides with the former count-based allocator; new markers advance beyond the retained maximum. Source-marker exhaustion returns a structured diagnostic. Library-quality raw Option/Result coverage labels and strongly validated Email payload behavior are verified at compiler/interpreter level; durable Flow library commits remain pending.
 
 Repository visibility was freshly confirmed private before publication. The native/arena/mailbox designs remain research. No new controlled agent trial or productivity improvement is claimed.
+
+## Committed CI and publication
+
+Implementation commit `2a01370e23b1b34ba468232a038ea0d758a442c6` passed hosted [CI run 37352818234](https://github.com/benwmaddox/AgentLang/actions/runs/37352818234). The downloaded validation artifact identifies that exact revision, a clean checkout, Release configuration, and all 24 required checks passing. The run identity is retained in [CI run evidence](evidence/026-committed-ci-run.json); the complete gate output is retained in [committed validation evidence](evidence/026-committed-ci-validation.json).
+
+This report/evidence update accompanies publication of the milestone to main. It changes documentation only; the validated implementation remains exactly the implementation commit above. Default Runtime authoring is still RPN, and no controlled productivity or native-memory result is claimed.
