@@ -1,0 +1,1874 @@
+{
+  "schemaVersion": 1,
+  "kind": "subagent-trial-host-wrapper-verification",
+  "outcome": "passed",
+  "createdUtc": "2026-10-05T21:17:34.1767461+00:00",
+  "repoRoot": "D:\\a\\AgentLang\\AgentLang",
+  "testedHead": "1e3aba27d0fb1db2a7f3670726e126b806ba6b0f",
+  "workingTreeDirty": false,
+  "cliFiles": [
+    {
+      "name": "AgentLang.Cli.deps.json",
+      "sha256": "be2b5c552c88ae78e6cfd9f6ea223d1761afd2dd41d6a0bfa244f064ef099d80"
+    },
+    {
+      "name": "AgentLang.Cli.dll",
+      "sha256": "798a0e97836efb6782fd256b6ee6127b36f3a5a23858ad7556d006fa7a953096"
+    },
+    {
+      "name": "AgentLang.Cli.runtimeconfig.json",
+      "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+    },
+    {
+      "name": "AgentLang.Core.dll",
+      "sha256": "cf0bfbbaa4466ae49b665936d6bfd46e7503c514127fe782e94af6233147e991"
+    },
+    {
+      "name": "FSharp.Core.dll",
+      "sha256": "39b0b7f06c11bedd93f94b6f101fffd645f1c4437a5a6d3ee79259f855aeb11a"
+    }
+  ],
+  "wrapperFiles": [
+    {
+      "path": "scripts\\Start-SubagentTrialHost.ps1",
+      "sha256": "19f0ac0eae21e928dd6606a4de7be32d21338d31e21e499a50524099786f813f"
+    },
+    {
+      "path": "scripts\\Verify-SubagentTrialHost.ps1",
+      "sha256": "497b59efe3adb260c2f8fe0dd239e073465cbfb47a4218360a138b6bffabd1e5"
+    },
+    {
+      "path": "docs\\SUBAGENT-TRIAL-HOST.md",
+      "sha256": "f2971a28df77c5ff891a2a51d3f5991011765b79f57be0bd112cb7f9919b7a3c"
+    }
+  ],
+  "artifacts": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a",
+  "checks": [
+    {
+      "name": "language write session exits cleanly",
+      "passed": true,
+      "detail": "exit=0; stderr="
+    },
+    {
+      "name": "language write responses all succeed",
+      "passed": true,
+      "detail": "responses=5"
+    },
+    {
+      "name": "language write session confirms full request delivery",
+      "passed": true,
+      "detail": "All five forwarded exchanges have a confirmed complete line."
+    },
+    {
+      "name": "x64 JobObject ABI layout is recorded and validated",
+      "passed": true,
+      "detail": "{\"basicLimitInformationBytes\":64,\"basicLimitFlagsOffset\":16,\"ioCountersBytes\":48,\"extendedLimitInformationBytes\":144,\"extendedIoInfoOffset\":64,\"processMemoryLimitOffset\":112,\"jobMemoryLimitOffset\":120,\"peakProcessMemoryUsedOffset\":128,\"peakJobMemoryUsedOffset\":136}"
+    },
+    {
+      "name": "fresh process loads committed definition and tests",
+      "passed": true,
+      "detail": "exit=0; test=1/1 test(s) passed."
+    },
+    {
+      "name": "malformed request returns structured host error without forwarding",
+      "passed": true,
+      "detail": "Expected depth to be zero at the end of the JSON payload. There is an open JSON object or array that should be closed. LineNumber: 0 | BytePositionInLine: 6."
+    },
+    {
+      "name": "disallowed operation is denied before runtime execution",
+      "passed": true,
+      "detail": "Operation is not in the trial host's allowed protocol operation set."
+    },
+    {
+      "name": "oversized request is rejected before runtime forwarding",
+      "passed": true,
+      "detail": "exit=2; response=The request line exceeded the configured byte limit; the session is closing."
+    },
+    {
+      "name": "fake child build succeeds",
+      "passed": true,
+      "detail": "  Determining projects to restore...\r\n  Restored D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\fake-runtime-source\\FakeRuntime.csproj (in 94 ms).\r\n  FakeRuntime -> D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\fake-runtime-output\\FakeRuntime.dll\r\n\r\nBuild succeeded.\r\n    0 Warning(s)\r\n    0 Error(s)\r\n\r\nTime Elapsed 00:00:06.54\r\n"
+    },
+    {
+      "name": "verifier subprocess output capture enforces a hard byte cap and kills the child",
+      "passed": true,
+      "detail": "captured=1024; cleanupTimedOut=False"
+    },
+    {
+      "name": "dripped partial response captures multiple chunks and preserves uncertain no-retry outcome",
+      "passed": true,
+      "detail": "exit=124; capturedPrefix='{\"partial\":      '; bytes=17"
+    },
+    {
+      "name": "dripped response is bounded by one absolute exchange deadline",
+      "passed": true,
+      "detail": "exchangeTraceElapsed=4012.648ms; subprocessTotal=7033.837ms; configuredDeadline=4000ms"
+    },
+    {
+      "name": "non-reading child cannot block a large stdin write past deadline",
+      "passed": true,
+      "detail": "exit=124; elapsed=4846.734ms; attempted=250029"
+    },
+    {
+      "name": "oversized runtime response marks execution uncertain and forbids retry",
+      "passed": true,
+      "detail": "exit=2; prefixBytes=65"
+    },
+    {
+      "name": "invalid runtime JSON returns a structured uncertain host error and preserves exact bytes",
+      "passed": true,
+      "detail": "exit=4; executionState=uncertain"
+    },
+    {
+      "name": "lost child response never reports rollback or safe retry",
+      "passed": true,
+      "detail": "exit=3; executionState=uncertain"
+    },
+    {
+      "name": "conventional profile omits AgentLang-only clock and capability flags",
+      "passed": true,
+      "detail": "{\"ok\":true,\"hasClock\":false,\"hasAllow\":false,\"args\":[\"--project\",\"D:\\\\a\\\\AgentLang\\\\AgentLang\\\\.agentlang\\\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\\\conventional-profile-args\",\"--fake-mode=inspect-args\",\"--jsonl\"]}"
+    }
+  ],
+  "runs": [
+    {
+      "name": "language-write-session",
+      "projectPath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\language-write-session",
+      "tracePath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\reports\\trial-host-de50c709534f482e81d877a3e45f597a-language-write-session.jsonl",
+      "runtimeDll": "D:\\a\\AgentLang\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+      "runtimeDllSha256": "798a0e97836efb6782fd256b6ee6127b36f3a5a23858ad7556d006fa7a953096",
+      "allowedOperations": [
+        "task.begin",
+        "define",
+        "test",
+        "commit",
+        "task.commit"
+      ],
+      "profile": "agentlang",
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMilliseconds": 2239.161,
+      "stdoutUtf8Bytes": 1155,
+      "stderrUtf8Bytes": 0,
+      "responseCount": 5,
+      "responses": [
+        {
+          "ok": true,
+          "kind": "task.begin",
+          "text": "Started task-0001.",
+          "data": {
+            "task": "task-0001",
+            "goal": "wrapper persistent-flow verification",
+            "active": true,
+            "wordsInspected": [],
+            "wordsUsed": [],
+            "wordsCreated": [],
+            "testsRun": 0,
+            "testsFailed": 0,
+            "effects": {},
+            "errors": []
+          }
+        },
+        {
+          "ok": true,
+          "kind": "defined",
+          "text": "Definitions parsed, type checked, and staged.",
+          "data": [
+            "trial.success"
+          ]
+        },
+        {
+          "ok": true,
+          "kind": "test",
+          "text": "1/1 test(s) passed.",
+          "data": {
+            "results": [
+              {
+                "name": "basic",
+                "word": "trial.success",
+                "passed": true,
+                "expected": "2",
+                "actual": [
+                  "2"
+                ]
+              }
+            ],
+            "coverage": {
+              "instructionsCovered": 2,
+              "instructionsTotal": 2,
+              "branchesCovered": 0,
+              "branchesTotal": 0,
+              "uncoveredInstructions": [],
+              "uncoveredBranchOutcomes": []
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "commit",
+          "text": "1 attached test(s) passed; selected candidates committed.",
+          "data": [
+            "trial.success/basic"
+          ]
+        },
+        {
+          "ok": true,
+          "kind": "task.commit",
+          "text": "Task committed and temporary words were cleared. The task log was saved.",
+          "data": {
+            "task": "task-0001",
+            "goal": "wrapper persistent-flow verification",
+            "active": false,
+            "wordsInspected": [],
+            "wordsUsed": [
+              "add",
+              "trial.success"
+            ],
+            "wordsCreated": [
+              "trial.success"
+            ],
+            "testsRun": 2,
+            "testsFailed": 0,
+            "effects": {},
+            "errors": []
+          }
+        }
+      ],
+      "responseEntriesOmitted": 0,
+      "traceEventCount": 7,
+      "traceEvents": [
+        {
+          "event": "session-start",
+          "schemaVersion": 1,
+          "startedUtc": "2026-10-05T21:17:00.283555+00:00",
+          "hostProcessId": 6264,
+          "runtimeProcessId": 5088,
+          "runtimeExecutable": "dotnet",
+          "processArchitecture": "x64",
+          "jobObjectLayout": {
+            "basicLimitInformationBytes": 64,
+            "basicLimitFlagsOffset": 16,
+            "ioCountersBytes": 48,
+            "extendedLimitInformationBytes": 144,
+            "extendedIoInfoOffset": 64,
+            "processMemoryLimitOffset": 112,
+            "jobMemoryLimitOffset": 120,
+            "peakProcessMemoryUsedOffset": 128,
+            "peakJobMemoryUsedOffset": 136
+          },
+          "cliDll": "D:\\a\\AgentLang\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+          "cliFiles": [
+            {
+              "name": "AgentLang.Cli.deps.json",
+              "sha256": "be2b5c552c88ae78e6cfd9f6ea223d1761afd2dd41d6a0bfa244f064ef099d80"
+            },
+            {
+              "name": "AgentLang.Cli.dll",
+              "sha256": "798a0e97836efb6782fd256b6ee6127b36f3a5a23858ad7556d006fa7a953096"
+            },
+            {
+              "name": "AgentLang.Cli.runtimeconfig.json",
+              "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+            },
+            {
+              "name": "AgentLang.Core.dll",
+              "sha256": "cf0bfbbaa4466ae49b665936d6bfd46e7503c514127fe782e94af6233147e991"
+            },
+            {
+              "name": "FSharp.Core.dll",
+              "sha256": "39b0b7f06c11bedd93f94b6f101fffd645f1c4437a5a6d3ee79259f855aeb11a"
+            }
+          ],
+          "projectPath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\language-write-session",
+          "profile": "agentlang",
+          "allowedOperations": [
+            "commit",
+            "define",
+            "task.begin",
+            "task.commit",
+            "test"
+          ],
+          "additionalCliArguments": [],
+          "capabilities": [],
+          "limits": {
+            "maxRequestBytes": 262144,
+            "maxResponseBytes": 524288,
+            "exchangeTimeoutMilliseconds": 2000,
+            "maxExchanges": 100
+          },
+          "cleanup": "Windows job object kill-on-close plus explicit process cleanup"
+        },
+        {
+          "event": "exchange",
+          "index": 1,
+          "atUtc": "2026-10-05T21:17:00.5850454+00:00",
+          "operation": "task.begin",
+          "outcome": "forwarded",
+          "requestDelivery": {
+            "state": "confirmed",
+            "attemptedUtf8Bytes": 66,
+            "confirmedUtf8Bytes": 66,
+            "completeLineConfirmed": true
+          },
+          "executionState": "response-observed",
+          "automaticRetry": "never; inspect authoritative stored state after any uncertain outcome",
+          "observedRuntimeResponse": null,
+          "request": {
+            "rawLine": "{\"goal\":\"wrapper persistent-flow verification\",\"op\":\"task.begin\"}",
+            "canonical": "{\"goal\":\"wrapper persistent-flow verification\",\"op\":\"task.begin\"}",
+            "wireBase64": "eyJnb2FsIjoid3JhcHBlciBwZXJzaXN0ZW50LWZsb3cgdmVyaWZpY2F0aW9uIiwib3AiOiJ0YXNrLmJlZ2luIn0K",
+            "payloadUtf8Bytes": 65,
+            "wireUtf8Bytes": 66,
+            "sha256": "646a111520d5162b1ba8616940f79feb9442c85b6afec730acadcb6264ae1d18"
+          },
+          "response": {
+            "source": "runtime",
+            "rawLine": "{\"ok\":true,\"kind\":\"task.begin\",\"text\":\"Started task-0001.\",\"data\":{\"task\":\"task-0001\",\"goal\":\"wrapper persistent-flow verification\",\"active\":true,\"wordsInspected\":[],\"wordsUsed\":[],\"wordsCreated\":[],\"testsRun\":0,\"testsFailed\":0,\"effects\":{},\"errors\":[]}}\r",
+            "canonical": "{\"data\":{\"active\":true,\"effects\":{},\"errors\":[],\"goal\":\"wrapper persistent-flow verification\",\"task\":\"task-0001\",\"testsFailed\":0,\"testsRun\":0,\"wordsCreated\":[],\"wordsInspected\":[],\"wordsUsed\":[]},\"kind\":\"task.begin\",\"ok\":true,\"text\":\"Started task-0001.\"}",
+            "wireBase64": "eyJvayI6dHJ1ZSwia2luZCI6InRhc2suYmVnaW4iLCJ0ZXh0IjoiU3RhcnRlZCB0YXNrLTAwMDEuIiwiZGF0YSI6eyJ0YXNrIjoidGFzay0wMDAxIiwiZ29hbCI6IndyYXBwZXIgcGVyc2lzdGVudC1mbG93IHZlcmlmaWNhdGlvbiIsImFjdGl2ZSI6dHJ1ZSwid29yZHNJbnNwZWN0ZWQiOltdLCJ3b3Jkc1VzZWQiOltdLCJ3b3Jkc0NyZWF0ZWQiOltdLCJ0ZXN0c1J1biI6MCwidGVzdHNGYWlsZWQiOjAsImVmZmVjdHMiOnt9LCJlcnJvcnMiOltdfX0NCg==",
+            "payloadUtf8Bytes": 255,
+            "wireUtf8Bytes": 256,
+            "sha256": "515c008fa6a8bc0c50e65e55711fe03fe4e10f94507f7dedd99b150c26060a16",
+            "parseError": null
+          },
+          "elapsedMilliseconds": 65.1543,
+          "errorCode": null,
+          "errorMessage": null
+        },
+        {
+          "event": "exchange",
+          "index": 2,
+          "atUtc": "2026-10-05T21:17:00.6896778+00:00",
+          "operation": "define",
+          "outcome": "forwarded",
+          "requestDelivery": {
+            "state": "confirmed",
+            "attemptedUtf8Bytes": 157,
+            "confirmedUtf8Bytes": 157,
+            "completeLineConfirmed": true
+          },
+          "executionState": "response-observed",
+          "automaticRetry": "never; inspect authoritative stored state after any uncertain outcome",
+          "observedRuntimeResponse": null,
+          "request": {
+            "rawLine": "{\"source\":\"word trial.success : Int -> Int\\n    effects none\\n    1 add\\nend\\n\\ntest trial.success/basic\\n    1 trial.success\\n    => 2\\nend\",\"op\":\"define\"}",
+            "canonical": "{\"op\":\"define\",\"source\":\"word trial.success : Int -\\u003E Int\\n    effects none\\n    1 add\\nend\\n\\ntest trial.success/basic\\n    1 trial.success\\n    =\\u003E 2\\nend\"}",
+            "wireBase64": "eyJzb3VyY2UiOiJ3b3JkIHRyaWFsLnN1Y2Nlc3MgOiBJbnQgLT4gSW50XG4gICAgZWZmZWN0cyBub25lXG4gICAgMSBhZGRcbmVuZFxuXG50ZXN0IHRyaWFsLnN1Y2Nlc3MvYmFzaWNcbiAgICAxIHRyaWFsLnN1Y2Nlc3NcbiAgICA9PiAyXG5lbmQiLCJvcCI6ImRlZmluZSJ9Cg==",
+            "payloadUtf8Bytes": 156,
+            "wireUtf8Bytes": 157,
+            "sha256": "f9fc9ee7405d861a0f43112c30c5c22542f4f2d2115abad21880899a6ea3d2ff"
+          },
+          "response": {
+            "source": "runtime",
+            "rawLine": "{\"ok\":true,\"kind\":\"defined\",\"text\":\"Definitions parsed, type checked, and staged.\",\"data\":[\"trial.success\"]}\r",
+            "canonical": "{\"data\":[\"trial.success\"],\"kind\":\"defined\",\"ok\":true,\"text\":\"Definitions parsed, type checked, and staged.\"}",
+            "wireBase64": "eyJvayI6dHJ1ZSwia2luZCI6ImRlZmluZWQiLCJ0ZXh0IjoiRGVmaW5pdGlvbnMgcGFyc2VkLCB0eXBlIGNoZWNrZWQsIGFuZCBzdGFnZWQuIiwiZGF0YSI6WyJ0cmlhbC5zdWNjZXNzIl19DQo=",
+            "payloadUtf8Bytes": 109,
+            "wireUtf8Bytes": 110,
+            "sha256": "ed48d0d985e607730c77c4413623b312b2b50b31d452506c0700a46ac9bddc90",
+            "parseError": null
+          },
+          "elapsedMilliseconds": 95.72,
+          "errorCode": null,
+          "errorMessage": null
+        },
+        {
+          "event": "exchange",
+          "index": 3,
+          "atUtc": "2026-10-05T21:17:00.733327+00:00",
+          "operation": "test",
+          "outcome": "forwarded",
+          "requestDelivery": {
+            "state": "confirmed",
+            "attemptedUtf8Bytes": 37,
+            "confirmedUtf8Bytes": 37,
+            "completeLineConfirmed": true
+          },
+          "executionState": "response-observed",
+          "automaticRetry": "never; inspect authoritative stored state after any uncertain outcome",
+          "observedRuntimeResponse": null,
+          "request": {
+            "rawLine": "{\"word\":\"trial.success\",\"op\":\"test\"}",
+            "canonical": "{\"op\":\"test\",\"word\":\"trial.success\"}",
+            "wireBase64": "eyJ3b3JkIjoidHJpYWwuc3VjY2VzcyIsIm9wIjoidGVzdCJ9Cg==",
+            "payloadUtf8Bytes": 36,
+            "wireUtf8Bytes": 37,
+            "sha256": "89dceccdf3d59f497025bd8ead440304324a5776baa911088562039afa8d50a3"
+          },
+          "response": {
+            "source": "runtime",
+            "rawLine": "{\"ok\":true,\"kind\":\"test\",\"text\":\"1/1 test(s) passed.\",\"data\":{\"results\":[{\"name\":\"basic\",\"word\":\"trial.success\",\"passed\":true,\"expected\":\"2\",\"actual\":[\"2\"]}],\"coverage\":{\"instructionsCovered\":2,\"instructionsTotal\":2,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[]}}}\r",
+            "canonical": "{\"data\":{\"coverage\":{\"branchesCovered\":0,\"branchesTotal\":0,\"instructionsCovered\":2,\"instructionsTotal\":2,\"uncoveredBranchOutcomes\":[],\"uncoveredInstructions\":[]},\"results\":[{\"actual\":[\"2\"],\"expected\":\"2\",\"name\":\"basic\",\"passed\":true,\"word\":\"trial.success\"}]},\"kind\":\"test\",\"ok\":true,\"text\":\"1/1 test(s) passed.\"}",
+            "wireBase64": "eyJvayI6dHJ1ZSwia2luZCI6InRlc3QiLCJ0ZXh0IjoiMS8xIHRlc3QocykgcGFzc2VkLiIsImRhdGEiOnsicmVzdWx0cyI6W3sibmFtZSI6ImJhc2ljIiwid29yZCI6InRyaWFsLnN1Y2Nlc3MiLCJwYXNzZWQiOnRydWUsImV4cGVjdGVkIjoiMiIsImFjdHVhbCI6WyIyIl19XSwiY292ZXJhZ2UiOnsiaW5zdHJ1Y3Rpb25zQ292ZXJlZCI6MiwiaW5zdHJ1Y3Rpb25zVG90YWwiOjIsImJyYW5jaGVzQ292ZXJlZCI6MCwiYnJhbmNoZXNUb3RhbCI6MCwidW5jb3ZlcmVkSW5zdHJ1Y3Rpb25zIjpbXSwidW5jb3ZlcmVkQnJhbmNoT3V0Y29tZXMiOltdfX19DQo=",
+            "payloadUtf8Bytes": 313,
+            "wireUtf8Bytes": 314,
+            "sha256": "e6246bc3ed3dca91b2d3cb0e7620ac9057b7d7dc836e4107a8d97b16360698ee",
+            "parseError": null
+          },
+          "elapsedMilliseconds": 42.8011,
+          "errorCode": null,
+          "errorMessage": null
+        },
+        {
+          "event": "exchange",
+          "index": 4,
+          "atUtc": "2026-10-05T21:17:00.8160975+00:00",
+          "operation": "commit",
+          "outcome": "forwarded",
+          "requestDelivery": {
+            "state": "confirmed",
+            "attemptedUtf8Bytes": 39,
+            "confirmedUtf8Bytes": 39,
+            "completeLineConfirmed": true
+          },
+          "executionState": "response-observed",
+          "automaticRetry": "never; inspect authoritative stored state after any uncertain outcome",
+          "observedRuntimeResponse": null,
+          "request": {
+            "rawLine": "{\"word\":\"trial.success\",\"op\":\"commit\"}",
+            "canonical": "{\"op\":\"commit\",\"word\":\"trial.success\"}",
+            "wireBase64": "eyJ3b3JkIjoidHJpYWwuc3VjY2VzcyIsIm9wIjoiY29tbWl0In0K",
+            "payloadUtf8Bytes": 38,
+            "wireUtf8Bytes": 39,
+            "sha256": "ec3fd66549840792b1fa7d9353c0adef28f64442710052c2bd3b001f5ac56663"
+          },
+          "response": {
+            "source": "runtime",
+            "rawLine": "{\"ok\":true,\"kind\":\"commit\",\"text\":\"1 attached test(s) passed; selected candidates committed.\",\"data\":[\"trial.success/basic\"]}\r",
+            "canonical": "{\"data\":[\"trial.success/basic\"],\"kind\":\"commit\",\"ok\":true,\"text\":\"1 attached test(s) passed; selected candidates committed.\"}",
+            "wireBase64": "eyJvayI6dHJ1ZSwia2luZCI6ImNvbW1pdCIsInRleHQiOiIxIGF0dGFjaGVkIHRlc3QocykgcGFzc2VkOyBzZWxlY3RlZCBjYW5kaWRhdGVzIGNvbW1pdHRlZC4iLCJkYXRhIjpbInRyaWFsLnN1Y2Nlc3MvYmFzaWMiXX0NCg==",
+            "payloadUtf8Bytes": 126,
+            "wireUtf8Bytes": 127,
+            "sha256": "5fb136399f283d7bc3a88aed4396dd80063b82a3fa5860bec9eddeaacb9f71ef",
+            "parseError": null
+          },
+          "elapsedMilliseconds": 82.2667,
+          "errorCode": null,
+          "errorMessage": null
+        },
+        {
+          "event": "exchange",
+          "index": 5,
+          "atUtc": "2026-10-05T21:17:00.8241401+00:00",
+          "operation": "task.commit",
+          "outcome": "forwarded",
+          "requestDelivery": {
+            "state": "confirmed",
+            "attemptedUtf8Bytes": 21,
+            "confirmedUtf8Bytes": 21,
+            "completeLineConfirmed": true
+          },
+          "executionState": "response-observed",
+          "automaticRetry": "never; inspect authoritative stored state after any uncertain outcome",
+          "observedRuntimeResponse": null,
+          "request": {
+            "rawLine": "{\"op\":\"task.commit\"}",
+            "canonical": "{\"op\":\"task.commit\"}",
+            "wireBase64": "eyJvcCI6InRhc2suY29tbWl0In0K",
+            "payloadUtf8Bytes": 20,
+            "wireUtf8Bytes": 21,
+            "sha256": "a29ee9d6f7d74bf5d44bdea44cb3e2afb1ca7b3a616c99dc4571fcb25653e19e"
+          },
+          "response": {
+            "source": "runtime",
+            "rawLine": "{\"ok\":true,\"kind\":\"task.commit\",\"text\":\"Task committed and temporary words were cleared. The task log was saved.\",\"data\":{\"task\":\"task-0001\",\"goal\":\"wrapper persistent-flow verification\",\"active\":false,\"wordsInspected\":[],\"wordsUsed\":[\"add\",\"trial.success\"],\"wordsCreated\":[\"trial.success\"],\"testsRun\":2,\"testsFailed\":0,\"effects\":{},\"errors\":[]}}\r",
+            "canonical": "{\"data\":{\"active\":false,\"effects\":{},\"errors\":[],\"goal\":\"wrapper persistent-flow verification\",\"task\":\"task-0001\",\"testsFailed\":0,\"testsRun\":2,\"wordsCreated\":[\"trial.success\"],\"wordsInspected\":[],\"wordsUsed\":[\"add\",\"trial.success\"]},\"kind\":\"task.commit\",\"ok\":true,\"text\":\"Task committed and temporary words were cleared. The task log was saved.\"}",
+            "wireBase64": "eyJvayI6dHJ1ZSwia2luZCI6InRhc2suY29tbWl0IiwidGV4dCI6IlRhc2sgY29tbWl0dGVkIGFuZCB0ZW1wb3Jhcnkgd29yZHMgd2VyZSBjbGVhcmVkLiBUaGUgdGFzayBsb2cgd2FzIHNhdmVkLiIsImRhdGEiOnsidGFzayI6InRhc2stMDAwMSIsImdvYWwiOiJ3cmFwcGVyIHBlcnNpc3RlbnQtZmxvdyB2ZXJpZmljYXRpb24iLCJhY3RpdmUiOmZhbHNlLCJ3b3Jkc0luc3BlY3RlZCI6W10sIndvcmRzVXNlZCI6WyJhZGQiLCJ0cmlhbC5zdWNjZXNzIl0sIndvcmRzQ3JlYXRlZCI6WyJ0cmlhbC5zdWNjZXNzIl0sInRlc3RzUnVuIjoyLCJ0ZXN0c0ZhaWxlZCI6MCwiZWZmZWN0cyI6e30sImVycm9ycyI6W119fQ0K",
+            "payloadUtf8Bytes": 347,
+            "wireUtf8Bytes": 348,
+            "sha256": "2693472220d0c61044000d84fc38e001e88a827a51d19891852b7b7e25500d45",
+            "parseError": null
+          },
+          "elapsedMilliseconds": 7.5421,
+          "errorCode": null,
+          "errorMessage": null
+        },
+        {
+          "event": "session-end",
+          "finishedUtc": "2026-10-05T21:17:00.8369729+00:00",
+          "exchangeCount": 5,
+          "hostExitCode": 0,
+          "runtimeExitCode": 0,
+          "runtimeStderrPrefixBytes": 0,
+          "runtimeStderrTotalBytes": 0,
+          "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "runtimeStderrCaptureTruncated": false
+        }
+      ],
+      "traceEventEntriesOmitted": 0
+    },
+    {
+      "name": "language-reload-session",
+      "projectPath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\language-write-session",
+      "tracePath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\reports\\trial-host-de50c709534f482e81d877a3e45f597a-language-reload-session.jsonl",
+      "runtimeDll": "D:\\a\\AgentLang\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+      "runtimeDllSha256": "798a0e97836efb6782fd256b6ee6127b36f3a5a23858ad7556d006fa7a953096",
+      "allowedOperations": [
+        "tests",
+        "test",
+        "describe"
+      ],
+      "profile": "agentlang",
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMilliseconds": 2496.002,
+      "stdoutUtf8Bytes": 1033,
+      "stderrUtf8Bytes": 0,
+      "responseCount": 3,
+      "responses": [
+        {
+          "ok": true,
+          "kind": "tests",
+          "text": "1 attached test(s).",
+          "data": [
+            "basic"
+          ]
+        },
+        {
+          "ok": true,
+          "kind": "test",
+          "text": "1/1 test(s) passed.",
+          "data": {
+            "results": [
+              {
+                "name": "basic",
+                "word": "trial.success",
+                "passed": true,
+                "expected": "2",
+                "actual": [
+                  "2"
+                ]
+              }
+            ],
+            "coverage": {
+              "instructionsCovered": 2,
+              "instructionsTotal": 2,
+              "branchesCovered": 0,
+              "branchesTotal": 0,
+              "uncoveredInstructions": [],
+              "uncoveredBranchOutcomes": []
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "describe",
+          "text": "Description for trial.success.",
+          "data": {
+            "name": "trial.success",
+            "inputs": [
+              "Int"
+            ],
+            "outputs": [
+              "Int"
+            ],
+            "effects": [],
+            "documentation": "",
+            "id": "word_71656ee94c384000aef412d39021c2dd",
+            "dependencies": [
+              "add"
+            ],
+            "transitiveDependencies": [
+              "add"
+            ],
+            "callers": [],
+            "tests": [
+              "basic"
+            ],
+            "examples": [],
+            "source": "dictionary.agent",
+            "line": 1,
+            "kind": "word",
+            "status": "persistent",
+            "maturity": "project",
+            "deprecated": false,
+            "revision": 1,
+            "testCount": 1,
+            "exampleCount": 0,
+            "coverage": {
+              "instructionsCovered": 2,
+              "instructionsTotal": 2,
+              "branchesCovered": 0,
+              "branchesTotal": 0,
+              "uncoveredInstructions": [],
+              "uncoveredBranchOutcomes": [],
+              "status": "current"
+            }
+          }
+        }
+      ],
+      "responseEntriesOmitted": 0,
+      "traceEventCount": 5,
+      "traceEvents": [
+        {
+          "event": "session-start",
+          "schemaVersion": 1,
+          "startedUtc": "2026-10-05T21:17:02.6721274+00:00",
+          "hostProcessId": 5080,
+          "runtimeProcessId": 1868,
+          "runtimeExecutable": "dotnet",
+          "processArchitecture": "x64",
+          "jobObjectLayout": {
+            "basicLimitInformationBytes": 64,
+            "basicLimitFlagsOffset": 16,
+            "ioCountersBytes": 48,
+            "extendedLimitInformationBytes": 144,
+            "extendedIoInfoOffset": 64,
+            "processMemoryLimitOffset": 112,
+            "jobMemoryLimitOffset": 120,
+            "peakProcessMemoryUsedOffset": 128,
+            "peakJobMemoryUsedOffset": 136
+          },
+          "cliDll": "D:\\a\\AgentLang\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+          "cliFiles": [
+            {
+              "name": "AgentLang.Cli.deps.json",
+              "sha256": "be2b5c552c88ae78e6cfd9f6ea223d1761afd2dd41d6a0bfa244f064ef099d80"
+            },
+            {
+              "name": "AgentLang.Cli.dll",
+              "sha256": "798a0e97836efb6782fd256b6ee6127b36f3a5a23858ad7556d006fa7a953096"
+            },
+            {
+              "name": "AgentLang.Cli.runtimeconfig.json",
+              "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+            },
+            {
+              "name": "AgentLang.Core.dll",
+              "sha256": "cf0bfbbaa4466ae49b665936d6bfd46e7503c514127fe782e94af6233147e991"
+            },
+            {
+              "name": "FSharp.Core.dll",
+              "sha256": "39b0b7f06c11bedd93f94b6f101fffd645f1c4437a5a6d3ee79259f855aeb11a"
+            }
+          ],
+          "projectPath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\language-write-session",
+          "profile": "agentlang",
+          "allowedOperations": [
+            "describe",
+            "test",
+            "tests"
+          ],
+          "additionalCliArguments": [],
+          "capabilities": [],
+          "limits": {
+            "maxRequestBytes": 262144,
+            "maxResponseBytes": 524288,
+            "exchangeTimeoutMilliseconds": 2000,
+            "maxExchanges": 100
+          },
+          "cleanup": "Windows job object kill-on-close plus explicit process cleanup"
+        },
+        {
+          "event": "exchange",
+          "index": 1,
+          "atUtc": "2026-10-05T21:17:03.2358524+00:00",
+          "operation": "tests",
+          "outcome": "forwarded",
+          "requestDelivery": {
+            "state": "confirmed",
+            "attemptedUtf8Bytes": 38,
+            "confirmedUtf8Bytes": 38,
+            "completeLineConfirmed": true
+          },
+          "executionState": "response-observed",
+          "automaticRetry": "never; inspect authoritative stored state after any uncertain outcome",
+          "observedRuntimeResponse": null,
+          "request": {
+            "rawLine": "{\"word\":\"trial.success\",\"op\":\"tests\"}",
+            "canonical": "{\"op\":\"tests\",\"word\":\"trial.success\"}",
+            "wireBase64": "eyJ3b3JkIjoidHJpYWwuc3VjY2VzcyIsIm9wIjoidGVzdHMifQo=",
+            "payloadUtf8Bytes": 37,
+            "wireUtf8Bytes": 38,
+            "sha256": "084600c77bc779e52ba06656957d83ad3388b9da2b65fe076a07892bab7217f4"
+          },
+          "response": {
+            "source": "runtime",
+            "rawLine": "{\"ok\":true,\"kind\":\"tests\",\"text\":\"1 attached test(s).\",\"data\":[\"basic\"]}\r",
+            "canonical": "{\"data\":[\"basic\"],\"kind\":\"tests\",\"ok\":true,\"text\":\"1 attached test(s).\"}",
+            "wireBase64": "eyJvayI6dHJ1ZSwia2luZCI6InRlc3RzIiwidGV4dCI6IjEgYXR0YWNoZWQgdGVzdChzKS4iLCJkYXRhIjpbImJhc2ljIl19DQo=",
+            "payloadUtf8Bytes": 73,
+            "wireUtf8Bytes": 74,
+            "sha256": "d7830b8581eec01b53b431200517bcdfd72fa952ae16626939137d3c085fa227",
+            "parseError": null
+          },
+          "elapsedMilliseconds": 79.1412,
+          "errorCode": null,
+          "errorMessage": null
+        },
+        {
+          "event": "exchange",
+          "index": 2,
+          "atUtc": "2026-10-05T21:17:03.3037456+00:00",
+          "operation": "test",
+          "outcome": "forwarded",
+          "requestDelivery": {
+            "state": "confirmed",
+            "attemptedUtf8Bytes": 37,
+            "confirmedUtf8Bytes": 37,
+            "completeLineConfirmed": true
+          },
+          "executionState": "response-observed",
+          "automaticRetry": "never; inspect authoritative stored state after any uncertain outcome",
+          "observedRuntimeResponse": null,
+          "request": {
+            "rawLine": "{\"word\":\"trial.success\",\"op\":\"test\"}",
+            "canonical": "{\"op\":\"test\",\"word\":\"trial.success\"}",
+            "wireBase64": "eyJ3b3JkIjoidHJpYWwuc3VjY2VzcyIsIm9wIjoidGVzdCJ9Cg==",
+            "payloadUtf8Bytes": 36,
+            "wireUtf8Bytes": 37,
+            "sha256": "89dceccdf3d59f497025bd8ead440304324a5776baa911088562039afa8d50a3"
+          },
+          "response": {
+            "source": "runtime",
+            "rawLine": "{\"ok\":true,\"kind\":\"test\",\"text\":\"1/1 test(s) passed.\",\"data\":{\"results\":[{\"name\":\"basic\",\"word\":\"trial.success\",\"passed\":true,\"expected\":\"2\",\"actual\":[\"2\"]}],\"coverage\":{\"instructionsCovered\":2,\"instructionsTotal\":2,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[]}}}\r",
+            "canonical": "{\"data\":{\"coverage\":{\"branchesCovered\":0,\"branchesTotal\":0,\"instructionsCovered\":2,\"instructionsTotal\":2,\"uncoveredBranchOutcomes\":[],\"uncoveredInstructions\":[]},\"results\":[{\"actual\":[\"2\"],\"expected\":\"2\",\"name\":\"basic\",\"passed\":true,\"word\":\"trial.success\"}]},\"kind\":\"test\",\"ok\":true,\"text\":\"1/1 test(s) passed.\"}",
+            "wireBase64": "eyJvayI6dHJ1ZSwia2luZCI6InRlc3QiLCJ0ZXh0IjoiMS8xIHRlc3QocykgcGFzc2VkLiIsImRhdGEiOnsicmVzdWx0cyI6W3sibmFtZSI6ImJhc2ljIiwid29yZCI6InRyaWFsLnN1Y2Nlc3MiLCJwYXNzZWQiOnRydWUsImV4cGVjdGVkIjoiMiIsImFjdHVhbCI6WyIyIl19XSwiY292ZXJhZ2UiOnsiaW5zdHJ1Y3Rpb25zQ292ZXJlZCI6MiwiaW5zdHJ1Y3Rpb25zVG90YWwiOjIsImJyYW5jaGVzQ292ZXJlZCI6MCwiYnJhbmNoZXNUb3RhbCI6MCwidW5jb3ZlcmVkSW5zdHJ1Y3Rpb25zIjpbXSwidW5jb3ZlcmVkQnJhbmNoT3V0Y29tZXMiOltdfX19DQo=",
+            "payloadUtf8Bytes": 313,
+            "wireUtf8Bytes": 314,
+            "sha256": "e6246bc3ed3dca91b2d3cb0e7620ac9057b7d7dc836e4107a8d97b16360698ee",
+            "parseError": null
+          },
+          "elapsedMilliseconds": 55.4102,
+          "errorCode": null,
+          "errorMessage": null
+        },
+        {
+          "event": "exchange",
+          "index": 3,
+          "atUtc": "2026-10-05T21:17:03.3118948+00:00",
+          "operation": "describe",
+          "outcome": "forwarded",
+          "requestDelivery": {
+            "state": "confirmed",
+            "attemptedUtf8Bytes": 41,
+            "confirmedUtf8Bytes": 41,
+            "completeLineConfirmed": true
+          },
+          "executionState": "response-observed",
+          "automaticRetry": "never; inspect authoritative stored state after any uncertain outcome",
+          "observedRuntimeResponse": null,
+          "request": {
+            "rawLine": "{\"word\":\"trial.success\",\"op\":\"describe\"}",
+            "canonical": "{\"op\":\"describe\",\"word\":\"trial.success\"}",
+            "wireBase64": "eyJ3b3JkIjoidHJpYWwuc3VjY2VzcyIsIm9wIjoiZGVzY3JpYmUifQo=",
+            "payloadUtf8Bytes": 40,
+            "wireUtf8Bytes": 41,
+            "sha256": "44c05dd95cb0d0694096b0153416423e8bf00fa51e2463bb35a4306c28333906"
+          },
+          "response": {
+            "source": "runtime",
+            "rawLine": "{\"ok\":true,\"kind\":\"describe\",\"text\":\"Description for trial.success.\",\"data\":{\"name\":\"trial.success\",\"inputs\":[\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"documentation\":\"\",\"id\":\"word_71656ee94c384000aef412d39021c2dd\",\"dependencies\":[\"add\"],\"transitiveDependencies\":[\"add\"],\"callers\":[],\"tests\":[\"basic\"],\"examples\":[],\"source\":\"dictionary.agent\",\"line\":1,\"kind\":\"word\",\"status\":\"persistent\",\"maturity\":\"project\",\"deprecated\":false,\"revision\":1,\"testCount\":1,\"exampleCount\":0,\"coverage\":{\"instructionsCovered\":2,\"instructionsTotal\":2,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[],\"status\":\"current\"}}}\r",
+            "canonical": "{\"data\":{\"callers\":[],\"coverage\":{\"branchesCovered\":0,\"branchesTotal\":0,\"instructionsCovered\":2,\"instructionsTotal\":2,\"status\":\"current\",\"uncoveredBranchOutcomes\":[],\"uncoveredInstructions\":[]},\"dependencies\":[\"add\"],\"deprecated\":false,\"documentation\":\"\",\"effects\":[],\"exampleCount\":0,\"examples\":[],\"id\":\"word_71656ee94c384000aef412d39021c2dd\",\"inputs\":[\"Int\"],\"kind\":\"word\",\"line\":1,\"maturity\":\"project\",\"name\":\"trial.success\",\"outputs\":[\"Int\"],\"revision\":1,\"source\":\"dictionary.agent\",\"status\":\"persistent\",\"testCount\":1,\"tests\":[\"basic\"],\"transitiveDependencies\":[\"add\"]},\"kind\":\"describe\",\"ok\":true,\"text\":\"Description for trial.success.\"}",
+            "wireBase64": "eyJvayI6dHJ1ZSwia2luZCI6ImRlc2NyaWJlIiwidGV4dCI6IkRlc2NyaXB0aW9uIGZvciB0cmlhbC5zdWNjZXNzLiIsImRhdGEiOnsibmFtZSI6InRyaWFsLnN1Y2Nlc3MiLCJpbnB1dHMiOlsiSW50Il0sIm91dHB1dHMiOlsiSW50Il0sImVmZmVjdHMiOltdLCJkb2N1bWVudGF0aW9uIjoiIiwiaWQiOiJ3b3JkXzcxNjU2ZWU5NGMzODQwMDBhZWY0MTJkMzkwMjFjMmRkIiwiZGVwZW5kZW5jaWVzIjpbImFkZCJdLCJ0cmFuc2l0aXZlRGVwZW5kZW5jaWVzIjpbImFkZCJdLCJjYWxsZXJzIjpbXSwidGVzdHMiOlsiYmFzaWMiXSwiZXhhbXBsZXMiOltdLCJzb3VyY2UiOiJkaWN0aW9uYXJ5LmFnZW50IiwibGluZSI6MSwia2luZCI6IndvcmQiLCJzdGF0dXMiOiJwZXJzaXN0ZW50IiwibWF0dXJpdHkiOiJwcm9qZWN0IiwiZGVwcmVjYXRlZCI6ZmFsc2UsInJldmlzaW9uIjoxLCJ0ZXN0Q291bnQiOjEsImV4YW1wbGVDb3VudCI6MCwiY292ZXJhZ2UiOnsiaW5zdHJ1Y3Rpb25zQ292ZXJlZCI6MiwiaW5zdHJ1Y3Rpb25zVG90YWwiOjIsImJyYW5jaGVzQ292ZXJlZCI6MCwiYnJhbmNoZXNUb3RhbCI6MCwidW5jb3ZlcmVkSW5zdHJ1Y3Rpb25zIjpbXSwidW5jb3ZlcmVkQnJhbmNoT3V0Y29tZXMiOltdLCJzdGF0dXMiOiJjdXJyZW50In19fQ0K",
+            "payloadUtf8Bytes": 644,
+            "wireUtf8Bytes": 645,
+            "sha256": "621c299926e3a9d12c92acea71b9b0bdc7fdeb4d7702d03759df5d55866cbadc",
+            "parseError": null
+          },
+          "elapsedMilliseconds": 7.2859,
+          "errorCode": null,
+          "errorMessage": null
+        },
+        {
+          "event": "session-end",
+          "finishedUtc": "2026-10-05T21:17:03.3260306+00:00",
+          "exchangeCount": 3,
+          "hostExitCode": 0,
+          "runtimeExitCode": 0,
+          "runtimeStderrPrefixBytes": 0,
+          "runtimeStderrTotalBytes": 0,
+          "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "runtimeStderrCaptureTruncated": false
+        }
+      ],
+      "traceEventEntriesOmitted": 0
+    },
+    {
+      "name": "malformed-denied",
+      "projectPath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\malformed-denied",
+      "tracePath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\reports\\trial-host-de50c709534f482e81d877a3e45f597a-malformed-denied.jsonl",
+      "runtimeDll": "D:\\a\\AgentLang\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+      "runtimeDllSha256": "798a0e97836efb6782fd256b6ee6127b36f3a5a23858ad7556d006fa7a953096",
+      "allowedOperations": [
+        "describe"
+      ],
+      "profile": "agentlang",
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMilliseconds": 2176.291,
+      "stdoutUtf8Bytes": 642,
+      "stderrUtf8Bytes": 0,
+      "responseCount": 2,
+      "responses": [
+        {
+          "ok": false,
+          "kind": "error",
+          "text": "Expected depth to be zero at the end of the JSON payload. There is an open JSON object or array that should be closed. LineNumber: 0 | BytePositionInLine: 6.",
+          "error": {
+            "code": "TRIAL_INVALID_JSON",
+            "message": "Expected depth to be zero at the end of the JSON payload. There is an open JSON object or array that should be closed. LineNumber: 0 | BytePositionInLine: 6."
+          }
+        },
+        {
+          "ok": false,
+          "kind": "error",
+          "text": "Operation is not in the trial host's allowed protocol operation set.",
+          "error": {
+            "code": "TRIAL_OPERATION_DENIED",
+            "message": "Operation is not in the trial host's allowed protocol operation set."
+          }
+        }
+      ],
+      "responseEntriesOmitted": 0,
+      "traceEventCount": 4,
+      "traceEvents": [
+        {
+          "event": "session-start",
+          "schemaVersion": 1,
+          "startedUtc": "2026-10-05T21:17:05.2496059+00:00",
+          "hostProcessId": 1704,
+          "runtimeProcessId": 6468,
+          "runtimeExecutable": "dotnet",
+          "processArchitecture": "x64",
+          "jobObjectLayout": {
+            "basicLimitInformationBytes": 64,
+            "basicLimitFlagsOffset": 16,
+            "ioCountersBytes": 48,
+            "extendedLimitInformationBytes": 144,
+            "extendedIoInfoOffset": 64,
+            "processMemoryLimitOffset": 112,
+            "jobMemoryLimitOffset": 120,
+            "peakProcessMemoryUsedOffset": 128,
+            "peakJobMemoryUsedOffset": 136
+          },
+          "cliDll": "D:\\a\\AgentLang\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+          "cliFiles": [
+            {
+              "name": "AgentLang.Cli.deps.json",
+              "sha256": "be2b5c552c88ae78e6cfd9f6ea223d1761afd2dd41d6a0bfa244f064ef099d80"
+            },
+            {
+              "name": "AgentLang.Cli.dll",
+              "sha256": "798a0e97836efb6782fd256b6ee6127b36f3a5a23858ad7556d006fa7a953096"
+            },
+            {
+              "name": "AgentLang.Cli.runtimeconfig.json",
+              "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+            },
+            {
+              "name": "AgentLang.Core.dll",
+              "sha256": "cf0bfbbaa4466ae49b665936d6bfd46e7503c514127fe782e94af6233147e991"
+            },
+            {
+              "name": "FSharp.Core.dll",
+              "sha256": "39b0b7f06c11bedd93f94b6f101fffd645f1c4437a5a6d3ee79259f855aeb11a"
+            }
+          ],
+          "projectPath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\malformed-denied",
+          "profile": "agentlang",
+          "allowedOperations": [
+            "describe"
+          ],
+          "additionalCliArguments": [],
+          "capabilities": [],
+          "limits": {
+            "maxRequestBytes": 262144,
+            "maxResponseBytes": 524288,
+            "exchangeTimeoutMilliseconds": 2000,
+            "maxExchanges": 100
+          },
+          "cleanup": "Windows job object kill-on-close plus explicit process cleanup"
+        },
+        {
+          "event": "exchange",
+          "index": 1,
+          "atUtc": "2026-10-05T21:17:05.3429161+00:00",
+          "operation": null,
+          "outcome": "malformed",
+          "requestDelivery": {
+            "state": "not-sent",
+            "attemptedUtf8Bytes": 0,
+            "confirmedUtf8Bytes": 0,
+            "completeLineConfirmed": false
+          },
+          "executionState": "not-executed",
+          "automaticRetry": "never; inspect authoritative stored state after any uncertain outcome",
+          "observedRuntimeResponse": null,
+          "request": {
+            "rawLine": "{\"op\":",
+            "canonical": null,
+            "wireBase64": "eyJvcCI6Cg==",
+            "payloadUtf8Bytes": 6,
+            "wireUtf8Bytes": 7,
+            "sha256": "32bf3f12d328634a071eba9d83cc1af4a9504b83efc3e677c5be6a1c77b3c1f1"
+          },
+          "response": {
+            "source": "host",
+            "rawLine": "{\"ok\":false,\"kind\":\"error\",\"text\":\"Expected depth to be zero at the end of the JSON payload. There is an open JSON object or array that should be closed. LineNumber: 0 | BytePositionInLine: 6.\",\"error\":{\"code\":\"TRIAL_INVALID_JSON\",\"message\":\"Expected depth to be zero at the end of the JSON payload. There is an open JSON object or array that should be closed. LineNumber: 0 | BytePositionInLine: 6.\"}}",
+            "canonical": "{\"error\":{\"code\":\"TRIAL_INVALID_JSON\",\"message\":\"Expected depth to be zero at the end of the JSON payload. There is an open JSON object or array that should be closed. LineNumber: 0 | BytePositionInLine: 6.\"},\"kind\":\"error\",\"ok\":false,\"text\":\"Expected depth to be zero at the end of the JSON payload. There is an open JSON object or array that should be closed. LineNumber: 0 | BytePositionInLine: 6.\"}",
+            "wireBase64": "eyJvayI6ZmFsc2UsImtpbmQiOiJlcnJvciIsInRleHQiOiJFeHBlY3RlZCBkZXB0aCB0byBiZSB6ZXJvIGF0IHRoZSBlbmQgb2YgdGhlIEpTT04gcGF5bG9hZC4gVGhlcmUgaXMgYW4gb3BlbiBKU09OIG9iamVjdCBvciBhcnJheSB0aGF0IHNob3VsZCBiZSBjbG9zZWQuIExpbmVOdW1iZXI6IDAgfCBCeXRlUG9zaXRpb25JbkxpbmU6IDYuIiwiZXJyb3IiOnsiY29kZSI6IlRSSUFMX0lOVkFMSURfSlNPTiIsIm1lc3NhZ2UiOiJFeHBlY3RlZCBkZXB0aCB0byBiZSB6ZXJvIGF0IHRoZSBlbmQgb2YgdGhlIEpTT04gcGF5bG9hZC4gVGhlcmUgaXMgYW4gb3BlbiBKU09OIG9iamVjdCBvciBhcnJheSB0aGF0IHNob3VsZCBiZSBjbG9zZWQuIExpbmVOdW1iZXI6IDAgfCBCeXRlUG9zaXRpb25JbkxpbmU6IDYuIn19Cg==",
+            "payloadUtf8Bytes": 402,
+            "wireUtf8Bytes": 403,
+            "sha256": "94dad5c11affb6c22951801c873088cb05195159455d786d81b2bfbf762ea316",
+            "parseError": null
+          },
+          "elapsedMilliseconds": 11.149,
+          "errorCode": "TRIAL_INVALID_JSON",
+          "errorMessage": "Expected depth to be zero at the end of the JSON payload. There is an open JSON object or array that should be closed. LineNumber: 0 | BytePositionInLine: 6."
+        },
+        {
+          "event": "exchange",
+          "index": 2,
+          "atUtc": "2026-10-05T21:17:05.3524873+00:00",
+          "operation": "task.commit",
+          "outcome": "denied",
+          "requestDelivery": {
+            "state": "not-sent",
+            "attemptedUtf8Bytes": 0,
+            "confirmedUtf8Bytes": 0,
+            "completeLineConfirmed": false
+          },
+          "executionState": "not-executed",
+          "automaticRetry": "never; inspect authoritative stored state after any uncertain outcome",
+          "observedRuntimeResponse": null,
+          "request": {
+            "rawLine": "{\"op\":\"task.commit\"}",
+            "canonical": "{\"op\":\"task.commit\"}",
+            "wireBase64": "eyJvcCI6InRhc2suY29tbWl0In0K",
+            "payloadUtf8Bytes": 20,
+            "wireUtf8Bytes": 21,
+            "sha256": "a29ee9d6f7d74bf5d44bdea44cb3e2afb1ca7b3a616c99dc4571fcb25653e19e"
+          },
+          "response": {
+            "source": "host",
+            "rawLine": "{\"ok\":false,\"kind\":\"error\",\"text\":\"Operation is not in the trial host\\u0027s allowed protocol operation set.\",\"error\":{\"code\":\"TRIAL_OPERATION_DENIED\",\"message\":\"Operation is not in the trial host\\u0027s allowed protocol operation set.\"}}",
+            "canonical": "{\"error\":{\"code\":\"TRIAL_OPERATION_DENIED\",\"message\":\"Operation is not in the trial host\\u0027s allowed protocol operation set.\"},\"kind\":\"error\",\"ok\":false,\"text\":\"Operation is not in the trial host\\u0027s allowed protocol operation set.\"}",
+            "wireBase64": "eyJvayI6ZmFsc2UsImtpbmQiOiJlcnJvciIsInRleHQiOiJPcGVyYXRpb24gaXMgbm90IGluIHRoZSB0cmlhbCBob3N0XHUwMDI3cyBhbGxvd2VkIHByb3RvY29sIG9wZXJhdGlvbiBzZXQuIiwiZXJyb3IiOnsiY29kZSI6IlRSSUFMX09QRVJBVElPTl9ERU5JRUQiLCJtZXNzYWdlIjoiT3BlcmF0aW9uIGlzIG5vdCBpbiB0aGUgdHJpYWwgaG9zdFx1MDAyN3MgYWxsb3dlZCBwcm90b2NvbCBvcGVyYXRpb24gc2V0LiJ9fQo=",
+            "payloadUtf8Bytes": 238,
+            "wireUtf8Bytes": 239,
+            "sha256": "adb8b4c640a528015b38ebe9ec8e6e3a9411c81ec8b49b1e22b9e957b0f2669c",
+            "parseError": null
+          },
+          "elapsedMilliseconds": 0.4572,
+          "errorCode": "TRIAL_OPERATION_DENIED",
+          "errorMessage": "Operation is not in the trial host's allowed protocol operation set."
+        },
+        {
+          "event": "session-end",
+          "finishedUtc": "2026-10-05T21:17:05.5768592+00:00",
+          "exchangeCount": 2,
+          "hostExitCode": 0,
+          "runtimeExitCode": 0,
+          "runtimeStderrPrefixBytes": 0,
+          "runtimeStderrTotalBytes": 0,
+          "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "runtimeStderrCaptureTruncated": false
+        }
+      ],
+      "traceEventEntriesOmitted": 0
+    },
+    {
+      "name": "oversized-request",
+      "projectPath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\oversized-request",
+      "tracePath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\reports\\trial-host-de50c709534f482e81d877a3e45f597a-oversized-request.jsonl",
+      "runtimeDll": "D:\\a\\AgentLang\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+      "runtimeDllSha256": "798a0e97836efb6782fd256b6ee6127b36f3a5a23858ad7556d006fa7a953096",
+      "allowedOperations": [
+        "describe"
+      ],
+      "profile": "agentlang",
+      "exitCode": 2,
+      "timedOut": false,
+      "durationMilliseconds": 1946.255,
+      "stdoutUtf8Bytes": 246,
+      "stderrUtf8Bytes": 0,
+      "responseCount": 1,
+      "responses": [
+        {
+          "ok": false,
+          "kind": "error",
+          "text": "The request line exceeded the configured byte limit; the session is closing.",
+          "error": {
+            "code": "TRIAL_REQUEST_TOO_LARGE",
+            "message": "The request line exceeded the configured byte limit; the session is closing."
+          }
+        }
+      ],
+      "responseEntriesOmitted": 0,
+      "traceEventCount": 3,
+      "traceEvents": [
+        {
+          "event": "session-start",
+          "schemaVersion": 1,
+          "startedUtc": "2026-10-05T21:17:07.3105064+00:00",
+          "hostProcessId": 1248,
+          "runtimeProcessId": 5344,
+          "runtimeExecutable": "dotnet",
+          "processArchitecture": "x64",
+          "jobObjectLayout": {
+            "basicLimitInformationBytes": 64,
+            "basicLimitFlagsOffset": 16,
+            "ioCountersBytes": 48,
+            "extendedLimitInformationBytes": 144,
+            "extendedIoInfoOffset": 64,
+            "processMemoryLimitOffset": 112,
+            "jobMemoryLimitOffset": 120,
+            "peakProcessMemoryUsedOffset": 128,
+            "peakJobMemoryUsedOffset": 136
+          },
+          "cliDll": "D:\\a\\AgentLang\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+          "cliFiles": [
+            {
+              "name": "AgentLang.Cli.deps.json",
+              "sha256": "be2b5c552c88ae78e6cfd9f6ea223d1761afd2dd41d6a0bfa244f064ef099d80"
+            },
+            {
+              "name": "AgentLang.Cli.dll",
+              "sha256": "798a0e97836efb6782fd256b6ee6127b36f3a5a23858ad7556d006fa7a953096"
+            },
+            {
+              "name": "AgentLang.Cli.runtimeconfig.json",
+              "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+            },
+            {
+              "name": "AgentLang.Core.dll",
+              "sha256": "cf0bfbbaa4466ae49b665936d6bfd46e7503c514127fe782e94af6233147e991"
+            },
+            {
+              "name": "FSharp.Core.dll",
+              "sha256": "39b0b7f06c11bedd93f94b6f101fffd645f1c4437a5a6d3ee79259f855aeb11a"
+            }
+          ],
+          "projectPath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\oversized-request",
+          "profile": "agentlang",
+          "allowedOperations": [
+            "describe"
+          ],
+          "additionalCliArguments": [],
+          "capabilities": [],
+          "limits": {
+            "maxRequestBytes": 64,
+            "maxResponseBytes": 524288,
+            "exchangeTimeoutMilliseconds": 2000,
+            "maxExchanges": 100
+          },
+          "cleanup": "Windows job object kill-on-close plus explicit process cleanup"
+        },
+        {
+          "event": "request-rejected",
+          "atUtc": "2026-10-05T21:17:07.3849423+00:00",
+          "code": "TRIAL_REQUEST_TOO_LARGE",
+          "maxRequestBytes": 64,
+          "observedPrefixBytes": 65,
+          "observedPrefixSha256": "0d3b1e0e5e4ade8154c1a48f58fdb3a60724ea94bf84a769d3e59cdbec6b2fb8",
+          "prefixBase64": "eyJ3b3JkIjoienp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6eno="
+        },
+        {
+          "event": "session-end",
+          "finishedUtc": "2026-10-05T21:17:07.5511837+00:00",
+          "exchangeCount": 0,
+          "hostExitCode": 2,
+          "runtimeExitCode": 0,
+          "runtimeStderrPrefixBytes": 0,
+          "runtimeStderrTotalBytes": 0,
+          "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "runtimeStderrCaptureTruncated": false
+        }
+      ],
+      "traceEventEntriesOmitted": 0
+    },
+    {
+      "name": "timeout-partial-response",
+      "projectPath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\timeout-partial-response",
+      "tracePath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\reports\\trial-host-de50c709534f482e81d877a3e45f597a-timeout-partial-response.jsonl",
+      "runtimeDll": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\fake-runtime-output\\FakeRuntime.dll",
+      "runtimeDllSha256": "f51858f62a377cbc73b8020e47dc619beb8124c12a598eaff69e23c493e2108c",
+      "allowedOperations": [
+        "fake.echo"
+      ],
+      "profile": "agentlang",
+      "exitCode": 124,
+      "timedOut": false,
+      "durationMilliseconds": 7033.837,
+      "stdoutUtf8Bytes": 467,
+      "stderrUtf8Bytes": 0,
+      "responseCount": 1,
+      "responses": [
+        {
+          "ok": false,
+          "kind": "error",
+          "text": "Request delivery and response did not both complete before the single exchange deadline. Execution outcome is uncertain; do not retry automatically, inspect persisted project state first.",
+          "error": {
+            "code": "TRIAL_EXCHANGE_TIMEOUT",
+            "message": "Request delivery and response did not both complete before the single exchange deadline. Execution outcome is uncertain; do not retry automatically, inspect persisted project state first."
+          }
+        }
+      ],
+      "responseEntriesOmitted": 0,
+      "traceEventCount": 3,
+      "traceEvents": [
+        {
+          "event": "session-start",
+          "schemaVersion": 1,
+          "startedUtc": "2026-10-05T21:17:16.9681114+00:00",
+          "hostProcessId": 7236,
+          "runtimeProcessId": 2992,
+          "runtimeExecutable": "dotnet",
+          "processArchitecture": "x64",
+          "jobObjectLayout": {
+            "basicLimitInformationBytes": 64,
+            "basicLimitFlagsOffset": 16,
+            "ioCountersBytes": 48,
+            "extendedLimitInformationBytes": 144,
+            "extendedIoInfoOffset": 64,
+            "processMemoryLimitOffset": 112,
+            "jobMemoryLimitOffset": 120,
+            "peakProcessMemoryUsedOffset": 128,
+            "peakJobMemoryUsedOffset": 136
+          },
+          "cliDll": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\fake-runtime-output\\FakeRuntime.dll",
+          "cliFiles": [
+            {
+              "name": "FakeRuntime.deps.json",
+              "sha256": "0ff1bdcaa1e0aec9542b462d5555495a075fd707be91bb5da237092db151518b"
+            },
+            {
+              "name": "FakeRuntime.dll",
+              "sha256": "f51858f62a377cbc73b8020e47dc619beb8124c12a598eaff69e23c493e2108c"
+            },
+            {
+              "name": "FakeRuntime.runtimeconfig.json",
+              "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+            }
+          ],
+          "projectPath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\timeout-partial-response",
+          "profile": "agentlang",
+          "allowedOperations": [
+            "fake.echo"
+          ],
+          "additionalCliArguments": [
+            "--fake-mode=partial"
+          ],
+          "capabilities": [],
+          "limits": {
+            "maxRequestBytes": 262144,
+            "maxResponseBytes": 524288,
+            "exchangeTimeoutMilliseconds": 4000,
+            "maxExchanges": 100
+          },
+          "cleanup": "Windows job object kill-on-close plus explicit process cleanup"
+        },
+        {
+          "event": "exchange",
+          "index": 1,
+          "atUtc": "2026-10-05T21:17:21.0562711+00:00",
+          "operation": "fake.echo",
+          "outcome": "timeout",
+          "requestDelivery": {
+            "state": "confirmed",
+            "attemptedUtf8Bytes": 19,
+            "confirmedUtf8Bytes": 19,
+            "completeLineConfirmed": true
+          },
+          "executionState": "uncertain",
+          "automaticRetry": "never; inspect authoritative stored state after any uncertain outcome",
+          "observedRuntimeResponse": {
+            "complete": false,
+            "validJson": null,
+            "utf8Bytes": 17,
+            "sha256": "7bb7654b358b82e3c1d5335fd72f0fd4c05c1223db38447716960a333050d8fc",
+            "base64": "eyJwYXJ0aWFsIjogICAgICA="
+          },
+          "request": {
+            "rawLine": "{\"op\":\"fake.echo\"}",
+            "canonical": "{\"op\":\"fake.echo\"}",
+            "wireBase64": "eyJvcCI6ImZha2UuZWNobyJ9Cg==",
+            "payloadUtf8Bytes": 18,
+            "wireUtf8Bytes": 19,
+            "sha256": "821ff3bfa133b1826cd79a482e6e4fce004cc857f0432b40b3bbf9170e8ea745"
+          },
+          "response": {
+            "source": "host",
+            "rawLine": "{\"ok\":false,\"kind\":\"error\",\"text\":\"Request delivery and response did not both complete before the single exchange deadline. Execution outcome is uncertain; do not retry automatically, inspect persisted project state first.\",\"error\":{\"code\":\"TRIAL_EXCHANGE_TIMEOUT\",\"message\":\"Request delivery and response did not both complete before the single exchange deadline. Execution outcome is uncertain; do not retry automatically, inspect persisted project state first.\"}}",
+            "canonical": "{\"error\":{\"code\":\"TRIAL_EXCHANGE_TIMEOUT\",\"message\":\"Request delivery and response did not both complete before the single exchange deadline. Execution outcome is uncertain; do not retry automatically, inspect persisted project state first.\"},\"kind\":\"error\",\"ok\":false,\"text\":\"Request delivery and response did not both complete before the single exchange deadline. Execution outcome is uncertain; do not retry automatically, inspect persisted project state first.\"}",
+            "wireBase64": "eyJvayI6ZmFsc2UsImtpbmQiOiJlcnJvciIsInRleHQiOiJSZXF1ZXN0IGRlbGl2ZXJ5IGFuZCByZXNwb25zZSBkaWQgbm90IGJvdGggY29tcGxldGUgYmVmb3JlIHRoZSBzaW5nbGUgZXhjaGFuZ2UgZGVhZGxpbmUuIEV4ZWN1dGlvbiBvdXRjb21lIGlzIHVuY2VydGFpbjsgZG8gbm90IHJldHJ5IGF1dG9tYXRpY2FsbHksIGluc3BlY3QgcGVyc2lzdGVkIHByb2plY3Qgc3RhdGUgZmlyc3QuIiwiZXJyb3IiOnsiY29kZSI6IlRSSUFMX0VYQ0hBTkdFX1RJTUVPVVQiLCJtZXNzYWdlIjoiUmVxdWVzdCBkZWxpdmVyeSBhbmQgcmVzcG9uc2UgZGlkIG5vdCBib3RoIGNvbXBsZXRlIGJlZm9yZSB0aGUgc2luZ2xlIGV4Y2hhbmdlIGRlYWRsaW5lLiBFeGVjdXRpb24gb3V0Y29tZSBpcyB1bmNlcnRhaW47IGRvIG5vdCByZXRyeSBhdXRvbWF0aWNhbGx5LCBpbnNwZWN0IHBlcnNpc3RlZCBwcm9qZWN0IHN0YXRlIGZpcnN0LiJ9fQo=",
+            "payloadUtf8Bytes": 466,
+            "wireUtf8Bytes": 467,
+            "sha256": "22f356027e45d83df020604ff2158f148740d75c1bcf75facbc300ad7588e45a",
+            "parseError": null
+          },
+          "elapsedMilliseconds": 4012.648,
+          "errorCode": "TRIAL_EXCHANGE_TIMEOUT",
+          "errorMessage": "Request delivery and response did not both complete before the single exchange deadline. Execution outcome is uncertain; do not retry automatically, inspect persisted project state first."
+        },
+        {
+          "event": "session-end",
+          "finishedUtc": "2026-10-05T21:17:22.3038656+00:00",
+          "exchangeCount": 1,
+          "hostExitCode": 124,
+          "runtimeExitCode": 0,
+          "runtimeStderrPrefixBytes": 0,
+          "runtimeStderrTotalBytes": 0,
+          "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "runtimeStderrCaptureTruncated": false
+        }
+      ],
+      "traceEventEntriesOmitted": 0
+    },
+    {
+      "name": "large-write-no-reader",
+      "projectPath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\large-write-no-reader",
+      "tracePath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\reports\\trial-host-de50c709534f482e81d877a3e45f597a-large-write-no-reader.jsonl",
+      "runtimeDll": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\fake-runtime-output\\FakeRuntime.dll",
+      "runtimeDllSha256": "f51858f62a377cbc73b8020e47dc619beb8124c12a598eaff69e23c493e2108c",
+      "allowedOperations": [
+        "fake.echo"
+      ],
+      "profile": "agentlang",
+      "exitCode": 124,
+      "timedOut": false,
+      "durationMilliseconds": 4846.734,
+      "stdoutUtf8Bytes": 467,
+      "stderrUtf8Bytes": 0,
+      "responseCount": 1,
+      "responses": [
+        {
+          "ok": false,
+          "kind": "error",
+          "text": "Request delivery and response did not both complete before the single exchange deadline. Execution outcome is uncertain; do not retry automatically, inspect persisted project state first.",
+          "error": {
+            "code": "TRIAL_EXCHANGE_TIMEOUT",
+            "message": "Request delivery and response did not both complete before the single exchange deadline. Execution outcome is uncertain; do not retry automatically, inspect persisted project state first."
+          }
+        }
+      ],
+      "responseEntriesOmitted": 0,
+      "traceEventCount": 3,
+      "traceEvents": [
+        {
+          "event": "session-start",
+          "schemaVersion": 1,
+          "startedUtc": "2026-10-05T21:17:24.1344816+00:00",
+          "hostProcessId": 6724,
+          "runtimeProcessId": 6692,
+          "runtimeExecutable": "dotnet",
+          "processArchitecture": "x64",
+          "jobObjectLayout": {
+            "basicLimitInformationBytes": 64,
+            "basicLimitFlagsOffset": 16,
+            "ioCountersBytes": 48,
+            "extendedLimitInformationBytes": 144,
+            "extendedIoInfoOffset": 64,
+            "processMemoryLimitOffset": 112,
+            "jobMemoryLimitOffset": 120,
+            "peakProcessMemoryUsedOffset": 128,
+            "peakJobMemoryUsedOffset": 136
+          },
+          "cliDll": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\fake-runtime-output\\FakeRuntime.dll",
+          "cliFiles": [
+            {
+              "name": "FakeRuntime.deps.json",
+              "sha256": "0ff1bdcaa1e0aec9542b462d5555495a075fd707be91bb5da237092db151518b"
+            },
+            {
+              "name": "FakeRuntime.dll",
+              "sha256": "f51858f62a377cbc73b8020e47dc619beb8124c12a598eaff69e23c493e2108c"
+            },
+            {
+              "name": "FakeRuntime.runtimeconfig.json",
+              "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+            }
+          ],
+          "projectPath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\large-write-no-reader",
+          "profile": "agentlang",
+          "allowedOperations": [
+            "fake.echo"
+          ],
+          "additionalCliArguments": [
+            "--fake-mode=no-read"
+          ],
+          "capabilities": [],
+          "limits": {
+            "maxRequestBytes": 300000,
+            "maxResponseBytes": 524288,
+            "exchangeTimeoutMilliseconds": 500,
+            "maxExchanges": 100
+          },
+          "cleanup": "Windows job object kill-on-close plus explicit process cleanup"
+        },
+        {
+          "truncated": true,
+          "originalJsonCharacters": 836228,
+          "jsonPrefix": "{\"event\":\"exchange\",\"index\":1,\"atUtc\":\"2026-10-05T21:17:25.1437301+00:00\",\"operation\":\"fake.echo\",\"outcome\":\"timeout\",\"requestDelivery\":{\"state\":\"uncertain\",\"attemptedUtf8Bytes\":250029,\"confirmedUtf8Bytes\":null,\"completeLineConfirmed\":false},\"executionState\":\"uncertain\",\"automaticRetry\":\"never; inspect authoritative stored state after any uncertain outcome\",\"observedRuntimeResponse\":{\"complete\":false,\"validJson\":null,\"utf8Bytes\":0,\"sha256\":\"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"base64\":\"\"},\"request\":{\"rawLine\":\"{\\\"op\\\":\\\"fake.echo\\\",\\\"data\\\":\\\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        },
+        {
+          "event": "session-end",
+          "finishedUtc": "2026-10-05T21:17:27.1751853+00:00",
+          "exchangeCount": 1,
+          "hostExitCode": 124,
+          "runtimeExitCode": -1,
+          "runtimeStderrPrefixBytes": 0,
+          "runtimeStderrTotalBytes": 0,
+          "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "runtimeStderrCaptureTruncated": false
+        }
+      ],
+      "traceEventEntriesOmitted": 0
+    },
+    {
+      "name": "oversized-response",
+      "projectPath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\oversized-response",
+      "tracePath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\reports\\trial-host-de50c709534f482e81d877a3e45f597a-oversized-response.jsonl",
+      "runtimeDll": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\fake-runtime-output\\FakeRuntime.dll",
+      "runtimeDllSha256": "f51858f62a377cbc73b8020e47dc619beb8124c12a598eaff69e23c493e2108c",
+      "allowedOperations": [
+        "fake.echo"
+      ],
+      "profile": "agentlang",
+      "exitCode": 2,
+      "timedOut": false,
+      "durationMilliseconds": 1726.509,
+      "stdoutUtf8Bytes": 411,
+      "stderrUtf8Bytes": 0,
+      "responseCount": 1,
+      "responses": [
+        {
+          "ok": false,
+          "kind": "error",
+          "text": "Runtime response exceeded the configured byte limit. The request may already have executed; do not retry automatically, inspect persisted project state first.",
+          "error": {
+            "code": "TRIAL_RESPONSE_TOO_LARGE",
+            "message": "Runtime response exceeded the configured byte limit. The request may already have executed; do not retry automatically, inspect persisted project state first."
+          }
+        }
+      ],
+      "responseEntriesOmitted": 0,
+      "traceEventCount": 3,
+      "traceEvents": [
+        {
+          "event": "session-start",
+          "schemaVersion": 1,
+          "startedUtc": "2026-10-05T21:17:28.8113758+00:00",
+          "hostProcessId": 8148,
+          "runtimeProcessId": 6328,
+          "runtimeExecutable": "dotnet",
+          "processArchitecture": "x64",
+          "jobObjectLayout": {
+            "basicLimitInformationBytes": 64,
+            "basicLimitFlagsOffset": 16,
+            "ioCountersBytes": 48,
+            "extendedLimitInformationBytes": 144,
+            "extendedIoInfoOffset": 64,
+            "processMemoryLimitOffset": 112,
+            "jobMemoryLimitOffset": 120,
+            "peakProcessMemoryUsedOffset": 128,
+            "peakJobMemoryUsedOffset": 136
+          },
+          "cliDll": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\fake-runtime-output\\FakeRuntime.dll",
+          "cliFiles": [
+            {
+              "name": "FakeRuntime.deps.json",
+              "sha256": "0ff1bdcaa1e0aec9542b462d5555495a075fd707be91bb5da237092db151518b"
+            },
+            {
+              "name": "FakeRuntime.dll",
+              "sha256": "f51858f62a377cbc73b8020e47dc619beb8124c12a598eaff69e23c493e2108c"
+            },
+            {
+              "name": "FakeRuntime.runtimeconfig.json",
+              "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+            }
+          ],
+          "projectPath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\oversized-response",
+          "profile": "agentlang",
+          "allowedOperations": [
+            "fake.echo"
+          ],
+          "additionalCliArguments": [
+            "--fake-mode=oversize"
+          ],
+          "capabilities": [],
+          "limits": {
+            "maxRequestBytes": 262144,
+            "maxResponseBytes": 64,
+            "exchangeTimeoutMilliseconds": 2000,
+            "maxExchanges": 100
+          },
+          "cleanup": "Windows job object kill-on-close plus explicit process cleanup"
+        },
+        {
+          "event": "exchange",
+          "index": 1,
+          "atUtc": "2026-10-05T21:17:28.9153011+00:00",
+          "operation": "fake.echo",
+          "outcome": "response-too-large",
+          "requestDelivery": {
+            "state": "confirmed",
+            "attemptedUtf8Bytes": 19,
+            "confirmedUtf8Bytes": 19,
+            "completeLineConfirmed": true
+          },
+          "executionState": "uncertain",
+          "automaticRetry": "never; inspect authoritative stored state after any uncertain outcome",
+          "observedRuntimeResponse": {
+            "complete": false,
+            "validJson": null,
+            "utf8Bytes": 65,
+            "sha256": "9537c5fdf120482f7d58d25e9ed583f52c02b4e304ea814db1633ad565aed7e9",
+            "base64": "eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHg="
+          },
+          "request": {
+            "rawLine": "{\"op\":\"fake.echo\"}",
+            "canonical": "{\"op\":\"fake.echo\"}",
+            "wireBase64": "eyJvcCI6ImZha2UuZWNobyJ9Cg==",
+            "payloadUtf8Bytes": 18,
+            "wireUtf8Bytes": 19,
+            "sha256": "821ff3bfa133b1826cd79a482e6e4fce004cc857f0432b40b3bbf9170e8ea745"
+          },
+          "response": {
+            "source": "host",
+            "rawLine": "{\"ok\":false,\"kind\":\"error\",\"text\":\"Runtime response exceeded the configured byte limit. The request may already have executed; do not retry automatically, inspect persisted project state first.\",\"error\":{\"code\":\"TRIAL_RESPONSE_TOO_LARGE\",\"message\":\"Runtime response exceeded the configured byte limit. The request may already have executed; do not retry automatically, inspect persisted project state first.\"}}",
+            "canonical": "{\"error\":{\"code\":\"TRIAL_RESPONSE_TOO_LARGE\",\"message\":\"Runtime response exceeded the configured byte limit. The request may already have executed; do not retry automatically, inspect persisted project state first.\"},\"kind\":\"error\",\"ok\":false,\"text\":\"Runtime response exceeded the configured byte limit. The request may already have executed; do not retry automatically, inspect persisted project state first.\"}",
+            "wireBase64": "eyJvayI6ZmFsc2UsImtpbmQiOiJlcnJvciIsInRleHQiOiJSdW50aW1lIHJlc3BvbnNlIGV4Y2VlZGVkIHRoZSBjb25maWd1cmVkIGJ5dGUgbGltaXQuIFRoZSByZXF1ZXN0IG1heSBhbHJlYWR5IGhhdmUgZXhlY3V0ZWQ7IGRvIG5vdCByZXRyeSBhdXRvbWF0aWNhbGx5LCBpbnNwZWN0IHBlcnNpc3RlZCBwcm9qZWN0IHN0YXRlIGZpcnN0LiIsImVycm9yIjp7ImNvZGUiOiJUUklBTF9SRVNQT05TRV9UT09fTEFSR0UiLCJtZXNzYWdlIjoiUnVudGltZSByZXNwb25zZSBleGNlZWRlZCB0aGUgY29uZmlndXJlZCBieXRlIGxpbWl0LiBUaGUgcmVxdWVzdCBtYXkgYWxyZWFkeSBoYXZlIGV4ZWN1dGVkOyBkbyBub3QgcmV0cnkgYXV0b21hdGljYWxseSwgaW5zcGVjdCBwZXJzaXN0ZWQgcHJvamVjdCBzdGF0ZSBmaXJzdC4ifX0K",
+            "payloadUtf8Bytes": 410,
+            "wireUtf8Bytes": 411,
+            "sha256": "6a6240a3e3059cfd7f08074baea09e81fe7f3446667c45b007bd711cad1db11f",
+            "parseError": "observedPrefixBytes=65; sha256=9537c5fdf120482f7d58d25e9ed583f52c02b4e304ea814db1633ad565aed7e9"
+          },
+          "elapsedMilliseconds": 29.2338,
+          "errorCode": "TRIAL_RESPONSE_TOO_LARGE",
+          "errorMessage": "Runtime response exceeded the configured byte limit. The request may already have executed; do not retry automatically, inspect persisted project state first."
+        },
+        {
+          "event": "session-end",
+          "finishedUtc": "2026-10-05T21:17:28.9234621+00:00",
+          "exchangeCount": 1,
+          "hostExitCode": 2,
+          "runtimeExitCode": 0,
+          "runtimeStderrPrefixBytes": 0,
+          "runtimeStderrTotalBytes": 0,
+          "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "runtimeStderrCaptureTruncated": false
+        }
+      ],
+      "traceEventEntriesOmitted": 0
+    },
+    {
+      "name": "invalid-runtime-json",
+      "projectPath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\invalid-runtime-json",
+      "tracePath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\reports\\trial-host-de50c709534f482e81d877a3e45f597a-invalid-runtime-json.jsonl",
+      "runtimeDll": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\fake-runtime-output\\FakeRuntime.dll",
+      "runtimeDllSha256": "f51858f62a377cbc73b8020e47dc619beb8124c12a598eaff69e23c493e2108c",
+      "allowedOperations": [
+        "fake.echo"
+      ],
+      "profile": "agentlang",
+      "exitCode": 4,
+      "timedOut": false,
+      "durationMilliseconds": 1699.661,
+      "stdoutUtf8Bytes": 419,
+      "stderrUtf8Bytes": 0,
+      "responseCount": 1,
+      "responses": [
+        {
+          "ok": false,
+          "kind": "error",
+          "text": "The runtime returned a complete line that is not valid JSON. Execution outcome is uncertain; do not retry automatically, inspect persisted project state first.",
+          "error": {
+            "code": "TRIAL_INVALID_RUNTIME_RESPONSE",
+            "message": "The runtime returned a complete line that is not valid JSON. Execution outcome is uncertain; do not retry automatically, inspect persisted project state first."
+          }
+        }
+      ],
+      "responseEntriesOmitted": 0,
+      "traceEventCount": 3,
+      "traceEvents": [
+        {
+          "event": "session-start",
+          "schemaVersion": 1,
+          "startedUtc": "2026-10-05T21:17:30.5082859+00:00",
+          "hostProcessId": 632,
+          "runtimeProcessId": 2488,
+          "runtimeExecutable": "dotnet",
+          "processArchitecture": "x64",
+          "jobObjectLayout": {
+            "basicLimitInformationBytes": 64,
+            "basicLimitFlagsOffset": 16,
+            "ioCountersBytes": 48,
+            "extendedLimitInformationBytes": 144,
+            "extendedIoInfoOffset": 64,
+            "processMemoryLimitOffset": 112,
+            "jobMemoryLimitOffset": 120,
+            "peakProcessMemoryUsedOffset": 128,
+            "peakJobMemoryUsedOffset": 136
+          },
+          "cliDll": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\fake-runtime-output\\FakeRuntime.dll",
+          "cliFiles": [
+            {
+              "name": "FakeRuntime.deps.json",
+              "sha256": "0ff1bdcaa1e0aec9542b462d5555495a075fd707be91bb5da237092db151518b"
+            },
+            {
+              "name": "FakeRuntime.dll",
+              "sha256": "f51858f62a377cbc73b8020e47dc619beb8124c12a598eaff69e23c493e2108c"
+            },
+            {
+              "name": "FakeRuntime.runtimeconfig.json",
+              "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+            }
+          ],
+          "projectPath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\invalid-runtime-json",
+          "profile": "agentlang",
+          "allowedOperations": [
+            "fake.echo"
+          ],
+          "additionalCliArguments": [
+            "--fake-mode=invalid-json"
+          ],
+          "capabilities": [],
+          "limits": {
+            "maxRequestBytes": 262144,
+            "maxResponseBytes": 524288,
+            "exchangeTimeoutMilliseconds": 2000,
+            "maxExchanges": 100
+          },
+          "cleanup": "Windows job object kill-on-close plus explicit process cleanup"
+        },
+        {
+          "event": "exchange",
+          "index": 1,
+          "atUtc": "2026-10-05T21:17:30.6107702+00:00",
+          "operation": "fake.echo",
+          "outcome": "invalid-runtime-response",
+          "requestDelivery": {
+            "state": "confirmed",
+            "attemptedUtf8Bytes": 19,
+            "confirmedUtf8Bytes": 19,
+            "completeLineConfirmed": true
+          },
+          "executionState": "uncertain",
+          "automaticRetry": "never; inspect authoritative stored state after any uncertain outcome",
+          "observedRuntimeResponse": {
+            "complete": true,
+            "validJson": false,
+            "utf8Bytes": 8,
+            "sha256": "0c21a879c732a67910d80988df4919d794f6a070aab610ef865032a28046b021",
+            "base64": "bm90LWpzb24="
+          },
+          "request": {
+            "rawLine": "{\"op\":\"fake.echo\"}",
+            "canonical": "{\"op\":\"fake.echo\"}",
+            "wireBase64": "eyJvcCI6ImZha2UuZWNobyJ9Cg==",
+            "payloadUtf8Bytes": 18,
+            "wireUtf8Bytes": 19,
+            "sha256": "821ff3bfa133b1826cd79a482e6e4fce004cc857f0432b40b3bbf9170e8ea745"
+          },
+          "response": {
+            "source": "host",
+            "rawLine": "{\"ok\":false,\"kind\":\"error\",\"text\":\"The runtime returned a complete line that is not valid JSON. Execution outcome is uncertain; do not retry automatically, inspect persisted project state first.\",\"error\":{\"code\":\"TRIAL_INVALID_RUNTIME_RESPONSE\",\"message\":\"The runtime returned a complete line that is not valid JSON. Execution outcome is uncertain; do not retry automatically, inspect persisted project state first.\"}}",
+            "canonical": "{\"error\":{\"code\":\"TRIAL_INVALID_RUNTIME_RESPONSE\",\"message\":\"The runtime returned a complete line that is not valid JSON. Execution outcome is uncertain; do not retry automatically, inspect persisted project state first.\"},\"kind\":\"error\",\"ok\":false,\"text\":\"The runtime returned a complete line that is not valid JSON. Execution outcome is uncertain; do not retry automatically, inspect persisted project state first.\"}",
+            "wireBase64": "eyJvayI6ZmFsc2UsImtpbmQiOiJlcnJvciIsInRleHQiOiJUaGUgcnVudGltZSByZXR1cm5lZCBhIGNvbXBsZXRlIGxpbmUgdGhhdCBpcyBub3QgdmFsaWQgSlNPTi4gRXhlY3V0aW9uIG91dGNvbWUgaXMgdW5jZXJ0YWluOyBkbyBub3QgcmV0cnkgYXV0b21hdGljYWxseSwgaW5zcGVjdCBwZXJzaXN0ZWQgcHJvamVjdCBzdGF0ZSBmaXJzdC4iLCJlcnJvciI6eyJjb2RlIjoiVFJJQUxfSU5WQUxJRF9SVU5USU1FX1JFU1BPTlNFIiwibWVzc2FnZSI6IlRoZSBydW50aW1lIHJldHVybmVkIGEgY29tcGxldGUgbGluZSB0aGF0IGlzIG5vdCB2YWxpZCBKU09OLiBFeGVjdXRpb24gb3V0Y29tZSBpcyB1bmNlcnRhaW47IGRvIG5vdCByZXRyeSBhdXRvbWF0aWNhbGx5LCBpbnNwZWN0IHBlcnNpc3RlZCBwcm9qZWN0IHN0YXRlIGZpcnN0LiJ9fQo=",
+            "payloadUtf8Bytes": 418,
+            "wireUtf8Bytes": 419,
+            "sha256": "60014c7ef31679b1a491ed170337c12144a33a9283d36d84c39bc5882769e6c1",
+            "parseError": "'not-json' is an invalid JSON literal. Expected the literal 'null'. LineNumber: 0 | BytePositionInLine: 1."
+          },
+          "elapsedMilliseconds": 27.1463,
+          "errorCode": "TRIAL_INVALID_RUNTIME_RESPONSE",
+          "errorMessage": "The runtime returned a complete line that is not valid JSON. Execution outcome is uncertain; do not retry automatically, inspect persisted project state first."
+        },
+        {
+          "event": "session-end",
+          "finishedUtc": "2026-10-05T21:17:30.6190035+00:00",
+          "exchangeCount": 1,
+          "hostExitCode": 4,
+          "runtimeExitCode": 0,
+          "runtimeStderrPrefixBytes": 0,
+          "runtimeStderrTotalBytes": 0,
+          "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "runtimeStderrCaptureTruncated": false
+        }
+      ],
+      "traceEventEntriesOmitted": 0
+    },
+    {
+      "name": "child-exits-after-request",
+      "projectPath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\child-exits-after-request",
+      "tracePath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\reports\\trial-host-de50c709534f482e81d877a3e45f597a-child-exits-after-request.jsonl",
+      "runtimeDll": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\fake-runtime-output\\FakeRuntime.dll",
+      "runtimeDllSha256": "f51858f62a377cbc73b8020e47dc619beb8124c12a598eaff69e23c493e2108c",
+      "allowedOperations": [
+        "fake.echo"
+      ],
+      "profile": "agentlang",
+      "exitCode": 3,
+      "timedOut": false,
+      "durationMilliseconds": 1706.818,
+      "stdoutUtf8Bytes": 407,
+      "stderrUtf8Bytes": 0,
+      "responseCount": 1,
+      "responses": [
+        {
+          "ok": false,
+          "kind": "error",
+          "text": "The runtime exited without a complete JSONL response. The request may already have executed; do not retry automatically, inspect persisted project state first.",
+          "error": {
+            "code": "TRIAL_CHILD_EXITED",
+            "message": "The runtime exited without a complete JSONL response. The request may already have executed; do not retry automatically, inspect persisted project state first."
+          }
+        }
+      ],
+      "responseEntriesOmitted": 0,
+      "traceEventCount": 3,
+      "traceEvents": [
+        {
+          "event": "session-start",
+          "schemaVersion": 1,
+          "startedUtc": "2026-10-05T21:17:32.2269594+00:00",
+          "hostProcessId": 672,
+          "runtimeProcessId": 7864,
+          "runtimeExecutable": "dotnet",
+          "processArchitecture": "x64",
+          "jobObjectLayout": {
+            "basicLimitInformationBytes": 64,
+            "basicLimitFlagsOffset": 16,
+            "ioCountersBytes": 48,
+            "extendedLimitInformationBytes": 144,
+            "extendedIoInfoOffset": 64,
+            "processMemoryLimitOffset": 112,
+            "jobMemoryLimitOffset": 120,
+            "peakProcessMemoryUsedOffset": 128,
+            "peakJobMemoryUsedOffset": 136
+          },
+          "cliDll": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\fake-runtime-output\\FakeRuntime.dll",
+          "cliFiles": [
+            {
+              "name": "FakeRuntime.deps.json",
+              "sha256": "0ff1bdcaa1e0aec9542b462d5555495a075fd707be91bb5da237092db151518b"
+            },
+            {
+              "name": "FakeRuntime.dll",
+              "sha256": "f51858f62a377cbc73b8020e47dc619beb8124c12a598eaff69e23c493e2108c"
+            },
+            {
+              "name": "FakeRuntime.runtimeconfig.json",
+              "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+            }
+          ],
+          "projectPath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\child-exits-after-request",
+          "profile": "agentlang",
+          "allowedOperations": [
+            "fake.echo"
+          ],
+          "additionalCliArguments": [
+            "--fake-mode=exit-after-read"
+          ],
+          "capabilities": [],
+          "limits": {
+            "maxRequestBytes": 262144,
+            "maxResponseBytes": 524288,
+            "exchangeTimeoutMilliseconds": 2000,
+            "maxExchanges": 100
+          },
+          "cleanup": "Windows job object kill-on-close plus explicit process cleanup"
+        },
+        {
+          "event": "exchange",
+          "index": 1,
+          "atUtc": "2026-10-05T21:17:32.3310814+00:00",
+          "operation": "fake.echo",
+          "outcome": "child-exited",
+          "requestDelivery": {
+            "state": "confirmed",
+            "attemptedUtf8Bytes": 19,
+            "confirmedUtf8Bytes": 19,
+            "completeLineConfirmed": true
+          },
+          "executionState": "uncertain",
+          "automaticRetry": "never; inspect authoritative stored state after any uncertain outcome",
+          "observedRuntimeResponse": {
+            "complete": false,
+            "validJson": null,
+            "utf8Bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "base64": ""
+          },
+          "request": {
+            "rawLine": "{\"op\":\"fake.echo\"}",
+            "canonical": "{\"op\":\"fake.echo\"}",
+            "wireBase64": "eyJvcCI6ImZha2UuZWNobyJ9Cg==",
+            "payloadUtf8Bytes": 18,
+            "wireUtf8Bytes": 19,
+            "sha256": "821ff3bfa133b1826cd79a482e6e4fce004cc857f0432b40b3bbf9170e8ea745"
+          },
+          "response": {
+            "source": "host",
+            "rawLine": "{\"ok\":false,\"kind\":\"error\",\"text\":\"The runtime exited without a complete JSONL response. The request may already have executed; do not retry automatically, inspect persisted project state first.\",\"error\":{\"code\":\"TRIAL_CHILD_EXITED\",\"message\":\"The runtime exited without a complete JSONL response. The request may already have executed; do not retry automatically, inspect persisted project state first.\"}}",
+            "canonical": "{\"error\":{\"code\":\"TRIAL_CHILD_EXITED\",\"message\":\"The runtime exited without a complete JSONL response. The request may already have executed; do not retry automatically, inspect persisted project state first.\"},\"kind\":\"error\",\"ok\":false,\"text\":\"The runtime exited without a complete JSONL response. The request may already have executed; do not retry automatically, inspect persisted project state first.\"}",
+            "wireBase64": "eyJvayI6ZmFsc2UsImtpbmQiOiJlcnJvciIsInRleHQiOiJUaGUgcnVudGltZSBleGl0ZWQgd2l0aG91dCBhIGNvbXBsZXRlIEpTT05MIHJlc3BvbnNlLiBUaGUgcmVxdWVzdCBtYXkgYWxyZWFkeSBoYXZlIGV4ZWN1dGVkOyBkbyBub3QgcmV0cnkgYXV0b21hdGljYWxseSwgaW5zcGVjdCBwZXJzaXN0ZWQgcHJvamVjdCBzdGF0ZSBmaXJzdC4iLCJlcnJvciI6eyJjb2RlIjoiVFJJQUxfQ0hJTERfRVhJVEVEIiwibWVzc2FnZSI6IlRoZSBydW50aW1lIGV4aXRlZCB3aXRob3V0IGEgY29tcGxldGUgSlNPTkwgcmVzcG9uc2UuIFRoZSByZXF1ZXN0IG1heSBhbHJlYWR5IGhhdmUgZXhlY3V0ZWQ7IGRvIG5vdCByZXRyeSBhdXRvbWF0aWNhbGx5LCBpbnNwZWN0IHBlcnNpc3RlZCBwcm9qZWN0IHN0YXRlIGZpcnN0LiJ9fQo=",
+            "payloadUtf8Bytes": 406,
+            "wireUtf8Bytes": 407,
+            "sha256": "5ff28a7a73dac56b684fa9047d374bb80530cf9cbc43dd79996512d0c7209a94",
+            "parseError": null
+          },
+          "elapsedMilliseconds": 28.7144,
+          "errorCode": "TRIAL_CHILD_EXITED",
+          "errorMessage": "The runtime exited without a complete JSONL response. The request may already have executed; do not retry automatically, inspect persisted project state first."
+        },
+        {
+          "event": "session-end",
+          "finishedUtc": "2026-10-05T21:17:32.3388777+00:00",
+          "exchangeCount": 1,
+          "hostExitCode": 3,
+          "runtimeExitCode": 42,
+          "runtimeStderrPrefixBytes": 0,
+          "runtimeStderrTotalBytes": 0,
+          "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "runtimeStderrCaptureTruncated": false
+        }
+      ],
+      "traceEventEntriesOmitted": 0
+    },
+    {
+      "name": "conventional-profile-args",
+      "projectPath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\conventional-profile-args",
+      "tracePath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\reports\\trial-host-de50c709534f482e81d877a3e45f597a-conventional-profile-args.jsonl",
+      "runtimeDll": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\fake-runtime-output\\FakeRuntime.dll",
+      "runtimeDllSha256": "f51858f62a377cbc73b8020e47dc619beb8124c12a598eaff69e23c493e2108c",
+      "allowedOperations": [
+        "fake.echo"
+      ],
+      "profile": "conventional",
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMilliseconds": 1720.236,
+      "stdoutUtf8Bytes": 235,
+      "stderrUtf8Bytes": 0,
+      "responseCount": 1,
+      "responses": [
+        {
+          "ok": true,
+          "hasClock": false,
+          "hasAllow": false,
+          "args": [
+            "--project",
+            "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\conventional-profile-args",
+            "--fake-mode=inspect-args",
+            "--jsonl"
+          ]
+        }
+      ],
+      "responseEntriesOmitted": 0,
+      "traceEventCount": 3,
+      "traceEvents": [
+        {
+          "event": "session-start",
+          "schemaVersion": 1,
+          "startedUtc": "2026-10-05T21:17:33.9182861+00:00",
+          "hostProcessId": 4512,
+          "runtimeProcessId": 7268,
+          "runtimeExecutable": "dotnet",
+          "processArchitecture": "x64",
+          "jobObjectLayout": {
+            "basicLimitInformationBytes": 64,
+            "basicLimitFlagsOffset": 16,
+            "ioCountersBytes": 48,
+            "extendedLimitInformationBytes": 144,
+            "extendedIoInfoOffset": 64,
+            "processMemoryLimitOffset": 112,
+            "jobMemoryLimitOffset": 120,
+            "peakProcessMemoryUsedOffset": 128,
+            "peakJobMemoryUsedOffset": 136
+          },
+          "cliDll": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\fake-runtime-output\\FakeRuntime.dll",
+          "cliFiles": [
+            {
+              "name": "FakeRuntime.deps.json",
+              "sha256": "0ff1bdcaa1e0aec9542b462d5555495a075fd707be91bb5da237092db151518b"
+            },
+            {
+              "name": "FakeRuntime.dll",
+              "sha256": "f51858f62a377cbc73b8020e47dc619beb8124c12a598eaff69e23c493e2108c"
+            },
+            {
+              "name": "FakeRuntime.runtimeconfig.json",
+              "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+            }
+          ],
+          "projectPath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\conventional-profile-args",
+          "profile": "conventional",
+          "allowedOperations": [
+            "fake.echo"
+          ],
+          "additionalCliArguments": [
+            "--fake-mode=inspect-args"
+          ],
+          "capabilities": [],
+          "limits": {
+            "maxRequestBytes": 262144,
+            "maxResponseBytes": 524288,
+            "exchangeTimeoutMilliseconds": 2000,
+            "maxExchanges": 100
+          },
+          "cleanup": "Windows job object kill-on-close plus explicit process cleanup"
+        },
+        {
+          "event": "exchange",
+          "index": 1,
+          "atUtc": "2026-10-05T21:17:34.0534838+00:00",
+          "operation": "fake.echo",
+          "outcome": "forwarded",
+          "requestDelivery": {
+            "state": "confirmed",
+            "attemptedUtf8Bytes": 19,
+            "confirmedUtf8Bytes": 19,
+            "completeLineConfirmed": true
+          },
+          "executionState": "response-observed",
+          "automaticRetry": "never; inspect authoritative stored state after any uncertain outcome",
+          "observedRuntimeResponse": null,
+          "request": {
+            "rawLine": "{\"op\":\"fake.echo\"}",
+            "canonical": "{\"op\":\"fake.echo\"}",
+            "wireBase64": "eyJvcCI6ImZha2UuZWNobyJ9Cg==",
+            "payloadUtf8Bytes": 18,
+            "wireUtf8Bytes": 19,
+            "sha256": "821ff3bfa133b1826cd79a482e6e4fce004cc857f0432b40b3bbf9170e8ea745"
+          },
+          "response": {
+            "source": "runtime",
+            "rawLine": "{\"ok\":true,\"hasClock\":false,\"hasAllow\":false,\"args\":[\"--project\",\"D:\\\\a\\\\AgentLang\\\\AgentLang\\\\.agentlang\\\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\\\conventional-profile-args\",\"--fake-mode=inspect-args\",\"--jsonl\"]}\r",
+            "canonical": "{\"args\":[\"--project\",\"D:\\\\a\\\\AgentLang\\\\AgentLang\\\\.agentlang\\\\subagent-host-verification-de50c709534f482e81d877a3e45f597a\\\\conventional-profile-args\",\"--fake-mode=inspect-args\",\"--jsonl\"],\"hasAllow\":false,\"hasClock\":false,\"ok\":true}",
+            "wireBase64": "eyJvayI6dHJ1ZSwiaGFzQ2xvY2siOmZhbHNlLCJoYXNBbGxvdyI6ZmFsc2UsImFyZ3MiOlsiLS1wcm9qZWN0IiwiRDpcXGFcXEFnZW50TGFuZ1xcQWdlbnRMYW5nXFwuYWdlbnRsYW5nXFxzdWJhZ2VudC1ob3N0LXZlcmlmaWNhdGlvbi1kZTUwYzcwOTUzNGY0ODJlODFkODc3YTNlNDVmNTk3YVxcY29udmVudGlvbmFsLXByb2ZpbGUtYXJncyIsIi0tZmFrZS1tb2RlPWluc3BlY3QtYXJncyIsIi0tanNvbmwiXX0NCg==",
+            "payloadUtf8Bytes": 234,
+            "wireUtf8Bytes": 235,
+            "sha256": "450583f79bd3be85114ebfb7da6d889c9370d1d99c211688dc5872c35ef82d14",
+            "parseError": null
+          },
+          "elapsedMilliseconds": 58.2463,
+          "errorCode": null,
+          "errorMessage": null
+        },
+        {
+          "event": "session-end",
+          "finishedUtc": "2026-10-05T21:17:34.0635507+00:00",
+          "exchangeCount": 1,
+          "hostExitCode": 0,
+          "runtimeExitCode": 0,
+          "runtimeStderrPrefixBytes": 0,
+          "runtimeStderrTotalBytes": 0,
+          "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "runtimeStderrCaptureTruncated": false
+        }
+      ],
+      "traceEventEntriesOmitted": 0
+    }
+  ],
+  "limitations": [
+    "This wrapper verifies transport and persistence mechanics; it does not run a model or measure model turns, tokens, or context windows.",
+    "A requested protocol whitelist is enforced at this broker only. External agents can have other host tools unless the surrounding platform restricts them.",
+    "Runtime child processes are not an OS sandbox. The wrapper launches only a host-selected DLL, project path, profile, and argument list.",
+    "Any request with uncertain delivery or response has an unknown execution result; the operator must inspect authoritative stored state before deciding what to do next."
+  ]
+}
