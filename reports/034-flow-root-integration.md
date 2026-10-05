@@ -59,3 +59,19 @@ Saved [full local evidence](evidence/034-flow-root-validation.json) plus adjacen
 Final refinement retained the existing verified semantic IR and primitive registry. Exact root calls/callbacks use explicit source representations and deterministic lookup; ordinary short-name ambiguity remains. Root-qualified callbacks cannot select a namespace alternative to repair types, output arity or denied effects. All new AST consumers and callback metadata fixtures were updated, including lint and authored cases. The change is an additive pre-durable Flow syntax-version-1 extension; Runtime/protocol remain unchanged.
 
 Complete-project signature catalogs/lowering/call bindings and durable/default integration remain the next required migration work. The full PRD remains active.
+
+## Committed CI and publication evidence
+
+[CI run 37378108610](https://github.com/benwmaddox/AgentLang/actions/runs/37378108610)
+passed on exact source commit `c0b33dcb2b8bb1bb6656cc1e94cb5c23539b8a0f`.
+Downloaded evidence identifies a clean checkout, Release configuration and all
+24 checks with exit code zero. Saved [run identity](evidence/034-ci-run.json),
+[validation](evidence/034-ci-validation.json) and its four adjacent reports.
+This is committed source evidence, separate from the earlier dirty local gate.
+
+The subsequent memory-research commit `507b07a` adds only documentation and its
+assessment report. The publication update saves CI evidence; executable source,
+tests, scripts and workflows have no difference from the tested source commit.
+Private visibility and fast-forward ancestry are checked before pushing these
+updates to prototype/main. A new post-publication CI run is separate evidence
+and is not claimed by this section.
