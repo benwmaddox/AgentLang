@@ -1,0 +1,7 @@
+{
+  "chunk_id": "f610f0",
+  "wall_time_seconds": 2.290011,
+  "exit_code": 1,
+  "original_token_count": 271,
+  "output": "D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs(1493,86): error FS0001: This expression was expected to have type\u001d    'TestExpectation'    \u001dbut here has type\u001d    'Literal' [D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\AgentLang.Flow.Tests.fsproj]\r\nD:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs(1568,17): error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved. [D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\AgentLang.Flow.Tests.fsproj]\r\nD:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs(1571,21): error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved. [D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\AgentLang.Flow.Tests.fsproj]\r\n\r\nThe build failed. Fix the build errors and run again.\r\n"
+}

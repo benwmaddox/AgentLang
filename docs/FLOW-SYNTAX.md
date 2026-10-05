@@ -54,6 +54,42 @@ isolated-expression positions still require exactly one output. Multi-output
 calls never spread implicitly. An effect-only statement should call a word
 whose signature declares the single output `Unit`.
 
+Standalone Flow tests and examples use the same expression syntax and have an
+explicit terminal expectation:
+
+```text
+test customer.renew/basic-success {
+    customer::renew(customer::example-eligible())
+    => true
+}
+
+test customer.renew/value-expectation {
+    customer::balance(customer::example-premium())
+    => value money::from-cents(9000)
+}
+
+test customer.renew/denied {
+    customer::renew(customer::example-ineligible())
+    => error RENEWAL_NOT_ALLOWED
+}
+
+example invoice.total/basic {
+    invoice::total(invoice::example-small())
+    => 42.50
+}
+```
+
+The slash separates the canonical dotted owner name from the case name. A
+test accepts a literal, a stable runtime error code, or a separately compiled
+pure value expression; an example accepts a literal only. The actual test body
+must produce one value for literal and value-expression assertions, and the
+expected expression must produce the same closed type. Actual and expected
+bodies retain separate executable traces, source origins, and coverage credit.
+The Flow parser stops the top-level body at `=>`; nested match-arm `=>` tokens
+remain part of the nested expression. `FlowParser.parseTest` and
+`FlowParser.parseExample` parse these as standalone source objects, with
+deterministic renderers on `FlowSource`.
+
 `map`, `filter`, and `each` also accept one static callback reference:
 
 ```text
@@ -153,12 +189,13 @@ into an unbounded intermediate collection. The same structural check runs at
 public rendering and lowering entry points, so host-built Flow ASTs receive
 both bounds before any recursive traversal too.
 
-`FlowParser.parseWord` and `FlowParser.parseExpression` are explicit entry
-points. A Flow parse error never invokes the legacy parser. The source renderer
-is deterministic, but canonical Flow text is currently inspection/test
-metadata, not a storage format. In particular, generated lexical `Scope`
-operations are internal lowered expressions and are not added to the legacy
-source parser. Durable source, test/example integration, rename, reload, and
+`FlowParser.parseWord`, `FlowParser.parseExpression`, `FlowParser.parseTest`,
+and `FlowParser.parseExample` are explicit entry points. A Flow parse error
+never invokes the legacy parser. The source renderer is deterministic, but
+canonical Flow text is currently inspection/test metadata, not a storage
+format. Standalone test/example parsing, lowering, and compilation exist in
+Core; generated lexical `Scope` operations remain internal lowered
+expressions. Durable source, Runtime attachment dispatch, rename, reload, and
 protocol cutover remain later migration work.
 
 Focused checks are run with:

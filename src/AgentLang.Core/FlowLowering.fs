@@ -25,6 +25,20 @@ module FlowLowering =
           Program: VerifiedIrProgram
           SiteOrigins: Map<SourceSiteId, SourceSpan> }
 
+    type CompiledTest =
+        { Lowered: FlowLoweredTest
+          Program: VerifiedIrProgram
+          Body: VerifiedIrBody
+          ExpectationBody: VerifiedIrBody option
+          BodySiteOrigins: Map<SourceSiteId, SourceSpan>
+          ExpectationSiteOrigins: Map<SourceSiteId, SourceSpan> option }
+
+    type CompiledExample =
+        { Lowered: FlowLoweredExample
+          Program: VerifiedIrProgram
+          Body: VerifiedIrBody
+          SiteOrigins: Map<SourceSiteId, SourceSpan> }
+
     type private Binding =
         { InternalName: string
           Type: LangType }
@@ -720,10 +734,18 @@ module FlowLowering =
         | Some _ -> fail "FLOW_SOURCE_ORIGIN_COLLISION" "Internal Flow source markers must remain unique across one compiler snapshot." None None [] [ "marker collision" ]
         | None -> Map.fold (fun found marker origin -> Map.add marker origin found) context.SourceOrigins projection.SyntheticOrigins
 
+    let private remapAttachmentDiagnostic (sourceOrigins: Map<SourceSpan, SourceSpan>) action =
+        try action ()
+        with
+        | LanguageException diagnostic ->
+            match diagnostic.Span |> Option.bind (fun source -> sourceOrigins.TryFind source) with
+            | Some authored -> raise (LanguageException { diagnostic with Span = Some authored })
+            | None -> raise (LanguageException diagnostic)
+
     let private sourceSites (sourceMap: Map<SourceSiteId, IrSourceSite>) =
         sourceMap |> Map.map (fun _ source -> source.SiteSpan)
 
-    let private lowerExpressionBody context expression =
+    let private lowerExpressionBody context expression : FlowLoweredExpression =
         let state = freshState context.SourceOrigins
         inferExpression context state Map.empty expression |> ignore
         let lowered = lowerFlowExpression context state Map.empty expression
@@ -741,7 +763,7 @@ module FlowLowering =
         let checkedExpression = Compiler.checkExpression (knownTypes context) context.CompilerContext.Words lowered.Expressions
         lowered, checkedExpression
 
-    let compileExpression context expression =
+    let compileExpression context expression : CompiledExpression =
         let lowered, checkedExpression = checkExpression context expression
         match checkedExpression.Stack with
         | [ _ ] -> ()
@@ -755,7 +777,7 @@ module FlowLowering =
           Body = body
           SiteOrigins = sourceSites bodyData.BodySourceMap }
 
-    let lowerWord context (flowWord: FlowWordDefinition) =
+    let lowerWord context (flowWord: FlowWordDefinition) : FlowLoweredWord =
         FlowStructure.validateWordNesting flowWord
         if flowWord.SyntaxVersion <> 1 then fail "FLOW_VERSION_UNSUPPORTED" "Only Flow syntax version 1 is supported by this compiler slice." (Some flowWord.Name) (Some flowWord.Span) [ "1" ] [ string flowWord.SyntaxVersion ]
         let names = flowWord.Parameters |> List.map (fun parameter -> parameter.Name)
@@ -796,7 +818,7 @@ module FlowLowering =
         let checkedDefinition = Compiler.checkDefinition (knownTypes context) context.CompilerContext.Words lowered.Definition
         lowered, checkedDefinition
 
-    let compileWord context wordId flowWord =
+    let compileWord context wordId flowWord : CompiledWord =
         let lowered, _ = checkWord context flowWord
         if context.CompilerContext.Words.ContainsKey lowered.Definition.Name then
             fail "FLOW_WORD_EXISTS" $"Word '{lowered.Definition.Name}' already exists in the supplied compiler snapshot." (Some lowered.Definition.Name) (Some flowWord.Span) [] [ lowered.Definition.Name ]
@@ -824,6 +846,96 @@ module FlowLowering =
             |> Map.filter (fun _ source -> source.SiteOwner = Some wordId)
             |> sourceSites
         { Lowered = lowered; Context = nextContext; Program = program; SiteOrigins = sites }
+
+    let private requireAttachmentVersion kind word span version =
+        if version <> 1 then fail "FLOW_VERSION_UNSUPPORTED" $"Only Flow syntax version 1 is supported for Flow {kind} attachments." (Some word) (Some span) [ "1" ] [ string version ]
+
+    let lowerTest (context: Context) (flowTest: FlowTestDefinition) : FlowLoweredTest =
+        FlowStructure.validateTestNesting flowTest
+        requireAttachmentVersion "test" flowTest.Word flowTest.Span flowTest.SyntaxVersion
+        let state = freshState context.SourceOrigins
+        rememberSpan state flowTest.Span
+        rememberSpan state flowTest.HeaderSpan
+        rememberSpan state flowTest.ExpectationSpan
+        let body, _ = lowerStatements context state Map.empty flowTest.Body
+        let expected =
+            match flowTest.Expected with
+            | FlowTestExpectation.Literal(literal, literalSpan) ->
+                rememberSpan state literalSpan
+                ExpectedValue literal
+            | FlowTestExpectation.RuntimeError(code, codeSpan) ->
+                rememberSpan state codeSpan
+                ExpectedRuntimeError code
+            | FlowTestExpectation.Expression expression ->
+                inferExpression context state Map.empty expression |> ignore
+                ExpectedExpression(lowerFlowExpression context state Map.empty expression)
+        let definition: TestDefinition =
+            { Name = flowTest.CaseName
+              Word = flowTest.Word
+              Body = body
+              Expected = expected
+              SourceText = flowTest.SourceText
+              Span = flowTest.Span }
+        let projection = makeProjection state
+        let origins = mergeOrigins context projection
+        remapAttachmentDiagnostic origins (fun () -> Compiler.checkTest (knownTypes context) context.CompilerContext.Words definition |> ignore)
+        { Definition = definition
+          SourceText = flowTest.SourceText
+          SyntaxVersion = flowTest.SyntaxVersion
+          Projection = projection }
+
+    let lowerExample (context: Context) (flowExample: FlowExampleDefinition) : FlowLoweredExample =
+        FlowStructure.validateExampleNesting flowExample
+        requireAttachmentVersion "example" flowExample.Word flowExample.Span flowExample.SyntaxVersion
+        let state = freshState context.SourceOrigins
+        rememberSpan state flowExample.Span
+        rememberSpan state flowExample.HeaderSpan
+        rememberSpan state flowExample.ExpectationSpan
+        rememberSpan state flowExample.ExpectedSpan
+        let body, _ = lowerStatements context state Map.empty flowExample.Body
+        let definition: ExampleDefinition =
+            { Name = flowExample.CaseName
+              Word = flowExample.Word
+              Body = body
+              Expected = flowExample.Expected
+              SourceText = flowExample.SourceText
+              Span = flowExample.Span }
+        let projection = makeProjection state
+        let origins = mergeOrigins context projection
+        remapAttachmentDiagnostic origins (fun () -> Compiler.checkExample (knownTypes context) context.CompilerContext.Words definition |> ignore)
+        { Definition = definition
+          SourceText = flowExample.SourceText
+          SyntaxVersion = flowExample.SyntaxVersion
+          Projection = projection }
+
+    let compileTest (context: Context) (verifiedProgram: VerifiedIrProgram) (flowTest: FlowTestDefinition) : CompiledTest =
+        let lowered = lowerTest context flowTest
+        let origins = mergeOrigins context lowered.Projection
+        let body, expectationBody =
+            Compiler.compileIrTestWithExpectationAgainstProgramWithSourceOrigins
+                context.CompilerContext verifiedProgram lowered.Definition origins
+        let bodySources = VerifiedIrBody.inspect body |> fun value -> value.BodySourceMap |> sourceSites
+        let expectationSources =
+            expectationBody
+            |> Option.map (VerifiedIrBody.inspect >> fun value -> value.BodySourceMap |> sourceSites)
+        { Lowered = lowered
+          Program = verifiedProgram
+          Body = body
+          ExpectationBody = expectationBody
+          BodySiteOrigins = bodySources
+          ExpectationSiteOrigins = expectationSources }
+
+    let compileExample (context: Context) (verifiedProgram: VerifiedIrProgram) (flowExample: FlowExampleDefinition) : CompiledExample =
+        let lowered = lowerExample context flowExample
+        let origins = mergeOrigins context lowered.Projection
+        let body =
+            Compiler.compileIrExampleAgainstProgramWithSourceOrigins
+                context.CompilerContext verifiedProgram lowered.Definition origins
+        let sites = VerifiedIrBody.inspect body |> fun value -> value.BodySourceMap |> sourceSites
+        { Lowered = lowered
+          Program = verifiedProgram
+          Body = body
+          SiteOrigins = sites }
 
     let parameterCatalog (definitions: FlowWordDefinition list) =
         definitions

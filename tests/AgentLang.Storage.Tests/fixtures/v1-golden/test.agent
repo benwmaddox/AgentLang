@@ -1,0 +1,5 @@
+test fixture.stable/returns-42
+    1
+    fixture.stable
+    => 42
+end

@@ -43,6 +43,121 @@ module Program =
         |> Convert.ToHexString
         |> fun value -> value.ToLowerInvariant()
 
+    let private digestBytes (bytes: byte array) =
+        bytes
+        |> SHA256.HashData
+        |> Convert.ToHexString
+        |> fun value -> value.ToLowerInvariant()
+
+    let private goldenV1Fixture name =
+        File.ReadAllBytes(Path.Combine(__SOURCE_DIRECTORY__, "fixtures", "v1-golden", name))
+
+    let private checkGoldenV1Hash name expected =
+        let bytes = goldenV1Fixture name
+        equal expected (digestBytes bytes) $"frozen v1 {name} hash"
+        bytes
+
+    let private bytesEqual (left: byte array) (right: byte array) =
+        left.Length = right.Length && left.AsSpan().SequenceEqual(right.AsSpan())
+
+    let private writeBytes (path: string) (bytes: byte array) =
+        Directory.CreateDirectory(Path.GetDirectoryName path) |> ignore
+        File.WriteAllBytes(path, bytes)
+
+    let private testFrozenV1Compatibility root =
+        // These hashes and files were frozen from the v1 on-disk contract. Keep
+        // the expected manifest and pointer literal; do not create them through
+        // Storage.commit or its serializer in this compatibility test.
+        let currentHash = "236daa1c04fa56447e51331d79fdd568ca289a1df7a19bf5aaff9a4fb274be3e"
+        let manifestHash = "4c6d03175ba00897f616f5e292fec13662aa377969c4c9415ff20afd4996fb12"
+        let projectHash = "e6b4cbf8141a8451ce44bbb1a9c65bd38bd83b830a7728d3ded525bbe3fa4e57"
+        let definitionHash = "d5fccf0da01f2b10f3ab009d88ebfee93193263f3f525f0c09484dc379d8b31f"
+        let testHash = "8460ea4537c9508a107090437311053d9cd9938dc7d550790a30d19fc62a51e4"
+        let exampleHash = "a488717128dea5bec22b990072976ea2f5d676982eff0d58a4bf85901288844b"
+
+        let currentBytes = checkGoldenV1Hash "CURRENT" currentHash
+        let manifestBytes = checkGoldenV1Hash "manifest.json" manifestHash
+        let projectBytes = checkGoldenV1Hash "project.agent" projectHash
+        let definitionBytes = checkGoldenV1Hash "definition.agent" definitionHash
+        let testBytes = checkGoldenV1Hash "test.agent" testHash
+        let exampleBytes = checkGoldenV1Hash "example.agent" exampleHash
+        let decode (bytes: byte array) = UTF8Encoding(false, true).GetString bytes
+        let projectText = decode projectBytes
+
+        let projectPath = Path.Combine(root, "golden-v1")
+        let storeRoot = Path.Combine(projectPath, ".agentlang", "store")
+        let objectsRoot = Path.Combine(storeRoot, "objects")
+        let manifestRoot = Path.Combine(storeRoot, "manifests")
+        writeBytes (Path.Combine(storeRoot, "CURRENT")) currentBytes
+        writeBytes (Path.Combine(manifestRoot, manifestHash + ".json")) manifestBytes
+        writeBytes (Path.Combine(objectsRoot, projectHash + ".agent")) projectBytes
+        writeBytes (Path.Combine(objectsRoot, definitionHash + ".agent")) definitionBytes
+        writeBytes (Path.Combine(objectsRoot, testHash + ".agent")) testBytes
+        writeBytes (Path.Combine(objectsRoot, exampleHash + ".agent")) exampleBytes
+        writeBytes (Path.Combine(projectPath, "dictionary.agent")) projectBytes
+
+        let store = Storage.create projectPath
+        let loaded = Storage.load store |> ok "load the frozen v1 fixture"
+        equal 1L loaded.Generation "frozen v1 CURRENT generation"
+        equal (ManifestAuthority manifestHash) loaded.Authority "frozen v1 authority"
+        equal (Some manifestHash) loaded.ManifestHash "frozen v1 manifest identity"
+        equal (Some projectText) loaded.ProjectSource "frozen v1 project source bytes"
+        check (loaded.Manifest.IsSome) "frozen v1 manifest is parsed"
+        equal 1 loaded.Manifest.Value.FormatVersion "frozen v1 schema version"
+        equal projectHash loaded.Manifest.Value.ProjectSource.Hash "frozen v1 project object hash"
+        equal definitionHash loaded.Manifest.Value.Revisions.Head.Definition.Hash "frozen v1 definition object hash"
+        equal testHash loaded.Manifest.Value.Revisions.Head.Tests.Head.Hash "frozen v1 test object hash"
+        equal exampleHash loaded.Manifest.Value.Revisions.Head.Examples.Head.Hash "frozen v1 example object hash"
+        check (bytesEqual currentBytes (File.ReadAllBytes(Path.Combine(storeRoot, "CURRENT")))) "load leaves frozen v1 CURRENT bytes unchanged"
+
+        let revision = Storage.readRevision store manifestHash "word-golden-v1" 1 |> ok "read frozen v1 revision"
+        equal "fixture.stable" revision.Revision.Name "frozen v1 revision identity"
+        equal (decode definitionBytes) revision.DefinitionSource "frozen v1 definition bytes"
+        equal [ decode testBytes ] revision.TestSources "frozen v1 attached test bytes"
+        equal [ decode exampleBytes ] revision.ExampleSources "frozen v1 attached example bytes"
+
+        let captured = Storage.capture store |> ok "capture frozen v1 authority"
+        equal (ManifestAuthority manifestHash) captured.Authority "captured frozen v1 authority"
+        equal (Some projectText) captured.ExportText "captured frozen v1 export bytes"
+        let providerFiles = Map.ofList [ "state/value", "golden" ]
+        Storage.saveSnapshot store loaded.Generation "golden-v1" providerFiles (Some "2026-01-02T03:04:05Z")
+        |> ok "save named snapshot of frozen v1"
+        let named = Storage.readSnapshot store "golden-v1" |> ok "read named snapshot of frozen v1"
+        equal manifestHash named.ManifestHash "named v1 snapshot retains manifest identity"
+        equal 1 named.Manifest.FormatVersion "named v1 snapshot retains schema version"
+        equal providerFiles named.VirtualFiles "named v1 snapshot provider bytes"
+        equal (Some "2026-01-02T03:04:05Z") named.ClockValue "named v1 snapshot clock"
+
+        let intermediateText = "temporary intervening export\n"
+        let intermediateProject = Storage.sourceObject StorageObjectKind.ProjectSource intermediateText
+        let intermediateManifest = { loaded.Manifest.Value with ProjectSource = intermediateProject.Reference }
+        let commitIntermediate generation =
+            Storage.commit store generation intermediateManifest [ intermediateProject ] intermediateText
+            |> ok "commit intervening manifest before v1 restore"
+
+        let firstIntervening = commitIntermediate loaded.Generation
+        let namedRestore = Storage.restoreSnapshot store firstIntervening.Generation named |> ok "restore named frozen v1 snapshot"
+        equal manifestHash namedRestore.ManifestHash.Value "named restore returns original v1 manifest identity"
+        let secondIntervening = commitIntermediate namedRestore.Generation
+        let taskRestore = Storage.restore store secondIntervening.Generation captured |> ok "restore captured frozen v1 authority"
+        equal manifestHash taskRestore.ManifestHash.Value "task restore returns original v1 manifest identity"
+
+        let final = Storage.load store |> ok "reload original v1 authority after both restore paths"
+        equal manifestHash final.ManifestHash.Value "restored v1 manifest hash"
+        equal 5L final.Generation "both restore paths advance storage generation"
+        equal (Some projectText) final.ProjectSource "restored v1 project bytes"
+        let finalRevision = Storage.readRevision store manifestHash "word-golden-v1" 1 |> ok "read restored frozen v1 revision"
+        equal (decode definitionBytes) finalRevision.DefinitionSource "restored v1 definition bytes"
+        equal [ decode testBytes ] finalRevision.TestSources "restored v1 test bytes"
+        equal [ decode exampleBytes ] finalRevision.ExampleSources "restored v1 example bytes"
+
+        let persistedManifest = File.ReadAllBytes(Path.Combine(manifestRoot, manifestHash + ".json"))
+        check (bytesEqual manifestBytes persistedManifest) "restore leaves original v1 manifest bytes unchanged"
+        for hash, expected in [ projectHash, projectBytes; definitionHash, definitionBytes; testHash, testBytes; exampleHash, exampleBytes ] do
+            let persisted = File.ReadAllBytes(Path.Combine(objectsRoot, hash + ".agent"))
+            check (bytesEqual expected persisted) $"restore leaves v1 object {hash} bytes unchanged"
+        equal projectText (File.ReadAllText(Path.Combine(projectPath, "dictionary.agent"))) "restored v1 project export bytes"
+
     let private fixture suffix =
         let projectText = $"project fixture {suffix}\n"
         let definitionText = $"word sample.{suffix}\n    42\nend\n"
@@ -347,6 +462,7 @@ module Program =
     let main _ =
         let root = newRoot "suite"
         try
+            testFrozenV1Compatibility root
             testCommitReloadRevisionAndStableHistory root
             testStaleGenerationWriterLockAndLimits root
             testFailureBoundaries root
@@ -355,7 +471,7 @@ module Program =
             testTamperingUnsupportedVersionAndNoFallback root
             testTaskLogValidation root
             testReparsePointRefusal root
-            printfn $"Storage tests passed: 8 groups, {assertions} assertions."
+            printfn $"Storage tests passed: 9 groups, {assertions} assertions."
             0
         finally
             if Directory.Exists root then Directory.Delete(root, true)

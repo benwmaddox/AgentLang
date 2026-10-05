@@ -26,6 +26,16 @@ module FlowParser =
           EndLine: int
           EndColumn: int }
 
+    let private expressionSpan = function
+        | FlowExpression.Literal(_, span)
+        | FlowExpression.Local(_, span)
+        | FlowExpression.Call(_, _, span)
+        | FlowExpression.DotCall(_, _, _, span)
+        | FlowExpression.If(_, _, _, span)
+        | FlowExpression.Container(_, _, _, span)
+        | FlowExpression.MatchOption(_, _, _, span)
+        | FlowExpression.MatchResult(_, _, _, span) -> span
+
     let private maxSourceLength = 1_000_000
     let private maxTokens = 100_000
     let private maxNesting = FlowStructure.maxExpressionDepth
@@ -323,14 +333,21 @@ module FlowParser =
             statements)
 
     and private parseBlockStatements state =
+        parseBlockStatementsUntil state (Set.singleton "}")
+
+    and private parseBlockStatementsUntil state terminators =
         let statements = ResizeArray<FlowStatement>()
-        while peek state <> Some "}" && not (atEnd state) do
+        let isTerminator () =
+            match current state with
+            | Some token -> Set.contains token.Text terminators
+            | None -> false
+        while not (isTerminator ()) && not (atEnd state) do
             let statement = parseStatement state
             statements.Add statement
             if accept state ";" then ()
             else
                 match current state, previous state with
-                | Some next, Some last when next.Text <> "}" && next.Line <= last.Line ->
+                | Some next, Some last when not (Set.contains next.Text terminators) && next.Line <= last.Line ->
                     fail state.File next.Line next.Column next.Text.Length "FLOW_EXPECTED_SEPARATOR" "Statements on one line must be separated by ';'."
                 | _ -> ()
         let values = List.ofSeq statements
@@ -648,6 +665,106 @@ module FlowParser =
     and private parseBlockBody state =
         parseBlockStatements state
 
+    and private parseCaseHeader state kind =
+        let startToken = expect state kind
+        let word, _ = parseWordName state
+        expect state "/" |> ignore
+        let caseToken = expectIdentifier state
+        let headerSpan = sourceSpan state.File startToken (Some caseToken)
+        startToken, word, caseToken.Text, headerSpan
+
+    and private parseCaseExpectationLiteral state kind =
+        let expression = parseExpressionState state
+        match expression with
+        | FlowExpression.Literal(literal, literalSpan) -> literal, literalSpan
+        | _ ->
+            let source = expressionSpan expression
+            fail state.File source.Line source.Column source.Length "FLOW_EXPECTATION_LITERAL_REQUIRED" $"A Flow {kind} requires a literal expectation."
+
+    and private closeCase state kind =
+        match current state with
+        | Some token when token.Text = "}" -> consume state
+        | Some token -> fail state.File token.Line token.Column token.Text.Length "FLOW_EXPECTATION_TRAILING" $"Unexpected content follows the Flow {kind} expectation."
+        | None -> tokenError state "FLOW_INCOMPLETE_INPUT" $"Expected '}}' after the Flow {kind} expectation."
+
+    and private parseTestState state =
+        withDepth state (fun () ->
+            let startToken, word, caseName, headerSpan = parseCaseHeader state "test"
+            expect state "{" |> ignore
+            let body = parseBlockStatementsUntil state (Set.ofList [ "=>"; "}" ])
+            match current state with
+            | Some token when token.Text = "}" -> fail state.File token.Line token.Column token.Text.Length "FLOW_EXPECTATION_REQUIRED" "A Flow test must end with one '=>' expectation."
+            | None -> tokenError state "FLOW_INCOMPLETE_INPUT" "A Flow test is missing its '=>' expectation."
+            | _ -> ()
+            let expectationToken = expect state "=>"
+            let expectationSpan = sourceSpan state.File expectationToken (Some expectationToken)
+            let expected =
+                match current state with
+                | Some token when token.Text = "error" ->
+                    consume state |> ignore
+                    let codeToken = expectIdentifier state
+                    if not (TestExpectation.isValidRuntimeErrorCode codeToken.Text) then
+                        fail state.File codeToken.Line codeToken.Column codeToken.Text.Length "FLOW_INVALID_EXPECTED_ERROR_CODE" "Runtime-error expectations use '=> error UPPERCASE_CODE'."
+                    FlowTestExpectation.RuntimeError(codeToken.Text, sourceSpan state.File codeToken (Some codeToken))
+                | Some token when token.Text = "value" ->
+                    consume state |> ignore
+                    FlowTestExpectation.Expression(parseExpressionState state)
+                | _ ->
+                    let literal, literalSpan = parseCaseExpectationLiteral state "test"
+                    FlowTestExpectation.Literal(literal, literalSpan)
+            match expected with
+            | FlowTestExpectation.Expression _ | FlowTestExpectation.RuntimeError _ when List.isEmpty body ->
+                fail state.File startToken.Line startToken.Column startToken.Text.Length "FLOW_EXPECTATION_BODY_EMPTY" "Runtime-error and value-expression tests require a nonempty actual body."
+            | _ -> ()
+            let endToken = closeCase state "test"
+            if not (atEnd state) then tokenError state "FLOW_TRAILING_INPUT" "Unexpected content follows the Flow test definition."
+            let definition =
+                { Word = word
+                  CaseName = caseName
+                  Body = body
+                  Expected = expected
+                  SourceText = state.Source
+                  Span = sourceSpan state.File startToken (Some endToken)
+                  SyntaxVersion = 1
+                  HeaderSpan = headerSpan
+                  ExpectationSpan = expectationSpan }
+            FlowStructure.validateTestNesting definition
+            definition)
+
+    and private parseExampleState state =
+        withDepth state (fun () ->
+            let startToken, word, caseName, headerSpan = parseCaseHeader state "example"
+            expect state "{" |> ignore
+            let body = parseBlockStatementsUntil state (Set.ofList [ "=>"; "}" ])
+            match current state with
+            | Some token when token.Text = "}" -> fail state.File token.Line token.Column token.Text.Length "FLOW_EXPECTATION_REQUIRED" "A Flow example must end with one '=>' literal expectation."
+            | None -> tokenError state "FLOW_INCOMPLETE_INPUT" "A Flow example is missing its '=>' expectation."
+            | _ -> ()
+            let expectationToken = expect state "=>"
+            let expectationSpan = sourceSpan state.File expectationToken (Some expectationToken)
+            match current state with
+            | Some token when token.Text = "error" || token.Text = "value" ->
+                fail state.File token.Line token.Column token.Text.Length "FLOW_EXAMPLE_EXPECTATION_KIND" "Flow examples accept literal expectations only."
+            | _ -> ()
+            let expected, expectedSpan = parseCaseExpectationLiteral state "example"
+            if List.isEmpty body then
+                fail state.File startToken.Line startToken.Column startToken.Text.Length "FLOW_EXPECTATION_BODY_EMPTY" "A Flow example requires a nonempty actual body."
+            let endToken = closeCase state "example"
+            if not (atEnd state) then tokenError state "FLOW_TRAILING_INPUT" "Unexpected content follows the Flow example definition."
+            let definition =
+                { Word = word
+                  CaseName = caseName
+                  Body = body
+                  Expected = expected
+                  ExpectedSpan = expectedSpan
+                  SourceText = state.Source
+                  Span = sourceSpan state.File startToken (Some endToken)
+                  SyntaxVersion = 1
+                  HeaderSpan = headerSpan
+                  ExpectationSpan = expectationSpan }
+            FlowStructure.validateExampleNesting definition
+            definition)
+
     let parseExpression file source =
         try
             let tokens, endLine, endColumn = tokenize file source
@@ -665,4 +782,18 @@ module FlowParser =
             let definition = parseWordState state
             FlowStructure.validateWordNesting definition
             Ok definition
+        with LanguageException error -> Error error
+
+    let parseTest file source =
+        try
+            let tokens, endLine, endColumn = tokenize file source
+            let state = { File = file; Source = source; Tokens = tokens; Index = 0; Depth = 0; EndLine = endLine; EndColumn = endColumn }
+            Ok(parseTestState state)
+        with LanguageException error -> Error error
+
+    let parseExample file source =
+        try
+            let tokens, endLine, endColumn = tokenize file source
+            let state = { File = file; Source = source; Tokens = tokens; Index = 0; Depth = 0; EndLine = endLine; EndColumn = endColumn }
+            Ok(parseExampleState state)
         with LanguageException error -> Error error

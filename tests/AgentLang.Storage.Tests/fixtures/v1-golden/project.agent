@@ -1,0 +1,19 @@
+word fixture.stable : Int -> Int
+    effects none
+    maturity project
+    revision 1
+    doc "Frozen v1 compatibility fixture."
+    42
+end
+
+test fixture.stable/returns-42
+    1
+    fixture.stable
+    => 42
+end
+
+example fixture.stable/returns-42
+    1
+    fixture.stable
+    => 42
+end

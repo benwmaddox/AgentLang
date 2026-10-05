@@ -35,6 +35,16 @@ let private parseWord source =
     | Ok word -> word
     | Error diagnostic -> failwith (Diagnostics.render diagnostic)
 
+let private parseTest source =
+    match FlowParser.parseTest "<flow-test>" source with
+    | Ok test -> test
+    | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+
+let private parseExample source =
+    match FlowParser.parseExample "<flow-test>" source with
+    | Ok example -> example
+    | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+
 let private parseExpression source =
     match FlowParser.parseExpression "<flow-test>" source with
     | Ok expression -> expression
@@ -1262,6 +1272,474 @@ let private testFlowOutputVectors () =
     expectLanguageError "lowering streams wide statement blocks under the shared budget" "FLOW_STRUCTURE_LIMIT" (fun () ->
         FlowLowering.lowerWord scalarContext wideBlockWord |> ignore)
 
+let private testFlowAuthoredCases () =
+    let literalSource =
+        "test storefront.select/some-literal {\n"
+        + "    storefront::select(option::some<Int>(7))\n"
+        + "    => 7\n"
+        + "}"
+    let literalTest =
+        match FlowParser.parseTest "authored/storefront.flow" literalSource with
+        | Ok value -> value
+        | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+    equal "Flow test owner and case name stay separate" "storefront.select" literalTest.Word
+    equal "Flow test retains its case name" "some-literal" literalTest.CaseName
+    equal "Flow test preserves exact authored source" literalSource literalTest.SourceText
+    equal "Flow test syntax version is explicit" 1 literalTest.SyntaxVersion
+    equal "Flow test header has its authored span" (span "authored/storefront.flow" 1 1 "test storefront.select/some-literal".Length) literalTest.HeaderSpan
+    equal "Flow test expectation marker has an authored span" (span "authored/storefront.flow" 3 5 2) literalTest.ExpectationSpan
+    match literalTest.Expected with
+    | FlowTestExpectation.Literal(LInt 7L, valueSpan) ->
+        equal "literal expectation value span is retained" (span "authored/storefront.flow" 3 8 1) valueSpan
+    | other -> failwithf "Expected literal Flow test, got %A" other
+    let literalCanonical = FlowSource.renderTest literalTest
+    equal "Flow test render/reparse is deterministic" literalCanonical (literalCanonical |> parseTest |> FlowSource.renderTest)
+    let reparsedLiteral = parseTest literalCanonical
+    equal "Flow test render retains owner and case" (literalTest.Word, literalTest.CaseName) (reparsedLiteral.Word, reparsedLiteral.CaseName)
+
+    let choiceWord =
+        parseWord
+            """word storefront.select(value: Option<Int>) -> Int {
+    effects none
+    match value {
+        some item => { return item }
+        none => { return 0 }
+    }
+}"""
+    let compiledChoice = FlowLowering.compileWord (loweringContext [] Map.empty) (WordId "user-storefront-select") choiceWord
+    let compiledLiteral = FlowLowering.compileTest compiledChoice.Context compiledChoice.Program literalTest
+    equal "literal Flow test lowers to the exact legacy test definition"
+        (literalSource, 1, "storefront.select", "some-literal")
+        (compiledLiteral.Lowered.Definition.SourceText, compiledLiteral.Lowered.SyntaxVersion,
+         compiledLiteral.Lowered.Definition.Word, compiledLiteral.Lowered.Definition.Name)
+    equal "literal Flow test executes its actual body" [ IntValue 7L ]
+        (IrInterpreter.executeBody (host (ResizeArray())) "flow-literal-test" compiledLiteral.Body)
+    check "literal expectation does not create an executable expectation body" compiledLiteral.ExpectationBody.IsNone
+    check "test projection retains header and expectation marker spans"
+        (compiledLiteral.Lowered.Projection.AuthoredSpans.Contains literalTest.HeaderSpan
+         && compiledLiteral.Lowered.Projection.AuthoredSpans.Contains literalTest.ExpectationSpan)
+    check "test body source sites map to authored spans"
+        (compiledLiteral.BodySiteOrigins |> Map.forall (fun _ source -> source.File = "authored/storefront.flow" && source.Column < 1000))
+
+    let valueSource =
+        "test storefront.select/value-expression {\n"
+        + "    storefront::select(option::some<Int>(7))\n"
+        + "    => value add(3, 4)\n"
+        + "}"
+    let valueTest = parseTest valueSource
+    match valueTest.Expected with
+    | FlowTestExpectation.Expression(FlowExpression.Call("add", _, expressionSpan)) ->
+        equal "value expectation records its expression source span" (span "<flow-test>" 3 14 "add(3, 4)".Length) expressionSpan
+    | other -> failwithf "Expected expression Flow test, got %A" other
+    let valueCanonical = FlowSource.renderTest valueTest
+    equal "value-expression test has deterministic canonical source" valueCanonical (valueCanonical |> parseTest |> FlowSource.renderTest)
+    let compiledValue = FlowLowering.compileTest compiledChoice.Context compiledChoice.Program valueTest
+    let expectationBody = compiledValue.ExpectationBody |> Option.defaultWith (fun () -> failwith "Expected a separately compiled value expectation body.")
+    equal "value Flow test actual body executes" [ IntValue 7L ]
+        (IrInterpreter.executeBody (host (ResizeArray())) "flow-value-test-body" compiledValue.Body)
+    equal "value Flow test expression executes independently" [ IntValue 7L ]
+        (IrInterpreter.executeBody (host (ResizeArray())) "flow-value-test-expectation" expectationBody)
+    check "value expectation source sites map to its authored expression"
+        (compiledValue.ExpectationSiteOrigins |> Option.exists (Map.exists (fun _ source -> source.File = "<flow-test>" && source.Line = 3 && source.Column < 1000)))
+    let contextMarkers = compiledChoice.Context.SourceOrigins |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+    let caseMarkers = compiledValue.Lowered.Projection.SyntheticOrigins |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+    check "test actual and expected lowerings use markers disjoint from prior Flow words" (Set.isEmpty (Set.intersect contextMarkers caseMarkers))
+
+    let nominalWord =
+        parseWord
+            """word storefront.email(value: Email) -> Email {
+    effects none
+    Email::new(Email::value(value))
+}"""
+    let compiledEmail = FlowLowering.compileWord (richTypeContext []) (WordId "user-storefront-email") nominalWord
+    let emailLabelWord =
+        parseWord
+            """word storefront.email-label(value: Email) -> String {
+    effects none
+    string::concat(Email::value(value), "!")
+}"""
+    let compiledEmailLabel = FlowLowering.compileWord compiledEmail.Context (WordId "user-storefront-email-label") emailLabelWord
+    let emailTest =
+        parseTest
+            """test storefront.email/refined-value {
+    if true {
+        storefront::email(Email::new("a@b"))
+    } else {
+        storefront::email(Email::new("c@d"))
+    }
+    => value if true {
+        storefront::email(Email::new("a@b"))
+    } else {
+        storefront::email(Email::new("c@d"))
+    }
+}"""
+    let compiledEmailTest = FlowLowering.compileTest compiledEmail.Context compiledEmail.Program emailTest
+    equal "Flow attachment actual body preserves the Email refinement"
+        [ NamedValue("Email", StringValue "a@b") ]
+        (IrInterpreter.executeBody (host (ResizeArray())) "flow-email-actual" compiledEmailTest.Body)
+    equal "pure Flow attachment expectation can produce the same refined Email"
+        [ NamedValue("Email", StringValue "a@b") ]
+        (compiledEmailTest.ExpectationBody
+         |> Option.defaultWith (fun () -> failwith "Expected a typed Email value expectation.")
+         |> IrInterpreter.executeBody (host (ResizeArray())) "flow-email-expected")
+    let emailWithStringLiteral = parseTest "test storefront.email/string-literal {\n    storefront::email(Email::new(\"a@b\"))\n    => \"a@b\"\n}"
+    expectLanguageError "an Email test body rejects an underlying String literal expectation" "TEST_EXPECTED_STACK" (fun () ->
+        FlowLowering.lowerTest compiledEmail.Context emailWithStringLiteral |> ignore)
+    let emailWithStringExpression =
+        parseTest
+            """test storefront.email/string-expression {
+    storefront::email(Email::new("a@b"))
+    => value Email::value(Email::new("a@b"))
+}"""
+    expectLanguageError "an Email test body rejects an expression unwrapping to String" "TEST_EXPECTED_STACK" (fun () ->
+        FlowLowering.lowerTest compiledEmail.Context emailWithStringExpression |> ignore)
+
+    let markerIndex (marker: SourceSpan) = int64 Int32.MaxValue - int64 marker.Column
+    let sparseOriginsBase = compiledEmailLabel.Context.SourceOrigins
+    let shiftMarker marker =
+        if marker.Length = 0 && marker.Column > 0 then
+            let index = markerIndex marker
+            let sparseIndex = index * 3L + 11L
+            { marker with Column = int (int64 Int32.MaxValue - sparseIndex) }
+        else marker
+    let rec shiftExpression expression =
+        match expression with
+        | Push(literal, source) -> Push(literal, shiftMarker source)
+        | Call(name, source) -> Call(name, shiftMarker source)
+        | ConstructContainer(kind, types, source) -> ConstructContainer(kind, types, shiftMarker source)
+        | MapList(name, source) -> MapList(name, shiftMarker source)
+        | FilterList(name, source) -> FilterList(name, shiftMarker source)
+        | EachList(name, source) -> EachList(name, shiftMarker source)
+        | Let(name, source) -> Let(name, shiftMarker source)
+        | Load(name, source) -> Load(name, shiftMarker source)
+        | If(thenBody, elseBody, source) -> If(List.map shiftExpression thenBody, List.map shiftExpression elseBody, shiftMarker source)
+        | Scope(body, source) -> Scope(List.map shiftExpression body, shiftMarker source)
+        | MatchOption(name, someBody, noneBody, source) -> MatchOption(name, List.map shiftExpression someBody, List.map shiftExpression noneBody, shiftMarker source)
+        | MatchResult(okName, errorName, okBody, errorBody, source) -> MatchResult(okName, errorName, List.map shiftExpression okBody, List.map shiftExpression errorBody, shiftMarker source)
+    let shiftedWords =
+        compiledEmailLabel.Context.CompilerContext.Words
+        |> Map.map (fun _ entry ->
+            { entry with
+                Definition = { entry.Definition with Body = List.map shiftExpression entry.Definition.Body } })
+    let sparseOrigins =
+        compiledEmailLabel.Context.SourceOrigins
+        |> Map.toList
+        |> List.map (fun (marker, origin) -> shiftMarker marker, origin)
+        |> Map.ofList
+    let sparseEmailContext =
+        { compiledEmailLabel.Context with
+            CompilerContext = { compiledEmailLabel.Context.CompilerContext with Words = shiftedWords }
+            SourceOrigins = sparseOrigins }
+    let retainedSparseIndices = sparseOrigins |> Map.toSeq |> Seq.map (fst >> markerIndex) |> Seq.sort |> Seq.toList
+    check "the attachment compiler fixture has gaps between retained source markers"
+        (retainedSparseIndices.Length > 1
+         && (retainedSparseIndices |> List.pairwise |> List.forall (fun (left, right) -> right - left > 1L)))
+    let sparseProgram = Compiler.compileIrProgramWithSourceOrigins sparseEmailContext.CompilerContext sparseEmailContext.SourceOrigins
+    let sparseEmailTest = FlowLowering.compileTest sparseEmailContext sparseProgram emailTest
+    let sparseAttachmentMarkers = sparseEmailTest.Lowered.Projection.SyntheticOrigins
+    let sparseAttachmentIndices = sparseAttachmentMarkers |> Map.toSeq |> Seq.map (fst >> markerIndex) |> Seq.toList
+    let sparseRetainedMax = sparseOrigins |> Map.toSeq |> Seq.map (fst >> markerIndex) |> Seq.max
+    check "Flow attachment markers allocate beyond the maximum sparse retained marker"
+        (not sparseAttachmentIndices.IsEmpty && List.forall (fun marker -> marker > sparseRetainedMax) sparseAttachmentIndices)
+    let actualAttachmentMarkers =
+        sparseAttachmentMarkers
+        |> Map.toSeq
+        |> Seq.choose (fun (marker, origin) -> if origin.Line >= 2 && origin.Line <= 6 then Some marker else None)
+        |> Set.ofSeq
+    let expectedAttachmentMarkers =
+        sparseAttachmentMarkers
+        |> Map.toSeq
+        |> Seq.choose (fun (marker, origin) -> if origin.Line >= 7 && origin.Line <= 11 then Some marker else None)
+        |> Set.ofSeq
+    check "Flow attachment actual and expected expressions receive disjoint markers"
+        (not (Set.isEmpty actualAttachmentMarkers)
+         && not (Set.isEmpty expectedAttachmentMarkers)
+         && Set.isEmpty (Set.intersect actualAttachmentMarkers expectedAttachmentMarkers))
+    check "compiled Flow attachment is bound to the same sparse-origin program snapshot"
+        (Object.ReferenceEquals(sparseEmailTest.Program, sparseProgram))
+    check "Flow attachment marker projection keeps exact authored source spans"
+        (sparseAttachmentMarkers |> Map.forall (fun _ origin -> origin.File = "<flow-test>" && origin.Column < 1000)
+         && (sparseEmailTest.BodySiteOrigins |> Map.forall (fun _ origin -> origin.File = "<flow-test>" && origin.Line >= 2 && origin.Line <= 6))
+         && (sparseEmailTest.ExpectationSiteOrigins
+             |> Option.exists (Map.forall (fun _ origin -> origin.File = "<flow-test>" && origin.Line >= 7 && origin.Line <= 11))))
+
+    let errorWord =
+        parseWord
+            """word storefront.divide(value: Int) -> Int {
+    effects none
+    divide(value, 0)
+}"""
+    let compiledErrorWord = FlowLowering.compileWord compiledChoice.Context (WordId "user-storefront-divide") errorWord
+    let errorSource =
+        "test storefront.divide/divide-by-zero {\n"
+        + "    storefront::divide(3)\n"
+        + "    => error RUNTIME_DIVIDE_BY_ZERO\n"
+        + "}"
+    let errorTest = parseTest errorSource
+    match errorTest.Expected with
+    | FlowTestExpectation.RuntimeError(code, codeSpan) ->
+        equal "runtime-error expectation retains its code" "RUNTIME_DIVIDE_BY_ZERO" code
+        equal "runtime-error expectation retains the code span" (span "<flow-test>" 3 14 "RUNTIME_DIVIDE_BY_ZERO".Length) codeSpan
+    | other -> failwithf "Expected runtime-error Flow test, got %A" other
+    let compiledErrorTest = FlowLowering.compileTest compiledErrorWord.Context compiledErrorWord.Program errorTest
+    let errorResult =
+        try
+            IrInterpreter.executeBody (host (ResizeArray())) "flow-error-test" compiledErrorTest.Body |> ignore
+            None
+        with LanguageException diagnostic -> Some diagnostic.Code
+    equal "runtime-error Flow test executes and observes the expected diagnostic" (Some "RUNTIME_DIVIDE_BY_ZERO") errorResult
+
+    let exampleSource =
+        "example storefront.select/none-example {\n"
+        + "    storefront::select(option::none<Int>())\n"
+        + "    => 0\n"
+        + "}"
+    let example =
+        match FlowParser.parseExample "authored/storefront.flow" exampleSource with
+        | Ok value -> value
+        | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+    equal "Flow example preserves exact authored source" exampleSource example.SourceText
+    equal "Flow example retains the literal expectation span" (span "authored/storefront.flow" 3 8 1) example.ExpectedSpan
+    let exampleCanonical = FlowSource.renderExample example
+    equal "Flow example render/reparse is deterministic" exampleCanonical (exampleCanonical |> parseExample |> FlowSource.renderExample)
+    let compiledExample = FlowLowering.compileExample compiledChoice.Context compiledChoice.Program example
+    equal "Flow example executes through the exact verified program" [ IntValue 0L ]
+        (IrInterpreter.executeBody (host (ResizeArray())) "flow-example" compiledExample.Body)
+    equal "Flow example keeps its literal Core expectation" (LInt 0L) compiledExample.Lowered.Definition.Expected
+    equal "Flow example keeps its source version" 1 compiledExample.Lowered.SyntaxVersion
+    equal "Flow example lowering preserves the exact authored source" exampleSource compiledExample.Lowered.SourceText
+    equal "Core example projection retains the same authored source bytes" exampleSource compiledExample.Lowered.Definition.SourceText
+
+    let documentedWord =
+        parseWord
+            """word storefront.documented() -> String {
+    effects none
+    doc "A documented Flow word."
+    "ready"
+}"""
+    let documentedCanonical = FlowSource.renderWord documentedWord
+    equal "word documentation survives Flow source round-trip" documentedCanonical (documentedCanonical |> parseWord |> FlowSource.renderWord)
+    equal "word documentation remains metadata" "A documented Flow word." (documentedCanonical |> parseWord).Documentation
+
+    let nestedSource =
+        """test storefront.select/nested-result {
+    let result = result::ok<Int, String>(4)
+    let (number, label) = match result {
+        ok value => { return (value, "ok") }
+        error message => { return (0, message) }
+    };
+    return string::concat(int::to-string(number), string::concat(":", label))
+    => value "4:ok"
+}"""
+    let nestedTest = parseTest nestedSource
+    let nestedCanonical = FlowSource.renderTest nestedTest
+    equal "nested Result constructor/match/destructure source round-trips" nestedCanonical (nestedCanonical |> parseTest |> FlowSource.renderTest)
+    let compiledNested = FlowLowering.compileTest compiledChoice.Context compiledChoice.Program nestedTest
+    equal "nested constructor, match, destructuring, and terminal return execute" [ StringValue "4:ok" ]
+        (IrInterpreter.executeBody (host (ResizeArray())) "flow-nested-test" compiledNested.Body)
+    let nestedExpected = compiledNested.ExpectationBody |> Option.defaultWith (fun () -> failwith "Expected nested Flow value expectation.")
+    equal "nested test expression expectation evaluates separately" [ StringValue "4:ok" ]
+        (IrInterpreter.executeBody (host (ResizeArray())) "flow-nested-expected" nestedExpected)
+    check "nested test contains no private source coordinates in either source map"
+        (compiledNested.BodySiteOrigins
+         |> Map.forall (fun _ source -> source.Column < 1000)
+         && (compiledNested.ExpectationSiteOrigins |> Option.defaultValue Map.empty
+             |> Map.forall (fun _ source -> source.Column < 1000)))
+
+    let effectSource =
+        "test storefront.select/separate-effects {\n"
+        + "    console::write(\"actual\")\n"
+        + "    unit\n"
+        + "    => value unit\n"
+        + "}"
+    let effectTest = parseTest effectSource
+    let compiledEffect = FlowLowering.compileTest compiledChoice.Context compiledChoice.Program effectTest
+    let actualProvider = ResizeArray<string>()
+    let expectationProvider = ResizeArray<string>()
+    equal "effectful test body preserves its Unit result" [ UnitValue ]
+        (IrInterpreter.executeBody (host actualProvider) "flow-effect-actual" compiledEffect.Body)
+    let separateExpectation = compiledEffect.ExpectationBody |> Option.defaultWith (fun () -> failwith "Expected Unit value expectation.")
+    equal "pure expected expression returns Unit" [ UnitValue ]
+        (IrInterpreter.executeBody (host expectationProvider) "flow-effect-expectation" separateExpectation)
+    equal "test body uses its own effect provider" [ "actual" ] (List.ofSeq actualProvider)
+    equal "separate expected expression does not reuse actual effect provider" [] (List.ofSeq expectationProvider)
+
+    let programData = VerifiedIrProgram.inspect compiledChoice.Program
+    let targetId = WordId "user-storefront-select"
+    let targetBranchLabels =
+        programData.CoverageByWord[targetId].BranchOutcomes
+        |> Map.toList |> List.collect snd |> Set.ofList
+    equal "branch coverage obligation has both library-owned Option paths" (Set.ofList [ "some"; "none" ]) targetBranchLabels
+    let targetBranchObligations =
+        programData.CoverageByWord[targetId].BranchOutcomes
+        |> Map.toList
+        |> List.collect (fun (site, outcomes) -> outcomes |> List.map (fun outcome -> site, outcome))
+        |> Set.ofList
+    let targetSomeObligations = targetBranchObligations |> Set.filter (fun (_, outcome) -> outcome = "some")
+    let targetNoneObligations = targetBranchObligations |> Set.filter (fun (_, outcome) -> outcome = "none")
+    let collectLibraryBranches (rawBranches: ResizeArray<string * SourceSiteId * string>) (observedBranches: ResizeArray<SourceSiteId * string>) =
+        { host (ResizeArray()) with
+            RecordBranchOutcome = fun currentWord site outcome ->
+                rawBranches.Add(currentWord, site, outcome)
+                match programData.SourceMap.TryFind site with
+                | Some source when currentWord = "storefront.select" && source.SiteOwner = Some targetId ->
+                    observedBranches.Add(site, outcome)
+                | _ -> () }
+    let actualTraceBranches = ResizeArray<string * SourceSiteId * string>()
+    let observedLibraryBranches = ResizeArray<SourceSiteId * string>()
+    let coverageHost () = collectLibraryBranches actualTraceBranches observedLibraryBranches
+    let fixtureSource =
+        """test storefront.select/fixture-same-label {
+    match option::none<Int>() {
+        some value => { value }
+        none => { 1 }
+    }
+    => 1
+}"""
+    let fixtureTest = FlowLowering.compileTest compiledChoice.Context compiledChoice.Program (parseTest fixtureSource)
+    let fixtureBranches = ResizeArray<string * SourceSiteId * string>()
+    let fixtureObservedLibraryBranches = ResizeArray<SourceSiteId * string>()
+    let fixtureHost = collectLibraryBranches fixtureBranches fixtureObservedLibraryBranches
+    equal "inline match fixture can pass its assertion" [ IntValue 1L ]
+        (IrInterpreter.executeBody fixtureHost "flow-coverage-fixture" fixtureTest.Body)
+    check "inline fixture executes a same-named none branch"
+        (fixtureBranches |> Seq.exists (fun (_, _, outcome) -> outcome = "none"))
+    equal "the identical target-site filter excludes an inline fixture branch" Set.empty (fixtureObservedLibraryBranches |> Set.ofSeq)
+
+    let expectedBranchSource =
+        """test storefront.select/expected-is-isolated {
+    storefront::select(option::some<Int>(0))
+    => value storefront::select(option::none<Int>())
+}"""
+    let expectedBranchTest = FlowLowering.compileTest compiledChoice.Context compiledChoice.Program (parseTest expectedBranchSource)
+    equal "actual test call exercises the library some path" [ IntValue 0L ]
+        (IrInterpreter.executeBody (coverageHost ()) "flow-coverage-actual" expectedBranchTest.Body)
+    equal "the actual call covers the exact library-owned some obligation sites" targetSomeObligations
+        (observedLibraryBranches |> Set.ofSeq)
+    let expectedBranchEvents = ResizeArray<string * SourceSiteId * string>()
+    let expectedObservedLibraryBranches = ResizeArray<SourceSiteId * string>()
+    let expectedIsolationHost = collectLibraryBranches expectedBranchEvents expectedObservedLibraryBranches
+    let isolatedExpectation = expectedBranchTest.ExpectationBody |> Option.defaultWith (fun () -> failwith "Expected match expression body.")
+    equal "expected expression computes the same value through the opposite library path" [ IntValue 0L ]
+        (IrInterpreter.executeBody expectedIsolationHost "flow-isolated-expectation" isolatedExpectation)
+    let expectedObservedPairs = expectedObservedLibraryBranches |> Set.ofSeq
+    check "expected expression takes the tested library's none branch in its isolated trace"
+        (expectedObservedPairs = targetNoneObligations)
+    equal "isolated expected-expression branches leave exact actual coverage unchanged" targetSomeObligations
+        (observedLibraryBranches |> Set.ofSeq)
+
+    let noneSource =
+        """test storefront.select/actual-none {
+    storefront::select(option::none<Int>())
+    => 0
+}"""
+    let noneTest = FlowLowering.compileTest compiledChoice.Context compiledChoice.Program (parseTest noneSource)
+    equal "actual call exercises the library none path" [ IntValue 0L ]
+        (IrInterpreter.executeBody (coverageHost ()) "flow-coverage-none" noneTest.Body)
+    equal "calls through the tested word cover every exact branch site/outcome pair" targetBranchObligations
+        (observedLibraryBranches |> Set.ofSeq)
+
+    let invalidSources =
+        [ ("missing expectation", "test storefront.select/missing {\n    1\n}", "FLOW_EXPECTATION_REQUIRED")
+          ("duplicate expectation", "test storefront.select/duplicate {\n    1\n    => 1\n    => 1\n}", "FLOW_EXPECTATION_TRAILING")
+          ("malformed error code", "test storefront.select/bad-error {\n    1\n    => error bad-code\n}", "FLOW_INVALID_EXPECTED_ERROR_CODE")
+          ("empty error body", "test storefront.select/empty-error {\n    => error RUNTIME_ERROR\n}", "FLOW_EXPECTATION_BODY_EMPTY")
+          ("empty value-expression body", "test storefront.select/empty-value {\n    => value 1\n}", "FLOW_EXPECTATION_BODY_EMPTY")
+          ("trailing expectation source", "test storefront.select/trailing {\n    1\n    => 1 extra\n}", "FLOW_EXPECTATION_TRAILING") ]
+    for name, source, code in invalidSources do
+        expectError ("Flow test parser rejects " + name) code (FlowParser.parseTest "<invalid-flow-test>" source) |> ignore
+
+    for name, source, code in
+        [ ("error example", "example storefront.select/error {\n    1\n    => error RUNTIME_ERROR\n}", "FLOW_EXAMPLE_EXPECTATION_KIND")
+          ("expression example", "example storefront.select/value {\n    1\n    => value 1\n}", "FLOW_EXAMPLE_EXPECTATION_KIND")
+          ("empty example body", "example storefront.select/empty {\n    => 1\n}", "FLOW_EXPECTATION_BODY_EMPTY")
+          ("missing example expectation", "example storefront.select/missing {\n    1\n}", "FLOW_EXPECTATION_REQUIRED") ] do
+        expectError ("Flow example parser rejects " + name) code (FlowParser.parseExample "<invalid-flow-example>" source) |> ignore
+
+    let badTestSource =
+        { literalTest with
+            Expected = FlowTestExpectation.RuntimeError("bad-code", sourceSpan) }
+    expectLanguageError "host-built invalid runtime code fails rendering" "FLOW_INVALID_EXPECTED_ERROR_CODE" (fun () -> FlowSource.renderTest badTestSource |> ignore)
+    expectLanguageError "host-built invalid runtime code fails lowering" "FLOW_INVALID_EXPECTED_ERROR_CODE" (fun () -> FlowLowering.lowerTest compiledChoice.Context badTestSource |> ignore)
+    let emptyErrorTest =
+        { literalTest with Body = []; Expected = FlowTestExpectation.RuntimeError("RUNTIME_ERROR", sourceSpan) }
+    expectLanguageError "host-built empty runtime-error test fails rendering" "FLOW_EXPECTATION_BODY_EMPTY" (fun () -> FlowSource.renderTest emptyErrorTest |> ignore)
+    expectLanguageError "host-built empty runtime-error test fails lowering" "FLOW_EXPECTATION_BODY_EMPTY" (fun () -> FlowLowering.lowerTest compiledChoice.Context emptyErrorTest |> ignore)
+    let invalidOwnerTest = { literalTest with Word = "storefront/select" }
+    expectLanguageError "host-built noncanonical owner fails rendering" "FLOW_CASE_OWNER_NAME_INVALID" (fun () -> FlowSource.renderTest invalidOwnerTest |> ignore)
+    expectLanguageError "host-built noncanonical owner fails lowering" "FLOW_CASE_OWNER_NAME_INVALID" (fun () -> FlowLowering.lowerTest compiledChoice.Context invalidOwnerTest |> ignore)
+    let unsupportedCaseVersion = { literalTest with SyntaxVersion = 2 }
+    expectLanguageError "host-built unsupported test version fails rendering" "FLOW_VERSION_UNSUPPORTED" (fun () -> FlowSource.renderTest unsupportedCaseVersion |> ignore)
+    expectLanguageError "host-built unsupported test version fails lowering" "FLOW_VERSION_UNSUPPORTED" (fun () -> FlowLowering.lowerTest compiledChoice.Context unsupportedCaseVersion |> ignore)
+
+    let badScalarTest =
+        parseTest """test storefront.select/multi-output {
+    return (1, 2)
+    => 1
+}"""
+    expectLanguageError "test actual body must return exactly one value" "TEST_EXPECTED_STACK" (fun () -> FlowLowering.lowerTest compiledChoice.Context badScalarTest |> ignore)
+    let badScalarExpectation =
+        parseTest """test storefront.select/multi-expectation {
+    1
+    => value dup(1)
+}"""
+    expectLanguageError "value expectation must return exactly one value" "FLOW_CALL_OUTPUT_ARITY" (fun () -> FlowLowering.lowerTest compiledChoice.Context badScalarExpectation |> ignore)
+    let badValueType = parseTest "test storefront.select/value-type {\n    unit\n    => value \"wrong\"\n}"
+    let badValueTypeError = captureLanguageError "value expectation type mismatch" "TEST_EXPECTED_STACK" (fun () -> FlowLowering.lowerTest compiledChoice.Context badValueType |> ignore)
+    equal "value expectation mismatch diagnostic points to authored test source" (Some badValueType.Span) badValueTypeError.Span
+    let effectfulExpected = parseTest "test storefront.select/effectful-expected {\n    unit\n    => value console::write(\"denied\")\n}"
+    let effectDiagnostic = captureLanguageError "value expectation rejects observable effects" "TEST_EXPECTED_VALUE_EFFECTS" (fun () -> FlowLowering.lowerTest compiledChoice.Context effectfulExpected |> ignore)
+    check "effectful expectation diagnostics never expose private source coordinates"
+        (effectDiagnostic.Span |> Option.forall (fun source -> source.Column < Int32.MaxValue - 1000))
+    let effectfulUnselectedExpectation =
+        parseTest
+            """test storefront.select/unselected-expected-effect {
+    unit
+    => value if true { unit } else { console::write("unselected") }
+}"""
+    expectLanguageError "value expectation purity includes effects in an unselected branch" "TEST_EXPECTED_VALUE_EFFECTS" (fun () ->
+        FlowLowering.lowerTest compiledChoice.Context effectfulUnselectedExpectation |> ignore)
+    let conservativeActualEffect =
+        parseTest
+            """test storefront.select/unselected-actual-effect {
+    if true { unit } else { console::write("unselected") }
+    => value unit
+}"""
+    let compiledConservativeEffect = FlowLowering.compileTest compiledChoice.Context compiledChoice.Program conservativeActualEffect
+    let conservativeEffectBody = VerifiedIrBody.inspect compiledConservativeEffect.Body
+    equal "actual test body retains effect metadata from an unselected branch"
+        (Set.singleton IrEffect.ConsoleWrite) conservativeEffectBody.BodyInferredEffects
+    let actualPreflight = ResizeArray<Set<IrEffect>>()
+    let actualEffectInvocations = ResizeArray<string>()
+    let mutable instructionStartedBeforePreflight = false
+    let preflightHost =
+        { host actualEffectInvocations with
+            PreflightEffects = fun effects _ _ -> actualPreflight.Add effects
+            ChargeInstruction = fun _ _ ->
+                if actualPreflight.Count = 0 then instructionStartedBeforePreflight <- true }
+    equal "actual test takes the pure selected branch" [ UnitValue ]
+        (IrInterpreter.executeBody preflightHost "flow-conservative-actual" compiledConservativeEffect.Body)
+    equal "actual test effect preflight runs before any instruction" false instructionStartedBeforePreflight
+    equal "unselected actual-branch effects remain in preflight" [ Set.singleton IrEffect.ConsoleWrite ] (List.ofSeq actualPreflight)
+    equal "unselected actual-branch provider is not invoked" [] (List.ofSeq actualEffectInvocations)
+
+    let outputBudgetLiteral = FlowExpression.Literal(LInt 1L, sourceSpan)
+    let returnMembers = List.replicate 48000 outputBudgetLiteral
+    let oversizedExpected =
+        FlowExpression.If(
+            FlowExpression.Literal(LBool true, sourceSpan),
+            [ FlowStatement.Return(returnMembers, sourceSpan) ],
+            [ FlowStatement.Return(returnMembers, sourceSpan) ],
+            sourceSpan)
+    let sharedBudgetTest =
+        { literalTest with
+            Body = List.replicate 5000 (FlowStatement.Evaluate outputBudgetLiteral)
+            Expected = FlowTestExpectation.Expression oversizedExpected }
+    expectLanguageError "actual and expression expectation share one expanded-node budget" "FLOW_STRUCTURE_LIMIT" (fun () ->
+        FlowSource.renderTest sharedBudgetTest |> ignore)
+    expectLanguageError "lowering shares the combined actual/expectation node budget" "FLOW_STRUCTURE_LIMIT" (fun () ->
+        FlowLowering.lowerTest compiledChoice.Context sharedBudgetTest |> ignore)
+
 let private testFlowDiagnostics () =
     let context = loweringContext [] Map.empty
     let ambiguous = parseExpression "1.unknown(2)"
@@ -1293,6 +1771,7 @@ let main _ =
     testLoweringAndExecution ()
     testContainerAndMatchLowering ()
     testFlowOutputVectors ()
+    testFlowAuthoredCases ()
     testFlowDiagnostics ()
     printfn "Flow tests passed: %d assertions" assertions
     0

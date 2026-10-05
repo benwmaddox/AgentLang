@@ -1,14 +1,14 @@
 # Flow-authored tests and examples
 
-Status: implementation plan. This describes the next Flow syntax/compiler slice and its later Runtime integration. It does not claim that Flow tests or examples are currently parsed, compiled, or stored by Runtime.
+Status: Flow-native test/example parsing, rendering, validation, lowering, and compilation are implemented in Core. Durable Runtime storage and protocol integration remain a later stage.
 
 ## Current boundary
 
-The Flow frontend currently parses and renders expressions and words. It has no Flow test/example AST, parser, renderer, or lowering API. Core `TestDefinition` and `ExampleDefinition` carry legacy `Expr list` bodies; tests support literal, stable runtime-error-code, and pure value-expression expectations, while examples support literal expectations only. Compiler origin-aware test/example functions exist, but they consume those legacy executable definitions. Runtime still parses source with `Parser.parse`, serializes cases through `Source.renderTest` / `Source.renderExample`, and compiles them without Flow source origins.
+The Flow frontend parses and renders expressions, words, tests, and examples. Standalone Flow attachments lower to the existing Core `TestDefinition` and `ExampleDefinition` executable forms, then compile against an exact verified program with source-origin-aware compiler APIs. Runtime still loads and stores legacy attachments through `Parser.parse`, `Source.renderTest`, and `Source.renderExample`; this slice does not change Runtime persistence or its protocol.
 
-## Proposed source model
+## Flow source model
 
-Add a closed `FlowTestExpectation` union:
+`FlowTestExpectation` is a closed union:
 
 ```fsharp
 type FlowTestExpectation =
@@ -17,9 +17,9 @@ type FlowTestExpectation =
     | Expression of FlowExpression
 ```
 
-Add `FlowTestDefinition` and `FlowExampleDefinition` records with a case `Name`, owning `Word`, `Body: FlowStatement list`, expectation, complete `SourceText`, full `Span`, and `SyntaxVersion`. Examples keep a literal expectation. Retain spans for the header, body statements, expectation marker and value, and the example literal so diagnostics and IR source maps point back to authored text.
+`FlowTestDefinition` and `FlowExampleDefinition` carry a case `CaseName`, owning `Word`, `Body: FlowStatement list`, expectation, exact authored `SourceText`, full `Span`, and `SyntaxVersion`. Both also retain header and expectation spans; cases and literal values retain their own source spans. Examples keep a literal expectation. Shared Flow structural validation applies the same nesting/node limits to the body and value-expression expectation.
 
-Parse and render each test/example as a standalone source object with `FlowParser.parseTest`, `FlowParser.parseExample`, `FlowSource.renderTest`, and `FlowSource.renderExample`. A later project parser can combine these objects with words after dispatching each object using its owning revision's frontend metadata.
+Parse and render each test/example as a standalone source object with `FlowParser.parseTest`, `FlowParser.parseExample`, `FlowSource.renderTest`, and `FlowSource.renderExample`. The owner is metadata for attachment association; lowering deliberately does not require the owner to exist in the supplied word dictionary. A later project parser can combine these objects with words after dispatching each object using its owning revision's frontend metadata.
 
 Use the existing test/example header naming convention: the owner name is the canonical internal word name with dot separators, followed by `/` and the case name. Keep `::` for qualified word calls and references in expressions; parsing maps those names to the same internal dotted form.
 
@@ -49,23 +49,23 @@ The test body ends before `=>`. `=> literal` produces a literal assertion; `=> e
 
 ## Lowering and execution
 
-Add `FlowLowering.lowerTest` and `lowerExample`. Each returns the existing executable `TestDefinition` or `ExampleDefinition` together with the authored Flow source/version and its source projection. The executable body is derived from the Flow statements; the authored Flow source remains the source representation.
+`FlowLowering.lowerTest` and `lowerExample` return the existing executable `TestDefinition` or `ExampleDefinition` together with authored Flow source/version and a source projection. The executable body is derived from the Flow statements; the authored Flow source remains the source representation. Lowering applies Core test/example validation, including closed expected-value type equality, single-value constraints, runtime-error code validation, and expected-expression purity.
 
-For a test with `Expression` expectation, lower the tested body and expected expression with one shared source-marker allocator. Their marker sets must be disjoint from each other and from the compiler context's retained markers. Calling `lowerExpression` twice with the same context is insufficient because both lowerings can choose the same next marker. Pass the combined origin map to `Compiler.compileIrTestWithExpectationAgainstProgramWithSourceOrigins`. Use `Compiler.compileIrExampleAgainstProgramWithSourceOrigins` for examples. These APIs already compile the expected expression separately and require it to be pure.
+For a test with `Expression` expectation, lower the tested body and expected expression with one shared source-marker allocator. Their marker sets are disjoint from each other and from the compiler context's retained markers. Calling `lowerExpression` twice with the same context is insufficient because both lowerings can choose the same next marker. `FlowLowering.compileTest` passes the combined origin map to `Compiler.compileIrTestWithExpectationAgainstProgramWithSourceOrigins`; `compileExample` uses `Compiler.compileIrExampleAgainstProgramWithSourceOrigins`. The compiler produces separate executable bodies for actual and expected expressions.
 
 The tested body must produce one value for literal and expression assertions. An error assertion must execute a nonempty body. An expected expression must produce one value with the same closed type as the tested body and have no effects. Runtime currently runs a value expectation with an isolated trace, so its instructions, branches, and effects cannot satisfy the tested word's library coverage. Keep that separation when wiring Flow-origin-aware bodies. Coverage belongs to the library function's own authored IR sites reached by calls from the actual test body. The compiler emits detached test-body sites with `SiteOwner = None`; Runtime sets `CoverageTarget` to the tested word and records a hit only while that word is the active call. Results are then intersected with that word's coverage obligations. Inline `if`/`match` branches in test fixtures therefore cannot satisfy missing branches in the tested word, even when they produce the same outcome labels. Only execution of the target word's own branch sites counts.
 
 `FlowSource.renderTest` and `renderExample` should be deterministic and parseable. Decide the durable byte policy in stage 3. If storage keeps exact authored formatting, the source text and all spans must refer to those stored bytes; do not also promise that the stored bytes equal canonical rendering. If storage canonicalizes before commit, rebuild or reparse the source and spans from the exact canonical bytes that are hashed and stored. In either policy, persist the Flow source object as authority and never persist generated RPN as a Flow test/example definition.
 
-## Core acceptance
+## Core acceptance status
 
-- Parse/render/reparse literal, runtime-error, and value-expression tests; literal-only examples; nested Flow expressions; qualified calls; and word documentation. Check case names, owner names, syntax version, source text policy, and spans.
-- Reject missing or duplicate expectation markers, empty bodies where disallowed, malformed runtime error codes, extra content after expectations, multiple values, type mismatches, and effectful expected expressions. Reject error or expression expectations on examples.
-- Lower actual and expected bodies with nonoverlapping source markers, including a context that already contains Flow words. Check that diagnostics map back to authored expectation/body spans and do not expose private markers.
-- Execute each success/error assertion kind. Give a library word an uncovered Option/Result branch, then execute an inline fixture `match` that takes the same label; verify the library word remains undercovered. Separately call the library word with inputs that take both of its own branches and verify those calls satisfy its branch obligations. Confirm branches and effects in the expected expression do not count; an effect in an unselected branch of the actual test remains part of conservative effect validation.
-- Check that Flow examples execute and retain their literal expected value and authored source through parse/render/lower operations.
+- Focused Flow regressions cover parse/render/reparse of literal, runtime-error, and value-expression tests; literal-only examples; nested Flow expressions; qualified calls; and word documentation. They check owner/case names, syntax version, exact source text, and spans.
+- Parser, renderer, and lowerer regressions reject missing or duplicate expectation markers, empty bodies where disallowed, malformed runtime error codes, malformed owner/case names, extra content after expectations, multiple values, type mismatches, and effectful expected expressions. Examples reject error or expression expectations.
+- Attachment actual and expected bodies share one lowering state. Regressions check sparse retained marker IDs, disjoint actual/expected source markers, authored source projection, and diagnostics without private marker coordinates.
+- Execution regressions cover value, error, and example cases. Coverage uses the tested library's own source sites: an inline fixture branch cannot satisfy the library's obligation, calls through the library can cover both paths, and an expected-expression call through the library is traced separately. An effect in an unselected actual branch remains in preflight metadata, and an unselected expected-expression effect still fails purity validation.
+- Refined `Email` expectations succeed when both actual and expected sides retain the nominal type; an underlying `String` literal or expression does not match `Email`.
 
-Focused commands after the Core implementation:
+Focused validation command (result is recorded in `reports/031-flow-authored-cases.md`):
 
 ```powershell
 dotnet run --project tests/AgentLang.Flow.Tests -c Release
@@ -87,4 +87,4 @@ dotnet run --project tests/AgentLang.Storage.Tests -c Release
 ./scripts/Validate.ps1 -Configuration Release -ReportPath .agentlang/reports/flow-attachments-validation.json
 ```
 
-No code, build, or runtime integration is claimed by this plan.
+This document's implemented scope is the standalone Core/Flow attachment frontend; it does not claim durable Flow storage, Runtime attachment dispatch, or protocol migration.

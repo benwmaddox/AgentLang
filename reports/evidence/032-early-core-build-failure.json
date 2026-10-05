@@ -1,0 +1,14 @@
+{
+  "command": "dotnet build src/AgentLang.Core -c Release",
+  "exitCode": 1,
+  "warnings": 0,
+  "errors": [
+    "FlowLowering.fs(775,21) FS0001: expected FlowLoweredExample; actual FlowLoweredExpression",
+    "FlowLowering.fs(882,24) FS0001: expected ExampleDefinition; actual TestDefinition",
+    "FlowLowering.fs(916,57) FS0001: expected TestDefinition; actual ExampleDefinition",
+    "FlowLowering.fs(921,21) FS0001: expected FlowLoweredTest; actual FlowLoweredExample"
+  ],
+  "evidenceKind": "early build diagnostic transcription; not final validation",
+  "revision": "f5d59f349c98053560a30e38bd94cd3152f49332",
+  "dirty": true
+}

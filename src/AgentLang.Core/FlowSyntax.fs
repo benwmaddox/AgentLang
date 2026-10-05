@@ -72,6 +72,35 @@ type FlowWordDefinition =
       Span: SourceSpan
       SyntaxVersion: int }
 
+[<RequireQualifiedAccess>]
+type FlowTestExpectation =
+    | Literal of Literal * SourceSpan
+    | RuntimeError of string * SourceSpan
+    | Expression of FlowExpression
+
+type FlowTestDefinition =
+    { Word: string
+      CaseName: string
+      Body: FlowStatement list
+      Expected: FlowTestExpectation
+      SourceText: string
+      Span: SourceSpan
+      SyntaxVersion: int
+      HeaderSpan: SourceSpan
+      ExpectationSpan: SourceSpan }
+
+type FlowExampleDefinition =
+    { Word: string
+      CaseName: string
+      Body: FlowStatement list
+      Expected: Literal
+      ExpectedSpan: SourceSpan
+      SourceText: string
+      Span: SourceSpan
+      SyntaxVersion: int
+      HeaderSpan: SourceSpan
+      ExpectationSpan: SourceSpan }
+
 type FlowSourceProjection =
     { AuthoredSpans: Set<SourceSpan>
       /// Zero-length temporary/scope spans point at authored source positions.
@@ -89,6 +118,18 @@ type FlowLoweredExpression =
 type FlowLoweredWord =
     { Definition: WordDefinition
       ParameterNames: string list
+      SourceText: string
+      SyntaxVersion: int
+      Projection: FlowSourceProjection }
+
+type FlowLoweredTest =
+    { Definition: TestDefinition
+      SourceText: string
+      SyntaxVersion: int
+      Projection: FlowSourceProjection }
+
+type FlowLoweredExample =
+    { Definition: ExampleDefinition
       SourceText: string
       SyntaxVersion: int
       Projection: FlowSourceProjection }
@@ -113,6 +154,20 @@ module FlowStructure =
         | FlowExpression.Container(_, _, _, span)
         | FlowExpression.MatchOption(_, _, _, span)
         | FlowExpression.MatchResult(_, _, _, span) -> span
+
+    let private isIdentifierName (value: string) =
+        not (System.String.IsNullOrEmpty value)
+        && (System.Char.IsLetter value[0] || value[0] = '_')
+        && (value |> Seq.skip 1 |> Seq.forall (fun ch -> System.Char.IsLetterOrDigit ch || ch = '_' || ch = '-' || ch = '?' || ch = '!'))
+
+    let private validateCaseHeader kind word caseName span =
+        let validWord =
+            not (System.String.IsNullOrEmpty word)
+            && (word.Split('.') |> Array.forall isIdentifierName)
+        if not validWord then
+            Diagnostics.raiseError "FLOW_CASE_OWNER_NAME_INVALID" $"A Flow {kind} owner must use a canonical dotted word name." (Some word) (Some span) [ "word.name" ] [ word ]
+        if not (isIdentifierName caseName) then
+            Diagnostics.raiseError "FLOW_CASE_NAME_INVALID" $"A Flow {kind} case name must be an identifier." (Some word) (Some span) [ "case-name" ] [ caseName ]
 
     let private validateStructure (expressionRoots: FlowExpression list) (typeRoots: seq<LangType * SourceSpan>) (statementRoots: FlowStatement list) =
         let pending = Stack<Node>()
@@ -234,6 +289,26 @@ module FlowStructure =
             }
         validateStructure [] typeRoots definition.Body
 
+    let validateTestNesting (definition: FlowTestDefinition) =
+        validateCaseHeader "test" definition.Word definition.CaseName definition.HeaderSpan
+        let expressionRoots =
+            match definition.Expected with
+            | FlowTestExpectation.Expression expression -> [ expression ]
+            | FlowTestExpectation.Literal _ | FlowTestExpectation.RuntimeError _ -> []
+        match definition.Expected with
+        | FlowTestExpectation.RuntimeError(code, codeSpan) when not (TestExpectation.isValidRuntimeErrorCode code) ->
+            Diagnostics.raiseError "FLOW_INVALID_EXPECTED_ERROR_CODE" "Runtime-error expectations use a stable uppercase diagnostic code." (Some definition.Word) (Some codeSpan) [ "[A-Z][A-Z0-9_]*" ] [ code ]
+        | FlowTestExpectation.RuntimeError _ | FlowTestExpectation.Expression _ when List.isEmpty definition.Body ->
+            Diagnostics.raiseError "FLOW_EXPECTATION_BODY_EMPTY" "Runtime-error and value-expression tests require a nonempty actual body." (Some definition.Word) (Some definition.Span) [ "nonempty test body" ] []
+        | _ -> ()
+        validateStructure expressionRoots Seq.empty definition.Body
+
+    let validateExampleNesting (definition: FlowExampleDefinition) =
+        validateCaseHeader "example" definition.Word definition.CaseName definition.HeaderSpan
+        if List.isEmpty definition.Body then
+            Diagnostics.raiseError "FLOW_EXPECTATION_BODY_EMPTY" "A Flow example requires a nonempty actual body." (Some definition.Word) (Some definition.Span) [ "nonempty example body" ] []
+        validateStructure [] Seq.empty definition.Body
+
 /// Deterministic rendering for inspection and tests. Durable source storage is
 /// intentionally not wired to this frontend in the current phase.
 module FlowSource =
@@ -348,5 +423,36 @@ module FlowSource =
         lines.Add("    effects " + effects)
         if not (System.String.IsNullOrEmpty definition.Documentation) then lines.Add("    doc " + JsonSerializer.Serialize(definition.Documentation))
         renderStatements 1 definition.Body |> List.iter lines.Add
+        lines.Add("}")
+        String.concat "\n" lines
+
+    let private renderExpectation = function
+        | FlowTestExpectation.Literal(literal, _) -> renderLiteral literal
+        | FlowTestExpectation.RuntimeError(code, _) -> "error " + code
+        | FlowTestExpectation.Expression expression -> "value " + renderInlineExpression expression
+
+    let renderTest (definition: FlowTestDefinition) =
+        FlowStructure.validateTestNesting definition
+        match definition.Expected with
+        | FlowTestExpectation.RuntimeError(code, codeSpan) when not (TestExpectation.isValidRuntimeErrorCode code) ->
+            Diagnostics.raiseError "FLOW_INVALID_EXPECTED_ERROR_CODE" "Runtime-error expectations use a stable uppercase diagnostic code." (Some definition.Word) (Some codeSpan) [ "[A-Z][A-Z0-9_]*" ] [ code ]
+        | _ -> ()
+        if definition.SyntaxVersion <> 1 then
+            Diagnostics.raiseError "FLOW_VERSION_UNSUPPORTED" "Only Flow syntax version 1 is supported by this renderer." (Some definition.Word) (Some definition.Span) [ "1" ] [ string definition.SyntaxVersion ]
+        let lines = ResizeArray<string>()
+        lines.Add($"test {definition.Word}/{definition.CaseName} {{")
+        renderStatements 1 definition.Body |> List.iter lines.Add
+        lines.Add("    => " + renderExpectation definition.Expected)
+        lines.Add("}")
+        String.concat "\n" lines
+
+    let renderExample (definition: FlowExampleDefinition) =
+        FlowStructure.validateExampleNesting definition
+        if definition.SyntaxVersion <> 1 then
+            Diagnostics.raiseError "FLOW_VERSION_UNSUPPORTED" "Only Flow syntax version 1 is supported by this renderer." (Some definition.Word) (Some definition.Span) [ "1" ] [ string definition.SyntaxVersion ]
+        let lines = ResizeArray<string>()
+        lines.Add($"example {definition.Word}/{definition.CaseName} {{")
+        renderStatements 1 definition.Body |> List.iter lines.Add
+        lines.Add("    => " + renderLiteral definition.Expected)
         lines.Add("}")
         String.concat "\n" lines

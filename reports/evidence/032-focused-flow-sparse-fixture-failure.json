@@ -1,0 +1,7 @@
+{
+  "chunk_id": "7d4238",
+  "wall_time_seconds": 7.1450969,
+  "exit_code": 1,
+  "original_token_count": 125,
+  "output": "Unhandled exception. System.Exception: the attachment compiler fixture has gaps between retained source markers: assertion failed\r\n   at AgentLang.Flow.Tests.check[a](a name, Boolean condition) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs:line 10\r\n   at AgentLang.Flow.Tests.testFlowAuthoredCases() in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs:line 1419\r\n   at AgentLang.Flow.Tests.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs:line 1759\n"
+}
