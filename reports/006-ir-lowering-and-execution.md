@@ -37,3 +37,7 @@ Only after every runtime path uses IR without an AST fallback, all existing acce
 Independent read-only review found no material defect in the scoped lowerer/verifier. The executable backend must dispatch PrimitiveId through a fixed host implementation mapping and pass its own canonical catalog; matching a contract alone does not identify a host implementation. This is a trusted-host boundary, not language access to arbitrary F# metadata.
 
 The new lowerer build was also compared against the pinned published AST CLI with the same verifier: 314 checks passed. [Saved compatibility evidence](evidence/006-ast-compatibility.json) establishes selected cross-build AST behavior only; both builds still execute AST, so it is not interpreter-on-IR parity.
+
+## Published revision and clean CI evidence
+
+Implementation and reports were committed at `743e07d79ab1bb29ea859bc61ab23aec540b4092`, pushed to the private repository, and fast-forward merged/pushed to `main`. [CI run 37261518116](https://github.com/benwmaddox/AgentLang/actions/runs/37261518116) completed successfully for that exact revision. Downloaded [validation evidence](evidence/006-committed-ci-validation.json) confirms `dirty: false` and `passed: true`; the [fresh-process projection evidence](evidence/006-committed-ci-projection.json) also passed. This records the lowering checkpoint and vocabulary foundation, not the unfinished runtime cutover.
