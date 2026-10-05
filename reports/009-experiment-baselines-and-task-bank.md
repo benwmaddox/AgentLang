@@ -25,3 +25,7 @@ These are infrastructure and specification results, not live model outcomes or p
 ## Published revision and clean CI
 
 Code and reports shipped together at `246dba27dfe0da619423bdf7781c8493596e42fa`. [Exact-revision CI run 37299454080](https://github.com/benwmaddox/AgentLang/actions/runs/37299454080) passed. Downloaded [validation](evidence/008-committed-ci-validation.json) confirms `dirty: false`, all 16 checks passed and the expected revision; [persistence evidence](evidence/008-committed-ci-projection.json) passed 99 checks. This checkpoint is merged and pushed to private `main`; runtime migration and actual benchmark execution remain pending.
+
+## Fixture documentation correction
+
+A subsequent source audit found that the suite document incorrectly named a nonexistent ReferenceCustomer without Kind. The actual Domain.Customer already has Kind, nominal ID, validated Email, signed Money balance and CreatedAt; Customer.create validates raw Kind and normalizes the instant. The suite document is corrected. S01 still supplies only a fragment, so a versioned full schema and explicit deterministic factory remain necessary. This correction changes documentation, not reference behavior or benchmark evidence.
