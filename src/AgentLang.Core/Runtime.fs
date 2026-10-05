@@ -15,6 +15,8 @@ module Runtime =
 
     type private DictionaryState =
         { Words: Map<string, WordEntry>
+          WordIds: Map<string, string>
+          Deprecated: Set<string>
           Records: Map<string, RecordEntry>
           Scalars: Map<string, ScalarEntry>
           Tests: Map<string, TestDefinition>
@@ -26,6 +28,11 @@ module Runtime =
         { Id: string
           Goal: string
           Snapshot: DictionaryState
+          StorageSnapshot: StoreSnapshot option
+          ManifestSnapshot: ProjectManifest option
+          ManifestHashSnapshot: string option
+          VirtualFilesSnapshot: Map<string, string>
+          ClockSnapshot: string
           mutable Active: bool
           mutable Inspected: Set<string>
           mutable Used: Set<string>
@@ -41,7 +48,7 @@ module Runtime =
           Passed: bool
           Error: Diagnostic option
           Actual: Value list
-          Expected: Literal
+          Expected: TestExpectation
           Instructions: Set<string>
           BranchOutcomes: Set<string> }
 
@@ -54,6 +61,30 @@ module Runtime =
           mutable Console: string list
           CoverageTarget: string option
           Isolated: bool }
+
+    let rec private namedTypeReferences = function
+        | TNamed name -> Set.singleton name
+        | TList item | TOption item -> namedTypeReferences item
+        | TResult(ok, error) -> Set.union (namedTypeReferences ok) (namedTypeReferences error)
+        | _ -> Set.empty
+
+    let private expressionTypeReferences (body: Expr list) =
+        let rec collect (expressions: Expr list) =
+            expressions
+            |> List.fold (fun found expression ->
+                match expression with
+                | ConstructContainer(_, arguments, _) ->
+                    arguments
+                    |> List.map namedTypeReferences
+                    |> Set.unionMany
+                    |> Set.union found
+                | If(thenBranch, elseBranch, _)
+                | MatchOption(_, thenBranch, elseBranch, _) ->
+                    Set.union found (Set.union (collect thenBranch) (collect elseBranch))
+                | MatchResult(_, _, okBranch, errorBranch, _) ->
+                    Set.union found (Set.union (collect okBranch) (collect errorBranch))
+                | _ -> found) Set.empty
+        collect body
 
     type private SyntaxDescriptor =
         { Name: string
@@ -121,10 +152,17 @@ module Runtime =
     let private entry (definition: WordDefinition) (builtin: Builtin option) (status: WordStatus) (maturity: WordMaturity) (revision: int) : WordEntry =
         { Definition = definition; Builtin = builtin; Status = status; Maturity = maturity; Revision = revision }
 
+    let private newWordIdentity () = "word_" + Guid.NewGuid().ToString("N")
+
     type Engine(projectDirectory: string, capabilities: Set<string>, ?clockValue: string) =
         let projectRoot = if String.IsNullOrWhiteSpace projectDirectory then None else Some(Path.GetFullPath projectDirectory)
-        let dictionaryPath = projectRoot |> Option.map (fun path -> Path.Combine(path, "dictionary.agent"))
-        let fixedClock = defaultArg clockValue "2000-01-01T00:00:00Z"
+        let store = projectRoot |> Option.map Storage.create
+        let mutable storageGeneration = 0L
+        let mutable storageAuthority = EmptyAuthority
+        let mutable currentManifest: ProjectManifest option = None
+        let mutable currentManifestHash: string option = None
+        let mutable lastExportWarning: StorageError option = None
+        let mutable fixedClock = defaultArg clockValue "2000-01-01T00:00:00Z"
         let maxCollectionLength = 10000
         let syntaxDescriptors =
             [ { Name = "list.empty"; Syntax = "list.empty<T>"; Inputs = []; Outputs = [ "List<T>" ]; TypeParameters = [ "T" ]; Effects = []; EffectRule = "none"; Documentation = "Constructs an empty List<T>. T must be a declared closed type."; Coverage = [] }
@@ -154,6 +192,8 @@ module Runtime =
             node
         let mutable data =
             { Words = Compiler.primitives
+              WordIds = Map.empty
+              Deprecated = Set.empty
               Records = Map.empty
               Scalars = Map.empty
               Tests = Map.empty
@@ -231,6 +271,15 @@ module Runtime =
             let withGenerated = Map.fold (fun found name value -> Map.add name value found) baseWords generated
             Map.fold (fun found name value ->
                 if value.Builtin.IsNone then Map.add name value found else found) withGenerated state.Words
+
+        let wordIdentity (state: DictionaryState) (item: WordEntry) =
+            match item.Builtin with
+            | Some(BuiltinOp _) -> "primitive_" + item.Definition.Name
+            | Some _ -> "generated_" + item.Definition.Name
+            | None ->
+                match state.WordIds.TryFind item.Definition.Name with
+                | Some identity -> identity
+                | None -> error "WORD_ID_MISSING" $"Word '{item.Definition.Name}' has no stable identity." (Some item.Definition.Name) None [] []
 
         let log (kind: string) (name: string) =
             match activeTask with
@@ -615,9 +664,11 @@ module Runtime =
                         | _ -> current)
                     state
                     state.Replacements
+            let persistentWords = restored.Words |> Map.filter (fun _ value -> value.Builtin.IsSome || value.Status = Persistent)
             let projected =
                 { restored with
-                    Words = restored.Words |> Map.filter (fun _ value -> value.Builtin.IsSome || value.Status = Persistent)
+                    Words = persistentWords
+                    WordIds = restored.WordIds |> Map.filter (fun name _ -> persistentWords.ContainsKey name)
                     Records = restored.Records |> Map.filter (fun _ value -> value.Status = Persistent)
                     Scalars = restored.Scalars |> Map.filter (fun _ value -> value.Status = Persistent)
                     Tests = Map.empty
@@ -639,9 +690,9 @@ module Runtime =
         let sourceFor (state: DictionaryState) =
             let state = durableState state
             let sections = ResizeArray<string>()
-            for _, item in state.Records |> Map.toSeq |> Seq.sortBy fst do if item.Status = Persistent then sections.Add item.Definition.SourceText
-            for _, item in state.Scalars |> Map.toSeq |> Seq.sortBy fst do if item.Status = Persistent then sections.Add item.Definition.SourceText
-            for word in topologicalWords state do sections.Add(serializeWord word)
+            for _, item in state.Records |> Map.toSeq |> Seq.sortBy fst do if item.Status = Persistent then sections.Add(Source.renderRecord item.Definition)
+            for _, item in state.Scalars |> Map.toSeq |> Seq.sortBy fst do if item.Status = Persistent then sections.Add(Source.renderScalar item.Definition)
+            for word in topologicalWords state do sections.Add(Source.renderWord true word.Definition)
             let durableTypes =
                 Set.union
                     (state.Records |> Map.toSeq |> Seq.choose (fun (name, item) -> if item.Status = Persistent then Some(lowerFirst name) else None) |> Set.ofSeq)
@@ -655,7 +706,7 @@ module Runtime =
                     || (durableTypes |> Set.exists (fun prefix -> test.Word = prefix + ".new" || test.Word = prefix + ".value" || test.Word.StartsWith(prefix + ".", StringComparison.Ordinal)))
                 )
                 |> List.sortBy (fun test -> test.Word, test.Name)
-            for test in durableTests do sections.Add test.SourceText
+            for test in durableTests do sections.Add(Source.renderTest test)
             let durableExamples =
                 state.Examples
                 |> Map.toList
@@ -665,7 +716,7 @@ module Runtime =
                     || (durableTypes |> Set.exists (fun prefix -> example.Word = prefix + ".new" || example.Word = prefix + ".value" || example.Word.StartsWith(prefix + ".", StringComparison.Ordinal)))
                 )
                 |> List.sortBy (fun example -> example.Word, example.Name)
-            for example in durableExamples do sections.Add example.SourceText
+            for example in durableExamples do sections.Add(Source.renderExample example)
             String.concat (Environment.NewLine + Environment.NewLine) sections + Environment.NewLine
 
         let sourceForAgent (source: string) =
@@ -675,23 +726,176 @@ module Runtime =
                 not (trimmed.StartsWith("maturity ", StringComparison.Ordinal) || trimmed.StartsWith("revision ", StringComparison.Ordinal)))
             |> String.concat Environment.NewLine
 
-        let writeAtomic (path: string) (contents: string) =
-            let directory = Path.GetDirectoryName path
-            Directory.CreateDirectory directory |> ignore
-            let temp = Path.Combine(directory, $".{Path.GetFileName path}.{Guid.NewGuid():N}.tmp")
-            File.WriteAllText(temp, contents, System.Text.UTF8Encoding(false))
-            File.Move(temp, path, true)
-
-        let persist (state: DictionaryState) =
-            match dictionaryPath with
-            | Some path -> writeAtomic path (sourceFor state)
-            | None -> ()
-
         let addTest (results: Map<string, TestDefinition>) (test: TestDefinition) =
             Map.add ($"{test.Word}/{test.Name}") test results
 
         let addExample (results: Map<string, ExampleDefinition>) (example: ExampleDefinition) =
             Map.add ($"{example.Word}/{example.Name}") example results
+
+        let raiseStorageError (storageError: StorageError) =
+            error storageError.Code storageError.Message None None [] (storageError.Path |> Option.toList)
+
+        let parseProjectSource sourceName source =
+            match Parser.parse sourceName source with
+            | Error diagnostic -> raise (LanguageException diagnostic)
+            | Ok parsed -> parsed
+
+        let parsedState (parsed: ParsedSource) (previous: DictionaryState) (identityByName: Map<string, string>) =
+            let records: Map<string, RecordEntry> =
+                parsed.Records
+                |> List.map (fun (value: RecordDefinition) -> value.Name, ({ Definition = value; Status = Persistent }: RecordEntry))
+                |> Map.ofList
+            let scalars: Map<string, ScalarEntry> =
+                parsed.Scalars
+                |> List.map (fun (value: ScalarTypeDefinition) -> value.Name, ({ Definition = value; Status = Persistent }: ScalarEntry))
+                |> Map.ofList
+            let words =
+                parsed.Words
+                |> List.map (fun value -> value.Name, entry value None Persistent value.Maturity value.Revision)
+                |> Map.ofList
+            let wordIds =
+                parsed.Words
+                |> List.map (fun value -> value.Name, (identityByName.TryFind value.Name |> Option.defaultWith newWordIdentity))
+                |> Map.ofList
+            let state =
+                { previous with
+                    Words = Map.fold (fun found name value -> Map.add name value found) Compiler.primitives words
+                    WordIds = wordIds
+                    Deprecated = Set.empty
+                    Records = records
+                    Scalars = scalars
+                    Tests = parsed.Tests |> List.fold addTest Map.empty
+                    Examples = parsed.Examples |> List.fold addExample Map.empty
+                    History = Map.empty
+                    Replacements = Map.empty }
+            state
+
+        let currentManifestFor (state: DictionaryState) (baseline: DictionaryState) (actor: string) =
+            let durable = durableState state
+            let exportText = sourceFor durable
+            let projectObject = Storage.sourceObject StorageObjectKind.ProjectSource exportText
+            let sourceObjects = ResizeArray<SourceObject>()
+            sourceObjects.Add projectObject
+
+            let typeSources =
+                [ for KeyValue(name, item) in durable.Records do
+                      let sourceObject = Storage.sourceObject StorageObjectKind.TypeDefinition (Source.renderRecord item.Definition)
+                      sourceObjects.Add sourceObject
+                      yield { Name = name; Definition = sourceObject.Reference }
+                  for KeyValue(name, item) in durable.Scalars do
+                      let sourceObject = Storage.sourceObject StorageObjectKind.TypeDefinition (Source.renderScalar item.Definition)
+                      sourceObjects.Add sourceObject
+                      yield { Name = name; Definition = sourceObject.Reference } ]
+
+            let manifestBase = currentManifest |> Option.defaultValue { FormatVersion = 1; ProjectSource = projectObject.Reference; Types = []; Words = []; Revisions = [] }
+            let revisions = ResizeArray<WordRevision>(manifestBase.Revisions)
+            let mutable revisionKeys = revisions |> Seq.map (fun item -> item.WordId, item.Revision) |> Set.ofSeq
+            let taskId = activeTask |> Option.filter (fun task -> task.Active) |> Option.map (fun task -> task.Id)
+            let timestamp = DateTimeOffset.Parse(fixedClock, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind).ToUniversalTime()
+
+            let attachedSources (wordName: string) =
+                let tests =
+                    durable.Tests
+                    |> Map.toSeq
+                    |> Seq.map snd
+                    |> Seq.filter (fun test -> test.Word = wordName)
+                    |> Seq.sortBy (fun test -> test.Name)
+                    |> Seq.map (fun test ->
+                        let sourceObject = Storage.sourceObject StorageObjectKind.TestDefinition (Source.renderTest test)
+                        sourceObjects.Add sourceObject
+                        sourceObject.Reference)
+                    |> Seq.toList
+                let examples =
+                    durable.Examples
+                    |> Map.toSeq
+                    |> Seq.map snd
+                    |> Seq.filter (fun example -> example.Word = wordName)
+                    |> Seq.sortBy (fun example -> example.Name)
+                    |> Seq.map (fun example ->
+                        let sourceObject = Storage.sourceObject StorageObjectKind.ExampleDefinition (Source.renderExample example)
+                        sourceObjects.Add sourceObject
+                        sourceObject.Reference)
+                    |> Seq.toList
+                tests, examples
+
+            let addRevision revisionActor revisionTaskId (item: WordEntry) =
+                match durable.WordIds.TryFind item.Definition.Name with
+                | None -> error "WORD_ID_MISSING" $"Persistent word '{item.Definition.Name}' has no stable identity." (Some item.Definition.Name) None [] []
+                | Some wordId when revisionKeys.Contains(wordId, item.Definition.Revision) -> ()
+                | Some wordId ->
+                    let definitionObject = Storage.sourceObject StorageObjectKind.WordDefinition (Source.renderWord true item.Definition)
+                    sourceObjects.Add definitionObject
+                    let tests, examples = attachedSources item.Definition.Name
+                    let revision =
+                        { WordId = wordId
+                          Name = item.Definition.Name
+                          Revision = item.Definition.Revision
+                          Definition = definitionObject.Reference
+                          Tests = tests
+                          Examples = examples
+                          Maturity = item.Maturity
+                          Actor = revisionActor
+                          TaskId = revisionTaskId
+                          TimestampUtc = timestamp
+                          Deprecated = durable.Deprecated.Contains item.Definition.Name }
+                    revisions.Add revision
+                    revisionKeys <- Set.add (wordId, item.Definition.Revision) revisionKeys
+
+            // A legacy dictionary has no authoritative revision objects. On its
+            // first manifest commit, record its currently durable definitions as
+            // the honest migration baseline before adding staged revisions.
+            if currentManifest.IsNone then
+                let legacyBase = durableState baseline
+                legacyBase.Words
+                |> Map.toSeq
+                |> Seq.map snd
+                |> Seq.filter (fun item -> item.Builtin.IsNone && item.Status = Persistent)
+                |> Seq.sortBy (fun item -> item.Definition.Name)
+                |> Seq.iter (addRevision "host" None)
+
+            durable.Words
+            |> Map.toSeq
+            |> Seq.map snd
+            |> Seq.filter (fun item -> item.Builtin.IsNone && item.Status = Persistent)
+            |> Seq.sortBy (fun item -> item.Definition.Name)
+            |> Seq.iter (addRevision actor taskId)
+
+            let heads =
+                durable.Words
+                |> Map.toSeq
+                |> Seq.map snd
+                |> Seq.filter (fun item -> item.Builtin.IsNone && item.Status = Persistent)
+                |> Seq.map (fun item ->
+                    match durable.WordIds.TryFind item.Definition.Name with
+                    | None -> error "WORD_ID_MISSING" $"Persistent word '{item.Definition.Name}' has no stable identity." (Some item.Definition.Name) None [] []
+                    | Some wordId ->
+                        { WordId = wordId
+                          CurrentName = item.Definition.Name
+                          CurrentRevision = item.Definition.Revision
+                          Deprecated = durable.Deprecated.Contains item.Definition.Name })
+                |> Seq.toList
+
+            let manifest =
+                { FormatVersion = 1
+                  ProjectSource = projectObject.Reference
+                  Types = typeSources
+                  Words = heads
+                  Revisions = List.ofSeq revisions }
+            manifest, List.ofSeq sourceObjects, exportText
+
+        let publish (baseline: DictionaryState) (state: DictionaryState) actor =
+            match store with
+            | None -> lastExportWarning <- None
+            | Some projectStore ->
+                let manifest, sources, exportText = currentManifestFor state baseline actor
+                match Storage.commit projectStore storageGeneration manifest sources exportText with
+                | Error storageError -> raiseStorageError storageError
+                | Ok committed ->
+                    storageGeneration <- committed.Generation
+                    storageAuthority <- committed.Authority
+                    currentManifest <- Some manifest
+                    currentManifestHash <- committed.ManifestHash
+                    lastExportWarning <- committed.ExportWarning
 
         let validateGraph (state: DictionaryState) =
             let words = effectiveWords state
@@ -742,22 +946,94 @@ module Runtime =
                     colors[name] <- 2
             graph |> Map.toSeq |> Seq.iter (fun (name, _) -> visit [] name)
 
+        let validateStoredProject (projectStore: Store) (manifest: ProjectManifest option) (manifestHash: string option) (projectSource: string option) =
+            let parsed = projectSource |> Option.map (parseProjectSource "dictionary.agent")
+            let identities =
+                manifest
+                |> Option.map (fun value -> value.Words |> List.map (fun head -> head.CurrentName, head.WordId) |> Map.ofList)
+                |> Option.defaultValue Map.empty
+            let proposed =
+                match parsed with
+                | None -> data
+                | Some source -> parsedState source data identities
+            validateGraph proposed
+            match manifest with
+            | None -> proposed
+            | Some value ->
+                let headsByName = value.Words |> List.map (fun head -> head.CurrentName, head) |> Map.ofList
+                let headsById = value.Words |> List.map (fun head -> head.WordId, head) |> Map.ofList
+                let currentUserWords = proposed.Words |> Map.filter (fun _ item -> item.Builtin.IsNone && item.Status = Persistent)
+                if currentUserWords.Count <> value.Words.Length then
+                    error "STORAGE_PROJECT_MISMATCH" "Manifest word heads do not match definitions in the authoritative project source." None None [ string value.Words.Length ] [ string currentUserWords.Count ]
+                if Set.ofList (value.Types |> List.map (fun item -> item.Name)) <> knownTypes proposed then
+                    error "STORAGE_PROJECT_MISMATCH" "Manifest type names do not match definitions in the authoritative project source." None None (knownTypes proposed |> Set.toList) (value.Types |> List.map (fun item -> item.Name))
+                for KeyValue(name, word) in currentUserWords do
+                    match headsByName.TryFind name with
+                    | None -> error "STORAGE_PROJECT_MISMATCH" $"Project source word '{name}' has no manifest head." (Some name) None [] []
+                    | Some head when head.CurrentRevision <> word.Definition.Revision ->
+                        error "STORAGE_PROJECT_MISMATCH" $"Project source revision for '{name}' does not match its manifest head." (Some name) None [ string head.CurrentRevision ] [ string word.Definition.Revision ]
+                    | Some head ->
+                        match value.Revisions |> List.tryFind (fun revision -> revision.WordId = head.WordId && revision.Revision = head.CurrentRevision) with
+                        | Some revision when revision.Maturity = word.Maturity && revision.Deprecated = head.Deprecated -> ()
+                        | _ -> error "STORAGE_PROJECT_MISMATCH" $"Current word metadata for '{name}' differs from its manifest revision." (Some name) None [] []
+                for typeSource in value.Types do
+                    match Storage.readSource projectStore typeSource.Definition with
+                    | Error storageError -> raiseStorageError storageError
+                    | Ok source ->
+                        let typeParsed = parseProjectSource ($"<type:{typeSource.Name}>") source
+                        let rendered =
+                            match typeParsed.Records, typeParsed.Scalars with
+                            | [ record ], [] when record.Name = typeSource.Name -> Source.renderRecord record
+                            | [], [ scalar ] when scalar.Name = typeSource.Name -> Source.renderScalar scalar
+                            | _ -> error "STORAGE_PROJECT_MISMATCH" $"Manifest type object '{typeSource.Name}' does not contain exactly that type." (Some typeSource.Name) None [] []
+                        let expected =
+                            match proposed.Records.TryFind typeSource.Name, proposed.Scalars.TryFind typeSource.Name with
+                            | Some record, _ -> Source.renderRecord record.Definition
+                            | _, Some scalar -> Source.renderScalar scalar.Definition
+                            | _ -> error "STORAGE_PROJECT_MISMATCH" $"Manifest type '{typeSource.Name}' is missing from the project source." (Some typeSource.Name) None [] []
+                        if rendered <> expected then error "STORAGE_PROJECT_MISMATCH" $"Manifest type '{typeSource.Name}' differs from project source." (Some typeSource.Name) None [] []
+                let hash = manifestHash |> Option.defaultWith (fun () -> error "STORAGE_INVALID_MANIFEST" "Manifest authority has no manifest hash." None None [] [])
+                let mutable loadedHistory: Map<string, WordDefinition list> = Map.empty
+                for metadata in value.Revisions |> List.sortBy (fun revision -> revision.WordId, revision.Revision) do
+                    match headsById.TryFind metadata.WordId with
+                    | None -> error "STORAGE_PROJECT_MISMATCH" $"Revision '{metadata.WordId}/{metadata.Revision}' has no word head." (Some metadata.Name) None [] []
+                    | Some head ->
+                        match Storage.readRevision projectStore hash metadata.WordId metadata.Revision with
+                        | Error storageError -> raiseStorageError storageError
+                        | Ok revisionContent ->
+                            let definitionParsed = parseProjectSource ($"<revision:{metadata.Name}/{metadata.Revision}>") revisionContent.DefinitionSource
+                            match definitionParsed.Words with
+                            | [ definition ] when definition.Name = metadata.Name && definition.Revision = metadata.Revision && definition.Maturity = metadata.Maturity ->
+                                for testSource in revisionContent.TestSources do
+                                    let parsedTest = parseProjectSource "<stored-test>" testSource
+                                    match parsedTest.Tests with
+                                    | [ test ] when test.Word = metadata.Name -> ()
+                                    | _ -> error "STORAGE_PROJECT_MISMATCH" $"Stored test metadata for '{metadata.Name}/{metadata.Revision}' is invalid." (Some metadata.Name) None [] []
+                                for exampleSource in revisionContent.ExampleSources do
+                                    let parsedExample = parseProjectSource "<stored-example>" exampleSource
+                                    match parsedExample.Examples with
+                                    | [ example ] when example.Word = metadata.Name -> ()
+                                    | _ -> error "STORAGE_PROJECT_MISMATCH" $"Stored example metadata for '{metadata.Name}/{metadata.Revision}' is invalid." (Some metadata.Name) None [] []
+                                let previous = loadedHistory.TryFind head.CurrentName |> Option.defaultValue []
+                                loadedHistory <- Map.add head.CurrentName (previous @ [ definition ]) loadedHistory
+                            | _ -> error "STORAGE_PROJECT_MISMATCH" $"Stored revision {metadata.WordId}/{metadata.Revision} does not match its manifest metadata." (Some metadata.Name) None [] []
+                let deprecated = value.Words |> List.filter (fun head -> head.Deprecated) |> List.map (fun head -> head.CurrentName) |> Set.ofList
+                { proposed with History = loadedHistory; Deprecated = deprecated }
+
         let loadProject () =
-            match dictionaryPath with
-            | Some path when File.Exists path ->
-                let source = File.ReadAllText path
-                match Parser.parse path source with
-                | Error diagnostic -> raise (LanguageException diagnostic)
-                | Ok parsed ->
-                    let records: Map<string, RecordEntry> = parsed.Records |> List.map (fun (value: RecordDefinition) -> value.Name, ({ Definition = value; Status = Persistent }: RecordEntry)) |> Map.ofList
-                    let scalars: Map<string, ScalarEntry> = parsed.Scalars |> List.map (fun (value: ScalarTypeDefinition) -> value.Name, ({ Definition = value; Status = Persistent }: ScalarEntry)) |> Map.ofList
-                    let mutable proposed = { data with Records = records; Scalars = scalars }
-                    let words = parsed.Words |> List.map (fun value -> value.Name, entry value None Persistent value.Maturity value.Revision) |> Map.ofList
-                    proposed <- { proposed with Words = Map.fold (fun found name value -> Map.add name value found) Compiler.primitives words }
-                    proposed <- { proposed with Tests = parsed.Tests |> List.fold addTest Map.empty; Examples = parsed.Examples |> List.fold addExample Map.empty }
-                    validateGraph proposed
+            match store with
+            | None -> ()
+            | Some projectStore ->
+                match Storage.load projectStore with
+                | Error storageError -> raiseStorageError storageError
+                | Ok loaded ->
+                    let proposed = validateStoredProject projectStore loaded.Manifest loaded.ManifestHash loaded.ProjectSource
                     data <- proposed
-            | _ -> ()
+                    storageGeneration <- loaded.Generation
+                    storageAuthority <- loaded.Authority
+                    currentManifest <- loaded.Manifest
+                    currentManifestHash <- loaded.ManifestHash
+                    lastExportWarning <- loaded.ExportWarning
 
         do loadProject ()
 
@@ -769,36 +1045,65 @@ module Runtime =
                 |> Option.map (fun entry -> collectInstructionSites entry.Definition.Body)
                 |> Option.defaultValue Set.empty
             let trace = createTrace (Some test.Word) Map.empty
-            try
-                Compiler.checkTest (knownTypes state) words test |> ignore
-                let stack, _ = runBody state words trace 0 "<test>" [] Map.empty test.Body
-                let expected = Types.literalValue test.Expected
-                let passed = stack = [ expected ]
+            let makeResult passed diagnostic actual =
                 { Name = test.Name
                   Word = test.Word
                   Passed = passed
-                  Error = if passed then None else Some { Code = "TEST_ASSERTION_FAILED"; Message = "Actual value did not equal the expected literal."; Word = Some test.Word; Span = Some test.Span; Expected = [ Types.formatValue expected ]; Actual = stack |> List.map Types.formatValue }
-                  Actual = stack
+                  Error = diagnostic
+                  Actual = actual
                   Expected = test.Expected
                   Instructions = trace.CoverageInstructions |> Set.intersect sites
                   BranchOutcomes = trace.CoverageBranches }
-            with
-            | LanguageException diagnostic ->
-                { Name = test.Name
-                  Word = test.Word
-                  Passed = false
-                  Error = Some diagnostic
-                  Actual = []
-                  Expected = test.Expected
-                  Instructions = trace.CoverageInstructions |> Set.intersect sites
-                  BranchOutcomes = trace.CoverageBranches }
+            let compileError =
+                try
+                    Compiler.checkTest (knownTypes state) words test |> ignore
+                    None
+                with LanguageException diagnostic -> Some diagnostic
+            match compileError with
+            | Some diagnostic -> makeResult false (Some diagnostic) []
+            | None ->
+                try
+                    let stack, _ = runBody state words trace 0 "<test>" [] Map.empty test.Body
+                    match test.Expected with
+                    | ExpectedValue literal ->
+                        let expected = Types.literalValue literal
+                        let passed = stack = [ expected ]
+                        let diagnostic =
+                            if passed then None
+                            else
+                                Some
+                                    { Code = "TEST_ASSERTION_FAILED"
+                                      Message = "Actual value did not equal the expected literal."
+                                      Word = Some test.Word
+                                      Span = Some test.Span
+                                      Expected = [ Types.formatValue expected ]
+                                      Actual = stack |> List.map Types.formatValue }
+                        makeResult passed diagnostic stack
+                    | ExpectedRuntimeError code ->
+                        let diagnostic =
+                            { Code = "TEST_EXPECTED_RUNTIME_ERROR"
+                              Message = $"Expected runtime error '{code}', but the test expression completed normally."
+                              Word = Some test.Word
+                              Span = Some test.Span
+                              Expected = [ code ]
+                              Actual = stack |> List.map Types.formatValue }
+                        makeResult false (Some diagnostic) stack
+                with
+                | LanguageException diagnostic ->
+                    match test.Expected with
+                    | ExpectedRuntimeError expectedCode when diagnostic.Code = expectedCode -> makeResult true None []
+                    | _ -> makeResult false (Some diagnostic) []
 
         let resultJson (result: TestCaseResult) =
             let node = JsonObject()
             node["name"] <- jstr result.Name
             node["word"] <- jstr result.Word
             node["passed"] <- jbool result.Passed
-            node["expected"] <- toJsonValue (Types.literalValue result.Expected)
+            match result.Expected with
+            | ExpectedValue literal -> node["expected"] <- toJsonValue (Types.literalValue literal)
+            | ExpectedRuntimeError code ->
+                node["expected"] <- jstr ("error " + code)
+                node["expectedErrorCode"] <- jstr code
             node["actual"] <- jsonNode (result.Actual |> List.map Types.formatValue)
             match result.Error with
             | Some diagnostic -> node["errorCode"] <- jstr diagnostic.Code; node["message"] <- jstr diagnostic.Message
@@ -895,6 +1200,7 @@ module Runtime =
                         proposed <-
                             { proposed with
                                 Words = Map.remove name proposed.Words
+                                WordIds = Map.remove name proposed.WordIds
                                 Tests = proposed.Tests |> Map.filter (fun _ test -> test.Word <> name)
                                 Examples = proposed.Examples |> Map.filter (fun _ example -> example.Word <> name) }
             validateGraph proposed
@@ -944,6 +1250,7 @@ module Runtime =
                 obj["outputs"] <- jsonNode (definition.Outputs |> List.map Types.format)
                 obj["effects"] <- jsonNode (definition.Effects |> Set.toList)
                 obj["documentation"] <- jstr definition.Documentation
+                obj["id"] <- jstr (wordIdentity state item)
                 obj["dependencies"] <- jsonNode (direct |> Set.toList)
                 obj["transitiveDependencies"] <- jsonNode (transitive |> Set.toList)
                 obj["callers"] <- jsonNode callers
@@ -954,6 +1261,7 @@ module Runtime =
                 obj["kind"] <- jstr kind
                 obj["status"] <- jstr status
                 obj["maturity"] <- jstr maturity
+                obj["deprecated"] <- jbool (state.Deprecated.Contains name)
                 obj["revision"] <- jint item.Revision
                 obj["testCount"] <- jint tests.Length
                 obj["exampleCount"] <- jint examples.Length
@@ -1000,6 +1308,11 @@ module Runtime =
             let status = if temporary then Temporary else Candidate
             let records: Map<string, RecordEntry> = parsed.Records |> List.fold (fun result (record: RecordDefinition) -> Map.add record.Name ({ Definition = record; Status = Candidate }: RecordEntry) result) old.Records
             let scalars: Map<string, ScalarEntry> = parsed.Scalars |> List.fold (fun result (scalar: ScalarTypeDefinition) -> Map.add scalar.Name ({ Definition = scalar; Status = Candidate }: ScalarEntry) result) old.Scalars
+            let wordIds =
+                parsed.Words
+                |> List.fold (fun (identities: Map<string, string>) (definition: WordDefinition) ->
+                    if identities.ContainsKey definition.Name then identities
+                    else Map.add definition.Name (newWordIdentity ()) identities) old.WordIds
             let initialEntries, initialReplacements : Map<string, WordEntry> * Map<string, ReplacementBackup> =
                 List.fold (fun (words: Map<string, WordEntry>, backups: Map<string, ReplacementBackup>) (definition: WordDefinition) ->
                     if Compiler.primitives.ContainsKey definition.Name || (makeGenerated { old with Records = records; Scalars = scalars }).ContainsKey definition.Name then
@@ -1051,7 +1364,7 @@ module Runtime =
                     | Some item when item.Status = Persistent -> error "TEST_TARGET_IMMUTABLE" $"Tests and examples for generated type word '{name}' must be attached before the type is committed." (Some name) None [] []
                     | _ -> ()
                 | _ -> ()
-            let proposed = { old with Records = records; Scalars = scalars; Words = entries; Tests = tests; Examples = examples; Replacements = replacements }
+            let proposed = { old with Records = records; Scalars = scalars; Words = entries; WordIds = wordIds; Tests = tests; Examples = examples; Replacements = replacements }
             validateGraph proposed
             let frozen = frozenValidatorWords old (effectiveWords old)
             let changed = parsed.Words |> List.map (fun word -> word.Name) |> Set.ofList
@@ -1066,11 +1379,12 @@ module Runtime =
 
         let saveTaskLog (task: TaskSession) =
             let node = makeTaskJson task
-            match projectRoot with
-            | Some root ->
-                let history = Path.Combine(root, "history")
-                Directory.CreateDirectory history |> ignore
-                writeAtomic (Path.Combine(history, task.Id + ".json")) (node.ToJsonString(JsonSerializerOptions(WriteIndented = true)))
+            match store with
+            | Some projectStore ->
+                let taskLogId = task.Id.Substring("task-".Length)
+                match Storage.saveTaskLog projectStore taskLogId (node.ToJsonString(JsonSerializerOptions(WriteIndented = true))) with
+                | Ok () -> ()
+                | Error storageError -> raiseStorageError storageError
             | None -> ()
             previousTaskLog <- Some node
 
@@ -1092,7 +1406,7 @@ module Runtime =
             taskCounter <- max taskCounter persistedMaximum + 1
             taskCounter
 
-        let commitCandidates target library =
+        let commitCandidates target library actor includeReplacementCallers =
             let candidateWords = data.Words |> Map.filter (fun _ value -> value.Status = Candidate)
             let candidateRecords = data.Records |> Map.filter (fun _ value -> value.Status = Candidate)
             let candidateScalars = data.Scalars |> Map.filter (fun _ value -> value.Status = Candidate)
@@ -1150,6 +1464,44 @@ module Runtime =
                         | _ -> Set.empty
                     typeClosure (rest @ Set.toList referenced) (Set.add name found)
 
+            let selectedTypeWordNames (types: Set<string>) =
+                currentWords
+                |> Map.toSeq
+                |> Seq.choose (fun (name, _) ->
+                    ownerOfGeneratedWord name
+                    |> Option.filter types.Contains
+                    |> Option.map (fun _ -> name))
+                |> Set.ofSeq
+
+            let selectedMetadata (owners: Set<string>) =
+                let tests =
+                    data.Tests
+                    |> Map.toSeq
+                    |> Seq.choose (fun (_, test) ->
+                        if owners.Contains test.Word then Some(test.Word, "test", test.Name, test.Body)
+                        else None)
+                let examples =
+                    data.Examples
+                    |> Map.toSeq
+                    |> Seq.choose (fun (_, example) ->
+                        if owners.Contains example.Word then Some(example.Word, "example", example.Name, example.Body)
+                        else None)
+                Seq.append tests examples |> Seq.toList
+
+            let validateSelectedMetadataTemporaryReferences metadata =
+                for owner, kind, name, body in metadata do
+                    let temporaryDependency =
+                        Compiler.dependencies body
+                        |> Set.toList
+                        |> List.tryFind (fun dependency ->
+                            data.Words.TryFind dependency
+                            |> Option.exists (fun value -> value.Status = Temporary))
+                    match temporaryDependency with
+                    | Some dependency ->
+                        let code = if kind = "test" then "COMMIT_TEMPORARY_TEST_DEPENDENCY" else "COMMIT_TEMPORARY_EXAMPLE_DEPENDENCY"
+                        error code $"Selected {kind} '{name}' on '{owner}' references temporary word '{dependency}', which cannot be committed." (Some owner) None [] [ dependency ]
+                    | None -> ()
+
             let mutable selectedWords, selectedTypes =
                 match target with
                 | None -> candidateWords |> Map.toSeq |> Seq.map fst |> Set.ofSeq, candidateTypes
@@ -1160,6 +1512,23 @@ module Runtime =
                     | Some owner when candidateTypes.Contains owner -> Set.empty, typeClosure [ owner ] Set.empty
                     | _ -> error "COMMIT_NOT_CANDIDATE" $"'{name}' is not a candidate word or type." (Some name) None [] []
 
+            if includeReplacementCallers then
+                let mutable callerSearch = selectedWords
+                let mutable addedCallers = true
+                while addedCallers do
+                    let stagedCallers =
+                        data.Replacements
+                        |> Map.toSeq
+                        |> Seq.choose (fun (name, backup) ->
+                            if candidateWords.ContainsKey name && not (selectedWords.Contains name) && backup.Word.Status = Persistent && not (Set.isEmpty (Set.intersect callerSearch (Compiler.dependencies backup.Word.Definition.Body))) then Some name
+                            else None)
+                        |> Set.ofSeq
+                    if Set.isEmpty stagedCallers then addedCallers <- false
+                    else
+                        let additions = wordClosure (Set.toList stagedCallers) Set.empty
+                        selectedWords <- Set.union selectedWords additions
+                        callerSearch <- Set.union callerSearch additions
+
             let mutable changed = true
             while changed do
                 let previousWords, previousTypes = selectedWords, selectedTypes
@@ -1168,9 +1537,38 @@ module Runtime =
                     |> Set.toList
                     |> List.choose (fun name -> candidateScalars.TryFind name |> Option.bind (fun value -> value.Definition.Validator))
                     |> List.fold (fun found name -> Set.union found (wordClosure [ name ] Set.empty)) Set.empty
-                selectedWords <- Set.union selectedWords validatorWords
+                let owners = Set.union selectedWords (selectedTypeWordNames selectedTypes)
+                let metadata = selectedMetadata owners
+                validateSelectedMetadataTemporaryReferences metadata
+                let metadataDependencies = metadata |> List.map (fun (_, _, _, body) -> Compiler.dependencies body) |> Set.unionMany
+                let metadataTypes =
+                    metadata
+                    |> List.map (fun (_, _, _, body) -> expressionTypeReferences body)
+                    |> Set.unionMany
+                let generatedMetadataTypes =
+                    metadataDependencies
+                    |> Set.toList
+                    |> List.choose ownerOfGeneratedWord
+                    |> Set.ofList
+                let metadataWords = wordClosure (Set.toList metadataDependencies) Set.empty
+                let replacementCallerWords =
+                    if includeReplacementCallers then
+                        let callerRoots =
+                            data.Replacements
+                            |> Map.toSeq
+                            |> Seq.choose (fun (name, backup) ->
+                                if candidateWords.ContainsKey name
+                                   && not (selectedWords.Contains name)
+                                   && backup.Word.Status = Persistent
+                                   && not (Set.isEmpty (Set.intersect selectedWords (Compiler.dependencies backup.Word.Definition.Body))) then Some name
+                                else None)
+                            |> Set.ofSeq
+                        wordClosure (Set.toList callerRoots) Set.empty
+                    else Set.empty
+                selectedWords <- Set.unionMany [ selectedWords; validatorWords; metadataWords; replacementCallerWords ]
                 let referencedTypes = selectedWords |> Set.toList |> List.map typeReferencesForWord |> Set.unionMany
-                selectedTypes <- typeClosure (Set.union selectedTypes referencedTypes |> Set.toList) selectedTypes
+                let allReferencedTypes = Set.unionMany [ referencedTypes; metadataTypes; generatedMetadataTypes ]
+                selectedTypes <- typeClosure (Set.union selectedTypes allReferencedTypes |> Set.toList) selectedTypes
                 changed <- previousWords <> selectedWords || previousTypes <> selectedTypes
 
             if Set.isEmpty selectedWords && Set.isEmpty selectedTypes then
@@ -1181,7 +1579,8 @@ module Runtime =
                 |> Map.map (fun name value ->
                     if selectedWords.Contains name then
                         let promoteToLibrary = library && (target.IsNone || target = Some name)
-                        { value with Status = Persistent; Maturity = if promoteToLibrary || value.Maturity = LibraryWord then LibraryWord else ProjectWord }
+                        let maturity = if promoteToLibrary || value.Maturity = LibraryWord then LibraryWord else ProjectWord
+                        { value with Status = Persistent; Maturity = maturity; Definition = { value.Definition with Maturity = maturity } }
                     else value)
             let proposedRecords = data.Records |> Map.map (fun name value -> if selectedTypes.Contains name then { value with Status = Persistent } else value)
             let proposedScalars = data.Scalars |> Map.map (fun name value -> if selectedTypes.Contains name then { value with Status = Persistent } else value)
@@ -1191,7 +1590,6 @@ module Runtime =
                     Records = proposedRecords
                     Scalars = proposedScalars
                     Replacements = data.Replacements |> Map.filter (fun name _ -> not (selectedWords.Contains name)) }
-            let finalWords = effectiveWords proposed
             validateGraph proposed
             for name in selectedWords do
                 let candidate = candidateWords[name]
@@ -1199,7 +1597,53 @@ module Runtime =
                 if not (Set.isEmpty danglingTemp) then error "COMMIT_TEMPORARY_DEPENDENCY" $"Candidate '{name}' depends on temporary word '{Set.minElement danglingTemp}'. Promote it and commit it before this word." (Some name) None [] (Set.toList danglingTemp)
                 let attached = proposed.Tests |> Map.toList |> List.map snd |> List.filter (fun test -> test.Word = name)
                 if List.isEmpty attached then error "COMMIT_TEST_REQUIRED" $"Candidate '{name}' needs at least one attached passing test before commit." (Some name) None [ "attached passing test" ] []
-            let results = selectedWords |> Set.toList |> List.collect (fun name -> runTestsFor proposed finalWords (Some name))
+            let durableBefore = durableState data
+            let replacing = selectedWords |> Set.filter (fun name -> durableBefore.Words.ContainsKey name)
+            let durableProposed = durableState proposed
+            let durableWords = effectiveWords durableProposed
+            validateGraph durableProposed
+            let durableMetadataOwners = Set.union selectedWords (selectedTypeWordNames selectedTypes)
+            let selectedMetadataEntries = selectedMetadata durableMetadataOwners
+            let missingDurableTests =
+                selectedMetadataEntries
+                |> List.choose (fun (owner, kind, name, _) ->
+                    if kind = "test" && not (durableProposed.Tests.ContainsKey($"{owner}/{name}")) then Some($"{owner}/{name}")
+                    else None)
+            if not (List.isEmpty missingDurableTests) then
+                error "COMMIT_SELECTED_TEST_NOT_DURABLE" "A selected test would not survive the durable project projection." None None [] missingDurableTests
+            let missingDurableExamples =
+                selectedMetadataEntries
+                |> List.choose (fun (owner, kind, name, _) ->
+                    if kind = "example" && not (durableProposed.Examples.ContainsKey($"{owner}/{name}")) then Some($"{owner}/{name}")
+                    else None)
+            if not (List.isEmpty missingDurableExamples) then
+                error "COMMIT_SELECTED_EXAMPLE_NOT_DURABLE" "A selected example would not survive the durable project projection." None None [] missingDurableExamples
+            let selectedResults = selectedWords |> Set.toList |> List.collect (fun name -> runTestsFor durableProposed durableWords (Some name))
+            let mutable changedNames = replacing
+            let mutable callers = Set.empty
+            let mutable foundCallers = true
+            while foundCallers do
+                let nextCallers =
+                    durableBefore.Words
+                    |> Map.toSeq
+                    |> Seq.choose (fun (name, item) ->
+                        if item.Status = Persistent && not (Set.isEmpty (Set.intersect changedNames (Compiler.dependencies item.Definition.Body))) then Some name
+                        else None)
+                    |> Set.ofSeq
+                    |> Set.filter (fun name -> not (callers.Contains name))
+                callers <- Set.union callers nextCallers
+                changedNames <- Set.union changedNames nextCallers
+                foundCallers <- not nextCallers.IsEmpty
+            let callerResults =
+                callers
+                |> Set.filter (fun caller -> not (selectedWords.Contains caller))
+                |> Set.toList
+                |> List.collect (fun caller ->
+                    let attached = durableProposed.Tests |> Map.toSeq |> Seq.map snd |> Seq.filter (fun test -> test.Word = caller) |> Seq.toList
+                    if List.isEmpty attached then
+                        error "REPLACE_CALLER_TESTS_REQUIRED" $"Replacing a dependency requires attached passing tests on persistent caller '{caller}'." (Some caller) None [ "attached passing test" ] []
+                    runTestsFor durableProposed durableWords (Some caller))
+            let results = selectedResults @ callerResults
             lastResults <- results
             recordTestResults results
             let failed = results |> List.filter (fun result -> not result.Passed)
@@ -1221,12 +1665,11 @@ module Runtime =
             let history =
                 selectedWords
                 |> Set.fold (fun (found: Map<string, WordDefinition list>) name ->
-                    let candidate = candidateWords[name]
                     let previous = found.TryFind name |> Option.defaultValue []
-                    Map.add name (previous @ [ candidate.Definition ]) found) data.History
+                    Map.add name (previous @ [ proposedWords[name].Definition ]) found) data.History
             let finalState = { proposed with History = history }
             validateGraph (durableState finalState)
-            persist finalState
+            publish data finalState actor
             data <- finalState
             lastResults <- results
             results
@@ -1300,11 +1743,13 @@ module Runtime =
                         log "inspect" item.Definition.Name
                         let value = JsonObject()
                         value["name"] <- jstr item.Definition.Name
+                        value["id"] <- jstr (wordIdentity data item)
                         value["inputs"] <- jsonNode (item.Definition.Inputs |> List.map Types.format)
                         value["outputs"] <- jsonNode (item.Definition.Outputs |> List.map Types.format)
                         value["effects"] <- jsonNode (item.Definition.Effects |> Set.toList)
                         value["status"] <- jstr (match item.Status with Primitive -> "primitive" | Candidate -> "candidate" | Temporary -> "temporary" | Persistent -> "persistent")
                         value["maturity"] <- jstr (if item.Maturity = LibraryWord then "library" else "project")
+                        value["deprecated"] <- jbool (data.Deprecated.Contains item.Definition.Name)
                         array.Add value)
                     let payload = JsonObject()
                     payload["words"] <- array
@@ -1415,28 +1860,184 @@ module Runtime =
                     recordTestResults allResults
                     let results = allResults |> List.filter (fun result -> not result.Passed)
                     resultList "failed-tests" $"{results.Length} failing test(s) on current dictionary." results None
-                | "commit" | "commit-word" | "task.commit" ->
+                | "commit" | "commit-word" | "replace-word" | "task.commit" ->
                     let name = readString args "word" ""
                     let library = readBool args "library" false
+                    let actor = readString args "actor" "client"
                     let hasCandidates =
                         (data.Words |> Map.exists (fun _ value -> value.Status = Candidate))
                         || (data.Records |> Map.exists (fun _ value -> value.Status = Candidate))
                         || (data.Scalars |> Map.exists (fun _ value -> value.Status = Candidate))
                     if operation = "task.commit" && not (activeTask |> Option.exists (fun task -> task.Active)) then
                         error "TASK_NOT_ACTIVE" "No active task can be committed." None None [] []
+                    elif actor <> "client" && actor <> "host" then
+                        error "PROVENANCE_INVALID_ACTOR" "Commit actor must be 'client' or 'host'." None None [ "client"; "host" ] [ actor ]
+                    elif operation = "replace-word" && (name = "" || not (data.Replacements.ContainsKey name)) then
+                        error "REPLACE_NOT_STAGED" "replace-word requires the name of a staged replacement for an existing persistent word." (if name = "" then None else Some name) None [] []
                     else
                         let results =
                             if operation = "task.commit" && not hasCandidates then []
-                            else commitCandidates (if name = "" then None else Some name) library
+                            else commitCandidates (if name = "" then None else Some name) library actor (operation = "replace-word")
                         if operation = "task.commit" then
                             match activeTask with
                             | Some task ->
                                 cleanupTaskTemporaries task
                                 task.Active <- false
                                 saveTaskLog task
-                                success "task.commit" "Task committed, temporary words were cleared, and the task log was saved." (Some(makeTaskJson task))
+                                let warning = lastExportWarning |> Option.map (fun item -> $" Export warning: {item.Message}") |> Option.defaultValue ""
+                                success "task.commit" ($"Task committed, temporary words were cleared, and the task log was saved.{warning}") (Some(makeTaskJson task))
                             | None -> error "TASK_NOT_ACTIVE" "No active task can be committed." None None [] []
-                        else success "commit" $"{results.Length} attached test(s) passed; selected candidates committed." (Some(jsonNode (results |> List.map (fun value -> $"{value.Word}/{value.Name}"))))
+                        elif operation = "replace-word" then
+                            let warning = lastExportWarning |> Option.map (fun item -> $" Export warning: {item.Message}") |> Option.defaultValue ""
+                            success "replace-word" ($"Replacement of '{name}' passed caller checks and was committed.{warning}") (Some(jsonNode (results |> List.map (fun value -> $"{value.Word}/{value.Name}"))))
+                        else
+                            let warning = lastExportWarning |> Option.map (fun item -> $" Export warning: {item.Message}") |> Option.defaultValue ""
+                            success "commit" ($"{results.Length} attached test(s) passed; selected candidates committed.{warning}") (Some(jsonNode (results |> List.map (fun value -> $"{value.Word}/{value.Name}"))))
+                | "rename" ->
+                    let oldName = readString args "word" ""
+                    let newName = readString args "to" ""
+                    let actor = readString args "actor" "client"
+                    if actor <> "client" && actor <> "host" then
+                        error "PROVENANCE_INVALID_ACTOR" "Maintenance actor must be 'client' or 'host'." None None [ "client"; "host" ] [ actor ]
+                    elif oldName = "" || newName = "" || oldName = newName then
+                        error "RENAME_INVALID_NAME" "Rename requires distinct nonempty source and target names." (if oldName = "" then None else Some oldName) None [] [ oldName; newName ]
+                    elif (data.Words |> Map.exists (fun _ item -> item.Status = Candidate || item.Status = Temporary))
+                         || (data.Records |> Map.exists (fun _ item -> item.Status = Candidate))
+                         || (data.Scalars |> Map.exists (fun _ item -> item.Status = Candidate)) then
+                        error "RENAME_STAGED_CHANGES" "Commit or discard staged edits before renaming persistent vocabulary." None None [] []
+                    else
+                        let effective = effectiveWords data
+                        match data.Words.TryFind oldName with
+                        | None -> error "NAME_UNKNOWN_WORD" $"Word '{oldName}' is not a user-defined word." (Some oldName) None [] []
+                        | Some original when original.Builtin.IsSome -> error "WORD_MAINTENANCE_IMMUTABLE" "Primitive and generated words cannot be renamed." (Some oldName) None [] []
+                        | Some original when original.Status <> Persistent -> error "WORD_MAINTENANCE_REQUIRES_COMMIT" "Only committed words can be renamed." (Some oldName) None [ "persistent" ] [ string original.Status ]
+                        | Some _ ->
+                            if effective.ContainsKey newName || (knownTypes data).Contains newName then
+                                error "RENAME_COLLISION" $"The name '{newName}' is already used by a word or type." (Some newName) None [] []
+                            let frozen = frozenValidatorWords data effective
+                            if frozen.Contains oldName then
+                                error "TYPE_VALIDATOR_FROZEN" $"Cannot rename '{oldName}' because it belongs to a persistent scalar validator closure." (Some oldName) None [] [ oldName ]
+                            let updates =
+                                data.Words
+                                |> Map.toList
+                                |> List.choose (fun (oldKey, item) ->
+                                    if item.Builtin.IsSome then None
+                                    else
+                                        let renamed = Source.renameWordDefinition oldName newName item.Definition
+                                        if oldKey <> oldName && renamed.Body = item.Definition.Body then None
+                                        else
+                                            let revision = item.Revision + 1
+                                            let definition = { renamed with Revision = revision; Maturity = item.Maturity }
+                                            let definition = { definition with SourceText = Source.renderWord true definition }
+                                            Some(oldKey, definition.Name, { item with Definition = definition; Revision = revision }))
+                            let identity = data.WordIds.TryFind oldName |> Option.defaultWith (fun () -> error "WORD_ID_MISSING" $"Word '{oldName}' has no stable identity." (Some oldName) None [] [])
+                            let wordIds = data.WordIds |> Map.remove oldName |> Map.add newName identity
+                            let words =
+                                updates
+                                |> List.fold (fun found (_, name, item) -> Map.add name item found) (Map.remove oldName data.Words)
+                            let tests = data.Tests |> Map.toSeq |> Seq.map (fun (_, item) -> Source.renameTestOwner oldName newName item) |> Seq.fold addTest Map.empty
+                            let examples = data.Examples |> Map.toSeq |> Seq.map (fun (_, item) -> Source.renameExampleOwner oldName newName item) |> Seq.fold addExample Map.empty
+                            let scalars =
+                                data.Scalars
+                                |> Map.map (fun _ item ->
+                                    let definition = Source.renameScalarValidator oldName newName item.Definition
+                                    if definition.Validator = item.Definition.Validator then item
+                                    else { item with Definition = definition })
+                            let deprecated = if data.Deprecated.Contains oldName then data.Deprecated |> Set.remove oldName |> Set.add newName else data.Deprecated
+                            let rewritten = { data with Words = words; WordIds = wordIds; Deprecated = deprecated; Scalars = scalars; Tests = tests; Examples = examples; Replacements = Map.empty }
+                            let parsed = parseProjectSource "<rename>" (sourceFor rewritten)
+                            let parsedProposed = parsedState parsed rewritten wordIds
+                            let movedHistory: Map<string, WordDefinition list> =
+                                match data.History.TryFind oldName with
+                                | Some oldHistory -> data.History |> Map.remove oldName |> Map.add newName oldHistory
+                                | None -> data.History
+                            let history: Map<string, WordDefinition list> =
+                                updates
+                                |> List.fold (fun found (_, name, item) ->
+                                    let previous = found.TryFind name |> Option.defaultValue []
+                                    Map.add name (previous @ [ item.Definition ]) found) movedHistory
+                            let proposed = { parsedProposed with History = history; Deprecated = deprecated }
+                            validateGraph proposed
+                            let affectedNames = updates |> List.map (fun (_, name, _) -> name) |> Set.ofList
+                            let wordsAfter = effectiveWords proposed
+                            let results =
+                                affectedNames
+                                |> Set.toList
+                                |> List.collect (fun name ->
+                                    let attached = proposed.Tests |> Map.toSeq |> Seq.map snd |> Seq.filter (fun test -> test.Word = name) |> Seq.toList
+                                    if List.isEmpty attached then
+                                        error "RENAME_TESTS_REQUIRED" $"Renaming or rewriting '{name}' requires at least one attached test." (Some name) None [ "attached passing test" ] []
+                                    runTestsFor proposed wordsAfter (Some name))
+                            recordTestResults results
+                            let failed = results |> List.filter (fun item -> not item.Passed)
+                            if not (List.isEmpty failed) then
+                                error "RENAME_TESTS_FAILED" "Affected tests must pass before the rename can be published." None None [] (failed |> List.map (fun item -> $"{item.Word}/{item.Name}"))
+                            for name in affectedNames do
+                                let candidate = wordsAfter[name]
+                                if candidate.Maturity = LibraryWord then
+                                    let ownTests = results |> List.filter (fun test -> test.Word = name)
+                                    let requiredInstructions = collectInstructionSites candidate.Definition.Body
+                                    let requiredBranches = collectBranchSites candidate.Definition.Body
+                                    let coveredInstructions = ownTests |> List.fold (fun found test -> Set.union found test.Instructions) Set.empty
+                                    let coveredBranches = ownTests |> List.fold (fun found test -> Set.union found test.BranchOutcomes) Set.empty
+                                    let uncovered = Set.difference requiredInstructions coveredInstructions
+                                    let missingBranches = Set.difference requiredBranches coveredBranches
+                                    if not (Set.isEmpty uncovered && Set.isEmpty missingBranches && not (List.isEmpty ownTests)) then
+                                        error "LIBRARY_COVERAGE_INCOMPLETE" $"Renamed library word '{name}' requires complete attached test coverage." (Some name) None [] (Set.toList uncovered @ Set.toList missingBranches)
+                            publish data proposed actor
+                            data <- proposed
+                            lastResults <- results
+                            let payload = JsonObject()
+                            payload["id"] <- jstr identity
+                            payload["from"] <- jstr oldName
+                            payload["to"] <- jstr newName
+                            payload["rewrittenWords"] <- jsonNode (affectedNames |> Set.toList)
+                            success "rename" $"Renamed '{oldName}' to '{newName}' and validated {results.Length} affected test(s)." (Some payload)
+                | "deprecate" ->
+                    let name = readString args "word" ""
+                    let actor = readString args "actor" "client"
+                    if actor <> "client" && actor <> "host" then
+                        error "PROVENANCE_INVALID_ACTOR" "Maintenance actor must be 'client' or 'host'." None None [ "client"; "host" ] [ actor ]
+                    elif (data.Words |> Map.exists (fun _ item -> item.Status = Candidate || item.Status = Temporary))
+                         || (data.Records |> Map.exists (fun _ item -> item.Status = Candidate))
+                         || (data.Scalars |> Map.exists (fun _ item -> item.Status = Candidate)) then
+                        error "DEPRECATE_STAGED_CHANGES" "Commit or discard staged edits before deprecating a word." None None [] []
+                    else
+                        match data.Words.TryFind name with
+                        | None -> error "NAME_UNKNOWN_WORD" $"Word '{name}' is not a user-defined word." (Some name) None [] []
+                        | Some item when item.Builtin.IsSome -> error "WORD_MAINTENANCE_IMMUTABLE" "Primitive and generated words cannot be deprecated." (Some name) None [] []
+                        | Some item when item.Status <> Persistent -> error "WORD_MAINTENANCE_REQUIRES_COMMIT" "Only committed words can be deprecated." (Some name) None [ "persistent" ] [ string item.Status ]
+                        | Some item when data.Deprecated.Contains name ->
+                            let payload = JsonObject()
+                            payload["id"] <- jstr (wordIdentity data item)
+                            payload["deprecated"] <- jbool true
+                            success "deprecate" $"Word '{name}' is already deprecated." (Some payload)
+                        | Some item ->
+                            let revision = item.Revision + 1
+                            let definition = { item.Definition with Revision = revision }
+                            let definition = { definition with SourceText = Source.renderWord true definition }
+                            let updated = { item with Definition = definition; Revision = revision }
+                            let proposedWords = Map.add name updated data.Words
+                            let tests = runTestsFor { data with Words = proposedWords } (Map.add name updated (effectiveWords data)) (Some name)
+                            if List.isEmpty tests then error "DEPRECATE_TESTS_REQUIRED" $"Word '{name}' needs an attached test before it can be deprecated." (Some name) None [ "attached passing test" ] []
+                            recordTestResults tests
+                            let failed = tests |> List.filter (fun result -> not result.Passed)
+                            if not (List.isEmpty failed) then error "DEPRECATE_TESTS_FAILED" "The word's attached tests must pass before deprecation." (Some name) None [] (failed |> List.map (fun result -> result.Name))
+                            let history = data.History.TryFind name |> Option.defaultValue []
+                            let proposed =
+                                { data with
+                                    Words = proposedWords
+                                    Deprecated = Set.add name data.Deprecated
+                                    History = Map.add name (history @ [ definition ]) data.History }
+                            validateGraph proposed
+                            publish data proposed actor
+                            data <- proposed
+                            lastResults <- tests
+                            let payload = JsonObject()
+                            payload["id"] <- jstr (wordIdentity proposed updated)
+                            payload["deprecated"] <- jbool true
+                            payload["revision"] <- jint revision
+                            success "deprecate" $"Deprecated '{name}' after {tests.Length} passing test(s)." (Some payload)
                 | "promote" ->
                     let name = readString args "word" ""
                     match data.Words.TryFind name with
@@ -1465,6 +2066,7 @@ module Runtime =
                             | None ->
                                 { data with
                                     Words = Map.remove name data.Words
+                                    WordIds = Map.remove name data.WordIds
                                     Tests = data.Tests |> Map.filter (fun _ test -> test.Word <> name)
                                     Examples = data.Examples |> Map.filter (fun _ example -> example.Word <> name) }
                         validateGraph proposed
@@ -1500,43 +2102,200 @@ module Runtime =
                     match activeTask with
                     | Some task when task.Active -> error "TASK_ALREADY_ACTIVE" "A task is already active." (Some task.Id) None [] []
                     | _ ->
+                        let storageSnapshot =
+                            match store with
+                            | None -> None
+                            | Some projectStore ->
+                                match Storage.capture projectStore with
+                                | Error storageError -> raiseStorageError storageError
+                                | Ok snapshot when snapshot.Generation <> storageGeneration ->
+                                    error "STORAGE_STALE_GENERATION" "Project storage changed since this engine loaded; reload the project before starting a task." None None [ string storageGeneration ] [ string snapshot.Generation ]
+                                | Ok snapshot -> Some snapshot
                         let taskNumber = nextTaskNumber ()
-                        let task = { Id = $"task-{taskNumber:D4}"; Goal = readString args "goal" ""; Snapshot = data; Active = true; Inspected = Set.empty; Used = Set.empty; Created = Set.empty; TestsRun = 0; TestsFailed = 0; EffectCounts = Map.empty; Errors = [] }
+                        let task =
+                            { Id = $"task-{taskNumber:D4}"
+                              Goal = readString args "goal" ""
+                              Snapshot = data
+                              StorageSnapshot = storageSnapshot
+                              ManifestSnapshot = currentManifest
+                              ManifestHashSnapshot = currentManifestHash
+                              VirtualFilesSnapshot = virtualFiles
+                              ClockSnapshot = fixedClock
+                              Active = true
+                              Inspected = Set.empty
+                              Used = Set.empty
+                              Created = Set.empty
+                              TestsRun = 0
+                              TestsFailed = 0
+                              EffectCounts = Map.empty
+                              Errors = [] }
                         activeTask <- Some task
                         success "task.begin" $"Started {task.Id}." (Some(makeTaskJson task))
                 | "task.status" ->
                     match activeTask with Some task -> success "task.status" $"Status for {task.Id}." (Some(makeTaskJson task)) | None -> success "task.status" "No active task." (previousTaskLog |> Option.map (fun value -> value :> JsonNode))
+                | "storage.status" ->
+                    let authority, manifestHash =
+                        match storageAuthority with
+                        | EmptyAuthority -> "empty", None
+                        | LegacyAuthority _ -> "legacy", None
+                        | ManifestAuthority hash -> "manifest", Some hash
+                    let payload = JsonObject()
+                    payload["projectConfigured"] <- jbool store.IsSome
+                    payload["generation"] <- JsonValue.Create(storageGeneration) :> JsonNode
+                    payload["authority"] <- jstr authority
+                    match manifestHash with
+                    | Some hash -> payload["manifestHash"] <- jstr hash
+                    | None -> ()
+                    match lastExportWarning with
+                    | Some warning ->
+                        let warningNode = JsonObject()
+                        warningNode["code"] <- jstr warning.Code
+                        warningNode["message"] <- jstr warning.Message
+                        match warning.Path with Some path -> warningNode["path"] <- jstr path | None -> ()
+                        payload["exportWarning"] <- warningNode
+                    | None -> payload["exportWarning"] <- null
+                    success "storage.status" "Current durable storage authority and export status." (Some payload)
                 | "task.log" ->
                     match activeTask with Some task -> success "task.log" $"Log for {task.Id}." (Some(makeTaskJson task)) | None -> success "task.log" "Most recent task log." (previousTaskLog |> Option.map (fun value -> value :> JsonNode))
                 | "task.abort" ->
                     match activeTask with
                     | Some task when task.Active ->
                         let snap = task.Snapshot
-                        persist snap
+                        let restored =
+                            match store, task.StorageSnapshot with
+                            | None, None -> None
+                            | Some projectStore, Some storageSnapshot ->
+                                match Storage.restore projectStore storageGeneration storageSnapshot with
+                                | Error storageError -> raiseStorageError storageError
+                                | Ok result -> Some result
+                            | _ -> error "STORAGE_TASK_SNAPSHOT_MISSING" "The task's storage snapshot is unavailable." None None [] []
                         data <- snap
+                        virtualFiles <- task.VirtualFilesSnapshot
+                        fixedClock <- task.ClockSnapshot
+                        match restored with
+                        | Some result ->
+                            storageGeneration <- result.Generation
+                            storageAuthority <- result.Authority
+                            currentManifest <- task.ManifestSnapshot
+                            currentManifestHash <- task.ManifestHashSnapshot
+                            lastExportWarning <- result.ExportWarning
+                        | None -> ()
                         task.Active <- false
                         lastResults <- []
                         saveTaskLog task
-                        success "task.abort" $"Aborted {task.Id}; dictionary changes were rolled back." (Some(makeTaskJson task))
+                        let warning = lastExportWarning |> Option.map (fun item -> $" Export warning: {item.Message}") |> Option.defaultValue ""
+                        success "task.abort" ($"Aborted {task.Id}; dictionary changes were rolled back.{warning}") (Some(makeTaskJson task))
                     | _ -> error "TASK_NOT_ACTIVE" "No active task can be aborted." None None [] []
+                | "snapshot.save" ->
+                    let name = readString args "name" ""
+                    match store with
+                    | None -> error "PROJECT_PATH_REQUIRED" "Named snapshots require a configured project directory." None None [] []
+                    | Some projectStore ->
+                        let excluded = JsonArray()
+                        data.Words |> Map.toSeq |> Seq.choose (fun (word, item) -> if item.Status = Candidate || item.Status = Temporary then Some word else None) |> Seq.sort |> Seq.iter (fun word -> excluded.Add(jstr word))
+                        data.Records |> Map.toSeq |> Seq.choose (fun (typeName, item) -> if item.Status = Candidate then Some typeName else None) |> Seq.sort |> Seq.iter (fun typeName -> excluded.Add(jstr typeName))
+                        data.Scalars |> Map.toSeq |> Seq.choose (fun (typeName, item) -> if item.Status = Candidate then Some typeName else None) |> Seq.sort |> Seq.iter (fun typeName -> excluded.Add(jstr typeName))
+                        match Storage.saveSnapshot projectStore storageGeneration name virtualFiles (Some fixedClock) with
+                        | Error storageError -> raiseStorageError storageError
+                        | Ok () ->
+                            let payload = JsonObject()
+                            payload["name"] <- jstr name
+                            payload["excludedCandidates"] <- excluded
+                            success "snapshot.save" $"Saved committed snapshot '{name}' with {excluded.Count} staged item(s) excluded." (Some payload)
+                | "snapshot.load" ->
+                    let name = readString args "name" ""
+                    match activeTask with
+                    | Some task when task.Active -> error "SNAPSHOT_TASK_ACTIVE" "Cannot load a named snapshot during an active task." (Some task.Id) None [] []
+                    | _ ->
+                        match store with
+                        | None -> error "PROJECT_PATH_REQUIRED" "Named snapshots require a configured project directory." None None [] []
+                        | Some projectStore ->
+                            match Storage.readSnapshot projectStore name with
+                            | Error storageError -> raiseStorageError storageError
+                            | Ok snapshot ->
+                                let projectSource =
+                                    match Storage.readSource projectStore snapshot.Manifest.ProjectSource with
+                                    | Error storageError -> raiseStorageError storageError
+                                    | Ok source -> source
+                                let proposed = validateStoredProject projectStore (Some snapshot.Manifest) (Some snapshot.ManifestHash) (Some projectSource)
+                                match Storage.restoreSnapshot projectStore storageGeneration snapshot with
+                                | Error storageError -> raiseStorageError storageError
+                                | Ok restored ->
+                                    data <- proposed
+                                    virtualFiles <- snapshot.VirtualFiles
+                                    fixedClock <- defaultArg snapshot.ClockValue "2000-01-01T00:00:00Z"
+                                    storageGeneration <- restored.Generation
+                                    storageAuthority <- restored.Authority
+                                    currentManifest <- Some snapshot.Manifest
+                                    currentManifestHash <- Some snapshot.ManifestHash
+                                    lastExportWarning <- restored.ExportWarning
+                                    lastResults <- []
+                                    let payload = JsonObject()
+                                    payload["name"] <- jstr name
+                                    payload["manifestHash"] <- jstr snapshot.ManifestHash
+                                    payload["virtualFiles"] <- jint virtualFiles.Count
+                                    payload["clockValue"] <- jstr fixedClock
+                                    let warning = lastExportWarning |> Option.map (fun item -> $" Export warning: {item.Message}") |> Option.defaultValue ""
+                                    success "snapshot.load" ($"Loaded committed snapshot '{name}'.{warning}") (Some payload)
                 | "history" ->
                     let name = readString args "word" ""
-                    let revisions = data.History.TryFind name |> Option.defaultValue []
-                    let payload = revisions |> List.mapi (fun index definition -> {| revision = index + 1; source = definition.SourceText |})
-                    success "history" $"{revisions.Length} revision(s) for {name}." (Some(jsonNode payload))
+                    match store, currentManifest, currentManifestHash with
+                    | Some projectStore, Some manifest, Some manifestHash ->
+                        match manifest.Words |> List.tryFind (fun head -> head.CurrentName = name) with
+                        | None -> error "HISTORY_WORD_UNKNOWN" $"No durable history exists for '{name}'." (Some name) None [] []
+                        | Some head ->
+                            let revisions = manifest.Revisions |> List.filter (fun item -> item.WordId = head.WordId) |> List.sortBy (fun item -> item.Revision)
+                            let payload = JsonArray()
+                            for revision in revisions do
+                                match Storage.readRevision projectStore manifestHash head.WordId revision.Revision with
+                                | Error storageError -> raiseStorageError storageError
+                                | Ok content ->
+                                    let item = JsonObject()
+                                    item["id"] <- jstr head.WordId
+                                    item["name"] <- jstr revision.Name
+                                    item["revision"] <- jint revision.Revision
+                                    item["source"] <- jstr content.DefinitionSource
+                                    item["maturity"] <- jstr (if revision.Maturity = LibraryWord then "library" else "project")
+                                    item["actor"] <- jstr revision.Actor
+                                    item["task"] <- revision.TaskId |> Option.map jstr |> Option.defaultValue null
+                                    item["timestampUtc"] <- jstr (revision.TimestampUtc.ToString("O", CultureInfo.InvariantCulture))
+                                    item["deprecated"] <- jbool revision.Deprecated
+                                    item["tests"] <- jsonNode content.TestSources
+                                    item["examples"] <- jsonNode content.ExampleSources
+                                    payload.Add item
+                            success "history" $"{revisions.Length} durable revision(s) for {name}." (Some(payload :> JsonNode))
+                    | _ ->
+                        let revisions = data.History.TryFind name |> Option.defaultValue []
+                        let payload = revisions |> List.map (fun definition -> {| revision = definition.Revision; source = Source.renderWord true definition |})
+                        success "history" $"{revisions.Length} revision(s) for {name}." (Some(jsonNode payload))
                 | "diff" ->
                     let name = readString args "word" ""
-                    let first = try (args["from"].GetValue<int>() - 1) with _ -> -1
-                    let second = try (args["to"].GetValue<int>() - 1) with _ -> -1
-                    let revisions = data.History.TryFind name |> Option.defaultValue []
-                    if first < 0 || second < 0 || first >= revisions.Length || second >= revisions.Length then error "HISTORY_REVISION_UNKNOWN" "Requested word revision does not exist." (Some name) None [] []
-                    else
-                        let a = revisions[first].SourceText.Split('\n')
-                        let b = revisions[second].SourceText.Split('\n')
+                    let first = try args["from"].GetValue<int>() with _ -> -1
+                    let second = try args["to"].GetValue<int>() with _ -> -1
+                    let sourceForRevision revision =
+                        match store, currentManifest, currentManifestHash with
+                        | Some projectStore, Some manifest, Some manifestHash ->
+                            match manifest.Words |> List.tryFind (fun head -> head.CurrentName = name) with
+                            | None -> None
+                            | Some head ->
+                                match Storage.readRevision projectStore manifestHash head.WordId revision with
+                                | Ok content -> Some content.DefinitionSource
+                                | Error storageError when storageError.Code = "STORAGE_REVISION_NOT_FOUND" -> None
+                                | Error storageError -> raiseStorageError storageError
+                        | _ ->
+                            data.History.TryFind name
+                            |> Option.defaultValue []
+                            |> List.tryFind (fun definition -> definition.Revision = revision)
+                            |> Option.map (Source.renderWord true)
+                    match sourceForRevision first, sourceForRevision second with
+                    | Some firstSource, Some secondSource ->
+                        let a = firstSource.Split('\n')
+                        let b = secondSource.Split('\n')
                         let removed = String.concat "\n- " a
                         let added = String.concat "\n+ " b
-                        let text = $"revision {first + 1} -> {second + 1}\n- {removed}\n+ {added}"
+                        let text = $"revision {first} -> {second}\n- {removed}\n+ {added}"
                         success "diff" text (Some(jstr text))
+                    | _ -> error "HISTORY_REVISION_UNKNOWN" "Requested word revision does not exist." (Some name) None [] [ string first; string second ]
                 | "stack" -> success "stack" "Evaluation is stateless; each eval begins with an empty stack." (Some(jsonNode ([]: string list)))
                 | _ -> error "PROTOCOL_UNKNOWN_OPERATION" $"Unknown operation '{operation}'." None None [] [ operation ]
             with

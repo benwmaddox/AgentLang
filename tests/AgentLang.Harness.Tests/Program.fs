@@ -119,6 +119,12 @@ module Program =
         if resolved.StartsWith(allowed + string Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) && Directory.Exists resolved then
             Directory.Delete(resolved, true)
 
+    let private removeDirectoryLink path =
+        if Directory.Exists path then
+            let attributes = File.GetAttributes(path)
+            if (attributes &&& FileAttributes.ReparsePoint) <> enum<FileAttributes> 0 then
+                Directory.Delete(path)
+
     let private testStatelessToolLoopAndLogs root =
         let settings = config root Growing "stateless-loop" [ evalOracle "10 20 add" "30" ]
         let reasoning = json "{\"type\":\"reasoning\",\"encrypted_content\":\"ciphertext-preserved\"}"
@@ -205,9 +211,96 @@ end
         equal 2 result.ToolCalls "the over-limit call did not execute"
         let dictionaryPath = Path.Combine(settings.ProjectDirectory, "dictionary.agent")
         check (not (File.Exists dictionaryPath) || not (File.ReadAllText(dictionaryPath).Contains("rollback.staged"))) "abort rolls back an earlier per-word project commit"
+        let initialState = JsonNode.Parse(File.ReadAllText(Path.Combine(settings.RunDirectory, "initial-state.json")))
         let finalState = JsonNode.Parse(File.ReadAllText(Path.Combine(settings.RunDirectory, "final-state.json")))
         let finalDictionary = finalState["state"].AsObject()["dictionary"]
         check (isNull finalDictionary) "reported final state matches the pre-task empty dictionary"
+        let initialDigest = initialState["sha256"].GetValue<string>()
+        let finalDigest = finalState["sha256"].GetValue<string>()
+        equal initialDigest finalDigest "semantic state digest matches after rollback"
+        let initialStateBody = initialState["state"]
+        let finalStateBody = finalState["state"]
+        let initialGeneration = initialStateBody["generation"].GetValue<int64>()
+        let finalGeneration = finalStateBody["generation"].GetValue<int64>()
+        check (finalGeneration > initialGeneration) "rollback advances storage concurrency generation without changing semantic state"
+
+    let private testHistorySymlinkAndSizeGuards root =
+        let captureSettings = config root Growing "history-link-capture" [ evalOracle "1" "1" ]
+        let captureHistory = Path.Combine(captureSettings.ProjectDirectory, "history")
+        let captureExternal = Path.Combine(root, "external-history-capture")
+        Directory.CreateDirectory(captureSettings.ProjectDirectory) |> ignore
+        Directory.CreateDirectory(captureExternal) |> ignore
+        let captureSentinel = Path.Combine(captureExternal, "task-sentinel.json")
+        File.WriteAllText(captureSentinel, "external history must survive")
+
+        let captureLinkCreated =
+            try
+                Directory.CreateSymbolicLink(captureHistory, captureExternal) |> ignore
+                true
+            with
+            | :? UnauthorizedAccessException
+            | :? PlatformNotSupportedException
+            | :? IOException -> false
+
+        if captureLinkCreated then
+            try
+                let emptyProvider = ScriptedProvider(JsonArray())
+                let captured = runWith captureSettings (emptyProvider :> IAgentProvider)
+                equal (Some "PROJECT_HISTORY_REPARSE_POINT") captured.FailureCode "initial history symlink is rejected"
+                equal 0 emptyProvider.ResponsesConsumed "history path is checked before the provider is called"
+                equal "external history must survive" (File.ReadAllText(captureSentinel)) "capture never follows an external history link"
+                equal [ "task-sentinel.json" ] (Directory.GetFiles(captureExternal) |> Array.map (fun path -> Path.GetFileName(path)) |> Array.toList) "capture does not add or remove external task files"
+            finally
+                removeDirectoryLink captureHistory
+
+            let restoreSettings = config root Growing "history-link-restore" [ evalOracle "1" "2" ]
+            let restoreHistory = Path.Combine(restoreSettings.ProjectDirectory, "history")
+            let restoreExternal = Path.Combine(root, "external-history-restore")
+            Directory.CreateDirectory(restoreExternal) |> ignore
+            let restoreSentinel = Path.Combine(restoreExternal, "task-sentinel.json")
+            File.WriteAllText(restoreSentinel, "external task log must survive rollback")
+            let mutable linkInstalled = false
+            let linkSwappingProvider =
+                { new IAgentProvider with
+                    member _.Name = "history-link-swap"
+                    member _.Complete(_: ProviderRequest) =
+                        task {
+                            if not linkInstalled then
+                                linkInstalled <- true
+                                Directory.CreateSymbolicLink(restoreHistory, restoreExternal) |> ignore
+                            let output = JsonArray()
+                            output.Add(outputMessage "The task is finished.")
+                            return
+                                { Status = "completed"
+                                  OutputItems = output
+                                  OutputText = "The task is finished."
+                                  Usage = None
+                                  RawResponse = "{}" }
+                        } }
+            try
+                let rolledBack = runWith restoreSettings linkSwappingProvider
+                equal (Some "ROLLBACK_FAILED") rolledBack.FailureCode "rollback refuses a history link installed after capture"
+                check (rolledBack.FailureMessage |> Option.exists (fun message -> message.Contains("PROJECT_HISTORY_REPARSE_POINT", StringComparison.Ordinal))) "rollback exposes the structured history path error"
+                let restoreTrace = File.ReadAllText(Path.Combine(restoreSettings.RunDirectory, "trace.jsonl"))
+                check (restoreTrace.Contains("project-storage-restore-failure", StringComparison.Ordinal) && restoreTrace.Contains("PROJECT_HISTORY_REPARSE_POINT", StringComparison.Ordinal)) "rollback trace records a structured reparse error"
+                check (File.Exists restoreSentinel) "external task history remains present after rollback"
+                equal "external task log must survive rollback" (File.ReadAllText(restoreSentinel)) "rollback never deletes through an external history link"
+                equal [ "task-sentinel.json" ] (Directory.GetFiles(restoreExternal) |> Array.map (fun path -> Path.GetFileName(path)) |> Array.toList) "rollback does not add or remove external task files"
+            finally
+                removeDirectoryLink restoreHistory
+        else
+            printfn "SKIP history symlink fixtures: this host does not permit creating links"
+
+        let sizeSettings = config root Growing "history-size-limit" [ evalOracle "1" "1" ]
+        let oversizedPath = Path.Combine(sizeSettings.ProjectDirectory, "history", "task-large.json")
+        Directory.CreateDirectory(Path.GetDirectoryName oversizedPath) |> ignore
+        do
+            use oversized = new FileStream(oversizedPath, FileMode.CreateNew, FileAccess.Write, FileShare.None)
+            oversized.SetLength(int64 AgentLang.StorageLimits.MaxMetadataBytes + 1L)
+        let sizeProvider = ScriptedProvider(JsonArray())
+        let sizeResult = runWith sizeSettings (sizeProvider :> IAgentProvider)
+        equal (Some "PROJECT_HISTORY_LIMIT") sizeResult.FailureCode "oversized task history is rejected before loading"
+        check (File.Exists oversizedPath) "history size rejection preserves the oversized file"
 
     let private testLibraryCoverageThroughTools root =
         let settings = config root Growing "library-coverage" [ step "test-all" (JsonObject()) None None (Some 2) ]
@@ -448,6 +541,7 @@ end
             testStrictRuntimeToolWhitelist root
             testInitialPromptIncludesLanguagePrimer ()
             testToolLimitRollsBackCandidates root
+            testHistorySymlinkAndSizeGuards root
             testLibraryCoverageThroughTools root
             testFlatRequiresRunLocalProject root
             testEngineInitializationFailureIsReported root

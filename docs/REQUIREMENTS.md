@@ -8,6 +8,8 @@ Baseline evidence: [Milestone 001 report](../reports/001-first-usable-prototype.
 
 Current milestone evidence: [Milestone 002 report](../reports/002-next-milestone.md), fresh Release build with zero warnings/errors, 18 language groups/256 assertions, 82 offline harness assertions, and 7 business groups/113 assertions. No live model comparison has been run.
 
+Durable-state milestone evidence: [Milestone 003 report](../reports/003-durable-project-state.md), independent fresh Release build with zero warnings/errors, 26 language groups/396 assertions, 98 harness, 113 business, 57 source, 64 storage, and 63 conventional-tool assertions. A separate fresh-process verifier passed 99 checks over 31 protocol exchanges. This validates the listed implementation slice, not a controlled agent performance comparison.
+
 Exploratory external-agent evidence: [the subagent pilot](../reports/004-subagent-vocabulary-pilot.md) records a fresh agent building two tested library words and a different agent discovering/reusing them for a later task. Independent host checks passed 16 and 17 cases respectively. The second agent retained earlier repository context; exact model usage is unavailable. This proves a scoped workflow, not the required controlled performance comparison.
 
 | Original section | Requirement / disposition | Current evidence and outstanding work |
@@ -17,7 +19,7 @@ Exploratory external-agent evidence: [the subagent pilot](../reports/004-subagen
 | 3 | Pending: ten primary agent outcomes | Requires real agent trials and comparable baseline |
 | 4 | Excluded: listed V1 non-goals | No native/LLVM/WASM/JIT, generic user definitions, OO, arbitrary reflection, or frameworks |
 | 5 | Design: explicit inspectable deterministic behavior | Apply to every feature and review; discovery still incomplete |
-| 6 | Partial: complete word metadata | Signatures/source/effects/tests/dependencies present; IDs/provenance/history incomplete |
+| 6 | Partial: complete word metadata | Stable IDs, durable revision provenance/history now verified; full examples/test metadata query remains incomplete |
 | 7 | Verified: concatenative execution | Basic eval and user-word acceptance groups |
 | 8 | Verified: typed scalar/nominal stack | Type mismatch and no-effects-on-type-error checks; closed container types independently probed |
 | 9 | Verified: Int/Float/Bool/String/Unit/List/Option/Result/Record foundation | Closed nested containers, static callbacks/cases, persistence and coverage checks |
@@ -29,14 +31,14 @@ Exploratory external-agent evidence: [the subagent pilot](../reports/004-subagen
 | 15 | Verified: interactive REPL foundation | Multiline CLI smoke and expressions; additional commands tracked below |
 | 16 | Partial: required introspection commands | words/describe/source/dependencies/callers/search/effects/tests/test/examples; type-of/recent-words pending |
 | 17 | Verified: machine-readable command transport | JSON-lines protocol and diagnostic acceptance checks |
-| 18 | Partial: first-class tests | Tests/test-all/failed-tests and gates; structured-value/error expectations incomplete |
+| 18 | Partial: first-class tests | Tests/test-all/failed-tests and gates; exact runtime-error expectations verified; structured-value expectations pending |
 | 19 | Partial: examples as metadata | Persisted cases; query currently returns names rather than full example details |
 | 20 | Verified: attached documentation | Word doc source, describe, persistence and rollback checks |
 | 21 | Verified: incremental word declarations | Parser and user-word acceptance checks |
 | 22 | Verified: candidate validation and test-gated commits | Failing/untested commits blocked; dependency and scoped metadata regressions |
 | 23 | Verified: temporary words/promote/discard | Session isolation and task-cleanup checks |
 | 24 | Verified: readable file dictionary foundation | dictionary.agent reload; richer file layout advisory |
-| 25 | Partial: revision history and diff | Revision numbers persist; durable prior source/provenance pending |
+| 25 | Verified: durable word history and diff | Hashed prior definitions/tests/examples/provenance and source diff survive reload; milestone-003 checks |
 | 26 | Partial: task sessions and complete logging | begin/status/commit/abort verified; complete ordered inspection/execution/change events pending |
 | 27 | Partial: deterministic structured task log | Aggregates exist; event sequence and complete metrics pending |
 | 28 | Verified: dictionary rollback | Abort restores definitions/types/tests/docs/policy after interim commits |
@@ -66,19 +68,19 @@ Exploratory external-agent evidence: [the subagent pilot](../reports/004-subagen
 | 52 | Pending: vocabulary quality metrics | Reuse/callers/lifetime/downstream acceptance evidence required |
 | 53 | Pending: pollution metrics | Unused/duplicate/short-lived words and growth traces required |
 | 54 | Pending: structural duplicate warnings | Commit warning and deterministic fingerprints missing |
-| 55 | Pending: deprecate/rename/replace | Stable identity and caller-safe durable edits required |
-| 56 | Pending: reproducible snapshot save/load | Snapshot integrity and restoration tests missing |
+| 55 | Partial: deprecate/rename/replace | Stable-ID semantic rename/deprecation and caller-gated implementation replacement verified; replace OLD NEW pending; frozen validator rename refused |
+| 56 | Verified: committed snapshot save/load | Hash integrity, project/provider restoration and retention of current host capabilities verified |
 | 57 | Partial: model-provider harness | Scripted/canned HTTP adapter, traces/usage/state/oracles verified; snapshot selection, conventional runner and live trials pending |
 | 58 | Partial: compact system prompt | Mandatory compact primer and per-run prompt artifact verified; live usage pending |
 | 59 | Partial: small initial context strategy | Prompt avoids dictionary dump; full requests include retrieval history and byte caps, exact token accounting pending |
-| 60 | Pending: conventional tool baseline | Confined read/search/edit/test tools and same provider/model |
+| 60 | Partial: conventional tool baseline | Path-confined read/search/CAS edit/fixed validation tools verified; actual same-model comparison pending; validation is not an OS sandbox |
 | 61 | Pending: 60 deterministic benchmark tasks | 20 simple, 20 medium, 10 debugging, 10 refactoring and independent acceptance tests |
 | 62 | Partial: vocabulary-building task sequence | Initial premium demo; sequence and comparable costs pending |
 | 63 | Partial: CLI observability | task status/log and words; recent-words/graph/metrics pending; GUI optional |
 | 64 | Partial: runtime dependency graph | Direct dependencies/callers exist; complete transitive graph APIs pending |
-| 65 | Partial: definition-level editing | define replaces words safely; explicit replace-word interface pending |
+| 65 | Verified: definition-level word editing | define stages source; replace-word commits after current word and transitive caller tests pass |
 | 66 | Partial: semantic change boundaries | Scoped word/test metadata checked; dedicated type/test/example/doc operations pending |
-| 67 | Pending: stable definition IDs | Preserve across rename/history/reload; currently name identity only |
+| 67 | Verified: stable word IDs | Preserve across temporary promotion, replacement, semantic rename, history and reload; milestone-003 identity checks |
 | 68 | Partial: structured failure reporting | Code/word/span/expected/actual; related definitions and complete current-stack context pending |
 | 69 | Pending: deterministic conversion hints | Search type graph for suggested conversion words |
 | 70 | Partial: all eight milestones | First usable slice only; full types/effects, domain, harness and evaluation remain |
@@ -91,15 +93,15 @@ Exploratory external-agent evidence: [the subagent pilot](../reports/004-subagen
 | 77 | Excluded: optional extra maturity levels | Required user addition project/library rigor already implemented |
 | 78 | Excluded: proof-like contracts | Explicit follow-on, not V1 |
 | 79 | Verified: initial usable slice | Baseline checks; must not redefine full completion as this milestone |
-| 80 | Partial: actual agent demo and later-agent reuse | Runtime demo verified; real first/later agents and reuse discovery unmeasured |
+| 80 | Partial: actual agent demo and later-agent reuse | Two actual external subagent tasks passed independent checks and retained-word discovery/reuse; controlled cost comparisons pending |
 | 81 | Pending: marginal cost trend | Sequence, cost data, comparable task difficulty and correctness required |
 | 82 | Pending: full prototype outcome | Unfamiliar-project agent task plus measured help for later agents required |
 
 ## Named-command completion checklist
 
-Verified foundation: eval, define, words, describe, source, dependencies, callers, search, effects, ir (checked-tree representation only), tests, test, test-all, failed-tests, examples (names only), commit/commit-word, promote, discard, task.begin/status/commit/abort/log, stack. History/diff are process-local and do not satisfy durable history.
+Verified foundation: eval, define, words, describe, source, dependencies, callers, search, effects, ir (checked-tree representation only), tests, test, test-all, failed-tests, examples (names only), commit/commit-word, replace-word, promote, discard, task.begin/status/commit/abort/log, stack, durable history/diff, rename, deprecate, snapshot.save/load and storage.status.
 
-Still required or incomplete: type-of, recent-words, search-type, search-output, search-effect, search-dependency, context, parse, ast, types, lowered ir, graph, metrics, transitive-dependencies, transitive-callers, deprecate, rename, replace, replace-word, snapshot save/load, durable history/diff, full example/test metadata, definition-level documentation/test/example edits, agent-run with model/task/snapshot selection.
+Still required or incomplete: type-of, recent-words, search-type, search-output, search-effect, search-dependency, context, parse, ast, types, lowered ir, graph, metrics, transitive-dependencies, transitive-callers, replace OLD NEW, full example/test metadata, definition-level documentation/test/example edits, agent-run with model/task/snapshot selection.
 
 ## Planned implementation order
 

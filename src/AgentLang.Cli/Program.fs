@@ -29,6 +29,12 @@ Human REPL commands:
   :test-all          Run every attached test
   :commit WORD       Commit candidates after their tests pass
   :commit WORD --library  Also require full instruction and branch coverage
+  :replace-word WORD Commit a staged replacement after caller tests pass
+  :rename OLD NEW    Rename a word and rewrite its semantic references
+  :deprecate WORD    Mark a committed word as deprecated
+  :snapshot.save NAME  Save committed project and provider state
+  :snapshot.load NAME  Restore a named committed snapshot
+  :storage.status    Show durable authority and export status
   :help              Show this help
   :quit              Exit
 """
@@ -85,10 +91,23 @@ Human REPL commands:
                 | Some word -> args["word"] <- jsonString word
                 | None -> ()
                 engine.Dispatch("commit", args)
-            | "describe" | "source" | "dependencies" | "callers" | "effects" | "ir" | "tests" | "examples" | "test" | "history" | "diff" | "promote" | "discard" ->
+            | "replace-word" ->
+                let parts = rest.Split([| ' '; '\t' |], StringSplitOptions.RemoveEmptyEntries)
+                match parts |> Array.tryHead with Some word -> args["word"] <- jsonString word | None -> ()
+                if parts |> Array.contains "--library" then args["library"] <- JsonValue.Create(true)
+                engine.Dispatch("replace-word", args)
+            | "rename" ->
+                match rest.Split([| ' '; '\t' |], StringSplitOptions.RemoveEmptyEntries) with
+                | [| oldName; newName |] -> args["word"] <- jsonString oldName; args["to"] <- jsonString newName
+                | _ -> ()
+                engine.Dispatch("rename", args)
+            | "snapshot.save" | "snapshot.load" ->
+                if rest <> "" then args["name"] <- jsonString rest
+                engine.Dispatch(command, args)
+            | "describe" | "source" | "dependencies" | "callers" | "effects" | "ir" | "tests" | "examples" | "test" | "history" | "diff" | "promote" | "discard" | "deprecate" ->
                 if rest <> "" then args["word"] <- jsonString rest
                 engine.Dispatch(command, args)
-            | "words" | "test-all" | "failed-tests" | "stack" | "task.status" | "task.commit" | "task.abort" | "task.log" ->
+            | "words" | "test-all" | "failed-tests" | "stack" | "task.status" | "task.commit" | "task.abort" | "task.log" | "storage.status" ->
                 engine.Dispatch(command, args)
             | _ ->
                 let message = $"Unknown REPL command ':{command}'. Use :help for available commands."

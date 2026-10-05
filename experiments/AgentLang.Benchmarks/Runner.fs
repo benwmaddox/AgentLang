@@ -124,12 +124,137 @@ module TaskFile =
     let load path = File.ReadAllText(path) |> parse
 
 module Runner =
+    exception private ProjectSnapshotFailure of StorageError
+
+    type private ProjectCheckpoint =
+        { Storage: StoreSnapshot
+          TaskHistory: (string * string) list }
+
+    let private maximumTaskHistoryFiles = 10_000
+    let private maximumTaskHistoryFileBytes = int64 StorageLimits.MaxMetadataBytes
+    let private maximumTaskHistoryBytes = 32L * 1024L * 1024L
+
     let private serializer = JsonSerializerOptions(WriteIndented = true)
 
     let private nodeOption (value: JsonNode option) =
         match value with
         | Some node -> node.DeepClone()
         | None -> null
+
+    let private storageErrorMessage (error: StorageError) =
+        match error.Path with
+        | Some path -> $"{error.Message} ({path})"
+        | None -> error.Message
+
+    let private taskHistoryFailure code message path =
+        raise (ProjectSnapshotFailure { Code = code; Message = message; Path = Some path })
+
+    let private ensureSafeHistoryPath (path: string) (expectedDirectory: bool option) (allowMissingFinal: bool) =
+        let fullPath = Path.GetFullPath(path)
+        let volumeRoot = Path.GetPathRoot(fullPath)
+        if String.IsNullOrWhiteSpace volumeRoot then
+            taskHistoryFailure "PROJECT_HISTORY_PATH_INVALID" "The project history path has no filesystem root." fullPath
+        let relative = Path.GetRelativePath(volumeRoot, fullPath)
+        let segments =
+            if relative = "." then [||]
+            else relative.Split([| Path.DirectorySeparatorChar; Path.AltDirectorySeparatorChar |], StringSplitOptions.RemoveEmptyEntries)
+        let mutable current = volumeRoot
+        for index = 0 to segments.Length do
+            if index > 0 then current <- Path.Combine(current, segments[index - 1])
+            let isFinal = index = segments.Length
+            let attributes =
+                try Some(File.GetAttributes(current))
+                with
+                | :? FileNotFoundException when isFinal && allowMissingFinal -> None
+                | :? DirectoryNotFoundException when isFinal && allowMissingFinal -> None
+                | ex ->
+                    taskHistoryFailure
+                        "PROJECT_HISTORY_PATH_INVALID"
+                        $"Could not inspect the history path component ({ex.GetType().Name})."
+                        current
+            match attributes with
+            | None -> ()
+            | Some value ->
+                if (value &&& FileAttributes.ReparsePoint) <> enum<FileAttributes> 0 then
+                    taskHistoryFailure "PROJECT_HISTORY_REPARSE_POINT" "Project history cannot use a reparse point or symbolic link." current
+                let isDirectory = (value &&& FileAttributes.Directory) <> enum<FileAttributes> 0
+                if not isFinal && not isDirectory then
+                    taskHistoryFailure "PROJECT_HISTORY_PATH_INVALID" "A project history path ancestor is not a directory." current
+                if isFinal then
+                    match expectedDirectory with
+                    | Some true when not isDirectory ->
+                        taskHistoryFailure "PROJECT_HISTORY_PATH_INVALID" "The project history path is not a directory." current
+                    | Some false when isDirectory ->
+                        taskHistoryFailure "PROJECT_HISTORY_PATH_INVALID" "A project task history entry is a directory." current
+                    | _ -> ()
+
+    let private taskHistoryFiles historyPath =
+        ensureSafeHistoryPath historyPath (Some true) true
+        let attributes =
+            try Some(File.GetAttributes(historyPath))
+            with
+            | :? FileNotFoundException
+            | :? DirectoryNotFoundException -> None
+            | ex ->
+                taskHistoryFailure
+                    "PROJECT_HISTORY_IO"
+                    $"Could not inspect project task history ({ex.GetType().Name})."
+                    historyPath
+        match attributes with
+        | None -> []
+        | Some value when (value &&& FileAttributes.Directory) = enum<FileAttributes> 0 ->
+            taskHistoryFailure "PROJECT_HISTORY_PATH_INVALID" "The project history path is not a directory." historyPath
+        | Some _ ->
+            try
+                let entries = ResizeArray<string>()
+                use iterator = Directory.EnumerateFiles(historyPath, "task-*.json").GetEnumerator()
+                let mutable hasMore = true
+                while hasMore && entries.Count <= maximumTaskHistoryFiles do
+                    if iterator.MoveNext() then entries.Add(iterator.Current) else hasMore <- false
+                if entries.Count > maximumTaskHistoryFiles then
+                    taskHistoryFailure "PROJECT_HISTORY_LIMIT" $"Project history exceeds the {maximumTaskHistoryFiles}-file limit." historyPath
+                let files = entries.ToArray()
+                Array.sortInPlaceWith (fun (left: string) (right: string) -> StringComparer.Ordinal.Compare(left, right)) files
+                files
+                |> Array.iter (fun file -> ensureSafeHistoryPath file (Some false) false)
+                Array.toList files
+            with
+            | ProjectSnapshotFailure _ as ex -> raise ex
+            | ex ->
+                taskHistoryFailure
+                    "PROJECT_HISTORY_IO"
+                    $"Could not enumerate project task history ({ex.GetType().Name})."
+                    historyPath
+
+    let private readTaskHistoryFile path currentTotalBytes =
+        ensureSafeHistoryPath path (Some false) false
+        try
+            use stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 8192, FileOptions.SequentialScan)
+            if stream.Length > maximumTaskHistoryFileBytes then
+                taskHistoryFailure "PROJECT_HISTORY_LIMIT" $"Task history files are limited to {maximumTaskHistoryFileBytes} bytes." path
+            if currentTotalBytes + stream.Length > maximumTaskHistoryBytes then
+                taskHistoryFailure "PROJECT_HISTORY_LIMIT" $"Project task history is limited to {maximumTaskHistoryBytes} UTF-8 bytes." path
+            use buffer = new MemoryStream()
+            let chunk = Array.zeroCreate<byte> 8192
+            let mutable count = stream.Read(chunk, 0, chunk.Length)
+            while count > 0 do
+                if currentTotalBytes + buffer.Length + int64 count > maximumTaskHistoryBytes
+                   || buffer.Length + int64 count > maximumTaskHistoryFileBytes then
+                    taskHistoryFailure "PROJECT_HISTORY_LIMIT" "Project task history exceeded its bounded UTF-8 read limit." path
+                buffer.Write(chunk, 0, count)
+                count <- stream.Read(chunk, 0, chunk.Length)
+            let bytes = buffer.ToArray()
+            let contents = UTF8Encoding(false, true).GetString(bytes)
+            contents, int64 bytes.Length
+        with
+        | ProjectSnapshotFailure _ as ex -> raise ex
+        | :? DecoderFallbackException ->
+            taskHistoryFailure "PROJECT_HISTORY_ENCODING" "Task history must contain valid UTF-8." path
+        | ex ->
+            taskHistoryFailure
+                "PROJECT_HISTORY_IO"
+                $"Could not read project task history ({ex.GetType().Name})."
+                path
 
     let private responseOk (response: JsonObject) =
         Json.tryProperty response "ok"
@@ -168,44 +293,90 @@ module Runner =
         for KeyValue(key, value) in arguments do args[key] <- if isNull value then null else value.DeepClone()
         engine.Dispatch(operation, args)
 
-    let private stateNode (projectDirectory: string) =
-        let state = JsonObject()
-        let dictionaryPath = Path.Combine(projectDirectory, "dictionary.agent")
-        state["dictionary"] <- if File.Exists dictionaryPath then Json.text (File.ReadAllText dictionaryPath) else null
-        let history = JsonArray()
+    let private taskHistory (projectDirectory: string) =
         let historyPath = Path.Combine(projectDirectory, "history")
-        if Directory.Exists historyPath then
-            Directory.GetFiles(historyPath, "task-*.json")
-            |> Array.sort
-            |> Array.iter (fun path ->
-                let item = JsonObject()
-                item["path"] <- Json.text ($"history/{Path.GetFileName path}")
-                item["content"] <- Json.text (File.ReadAllText path)
-                history.Add item)
+        let files = taskHistoryFiles historyPath
+        let mutable totalBytes = 0L
+        files
+        |> List.map (fun path ->
+            let contents, byteCount = readTaskHistoryFile path totalBytes
+            totalBytes <- totalBytes + byteCount
+            $"history/{Path.GetFileName path}", contents)
+
+    let private captureProjectState (projectDirectory: string) =
+        let history = taskHistory projectDirectory
+        match Storage.capture (Storage.create projectDirectory) with
+        | Ok snapshot -> Ok { Storage = snapshot; TaskHistory = history }
+        | Error error -> Error error
+
+    let private snapshotOrRaise (result: Result<'snapshot, StorageError>) : 'snapshot =
+        match result with
+        | Ok snapshot -> snapshot
+        | Error error -> raise (ProjectSnapshotFailure error)
+
+    let private stateNode (checkpoint: ProjectCheckpoint) =
+        let state = JsonObject()
+        let authority = JsonObject()
+        match checkpoint.Storage.Authority with
+        | EmptyAuthority -> authority["kind"] <- Json.text "empty"
+        | LegacyAuthority reference ->
+            authority["kind"] <- Json.text "legacy"
+            authority["sourceKind"] <- Json.text "legacy-dictionary"
+            authority["sourceHash"] <- Json.text reference.Hash
+        | ManifestAuthority manifestHash ->
+            authority["kind"] <- Json.text "manifest"
+            authority["manifestHash"] <- Json.text manifestHash
+        state["storageAuthority"] <- authority
+        state["generation"] <- JsonValue.Create(checkpoint.Storage.Generation)
+        state["dictionary"] <- checkpoint.Storage.ExportText |> Option.map Json.text |> nodeOption
+        let history = JsonArray()
+        checkpoint.TaskHistory
+        |> List.iter (fun (relativePath, content) ->
+            let item = JsonObject()
+            item["path"] <- Json.text relativePath
+            item["content"] <- Json.text content
+            history.Add item)
         state["history"] <- history
         state
 
-    let private restoreState (projectDirectory: string) (state: JsonObject) =
-        Directory.CreateDirectory(projectDirectory) |> ignore
-        let dictionaryPath = Path.Combine(projectDirectory, "dictionary.agent")
-        match Json.tryProperty state "dictionary" |> Option.bind Json.tryString with
-        | Some contents -> File.WriteAllText(dictionaryPath, contents, UTF8Encoding(false))
-        | None when File.Exists dictionaryPath -> File.Delete dictionaryPath
-        | None -> ()
-
+    let private restoreTaskHistory (projectDirectory: string) (entries: (string * string) list) =
         let historyPath = Path.Combine(projectDirectory, "history")
-        if Directory.Exists historyPath then
-            Directory.GetFiles(historyPath, "task-*.json") |> Array.iter File.Delete
-        match Json.tryProperty state "history" |> Option.bind Json.asArray with
-        | Some entries ->
-            Directory.CreateDirectory(historyPath) |> ignore
-            for entry in entries do
-                let relative = Json.propertyString entry "path" ""
+        let files = taskHistoryFiles historyPath
+        for path in files do
+            ensureSafeHistoryPath path (Some false) false
+        for path in files do
+            ensureSafeHistoryPath path (Some false) true
+            if File.Exists path then
+                try File.Delete path
+                with ex ->
+                    taskHistoryFailure "PROJECT_HISTORY_IO" $"Could not remove project task history ({ex.GetType().Name})." path
+        if not entries.IsEmpty then
+            ensureSafeHistoryPath historyPath (Some true) true
+            try Directory.CreateDirectory(historyPath) |> ignore
+            with ex ->
+                taskHistoryFailure "PROJECT_HISTORY_IO" $"Could not create the project history directory ({ex.GetType().Name})." historyPath
+            ensureSafeHistoryPath historyPath (Some true) false
+            for relative, content in entries do
                 let fileName = Path.GetFileName(relative)
-                if fileName.StartsWith("task-", StringComparison.Ordinal) && fileName.EndsWith(".json", StringComparison.Ordinal) then
-                    let content = Json.propertyString entry "content" ""
-                    File.WriteAllText(Path.Combine(historyPath, fileName), content, UTF8Encoding(false))
-        | None -> ()
+                if relative <> $"history/{fileName}"
+                   || not (fileName.StartsWith("task-", StringComparison.Ordinal) && fileName.EndsWith(".json", StringComparison.Ordinal)) then
+                    taskHistoryFailure "PROJECT_HISTORY_PATH_INVALID" "A captured project task history path is invalid." relative
+                let target = Path.Combine(historyPath, fileName)
+                ensureSafeHistoryPath target (Some false) true
+                try File.WriteAllText(target, content, UTF8Encoding(false))
+                with ex ->
+                    taskHistoryFailure "PROJECT_HISTORY_IO" $"Could not restore project task history ({ex.GetType().Name})." target
+                ensureSafeHistoryPath target (Some false) false
+
+    let private restoreState (projectDirectory: string) (checkpoint: ProjectCheckpoint) =
+        ensureSafeHistoryPath (Path.Combine(projectDirectory, "history")) (Some true) true
+        let store = Storage.create projectDirectory
+        let current = Storage.capture store |> snapshotOrRaise
+        match Storage.restore store current.Generation checkpoint.Storage with
+        | Error error -> raise (ProjectSnapshotFailure error)
+        | Ok result ->
+            restoreTaskHistory projectDirectory checkpoint.TaskHistory
+            result
 
     let private writeJson (path: string) (node: JsonNode) =
         File.WriteAllText(path, node.ToJsonString(serializer), UTF8Encoding(false))
@@ -341,7 +512,9 @@ module Runner =
         node
 
     let private stateDigest (state: JsonObject) =
-        let bytes = Encoding.UTF8.GetBytes(Json.compact state)
+        let semanticState = state.DeepClone().AsObject()
+        semanticState.Remove("generation") |> ignore
+        let bytes = Encoding.UTF8.GetBytes(Json.compact semanticState)
         SHA256.HashData(bytes) |> Convert.ToHexString |> fun value -> value.ToLowerInvariant()
 
     let private stateManifest (state: JsonObject) =
@@ -393,8 +566,7 @@ module Runner =
             let mutable engineInstance: Runtime.Engine option = None
             let mutable failure: (string * string) option = None
             let mutable taskBegan = false
-            let mutable initialStateCaptured = false
-            let mutable initialStateSnapshot: JsonObject option = None
+            let mutable initialStateSnapshot: ProjectCheckpoint option = None
             let mutable turns = 0
             let mutable calls = 0
             let mutable requestsSent = 0
@@ -408,10 +580,9 @@ module Runner =
             let mutable runtimeLog: JsonNode = null
 
             try
-                let preSeedState = stateNode config.ProjectDirectory
+                let preSeedState = captureProjectState config.ProjectDirectory |> snapshotOrRaise
                 initialStateSnapshot <- Some preSeedState
-                writeJson initialStatePath (stateManifest preSeedState)
-                initialStateCaptured <- true
+                writeJson initialStatePath (stateManifest (stateNode preSeedState))
                 let engine = Runtime.Engine(config.ProjectDirectory, Set.empty, "2000-01-01T00:00:00Z")
                 engineInstance <- Some engine
                 if not (File.Exists dictionaryPath) then
@@ -430,9 +601,9 @@ module Runner =
                     | Some path -> failwith $"Seed dictionary source does not exist: {path}"
                     | None -> ()
 
-                let initialState = stateNode config.ProjectDirectory
+                let initialState = captureProjectState config.ProjectDirectory |> snapshotOrRaise
                 initialStateSnapshot <- Some initialState
-                writeJson initialStatePath (stateManifest initialState)
+                writeJson initialStatePath (stateManifest (stateNode initialState))
                 let beginArgs = JsonObject()
                 beginArgs["goal"] <- Json.text config.Task.Goal
                 let begun = engine.Dispatch("task.begin", beginArgs)
@@ -535,6 +706,12 @@ module Runner =
                 inputTokens <- None
                 outputTokens <- None
                 totalTokens <- None
+            | ProjectSnapshotFailure error ->
+                if failure.IsNone then failure <- Some(error.Code, storageErrorMessage error)
+                log "project-snapshot-failure"
+                    [ "code", Json.text error.Code
+                      "message", Json.text (storageErrorMessage error)
+                      "path", error.Path |> Option.map Json.text |> nodeOption ]
             | ex ->
                 if failure.IsNone then failure <- Some("HARNESS_FAILURE", ex.Message)
                 if requestsSent > 0 then
@@ -554,24 +731,74 @@ module Runner =
                     with ex ->
                         log "task-abort-failure" [ "message", Json.text ex.Message ]
                         failure <- Some("ROLLBACK_FAILED", $"Task abort failed: {ex.Message}")
-                if initialStateCaptured then
+                if initialStateSnapshot.IsSome then
                     try
                         match initialStateSnapshot with
                         | Some initial ->
-                            restoreState config.ProjectDirectory initial
-                            let restored = stateNode config.ProjectDirectory
-                            if Json.compact restored <> Json.compact initial then
-                                failure <- Some("ROLLBACK_FAILED", "Project state did not match its pre-task snapshot after rollback.")
+                            let restoreResult = restoreState config.ProjectDirectory initial
+                            let restored = captureProjectState config.ProjectDirectory |> snapshotOrRaise
+                            let initialNode = stateNode initial
+                            let restoredNode = stateNode restored
+                            let expectedDigest = stateDigest initialNode
+                            let actualDigest = stateDigest restoredNode
+                            let warning =
+                                restoreResult.ExportWarning
+                                |> Option.map (fun item -> $"{item.Code}: {storageErrorMessage item}")
+                            log "project-storage-restore"
+                                [ "capturedGeneration", JsonValue.Create(initial.Storage.Generation)
+                                  "restoredGeneration", JsonValue.Create(restoreResult.Generation)
+                                  "expectedSemanticDigest", Json.text expectedDigest
+                                  "actualSemanticDigest", Json.text actualDigest
+                                  "warning", warning |> Option.map Json.text |> nodeOption ]
+                            if actualDigest <> expectedDigest then
+                                let detail =
+                                    warning
+                                    |> Option.map (fun value -> $" Restore warning: {value}")
+                                    |> Option.defaultValue ""
+                                failure <- Some("ROLLBACK_FAILED", $"Project state digest did not match after storage restore.{detail}")
+                            elif warning.IsSome then
+                                log "project-storage-restore-warning" [ "warning", Json.text warning.Value ]
                         | None -> ()
-                    with ex -> failure <- Some("ROLLBACK_FAILED", $"Could not restore project state: {ex.Message}")
+                    with
+                    | ProjectSnapshotFailure error ->
+                        log "project-storage-restore-failure"
+                            [ "code", Json.text error.Code
+                              "message", Json.text (storageErrorMessage error)
+                              "path", error.Path |> Option.map Json.text |> nodeOption ]
+                        failure <- Some("ROLLBACK_FAILED", $"{error.Code}: {storageErrorMessage error}")
+                    | ex ->
+                        log "project-storage-restore-failure"
+                            [ "code", Json.text "ROLLBACK_FAILED"
+                              "message", Json.text ex.Message ]
+                        failure <- Some("ROLLBACK_FAILED", $"Could not restore project state: {ex.Message}")
 
             if requestsSent = 0 then
                 inputTokens <- None
                 outputTokens <- None
                 totalTokens <- None
 
-            let finalState = stateNode config.ProjectDirectory
-            writeJson finalStatePath (stateManifest finalState)
+            let finalState =
+                try
+                    match captureProjectState config.ProjectDirectory with
+                    | Ok snapshot -> stateManifest (stateNode snapshot)
+                    | Error error ->
+                        if failure.IsNone then failure <- Some("PROJECT_SNAPSHOT_FAILED", $"Could not capture final project state: {error.Code}: {storageErrorMessage error}")
+                        let state = JsonObject()
+                        let detail = JsonObject()
+                        detail["code"] <- Json.text error.Code
+                        detail["message"] <- Json.text (storageErrorMessage error)
+                        detail["path"] <- error.Path |> Option.map Json.text |> nodeOption
+                        state["captureError"] <- detail
+                        stateManifest state
+                with ex ->
+                    if failure.IsNone then failure <- Some("PROJECT_SNAPSHOT_FAILED", $"Could not capture final project state: {ex.Message}")
+                    let state = JsonObject()
+                    let detail = JsonObject()
+                    detail["code"] <- Json.text "STATE_CAPTURE_FAILED"
+                    detail["message"] <- Json.text ex.Message
+                    state["captureError"] <- detail
+                    stateManifest state
+            writeJson finalStatePath finalState
             let savedRuntimeLog: JsonNode = if isNull runtimeLog then JsonObject() :> JsonNode else runtimeLog
             writeJson runtimeLogPath savedRuntimeLog
             timer.Stop()

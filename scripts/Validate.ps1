@@ -46,11 +46,24 @@ try {
     $buildCode = Invoke-ValidationCheck 'build' 'dotnet' @('build', 'AgentLang.sln', '--configuration', $Configuration)
     if ($buildCode -eq 0) {
         $null = Invoke-ValidationCheck 'language-acceptance' 'dotnet' @('run', '--no-build', '--configuration', $Configuration, '--project', 'tests/AgentLang.Acceptance')
-        if (Test-Path -LiteralPath 'tests/AgentLang.Harness.Tests/AgentLang.Harness.Tests.fsproj') {
-            $null = Invoke-ValidationCheck 'harness-acceptance' 'dotnet' @('run', '--no-build', '--configuration', $Configuration, '--project', 'tests/AgentLang.Harness.Tests')
+        $acceptanceProjects = [ordered]@{
+            'harness-acceptance' = 'AgentLang.Harness.Tests'
+            'business-acceptance' = 'AgentLang.Business.Tests'
+            'source-acceptance' = 'AgentLang.Source.Tests'
+            'storage-acceptance' = 'AgentLang.Storage.Tests'
+            'conventional-acceptance' = 'AgentLang.Conventional.Tests'
         }
-        if (Test-Path -LiteralPath 'tests/AgentLang.Business.Tests/AgentLang.Business.Tests.fsproj') {
-            $null = Invoke-ValidationCheck 'business-acceptance' 'dotnet' @('run', '--no-build', '--configuration', $Configuration, '--project', 'tests/AgentLang.Business.Tests')
+        foreach ($checkName in $acceptanceProjects.Keys) {
+            $projectName = $acceptanceProjects[$checkName]
+            $projectDirectory = "tests/$projectName"
+            if (Test-Path -LiteralPath "$projectDirectory/$projectName.fsproj") {
+                $null = Invoke-ValidationCheck $checkName 'dotnet' @('run', '--no-build', '--configuration', $Configuration, '--project', $projectDirectory)
+            }
+        }
+        if (Test-Path -LiteralPath 'scripts/Verify-PersistenceProjection.ps1') {
+            $projectionReportPath = [System.IO.Path]::ChangeExtension($ReportPath, 'projection.json')
+            $cliBinaryPath = "src/AgentLang.Cli/bin/$Configuration/net9.0/AgentLang.Cli.dll"
+            $null = Invoke-ValidationCheck 'fresh-process-projection' 'pwsh' @('-NoProfile', '-File', 'scripts/Verify-PersistenceProjection.ps1', '-CliDll', $cliBinaryPath, '-EvidencePath', $projectionReportPath)
         }
     }
     $null = Invoke-ValidationCheck 'diff-whitespace' 'git' @('diff', '--check')

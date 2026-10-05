@@ -1,0 +1,137 @@
+{
+  "writeResponses": [
+    {
+      "ok": true,
+      "kind": "defined",
+      "text": "Definitions parsed, type checked, and staged.",
+      "data": [
+        "helper",
+        "target"
+      ]
+    },
+    {
+      "ok": true,
+      "kind": "commit",
+      "text": "2 attached test(s) passed; selected candidates committed.",
+      "data": [
+        "helper/basic",
+        "target/helper-case"
+      ]
+    }
+  ],
+  "revision": "f745455c3b156b86aa1405df303a2ea178671261",
+  "writeRequests": [
+    {
+      "source": "word helper : Int -> Int\n    effects none\n    1 add\nend\ntest helper/basic\n    1 helper\n    => 2\nend\nword target : Int -> Int\n    effects none\n    1 add\nend\ntest target/helper-case\n    41 helper target\n    => 43\nend",
+      "op": "define"
+    },
+    {
+      "word": "target",
+      "op": "commit"
+    }
+  ],
+  "dirty": true,
+  "reloadRequests": [
+    {
+      "word": "target",
+      "op": "tests"
+    },
+    {
+      "word": "target",
+      "op": "test"
+    },
+    {
+      "word": "helper",
+      "op": "describe"
+    }
+  ],
+  "project": "D:\\code\\AgentLang\\.agentlang\\probes\\corrected-projection-a0b94bbe3eb94ce0a645601568f780fd",
+  "schemaVersion": 1,
+  "reloadResponses": [
+    {
+      "ok": true,
+      "kind": "tests",
+      "text": "1 attached test(s).",
+      "data": [
+        "helper-case"
+      ]
+    },
+    {
+      "ok": true,
+      "kind": "test",
+      "text": "1/1 test(s) passed.",
+      "data": {
+        "results": [
+          {
+            "name": "helper-case",
+            "word": "target",
+            "passed": true,
+            "expected": "43",
+            "actual": [
+              "43"
+            ]
+          }
+        ],
+        "coverage": {
+          "instructionsCovered": 2,
+          "instructionsTotal": 2,
+          "branchesCovered": 0,
+          "branchesTotal": 0,
+          "uncoveredInstructions": [],
+          "uncoveredBranchOutcomes": []
+        }
+      }
+    },
+    {
+      "ok": true,
+      "kind": "describe",
+      "text": "Description for helper.",
+      "data": {
+        "name": "helper",
+        "inputs": [
+          "Int"
+        ],
+        "outputs": [
+          "Int"
+        ],
+        "effects": [],
+        "documentation": "",
+        "id": "word_28336e928d2644ae9d1a7cd99f06a3c8",
+        "dependencies": [
+          "add"
+        ],
+        "transitiveDependencies": [
+          "add"
+        ],
+        "callers": [],
+        "tests": [
+          "basic"
+        ],
+        "examples": [],
+        "source": "dictionary.agent",
+        "line": 1,
+        "kind": "word",
+        "status": "persistent",
+        "maturity": "project",
+        "deprecated": false,
+        "revision": 1,
+        "testCount": 1,
+        "exampleCount": 0,
+        "coverage": {
+          "instructionsCovered": 0,
+          "instructionsTotal": 2,
+          "branchesCovered": 0,
+          "branchesTotal": 0,
+          "uncoveredInstructions": [
+            "dictionary.agent:5:5",
+            "dictionary.agent:6:5"
+          ],
+          "uncoveredBranchOutcomes": [],
+          "status": "not-run"
+        }
+      }
+    }
+  ],
+  "passed": true,
+  "kind": "independent-fresh-cli-reproduction-after-fix"
+}

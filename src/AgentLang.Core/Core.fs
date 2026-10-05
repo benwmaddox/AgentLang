@@ -42,6 +42,20 @@ type Literal =
     | LString of string
     | LUnit
 
+type TestExpectation =
+    | ExpectedValue of Literal
+    | ExpectedRuntimeError of string
+
+module TestExpectation =
+    /// Error assertions name a stable diagnostic code, not message text.
+    let isValidRuntimeErrorCode (code: string) =
+        not (String.IsNullOrEmpty code)
+        && code[0] >= 'A' && code[0] <= 'Z'
+        && (code |> Seq.forall (fun character ->
+            (character >= 'A' && character <= 'Z')
+            || (character >= '0' && character <= '9')
+            || character = '_'))
+
 type ContainerConstructor =
     | ListEmpty
     | ListSingleton
@@ -98,7 +112,7 @@ type TestDefinition =
     { Name: string
       Word: string
       Body: Expr list
-      Expected: Literal
+      Expected: TestExpectation
       SourceText: string
       Span: SourceSpan }
 

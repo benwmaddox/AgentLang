@@ -24,6 +24,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: validation-evidence
-          path: .agentlang/reports/validation.json
+          path: |
+            .agentlang/reports/validation.json
+            .agentlang/reports/validation.projection.json
           include-hidden-files: true
           if-no-files-found: warn

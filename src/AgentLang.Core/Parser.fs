@@ -410,20 +410,34 @@ module Parser =
             fail file header.Number 1 "PARSE_INVALID_TEST_NAME" $"Use '{keyword} word-name/case-name'."
         let content = if finish > start + 1 then lines[start + 1 .. finish - 1] |> Array.toList else []
         let meaningful = content |> List.filter (fun line -> not (String.IsNullOrWhiteSpace(stripComment line.Text)))
-        if List.isEmpty meaningful then fail file header.Number 1 "PARSE_MISSING_EXPECTED" "Test and example blocks require a final '=> literal' line."
+        if List.isEmpty meaningful then fail file header.Number 1 "PARSE_MISSING_EXPECTED" "Test and example blocks require a final '=> literal' line (tests may also use '=> error CODE')."
         let expectedLine = List.last meaningful
         let expectedText = stripComment expectedLine.Text |> fun value -> value.Trim()
         let expectedTokens = tokenize file expectedLine
+        let parseArrowExpectation (rest: string) : TestExpectation =
+            let parts: string array = rest.Split([| ' '; '\t' |], StringSplitOptions.RemoveEmptyEntries)
+            if parts.Length > 0 && parts[0] = "error" then
+                if isExample then
+                    fail file expectedLine.Number 1 "PARSE_ERROR_EXPECTATION_NOT_ALLOWED" "Examples must end with a literal value expectation; runtime-error expectations are available only in tests."
+                match parts with
+                | [| "error"; code |] when TestExpectation.isValidRuntimeErrorCode code -> ExpectedRuntimeError code
+                | _ -> fail file expectedLine.Number 1 "PARSE_INVALID_EXPECTED_ERROR" "Runtime-error expectations use '=> error UPPERCASE_CODE' with a stable uppercase diagnostic code."
+            else
+                let token = { Text = rest; Column = expectedLine.Text.IndexOf(rest, StringComparison.Ordinal) + 1 }
+                ExpectedValue(parseExpected file expectedLine [ token ])
         let expected =
             if expectedText.StartsWith("=>", StringComparison.Ordinal) then
                 let rest = expectedText.Substring(2).Trim()
-                let token = { Text = rest; Column = expectedLine.Text.IndexOf(rest, StringComparison.Ordinal) + 1 }
-                parseExpected file expectedLine [ token ]
+                parseArrowExpectation rest
             elif expectedText.StartsWith("expect ", StringComparison.Ordinal) then
-                parseExpected file expectedLine (expectedTokens |> List.tail)
-            else fail file expectedLine.Number 1 "PARSE_MISSING_EXPECTED" "Final test line must be '=> literal' or 'expect literal'."
+                ExpectedValue(parseExpected file expectedLine (expectedTokens |> List.tail))
+            else fail file expectedLine.Number 1 "PARSE_MISSING_EXPECTED" "Final test line must be '=> literal' or 'expect literal'; tests may use '=> error CODE'."
         let bodyLines = meaningful |> List.take (meaningful.Length - 1)
         let body = parseExpressionLines file bodyLines
+        match expected with
+        | ExpectedRuntimeError _ when List.isEmpty body ->
+            fail file header.Number 1 "PARSE_EMPTY_ERROR_TEST_BODY" "A runtime-error test must execute at least one expression before asserting an error."
+        | _ -> ()
         pieces[1], pieces[0], body, expected, blockSource lines start finish, span file header.Number 1 header.Text.Length
 
     /// Parse a complete, line-oriented source document containing records, words, tests, and examples.
@@ -507,7 +521,9 @@ module Parser =
                 elif content.StartsWith("example ", StringComparison.Ordinal) then
                     let finish = blockEnd file lines cursor
                     let name, word, body, expected, sourceText, sourceSpan = parseTestLike file lines cursor finish true
-                    examples.Add { Name = name; Word = word; Body = body; Expected = expected; SourceText = sourceText; Span = sourceSpan }
+                    match expected with
+                    | ExpectedValue literal -> examples.Add { Name = name; Word = word; Body = body; Expected = literal; SourceText = sourceText; Span = sourceSpan }
+                    | ExpectedRuntimeError _ -> fail file lines[cursor].Number 1 "PARSE_ERROR_EXPECTATION_NOT_ALLOWED" "Examples must end with a literal value expectation; runtime-error expectations are available only in tests."
                     cursor <- finish + 1
                 else fail file lines[cursor].Number 1 "PARSE_UNKNOWN_DECLARATION" $"Unknown declaration '{content}'."
             Ok { Records = List.ofSeq records; Scalars = List.ofSeq scalars; Words = List.ofSeq words; Tests = List.ofSeq tests; Examples = List.ofSeq examples }

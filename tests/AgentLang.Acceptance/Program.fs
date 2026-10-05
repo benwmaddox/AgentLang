@@ -59,6 +59,10 @@ module Program =
         let values = stackNode.AsArray()
         values.[index].GetValue<string>()
 
+    let private identityOf (response: JsonObject) =
+        let data = response["data"]
+        data["id"].GetValue<string>()
+
     let private stackType (response: JsonObject) (index: int) =
         let values = (response["data"]["stackTypes"]).AsArray()
         values.[index].GetValue<string>()
@@ -274,6 +278,150 @@ end
         let description = dispatch reloaded "describe" [ "word", jsonString "add-two" ] |> expectOk "reload helper metadata"
         equal "persistent" ((description["data"]["status"]).GetValue<string>()) "helper was committed with its caller"
 
+    let private testSelectedMetadataDependenciesPersist root =
+        let projectPath = makeProject root "selected-metadata-dependencies"
+        let runtime = engine projectPath []
+        let source =
+            """record ProbeToken
+    field value Int
+end
+
+word candidate-helper : Int -> Int
+    effects none
+    1 add
+end
+
+test candidate-helper/basic
+    1 candidate-helper
+    => 2
+end
+
+word metadata-target : Int -> Int
+    effects none
+    1 add
+end
+
+test metadata-target/helper-case
+    option.none<ProbeToken> drop
+    41 candidate-helper metadata-target
+    => 43
+end
+
+example metadata-target/helper-example
+    option.none<ProbeToken> drop
+    41 candidate-helper metadata-target
+    => 43
+end
+
+word unrelated-candidate : Int -> Int
+    effects none
+    2 add
+end
+
+test unrelated-candidate/basic
+    1 unrelated-candidate
+    => 3
+end
+"""
+        define runtime source |> expectOk "define candidate metadata dependencies and unrelated candidate" |> ignore
+        dispatch runtime "commit" [ "word", jsonString "metadata-target" ]
+        |> expectOk "commit target with dependencies used only by attached metadata"
+        |> ignore
+
+        let firstReload = engine projectPath []
+        let value = evaluate firstReload "41 candidate-helper metadata-target" |> expectOk "reload helper referenced by target test"
+        equal "43" (stackValue value 0) "candidate helper survives when only target metadata calls it"
+        dispatch firstReload "test" [ "word", jsonString "metadata-target" ]
+        |> expectOk "run target test after metadata dependency reload"
+        |> assertAllTestsPassed "metadata target" 1
+        dispatch firstReload "test" [ "word", jsonString "candidate-helper" ]
+        |> expectOk "run helper's attached test after reload"
+        |> assertAllTestsPassed "metadata helper" 1
+        let examples = dispatch firstReload "examples" [ "word", jsonString "metadata-target" ] |> expectOk "inspect durable target example"
+        equal "[\"helper-example\"]" (examples["data"].ToJsonString()) "target example depending on candidate helper survives reload"
+        expectError "NAME_UNKNOWN_WORD" (dispatch firstReload "source" [ "word", jsonString "unrelated-candidate" ]) |> ignore
+        let unstoredTests = dispatch firstReload "tests" [ "word", jsonString "unrelated-candidate" ] |> expectOk "inspect unrelated tests in committed projection"
+        equal "[]" (unstoredTests["data"].ToJsonString()) "unrelated staged metadata is not included in target commit"
+        let stagedUnrelated = dispatch runtime "describe" [ "word", jsonString "unrelated-candidate" ] |> expectOk "inspect untouched unrelated candidate"
+        equal "candidate" ((stagedUnrelated["data"]["status"]).GetValue<string>()) "unrelated candidate remains staged in the current engine"
+        let stagedTests = dispatch runtime "tests" [ "word", jsonString "unrelated-candidate" ] |> expectOk "inspect staged unrelated test"
+        equal "[\"basic\"]" (stagedTests["data"].ToJsonString()) "unrelated staged test remains available in the current engine"
+        dispatch runtime "commit" [ "word", jsonString "unrelated-candidate" ]
+        |> expectOk "commit the unrelated candidate separately"
+        |> ignore
+        let unrelatedReload = engine projectPath []
+        evaluate unrelatedReload "1 unrelated-candidate" |> expectOk "reload separately committed unrelated candidate" |> ignore
+
+        let replacement =
+            """word candidate-helper : Int -> Int
+    effects none
+    2 add
+end
+
+test candidate-helper/basic
+    1 candidate-helper
+    => 3
+end
+
+test metadata-target/helper-case
+    option.none<ProbeToken> drop
+    41 candidate-helper metadata-target
+    => 44
+end
+
+example metadata-target/helper-example
+    option.none<ProbeToken> drop
+    41 candidate-helper metadata-target
+    => 44
+end
+"""
+        define unrelatedReload replacement |> expectOk "stage a helper replacement used only by target metadata" |> ignore
+        dispatch unrelatedReload "commit" [ "word", jsonString "metadata-target" ]
+        |> expectOk "commit metadata-selected helper replacement"
+        |> ignore
+        let replacementReload = engine projectPath []
+        let replacementValue = evaluate replacementReload "41 candidate-helper metadata-target" |> expectOk "reload committed helper replacement"
+        equal "44" (stackValue replacementValue 0) "metadata-scoped replacement helper persists with its updated target test"
+        dispatch replacementReload "test" [ "word", jsonString "metadata-target" ]
+        |> expectOk "run target test after helper replacement reload"
+        |> assertAllTestsPassed "replacement metadata target" 1
+        dispatch replacementReload "test" [ "word", jsonString "candidate-helper" ]
+        |> expectOk "run helper test after helper replacement reload"
+        |> assertAllTestsPassed "replacement metadata helper" 1
+
+    let private testTemporaryMetadataDependencyRejected root =
+        let projectPath = makeProject root "temporary-metadata-dependency"
+        let runtime = engine projectPath []
+        let temporarySource =
+            """word temporary-test-helper : Int -> Int
+    effects none
+    1 add
+end
+"""
+        dispatch runtime "define" [ "source", jsonString temporarySource; "temporary", jsonBool true ]
+        |> expectOk "define temporary helper referenced by candidate test"
+        |> ignore
+        let source =
+            """word temporary-metadata-target : Int -> Int
+    effects none
+    1 add
+end
+
+test temporary-metadata-target/uses-temporary
+    1 temporary-test-helper temporary-metadata-target
+    => 3
+end
+"""
+        define runtime source |> expectOk "define target test referencing temporary helper" |> ignore
+        let rejection = dispatch runtime "commit" [ "word", jsonString "temporary-metadata-target" ]
+        expectError "COMMIT_TEMPORARY_TEST_DEPENDENCY" rejection |> ignore
+        let rejectionError = rejection["error"]
+        let actualNode = rejectionError["actual"]
+        let actual = actualNode.ToJsonString()
+        check (actual.Contains("temporary-test-helper", StringComparison.Ordinal)) "temporary dependency diagnostic names the helper"
+        let reloaded = engine projectPath []
+        expectError "NAME_UNKNOWN_WORD" (dispatch reloaded "source" [ "word", jsonString "temporary-metadata-target" ]) |> ignore
+
     let private testTemporaryWordsStaySessionOnly root =
         let projectPath = makeProject root "temporary-isolation"
         let runtime = engine projectPath []
@@ -357,8 +505,8 @@ end
         equal "11" (stackValue persistedValue 0) "unselected replacement f was not persisted"
         let durableSource = dispatch afterCommit "source" [ "word", jsonString "f" ] |> expectOk "inspect persisted original f"
         let sourceText = durableSource["data"].GetValue<string>()
-        check (sourceText.Contains("1 add", StringComparison.Ordinal)) "unselected replacement backup remains in durable dictionary"
-        check (not (sourceText.Contains("2 add", StringComparison.Ordinal))) "unselected replacement body is absent from durable dictionary"
+        check (sourceText.Contains("    1" + Environment.NewLine + "    add", StringComparison.Ordinal)) "unselected replacement backup remains in durable dictionary"
+        check (not (sourceText.Contains("    2" + Environment.NewLine + "    add", StringComparison.Ordinal))) "unselected replacement body is absent from durable dictionary"
         let originalTests = dispatch afterCommit "test" [ "word", jsonString "f" ] |> expectOk "reload original f test"
         assertAllTestsPassed "original f" 1 originalTests
 
@@ -431,6 +579,330 @@ end
 
         expectError "COMMIT_TESTS_FAILED" (dispatch runtime "commit" [ "word", jsonString "g" ])
         |> ignore
+
+    let private testReplacementCallerTests root =
+        let projectPath = makeProject root "replacement-caller-tests"
+        let runtime = engine projectPath []
+        let baseline =
+            """word replacement-base : Int -> Int
+    effects none
+    1 add
+end
+
+test replacement-base/basic
+    10 replacement-base
+    => 11
+end
+
+word replacement-caller : Int -> Int
+    effects none
+    replacement-base
+end
+
+test replacement-caller/basic
+    10 replacement-caller
+    => 11
+end
+"""
+        define runtime baseline |> expectOk "define replacement dependency and caller" |> ignore
+        dispatch runtime "commit" [] |> expectOk "commit replacement dependency and caller" |> ignore
+
+        let replacement =
+            """word replacement-base : Int -> Int
+    effects none
+    2 add
+end
+
+test replacement-base/basic
+    10 replacement-base
+    => 12
+end
+"""
+        define runtime replacement |> expectOk "stage replacement dependency" |> ignore
+        let dependencyInfo = dispatch runtime "dependencies" [ "word", jsonString "replacement-caller" ] |> expectOk "inspect replacement caller dependencies"
+        let dependencyNames = dependencyInfo["data"]["dependencies"]
+        check (dependencyNames.ToJsonString().Contains("replacement-base", StringComparison.Ordinal)) "caller dependency analysis names the replaced word"
+        let impactedCallerTest = dispatch runtime "test" [ "word", jsonString "replacement-caller" ] |> expectOk "run caller test against staged replacement"
+        let impactedResults = impactedCallerTest["data"]["results"]
+        let impactedFirstResult = impactedResults[0]
+        let impactedPassed = impactedFirstResult["passed"].GetValue<bool>()
+        check (not impactedPassed) "the old caller test fails against the staged replacement"
+        for operation in [ "commit"; "commit-word"; "replace-word" ] do
+            expectError "COMMIT_TESTS_FAILED" (dispatch runtime operation [ "word", jsonString "replacement-base" ])
+            |> ignore
+        let beforeCallerUpdate = evaluate runtime "10 replacement-caller" |> expectOk "failed replacement leaves candidate view available"
+        equal "12" (stackValue beforeCallerUpdate 0) "staged replacement is visible in the session"
+        let durableBeforeCallerUpdate = engine projectPath []
+        let oldDurableValue = evaluate durableBeforeCallerUpdate "10 replacement-caller" |> expectOk "failed replacement leaves committed caller intact"
+        equal "11" (stackValue oldDurableValue 0) "failed replacement does not publish changed dependency"
+
+        let updatedCallerTest =
+            """test replacement-caller/basic
+    10 replacement-caller
+    => 12
+end
+"""
+        define runtime updatedCallerTest |> expectOk "stage passing caller test update" |> ignore
+        let committed = dispatch runtime "replace-word" [ "word", jsonString "replacement-base" ] |> expectOk "commit replacement after caller tests pass"
+        let committedResults = committed["data"].AsArray()
+        check (committedResults |> Seq.exists (fun value -> value.GetValue<string>() = "replacement-caller/basic")) "replacement reports the checked caller test"
+        let updatedValue = evaluate runtime "10 replacement-caller" |> expectOk "evaluate updated caller after replacement"
+        equal "12" (stackValue updatedValue 0) "caller observes committed replacement"
+        let reloaded = engine projectPath []
+        let reloadedValue = evaluate reloaded "10 replacement-caller" |> expectOk "reload replacement and caller"
+        equal "12" (stackValue reloadedValue 0) "replacement and caller persist together"
+        dispatch reloaded "test" [ "word", jsonString "replacement-caller" ]
+        |> expectOk "test reloaded updated caller"
+        |> assertAllTestsPassed "replacement caller" 1
+
+        let taskRuntime = engine projectPath []
+        dispatch taskRuntime "task.begin" [ "goal", jsonString "reject unsafe replacement through task.commit" ]
+        |> expectOk "begin task for caller guard"
+        |> ignore
+        let taskReplacement =
+            """word replacement-base : Int -> Int
+    effects none
+    3 add
+end
+
+test replacement-base/basic
+    10 replacement-base
+    => 13
+end
+"""
+        define taskRuntime taskReplacement |> expectOk "stage task replacement" |> ignore
+        expectError "COMMIT_TESTS_FAILED" (dispatch taskRuntime "task.commit" []) |> ignore
+        dispatch taskRuntime "task.abort" [] |> expectOk "abort task after caller test rejection" |> ignore
+        let taskReload = engine projectPath []
+        let rolledBack = evaluate taskReload "10 replacement-caller" |> expectOk "reload after rejected task replacement"
+        equal "12" (stackValue rolledBack 0) "task.commit caller-test rejection does not publish replacement"
+
+        let transitivePath = makeProject root "replacement-transitive-static-callback"
+        let transitive = engine transitivePath []
+        let transitiveBaseline =
+            """word gate-base : Int -> Bool
+    effects none
+    drop
+    true
+end
+
+test gate-base/basic
+    1 gate-base
+    => true
+end
+
+word gate-caller : Int -> Bool
+    effects none
+    gate-base
+end
+
+test gate-caller/basic
+    1 gate-caller
+    => true
+end
+
+word gate-ancestor : Int -> Int
+    effects none
+    drop
+    1 list.singleton<Int>
+    list.filter gate-caller
+    list.count
+end
+
+test gate-ancestor/static-callback
+    7 gate-ancestor
+    => 1
+end
+"""
+        define transitive transitiveBaseline |> expectOk "define static callback dependency chain" |> ignore
+        dispatch transitive "commit" [] |> expectOk "commit static callback dependency chain" |> ignore
+        let changedBaseAndCaller =
+            """word gate-base : Int -> Bool
+    effects none
+    drop
+    false
+end
+
+test gate-base/basic
+    1 gate-base
+    => false
+end
+
+test gate-caller/basic
+    1 gate-caller
+    => false
+end
+"""
+        define transitive changedBaseAndCaller |> expectOk "stage base and direct caller test updates" |> ignore
+        let blockedByAncestor = dispatch transitive "replace-word" [ "word", jsonString "gate-base" ]
+        expectError "COMMIT_TESTS_FAILED" blockedByAncestor |> ignore
+        let blockedError = blockedByAncestor["error"]
+        let blockedActual = blockedError["actual"]
+        let failedNames = blockedActual.ToJsonString()
+        check (failedNames.Contains("gate-ancestor/static-callback", StringComparison.Ordinal)) "transitive static callback ancestor test blocks replacement"
+        let oldAncestor = engine transitivePath []
+        let oldResult = evaluate oldAncestor "7 gate-ancestor" |> expectOk "reload unchanged ancestor after blocked replacement"
+        equal "1" (stackValue oldResult 0) "failed transitive caller check preserves durable dependency chain"
+        let updatedAncestorTest =
+            """test gate-ancestor/static-callback
+    7 gate-ancestor
+    => 0
+end
+"""
+        define transitive updatedAncestorTest |> expectOk "stage passing ancestor test update" |> ignore
+        dispatch transitive "replace-word" [ "word", jsonString "gate-base" ]
+        |> expectOk "commit replacement after direct and transitive caller tests pass"
+        |> ignore
+        let transitiveReload = engine transitivePath []
+        let updatedAncestor = evaluate transitiveReload "7 gate-ancestor" |> expectOk "reload updated static callback chain"
+        equal "0" (stackValue updatedAncestor 0) "transitive replacement and callback tests persist together"
+        dispatch transitiveReload "test-all" [] |> expectOk "run reloaded transitive callback tests" |> assertAllTestsPassed "transitive callback reload" 3
+
+    let private testWordIdentityLifecycle root =
+        let projectPath = makeProject root "word-identities"
+        let runtime = engine projectPath []
+        let temporarySource =
+            """word stable-item : Int -> Int
+    effects none
+    doc "original implementation"
+    1 add
+end
+
+test stable-item/original
+    1 stable-item
+    => 2
+end
+"""
+        dispatch runtime "define" [ "source", jsonString temporarySource; "temporary", jsonBool true ]
+        |> expectOk "define temporary word with test"
+        |> ignore
+        let originalIdentity = dispatch runtime "describe" [ "word", jsonString "stable-item" ] |> expectOk "inspect temporary identity" |> identityOf
+        check (originalIdentity.StartsWith("word_", StringComparison.Ordinal)) "user identity has word_ prefix"
+        check (originalIdentity.Length = 37) "user identity uses a 32-hex GUID suffix"
+        let guidSuffixIsValid =
+            try Guid.ParseExact(originalIdentity.Substring(5), "N") |> ignore; true
+            with _ -> false
+        check guidSuffixIsValid "user identity suffix parses as a compact GUID"
+
+        dispatch runtime "promote" [ "word", jsonString "stable-item" ] |> expectOk "promote temporary identity" |> ignore
+        let candidateIdentity = dispatch runtime "describe" [ "word", jsonString "stable-item" ] |> expectOk "inspect candidate identity" |> identityOf
+        equal originalIdentity candidateIdentity "promotion preserves identity"
+        dispatch runtime "commit" [ "word", jsonString "stable-item" ] |> expectOk "commit identity-bearing word" |> ignore
+        let persistentIdentity = dispatch runtime "describe" [ "word", jsonString "stable-item" ] |> expectOk "inspect persistent identity" |> identityOf
+        equal originalIdentity persistentIdentity "commit preserves identity"
+        let listedWords = dispatch runtime "words" [] |> expectOk "list identity-bearing words"
+        let listData = listedWords["data"]
+        let wordEntries = (listData["words"]).AsArray()
+        let listedIdentity =
+            wordEntries
+            |> Seq.find (fun item -> item["name"].GetValue<string>() = "stable-item")
+            |> fun item -> item["id"].GetValue<string>()
+        equal originalIdentity listedIdentity "words exposes the stable identity"
+
+        let replacement =
+            """word stable-item : Int -> Int
+    effects none
+    doc "replacement implementation"
+    1 add
+end
+
+test stable-item/replacement
+    2 stable-item
+    => 3
+end
+"""
+        define runtime replacement |> expectOk "stage replacement" |> ignore
+        let replacementIdentity = dispatch runtime "describe" [ "word", jsonString "stable-item" ] |> expectOk "inspect replacement identity" |> identityOf
+        equal originalIdentity replacementIdentity "replacement retains persistent identity"
+        dispatch runtime "discard" [ "word", jsonString "stable-item" ] |> expectOk "discard replacement" |> ignore
+        let restored = dispatch runtime "describe" [ "word", jsonString "stable-item" ] |> expectOk "inspect restored identity"
+        equal originalIdentity (identityOf restored) "discard restores original identity"
+        equal "original implementation" ((restored["data"]["documentation"]).GetValue<string>()) "discard restores original definition"
+
+        let throwaway =
+            """word throwaway : Int -> Int
+    effects none
+    1 add
+end
+
+test throwaway/basic
+    1 throwaway
+    => 2
+end
+"""
+        define runtime throwaway |> expectOk "define throwaway identity" |> ignore
+        let discardedIdentity = dispatch runtime "describe" [ "word", jsonString "throwaway" ] |> expectOk "inspect throwaway identity" |> identityOf
+        dispatch runtime "discard" [ "word", jsonString "throwaway" ] |> expectOk "discard new word identity" |> ignore
+        define runtime throwaway |> expectOk "redefine throwaway" |> ignore
+        let newIdentity = dispatch runtime "describe" [ "word", jsonString "throwaway" ] |> expectOk "inspect redefined identity" |> identityOf
+        check (discardedIdentity <> newIdentity) "discarding a new definition removes its identity"
+        check (newIdentity <> originalIdentity) "distinct user words have distinct identities"
+
+        let primitiveId = dispatch runtime "describe" [ "word", jsonString "add" ] |> expectOk "inspect primitive identity" |> identityOf
+        check (primitiveId.StartsWith("primitive_", StringComparison.Ordinal)) "primitive identity is deterministic by builtin name"
+        let otherRuntime = engine (makeProject root "word-identities-other") []
+        let primitiveIdAgain = dispatch otherRuntime "describe" [ "word", jsonString "add" ] |> expectOk "inspect primitive identity in fresh engine" |> identityOf
+        equal primitiveId primitiveIdAgain "primitive identities are deterministic across engines"
+
+        define runtime "record Receipt\n    field amount Int\nend\n" |> expectOk "define generated-word owner" |> ignore
+        dispatch runtime "commit" [ "word", jsonString "Receipt" ] |> expectOk "commit generated-word owner" |> ignore
+        let generatedId = dispatch runtime "describe" [ "word", jsonString "receipt.new" ] |> expectOk "inspect generated identity" |> identityOf
+        check (generatedId.StartsWith("generated_", StringComparison.Ordinal)) "generated identity is deterministic by generated word name"
+        let generatedIdReloaded =
+            engine projectPath []
+            |> fun reloaded -> dispatch reloaded "describe" [ "word", jsonString "receipt.new" ]
+            |> expectOk "inspect generated identity after reload"
+            |> identityOf
+        equal generatedId generatedIdReloaded "generated identities are deterministic across reload"
+
+    let private testRuntimeErrorExpectations root =
+        let runtime = engine (makeProject root "runtime-error-expectations") []
+        let source =
+            """word guarded-divide : Int -> Int
+    effects none
+    1 swap divide
+end
+
+test guarded-divide/divide-by-zero
+    0 guarded-divide
+    => error RUNTIME_DIVIDE_BY_ZERO
+end
+
+test guarded-divide/completes
+    2 guarded-divide
+    => error RUNTIME_DIVIDE_BY_ZERO
+end
+
+test guarded-divide/wrong-code
+    0 guarded-divide
+    => error RUNTIME_OVERFLOW
+end
+"""
+        define runtime source |> expectOk "define runtime-error tests" |> ignore
+        let testResponse = dispatch runtime "test" [ "word", jsonString "guarded-divide" ] |> expectOk "run runtime-error tests"
+        let results = (testResponse["data"]["results"]).AsArray()
+        equal 3 results.Count "runtime-error result count"
+        let byName name = results |> Seq.find (fun result -> result["name"].GetValue<string>() = name)
+        let matching = byName "divide-by-zero"
+        check (matching["passed"].GetValue<bool>()) "exact runtime diagnostic code passes"
+        equal "error RUNTIME_DIVIDE_BY_ZERO" (matching["expected"].GetValue<string>()) "expected-error JSON keeps an explicit expectation"
+        equal "RUNTIME_DIVIDE_BY_ZERO" (matching["expectedErrorCode"].GetValue<string>()) "expected-error JSON exposes its code"
+        let completed = byName "completes"
+        check (not (completed["passed"].GetValue<bool>())) "normal completion does not pass an expected-error test"
+        equal "TEST_EXPECTED_RUNTIME_ERROR" (completed["errorCode"].GetValue<string>()) "normal completion reports an expected-error mismatch"
+        let wrongCode = byName "wrong-code"
+        check (not (wrongCode["passed"].GetValue<bool>())) "a different runtime diagnostic does not pass"
+        equal "RUNTIME_DIVIDE_BY_ZERO" (wrongCode["errorCode"].GetValue<string>()) "wrong runtime code remains observable"
+
+        let compileNegative =
+            """test guarded-divide/compile-negative
+    "text" 1 add
+    => error TYPE_STACK_MISMATCH
+end
+"""
+        expectError "TYPE_STACK_MISMATCH" (define runtime compileNegative) |> ignore
+        let attached = dispatch runtime "tests" [ "word", jsonString "guarded-divide" ] |> expectOk "check compile-negative test was not staged"
+        equal 3 ((attached["data"]).AsArray().Count) "compile-time mismatch cannot be staged as an expected runtime error"
 
     let private testRefinedTypesAndNominality root =
         let runtime = engine (makeProject root "refined-types") []
@@ -574,6 +1046,63 @@ end
         let afterReplacement = dispatch reloaded "describe" [ "word", jsonString "choose" ] |> expectOk "inspect replacement maturity"
         equal "library" ((afterReplacement["data"]["maturity"]).GetValue<string>()) "library quality cannot be downgraded"
 
+        let metadataPath = makeProject root "library-metadata-helper-coverage"
+        let metadataRuntime = engine metadataPath []
+        let metadataSource =
+            """word choose-true : Int -> Bool
+    effects none
+    drop
+    true
+end
+
+test choose-true/basic
+    0 choose-true
+    => true
+end
+
+word choose-false : Int -> Bool
+    effects none
+    drop
+    false
+end
+
+test choose-false/basic
+    0 choose-false
+    => false
+end
+
+word branch-library : Bool -> Int
+    effects none
+    if
+        1
+    else
+        2
+    end
+end
+
+test branch-library/true
+    0 choose-true branch-library
+    => 1
+end
+
+test branch-library/false
+    0 choose-false branch-library
+    => 2
+end
+"""
+        define metadataRuntime metadataSource |> expectOk "define library tests with candidate helper dependencies" |> ignore
+        dispatch metadataRuntime "commit" [ "word", jsonString "branch-library"; "library", jsonBool true ]
+        |> expectOk "commit library word with metadata-only helper dependencies"
+        |> ignore
+        let metadataReload = engine metadataPath []
+        let reloadedTests = dispatch metadataReload "test" [ "word", jsonString "branch-library" ] |> expectOk "run reloaded library branch tests"
+        assertAllTestsPassed "reloaded library branch" 2 reloadedTests
+        let durableCoverage = reloadedTests["data"]["coverage"]
+        let covered = durableCoverage["branchesCovered"]
+        let required = durableCoverage["branchesTotal"]
+        equal 2 (covered.GetValue<int>()) "both library branches remain covered after reload"
+        equal 2 (required.GetValue<int>()) "library branch requirements remain visible after reload"
+
     let private testTaskAbortRollsBackDictionary root =
         let projectPath = makeProject root "task-abort"
         let runtime = engine projectPath []
@@ -591,6 +1120,7 @@ end
 """
         define runtime baseline |> expectOk "define durable task baseline" |> ignore
         dispatch runtime "commit" [ "word", jsonString "stable.value" ] |> expectOk "commit durable task baseline" |> ignore
+        let baselineIdentity = dispatch runtime "describe" [ "word", jsonString "stable.value" ] |> expectOk "capture baseline word identity" |> identityOf
 
         dispatch runtime "task.begin" [ "goal", jsonString "temporary vocabulary experiment" ] |> expectOk "begin task" |> ignore
         let stagedSource =
@@ -655,6 +1185,7 @@ end
         expectError "NAME_UNKNOWN_WORD" (evaluate runtime "1 draftRecord.new") |> ignore
 
         let restoredDescription = dispatch runtime "describe" [ "word", jsonString "stable.value" ] |> expectOk "inspect task baseline after abort"
+        equal baselineIdentity (identityOf restoredDescription) "task abort restores the original word identity"
         equal "project" ((restoredDescription["data"]["maturity"]).GetValue<string>()) "abort restores original maturity policy"
         equal "durable original implementation" ((restoredDescription["data"]["documentation"]).GetValue<string>()) "abort restores original documentation"
         let restoredValue = evaluate runtime "1 stable.value" |> expectOk "evaluate baseline after abort"
@@ -670,7 +1201,7 @@ end
         equal "project" ((reloadDescription["data"]["maturity"]).GetValue<string>()) "abort restores original maturity policy on disk"
         let reloadSource = dispatch reloaded "source" [ "word", jsonString "stable.value" ] |> expectOk "inspect restored source after reload"
         let reloadSourceText = reloadSource["data"].GetValue<string>()
-        check (reloadSourceText.Contains("1 add", StringComparison.Ordinal)) "abort restores original source on disk"
+        check (reloadSourceText.Contains("    1" + Environment.NewLine + "    add", StringComparison.Ordinal)) "abort restores original source on disk"
         check (reloadSourceText.Contains("durable original implementation", StringComparison.Ordinal)) "abort restores original documentation on disk"
         check (not (reloadSourceText.Contains("task-local replacement", StringComparison.Ordinal))) "aborted replacement documentation is absent from disk"
         let reloadValue = evaluate reloaded "1 stable.value" |> expectOk "evaluate reloaded baseline after abort"
@@ -710,6 +1241,211 @@ end
 
         dispatch runtime "task.begin" [ "goal", jsonString "empty task" ] |> expectOk "begin empty task" |> ignore
         dispatch runtime "task.commit" [] |> expectOk "commit empty task" |> ignore
+
+    let private testTaskLogsSurviveReload root =
+        let projectPath = makeProject root "task-log-history"
+        let completeTask runtime goal =
+            let started = dispatch runtime "task.begin" [ "goal", jsonString goal ] |> expectOk "begin persisted task"
+            let taskId = (started["data"]["task"]).GetValue<string>()
+            dispatch runtime "task.abort" [] |> expectOk "persist task log" |> ignore
+            taskId
+        let first = completeTask (engine projectPath []) "first task session"
+        let second = completeTask (engine projectPath []) "second task session"
+        check (first <> second) "task identifiers advance across engine reloads"
+        equal "task-0001" first "first persisted task id"
+        equal "task-0002" second "second persisted task id"
+        let historyPath = Path.Combine(projectPath, "history")
+        let taskLogs = Directory.GetFiles(historyPath, "task-*.json") |> Array.sort
+        equal 2 taskLogs.Length "both task logs remain on disk"
+        check (File.Exists(Path.Combine(historyPath, first + ".json"))) "first task log is preserved"
+        check (File.Exists(Path.Combine(historyPath, second + ".json"))) "second task log is preserved"
+        let third = completeTask (engine projectPath []) "third task session after reload"
+        equal "task-0003" third "task numbering continues after another reload"
+        equal 3 (Directory.GetFiles(historyPath, "task-*.json").Length) "reloading does not overwrite earlier task logs"
+
+    let private testNamedSnapshotRestoresProjectAndProviders root =
+        let projectPath = makeProject root "named-snapshot"
+        let capabilities = Set.ofList [ "fs.read"; "fs.write"; "clock.read" ]
+        let savedClock = "2025-12-31T23:59:58Z"
+        let runtime = Runtime.Engine(projectPath, capabilities, ?clockValue = Some savedClock)
+        let baseline =
+            """word snapshot.base : Int -> Int
+    effects none
+    1 add
+end
+
+test snapshot.base/basic
+    1 snapshot.base
+    => 2
+end
+"""
+        define runtime baseline |> expectOk "define snapshot baseline" |> ignore
+        dispatch runtime "commit" [ "word", jsonString "snapshot.base" ] |> expectOk "commit snapshot baseline" |> ignore
+        let storageStatus = dispatch runtime "storage.status" [] |> expectOk "inspect durable storage status"
+        equal "manifest" ((storageStatus["data"]["authority"]).GetValue<string>()) "storage status reports manifest authority"
+        check ((storageStatus["data"]["generation"]).GetValue<int64>() > 0L) "storage status reports current generation"
+        check ((storageStatus["data"]["manifestHash"]).GetValue<string>() <> "") "storage status reports the current manifest hash"
+        let storageWarning = storageStatus["data"]["exportWarning"]
+        check (isNull storageWarning) "storage status reports no warning after successful export"
+        evaluate runtime "\"snapshot-file\" \"saved-value\" file.write" |> expectOk "write snapshot provider state" |> ignore
+        dispatch runtime "snapshot.save" [ "name", jsonString "baseline" ] |> expectOk "save named snapshot" |> ignore
+
+        let staged =
+            """word snapshot.extra : Int -> Int
+    effects none
+    5 add
+end
+
+test snapshot.extra/basic
+    1 snapshot.extra
+    => 6
+end
+"""
+        define runtime staged |> expectOk "stage snapshot-excluded candidate" |> ignore
+        let candidateSnapshot = dispatch runtime "snapshot.save" [ "name", jsonString "committed-only" ] |> expectOk "save committed projection"
+        let excludedNode = candidateSnapshot["data"]["excludedCandidates"]
+        let excluded = excludedNode.AsArray()
+        check (excluded |> Seq.exists (fun item -> item.GetValue<string>() = "snapshot.extra")) "snapshot save reports excluded candidate"
+        dispatch runtime "commit" [ "word", jsonString "snapshot.extra" ] |> expectOk "commit post-snapshot candidate" |> ignore
+        evaluate runtime "\"snapshot-file\" \"later-value\" file.write" |> expectOk "mutate virtual file after snapshot" |> ignore
+
+        let laterClock = "2026-01-02T03:04:05Z"
+        let reloaded = Runtime.Engine(projectPath, capabilities, ?clockValue = Some laterClock)
+        let loaded = dispatch reloaded "snapshot.load" [ "name", jsonString "baseline" ] |> expectOk "restore named snapshot"
+        let restoredClock = loaded["data"]["clockValue"]
+        equal savedClock (restoredClock.GetValue<string>()) "snapshot clock state is restored"
+        let fileText = evaluate reloaded "\"snapshot-file\" file.read" |> expectOk "read restored provider file"
+        equal "\"saved-value\"" (stackValue fileText 0) "snapshot virtual file state is restored"
+        expectError "NAME_UNKNOWN_WORD" (evaluate reloaded "1 snapshot.extra") |> ignore
+        let restoredValue = evaluate reloaded "1 snapshot.base" |> expectOk "evaluate word restored from snapshot"
+        equal "2" (stackValue restoredValue 0) "snapshot restores committed vocabulary"
+        let clock = evaluate reloaded "clock.now" |> expectOk "host clock capability survives snapshot load"
+        equal ($"\"{savedClock}\"") (stackValue clock 0) "snapshot restores fixed clock"
+
+        dispatch reloaded "task.begin" [ "goal", jsonString "protect active task from snapshot load" ] |> expectOk "begin task before snapshot load" |> ignore
+        expectError "SNAPSHOT_TASK_ACTIVE" (dispatch reloaded "snapshot.load" [ "name", jsonString "committed-only" ]) |> ignore
+        dispatch reloaded "task.abort" [] |> expectOk "abort task after rejected snapshot load" |> ignore
+
+    let private testSemanticRenameAndDeprecation root =
+        let projectPath = makeProject root "semantic-maintenance"
+        let runtime = engine projectPath []
+        let source =
+            """word rename-target : Int -> Int
+    effects none
+    1 add
+end
+
+word rename-caller : Int -> Int
+    effects none
+    rename-target
+end
+
+word rename-map : List<Int> -> Int
+    effects none
+    list.map rename-target
+    drop
+    9
+end
+
+test rename-target/basic
+    1 rename-target
+    => 2
+end
+
+test rename-target/literal-is-not-a-reference
+    "rename-target" drop
+    1 rename-target
+    => 2
+end
+
+test rename-caller/basic
+    1 rename-caller
+    => 2
+end
+
+test rename-map/empty-callback
+    list.empty<Int> rename-map
+    => 9
+end
+
+test rename-map/nonempty-callback
+    1 list.singleton<Int> rename-map
+    => 9
+end
+
+example rename-target/basic-example
+    1 rename-target
+    => 2
+end
+"""
+        define runtime source |> expectOk "define vocabulary for semantic rename" |> ignore
+        dispatch runtime "commit" [] |> expectOk "commit vocabulary before semantic rename" |> ignore
+        let oldDescription = dispatch runtime "describe" [ "word", jsonString "rename-target" ] |> expectOk "inspect old name before rename"
+        let identity = identityOf oldDescription
+        let renamed =
+            dispatch runtime "rename" [ "word", jsonString "rename-target"; "to", jsonString "canonical-target"; "actor", jsonString "host" ]
+            |> expectOk "rename committed word and references"
+        let renamedIdNode = renamed["data"]["id"]
+        equal identity (renamedIdNode.GetValue<string>()) "semantic rename preserves word identity"
+        let callers = dispatch runtime "callers" [ "word", jsonString "canonical-target" ] |> expectOk "inspect renamed callers"
+        let callerNames = callers["data"].AsArray() |> Seq.map (fun value -> value.GetValue<string>()) |> Set.ofSeq
+        check (callerNames.Contains "rename-caller") "direct call is rewritten"
+        check (callerNames.Contains "rename-map") "static list callback is rewritten"
+        expectError "NAME_UNKNOWN_WORD" (dispatch runtime "describe" [ "word", jsonString "rename-target" ]) |> ignore
+        equal "2" (stackValue (evaluate runtime "1 canonical-target" |> expectOk "evaluate renamed definition") 0) "renamed word remains callable"
+        equal "2" (stackValue (evaluate runtime "1 rename-caller" |> expectOk "evaluate rewritten caller") 0) "rewritten caller preserves behavior"
+        equal "9" (stackValue (evaluate runtime "1 list.singleton<Int> rename-map" |> expectOk "evaluate rewritten static callback") 0) "rewritten static callback executes"
+        let allTests = dispatch runtime "test-all" [] |> expectOk "run tests after semantic rename"
+        assertAllTestsPassed "renamed graph" 5 allTests
+
+        let history = dispatch runtime "history" [ "word", jsonString "canonical-target" ] |> expectOk "inspect durable rename history"
+        let revisions = history["data"].AsArray()
+        equal 2 revisions.Count "rename adds a durable revision"
+        let firstRevisionNode = revisions[0]["revision"]
+        let secondRevisionNode = revisions[1]["revision"]
+        let actorNode = revisions[1]["actor"]
+        equal 1 (firstRevisionNode.GetValue<int>()) "original revision number is retained"
+        equal 2 (secondRevisionNode.GetValue<int>()) "rename revision uses the actual durable revision number"
+        equal "host" (actorNode.GetValue<string>()) "revision records explicit provenance"
+        let latestTestsNode = revisions[1]["tests"]
+        let latestTests = latestTestsNode.AsArray()
+        check (latestTests |> Seq.exists (fun item ->
+            let testSource = item.GetValue<string>()
+            testSource.Contains("\"rename-target\"", StringComparison.Ordinal)
+            && testSource.Contains("canonical-target", StringComparison.Ordinal))) "literal text is preserved while executable references are rewritten"
+
+        expectError "RENAME_COLLISION" (dispatch runtime "rename" [ "word", jsonString "canonical-target"; "to", jsonString "rename-caller" ]) |> ignore
+        equal identity (dispatch runtime "describe" [ "word", jsonString "canonical-target" ] |> expectOk "inspect after rejected collision" |> identityOf) "collision refusal leaves word identity unchanged"
+        let reloaded = engine projectPath []
+        equal identity (dispatch reloaded "describe" [ "word", jsonString "canonical-target" ] |> expectOk "reload renamed identity" |> identityOf) "renamed identity persists across reload"
+        assertAllTestsPassed "reloaded renamed graph" 5 (dispatch reloaded "test-all" [] |> expectOk "run reloaded rename tests")
+
+        let deprecated = dispatch reloaded "deprecate" [ "word", jsonString "canonical-target"; "actor", jsonString "client" ] |> expectOk "deprecate committed word"
+        let deprecatedIdNode = deprecated["data"]["id"]
+        let deprecatedFlagNode = deprecated["data"]["deprecated"]
+        equal identity (deprecatedIdNode.GetValue<string>()) "deprecation preserves word identity"
+        check (deprecatedFlagNode.GetValue<bool>()) "deprecation response exposes policy"
+        let deprecatedDescription = dispatch reloaded "describe" [ "word", jsonString "canonical-target" ] |> expectOk "inspect deprecated word"
+        let descriptionFlagNode = deprecatedDescription["data"]["deprecated"]
+        check (descriptionFlagNode.GetValue<bool>()) "describe exposes deprecation state"
+        let deprecationHistory = dispatch reloaded "history" [ "word", jsonString "canonical-target" ] |> expectOk "inspect deprecation revision"
+        let deprecationRevisions = deprecationHistory["data"].AsArray()
+        equal 3 deprecationRevisions.Count "deprecation adds a durable revision"
+        let durableDeprecatedNode = deprecationRevisions[2]["deprecated"]
+        check (durableDeprecatedNode.GetValue<bool>()) "durable history records deprecation"
+        let fresh = engine projectPath []
+        let freshDescription = dispatch fresh "describe" [ "word", jsonString "canonical-target" ] |> expectOk "reload deprecated word"
+        let freshDeprecatedNode = freshDescription["data"]["deprecated"]
+        check (freshDeprecatedNode.GetValue<bool>()) "deprecation survives reload"
+        equal "2" (stackValue (evaluate fresh "1 canonical-target" |> expectOk "deprecated word remains callable") 0) "deprecation preserves callers"
+
+        let frozenPath = makeProject root "frozen-validator-rename"
+        let frozen = engine frozenPath []
+        define frozen (exampleSource "refined-types.agent") |> expectOk "define persistent scalar validator" |> ignore
+        dispatch frozen "commit" [] |> expectOk "commit scalar validator graph" |> ignore
+        let frozenId = dispatch frozen "describe" [ "word", jsonString "email.valid?" ] |> expectOk "inspect frozen validator identity" |> identityOf
+        expectError "TYPE_VALIDATOR_FROZEN" (dispatch frozen "rename" [ "word", jsonString "email.valid?"; "to", jsonString "email.accepts?" ]) |> ignore
+        equal frozenId (dispatch frozen "describe" [ "word", jsonString "email.valid?" ] |> expectOk "inspect validator after refused rename" |> identityOf) "frozen validator refusal leaves identity unchanged"
 
     let private testTypedContainersAndLanguageConstructs root =
         let projectPath = makeProject root "typed-containers"
@@ -1068,9 +1804,14 @@ end
               "Customer records, locals, and branches", testDemoRecordLocalsAndBranches
               "test-gated project commits", testProjectCommitRequirements
               "candidate dependency persistence", testCandidateDependenciesPersist
+              "selected metadata dependency closure", testSelectedMetadataDependenciesPersist
+              "temporary metadata dependency rejection", testTemporaryMetadataDependencyRejected
               "temporary session isolation", testTemporaryWordsStaySessionOnly
               "scoped replacement and discard", testScopedReplacementAndDiscard
               "scoped test metadata persistence", testScopedTestMetadataPersistence
+              "replacement caller tests gate durable updates", testReplacementCallerTests
+              "stable word identity lifecycle", testWordIdentityLifecycle
+              "runtime error test expectations", testRuntimeErrorExpectations
               "nominal and refined types", testRefinedTypesAndNominality
               "validator rejection", testInvalidValidatorsRejected
               "type-only commit", testTypeOnlyCommit
@@ -1078,6 +1819,9 @@ end
               "library coverage gate", testLibraryCoverageGate
               "task abort rollback", testTaskAbortRollsBackDictionary
               "task commit temporary cleanup", testTaskCommitClearsSessionWords
+              "task logs survive reload", testTaskLogsSurviveReload
+              "named snapshot restores project and providers", testNamedSnapshotRestoresProjectAndProviders
+              "semantic rename and deprecation", testSemanticRenameAndDeprecation
               "typed containers and syntax metadata", testTypedContainersAndLanguageConstructs
               "container library coverage", testContainerLibraryCoverage ]
         let failures = ResizeArray<string>()

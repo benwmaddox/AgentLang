@@ -1,0 +1,183 @@
+{
+  "revision": "f745455c3b156b86aa1405df303a2ea178671261",
+  "kind": "independent-fresh-cli-library-projection",
+  "schemaVersion": 1,
+  "passed": true,
+  "reloadResponses": [
+    {
+      "ok": true,
+      "kind": "test",
+      "text": "2/2 test(s) passed.",
+      "data": {
+        "results": [
+          {
+            "name": "false",
+            "word": "flag.code",
+            "passed": true,
+            "expected": "0",
+            "actual": [
+              "0"
+            ]
+          },
+          {
+            "name": "true",
+            "word": "flag.code",
+            "passed": true,
+            "expected": "1",
+            "actual": [
+              "1"
+            ]
+          }
+        ],
+        "coverage": {
+          "instructionsCovered": 3,
+          "instructionsTotal": 3,
+          "branchesCovered": 2,
+          "branchesTotal": 2,
+          "uncoveredInstructions": [],
+          "uncoveredBranchOutcomes": []
+        }
+      }
+    },
+    {
+      "ok": true,
+      "kind": "describe",
+      "text": "Description for flag.code.",
+      "data": {
+        "name": "flag.code",
+        "inputs": [
+          "Bool"
+        ],
+        "outputs": [
+          "Int"
+        ],
+        "effects": [],
+        "documentation": "",
+        "id": "word_3ad44cbb111243dab1f580878d3ca81e",
+        "dependencies": [],
+        "transitiveDependencies": [],
+        "callers": [],
+        "tests": [
+          "false",
+          "true"
+        ],
+        "examples": [],
+        "source": "dictionary.agent",
+        "line": 1,
+        "kind": "word",
+        "status": "persistent",
+        "maturity": "library",
+        "deprecated": false,
+        "revision": 1,
+        "testCount": 2,
+        "exampleCount": 0,
+        "coverage": {
+          "instructionsCovered": 3,
+          "instructionsTotal": 3,
+          "branchesCovered": 2,
+          "branchesTotal": 2,
+          "uncoveredInstructions": [],
+          "uncoveredBranchOutcomes": [],
+          "status": "current"
+        }
+      }
+    },
+    {
+      "ok": true,
+      "kind": "describe",
+      "text": "Description for helper.",
+      "data": {
+        "name": "helper",
+        "inputs": [
+          "Int"
+        ],
+        "outputs": [
+          "Int"
+        ],
+        "effects": [],
+        "documentation": "",
+        "id": "word_1f44940e4eae48deb60aade2e40da835",
+        "dependencies": [
+          "add"
+        ],
+        "transitiveDependencies": [
+          "add"
+        ],
+        "callers": [],
+        "tests": [
+          "basic"
+        ],
+        "examples": [],
+        "source": "dictionary.agent",
+        "line": 12,
+        "kind": "word",
+        "status": "persistent",
+        "maturity": "project",
+        "deprecated": false,
+        "revision": 1,
+        "testCount": 1,
+        "exampleCount": 0,
+        "coverage": {
+          "instructionsCovered": 0,
+          "instructionsTotal": 2,
+          "branchesCovered": 0,
+          "branchesTotal": 0,
+          "uncoveredInstructions": [
+            "dictionary.agent:16:5",
+            "dictionary.agent:17:5"
+          ],
+          "uncoveredBranchOutcomes": [],
+          "status": "not-run"
+        }
+      }
+    }
+  ],
+  "writeResponses": [
+    {
+      "ok": true,
+      "kind": "defined",
+      "text": "Definitions parsed, type checked, and staged.",
+      "data": [
+        "helper",
+        "flag.code"
+      ]
+    },
+    {
+      "ok": true,
+      "kind": "commit",
+      "text": "3 attached test(s) passed; selected candidates committed.",
+      "data": [
+        "flag.code/false",
+        "flag.code/true",
+        "helper/basic"
+      ]
+    }
+  ],
+  "project": "D:\\code\\AgentLang\\.agentlang\\probes\\library-projection-dea3cdca0c04412e9a07b92cb5dd2fe6",
+  "reloadRequests": [
+    {
+      "op": "test",
+      "word": "flag.code"
+    },
+    {
+      "op": "describe",
+      "word": "flag.code"
+    },
+    {
+      "op": "describe",
+      "word": "helper"
+    }
+  ],
+  "dirty": true,
+  "writeRequests": [
+    {
+      "source": "word helper : Int -> Int\n    effects none\n    1 add\nend\ntest helper/basic\n    1 helper\n    => 2\nend\nword flag.code : Bool -> Int\n    effects none\n    if\n        1\n    else\n        0\n    end\nend\ntest flag.code/true\n    40 helper 41 equals flag.code\n    => 1\nend\ntest flag.code/false\n    39 helper 41 equals flag.code\n    => 0\nend",
+      "op": "define"
+    },
+    {
+      "word": "flag.code",
+      "library": true,
+      "op": "commit"
+    }
+  ]
+}

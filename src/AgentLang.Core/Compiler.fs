@@ -328,10 +328,19 @@ module Compiler =
         { Definition = definition; Dependencies = inferred.Dependencies; InferredEffects = inferred.Effects }
 
     let checkTest knownTypes words (test: TestDefinition) =
+        match test.Expected with
+        | ExpectedRuntimeError _ when List.isEmpty test.Body ->
+            Diagnostics.raiseError "TEST_EXPECTED_ERROR_BODY_EMPTY" $"Runtime-error test '{test.Name}' must contain an expression to execute." (Some test.Word) (Some test.Span) [ "nonempty test body" ] []
+        | ExpectedRuntimeError code when not (TestExpectation.isValidRuntimeErrorCode code) ->
+            Diagnostics.raiseError "TEST_INVALID_EXPECTED_ERROR_CODE" $"Runtime-error test '{test.Name}' uses an invalid diagnostic code." (Some test.Word) (Some test.Span) [ "[A-Z][A-Z0-9_]*" ] [ code ]
+        | _ -> ()
         let checkedExpression = checkExpression knownTypes words test.Body
-        let expectedType = test.Expected |> Types.literalValue |> Types.ofValue
-        if checkedExpression.Stack <> [ expectedType ] then
-            Diagnostics.raiseError "TEST_EXPECTED_STACK" $"Test '{test.Name}' must leave exactly one value matching its expected literal." (Some test.Word) (Some test.Span) [ Types.format expectedType ] (checkedExpression.Stack |> List.map Types.format)
+        match test.Expected with
+        | ExpectedValue literal ->
+            let expectedType = literal |> Types.literalValue |> Types.ofValue
+            if checkedExpression.Stack <> [ expectedType ] then
+                Diagnostics.raiseError "TEST_EXPECTED_STACK" $"Test '{test.Name}' must leave exactly one value matching its expected literal." (Some test.Word) (Some test.Span) [ Types.format expectedType ] (checkedExpression.Stack |> List.map Types.format)
+        | ExpectedRuntimeError _ -> ()
         checkedExpression
 
     let checkExample knownTypes words (example: ExampleDefinition) =

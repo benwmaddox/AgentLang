@@ -1,7 +1,7 @@
 # Milestone 003: durable project state and editing foundations
 
 Date: 2026-10-04
-Status: initial integrated Release checks passed; publication blocked on a newly reproduced metadata-projection defect.
+Status: corrected integrated Release checks and independent fresh-process verification passed.
 
 ## Planned scope
 
@@ -57,3 +57,15 @@ Working-tree runtime behavior includes stable word IDs across promotion/replacem
 Limits remain explicit: `replace-word` updates a staged implementation; the separate `replace OLD NEW` operation is still pending. Renaming a frozen refinement validator is refused. Tests currently expect literals or diagnostic codes rather than arbitrary structured values. Static path checks are not protection against concurrent hostile filesystem mutation, and conventional F# validation runs with host permissions. Atomic storage publication is not a power-loss or distributed-filesystem guarantee. Typed semantic IR, richer discovery, real effect providers, full business-language parity and controlled agent evaluation remain separate outstanding PRD work.
 
 Publication review then found a missing acceptance case: a selected word's attached test could call an unrelated candidate helper. Tests ran against the full candidate view, but the durable projection excluded the helper and silently removed the selected test. An [independent CLI reproduction](evidence/003-metadata-projection-finding.json) showed one passing attached test before commit and zero after fresh-process reload. A staged replacement helper can also retain a test against the wrong durable revision. The initial green suite did not cover these invariants. Publication is withheld until selected metadata dependencies are handled explicitly and regression tests verify that accepted tests survive reload, including the library coverage gate.
+
+The report-only checkpoint **f745455c3b156b86aa1405df303a2ea178671261** was merged and pushed to private `main`; [CI passed](https://github.com/benwmaddox/AgentLang/actions/runs/37254893030). That CI run validates the previously committed implementation plus the report artifacts, not the still-unpublished milestone-003 code. A separate fresh-process CLI verifier is being added to check metadata dependencies and library coverage against the published state after the fix.
+
+## Corrected result
+
+Scoped selection now includes candidate word/type dependencies used by selected tests and examples, including nominal types named only inside container constructors. It iterates to a fixed point and preserves unrelated staged metadata. Temporary metadata dependencies are rejected explicitly. Before publication, the runtime checks that selected tests/examples survive projection and runs the tests against that exact durable state. The same gate checks transitive affected callers, including static list callbacks.
+
+Independent validation reran `./scripts/Validate.ps1 -Configuration Release -ReportPath .agentlang/reports/milestone-003-corrected.json`: fresh build **zero warnings/errors**, language **26 groups / 396 assertions**, harness **98**, business **113**, source **57**, storage **64**, conventional **63**, and both whitespace checks passed. [Corrected working-tree evidence](evidence/003-corrected-working-tree-validation.json) retains its pre-commit revision and dirty flag.
+
+Two additional independent CLI scenarios passed after the fresh Release build. The [original test-helper reproduction](evidence/003-corrected-fresh-cli.json) now reloads one retained passing test and a persistent helper. The [library scenario](evidence/003-library-fresh-cli.json) reloads two passing attached tests with **3/3 instructions and 2/2 conditional outcomes** covered; its helper, used only in tests, also persists. These are implementation checks, not agent-performance measurements. The broader reusable CLI verifier remains separate work in progress.
+
+Final publication validation integrates the reusable [fresh-process verifier](../docs/PROJECTION-VERIFY.md) into `scripts/Validate.ps1` and CI. The coordinating run passed **8 subprocess sessions, 31 request/response exchanges and 99 checks with zero failures**, including distinct test/example helper inclusion, exact replacement revision, unrelated-candidate exclusion, library coverage after reload and temporary dependency rejection. All subprocesses exited normally. The [full validation evidence](evidence/003-publication-working-tree-validation.json) and [verifier trace](evidence/003-fresh-process-verification.json) are committed with this report; their dirty flags identify local pre-publication validation. CI now uploads both validation and projection evidence. The implementation is ready for publication with its documented remaining PRD gaps.
