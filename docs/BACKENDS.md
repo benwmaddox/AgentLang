@@ -1,6 +1,6 @@
 # Shared semantic IR and later native backends
 
-This is the architecture contract. Source lowering, IR verification, a standalone interpreter, and structured inspection are implemented. The public Runtime remains on checked AST execution pending all-path cutover and parity validation. LLVM backends do not exist yet.
+This is the architecture contract. Source lowering, IR verification, a standalone interpreter, and structured inspection are implemented. The public Runtime now executes verified IR through the interpreter; cutover validation is recorded in report 010. LLVM backends do not exist yet.
 
 Source → parsed AST → resolved/type-and-effect-checked definitions → typed semantic IR → interpreter.
 

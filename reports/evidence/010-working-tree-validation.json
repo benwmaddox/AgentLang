@@ -1,0 +1,261 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-10-05T11:54:23.0386605+00:00",
+  "completedAt": "2026-10-05T11:54:55.2758088+00:00",
+  "revision": "f0a2b31963d19517238a9556b50fe9019de7181d",
+  "branch": "prototype",
+  "dirty": true,
+  "configuration": "Release",
+  "passed": true,
+  "checks": [
+    {
+      "name": "build",
+      "command": "dotnet build AgentLang.sln --configuration Release",
+      "exitCode": 0,
+      "durationMilliseconds": 4284,
+      "output": [
+        "  Determining projects to restore...",
+        "  All projects are up-to-date for restore.",
+        "  AgentLang.Conventional -> D:\\code\\AgentLang\\experiments\\AgentLang.Conventional\\bin\\Release\\net9.0\\AgentLang.Conventional.dll",
+        "  AgentLang.Business -> D:\\code\\AgentLang\\experiments\\AgentLang.Business\\bin\\Release\\net9.0\\AgentLang.Business.dll",
+        "  AgentLang.TaskBank.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.TaskBank.Tests\\bin\\Release\\net9.0\\AgentLang.TaskBank.Tests.dll",
+        "  AgentLang.Conventional.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.Conventional.Tests\\bin\\Release\\net9.0\\AgentLang.Conventional.Tests.dll",
+        "  AgentLang.Business.Contracts -> D:\\code\\AgentLang\\experiments\\AgentLang.Business.Contracts\\bin\\Release\\net9.0\\AgentLang.Business.Contracts.dll",
+        "  AgentLang.Business.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.Business.Tests\\bin\\Release\\net9.0\\AgentLang.Business.Tests.dll",
+        "  AgentLang.Core -> D:\\code\\AgentLang\\src\\AgentLang.Core\\bin\\Release\\net9.0\\AgentLang.Core.dll",
+        "  AgentLang.IR.Interpreter.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.IR.Interpreter.Tests\\bin\\Release\\net9.0\\AgentLang.IR.Interpreter.Tests.dll",
+        "  AgentLang.ValueInspection.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.ValueInspection.Tests\\bin\\Release\\net9.0\\AgentLang.ValueInspection.Tests.dll",
+        "  AgentLang.Storage.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\bin\\Release\\net9.0\\AgentLang.Storage.Tests.dll",
+        "  AgentLang.IR.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.IR.Tests\\bin\\Release\\net9.0\\AgentLang.IR.Tests.dll",
+        "  AgentLang.Discovery.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.Discovery.Tests\\bin\\Release\\net9.0\\AgentLang.Discovery.Tests.dll",
+        "  AgentLang.Business.Contracts.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.Business.Contracts.Tests\\bin\\Release\\net9.0\\AgentLang.Business.Contracts.Tests.dll",
+        "  AgentLang.IR.Formatting.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.IR.Formatting.Tests\\bin\\Release\\net9.0\\AgentLang.IR.Formatting.Tests.dll",
+        "  AgentLang.Source.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.Source.Tests\\bin\\Release\\net9.0\\AgentLang.Source.Tests.dll",
+        "  AgentLang.Cli -> D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+        "  AgentLang.Vocabulary.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.Vocabulary.Tests\\bin\\Release\\net9.0\\AgentLang.Vocabulary.Tests.dll",
+        "  AgentLang.Benchmarks -> D:\\code\\AgentLang\\experiments\\AgentLang.Benchmarks\\bin\\Release\\net9.0\\AgentLang.Benchmarks.dll",
+        "  AgentLang.Harness.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.Harness.Tests\\bin\\Release\\net9.0\\AgentLang.Harness.Tests.dll",
+        "  AgentLang.Acceptance -> D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\bin\\Release\\net9.0\\AgentLang.Acceptance.dll",
+        "",
+        "Build succeeded.",
+        "    0 Warning(s)",
+        "    0 Error(s)",
+        "",
+        "Time Elapsed 00:00:04.04"
+      ]
+    },
+    {
+      "name": "language-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Acceptance",
+      "exitCode": 0,
+      "durationMilliseconds": 5393,
+      "output": [
+        "PASS JSON-lines protocol and eval",
+        "PASS checked numeric boundaries",
+        "PASS effects and capability boundary",
+        "PASS Customer records, locals, and branches",
+        "PASS test-gated project commits",
+        "PASS candidate dependency persistence",
+        "PASS selected metadata dependency closure",
+        "PASS temporary metadata dependency rejection",
+        "PASS temporary session isolation",
+        "PASS scoped replacement and discard",
+        "PASS scoped test metadata persistence",
+        "PASS replacement caller tests gate durable updates",
+        "PASS stable word identity lifecycle",
+        "PASS runtime error test expectations",
+        "PASS nominal and refined types",
+        "PASS validator rejection",
+        "PASS type-only commit",
+        "PASS frozen validator replacement",
+        "PASS library coverage gate",
+        "PASS task abort rollback",
+        "PASS task commit temporary cleanup",
+        "PASS task logs survive reload",
+        "PASS task log failures remain truthful warnings",
+        "PASS named snapshot restores project and providers",
+        "PASS semantic rename and deprecation",
+        "PASS typed containers and syntax metadata",
+        "PASS container library coverage",
+        "PASS live bounded Discovery commands",
+        "PASS verified IR runtime snapshots and formatter",
+        "All 29 acceptance groups passed (494 assertions)."
+      ]
+    },
+    {
+      "name": "harness-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Harness.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 3217,
+      "output": [
+        "PASS: 185 harness assertions"
+      ]
+    },
+    {
+      "name": "business-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Business.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 494,
+      "output": [
+        "PASS nominal identifiers and Email policy",
+        "PASS checked minor-unit arithmetic and price invariants",
+        "PASS immutable store and lookup",
+        "PASS subscription lifecycle",
+        "PASS invoice totals and validation",
+        "PASS payment provider boundary and receipt",
+        "PASS email outbox and provider isolation",
+        "Business reference: 7 groups, 113 assertions"
+      ]
+    },
+    {
+      "name": "business-contracts-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Business.Contracts.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 585,
+      "output": [
+        "PASS deterministic baseline and canonical hash",
+        "PASS strict versioned document parsing",
+        "PASS identifiers, email policy, and normalization",
+        "PASS exact money, time, and quantity representations",
+        "PASS complete wire round-trip",
+        "PASS immutable Store projection and identity ledger",
+        "PASS fragment expansion and unsupported fields",
+        "PASS 7 groups, 69 assertions"
+      ]
+    },
+    {
+      "name": "value-inspection-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.ValueInspection.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 608,
+      "output": [
+        "PASS nested values and snapshot schema",
+        "PASS nominal distinction and ordering",
+        "PASS lossless integer and float encoding",
+        "PASS invalid host values and snapshots",
+        "PASS deterministic limits",
+        "AgentLang.ValueInspection.Tests: 44 assertions passed."
+      ]
+    },
+    {
+      "name": "source-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Source.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 664,
+      "output": [
+        "All source tests passed (57 assertions)."
+      ]
+    },
+    {
+      "name": "storage-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Storage.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 1173,
+      "output": [
+        "Storage tests passed: 8 groups, 64 assertions."
+      ]
+    },
+    {
+      "name": "conventional-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Conventional.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 5558,
+      "output": [
+        "PASS: 63 conventional tool assertions"
+      ]
+    },
+    {
+      "name": "discovery-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Discovery.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 520,
+      "output": [
+        "AgentLang.Discovery.Tests: 53 assertions passed."
+      ]
+    },
+    {
+      "name": "ir-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.IR.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 1231,
+      "output": [
+        "PASS closed effect vocabulary",
+        "PASS concrete primitive specializations",
+        "PASS closed container constructors",
+        "PASS structured branches and coverage",
+        "PASS Option and Result payload scope",
+        "PASS generated record and scalar operations",
+        "PASS static callbacks and effects",
+        "PASS identity and call-graph guards",
+        "PASS flat verifier stack safety",
+        "PASS compiler lowering and detached bodies",
+        "PASS compiler snapshot identity",
+        "AgentLang.IR.Tests: 69 assertions passed."
+      ]
+    },
+    {
+      "name": "ir-formatting-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.IR.Formatting.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 656,
+      "output": [
+        "PASS verified authored function and branches",
+        "PASS callbacks locals and nominal closure",
+        "PASS generated and primitive documents",
+        "PASS structured lookup errors",
+        "PASS protocol depth guard",
+        "AgentLang.IR.Formatting.Tests: 36 assertions passed."
+      ]
+    },
+    {
+      "name": "ir-interpreter-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.IR.Interpreter.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 793,
+      "output": [
+        "IR Interpreter tests passed (13 assertions)."
+      ]
+    },
+    {
+      "name": "vocabulary-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Vocabulary.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 558,
+      "output": [
+        "AgentLang.Vocabulary.Tests: 32 assertions passed."
+      ]
+    },
+    {
+      "name": "task-bank-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.TaskBank.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 498,
+      "output": [
+        "Task-bank validator passed: 2114 assertions, 60 tasks, 180 proposed vectors (minimum 3 / maximum 3 cases per task)."
+      ]
+    },
+    {
+      "name": "fresh-process-projection",
+      "command": "pwsh -NoProfile -File scripts/Verify-PersistenceProjection.ps1 -CliDll src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll -EvidencePath .agentlang/reports/010-runtime-ir-validation.projection.json",
+      "exitCode": 0,
+      "durationMilliseconds": 5386,
+      "output": [
+        "Persistence projection verification passed. Evidence: D:\\code\\AgentLang\\.agentlang\\reports\\010-runtime-ir-validation.projection.json"
+      ]
+    },
+    {
+      "name": "diff-whitespace",
+      "command": "git diff --check",
+      "exitCode": 0,
+      "durationMilliseconds": 161,
+      "output": []
+    },
+    {
+      "name": "staged-diff-whitespace",
+      "command": "git diff --cached --check",
+      "exitCode": 0,
+      "durationMilliseconds": 90,
+      "output": []
+    }
+  ]
+}

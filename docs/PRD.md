@@ -106,7 +106,7 @@ The implementation README is the authoritative executable syntax reference, incl
 
 ### Compiler and runtime
 
-Use F# discriminated unions for types, values, effects, AST nodes, diagnostics, and IR. Keep parser, compiler, runtime, and protocol concerns separate without requiring a separate assembly for every module. The first usable slice may interpret a checked expression tree directly; its introspection must label that representation accurately. A separate lowered instruction stream is a later implementation step rather than a prerequisite for the first agent trial.
+Use F# discriminated unions for types, values, effects, AST nodes, diagnostics, and IR. Keep parser, compiler, runtime, and protocol concerns separate without requiring a separate assembly for every module. The initial usable slice historically interpreted a checked expression tree. The required executable boundary is now a verified typed semantic IR shared by the interpreter and any later native backend. Source ASTs remain authoring and diagnostic representations; runtime execution must not fall back to them.
 
 The intended compilation stages are lexing/parsing, name resolution, stack checking, effect checking, and lowering to a small printable IR. Initially, the runtime may interpret the checked tree. No JIT or native backend is required. Expose source, signatures, effects, dependencies, and execution representation through introspection; deeper compiler-stage queries can follow later.
 

@@ -12,9 +12,9 @@ Durable-state milestone evidence: [Milestone 003 report](../reports/003-durable-
 
 Exploratory external-agent evidence: [the subagent pilot](../reports/004-subagent-vocabulary-pilot.md) records a fresh agent building two tested library words and a different agent discovering/reusing them for a later task. Independent host checks passed 16 and 17 cases respectively. The second agent retained earlier repository context; exact model usage is unavailable. This proves a scoped workflow, not the required controlled performance comparison.
 
-Discovery and IR-foundation evidence: [Milestone 005](../reports/005-discovery-and-typed-ir.md), Release build with zero warnings/errors, 27 language groups/465 assertions, 53 discovery assertions, 8 IR verifier groups/37 assertions, all existing suites and 99 fresh-process persistence checks. Nine discovery commands are integrated. Lowering and vocabulary-analysis evidence is recorded in [milestone 006](../reports/006-ir-lowering-and-execution.md) and [milestone 007](../reports/007-vocabulary-analysis-foundation.md): full Release validation with 67 IR and 32 vocabulary assertions plus all existing suites and 99 persistence checks. Runtime still executes the AST. A 314-check baseline self-comparison validates parity infrastructure only. Runtime warnings and measured reuse metrics remain pending.
+Discovery and IR-foundation evidence: [Milestone 005](../reports/005-discovery-and-typed-ir.md), Release build with zero warnings/errors, 27 language groups/465 assertions, 53 discovery assertions, 8 IR verifier groups/37 assertions, all existing suites and 99 fresh-process persistence checks. Nine discovery commands are integrated. Lowering and vocabulary-analysis evidence is recorded in [milestone 006](../reports/006-ir-lowering-and-execution.md) and [milestone 007](../reports/007-vocabulary-analysis-foundation.md): full Release validation with 67 IR and 32 vocabulary assertions plus all existing suites and 99 persistence checks. At that milestone Runtime still executed the AST. A 314-check baseline self-comparison validates parity infrastructure only. Runtime warnings and measured reuse metrics remain pending.
 
-Standalone backend and baseline-audit evidence: [milestone 008](../reports/008-standalone-ir-backend.md) and [milestone 009](../reports/009-experiment-baselines-and-task-bank.md), fresh full Release validation with zero warnings/errors, 185 harness, 69 IR, 36 formatter, 13 interpreter and 2,114 task-bank assertions, all existing suites and 99 persistence checks. Runtime cutover and executable benchmark trials remain pending.
+Standalone backend and baseline-audit evidence: [milestone 008](../reports/008-standalone-ir-backend.md) and [milestone 009](../reports/009-experiment-baselines-and-task-bank.md), fresh full Release validation with zero warnings/errors, 185 harness, 69 IR, 36 formatter, 13 interpreter and 2,114 task-bank assertions, all existing suites and 99 persistence checks. Runtime cutover was pending at that milestone; executable benchmark trials remain pending.
 
 | Original section | Requirement / disposition | Current evidence and outstanding work |
 | --- | --- | --- |
@@ -50,17 +50,17 @@ Standalone backend and baseline-audit evidence: [milestone 008](../reports/008-s
 | 30 | Verified: small agent command interface foundation | Engine.Dispatch and Protocol; live LLM integration pending |
 | 31 | Design: suggested F# solution organization | Existing Core/CLI/Acceptance projects; add host/harness/domain boundaries as needed |
 | 32 | Partial: strongly typed internal concepts | Value/type/AST unions and closed ten-case IR effect union; source/runtime effect metadata still checked strings |
-| 33 | Partial: verified typed IR, lowering, standalone interpreter and formatter | Fixed primitive dispatch, snapshot-scoped nominal values, local execution bounds and structured inspection exist; Runtime integration and all-path parity remain pending |
+| 33 | Partial: authoritative typed IR execution and inspection | Runtime cutover now routes eval, calls, tests and state transitions through verified IR; full Release validation passed 18 checks and pinned parity passed 314 selected contracts (report 010). LLVM remains excluded from V1 |
 | 34 | Partial: bounded runtime and turnaround | Step/depth bounds exist; timing goals unmeasured |
 | 35 | Partial: small parser with spans/incomplete detection | Spans and interactive buffering; parse-stage API/incomplete classification pending |
-| 36 | Pending: parse/ast/types/ir stage debugging | Current ir accurately labels checked tree; richer stage representations pending |
+| 36 | Partial: lowered ir stage inspection | ir renders verified functions/generated operations or canonical primitive contracts; parse/ast/types stage commands remain pending |
 | 37 | Verified: stack checking and branch joins | Compiler and negative acceptance cases |
 | 38 | Verified: minimal stack gymnastics | dup/drop/swap; no extended stack operation assortment |
 | 39 | Verified: typed local bindings | Local/branch joins and demo checks |
 | 40 | Verified: deterministic structural search | Exact nested nominal input/output types, declared effects and direct dependency queries; no embeddings |
 | 41 | Verified: compact bounded dependency/type context | Complete JSON entries, recursive nominal declarations, concise docs, hard budgets/omissions and exact transported data bytes; not inferred task relevance |
 | 42 | Partial: context/token accounting | Harness records complete prepared/sent request bytes and returned provider usage; exact token budget/retrieval breakdown pending |
-| 43 | Partial: complete small-business fixture | Customer language demo and conventional typed business foundation; full language domain, 40–60 words and 50–100 tests pending |
+| 43 | Partial: complete small-business fixture | Customer language demo, conventional reference and standalone typed fixture contract; full language domain, matched adapters, 40–60 words and 50–100 tests pending |
 | 44 | Excluded from first domain: optional later simulation | Preserve for later generalization, not a V1 blocker |
 | 45 | Partial: equivalent conventional environment | F# business foundation passes 7 groups/113 assertions; language parity and matching task oracles missing |
 | 46 | Pending: fresh/growing/debugging/discovery/refactoring experiments | Categories require tasks and runner |
@@ -101,15 +101,17 @@ Standalone backend and baseline-audit evidence: [milestone 008](../reports/008-s
 | 81 | Pending: marginal cost trend | Sequence, cost data, comparable task difficulty and correctness required |
 | 82 | Pending: full prototype outcome | Unfamiliar-project agent task plus measured help for later agents required |
 
+Runtime cutover evidence: [report 010](../reports/010-runtime-ir-cutover.md) records the 18-check full Release gate, 29 language groups/494 assertions, 99 persistence checks, and 314 selected pinned AST-versus-IR contracts. [Report 011](../reports/011-business-fixture-contract.md) records 69 standalone fixture-contract assertions; [report 012](../reports/012-value-inspection.md) records 44 structural value-inspection assertions. Neither foundation establishes cross-language business parity or research gains.
+
 ## Named-command completion checklist
 
-Verified foundation: eval, define, words, describe, type-of, source, dependencies, callers, search, search-type, search-output, search-effect, search-dependency, transitive-dependencies, transitive-callers, graph, context, effects, ir (checked-tree representation only), tests, test, test-all, failed-tests, examples (names only), commit/commit-word, replace-word, promote, discard, task.begin/status/commit/abort/log, stack, durable history/diff, rename, deprecate, snapshot.save/load and storage.status.
+Verified foundation: eval, define, words, describe, type-of, source, dependencies, callers, search, search-type, search-output, search-effect, search-dependency, transitive-dependencies, transitive-callers, graph, context, effects, ir (verified IR/primitive contract), tests, test, test-all, failed-tests, examples (names only), commit/commit-word, replace-word, promote, discard, task.begin/status/commit/abort/log, stack, durable history/diff, rename, deprecate, snapshot.save/load and storage.status.
 
-Still required or incomplete: recent-words, parse, ast, types, lowered ir, metrics, replace OLD NEW, full example/test metadata, definition-level documentation/test/example edits, agent-run with model/task/snapshot selection.
+Still required or incomplete: recent-words, parse, ast, types, metrics, replace OLD NEW, full example/test metadata, definition-level documentation/test/example edits, agent-run with model/task/snapshot selection.
 
 ## Planned implementation order
 
-User addition: the typed semantic IR must become the authoritative executable representation. The current checked-AST interpreter is transitional. Introduce and validate a small IR interpreter in V1; LLVM development JIT and release AOT remain conditional follow-ons after successful agent experiments. See [the backend plan](BACKENDS.md).
+User addition: the typed semantic IR must become the authoritative executable representation. Runtime now routes through the verified IR interpreter; report 010 records cutover validation. Further source-stage inspection remains pending; LLVM development JIT and release AOT remain conditional follow-ons after successful agent experiments. See [the backend plan](BACKENDS.md).
 
 1. Typed containers, case handling, and coverage rules; establish provider harness contracts in parallel.
 2. Stable identity, durable history, snapshots, structured discovery/context/metrics and complete task events.

@@ -1,0 +1,2540 @@
+{
+  "schemaVersion": 1,
+  "startedUtc": "2026-10-05T11:54:50.8289985+00:00",
+  "state": "passed",
+  "repoRoot": "D:\\code\\AgentLang",
+  "testedHead": "f0a2b31963d19517238a9556b50fe9019de7181d",
+  "workingTreeDirty": true,
+  "cliDll": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+  "binarySha256": {
+    "AgentLang.Cli.dll": "b845617cee67afc71723079555730b593c330db694659f940a8db6bfafa97752",
+    "AgentLang.Core.dll": "61b056123cd789541b26edbb4b7562e29d5b7fec9fc6f1afef506d25b6e9bb2b",
+    "FSharp.Core.dll": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+  },
+  "verificationRoot": "D:\\code\\AgentLang\\.agentlang\\projection-verification-9557cad178b744be92208dc79eac546a",
+  "limits": {
+    "timeoutSeconds": 60,
+    "maxOutputBytesPerProcess": 2097152,
+    "maxInputBytesPerProcess": 1048576
+  },
+  "sessions": [
+    {
+      "name": "metadata-commit",
+      "projectPath": "D:\\code\\AgentLang\\.agentlang\\projection-verification-9557cad178b744be92208dc79eac546a\\metadata-closure",
+      "process": {
+        "exitCode": 0,
+        "timedOut": false,
+        "outputLimitExceeded": false,
+        "durationMilliseconds": 371,
+        "inputError": null,
+        "stderr": "",
+        "stdoutLines": [
+          "{\"ok\":true,\"kind\":\"defined\",\"text\":\"Definitions parsed, type checked, and staged.\",\"data\":[\"candidate-helper\",\"candidate-example-helper\",\"metadata-target\",\"unrelated-candidate\"]}",
+          "{\"ok\":true,\"kind\":\"commit\",\"text\":\"3 attached test(s) passed; selected candidates committed.\",\"data\":[\"candidate-example-helper/basic\",\"candidate-helper/basic\",\"metadata-target/helper-case\"]}",
+          "{\"ok\":true,\"kind\":\"describe\",\"text\":\"Description for unrelated-candidate.\",\"data\":{\"name\":\"unrelated-candidate\",\"inputs\":[\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"documentation\":\"\",\"id\":\"word_c9e94810abae42e39776db284a1213eb\",\"dependencies\":[\"add\"],\"transitiveDependencies\":[\"add\"],\"callers\":[],\"tests\":[\"basic\"],\"examples\":[],\"source\":\"\\u003Cdefinition\\u003E\",\"line\":42,\"kind\":\"word\",\"status\":\"candidate\",\"maturity\":\"project\",\"deprecated\":false,\"revision\":1,\"testCount\":1,\"exampleCount\":0,\"coverage\":{\"instructionsCovered\":0,\"instructionsTotal\":2,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[\"\\u003Cdefinition\\u003E:44:5\",\"\\u003Cdefinition\\u003E:44:7\"],\"uncoveredBranchOutcomes\":[],\"status\":\"not-run\"}}}",
+          "{\"ok\":true,\"kind\":\"tests\",\"text\":\"1 attached test(s).\",\"data\":[\"basic\"]}"
+        ]
+      },
+      "exchanges": [
+        {
+          "index": 0,
+          "request": {
+            "op": "define",
+            "source": "record ProbeToken\n    field value Int\nend\n\nword candidate-helper : Int -> Int\n    effects none\n    1 add\nend\n\ntest candidate-helper/basic\n    1 candidate-helper\n    => 2\nend\n\nword candidate-example-helper : Int -> Int\n    effects none\n    5 add\nend\n\ntest candidate-example-helper/basic\n    1 candidate-example-helper\n    => 6\nend\n\nword metadata-target : Int -> Int\n    effects none\n    1 add\nend\n\ntest metadata-target/helper-case\n    option.none<ProbeToken> drop\n    41 candidate-helper metadata-target\n    => 43\nend\n\nexample metadata-target/helper-example\n    option.none<ProbeToken> drop\n    41 candidate-example-helper metadata-target\n    => 47\nend\n\nword unrelated-candidate : Int -> Int\n    effects none\n    2 add\nend\n\ntest unrelated-candidate/basic\n    1 unrelated-candidate\n    => 3\nend"
+          },
+          "requestLine": "{\"op\":\"define\",\"source\":\"record ProbeToken\\n    field value Int\\nend\\n\\nword candidate-helper : Int -> Int\\n    effects none\\n    1 add\\nend\\n\\ntest candidate-helper/basic\\n    1 candidate-helper\\n    => 2\\nend\\n\\nword candidate-example-helper : Int -> Int\\n    effects none\\n    5 add\\nend\\n\\ntest candidate-example-helper/basic\\n    1 candidate-example-helper\\n    => 6\\nend\\n\\nword metadata-target : Int -> Int\\n    effects none\\n    1 add\\nend\\n\\ntest metadata-target/helper-case\\n    option.none<ProbeToken> drop\\n    41 candidate-helper metadata-target\\n    => 43\\nend\\n\\nexample metadata-target/helper-example\\n    option.none<ProbeToken> drop\\n    41 candidate-example-helper metadata-target\\n    => 47\\nend\\n\\nword unrelated-candidate : Int -> Int\\n    effects none\\n    2 add\\nend\\n\\ntest unrelated-candidate/basic\\n    1 unrelated-candidate\\n    => 3\\nend\"}",
+          "responseRaw": "{\"ok\":true,\"kind\":\"defined\",\"text\":\"Definitions parsed, type checked, and staged.\",\"data\":[\"candidate-helper\",\"candidate-example-helper\",\"metadata-target\",\"unrelated-candidate\"]}",
+          "response": {
+            "ok": true,
+            "kind": "defined",
+            "text": "Definitions parsed, type checked, and staged.",
+            "data": [
+              "candidate-helper",
+              "candidate-example-helper",
+              "metadata-target",
+              "unrelated-candidate"
+            ]
+          },
+          "parseError": null,
+          "checks": [
+            {
+              "name": "metadata-commit response 0 is valid JSON",
+              "passed": true,
+              "message": "valid JSON response object",
+              "session": "metadata-commit",
+              "exchangeIndex": 0
+            },
+            {
+              "name": "define metadata closure fixture",
+              "passed": true,
+              "message": "Definitions parsed, type checked, and staged.",
+              "session": "metadata-commit",
+              "exchangeIndex": 0
+            }
+          ]
+        },
+        {
+          "index": 1,
+          "request": {
+            "op": "commit",
+            "word": "metadata-target"
+          },
+          "requestLine": "{\"op\":\"commit\",\"word\":\"metadata-target\"}",
+          "responseRaw": "{\"ok\":true,\"kind\":\"commit\",\"text\":\"3 attached test(s) passed; selected candidates committed.\",\"data\":[\"candidate-example-helper/basic\",\"candidate-helper/basic\",\"metadata-target/helper-case\"]}",
+          "response": {
+            "ok": true,
+            "kind": "commit",
+            "text": "3 attached test(s) passed; selected candidates committed.",
+            "data": [
+              "candidate-example-helper/basic",
+              "candidate-helper/basic",
+              "metadata-target/helper-case"
+            ]
+          },
+          "parseError": null,
+          "checks": [
+            {
+              "name": "metadata-commit response 1 is valid JSON",
+              "passed": true,
+              "message": "valid JSON response object",
+              "session": "metadata-commit",
+              "exchangeIndex": 1
+            },
+            {
+              "name": "commit selected target with test/example dependencies",
+              "passed": true,
+              "message": "3 attached test(s) passed; selected candidates committed.",
+              "session": "metadata-commit",
+              "exchangeIndex": 1
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "request": {
+            "op": "describe",
+            "word": "unrelated-candidate"
+          },
+          "requestLine": "{\"op\":\"describe\",\"word\":\"unrelated-candidate\"}",
+          "responseRaw": "{\"ok\":true,\"kind\":\"describe\",\"text\":\"Description for unrelated-candidate.\",\"data\":{\"name\":\"unrelated-candidate\",\"inputs\":[\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"documentation\":\"\",\"id\":\"word_c9e94810abae42e39776db284a1213eb\",\"dependencies\":[\"add\"],\"transitiveDependencies\":[\"add\"],\"callers\":[],\"tests\":[\"basic\"],\"examples\":[],\"source\":\"\\u003Cdefinition\\u003E\",\"line\":42,\"kind\":\"word\",\"status\":\"candidate\",\"maturity\":\"project\",\"deprecated\":false,\"revision\":1,\"testCount\":1,\"exampleCount\":0,\"coverage\":{\"instructionsCovered\":0,\"instructionsTotal\":2,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[\"\\u003Cdefinition\\u003E:44:5\",\"\\u003Cdefinition\\u003E:44:7\"],\"uncoveredBranchOutcomes\":[],\"status\":\"not-run\"}}}",
+          "response": {
+            "ok": true,
+            "kind": "describe",
+            "text": "Description for unrelated-candidate.",
+            "data": {
+              "name": "unrelated-candidate",
+              "inputs": [
+                "Int"
+              ],
+              "outputs": [
+                "Int"
+              ],
+              "effects": [],
+              "documentation": "",
+              "id": "word_c9e94810abae42e39776db284a1213eb",
+              "dependencies": [
+                "add"
+              ],
+              "transitiveDependencies": [
+                "add"
+              ],
+              "callers": [],
+              "tests": [
+                "basic"
+              ],
+              "examples": [],
+              "source": "<definition>",
+              "line": 42,
+              "kind": "word",
+              "status": "candidate",
+              "maturity": "project",
+              "deprecated": false,
+              "revision": 1,
+              "testCount": 1,
+              "exampleCount": 0,
+              "coverage": {
+                "instructionsCovered": 0,
+                "instructionsTotal": 2,
+                "branchesCovered": 0,
+                "branchesTotal": 0,
+                "uncoveredInstructions": [
+                  "<definition>:44:5",
+                  "<definition>:44:7"
+                ],
+                "uncoveredBranchOutcomes": [],
+                "status": "not-run"
+              }
+            }
+          },
+          "parseError": null,
+          "checks": [
+            {
+              "name": "metadata-commit response 2 is valid JSON",
+              "passed": true,
+              "message": "valid JSON response object",
+              "session": "metadata-commit",
+              "exchangeIndex": 2
+            },
+            {
+              "name": "unrelated candidate remains staged",
+              "passed": true,
+              "message": "Description for unrelated-candidate.",
+              "session": "metadata-commit",
+              "exchangeIndex": 2
+            },
+            {
+              "name": "selected metadata closure excludes unrelated candidate words",
+              "passed": true,
+              "message": "observed status 'candidate'",
+              "session": "metadata-commit",
+              "exchangeIndex": 2
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "request": {
+            "op": "tests",
+            "word": "unrelated-candidate"
+          },
+          "requestLine": "{\"op\":\"tests\",\"word\":\"unrelated-candidate\"}",
+          "responseRaw": "{\"ok\":true,\"kind\":\"tests\",\"text\":\"1 attached test(s).\",\"data\":[\"basic\"]}",
+          "response": {
+            "ok": true,
+            "kind": "tests",
+            "text": "1 attached test(s).",
+            "data": [
+              "basic"
+            ]
+          },
+          "parseError": null,
+          "checks": [
+            {
+              "name": "metadata-commit response 3 is valid JSON",
+              "passed": true,
+              "message": "valid JSON response object",
+              "session": "metadata-commit",
+              "exchangeIndex": 3
+            },
+            {
+              "name": "unrelated candidate tests remain in the staging session",
+              "passed": true,
+              "message": "1 attached test(s).",
+              "session": "metadata-commit",
+              "exchangeIndex": 3
+            },
+            {
+              "name": "unrelated staged test metadata was not discarded in memory",
+              "passed": true,
+              "message": "observed 1 attached test(s)",
+              "session": "metadata-commit",
+              "exchangeIndex": 3
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "name": "metadata-commit process completed",
+          "passed": true,
+          "message": "exit=0, timeout=False, outputLimit=False, durationMs=371",
+          "session": "metadata-commit"
+        },
+        {
+          "name": "metadata-commit response count matches requests",
+          "passed": true,
+          "message": "received 4 response line(s) for 4 request(s)",
+          "session": "metadata-commit"
+        }
+      ]
+    },
+    {
+      "name": "metadata-reload",
+      "projectPath": "D:\\code\\AgentLang\\.agentlang\\projection-verification-9557cad178b744be92208dc79eac546a\\metadata-closure",
+      "process": {
+        "exitCode": 0,
+        "timedOut": false,
+        "outputLimitExceeded": false,
+        "durationMilliseconds": 322,
+        "inputError": null,
+        "stderr": "",
+        "stdoutLines": [
+          "{\"ok\":true,\"kind\":\"describe\",\"text\":\"Description for candidate-helper.\",\"data\":{\"name\":\"candidate-helper\",\"inputs\":[\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"documentation\":\"\",\"id\":\"word_17b8022f47ef461eb285c58c9d057512\",\"dependencies\":[\"add\"],\"transitiveDependencies\":[\"add\"],\"callers\":[],\"tests\":[\"basic\"],\"examples\":[],\"source\":\"dictionary.agent\",\"line\":13,\"kind\":\"word\",\"status\":\"persistent\",\"maturity\":\"project\",\"deprecated\":false,\"revision\":1,\"testCount\":1,\"exampleCount\":0,\"coverage\":{\"instructionsCovered\":0,\"instructionsTotal\":2,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[\"dictionary.agent:17:5\",\"dictionary.agent:18:5\"],\"uncoveredBranchOutcomes\":[],\"status\":\"not-run\"}}}",
+          "{\"ok\":true,\"kind\":\"describe\",\"text\":\"Description for candidate-example-helper.\",\"data\":{\"name\":\"candidate-example-helper\",\"inputs\":[\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"documentation\":\"\",\"id\":\"word_536f98aafc1d4f98b9d07c1375f4cae2\",\"dependencies\":[\"add\"],\"transitiveDependencies\":[\"add\"],\"callers\":[],\"tests\":[\"basic\"],\"examples\":[],\"source\":\"dictionary.agent\",\"line\":5,\"kind\":\"word\",\"status\":\"persistent\",\"maturity\":\"project\",\"deprecated\":false,\"revision\":1,\"testCount\":1,\"exampleCount\":0,\"coverage\":{\"instructionsCovered\":0,\"instructionsTotal\":2,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[\"dictionary.agent:10:5\",\"dictionary.agent:9:5\"],\"uncoveredBranchOutcomes\":[],\"status\":\"not-run\"}}}",
+          "{\"ok\":true,\"kind\":\"tests\",\"text\":\"1 attached test(s).\",\"data\":[\"helper-case\"]}",
+          "{\"ok\":true,\"kind\":\"test\",\"text\":\"1/1 test(s) passed.\",\"data\":{\"results\":[{\"name\":\"helper-case\",\"word\":\"metadata-target\",\"passed\":true,\"expected\":\"43\",\"actual\":[\"43\"]}],\"coverage\":{\"instructionsCovered\":2,\"instructionsTotal\":2,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[]}}}",
+          "{\"ok\":true,\"kind\":\"test\",\"text\":\"1/1 test(s) passed.\",\"data\":{\"results\":[{\"name\":\"basic\",\"word\":\"candidate-example-helper\",\"passed\":true,\"expected\":\"6\",\"actual\":[\"6\"]}],\"coverage\":{\"instructionsCovered\":2,\"instructionsTotal\":2,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[]}}}",
+          "{\"ok\":true,\"kind\":\"examples\",\"text\":\"1 example(s).\",\"data\":[\"helper-example\"]}",
+          "{\"ok\":false,\"kind\":\"error\",\"text\":\"NAME_UNKNOWN_WORD in unrelated-candidate: Word \\u0027unrelated-candidate\\u0027 is not defined.\",\"error\":{\"code\":\"NAME_UNKNOWN_WORD\",\"message\":\"Word \\u0027unrelated-candidate\\u0027 is not defined.\",\"word\":\"unrelated-candidate\",\"expected\":[],\"actual\":[]}}",
+          "{\"ok\":true,\"kind\":\"storage.status\",\"text\":\"Current durable storage authority and export status.\",\"data\":{\"projectConfigured\":true,\"generation\":1,\"authority\":\"manifest\",\"manifestHash\":\"4bba7bf17fb9ac7c6a5dc5f290457faf201fd355e61b0d483cfc36647e174ff0\",\"exportWarning\":null}}"
+        ]
+      },
+      "exchanges": [
+        {
+          "index": 0,
+          "request": {
+            "op": "describe",
+            "word": "candidate-helper"
+          },
+          "requestLine": "{\"op\":\"describe\",\"word\":\"candidate-helper\"}",
+          "responseRaw": "{\"ok\":true,\"kind\":\"describe\",\"text\":\"Description for candidate-helper.\",\"data\":{\"name\":\"candidate-helper\",\"inputs\":[\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"documentation\":\"\",\"id\":\"word_17b8022f47ef461eb285c58c9d057512\",\"dependencies\":[\"add\"],\"transitiveDependencies\":[\"add\"],\"callers\":[],\"tests\":[\"basic\"],\"examples\":[],\"source\":\"dictionary.agent\",\"line\":13,\"kind\":\"word\",\"status\":\"persistent\",\"maturity\":\"project\",\"deprecated\":false,\"revision\":1,\"testCount\":1,\"exampleCount\":0,\"coverage\":{\"instructionsCovered\":0,\"instructionsTotal\":2,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[\"dictionary.agent:17:5\",\"dictionary.agent:18:5\"],\"uncoveredBranchOutcomes\":[],\"status\":\"not-run\"}}}",
+          "response": {
+            "ok": true,
+            "kind": "describe",
+            "text": "Description for candidate-helper.",
+            "data": {
+              "name": "candidate-helper",
+              "inputs": [
+                "Int"
+              ],
+              "outputs": [
+                "Int"
+              ],
+              "effects": [],
+              "documentation": "",
+              "id": "word_17b8022f47ef461eb285c58c9d057512",
+              "dependencies": [
+                "add"
+              ],
+              "transitiveDependencies": [
+                "add"
+              ],
+              "callers": [],
+              "tests": [
+                "basic"
+              ],
+              "examples": [],
+              "source": "dictionary.agent",
+              "line": 13,
+              "kind": "word",
+              "status": "persistent",
+              "maturity": "project",
+              "deprecated": false,
+              "revision": 1,
+              "testCount": 1,
+              "exampleCount": 0,
+              "coverage": {
+                "instructionsCovered": 0,
+                "instructionsTotal": 2,
+                "branchesCovered": 0,
+                "branchesTotal": 0,
+                "uncoveredInstructions": [
+                  "dictionary.agent:17:5",
+                  "dictionary.agent:18:5"
+                ],
+                "uncoveredBranchOutcomes": [],
+                "status": "not-run"
+              }
+            }
+          },
+          "parseError": null,
+          "checks": [
+            {
+              "name": "metadata-reload response 0 is valid JSON",
+              "passed": true,
+              "message": "valid JSON response object",
+              "session": "metadata-reload",
+              "exchangeIndex": 0
+            },
+            {
+              "name": "fresh process loads helper included by selected metadata closure",
+              "passed": true,
+              "message": "Description for candidate-helper.",
+              "session": "metadata-reload",
+              "exchangeIndex": 0
+            },
+            {
+              "name": "metadata test helper is durable",
+              "passed": true,
+              "message": "observed status 'persistent'",
+              "session": "metadata-reload",
+              "exchangeIndex": 0
+            }
+          ]
+        },
+        {
+          "index": 1,
+          "request": {
+            "op": "describe",
+            "word": "candidate-example-helper"
+          },
+          "requestLine": "{\"op\":\"describe\",\"word\":\"candidate-example-helper\"}",
+          "responseRaw": "{\"ok\":true,\"kind\":\"describe\",\"text\":\"Description for candidate-example-helper.\",\"data\":{\"name\":\"candidate-example-helper\",\"inputs\":[\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"documentation\":\"\",\"id\":\"word_536f98aafc1d4f98b9d07c1375f4cae2\",\"dependencies\":[\"add\"],\"transitiveDependencies\":[\"add\"],\"callers\":[],\"tests\":[\"basic\"],\"examples\":[],\"source\":\"dictionary.agent\",\"line\":5,\"kind\":\"word\",\"status\":\"persistent\",\"maturity\":\"project\",\"deprecated\":false,\"revision\":1,\"testCount\":1,\"exampleCount\":0,\"coverage\":{\"instructionsCovered\":0,\"instructionsTotal\":2,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[\"dictionary.agent:10:5\",\"dictionary.agent:9:5\"],\"uncoveredBranchOutcomes\":[],\"status\":\"not-run\"}}}",
+          "response": {
+            "ok": true,
+            "kind": "describe",
+            "text": "Description for candidate-example-helper.",
+            "data": {
+              "name": "candidate-example-helper",
+              "inputs": [
+                "Int"
+              ],
+              "outputs": [
+                "Int"
+              ],
+              "effects": [],
+              "documentation": "",
+              "id": "word_536f98aafc1d4f98b9d07c1375f4cae2",
+              "dependencies": [
+                "add"
+              ],
+              "transitiveDependencies": [
+                "add"
+              ],
+              "callers": [],
+              "tests": [
+                "basic"
+              ],
+              "examples": [],
+              "source": "dictionary.agent",
+              "line": 5,
+              "kind": "word",
+              "status": "persistent",
+              "maturity": "project",
+              "deprecated": false,
+              "revision": 1,
+              "testCount": 1,
+              "exampleCount": 0,
+              "coverage": {
+                "instructionsCovered": 0,
+                "instructionsTotal": 2,
+                "branchesCovered": 0,
+                "branchesTotal": 0,
+                "uncoveredInstructions": [
+                  "dictionary.agent:10:5",
+                  "dictionary.agent:9:5"
+                ],
+                "uncoveredBranchOutcomes": [],
+                "status": "not-run"
+              }
+            }
+          },
+          "parseError": null,
+          "checks": [
+            {
+              "name": "metadata-reload response 1 is valid JSON",
+              "passed": true,
+              "message": "valid JSON response object",
+              "session": "metadata-reload",
+              "exchangeIndex": 1
+            },
+            {
+              "name": "fresh process loads helper included by selected example metadata",
+              "passed": true,
+              "message": "Description for candidate-example-helper.",
+              "session": "metadata-reload",
+              "exchangeIndex": 1
+            },
+            {
+              "name": "metadata example-only helper is durable",
+              "passed": true,
+              "message": "observed status 'persistent'",
+              "session": "metadata-reload",
+              "exchangeIndex": 1
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "request": {
+            "op": "tests",
+            "word": "metadata-target"
+          },
+          "requestLine": "{\"op\":\"tests\",\"word\":\"metadata-target\"}",
+          "responseRaw": "{\"ok\":true,\"kind\":\"tests\",\"text\":\"1 attached test(s).\",\"data\":[\"helper-case\"]}",
+          "response": {
+            "ok": true,
+            "kind": "tests",
+            "text": "1 attached test(s).",
+            "data": [
+              "helper-case"
+            ]
+          },
+          "parseError": null,
+          "checks": [
+            {
+              "name": "metadata-reload response 2 is valid JSON",
+              "passed": true,
+              "message": "valid JSON response object",
+              "session": "metadata-reload",
+              "exchangeIndex": 2
+            },
+            {
+              "name": "fresh process retains selected target test metadata",
+              "passed": true,
+              "message": "1 attached test(s).",
+              "session": "metadata-reload",
+              "exchangeIndex": 2
+            },
+            {
+              "name": "target test survives reload",
+              "passed": true,
+              "message": "observed tests: helper-case",
+              "session": "metadata-reload",
+              "exchangeIndex": 2
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "request": {
+            "op": "test",
+            "word": "metadata-target"
+          },
+          "requestLine": "{\"op\":\"test\",\"word\":\"metadata-target\"}",
+          "responseRaw": "{\"ok\":true,\"kind\":\"test\",\"text\":\"1/1 test(s) passed.\",\"data\":{\"results\":[{\"name\":\"helper-case\",\"word\":\"metadata-target\",\"passed\":true,\"expected\":\"43\",\"actual\":[\"43\"]}],\"coverage\":{\"instructionsCovered\":2,\"instructionsTotal\":2,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[]}}}",
+          "response": {
+            "ok": true,
+            "kind": "test",
+            "text": "1/1 test(s) passed.",
+            "data": {
+              "results": [
+                {
+                  "name": "helper-case",
+                  "word": "metadata-target",
+                  "passed": true,
+                  "expected": "43",
+                  "actual": [
+                    "43"
+                  ]
+                }
+              ],
+              "coverage": {
+                "instructionsCovered": 2,
+                "instructionsTotal": 2,
+                "branchesCovered": 0,
+                "branchesTotal": 0,
+                "uncoveredInstructions": [],
+                "uncoveredBranchOutcomes": []
+              }
+            }
+          },
+          "parseError": null,
+          "checks": [
+            {
+              "name": "metadata-reload response 3 is valid JSON",
+              "passed": true,
+              "message": "valid JSON response object",
+              "session": "metadata-reload",
+              "exchangeIndex": 3
+            },
+            {
+              "name": "fresh process runs selected target test",
+              "passed": true,
+              "message": "1/1 test(s) passed.",
+              "session": "metadata-reload",
+              "exchangeIndex": 3
+            },
+            {
+              "name": "target test passes after reload",
+              "passed": true,
+              "message": "observed 1 test result(s)",
+              "session": "metadata-reload",
+              "exchangeIndex": 3
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "request": {
+            "op": "test",
+            "word": "candidate-example-helper"
+          },
+          "requestLine": "{\"op\":\"test\",\"word\":\"candidate-example-helper\"}",
+          "responseRaw": "{\"ok\":true,\"kind\":\"test\",\"text\":\"1/1 test(s) passed.\",\"data\":{\"results\":[{\"name\":\"basic\",\"word\":\"candidate-example-helper\",\"passed\":true,\"expected\":\"6\",\"actual\":[\"6\"]}],\"coverage\":{\"instructionsCovered\":2,\"instructionsTotal\":2,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[]}}}",
+          "response": {
+            "ok": true,
+            "kind": "test",
+            "text": "1/1 test(s) passed.",
+            "data": {
+              "results": [
+                {
+                  "name": "basic",
+                  "word": "candidate-example-helper",
+                  "passed": true,
+                  "expected": "6",
+                  "actual": [
+                    "6"
+                  ]
+                }
+              ],
+              "coverage": {
+                "instructionsCovered": 2,
+                "instructionsTotal": 2,
+                "branchesCovered": 0,
+                "branchesTotal": 0,
+                "uncoveredInstructions": [],
+                "uncoveredBranchOutcomes": []
+              }
+            }
+          },
+          "parseError": null,
+          "checks": [
+            {
+              "name": "metadata-reload response 4 is valid JSON",
+              "passed": true,
+              "message": "valid JSON response object",
+              "session": "metadata-reload",
+              "exchangeIndex": 4
+            },
+            {
+              "name": "fresh process runs example-only helper test",
+              "passed": true,
+              "message": "1/1 test(s) passed.",
+              "session": "metadata-reload",
+              "exchangeIndex": 4
+            },
+            {
+              "name": "example-only helper test passes after reload",
+              "passed": true,
+              "message": "observed 1 helper test result(s)",
+              "session": "metadata-reload",
+              "exchangeIndex": 4
+            }
+          ]
+        },
+        {
+          "index": 5,
+          "request": {
+            "op": "examples",
+            "word": "metadata-target"
+          },
+          "requestLine": "{\"op\":\"examples\",\"word\":\"metadata-target\"}",
+          "responseRaw": "{\"ok\":true,\"kind\":\"examples\",\"text\":\"1 example(s).\",\"data\":[\"helper-example\"]}",
+          "response": {
+            "ok": true,
+            "kind": "examples",
+            "text": "1 example(s).",
+            "data": [
+              "helper-example"
+            ]
+          },
+          "parseError": null,
+          "checks": [
+            {
+              "name": "metadata-reload response 5 is valid JSON",
+              "passed": true,
+              "message": "valid JSON response object",
+              "session": "metadata-reload",
+              "exchangeIndex": 5
+            },
+            {
+              "name": "fresh process retains selected target examples",
+              "passed": true,
+              "message": "1 example(s).",
+              "session": "metadata-reload",
+              "exchangeIndex": 5
+            },
+            {
+              "name": "target example survives reload",
+              "passed": true,
+              "message": "observed examples: helper-example",
+              "session": "metadata-reload",
+              "exchangeIndex": 5
+            }
+          ]
+        },
+        {
+          "index": 6,
+          "request": {
+            "op": "source",
+            "word": "unrelated-candidate"
+          },
+          "requestLine": "{\"op\":\"source\",\"word\":\"unrelated-candidate\"}",
+          "responseRaw": "{\"ok\":false,\"kind\":\"error\",\"text\":\"NAME_UNKNOWN_WORD in unrelated-candidate: Word \\u0027unrelated-candidate\\u0027 is not defined.\",\"error\":{\"code\":\"NAME_UNKNOWN_WORD\",\"message\":\"Word \\u0027unrelated-candidate\\u0027 is not defined.\",\"word\":\"unrelated-candidate\",\"expected\":[],\"actual\":[]}}",
+          "response": {
+            "ok": false,
+            "kind": "error",
+            "text": "NAME_UNKNOWN_WORD in unrelated-candidate: Word 'unrelated-candidate' is not defined.",
+            "error": {
+              "code": "NAME_UNKNOWN_WORD",
+              "message": "Word 'unrelated-candidate' is not defined.",
+              "word": "unrelated-candidate",
+              "expected": [],
+              "actual": []
+            }
+          },
+          "parseError": null,
+          "checks": [
+            {
+              "name": "metadata-reload response 6 is valid JSON",
+              "passed": true,
+              "message": "valid JSON response object",
+              "session": "metadata-reload",
+              "exchangeIndex": 6
+            },
+            {
+              "name": "unrelated candidate is absent from fresh committed projection",
+              "passed": true,
+              "message": "expected NAME_UNKNOWN_WORD; observed NAME_UNKNOWN_WORD",
+              "session": "metadata-reload",
+              "exchangeIndex": 6
+            }
+          ]
+        },
+        {
+          "index": 7,
+          "request": {
+            "op": "storage.status"
+          },
+          "requestLine": "{\"op\":\"storage.status\"}",
+          "responseRaw": "{\"ok\":true,\"kind\":\"storage.status\",\"text\":\"Current durable storage authority and export status.\",\"data\":{\"projectConfigured\":true,\"generation\":1,\"authority\":\"manifest\",\"manifestHash\":\"4bba7bf17fb9ac7c6a5dc5f290457faf201fd355e61b0d483cfc36647e174ff0\",\"exportWarning\":null}}",
+          "response": {
+            "ok": true,
+            "kind": "storage.status",
+            "text": "Current durable storage authority and export status.",
+            "data": {
+              "projectConfigured": true,
+              "generation": 1,
+              "authority": "manifest",
+              "manifestHash": "4bba7bf17fb9ac7c6a5dc5f290457faf201fd355e61b0d483cfc36647e174ff0",
+              "exportWarning": null
+            }
+          },
+          "parseError": null,
+          "checks": [
+            {
+              "name": "metadata-reload response 7 is valid JSON",
+              "passed": true,
+              "message": "valid JSON response object",
+              "session": "metadata-reload",
+              "exchangeIndex": 7
+            },
+            {
+              "name": "inspect metadata closure storage status",
+              "passed": true,
+              "message": "Current durable storage authority and export status.",
+              "session": "metadata-reload",
+              "exchangeIndex": 7
+            },
+            {
+              "name": "metadata closure reloads manifest authority",
+              "passed": true,
+              "message": "authority=manifest, generation=1, exportWarning=",
+              "session": "metadata-reload",
+              "exchangeIndex": 7
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "name": "metadata-reload process completed",
+          "passed": true,
+          "message": "exit=0, timeout=False, outputLimit=False, durationMs=322",
+          "session": "metadata-reload"
+        },
+        {
+          "name": "metadata-reload response count matches requests",
+          "passed": true,
+          "message": "received 8 response line(s) for 8 request(s)",
+          "session": "metadata-reload"
+        }
+      ]
+    },
+    {
+      "name": "metadata-replacement-commit",
+      "projectPath": "D:\\code\\AgentLang\\.agentlang\\projection-verification-9557cad178b744be92208dc79eac546a\\metadata-closure",
+      "process": {
+        "exitCode": 0,
+        "timedOut": false,
+        "outputLimitExceeded": false,
+        "durationMilliseconds": 387,
+        "inputError": null,
+        "stderr": "",
+        "stdoutLines": [
+          "{\"ok\":true,\"kind\":\"defined\",\"text\":\"Definitions parsed, type checked, and staged.\",\"data\":[\"candidate-helper\"]}",
+          "{\"ok\":true,\"kind\":\"commit\",\"text\":\"2 attached test(s) passed; selected candidates committed.\",\"data\":[\"candidate-helper/basic\",\"metadata-target/helper-case\"]}"
+        ]
+      },
+      "exchanges": [
+        {
+          "index": 0,
+          "request": {
+            "op": "define",
+            "source": "word candidate-helper : Int -> Int\n    effects none\n    2 add\nend\n\ntest candidate-helper/basic\n    1 candidate-helper\n    => 3\nend\n\ntest metadata-target/helper-case\n    option.none<ProbeToken> drop\n    41 candidate-helper metadata-target\n    => 44\nend\n\nexample metadata-target/helper-example\n    option.none<ProbeToken> drop\n    41 candidate-helper metadata-target\n    => 44\nend"
+          },
+          "requestLine": "{\"op\":\"define\",\"source\":\"word candidate-helper : Int -> Int\\n    effects none\\n    2 add\\nend\\n\\ntest candidate-helper/basic\\n    1 candidate-helper\\n    => 3\\nend\\n\\ntest metadata-target/helper-case\\n    option.none<ProbeToken> drop\\n    41 candidate-helper metadata-target\\n    => 44\\nend\\n\\nexample metadata-target/helper-example\\n    option.none<ProbeToken> drop\\n    41 candidate-helper metadata-target\\n    => 44\\nend\"}",
+          "responseRaw": "{\"ok\":true,\"kind\":\"defined\",\"text\":\"Definitions parsed, type checked, and staged.\",\"data\":[\"candidate-helper\"]}",
+          "response": {
+            "ok": true,
+            "kind": "defined",
+            "text": "Definitions parsed, type checked, and staged.",
+            "data": [
+              "candidate-helper"
+            ]
+          },
+          "parseError": null,
+          "checks": [
+            {
+              "name": "metadata-replacement-commit response 0 is valid JSON",
+              "passed": true,
+              "message": "valid JSON response object",
+              "session": "metadata-replacement-commit",
+              "exchangeIndex": 0
+            },
+            {
+              "name": "stage helper replacement referenced only by target metadata",
+              "passed": true,
+              "message": "Definitions parsed, type checked, and staged.",
+              "session": "metadata-replacement-commit",
+              "exchangeIndex": 0
+            }
+          ]
+        },
+        {
+          "index": 1,
+          "request": {
+            "op": "commit",
+            "word": "metadata-target"
+          },
+          "requestLine": "{\"op\":\"commit\",\"word\":\"metadata-target\"}",
+          "responseRaw": "{\"ok\":true,\"kind\":\"commit\",\"text\":\"2 attached test(s) passed; selected candidates committed.\",\"data\":[\"candidate-helper/basic\",\"metadata-target/helper-case\"]}",
+          "response": {
+            "ok": true,
+            "kind": "commit",
+            "text": "2 attached test(s) passed; selected candidates committed.",
+            "data": [
+              "candidate-helper/basic",
+              "metadata-target/helper-case"
+            ]
+          },
+          "parseError": null,
+          "checks": [
+            {
+              "name": "metadata-replacement-commit response 1 is valid JSON",
+              "passed": true,
+              "message": "valid JSON response object",
+              "session": "metadata-replacement-commit",
+              "exchangeIndex": 1
+            },
+            {
+              "name": "commit metadata-selected helper replacement",
+              "passed": true,
+              "message": "2 attached test(s) passed; selected candidates committed.",
+              "session": "metadata-replacement-commit",
+              "exchangeIndex": 1
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "name": "metadata-replacement-commit process completed",
+          "passed": true,
+          "message": "exit=0, timeout=False, outputLimit=False, durationMs=387",
+          "session": "metadata-replacement-commit"
+        },
+        {
+          "name": "metadata-replacement-commit response count matches requests",
+          "passed": true,
+          "message": "received 2 response line(s) for 2 request(s)",
+          "session": "metadata-replacement-commit"
+        }
+      ]
+    },
+    {
+      "name": "metadata-replacement-reload",
+      "projectPath": "D:\\code\\AgentLang\\.agentlang\\projection-verification-9557cad178b744be92208dc79eac546a\\metadata-closure",
+      "process": {
+        "exitCode": 0,
+        "timedOut": false,
+        "outputLimitExceeded": false,
+        "durationMilliseconds": 325,
+        "inputError": null,
+        "stderr": "",
+        "stdoutLines": [
+          "{\"ok\":true,\"kind\":\"describe\",\"text\":\"Description for candidate-helper.\",\"data\":{\"name\":\"candidate-helper\",\"inputs\":[\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"documentation\":\"\",\"id\":\"word_17b8022f47ef461eb285c58c9d057512\",\"dependencies\":[\"add\"],\"transitiveDependencies\":[\"add\"],\"callers\":[],\"tests\":[\"basic\"],\"examples\":[],\"source\":\"dictionary.agent\",\"line\":13,\"kind\":\"word\",\"status\":\"persistent\",\"maturity\":\"project\",\"deprecated\":false,\"revision\":2,\"testCount\":1,\"exampleCount\":0,\"coverage\":{\"instructionsCovered\":0,\"instructionsTotal\":2,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[\"dictionary.agent:17:5\",\"dictionary.agent:18:5\"],\"uncoveredBranchOutcomes\":[],\"status\":\"not-run\"}}}",
+          "{\"ok\":true,\"kind\":\"history\",\"text\":\"2 durable revision(s) for candidate-helper.\",\"data\":[{\"id\":\"word_17b8022f47ef461eb285c58c9d057512\",\"name\":\"candidate-helper\",\"revision\":1,\"source\":\"word candidate-helper : Int -\\u003E Int\\n    effects none\\n    maturity project\\n    revision 1\\n    1\\n    add\\nend\",\"maturity\":\"project\",\"actor\":\"client\",\"task\":null,\"timestampUtc\":\"2000-01-01T00:00:00.0000000\\u002B00:00\",\"deprecated\":false,\"tests\":[\"test candidate-helper/basic\\n    1\\n    candidate-helper\\n    =\\u003E 2\\nend\"],\"examples\":[]},{\"id\":\"word_17b8022f47ef461eb285c58c9d057512\",\"name\":\"candidate-helper\",\"revision\":2,\"source\":\"word candidate-helper : Int -\\u003E Int\\n    effects none\\n    maturity project\\n    revision 2\\n    2\\n    add\\nend\",\"maturity\":\"project\",\"actor\":\"client\",\"task\":null,\"timestampUtc\":\"2000-01-01T00:00:00.0000000\\u002B00:00\",\"deprecated\":false,\"tests\":[\"test candidate-helper/basic\\n    1\\n    candidate-helper\\n    =\\u003E 3\\nend\"],\"examples\":[]}]}",
+          "{\"ok\":true,\"kind\":\"eval\",\"text\":\"44\",\"data\":{\"stack\":[\"44\"],\"stackTypes\":[\"Int\"],\"console\":[],\"effects\":{}}}",
+          "{\"ok\":true,\"kind\":\"test\",\"text\":\"1/1 test(s) passed.\",\"data\":{\"results\":[{\"name\":\"helper-case\",\"word\":\"metadata-target\",\"passed\":true,\"expected\":\"44\",\"actual\":[\"44\"]}],\"coverage\":{\"instructionsCovered\":2,\"instructionsTotal\":2,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[]}}}",
+          "{\"ok\":true,\"kind\":\"test\",\"text\":\"1/1 test(s) passed.\",\"data\":{\"results\":[{\"name\":\"basic\",\"word\":\"candidate-helper\",\"passed\":true,\"expected\":\"3\",\"actual\":[\"3\"]}],\"coverage\":{\"instructionsCovered\":2,\"instructionsTotal\":2,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[]}}}",
+          "{\"ok\":true,\"kind\":\"examples\",\"text\":\"1 example(s).\",\"data\":[\"helper-example\"]}"
+        ]
+      },
+      "exchanges": [
+        {
+          "index": 0,
+          "request": {
+            "op": "describe",
+            "word": "candidate-helper"
+          },
+          "requestLine": "{\"op\":\"describe\",\"word\":\"candidate-helper\"}",
+          "responseRaw": "{\"ok\":true,\"kind\":\"describe\",\"text\":\"Description for candidate-helper.\",\"data\":{\"name\":\"candidate-helper\",\"inputs\":[\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"documentation\":\"\",\"id\":\"word_17b8022f47ef461eb285c58c9d057512\",\"dependencies\":[\"add\"],\"transitiveDependencies\":[\"add\"],\"callers\":[],\"tests\":[\"basic\"],\"examples\":[],\"source\":\"dictionary.agent\",\"line\":13,\"kind\":\"word\",\"status\":\"persistent\",\"maturity\":\"project\",\"deprecated\":false,\"revision\":2,\"testCount\":1,\"exampleCount\":0,\"coverage\":{\"instructionsCovered\":0,\"instructionsTotal\":2,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[\"dictionary.agent:17:5\",\"dictionary.agent:18:5\"],\"uncoveredBranchOutcomes\":[],\"status\":\"not-run\"}}}",
+          "response": {
+            "ok": true,
+            "kind": "describe",
+            "text": "Description for candidate-helper.",
+            "data": {
+              "name": "candidate-helper",
+              "inputs": [
+                "Int"
+              ],
+              "outputs": [
+                "Int"
+              ],
+              "effects": [],
+              "documentation": "",
+              "id": "word_17b8022f47ef461eb285c58c9d057512",
+              "dependencies": [
+                "add"
+              ],
+              "transitiveDependencies": [
+                "add"
+              ],
+              "callers": [],
+              "tests": [
+                "basic"
+              ],
+              "examples": [],
+              "source": "dictionary.agent",
+              "line": 13,
+              "kind": "word",
+              "status": "persistent",
+              "maturity": "project",
+              "deprecated": false,
+              "revision": 2,
+              "testCount": 1,
+              "exampleCount": 0,
+              "coverage": {
+                "instructionsCovered": 0,
+                "instructionsTotal": 2,
+                "branchesCovered": 0,
+                "branchesTotal": 0,
+                "uncoveredInstructions": [
+                  "dictionary.agent:17:5",
+                  "dictionary.agent:18:5"
+                ],
+                "uncoveredBranchOutcomes": [],
+                "status": "not-run"
+              }
+            }
+          },
+          "parseError": null,
+          "checks": [
+            {
+              "name": "metadata-replacement-reload response 0 is valid JSON",
+              "passed": true,
+              "message": "valid JSON response object",
+              "session": "metadata-replacement-reload",
+              "exchangeIndex": 0
+            },
+            {
+              "name": "fresh process loads staged helper replacement",
+              "passed": true,
+              "message": "Description for candidate-helper.",
+              "session": "metadata-replacement-reload",
+              "exchangeIndex": 0
+            },
+            {
+              "name": "selected helper replacement is exactly revision two",
+              "passed": true,
+              "message": "status=persistent, revision=2",
+              "session": "metadata-replacement-reload",
+              "exchangeIndex": 0
+            }
+          ]
+        },
+        {
+          "index": 1,
+          "request": {
+            "op": "history",
+            "word": "candidate-helper"
+          },
+          "requestLine": "{\"op\":\"history\",\"word\":\"candidate-helper\"}",
+          "responseRaw": "{\"ok\":true,\"kind\":\"history\",\"text\":\"2 durable revision(s) for candidate-helper.\",\"data\":[{\"id\":\"word_17b8022f47ef461eb285c58c9d057512\",\"name\":\"candidate-helper\",\"revision\":1,\"source\":\"word candidate-helper : Int -\\u003E Int\\n    effects none\\n    maturity project\\n    revision 1\\n    1\\n    add\\nend\",\"maturity\":\"project\",\"actor\":\"client\",\"task\":null,\"timestampUtc\":\"2000-01-01T00:00:00.0000000\\u002B00:00\",\"deprecated\":false,\"tests\":[\"test candidate-helper/basic\\n    1\\n    candidate-helper\\n    =\\u003E 2\\nend\"],\"examples\":[]},{\"id\":\"word_17b8022f47ef461eb285c58c9d057512\",\"name\":\"candidate-helper\",\"revision\":2,\"source\":\"word candidate-helper : Int -\\u003E Int\\n    effects none\\n    maturity project\\n    revision 2\\n    2\\n    add\\nend\",\"maturity\":\"project\",\"actor\":\"client\",\"task\":null,\"timestampUtc\":\"2000-01-01T00:00:00.0000000\\u002B00:00\",\"deprecated\":false,\"tests\":[\"test candidate-helper/basic\\n    1\\n    candidate-helper\\n    =\\u003E 3\\nend\"],\"examples\":[]}]}",
+          "response": {
+            "ok": true,
+            "kind": "history",
+            "text": "2 durable revision(s) for candidate-helper.",
+            "data": [
+              {
+                "id": "word_17b8022f47ef461eb285c58c9d057512",
+                "name": "candidate-helper",
+                "revision": 1,
+                "source": "word candidate-helper : Int -> Int\n    effects none\n    maturity project\n    revision 1\n    1\n    add\nend",
+                "maturity": "project",
+                "actor": "client",
+                "task": null,
+                "timestampUtc": "1999-12-31T19:00:00-05:00",
+                "deprecated": false,
+                "tests": [
+                  "test candidate-helper/basic\n    1\n    candidate-helper\n    => 2\nend"
+                ],
+                "examples": []
+              },
+              {
+                "id": "word_17b8022f47ef461eb285c58c9d057512",
+                "name": "candidate-helper",
+                "revision": 2,
+                "source": "word candidate-helper : Int -> Int\n    effects none\n    maturity project\n    revision 2\n    2\n    add\nend",
+                "maturity": "project",
+                "actor": "client",
+                "task": null,
+                "timestampUtc": "1999-12-31T19:00:00-05:00",
+                "deprecated": false,
+                "tests": [
+                  "test candidate-helper/basic\n    1\n    candidate-helper\n    => 3\nend"
+                ],
+                "examples": []
+              }
+            ]
+          },
+          "parseError": null,
+          "checks": [
+            {
+              "name": "metadata-replacement-reload response 1 is valid JSON",
+              "passed": true,
+              "message": "valid JSON response object",
+              "session": "metadata-replacement-reload",
+              "exchangeIndex": 1
+            },
+            {
+              "name": "fresh process loads immutable helper history",
+              "passed": true,
+              "message": "2 durable revision(s) for candidate-helper.",
+              "session": "metadata-replacement-reload",
+              "exchangeIndex": 1
+            },
+            {
+              "name": "helper revision two is present in durable history",
+              "passed": true,
+              "message": "history revisions: 1, 2",
+              "session": "metadata-replacement-reload",
+              "exchangeIndex": 1
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "request": {
+            "op": "eval",
+            "code": "41 candidate-helper metadata-target"
+          },
+          "requestLine": "{\"op\":\"eval\",\"code\":\"41 candidate-helper metadata-target\"}",
+          "responseRaw": "{\"ok\":true,\"kind\":\"eval\",\"text\":\"44\",\"data\":{\"stack\":[\"44\"],\"stackTypes\":[\"Int\"],\"console\":[],\"effects\":{}}}",
+          "response": {
+            "ok": true,
+            "kind": "eval",
+            "text": "44",
+            "data": {
+              "stack": [
+                "44"
+              ],
+              "stackTypes": [
+                "Int"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          "parseError": null,
+          "checks": [
+            {
+              "name": "metadata-replacement-reload response 2 is valid JSON",
+              "passed": true,
+              "message": "valid JSON response object",
+              "session": "metadata-replacement-reload",
+              "exchangeIndex": 2
+            },
+            {
+              "name": "fresh process evaluates target using the replacement helper",
+              "passed": true,
+              "message": "44",
+              "session": "metadata-replacement-reload",
+              "exchangeIndex": 2
+            },
+            {
+              "name": "exact staged helper behavior survives reload",
+              "passed": true,
+              "message": "observed stack: 44",
+              "session": "metadata-replacement-reload",
+              "exchangeIndex": 2
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "request": {
+            "op": "test",
+            "word": "metadata-target"
+          },
+          "requestLine": "{\"op\":\"test\",\"word\":\"metadata-target\"}",
+          "responseRaw": "{\"ok\":true,\"kind\":\"test\",\"text\":\"1/1 test(s) passed.\",\"data\":{\"results\":[{\"name\":\"helper-case\",\"word\":\"metadata-target\",\"passed\":true,\"expected\":\"44\",\"actual\":[\"44\"]}],\"coverage\":{\"instructionsCovered\":2,\"instructionsTotal\":2,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[]}}}",
+          "response": {
+            "ok": true,
+            "kind": "test",
+            "text": "1/1 test(s) passed.",
+            "data": {
+              "results": [
+                {
+                  "name": "helper-case",
+                  "word": "metadata-target",
+                  "passed": true,
+                  "expected": "44",
+                  "actual": [
+                    "44"
+                  ]
+                }
+              ],
+              "coverage": {
+                "instructionsCovered": 2,
+                "instructionsTotal": 2,
+                "branchesCovered": 0,
+                "branchesTotal": 0,
+                "uncoveredInstructions": [],
+                "uncoveredBranchOutcomes": []
+              }
+            }
+          },
+          "parseError": null,
+          "checks": [
+            {
+              "name": "metadata-replacement-reload response 3 is valid JSON",
+              "passed": true,
+              "message": "valid JSON response object",
+              "session": "metadata-replacement-reload",
+              "exchangeIndex": 3
+            },
+            {
+              "name": "fresh process runs target test after replacement",
+              "passed": true,
+              "message": "1/1 test(s) passed.",
+              "session": "metadata-replacement-reload",
+              "exchangeIndex": 3
+            },
+            {
+              "name": "updated target test passes on durable helper revision",
+              "passed": true,
+              "message": "observed 1 target test result(s)",
+              "session": "metadata-replacement-reload",
+              "exchangeIndex": 3
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "request": {
+            "op": "test",
+            "word": "candidate-helper"
+          },
+          "requestLine": "{\"op\":\"test\",\"word\":\"candidate-helper\"}",
+          "responseRaw": "{\"ok\":true,\"kind\":\"test\",\"text\":\"1/1 test(s) passed.\",\"data\":{\"results\":[{\"name\":\"basic\",\"word\":\"candidate-helper\",\"passed\":true,\"expected\":\"3\",\"actual\":[\"3\"]}],\"coverage\":{\"instructionsCovered\":2,\"instructionsTotal\":2,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[]}}}",
+          "response": {
+            "ok": true,
+            "kind": "test",
+            "text": "1/1 test(s) passed.",
+            "data": {
+              "results": [
+                {
+                  "name": "basic",
+                  "word": "candidate-helper",
+                  "passed": true,
+                  "expected": "3",
+                  "actual": [
+                    "3"
+                  ]
+                }
+              ],
+              "coverage": {
+                "instructionsCovered": 2,
+                "instructionsTotal": 2,
+                "branchesCovered": 0,
+                "branchesTotal": 0,
+                "uncoveredInstructions": [],
+                "uncoveredBranchOutcomes": []
+              }
+            }
+          },
+          "parseError": null,
+          "checks": [
+            {
+              "name": "metadata-replacement-reload response 4 is valid JSON",
+              "passed": true,
+              "message": "valid JSON response object",
+              "session": "metadata-replacement-reload",
+              "exchangeIndex": 4
+            },
+            {
+              "name": "fresh process runs helper test after replacement",
+              "passed": true,
+              "message": "1/1 test(s) passed.",
+              "session": "metadata-replacement-reload",
+              "exchangeIndex": 4
+            },
+            {
+              "name": "updated helper test passes after replacement",
+              "passed": true,
+              "message": "observed 1 helper test result(s)",
+              "session": "metadata-replacement-reload",
+              "exchangeIndex": 4
+            }
+          ]
+        },
+        {
+          "index": 5,
+          "request": {
+            "op": "examples",
+            "word": "metadata-target"
+          },
+          "requestLine": "{\"op\":\"examples\",\"word\":\"metadata-target\"}",
+          "responseRaw": "{\"ok\":true,\"kind\":\"examples\",\"text\":\"1 example(s).\",\"data\":[\"helper-example\"]}",
+          "response": {
+            "ok": true,
+            "kind": "examples",
+            "text": "1 example(s).",
+            "data": [
+              "helper-example"
+            ]
+          },
+          "parseError": null,
+          "checks": [
+            {
+              "name": "metadata-replacement-reload response 5 is valid JSON",
+              "passed": true,
+              "message": "valid JSON response object",
+              "session": "metadata-replacement-reload",
+              "exchangeIndex": 5
+            },
+            {
+              "name": "fresh process retains selected example after replacement",
+              "passed": true,
+              "message": "1 example(s).",
+              "session": "metadata-replacement-reload",
+              "exchangeIndex": 5
+            },
+            {
+              "name": "replacement example metadata survives reload",
+              "passed": true,
+              "message": "observed examples: helper-example",
+              "session": "metadata-replacement-reload",
+              "exchangeIndex": 5
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "name": "metadata-replacement-reload process completed",
+          "passed": true,
+          "message": "exit=0, timeout=False, outputLimit=False, durationMs=325",
+          "session": "metadata-replacement-reload"
+        },
+        {
+          "name": "metadata-replacement-reload response count matches requests",
+          "passed": true,
+          "message": "received 6 response line(s) for 6 request(s)",
+          "session": "metadata-replacement-reload"
+        }
+      ]
+    },
+    {
+      "name": "library-commit",
+      "projectPath": "D:\\code\\AgentLang\\.agentlang\\projection-verification-9557cad178b744be92208dc79eac546a\\library-coverage",
+      "process": {
+        "exitCode": 0,
+        "timedOut": false,
+        "outputLimitExceeded": false,
+        "durationMilliseconds": 376,
+        "inputError": null,
+        "stderr": "",
+        "stdoutLines": [
+          "{\"ok\":true,\"kind\":\"defined\",\"text\":\"Definitions parsed, type checked, and staged.\",\"data\":[\"covered-choice\"]}",
+          "{\"ok\":true,\"kind\":\"commit\",\"text\":\"2 attached test(s) passed; selected candidates committed.\",\"data\":[\"covered-choice/false\",\"covered-choice/true\"]}"
+        ]
+      },
+      "exchanges": [
+        {
+          "index": 0,
+          "request": {
+            "op": "define",
+            "source": "word covered-choice : Bool -> Int\n    effects none\n    if\n        1\n    else\n        2\n    end\nend\n\ntest covered-choice/true\n    true covered-choice\n    => 1\nend\n\ntest covered-choice/false\n    false covered-choice\n    => 2\nend"
+          },
+          "requestLine": "{\"op\":\"define\",\"source\":\"word covered-choice : Bool -> Int\\n    effects none\\n    if\\n        1\\n    else\\n        2\\n    end\\nend\\n\\ntest covered-choice/true\\n    true covered-choice\\n    => 1\\nend\\n\\ntest covered-choice/false\\n    false covered-choice\\n    => 2\\nend\"}",
+          "responseRaw": "{\"ok\":true,\"kind\":\"defined\",\"text\":\"Definitions parsed, type checked, and staged.\",\"data\":[\"covered-choice\"]}",
+          "response": {
+            "ok": true,
+            "kind": "defined",
+            "text": "Definitions parsed, type checked, and staged.",
+            "data": [
+              "covered-choice"
+            ]
+          },
+          "parseError": null,
+          "checks": [
+            {
+              "name": "library-commit response 0 is valid JSON",
+              "passed": true,
+              "message": "valid JSON response object",
+              "session": "library-commit",
+              "exchangeIndex": 0
+            },
+            {
+              "name": "define complete-coverage library fixture",
+              "passed": true,
+              "message": "Definitions parsed, type checked, and staged.",
+              "session": "library-commit",
+              "exchangeIndex": 0
+            }
+          ]
+        },
+        {
+          "index": 1,
+          "request": {
+            "op": "commit",
+            "word": "covered-choice",
+            "library": true
+          },
+          "requestLine": "{\"op\":\"commit\",\"word\":\"covered-choice\",\"library\":true}",
+          "responseRaw": "{\"ok\":true,\"kind\":\"commit\",\"text\":\"2 attached test(s) passed; selected candidates committed.\",\"data\":[\"covered-choice/false\",\"covered-choice/true\"]}",
+          "response": {
+            "ok": true,
+            "kind": "commit",
+            "text": "2 attached test(s) passed; selected candidates committed.",
+            "data": [
+              "covered-choice/false",
+              "covered-choice/true"
+            ]
+          },
+          "parseError": null,
+          "checks": [
+            {
+              "name": "library-commit response 1 is valid JSON",
+              "passed": true,
+              "message": "valid JSON response object",
+              "session": "library-commit",
+              "exchangeIndex": 1
+            },
+            {
+              "name": "commit fully covered library word",
+              "passed": true,
+              "message": "2 attached test(s) passed; selected candidates committed.",
+              "session": "library-commit",
+              "exchangeIndex": 1
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "name": "library-commit process completed",
+          "passed": true,
+          "message": "exit=0, timeout=False, outputLimit=False, durationMs=376",
+          "session": "library-commit"
+        },
+        {
+          "name": "library-commit response count matches requests",
+          "passed": true,
+          "message": "received 2 response line(s) for 2 request(s)",
+          "session": "library-commit"
+        }
+      ]
+    },
+    {
+      "name": "library-reload",
+      "projectPath": "D:\\code\\AgentLang\\.agentlang\\projection-verification-9557cad178b744be92208dc79eac546a\\library-coverage",
+      "process": {
+        "exitCode": 0,
+        "timedOut": false,
+        "outputLimitExceeded": false,
+        "durationMilliseconds": 325,
+        "inputError": null,
+        "stderr": "",
+        "stdoutLines": [
+          "{\"ok\":true,\"kind\":\"test\",\"text\":\"2/2 test(s) passed.\",\"data\":{\"results\":[{\"name\":\"false\",\"word\":\"covered-choice\",\"passed\":true,\"expected\":\"2\",\"actual\":[\"2\"]},{\"name\":\"true\",\"word\":\"covered-choice\",\"passed\":true,\"expected\":\"1\",\"actual\":[\"1\"]}],\"coverage\":{\"instructionsCovered\":3,\"instructionsTotal\":3,\"branchesCovered\":2,\"branchesTotal\":2,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[]}}}",
+          "{\"ok\":true,\"kind\":\"describe\",\"text\":\"Description for covered-choice.\",\"data\":{\"name\":\"covered-choice\",\"inputs\":[\"Bool\"],\"outputs\":[\"Int\"],\"effects\":[],\"documentation\":\"\",\"id\":\"word_cae0080524af40b49141c894fc1c0943\",\"dependencies\":[],\"transitiveDependencies\":[],\"callers\":[],\"tests\":[\"false\",\"true\"],\"examples\":[],\"source\":\"dictionary.agent\",\"line\":1,\"kind\":\"word\",\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false,\"revision\":1,\"testCount\":2,\"exampleCount\":0,\"coverage\":{\"instructionsCovered\":3,\"instructionsTotal\":3,\"branchesCovered\":2,\"branchesTotal\":2,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[],\"status\":\"current\"}}}",
+          "{\"ok\":true,\"kind\":\"tests\",\"text\":\"2 attached test(s).\",\"data\":[\"false\",\"true\"]}"
+        ]
+      },
+      "exchanges": [
+        {
+          "index": 0,
+          "request": {
+            "op": "test",
+            "word": "covered-choice"
+          },
+          "requestLine": "{\"op\":\"test\",\"word\":\"covered-choice\"}",
+          "responseRaw": "{\"ok\":true,\"kind\":\"test\",\"text\":\"2/2 test(s) passed.\",\"data\":{\"results\":[{\"name\":\"false\",\"word\":\"covered-choice\",\"passed\":true,\"expected\":\"2\",\"actual\":[\"2\"]},{\"name\":\"true\",\"word\":\"covered-choice\",\"passed\":true,\"expected\":\"1\",\"actual\":[\"1\"]}],\"coverage\":{\"instructionsCovered\":3,\"instructionsTotal\":3,\"branchesCovered\":2,\"branchesTotal\":2,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[]}}}",
+          "response": {
+            "ok": true,
+            "kind": "test",
+            "text": "2/2 test(s) passed.",
+            "data": {
+              "results": [
+                {
+                  "name": "false",
+                  "word": "covered-choice",
+                  "passed": true,
+                  "expected": "2",
+                  "actual": [
+                    "2"
+                  ]
+                },
+                {
+                  "name": "true",
+                  "word": "covered-choice",
+                  "passed": true,
+                  "expected": "1",
+                  "actual": [
+                    "1"
+                  ]
+                }
+              ],
+              "coverage": {
+                "instructionsCovered": 3,
+                "instructionsTotal": 3,
+                "branchesCovered": 2,
+                "branchesTotal": 2,
+                "uncoveredInstructions": [],
+                "uncoveredBranchOutcomes": []
+              }
+            }
+          },
+          "parseError": null,
+          "checks": [
+            {
+              "name": "library-reload response 0 is valid JSON",
+              "passed": true,
+              "message": "valid JSON response object",
+              "session": "library-reload",
+              "exchangeIndex": 0
+            },
+            {
+              "name": "fresh process runs library tests",
+              "passed": true,
+              "message": "2/2 test(s) passed.",
+              "session": "library-reload",
+              "exchangeIndex": 0
+            },
+            {
+              "name": "both library branch tests survive and pass",
+              "passed": true,
+              "message": "observed 2 test result(s)",
+              "session": "library-reload",
+              "exchangeIndex": 0
+            }
+          ]
+        },
+        {
+          "index": 1,
+          "request": {
+            "op": "describe",
+            "word": "covered-choice"
+          },
+          "requestLine": "{\"op\":\"describe\",\"word\":\"covered-choice\"}",
+          "responseRaw": "{\"ok\":true,\"kind\":\"describe\",\"text\":\"Description for covered-choice.\",\"data\":{\"name\":\"covered-choice\",\"inputs\":[\"Bool\"],\"outputs\":[\"Int\"],\"effects\":[],\"documentation\":\"\",\"id\":\"word_cae0080524af40b49141c894fc1c0943\",\"dependencies\":[],\"transitiveDependencies\":[],\"callers\":[],\"tests\":[\"false\",\"true\"],\"examples\":[],\"source\":\"dictionary.agent\",\"line\":1,\"kind\":\"word\",\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false,\"revision\":1,\"testCount\":2,\"exampleCount\":0,\"coverage\":{\"instructionsCovered\":3,\"instructionsTotal\":3,\"branchesCovered\":2,\"branchesTotal\":2,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[],\"status\":\"current\"}}}",
+          "response": {
+            "ok": true,
+            "kind": "describe",
+            "text": "Description for covered-choice.",
+            "data": {
+              "name": "covered-choice",
+              "inputs": [
+                "Bool"
+              ],
+              "outputs": [
+                "Int"
+              ],
+              "effects": [],
+              "documentation": "",
+              "id": "word_cae0080524af40b49141c894fc1c0943",
+              "dependencies": [],
+              "transitiveDependencies": [],
+              "callers": [],
+              "tests": [
+                "false",
+                "true"
+              ],
+              "examples": [],
+              "source": "dictionary.agent",
+              "line": 1,
+              "kind": "word",
+              "status": "persistent",
+              "maturity": "library",
+              "deprecated": false,
+              "revision": 1,
+              "testCount": 2,
+              "exampleCount": 0,
+              "coverage": {
+                "instructionsCovered": 3,
+                "instructionsTotal": 3,
+                "branchesCovered": 2,
+                "branchesTotal": 2,
+                "uncoveredInstructions": [],
+                "uncoveredBranchOutcomes": [],
+                "status": "current"
+              }
+            }
+          },
+          "parseError": null,
+          "checks": [
+            {
+              "name": "library-reload response 1 is valid JSON",
+              "passed": true,
+              "message": "valid JSON response object",
+              "session": "library-reload",
+              "exchangeIndex": 1
+            },
+            {
+              "name": "fresh process describes library coverage",
+              "passed": true,
+              "message": "Description for covered-choice.",
+              "session": "library-reload",
+              "exchangeIndex": 1
+            },
+            {
+              "name": "library own-body coverage remains complete after reload",
+              "passed": true,
+              "message": "maturity=library, instructions=3/3, branches=2/2",
+              "session": "library-reload",
+              "exchangeIndex": 1
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "request": {
+            "op": "tests",
+            "word": "covered-choice"
+          },
+          "requestLine": "{\"op\":\"tests\",\"word\":\"covered-choice\"}",
+          "responseRaw": "{\"ok\":true,\"kind\":\"tests\",\"text\":\"2 attached test(s).\",\"data\":[\"false\",\"true\"]}",
+          "response": {
+            "ok": true,
+            "kind": "tests",
+            "text": "2 attached test(s).",
+            "data": [
+              "false",
+              "true"
+            ]
+          },
+          "parseError": null,
+          "checks": [
+            {
+              "name": "library-reload response 2 is valid JSON",
+              "passed": true,
+              "message": "valid JSON response object",
+              "session": "library-reload",
+              "exchangeIndex": 2
+            },
+            {
+              "name": "fresh process lists attached library tests",
+              "passed": true,
+              "message": "2 attached test(s).",
+              "session": "library-reload",
+              "exchangeIndex": 2
+            },
+            {
+              "name": "library test metadata survives reload",
+              "passed": true,
+              "message": "observed tests: false, true",
+              "session": "library-reload",
+              "exchangeIndex": 2
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "name": "library-reload process completed",
+          "passed": true,
+          "message": "exit=0, timeout=False, outputLimit=False, durationMs=325",
+          "session": "library-reload"
+        },
+        {
+          "name": "library-reload response count matches requests",
+          "passed": true,
+          "message": "received 3 response line(s) for 3 request(s)",
+          "session": "library-reload"
+        }
+      ]
+    },
+    {
+      "name": "temporary-metadata-rejection",
+      "projectPath": "D:\\code\\AgentLang\\.agentlang\\projection-verification-9557cad178b744be92208dc79eac546a\\temporary-metadata",
+      "process": {
+        "exitCode": 0,
+        "timedOut": false,
+        "outputLimitExceeded": false,
+        "durationMilliseconds": 391,
+        "inputError": null,
+        "stderr": "",
+        "stdoutLines": [
+          "{\"ok\":true,\"kind\":\"defined\",\"text\":\"Definitions parsed, type checked, and staged.\",\"data\":[\"temporary-test-helper\"]}",
+          "{\"ok\":true,\"kind\":\"defined\",\"text\":\"Definitions parsed, type checked, and staged.\",\"data\":[\"temporary-metadata-target\"]}",
+          "{\"ok\":false,\"kind\":\"error\",\"text\":\"COMMIT_TEMPORARY_TEST_DEPENDENCY in temporary-metadata-target: Selected test \\u0027uses-temporary\\u0027 on \\u0027temporary-metadata-target\\u0027 references temporary word \\u0027temporary-test-helper\\u0027, which cannot be committed.\",\"error\":{\"code\":\"COMMIT_TEMPORARY_TEST_DEPENDENCY\",\"message\":\"Selected test \\u0027uses-temporary\\u0027 on \\u0027temporary-metadata-target\\u0027 references temporary word \\u0027temporary-test-helper\\u0027, which cannot be committed.\",\"word\":\"temporary-metadata-target\",\"expected\":[],\"actual\":[\"temporary-test-helper\"]}}",
+          "{\"ok\":true,\"kind\":\"storage.status\",\"text\":\"Current durable storage authority and export status.\",\"data\":{\"projectConfigured\":true,\"generation\":0,\"authority\":\"empty\",\"exportWarning\":null}}"
+        ]
+      },
+      "exchanges": [
+        {
+          "index": 0,
+          "request": {
+            "op": "define",
+            "source": "word temporary-test-helper : Int -> Int\n    effects none\n    1 add\nend",
+            "temporary": true
+          },
+          "requestLine": "{\"op\":\"define\",\"source\":\"word temporary-test-helper : Int -> Int\\n    effects none\\n    1 add\\nend\",\"temporary\":true}",
+          "responseRaw": "{\"ok\":true,\"kind\":\"defined\",\"text\":\"Definitions parsed, type checked, and staged.\",\"data\":[\"temporary-test-helper\"]}",
+          "response": {
+            "ok": true,
+            "kind": "defined",
+            "text": "Definitions parsed, type checked, and staged.",
+            "data": [
+              "temporary-test-helper"
+            ]
+          },
+          "parseError": null,
+          "checks": [
+            {
+              "name": "temporary-metadata-rejection response 0 is valid JSON",
+              "passed": true,
+              "message": "valid JSON response object",
+              "session": "temporary-metadata-rejection",
+              "exchangeIndex": 0
+            },
+            {
+              "name": "define temporary metadata helper",
+              "passed": true,
+              "message": "Definitions parsed, type checked, and staged.",
+              "session": "temporary-metadata-rejection",
+              "exchangeIndex": 0
+            }
+          ]
+        },
+        {
+          "index": 1,
+          "request": {
+            "op": "define",
+            "source": "word temporary-metadata-target : Int -> Int\n    effects none\n    1 add\nend\n\ntest temporary-metadata-target/uses-temporary\n    1 temporary-test-helper temporary-metadata-target\n    => 3\nend"
+          },
+          "requestLine": "{\"op\":\"define\",\"source\":\"word temporary-metadata-target : Int -> Int\\n    effects none\\n    1 add\\nend\\n\\ntest temporary-metadata-target/uses-temporary\\n    1 temporary-test-helper temporary-metadata-target\\n    => 3\\nend\"}",
+          "responseRaw": "{\"ok\":true,\"kind\":\"defined\",\"text\":\"Definitions parsed, type checked, and staged.\",\"data\":[\"temporary-metadata-target\"]}",
+          "response": {
+            "ok": true,
+            "kind": "defined",
+            "text": "Definitions parsed, type checked, and staged.",
+            "data": [
+              "temporary-metadata-target"
+            ]
+          },
+          "parseError": null,
+          "checks": [
+            {
+              "name": "temporary-metadata-rejection response 1 is valid JSON",
+              "passed": true,
+              "message": "valid JSON response object",
+              "session": "temporary-metadata-rejection",
+              "exchangeIndex": 1
+            },
+            {
+              "name": "define target with temporary metadata reference",
+              "passed": true,
+              "message": "Definitions parsed, type checked, and staged.",
+              "session": "temporary-metadata-rejection",
+              "exchangeIndex": 1
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "request": {
+            "op": "commit",
+            "word": "temporary-metadata-target"
+          },
+          "requestLine": "{\"op\":\"commit\",\"word\":\"temporary-metadata-target\"}",
+          "responseRaw": "{\"ok\":false,\"kind\":\"error\",\"text\":\"COMMIT_TEMPORARY_TEST_DEPENDENCY in temporary-metadata-target: Selected test \\u0027uses-temporary\\u0027 on \\u0027temporary-metadata-target\\u0027 references temporary word \\u0027temporary-test-helper\\u0027, which cannot be committed.\",\"error\":{\"code\":\"COMMIT_TEMPORARY_TEST_DEPENDENCY\",\"message\":\"Selected test \\u0027uses-temporary\\u0027 on \\u0027temporary-metadata-target\\u0027 references temporary word \\u0027temporary-test-helper\\u0027, which cannot be committed.\",\"word\":\"temporary-metadata-target\",\"expected\":[],\"actual\":[\"temporary-test-helper\"]}}",
+          "response": {
+            "ok": false,
+            "kind": "error",
+            "text": "COMMIT_TEMPORARY_TEST_DEPENDENCY in temporary-metadata-target: Selected test 'uses-temporary' on 'temporary-metadata-target' references temporary word 'temporary-test-helper', which cannot be committed.",
+            "error": {
+              "code": "COMMIT_TEMPORARY_TEST_DEPENDENCY",
+              "message": "Selected test 'uses-temporary' on 'temporary-metadata-target' references temporary word 'temporary-test-helper', which cannot be committed.",
+              "word": "temporary-metadata-target",
+              "expected": [],
+              "actual": [
+                "temporary-test-helper"
+              ]
+            }
+          },
+          "parseError": null,
+          "checks": [
+            {
+              "name": "temporary-metadata-rejection response 2 is valid JSON",
+              "passed": true,
+              "message": "valid JSON response object",
+              "session": "temporary-metadata-rejection",
+              "exchangeIndex": 2
+            },
+            {
+              "name": "reject temporary test dependency before publication",
+              "passed": true,
+              "message": "expected COMMIT_TEMPORARY_TEST_DEPENDENCY; observed COMMIT_TEMPORARY_TEST_DEPENDENCY",
+              "session": "temporary-metadata-rejection",
+              "exchangeIndex": 2
+            },
+            {
+              "name": "temporary dependency error identifies helper",
+              "passed": true,
+              "message": "reported dependencies: temporary-test-helper",
+              "session": "temporary-metadata-rejection",
+              "exchangeIndex": 2
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "request": {
+            "op": "storage.status"
+          },
+          "requestLine": "{\"op\":\"storage.status\"}",
+          "responseRaw": "{\"ok\":true,\"kind\":\"storage.status\",\"text\":\"Current durable storage authority and export status.\",\"data\":{\"projectConfigured\":true,\"generation\":0,\"authority\":\"empty\",\"exportWarning\":null}}",
+          "response": {
+            "ok": true,
+            "kind": "storage.status",
+            "text": "Current durable storage authority and export status.",
+            "data": {
+              "projectConfigured": true,
+              "generation": 0,
+              "authority": "empty",
+              "exportWarning": null
+            }
+          },
+          "parseError": null,
+          "checks": [
+            {
+              "name": "temporary-metadata-rejection response 3 is valid JSON",
+              "passed": true,
+              "message": "valid JSON response object",
+              "session": "temporary-metadata-rejection",
+              "exchangeIndex": 3
+            },
+            {
+              "name": "inspect storage after rejected temporary commit",
+              "passed": true,
+              "message": "Current durable storage authority and export status.",
+              "session": "temporary-metadata-rejection",
+              "exchangeIndex": 3
+            },
+            {
+              "name": "rejected commit leaves empty authority unchanged",
+              "passed": true,
+              "message": "authority=empty, generation=0",
+              "session": "temporary-metadata-rejection",
+              "exchangeIndex": 3
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "name": "temporary-metadata-rejection process completed",
+          "passed": true,
+          "message": "exit=0, timeout=False, outputLimit=False, durationMs=391",
+          "session": "temporary-metadata-rejection"
+        },
+        {
+          "name": "temporary-metadata-rejection response count matches requests",
+          "passed": true,
+          "message": "received 4 response line(s) for 4 request(s)",
+          "session": "temporary-metadata-rejection"
+        }
+      ]
+    },
+    {
+      "name": "temporary-metadata-fresh-check",
+      "projectPath": "D:\\code\\AgentLang\\.agentlang\\projection-verification-9557cad178b744be92208dc79eac546a\\temporary-metadata",
+      "process": {
+        "exitCode": 0,
+        "timedOut": false,
+        "outputLimitExceeded": false,
+        "durationMilliseconds": 299,
+        "inputError": null,
+        "stderr": "",
+        "stdoutLines": [
+          "{\"ok\":false,\"kind\":\"error\",\"text\":\"NAME_UNKNOWN_WORD in temporary-metadata-target: Word \\u0027temporary-metadata-target\\u0027 is not defined.\",\"error\":{\"code\":\"NAME_UNKNOWN_WORD\",\"message\":\"Word \\u0027temporary-metadata-target\\u0027 is not defined.\",\"word\":\"temporary-metadata-target\",\"expected\":[],\"actual\":[]}}",
+          "{\"ok\":true,\"kind\":\"storage.status\",\"text\":\"Current durable storage authority and export status.\",\"data\":{\"projectConfigured\":true,\"generation\":0,\"authority\":\"empty\",\"exportWarning\":null}}"
+        ]
+      },
+      "exchanges": [
+        {
+          "index": 0,
+          "request": {
+            "op": "source",
+            "word": "temporary-metadata-target"
+          },
+          "requestLine": "{\"op\":\"source\",\"word\":\"temporary-metadata-target\"}",
+          "responseRaw": "{\"ok\":false,\"kind\":\"error\",\"text\":\"NAME_UNKNOWN_WORD in temporary-metadata-target: Word \\u0027temporary-metadata-target\\u0027 is not defined.\",\"error\":{\"code\":\"NAME_UNKNOWN_WORD\",\"message\":\"Word \\u0027temporary-metadata-target\\u0027 is not defined.\",\"word\":\"temporary-metadata-target\",\"expected\":[],\"actual\":[]}}",
+          "response": {
+            "ok": false,
+            "kind": "error",
+            "text": "NAME_UNKNOWN_WORD in temporary-metadata-target: Word 'temporary-metadata-target' is not defined.",
+            "error": {
+              "code": "NAME_UNKNOWN_WORD",
+              "message": "Word 'temporary-metadata-target' is not defined.",
+              "word": "temporary-metadata-target",
+              "expected": [],
+              "actual": []
+            }
+          },
+          "parseError": null,
+          "checks": [
+            {
+              "name": "temporary-metadata-fresh-check response 0 is valid JSON",
+              "passed": true,
+              "message": "valid JSON response object",
+              "session": "temporary-metadata-fresh-check",
+              "exchangeIndex": 0
+            },
+            {
+              "name": "fresh project remains unchanged after rejected commit",
+              "passed": true,
+              "message": "expected NAME_UNKNOWN_WORD; observed NAME_UNKNOWN_WORD",
+              "session": "temporary-metadata-fresh-check",
+              "exchangeIndex": 0
+            }
+          ]
+        },
+        {
+          "index": 1,
+          "request": {
+            "op": "storage.status"
+          },
+          "requestLine": "{\"op\":\"storage.status\"}",
+          "responseRaw": "{\"ok\":true,\"kind\":\"storage.status\",\"text\":\"Current durable storage authority and export status.\",\"data\":{\"projectConfigured\":true,\"generation\":0,\"authority\":\"empty\",\"exportWarning\":null}}",
+          "response": {
+            "ok": true,
+            "kind": "storage.status",
+            "text": "Current durable storage authority and export status.",
+            "data": {
+              "projectConfigured": true,
+              "generation": 0,
+              "authority": "empty",
+              "exportWarning": null
+            }
+          },
+          "parseError": null,
+          "checks": [
+            {
+              "name": "temporary-metadata-fresh-check response 1 is valid JSON",
+              "passed": true,
+              "message": "valid JSON response object",
+              "session": "temporary-metadata-fresh-check",
+              "exchangeIndex": 1
+            },
+            {
+              "name": "recheck fresh storage authority",
+              "passed": true,
+              "message": "Current durable storage authority and export status.",
+              "session": "temporary-metadata-fresh-check",
+              "exchangeIndex": 1
+            },
+            {
+              "name": "fresh project still has no published manifest",
+              "passed": true,
+              "message": "authority=empty, generation=0",
+              "session": "temporary-metadata-fresh-check",
+              "exchangeIndex": 1
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "name": "temporary-metadata-fresh-check process completed",
+          "passed": true,
+          "message": "exit=0, timeout=False, outputLimit=False, durationMs=299",
+          "session": "temporary-metadata-fresh-check"
+        },
+        {
+          "name": "temporary-metadata-fresh-check response count matches requests",
+          "passed": true,
+          "message": "received 2 response line(s) for 2 request(s)",
+          "session": "temporary-metadata-fresh-check"
+        }
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "name": "metadata-commit process completed",
+      "passed": true,
+      "message": "exit=0, timeout=False, outputLimit=False, durationMs=371",
+      "session": "metadata-commit"
+    },
+    {
+      "name": "metadata-commit response count matches requests",
+      "passed": true,
+      "message": "received 4 response line(s) for 4 request(s)",
+      "session": "metadata-commit"
+    },
+    {
+      "name": "metadata-commit response 0 is valid JSON",
+      "passed": true,
+      "message": "valid JSON response object",
+      "session": "metadata-commit",
+      "exchangeIndex": 0
+    },
+    {
+      "name": "metadata-commit response 1 is valid JSON",
+      "passed": true,
+      "message": "valid JSON response object",
+      "session": "metadata-commit",
+      "exchangeIndex": 1
+    },
+    {
+      "name": "metadata-commit response 2 is valid JSON",
+      "passed": true,
+      "message": "valid JSON response object",
+      "session": "metadata-commit",
+      "exchangeIndex": 2
+    },
+    {
+      "name": "metadata-commit response 3 is valid JSON",
+      "passed": true,
+      "message": "valid JSON response object",
+      "session": "metadata-commit",
+      "exchangeIndex": 3
+    },
+    {
+      "name": "define metadata closure fixture",
+      "passed": true,
+      "message": "Definitions parsed, type checked, and staged.",
+      "session": "metadata-commit",
+      "exchangeIndex": 0
+    },
+    {
+      "name": "commit selected target with test/example dependencies",
+      "passed": true,
+      "message": "3 attached test(s) passed; selected candidates committed.",
+      "session": "metadata-commit",
+      "exchangeIndex": 1
+    },
+    {
+      "name": "unrelated candidate remains staged",
+      "passed": true,
+      "message": "Description for unrelated-candidate.",
+      "session": "metadata-commit",
+      "exchangeIndex": 2
+    },
+    {
+      "name": "selected metadata closure excludes unrelated candidate words",
+      "passed": true,
+      "message": "observed status 'candidate'",
+      "session": "metadata-commit",
+      "exchangeIndex": 2
+    },
+    {
+      "name": "unrelated candidate tests remain in the staging session",
+      "passed": true,
+      "message": "1 attached test(s).",
+      "session": "metadata-commit",
+      "exchangeIndex": 3
+    },
+    {
+      "name": "unrelated staged test metadata was not discarded in memory",
+      "passed": true,
+      "message": "observed 1 attached test(s)",
+      "session": "metadata-commit",
+      "exchangeIndex": 3
+    },
+    {
+      "name": "metadata-reload process completed",
+      "passed": true,
+      "message": "exit=0, timeout=False, outputLimit=False, durationMs=322",
+      "session": "metadata-reload"
+    },
+    {
+      "name": "metadata-reload response count matches requests",
+      "passed": true,
+      "message": "received 8 response line(s) for 8 request(s)",
+      "session": "metadata-reload"
+    },
+    {
+      "name": "metadata-reload response 0 is valid JSON",
+      "passed": true,
+      "message": "valid JSON response object",
+      "session": "metadata-reload",
+      "exchangeIndex": 0
+    },
+    {
+      "name": "metadata-reload response 1 is valid JSON",
+      "passed": true,
+      "message": "valid JSON response object",
+      "session": "metadata-reload",
+      "exchangeIndex": 1
+    },
+    {
+      "name": "metadata-reload response 2 is valid JSON",
+      "passed": true,
+      "message": "valid JSON response object",
+      "session": "metadata-reload",
+      "exchangeIndex": 2
+    },
+    {
+      "name": "metadata-reload response 3 is valid JSON",
+      "passed": true,
+      "message": "valid JSON response object",
+      "session": "metadata-reload",
+      "exchangeIndex": 3
+    },
+    {
+      "name": "metadata-reload response 4 is valid JSON",
+      "passed": true,
+      "message": "valid JSON response object",
+      "session": "metadata-reload",
+      "exchangeIndex": 4
+    },
+    {
+      "name": "metadata-reload response 5 is valid JSON",
+      "passed": true,
+      "message": "valid JSON response object",
+      "session": "metadata-reload",
+      "exchangeIndex": 5
+    },
+    {
+      "name": "metadata-reload response 6 is valid JSON",
+      "passed": true,
+      "message": "valid JSON response object",
+      "session": "metadata-reload",
+      "exchangeIndex": 6
+    },
+    {
+      "name": "metadata-reload response 7 is valid JSON",
+      "passed": true,
+      "message": "valid JSON response object",
+      "session": "metadata-reload",
+      "exchangeIndex": 7
+    },
+    {
+      "name": "fresh process loads helper included by selected metadata closure",
+      "passed": true,
+      "message": "Description for candidate-helper.",
+      "session": "metadata-reload",
+      "exchangeIndex": 0
+    },
+    {
+      "name": "metadata test helper is durable",
+      "passed": true,
+      "message": "observed status 'persistent'",
+      "session": "metadata-reload",
+      "exchangeIndex": 0
+    },
+    {
+      "name": "fresh process loads helper included by selected example metadata",
+      "passed": true,
+      "message": "Description for candidate-example-helper.",
+      "session": "metadata-reload",
+      "exchangeIndex": 1
+    },
+    {
+      "name": "metadata example-only helper is durable",
+      "passed": true,
+      "message": "observed status 'persistent'",
+      "session": "metadata-reload",
+      "exchangeIndex": 1
+    },
+    {
+      "name": "fresh process retains selected target test metadata",
+      "passed": true,
+      "message": "1 attached test(s).",
+      "session": "metadata-reload",
+      "exchangeIndex": 2
+    },
+    {
+      "name": "target test survives reload",
+      "passed": true,
+      "message": "observed tests: helper-case",
+      "session": "metadata-reload",
+      "exchangeIndex": 2
+    },
+    {
+      "name": "fresh process runs selected target test",
+      "passed": true,
+      "message": "1/1 test(s) passed.",
+      "session": "metadata-reload",
+      "exchangeIndex": 3
+    },
+    {
+      "name": "target test passes after reload",
+      "passed": true,
+      "message": "observed 1 test result(s)",
+      "session": "metadata-reload",
+      "exchangeIndex": 3
+    },
+    {
+      "name": "fresh process runs example-only helper test",
+      "passed": true,
+      "message": "1/1 test(s) passed.",
+      "session": "metadata-reload",
+      "exchangeIndex": 4
+    },
+    {
+      "name": "example-only helper test passes after reload",
+      "passed": true,
+      "message": "observed 1 helper test result(s)",
+      "session": "metadata-reload",
+      "exchangeIndex": 4
+    },
+    {
+      "name": "fresh process retains selected target examples",
+      "passed": true,
+      "message": "1 example(s).",
+      "session": "metadata-reload",
+      "exchangeIndex": 5
+    },
+    {
+      "name": "target example survives reload",
+      "passed": true,
+      "message": "observed examples: helper-example",
+      "session": "metadata-reload",
+      "exchangeIndex": 5
+    },
+    {
+      "name": "unrelated candidate is absent from fresh committed projection",
+      "passed": true,
+      "message": "expected NAME_UNKNOWN_WORD; observed NAME_UNKNOWN_WORD",
+      "session": "metadata-reload",
+      "exchangeIndex": 6
+    },
+    {
+      "name": "inspect metadata closure storage status",
+      "passed": true,
+      "message": "Current durable storage authority and export status.",
+      "session": "metadata-reload",
+      "exchangeIndex": 7
+    },
+    {
+      "name": "metadata closure reloads manifest authority",
+      "passed": true,
+      "message": "authority=manifest, generation=1, exportWarning=",
+      "session": "metadata-reload",
+      "exchangeIndex": 7
+    },
+    {
+      "name": "metadata-replacement-commit process completed",
+      "passed": true,
+      "message": "exit=0, timeout=False, outputLimit=False, durationMs=387",
+      "session": "metadata-replacement-commit"
+    },
+    {
+      "name": "metadata-replacement-commit response count matches requests",
+      "passed": true,
+      "message": "received 2 response line(s) for 2 request(s)",
+      "session": "metadata-replacement-commit"
+    },
+    {
+      "name": "metadata-replacement-commit response 0 is valid JSON",
+      "passed": true,
+      "message": "valid JSON response object",
+      "session": "metadata-replacement-commit",
+      "exchangeIndex": 0
+    },
+    {
+      "name": "metadata-replacement-commit response 1 is valid JSON",
+      "passed": true,
+      "message": "valid JSON response object",
+      "session": "metadata-replacement-commit",
+      "exchangeIndex": 1
+    },
+    {
+      "name": "stage helper replacement referenced only by target metadata",
+      "passed": true,
+      "message": "Definitions parsed, type checked, and staged.",
+      "session": "metadata-replacement-commit",
+      "exchangeIndex": 0
+    },
+    {
+      "name": "commit metadata-selected helper replacement",
+      "passed": true,
+      "message": "2 attached test(s) passed; selected candidates committed.",
+      "session": "metadata-replacement-commit",
+      "exchangeIndex": 1
+    },
+    {
+      "name": "metadata-replacement-reload process completed",
+      "passed": true,
+      "message": "exit=0, timeout=False, outputLimit=False, durationMs=325",
+      "session": "metadata-replacement-reload"
+    },
+    {
+      "name": "metadata-replacement-reload response count matches requests",
+      "passed": true,
+      "message": "received 6 response line(s) for 6 request(s)",
+      "session": "metadata-replacement-reload"
+    },
+    {
+      "name": "metadata-replacement-reload response 0 is valid JSON",
+      "passed": true,
+      "message": "valid JSON response object",
+      "session": "metadata-replacement-reload",
+      "exchangeIndex": 0
+    },
+    {
+      "name": "metadata-replacement-reload response 1 is valid JSON",
+      "passed": true,
+      "message": "valid JSON response object",
+      "session": "metadata-replacement-reload",
+      "exchangeIndex": 1
+    },
+    {
+      "name": "metadata-replacement-reload response 2 is valid JSON",
+      "passed": true,
+      "message": "valid JSON response object",
+      "session": "metadata-replacement-reload",
+      "exchangeIndex": 2
+    },
+    {
+      "name": "metadata-replacement-reload response 3 is valid JSON",
+      "passed": true,
+      "message": "valid JSON response object",
+      "session": "metadata-replacement-reload",
+      "exchangeIndex": 3
+    },
+    {
+      "name": "metadata-replacement-reload response 4 is valid JSON",
+      "passed": true,
+      "message": "valid JSON response object",
+      "session": "metadata-replacement-reload",
+      "exchangeIndex": 4
+    },
+    {
+      "name": "metadata-replacement-reload response 5 is valid JSON",
+      "passed": true,
+      "message": "valid JSON response object",
+      "session": "metadata-replacement-reload",
+      "exchangeIndex": 5
+    },
+    {
+      "name": "fresh process loads staged helper replacement",
+      "passed": true,
+      "message": "Description for candidate-helper.",
+      "session": "metadata-replacement-reload",
+      "exchangeIndex": 0
+    },
+    {
+      "name": "selected helper replacement is exactly revision two",
+      "passed": true,
+      "message": "status=persistent, revision=2",
+      "session": "metadata-replacement-reload",
+      "exchangeIndex": 0
+    },
+    {
+      "name": "fresh process loads immutable helper history",
+      "passed": true,
+      "message": "2 durable revision(s) for candidate-helper.",
+      "session": "metadata-replacement-reload",
+      "exchangeIndex": 1
+    },
+    {
+      "name": "helper revision two is present in durable history",
+      "passed": true,
+      "message": "history revisions: 1, 2",
+      "session": "metadata-replacement-reload",
+      "exchangeIndex": 1
+    },
+    {
+      "name": "fresh process evaluates target using the replacement helper",
+      "passed": true,
+      "message": "44",
+      "session": "metadata-replacement-reload",
+      "exchangeIndex": 2
+    },
+    {
+      "name": "exact staged helper behavior survives reload",
+      "passed": true,
+      "message": "observed stack: 44",
+      "session": "metadata-replacement-reload",
+      "exchangeIndex": 2
+    },
+    {
+      "name": "fresh process runs target test after replacement",
+      "passed": true,
+      "message": "1/1 test(s) passed.",
+      "session": "metadata-replacement-reload",
+      "exchangeIndex": 3
+    },
+    {
+      "name": "updated target test passes on durable helper revision",
+      "passed": true,
+      "message": "observed 1 target test result(s)",
+      "session": "metadata-replacement-reload",
+      "exchangeIndex": 3
+    },
+    {
+      "name": "fresh process runs helper test after replacement",
+      "passed": true,
+      "message": "1/1 test(s) passed.",
+      "session": "metadata-replacement-reload",
+      "exchangeIndex": 4
+    },
+    {
+      "name": "updated helper test passes after replacement",
+      "passed": true,
+      "message": "observed 1 helper test result(s)",
+      "session": "metadata-replacement-reload",
+      "exchangeIndex": 4
+    },
+    {
+      "name": "fresh process retains selected example after replacement",
+      "passed": true,
+      "message": "1 example(s).",
+      "session": "metadata-replacement-reload",
+      "exchangeIndex": 5
+    },
+    {
+      "name": "replacement example metadata survives reload",
+      "passed": true,
+      "message": "observed examples: helper-example",
+      "session": "metadata-replacement-reload",
+      "exchangeIndex": 5
+    },
+    {
+      "name": "library-commit process completed",
+      "passed": true,
+      "message": "exit=0, timeout=False, outputLimit=False, durationMs=376",
+      "session": "library-commit"
+    },
+    {
+      "name": "library-commit response count matches requests",
+      "passed": true,
+      "message": "received 2 response line(s) for 2 request(s)",
+      "session": "library-commit"
+    },
+    {
+      "name": "library-commit response 0 is valid JSON",
+      "passed": true,
+      "message": "valid JSON response object",
+      "session": "library-commit",
+      "exchangeIndex": 0
+    },
+    {
+      "name": "library-commit response 1 is valid JSON",
+      "passed": true,
+      "message": "valid JSON response object",
+      "session": "library-commit",
+      "exchangeIndex": 1
+    },
+    {
+      "name": "define complete-coverage library fixture",
+      "passed": true,
+      "message": "Definitions parsed, type checked, and staged.",
+      "session": "library-commit",
+      "exchangeIndex": 0
+    },
+    {
+      "name": "commit fully covered library word",
+      "passed": true,
+      "message": "2 attached test(s) passed; selected candidates committed.",
+      "session": "library-commit",
+      "exchangeIndex": 1
+    },
+    {
+      "name": "library-reload process completed",
+      "passed": true,
+      "message": "exit=0, timeout=False, outputLimit=False, durationMs=325",
+      "session": "library-reload"
+    },
+    {
+      "name": "library-reload response count matches requests",
+      "passed": true,
+      "message": "received 3 response line(s) for 3 request(s)",
+      "session": "library-reload"
+    },
+    {
+      "name": "library-reload response 0 is valid JSON",
+      "passed": true,
+      "message": "valid JSON response object",
+      "session": "library-reload",
+      "exchangeIndex": 0
+    },
+    {
+      "name": "library-reload response 1 is valid JSON",
+      "passed": true,
+      "message": "valid JSON response object",
+      "session": "library-reload",
+      "exchangeIndex": 1
+    },
+    {
+      "name": "library-reload response 2 is valid JSON",
+      "passed": true,
+      "message": "valid JSON response object",
+      "session": "library-reload",
+      "exchangeIndex": 2
+    },
+    {
+      "name": "fresh process runs library tests",
+      "passed": true,
+      "message": "2/2 test(s) passed.",
+      "session": "library-reload",
+      "exchangeIndex": 0
+    },
+    {
+      "name": "both library branch tests survive and pass",
+      "passed": true,
+      "message": "observed 2 test result(s)",
+      "session": "library-reload",
+      "exchangeIndex": 0
+    },
+    {
+      "name": "fresh process describes library coverage",
+      "passed": true,
+      "message": "Description for covered-choice.",
+      "session": "library-reload",
+      "exchangeIndex": 1
+    },
+    {
+      "name": "library own-body coverage remains complete after reload",
+      "passed": true,
+      "message": "maturity=library, instructions=3/3, branches=2/2",
+      "session": "library-reload",
+      "exchangeIndex": 1
+    },
+    {
+      "name": "fresh process lists attached library tests",
+      "passed": true,
+      "message": "2 attached test(s).",
+      "session": "library-reload",
+      "exchangeIndex": 2
+    },
+    {
+      "name": "library test metadata survives reload",
+      "passed": true,
+      "message": "observed tests: false, true",
+      "session": "library-reload",
+      "exchangeIndex": 2
+    },
+    {
+      "name": "temporary-metadata-rejection process completed",
+      "passed": true,
+      "message": "exit=0, timeout=False, outputLimit=False, durationMs=391",
+      "session": "temporary-metadata-rejection"
+    },
+    {
+      "name": "temporary-metadata-rejection response count matches requests",
+      "passed": true,
+      "message": "received 4 response line(s) for 4 request(s)",
+      "session": "temporary-metadata-rejection"
+    },
+    {
+      "name": "temporary-metadata-rejection response 0 is valid JSON",
+      "passed": true,
+      "message": "valid JSON response object",
+      "session": "temporary-metadata-rejection",
+      "exchangeIndex": 0
+    },
+    {
+      "name": "temporary-metadata-rejection response 1 is valid JSON",
+      "passed": true,
+      "message": "valid JSON response object",
+      "session": "temporary-metadata-rejection",
+      "exchangeIndex": 1
+    },
+    {
+      "name": "temporary-metadata-rejection response 2 is valid JSON",
+      "passed": true,
+      "message": "valid JSON response object",
+      "session": "temporary-metadata-rejection",
+      "exchangeIndex": 2
+    },
+    {
+      "name": "temporary-metadata-rejection response 3 is valid JSON",
+      "passed": true,
+      "message": "valid JSON response object",
+      "session": "temporary-metadata-rejection",
+      "exchangeIndex": 3
+    },
+    {
+      "name": "define temporary metadata helper",
+      "passed": true,
+      "message": "Definitions parsed, type checked, and staged.",
+      "session": "temporary-metadata-rejection",
+      "exchangeIndex": 0
+    },
+    {
+      "name": "define target with temporary metadata reference",
+      "passed": true,
+      "message": "Definitions parsed, type checked, and staged.",
+      "session": "temporary-metadata-rejection",
+      "exchangeIndex": 1
+    },
+    {
+      "name": "reject temporary test dependency before publication",
+      "passed": true,
+      "message": "expected COMMIT_TEMPORARY_TEST_DEPENDENCY; observed COMMIT_TEMPORARY_TEST_DEPENDENCY",
+      "session": "temporary-metadata-rejection",
+      "exchangeIndex": 2
+    },
+    {
+      "name": "temporary dependency error identifies helper",
+      "passed": true,
+      "message": "reported dependencies: temporary-test-helper",
+      "session": "temporary-metadata-rejection",
+      "exchangeIndex": 2
+    },
+    {
+      "name": "inspect storage after rejected temporary commit",
+      "passed": true,
+      "message": "Current durable storage authority and export status.",
+      "session": "temporary-metadata-rejection",
+      "exchangeIndex": 3
+    },
+    {
+      "name": "rejected commit leaves empty authority unchanged",
+      "passed": true,
+      "message": "authority=empty, generation=0",
+      "session": "temporary-metadata-rejection",
+      "exchangeIndex": 3
+    },
+    {
+      "name": "temporary-metadata-fresh-check process completed",
+      "passed": true,
+      "message": "exit=0, timeout=False, outputLimit=False, durationMs=299",
+      "session": "temporary-metadata-fresh-check"
+    },
+    {
+      "name": "temporary-metadata-fresh-check response count matches requests",
+      "passed": true,
+      "message": "received 2 response line(s) for 2 request(s)",
+      "session": "temporary-metadata-fresh-check"
+    },
+    {
+      "name": "temporary-metadata-fresh-check response 0 is valid JSON",
+      "passed": true,
+      "message": "valid JSON response object",
+      "session": "temporary-metadata-fresh-check",
+      "exchangeIndex": 0
+    },
+    {
+      "name": "temporary-metadata-fresh-check response 1 is valid JSON",
+      "passed": true,
+      "message": "valid JSON response object",
+      "session": "temporary-metadata-fresh-check",
+      "exchangeIndex": 1
+    },
+    {
+      "name": "fresh project remains unchanged after rejected commit",
+      "passed": true,
+      "message": "expected NAME_UNKNOWN_WORD; observed NAME_UNKNOWN_WORD",
+      "session": "temporary-metadata-fresh-check",
+      "exchangeIndex": 0
+    },
+    {
+      "name": "recheck fresh storage authority",
+      "passed": true,
+      "message": "Current durable storage authority and export status.",
+      "session": "temporary-metadata-fresh-check",
+      "exchangeIndex": 1
+    },
+    {
+      "name": "fresh project still has no published manifest",
+      "passed": true,
+      "message": "authority=empty, generation=0",
+      "session": "temporary-metadata-fresh-check",
+      "exchangeIndex": 1
+    }
+  ],
+  "failure": null,
+  "completedUtc": "2026-10-05T11:54:54.7765772+00:00"
+}

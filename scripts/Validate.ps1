@@ -49,6 +49,8 @@ try {
         $acceptanceProjects = [ordered]@{
             'harness-acceptance' = 'AgentLang.Harness.Tests'
             'business-acceptance' = 'AgentLang.Business.Tests'
+            'business-contracts-acceptance' = 'AgentLang.Business.Contracts.Tests'
+            'value-inspection-acceptance' = 'AgentLang.ValueInspection.Tests'
             'source-acceptance' = 'AgentLang.Source.Tests'
             'storage-acceptance' = 'AgentLang.Storage.Tests'
             'conventional-acceptance' = 'AgentLang.Conventional.Tests'

@@ -17,13 +17,14 @@ Two gaps constrain the fixture:
 - There is no fold. The existing callbacks take one collection element, so they cannot search for a caller-supplied ID, accumulate checked line totals, or replace a selected Store entry. `list.fold` is the smallest general solution. It should not add arbitrary callbacks or closures.
 - Record declarations currently provide nominal fields, while F# Store uses keyed maps and payment/email providers are callable interfaces. AgentLang should deliberately use lists and pure outcome data instead of simulating a hidden map or invoking .NET.
 
-The current `Compiler.primitives` list contains 49 trusted words, versus 44 in the baseline. Container constructors and branch/mapping forms are separately described syntax, not newly registered dictionary words. `list.fold` should likewise be documented as typed syntax with a closed static callback. Eight narrowly scoped helpers below would bring the dictionary primitive count to 57, inside the PRD's 50–100 range.
+The current `Compiler.primitives` list contains 49 trusted words, versus 44 in the baseline. Container constructors and branch/mapping forms are separately described syntax, not newly registered dictionary words. `list.fold` should likewise be documented as typed syntax with a closed static callback. Nine narrowly scoped helpers below would bring the dictionary primitive count to 58, inside the PRD's 50–100 range.
 
 ## Minimal trusted additions
 
 | Addition | Proposed signature | Purpose and boundary |
 | --- | --- | --- |
-| `string.guid-canonical?` | `String -> Bool` | Require one canonical lower-case GUID `D` representation, so equal IDs have equal stored text. The current F# parser accepts broader `Guid.TryParse` forms; narrow the comparison contract or design a normalizing constructor before claiming parity. |
+| `string.guid-canonical?` | `String -> Bool` | Validate canonical lower-case GUID `D` storage text for nominal ID constructors. |
+| `string.guid-normalize` | `String -> Result<String, String>` | Accept the reference's valid `Guid.TryParse` input forms and return lower-case `D` storage text before nominal construction. Do not narrow the accepted fixture inputs to claim parity. |
 | `string.email-address-valid?` | `String -> Bool` | Apply the exact documented ASCII address policy from `BUSINESS.md`; keep it pure and bounded to the existing 254-character limit. The current demo's looser `email.valid?` word is not equivalent. |
 | `int.add-checked` | `Int Int -> Result<Int, String>` | Surface Int64 overflow as a value so a domain word can return the same `MONEY_OVERFLOW` code instead of leaking a runtime diagnostic. |
 | `int.multiply-checked` | `Int Int -> Result<Int, String>` | Checked line-price times quantity with no Float conversion. |
@@ -32,7 +33,7 @@ The current `Compiler.primitives` list contains 49 trusted words, versus 44 in t
 | `instant.before?` | `String String -> Bool` | Compare the normalized UTC instants, including equality boundaries used by cancellation and renewal tasks. |
 | `instant.add-days` | `String Int -> Result<String, String>` | Support deterministic expiry windows and reminder tasks with checked date-range errors. |
 
-These eight helpers are candidates, not approved host API. Before adding them, add direct Runtime tests for null, malformed, boundary, overflow, equality, offsets, and UTC normalization. If the team narrows the reference contracts instead, update the F# fixture and its tests first and record the narrower accepted formats. Do not replace the current email or instant contracts silently.
+These nine helpers are candidates, not implemented host API. Before adding them, add direct Runtime tests for null, malformed, boundary, overflow, equality, offsets, and UTC normalization. Preserve the immutable reference contracts and normalize valid alternate input forms at the explicit constructor boundary. Do not replace the current GUID, email, or instant contracts silently.
 
 `int.add-checked` and `int.multiply-checked` return a typed Result with an error code string. User words can map that low-level error to `BusinessError` using `match-result`; the primitives contain no billing rule. Generic Result support already exists. Avoid a primitive such as `invoice.total`, `customer.premium?`, `subscription.renewable?`, or a general .NET/regex invocation.
 

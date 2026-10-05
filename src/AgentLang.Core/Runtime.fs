@@ -24,10 +24,21 @@ module Runtime =
           History: Map<string, WordDefinition list>
           Replacements: Map<string, ReplacementBackup> }
 
+    /// One executable view of one immutable dictionary projection. Detached
+    /// bodies in the snapshot are verified against this exact program handle.
+    type private RuntimeSnapshot =
+        { State: DictionaryState
+          Words: Map<string, WordEntry>
+          Context: Compiler.IrLoweringContext
+          Program: VerifiedIrProgram
+          TestBodies: Map<string, VerifiedIrBody>
+          ExampleBodies: Map<string, VerifiedIrBody> }
+
     type private TaskSession =
         { Id: string
           Goal: string
           Snapshot: DictionaryState
+          ExecutableSnapshot: RuntimeSnapshot
           StorageSnapshot: StoreSnapshot option
           ManifestSnapshot: ProjectManifest option
           ManifestHashSnapshot: string option
@@ -40,7 +51,8 @@ module Runtime =
           mutable TestsRun: int
           mutable TestsFailed: int
           mutable EffectCounts: Map<string, int>
-          mutable Errors: string list }
+          mutable Errors: string list
+          mutable LogWarning: StorageError option }
 
     type private TestCaseResult =
         { Name: string
@@ -163,7 +175,6 @@ module Runtime =
         let mutable currentManifestHash: string option = None
         let mutable lastExportWarning: StorageError option = None
         let mutable fixedClock = defaultArg clockValue "2000-01-01T00:00:00Z"
-        let maxCollectionLength = 10000
         let syntaxDescriptors =
             [ { Name = "list.empty"; Syntax = "list.empty<T>"; Inputs = []; Outputs = [ "List<T>" ]; TypeParameters = [ "T" ]; Effects = []; EffectRule = "none"; Documentation = "Constructs an empty List<T>. T must be a declared closed type."; Coverage = [] }
               { Name = "list.singleton"; Syntax = "T list.singleton<T>"; Inputs = [ "T" ]; Outputs = [ "List<T>" ]; TypeParameters = [ "T" ]; Effects = []; EffectRule = "none"; Documentation = "Constructs a one-element List<T> after checking the payload against the explicit T."; Coverage = [] }
@@ -200,12 +211,18 @@ module Runtime =
               Examples = Map.empty
               History = Map.empty
               Replacements = Map.empty }
+        let mutable activeSnapshot: RuntimeSnapshot option = None
+
+        let currentSnapshot () =
+            activeSnapshot
+            |> Option.defaultWith (fun () -> error "RUNTIME_SNAPSHOT_UNAVAILABLE" "No verified executable snapshot is active." None None [] [])
+
         let mutable virtualFiles = Map.empty
         let mutable activeTask: TaskSession option = None
         let mutable previousTaskLog: JsonObject option = None
         let mutable taskCounter = 0
 
-        let userWords state = state.Words |> Map.filter (fun _ value -> value.Builtin.IsNone)
+        let userWords (state: DictionaryState) = state.Words |> Map.filter (fun _ value -> value.Builtin.IsNone)
         let recordDefinitions (state: DictionaryState) = state.Records |> Map.map (fun _ value -> value.Definition)
         let scalarDefinitions (state: DictionaryState) = state.Scalars |> Map.map (fun _ value -> value.Definition)
         let knownTypes (state: DictionaryState) =
@@ -295,70 +312,10 @@ module Runtime =
 
         let instructionId (span: SourceSpan) = $"{span.File}:{span.Line}:{span.Column}"
 
-        let rec collectInstructionSites (body: Expr list) =
-            let own =
-                body
-                |> List.fold (fun sites expression ->
-                    match expression with
-                    | Push(_, span) | Call(_, span) | ConstructContainer(_, _, span)
-                    | MapList(_, span) | FilterList(_, span) | EachList(_, span)
-                    | Let(_, span) | Load(_, span) | If(_, _, span)
-                    | MatchOption(_, _, _, span) | MatchResult(_, _, _, _, span) -> Set.add (instructionId span) sites) Set.empty
-            body
-            |> List.fold (fun sites expression ->
-                match expression with
-                | If(thenBranch, elseBranch, _) | MatchOption(_, thenBranch, elseBranch, _) ->
-                    Set.union sites (Set.union (collectInstructionSites thenBranch) (collectInstructionSites elseBranch))
-                | MatchResult(_, _, okBranch, errorBranch, _) ->
-                    Set.union sites (Set.union (collectInstructionSites okBranch) (collectInstructionSites errorBranch))
-                | _ -> sites) own
-
-        let rec collectBranchSites (body: Expr list) =
-            body
-            |> List.fold (fun sites expression ->
-                match expression with
-                | If(thenBranch, elseBranch, span) ->
-                    let site = instructionId span
-                    let withBranches = Set.add (site + ":true") (Set.add (site + ":false") sites)
-                    Set.union withBranches (Set.union (collectBranchSites thenBranch) (collectBranchSites elseBranch))
-                | MatchOption(_, someBranch, noneBranch, span) ->
-                    let site = instructionId span
-                    let withCases = Set.add (site + ":some") (Set.add (site + ":none") sites)
-                    Set.union withCases (Set.union (collectBranchSites someBranch) (collectBranchSites noneBranch))
-                | MatchResult(_, _, okBranch, errorBranch, span) ->
-                    let site = instructionId span
-                    let withCases = Set.add (site + ":ok") (Set.add (site + ":error") sites)
-                    Set.union withCases (Set.union (collectBranchSites okBranch) (collectBranchSites errorBranch))
-                | MapList(_, span) | EachList(_, span) ->
-                    let site = instructionId span
-                    Set.add (site + ":empty") (Set.add (site + ":nonempty") sites)
-                | FilterList(_, span) ->
-                    let site = instructionId span
-                    Set.add (site + ":drop") (Set.add (site + ":keep") (Set.add (site + ":empty") (Set.add (site + ":nonempty") sites)))
-                | _ -> sites) Set.empty
-
         let mutateEffect (trace: Trace) name =
             trace.Effects <- Map.change name (fun count -> Some(defaultArg count 0 + 1)) trace.Effects
             // Test effects run against isolated virtual providers and are not task effects.
             if not trace.Isolated then log "effect" name
-
-        let requireCapabilities (trace: Trace) (entry: WordEntry) =
-            let missing = Set.difference entry.Definition.Effects capabilities
-            if not trace.Isolated && not (Set.isEmpty missing) then
-                let missingText = String.concat ", " missing
-                error "CAPABILITY_DENIED" $"Execution requires capabilities not granted by the host: {missingText}." (Some entry.Definition.Name) (Some entry.Definition.Span) (entry.Definition.Effects |> Set.toList) (capabilities |> Set.toList)
-
-        let popArguments name (inputs: LangType list) (stack: Value list) =
-            if stack.Length < inputs.Length then error "RUNTIME_STACK_UNDERFLOW" $"'{name}' requires {inputs.Length} value(s)." (Some name) None (inputs |> List.map Types.format) (stack |> List.map (Types.ofValue >> Types.format))
-            let prefix = stack |> List.take (stack.Length - inputs.Length)
-            let args = stack |> List.skip (stack.Length - inputs.Length)
-            prefix, args
-
-        let expectNumbers name args =
-            match args with
-            | [ IntValue left; IntValue right ] -> Choice1Of2(left, right)
-            | [ FloatValue left; FloatValue right ] -> Choice2Of2(left, right)
-            | _ -> error "RUNTIME_INTERNAL_TYPE" $"'{name}' received a value outside its checked signature." (Some name) None [] (args |> List.map (Types.ofValue >> Types.format))
 
         let countInstruction trace currentWord span =
             trace.Steps <- trace.Steps + 1
@@ -369,241 +326,6 @@ module Runtime =
             if trace.CoverageTarget = Some currentWord then
                 trace.CoverageBranches <- Set.add (instructionId span + ":" + outcome) trace.CoverageBranches
 
-        let checkedIntOperation (name: string) (span: SourceSpan) (operation: int64 -> int64 -> int64) (left: int64) (right: int64) =
-            try IntValue(operation left right)
-            with :? OverflowException -> error "RUNTIME_OVERFLOW" $"'{name}' overflowed its Int64 result." (Some name) (Some span) [] [ string left; string right ]
-
-        let rec invoke (state: DictionaryState) (words: Map<string, WordEntry>) (trace: Trace) (depth: int) (entry: WordEntry) (arguments: Value list) =
-            if depth > 64 then error "RUNTIME_CALL_DEPTH" "Execution exceeded the 64 word call-depth limit." (Some entry.Definition.Name) (Some entry.Definition.Span) [] []
-            requireCapabilities trace entry
-            log "use" entry.Definition.Name
-            match entry.Builtin with
-            | None ->
-                let stack, _ = runBody state words trace (depth + 1) entry.Definition.Name arguments Map.empty entry.Definition.Body
-                stack
-            | Some(BuiltinOp name) ->
-                match name, arguments with
-                | "dup", [ value ] -> [ value; value ]
-                | "drop", [ _ ] -> []
-                | "swap", [ first; second ] -> [ second; first ]
-                | _ ->
-                    let result =
-                        match name, arguments with
-                        | "add", [ IntValue a; IntValue b ] -> checkedIntOperation name entry.Definition.Span (Checked.(+)) a b
-                        | "subtract", [ IntValue a; IntValue b ] -> checkedIntOperation name entry.Definition.Span (Checked.(-)) a b
-                        | "multiply", [ IntValue a; IntValue b ] -> checkedIntOperation name entry.Definition.Span (Checked.(*)) a b
-                        | "divide", [ IntValue _; IntValue 0L ] -> error "RUNTIME_DIVIDE_BY_ZERO" "Integer division by zero." (Some name) None [] []
-                        | "divide", [ IntValue a; IntValue b ] when a = Int64.MinValue && b = -1L -> error "RUNTIME_OVERFLOW" "Integer division overflow." (Some name) None [] []
-                        | "divide", [ IntValue a; IntValue b ] -> IntValue(a / b)
-                        | "float.add", [ FloatValue a; FloatValue b ] -> FloatValue(a + b)
-                        | "float.subtract", [ FloatValue a; FloatValue b ] -> FloatValue(a - b)
-                        | "float.multiply", [ FloatValue a; FloatValue b ] -> FloatValue(a * b)
-                        | "float.divide", [ FloatValue _; FloatValue b ] when b = 0.0 -> error "RUNTIME_DIVIDE_BY_ZERO" "Float division by zero." (Some name) None [] []
-                        | "float.divide", [ FloatValue a; FloatValue b ] -> FloatValue(a / b)
-                        | "int.less-than", [ IntValue a; IntValue b ] -> BoolValue(a < b)
-                        | "int.greater-than", [ IntValue a; IntValue b ] -> BoolValue(a > b)
-                        | "int.less-or-equal", [ IntValue a; IntValue b ] -> BoolValue(a <= b)
-                        | "int.greater-or-equal", [ IntValue a; IntValue b ] -> BoolValue(a >= b)
-                        | "float.less-than", [ FloatValue a; FloatValue b ] -> BoolValue(a < b)
-                        | "float.greater-than", [ FloatValue a; FloatValue b ] -> BoolValue(a > b)
-                        | "float.less-or-equal", [ FloatValue a; FloatValue b ] -> BoolValue(a <= b)
-                        | "float.greater-or-equal", [ FloatValue a; FloatValue b ] -> BoolValue(a >= b)
-                        | "equals", [ a; b ] -> BoolValue(a = b)
-                        | "bool.and", [ BoolValue a; BoolValue b ] -> BoolValue(a && b)
-                        | "bool.or", [ BoolValue a; BoolValue b ] -> BoolValue(a || b)
-                        | "bool.not", [ BoolValue value ] -> BoolValue(not value)
-                        | "string.concat", [ StringValue a; StringValue b ] -> StringValue(a + b)
-                        | "string.contains", [ StringValue value; StringValue sub ] -> BoolValue(value.Contains(sub, StringComparison.Ordinal))
-                        | "string.starts-with", [ StringValue value; StringValue sub ] -> BoolValue(value.StartsWith(sub, StringComparison.Ordinal))
-                        | "string.ends-with", [ StringValue value; StringValue sub ] -> BoolValue(value.EndsWith(sub, StringComparison.Ordinal))
-                        | "string.length", [ StringValue value ] -> IntValue(int64 value.Length)
-                        | "string.trim", [ StringValue value ] -> StringValue(value.Trim())
-                        | "string.to-lower", [ StringValue value ] -> StringValue(value.ToLowerInvariant())
-                        | "string.to-upper", [ StringValue value ] -> StringValue(value.ToUpperInvariant())
-                        | "int.abs", [ IntValue Int64.MinValue ] -> error "RUNTIME_OVERFLOW" "Absolute value of Int64.MinValue overflows." (Some name) None [] []
-                        | "int.abs", [ IntValue value ] -> IntValue(abs value)
-                        | "int.min", [ IntValue a; IntValue b ] -> IntValue(min a b)
-                        | "int.max", [ IntValue a; IntValue b ] -> IntValue(max a b)
-                        | "int.to-float", [ IntValue value ] -> FloatValue(float value)
-                        | "float.to-int", [ FloatValue value ] when not (Double.IsFinite value) || value >= 9223372036854775808.0 || value < -9223372036854775808.0 -> error "RUNTIME_RANGE" "Float value is outside the Int64 range." (Some name) None [ "finite Int64 range" ] [ string value ]
-                        | "float.to-int", [ FloatValue value ] -> IntValue(int64 value)
-                        | "float.round", [ FloatValue value ] when not (Double.IsFinite value) -> error "RUNTIME_RANGE" "Float value is outside the Int64 range." (Some name) None [ "finite Int64 range" ] [ string value ]
-                        | "float.round", [ FloatValue value ] ->
-                            let rounded = Math.Round(value, MidpointRounding.AwayFromZero)
-                            if rounded >= 9223372036854775808.0 || rounded < -9223372036854775808.0 then error "RUNTIME_RANGE" "Rounded Float value is outside the Int64 range." (Some name) None [ "finite Int64 range" ] [ string value ]
-                            IntValue(int64 rounded)
-                        | "int.to-string", [ IntValue value ] -> StringValue(string value)
-                        | "float.to-string", [ FloatValue value ] -> StringValue(value.ToString("G", CultureInfo.InvariantCulture))
-                        | "list.count", [ ListValue(_, values) ] -> IntValue(int64 values.Length)
-                        | "list.append", [ ListValue(itemType, values); _ ] when values.Length >= maxCollectionLength -> error "RUNTIME_VALUE_LIMIT" $"Lists cannot contain more than {maxCollectionLength} values." (Some name) None [ string maxCollectionLength ] [ string values.Length ]
-                        | "list.append", [ ListValue(itemType, values); value ] when Types.ofValue value = itemType -> ListValue(itemType, values @ [ value ])
-                        | "list.concat", [ ListValue(itemType, left); ListValue(otherType, right) ] when int64 left.Length + int64 right.Length > int64 maxCollectionLength -> error "RUNTIME_VALUE_LIMIT" $"Lists cannot contain more than {maxCollectionLength} values." (Some name) None [ string maxCollectionLength ] [ string (left.Length + right.Length) ]
-                        | "list.concat", [ ListValue(itemType, left); ListValue(otherType, right) ] when itemType = otherType -> ListValue(itemType, left @ right)
-                        | "list.get", [ ListValue(itemType, values); IntValue index ] when index >= 0L && index < int64 values.Length -> OptionValue(itemType, Some values[int index])
-                        | "list.get", [ ListValue(itemType, _); IntValue _ ] -> OptionValue(itemType, None)
-                        | "list.is-empty?", [ ListValue(_, values) ] -> BoolValue(List.isEmpty values)
-                        | "file.read", [ StringValue path ] ->
-                            mutateEffect trace "fs.read"
-                            match trace.FileSystem.TryFind path with
-                            | Some contents -> StringValue contents
-                            | None -> error "EFFECT_FILE_NOT_FOUND" $"Virtual file '{path}' does not exist." (Some name) None [] [ path ]
-                        | "file.exists?", [ StringValue path ] ->
-                            mutateEffect trace "fs.read"
-                            BoolValue(trace.FileSystem.ContainsKey path)
-                        | "file.write", [ StringValue path; StringValue contents ] ->
-                            mutateEffect trace "fs.write"
-                            trace.FileSystem <- Map.add path contents trace.FileSystem
-                            UnitValue
-                        | "clock.now", [] -> mutateEffect trace "clock.read"; StringValue fixedClock
-                        | "console.write", [ StringValue contents ] -> mutateEffect trace "console.write"; trace.Console <- trace.Console @ [ contents ]; UnitValue
-                        | _ -> error "RUNTIME_INTERNAL_TYPE" $"Builtin '{name}' received a value outside its checked signature." (Some name) None [] (arguments |> List.map (Types.ofValue >> Types.format))
-                    match result with
-                    | UnitValue -> [ UnitValue ]
-                    | FloatValue value when not (Double.IsFinite value) -> error "RUNTIME_NONFINITE_FLOAT" "Float operation produced a nonfinite value." (Some name) None [ "finite Float" ] [ string value ]
-                    | value -> [ value ]
-            | Some(RecordConstructor typeName) ->
-                let definition = state.Records[typeName].Definition
-                let values = List.zip definition.Fields arguments |> List.map (fun (field, value) -> field.Name, value) |> Map.ofList
-                [ RecordValue(typeName, values) ]
-            | Some(RecordAccessor(typeName, fieldName)) ->
-                match arguments with
-                | [ RecordValue(actualType, fields) ] when actualType = typeName -> [ fields[fieldName] ]
-                | _ -> error "RUNTIME_INTERNAL_TYPE" "Record accessor received an invalid record value." (Some entry.Definition.Name) None [ typeName ] (arguments |> List.map (Types.ofValue >> Types.format))
-            | Some(ScalarConstructor typeName) ->
-                let scalar = state.Scalars[typeName].Definition
-                match arguments with
-                | [ baseValue ] ->
-                    match scalar.Validator with
-                    | None -> [ NamedValue(typeName, baseValue) ]
-                    | Some validator ->
-                        let validatorEntry = words[validator]
-                        let checkedResult = invoke state words trace (depth + 1) validatorEntry [ baseValue ]
-                        match checkedResult with
-                        | [ BoolValue true ] -> [ NamedValue(typeName, baseValue) ]
-                        | [ BoolValue false ] -> error "REFINEMENT_FAILED" $"Value does not satisfy {typeName}'s refinement validator." (Some entry.Definition.Name) (Some entry.Definition.Span) [ "validator returns true" ] [ "false" ]
-                        | _ -> error "RUNTIME_VALIDATOR_RESULT" "Scalar validator did not return one Bool." (Some validator) None [ "Bool" ] (checkedResult |> List.map (Types.ofValue >> Types.format))
-                | _ -> error "RUNTIME_INTERNAL_TYPE" "Scalar constructor received an invalid value." (Some entry.Definition.Name) None [ Types.format scalar.BaseType ] (arguments |> List.map (Types.ofValue >> Types.format))
-            | Some(ScalarAccessor typeName) ->
-                match arguments with
-                | [ NamedValue(actual, value) ] when actual = typeName -> [ value ]
-                | _ -> error "RUNTIME_INTERNAL_TYPE" "Scalar unwrapping received an invalid nominal value." (Some entry.Definition.Name) None [ typeName ] (arguments |> List.map (Types.ofValue >> Types.format))
-
-        and runBody (state: DictionaryState) (words: Map<string, WordEntry>) (trace: Trace) (depth: int) (currentWord: string) (initialStack: Value list) (initialLocals: Map<string, Value>) (body: Expr list) =
-            let mutable stack = initialStack
-            let mutable locals = initialLocals
-            for expression in body do
-                let sourceSpan =
-                    match expression with
-                    | Push(_, span) | Call(_, span) | ConstructContainer(_, _, span)
-                    | MapList(_, span) | FilterList(_, span) | EachList(_, span)
-                    | Let(_, span) | Load(_, span) | If(_, _, span)
-                    | MatchOption(_, _, _, span) | MatchResult(_, _, _, _, span) -> span
-                countInstruction trace currentWord sourceSpan
-                match expression with
-                | Push(literal, _) -> stack <- stack @ [ Types.literalValue literal ]
-                | ConstructContainer(kind, types, span) ->
-                    let push value = stack <- stack @ [ value ]
-                    let consume () =
-                        if List.isEmpty stack then error "RUNTIME_STACK_UNDERFLOW" "Typed container constructor requires one payload value." (Some currentWord) (Some span) [] []
-                        let value = List.last stack
-                        stack <- stack |> List.take (stack.Length - 1)
-                        value
-                    match kind with
-                    | ListEmpty -> push (ListValue(types.Head, []))
-                    | ListSingleton -> push (ListValue(types.Head, [ consume () ]))
-                    | OptionNone -> push (OptionValue(types.Head, None))
-                    | OptionSome -> push (OptionValue(types.Head, Some(consume ())))
-                    | ResultOk -> push (ResultValue(types[0], types[1], Ok(consume ())))
-                    | ResultError -> push (ResultValue(types[0], types[1], Error(consume ())))
-                | Load(name, span) ->
-                    match locals.TryFind name with
-                    | Some value -> stack <- stack @ [ value ]
-                    | None -> error "RUNTIME_UNKNOWN_LOCAL" $"Local '${name}' has not been bound." (Some currentWord) (Some span) [] [ name ]
-                | Let(name, span) ->
-                    if List.isEmpty stack then error "RUNTIME_STACK_UNDERFLOW" $"Binding '{name}' requires a stack value." (Some currentWord) (Some span) [ "value" ] []
-                    locals <- Map.add name (List.last stack) locals
-                    stack <- stack |> List.take (stack.Length - 1)
-                | Call(name, span) ->
-                    match words.TryFind name with
-                    | None -> error "RUNTIME_UNKNOWN_WORD" $"Word '{name}' is not defined." (Some currentWord) (Some span) [] [ name ]
-                    | Some target ->
-                        let prefix, arguments = popArguments name target.Definition.Inputs stack
-                        let result = invoke state words trace depth target arguments
-                        stack <- prefix @ result
-                | (MapList(targetName, span) | FilterList(targetName, span) | EachList(targetName, span)) as operation ->
-                    if List.isEmpty stack then error "RUNTIME_STACK_UNDERFLOW" "List higher-order operation requires a list." (Some currentWord) (Some span) [] []
-                    let itemType, values, prefix =
-                        match List.last stack with
-                        | ListValue(itemType, values) -> itemType, values, stack |> List.take (stack.Length - 1)
-                        | actual -> error "RUNTIME_INTERNAL_TYPE" "List operation received a non-list after type checking." (Some currentWord) (Some span) [ "List<T>" ] [ Types.ofValue actual |> Types.format ]
-                    let callback =
-                        match words.TryFind targetName with
-                        | Some entry -> entry
-                        | None -> error "RUNTIME_UNKNOWN_WORD" $"List callback '{targetName}' is no longer defined." (Some currentWord) (Some span) [] [ targetName ]
-                    let operationName = match operation with MapList _ -> "list.map" | FilterList _ -> "list.filter" | _ -> "list.each"
-                    log "use" operationName
-                    countBranchOutcome trace currentWord span (if List.isEmpty values then "empty" else "nonempty")
-                    let outputs = ResizeArray<Value>()
-                    for value in values do
-                        // Charge each iteration against the same instruction budget as ordinary code.
-                        countInstruction trace currentWord span
-                        let result = invoke state words trace (depth + 1) callback [ value ]
-                        match operation, result with
-                        | MapList _, [ mapped ] -> outputs.Add mapped
-                        | FilterList _, [ BoolValue true ] -> outputs.Add value; countBranchOutcome trace currentWord span "keep"
-                        | FilterList _, [ BoolValue false ] -> countBranchOutcome trace currentWord span "drop"
-                        | EachList _, [ UnitValue ] -> ()
-                        | _ -> error "RUNTIME_INTERNAL_TYPE" $"List callback '{targetName}' returned values outside its checked signature." (Some currentWord) (Some span) [] (result |> List.map (Types.ofValue >> Types.format))
-                    match operation with
-                    | MapList _ ->
-                        let outputType = Compiler.listCallbackOutputType (knownTypes state) words targetName span itemType
-                        stack <- prefix @ [ ListValue(outputType, List.ofSeq outputs) ]
-                    | FilterList _ -> stack <- prefix @ [ ListValue(itemType, List.ofSeq outputs) ]
-                    | EachList _ -> stack <- prefix @ [ UnitValue ]
-                    | _ -> failwith "unreachable"
-                | If(thenBranch, elseBranch, span) ->
-                    match stack with
-                    | _ when not (List.isEmpty stack) && (match List.last stack with BoolValue _ -> true | _ -> false) ->
-                        let condition = match List.last stack with BoolValue value -> value | _ -> false
-                        stack <- stack |> List.take (stack.Length - 1)
-                        countBranchOutcome trace currentWord span (if condition then "true" else "false")
-                        let branch = if condition then thenBranch else elseBranch
-                        let branchStack, branchLocals = runBody state words trace depth currentWord stack locals branch
-                        stack <- branchStack
-                        locals <- branchLocals
-                    | _ -> error "RUNTIME_IF_REQUIRES_BOOL" "'if' requires a Bool at the top of the stack." (Some currentWord) (Some span) [ "Bool" ] (stack |> List.tryLast |> Option.map (Types.ofValue >> Types.format) |> Option.toList)
-                | MatchOption(someName, someBranch, noneBranch, span) ->
-                    if List.isEmpty stack then error "RUNTIME_STACK_UNDERFLOW" "match-option requires an Option<T>." (Some currentWord) (Some span) [] []
-                    let prefix = stack |> List.take (stack.Length - 1)
-                    match List.last stack with
-                    | OptionValue(_, Some value) ->
-                        countBranchOutcome trace currentWord span "some"
-                        let branchStack, branchLocals = runBody state words trace depth currentWord prefix (Map.add someName value locals) someBranch
-                        stack <- branchStack
-                        locals <- Map.remove someName branchLocals
-                    | OptionValue(_, None) ->
-                        countBranchOutcome trace currentWord span "none"
-                        let branchStack, branchLocals = runBody state words trace depth currentWord prefix locals noneBranch
-                        stack <- branchStack
-                        locals <- branchLocals
-                    | actual -> error "RUNTIME_INTERNAL_TYPE" "match-option received a non-option after type checking." (Some currentWord) (Some span) [ "Option<T>" ] [ Types.ofValue actual |> Types.format ]
-                | MatchResult(okName, errorName, okBranch, errorBranch, span) ->
-                    if List.isEmpty stack then error "RUNTIME_STACK_UNDERFLOW" "match-result requires a Result<T, E>." (Some currentWord) (Some span) [] []
-                    let prefix = stack |> List.take (stack.Length - 1)
-                    match List.last stack with
-                    | ResultValue(_, _, Ok value) ->
-                        countBranchOutcome trace currentWord span "ok"
-                        let branchStack, branchLocals = runBody state words trace depth currentWord prefix (Map.add okName value locals) okBranch
-                        stack <- branchStack
-                        locals <- Map.remove okName branchLocals
-                    | ResultValue(_, _, Error value) ->
-                        countBranchOutcome trace currentWord span "error"
-                        let branchStack, branchLocals = runBody state words trace depth currentWord prefix (Map.add errorName value locals) errorBranch
-                        stack <- branchStack
-                        locals <- Map.remove errorName branchLocals
-                    | actual -> error "RUNTIME_INTERNAL_TYPE" "match-result received a non-result after type checking." (Some currentWord) (Some span) [ "Result<T, E>" ] [ Types.ofValue actual |> Types.format ]
-            stack, locals
-
         let createTrace coverageTarget fileSystem =
             { Steps = 0
               CoverageInstructions = Set.empty
@@ -613,16 +335,6 @@ module Runtime =
               Console = []
               CoverageTarget = coverageTarget
               Isolated = coverageTarget.IsSome }
-
-        let executeExpression (state: DictionaryState) (words: Map<string, WordEntry>) (coverageTarget: string option) (fileSystem: Map<string, string>) (expressions: Expr list) =
-            let checkedExpression = Compiler.checkExpression (knownTypes state) words expressions
-            if coverageTarget.IsNone then
-                let missing = Set.difference checkedExpression.Effects capabilities
-                if not (Set.isEmpty missing) then
-                    error "CAPABILITY_DENIED" "The expression requires effects not granted by the host." None None (checkedExpression.Effects |> Set.toList) (capabilities |> Set.toList)
-            let trace = createTrace coverageTarget fileSystem
-            let stack, _ = runBody state words trace 0 "<eval>" [] Map.empty expressions
-            stack, trace
 
         let topologicalWords (state: DictionaryState) : WordEntry list =
             let words = userWords state |> Map.filter (fun _ value -> value.Status = Persistent)
@@ -946,6 +658,117 @@ module Runtime =
                     colors[name] <- 2
             graph |> Map.toSeq |> Seq.iter (fun (name, _) -> visit [] name)
 
+        let compileRuntimeSnapshot (state: DictionaryState) =
+            validateGraph state
+            let words = effectiveWords state
+            let context: Compiler.IrLoweringContext =
+                { Words = words
+                  Records = recordDefinitions state
+                  Scalars = scalarDefinitions state
+                  WordIds = words |> Map.map (fun _ item -> WordId(wordIdentity state item)) }
+            let program = Compiler.compileIrProgram context
+            IrInterpreter.validateProgram program
+            let testBodies =
+                state.Tests
+                |> Map.map (fun _ test -> Compiler.compileIrTestAgainstProgram context program test)
+            let exampleBodies =
+                state.Examples
+                |> Map.map (fun _ example -> Compiler.compileIrExampleAgainstProgram context program example)
+            { State = state
+              Words = words
+              Context = context
+              Program = program
+              TestBodies = testBodies
+              ExampleBodies = exampleBodies }
+
+        let siteSpan (snapshot: RuntimeSnapshot) (body: VerifiedIrBody option) (site: SourceSiteId) =
+            let bodySource =
+                body
+                |> Option.map (VerifiedIrBody.inspect >> fun value -> value.BodySourceMap)
+                |> Option.defaultValue Map.empty
+            bodySource.TryFind site
+            |> Option.orElseWith (fun () ->
+                (VerifiedIrProgram.inspect snapshot.Program).SourceMap.TryFind site)
+            |> Option.map (fun source -> source.SiteSpan)
+            |> Option.defaultWith (fun () ->
+                error "IR_SOURCE_SITE_MISSING" "Verified executable source site has no source-map entry." None None [] [ sprintf "%A" site ])
+
+        let coverageObligations (snapshot: RuntimeSnapshot) (word: string) =
+            match snapshot.Words.TryFind word with
+            | None -> Set.empty, Set.empty
+            | Some entry ->
+                let id = WordId(wordIdentity snapshot.State entry)
+                match (VerifiedIrProgram.inspect snapshot.Program).CoverageByWord.TryFind id with
+                | None -> Set.empty, Set.empty
+                | Some obligations ->
+                    let instructionKeys =
+                        obligations.CoveredSites
+                        |> Set.map (fun site -> instructionId (siteSpan snapshot None site))
+                    let branchKeys =
+                        obligations.BranchOutcomes
+                        |> Map.toList
+                        |> List.collect (fun (site, outcomes) ->
+                            let source = instructionId (siteSpan snapshot None site)
+                            outcomes |> List.map (fun outcome -> source + ":" + outcome))
+                        |> Set.ofList
+                    instructionKeys, branchKeys
+
+        let interpreterHost (snapshot: RuntimeSnapshot) (trace: Trace) (body: VerifiedIrBody option) =
+            let sourceSpan site = siteSpan snapshot body site
+            let definitionSpan (name: string) =
+                snapshot.Words.TryFind name |> Option.map (fun entry -> entry.Definition.Span)
+            { PreflightEffects = fun effects word _ ->
+                  let effectNames = IrEffects.names effects
+                  let missing = Set.difference (Set.ofList effectNames) capabilities
+                  if not trace.Isolated && not (Set.isEmpty missing) then
+                      let expected = effectNames
+                      let message, failureWord, failureSpan =
+                          match word with
+                          | Some name ->
+                              let names = String.concat ", " (missing |> Set.toList)
+                              $"Execution requires capabilities not granted by the host: {names}.", Some name, definitionSpan name
+                          | None -> "The expression requires effects not granted by the host.", None, None
+                      error "CAPABILITY_DENIED" message failureWord failureSpan expected (capabilities |> Set.toList)
+              ChargeInstruction = fun currentWord site -> countInstruction trace currentWord (sourceSpan site)
+              RecordBranchOutcome = fun currentWord site outcome -> countBranchOutcome trace currentWord (sourceSpan site) outcome
+              RecordUse = fun name -> log "use" name
+              InvokeEffect = fun command ->
+                  match command with
+                  | ReadVirtualFile(operation, path) ->
+                      mutateEffect trace "fs.read"
+                      match trace.FileSystem.TryFind path with
+                      | Some contents -> EffectString contents
+                      | None -> error "EFFECT_FILE_NOT_FOUND" $"Virtual file '{path}' does not exist." (Some operation) None [] [ path ]
+                  | VirtualFileExists(_, path) ->
+                      mutateEffect trace "fs.read"
+                      EffectBool(trace.FileSystem.ContainsKey path)
+                  | WriteVirtualFile(_, path, contents) ->
+                      mutateEffect trace "fs.write"
+                      trace.FileSystem <- Map.add path contents trace.FileSystem
+                      EffectUnit
+                  | ReadFixedClock _ -> mutateEffect trace "clock.read"; EffectString fixedClock
+                  | WriteVirtualConsole(_, contents) ->
+                      mutateEffect trace "console.write"
+                      trace.Console <- trace.Console @ [ contents ]
+                      EffectUnit
+              WordDefinitionSpan = definitionSpan
+              PrimitiveDefinitionSpan = definitionSpan }
+
+        let executeIRBody (snapshot: RuntimeSnapshot) (executionName: string) (trace: Trace) (body: VerifiedIrBody) =
+            let host = interpreterHost snapshot trace (Some body)
+            IrInterpreter.executeBody host executionName body
+
+        let executeExpression (snapshot: RuntimeSnapshot) (coverageTarget: string option) (fileSystem: Map<string, string>) (expressions: Expr list) =
+            Compiler.checkExpression (knownTypes snapshot.State) snapshot.Words expressions |> ignore
+            let body = Compiler.compileIrBodyAgainstProgram snapshot.Context snapshot.Program "<eval>" [] expressions
+            let trace = createTrace coverageTarget fileSystem
+            let stack = executeIRBody snapshot "<eval>" trace body
+            stack, trace
+
+        let activateRuntimeSnapshot (snapshot: RuntimeSnapshot) =
+            data <- snapshot.State
+            activeSnapshot <- Some snapshot
+
         let validateStoredProject (projectStore: Store) (manifest: ProjectManifest option) (manifestHash: string option) (projectSource: string option) =
             let parsed = projectSource |> Option.map (parseProjectSource "dictionary.agent")
             let identities =
@@ -1022,13 +845,14 @@ module Runtime =
 
         let loadProject () =
             match store with
-            | None -> ()
+            | None -> compileRuntimeSnapshot data |> activateRuntimeSnapshot
             | Some projectStore ->
                 match Storage.load projectStore with
                 | Error storageError -> raiseStorageError storageError
                 | Ok loaded ->
                     let proposed = validateStoredProject projectStore loaded.Manifest loaded.ManifestHash loaded.ProjectSource
-                    data <- proposed
+                    let executable = compileRuntimeSnapshot proposed
+                    activateRuntimeSnapshot executable
                     storageGeneration <- loaded.Generation
                     storageAuthority <- loaded.Authority
                     currentManifest <- loaded.Manifest
@@ -1039,12 +863,14 @@ module Runtime =
 
         let toJsonValue value = jsonNode (Types.formatValue value)
 
-        let checkedByTest (state: DictionaryState) (words: Map<string, WordEntry>) (test: TestDefinition) =
-            let sites =
-                words.TryFind test.Word
-                |> Option.map (fun entry -> collectInstructionSites entry.Definition.Body)
-                |> Option.defaultValue Set.empty
+        let checkedByTest (snapshot: RuntimeSnapshot) (test: TestDefinition) =
+            let sites, _ = coverageObligations snapshot test.Word
             let trace = createTrace (Some test.Word) Map.empty
+            let bodyKey = $"{test.Word}/{test.Name}"
+            let body =
+                snapshot.TestBodies.TryFind bodyKey
+                |> Option.defaultWith (fun () ->
+                    error "IR_TEST_BODY_MISSING" "Compiled test body is absent from its exact executable snapshot." (Some test.Word) (Some test.Span) [] [ bodyKey ])
             let makeResult passed diagnostic actual =
                 { Name = test.Name
                   Word = test.Word
@@ -1054,45 +880,37 @@ module Runtime =
                   Expected = test.Expected
                   Instructions = trace.CoverageInstructions |> Set.intersect sites
                   BranchOutcomes = trace.CoverageBranches }
-            let compileError =
-                try
-                    Compiler.checkTest (knownTypes state) words test |> ignore
-                    None
-                with LanguageException diagnostic -> Some diagnostic
-            match compileError with
-            | Some diagnostic -> makeResult false (Some diagnostic) []
-            | None ->
-                try
-                    let stack, _ = runBody state words trace 0 "<test>" [] Map.empty test.Body
-                    match test.Expected with
-                    | ExpectedValue literal ->
-                        let expected = Types.literalValue literal
-                        let passed = stack = [ expected ]
-                        let diagnostic =
-                            if passed then None
-                            else
-                                Some
-                                    { Code = "TEST_ASSERTION_FAILED"
-                                      Message = "Actual value did not equal the expected literal."
-                                      Word = Some test.Word
-                                      Span = Some test.Span
-                                      Expected = [ Types.formatValue expected ]
-                                      Actual = stack |> List.map Types.formatValue }
-                        makeResult passed diagnostic stack
-                    | ExpectedRuntimeError code ->
-                        let diagnostic =
-                            { Code = "TEST_EXPECTED_RUNTIME_ERROR"
-                              Message = $"Expected runtime error '{code}', but the test expression completed normally."
-                              Word = Some test.Word
-                              Span = Some test.Span
-                              Expected = [ code ]
-                              Actual = stack |> List.map Types.formatValue }
-                        makeResult false (Some diagnostic) stack
-                with
-                | LanguageException diagnostic ->
-                    match test.Expected with
-                    | ExpectedRuntimeError expectedCode when diagnostic.Code = expectedCode -> makeResult true None []
-                    | _ -> makeResult false (Some diagnostic) []
+            try
+                let stack = executeIRBody snapshot "<test>" trace body
+                match test.Expected with
+                | ExpectedValue literal ->
+                    let expected = Types.literalValue literal
+                    let passed = stack = [ expected ]
+                    let diagnostic =
+                        if passed then None
+                        else
+                            Some
+                                { Code = "TEST_ASSERTION_FAILED"
+                                  Message = "Actual value did not equal the expected literal."
+                                  Word = Some test.Word
+                                  Span = Some test.Span
+                                  Expected = [ Types.formatValue expected ]
+                                  Actual = stack |> List.map Types.formatValue }
+                    makeResult passed diagnostic stack
+                | ExpectedRuntimeError code ->
+                    let diagnostic =
+                        { Code = "TEST_EXPECTED_RUNTIME_ERROR"
+                          Message = $"Expected runtime error '{code}', but the test expression completed normally."
+                          Word = Some test.Word
+                          Span = Some test.Span
+                          Expected = [ code ]
+                          Actual = stack |> List.map Types.formatValue }
+                    makeResult false (Some diagnostic) stack
+            with
+            | LanguageException diagnostic ->
+                match test.Expected with
+                | ExpectedRuntimeError expectedCode when diagnostic.Code = expectedCode -> makeResult true None []
+                | _ -> makeResult false (Some diagnostic) []
 
         let resultJson (result: TestCaseResult) =
             let node = JsonObject()
@@ -1110,19 +928,17 @@ module Runtime =
             | None -> ()
             node
 
-        let runTestsFor (state: DictionaryState) (words: Map<string, WordEntry>) target =
+        let runTestsFor (snapshot: RuntimeSnapshot) target =
             let tests =
-                state.Tests
+                snapshot.State.Tests
                 |> Map.toList
                 |> List.map snd
                 |> List.filter (fun test -> target |> Option.forall ((=) test.Word))
                 |> List.sortBy (fun test -> test.Word, test.Name)
-            tests |> List.map (checkedByTest state words)
+            tests |> List.map (checkedByTest snapshot)
 
-        let coverageJson (word: string) (words: Map<string, WordEntry>) (results: TestCaseResult list) =
-            let definition = words[word].Definition
-            let requiredInstructions = collectInstructionSites definition.Body
-            let requiredBranches = collectBranchSites definition.Body
+        let coverageJson (snapshot: RuntimeSnapshot) (word: string) (results: TestCaseResult list) =
+            let requiredInstructions, requiredBranches = coverageObligations snapshot word
             let actualInstructions = results |> List.fold (fun found result -> Set.union found result.Instructions) Set.empty
             let actualBranches = results |> List.fold (fun found result -> Set.union found result.BranchOutcomes) Set.empty
             let uncoveredInstructions = Set.difference requiredInstructions actualInstructions
@@ -1153,6 +969,15 @@ module Runtime =
             node["testsFailed"] <- jint task.TestsFailed
             node["effects"] <- jsonNode (task.EffectCounts |> Map.toSeq |> Map.ofSeq)
             node["errors"] <- jsonNode task.Errors
+            match task.LogWarning with
+            | Some warning ->
+                let warningNode = JsonObject()
+                warningNode["code"] <- jstr warning.Code
+                warningNode["message"] <- jstr warning.Message
+                match warning.Path with Some path -> warningNode["path"] <- jstr path | None -> ()
+                warningNode["saved"] <- jbool false
+                node["logWarning"] <- warningNode
+            | None -> ()
             node
 
         let mutable lastResults: TestCaseResult list = []
@@ -1203,11 +1028,13 @@ module Runtime =
                                 WordIds = Map.remove name proposed.WordIds
                                 Tests = proposed.Tests |> Map.filter (fun _ test -> test.Word <> name)
                                 Examples = proposed.Examples |> Map.filter (fun _ example -> example.Word <> name) }
-            validateGraph proposed
-            data <- proposed
+            let executable = compileRuntimeSnapshot proposed
+            activateRuntimeSnapshot executable
             lastResults <- []
 
-        let availableDescription (state: DictionaryState) (words: Map<string, WordEntry>) name =
+        let availableDescription (snapshot: RuntimeSnapshot) name =
+            let state = snapshot.State
+            let words = snapshot.Words
             match words.TryFind name with
             | None -> error "NAME_UNKNOWN_WORD" $"Word '{name}' is not defined." (Some name) None [] []
             | Some item ->
@@ -1266,7 +1093,7 @@ module Runtime =
                 obj["testCount"] <- jint tests.Length
                 obj["exampleCount"] <- jint examples.Length
                 let observed = lastResults |> List.filter (fun result -> result.Word = name)
-                let currentCoverage = coverageJson name words observed
+                let currentCoverage = coverageJson snapshot name observed
                 currentCoverage["status"] <- jstr (if List.isEmpty observed then "not-run" else "current")
                 obj["coverage"] <- currentCoverage
                 obj
@@ -1365,28 +1192,39 @@ module Runtime =
                     | _ -> ()
                 | _ -> ()
             let proposed = { old with Records = records; Scalars = scalars; Words = entries; WordIds = wordIds; Tests = tests; Examples = examples; Replacements = replacements }
-            validateGraph proposed
+            let executable = compileRuntimeSnapshot proposed
             let frozen = frozenValidatorWords old (effectiveWords old)
             let changed = parsed.Words |> List.map (fun word -> word.Name) |> Set.ofList
             let conflict = Set.intersect frozen changed
             if not (Set.isEmpty conflict) then
                 error "TYPE_VALIDATOR_FROZEN" $"Cannot replace validator dependency '{Set.minElement conflict}' while a scalar type is persistent." None None [] (Set.toList conflict)
-            data <- proposed
+            activateRuntimeSnapshot executable
             lastResults <- []
             for word in parsed.Words do log "create" word.Name
             for name in metadataTargets do
                 if initialEntries.TryFind name |> Option.exists (fun item -> item.Status = Persistent) then log "create" name
 
-        let saveTaskLog (task: TaskSession) =
-            let node = makeTaskJson task
-            match store with
-            | Some projectStore ->
-                let taskLogId = task.Id.Substring("task-".Length)
-                match Storage.saveTaskLog projectStore taskLogId (node.ToJsonString(JsonSerializerOptions(WriteIndented = true))) with
-                | Ok () -> ()
-                | Error storageError -> raiseStorageError storageError
-            | None -> ()
-            previousTaskLog <- Some node
+        let saveTaskLog (task: TaskSession) : StorageError option =
+            task.LogWarning <- None
+            let saveResult =
+                match store with
+                | Some projectStore ->
+                    let taskLogId = task.Id.Substring("task-".Length)
+                    Storage.saveTaskLog projectStore taskLogId ((makeTaskJson task).ToJsonString(JsonSerializerOptions(WriteIndented = true)))
+                | None -> Ok ()
+            match saveResult with
+            | Ok () ->
+                previousTaskLog <- Some(makeTaskJson task)
+                None
+            | Error storageError ->
+                task.LogWarning <- Some storageError
+                previousTaskLog <- Some(makeTaskJson task)
+                Some storageError
+
+        let taskLogStatusText (logWarning: StorageError option) =
+            match logWarning with
+            | Some warning -> $"The task log was not saved ({warning.Code}): {warning.Message}"
+            | None -> "The task log was saved."
 
         let nextTaskNumber () =
             let persistedMaximum =
@@ -1590,7 +1428,7 @@ module Runtime =
                     Records = proposedRecords
                     Scalars = proposedScalars
                     Replacements = data.Replacements |> Map.filter (fun name _ -> not (selectedWords.Contains name)) }
-            validateGraph proposed
+            compileRuntimeSnapshot proposed |> ignore
             for name in selectedWords do
                 let candidate = candidateWords[name]
                 let danglingTemp = Compiler.dependencies candidate.Definition.Body |> Set.filter (fun dependency -> data.Words.TryFind dependency |> Option.exists (fun value -> value.Status = Temporary))
@@ -1600,8 +1438,7 @@ module Runtime =
             let durableBefore = durableState data
             let replacing = selectedWords |> Set.filter (fun name -> durableBefore.Words.ContainsKey name)
             let durableProposed = durableState proposed
-            let durableWords = effectiveWords durableProposed
-            validateGraph durableProposed
+            let durableSnapshot = compileRuntimeSnapshot durableProposed
             let durableMetadataOwners = Set.union selectedWords (selectedTypeWordNames selectedTypes)
             let selectedMetadataEntries = selectedMetadata durableMetadataOwners
             let missingDurableTests =
@@ -1618,7 +1455,8 @@ module Runtime =
                     else None)
             if not (List.isEmpty missingDurableExamples) then
                 error "COMMIT_SELECTED_EXAMPLE_NOT_DURABLE" "A selected example would not survive the durable project projection." None None [] missingDurableExamples
-            let selectedResults = selectedWords |> Set.toList |> List.collect (fun name -> runTestsFor durableProposed durableWords (Some name))
+            let selectedTestOwners = Set.union selectedWords (selectedTypeWordNames selectedTypes)
+            let selectedResults = selectedTestOwners |> Set.toList |> List.collect (fun name -> runTestsFor durableSnapshot (Some name))
             let mutable changedNames = replacing
             let mutable callers = Set.empty
             let mutable foundCallers = true
@@ -1642,7 +1480,7 @@ module Runtime =
                     let attached = durableProposed.Tests |> Map.toSeq |> Seq.map snd |> Seq.filter (fun test -> test.Word = caller) |> Seq.toList
                     if List.isEmpty attached then
                         error "REPLACE_CALLER_TESTS_REQUIRED" $"Replacing a dependency requires attached passing tests on persistent caller '{caller}'." (Some caller) None [ "attached passing test" ] []
-                    runTestsFor durableProposed durableWords (Some caller))
+                    runTestsFor durableSnapshot (Some caller))
             let results = selectedResults @ callerResults
             lastResults <- results
             recordTestResults results
@@ -1654,8 +1492,7 @@ module Runtime =
                 let candidate = candidateWords[name]
                 if proposedWords[name].Maturity = LibraryWord then
                     let result = results |> List.filter (fun test -> test.Word = name)
-                    let requiredInstructions = collectInstructionSites candidate.Definition.Body
-                    let requiredBranches = collectBranchSites candidate.Definition.Body
+                    let requiredInstructions, requiredBranches = coverageObligations durableSnapshot name
                     let coveredInstructions = result |> List.fold (fun found test -> Set.union found test.Instructions) Set.empty
                     let coveredBranches = result |> List.fold (fun found test -> Set.union found test.BranchOutcomes) Set.empty
                     let uncovered = Set.difference requiredInstructions coveredInstructions
@@ -1668,9 +1505,10 @@ module Runtime =
                     let previous = found.TryFind name |> Option.defaultValue []
                     Map.add name (previous @ [ proposedWords[name].Definition ]) found) data.History
             let finalState = { proposed with History = history }
-            validateGraph (durableState finalState)
+            let finalSnapshot = compileRuntimeSnapshot finalState
+            compileRuntimeSnapshot (durableState finalState) |> ignore
             publish data finalState actor
-            data <- finalState
+            activateRuntimeSnapshot finalSnapshot
             lastResults <- results
             results
 
@@ -1764,15 +1602,14 @@ module Runtime =
                 log "inspect" word
                 syntaxDescriptorJson descriptor
             | None ->
-                let words = effectiveWords data
-                availableDescription data words word
+                availableDescription (currentSnapshot ()) word
 
-        let resultList (kind: string) (text: string) (results: TestCaseResult list) (target: string option) =
+        let resultList (snapshot: RuntimeSnapshot) (kind: string) (text: string) (results: TestCaseResult list) (target: string option) =
             let array = JsonArray()
             results |> List.iter (fun result -> array.Add(resultJson result))
             let dataNode = JsonObject()
             dataNode["results"] <- array
-            match target with Some word when (effectiveWords data).ContainsKey word -> dataNode["coverage"] <- coverageJson word (effectiveWords data) results | _ -> ()
+            match target with Some word when snapshot.Words.ContainsKey word -> dataNode["coverage"] <- coverageJson snapshot word results | _ -> ()
             success kind text (Some dataNode)
 
         member _.ProjectDirectory = projectRoot
@@ -1791,8 +1628,8 @@ module Runtime =
                         match Parser.parseExpression "<eval>" code with
                         | Error diagnostic -> response false "error" (Diagnostics.render diagnostic) None (Some diagnostic)
                         | Ok body ->
-                            let words = effectiveWords data
-                            let result, trace = executeExpression data words None virtualFiles body
+                            let snapshot = currentSnapshot ()
+                            let result, trace = executeExpression snapshot None virtualFiles body
                             virtualFiles <- trace.FileSystem
                             let values = JsonArray()
                             result |> List.iter (fun value -> values.Add(toJsonValue value))
@@ -1969,12 +1806,21 @@ module Runtime =
                     | Some value -> success "effects" $"Effects for {name}." (Some(jsonNode (value.Definition.Effects |> Set.toList)))
                 | "ir" ->
                     let name = readString args "word" ""
-                    match (effectiveWords data).TryFind name with
+                    let snapshot = currentSnapshot ()
+                    match snapshot.Words.TryFind name with
                     | None -> error "NAME_UNKNOWN_WORD" $"Word '{name}' is not defined." (Some name) None [] []
-                    | Some value when value.Builtin.IsSome -> success "ir" $"{name} is a trusted host primitive." (Some(jstr "primitive"))
                     | Some value ->
-                        let body = Compiler.sourceExpressions value.Definition.Body
-                        success "ir" "Checked expression tree (interpreted directly; no separate bytecode exists yet)." (Some(jstr body))
+                        let target =
+                            match value.Builtin with
+                            | Some(BuiltinOp operation) -> IrFormatTarget.PrimitiveContract(PrimitiveId operation)
+                            | Some _ -> IrFormatTarget.GeneratedWordId(WordId(wordIdentity snapshot.State value))
+                            | None -> IrFormatTarget.UserWordId(WordId(wordIdentity snapshot.State value))
+                        let formatted = IrFormatting.toData snapshot.Program target
+                        let label =
+                            match value.Builtin with
+                            | Some(BuiltinOp _) -> "Canonical primitive contract"
+                            | _ -> "Verified executable IR"
+                        success "ir" $"{label} for '{name}'." (Some formatted)
                 | "tests" ->
                     let name = readString args "word" ""
                     let tests = data.Tests |> Map.toList |> List.map snd |> List.filter (fun test -> test.Word = name) |> List.sortBy (fun test -> test.Name)
@@ -1985,23 +1831,23 @@ module Runtime =
                     success "examples" $"{examples.Length} example(s)." (Some(jsonNode (examples |> List.map (fun example -> example.Name))))
                 | "test" ->
                     let target = readString args "word" ""
-                    let words = effectiveWords data
-                    let results = runTestsFor data words (if target = "" then None else Some target)
+                    let snapshot = currentSnapshot ()
+                    let results = runTestsFor snapshot (if target = "" then None else Some target)
                     lastResults <- results
                     recordTestResults results
-                    resultList "test" $"{results |> List.filter (fun item -> item.Passed) |> List.length}/{results.Length} test(s) passed." results (if target = "" then None else Some target)
+                    resultList snapshot "test" $"{results |> List.filter (fun item -> item.Passed) |> List.length}/{results.Length} test(s) passed." results (if target = "" then None else Some target)
                 | "test-all" ->
-                    let words = effectiveWords data
-                    let results = runTestsFor data words None
+                    let snapshot = currentSnapshot ()
+                    let results = runTestsFor snapshot None
                     lastResults <- results
                     recordTestResults results
-                    resultList "test" $"{results |> List.filter (fun item -> item.Passed) |> List.length}/{results.Length} test(s) passed." results None
+                    resultList snapshot "test" $"{results |> List.filter (fun item -> item.Passed) |> List.length}/{results.Length} test(s) passed." results None
                 | "failed-tests" ->
-                    let words = effectiveWords data
-                    let allResults = runTestsFor data words None
+                    let snapshot = currentSnapshot ()
+                    let allResults = runTestsFor snapshot None
                     recordTestResults allResults
                     let results = allResults |> List.filter (fun result -> not result.Passed)
-                    resultList "failed-tests" $"{results.Length} failing test(s) on current dictionary." results None
+                    resultList snapshot "failed-tests" $"{results.Length} failing test(s) on current dictionary." results None
                 | "commit" | "commit-word" | "replace-word" | "task.commit" ->
                     let name = readString args "word" ""
                     let library = readBool args "library" false
@@ -2025,9 +1871,9 @@ module Runtime =
                             | Some task ->
                                 cleanupTaskTemporaries task
                                 task.Active <- false
-                                saveTaskLog task
+                                let logWarning = saveTaskLog task
                                 let warning = lastExportWarning |> Option.map (fun item -> $" Export warning: {item.Message}") |> Option.defaultValue ""
-                                success "task.commit" ($"Task committed, temporary words were cleared, and the task log was saved.{warning}") (Some(makeTaskJson task))
+                                success "task.commit" ($"Task committed and temporary words were cleared. {taskLogStatusText logWarning}{warning}") (Some(makeTaskJson task))
                             | None -> error "TASK_NOT_ACTIVE" "No active task can be committed." None None [] []
                         elif operation = "replace-word" then
                             let warning = lastExportWarning |> Option.map (fun item -> $" Export warning: {item.Message}") |> Option.defaultValue ""
@@ -2099,9 +1945,9 @@ module Runtime =
                                     let previous = found.TryFind name |> Option.defaultValue []
                                     Map.add name (previous @ [ item.Definition ]) found) movedHistory
                             let proposed = { parsedProposed with History = history; Deprecated = deprecated }
-                            validateGraph proposed
+                            let executable = compileRuntimeSnapshot proposed
                             let affectedNames = updates |> List.map (fun (_, name, _) -> name) |> Set.ofList
-                            let wordsAfter = effectiveWords proposed
+                            let wordsAfter = executable.Words
                             let results =
                                 affectedNames
                                 |> Set.toList
@@ -2109,7 +1955,7 @@ module Runtime =
                                     let attached = proposed.Tests |> Map.toSeq |> Seq.map snd |> Seq.filter (fun test -> test.Word = name) |> Seq.toList
                                     if List.isEmpty attached then
                                         error "RENAME_TESTS_REQUIRED" $"Renaming or rewriting '{name}' requires at least one attached test." (Some name) None [ "attached passing test" ] []
-                                    runTestsFor proposed wordsAfter (Some name))
+                                    runTestsFor executable (Some name))
                             recordTestResults results
                             let failed = results |> List.filter (fun item -> not item.Passed)
                             if not (List.isEmpty failed) then
@@ -2118,16 +1964,16 @@ module Runtime =
                                 let candidate = wordsAfter[name]
                                 if candidate.Maturity = LibraryWord then
                                     let ownTests = results |> List.filter (fun test -> test.Word = name)
-                                    let requiredInstructions = collectInstructionSites candidate.Definition.Body
-                                    let requiredBranches = collectBranchSites candidate.Definition.Body
+                                    let requiredInstructions, requiredBranches = coverageObligations executable name
                                     let coveredInstructions = ownTests |> List.fold (fun found test -> Set.union found test.Instructions) Set.empty
                                     let coveredBranches = ownTests |> List.fold (fun found test -> Set.union found test.BranchOutcomes) Set.empty
                                     let uncovered = Set.difference requiredInstructions coveredInstructions
                                     let missingBranches = Set.difference requiredBranches coveredBranches
                                     if not (Set.isEmpty uncovered && Set.isEmpty missingBranches && not (List.isEmpty ownTests)) then
                                         error "LIBRARY_COVERAGE_INCOMPLETE" $"Renamed library word '{name}' requires complete attached test coverage." (Some name) None [] (Set.toList uncovered @ Set.toList missingBranches)
+                            compileRuntimeSnapshot (durableState proposed) |> ignore
                             publish data proposed actor
-                            data <- proposed
+                            activateRuntimeSnapshot executable
                             lastResults <- results
                             let payload = JsonObject()
                             payload["id"] <- jstr identity
@@ -2160,7 +2006,8 @@ module Runtime =
                             let definition = { definition with SourceText = Source.renderWord true definition }
                             let updated = { item with Definition = definition; Revision = revision }
                             let proposedWords = Map.add name updated data.Words
-                            let tests = runTestsFor { data with Words = proposedWords } (Map.add name updated (effectiveWords data)) (Some name)
+                            let testSnapshot = compileRuntimeSnapshot { data with Words = proposedWords }
+                            let tests = runTestsFor testSnapshot (Some name)
                             if List.isEmpty tests then error "DEPRECATE_TESTS_REQUIRED" $"Word '{name}' needs an attached test before it can be deprecated." (Some name) None [ "attached passing test" ] []
                             recordTestResults tests
                             let failed = tests |> List.filter (fun result -> not result.Passed)
@@ -2171,9 +2018,10 @@ module Runtime =
                                     Words = proposedWords
                                     Deprecated = Set.add name data.Deprecated
                                     History = Map.add name (history @ [ definition ]) data.History }
-                            validateGraph proposed
+                            let executable = compileRuntimeSnapshot proposed
+                            compileRuntimeSnapshot (durableState proposed) |> ignore
                             publish data proposed actor
-                            data <- proposed
+                            activateRuntimeSnapshot executable
                             lastResults <- tests
                             let payload = JsonObject()
                             payload["id"] <- jstr (wordIdentity proposed updated)
@@ -2183,7 +2031,12 @@ module Runtime =
                 | "promote" ->
                     let name = readString args "word" ""
                     match data.Words.TryFind name with
-                    | Some item when item.Status = Temporary -> data <- { data with Words = Map.add name { item with Status = Candidate } data.Words }; lastResults <- []; success "promote" $"Promoted '{name}' to a candidate." None
+                    | Some item when item.Status = Temporary ->
+                        let proposed = { data with Words = Map.add name { item with Status = Candidate } data.Words }
+                        let executable = compileRuntimeSnapshot proposed
+                        activateRuntimeSnapshot executable
+                        lastResults <- []
+                        success "promote" $"Promoted '{name}' to a candidate." None
                     | _ -> error "PROMOTE_NOT_TEMPORARY" $"'{name}' is not a temporary word." (Some name) None [] []
                 | "discard" ->
                     let name = readString args "word" ""
@@ -2211,8 +2064,8 @@ module Runtime =
                                     WordIds = Map.remove name data.WordIds
                                     Tests = data.Tests |> Map.filter (fun _ test -> test.Word <> name)
                                     Examples = data.Examples |> Map.filter (fun _ example -> example.Word <> name) }
-                        validateGraph proposed
-                        data <- proposed
+                        let executable = compileRuntimeSnapshot proposed
+                        activateRuntimeSnapshot executable
                         lastResults <- []
                         success "discard" $"Discarded staged word '{name}'." None
                     | None when data.Records.TryFind name |> Option.exists (fun value -> value.Status = Candidate) ->
@@ -2223,8 +2076,8 @@ module Runtime =
                                 Records = Map.remove name data.Records
                                 Tests = data.Tests |> Map.filter (fun _ test -> not (owns test.Word))
                                 Examples = data.Examples |> Map.filter (fun _ example -> not (owns example.Word)) }
-                        validateGraph proposed
-                        data <- proposed
+                        let executable = compileRuntimeSnapshot proposed
+                        activateRuntimeSnapshot executable
                         lastResults <- []
                         success "discard" $"Discarded candidate type '{name}'." None
                     | None when data.Scalars.TryFind name |> Option.exists (fun value -> value.Status = Candidate) ->
@@ -2235,8 +2088,8 @@ module Runtime =
                                 Scalars = Map.remove name data.Scalars
                                 Tests = data.Tests |> Map.filter (fun _ test -> not (owns test.Word))
                                 Examples = data.Examples |> Map.filter (fun _ example -> not (owns example.Word)) }
-                        validateGraph proposed
-                        data <- proposed
+                        let executable = compileRuntimeSnapshot proposed
+                        activateRuntimeSnapshot executable
                         lastResults <- []
                         success "discard" $"Discarded candidate scalar type '{name}'." None
                     | _ -> error "DISCARD_NOT_STAGED" $"'{name}' is not staged." (Some name) None [] []
@@ -2258,6 +2111,7 @@ module Runtime =
                             { Id = $"task-{taskNumber:D4}"
                               Goal = readString args "goal" ""
                               Snapshot = data
+                              ExecutableSnapshot = currentSnapshot ()
                               StorageSnapshot = storageSnapshot
                               ManifestSnapshot = currentManifest
                               ManifestHashSnapshot = currentManifestHash
@@ -2270,7 +2124,8 @@ module Runtime =
                               TestsRun = 0
                               TestsFailed = 0
                               EffectCounts = Map.empty
-                              Errors = [] }
+                              Errors = []
+                              LogWarning = None }
                         activeTask <- Some task
                         success "task.begin" $"Started {task.Id}." (Some(makeTaskJson task))
                 | "task.status" ->
@@ -2302,7 +2157,6 @@ module Runtime =
                 | "task.abort" ->
                     match activeTask with
                     | Some task when task.Active ->
-                        let snap = task.Snapshot
                         let restored =
                             match store, task.StorageSnapshot with
                             | None, None -> None
@@ -2311,7 +2165,7 @@ module Runtime =
                                 | Error storageError -> raiseStorageError storageError
                                 | Ok result -> Some result
                             | _ -> error "STORAGE_TASK_SNAPSHOT_MISSING" "The task's storage snapshot is unavailable." None None [] []
-                        data <- snap
+                        activateRuntimeSnapshot task.ExecutableSnapshot
                         virtualFiles <- task.VirtualFilesSnapshot
                         fixedClock <- task.ClockSnapshot
                         match restored with
@@ -2324,9 +2178,9 @@ module Runtime =
                         | None -> ()
                         task.Active <- false
                         lastResults <- []
-                        saveTaskLog task
+                        let logWarning = saveTaskLog task
                         let warning = lastExportWarning |> Option.map (fun item -> $" Export warning: {item.Message}") |> Option.defaultValue ""
-                        success "task.abort" ($"Aborted {task.Id}; dictionary changes were rolled back.{warning}") (Some(makeTaskJson task))
+                        success "task.abort" ($"Aborted {task.Id}; dictionary changes were rolled back. {taskLogStatusText logWarning}{warning}") (Some(makeTaskJson task))
                     | _ -> error "TASK_NOT_ACTIVE" "No active task can be aborted." None None [] []
                 | "snapshot.save" ->
                     let name = readString args "name" ""
@@ -2360,10 +2214,11 @@ module Runtime =
                                     | Error storageError -> raiseStorageError storageError
                                     | Ok source -> source
                                 let proposed = validateStoredProject projectStore (Some snapshot.Manifest) (Some snapshot.ManifestHash) (Some projectSource)
+                                let executable = compileRuntimeSnapshot proposed
                                 match Storage.restoreSnapshot projectStore storageGeneration snapshot with
                                 | Error storageError -> raiseStorageError storageError
                                 | Ok restored ->
-                                    data <- proposed
+                                    activateRuntimeSnapshot executable
                                     virtualFiles <- snapshot.VirtualFiles
                                     fixedClock <- defaultArg snapshot.ClockValue "2000-01-01T00:00:00Z"
                                     storageGeneration <- restored.Generation

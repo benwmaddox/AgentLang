@@ -1,20 +1,20 @@
 # Typed semantic IR migration plan
 
-Status: in progress. The typed IR model, verifier, and compiler-side lowering
-exist. The IR interpreter and runtime cutover are still pending. The first
-backend is an interpreter over the typed IR. LLVM remains conditional follow-on
-work and is not a dependency of this migration.
+Status: Runtime cutover validated through the full Release gate and 314 selected pinned AST-versus-IR contracts; see report 010. The typed IR model, verifier, compiler lowering,
+interpreter, and Runtime routing now exist. The first backend is an interpreter
+over typed IR. LLVM remains conditional follow-on work and is not a dependency
+of this migration.
 
 ## Current gap and boundary
 
-The language currently parses to `Expr`, infers types and effects in
-`Compiler.inferBody`, then interprets the same AST in `Runtime.runBody`.
-`Compiler.compileIrProgram` and the detached body/test/example APIs now lower
-checked source trees to verified executable IR, but the runtime still uses the
-AST path. The `ir` command is not yet a rendering of verified IR. This
-migration is complete only when REPL evaluation, words, callbacks, tests,
-candidate validation, and reload all execute compiled IR and there is no
-runtime AST fallback.
+The language parses to `Expr` for checking, canonical source, and diagnostics.
+`Runtime` now pairs every active `DictionaryState` with an immutable verified
+IR program and compiled attached test/example bodies. Evaluation, user and
+generated calls, primitives, callbacks, tests, candidate/durable gates,
+maintenance, task rollback, and reload execute through `IrInterpreter`; the
+former Runtime AST evaluator has been removed. The `ir` command renders the
+verified function or generated operation, while primitive entries display
+their canonical contract. Whole-solution Release validation and 314 selected pinned parity contracts passed. This is scoped conformance evidence, not an exhaustive semantic equivalence proof.
 
 ## Implementation status
 
@@ -40,13 +40,14 @@ callback signatures and effects, branch joins, case-local scope, source
 ownership, exact coverage categories, and acyclic user/generated call graphs
 before returning a verified program handle.
 
-`tests/AgentLang.IR.Tests` exercises both constructed verifier inputs and
-compiler lowering, including stale-snapshot and invalid-constant regressions.
-This establishes compiler output and verifier contracts only. `Runtime` still
-executes the source AST, and the current `ir` command is not yet a rendering of
-verified executable IR. No claim of IR execution, interpreter parity, or
-backend cutover is made until later migration stages pass their acceptance
-criteria.
+`tests/AgentLang.IR.Tests` exercises constructed verifier inputs and compiler
+lowering, including stale-snapshot and invalid-constant regressions.
+`tests/AgentLang.IR.Interpreter.Tests` covers the standalone backend boundary,
+private nominal values, trusted primitive dispatch, effects, and local fuel.
+Runtime Acceptance now includes candidate replacement/discard, commit, reload,
+and verified `ir` output. An earlier focused Core Release build and 28-group /
+477-assertion Acceptance run passed before the final generated-owner and
+task-log-write regressions were added. The final full Release gate passed all 18 checks, including 29 language groups/494 assertions. Pinned parity passed 314 selected contracts; report 010 records the final source and evidence.
 
 Keep `Expr` as the source AST used by parsing, canonical source rendering,
 diagnostics, and semantic edits. Add one closed, typed, resolved representation
@@ -171,7 +172,7 @@ project or dependency for the first migration.
 | `TypedIR.fs` (new) | Closed IR types, opaque snapshot-scoped `ProgramTypeKey`, resolved call records, typed blocks/functions, immutable type table/program snapshot, source-map and coverage sidecar DTOs. No parser or execution logic. |
 | `Compiler.fs` | Sole AST-to-checked-IR pipeline: name resolution, concrete polymorphic instantiation, stack/local/control-flow typing, direct and transitive effects, lowering, and IR verification. Existing checks must not be reimplemented in Runtime. |
 | `IRInterpreter.fs` (new) | Executes verified IR only: constants, calls, constructors, locals, callbacks, and structured cases. It has no `Expr` match and no parser access. |
-| `Runtime.fs` | Owns dictionary/task transactions, candidate and persistent execution snapshots, capability/provider bindings, primitive host dispatch, test execution, coverage aggregation, and compile/relink on stage, replacement, commit, abort, and load. Remove `runBody`'s AST execution path after cutover. |
+| `Runtime.fs` | Owns dictionary/task transactions, candidate and persistent execution snapshots, capability/provider bindings, primitive host dispatch, test execution, coverage aggregation, and compile/relink on stage, replacement, commit, abort, and load. It contains no AST execution path. |
 | `Source.fs`, `Storage.fs` | Continue rendering and persisting canonical source/metadata and existing stable word IDs in Storage v1. Rebuild the nominal type table and verify IR on load; program-scoped type keys and IR caches are disposable. Do not change storage schema for this cutover. |
 | `tests/AgentLang.IR.Tests` (new), Acceptance/Storage tests | Unit-test IR shape/verifier/lowering, then test Runtime behavior, persistence identity/reload, and whole-language compatibility. |
 
@@ -197,21 +198,22 @@ host interface for primitive/effect operations; it must not call arbitrary
    case-local payloads, callback constraints, and source-site mappings. Make
    `ir <word>` display this verified representation. Acceptance: all current
    definitions can compile and verify with no change to their source API.
-3. **Switch all execution to IR.** Route REPL `eval`, word calls, primitives,
-   generated words, callbacks, tests/examples, candidate tests, and task-session
-   execution through `IRInterpreter`. Compile a complete proposed snapshot
-   before staging/committing it; compile again from authoritative source/IDs
-   on reload. Acceptance: no runtime path accepts or executes `Expr`; malformed
-   or stale linked IR is rejected before effects; candidate/temporary rollback
-   and replacement invalidate/relink affected callers atomically.
-4. **Prove parity and freeze the backend seam.** Run all current acceptance
+3. **Switch all execution to IR.** Implemented in Runtime: route REPL `eval`,
+   word calls, primitives, generated words, callbacks, and tests through
+   `IRInterpreter`; examples remain compile-only. Compile complete active and
+   durable projections before publication and recompile authoritative source
+   on reload or snapshot load. Temporary rollback and semantic maintenance
+   activate only a fully compiled snapshot. The focused Acceptance suite passes.
+4. **Prove parity and freeze the backend seam.** Pending the independent gate:
+   run all current acceptance
    and persistence tests plus targeted conformance checks: exact structured
    errors and source origins; capability denial before effects, including an
    empty list with an effectful callback; callback and nominal type mismatch;
    both outcomes of every case; own-body coverage; stable IDs after reload and
    rename; task abort; and candidate commit with the proposed IR snapshot.
-   Only after this passes should experiments decide whether a native backend
-   is worth implementing.
+   Full Release validation and the pinned AST-parity suite must pass before the
+   migration is complete. Only after that should experiments decide whether a
+   native backend is worth implementing.
 
 The compiler/IR unit command added in stage 2 is
 `dotnet run --project tests/AgentLang.IR.Tests/AgentLang.IR.Tests.fsproj`.
@@ -226,10 +228,9 @@ dotnet run --project tests/AgentLang.Harness.Tests/AgentLang.Harness.Tests.fspro
 ```
 
 The final integrated gate is `pwsh -File scripts/Validate.ps1
--Configuration Release`, after adding the IR test project to the solution and
-validation script. This rebuilds the solution, runs the acceptance projects,
-and checks tracked/staged whitespace. The first interpreter-on-IR milestone
-must pass the same gate before any LLVM work begins.
+-Configuration Release`. It rebuilds the solution, runs the acceptance
+projects, and checks tracked/staged whitespace. The first interpreter-on-IR
+milestone must pass the same gate before any LLVM work begins.
 
 ## Deferred
 

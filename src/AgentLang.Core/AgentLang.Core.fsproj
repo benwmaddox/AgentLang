@@ -13,6 +13,7 @@
     <Compile Include="Compiler.fs" />
     <Compile Include="IrFormatting.fs" />
     <Compile Include="IrInterpreter.fs" />
+    <Compile Include="ValueInspection.fs" />
     <Compile Include="Source.fs" />
     <Compile Include="Discovery.fs" />
     <Compile Include="VocabularyAnalysis.fs" />

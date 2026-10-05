@@ -1265,6 +1265,60 @@ end
         equal "task-0003" third "task numbering continues after another reload"
         equal 3 (Directory.GetFiles(historyPath, "task-*.json").Length) "reloading does not overwrite earlier task logs"
 
+    let private testTaskLogWriteFailureIsWarning root =
+        let projectPath = makeProject root "task-log-write-warning"
+        let historyPath = Path.Combine(projectPath, "history")
+        Directory.CreateDirectory(Path.Combine(historyPath, "task-0001.json")) |> ignore
+        let runtime = engine projectPath []
+        let committedSource =
+            """word log-warning.persist : Int -> Int
+    effects none
+    1 add
+end
+
+test log-warning.persist/basic
+    2 log-warning.persist
+    => 3
+end
+"""
+        dispatch runtime "task.begin" [ "goal", jsonString "commit despite task log write failure" ]
+        |> expectOk "begin task with blocked log destination" |> ignore
+        define runtime committedSource |> expectOk "define candidate for task-log commit" |> ignore
+
+        let committed = dispatch runtime "task.commit" [] |> expectOk "task commit remains successful when log write fails"
+        let warning = committed["data"]["logWarning"]
+        check (not (isNull warning)) "committed task result includes a log warning"
+        check (not (warning["saved"].GetValue<bool>())) "commit warning states that the task log was not saved"
+        check ((warning["code"].GetValue<string>()).StartsWith("STORAGE_", StringComparison.Ordinal)) "commit warning retains the structured storage error code"
+        check (committed["text"].GetValue<string>().Contains("not saved", StringComparison.OrdinalIgnoreCase)) "commit response text explains that the task log was not saved"
+        check (not ((committed["data"]["active"]).GetValue<bool>())) "task commit is complete despite the log warning"
+
+        let completedStatus = dispatch runtime "task.status" [] |> expectOk "read completed task status after log failure"
+        check (not (isNull (completedStatus["data"]["logWarning"]))) "in-memory completed task status retains the log warning"
+        let reloaded = engine projectPath []
+        equal "3" (stackValue (evaluate reloaded "2 log-warning.persist" |> expectOk "verify committed state after log failure") 0) "task-log failure does not undo the durable commit"
+
+        Directory.CreateDirectory(Path.Combine(historyPath, "task-0002.json")) |> ignore
+        dispatch runtime "task.begin" [ "goal", jsonString "abort despite task log write failure" ]
+        |> expectOk "begin task with second blocked log destination" |> ignore
+        let transientSource =
+            """word log-warning.transient : Int -> Int
+    effects none
+    dup drop
+end
+"""
+        dispatch runtime "define" [ "source", jsonString transientSource; "temporary", jsonBool true ]
+        |> expectOk "define temporary word for task abort" |> ignore
+
+        let aborted = dispatch runtime "task.abort" [] |> expectOk "task abort remains successful when log write fails"
+        let abortWarning = aborted["data"]["logWarning"]
+        check (not (isNull abortWarning)) "aborted task result includes a log warning"
+        check (not (abortWarning["saved"].GetValue<bool>())) "abort warning states that the task log was not saved"
+        check (aborted["text"].GetValue<string>().Contains("not saved", StringComparison.OrdinalIgnoreCase)) "abort response text explains that the task log was not saved"
+        let abortedStatus = dispatch runtime "task.status" [] |> expectOk "read aborted task status after log failure"
+        check (not (isNull (abortedStatus["data"]["logWarning"]))) "in-memory aborted task status retains the log warning"
+        expectError "NAME_UNKNOWN_WORD" (evaluate (engine projectPath []) "1 log-warning.transient") |> ignore
+
     let private testNamedSnapshotRestoresProjectAndProviders root =
         let projectPath = makeProject root "named-snapshot"
         let capabilities = Set.ofList [ "fs.read"; "fs.write"; "clock.read" ]
@@ -1957,6 +2011,69 @@ end
         equal "false" (stackValue missingFile 0) "discovery did not run the effectful candidate"
         dispatch runtime "task.abort" [] |> expectOk "abort read-only discovery task" |> ignore
 
+    let private testVerifiedIrRuntimeSurface root =
+        let path = makeProject root "verified-ir-runtime"
+        let runtime = engine path []
+        let initialSource =
+            """word ir.snapshot : Int -> Int
+    effects none
+    1 add
+end
+
+record IrPoint
+    field x Int
+end
+
+test ir.snapshot/increment
+    2 ir.snapshot
+=> 3
+end
+
+test irPoint.x/read
+    7 irPoint.new irPoint.x
+=> 7
+end
+"""
+        define runtime initialSource |> expectOk "define IR-backed candidate and test" |> ignore
+        let candidateIr = dispatch runtime "ir" [ "word", jsonString "ir.snapshot" ] |> expectOk "format candidate IR"
+        equal "function" ((candidateIr["data"]["kind"]).GetValue<string>()) "ir command returns a verified function DTO"
+        check ((candidateIr["data"]["wordId"]).GetValue<string>().StartsWith("word_", StringComparison.Ordinal)) "IR formatter exposes the stable user word id"
+        check (candidateIr.ToJsonString().Contains("\"kind\":\"call\"", StringComparison.Ordinal)) "IR formatter exposes typed call operations"
+        check (candidateIr.ToJsonString().Contains("add", StringComparison.Ordinal)) "IR formatter resolves the primitive target"
+        let generatedIr = dispatch runtime "ir" [ "word", jsonString "irPoint.new" ] |> expectOk "format generated constructor IR"
+        equal "generated-word" ((generatedIr["data"]["kind"]).GetValue<string>()) "generated target formatter displays a verified operation"
+        equal "3" (stackValue (evaluate runtime "2 ir.snapshot" |> expectOk "execute compiled candidate") 0) "candidate executes its verified snapshot"
+
+        dispatch runtime "commit" [ "word", jsonString "ir.snapshot" ] |> expectOk "commit IR-backed word" |> ignore
+        let changedSource =
+            """word ir.snapshot : Int -> Int
+    effects none
+    2 add
+end
+
+test ir.snapshot/increment
+    2 ir.snapshot
+=> 4
+end
+"""
+        define runtime changedSource |> expectOk "stage IR replacement" |> ignore
+        let replacementIr = dispatch runtime "ir" [ "word", jsonString "ir.snapshot" ] |> expectOk "format staged replacement IR"
+        check (candidateIr.ToJsonString() <> replacementIr.ToJsonString()) "IR query observes the current replacement snapshot"
+        equal "4" (stackValue (evaluate runtime "2 ir.snapshot" |> expectOk "execute staged replacement") 0) "replacement executes through the new snapshot"
+        dispatch runtime "discard" [ "word", jsonString "ir.snapshot" ] |> expectOk "discard IR replacement" |> ignore
+        equal "3" (stackValue (evaluate runtime "2 ir.snapshot" |> expectOk "execute restored persistent snapshot") 0) "discard reactivates the prior compiled snapshot"
+
+        let generatedCommit = dispatch runtime "commit" [ "word", jsonString "IrPoint" ] |> expectOk "commit generated-target metadata"
+        let generatedResults = (generatedCommit["data"]).AsArray()
+        equal 1 generatedResults.Count "generated target commit gate result count"
+        equal "irPoint.x/read" (generatedResults[0].GetValue<string>()) "generated owner test ran before type publication"
+
+        let reloaded = engine path []
+        equal "3" (stackValue (evaluate reloaded "2 ir.snapshot" |> expectOk "execute reloaded IR program") 0) "reload compiles and executes the committed program"
+        assertAllTestsPassed "reloaded IR program" 2 (dispatch reloaded "test-all" [] |> expectOk "run reloaded IR tests")
+        let primitive = dispatch reloaded "ir" [ "word", jsonString "add" ] |> expectOk "format primitive contract"
+        equal "primitive-contract" ((primitive["data"]["kind"]).GetValue<string>()) "primitive IR output is explicitly a canonical contract"
+
     [<EntryPoint>]
     let main _ =
         let temporaryRoot = Path.Combine(Path.GetTempPath(), "agentlang-acceptance-" + Guid.NewGuid().ToString("N"))
@@ -1984,11 +2101,13 @@ end
               "task abort rollback", testTaskAbortRollsBackDictionary
               "task commit temporary cleanup", testTaskCommitClearsSessionWords
               "task logs survive reload", testTaskLogsSurviveReload
+              "task log failures remain truthful warnings", testTaskLogWriteFailureIsWarning
               "named snapshot restores project and providers", testNamedSnapshotRestoresProjectAndProviders
               "semantic rename and deprecation", testSemanticRenameAndDeprecation
               "typed containers and syntax metadata", testTypedContainersAndLanguageConstructs
               "container library coverage", testContainerLibraryCoverage
-              "live bounded Discovery commands", testDiscoveryCommands ]
+              "live bounded Discovery commands", testDiscoveryCommands
+              "verified IR runtime snapshots and formatter", testVerifiedIrRuntimeSurface ]
         let failures = ResizeArray<string>()
         try
             for name, run in cases do
