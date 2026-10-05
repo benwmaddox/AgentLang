@@ -36,6 +36,8 @@ Final independent validation command: `./scripts/Validate.ps1 -ReportPath .agent
 
 The final language suite corrected the syntax expectation and added whole-expression preflight checks: a wrong constructor payload or denied callback effect cannot execute an earlier allowed file write. Namespace checks reject generated/generated, generated/user, primitive and syntax collisions, including project reload. The runtime contains **49 trusted dictionary primitives**; constructor/match/iteration syntax is separately described and counted.
 
+Commit `6d9e341c402144f5d168566e119906e5495e3cb4` was pushed to the private repository's main branch. [CI run 37247143377](https://github.com/benwmaddox/AgentLang/actions/runs/37247143377) passed, including validation evidence upload. The downloaded `validation.json` confirms that exact revision, `dirty: false`, and all six checks passing. The artifact is retained locally at `.agentlang/reports/ci-6d9e341/validation.json`.
+
 Harness checks cover preserved reasoning/function history, strict tool decoding, the compact language primer, temporary word cleanup, library coverage rejection and retry, rollback after interim word commits, Flat/Growing retention, initialization failure reports, prepared-versus-sent bytes, unknown usage, incomplete responses, output caps, and credential omission from HTTP failure artifacts. No live API calls were made. Business fixture equivalence with the language domain and live agent comparisons remain unverified.
 
 ## Feedback and remaining limits

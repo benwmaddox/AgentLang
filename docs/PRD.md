@@ -257,9 +257,17 @@ The experiment must answer whether agents create reusable words, whether later a
 ## Delivery sequence
 
 1. Ship and validate the first usable slice and demo.
-2. Connect one model through the small protocol; record complete usage and events.
+2. Run a fresh external subagent through the small protocol; record supplied context, interactions, independent results, and available usage.
 3. Run a pilot against flat and conventional modes before expanding language features.
 4. Add only capabilities justified by pilot failures, then freeze fixtures and harness versions.
 5. Run the controlled suite and publish outcomes, uncertainty, and limitations.
 
 Future curator agents, synthesized context, maturity levels, contracts, and a second game/simulation domain remain hypotheses for later work. They must not delay the first measured agent task.
+
+## Conditional development and release backends
+
+If the initial experiments support the hypothesis, evolve toward separate development and release runtimes. Development retains the interpreter, REPL, introspection, and hot word replacement, and may use LLVM JIT compilation for stable or frequently executed words. Release uses LLVM AOT to emit optimized native code with a minimal runtime and ships neither the interpreter nor compiler.
+
+The typed semantic IR is the authoritative executable representation from the initial architecture. Source and AST are authoring representations; type/effect checking lowers them to this IR before execution. Interpreter, JIT, and AOT must share type identities, numeric/error behavior, control flow, effects, and value semantics. Native performance, memory use, and startup approaching Rust or C are later evaluation goals, not current guarantees.
+
+LLVM implementation remains outside V1 and is conditional on successful experiments. The current checked-AST interpreter is a transitional implementation and does not satisfy the semantic-IR requirement. V1 must introduce a small inspectable typed IR and validate its interpreter without adding LLVM.

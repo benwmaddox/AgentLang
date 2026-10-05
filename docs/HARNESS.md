@@ -1,5 +1,7 @@
 # Agent experiment harness
 
+The project owner's selected experiment path is fresh Codex subagents using a compact prompt and the runtime command protocol. These agents are external development tools; the language contains no AI machinery. A subagent trial must save its prompt, runtime interaction log, project states, and host-run acceptance results. Exact token usage and framework context are unavailable unless reported by the subagent interface. Protocol-only instructions do not enforce host tool isolation. See [the evaluation protocol](EVALUATION.md).
+
 The harness runs a task against the AgentLang JSON dispatch API, one provider turn at a time. It supports a deterministic scripted provider for offline tests and an OpenAI Responses API provider for live experiments. Conventional repository editing and multi-task benchmark orchestration are not implemented yet.
 
 ## Run the offline customer example

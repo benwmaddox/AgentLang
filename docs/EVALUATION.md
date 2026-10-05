@@ -4,6 +4,12 @@ This document specifies how to evaluate the hypothesis before collecting results
 
 ## Paired environments
 
+The prototype's first AI experiments use fresh Codex subagents, as requested by the project owner. AI remains outside the language: a subagent builds and tests words through the runtime protocol. The optional HTTP provider is an alternative integration, not a prerequisite for these experiments.
+
+Save the exact experiment prompt, supplied language primer, model/reasoning configuration when known, runtime requests and responses, initial/final project state, elapsed time, and independent acceptance results. Start each trial without inherited task history where the subagent interface permits it. Record any reused agent or inherited context as a trial limitation.
+
+Subagents may have broader host tools than the experiment protocol. A request to use only the protocol is an instruction rather than an enforced sandbox; disclose this and record observed source/tool fallbacks. Supplied prompt and retrieval bytes can be measured, but framework context, exact model turns, and token usage must remain unavailable unless the interface reports them. Do not substitute runtime calls for model turns or byte estimates for observed tokens.
+
 Use the same provider, explicit model, reasoning configuration, task intent, deterministic input data, and independent acceptance oracle for each mode. Record their exact versions and the repository revision. Give each agent equivalent high-level instructions and a compact initial project description.
 
 | Mode | Starting environment | Accepted changes after a task |

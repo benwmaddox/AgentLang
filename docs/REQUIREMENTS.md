@@ -101,6 +101,8 @@ Still required or incomplete: type-of, recent-words, search-type, search-output,
 
 ## Planned implementation order
 
+User addition: the typed semantic IR must become the authoritative executable representation. The current checked-AST interpreter is transitional. Introduce and validate a small IR interpreter in V1; LLVM development JIT and release AOT remain conditional follow-ons after successful agent experiments. See [the backend plan](BACKENDS.md).
+
 1. Typed containers, case handling, and coverage rules; establish provider harness contracts in parallel.
 2. Stable identity, durable history, snapshots, structured discovery/context/metrics and complete task events.
 3. Replaceable effect providers and confined real providers; JSON and necessary primitives within 50–100.

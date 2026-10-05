@@ -26,6 +26,8 @@ These decisions refine the supplied PRD into a first usable experiment. They des
 | Agent protocol? | One command dispatcher with JSON-lines transport | Small tool surface and consistent human/machine behavior |
 | Metrics? | Runtime events plus model-harness usage | Prevents invented token or recovery measurements |
 | Benchmark scope? | Small pilot before a 60-task suite | Finds usability problems quickly |
+| Executable representation? | Authoritative typed semantic IR shared by backends | Prevents interpreter and future native semantics from drifting; current checked AST is transitional |
+| Native backend timing? | Conditional post-experiment LLVM JIT for development and AOT for release | Preserves live development while permitting a minimal native release runtime; LLVM stays outside V1 |
 
 The refined PRD resolves several tensions in the original: 30 versus 50–100 primitives is a staged rollout; built-in parameterized containers do not imply generic user words; test-gated word commits are distinct from benchmark success; default effect denial is distinct from mocks; deterministic semantic logs do not require identical timestamps; and task rollback does not promise reversal of external I/O.
 
