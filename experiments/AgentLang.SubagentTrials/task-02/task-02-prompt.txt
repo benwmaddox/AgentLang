@@ -1,0 +1,26 @@
+You are a different external coding agent using a small typed language. A previous agent's accepted vocabulary persists, but you receive none of that agent's conversation. The framework has reached its subagent-thread limit, so this trial reuses an earlier storage-implementation agent. Prior repository context is a limitation: this is an exploratory reuse demonstration, not a controlled fresh-context comparison. Use live discovery rather than assumptions from earlier implementation work.
+
+Task: Add the reusable library word customer.renewal-balance : Customer Subscription -> Float. Start with the existing customer's discounted balance. An exactly premium customer renewing an annual subscription with renewable=true receives an additional 5% reduction on that already discounted balance. Every other customer/subscription combination retains the existing discounted balance. Reuse the existing customer.premium? and customer.discounted-balance words instead of reimplementing their rules. Add thorough attached tests across eligibility combinations, then library-commit the new word. Preserve existing vocabulary/types. Keep the task open for host acceptance.
+
+Discover capabilities through the runtime. Do not read repository implementation, examples, dictionary, prior trial traces, or hidden acceptance files. Do not edit language project files directly. You may read this prompt and write only your task-02 interaction log/notes. Protocol-only tool use is an instruction rather than an enforced sandbox in this exploratory trial. You are not alone in the shared checkout; no git operations.
+
+Start a stopwatch/timestamp after reading this prompt and record when runtime task work begins. The workstation sandbox cannot start; use tools.exec_command sandbox_permissions require_escalated for reading this prompt, launching the fixed runtime, and writing your log/notes. Start your own persistent CLI with tty true, workdir D:\code\AgentLang, command: dotnet .agentlang/subagent-pilot-6d9e341/host/AgentLang.Cli.dll --project .agentlang/subagent-pilot-6d9e341/growing-project --jsonl. Use tools.write_stdin with its returned session_id, newline-terminated compact JSON, yield_time_ms 1000. Do not start further runtimes; candidates are process-local.
+
+First send {"op":"task.begin","goal":"Add annual premium renewal balance using retained customer vocabulary"}. Then use only these six operations, with at most 30 runtime requests:
+{"op":"search","query":"customer"}
+{"op":"describe","word":"name"}
+{"op":"eval","code":"10 20 add"}
+{"op":"define","source":"..."}
+{"op":"test","word":"name"}
+{"op":"commit","word":"name","library":true}
+Do not task.commit or task.abort yet. When ready, report the session ID and leave it alive; host acceptance will be followed by authorization to finalize.
+
+Language primer: signatures list stack inputs/outputs bottom-to-top. Int and Float are distinct. Compose literals and named operations. Syntax:
+word example.increment : Int -> Int
+    effects none
+    doc "Increment an integer."
+    1 add
+end
+Bind stack top with let local; load with $local. Conditions consume Bool: if ... else ... end, with identical output stack types on both paths. Tests use test word/case, executable body, => expected-literal, end. One define can carry several declarations. Library commit requires attached passing tests plus full own-body instruction/control-flow-outcome coverage. The toy Float balance model does not implement exact financial arithmetic.
+
+Save every exact runtime request/response in order to D:\code\AgentLang\.agentlang\subagent-pilot-6d9e341\task-02-interactions.jsonl. Report runtime calls, errors/recovery, tests, static reuse, and any host-tool/source fallback. Save recorded runtime-task start/end timestamps and elapsed duration. Exact LLM tokens, framework context, and model turns are unavailable; do not claim measured values for them.

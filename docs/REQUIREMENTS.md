@@ -8,6 +8,8 @@ Baseline evidence: [Milestone 001 report](../reports/001-first-usable-prototype.
 
 Current milestone evidence: [Milestone 002 report](../reports/002-next-milestone.md), fresh Release build with zero warnings/errors, 18 language groups/256 assertions, 82 offline harness assertions, and 7 business groups/113 assertions. No live model comparison has been run.
 
+Exploratory external-agent evidence: [the subagent pilot](../reports/004-subagent-vocabulary-pilot.md) records a fresh agent building two tested library words and a different agent discovering/reusing them for a later task. Independent host checks passed 16 and 17 cases respectively. The second agent retained earlier repository context; exact model usage is unavailable. This proves a scoped workflow, not the required controlled performance comparison.
+
 | Original section | Requirement / disposition | Current evidence and outstanding work |
 | --- | --- | --- |
 | 1 | Partial: small extensible typed environment | Runtime and words exist; complete values/providers/evaluation remain |

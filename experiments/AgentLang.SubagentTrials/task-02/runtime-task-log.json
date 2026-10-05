@@ -1,0 +1,36 @@
+{
+  "task": "task-0002",
+  "goal": "Add annual premium renewal balance using retained customer vocabulary",
+  "active": false,
+  "wordsInspected": [
+    "customer.discounted-balance",
+    "customer.new",
+    "customer.premium?",
+    "customer.renewal-balance",
+    "equals",
+    "float.multiply",
+    "subscription.new",
+    "subscription.renewable",
+    "subscription.term"
+  ],
+  "wordsUsed": [
+    "customer.balance",
+    "customer.discounted-balance",
+    "customer.kind",
+    "customer.new",
+    "customer.premium?",
+    "customer.renewal-balance",
+    "equals",
+    "float.multiply",
+    "subscription.new",
+    "subscription.renewable",
+    "subscription.term"
+  ],
+  "wordsCreated": [
+    "customer.renewal-balance"
+  ],
+  "testsRun": 16,
+  "testsFailed": 0,
+  "effects": {},
+  "errors": []
+}

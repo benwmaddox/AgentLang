@@ -1,0 +1,61 @@
+record Customer
+    field kind String
+    field balance Float
+end
+
+word customer.premium? : Customer -> Bool
+maturity library
+revision 1
+    effects none
+    doc "Returns true only when the customer kind is exactly premium."
+    customer.kind "premium" equals
+end
+
+word customer.discounted-balance : Customer -> Float
+maturity library
+revision 1
+    effects none
+    doc "Returns 90 percent of the balance for premium customers and the original balance for every other kind."
+    let customer
+    $customer customer.premium?
+    if
+        $customer customer.balance 0.9 float.multiply
+    else
+        $customer customer.balance
+    end
+end
+
+test customer.discounted-balance/case-sensitive
+    "Premium" 80.0 customer.new customer.discounted-balance
+    => 80.0
+end
+
+test customer.discounted-balance/premium
+    "premium" 100.0 customer.new customer.discounted-balance
+    => 90.0
+end
+
+test customer.discounted-balance/premium-larger-balance
+    "premium" 250.0 customer.new customer.discounted-balance
+    => 225.0
+end
+
+test customer.discounted-balance/standard
+    "standard" 100.0 customer.new customer.discounted-balance
+    => 100.0
+end
+
+test customer.premium?/case-sensitive
+    "Premium" 100.0 customer.new customer.premium?
+    => false
+end
+
+test customer.premium?/premium
+    "premium" 100.0 customer.new customer.premium?
+    => true
+end
+
+test customer.premium?/standard
+    "standard" 100.0 customer.new customer.premium?
+    => false
+end

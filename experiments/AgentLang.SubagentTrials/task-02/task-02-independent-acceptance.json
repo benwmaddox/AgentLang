@@ -1,0 +1,711 @@
+{
+  "runtimeRevision": "6d9e341c402144f5d168566e119906e5495e3cb4",
+  "startedUtc": "2026-10-05T01:34:41.1379398+00:00",
+  "finishedUtc": "2026-10-05T01:34:41.3763084+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "request": {
+        "op": "eval",
+        "code": "\"premium\" 100.0 customer.new \"annual\" true subscription.new customer.renewal-balance"
+      },
+      "check": {
+        "kind": "value",
+        "expected": "85.5"
+      },
+      "passed": true,
+      "response": {
+        "ok": true,
+        "kind": "eval",
+        "text": "85.5",
+        "data": {
+          "stack": [
+            "85.5"
+          ],
+          "stackTypes": [
+            "Float"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      }
+    },
+    {
+      "request": {
+        "op": "eval",
+        "code": "\"premium\" 100.0 customer.new \"annual\" false subscription.new customer.renewal-balance"
+      },
+      "check": {
+        "kind": "value",
+        "expected": "90"
+      },
+      "passed": true,
+      "response": {
+        "ok": true,
+        "kind": "eval",
+        "text": "90",
+        "data": {
+          "stack": [
+            "90"
+          ],
+          "stackTypes": [
+            "Float"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      }
+    },
+    {
+      "request": {
+        "op": "eval",
+        "code": "\"premium\" 100.0 customer.new \"monthly\" true subscription.new customer.renewal-balance"
+      },
+      "check": {
+        "kind": "value",
+        "expected": "90"
+      },
+      "passed": true,
+      "response": {
+        "ok": true,
+        "kind": "eval",
+        "text": "90",
+        "data": {
+          "stack": [
+            "90"
+          ],
+          "stackTypes": [
+            "Float"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      }
+    },
+    {
+      "request": {
+        "op": "eval",
+        "code": "\"premium\" 100.0 customer.new \"monthly\" false subscription.new customer.renewal-balance"
+      },
+      "check": {
+        "kind": "value",
+        "expected": "90"
+      },
+      "passed": true,
+      "response": {
+        "ok": true,
+        "kind": "eval",
+        "text": "90",
+        "data": {
+          "stack": [
+            "90"
+          ],
+          "stackTypes": [
+            "Float"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      }
+    },
+    {
+      "request": {
+        "op": "eval",
+        "code": "\"standard\" 100.0 customer.new \"annual\" true subscription.new customer.renewal-balance"
+      },
+      "check": {
+        "kind": "value",
+        "expected": "100"
+      },
+      "passed": true,
+      "response": {
+        "ok": true,
+        "kind": "eval",
+        "text": "100",
+        "data": {
+          "stack": [
+            "100"
+          ],
+          "stackTypes": [
+            "Float"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      }
+    },
+    {
+      "request": {
+        "op": "eval",
+        "code": "\"standard\" 100.0 customer.new \"annual\" false subscription.new customer.renewal-balance"
+      },
+      "check": {
+        "kind": "value",
+        "expected": "100"
+      },
+      "passed": true,
+      "response": {
+        "ok": true,
+        "kind": "eval",
+        "text": "100",
+        "data": {
+          "stack": [
+            "100"
+          ],
+          "stackTypes": [
+            "Float"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      }
+    },
+    {
+      "request": {
+        "op": "eval",
+        "code": "\"standard\" 100.0 customer.new \"monthly\" true subscription.new customer.renewal-balance"
+      },
+      "check": {
+        "kind": "value",
+        "expected": "100"
+      },
+      "passed": true,
+      "response": {
+        "ok": true,
+        "kind": "eval",
+        "text": "100",
+        "data": {
+          "stack": [
+            "100"
+          ],
+          "stackTypes": [
+            "Float"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      }
+    },
+    {
+      "request": {
+        "op": "eval",
+        "code": "\"standard\" 100.0 customer.new \"monthly\" false subscription.new customer.renewal-balance"
+      },
+      "check": {
+        "kind": "value",
+        "expected": "100"
+      },
+      "passed": true,
+      "response": {
+        "ok": true,
+        "kind": "eval",
+        "text": "100",
+        "data": {
+          "stack": [
+            "100"
+          ],
+          "stackTypes": [
+            "Float"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      }
+    },
+    {
+      "request": {
+        "op": "eval",
+        "code": "\"Premium\" 100.0 customer.new \"annual\" true subscription.new customer.renewal-balance"
+      },
+      "check": {
+        "kind": "value",
+        "expected": "100"
+      },
+      "passed": true,
+      "response": {
+        "ok": true,
+        "kind": "eval",
+        "text": "100",
+        "data": {
+          "stack": [
+            "100"
+          ],
+          "stackTypes": [
+            "Float"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      }
+    },
+    {
+      "request": {
+        "op": "eval",
+        "code": "\"premium\" 100.0 customer.new \"Annual\" true subscription.new customer.renewal-balance"
+      },
+      "check": {
+        "kind": "value",
+        "expected": "90"
+      },
+      "passed": true,
+      "response": {
+        "ok": true,
+        "kind": "eval",
+        "text": "90",
+        "data": {
+          "stack": [
+            "90"
+          ],
+          "stackTypes": [
+            "Float"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      }
+    },
+    {
+      "request": {
+        "op": "eval",
+        "code": "\"premium\" 0.0 customer.new \"annual\" true subscription.new customer.renewal-balance"
+      },
+      "check": {
+        "kind": "value",
+        "expected": "0"
+      },
+      "passed": true,
+      "response": {
+        "ok": true,
+        "kind": "eval",
+        "text": "0",
+        "data": {
+          "stack": [
+            "0"
+          ],
+          "stackTypes": [
+            "Float"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      }
+    },
+    {
+      "request": {
+        "op": "eval",
+        "code": "\"premium\" -100.0 customer.new \"annual\" true subscription.new customer.renewal-balance"
+      },
+      "check": {
+        "kind": "value",
+        "expected": "-85.5"
+      },
+      "passed": true,
+      "response": {
+        "ok": true,
+        "kind": "eval",
+        "text": "-85.5",
+        "data": {
+          "stack": [
+            "-85.5"
+          ],
+          "stackTypes": [
+            "Float"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      }
+    },
+    {
+      "request": {
+        "op": "eval",
+        "code": "\"premium\" 100.0 customer.new \"premium\" 100.0 customer.new customer.renewal-balance"
+      },
+      "check": {
+        "kind": "error",
+        "code": "TYPE_STACK_MISMATCH"
+      },
+      "passed": true,
+      "response": {
+        "ok": false,
+        "kind": "error",
+        "text": "TYPE_STACK_MISMATCH in customer.renewal-balance at <eval>:1:59: Arguments passed to 'customer.renewal-balance' do not match its signature.",
+        "error": {
+          "code": "TYPE_STACK_MISMATCH",
+          "message": "Arguments passed to 'customer.renewal-balance' do not match its signature.",
+          "word": "customer.renewal-balance",
+          "span": {
+            "file": "<eval>",
+            "line": 1,
+            "column": 59,
+            "length": 24
+          },
+          "expected": [
+            "Customer",
+            "Subscription"
+          ],
+          "actual": [
+            "Customer",
+            "Customer"
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "op": "test-all"
+      },
+      "check": {
+        "kind": "tests",
+        "minimum": 8
+      },
+      "passed": true,
+      "response": {
+        "ok": true,
+        "kind": "test",
+        "text": "15/15 test(s) passed.",
+        "data": {
+          "results": [
+            {
+              "name": "case-sensitive",
+              "word": "customer.discounted-balance",
+              "passed": true,
+              "expected": "80",
+              "actual": [
+                "80"
+              ]
+            },
+            {
+              "name": "premium",
+              "word": "customer.discounted-balance",
+              "passed": true,
+              "expected": "90",
+              "actual": [
+                "90"
+              ]
+            },
+            {
+              "name": "premium-larger-balance",
+              "word": "customer.discounted-balance",
+              "passed": true,
+              "expected": "225",
+              "actual": [
+                "225"
+              ]
+            },
+            {
+              "name": "standard",
+              "word": "customer.discounted-balance",
+              "passed": true,
+              "expected": "100",
+              "actual": [
+                "100"
+              ]
+            },
+            {
+              "name": "case-sensitive",
+              "word": "customer.premium?",
+              "passed": true,
+              "expected": "false",
+              "actual": [
+                "false"
+              ]
+            },
+            {
+              "name": "premium",
+              "word": "customer.premium?",
+              "passed": true,
+              "expected": "true",
+              "actual": [
+                "true"
+              ]
+            },
+            {
+              "name": "standard",
+              "word": "customer.premium?",
+              "passed": true,
+              "expected": "false",
+              "actual": [
+                "false"
+              ]
+            },
+            {
+              "name": "premium-annual-not-renewable",
+              "word": "customer.renewal-balance",
+              "passed": true,
+              "expected": "90",
+              "actual": [
+                "90"
+              ]
+            },
+            {
+              "name": "premium-annual-renewable",
+              "word": "customer.renewal-balance",
+              "passed": true,
+              "expected": "85.5",
+              "actual": [
+                "85.5"
+              ]
+            },
+            {
+              "name": "premium-monthly-not-renewable",
+              "word": "customer.renewal-balance",
+              "passed": true,
+              "expected": "90",
+              "actual": [
+                "90"
+              ]
+            },
+            {
+              "name": "premium-monthly-renewable",
+              "word": "customer.renewal-balance",
+              "passed": true,
+              "expected": "90",
+              "actual": [
+                "90"
+              ]
+            },
+            {
+              "name": "standard-annual-not-renewable",
+              "word": "customer.renewal-balance",
+              "passed": true,
+              "expected": "100",
+              "actual": [
+                "100"
+              ]
+            },
+            {
+              "name": "standard-annual-renewable",
+              "word": "customer.renewal-balance",
+              "passed": true,
+              "expected": "100",
+              "actual": [
+                "100"
+              ]
+            },
+            {
+              "name": "standard-monthly-not-renewable",
+              "word": "customer.renewal-balance",
+              "passed": true,
+              "expected": "100",
+              "actual": [
+                "100"
+              ]
+            },
+            {
+              "name": "standard-monthly-renewable",
+              "word": "customer.renewal-balance",
+              "passed": true,
+              "expected": "100",
+              "actual": [
+                "100"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "op": "describe",
+        "word": "customer.renewal-balance"
+      },
+      "check": {
+        "kind": "metadata"
+      },
+      "passed": true,
+      "response": {
+        "ok": true,
+        "kind": "describe",
+        "text": "Description for customer.renewal-balance.",
+        "data": {
+          "name": "customer.renewal-balance",
+          "inputs": [
+            "Customer",
+            "Subscription"
+          ],
+          "outputs": [
+            "Float"
+          ],
+          "effects": [],
+          "documentation": "Returns the existing discounted balance, with a further 5% reduction only for premium customers on renewable annual subscriptions.",
+          "dependencies": [
+            "customer.discounted-balance",
+            "customer.premium?",
+            "equals",
+            "float.multiply",
+            "subscription.renewable",
+            "subscription.term"
+          ],
+          "transitiveDependencies": [
+            "customer.balance",
+            "customer.discounted-balance",
+            "customer.kind",
+            "customer.premium?",
+            "equals",
+            "float.multiply",
+            "subscription.renewable",
+            "subscription.term"
+          ],
+          "callers": [],
+          "tests": [
+            "premium-annual-not-renewable",
+            "premium-annual-renewable",
+            "premium-monthly-not-renewable",
+            "premium-monthly-renewable",
+            "standard-annual-not-renewable",
+            "standard-annual-renewable",
+            "standard-monthly-not-renewable",
+            "standard-monthly-renewable"
+          ],
+          "examples": [],
+          "source": "D:\\code\\AgentLang\\.agentlang\\subagent-pilot-6d9e341\\growing-project\\dictionary.agent",
+          "line": 33,
+          "kind": "word",
+          "status": "persistent",
+          "maturity": "library",
+          "revision": 1,
+          "testCount": 8,
+          "exampleCount": 0,
+          "coverage": {
+            "instructionsCovered": 22,
+            "instructionsTotal": 22,
+            "branchesCovered": 6,
+            "branchesTotal": 6,
+            "uncoveredInstructions": [],
+            "uncoveredBranchOutcomes": [],
+            "status": "current"
+          }
+        }
+      }
+    },
+    {
+      "request": {
+        "op": "describe",
+        "word": "customer.premium?"
+      },
+      "check": {
+        "output": "Bool",
+        "kind": "retained"
+      },
+      "passed": true,
+      "response": {
+        "ok": true,
+        "kind": "describe",
+        "text": "Description for customer.premium?.",
+        "data": {
+          "name": "customer.premium?",
+          "inputs": [
+            "Customer"
+          ],
+          "outputs": [
+            "Bool"
+          ],
+          "effects": [],
+          "documentation": "Returns true only when the customer kind is exactly premium.",
+          "dependencies": [
+            "customer.kind",
+            "equals"
+          ],
+          "transitiveDependencies": [
+            "customer.kind",
+            "equals"
+          ],
+          "callers": [
+            "customer.discounted-balance",
+            "customer.renewal-balance"
+          ],
+          "tests": [
+            "case-sensitive",
+            "premium",
+            "standard"
+          ],
+          "examples": [],
+          "source": "D:\\code\\AgentLang\\.agentlang\\subagent-pilot-6d9e341\\growing-project\\dictionary.agent",
+          "line": 11,
+          "kind": "word",
+          "status": "persistent",
+          "maturity": "library",
+          "revision": 1,
+          "testCount": 3,
+          "exampleCount": 0,
+          "coverage": {
+            "instructionsCovered": 3,
+            "instructionsTotal": 3,
+            "branchesCovered": 0,
+            "branchesTotal": 0,
+            "uncoveredInstructions": [],
+            "uncoveredBranchOutcomes": [],
+            "status": "current"
+          }
+        }
+      }
+    },
+    {
+      "request": {
+        "op": "describe",
+        "word": "customer.discounted-balance"
+      },
+      "check": {
+        "output": "Float",
+        "kind": "retained"
+      },
+      "passed": true,
+      "response": {
+        "ok": true,
+        "kind": "describe",
+        "text": "Description for customer.discounted-balance.",
+        "data": {
+          "name": "customer.discounted-balance",
+          "inputs": [
+            "Customer"
+          ],
+          "outputs": [
+            "Float"
+          ],
+          "effects": [],
+          "documentation": "Returns 90 percent of the balance for premium customers and the original balance for every other kind.",
+          "dependencies": [
+            "customer.balance",
+            "customer.premium?",
+            "float.multiply"
+          ],
+          "transitiveDependencies": [
+            "customer.balance",
+            "customer.kind",
+            "customer.premium?",
+            "equals",
+            "float.multiply"
+          ],
+          "callers": [
+            "customer.renewal-balance"
+          ],
+          "tests": [
+            "case-sensitive",
+            "premium",
+            "premium-larger-balance",
+            "standard"
+          ],
+          "examples": [],
+          "source": "D:\\code\\AgentLang\\.agentlang\\subagent-pilot-6d9e341\\growing-project\\dictionary.agent",
+          "line": 19,
+          "kind": "word",
+          "status": "persistent",
+          "maturity": "library",
+          "revision": 1,
+          "testCount": 4,
+          "exampleCount": 0,
+          "coverage": {
+            "instructionsCovered": 10,
+            "instructionsTotal": 10,
+            "branchesCovered": 2,
+            "branchesTotal": 2,
+            "uncoveredInstructions": [],
+            "uncoveredBranchOutcomes": [],
+            "status": "current"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "originalSuppliedPromptBytes": 2989,
+  "retrySuppliedPromptBytes": 3738,
+  "exactLlmInputTokens": null,
+  "exactLlmOutputTokens": null,
+  "frameworkContextBytes": null,
+  "model": "gpt-6-luna",
+  "reasoningEffort": "max",
+  "restriction": "instruction-only",
+  "runtimeRevision": "6d9e341c402144f5d168566e119906e5495e3cb4"
+}

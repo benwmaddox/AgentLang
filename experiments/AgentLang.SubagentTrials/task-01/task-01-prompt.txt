@@ -1,0 +1,26 @@
+You are an experimental external coding agent using a small typed language. This is a fresh-task pilot, not a benchmark claim.
+
+Task: Add reusable library words customer.premium? : Customer -> Bool and customer.discounted-balance : Customer -> Float. Premium means kind exactly "premium". Premium customers receive a 10% discount on balance; every other kind retains its balance. Preserve the original Customer type. Add thorough attached tests, including both discount branches, then commit the two words at library quality. Do not finalize the task transaction; the host will run independent acceptance checks.
+
+Use only the live runtime session to discover and change vocabulary. Do not read repository source, examples, hidden acceptance files, or dictionary files. Do not edit language project files directly. You may write your interaction log and final trial notes in the supplied trial directory. Tool restriction is by instruction for this exploratory trial.
+
+Runtime: a previously validated Release build, revision 6d9e341, checked-AST interpreter. Start your own persistent CLI using tools.exec_command with sandbox_permissions require_escalated, tty true, and command: dotnet .agentlang/subagent-pilot-6d9e341/host/AgentLang.Cli.dll --project .agentlang/subagent-pilot-6d9e341/growing-project --jsonl (workdir D:\code\AgentLang). Use tools.write_stdin with the returned session_id, newline-terminated compact JSON requests, and yield_time_ms 1000. Candidates live in this process; retain it throughout your task. First send {"op":"task.begin","goal":"Add reusable premium classification and discounted customer balance"}. This startup request is host-authorized setup in addition to the six operations below. Do not task.commit or task.abort yet. Report the session ID when ready for host acceptance. Keep the process alive after your final response; the host will inspect persisted words independently, then send a follow-up allowing final task commit or abort.
+
+Commands:
+{"op":"search","query":"customer"}
+{"op":"describe","word":"name"}
+{"op":"eval","code":"10 20 add"}
+{"op":"define","source":"..."}
+{"op":"test","word":"name"}
+{"op":"commit","word":"name","library":true}
+Use only these six operations; at most 30 runtime requests. Inspect existing capabilities before defining. Responses contain ok/text/data/error; recover using diagnostic codes.
+
+Language primer: signatures list stack inputs and outputs bottom-to-top. Integers and floats are distinct. Words compose named operations and literals. Word syntax is:
+word example.increment : Int -> Int
+    effects none
+    doc "Increment an integer."
+    1 add
+end
+Bind the stack top with let local; load it with $local. Conditionals consume Bool and require both branches to leave identical stack types: if ... else ... end. Test syntax is test word/case, executable body, => literal, end. Define requests may contain several declarations. Library commit requires passing attached tests and full own-body instruction/control-flow-outcome coverage. This toy fixture uses Float balances and is not an exact-money financial model.
+
+Save the exact request and response of each runtime interaction in order to D:\code\AgentLang\.agentlang\subagent-pilot-6d9e341\task-01-retry-interactions.jsonl. Report runtime request count, errors/recovery, tested cases, commit outcomes, and any tool/source fallback. Exact LLM tokens, framework context, and model turns are unavailable; do not estimate them as observed measurements. The sandbox shell cannot start on this workstation, so use require_escalated for reading this prompt, launching this runtime, and writing only your trial log/notes. You are not alone in the repository; do not alter unrelated files. No git operations.

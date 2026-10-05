@@ -1,0 +1,15 @@
+Task: Add reusable customer premium classification and discounted balance words.
+
+Runtime: task-0001 on CLI session 36713. Final request count: 17, including task.begin and task.commit.
+
+Vocabulary work: Added and library-committed customer.premium? : Customer -> Bool and customer.discounted-balance : Customer -> Float. The existing Customer constructor signature remained intact. Premium matching is exact on the string "premium"; other kinds keep the original balance. Premium balances are multiplied by 0.9.
+
+Attached tests: customer.premium? passed 3/3 (premium, standard, case-sensitive "Premium"). customer.discounted-balance passed 4/4 (100 -> 90 premium, 250 -> 225 premium, 100 -> 100 standard, 80 -> 80 case-sensitive "Premium"). The balance word covered all 10 instructions and both branch outcomes. Each library commit passed all attached tests.
+
+Independent host acceptance: 16/16 checks passed, including blank and case classification, zero/negative/larger balances, Int-to-Float mismatch rejection, all seven attached tests, library/full-coverage metadata, and preservation of the constructor signature.
+
+Finalization: task.commit succeeded for task-0001; response reports active=false, no errors, 14 tests run and 0 failed. The final request and response are recorded in task-01-retry-interactions.jsonl.
+
+Errors/recovery: No runtime errors and no recovery attempts. No source, example, dictionary, or hidden acceptance files were read. Vocabulary discovery and edits used only the live CLI; no implementation/source fallback or Git operations were used.
+
+Unavailable measurements: Exact LLM tokens, framework context, and model turns are unavailable. No elapsed-time stopwatch or start timestamp was recorded, so elapsed duration is unavailable.

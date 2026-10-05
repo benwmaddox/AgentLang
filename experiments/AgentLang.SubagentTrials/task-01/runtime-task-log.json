@@ -1,0 +1,29 @@
+{
+  "task": "task-0001",
+  "goal": "Add reusable premium classification and discounted customer balance",
+  "active": false,
+  "wordsInspected": [
+    "customer.balance",
+    "customer.kind",
+    "customer.new",
+    "equals",
+    "float.multiply"
+  ],
+  "wordsUsed": [
+    "customer.balance",
+    "customer.discounted-balance",
+    "customer.kind",
+    "customer.new",
+    "customer.premium?",
+    "equals",
+    "float.multiply"
+  ],
+  "wordsCreated": [
+    "customer.discounted-balance",
+    "customer.premium?"
+  ],
+  "testsRun": 14,
+  "testsFailed": 0,
+  "effects": {},
+  "errors": []
+}

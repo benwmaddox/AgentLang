@@ -1,0 +1,153 @@
+record Customer
+    field kind String
+    field balance Float
+end
+
+record Subscription
+    field term String
+    field renewable Bool
+end
+
+word customer.premium? : Customer -> Bool
+maturity library
+revision 1
+    effects none
+    doc "Returns true only when the customer kind is exactly premium."
+    customer.kind "premium" equals
+end
+
+word customer.discounted-balance : Customer -> Float
+maturity library
+revision 1
+    effects none
+    doc "Returns 90 percent of the balance for premium customers and the original balance for every other kind."
+    let customer
+    $customer customer.premium?
+    if
+        $customer customer.balance 0.9 float.multiply
+    else
+        $customer customer.balance
+    end
+end
+
+word customer.renewal-balance : Customer Subscription -> Float
+maturity library
+revision 1
+    effects none
+    doc "Returns the existing discounted balance, with a further 5% reduction only for premium customers on renewable annual subscriptions."
+    let subscription
+    let customer
+    $customer customer.discounted-balance
+    let balance
+    $customer customer.premium?
+    if
+        $subscription subscription.term
+        "annual"
+        equals
+        if
+            $subscription subscription.renewable
+            if
+                $balance
+                0.95
+                float.multiply
+            else
+                $balance
+            end
+        else
+            $balance
+        end
+    else
+        $balance
+    end
+end
+
+test customer.discounted-balance/case-sensitive
+    "Premium" 80.0 customer.new customer.discounted-balance
+    => 80.0
+end
+
+test customer.discounted-balance/premium
+    "premium" 100.0 customer.new customer.discounted-balance
+    => 90.0
+end
+
+test customer.discounted-balance/premium-larger-balance
+    "premium" 250.0 customer.new customer.discounted-balance
+    => 225.0
+end
+
+test customer.discounted-balance/standard
+    "standard" 100.0 customer.new customer.discounted-balance
+    => 100.0
+end
+
+test customer.premium?/case-sensitive
+    "Premium" 100.0 customer.new customer.premium?
+    => false
+end
+
+test customer.premium?/premium
+    "premium" 100.0 customer.new customer.premium?
+    => true
+end
+
+test customer.premium?/standard
+    "standard" 100.0 customer.new customer.premium?
+    => false
+end
+
+test customer.renewal-balance/premium-annual-not-renewable
+    "premium" 100.0 customer.new
+    "annual" false subscription.new
+    customer.renewal-balance
+    => 90.0
+end
+
+test customer.renewal-balance/premium-annual-renewable
+    "premium" 100.0 customer.new
+    "annual" true subscription.new
+    customer.renewal-balance
+    => 85.5
+end
+
+test customer.renewal-balance/premium-monthly-not-renewable
+    "premium" 100.0 customer.new
+    "monthly" false subscription.new
+    customer.renewal-balance
+    => 90.0
+end
+
+test customer.renewal-balance/premium-monthly-renewable
+    "premium" 100.0 customer.new
+    "monthly" true subscription.new
+    customer.renewal-balance
+    => 90.0
+end
+
+test customer.renewal-balance/standard-annual-not-renewable
+    "standard" 100.0 customer.new
+    "annual" false subscription.new
+    customer.renewal-balance
+    => 100.0
+end
+
+test customer.renewal-balance/standard-annual-renewable
+    "standard" 100.0 customer.new
+    "annual" true subscription.new
+    customer.renewal-balance
+    => 100.0
+end
+
+test customer.renewal-balance/standard-monthly-not-renewable
+    "standard" 100.0 customer.new
+    "monthly" false subscription.new
+    customer.renewal-balance
+    => 100.0
+end
+
+test customer.renewal-balance/standard-monthly-renewable
+    "standard" 100.0 customer.new
+    "monthly" true subscription.new
+    customer.renewal-balance
+    => 100.0
+end

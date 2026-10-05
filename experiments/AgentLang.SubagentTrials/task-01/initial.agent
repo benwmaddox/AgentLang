@@ -1,0 +1,4 @@
+record Customer
+    field kind String
+    field balance Float
+end

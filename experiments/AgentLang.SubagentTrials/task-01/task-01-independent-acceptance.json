@@ -1,0 +1,609 @@
+{
+  "runtimeRevision": "6d9e341c402144f5d168566e119906e5495e3cb4",
+  "startedUtc": "2026-10-05T01:17:42.0225565+00:00",
+  "finishedUtc": "2026-10-05T01:17:42.2620153+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "request": {
+        "code": "\"premium\" 100.0 customer.new customer.premium?",
+        "op": "eval"
+      },
+      "check": {
+        "code": "\"premium\" 100.0 customer.new customer.premium?",
+        "kind": "value",
+        "type": "Bool",
+        "expected": "true"
+      },
+      "passed": true,
+      "response": {
+        "ok": true,
+        "kind": "eval",
+        "text": "true",
+        "data": {
+          "stack": [
+            "true"
+          ],
+          "stackTypes": [
+            "Bool"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      }
+    },
+    {
+      "request": {
+        "code": "\"standard\" 100.0 customer.new customer.premium?",
+        "op": "eval"
+      },
+      "check": {
+        "code": "\"standard\" 100.0 customer.new customer.premium?",
+        "kind": "value",
+        "type": "Bool",
+        "expected": "false"
+      },
+      "passed": true,
+      "response": {
+        "ok": true,
+        "kind": "eval",
+        "text": "false",
+        "data": {
+          "stack": [
+            "false"
+          ],
+          "stackTypes": [
+            "Bool"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      }
+    },
+    {
+      "request": {
+        "code": "\"Premium\" 100.0 customer.new customer.premium?",
+        "op": "eval"
+      },
+      "check": {
+        "code": "\"Premium\" 100.0 customer.new customer.premium?",
+        "kind": "value",
+        "type": "Bool",
+        "expected": "false"
+      },
+      "passed": true,
+      "response": {
+        "ok": true,
+        "kind": "eval",
+        "text": "false",
+        "data": {
+          "stack": [
+            "false"
+          ],
+          "stackTypes": [
+            "Bool"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      }
+    },
+    {
+      "request": {
+        "code": "\"\" 100.0 customer.new customer.premium?",
+        "op": "eval"
+      },
+      "check": {
+        "code": "\"\" 100.0 customer.new customer.premium?",
+        "kind": "value",
+        "type": "Bool",
+        "expected": "false"
+      },
+      "passed": true,
+      "response": {
+        "ok": true,
+        "kind": "eval",
+        "text": "false",
+        "data": {
+          "stack": [
+            "false"
+          ],
+          "stackTypes": [
+            "Bool"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      }
+    },
+    {
+      "request": {
+        "code": "\"premium\" 100.0 customer.new customer.discounted-balance",
+        "op": "eval"
+      },
+      "check": {
+        "code": "\"premium\" 100.0 customer.new customer.discounted-balance",
+        "kind": "value",
+        "type": "Float",
+        "expected": "90"
+      },
+      "passed": true,
+      "response": {
+        "ok": true,
+        "kind": "eval",
+        "text": "90",
+        "data": {
+          "stack": [
+            "90"
+          ],
+          "stackTypes": [
+            "Float"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      }
+    },
+    {
+      "request": {
+        "code": "\"standard\" 100.0 customer.new customer.discounted-balance",
+        "op": "eval"
+      },
+      "check": {
+        "code": "\"standard\" 100.0 customer.new customer.discounted-balance",
+        "kind": "value",
+        "type": "Float",
+        "expected": "100"
+      },
+      "passed": true,
+      "response": {
+        "ok": true,
+        "kind": "eval",
+        "text": "100",
+        "data": {
+          "stack": [
+            "100"
+          ],
+          "stackTypes": [
+            "Float"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      }
+    },
+    {
+      "request": {
+        "code": "\"Premium\" 100.0 customer.new customer.discounted-balance",
+        "op": "eval"
+      },
+      "check": {
+        "code": "\"Premium\" 100.0 customer.new customer.discounted-balance",
+        "kind": "value",
+        "type": "Float",
+        "expected": "100"
+      },
+      "passed": true,
+      "response": {
+        "ok": true,
+        "kind": "eval",
+        "text": "100",
+        "data": {
+          "stack": [
+            "100"
+          ],
+          "stackTypes": [
+            "Float"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      }
+    },
+    {
+      "request": {
+        "code": "\"\" 100.0 customer.new customer.discounted-balance",
+        "op": "eval"
+      },
+      "check": {
+        "code": "\"\" 100.0 customer.new customer.discounted-balance",
+        "kind": "value",
+        "type": "Float",
+        "expected": "100"
+      },
+      "passed": true,
+      "response": {
+        "ok": true,
+        "kind": "eval",
+        "text": "100",
+        "data": {
+          "stack": [
+            "100"
+          ],
+          "stackTypes": [
+            "Float"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      }
+    },
+    {
+      "request": {
+        "code": "\"premium\" 0.0 customer.new customer.discounted-balance",
+        "op": "eval"
+      },
+      "check": {
+        "code": "\"premium\" 0.0 customer.new customer.discounted-balance",
+        "kind": "value",
+        "type": "Float",
+        "expected": "0"
+      },
+      "passed": true,
+      "response": {
+        "ok": true,
+        "kind": "eval",
+        "text": "0",
+        "data": {
+          "stack": [
+            "0"
+          ],
+          "stackTypes": [
+            "Float"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      }
+    },
+    {
+      "request": {
+        "code": "\"premium\" -100.0 customer.new customer.discounted-balance",
+        "op": "eval"
+      },
+      "check": {
+        "code": "\"premium\" -100.0 customer.new customer.discounted-balance",
+        "kind": "value",
+        "type": "Float",
+        "expected": "-90"
+      },
+      "passed": true,
+      "response": {
+        "ok": true,
+        "kind": "eval",
+        "text": "-90",
+        "data": {
+          "stack": [
+            "-90"
+          ],
+          "stackTypes": [
+            "Float"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      }
+    },
+    {
+      "request": {
+        "code": "\"premium\" 250.0 customer.new customer.discounted-balance",
+        "op": "eval"
+      },
+      "check": {
+        "code": "\"premium\" 250.0 customer.new customer.discounted-balance",
+        "kind": "value",
+        "type": "Float",
+        "expected": "225"
+      },
+      "passed": true,
+      "response": {
+        "ok": true,
+        "kind": "eval",
+        "text": "225",
+        "data": {
+          "stack": [
+            "225"
+          ],
+          "stackTypes": [
+            "Float"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      }
+    },
+    {
+      "request": {
+        "code": "\"premium\" 100 customer.new customer.discounted-balance",
+        "op": "eval"
+      },
+      "check": {
+        "kind": "error",
+        "code": "TYPE_STACK_MISMATCH"
+      },
+      "passed": true,
+      "response": {
+        "ok": false,
+        "kind": "error",
+        "text": "TYPE_STACK_MISMATCH in customer.new at <eval>:1:15: Arguments passed to 'customer.new' do not match its signature.",
+        "error": {
+          "code": "TYPE_STACK_MISMATCH",
+          "message": "Arguments passed to 'customer.new' do not match its signature.",
+          "word": "customer.new",
+          "span": {
+            "file": "<eval>",
+            "line": 1,
+            "column": 15,
+            "length": 12
+          },
+          "expected": [
+            "String",
+            "Float"
+          ],
+          "actual": [
+            "String",
+            "Int"
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "op": "test-all"
+      },
+      "check": {
+        "kind": "tests",
+        "minimum": 7
+      },
+      "passed": true,
+      "response": {
+        "ok": true,
+        "kind": "test",
+        "text": "7/7 test(s) passed.",
+        "data": {
+          "results": [
+            {
+              "name": "case-sensitive",
+              "word": "customer.discounted-balance",
+              "passed": true,
+              "expected": "80",
+              "actual": [
+                "80"
+              ]
+            },
+            {
+              "name": "premium",
+              "word": "customer.discounted-balance",
+              "passed": true,
+              "expected": "90",
+              "actual": [
+                "90"
+              ]
+            },
+            {
+              "name": "premium-larger-balance",
+              "word": "customer.discounted-balance",
+              "passed": true,
+              "expected": "225",
+              "actual": [
+                "225"
+              ]
+            },
+            {
+              "name": "standard",
+              "word": "customer.discounted-balance",
+              "passed": true,
+              "expected": "100",
+              "actual": [
+                "100"
+              ]
+            },
+            {
+              "name": "case-sensitive",
+              "word": "customer.premium?",
+              "passed": true,
+              "expected": "false",
+              "actual": [
+                "false"
+              ]
+            },
+            {
+              "name": "premium",
+              "word": "customer.premium?",
+              "passed": true,
+              "expected": "true",
+              "actual": [
+                "true"
+              ]
+            },
+            {
+              "name": "standard",
+              "word": "customer.premium?",
+              "passed": true,
+              "expected": "false",
+              "actual": [
+                "false"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "word": "customer.premium?",
+        "op": "describe"
+      },
+      "check": {
+        "input": "Customer",
+        "output": "Bool",
+        "kind": "metadata"
+      },
+      "passed": true,
+      "response": {
+        "ok": true,
+        "kind": "describe",
+        "text": "Description for customer.premium?.",
+        "data": {
+          "name": "customer.premium?",
+          "inputs": [
+            "Customer"
+          ],
+          "outputs": [
+            "Bool"
+          ],
+          "effects": [],
+          "documentation": "Returns true only when the customer kind is exactly premium.",
+          "dependencies": [
+            "customer.kind",
+            "equals"
+          ],
+          "transitiveDependencies": [
+            "customer.kind",
+            "equals"
+          ],
+          "callers": [
+            "customer.discounted-balance"
+          ],
+          "tests": [
+            "case-sensitive",
+            "premium",
+            "standard"
+          ],
+          "examples": [],
+          "source": "D:\\code\\AgentLang\\.agentlang\\subagent-pilot-6d9e341\\growing-project\\dictionary.agent",
+          "line": 6,
+          "kind": "word",
+          "status": "persistent",
+          "maturity": "library",
+          "revision": 1,
+          "testCount": 3,
+          "exampleCount": 0,
+          "coverage": {
+            "instructionsCovered": 3,
+            "instructionsTotal": 3,
+            "branchesCovered": 0,
+            "branchesTotal": 0,
+            "uncoveredInstructions": [],
+            "uncoveredBranchOutcomes": [],
+            "status": "current"
+          }
+        }
+      }
+    },
+    {
+      "request": {
+        "word": "customer.discounted-balance",
+        "op": "describe"
+      },
+      "check": {
+        "input": "Customer",
+        "output": "Float",
+        "kind": "metadata"
+      },
+      "passed": true,
+      "response": {
+        "ok": true,
+        "kind": "describe",
+        "text": "Description for customer.discounted-balance.",
+        "data": {
+          "name": "customer.discounted-balance",
+          "inputs": [
+            "Customer"
+          ],
+          "outputs": [
+            "Float"
+          ],
+          "effects": [],
+          "documentation": "Returns 90 percent of the balance for premium customers and the original balance for every other kind.",
+          "dependencies": [
+            "customer.balance",
+            "customer.premium?",
+            "float.multiply"
+          ],
+          "transitiveDependencies": [
+            "customer.balance",
+            "customer.kind",
+            "customer.premium?",
+            "equals",
+            "float.multiply"
+          ],
+          "callers": [],
+          "tests": [
+            "case-sensitive",
+            "premium",
+            "premium-larger-balance",
+            "standard"
+          ],
+          "examples": [],
+          "source": "D:\\code\\AgentLang\\.agentlang\\subagent-pilot-6d9e341\\growing-project\\dictionary.agent",
+          "line": 14,
+          "kind": "word",
+          "status": "persistent",
+          "maturity": "library",
+          "revision": 1,
+          "testCount": 4,
+          "exampleCount": 0,
+          "coverage": {
+            "instructionsCovered": 10,
+            "instructionsTotal": 10,
+            "branchesCovered": 2,
+            "branchesTotal": 2,
+            "uncoveredInstructions": [],
+            "uncoveredBranchOutcomes": [],
+            "status": "current"
+          }
+        }
+      }
+    },
+    {
+      "request": {
+        "word": "customer.new",
+        "op": "describe"
+      },
+      "check": {
+        "kind": "constructor"
+      },
+      "passed": true,
+      "response": {
+        "ok": true,
+        "kind": "describe",
+        "text": "Description for customer.new.",
+        "data": {
+          "name": "customer.new",
+          "inputs": [
+            "String",
+            "Float"
+          ],
+          "outputs": [
+            "Customer"
+          ],
+          "effects": [],
+          "documentation": "Constructs a value after all record fields pass their declared types.",
+          "dependencies": [],
+          "transitiveDependencies": [],
+          "callers": [],
+          "tests": [],
+          "examples": [],
+          "source": "<generated>",
+          "line": 1,
+          "kind": "generated",
+          "status": "persistent",
+          "maturity": "library",
+          "revision": 1,
+          "testCount": 0,
+          "exampleCount": 0,
+          "coverage": {
+            "instructionsCovered": 0,
+            "instructionsTotal": 0,
+            "branchesCovered": 0,
+            "branchesTotal": 0,
+            "uncoveredInstructions": [],
+            "uncoveredBranchOutcomes": [],
+            "status": "not-run"
+          }
+        }
+      }
+    }
+  ]
+}

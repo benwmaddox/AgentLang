@@ -1,0 +1,43 @@
+{
+  "revision": "6d9e341c402144f5d168566e119906e5495e3cb4",
+  "validation": ".agentlang/reports/ci-6d9e341/validation.json",
+  "purpose": "Pinned previously validated Release runtime for exploratory subagent pilot; checked-AST interpreter",
+  "files": [
+    {
+      "file": "AgentLang.Cli.deps.json",
+      "sha256": "6382f6dc29bb8f827824839010e313b266e51a3f87a4fdb8c382931d2549e97e"
+    },
+    {
+      "file": "AgentLang.Cli.dll",
+      "sha256": "ee0d65d89bf83f0c623cfcccc85867a14e8bb53e4bf11857713f468f965dd725"
+    },
+    {
+      "file": "AgentLang.Cli.exe",
+      "sha256": "5dcfc9771822b64ceba1255c80a9f71fa58b332185ba268ae5b3c9bee03328a9"
+    },
+    {
+      "file": "AgentLang.Cli.pdb",
+      "sha256": "990b298ee1f8af59b5570e68f857a61993765a26a9e802cf93dc93132e99c9e8"
+    },
+    {
+      "file": "AgentLang.Cli.runtimeconfig.json",
+      "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+    },
+    {
+      "file": "AgentLang.Core.dll",
+      "sha256": "12d91e607cbed56988eead2623fc8b664decfe99bb09ac2492a144a2fd5b5ceb"
+    },
+    {
+      "file": "AgentLang.Core.pdb",
+      "sha256": "bd7f5d65672d614fbeb0ca2fd951dbc1258fcbafad6c5adb0a42274d28de05ca"
+    },
+    {
+      "file": "AgentLang.Core.xml",
+      "sha256": "9b15b28df508140ed08d6e3aab60ec614ff76d3f172769f5478b3c21f6273914"
+    },
+    {
+      "file": "FSharp.Core.dll",
+      "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+    }
+  ]
+}
