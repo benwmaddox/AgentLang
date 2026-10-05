@@ -41,3 +41,29 @@ protocol cutover. See `docs/FLOW-SEMANTIC-SURFACE.md`. Controlled agent trials
 must wait for equivalent Flow fixtures and stable identity snapshots. Native
 arenas and LLVM remain research/follow-on work; no allocator or agent-efficiency
 claim follows from this milestone.
+## Publication gate
+
+Implementation commit fe55c4c29b70a719ff36699c1dca22685018b8b8 was pushed to
+prototype. CI run 37337744955 failed only the bounded host verifier's partial
+response assertion; the remaining checks passed. Main has not received this
+milestone. The failure detail records exit 124 and overall elapsed 4786 ms,
+but the assertion also checks exact partial bytes and request/response state;
+elapsed time alone does not establish the cause. The artifact omitted the
+referenced per-exchange JSONL trace, so that cause remains unverified.
+
+The failed CI validation and host reports are preserved in
+`reports/evidence/021-failed-ci-*`. Repair and fresh validation are required
+before merging; local green checks do not supersede this failed gate.
+
+The unchanged verifier was rerun locally after the CI failure and again passed
+16 checks. Its preserved partial-response trace records a 413.1464 ms exchange,
+confirmed delivery, 11 response bytes, and uncertain execution. That is scoped
+local evidence, not a diagnosis of the missing CI assertion conjunct. See
+`reports/evidence/023-host-before-repair.json` and the paired JSONL trace.
+The workflow now uploads synthetic verifier JSONL traces for future CI failures.
+The repaired verifier subsequently passed 17 focused checks and the complete
+fresh Release gate passed all 23 required checks, with zero build warnings or
+errors. Evidence is saved under `reports/evidence/023-host-repair-*`. This
+repairs the local publication gate; committed hosted CI must still pass before
+main receives the milestone. Report 023 describes the strengthened dripped
+response test and bounded failure evidence.

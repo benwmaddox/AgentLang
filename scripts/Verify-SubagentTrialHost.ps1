@@ -371,7 +371,14 @@ switch (mode)
         if (Console.ReadLine() is null) return 11;
         Console.Write("{\"partial\":");
         Console.Out.Flush();
-        Thread.Sleep(TimeSpan.FromSeconds(30));
+        for (var i = 0; i < 8; i++)
+        {
+            Thread.Sleep(TimeSpan.FromMilliseconds(650));
+            Console.Write(" ");
+            Console.Out.Flush();
+        }
+        Console.Write("}\n");
+        Console.Out.Flush();
         return 0;
     case "oversize":
         if (Console.ReadLine() is null) return 12;
@@ -416,6 +423,31 @@ switch (mode)
 function New-JsonLine {
     param([object]$Value)
     return ConvertTo-Json -InputObject $Value -Compress -Depth 64
+}
+
+function Get-BoundedEvidenceItems {
+    param(
+        [AllowEmptyCollection()][object[]]$Items,
+        [int]$MaximumItems = 32,
+        [int]$MaximumJsonCharacters = 8192
+    )
+    $bounded = [System.Collections.Generic.List[object]]::new()
+    $count = 0
+    foreach ($item in @($Items)) {
+        if ($count -ge $MaximumItems) { break }
+        $json = ConvertTo-Json -InputObject $item -Compress -Depth 24
+        if ($json.Length -le $MaximumJsonCharacters) {
+            $bounded.Add($item)
+        } else {
+            $bounded.Add([ordered]@{
+                truncated = $true
+                originalJsonCharacters = $json.Length
+                jsonPrefix = $json.Substring(0, $MaximumJsonCharacters)
+            })
+        }
+        $count++
+    }
+    return $bounded.ToArray()
 }
 
 try {
@@ -518,15 +550,22 @@ end
     ) -Detail "captured=$($boundedOutput.StdoutBytes.Length); cleanupTimedOut=$($boundedOutput.CleanupTimedOut)"
 
     $partial = Invoke-TrialHost -Name 'timeout-partial-response' -RuntimeDll $fakeDll -Requests @($fakeRequest) `
-        -AllowedOperations @('fake.echo') -AdditionalCliArguments @('--fake-mode=partial') -ExchangeTimeoutMilliseconds 400
+        -AllowedOperations @('fake.echo') -AdditionalCliArguments @('--fake-mode=partial') -ExchangeTimeoutMilliseconds 4000
     $partialExchange = Get-ExchangeTrace -Run $partial
-    Assert-Check -Name 'partial runtime response is bounded by one exchange deadline' -Passed (
+    $partialPrefix = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($partialExchange.observedRuntimeResponse.base64))
+    Assert-Check -Name 'dripped partial response captures multiple chunks and preserves uncertain no-retry outcome' -Passed (
         $partial.process.exitCode -eq 124 -and $partial.responses[0].error.code -eq 'TRIAL_EXCHANGE_TIMEOUT' -and
         $partialExchange.requestDelivery.state -eq 'confirmed' -and $partialExchange.executionState -eq 'uncertain' -and
         $partialExchange.automaticRetry -like 'never*' -and
         $partialExchange.observedRuntimeResponse.complete -eq $false -and
-        [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($partialExchange.observedRuntimeResponse.base64)) -eq '{"partial":'
-    ) -Detail "exit=$($partial.process.exitCode); elapsed=$($partial.process.durationMilliseconds)ms"
+        $partialPrefix -match '^\{"partial": {2,}$' -and
+        $partialExchange.observedRuntimeResponse.utf8Bytes -eq $partialPrefix.Length
+    ) -Detail "exit=$($partial.process.exitCode); capturedPrefix='$partialPrefix'; bytes=$($partialExchange.observedRuntimeResponse.utf8Bytes)"
+    Assert-Check -Name 'dripped response is bounded by one absolute exchange deadline' -Passed (
+        $partialExchange.outcome -eq 'timeout' -and
+        $partialExchange.errorCode -eq 'TRIAL_EXCHANGE_TIMEOUT' -and
+        $partialExchange.elapsedMilliseconds -ge 3000 -and $partialExchange.elapsedMilliseconds -lt 6500
+    ) -Detail "exchangeTraceElapsed=$($partialExchange.elapsedMilliseconds)ms; subprocessTotal=$($partial.process.durationMilliseconds)ms; configuredDeadline=4000ms"
 
     $noReadPayload = New-JsonLine @{ op = 'fake.echo'; data = ('x' * 250000) }
     $noRead = Invoke-TrialHost -Name 'large-write-no-reader' -RuntimeDll $fakeDll -Requests @($noReadPayload) `
@@ -604,6 +643,11 @@ end
                 stdoutUtf8Bytes = $_.process.stdoutUtf8Bytes
                 stderrUtf8Bytes = $_.process.stderrUtf8Bytes
                 responseCount = $_.responses.Count
+                responses = @(Get-BoundedEvidenceItems -Items $_.responses)
+                responseEntriesOmitted = [math]::Max(0, $_.responses.Count - 32)
+                traceEventCount = $_.traceEvents.Count
+                traceEvents = @(Get-BoundedEvidenceItems -Items $_.traceEvents)
+                traceEventEntriesOmitted = [math]::Max(0, $_.traceEvents.Count - 32)
             }
         })
         limitations = @(
@@ -617,6 +661,7 @@ end
     Write-Output ("Verification passed: {0} checks. Evidence: {1}" -f $checks.Count, $EvidencePath)
     exit 0
 } catch {
+    $caughtError = $_
     $failed = [ordered]@{
         schemaVersion = 1
         kind = 'subagent-trial-host-wrapper-verification'
@@ -629,13 +674,27 @@ end
         cliFiles = @($cliFiles)
         wrapperFiles = @($wrapperFiles)
         artifacts = $artifactRoot
-        error = $_.Exception.Message
+        error = $caughtError.Exception.Message
         checks = @($checks)
-        runs = @($runs | ForEach-Object { [ordered]@{ name = $_.name; tracePath = $_.tracePath; exitCode = $_.process.exitCode } })
+        runs = @($runs | ForEach-Object {
+            [ordered]@{
+                name = $_.name
+                tracePath = $_.tracePath
+                exitCode = $_.process.exitCode
+                timedOut = $_.process.timedOut
+                durationMilliseconds = $_.process.durationMilliseconds
+                responseCount = $_.responses.Count
+                responses = @(Get-BoundedEvidenceItems -Items $_.responses -MaximumItems 12 -MaximumJsonCharacters 4096)
+                responseEntriesOmitted = [math]::Max(0, $_.responses.Count - 12)
+                traceEventCount = $_.traceEvents.Count
+                traceEvents = @(Get-BoundedEvidenceItems -Items $_.traceEvents -MaximumItems 12 -MaximumJsonCharacters 8192)
+                traceEventEntriesOmitted = [math]::Max(0, $_.traceEvents.Count - 12)
+            }
+        })
     }
     if (-not (Test-Path -LiteralPath $EvidencePath)) {
         [System.IO.File]::WriteAllText($EvidencePath, (ConvertTo-Json -InputObject $failed -Depth 24), $utf8)
     }
-    [Console]::Error.WriteLine(("Verification failed; evidence: {0}`n{1}" -f $EvidencePath, $_.Exception.Message))
+    [Console]::Error.WriteLine(("Verification failed; evidence: {0}`n{1}" -f $EvidencePath, $caughtError.Exception.Message))
     exit 1
 }

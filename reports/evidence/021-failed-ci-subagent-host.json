@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "kind": "subagent-trial-host-wrapper-verification",
+  "outcome": "failed",
+  "createdUtc": "2026-10-05T16:06:14.7483528+00:00",
+  "repoRoot": "D:\\a\\AgentLang\\AgentLang",
+  "testedHead": "fe55c4c29b70a719ff36699c1dca22685018b8b8",
+  "workingTreeDirty": false,
+  "cliDll": "D:\\a\\AgentLang\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+  "cliFiles": [
+    {
+      "name": "AgentLang.Cli.deps.json",
+      "sha256": "be2b5c552c88ae78e6cfd9f6ea223d1761afd2dd41d6a0bfa244f064ef099d80"
+    },
+    {
+      "name": "AgentLang.Cli.dll",
+      "sha256": "a76fe1ab3321314aa651d92192402cc46ee19a4b50b62e61c73645801a37b6f7"
+    },
+    {
+      "name": "AgentLang.Cli.runtimeconfig.json",
+      "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+    },
+    {
+      "name": "AgentLang.Core.dll",
+      "sha256": "a82c0bff0fb1ee9df9dcd6d76e1c8f4653c2f75bd7ceb96dd4e1d00780a3c9f2"
+    },
+    {
+      "name": "FSharp.Core.dll",
+      "sha256": "39b0b7f06c11bedd93f94b6f101fffd645f1c4437a5a6d3ee79259f855aeb11a"
+    }
+  ],
+  "wrapperFiles": [
+    {
+      "path": "scripts\\Start-SubagentTrialHost.ps1",
+      "sha256": "19f0ac0eae21e928dd6606a4de7be32d21338d31e21e499a50524099786f813f"
+    },
+    {
+      "path": "scripts\\Verify-SubagentTrialHost.ps1",
+      "sha256": "add3b45cfdc13d1c0dcd6bea84f39c62ad3cc9978d87b91fc5a5c5472c64e6c4"
+    },
+    {
+      "path": "docs\\SUBAGENT-TRIAL-HOST.md",
+      "sha256": "f2971a28df77c5ff891a2a51d3f5991011765b79f57be0bd112cb7f9919b7a3c"
+    }
+  ],
+  "artifacts": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-ac268b527d8f4ea39f96926539e11839",
+  "error": "Verification failed: partial runtime response is bounded by one exchange deadline — exit=124; elapsed=4786.011ms",
+  "checks": [
+    {
+      "name": "language write session exits cleanly",
+      "passed": true,
+      "detail": "exit=0; stderr="
+    },
+    {
+      "name": "language write responses all succeed",
+      "passed": true,
+      "detail": "responses=5"
+    },
+    {
+      "name": "language write session confirms full request delivery",
+      "passed": true,
+      "detail": "All five forwarded exchanges have a confirmed complete line."
+    },
+    {
+      "name": "x64 JobObject ABI layout is recorded and validated",
+      "passed": true,
+      "detail": "{\"basicLimitInformationBytes\":64,\"basicLimitFlagsOffset\":16,\"ioCountersBytes\":48,\"extendedLimitInformationBytes\":144,\"extendedIoInfoOffset\":64,\"processMemoryLimitOffset\":112,\"jobMemoryLimitOffset\":120,\"peakProcessMemoryUsedOffset\":128,\"peakJobMemoryUsedOffset\":136}"
+    },
+    {
+      "name": "fresh process loads committed definition and tests",
+      "passed": true,
+      "detail": "exit=0; test=1/1 test(s) passed."
+    },
+    {
+      "name": "malformed request returns structured host error without forwarding",
+      "passed": true,
+      "detail": "Expected depth to be zero at the end of the JSON payload. There is an open JSON object or array that should be closed. LineNumber: 0 | BytePositionInLine: 6."
+    },
+    {
+      "name": "disallowed operation is denied before runtime execution",
+      "passed": true,
+      "detail": "Operation is not in the trial host's allowed protocol operation set."
+    },
+    {
+      "name": "oversized request is rejected before runtime forwarding",
+      "passed": true,
+      "detail": "exit=2; response=The request line exceeded the configured byte limit; the session is closing."
+    },
+    {
+      "name": "fake child build succeeds",
+      "passed": true,
+      "detail": "  Determining projects to restore...\r\n  Restored D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-ac268b527d8f4ea39f96926539e11839\\fake-runtime-source\\FakeRuntime.csproj (in 103 ms).\r\n  FakeRuntime -> D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-ac268b527d8f4ea39f96926539e11839\\fake-runtime-output\\FakeRuntime.dll\r\n\r\nBuild succeeded.\r\n    0 Warning(s)\r\n    0 Error(s)\r\n\r\nTime Elapsed 00:00:06.10\r\n"
+    },
+    {
+      "name": "verifier subprocess output capture enforces a hard byte cap and kills the child",
+      "passed": true,
+      "detail": "captured=1024; cleanupTimedOut=False"
+    },
+    {
+      "name": "partial runtime response is bounded by one exchange deadline",
+      "passed": false,
+      "detail": "exit=124; elapsed=4786.011ms"
+    }
+  ],
+  "runs": [
+    {
+      "name": "language-write-session",
+      "tracePath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\reports\\trial-host-ac268b527d8f4ea39f96926539e11839-language-write-session.jsonl",
+      "exitCode": 0
+    },
+    {
+      "name": "language-reload-session",
+      "tracePath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\reports\\trial-host-ac268b527d8f4ea39f96926539e11839-language-reload-session.jsonl",
+      "exitCode": 0
+    },
+    {
+      "name": "malformed-denied",
+      "tracePath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\reports\\trial-host-ac268b527d8f4ea39f96926539e11839-malformed-denied.jsonl",
+      "exitCode": 0
+    },
+    {
+      "name": "oversized-request",
+      "tracePath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\reports\\trial-host-ac268b527d8f4ea39f96926539e11839-oversized-request.jsonl",
+      "exitCode": 2
+    },
+    {
+      "name": "timeout-partial-response",
+      "tracePath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\reports\\trial-host-ac268b527d8f4ea39f96926539e11839-timeout-partial-response.jsonl",
+      "exitCode": 124
+    }
+  ]
+}
