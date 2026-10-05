@@ -67,3 +67,13 @@ errors. Evidence is saved under `reports/evidence/023-host-repair-*`. This
 repairs the local publication gate; committed hosted CI must still pass before
 main receives the milestone. Report 023 describes the strengthened dripped
 response test and bounded failure evidence.
+## Committed CI evidence
+
+CI run [37341736314](https://github.com/benwmaddox/AgentLang/actions/runs/37341736314)
+completed successfully for repair revision
+146bece225a7e9ca54a4d6e73804df7786e15ea2. Its clean checkout passed all 23
+required checks, including 17 host checks. The exact run identity, validation
+report and bounded host evidence are saved in `reports/evidence/023-ci-run.json`,
+`023-committed-ci-validation.json` and `023-committed-ci-subagent-host.json`.
+This closes the failed publication gate for the implementation; complete Flow
+semantic coverage, durable integration and default cutover remain required.
