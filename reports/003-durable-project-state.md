@@ -1,7 +1,7 @@
 # Milestone 003: durable project state and editing foundations
 
 Date: 2026-10-04
-Status: in progress; no milestone pass claimed.
+Status: initial integrated Release checks passed; publication blocked on a newly reproduced metadata-projection defect.
 
 ## Planned scope
 
@@ -45,3 +45,15 @@ Current checkpoint: the storage-only project passed **8 groups / 64 assertions**
 The separate [two-agent pilot report](004-subagent-vocabulary-pilot.md) now records both independently accepted tasks, with 16 and 17 host checks. It uses the pinned milestone-002 runtime; it does not validate the new durable-runtime work. The reviewed IR migration proposal uses resolved snapshot-local nominal identities and preserves Storage v1 because type/field names are immutable; a new type-ID schema migration is deferred until a concrete need exists.
 
 The coordinating rerun now passes **98 harness assertions**, and independent Release conventional validation passes **63 assertions**. Runtime maintenance regression testing found that replacing a word could succeed even when a dependent caller's attached test failed against the replacement. The replacement guard is being corrected before integrated acceptance and publication. These focused passes do not yet establish a complete milestone pass.
+
+## Initial integrated result
+
+The replacement bug came from reversed arguments in a pipelined set difference, which discarded affected callers. The shared commit path now checks transitive durable callers, including staged callers, and gates `commit`, `commit-word`, `replace-word`, and `task.commit`. Regression cases reject a failing caller test, preserve the prior durable state, and accept the replacement after the caller test is corrected.
+
+Independent coordinating validation ran `./scripts/Validate.ps1 -Configuration Release -ReportPath .agentlang/reports/milestone-003-final.json`. The fresh solution build passed with **zero warnings and errors**. Language acceptance passed **24 groups / 361 assertions**, harness **98**, business reference **7 groups / 113**, canonical source **57**, storage **8 groups / 64**, and conventional tools **63**. Both working and staged whitespace checks passed. The saved [machine-readable evidence](evidence/003-working-tree-validation.json) explicitly identifies a dirty working tree based on `d1b293f`; it is local pre-publication evidence, not validation of a clean committed revision.
+
+Working-tree runtime behavior includes stable word IDs across promotion/replacement/rename/reload; hashed authoritative manifests and complete semantic load checks; durable history/diff; semantic rename and deprecation; committed snapshots with virtual file/clock restoration; task rollback across interim commits; and `storage.status`. The harness now restores authoritative storage and bounded task history instead of only the readable export. Expected-runtime-error tests support exact language diagnostic assertions. These implementation files remain unpublished while the projection defect below is corrected.
+
+Limits remain explicit: `replace-word` updates a staged implementation; the separate `replace OLD NEW` operation is still pending. Renaming a frozen refinement validator is refused. Tests currently expect literals or diagnostic codes rather than arbitrary structured values. Static path checks are not protection against concurrent hostile filesystem mutation, and conventional F# validation runs with host permissions. Atomic storage publication is not a power-loss or distributed-filesystem guarantee. Typed semantic IR, richer discovery, real effect providers, full business-language parity and controlled agent evaluation remain separate outstanding PRD work.
+
+Publication review then found a missing acceptance case: a selected word's attached test could call an unrelated candidate helper. Tests ran against the full candidate view, but the durable projection excluded the helper and silently removed the selected test. An [independent CLI reproduction](evidence/003-metadata-projection-finding.json) showed one passing attached test before commit and zero after fresh-process reload. A staged replacement helper can also retain a test against the wrong durable revision. The initial green suite did not cover these invariants. Publication is withheld until selected metadata dependencies are handled explicitly and regression tests verify that accepted tests survive reload, including the library coverage gate.

@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "kind": "independently-reproduced-publication-blocker",
+  "state": "initial milestone-003 working tree after its passing Release validation, before the projection fix",
+  "source": "word helper : Int -> Int\n    effects none\n    1 add\nend\ntest helper/basic\n    1 helper\n    => 2\nend\nword target : Int -> Int\n    effects none\n    1 add\nend\ntest target/helper-case\n    41 helper target\n    => 43\nend",
+  "observations": [
+    { "process": 1, "request": { "op": "define", "sourceRef": "source" }, "ok": true },
+    { "process": 1, "request": { "op": "commit", "word": "target" }, "response": { "ok": true, "kind": "commit", "text": "1 attached test(s) passed; selected candidates committed.", "data": ["target/helper-case"] } },
+    { "process": 1, "request": { "op": "tests", "word": "target" }, "response": { "ok": true, "kind": "tests", "text": "1 attached test(s).", "data": ["helper-case"] } },
+    { "process": 2, "request": { "op": "tests", "word": "target" }, "response": { "ok": true, "kind": "tests", "text": "0 attached test(s).", "data": [] } }
+  ],
+  "violatedInvariant": "Every accepted attached test used by the persistence gate must survive in the exact committed project and retain the same checked dependencies.",
+  "publication": "withheld pending fix and regression validation"
+}

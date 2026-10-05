@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-10-05T02:08:17.5914393+00:00",
+  "completedAt": "2026-10-05T02:08:41.2189229+00:00",
+  "revision": "d1b293f4c74abff26bbfac0682049831f8870c7f",
+  "branch": "prototype",
+  "dirty": true,
+  "configuration": "Release",
+  "passed": true,
+  "checks": [
+    {
+      "name": "build",
+      "command": "dotnet build AgentLang.sln --configuration Release",
+      "exitCode": 0,
+      "durationMilliseconds": 11245,
+      "output": [
+        "  Determining projects to restore...",
+        "  All projects are up-to-date for restore.",
+        "  AgentLang.Business -> D:\\code\\AgentLang\\experiments\\AgentLang.Business\\bin\\Release\\net9.0\\AgentLang.Business.dll",
+        "  AgentLang.Conventional -> D:\\code\\AgentLang\\experiments\\AgentLang.Conventional\\bin\\Release\\net9.0\\AgentLang.Conventional.dll",
+        "  AgentLang.Business.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.Business.Tests\\bin\\Release\\net9.0\\AgentLang.Business.Tests.dll",
+        "  AgentLang.Conventional.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.Conventional.Tests\\bin\\Release\\net9.0\\AgentLang.Conventional.Tests.dll",
+        "  AgentLang.Core -> D:\\code\\AgentLang\\src\\AgentLang.Core\\bin\\Release\\net9.0\\AgentLang.Core.dll",
+        "  AgentLang.Source.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.Source.Tests\\bin\\Release\\net9.0\\AgentLang.Source.Tests.dll",
+        "  AgentLang.Cli -> D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+        "  AgentLang.Acceptance -> D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\bin\\Release\\net9.0\\AgentLang.Acceptance.dll",
+        "  AgentLang.Storage.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\bin\\Release\\net9.0\\AgentLang.Storage.Tests.dll",
+        "  AgentLang.Benchmarks -> D:\\code\\AgentLang\\experiments\\AgentLang.Benchmarks\\bin\\Release\\net9.0\\AgentLang.Benchmarks.dll",
+        "  AgentLang.Harness.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.Harness.Tests\\bin\\Release\\net9.0\\AgentLang.Harness.Tests.dll",
+        "",
+        "Build succeeded.",
+        "    0 Warning(s)",
+        "    0 Error(s)",
+        "",
+        "Time Elapsed 00:00:10.99"
+      ]
+    },
+    {
+      "name": "language-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Acceptance",
+      "exitCode": 0,
+      "durationMilliseconds": 2331,
+      "output": [
+        "PASS JSON-lines protocol and eval",
+        "PASS checked numeric boundaries",
+        "PASS effects and capability boundary",
+        "PASS Customer records, locals, and branches",
+        "PASS test-gated project commits",
+        "PASS candidate dependency persistence",
+        "PASS temporary session isolation",
+        "PASS scoped replacement and discard",
+        "PASS scoped test metadata persistence",
+        "PASS replacement caller tests gate durable updates",
+        "PASS stable word identity lifecycle",
+        "PASS runtime error test expectations",
+        "PASS nominal and refined types",
+        "PASS validator rejection",
+        "PASS type-only commit",
+        "PASS frozen validator replacement",
+        "PASS library coverage gate",
+        "PASS task abort rollback",
+        "PASS task commit temporary cleanup",
+        "PASS task logs survive reload",
+        "PASS named snapshot restores project and providers",
+        "PASS semantic rename and deprecation",
+        "PASS typed containers and syntax metadata",
+        "PASS container library coverage",
+        "All 24 acceptance groups passed (361 assertions)."
+      ]
+    },
+    {
+      "name": "harness-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Harness.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 1563,
+      "output": [
+        "PASS: 98 harness assertions"
+      ]
+    },
+    {
+      "name": "business-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Business.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 639,
+      "output": [
+        "PASS nominal identifiers and Email policy",
+        "PASS checked minor-unit arithmetic and price invariants",
+        "PASS immutable store and lookup",
+        "PASS subscription lifecycle",
+        "PASS invoice totals and validation",
+        "PASS payment provider boundary and receipt",
+        "PASS email outbox and provider isolation",
+        "Business reference: 7 groups, 113 assertions"
+      ]
+    },
+    {
+      "name": "source-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Source.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 699,
+      "output": [
+        "All source tests passed (57 assertions)."
+      ]
+    },
+    {
+      "name": "storage-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Storage.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 1212,
+      "output": [
+        "Storage tests passed: 8 groups, 64 assertions."
+      ]
+    },
+    {
+      "name": "conventional-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Conventional.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 5565,
+      "output": [
+        "PASS: 63 conventional tool assertions"
+      ]
+    },
+    {
+      "name": "diff-whitespace",
+      "command": "git diff --check",
+      "exitCode": 0,
+      "durationMilliseconds": 70,
+      "output": [
+        "warning: in the working copy of 'AgentLang.sln', CRLF will be replaced by LF the next time Git touches it"
+      ]
+    },
+    {
+      "name": "staged-diff-whitespace",
+      "command": "git diff --cached --check",
+      "exitCode": 0,
+      "durationMilliseconds": 65,
+      "output": []
+    }
+  ]
+}
