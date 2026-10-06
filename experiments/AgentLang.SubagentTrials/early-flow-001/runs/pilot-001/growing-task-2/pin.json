@@ -1,0 +1,17 @@
+{
+  "sourceRevision": "e87931a1ed22b05e60443c158cf9c2527c0ba6f6",
+  "mode": "Growing",
+  "task": 2,
+  "model": "gpt-6-luna",
+  "reasoning": "max",
+  "history": "none",
+  "startPointer": {
+    "formatVersion": 1,
+    "generation": 4,
+    "kind": "manifest",
+    "manifestHash": "f8b6375da44fac456576decab988669d8ffa3e9b7aa0383ae6091f0a76e76880"
+  },
+  "retainedTask": 1,
+  "acceptance": ".agentlang/early-pilot-001/growing-task-1-acceptance.json",
+  "exactTokens": null
+}

@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "typesUnchanged": true,
+  "words": [
+    "customer.discounted-balance"
+  ],
+  "manifestHash": "e246c3709f81408c6ffc130020350c6746d2b1c198042357bec4e9e77e38ff9a",
+  "limits": "Own target purity, library maturity, coverage and behavior checked separately. Growing prior head/revision additionally compared unchanged before preparing task3."
+}

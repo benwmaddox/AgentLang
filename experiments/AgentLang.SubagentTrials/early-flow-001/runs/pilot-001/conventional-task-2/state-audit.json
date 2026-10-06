@@ -1,0 +1,7 @@
+{
+  "passed": true,
+  "unchangedOtherFunctions": 4,
+  "existingPredicateReused": true,
+  "selfTests": 15,
+  "task": 2
+}

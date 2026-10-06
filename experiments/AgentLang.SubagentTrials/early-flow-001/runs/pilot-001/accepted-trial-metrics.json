@@ -1,0 +1,68 @@
+[
+  {
+    "trial": "flat-task-1",
+    "exchanges": 16,
+    "runtimeErrors": 2,
+    "hostRejectedExchanges": 0,
+    "requestBytes": 1869.0,
+    "responseBytes": 20063.0,
+    "modelTurns": null,
+    "inputTokens": null,
+    "outputTokens": null
+  },
+  {
+    "trial": "growing-task-1",
+    "exchanges": 17,
+    "runtimeErrors": 2,
+    "hostRejectedExchanges": 1,
+    "requestBytes": 1661.0,
+    "responseBytes": 23095.0,
+    "modelTurns": null,
+    "inputTokens": null,
+    "outputTokens": null
+  },
+  {
+    "trial": "conventional-task-1",
+    "exchanges": 6,
+    "runtimeErrors": 0,
+    "hostRejectedExchanges": 0,
+    "requestBytes": 2230.0,
+    "responseBytes": 2552.0,
+    "modelTurns": null,
+    "inputTokens": null,
+    "outputTokens": null
+  },
+  {
+    "trial": "flat-task-2",
+    "exchanges": 15,
+    "runtimeErrors": 2,
+    "hostRejectedExchanges": 1,
+    "requestBytes": 2452.0,
+    "responseBytes": 22140.0,
+    "modelTurns": null,
+    "inputTokens": null,
+    "outputTokens": null
+  },
+  {
+    "trial": "growing-task-2",
+    "exchanges": 15,
+    "runtimeErrors": 1,
+    "hostRejectedExchanges": 0,
+    "requestBytes": 1857.0,
+    "responseBytes": 20671.0,
+    "modelTurns": null,
+    "inputTokens": null,
+    "outputTokens": null
+  },
+  {
+    "trial": "conventional-task-2",
+    "exchanges": 15,
+    "runtimeErrors": 1,
+    "hostRejectedExchanges": 1,
+    "requestBytes": 3474.0,
+    "responseBytes": 7247.0,
+    "modelTurns": null,
+    "inputTokens": null,
+    "outputTokens": null
+  }
+]

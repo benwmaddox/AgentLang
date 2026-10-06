@@ -1,0 +1,779 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "failure": null,
+  "task": 2,
+  "word": "customer.discounted-balance",
+  "cliSha256": "31235b45cb3b7149abf096d579a14643157e29fe26839df3135f724c38362b00",
+  "oracleSha256": "7ed0ba4d7925978424b98b7a17aae5276315cf1dff612a8f4688c178472c03eb",
+  "verifierSha256": "e8748381ab8d87e1baf8e8386205927951072909f250faa808473af6eb35cace",
+  "checks": [
+    {
+      "name": "fresh process exit",
+      "passed": true
+    },
+    {
+      "name": "one response per request",
+      "passed": true
+    },
+    {
+      "name": "all requests succeed",
+      "passed": true
+    },
+    {
+      "name": "all attached tests pass",
+      "passed": true
+    },
+    {
+      "name": "exact target signature",
+      "passed": true
+    },
+    {
+      "name": "pure persistent library target",
+      "passed": true
+    },
+    {
+      "name": "target has attached tests",
+      "passed": true
+    },
+    {
+      "name": "complete current own coverage",
+      "passed": true
+    },
+    {
+      "name": "premium-annual-true exact output shape",
+      "passed": true
+    },
+    {
+      "name": "premium-annual-true independent Float result",
+      "passed": true
+    },
+    {
+      "name": "premium-annual-false exact output shape",
+      "passed": true
+    },
+    {
+      "name": "premium-annual-false independent Float result",
+      "passed": true
+    },
+    {
+      "name": "premium-monthly-true exact output shape",
+      "passed": true
+    },
+    {
+      "name": "premium-monthly-true independent Float result",
+      "passed": true
+    },
+    {
+      "name": "premium-monthly-false exact output shape",
+      "passed": true
+    },
+    {
+      "name": "premium-monthly-false independent Float result",
+      "passed": true
+    },
+    {
+      "name": "standard-annual-true exact output shape",
+      "passed": true
+    },
+    {
+      "name": "standard-annual-true independent Float result",
+      "passed": true
+    },
+    {
+      "name": "standard-annual-false exact output shape",
+      "passed": true
+    },
+    {
+      "name": "standard-annual-false independent Float result",
+      "passed": true
+    },
+    {
+      "name": "standard-monthly-true exact output shape",
+      "passed": true
+    },
+    {
+      "name": "standard-monthly-true independent Float result",
+      "passed": true
+    },
+    {
+      "name": "standard-monthly-false exact output shape",
+      "passed": true
+    },
+    {
+      "name": "standard-monthly-false independent Float result",
+      "passed": true
+    },
+    {
+      "name": "case-sensitive-kind exact output shape",
+      "passed": true
+    },
+    {
+      "name": "case-sensitive-kind independent Float result",
+      "passed": true
+    },
+    {
+      "name": "case-sensitive-term exact output shape",
+      "passed": true
+    },
+    {
+      "name": "case-sensitive-term independent Float result",
+      "passed": true
+    },
+    {
+      "name": "term-trailing-space exact output shape",
+      "passed": true
+    },
+    {
+      "name": "term-trailing-space independent Float result",
+      "passed": true
+    },
+    {
+      "name": "empty-kind exact output shape",
+      "passed": true
+    },
+    {
+      "name": "empty-kind independent Float result",
+      "passed": true
+    },
+    {
+      "name": "zero-balance exact output shape",
+      "passed": true
+    },
+    {
+      "name": "zero-balance independent Float result",
+      "passed": true
+    },
+    {
+      "name": "negative-balance exact output shape",
+      "passed": true
+    },
+    {
+      "name": "negative-balance independent Float result",
+      "passed": true
+    },
+    {
+      "name": "larger-eligible exact output shape",
+      "passed": true
+    },
+    {
+      "name": "larger-eligible independent Float result",
+      "passed": true
+    },
+    {
+      "name": "larger-ineligible exact output shape",
+      "passed": true
+    },
+    {
+      "name": "larger-ineligible independent Float result",
+      "passed": true
+    },
+    {
+      "name": "accent-kind exact output shape",
+      "passed": true
+    },
+    {
+      "name": "accent-kind independent Float result",
+      "passed": true
+    },
+    {
+      "name": "fractional-balance exact output shape",
+      "passed": true
+    },
+    {
+      "name": "fractional-balance independent Float result",
+      "passed": true
+    },
+    {
+      "name": "tiny-balance exact output shape",
+      "passed": true
+    },
+    {
+      "name": "tiny-balance independent Float result",
+      "passed": true
+    },
+    {
+      "name": "large-finite-balance exact output shape",
+      "passed": true
+    },
+    {
+      "name": "large-finite-balance independent Float result",
+      "passed": true
+    }
+  ],
+  "requests": [
+    {
+      "op": "test-all"
+    },
+    {
+      "op": "describe",
+      "word": "customer.discounted-balance"
+    },
+    {
+      "op": "dependencies",
+      "word": "customer.discounted-balance"
+    },
+    {
+      "op": "source",
+      "word": "customer.discounted-balance"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = 100.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = 100.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = 100.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = 100.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::discounted-balance(customer::new(kind = \"standard\", balance = 100.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::discounted-balance(customer::new(kind = \"standard\", balance = 100.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::discounted-balance(customer::new(kind = \"standard\", balance = 100.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::discounted-balance(customer::new(kind = \"standard\", balance = 100.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::discounted-balance(customer::new(kind = \"Premium\", balance = 100.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = 100.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = 100.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::discounted-balance(customer::new(kind = \"\", balance = 100.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = 0.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = -100.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = 250.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = 250.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::discounted-balance(customer::new(kind = \"prémium\", balance = 100.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = 3.141592653589793))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = 1E-100))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::discounted-balance(customer::new(kind = \"standard\", balance = 1E+100))"
+    }
+  ],
+  "responses": [
+    {
+      "ok": true,
+      "kind": "test",
+      "text": "7/7 test(s) passed.",
+      "data": {
+        "results": [
+          {
+            "name": "case-sensitive",
+            "word": "customer.discounted-balance",
+            "passed": true,
+            "expected": "100",
+            "actual": [
+              "100"
+            ]
+          },
+          {
+            "name": "ordinary",
+            "word": "customer.discounted-balance",
+            "passed": true,
+            "expected": "100",
+            "actual": [
+              "100"
+            ]
+          },
+          {
+            "name": "premium",
+            "word": "customer.discounted-balance",
+            "passed": true,
+            "expected": "90",
+            "actual": [
+              "90"
+            ]
+          },
+          {
+            "name": "case-sensitive",
+            "word": "customer.premium?",
+            "passed": true,
+            "expected": "false",
+            "actual": [
+              "false"
+            ]
+          },
+          {
+            "name": "exact-match",
+            "word": "customer.premium?",
+            "passed": true,
+            "expected": "true",
+            "actual": [
+              "true"
+            ]
+          },
+          {
+            "name": "no-trim",
+            "word": "customer.premium?",
+            "passed": true,
+            "expected": "false",
+            "actual": [
+              "false"
+            ]
+          },
+          {
+            "name": "other-kind",
+            "word": "customer.premium?",
+            "passed": true,
+            "expected": "false",
+            "actual": [
+              "false"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "ok": true,
+      "kind": "describe",
+      "text": "Description for customer.discounted-balance.",
+      "data": {
+        "name": "customer.discounted-balance",
+        "inputs": [
+          "Customer"
+        ],
+        "outputs": [
+          "Float"
+        ],
+        "parameters": [
+          {
+            "name": "customer",
+            "type": "Customer"
+          }
+        ],
+        "effects": [],
+        "documentation": "",
+        "id": "word_6374d2b79c2445968d3505a9de759598",
+        "dependencies": [
+          "customer.balance",
+          "customer.premium?",
+          "float.multiply"
+        ],
+        "transitiveDependencies": [
+          "customer.balance",
+          "customer.kind",
+          "customer.premium?",
+          "equals",
+          "float.multiply"
+        ],
+        "callers": [],
+        "tests": [
+          "case-sensitive",
+          "ordinary",
+          "premium"
+        ],
+        "examples": [],
+        "source": "<revision:customer.discounted-balance/1>",
+        "line": 1,
+        "kind": "word",
+        "status": "persistent",
+        "maturity": "library",
+        "deprecated": false,
+        "revision": 1,
+        "testCount": 3,
+        "exampleCount": 0,
+        "coverage": {
+          "instructionsCovered": 9,
+          "instructionsTotal": 9,
+          "branchesCovered": 2,
+          "branchesTotal": 2,
+          "uncoveredInstructions": [],
+          "uncoveredBranchOutcomes": [],
+          "status": "current"
+        }
+      }
+    },
+    {
+      "ok": true,
+      "kind": "dependencies",
+      "text": "3 direct dependency/dependencies.",
+      "data": {
+        "dependencies": [
+          "customer.balance",
+          "customer.premium?",
+          "float.multiply"
+        ],
+        "callers": []
+      }
+    },
+    {
+      "ok": true,
+      "kind": "source",
+      "text": "word customer.discounted-balance(customer: Customer) -> Float {\n    effects none\n    if customer::premium?(customer) {\n        float::multiply(customer::balance(customer), 0.9)\n    } else {\n        customer::balance(customer)\n    }\n}",
+      "data": "word customer.discounted-balance(customer: Customer) -> Float {\n    effects none\n    if customer::premium?(customer) {\n        float::multiply(customer::balance(customer), 0.9)\n    } else {\n        customer::balance(customer)\n    }\n}"
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "90",
+      "data": {
+        "stack": [
+          "90"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "90",
+      "data": {
+        "stack": [
+          "90"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "90",
+      "data": {
+        "stack": [
+          "90"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "90",
+      "data": {
+        "stack": [
+          "90"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "100",
+      "data": {
+        "stack": [
+          "100"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "100",
+      "data": {
+        "stack": [
+          "100"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "100",
+      "data": {
+        "stack": [
+          "100"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "100",
+      "data": {
+        "stack": [
+          "100"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "100",
+      "data": {
+        "stack": [
+          "100"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "90",
+      "data": {
+        "stack": [
+          "90"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "90",
+      "data": {
+        "stack": [
+          "90"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "100",
+      "data": {
+        "stack": [
+          "100"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "0",
+      "data": {
+        "stack": [
+          "0"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "-90",
+      "data": {
+        "stack": [
+          "-90"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "225",
+      "data": {
+        "stack": [
+          "225"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "225",
+      "data": {
+        "stack": [
+          "225"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "100",
+      "data": {
+        "stack": [
+          "100"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "2.827433388230814",
+      "data": {
+        "stack": [
+          "2.827433388230814"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "9.000000000000001E-101",
+      "data": {
+        "stack": [
+          "9.000000000000001E-101"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "1E+100",
+      "data": {
+        "stack": [
+          "1E+100"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    }
+  ],
+  "limits": [
+    "Behavioral acceptance only; no model-efficiency claim.",
+    "Float tolerance is not bitwise or signed-zero equivalence.",
+    "Whole-state preservation and retained-helper quality require a separate audit."
+  ]
+}

@@ -1,0 +1,45 @@
+// frontend: flow/1
+
+record Customer {
+    field kind: String;
+    field balance: Float;
+}
+
+// frontend: flow/1
+
+record Subscription {
+    field term: String;
+    field renewable: Bool;
+}
+
+// frontend: flow/1
+
+word customer.discounted-balance(customer: Customer) -> Float {
+    effects none
+    if ::equals(customer::kind(customer), "premium") {
+        float::multiply(customer::balance(customer), 0.9)
+    } else {
+        customer::balance(customer)
+    }
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/case-sensitive {
+    customer::discounted-balance(customer::new("Premium", 100))
+    => 100
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/premium {
+    customer::discounted-balance(customer::new("premium", 100))
+    => 90
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/standard {
+    customer::discounted-balance(customer::new("standard", 100))
+    => 100
+}

@@ -59,3 +59,53 @@ Milestone 055 postpublication main CI run
 passed all 32 required checks on `2a1418ef0fc5117889c9935e8478c6f0be708456`,
 with a clean checkout. Saved run identity and validation were audited. The present
 pilot uses the same executable source, and acceptance is run with its pinned copy.
+## Continuing sequence
+
+Growing task 1 also passed all 48 independent checks with unchanged schema types
+and one added library word. Its four tests cover all four own instructions. It
+used 17 broker exchanges: two resolved runtime argument/syntax errors, plus one
+rejected malformed shutdown control byte. Shutdown needed Ctrl-C after Ctrl-D
+was echoed; the committed task and state were already complete and independently
+accepted. Closing friction is reported separately from language execution.
+
+A fresh Conventional task-2 agent discovered and reused `Customer.premium` in
+`discountedBalance`. Its 15 self-tests (7 retained + 8 new) and 43 independent
+acceptance checks pass; unrelated function definitions remain unchanged. This
+confirms that the conventional comparison can also retain/discover useful APIs.
+Its trace has 15 exchanges, one resolved inspect-argument error, and one malformed
+shutdown exchange. Growing task 2 and Flat task 2 are now running on the same
+pinned runtime. The Growing agent received one coordinator transport clarification
+that the host has no startup banner; subsequent Flat launch instructions state
+that explicitly. This apparatus clarification is not programming guidance and
+is preserved as an intervention. Initial launch messages were not identical
+beyond the matched task rules and intended protocol contracts, so these runs
+must not be promoted to controlled token/turn or latency evidence.
+
+Accepted trials and current metrics are retained under
+[the pilot artifacts](../experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/inventory.json).
+## Complete task-2 comparison
+
+| Task 2 | Flat | Growing | Conventional |
+|---|---:|---:|---:|
+| Independent acceptance checks passing | 48 | 48 | 43 |
+| Broker exchanges including closure | 15 | 15 | 15 |
+| Runtime errors resolved | 2 | 1 | 1 |
+| Rejected shutdown input | 1 | 0 | 1 |
+| Request payload bytes | 2,452 | 1,857 | 3,474 |
+| Response payload bytes | 22,140 | 20,671 | 7,247 |
+| Target own IR instructions covered | 11/11 | 9/9 | not measured |
+| Target own branch outcomes covered | 2/2 | 2/2 | not measured |
+
+Both language words pass three own tests. Growing reuses the earlier predicate;
+Flat composes generated accessors/equality directly. Conventional also reuses
+its predicate and preserves all earlier tests. Growing reduces authored request
+bytes and two own IR instructions compared with Flat, but does not reduce
+broker exchanges here. Its retrieved response bytes remain much larger than
+Conventional. This is concrete abstraction reuse, with no demonstrated overall
+cost advantage yet. Six completed trials are independently accepted; all three
+arms' tasks 3–5 remain necessary to finish this apparatus sequence.
+
+Growing task 3 hit model capacity after host startup and before any request.
+It resumed in the same host session with unchanged state; this platform
+interruption is separate from language/compiler failures. No model substitution
+or hidden inherited solution was used. Runtime source remains frozen throughout.

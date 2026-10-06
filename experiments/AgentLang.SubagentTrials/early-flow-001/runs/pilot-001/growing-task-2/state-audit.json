@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "typesUnchanged": true,
+  "words": [
+    "customer.discounted-balance",
+    "customer.premium?"
+  ],
+  "manifestHash": "142d4b51cc18680d7ddd3a7f9a76df6e1548c8374e7656e7411534f539f58757",
+  "limits": "Own target purity, library maturity, coverage and behavior checked separately. Growing prior head/revision additionally compared unchanged before preparing task3.",
+  "retainedHeadUnchanged": true,
+  "retainedRevisionUnchanged": true,
+  "retainedWordId": "word_df098836fe004a4b902a2f3c15659c6d"
+}
