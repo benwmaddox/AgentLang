@@ -8,6 +8,7 @@ open System.Text
 open System.Text.Json
 open System.Text.Json.Nodes
 open System.Threading.Tasks
+open AgentLang
 
 type TokenUsage =
     { InputTokens: int option
@@ -214,7 +215,7 @@ module AgentTools =
                     | _ -> Error $"tool '{name}' is not available"
             with ex -> Error $"invalid function arguments: {ex.Message}"
 
-    let dispatch (engine: AgentLang.Runtime.Engine) (command: Command) =
+    let dispatch (engine: AgentLang.Runtime.Engine) (frontend: SourceFrontend) (command: Command) =
         let args = JsonObject()
         let operation =
             match command with
@@ -240,6 +241,8 @@ module AgentTools =
                 | "promote" -> args["word"] <- Json.text word; "promote"
                 | "discard" -> args["word"] <- Json.text word; "discard"
                 | _ -> "harness.invalid-task-action"
+        if operation = "eval" || operation = "define" then
+            args["frontend"] <- Json.text (match frontend with SourceFrontend.Flow -> "flow" | SourceFrontend.Stack -> "stack")
         engine.Dispatch(operation, args)
 
 module ResponseParsing =

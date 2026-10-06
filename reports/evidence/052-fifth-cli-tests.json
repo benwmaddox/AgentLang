@@ -1,0 +1,32 @@
+{
+  "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Cli.Tests",
+  "revision": "3e43e2c291107f1cca269fc0a41f0d7ec888bff6",
+  "dirty": true,
+  "exitCode": 1,
+  "durationMilliseconds": 10572,
+  "output": [
+    "PASS CLI frontend selection and protocol authority",
+    "PASS Flow parser-driven interactive buffering",
+    "PASS Flow incomplete EOF and malformed recovery",
+    "PASS Flow file definition, CAS, and stable source identity",
+    "PASS Flow type source inspection and durable reload",
+    "PASS migrated Flow examples and fresh-process durability",
+    "FAIL after 6 groups and 79 assertions: legacy Stack definition stages: expected to find defined in output:",
+    "agentlang> ....> ....> ....> ....> Definitions parsed, type checked, and staged.",
+    "[",
+    "  \"stack.increment\"",
+    "]",
+    "agentlang> 42",
+    "{",
+    "  \"stack\": [",
+    "    \"42\"",
+    "  ],",
+    "  \"stackTypes\": [",
+    "    \"Int\"",
+    "  ],",
+    "  \"console\": [],",
+    "  \"effects\": {}",
+    "}",
+    "agentlang> "
+  ]
+}

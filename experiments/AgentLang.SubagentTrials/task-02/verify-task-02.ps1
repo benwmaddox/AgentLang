@@ -28,6 +28,9 @@ $requests.Add(@{op='describe';word='customer.premium?'})
 $checks.Add(@{kind='retained';output='Bool'})
 $requests.Add(@{op='describe';word='customer.discounted-balance'})
 $checks.Add(@{kind='retained';output='Float'})
+foreach ($request in $requests) {
+    if ($request.op -in @('define', 'eval') -and -not $request.Contains('frontend')) { $request.frontend = 'stack' }
+}
 $lines = @($requests | ForEach-Object { $_ | ConvertTo-Json -Compress -Depth 12 })
 $started = [DateTimeOffset]::UtcNow
 $raw = @($lines | & dotnet (Join-Path $trialRoot 'host/AgentLang.Cli.dll') --project (Join-Path $trialRoot 'growing-project') --jsonl)

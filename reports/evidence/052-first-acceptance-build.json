@@ -1,0 +1,19 @@
+{
+  "command": "dotnet build tests/AgentLang.Acceptance/AgentLang.Acceptance.fsproj --configuration Release",
+  "revision": "3e43e2c291107f1cca269fc0a41f0d7ec888bff6",
+  "dirty": true,
+  "exitCode": 0,
+  "durationMilliseconds": 3892,
+  "output": [
+    "  Determining projects to restore...",
+    "  All projects are up-to-date for restore.",
+    "  AgentLang.Core -> D:\\code\\AgentLang\\src\\AgentLang.Core\\bin\\Release\\net9.0\\AgentLang.Core.dll",
+    "  AgentLang.Acceptance -> D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\bin\\Release\\net9.0\\AgentLang.Acceptance.dll",
+    "",
+    "Build succeeded.",
+    "    0 Warning(s)",
+    "    0 Error(s)",
+    "",
+    "Time Elapsed 00:00:03.69"
+  ]
+}

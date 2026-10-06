@@ -1,0 +1,27 @@
+{
+  "command": "dotnet build tests/AgentLang.Harness.Tests/AgentLang.Harness.Tests.fsproj --configuration Release",
+  "revision": "3e43e2c291107f1cca269fc0a41f0d7ec888bff6",
+  "dirty": true,
+  "exitCode": 1,
+  "durationMilliseconds": 3356,
+  "output": [
+    "  Determining projects to restore...",
+    "  All projects are up-to-date for restore.",
+    "  AgentLang.Core -> D:\\code\\AgentLang\\src\\AgentLang.Core\\bin\\Release\\net9.0\\AgentLang.Core.dll",
+    "D:\\code\\AgentLang\\experiments\\AgentLang.Benchmarks\\Harness.fs(217,64): error FS0039: The type 'SourceFrontend' is not defined. Maybe you want one of the following:\u001d   SourceConstructFlags [D:\\code\\AgentLang\\experiments\\AgentLang.Benchmarks\\AgentLang.Benchmarks.fsproj]",
+    "D:\\code\\AgentLang\\experiments\\AgentLang.Benchmarks\\Harness.fs(244,64): error FS0039: The namespace or module 'SourceFrontend' is not defined. Maybe you want one of the following:\u001d   Sources [D:\\code\\AgentLang\\experiments\\AgentLang.Benchmarks\\AgentLang.Benchmarks.fsproj]",
+    "D:\\code\\AgentLang\\experiments\\AgentLang.Benchmarks\\Harness.fs(244,96): error FS0039: The namespace or module 'SourceFrontend' is not defined. Maybe you want one of the following:\u001d   Sources [D:\\code\\AgentLang\\experiments\\AgentLang.Benchmarks\\AgentLang.Benchmarks.fsproj]",
+    "D:\\code\\AgentLang\\experiments\\AgentLang.Benchmarks\\Harness.fs(244,50): warning FS0025: Incomplete pattern matches on this expression. [D:\\code\\AgentLang\\experiments\\AgentLang.Benchmarks\\AgentLang.Benchmarks.fsproj]",
+    "",
+    "Build FAILED.",
+    "",
+    "D:\\code\\AgentLang\\experiments\\AgentLang.Benchmarks\\Harness.fs(244,50): warning FS0025: Incomplete pattern matches on this expression. [D:\\code\\AgentLang\\experiments\\AgentLang.Benchmarks\\AgentLang.Benchmarks.fsproj]",
+    "D:\\code\\AgentLang\\experiments\\AgentLang.Benchmarks\\Harness.fs(217,64): error FS0039: The type 'SourceFrontend' is not defined. Maybe you want one of the following:\u001d   SourceConstructFlags [D:\\code\\AgentLang\\experiments\\AgentLang.Benchmarks\\AgentLang.Benchmarks.fsproj]",
+    "D:\\code\\AgentLang\\experiments\\AgentLang.Benchmarks\\Harness.fs(244,64): error FS0039: The namespace or module 'SourceFrontend' is not defined. Maybe you want one of the following:\u001d   Sources [D:\\code\\AgentLang\\experiments\\AgentLang.Benchmarks\\AgentLang.Benchmarks.fsproj]",
+    "D:\\code\\AgentLang\\experiments\\AgentLang.Benchmarks\\Harness.fs(244,96): error FS0039: The namespace or module 'SourceFrontend' is not defined. Maybe you want one of the following:\u001d   Sources [D:\\code\\AgentLang\\experiments\\AgentLang.Benchmarks\\AgentLang.Benchmarks.fsproj]",
+    "    1 Warning(s)",
+    "    3 Error(s)",
+    "",
+    "Time Elapsed 00:00:03.15"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Flow.Runtime.Tests",
+  "revision": "3e43e2c291107f1cca269fc0a41f0d7ec888bff6",
+  "dirty": true,
+  "exitCode": 0,
+  "durationMilliseconds": 18170,
+  "output": [
+    "Flow Runtime tests passed: 18 groups, 578 assertions."
+  ]
+}

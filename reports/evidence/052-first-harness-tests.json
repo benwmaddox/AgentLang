@@ -1,0 +1,14 @@
+{
+  "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Harness.Tests",
+  "revision": "3e43e2c291107f1cca269fc0a41f0d7ec888bff6",
+  "dirty": true,
+  "exitCode": -532462766,
+  "durationMilliseconds": 4783,
+  "output": [
+    "Unhandled exception. System.Exception: Could not prepare mixed frontend inventory: COMMIT_TESTS_FAILED: Candidate tests must pass against the proposed dictionary before commit.",
+    "   at AgentLang.Harness.Tests.Program.request@263(Engine engine, String operation, FSharpList`1 fields) in D:\\code\\AgentLang\\tests\\AgentLang.Harness.Tests\\Program.fs:line 269",
+    "   at AgentLang.Harness.Tests.Program.commit@274(Engine engine, String word) in D:\\code\\AgentLang\\tests\\AgentLang.Harness.Tests\\Program.fs:line 274",
+    "   at AgentLang.Harness.Tests.Program.testManifestInventoryUsesCurrentMixedFrontendHeads(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Harness.Tests\\Program.fs:line 304",
+    "   at AgentLang.Harness.Tests.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Harness.Tests\\Program.fs:line 1006"
+  ]
+}

@@ -7,3 +7,8 @@ Milestone publication includes updated reports in the same reviewed commit set a
 Run `./scripts/Validate.ps1` from PowerShell to build the solution and run every required acceptance runner and process verifier. Missing required projects or verifier scripts fail the gate. The command saves machine-readable evidence in `.agentlang/reports/validation.json` and exits with failure if any check fails. Use `-ReportPath PATH` to retain a particular run. Its `dirty` flag distinguishes a tested working tree from a committed revision; milestone prose should say which was tested.
 
 CI runs the same command and uploads its JSON report. Human feedback and milestone conclusions belong in numbered Markdown reports here. Credentials must never appear in reports. Live provider traces can contain project information and should remain in the experiment's local output directory unless deliberately reviewed for publication.
+
+Latest local checkpoint: [052 — default Flow authoring](052-default-flow-authoring.md)
+passed the complete 27-check Release gate. Exact source CI and private publication
+are recorded in that report separately; the full PRD and controlled research
+outcomes remain incomplete.

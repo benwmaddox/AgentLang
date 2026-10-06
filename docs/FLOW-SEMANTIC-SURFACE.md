@@ -1,6 +1,6 @@
 # Flow stage-2 semantic surface
 
-Status: stage 2 remains partial. Static list callbacks, output vectors, authored cases, and exact-root addressing lower through existing verified IR operations. Shared iterative `FlowStructure` preflight limits expression and type nesting to 128 and expanded syntax nodes to 100,000 across each word or expression, including host-built ASTs; that budget includes every declared output type, return member, and destructuring binding. The vector slice carries ordered word outputs, vector-aware call inference, `let (...)`, and terminal lexical `return` values. Standalone Flow test/example source objects, parsing, rendering, lowering, and compilation against verified programs are implemented. The authored-case milestone passed 354 assertions; the exact-root milestone passed 413 focused Flow assertions and 68 lint assertions. Report 030 retains earlier callback/vector validation; report 031 records authored-case validation and report 033 records root addressing. The coordinating agent's full Release gate is in progress. Durable Flow storage and frontend cutover remain follow-on work.
+Status: semantic surface, durable Flow integration and default authoring passed the complete local 27-check Release gate, 2026-10-06 (report 052). Focused Flow acceptance has 981 assertions; Runtime has 18 groups / 578 assertions; process-level CLI has 7 groups / 80 assertions. This document retains the original staged implementation plan below. Controlled external-subagent comparisons remain pending.
 
 ## Current boundary
 
@@ -107,3 +107,15 @@ dotnet run --project tests/AgentLang.Acceptance -c Release
 ```
 
 The remaining plan is not implementation evidence. Use the scoped results and limitations in report 026; complete frontend migration is still required.
+
+## Current integration checkpoint
+
+The original stage map above records the design rather than current incomplete
+work. Containers, callbacks, cases, output vectors, source-aware attachments and
+stable bindings have focused Flow acceptance; durable words/maintenance/type
+objects now pass the 26-check exact-source gate in reports 045, 047 and 050.
+Default human/protocol authoring and the complete local 27-check Release gate
+passed in report 052, including incremental single-owner case editing, fresh CLI
+buffering, explicit legacy selection and runnable primary Flow examples.
+Historical Stack projects remain parsed by declared source metadata. Actual
+controlled subagent comparisons remain separate, uncompleted research work.

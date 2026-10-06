@@ -28,8 +28,14 @@ module Program =
             args[name] <- if isNull value then null else value.DeepClone()
         args
 
+    // This suite preserves pre-Flow Stack coverage. Pin the frontend at the
+    // JSON protocol boundary so a runtime default change cannot change its intent.
     let private dispatch (engine: Runtime.Engine) operation values =
-        engine.Dispatch(operation, arguments values)
+        let selected =
+            if (operation = "define" || operation = "eval") && not (values |> List.exists (fun (name, _) -> name = "frontend")) then
+                ("frontend", jsonString "stack") :: values
+            else values
+        engine.Dispatch(operation, arguments selected)
 
     let private expectOk label (response: JsonObject) =
         if not (response["ok"].GetValue<bool>()) then
@@ -82,7 +88,7 @@ module Program =
         path
 
     let private exampleSource fileName =
-        let path = Path.Combine(Environment.CurrentDirectory, "examples", fileName)
+        let path = Path.Combine(Environment.CurrentDirectory, "examples", "legacy", fileName)
         if not (File.Exists path) then failwith $"Could not find demo source at {path}."
         File.ReadAllText path
 
@@ -95,7 +101,7 @@ module Program =
 
         let input =
             new StringReader(
-                "{\"op\":\"eval\",\"code\":\"10 20 add\"}\n" +
+                "{\"op\":\"eval\",\"frontend\":\"stack\",\"code\":\"10 20 add\"}\n" +
                 "{\"op\":\"words\"}\n")
         use output = new StringWriter()
         Protocol.serveJsonLines runtime input output

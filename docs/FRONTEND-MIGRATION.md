@@ -1,6 +1,6 @@
 # Early migration to explicit data-flow source
 
-Status: migration in progress, 2026-10-05. The user requested an early switch away from RPN after finding it difficult to read. Dot chaining is the preferred authoring notation. This supersedes the earlier plan to defer frontend changes until after initial agent experiments. The opt-in Flow parser and verified-IR lowering now support named typed inputs, immutable locals, ordinary/named/dot calls and conditional expressions. Runtime and protocol authoring still default to RPN; the complete semantic surface, durable Flow source and default cutover remain required. See report 021 for validated foundation evidence.
+Status: default Flow authoring passed the complete 27-check local Release gate, 2026-10-06 (report 052). Named typed inputs, immutable locals, ordinary/named/dot calls, conditionals, containers, cases, output vectors, typed project documents and durable frontend metadata are implemented. Runtime/protocol, human REPL and one-shot authoring default to Flow; explicit Stack and metadata-selected historical loading remain. Clean committed-source CI is recorded separately. Controlled external-subagent comparisons remain pending.
 
 ## Architecture and target syntax
 
@@ -128,3 +128,24 @@ verifies source hashes and validator identity, and preserves authored declaratio
 bytes through source inspection, snapshots and task abort. Type sources are
 immutable rather than fabricated word revisions. Default frontend cutover still
 requires complete document/runtime/storage acceptance and CLI migration.
+
+## Default Flow authoring acceptance
+
+The complete local 27-check Release gate passed in
+[report 052](../reports/052-default-flow-authoring.md). Omitted Runtime authoring
+selectors choose Flow; explicit Stack retains historical authoring and semantic
+fixtures without parser fallback. Human/one-shot CLI selection, parser-driven
+incomplete-input buffering, type-source inspection and revision-CAS file controls
+pass process-level acceptance. Primary examples are Flow; their original Git
+blobs remain under `examples/legacy`.
+
+Incremental Flow case-only documents resolve one existing Flow user-word owner.
+New additions capture its current immutable revision; existing case replacement
+requires explicit revision CAS, and removals require the existing source hash.
+Untouched cases, definition bytes, stable IDs, maturity and temporary lifetime
+remain intact. Generated/Stack owners and mixed-owner documents fail explicitly;
+Flow user-word cases can test generated operations. Library commits retain actual
+own-body instruction/branch coverage and persistent caller regression gates.
+
+Clean committed-source CI and publication are recorded separately from the local
+dirty-tree gate. Controlled external-subagent outcomes remain unproven.

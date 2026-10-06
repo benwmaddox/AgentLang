@@ -7,6 +7,7 @@
     {
       "operation": "eval",
       "args": {
+        "frontend": "stack",
         "code": "\"premium\" 100.0 customer.new customer.discounted-balance"
       },
       "data": {
@@ -16,6 +17,7 @@
     {
       "operation": "eval",
       "args": {
+        "frontend": "stack",
         "code": "\"regular\" 100.0 customer.new customer.discounted-balance"
       },
       "data": {

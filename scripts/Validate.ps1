@@ -55,6 +55,7 @@ try {
             'flow-acceptance' = 'AgentLang.Flow.Tests'
             'flow-lint-acceptance' = 'AgentLang.Flow.Lint.Tests'
             'flow-runtime-acceptance' = 'AgentLang.Flow.Runtime.Tests'
+            'cli-acceptance' = 'AgentLang.Cli.Tests'
             'storage-acceptance' = 'AgentLang.Storage.Tests'
             'conventional-acceptance' = 'AgentLang.Conventional.Tests'
             'conventional-cli-acceptance' = 'AgentLang.Conventional.Cli.Tests'

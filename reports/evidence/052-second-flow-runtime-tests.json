@@ -1,0 +1,14 @@
+{
+  "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Flow.Runtime.Tests",
+  "revision": "3e43e2c291107f1cca269fc0a41f0d7ec888bff6",
+  "dirty": true,
+  "exitCode": -532462766,
+  "durationMilliseconds": 5665,
+  "output": [
+    "Unhandled exception. System.InvalidOperationException: A value of type 'System.Int32' cannot be converted to a 'System.String'.",
+    "   at System.Text.Json.ThrowHelper.ThrowInvalidOperationException_NodeUnableToConvert(Type sourceType, Type destinationType)",
+    "   at System.Text.Json.Nodes.JsonValue`1.GetValue[T]()",
+    "   at AgentLang.Flow.Runtime.Tests.Program.testFlowAttachmentOnlyDocuments(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Runtime.Tests\\Program.fs:line 776",
+    "   at AgentLang.Flow.Runtime.Tests.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Runtime.Tests\\Program.fs:line 2362"
+  ]
+}

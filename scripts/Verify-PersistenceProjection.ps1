@@ -226,6 +226,7 @@ function New-Request {
     param([Parameter(Mandatory)][string]$Operation, [System.Collections.IDictionary]$Arguments = @{})
     $request = [ordered]@{ op = $Operation }
     foreach ($key in $Arguments.Keys) { $request[$key] = $Arguments[$key] }
+    if ($Operation -in @('define', 'eval') -and -not $request.Contains('frontend')) { $request['frontend'] = 'stack' }
     $request
 }
 

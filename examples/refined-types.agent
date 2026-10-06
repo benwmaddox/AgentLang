@@ -1,63 +1,62 @@
 # This small policy is illustrative and deliberately does not implement the full
 # Internet email standard.
-word email.valid? : String -> Bool
+word email.valid?(address: String) -> Bool {
     effects none
-    let address
-    $address "@" string.contains
-    $address "." string.contains
-    bool.and
-    $address " " string.contains
-    bool.not
-    bool.and
-    $address "@" string.starts-with
-    bool.not
-    bool.and
-    $address "@" string.ends-with
-    bool.not
-    bool.and
-end
+    let contains-at = string::contains(address, "@");
+    let contains-dot = string::contains(address, ".");
+    let contains-space = string::contains(address, " ");
+    let starts-with-at = string::starts-with(address, "@");
+    let ends-with-at = string::ends-with(address, "@");
+    let has-required-parts = bool::and(contains-at, contains-dot);
+    let has-no-space = bool::not(contains-space);
+    let has-no-leading-at = bool::not(starts-with-at);
+    let has-no-trailing-at = bool::not(ends-with-at);
+    bool::and(
+        bool::and(
+            bool::and(has-required-parts, has-no-space),
+            has-no-leading-at),
+        has-no-trailing-at)
+}
 
-type Email : String
-    validate email.valid?
-end
+type Email : String {
+    validate email::valid?;
+}
 
-type MetersPerSecond : Float
-end
+type MetersPerSecond : Float { }
 
-type KilometersPerHour : Float
-end
+type KilometersPerHour : Float { }
 
-test email.valid?/valid
-    "dev@example.com" email.valid?
+test email.valid?/valid {
+    email::valid?("dev@example.com")
     => true
-end
+}
 
-test email.valid?/missing-at
-    "dev.example.com" email.valid?
+test email.valid?/missing-at {
+    email::valid?("dev.example.com")
     => false
-end
+}
 
-test email.valid?/missing-dot
-    "dev@examplecom" email.valid?
+test email.valid?/missing-dot {
+    email::valid?("dev@examplecom")
     => false
-end
+}
 
-test email.valid?/spaces
-    "dev @example.com" email.valid?
+test email.valid?/spaces {
+    email::valid?("dev @example.com")
     => false
-end
+}
 
-test email.valid?/leading-at
-    "@dev.example" email.valid?
+test email.valid?/leading-at {
+    email::valid?("@dev.example")
     => false
-end
+}
 
-test email.valid?/trailing-at
-    "dev.example@" email.valid?
+test email.valid?/trailing-at {
+    email::valid?("dev.example@")
     => false
-end
+}
 
-example email.valid?/accepted-shape
-    "dev@example.com" email.valid?
+example email.valid?/accepted-shape {
+    email::valid?("dev@example.com")
     => true
-end
+}

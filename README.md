@@ -6,7 +6,13 @@ AI agents are external coding tools that use the language. The language runtime 
 
 This repository implements a prototype slice. The compiler checks and lowers source into verified typed semantic IR; the public runtime executes that IR through the interpreter, with no AST execution fallback. Effectful language primitives use virtual providers only; there is no host filesystem, network, or database access from language programs. An optional external experiment harness and a conventional business foundation are included; no measured agent comparison is claimed. The Customer demo uses binary floating point and is not suitable for exact money. The Email validator below demonstrates a modest local policy and does not claim conformance with the full Internet email standard.
 
-The default source frontend is still Stack/RPN. An explicit `frontend: "flow"` protocol selector enables [expression/dot data flow](docs/FRONTEND-MIGRATION.md), including named typed inputs, immutable locals, static dot calls, tests, examples and durable word commits. Both frontends execute the same verified semantic IR. Flow-aware rename and deprecation preserve authored source and call bindings; default authoring cutover remains required. Close-to-first-use is advisory lint, and unrestricted mutable language globals are excluded. The Customer demo and syntax section below document the legacy default.
+The default Flow authoring cutover passed the complete 27-check Release gate in
+[report 052](reports/052-default-flow-authoring.md). Flow uses named typed inputs,
+immutable locals, ordinary calls and static first-input dot chaining. Words
+remain the unit of reusable vocabulary. Explicit Stack mode and metadata-based
+historical loading remain supported; the runtime never tries another parser
+after a source error. Both frontends execute the same verified semantic IR.
+Close-to-first-use is advisory lint, and unrestricted mutable globals are excluded.
 
 The decisions and scope live in [docs/PRD.md](docs/PRD.md) and [docs/DECISIONS.md](docs/DECISIONS.md).
 
@@ -21,179 +27,172 @@ dotnet build AgentLang.sln
 dotnet run --project tests/AgentLang.Acceptance
 ~~~
 
-## Try the opt-in Flow frontend
+## Try Flow authoring
 
 Start the JSON-lines CLI:
 
 ~~~powershell
-dotnet run --project src/AgentLang.Cli -- --project .agentlang-flow --jsonl
+dotnet run --project src/AgentLang.Cli -- --project .agentlang/flow-quickstart --jsonl
 ~~~
 
 Send these requests, one per line:
 
 ~~~json
-{"op":"define","frontend":"flow","source":"word increment(value: Int) -> Int {\n    effects none\n    value.add(1)\n}","tests":["test increment/basic {\n    ::increment(41)\n    => 42\n}"]}
+{"op":"define","source":"word increment(value: Int) -> Int {\n    effects none\n    value.add(1)\n}\ntest increment/basic {\n    ::increment(41)\n    => 42\n}"}
 {"op":"test","word":"increment"}
 {"op":"commit","word":"increment"}
-{"op":"eval","frontend":"flow","code":"::increment(41)"}
+{"op":"eval","code":"::increment(41)"}
 {"op":"source","word":"increment"}
 ~~~
 
-Evaluation produces 42, and source inspection returns the authored Flow word.
-The explicit frontend selector is currently required for `define` and `eval`;
-the human REPL still uses Stack syntax by default.
-
-
-Flow `define` also accepts a complete document in its `source` field:
-
-~~~text
-type MetersPerSecond : Float {}
-word speed.roundtrip(value: MetersPerSecond) -> MetersPerSecond {
-    effects none
-    MetersPerSecond::new(MetersPerSecond::value(value))
-}
-test speed.roundtrip/basic {
-    speed::roundtrip(MetersPerSecond::new(1.0))
-    => value MetersPerSecond::new(1.0)
-}
-~~~
-
-Records, refined scalar types, words, tests and examples stage together only
-when the whole document validates. Commit still selects a word/type and its
-dependency closure; word commits require passing attached tests. Types remain
-nominal: passing an Int or Float directly to `speed.roundtrip` is a type error.
-Use `{"op":"source","type":"MetersPerSecond"}` to inspect the exact authored
-type declaration. New documents are add-only; use the existing single-word
-replacement route for revisions. Temporary documents cannot introduce types.
-Flow type sources use manifest v3 while historical v1/v2 projects remain readable.
+Evaluation produces 42; source inspection returns the authored Flow word.
+An explicit `frontend: "stack"` on `define` or `eval` selects legacy RPN.
+Malformed Flow never falls back to Stack. Other commands operate on the same
+current dictionary regardless of the frontend that authored a word.
 
 ## Run the Customer demo
 
-Start the human REPL in a project directory:
+Start the human REPL:
 
 ~~~powershell
 dotnet run --project src/AgentLang.Cli -- --project .agentlang
 ~~~
 
-At the agentlang> prompt, stage the example, run its tests, and commit the project vocabulary:
-
-~~~text
-:define examples/customer.agent
-:test-all
-:commit customer.premium?
-:commit customer.discounted-balance
-:quit
-~~~
-
-A word commit requires attached passing tests, and dependencies are committed before their callers. Library commits additionally require their own tests to cover every instruction and supported branch outcome; project words have a lighter coverage gate. The record definition commits with the first word. Start a fresh process to reuse the committed vocabulary:
-
-~~~powershell
-dotnet run --project src/AgentLang.Cli -- --project .agentlang --eval '"premium" 100.0 customer.new customer.discounted-balance'
-~~~
-
-The result is 90. This example uses binary floating point to keep the prototype small; it does not model exact financial amounts.
-
-The REPL accepts single-line expressions and buffers multiline declarations, if blocks, and Option/Result matches. Use :define FILE to load a file containing several declarations. The :help command lists available controls.
-
-## Language syntax
-
-Expressions are concatenative. Literals and word calls run left to right, with signatures describing stack inputs and outputs from bottom to top:
-
-~~~text
-10 20 add
-~~~
-
-This leaves 30. Strings are JSON-style quoted literals. Available scalar literals are Int, Float (include a decimal point), Bool, String, and unit.
-
-A declaration file can contain records, words, tests, and examples. Record field order defines constructor argument order. Record constructors and accessors use the record name with its first letter lowercased; a Customer with kind String and balance Float generates:
-
-~~~text
-customer.new : String Float -> Customer
-customer.kind : Customer -> String
-customer.balance : Customer -> Float
-~~~
-
-A named word declares its complete stack signature, effect set, optional documentation, and body:
-
-~~~text
-word add-one : Int -> Int
-    effects none
-    doc "Add one to an integer."
-    1 add
-end
-
-test add-one/basic
-    41 add-one
-    => 42
-end
-~~~
-
-Every word must explicitly say effects none or list effects such as fs.read or fs.write. Tests are attached by naming the word in the test header. An example block has the same body-and-expected-value form, but remains descriptive metadata and is not run as a test.
-
-The form let name consumes the top stack value and saves it as a word-local binding; $name pushes it again. An if consumes the top Bool; both branches must leave the same stack types. An omitted else is an empty branch:
-
-~~~text
-word positive-part : Int -> Int
-    effects none
-    let input
-    $input 0 int.greater-than
-    if
-        $input
-    else
-        0
-    end
-end
-~~~
-
-Nominal wrappers keep semantic values distinct from their underlying representation. Scalar constructors use the form Type.new, and explicit unwrapping uses Type.value. For example, [examples/refined-types.agent](examples/refined-types.agent) defines Email as String and distinct speed units over Float:
-
-~~~text
-"dev@example.com" Email.new Email.value
-3.0 MetersPerSecond.new
-3.0 MetersPerSecond.new 4.0 KilometersPerHour.new equals
-~~~
-
-The first expression constructs and explicitly unwraps an Email. The second constructs a speed value. The final expression fails static type checking because the nominal speed units are distinct. The validator requires an at-sign, a dot, no spaces, and no leading or trailing at-sign. It remains an illustrative acceptance rule, not a complete email validator.
-
-A validator must accept exactly the base type and return one Bool; it must be pure. MetersPerSecond does not convert to a plain Float or another unit implicitly.
-
-## JSON-lines protocol
-
-Run the same dispatcher without prompts or extra output:
-
-~~~powershell
-dotnet run --project src/AgentLang.Cli -- --project .agentlang --jsonl
-~~~
-
-Each input line is one JSON object with an op field. Operation arguments can be top-level fields or grouped under args. Each request produces exactly one compact JSON response line. Responses contain ok, kind, and text; successful operations may include data, while failures include a structured error with a stable code and message.
-
-Example requests:
-
-~~~json
-{"op":"eval","code":"10 20 add"}
-{"op":"define","source":"word add-one : Int -> Int\neffects none\n1 add\nend\ntest add-one/basic\n41 add-one\n=> 42\nend"}
-{"op":"test-all"}
-{"op":"commit","word":"add-one"}
-{"op":"describe","word":"add-one"}
-~~~
-
-The dispatcher supports evaluation and definition, vocabulary discovery (words, describe, search, source, dependencies, callers, effects, ir), examples and tests, commits and promotion, task begin/status/commit/abort/log, history, diff, and the current stack view. Commit and commit-word accept a word and a library flag. A library commit requires passing tests plus complete executable-instruction coverage and both outcomes of every conditional. Use the Human REPL sequence below to see the gate and coverage report:
+At its prompt, stage the Flow example, test it and commit reusable vocabulary:
 
 ~~~text
 :define examples/customer.agent
 :test-all
 :commit customer.premium?
 :commit customer.discounted-balance --library
-:describe customer.discounted-balance
+:quit
 ~~~
 
-A failed gate returns LIBRARY_COVERAGE_INCOMPLETE with uncovered instruction and outcome locations. Library tests must cover both conditional branches, both Option/Result cases, empty and nonempty iteration, and kept/dropped filter outcomes where used. A successful description reports coverage and the selected maturity. Library maturity survives reload and later replacements. See [testing policy](docs/TESTING.md).
+A word commit requires passing attached tests. Library commits additionally
+require every own-body executable instruction and supported branch outcome to
+be exercised. Selected dependencies and types commit with their callers.
+Start a fresh process to reuse the vocabulary:
 
-Temporary describes a word's lifetime, while library describes its quality requirements. A temporary word can be tried within a session and discarded; promoting it makes it a candidate for persistence. A project word requires attached passing tests to commit. A library word additionally requires complete instruction and supported control-flow coverage. A local binding created by `let` is a value within one invocation, not a dictionary word.
+~~~powershell
+dotnet run --project src/AgentLang.Cli -- --project .agentlang --eval 'customer::discounted-balance(customer::new(kind = "premium", balance = 100.0))'
+~~~
 
-Closed `List<T>`, `Option<T>`, and `Result<T,E>` values preserve their declared types even when empty or unsuccessful. Static callbacks and exhaustive case blocks are described in [docs/CONTAINERS.md](docs/CONTAINERS.md), with runnable examples in [examples/containers.agent](examples/containers.agent).
+The result is 90. This example uses binary floating point and does not model
+exact financial amounts. The REPL buffers incomplete Flow documents/expressions;
+use `:define FILE` for several declarations in one atomic source document.
+Use `--frontend stack` for the human REPL or one-shot legacy evaluation, with
+preserved examples under [examples/legacy](examples/legacy). JSON-lines and
+`--request` modes use per-request selectors instead of the process frontend flag.
 
-Structural discovery supports `type-of`, `search-type`, `search-output`, `search-effect`, `search-dependency`, transitive dependencies/callers, bounded `graph`, and compact `context`. Queries see the current staged vocabulary and preserve nominal distinctions such as Email versus String. Context reports exact compact JSON `data` bytes with explicit limits and omissions; byte counts are not model tokens. See [the command and budget contract](docs/DISCOVERY.md).
+## Language syntax
+
+Ordinary calls and dot chains have the same statically resolved behavior:
+
+~~~text
+add(10, 20)
+10.add(20)
+~~~
+
+Dot chaining passes its receiver as the first input, evaluates it once and
+preserves written effect order. It is not object dispatch. `::name` addresses an
+exact root dictionary name; `customer::premium?` addresses `customer.premium?`.
+Declaration headers and test/example owners spell the dictionary identity
+verbatim, with dots between namespace segments when present.
+Short calls reject ambiguity rather than choose a changing meaning.
+
+~~~text
+word positive-part(value: Int) -> Int {
+    effects none
+    doc "Keep a positive value, otherwise return zero."
+    if int::greater-than(value, 0) { value } else { 0 }
+}
+test positive-part/positive {
+    ::positive-part(3)
+    => 3
+}
+test positive-part/nonpositive {
+    ::positive-part(-1)
+    => 0
+}
+~~~
+
+Every word declares its types and effects. Named inputs and `let name = expression`
+locals are immutable and word-scoped. Locals near first use are advisory lint.
+Both conditional paths must return the same types; no value is silently dropped.
+Tests assert literal values, structured runtime errors or independently evaluated
+pure expected expressions. Examples provide metadata and do not count as tests.
+
+A Flow document can declare records, refined scalar types, words, tests and
+examples. The whole proposed dictionary validates before any member is staged:
+
+~~~text
+record Customer { field kind: String; field balance: Float; }
+type Email : String { validate email::valid?; }
+type MetersPerSecond : Float {}
+~~~
+
+A validator must accept its scalar base and return Bool, with no direct or
+transitive effects. [The refined-type example](examples/refined-types.agent)
+defines a modest Email policy, not full Internet email conformance. Construction
+checks that policy; unwrapping is explicit:
+
+~~~text
+Email::value(Email::new("dev@example.com"))
+MetersPerSecond::new(3.0)
+~~~
+
+Email is distinct from String, and MetersPerSecond is distinct from Float and
+KilometersPerHour. No representation-based coercion is allowed. Existing types
+and frozen validator semantics cannot be silently replaced. Flow type sources
+use manifest v3; historical v1/v2 source objects remain readable without rewriting.
+
+## Interactive updates and inspection
+
+Use `:source WORD` for a word and `:source --type TYPE` for the exact type source.
+Protocol equivalents are `{"op":"source","word":"increment"}` and
+`{"op":"source","type":"Email"}`. Source hashes, stable identities, tests,
+examples, history and dependency queries remain available after reload.
+
+After defining a Flow word, a separate test/example declaration can add a new
+case to that word. Existing case replacement requires explicit owner revision
+CAS. A file-based revision uses:
+
+~~~text
+:define replacement.agent --replace --expected-revision 1
+:test WORD
+:replace-word WORD
+~~~
+
+New multitype/multiword documents are add-only. Temporary documents cannot
+introduce project types. Case-only documents must name one existing Flow user
+word; test generated constructors/accessors through a user word, or select
+Stack explicitly for historical direct generated-owner cases.
+
+## Tests, temporary words and discovery
+
+Project words require at least one passing attached test. Library words add
+complete actual own-body instruction and supported control-flow coverage.
+Expected expressions cannot satisfy tested-word coverage. Coverage shows a path
+was exercised; meaningful assertions and boundary cases establish behavior.
+See [testing policy](docs/TESTING.md). Downstream project words can focus on
+integration rather than repeat all library coverage.
+
+Temporary describes dictionary lifetime; library describes quality. A temporary
+word can be tried and discarded, or promoted for tested persistence. A local
+binding is a value inside an invocation, not a dictionary word. Neither term
+specifies arena allocation or memory lifetime.
+
+Closed List, Option and Result types preserve nominal payload types even when
+empty or unsuccessful. Static callbacks and exhaustive cases share the same
+verified semantics across frontends. [The container example](examples/containers.agent)
+uses typed construction, cases, map/filter/each and branch tests.
+
+The protocol supports words, describe, search, source, dependencies, callers,
+effects, ir, tests/examples, commit/promotion, task transactions/logs, history,
+diff and current stack inspection. Structural queries include type-of,
+search-type/output/effect/dependency, transitive graphs and bounded compact
+context. Context bytes are measured payload bytes, not model tokens.
+See [discovery contracts](docs/DISCOVERY.md) and `:help` for CLI controls.
 
 ## Effect permissions
 
@@ -210,10 +209,10 @@ The initial file and clock providers are deterministic and virtual. The --clock 
 The optional harness consumes the public runtime interface. Its offline smoke run needs no model credential:
 
 ~~~powershell
-dotnet run --project experiments/AgentLang.Benchmarks -- run --task experiments/AgentLang.Benchmarks/fixtures/customer-discount-task.json --provider scripted --script experiments/AgentLang.Benchmarks/fixtures/customer-discount-script.json --seed-source examples/customer.agent
+dotnet run --project experiments/AgentLang.Benchmarks -- run --task experiments/AgentLang.Benchmarks/fixtures/customer-discount-task.json --provider scripted --script experiments/AgentLang.Benchmarks/fixtures/customer-discount-script.json --frontend stack --seed-source examples/legacy/customer.agent
 ~~~
 
-This checks protocol orchestration and existing customer vocabulary. It is a scripted infrastructure check, not evidence that an AI agent implemented a task. [docs/HARNESS.md](docs/HARNESS.md) documents live-provider configuration, retention modes, request limits, saved traces, and independent task oracles. [docs/BUSINESS.md](docs/BUSINESS.md) describes the conventional business foundation and its exact-money contract.
+This explicitly replays the historical Stack scripted fixture and checks protocol orchestration. Normal harness authoring selects Flow; the configured frontend also selects the seed/parser and compact language primer. This is an infrastructure check, not evidence that an AI agent implemented a task. [docs/HARNESS.md](docs/HARNESS.md) documents live-provider configuration, retention modes, request limits, saved traces, and independent task oracles. [docs/BUSINESS.md](docs/BUSINESS.md) describes the conventional business foundation and its exact-money contract.
 
 ## Current limits
 

@@ -1,0 +1,63 @@
+# This small policy is illustrative and deliberately does not implement the full
+# Internet email standard.
+word email.valid? : String -> Bool
+    effects none
+    let address
+    $address "@" string.contains
+    $address "." string.contains
+    bool.and
+    $address " " string.contains
+    bool.not
+    bool.and
+    $address "@" string.starts-with
+    bool.not
+    bool.and
+    $address "@" string.ends-with
+    bool.not
+    bool.and
+end
+
+type Email : String
+    validate email.valid?
+end
+
+type MetersPerSecond : Float
+end
+
+type KilometersPerHour : Float
+end
+
+test email.valid?/valid
+    "dev@example.com" email.valid?
+    => true
+end
+
+test email.valid?/missing-at
+    "dev.example.com" email.valid?
+    => false
+end
+
+test email.valid?/missing-dot
+    "dev@examplecom" email.valid?
+    => false
+end
+
+test email.valid?/spaces
+    "dev @example.com" email.valid?
+    => false
+end
+
+test email.valid?/leading-at
+    "@dev.example" email.valid?
+    => false
+end
+
+test email.valid?/trailing-at
+    "dev.example@" email.valid?
+    => false
+end
+
+example email.valid?/accepted-shape
+    "dev@example.com" email.valid?
+    => true
+end

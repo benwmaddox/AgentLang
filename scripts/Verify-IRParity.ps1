@@ -285,6 +285,7 @@ function New-ExpandedRequest {
     if (-not $request.Contains('op')) { throw "Fixture '$FixtureName' request has no operation." }
     $allowedOperations = @('define', 'eval', 'test', 'commit', 'task.begin', 'task.status', 'task.abort', 'describe', 'source', 'storage.status')
     if ($allowedOperations -cnotcontains [string]$request.op) { throw "Fixture '$FixtureName' uses unsupported operation '$($request.op)'." }
+    if ($request.op -in @('define', 'eval') -and -not $request.Contains('frontend')) { $request['frontend'] = 'stack' }
     $request
 }
 

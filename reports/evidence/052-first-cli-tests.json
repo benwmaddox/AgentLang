@@ -1,0 +1,10 @@
+{
+  "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Cli.Tests",
+  "revision": "3e43e2c291107f1cca269fc0a41f0d7ec888bff6",
+  "dirty": true,
+  "exitCode": 1,
+  "durationMilliseconds": 1413,
+  "output": [
+    "FAIL after 0 groups and 7 assertions: JSONL omitted selector retains protocol's Stack default"
+  ]
+}

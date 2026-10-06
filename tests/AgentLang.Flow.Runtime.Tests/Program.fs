@@ -104,11 +104,17 @@ module Program =
     let private defineFlowProject (engine: Runtime.Engine) source extra =
         dispatch engine "define" ([ "frontend", jstr "flow"; "source", jstr source ] @ extra)
 
+    let private defineStack (engine: Runtime.Engine) source extra =
+        dispatch engine "define" ([ "frontend", jstr "stack"; "source", jstr source ] @ extra)
+
     let private commit (engine: Runtime.Engine) operation name extra =
         dispatch engine operation ([ "word", jstr name ] @ extra)
 
     let private evalFlow (engine: Runtime.Engine) code =
         dispatch engine "eval" [ "frontend", jstr "flow"; "code", jstr code ]
+
+    let private evalStack (engine: Runtime.Engine) code =
+        dispatch engine "eval" [ "frontend", jstr "stack"; "code", jstr code ]
 
     let private cliEval project code =
         let outputDirectory = DirectoryInfo(AppContext.BaseDirectory.TrimEnd([| Path.DirectorySeparatorChar; Path.AltDirectorySeparatorChar |]))
@@ -189,7 +195,7 @@ module Program =
             + "    4 durable.stack_wrapper\n"
             + "    => 5\n"
             + "end\n"
-        dispatch engine "define" [ "source", jstr stackWrapperSource ]
+        defineStack engine stackWrapperSource []
         |> expectOk "define a Stack wrapper and cases after committing Flow"
         |> ignore
         let stackWrapperId = getWordId engine "durable.stack_wrapper"
@@ -246,13 +252,27 @@ module Program =
         assertAllPassed 1 (dispatch reloaded "test" [ "word", jstr "durable.stack_wrapper" ] |> expectOk "run reloaded Stack case calling Flow")
         let reloadedStackExample = dispatch reloaded "example" [ "word", jstr "durable.stack_wrapper"; "caseName", jstr "basic" ] |> expectOk "run reloaded Stack example calling Flow"
         check (boolValue (reloadedStackExample.["data"].["results"].[0].["passed"])) "reloaded Stack example calling Flow passes"
-        let stackWrapperValue = dispatch reloaded "eval" [ "code", jstr "9 durable.stack_wrapper" ] |> expectOk "evaluate reloaded Stack caller"
+        let stackWrapperValue = evalStack reloaded "9 durable.stack_wrapper" |> expectOk "evaluate reloaded Stack caller"
         equal "10" (stringValue (stackWrapperValue.["data"].["stack"].[0])) "fresh Engine reload executes the Stack caller against Flow"
 
     let private testExplicitFrontendCannotFallBack root =
         let engine = Runtime.Engine(Path.Combine(root, "frontend-selector"), Set.empty)
-        let stack = dispatch engine "eval" [ "code", jstr "10 20 add" ] |> expectOk "omitted frontend keeps Stack evaluation"
+        let flow = dispatch engine "eval" [ "code", jstr "add(10, 20)" ] |> expectOk "omitted frontend selects Flow evaluation"
+        equal "30" (stringValue (flow.["data"].["stack"].[0])) "Flow is the default expression frontend"
+        let stack = evalStack engine "10 20 add" |> expectOk "explicit Stack frontend keeps RPN evaluation"
         equal "30" (stringValue (stack.["data"].["stack"].[0])) "default Stack expression remains supported"
+        let defaultDefinition =
+            "word default.increment(value: Int) -> Int {\n"
+            + "    effects none\n"
+            + "    add(value, 1)\n"
+            + "}\n\n"
+            + "test default.increment/basic {\n"
+            + "    default::increment(9)\n"
+            + "    => 10\n"
+            + "}"
+        let defaultDefined = dispatch engine "define" [ "source", jstr defaultDefinition ] |> expectOk "omitted frontend selects Flow definition"
+        equal "flow" (stringValue (defaultDefined.["data"].["frontend"])) "default definition reports Flow"
+        equal "10" (stringValue (dispatch engine "eval" [ "code", jstr "default::increment(9)" ] |> expectOk "evaluate omitted-frontend Flow word" |> fun response -> response.["data"].["stack"].[0])) "omitted-frontend Flow word is executable"
         let freshFlowEngine = Runtime.Engine(Path.Combine(root, "flow-expression-without-words"), Set.empty)
         let primitiveOnly = evalFlow freshFlowEngine "add(1, 2)" |> expectOk "evaluate a Flow primitive with no user Flow words"
         equal "3" (stringValue (primitiveOnly.["data"].["stack"].[0])) "explicit Flow expression resolves primitives in a fresh empty Engine"
@@ -266,9 +286,15 @@ module Program =
         let malformedEval = evalFlow engine "word broken"
         check (not (succeeded malformedEval)) "malformed explicit Flow eval is rejected"
         check ((errorCode malformedEval).StartsWith("FLOW_", StringComparison.Ordinal)) "malformed explicit Flow eval keeps its Flow diagnostic"
+        let malformedDefaultEval = dispatch engine "eval" [ "code", jstr "word broken" ]
+        check (not (succeeded malformedDefaultEval)) "malformed omitted-frontend eval is rejected"
+        check ((errorCode malformedDefaultEval).StartsWith("FLOW_", StringComparison.Ordinal)) "malformed omitted-frontend eval keeps its Flow diagnostic"
         let malformedDefine = defineFlow engine "word malformed" [] [] []
         check (not (succeeded malformedDefine)) "malformed explicit Flow definition is rejected"
         check ((errorCode malformedDefine).StartsWith("FLOW_", StringComparison.Ordinal)) "malformed Flow definition is not passed to the Stack parser"
+        let malformedDefaultDefine = dispatch engine "define" [ "source", jstr "word malformed" ]
+        check (not (succeeded malformedDefaultDefine)) "malformed omitted-frontend definition is rejected"
+        check ((errorCode malformedDefaultDefine).StartsWith("FLOW_", StringComparison.Ordinal)) "malformed omitted-frontend definition is not passed to the Stack parser"
 
     let private testGeneratedRecordCasesPersistBesideFlow root =
         let project = Path.Combine(root, "flow-generated-record-cases")
@@ -302,7 +328,7 @@ module Program =
         let canonicalTest = parsed.Tests |> List.exactlyOne |> Source.renderTest
         let canonicalExample = parsed.Examples |> List.exactlyOne |> Source.renderExample
 
-        dispatch engine "define" [ "source", jstr stackSource ]
+        defineStack engine stackSource []
         |> expectOk "define a record and generated accessor test/example"
         |> ignore
         equal [ "read" ]
@@ -340,7 +366,7 @@ module Program =
         assertAllPassed 1 (dispatch reloaded "test" [ "word", jstr "receipt.amount" ] |> expectOk "run generated accessor test after reload")
         let reloadedExample = dispatch reloaded "example" [ "word", jstr "receipt.amount"; "caseName", jstr "read" ] |> expectOk "run generated accessor example after reload"
         check (boolValue (reloadedExample.["data"].["results"].[0].["passed"])) "generated accessor example passes after reload"
-        let value = dispatch reloaded "eval" [ "code", jstr "7 receipt.new receipt.amount" ] |> expectOk "evaluate generated accessor after reload"
+        let value = evalStack reloaded "7 receipt.new receipt.amount" |> expectOk "evaluate generated accessor after reload"
         equal "7" (stringValue (value.["data"].["stack"].[0])) "generated accessor body remains executable after reload"
 
     let private testStackGeneratedCasesSurviveV1Manifest root =
@@ -370,7 +396,7 @@ module Program =
             + "    11 receipt.new receipt.amount\n"
             + "    => 11\n"
             + "end\n"
-        dispatch engine "define" [ "source", jstr source ]
+        defineStack engine source []
         |> expectOk "define a Stack record, word, and generated accessor cases"
         |> ignore
         commit engine "commit" "Receipt" []
@@ -421,7 +447,7 @@ module Program =
         assertAllPassed 1 (dispatch reloaded "test" [ "word", jstr "receipt.amount" ] |> expectOk "run generated accessor test from v1")
         let example = dispatch reloaded "example" [ "word", jstr "receipt.amount"; "caseName", jstr "read" ] |> expectOk "run generated accessor example from v1"
         check (boolValue (example.["data"].["results"].[0].["passed"])) "generated accessor example passes after v1 migration"
-        let value = dispatch reloaded "eval" [ "code", jstr "9 receipt.new receipt.double" ] |> expectOk "evaluate Stack word from v1"
+        let value = evalStack reloaded "9 receipt.new receipt.double" |> expectOk "evaluate Stack word from v1"
         equal "9" (stringValue (value.["data"].["stack"].[0])) "Stack word remains executable after v1 migration"
 
     let private testStackOwnerMigrationToFlow root =
@@ -443,7 +469,7 @@ module Program =
             + "    => 2\n"
             + "end\n"
         let completeStackSource = stackDefinition + "\n" + stackTest + "\n" + stackExample
-        dispatch engine "define" [ "source", jstr completeStackSource ]
+        defineStack engine completeStackSource []
         |> expectOk "define a Stack owner with authored cases"
         |> ignore
         let wordId = getWordId engine "migration.increment"
@@ -499,7 +525,7 @@ module Program =
             |> expectOk "discard rejected mixed-frontend Flow candidate"
             |> ignore
         let stillStack = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z")
-        let oldEvaluation = dispatch stillStack "eval" [ "code", jstr "1 migration.increment" ] |> expectOk "reload Stack owner after rejected migration"
+        let oldEvaluation = evalStack stillStack "1 migration.increment" |> expectOk "reload Stack owner after rejected migration"
         equal "2" (stringValue (oldEvaluation.["data"].["stack"].[0])) "failed migration leaves the Stack implementation executable"
         assertAllPassed 1 (dispatch stillStack "test" [ "word", jstr "migration.increment" ] |> expectOk "rerun Stack case after rejected migration")
 
@@ -658,6 +684,293 @@ module Program =
         let removalRevision = afterRemoval.Manifest.Value.Revisions |> List.find (fun item -> item.WordId = originalId && item.Revision = 4)
         equal [] removalRevision.Examples "successful CAS removes the requested authored example"
         equal [ "basic"; "extra" ] (jsonArrayStrings (dispatch engine "tests" [ "word", jstr "durable.increment" ] |> expectOk "test remains after example removal" |> fun response -> response.["data"])) "unmentioned attachments remain intact"
+
+    let private testFlowAttachmentOnlyDocuments root =
+        let project = Path.Combine(root, "flow-attachment-only-document")
+        let engine = Runtime.Engine(project, Set.empty, "2032-03-04T05:06:07Z")
+        let store = Storage.create project
+        let recordSource =
+            "record CaseItem {\n"
+            + "    field text: String;\n"
+            + "}"
+        let describeSource =
+            "word caseitem.describe(value: CaseItem) -> String {\n"
+            + "    effects none\n"
+            + "    value.text()\n"
+            + "}"
+        let forwardSource =
+            "word caseitem.forward(value: CaseItem) -> String {\n"
+            + "    effects none\n"
+            + "    caseitem::describe(value)\n"
+            + "}"
+        let basicTest =
+            "test caseitem.describe/basic {\n"
+            + "    caseitem::describe(caseItem::new(text = \"original\"))\n"
+            + "    => \"original\"\n"
+            + "}"
+        let forwardTest =
+            "test caseitem.forward/basic {\n"
+            + "    caseitem::forward(caseItem::new(text = \"caller\"))\n"
+            + "    => \"caller\"\n"
+            + "}"
+        let basicExample =
+            "example caseitem.describe/basic {\n"
+            + "    caseitem::describe(caseItem::new(text = \"example\"))\n"
+            + "    => \"example\"\n"
+            + "}"
+        let projectDocument =
+            [ recordSource; describeSource; forwardSource; basicTest; forwardTest; basicExample ]
+            |> String.concat "\n\n"
+        defineFlowProject engine projectDocument []
+        |> expectOk "define Flow owner and caller with generated record accessors"
+        |> ignore
+        let ownerId = getWordId engine "caseitem.describe"
+        commit engine "commit" "caseitem.describe" [] |> expectOk "commit typed Flow attachment owner" |> ignore
+        commit engine "commit" "caseitem.forward" [] |> expectOk "commit retained Flow caller" |> ignore
+
+        let originalSource = stringValue (dispatch engine "source" [ "word", jstr "caseitem.describe" ] |> expectOk "read authored owner source before case-only edit" |> fun response -> response.["data"])
+        let before = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let beforeManifest = before.Manifest |> Option.defaultWith (fun () -> failwith "Flow owner was not committed")
+        let originalRevision = beforeManifest.Revisions |> List.find (fun item -> item.WordId = ownerId && item.Revision = 1)
+        let originalTestReference = originalRevision.Tests |> List.exactlyOne
+        let originalExampleReference = originalRevision.Examples |> List.exactlyOne
+
+        let extraTest =
+            "test caseitem.describe/extra {\n"
+            + "    caseitem::describe(caseItem::new(text = \"extra\"))\n"
+            + "    => \"extra\"\n"
+            + "}"
+        let extraExample =
+            "example caseitem.describe/extra {\n"
+            + "    caseitem::describe(caseItem::new(text = \"extra example\"))\n"
+            + "    => \"extra example\"\n"
+            + "}"
+        let addedDocument = String.concat "\n\n" [ extraTest; extraExample ]
+        let staleRemoval =
+            let row = JsonObject()
+            row["kind"] <- jstr "example"
+            row["caseName"] <- jstr "basic"
+            row["expectedSourceHash"] <- jstr (String.replicate 64 "0")
+            let rows = JsonArray()
+            rows.Add row
+            rows :> JsonNode
+        let staleRemovalResponse =
+            dispatch engine "define"
+                [ "source", jstr addedDocument
+                  "replace", jbool true
+                  "expectedRevision", jint 1
+                  "removeAttachments", staleRemoval ]
+        expectError "FLOW_ATTACHMENT_STALE_SOURCE" staleRemovalResponse |> ignore
+        equal before.ManifestHash (Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)).ManifestHash "stale source-hash removal through an attachment-only document does not publish"
+        expectError "FLOW_RUNTIME_INVALID_ARGUMENT" (dispatch engine "define" [ "source", jstr addedDocument; "temporary", jbool true ])
+        |> ignore
+        equal before.ManifestHash (Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)).ManifestHash "a persistent owner cannot be made temporary through an attachment-only edit"
+        let ambiguous = dispatch engine "define" [ "source", jstr addedDocument; "tests", strings [ extraTest ] ]
+        expectError "FLOW_PROJECT_REQUEST_SHAPE" ambiguous |> ignore
+        equal before.ManifestHash (Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)).ManifestHash "ambiguous external attachments do not change durable authority"
+        equal originalSource (stringValue (dispatch engine "source" [ "word", jstr "caseitem.describe" ] |> expectOk "owner source remains unchanged after ambiguous attachments" |> fun response -> response.["data"])) "ambiguous external attachments do not replace the owner body"
+
+        let staged = dispatch engine "define" [ "source", jstr addedDocument ] |> expectOk "add cases with an omitted frontend and no repeated word definition"
+        equal "flow" (stringValue (staged.["data"].["frontend"])) "attachment-only source selects Flow by default"
+        equal ownerId (stringValue (staged.["data"].["id"])) "case-only edit retains the existing owner identity"
+        equal 2 ((staged.["data"].["revision"]).GetValue<int>()) "case-only addition stages the next immutable owner revision"
+        equal [ "basic"; "extra" ] (jsonArrayStrings staged.["data"].["tests"]) "add-only case document preserves existing tests"
+        equal [ "basic"; "extra" ] (jsonArrayStrings staged.["data"].["examples"]) "add-only case document preserves existing examples"
+        equal originalSource (stringValue (dispatch engine "source" [ "word", jstr "caseitem.describe" ] |> expectOk "read unchanged authored body after case-only edit" |> fun response -> response.["data"])) "case-only edit preserves exact word source bytes"
+        equal ownerId (getWordId engine "caseitem.describe") "case-only candidate revision retains stable owner identity"
+        assertAllPassed 2 (dispatch engine "test" [ "word", jstr "caseitem.describe" ] |> expectOk "run original and new generated-record tests before publication")
+        for caseName in [ "basic"; "extra" ] do
+            let result = dispatch engine "example" [ "word", jstr "caseitem.describe"; "caseName", jstr caseName ] |> expectOk $"run {caseName} generated-record example"
+            check (boolValue (result.["data"].["results"].[0].["passed"])) $"case-only example {caseName} passes"
+
+        let stagedInventory = dispatch engine "words" [] |> expectOk "inspect candidate status after Flow case-only edit"
+        equal "candidate" (stringValue ((findWord stagedInventory "caseitem.describe").["status"])) "persistent owner becomes a candidate while its replacement is staged"
+        equal "project" (stringValue ((findWord stagedInventory "caseitem.describe").["maturity"])) "case-only revision preserves project maturity"
+        let mixedOwners =
+            String.concat "\n\n"
+                [ "test caseitem.describe/mixed {\n    caseitem::describe(caseItem::new(text = \"a\"))\n    => \"a\"\n}"
+                  "example caseitem.forward/mixed {\n    caseitem::forward(caseItem::new(text = \"b\"))\n    => \"b\"\n}" ]
+        expectError "FLOW_ATTACHMENT_OWNER_MISMATCH" (dispatch engine "define" [ "source", jstr mixedOwners ]) |> ignore
+
+        let stackOwner =
+            "word caseitem.stack_label : Int -> Int\n"
+            + "    effects none\n"
+            + "    1\n"
+            + "    add\n"
+            + "end\n\n"
+            + "test caseitem.stack_label/basic\n"
+            + "    1 caseitem.stack_label\n"
+            + "    expect 2\n"
+            + "end"
+        defineStack engine stackOwner [] |> expectOk "define a Stack owner beside Flow-authored words" |> ignore
+        let stackOwnerCase =
+            "test caseitem.stack_label/flow_case {\n"
+            + "    caseitem::stack_label(1)\n"
+            + "    => 1\n"
+            + "}"
+        expectError "FLOW_ATTACHMENT_OWNER_NOT_FLOW_WORD" (dispatch engine "define" [ "source", jstr stackOwnerCase ]) |> ignore
+        let generatedOwnerCase =
+            "test caseItem.text/flow_case {\n"
+            + "    caseItem::text(caseItem::new(text = \"generated\"))\n"
+            + "    => \"generated\"\n"
+            + "}"
+        expectError "FLOW_ATTACHMENT_OWNER_NOT_FLOW_WORD" (dispatch engine "define" [ "source", jstr generatedOwnerCase ]) |> ignore
+        let committed = commit engine "replace-word" "caseitem.describe" [] |> expectOk "publish case-only edit through owner and caller gates"
+        check (jsonArrayStrings committed.["data"] |> List.contains "caseitem.forward/basic") "persistent caller tests run during case-only publication"
+        let after = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let afterManifest = after.Manifest |> Option.defaultWith (fun () -> failwith "case-only revision did not publish")
+        let revised = afterManifest.Revisions |> List.find (fun item -> item.WordId = ownerId && item.Revision = 2)
+        equal originalRevision.Definition revised.Definition "case-only publication keeps the exact immutable word source reference"
+        check (List.contains originalTestReference revised.Tests) "case-only publication retains the original test source reference"
+        check (List.contains originalExampleReference revised.Examples) "case-only publication retains the original example source reference"
+        let revisedTestSources = revised.Tests |> List.map (fun reference -> Storage.readSource store reference |> Result.defaultWith (fun problem -> failwith problem.Message)) |> Set.ofList
+        equal (Set.ofList [ basicTest; extraTest ]) revisedTestSources "case-only publication preserves original and newly added test source bytes"
+        let revisedExampleSources = revised.Examples |> List.map (fun reference -> Storage.readSource store reference |> Result.defaultWith (fun problem -> failwith problem.Message)) |> Set.ofList
+        equal (Set.ofList [ basicExample; extraExample ]) revisedExampleSources "case-only publication preserves original and newly added example source bytes"
+
+        let collisionSource =
+            "test caseitem.describe/extra {\n"
+            + "    caseitem::describe(caseItem::new(text = \"replacement\"))\n"
+            + "    => \"replacement\"\n"
+            + "}"
+        let collision = dispatch engine "define" [ "source", jstr collisionSource ]
+        expectError "FLOW_ATTACHMENT_CAS_REQUIRED" collision |> ignore
+        equal after.ManifestHash (Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)).ManifestHash "case-name collision without explicit CAS does not publish"
+        equal [ "basic"; "extra" ] (jsonArrayStrings (dispatch engine "tests" [ "word", jstr "caseitem.describe" ] |> expectOk "inspect cases after rejected implicit replacement" |> fun response -> response.["data"])) "case-name collision does not activate an implicit replacement"
+
+        let stale = dispatch engine "define" [ "source", jstr collisionSource; "replace", jbool true; "expectedRevision", jint 1 ]
+        expectError "FLOW_BATCH_STALE_REVISION" stale |> ignore
+        equal after.ManifestHash (Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)).ManifestHash "stale case replacement CAS does not publish"
+        equal ownerId (getWordId engine "caseitem.describe") "stale case replacement does not change owner identity"
+        let replaced = dispatch engine "define" [ "source", jstr collisionSource; "replace", jbool true; "expectedRevision", jint 2 ] |> expectOk "replace one case with an explicit current owner revision"
+        equal 3 ((replaced.["data"].["revision"]).GetValue<int>()) "explicit case replacement advances the owner revision"
+        equal originalSource (stringValue (dispatch engine "source" [ "word", jstr "caseitem.describe" ] |> expectOk "read body after explicit case replacement" |> fun response -> response.["data"])) "explicit case replacement still preserves word body bytes"
+        commit engine "replace-word" "caseitem.describe" [] |> expectOk "publish explicit case replacement with caller regression tests" |> ignore
+        let afterReplacement = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let replacementRevision = afterReplacement.Manifest.Value.Revisions |> List.find (fun item -> item.WordId = ownerId && item.Revision = 3)
+        equal originalRevision.Definition replacementRevision.Definition "case replacement preserves the same word source reference"
+        assertAllPassed 2 (dispatch engine "test" [ "word", jstr "caseitem.describe" ] |> expectOk "run retained and replaced owner cases")
+        assertAllPassed 1 (dispatch engine "test" [ "word", jstr "caseitem.forward" ] |> expectOk "run persistent Flow caller after case replacement")
+
+        let beforeTask = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let beforeTaskTests = dispatch engine "tests" [ "word", jstr "caseitem.describe" ] |> expectOk "capture owner cases before task abort"
+        dispatch engine "task.begin" [ "goal", jstr "add and roll back a Flow attachment-only case" ] |> expectOk "begin task for Flow case-only rollback" |> ignore
+        let taskTest =
+            "test caseitem.describe/task_only {\n"
+            + "    caseitem::describe(caseItem::new(text = \"temporary\"))\n"
+            + "    => \"temporary\"\n"
+            + "}"
+        dispatch engine "define" [ "source", jstr taskTest ] |> expectOk "stage a task-local attachment-only Flow document" |> ignore
+        commit engine "replace-word" "caseitem.describe" [] |> expectOk "publish the case-only revision inside the task" |> ignore
+        dispatch engine "task.abort" [] |> expectOk "abort the committed attachment-only change" |> ignore
+        let afterTask = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        equal beforeTask.ManifestHash afterTask.ManifestHash "task abort restores exact authority after a case-only revision"
+        equal ((beforeTaskTests.["data"]).ToJsonString()) (((dispatch engine "tests" [ "word", jstr "caseitem.describe" ] |> expectOk "read restored cases after task abort").["data"]).ToJsonString()) "task abort restores exact pre-edit test sources and names"
+        equal originalSource (stringValue (dispatch engine "source" [ "word", jstr "caseitem.describe" ] |> expectOk "read restored body after task abort" |> fun response -> response.["data"])) "task abort restores the exact Flow definition bytes"
+        equal ownerId (getWordId (Runtime.Engine(project, Set.empty, "2032-03-04T05:06:07Z")) "caseitem.describe") "fresh Engine after abort reloads the same owner identity"
+
+        let candidateProject = Path.Combine(root, "flow-attachment-only-candidate-gate")
+        let candidateEngine = Runtime.Engine(candidateProject, Set.empty)
+        let candidateWord =
+            "word candidate.bump(value: Int) -> Int {\n"
+            + "    effects none\n"
+            + "    add(value, 1)\n"
+            + "}"
+        let candidateTest =
+            "test candidate.bump/basic {\n"
+            + "    candidate::bump(1)\n"
+            + "    => 2\n"
+            + "}"
+        defineFlow candidateEngine candidateWord [ candidateTest ] [] [] |> expectOk "define candidate for attachment test gate" |> ignore
+        let failingCandidateTest =
+            "test candidate.bump/basic {\n"
+            + "    candidate::bump(1)\n"
+            + "    => 99\n"
+            + "}"
+        dispatch candidateEngine "define" [ "source", jstr failingCandidateTest; "replace", jbool true; "expectedRevision", jint 1 ]
+        |> expectOk "stage a failing case-only candidate edit"
+        |> ignore
+        expectError "COMMIT_TESTS_FAILED" (commit candidateEngine "commit" "candidate.bump" []) |> ignore
+        check ((Storage.load (Storage.create candidateProject) |> Result.defaultWith (fun problem -> failwith problem.Message)).Manifest.IsNone) "a failing candidate case-only edit cannot create durable authority"
+
+        let libraryProject = Path.Combine(root, "flow-attachment-only-library-gate")
+        let libraryEngine = Runtime.Engine(libraryProject, Set.empty)
+        let libraryWord =
+            "word library.case_only(value: Bool) -> Int {\n"
+            + "    effects none\n"
+            + "    if value { 1 } else { 2 }\n"
+            + "}"
+        let trueTest =
+            "test library.case_only/true {\n"
+            + "    library::case_only(true)\n"
+            + "    => 1\n"
+            + "}"
+        let falseTest =
+            "test library.case_only/false {\n"
+            + "    library::case_only(false)\n"
+            + "    => 2\n"
+            + "}"
+        defineFlow libraryEngine libraryWord [ trueTest; falseTest ] [] [] |> expectOk "define library branch coverage baseline" |> ignore
+        commit libraryEngine "commit" "library.case_only" [ "library", jbool true ]
+        |> expectOk "commit library after both real branches are exercised"
+        |> ignore
+        let libraryBefore = Storage.load (Storage.create libraryProject) |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let libraryFalseReplacement =
+            "test library.case_only/false {\n"
+            + "    library::case_only(true)\n"
+            + "    => 1\n"
+            + "}"
+        dispatch libraryEngine "define" [ "source", jstr libraryFalseReplacement; "replace", jbool true; "expectedRevision", jint 1 ]
+        |> expectOk "stage a passing library case edit that omits one actual branch"
+        |> ignore
+        assertAllPassed 2 (dispatch libraryEngine "test" [ "word", jstr "library.case_only" ] |> expectOk "verify all library case expectations still pass")
+        expectError "LIBRARY_COVERAGE_INCOMPLETE" (commit libraryEngine "replace-word" "library.case_only" []) |> ignore
+        equal libraryBefore.ManifestHash (Storage.load (Storage.create libraryProject) |> Result.defaultWith (fun problem -> failwith problem.Message)).ManifestHash "library branch coverage gate rejects case-only publication without changing authority"
+        dispatch libraryEngine "discard" [ "word", jstr "library.case_only" ] |> expectOk "discard library case revision rejected by the actual-coverage gate" |> ignore
+
+    let private testFlowAttachmentOnlyPreservesTemporaryLifetime root =
+        let project = Path.Combine(root, "flow-attachment-only-temporary")
+        let engine = Runtime.Engine(project, Set.empty)
+        let temporaryWord =
+            "word temporary.echo(value: Int) -> Int {\n"
+            + "    effects none\n"
+            + "    value\n"
+            + "}"
+        let firstTest =
+            "test temporary.echo/first {\n"
+            + "    temporary::echo(1)\n"
+            + "    => 1\n"
+            + "}"
+        defineFlow engine temporaryWord [ firstTest ] [] [ "temporary", jbool true ]
+        |> expectOk "define a temporary Flow attachment owner"
+        |> ignore
+        let firstId = getWordId engine "temporary.echo"
+        let secondTest =
+            "test temporary.echo/second {\n"
+            + "    temporary::echo(2)\n"
+            + "    => 2\n"
+            + "}"
+        dispatch engine "define" [ "source", jstr secondTest ]
+        |> expectOk "add a case without changing a temporary owner's lifetime"
+        |> ignore
+        equal firstId (getWordId engine "temporary.echo") "temporary case-only edit preserves the owner identity"
+        let temporaryInventory = dispatch engine "words" [] |> expectOk "inspect temporary status after case-only edit"
+        equal "temporary" (stringValue ((findWord temporaryInventory "temporary.echo").["status"])) "case-only edit keeps a temporary owner temporary"
+        assertAllPassed 2 (dispatch engine "test" [ "word", jstr "temporary.echo" ] |> expectOk "run both temporary Flow cases")
+        dispatch engine "discard" [ "word", jstr "temporary.echo" ] |> expectOk "discard temporary owner after case-only edit" |> ignore
+        expectError "NAME_UNKNOWN_WORD" (dispatch engine "describe" [ "word", jstr "temporary.echo" ]) |> ignore
+
+        dispatch engine "task.begin" [ "goal", jstr "clean task-local Flow case-only words" ] |> expectOk "begin a task before defining temporary Flow owner" |> ignore
+        defineFlow engine temporaryWord [ firstTest ] [] [ "temporary", jbool true ]
+        |> expectOk "define a task-local temporary Flow owner"
+        |> ignore
+        dispatch engine "define" [ "source", jstr secondTest ]
+        |> expectOk "add a task-local case without promoting its owner"
+        |> ignore
+        equal "temporary" (stringValue ((findWord (dispatch engine "words" [] |> expectOk "inspect task-local temporary owner") "temporary.echo").["status"])) "task-local case-only edit preserves temporary status"
+        dispatch engine "task.commit" [] |> expectOk "task commit cleans up a temporary owner edited through a case-only document" |> ignore
+        expectError "NAME_UNKNOWN_WORD" (dispatch engine "describe" [ "word", jstr "temporary.echo" ]) |> ignore
+        check ((Storage.load (Storage.create project) |> Result.defaultWith (fun problem -> failwith problem.Message)).Manifest.IsNone) "temporary case-only edits leave no durable project authority"
 
     let private testTemporaryPromotionAndTaskAbort root =
         let project = Path.Combine(root, "temporary-promotion")
@@ -821,7 +1134,7 @@ module Program =
         |> expectOk "define snapshot Flow word"
         |> ignore
         commit engine "commit" "durable.increment" [] |> expectOk "commit snapshot Flow word" |> ignore
-        dispatch engine "eval" [ "code", jstr "\"snapshot-file\" \"saved-value\" file.write" ]
+        evalStack engine "\"snapshot-file\" \"saved-value\" file.write"
         |> expectOk "write virtual provider state before snapshot"
         |> ignore
         dispatch engine "snapshot.save" [ "name", jstr "flow-baseline" ] |> expectOk "save Flow/provider snapshot" |> ignore
@@ -832,7 +1145,7 @@ module Program =
         |> expectOk "stage later Flow revision after named snapshot"
         |> ignore
         commit engine "replace-word" "durable.increment" [] |> expectOk "commit later Flow revision after named snapshot" |> ignore
-        dispatch engine "eval" [ "code", jstr "\"snapshot-file\" \"later-value\" file.write" ]
+        evalStack engine "\"snapshot-file\" \"later-value\" file.write"
         |> expectOk "mutate virtual provider state after snapshot"
         |> ignore
 
@@ -841,7 +1154,7 @@ module Program =
         equal savedClock (stringValue (loaded.["data"].["clockValue"])) "named snapshot restores its saved clock value"
         let restored = Storage.load (Storage.create project) |> Result.defaultWith (fun problem -> failwith problem.Message)
         equal baseline.ManifestHash restored.ManifestHash "named snapshot restores the original Flow manifest"
-        let fileValue = dispatch reloaded "eval" [ "code", jstr "\"snapshot-file\" file.read" ] |> expectOk "read restored virtual provider file"
+        let fileValue = evalStack reloaded "\"snapshot-file\" file.read" |> expectOk "read restored virtual provider file"
         equal "\"saved-value\"" (stringValue (fileValue.["data"].["stack"].[0])) "named snapshot restores exact virtual-file state"
         equal "2" (evalFlow reloaded "durable::increment(1)" |> expectOk "evaluate restored Flow revision" |> fun response -> stringValue (response.["data"].["stack"].[0])) "named snapshot rehydrates the earlier executable Flow revision"
         assertAllPassed 1 (dispatch reloaded "test" [ "word", jstr "durable.increment" ] |> expectOk "run restored Flow attachment after snapshot load")
@@ -1238,7 +1551,7 @@ module Program =
             + "    5 client.stack\n"
             + "    => 512\n"
             + "end\n"
-        dispatch engine "define" [ "source", jstr stackBumpSource ]
+        defineStack engine stackBumpSource []
         |> expectOk "define a Stack caller of the Flow rename target"
         |> ignore
         commit engine "commit" "client.stack" [] |> expectOk "commit Stack caller of the Flow rename target" |> ignore
@@ -1257,7 +1570,7 @@ module Program =
             + "    5 legacy.bump\n"
             + "    => 6\n"
             + "end\n"
-        dispatch engine "define" [ "source", jstr legacySource ]
+        defineStack engine legacySource []
         |> expectOk "define a Stack target for Flow caller rename coverage"
         |> ignore
         commit engine "commit" "legacy.bump" [] |> expectOk "commit Stack target for Flow caller rename coverage" |> ignore
@@ -1709,7 +2022,7 @@ module Program =
             + "    \"a@b\" email.roundtrip\n"
             + "    => \"a@b\"\n"
             + "end\n"
-        dispatch engine "define" [ "source", jstr emailTypeSource ]
+        defineStack engine emailTypeSource []
         |> expectOk "stage a Stack scalar type whose validator is Flow-authored"
         |> ignore
         dispatch engine "commit" []
@@ -1735,7 +2048,16 @@ module Program =
         expectError "NAME_UNKNOWN_WORD" (dispatch engine "describe" [ "word", jstr "email.accepts?" ]) |> ignore
         equal ((beforeHistory.["data"]).ToJsonString()) (((dispatch engine "history" [ "word", jstr "email.valid?" ] |> expectOk "read Flow validator history after refused rename").["data"]).ToJsonString()) "frozen validator refusal adds no history entry"
         assertAllPassed 2 (dispatch engine "test" [ "word", jstr "email.valid?" ] |> expectOk "Flow validator cases remain active after refused rename")
-        equal "\"a@b\"" (stringValue (dispatch engine "eval" [ "code", jstr "\"a@b\" Email.new Email.value" ] |> expectOk "construct nominal value through retained Flow validator" |> fun response -> response.["data"].["stack"].[0])) "committed Stack nominal type keeps its Flow validator callable"
+        let frozenAttachment =
+            "test email.valid?/late_case {\n"
+            + "    email::valid?(\"late\")\n"
+            + "    => false\n"
+            + "}"
+        expectError "TYPE_VALIDATOR_FROZEN" (dispatch engine "define" [ "source", jstr frozenAttachment ])
+        |> ignore
+        equal before.ManifestHash (Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)).ManifestHash "case-only edit cannot bypass the frozen validator replacement guard"
+        equal [ "invalid"; "valid" ] (jsonArrayStrings (dispatch engine "tests" [ "word", jstr "email.valid?" ] |> expectOk "inspect frozen validator cases after rejected addition" |> fun response -> response.["data"])) "frozen validator refusal does not activate an attachment edit"
+        equal "\"a@b\"" (stringValue (evalStack engine "\"a@b\" Email.new Email.value" |> expectOk "construct nominal value through retained Flow validator" |> fun response -> response.["data"].["stack"].[0])) "committed Stack nominal type keeps its Flow validator callable"
 
     let private testFlowProjectDocumentTypesCommitAndReload root =
         let project = Path.Combine(root, "flow-project-document")
@@ -2037,6 +2359,8 @@ module Program =
             testStackGeneratedCasesSurviveV1Manifest root
             testStackOwnerMigrationToFlow root
             testReplacementCasAndRollback root
+            testFlowAttachmentOnlyDocuments root
+            testFlowAttachmentOnlyPreservesTemporaryLifetime root
             testTemporaryPromotionAndTaskAbort root
             testNamedSnapshotRestoresFlowAndProviders root
             testPersistedBindingsAreVerified root
@@ -2047,7 +2371,7 @@ module Program =
             testFlowMaintenanceFailureAndLibraryCoverage root
             testFlowValidatorCannotBeRenamedAfterTypeCommit root
             testFlowProjectDocumentTypesCommitAndReload root
-            printfn $"Flow Runtime tests passed: 16 groups, {assertions} assertions."
+            printfn $"Flow Runtime tests passed: 18 groups, {assertions} assertions."
             0
         finally
             if Directory.Exists root then Directory.Delete(root, true)

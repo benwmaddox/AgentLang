@@ -1,51 +1,47 @@
-# A tiny customer vocabulary for demonstrating the AgentLang workflow.
-record Customer
-    field kind String
-    field balance Float
-end
+# A small typed customer vocabulary for demonstrating the AgentLang workflow.
+record Customer {
+    field kind: String;
+    field balance: Float;
+}
 
-word customer.premium? : Customer -> Bool
+word customer.premium?(customer: Customer) -> Bool {
     effects none
     doc "Whether this customer has premium status."
-    let customer
-    $customer customer.kind
-    "premium"
-    equals
-end
+    equals(customer.kind(), "premium")
+}
 
-word customer.discounted-balance : Customer -> Float
+word customer.discounted-balance(customer: Customer) -> Float {
     effects none
     doc "Apply a 10% discount to premium customers."
-    let customer
-    $customer customer.balance
-    $customer customer.premium?
-    if
-        0.9 float.multiply
-    else
-    end
-end
+    let balance = customer.balance();
+    if customer.premium?() {
+        float::multiply(balance, 0.9)
+    } else {
+        balance
+    }
+}
 
-test customer.premium?/premium
-    "premium" 100.0 customer.new customer.premium?
+test customer.premium?/premium {
+    customer::premium?(customer::new(kind = "premium", balance = 100.0))
     => true
-end
+}
 
-test customer.premium?/regular
-    "regular" 100.0 customer.new customer.premium?
+test customer.premium?/regular {
+    customer::premium?(customer::new(kind = "regular", balance = 100.0))
     => false
-end
+}
 
-test customer.discounted-balance/premium
-    "premium" 100.0 customer.new customer.discounted-balance
+test customer.discounted-balance/premium {
+    customer::discounted-balance(customer::new(kind = "premium", balance = 100.0))
     => 90.0
-end
+}
 
-test customer.discounted-balance/regular
-    "regular" 100.0 customer.new customer.discounted-balance
+test customer.discounted-balance/regular {
+    customer::discounted-balance(customer::new(kind = "regular", balance = 100.0))
     => 100.0
-end
+}
 
-example customer.discounted-balance/premium
-    "premium" 100.0 customer.new customer.discounted-balance
+example customer.discounted-balance/premium {
+    customer::discounted-balance(customer::new(kind = "premium", balance = 100.0))
     => 90.0
-end
+}

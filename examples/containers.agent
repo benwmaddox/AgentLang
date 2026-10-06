@@ -1,141 +1,135 @@
-record ContainerEnvelope
-    field emails List<Email>
-    field preferred Option<Email>
-    field result Result<List<Int>, String>
-end
+# Uses the nominal Email type declared in refined-types.agent.
+record ContainerEnvelope {
+    field emails: List<Email>;
+    field preferred: Option<Email>;
+    field result: Result<List<Int>, String>;
+}
 
-word container.option-default : Option<Int> -> Int
+word container.option-default(value: Option<Int>) -> Int {
     effects none
-    match-option
-    some value
-        $value
-    none
-        0
-    end
-end
+    match value {
+        some selected => { selected }
+        none => { 0 }
+    }
+}
 
-word container.result-count : Result<List<Int>, String> -> Int
+word container.result-count(value: Result<List<Int>, String>) -> Int {
     effects none
-    match-result
-    ok numbers
-        $numbers list.count
-    error message
-        0
-    end
-end
+    match value {
+        ok numbers => { numbers.count() }
+        error message => { 0 }
+    }
+}
 
-word container.envelope-email-count : ContainerEnvelope -> Int
+word container.envelope-email-count(envelope: ContainerEnvelope) -> Int {
     effects none
-    containerEnvelope.emails list.count
-end
+    envelope.emails().count()
+}
 
-word container.increment : Int -> Int
+word container.increment(value: Int) -> Int {
     effects none
-    1 add
-end
+    add(value, 1)
+}
 
-word container.negative? : Int -> Bool
+word container.negative?(value: Int) -> Bool {
     effects none
-    0 int.less-than
-end
+    int::less-than(value, 0)
+}
 
-word container.ignore-int : Int -> Unit
+word container.ignore-int(value: Int) -> Unit {
     effects none
-    drop unit
-end
+    unit
+}
 
-word container.incremented-count : List<Int> -> Int
+word container.incremented-count(values: List<Int>) -> Int {
     effects none
-    list.map container.increment
-    list.count
-end
+    values.map(container::increment).count()
+}
 
-word container.negative-count : List<Int> -> Int
+word container.negative-count(values: List<Int>) -> Int {
     effects none
-    list.filter container.negative?
-    list.count
-end
+    values.filter(container::negative?).count()
+}
 
-word container.visit-numbers : List<Int> -> Unit
+word container.visit-numbers(values: List<Int>) -> Unit {
     effects none
-    list.each container.ignore-int
-end
+    values.each(container::ignore-int)
+}
 
-test container.option-default/some
-    9 option.some<Int> container.option-default
+test container.option-default/some {
+    container::option-default(option::some<Int>(9))
     => 9
-end
+}
 
-test container.option-default/none
-    option.none<Int> container.option-default
+test container.option-default/none {
+    container::option-default(option::none<Int>())
     => 0
-end
+}
 
-test container.result-count/ok
-    2 list.singleton<Int> result.ok<List<Int>, String> container.result-count
+test container.result-count/ok {
+    container::result-count(result::ok<List<Int>, String>(list::singleton<Int>(2)))
     => 1
-end
+}
 
-test container.result-count/error
-    "not found" result.error<List<Int>, String> container.result-count
+test container.result-count/error {
+    container::result-count(result::error<List<Int>, String>("not found"))
     => 0
-end
+}
 
-test container.envelope-email-count/nested-types
-    "dev@example.com" Email.new list.singleton<Email>
-    option.none<Email>
-    "unused" result.error<List<Int>, String>
-    containerEnvelope.new
-    container.envelope-email-count
+test container.envelope-email-count/nested-types {
+    container::envelope-email-count(containerEnvelope::new(
+        emails = list::singleton<Email>(Email::new("dev@example.com")),
+        preferred = option::none<Email>(),
+        result = result::error<List<Int>, String>("unused")))
     => 1
-end
+}
 
-test container.increment/basic
-    4 container.increment
+test container.increment/basic {
+    container::increment(4)
     => 5
-end
+}
 
-test container.negative?/yes
-    -1 container.negative?
+test container.negative?/yes {
+    container::negative?(-1)
     => true
-end
+}
 
-test container.negative?/no
-    1 container.negative?
+test container.negative?/no {
+    container::negative?(1)
     => false
-end
+}
 
-test container.ignore-int/unit
-    1 container.ignore-int
+test container.ignore-int/unit {
+    container::ignore-int(1)
     => unit
-end
+}
 
-test container.incremented-count/empty
-    list.empty<Int> container.incremented-count
+test container.incremented-count/empty {
+    container::incremented-count(list::empty<Int>())
     => 0
-end
+}
 
-test container.incremented-count/nonempty
-    3 list.singleton<Int> container.incremented-count
+test container.incremented-count/nonempty {
+    container::incremented-count(list::singleton<Int>(3))
     => 1
-end
+}
 
-test container.negative-count/empty
-    list.empty<Int> container.negative-count
+test container.negative-count/empty {
+    container::negative-count(list::empty<Int>())
     => 0
-end
+}
 
-test container.negative-count/keep-and-drop
-    -1 list.singleton<Int> 2 list.append container.negative-count
+test container.negative-count/keep-and-drop {
+    container::negative-count(list::append(list::singleton<Int>(-1), 2))
     => 1
-end
+}
 
-test container.visit-numbers/empty
-    list.empty<Int> container.visit-numbers
+test container.visit-numbers/empty {
+    container::visit-numbers(list::empty<Int>())
     => unit
-end
+}
 
-test container.visit-numbers/nonempty
-    3 list.singleton<Int> container.visit-numbers
+test container.visit-numbers/nonempty {
+    container::visit-numbers(list::singleton<Int>(3))
     => unit
-end
+}

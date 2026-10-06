@@ -1,17 +1,38 @@
 # Durable Flow source integration
 
-Status: opt-in Flow Runtime integration is implemented. The dedicated Runtime suite passes all 11 groups / 203 assertions. The final local 26-check Release gate also passes with zero build warnings or errors; exact committed-source CI passed all 26 checks (run 37417536333). Flow remains opt-in and the default frontend remains Stack. See [report 045](../reports/045-flow-runtime-integration.md), the [acceptance plan/report](../reports/046-flow-runtime-acceptance.md), [focused Runtime evidence](../reports/evidence/045-eleventh-runtime-tests.json), and [publication-gate evidence](../reports/evidence/045-publication-validation.json).
+Status: durable Flow words, attachments, maintenance and typed project documents
+are implemented. The historical typed-document source gate passed all 26
+checks on clean commit 471f795 (CI run 37430916129); the published report commit
+3e43e2c also passed main CI run 37431535228. That checkpoint had 16 Flow Runtime groups / 491
+assertions. Default Flow authoring now passes the complete 27-check local Release gate, with 18 Runtime groups / 578 assertions and 7 CLI groups / 80 assertions;
+see [report 052](../reports/052-default-flow-authoring.md).
 
 ## Current repository evidence
 
-- `Storage.SourceRef` contains an object kind and lowercase SHA-256 hash. `Storage.SourceObject.Content` is hashed as its exact UTF-8 bytes. Existing kinds already include project, word, type, test, and example source.
-- `CURRENT` and named snapshots remain format 1. Manifest readers accept formats 1 and 2. Version-1 revisions default to Stack syntax version 1 with no call bindings; version-2 revisions store `sourceFormat` and canonical authored call bindings. The exact v1 golden manifest format remains available for compatibility.
-- `Storage.commit` checks that the supplied export bytes equal the manifest's project-source object, writes immutable objects and the manifest, then atomically replaces `CURRENT`. Export refresh is post-commit and can report a warning. If `CURRENT` is absent, `Storage.load` exposes `dictionary.agent` as read-only `LegacyAuthority`; the first successful manifest commit migrates the live project while recording baseline revision objects.
-- Runtime now has an explicit opt-in Flow path. Stack export sections use `Source` rendering, while Flow sections retain authored definitions and case source. Manifest v2 records each word revision's frontend/version and call bindings; `validateStoredProject` dispatches from that metadata, validates historical objects in their own format, and rebuilds current Flow heads before checking the aggregate export. Omitted frontend selection still uses Stack. Focused Runtime acceptance passes 11 groups / 203 assertions, and the final local 26-check Release gate passed with zero build warnings or errors. Exact committed-source CI passed all 26 checks (run 37417536333).
-- `DictionaryState.WordIds` maps current names to stable IDs. IDs are generated when no manifest head supplies one; rename moves the existing ID. Runtime's rename path walks `Expr` bodies with the RPN-only `Source.renameReferences`, rechecks callers/tests, then persists.
-- Tests/examples already have content-addressed revision references. `Runtime.TaskSession` snapshots in-memory dictionary state, the executable snapshot, storage authority/export bytes, manifest identity, and virtual provider/clock state. Abort uses `Storage.restore`, which advances the storage generation without manufacturing revisions. Named snapshots retain the manifest hash plus virtual files and clock.
-- Runtime now retains authored Flow words and test/example cases by stable owner ID, together with compiler-verified source-call bindings and Flow revision history. Current Flow revisions can be committed and reloaded through a fresh Engine/CLI. The focused Runtime suite passed replacement/CAS, temporary/task cleanup, task rollback, populated snapshot/provider restore, mixed-frontend interoperation, and v1 generated-accessor case reload cases. Stack `Source` rename operations remain RPN-only; Flow-aware rename/deprecate conformance and the default frontend cutover remain open. The origin-aware compiler test/example APIs and their focused gates are recorded in reports 026 and 032.
-- `Protocol` remains a JSON-lines dispatcher, and `eval`/`define` accept an explicit Flow frontend selector. Stack remains the default route; frontend cutover is guarded until the remaining conformance suite passes.
+- Immutable word/type/test/example source objects retain exact authored UTF-8
+  bytes and content hashes; executable projections and project export are derived.
+- Manifest readers accept v1/v2/v3. V1 retains legacy defaults, v2 records word
+  frontend and stable call bindings, and v3 adds type frontend/validator targets.
+  CURRENT and named snapshot envelopes remain v1. See [Storage](STORAGE.md).
+- Runtime loads each object with its declared parser, reconstructs and verifies
+  the complete typed dictionary/IR and frozen validator identities, checks the
+  canonical aggregate export, and activates only after validation. No parse
+  fallback or AST execution path is permitted.
+- Flow rename/deprecation/replacement preserve stable identities, authored source,
+  call bindings, immutable history and case ownership. Existing replacement CAS,
+  caller tests and library actual-site coverage gates remain authoritative.
+- Whole typed Flow documents stage atomically; word/type commits select dependency
+  closures. Exact type source inspection, task abort and named snapshots pass the
+  typed-document acceptance. Types remain immutable rather than word histories.
+- Reports [045](../reports/045-flow-runtime-integration.md),
+  [047](../reports/047-flow-maintenance-integration.md) and
+  [050](../reports/050-flow-project-documents.md) retain scoped implementation and
+  failure evidence. None establishes an agent performance benefit.
+
+The original design below predates manifest v3 and the completed maintenance/type
+integration. Its v2 references describe the word-source migration, not the maximum
+current manifest version. Default cutover and incremental authoring are tracked
+separately; do not treat old follow-on wording as current implementation status.
 
 ## Recommended durable model
 
@@ -181,7 +202,7 @@ the later Runtime integration. See [the Core build evidence](../reports/evidence
 [full gate evidence](../reports/evidence/042-durable-manifest-validation.json),
 and [report 042's attempt chronology](../reports/042-durable-manifest-integration.md).
 
-## Current opt-in Runtime integration status
+## Historical opt-in Runtime integration checkpoint
 
 The next maintenance milestone is tracked in [report 047](../reports/047-flow-maintenance-integration.md)
 and its [durable acceptance contract](../reports/048-flow-maintenance-acceptance.md).

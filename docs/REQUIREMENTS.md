@@ -4,6 +4,15 @@ The active goal is completion of the prototype and evaluation requirements in th
 
 Status: **verified** means the listed scoped behavior has observed acceptance evidence; **partial** means some behavior exists but the full section is not proven; **pending** means implementation or evidence is missing; **design** means a principle/advisory requirement; **excluded** means a V1 non-goal or explicitly optional follow-on. A green build is not evidence of research success.
 
+Latest scoped evidence: [report 052](../reports/052-default-flow-authoring.md)
+records the default Flow authoring cutover and a passing complete local
+**27-check Release gate**, with zero build warnings/errors. Flow has 981
+assertions, Runtime 18 groups / 578, CLI 7 groups / 80, Harness 220, general
+acceptance 34 groups / 583, and Storage 15 groups / 305. The typed-document,
+case-editing, semantic IR, nominal/effect, caller and library coverage contracts
+remain enforced. Clean committed-source CI is tracked separately from this dirty
+working-tree evidence. Controlled external-subagent results and the full PRD
+remain incomplete; earlier checkpoints below are historical.
 Baseline evidence: [Milestone 001 report](../reports/001-first-usable-prototype.md), Core/Parser/Compiler/Runtime/Protocol modules, CLI, examples, and the 16-group/154-assertion acceptance runner. The detailed acceptance source is authoritative for what the baseline tests actually exercise.
 
 Current milestone evidence: [Milestone 002 report](../reports/002-next-milestone.md), fresh Release build with zero warnings/errors, 18 language groups/256 assertions, 82 offline harness assertions, and 7 business groups/113 assertions. No live model comparison has been run.
@@ -24,7 +33,7 @@ Standalone backend and baseline-audit evidence: [milestone 008](../reports/008-s
 | 4 | Excluded: listed V1 non-goals | No native/LLVM/WASM/JIT, generic user definitions, OO, arbitrary reflection, or frameworks |
 | 5 | Design: explicit inspectable deterministic behavior | Apply to every feature and review; discovery still incomplete |
 | 6 | Partial: complete word metadata | Stable IDs, durable revision provenance/history now verified; full examples/test metadata query remains incomplete |
-| 7 | Verified: concatenative execution | Basic eval and user-word acceptance groups |
+| 7 | Verified: typed stack semantic IR execution | Flow and explicit Stack authoring share verified IR; report 052 |
 | 8 | Verified: typed scalar/nominal stack | Type mismatch and no-effects-on-type-error checks; closed container types independently probed |
 | 9 | Verified: Int/Float/Bool/String/Unit/List/Option/Result/Record foundation | Closed nested containers, static callbacks/cases, persistence and coverage checks |
 | 10 | Verified: nominal refined scalar types | Email/unit distinctions, validators, reload and freeze checks |
@@ -32,10 +41,10 @@ Standalone backend and baseline-audit evidence: [milestone 008](../reports/008-s
 | 12 | Partial: effect capability restrictions | Default denial verified; resource/path-scoped policy pending |
 | 13 | Partial: 50–100 boring primitives | Baseline 44, current dictionary 49; syntax constructs counted separately. JSON/process/environment/introspection primitives incomplete |
 | 14 | Verified: no arbitrary .NET escape | Only host builtins invoke host code; no reflection/call escape surface |
-| 15 | Verified: interactive REPL foundation | Multiline CLI smoke and expressions; additional commands tracked below |
+| 15 | Verified: interactive Flow/Stack REPL foundation | Parser-driven incomplete input, recovery, selection, file CAS and type-source inspection; 7 CLI groups / 80 assertions |
 | 16 | Partial: required introspection commands | words/describe/source/dependencies/callers/search/effects/tests/test/examples/type-of; recent-words and fuller metadata pending |
 | 17 | Verified: machine-readable command transport | JSON-lines protocol and diagnostic acceptance checks |
-| 18 | Partial: first-class tests | Tests/test-all/failed-tests and gates; runtime-error expectations and typed pure expected-expression focused checks passed (report 013); complete Flow test integration pending |
+| 18 | Partial: first-class tests | Tests/test-all/failed-tests and gates; runtime-error expectations and typed pure expected-expression focused checks passed (report 013); Flow test integration and incremental case editing verified in report 052; complete provider replacement remains section 29 |
 | 19 | Partial: examples as metadata | Persisted cases; query currently returns names rather than full example details |
 | 20 | Verified: attached documentation | Word doc source, describe, persistence and rollback checks |
 | 21 | Verified: incremental word declarations | Parser and user-word acceptance checks |
@@ -47,7 +56,7 @@ Standalone backend and baseline-audit evidence: [milestone 008](../reports/008-s
 | 27 | Partial: deterministic structured task log | Aggregates exist; event sequence and complete metrics pending |
 | 28 | Verified: dictionary rollback | Abort restores definitions/types/tests/docs/policy after interim commits |
 | 29 | Partial: replaceable simulated effects | Isolated virtual file/clock tests; provider interfaces and other domains pending |
-| 30 | Verified: small agent command interface foundation | Engine.Dispatch and Protocol; live LLM integration pending |
+| 30 | Verified: small external-agent command interface foundation | Engine.Dispatch and Protocol; scoped external subagent workflow evidence exists, controlled comparisons remain pending |
 | 31 | Design: suggested F# solution organization | Existing Core/CLI/Acceptance projects; add host/harness/domain boundaries as needed |
 | 32 | Partial: strongly typed internal concepts | Value/type/AST unions and closed ten-case IR effect union; source/runtime effect metadata still checked strings |
 | 33 | Partial: authoritative typed IR execution and inspection | Runtime cutover now routes eval, calls, tests and state transitions through verified IR; full Release validation passed 18 checks and pinned parity passed 314 selected contracts (report 010). LLVM remains excluded from V1 |
@@ -220,3 +229,16 @@ staging, selected type commits, exact type source, v3 reload and lifecycle cases
 All 26 local release checks pass, with zero build warnings/errors. Exact committed-source CI passed all 26 checks
 (run 37430916129, source 471f795, clean checkout). The preceding
 publication commit e615918 has clean main CI evidence (run 37425519500).
+
+
+Default Flow authoring is in progress in [report 052](../reports/052-default-flow-authoring.md).
+The planned gate adds parser-driven human interaction, one-shot/default protocol
+selection, explicit Stack compatibility, incremental single-owner Flow cases and
+migrated examples. A new CLI executable makes the release gate 27 checks. No new
+integration result is claimed until a fresh source freeze/build/run.
+
+Task logging remains partial: current `wordsCreated` aggregates include definition
+revisions and type names through the shared create event. Separate actual word
+creation, changes, type/case edits and ordered events before using these aggregates
+as research creation/reuse metrics. This is a known full-PRD follow-on, not evidence
+of vocabulary quality or an agent benefit.

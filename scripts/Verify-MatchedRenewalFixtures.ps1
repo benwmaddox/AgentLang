@@ -39,6 +39,9 @@ function Assert-Check([string]$Name, [bool]$Passed) {
 }
 
 function Invoke-Language([string]$Project, [object[]]$Requests) {
+    foreach ($request in $Requests) {
+        if ($request.op -in @('define', 'eval') -and -not $request.Contains('frontend')) { $request.frontend = 'stack' }
+    }
     $lines = @($Requests | ForEach-Object { ConvertTo-Json -InputObject $_ -Depth 12 -Compress })
     $output = @($lines | & dotnet $cli --project $Project --jsonl)
     $exit = $LASTEXITCODE

@@ -2726,7 +2726,7 @@ module Runtime =
             | _ -> "value"
 
         let selectedFrontend (arguments: JsonObject) =
-            if not (arguments.ContainsKey "frontend") then "stack"
+            if not (arguments.ContainsKey "frontend") then "flow"
             else
                 match arguments["frontend"] with
                 | :? JsonValue as value ->
@@ -3274,13 +3274,85 @@ module Runtime =
             payload["examples"] <- jsonNode (executable.State.FlowExamples |> Map.toList |> List.map snd |> List.filter (fun item -> item.Source.OwnerId = ownerId) |> List.map (fun item -> item.Source.CaseName) |> List.sort)
             success "defined" "Flow definition, tests, examples, and retained source bindings validated and staged." (Some payload)
 
+        let registerFlowAttachmentsOnly (arguments: JsonObject) (document: FlowProjectDocument) =
+            let old = data
+            let attachmentSources =
+                (document.Tests |> List.map (fun item -> item.Word))
+                @ (document.Examples |> List.map (fun item -> item.Word))
+            let owners = attachmentSources |> Set.ofList
+            if owners.Count <> 1 then
+                error "FLOW_ATTACHMENT_OWNER_MISMATCH" "A Flow attachment-only document must name exactly one owner across its tests and examples." None None [ "one Flow word owner" ] (owners |> Set.toList)
+            let ownerName = Set.minElement owners
+            if not (document.Records.IsEmpty && document.Scalars.IsEmpty && document.Words.IsEmpty)
+               || (document.Tests.IsEmpty && document.Examples.IsEmpty) then
+                error "FLOW_ATTACHMENT_DOCUMENT_SHAPE" "An attachment-only Flow document must contain tests and/or examples for one existing Flow word and no declarations." (Some ownerName) None [ "test/example declarations only" ] []
+            if not (flowSourceStrings arguments "tests").IsEmpty || not (flowSourceStrings arguments "examples").IsEmpty then
+                error "FLOW_PROJECT_REQUEST_SHAPE" "An attachment-only Flow document must keep its test and example sources inline; external attachment arrays would make ownership ambiguous." (Some ownerName) None [ "inline Flow test/example sources" ] [ "external tests or examples" ]
+
+            if (makeGenerated old).ContainsKey ownerName then
+                error "FLOW_ATTACHMENT_OWNER_NOT_FLOW_WORD" $"Flow attachment owner '{ownerName}' is a generated type word and cannot own authored Flow cases." (Some ownerName) None [ "user-authored Flow word" ] [ "generated type word" ]
+            let ownerWord =
+                old.Words.TryFind ownerName
+                |> Option.defaultWith (fun () -> error "FLOW_ATTACHMENT_OWNER_NOT_FOUND" $"Flow attachment owner '{ownerName}' is not a current user word." (Some ownerName) None [ "existing Flow user word" ] [])
+            if ownerWord.Status = Primitive || ownerWord.Builtin.IsSome then
+                error "FLOW_ATTACHMENT_OWNER_NOT_FLOW_WORD" $"Flow attachment owner '{ownerName}' is a primitive or generated word and cannot own authored Flow cases." (Some ownerName) None [ "user-authored Flow word" ] [ ownerName ]
+            let ownerIdText =
+                old.WordIds.TryFind ownerName
+                |> Option.defaultWith (fun () -> error "FLOW_ATTACHMENT_OWNER_NOT_FLOW_WORD" $"Flow attachment owner '{ownerName}' has no stable user-word identity." (Some ownerName) None [ "existing Flow user word" ] [])
+            let ownerId = WordId ownerIdText
+            let authored =
+                old.FlowWords.TryFind (wordIdText ownerId)
+                |> Option.defaultWith (fun () -> error "FLOW_ATTACHMENT_OWNER_NOT_FLOW_WORD" $"Flow attachment owner '{ownerName}' is not authored in Flow." (Some ownerName) None [ "existing Flow user word" ] [ "Stack or generated word" ])
+            if authored.Source.OwnerName <> ownerName || authored.Source.OwnerRevision <> ownerWord.Revision then
+                error "FLOW_ATTACHMENT_OWNER_STALE" $"Flow attachment owner '{ownerName}' does not match its current immutable word revision." (Some ownerName) None [ $"{ownerName}@{ownerWord.Revision}" ] [ $"{authored.Source.OwnerName}@{authored.Source.OwnerRevision}" ]
+
+            let replace = readOptionalStrictBool arguments "replace" false
+            let removals = flowAttachmentRemovals arguments
+            let existingTestNames =
+                old.FlowTests
+                |> Map.toList
+                |> List.choose (fun (_, item) -> if item.Source.OwnerId = ownerId then Some item.Source.CaseName else None)
+                |> Set.ofList
+            let existingExampleNames =
+                old.FlowExamples
+                |> Map.toList
+                |> List.choose (fun (_, item) -> if item.Source.OwnerId = ownerId then Some item.Source.CaseName else None)
+                |> Set.ofList
+            let testCollisions = document.Tests |> List.map (fun item -> item.CaseName) |> Set.ofList |> Set.intersect existingTestNames
+            let exampleCollisions = document.Examples |> List.map (fun item -> item.CaseName) |> Set.ofList |> Set.intersect existingExampleNames
+            let hasCaseCollision = not testCollisions.IsEmpty || not exampleCollisions.IsEmpty
+            let hasRemovals = not removals.IsEmpty
+            let hasExpectedRevision = arguments.ContainsKey "expectedRevision"
+            if hasExpectedRevision && not replace then
+                error "FLOW_ATTACHMENT_CAS_REQUIRED" "An explicit expectedRevision for attachment edits must be paired with replace=true." (Some ownerName) None [ "replace=true with expectedRevision" ] [ "expectedRevision without replace=true" ]
+            if (hasCaseCollision || hasRemovals) && (not replace || not hasExpectedRevision) then
+                error "FLOW_ATTACHMENT_CAS_REQUIRED" "Replacing or removing an existing Flow case requires replace=true and the current expectedRevision; add-only case documents may capture the current revision." (Some ownerName) None
+                    [ "replace=true and expectedRevision" ]
+                    ((testCollisions |> Set.toList |> List.map (fun name -> "test/" + name))
+                     @ (exampleCollisions |> Set.toList |> List.map (fun name -> "example/" + name))
+                     @ (if hasRemovals then [ "attachment removal" ] else []))
+
+            let routed = JsonObject()
+            for KeyValue(key, value) in arguments do
+                if key <> "source" && key <> "tests" && key <> "examples" then
+                    routed[key] <- if isNull value then null else JsonNode.Parse(value.ToJsonString())
+            routed["source"] <- jstr authored.Source.Content
+            routed["tests"] <- jsonNode (document.Tests |> List.map (fun item -> item.SourceText))
+            routed["examples"] <- jsonNode (document.Examples |> List.map (fun item -> item.SourceText))
+            if not replace && not hasExpectedRevision then
+                routed["replace"] <- jbool true
+                routed["expectedRevision"] <- jint ownerWord.Revision
+            registerFlowParsedLegacy routed
+
         let registerFlowParsed (arguments: JsonObject) =
             let source = requiredFlowString arguments "source"
             let document =
                 match FlowParser.parseDocument "<flow-project>" source with
                 | Ok value -> value
                 | Error diagnostic -> raise (LanguageException diagnostic)
-            if document.Records.IsEmpty && document.Scalars.IsEmpty && document.Words.Length = 1 then
+            if document.Records.IsEmpty && document.Scalars.IsEmpty && document.Words.IsEmpty && (not document.Tests.IsEmpty || not document.Examples.IsEmpty) then
+                registerFlowAttachmentsOnly arguments document
+            elif document.Records.IsEmpty && document.Scalars.IsEmpty && document.Words.Length = 1 then
                 if document.Tests.IsEmpty && document.Examples.IsEmpty then
                     // Preserve the byte-for-byte legacy source object for the established
                     // one-word request shape, including comments and trailing whitespace.

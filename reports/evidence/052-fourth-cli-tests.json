@@ -1,0 +1,27 @@
+{
+  "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Cli.Tests",
+  "revision": "3e43e2c291107f1cca269fc0a41f0d7ec888bff6",
+  "dirty": true,
+  "exitCode": 1,
+  "durationMilliseconds": 5310,
+  "output": [
+    "PASS CLI frontend selection and protocol authority",
+    "PASS Flow parser-driven interactive buffering",
+    "PASS Flow incomplete EOF and malformed recovery",
+    "PASS Flow file definition, CAS, and stable source identity",
+    "FAIL after 4 groups and 55 assertions: type source inspection preserves the exact authored bytes: expected to find preserve this comment in output:",
+    "agentlang> Flow project declarations, attached cases, refined type metadata, and bindings validated atomically.",
+    "{",
+    "  \"frontend\": \"flow\",",
+    "  \"words\": [],",
+    "  \"types\": [",
+    "    \"Email\"",
+    "  ]",
+    "}",
+    "agentlang> 0 attached test(s) passed; selected candidates committed.",
+    "[]",
+    "agentlang> type Email : String {}",
+    "\"type Email : String {}\"",
+    "agentlang> "
+  ]
+}

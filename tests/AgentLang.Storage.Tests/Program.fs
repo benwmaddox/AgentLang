@@ -883,7 +883,7 @@ module Program =
         equal EmptyAuthority unchangedStackV2.Authority "Stack v2 refuses Flow bindings without changing authority"
         equal 0L unchangedStackV2.Generation "Stack v2 binding refusal leaves generation unchanged"
 
-    let private testRuntimePublishesV2AsStackByDefault root =
+    let private testRuntimePublishesV2ForExplicitStackFrontend root =
         let stackProject = Path.Combine(root, "runtime-stack-v2")
         let engine = Runtime.Engine(stackProject, Set.empty, "2030-01-02T03:04:05Z")
         let defineArgs = JsonObject()
@@ -900,6 +900,7 @@ module Program =
                   "end"
                   "" ]
         defineArgs["source"] <- JsonValue.Create(runtimeSource)
+        defineArgs["frontend"] <- JsonValue.Create("stack")
         let defined = engine.Dispatch("define", defineArgs)
         check (defined["ok"].GetValue<bool>()) $"Runtime accepts a typed Stack candidate and attached test: {defined.ToJsonString()}"
         let commitArgs = JsonObject()
@@ -909,7 +910,7 @@ module Program =
         let loaded = Storage.load (Storage.create stackProject) |> ok "load Runtime's new Stack publication"
         equal 2 loaded.Manifest.Value.FormatVersion "new Runtime writes use manifest v2"
         let runtimeRevision = loaded.Manifest.Value.Revisions.Head
-        equal { Frontend = SourceFrontend.Stack; Version = 1 } runtimeRevision.SourceFormat "Runtime defaults new definitions to Stack/1"
+        equal { Frontend = SourceFrontend.Stack; Version = 1 } runtimeRevision.SourceFormat "Runtime records the explicitly selected Stack/1 source format"
         equal [] runtimeRevision.CallBindings "Runtime Stack publication carries no authored call bindings"
 
     let private testCommitReloadRevisionAndStableHistory root =
@@ -1186,7 +1187,7 @@ module Program =
             testManifestV3TypeSourceRoundTripAndValidation root
             testV1HistoryMigrationAndSnapshotRestore root
             testManifestV2ValidationAndLimits root
-            testRuntimePublishesV2AsStackByDefault root
+            testRuntimePublishesV2ForExplicitStackFrontend root
             testCommitReloadRevisionAndStableHistory root
             testStaleGenerationWriterLockAndLimits root
             testFailureBoundaries root

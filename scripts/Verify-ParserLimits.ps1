@@ -27,9 +27,9 @@ $nestedType = ('Option<' * 3000) + 'Int' + ('>' * 3000)
 $typeSource = "word parser.type-limit : $nestedType -> Unit`neffects none`nend"
 $blockSource = "word parser.block-limit : Bool -> Bool`neffects none`n" + ("if`n" * 1000) + "true`n" + ("end`n" * 1001)
 $requests = @(
-    (@{ op = 'define'; source = $typeSource } | ConvertTo-Json -Compress),
-    (@{ op = 'define'; source = $blockSource } | ConvertTo-Json -Compress),
-    (@{ op = 'eval'; code = '10 20 add' } | ConvertTo-Json -Compress)
+    (@{ op = 'define'; frontend = 'stack'; source = $typeSource } | ConvertTo-Json -Compress),
+    (@{ op = 'define'; frontend = 'stack'; source = $blockSource } | ConvertTo-Json -Compress),
+    (@{ op = 'eval'; frontend = 'stack'; code = '10 20 add' } | ConvertTo-Json -Compress)
 )
 $responseLines = @($requests | & pwsh -NoProfile -File (Join-Path $repoRoot 'scripts/Start-SubagentTrialHost.ps1') -CliDll $cliPath -ProjectPath $projectPath -TracePath $tracePath -AllowedOperations 'define,eval' -MaxRequestBytes 65536 -MaxResponseBytes 16384 -ExchangeTimeoutMilliseconds 15000 -MaxExchanges 3)
 $hostExit = $LASTEXITCODE

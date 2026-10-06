@@ -25,12 +25,14 @@ module Program =
 
     let private define (runtime: Runtime.Engine) source =
         let args = JsonObject()
+        args["frontend"] <- stringNode "stack"
         args["source"] <- stringNode source
         let response = runtime.Dispatch("define", args)
         if not (response["ok"].GetValue<bool>()) then failwith (response["text"].GetValue<string>())
 
     let private evaluate (runtime: Runtime.Engine) code =
         let args = JsonObject()
+        args["frontend"] <- stringNode "stack"
         args["code"] <- stringNode code
         let response = runtime.Dispatch("eval", args)
         if not (response["ok"].GetValue<bool>()) then failwith (response["text"].GetValue<string>())

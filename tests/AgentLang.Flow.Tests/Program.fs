@@ -168,6 +168,29 @@ let private testParserLocationsAndQualification () =
     equal "nested EOF line" 3 incomplete.Span.Value.Line
     equal "nested EOF column" 2 incomplete.Span.Value.Column
 
+    let openWordHeader = "word pending(value: Int) -> Int {"
+    expectError "EOF after a word's opening brace remains extendable" "FLOW_INCOMPLETE_INPUT"
+        (FlowParser.parseWord "<eof>" openWordHeader) |> ignore
+    expectError "project parser reports an open word header as incomplete" "FLOW_INCOMPLETE_INPUT"
+        (FlowParser.parseDocument "<eof>" openWordHeader) |> ignore
+    expectError "EOF after an unfinished doc marker remains extendable" "FLOW_INCOMPLETE_INPUT"
+        (FlowParser.parseWord "<eof>" (openWordHeader + "\n    doc")) |> ignore
+    expectError "project parser reports an unfinished doc marker as incomplete" "FLOW_INCOMPLETE_INPUT"
+        (FlowParser.parseDocument "<eof>" (openWordHeader + "\n    doc")) |> ignore
+    expectError "EOF after effects and an unfinished doc marker remains extendable" "FLOW_INCOMPLETE_INPUT"
+        (FlowParser.parseWord "<eof>" (openWordHeader + "\n    effects none\n    doc")) |> ignore
+
+    expectError "closed word without effects remains a real validation error" "FLOW_EFFECTS_REQUIRED"
+        (FlowParser.parseWord "<closed>" "word closed() -> Int {\n}") |> ignore
+    expectError "project parser preserves the closed-word effects error" "FLOW_EFFECTS_REQUIRED"
+        (FlowParser.parseDocument "<closed>" "word closed() -> Int {\n}") |> ignore
+    expectError "closed word with a doc marker but no string remains a real validation error" "FLOW_DOC_STRING_REQUIRED"
+        (FlowParser.parseWord "<closed>" "word closed() -> Int {\n    doc\n}") |> ignore
+    expectError "project parser preserves the closed-word doc error" "FLOW_DOC_STRING_REQUIRED"
+        (FlowParser.parseDocument "<closed>" "word closed() -> Int {\n    effects none\n    doc\n}") |> ignore
+    expectError "closed word with an invalid doc token remains a real validation error" "FLOW_DOC_STRING_REQUIRED"
+        (FlowParser.parseWord "<closed>" "word closed() -> Int {\n    doc not-a-string\n    effects none\n}") |> ignore
+
 let private sourceSpan = span "<flow-lower>" 1 1 1
 
 let private wordEntry name inputs outputs effects body : WordEntry =

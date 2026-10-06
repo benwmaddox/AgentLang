@@ -2,18 +2,19 @@
 
 Tests can assert that execution raises a specific language diagnostic:
 
-```agent
-word number.divide : Int Int -> Int
+```agentlang
+word number.divide(numerator: Int, denominator: Int) -> Int {
     effects none
-    divide
-end
-
-test number.divide/zero
-    1
-    0
-    number.divide
+    ::divide(numerator, denominator)
+}
+test number.divide/basic {
+    number::divide(6, 2)
+    => 3
+}
+test number.divide/zero {
+    number::divide(1, 0)
     => error RUNTIME_DIVIDE_BY_ZERO
-end
+}
 ```
 
 The final line `=> error CODE` is available only in `test` blocks. `CODE` must
@@ -33,3 +34,10 @@ Expected errors are useful for checking rejected inputs, refinements, division
 by zero, and bounded numeric operations. Tests should keep their effect setup
 deterministic, and library-word branch coverage requirements continue to apply
 to each relevant outcome.
+
+
+These are Flow declarations. Explicit Stack tests retain the same `=> error CODE`
+expectation in their legacy `test ... end` source. Case-only Flow documents can
+add a test to one existing Flow user-word owner; replacing an existing case needs
+explicit owner revision CAS. Expected expressions and examples do not substitute
+for the tested word's actual library coverage.

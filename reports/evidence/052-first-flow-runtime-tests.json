@@ -1,0 +1,13 @@
+{
+  "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Flow.Runtime.Tests",
+  "revision": "3e43e2c291107f1cca269fc0a41f0d7ec888bff6",
+  "dirty": true,
+  "exitCode": -532462766,
+  "durationMilliseconds": 6483,
+  "output": [
+    "Unhandled exception. System.Exception: define Flow owner and caller with generated record accessors: expected success, got FLOW_UNKNOWN_CALL: No word matches 'caseitem.new'. Flow attachment context: owner='caseitem.describe' (WordId \"word_3cf76d3d75e24534b5a1422c5e76267c\"), kind='test', case='basic'. Authored body location(s): Actual at FlowAstPath [BlockStatement 0; EvaluateExpression; CallArgument 0].",
+    "   at AgentLang.Flow.Runtime.Tests.Program.expectOk[a](a label, JsonObject response) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Runtime.Tests\\Program.fs:line 58",
+    "   at AgentLang.Flow.Runtime.Tests.Program.testFlowAttachmentOnlyDocuments(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Runtime.Tests\\Program.fs:line 724",
+    "   at AgentLang.Flow.Runtime.Tests.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Runtime.Tests\\Program.fs:line 2362"
+  ]
+}

@@ -42,6 +42,7 @@ type ExperimentTask =
 type RunConfig =
     { Task: ExperimentTask
       Mode: RunMode
+      Frontend: SourceFrontend
       Model: string
       ProjectDirectory: string
       RunDirectory: string
@@ -63,6 +64,7 @@ type RunReport =
     { RunId: string
       TaskId: string
       Mode: string
+      Frontend: string
       Provider: string
       Model: string
       Success: bool
@@ -126,7 +128,18 @@ module TaskFile =
           ExpectedData = expectedData
           MinimumPassingTests = minimumPassing }
 
-    let parse (text: string) =
+    let private languagePrimer (frontend: SourceFrontend) =
+        let rules =
+            "Inspect words before use and prefer composing existing vocabulary. The define tool requires lifetime `candidate` or `temporary`; temporary words disappear when the task ends. Test your changes. A project commit requires passing tests; a library commit additionally requires tests to execute every instruction and every control-flow outcome, including both `if` branches. The task tool's `quality` is `project` or `library`. Use only supplied runtime tools and finish with a concise result."
+        let syntax =
+            match frontend with
+            | SourceFrontend.Flow ->
+                "You work inside AgentLang's strongly typed Flow language. Define with `word name(input: Type) -> Output { ... }`; declare `effects none` or effects inside the body. Call words as `namespace::word(arguments)` or use receiver dot stages; bind immutable locals with `let name = expression;`. Branch with `if condition { ... } else { ... }`. A test is `test word/case { expression => expected; }`; attach tests in the definition source."
+            | SourceFrontend.Stack ->
+                "You work inside AgentLang's strongly typed concatenative Stack language. Define with `word name : Input -> Output`, then `effects none` or declared effects, a body, and `end`. Locals use `let name` to bind the top value and `$name` to read it. `if` has `else` and `end`. A test is `test word/case`, a body, `=> expected-literal`, `end`; attach tests in the definition source."
+        syntax + " " + rules
+
+    let parseWithFrontend (frontend: SourceFrontend) (text: string) =
         let root =
             match JsonNode.Parse(text) |> Json.asObject with
             | Some value -> value
@@ -136,16 +149,19 @@ module TaskFile =
             | Some items -> items |> Seq.map readOracleStep |> Seq.toList
             | None -> invalidOp "Task file requires an oracle array."
         if List.isEmpty oracle then invalidOp "Task file oracle must contain at least one check."
-        let languagePrimer =
-            "You work inside a small, strongly typed concatenative language. Inspect words before use. Define with `word name : Input -> Output`, then `effects none` or declared effects, a body, and `end`. Locals use `let name` to bind the top value and `$name` to read it. `if` has `else` and `end`. A test is `test word/case`, a body, `=> expected-literal`, `end`; attach tests in the definition source. The define tool requires lifetime `candidate` or `temporary`; temporary words disappear when the task ends. Test your changes. A project commit requires passing tests; a library commit additionally requires tests to execute every instruction and every control-flow outcome, including both `if` branches. The task tool's `quality` is `project` or `library`. Use only supplied runtime tools and finish with a concise result."
+        let primer = languagePrimer frontend
         let taskSpecificPrompt = Json.propertyString root "systemPrompt" ""
         { Id = requiredString root "id"
           Goal = requiredString root "goal"
-          SystemPrompt = if String.IsNullOrWhiteSpace taskSpecificPrompt then languagePrimer else $"{languagePrimer}\nTask-specific guidance: {taskSpecificPrompt}"
+          SystemPrompt = if String.IsNullOrWhiteSpace taskSpecificPrompt then primer else $"{primer}\nTask-specific guidance: {taskSpecificPrompt}"
           InitialContext = Json.propertyString root "initialContext" ""
           Oracle = oracle }
 
-    let load path = File.ReadAllText(path) |> parse
+    let parse (text: string) = parseWithFrontend SourceFrontend.Flow text
+
+    let loadWithFrontend frontend path = File.ReadAllText(path) |> parseWithFrontend frontend
+
+    let load path = loadWithFrontend SourceFrontend.Flow path
 
 module Runner =
     exception private ProjectSnapshotFailure of StorageError
@@ -312,9 +328,15 @@ module Runner =
         | Some number -> Json.integer number
         | None -> null
 
-    let private setTaskCall (engine: Runtime.Engine) (operation: string) (arguments: JsonObject) =
+    let private frontendName = function
+        | SourceFrontend.Stack -> "stack"
+        | SourceFrontend.Flow -> "flow"
+
+    let private setTaskCall (engine: Runtime.Engine) (frontend: SourceFrontend) (operation: string) (arguments: JsonObject) =
         let args = JsonObject()
         for KeyValue(key, value) in arguments do args[key] <- if isNull value then null else value.DeepClone()
+        if (operation = "eval" || operation = "define") && not (args.ContainsKey "frontend") then
+            args["frontend"] <- Json.text (frontendName frontend)
         engine.Dispatch(operation, args)
 
     let private taskHistory (projectDirectory: string) =
@@ -359,34 +381,237 @@ module Runner =
         | LegacyAuthority _ -> "legacy"
         | ManifestAuthority _ -> "manifest"
 
-    let private baselineInventory (loaded: StorageLoadResult) =
-        let source = loaded.ProjectSource |> Option.defaultValue ""
-        let parsed =
-            match Parser.parse "<baseline-audit>" source with
-            | Ok result -> result
-            | Error diagnostic ->
-                raise (BaselineGuardFailure("BASELINE_INVENTORY_UNAVAILABLE", $"Could not parse the authoritative project source for its starting inventory: {diagnostic.Code}: {diagnostic.Message}"))
-        let wordHeads =
-            loaded.Manifest
-            |> Option.map (fun manifest -> manifest.Words |> List.map (fun head -> head.CurrentName, head) |> Map.ofList)
-            |> Option.defaultValue Map.empty
+    type private InventoryWord =
+        { Name: string
+          StableId: string option
+          Inputs: LangType list
+          Outputs: LangType list
+          Effects: Set<string>
+          Maturity: WordMaturity
+          Revision: int
+          Deprecated: bool }
+
+    type private InventoryDefinitions =
+        { Words: InventoryWord list
+          Records: RecordDefinition list
+          Scalars: ScalarTypeDefinition list
+          Tests: string list
+          Examples: string list }
+
+    let private inventoryFailure message =
+        raise (BaselineGuardFailure("BASELINE_INVENTORY_UNAVAILABLE", message))
+
+    let private parseStackInventorySource file source =
+        match Parser.parse file source with
+        | Ok parsed -> parsed
+        | Error diagnostic -> inventoryFailure $"Could not parse Stack source for its starting inventory: {diagnostic.Code}: {diagnostic.Message}"
+
+    let private parseFlowWordInventory file source =
+        match FlowParser.parseWord file source with
+        | Ok parsed -> parsed
+        | Error diagnostic -> inventoryFailure $"Could not parse Flow word source for its starting inventory: {diagnostic.Code}: {diagnostic.Message}"
+
+    let private parseFlowTestInventory file source =
+        match FlowParser.parseTest file source with
+        | Ok parsed -> parsed
+        | Error diagnostic -> inventoryFailure $"Could not parse Flow test source for its starting inventory: {diagnostic.Code}: {diagnostic.Message}"
+
+    let private parseFlowExampleInventory file source =
+        match FlowParser.parseExample file source with
+        | Ok parsed -> parsed
+        | Error diagnostic -> inventoryFailure $"Could not parse Flow example source for its starting inventory: {diagnostic.Code}: {diagnostic.Message}"
+
+    let private parseFlowTypeInventory file source =
+        match FlowParser.parseDocument file source with
+        | Ok parsed when parsed.Words.IsEmpty && parsed.Tests.IsEmpty && parsed.Examples.IsEmpty && (parsed.Records.Length + parsed.Scalars.Length = 1) ->
+            parsed.Records, parsed.Scalars
+        | Ok _ -> inventoryFailure "A Flow type source object must contain exactly one record or scalar declaration."
+        | Error diagnostic -> inventoryFailure $"Could not parse Flow type source for its starting inventory: {diagnostic.Code}: {diagnostic.Message}"
+
+    let private exactStackWord file source =
+        let parsed = parseStackInventorySource file source
+        match parsed.Words, parsed.Records, parsed.Scalars, parsed.Tests, parsed.Examples with
+        | [ word ], [], [], [], [] -> word
+        | _ -> inventoryFailure "A Stack word revision source object did not contain exactly one word."
+
+    let private exactStackTest file source =
+        let parsed = parseStackInventorySource file source
+        match parsed.Tests, parsed.Words, parsed.Records, parsed.Scalars, parsed.Examples with
+        | [ test ], [], [], [], [] -> test.Word, test.Name
+        | _ -> inventoryFailure "A Stack test source object did not contain exactly one test."
+
+    let private exactStackExample file source =
+        let parsed = parseStackInventorySource file source
+        match parsed.Examples, parsed.Words, parsed.Records, parsed.Scalars, parsed.Tests with
+        | [ example ], [], [], [], [] -> example.Word, example.Name
+        | _ -> inventoryFailure "A Stack example source object did not contain exactly one example."
+
+    let private stackSectionsForLegacyManifest (source: string) =
+        let sections = ResizeArray<string>()
+        let current = ResizeArray<string>()
+        let mutable frontend = "stack"
+        let mutable sawMarker = false
+        let flush () =
+            while current.Count > 0 && String.IsNullOrWhiteSpace current[current.Count - 1] do
+                current.RemoveAt(current.Count - 1)
+            if frontend = "stack" && current.Count > 0 then sections.Add(String.Join("\n", current))
+            current.Clear()
+        for line in source.Replace("\r\n", "\n").Split('\n') do
+            if line.StartsWith("// frontend: ", StringComparison.Ordinal) then
+                flush ()
+                sawMarker <- true
+                frontend <-
+                    match line with
+                    | "// frontend: stack/1" -> "stack"
+                    | "// frontend: flow/1" -> "flow"
+                    | _ -> inventoryFailure $"Unsupported source section marker in the historical manifest: {line}"
+            elif not sawMarker || frontend = "stack" then
+                current.Add line
+        flush ()
+        String.concat "\n\n" sections
+
+    let private baselineInventory (projectDirectory: string) (loaded: StorageLoadResult) =
+        let store = Storage.create projectDirectory
+        let readSource reference =
+            match Storage.readSource store reference with
+            | Ok source -> source
+            | Error error -> inventoryFailure $"Could not verify source object {error.Code} for the starting inventory: {error.Message}"
+
+        let inventoryDefinitions =
+            match loaded.Manifest, loaded.Authority with
+            | Some manifest, ManifestAuthority _ ->
+                let manifestHash = loaded.ManifestHash |> Option.defaultWith (fun () -> inventoryFailure "The authoritative manifest has no hash for inventory verification.")
+                let words = ResizeArray<InventoryWord>()
+                let tests = ResizeArray<string>()
+                let examples = ResizeArray<string>()
+                for head in manifest.Words |> List.sortBy _.CurrentName do
+                    let metadata =
+                        manifest.Revisions
+                        |> List.tryFind (fun revision -> revision.WordId = head.WordId && revision.Revision = head.CurrentRevision)
+                        |> Option.defaultWith (fun () -> inventoryFailure $"Current word head '{head.CurrentName}' has no matching revision source metadata.")
+                    let content =
+                        match Storage.readRevision store manifestHash head.WordId head.CurrentRevision with
+                        | Ok value -> value
+                        | Error error -> inventoryFailure $"Could not verify current revision for '{head.CurrentName}' ({error.Code}): {error.Message}"
+                    if metadata.Name <> head.CurrentName || content.Revision.Name <> head.CurrentName then
+                        inventoryFailure $"Current word metadata for '{head.CurrentName}' refers to a different source name."
+                    let inputs, outputs, effects =
+                        match metadata.SourceFormat.Frontend, metadata.SourceFormat.Version with
+                        | SourceFrontend.Stack, 1 ->
+                            let definition = exactStackWord $"<baseline:{head.CurrentName}/{head.CurrentRevision}>" content.DefinitionSource
+                            if definition.Name <> head.CurrentName then inventoryFailure $"Stack revision metadata for '{head.CurrentName}' does not match its exact source object."
+                            definition.Inputs, definition.Outputs, definition.Effects
+                        | SourceFrontend.Flow, 1 ->
+                            let definition = parseFlowWordInventory $"<baseline:{head.CurrentName}/{head.CurrentRevision}>" content.DefinitionSource
+                            if definition.Name <> head.CurrentName then inventoryFailure $"Flow revision metadata for '{head.CurrentName}' does not match its exact source object."
+                            definition.Parameters |> List.map _.Type, definition.Outputs, definition.Effects
+                        | frontend, version -> inventoryFailure $"Current word '{head.CurrentName}' uses unsupported {frontend}/{version} source metadata."
+                    words.Add
+                        { Name = head.CurrentName
+                          StableId = Some head.WordId
+                          Inputs = inputs
+                          Outputs = outputs
+                          Effects = effects
+                          Maturity = metadata.Maturity
+                          Revision = metadata.Revision
+                          Deprecated = head.Deprecated }
+                    for source in content.TestSources do
+                        match metadata.SourceFormat.Frontend, metadata.SourceFormat.Version with
+                        | SourceFrontend.Stack, 1 ->
+                            let owner, caseName = exactStackTest $"<baseline:{head.CurrentName}/{head.CurrentRevision}/test>" source
+                            if owner <> head.CurrentName then inventoryFailure $"Stack test for '{head.CurrentName}' is attached to a different source word."
+                            tests.Add(owner + "/" + caseName)
+                        | SourceFrontend.Flow, 1 ->
+                            let test = parseFlowTestInventory $"<baseline:{head.CurrentName}/{head.CurrentRevision}/test>" source
+                            if test.Word <> head.CurrentName then inventoryFailure $"Flow test for '{head.CurrentName}' is attached to a different source word."
+                            tests.Add(test.Word + "/" + test.CaseName)
+                        | frontend, version -> inventoryFailure $"Current test for '{head.CurrentName}' uses unsupported {frontend}/{version} source metadata."
+                    for source in content.ExampleSources do
+                        match metadata.SourceFormat.Frontend, metadata.SourceFormat.Version with
+                        | SourceFrontend.Stack, 1 ->
+                            let owner, caseName = exactStackExample $"<baseline:{head.CurrentName}/{head.CurrentRevision}/example>" source
+                            if owner <> head.CurrentName then inventoryFailure $"Stack example for '{head.CurrentName}' is attached to a different source word."
+                            examples.Add(owner + "/" + caseName)
+                        | SourceFrontend.Flow, 1 ->
+                            let example = parseFlowExampleInventory $"<baseline:{head.CurrentName}/{head.CurrentRevision}/example>" source
+                            if example.Word <> head.CurrentName then inventoryFailure $"Flow example for '{head.CurrentName}' is attached to a different source word."
+                            examples.Add(example.Word + "/" + example.CaseName)
+                        | frontend, version -> inventoryFailure $"Current example for '{head.CurrentName}' uses unsupported {frontend}/{version} source metadata."
+
+                let records = ResizeArray<RecordDefinition>()
+                let scalars = ResizeArray<ScalarTypeDefinition>()
+                for typeSource in manifest.Types |> List.sortBy _.Name do
+                    let source = readSource typeSource.Definition
+                    let typeRecords, typeScalars =
+                        match typeSource.SourceFormat.Frontend, typeSource.SourceFormat.Version with
+                        | SourceFrontend.Stack, 1 ->
+                            let parsed = parseStackInventorySource $"<baseline:type:{typeSource.Name}/{typeSource.Definition.Hash}>" source
+                            match parsed.Records, parsed.Scalars, parsed.Words, parsed.Tests, parsed.Examples with
+                            | [ record ], [], [], [], [] when record.Name = typeSource.Name -> [ record ], []
+                            | [], [ scalar ], [], [], [] when scalar.Name = typeSource.Name -> [], [ scalar ]
+                            | _ -> inventoryFailure $"Stack type source object for '{typeSource.Name}' did not contain exactly that type."
+                        | SourceFrontend.Flow, 1 ->
+                            let flowRecords, flowScalars = parseFlowTypeInventory $"<baseline:type:{typeSource.Name}/{typeSource.Definition.Hash}>" source
+                            match flowRecords, flowScalars with
+                            | [ record ], [] when record.Name = typeSource.Name -> flowRecords, flowScalars
+                            | [], [ scalar ] when scalar.Name = typeSource.Name -> flowRecords, flowScalars
+                            | _ -> inventoryFailure $"Flow type source object for '{typeSource.Name}' did not contain exactly that type."
+                        | frontend, version -> inventoryFailure $"Type '{typeSource.Name}' uses unsupported {frontend}/{version} source metadata."
+                    records.AddRange typeRecords
+                    scalars.AddRange typeScalars
+
+                // Manifests predating type source objects stored Stack types only in their
+                // canonical export. Parse only explicitly marked Stack sections; Flow text
+                // is never passed through the Stack parser.
+                if manifest.Types.IsEmpty && manifest.FormatVersion < 3 then
+                    let source = loaded.ProjectSource |> Option.defaultValue ""
+                    let stackSource = stackSectionsForLegacyManifest source
+                    let parsed = parseStackInventorySource "<baseline:historical-stack-types>" stackSource
+                    records.AddRange parsed.Records
+                    scalars.AddRange parsed.Scalars
+
+                { Words = List.ofSeq words
+                  Records = List.ofSeq records
+                  Scalars = List.ofSeq scalars
+                  Tests = List.ofSeq tests
+                  Examples = List.ofSeq examples }
+            | None, EmptyAuthority
+            | None, LegacyAuthority _ ->
+                let source = loaded.ProjectSource |> Option.defaultValue ""
+                let parsed = parseStackInventorySource "<baseline-legacy-stack>" source
+                { Words =
+                    parsed.Words
+                    |> List.map (fun word ->
+                        { Name = word.Name
+                          StableId = None
+                          Inputs = word.Inputs
+                          Outputs = word.Outputs
+                          Effects = word.Effects
+                          Maturity = word.Maturity
+                          Revision = word.Revision
+                          Deprecated = false })
+                  Records = parsed.Records
+                  Scalars = parsed.Scalars
+                  Tests = parsed.Tests |> List.map (fun test -> test.Word + "/" + test.Name)
+                  Examples = parsed.Examples |> List.map (fun example -> example.Word + "/" + example.Name) }
+            | _ -> inventoryFailure "Storage authority and manifest metadata disagree while reading the starting inventory."
+
         let words = JsonArray()
-        parsed.Words
+        inventoryDefinitions.Words
         |> List.sortBy (fun word -> word.Name)
         |> List.iter (fun definition ->
             let item = JsonObject()
             item["name"] <- Json.text definition.Name
-            item["stableId"] <- wordHeads.TryFind definition.Name |> Option.map (fun head -> Json.text head.WordId) |> nodeOption
+            item["stableId"] <- definition.StableId |> Option.map Json.text |> nodeOption
             item["inputs"] <- stringArray (definition.Inputs |> List.map Types.format)
             item["outputs"] <- stringArray (definition.Outputs |> List.map Types.format)
             item["effects"] <- stringArray (definition.Effects |> Set.toList)
             item["maturity"] <- Json.text (if definition.Maturity = LibraryWord then "library" else "project")
-            let revision = wordHeads.TryFind definition.Name |> Option.map (fun head -> head.CurrentRevision) |> Option.defaultValue definition.Revision
-            item["revision"] <- Json.integer revision
-            item["deprecated"] <- Json.bool (wordHeads.TryFind definition.Name |> Option.exists (fun head -> head.Deprecated))
+            item["revision"] <- Json.integer definition.Revision
+            item["deprecated"] <- Json.bool definition.Deprecated
             words.Add item)
         let records = JsonArray()
-        parsed.Records
+        inventoryDefinitions.Records
         |> List.sortBy (fun record -> record.Name)
         |> List.iter (fun definition ->
             let item = JsonObject()
@@ -401,7 +626,7 @@ module Runner =
             item["fields"] <- fields
             records.Add item)
         let scalars = JsonArray()
-        parsed.Scalars
+        inventoryDefinitions.Scalars
         |> List.sortBy (fun scalar -> scalar.Name)
         |> List.iter (fun definition ->
             let item = JsonObject()
@@ -409,9 +634,10 @@ module Runner =
             item["baseType"] <- Json.text (Types.format definition.BaseType)
             item["validator"] <- definition.Validator |> Option.map Json.text |> nodeOption
             scalars.Add item)
-        let tests = parsed.Tests |> List.map (fun definition -> definition.Name) |> List.sort |> stringArray
-        let examples = parsed.Examples |> List.map (fun definition -> definition.Name) |> List.sort |> stringArray
+        let tests = inventoryDefinitions.Tests |> List.sort |> stringArray
+        let examples = inventoryDefinitions.Examples |> List.sort |> stringArray
         let result = JsonObject()
+        result["attachmentNameFormat"] <- Json.text "word-case/1"
         result["storageAuthority"] <- Json.text (authorityName loaded.Authority)
         result["manifestHash"] <- loaded.ManifestHash |> Option.map Json.text |> nodeOption
         result["projectSourceSha256"] <- inventorySourceHash loaded |> Option.map Json.text |> nodeOption
@@ -420,15 +646,15 @@ module Runner =
         result["scalars"] <- scalars
         result["tests"] <- tests
         result["examples"] <- examples
-        result, parsed
+        result, inventoryDefinitions
 
-    let private inventoryHasAuthoredAlgorithms (parsed: ParsedSource) =
+    let private inventoryHasAuthoredAlgorithms (parsed: InventoryDefinitions) =
         not parsed.Words.IsEmpty || not parsed.Tests.IsEmpty || not parsed.Examples.IsEmpty
 
-    let private inventoryViolations (parsed: ParsedSource) =
+    let private inventoryViolations (parsed: InventoryDefinitions) =
         [ yield! parsed.Words |> List.map (fun word -> "word " + word.Name)
-          yield! parsed.Tests |> List.map (fun test -> "test " + test.Name)
-          yield! parsed.Examples |> List.map (fun example -> "example " + example.Name) ]
+          yield! parsed.Tests |> List.map (fun test -> "test " + test)
+          yield! parsed.Examples |> List.map (fun example -> "example " + example) ]
 
     let private readSeedSourceBytes (path: string option) =
         path
@@ -545,6 +771,30 @@ module Runner =
                 Json.tryString item
                 |> Option.exists (String.IsNullOrWhiteSpace >> not)))
 
+    let private validQualifiedAttachmentName (name: string) =
+        let separator = name.IndexOf('/')
+        separator > 0
+        && separator < name.Length - 1
+        && not (String.IsNullOrWhiteSpace(name.Substring(0, separator)))
+        && not (String.IsNullOrWhiteSpace(name.Substring(separator + 1)))
+
+    let private validQualifiedAttachmentArray (node: JsonObject) (name: string) =
+        Json.tryProperty (node :> JsonNode) name
+        |> Option.bind Json.asArray
+        |> Option.exists (fun items ->
+            items
+            |> Seq.forall (fun item ->
+                Json.tryString item
+                |> Option.exists validQualifiedAttachmentName))
+
+    let private validAttachmentNameFormat (inventory: JsonObject) =
+        match Json.tryProperty (inventory :> JsonNode) "attachmentNameFormat" with
+        | None -> true // Version-2 lineage markers created before this field used case-only names.
+        | Some value when Json.tryString value = Some "word-case/1" ->
+            validQualifiedAttachmentArray inventory "tests"
+            && validQualifiedAttachmentArray inventory "examples"
+        | _ -> false
+
     let private validWordInventoryItem (item: JsonNode) =
         let validStableId = nullableStringProperty item "stableId"
         let validMaturity =
@@ -611,6 +861,7 @@ module Runner =
         && arrayItemsSatisfy inventory "scalars" validScalarInventoryItem
         && stringArrayProperty (inventory :> JsonNode) "tests"
         && stringArrayProperty (inventory :> JsonNode) "examples"
+        && validAttachmentNameFormat inventory
         && authorityHashesMatch
 
     let private readLineage (projectDirectory: string) =
@@ -865,8 +1116,8 @@ module Runner =
         items.Add user
         items
 
-    let private oracleOutcome (engine: Runtime.Engine) (step: OracleStep) =
-        let response = setTaskCall engine step.Operation step.Arguments
+    let private oracleOutcome (engine: Runtime.Engine) (frontend: SourceFrontend) (step: OracleStep) =
+        let response = setTaskCall engine frontend step.Operation step.Arguments
         let mutable passed = responseOk response = step.ExpectedOk
         let reasons = ResizeArray<string>()
         if not passed then reasons.Add $"expected ok={step.ExpectedOk}"
@@ -923,6 +1174,7 @@ module Runner =
         node["runId"] <- Json.text report.RunId
         node["taskId"] <- Json.text report.TaskId
         node["mode"] <- Json.text report.Mode
+        node["frontend"] <- Json.text report.Frontend
         node["provider"] <- Json.text report.Provider
         node["model"] <- Json.text report.Model
         node["success"] <- Json.bool report.Success
@@ -1063,6 +1315,7 @@ module Runner =
                     match seedBytes with
                     | Some bytes ->
                         let defineArgs = JsonObject()
+                        defineArgs["frontend"] <- Json.text (frontendName config.Frontend)
                         defineArgs["source"] <- Json.text (decodeSeedSource bytes)
                         let defined = engine.Dispatch("define", defineArgs)
                         log "seed-define" [ "response", defined ]
@@ -1079,7 +1332,7 @@ module Runner =
                     match Storage.load (Storage.create config.ProjectDirectory) with
                     | Ok result -> result
                     | Error error -> raise (ProjectSnapshotFailure error)
-                let inventory, parsed = baselineInventory loaded
+                let inventory, parsed = baselineInventory config.ProjectDirectory loaded
                 let currentStateHash = canonicalDurableStateHash config.ProjectDirectory
                 let hasAuthoredAlgorithms = inventoryHasAuthoredAlgorithms parsed
                 let provisionalOriginInventory = priorLineage |> Option.map (fun lineage -> lineage.OriginInventory) |> Option.defaultValue inventory
@@ -1217,7 +1470,7 @@ module Runner =
                                             match AgentTools.decode call with
                                             | Error message -> commandError "AGENT_TOOL_ARGUMENTS" message
                                             | Ok command ->
-                                                try engine |> fun value -> AgentTools.dispatch value command |> Json.compact
+                                                try engine |> fun value -> AgentTools.dispatch value config.Frontend command |> Json.compact
                                                 with ex -> commandError "AGENT_TOOL_FAILURE" ex.Message
                                         let resultNode =
                                             try JsonNode.Parse(resultText) with _ -> errorResponse "AGENT_TOOL_FAILURE" resultText
@@ -1227,7 +1480,7 @@ module Runner =
                 if failure.IsNone && isFinished then
                     for step in config.Task.Oracle do
                         if failure.IsNone then
-                            let outcome = oracleOutcome engine step
+                            let outcome = oracleOutcome engine config.Frontend step
                             oracleOutcomes <- oracleOutcomes @ [ outcome ]
                             log "oracle" [ "operation", Json.text outcome.Operation; "passed", Json.bool outcome.Passed; "reason", Json.text outcome.Reason; "response", outcome.Response ]
                             if not outcome.Passed then
@@ -1434,6 +1687,7 @@ module Runner =
                 { RunId = runId
                   TaskId = config.Task.Id
                   Mode = if config.Mode = Flat then "flat" else "growing"
+                  Frontend = frontendName config.Frontend
                   Provider = provider.Name
                   Model = config.Model
                   Success = success

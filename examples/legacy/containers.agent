@@ -1,0 +1,141 @@
+record ContainerEnvelope
+    field emails List<Email>
+    field preferred Option<Email>
+    field result Result<List<Int>, String>
+end
+
+word container.option-default : Option<Int> -> Int
+    effects none
+    match-option
+    some value
+        $value
+    none
+        0
+    end
+end
+
+word container.result-count : Result<List<Int>, String> -> Int
+    effects none
+    match-result
+    ok numbers
+        $numbers list.count
+    error message
+        0
+    end
+end
+
+word container.envelope-email-count : ContainerEnvelope -> Int
+    effects none
+    containerEnvelope.emails list.count
+end
+
+word container.increment : Int -> Int
+    effects none
+    1 add
+end
+
+word container.negative? : Int -> Bool
+    effects none
+    0 int.less-than
+end
+
+word container.ignore-int : Int -> Unit
+    effects none
+    drop unit
+end
+
+word container.incremented-count : List<Int> -> Int
+    effects none
+    list.map container.increment
+    list.count
+end
+
+word container.negative-count : List<Int> -> Int
+    effects none
+    list.filter container.negative?
+    list.count
+end
+
+word container.visit-numbers : List<Int> -> Unit
+    effects none
+    list.each container.ignore-int
+end
+
+test container.option-default/some
+    9 option.some<Int> container.option-default
+    => 9
+end
+
+test container.option-default/none
+    option.none<Int> container.option-default
+    => 0
+end
+
+test container.result-count/ok
+    2 list.singleton<Int> result.ok<List<Int>, String> container.result-count
+    => 1
+end
+
+test container.result-count/error
+    "not found" result.error<List<Int>, String> container.result-count
+    => 0
+end
+
+test container.envelope-email-count/nested-types
+    "dev@example.com" Email.new list.singleton<Email>
+    option.none<Email>
+    "unused" result.error<List<Int>, String>
+    containerEnvelope.new
+    container.envelope-email-count
+    => 1
+end
+
+test container.increment/basic
+    4 container.increment
+    => 5
+end
+
+test container.negative?/yes
+    -1 container.negative?
+    => true
+end
+
+test container.negative?/no
+    1 container.negative?
+    => false
+end
+
+test container.ignore-int/unit
+    1 container.ignore-int
+    => unit
+end
+
+test container.incremented-count/empty
+    list.empty<Int> container.incremented-count
+    => 0
+end
+
+test container.incremented-count/nonempty
+    3 list.singleton<Int> container.incremented-count
+    => 1
+end
+
+test container.negative-count/empty
+    list.empty<Int> container.negative-count
+    => 0
+end
+
+test container.negative-count/keep-and-drop
+    -1 list.singleton<Int> 2 list.append container.negative-count
+    => 1
+end
+
+test container.visit-numbers/empty
+    list.empty<Int> container.visit-numbers
+    => unit
+end
+
+test container.visit-numbers/nonempty
+    3 list.singleton<Int> container.visit-numbers
+    => unit
+end

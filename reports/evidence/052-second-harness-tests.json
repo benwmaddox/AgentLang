@@ -1,0 +1,13 @@
+{
+  "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Harness.Tests",
+  "revision": "3e43e2c291107f1cca269fc0a41f0d7ec888bff6",
+  "dirty": true,
+  "exitCode": -532462766,
+  "durationMilliseconds": 4944,
+  "output": [
+    "Unhandled exception. System.Exception: inventory lists the refreshed Stack cases and current Flow case",
+    "   at AgentLang.Harness.Tests.Program.check(Boolean condition, String message) in D:\\code\\AgentLang\\tests\\AgentLang.Harness.Tests\\Program.fs:line 19",
+    "   at AgentLang.Harness.Tests.Program.testManifestInventoryUsesCurrentMixedFrontendHeads(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Harness.Tests\\Program.fs:line 339",
+    "   at AgentLang.Harness.Tests.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Harness.Tests\\Program.fs:line 1010"
+  ]
+}

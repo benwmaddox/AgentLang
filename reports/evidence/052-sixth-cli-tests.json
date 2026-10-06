@@ -1,0 +1,17 @@
+{
+  "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Cli.Tests",
+  "revision": "3e43e2c291107f1cca269fc0a41f0d7ec888bff6",
+  "dirty": true,
+  "exitCode": 0,
+  "durationMilliseconds": 10401,
+  "output": [
+    "PASS CLI frontend selection and protocol authority",
+    "PASS Flow parser-driven interactive buffering",
+    "PASS Flow incomplete EOF and malformed recovery",
+    "PASS Flow file definition, CAS, and stable source identity",
+    "PASS Flow type source inspection and durable reload",
+    "PASS migrated Flow examples and fresh-process durability",
+    "PASS explicit Stack REPL retains end blocks",
+    "PASS 7 groups, 80 assertions"
+  ]
+}

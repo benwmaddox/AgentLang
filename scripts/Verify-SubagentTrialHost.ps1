@@ -422,6 +422,9 @@ switch (mode)
 
 function New-JsonLine {
     param([object]$Value)
+    if ($Value -is [System.Collections.IDictionary] -and $Value.op -in @('define', 'eval') -and -not $Value.Contains('frontend')) {
+        $Value.frontend = 'stack'
+    }
     return ConvertTo-Json -InputObject $Value -Compress -Depth 64
 }
 

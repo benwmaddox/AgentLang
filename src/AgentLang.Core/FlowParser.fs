@@ -687,9 +687,15 @@ module FlowParser =
                         if documentationSeen then fail state.File marker.Line marker.Column marker.Text.Length "FLOW_DUPLICATE_DOC" "Word header may contain only one documentation string."
                         documentation <- JsonSerializer.Deserialize<string>((consume state).Text)
                         documentationSeen <- true
-                    | _ -> tokenError state "FLOW_DOC_STRING_REQUIRED" "Documentation must be a JSON-style quoted string."
+                    | None -> tokenError state "FLOW_INCOMPLETE_INPUT" "Expected a JSON-style quoted documentation string before end of input."
+                    | Some _ -> tokenError state "FLOW_DOC_STRING_REQUIRED" "Documentation must be a JSON-style quoted string."
                 | _ -> inMetadata <- false
-            let declaredEffects = effects |> Option.defaultWith (fun () -> tokenError state "FLOW_EFFECTS_REQUIRED" "Word definitions require an explicit effects declaration.")
+            let declaredEffects =
+                effects
+                |> Option.defaultWith (fun () ->
+                    match current state with
+                    | None -> tokenError state "FLOW_INCOMPLETE_INPUT" "Expected the required effects declaration before end of input."
+                    | Some _ -> tokenError state "FLOW_EFFECTS_REQUIRED" "Word definitions require an explicit effects declaration.")
             let body = parseBlockBody state
             let endToken = expect state "}"
             let span = sourceSpan state.File wordToken (Some endToken)

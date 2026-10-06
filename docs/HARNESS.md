@@ -91,3 +91,27 @@ dotnet run --project tests/AgentLang.Business.Tests
 The harness currently runs one task per process. Flat/Growing retention and baseline-inventory labeling are available, but there is no conventional F# baseline runner, multi-task scheduler, provider token counter, or live benchmark report yet. These controls are infrastructure; they do not by themselves establish a performance comparison.
 
 OpenAI request behavior follows the [Responses function-calling guide](https://developers.openai.com/api/docs/guides/function-calling), the [Responses create API reference](https://developers.openai.com/api/reference/resources/responses/methods/create), and [reasoning guidance for preserving items across function calls](https://developers.openai.com/api/docs/guides/reasoning#keeping-reasoning-items-in-context).
+
+## Frontend selection during the default Flow cutover
+
+The complete 27-check Release gate passed in report 052. Normal runner authoring selects
+Flow; `--frontend stack` explicitly replays a historical Stack fixture. Keep the
+frontend consistent across the seed dictionary, agent definition/evaluation,
+compact language primer and default acceptance-oracle requests. An oracle request
+with its own explicit selector remains authoritative. Record the configured
+frontend in run metadata; omitted usage remains unavailable rather than zero.
+
+The agent tool schemas remain compact: frontend selection belongs to the run,
+not a new arbitrary runtime escape hatch. Archived task prompts and transcripts
+remain historical evidence. Replaying them with an explicit compatibility
+selector does not constitute a new agent experiment. Future controlled trials
+must freeze equivalent Flow/conventional fixtures and use external subagents as
+requested by the user; runtime internals remain deterministic and model-free.
+
+Inventory attachment identities require an explicit encoding. New inventories
+record `attachmentNameFormat: "word-case/1"` and qualified `word/case`
+entries for both frontends. Untagged retained origin inventories remain the
+legacy case-name representation; do not rewrite them or reinterpret old trials
+as new ones. The schema-v2 lineage wrapper can retain either explicitly
+identified new inventories or untagged legacy origins. Unknown or malformed
+encoding tags must fail validation. This correction and complete legacy-origin preservation passed Harness acceptance; see [report 052](../reports/052-default-flow-authoring.md).

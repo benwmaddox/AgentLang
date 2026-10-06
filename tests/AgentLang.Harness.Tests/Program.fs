@@ -8,6 +8,7 @@ open System.Text
 open System.Text.Json.Nodes
 open System.Threading
 open System.Threading.Tasks
+open AgentLang
 open AgentLang.Benchmarks
 
 module Program =
@@ -94,6 +95,9 @@ module Program =
                 Path.Combine(root, projectName)
         { Task = makeTask taskName oracle
           Mode = mode
+          // Existing scripted protocol cases are historical Stack coverage.
+          // Dedicated Flow cases opt in explicitly below.
+          Frontend = SourceFrontend.Stack
           Model = "scripted-test-model"
           ProjectDirectory = projectDir
           RunDirectory = runDir
@@ -161,6 +165,7 @@ module Program =
         check (secondRequest["tools"].AsArray().Count <= 6) "provider receives a small runtime tool set"
 
         let report = JsonNode.Parse(File.ReadAllText(reportPath settings)).AsObject()
+        equal "stack" (report["frontend"].GetValue<string>()) "run metadata records the explicitly selected historical frontend"
         let tokenUsage = report["tokenUsage"].AsObject()
         let context = report["context"].AsObject()
         check (isNull tokenUsage["inputTokens"]) "missing token usage serializes as JSON null, not zero"
@@ -185,9 +190,218 @@ module Program =
     let private testInitialPromptIncludesLanguagePrimer () =
         let task =
             TaskFile.parse """{"id":"prompt-primer","goal":"Create a tested word.","systemPrompt":"Prefer existing vocabulary.","oracle":[{"operation":"test-all"}]}"""
-        check (task.SystemPrompt.Contains("word name : Input -> Output", StringComparison.Ordinal)) "custom task guidance always includes the definition grammar"
-        check (task.SystemPrompt.Contains("=> expected-literal", StringComparison.Ordinal)) "custom task guidance includes the test grammar"
+        check (task.SystemPrompt.Contains("word name(input: Type) -> Output", StringComparison.Ordinal)) "the default task primer explains Flow definitions"
+        check (task.SystemPrompt.Contains("test word/case", StringComparison.Ordinal)) "the default task primer includes the Flow test grammar"
         check (task.SystemPrompt.Contains("Task-specific guidance: Prefer existing vocabulary.", StringComparison.Ordinal)) "task-specific system guidance is preserved after the language primer"
+        let stackTask =
+            TaskFile.parseWithFrontend SourceFrontend.Stack """{"id":"stack-primer","goal":"Check a historical fixture.","oracle":[{"operation":"test-all"}]}"""
+        check (stackTask.SystemPrompt.Contains("word name : Input -> Output", StringComparison.Ordinal)) "an explicit historical Stack run receives the Stack definition primer"
+
+    let private testFlowFrontendSeedAndToolDispatch root =
+        let flowSeed = Path.GetFullPath(Path.Combine(__SOURCE_DIRECTORY__, "..", "..", "examples", "customer.agent"))
+        let flowSettings =
+            { config root Flat "flow-seed-inventory" [ step "test-all" (JsonObject()) None None (Some 4) ] with
+                Frontend = SourceFrontend.Flow
+                SeedDictionarySource = Some flowSeed }
+        let seedResponses = JsonArray()
+        seedResponses.Add(scriptedResponse "completed" [ outputMessage "The Flow-seeded vocabulary tests pass." ] "The Flow-seeded vocabulary tests pass." None)
+        let seeded = runWith flowSettings (provider seedResponses)
+        check seeded.Success "the default Flow frontend seeds and audits its exact project vocabulary"
+        let seedReport = JsonNode.Parse(File.ReadAllText(reportPath flowSettings)).AsObject()
+        equal "flow" (seedReport["frontend"].GetValue<string>()) "Flow selection is saved in report metadata"
+        let seedInventory = ((seedReport["baselineAudit"])["taskStartInventory"]).AsObject()
+        equal "word-case/1" (seedInventory["attachmentNameFormat"].GetValue<string>()) "new inventories declare the qualified attachment-name format"
+        equal 2 (seedInventory["authoredWords"].AsArray().Count) "Flow inventory includes only current authored word heads"
+        equal 1 (seedInventory["records"].AsArray().Count) "Flow inventory reads typed record sources"
+        equal 4 (seedInventory["tests"].AsArray().Count) "Flow inventory reads current test source objects"
+        equal 1 (seedInventory["examples"].AsArray().Count) "Flow inventory reads current example source objects"
+        let seedTests = seedInventory["tests"].AsArray() |> Seq.map (fun item -> item.GetValue<string>()) |> Set.ofSeq
+        check (seedTests.Contains("customer.premium?/premium") && seedTests.Contains("customer.discounted-balance/regular")) "Flow inventory identifies each test by owner and case"
+        let seedExamples = seedInventory["examples"].AsArray()
+        let seedExampleName = seedExamples[0].GetValue<string>()
+        equal "customer.discounted-balance/premium" seedExampleName "Flow example inventory identifies its owning word"
+        let flowSource =
+            "word harness.increment(value: Int) -> Int {\n"
+            + "    effects none\n"
+            + "    add(value, 1)\n"
+            + "}\n\n"
+            + "test harness.increment/basic {\n"
+            + "    harness::increment(41)\n"
+            + "    => value harness::increment(41)\n"
+            + "}"
+        let flowArgs = System.Text.Json.JsonSerializer.Serialize({| source = flowSource; lifetime = "candidate" |})
+        let define = functionCall "flow-define" "agentlang_define" flowArgs
+        let commitArgs = JsonObject()
+        commitArgs["action"] <- JsonValue.Create("commit-word")
+        commitArgs["word"] <- JsonValue.Create("harness.increment")
+        commitArgs["quality"] <- JsonValue.Create("project")
+        let commit = functionCall "flow-commit" "agentlang_task" (commitArgs.ToJsonString())
+        let flowOracle =
+            let args = JsonObject()
+            args["code"] <- JsonValue.Create("harness::increment(41)")
+            { evalOracle "" "42" with Arguments = args }
+        let explicitStackOracle =
+            let args = JsonObject()
+            args["code"] <- JsonValue.Create("41 1 add")
+            args["frontend"] <- JsonValue.Create("stack")
+            { evalOracle "" "42" with Arguments = args }
+        let settings =
+            { config root Flat "flow-tool-dispatch" [ step "test-all" (JsonObject()) None None (Some 1); flowOracle; explicitStackOracle ] with
+                Frontend = SourceFrontend.Flow
+                BaselineProfile = BaselineProfile.PrimitiveOnly }
+        let responses = JsonArray()
+        responses.Add(scriptedResponse "completed" [ define ] "" None)
+        responses.Add(scriptedResponse "completed" [ commit ] "" None)
+        responses.Add(scriptedResponse "completed" [ outputMessage "The Flow word is tested and committed." ] "The Flow word is tested and committed." None)
+        let result = runWith settings (provider responses)
+        check result.Success "configured Flow applies to authoring and default oracle calls while an explicit Stack oracle selector wins"
+        equal 2 result.ToolCalls "Flow tool dispatch uses the existing compact tool set"
+        let report = JsonNode.Parse(File.ReadAllText(reportPath settings)).AsObject()
+        equal "flow" (report["frontend"].GetValue<string>()) "report records the configured Flow frontend"
+        equal 3 (report["oracle"].AsArray().Count) "Flow and explicitly Stack-selected oracle checks are both recorded"
+        check (report["oracle"].AsArray() |> Seq.forall (fun item -> item["passed"].GetValue<bool>())) "frontend-aware task oracles pass"
+        let trace = File.ReadAllText(Path.Combine(settings.RunDirectory, "trace.jsonl"))
+        check (trace.Contains("harness.increment", StringComparison.Ordinal)) "Flow-authored word is recorded by the runtime trace"
+
+    let private testManifestInventoryUsesCurrentMixedFrontendHeads root =
+        let settings = config root Growing "inventory-current-heads" [ step "test-all" (JsonObject()) None None (Some 3) ]
+        let engine = Runtime.Engine(settings.ProjectDirectory, Set.empty, "2030-01-02T03:04:05Z")
+        let request (operation: string) (fields: (string * JsonNode) list) =
+            let args = JsonObject()
+            for name, value in fields do args[name] <- value
+            let response = engine.Dispatch(operation, args)
+            if not (response["ok"].GetValue<bool>()) then
+                let message = response["text"].GetValue<string>()
+                failwith $"Could not prepare mixed frontend inventory: {message}"
+            response
+        let define (frontend: string) (source: string) (extraArguments: (string * JsonNode) list) =
+            request "define" ([ "frontend", JsonValue.Create(frontend) :> JsonNode; "source", JsonValue.Create(source) :> JsonNode ] @ extraArguments)
+            |> ignore
+        let commit (word: string) = request "commit" [ "word", JsonValue.Create(word) :> JsonNode ] |> ignore
+        let readWordId (word: string) =
+            let words = request "words" []
+            ((words["data"])["words"]).AsArray()
+            |> Seq.find (fun item -> item["name"].GetValue<string>() = word)
+            |> fun word -> word["id"].GetValue<string>()
+
+        let firstRevision =
+            "word inventory.mixed : Int -> Int\n"
+            + "    effects none\n"
+            + "    1 add\n"
+            + "end\n\n"
+            + "test inventory.mixed/first\n"
+            + "    1 inventory.mixed\n"
+            + "    expect 2\n"
+            + "end\n"
+        define "stack" firstRevision []
+        commit "inventory.mixed"
+        let stableMixedId = readWordId "inventory.mixed"
+
+        let currentRevision =
+            "word inventory.mixed : Int -> Int\n"
+            + "    effects none\n"
+            + "    2 add\n"
+            + "end\n\n"
+            + "test inventory.mixed/first\n"
+            + "    1 inventory.mixed\n"
+            + "    expect 3\n"
+            + "end\n\n"
+            + "test inventory.mixed/current\n"
+            + "    1 inventory.mixed\n"
+            + "    expect 3\n"
+            + "end\n"
+        define "stack" currentRevision [ "replace", JsonValue.Create(true) :> JsonNode; "expectedRevision", JsonValue.Create(1) :> JsonNode ]
+        commit "inventory.mixed"
+        equal stableMixedId (readWordId "inventory.mixed") "a replacement retains its stable word identity"
+
+        let flowSource =
+            "word inventory.flow(value: Int) -> Int {\n"
+            + "    effects none\n"
+            + "    add(value, 2)\n"
+            + "}\n\n"
+            + "test inventory.flow/current {\n"
+            + "    inventory::flow(1)\n"
+            + "    => value inventory::flow(1)\n"
+            + "}"
+        define "flow" flowSource []
+        commit "inventory.flow"
+        let stableFlowId = readWordId "inventory.flow"
+
+        let responses = JsonArray()
+        responses.Add(scriptedResponse "completed" [ outputMessage "Both current Stack and Flow word tests pass." ] "Both current Stack and Flow word tests pass." None)
+        let result = runWith { settings with Frontend = SourceFrontend.Flow } (provider responses)
+        check result.Success "mixed historical Stack and current Flow words load through the Flow harness"
+        let report = JsonNode.Parse(File.ReadAllText(reportPath settings)).AsObject()
+        let inventory = ((report["baselineAudit"])["taskStartInventory"]).AsObject()
+        equal "word-case/1" (inventory["attachmentNameFormat"].GetValue<string>()) "mixed frontend inventory declares qualified attachment names"
+        let words = inventory["authoredWords"].AsArray()
+        equal 2 words.Count "manifest inventory lists current word heads, not historical revisions"
+        let currentMixed = words |> Seq.find (fun word -> word["name"].GetValue<string>() = "inventory.mixed")
+        let currentFlow = words |> Seq.find (fun word -> word["name"].GetValue<string>() = "inventory.flow")
+        equal 2 (currentMixed["revision"].GetValue<int>()) "Stack inventory uses the current revision metadata"
+        equal stableMixedId (currentMixed["stableId"].GetValue<string>()) "Stack inventory reports the stable current-head ID"
+        equal stableFlowId (currentFlow["stableId"].GetValue<string>()) "Flow inventory reports the stable current-head ID"
+        let tests = inventory["tests"].AsArray() |> Seq.map (fun test -> test.GetValue<string>()) |> Set.ofSeq
+        equal 3 tests.Count "inventory lists only the three tests attached to current word heads"
+        check (tests.Contains("inventory.mixed/current") && tests.Contains("inventory.mixed/first") && tests.Contains("inventory.flow/current")) "inventory lists the refreshed Stack cases and current Flow case"
+
+        let lineagePath = Path.Combine(settings.ProjectDirectory, ".agentlang-benchmark-lineage.json")
+        let lineage = JsonNode.Parse(File.ReadAllText(lineagePath)).AsObject()
+        let origin = lineage["originInventory"].AsObject()
+        origin.Remove("attachmentNameFormat") |> ignore
+        let legacyCaseNames (names: JsonArray) =
+            let result = JsonArray()
+            for item in names do
+                let qualifiedName = item.GetValue<string>()
+                let separator = qualifiedName.IndexOf('/')
+                if separator < 0 || separator = qualifiedName.Length - 1 then
+                    failwith $"Expected a qualified inventory attachment name, received '{qualifiedName}'."
+                result.Add(JsonValue.Create(qualifiedName.Substring(separator + 1)))
+            result
+        origin["tests"] <- legacyCaseNames (origin["tests"].AsArray())
+        origin["examples"] <- legacyCaseNames (origin["examples"].AsArray())
+        let legacyOriginText = origin.ToJsonString()
+        let legacyMarker = lineage.ToJsonString()
+        File.WriteAllText(lineagePath, legacyMarker, UTF8Encoding(false))
+
+        let legacySettings =
+            { config root Growing "inventory-legacy-origin" [ step "test-all" (JsonObject()) None None (Some 3) ] with
+                ProjectDirectory = settings.ProjectDirectory }
+        let legacyResponses = JsonArray()
+        legacyResponses.Add(scriptedResponse "completed" [ outputMessage "The legacy lineage marker remains readable." ] "The legacy lineage marker remains readable." None)
+        let legacyResult = runWith legacySettings (provider legacyResponses)
+        check legacyResult.Success "an untagged version-2 lineage origin remains readable"
+        let preservedOrigin = legacyResult.BaselineAudit["originInventory"].AsObject()
+        equal legacyOriginText (preservedOrigin.ToJsonString()) "continuing a legacy lineage preserves the complete origin inventory"
+        check (not (preservedOrigin.ContainsKey("attachmentNameFormat"))) "reading a legacy origin does not rewrite it with a new name format"
+        let preservedLegacyTests = preservedOrigin["tests"].AsArray() |> Seq.map (fun item -> item.GetValue<string>()) |> Set.ofSeq
+        check (preservedLegacyTests.Contains("first") && preservedLegacyTests.Contains("current")) "legacy origin retains its case-only test names"
+        let currentInventory = legacyResult.BaselineAudit["taskStartInventory"].AsObject()
+        equal "word-case/1" (currentInventory["attachmentNameFormat"].GetValue<string>()) "continued tasks emit the new qualified inventory format"
+        let acceptedLegacyMarker = File.ReadAllText(lineagePath)
+        let savedMarker = JsonNode.Parse(acceptedLegacyMarker).AsObject()
+        let savedOrigin = savedMarker["originInventory"].AsObject()
+        equal legacyOriginText (savedOrigin.ToJsonString()) "continuing a legacy lineage preserves the saved origin inventory"
+
+        let rejectInventoryMarker name mutate =
+            let invalidMarker = JsonNode.Parse(acceptedLegacyMarker).AsObject()
+            mutate (invalidMarker["originInventory"].AsObject())
+            File.WriteAllText(lineagePath, invalidMarker.ToJsonString(), UTF8Encoding(false))
+            let invalidSettings =
+                { config root Growing name [ step "test-all" (JsonObject()) None None (Some 3) ] with
+                    ProjectDirectory = settings.ProjectDirectory }
+            let invalidResult = runWith invalidSettings (provider (JsonArray()))
+            equal (Some "BASELINE_LINEAGE_INVALID") invalidResult.FailureCode $"invalid attachment inventory metadata is rejected ({name})"
+            File.WriteAllText(lineagePath, acceptedLegacyMarker, UTF8Encoding(false))
+
+        rejectInventoryMarker "inventory-unknown-name-format" (fun oldOrigin ->
+            oldOrigin["attachmentNameFormat"] <- JsonValue.Create("word-case/2"))
+        rejectInventoryMarker "inventory-malformed-name-format" (fun oldOrigin ->
+            oldOrigin["attachmentNameFormat"] <- JsonValue.Create(true))
+        rejectInventoryMarker "inventory-malformed-qualified-name" (fun oldOrigin ->
+            oldOrigin["attachmentNameFormat"] <- JsonValue.Create("word-case/1")
+            let oldTests = oldOrigin["tests"].AsArray()
+            oldTests[0] <- JsonValue.Create("case-only"))
 
     let private testToolLimitRollsBackCandidates root =
         let settings = config root Growing "tool-limit" [ evalOracle "41 rollback.staged" "42" ]
@@ -646,6 +860,7 @@ end
 """
         let externalDefine = JsonObject()
         externalDefine["source"] <- JsonValue.Create(externalSource)
+        externalDefine["frontend"] <- JsonValue.Create("stack")
         let externalDefinitionResult = external.Dispatch("define", externalDefine)
         check (externalDefinitionResult["ok"].GetValue<bool>()) "test fixture stages an external durable change"
         let externalCommitResult = external.Dispatch("commit", JsonObject())
@@ -731,7 +946,7 @@ end
         let savedInitialStateBaselineAudit = savedInitialState["baselineAudit"].AsObject()
         equal "primitive-only" (savedInitialStateBaselineAudit["profile"].GetValue<string>()) "initial-state.json persists the audited profile"
 
-        let businessSeed = Path.GetFullPath(Path.Combine(__SOURCE_DIRECTORY__, "..", "..", "examples", "customer.agent"))
+        let businessSeed = Path.GetFullPath(Path.Combine(__SOURCE_DIRECTORY__, "..", "..", "examples", "legacy", "customer.agent"))
         let rejectedSettings =
             { config root Flat "primitive-rejects-domain-seed" [ evalOracle "1 2 add" "3" ] with
                 BaselineProfile = BaselineProfile.PrimitiveOnly
@@ -857,6 +1072,8 @@ end
             testStatelessToolLoopAndLogs root
             testStrictRuntimeToolWhitelist root
             testInitialPromptIncludesLanguagePrimer ()
+            testFlowFrontendSeedAndToolDispatch root
+            testManifestInventoryUsesCurrentMixedFrontendHeads root
             testToolLimitRollsBackCandidates root
             testHistorySymlinkAndSizeGuards root
             testLibraryCoverageThroughTools root

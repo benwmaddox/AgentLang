@@ -1,0 +1,29 @@
+{
+  "command": "dotnet build tests/AgentLang.Cli.Tests/AgentLang.Cli.Tests.fsproj --configuration Release",
+  "revision": "3e43e2c291107f1cca269fc0a41f0d7ec888bff6",
+  "dirty": true,
+  "exitCode": 1,
+  "durationMilliseconds": 21836,
+  "output": [
+    "  Determining projects to restore...",
+    "  Restored D:\\code\\AgentLang\\tests\\AgentLang.Cli.Tests\\AgentLang.Cli.Tests.fsproj (in 481 ms).",
+    "  2 of 3 projects are up-to-date for restore.",
+    "  AgentLang.Core -> D:\\code\\AgentLang\\src\\AgentLang.Core\\bin\\Release\\net9.0\\AgentLang.Core.dll",
+    "  AgentLang.Cli -> D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Cli.Tests\\Program.fs(88,29): error FS0597: Successive arguments should be separated by spaces or tupled, and arguments involving function or method applications should be parenthesized [D:\\code\\AgentLang\\tests\\AgentLang.Cli.Tests\\AgentLang.Cli.Tests.fsproj]",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Cli.Tests\\Program.fs(272,54): error FS3373: Invalid interpolated string. Single quote or verbatim string literals may not be used in interpolated expressions in single quote or verbatim strings. Consider using an explicit 'let' binding for the interpolation expression or use a triple quote string as the outer string literal. [D:\\code\\AgentLang\\tests\\AgentLang.Cli.Tests\\AgentLang.Cli.Tests.fsproj]",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Cli.Tests\\Program.fs(290,54): error FS3373: Invalid interpolated string. Single quote or verbatim string literals may not be used in interpolated expressions in single quote or verbatim strings. Consider using an explicit 'let' binding for the interpolation expression or use a triple quote string as the outer string literal. [D:\\code\\AgentLang\\tests\\AgentLang.Cli.Tests\\AgentLang.Cli.Tests.fsproj]",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Cli.Tests\\Program.fs(312,54): error FS3373: Invalid interpolated string. Single quote or verbatim string literals may not be used in interpolated expressions in single quote or verbatim strings. Consider using an explicit 'let' binding for the interpolation expression or use a triple quote string as the outer string literal. [D:\\code\\AgentLang\\tests\\AgentLang.Cli.Tests\\AgentLang.Cli.Tests.fsproj]",
+    "",
+    "Build FAILED.",
+    "",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Cli.Tests\\Program.fs(88,29): error FS0597: Successive arguments should be separated by spaces or tupled, and arguments involving function or method applications should be parenthesized [D:\\code\\AgentLang\\tests\\AgentLang.Cli.Tests\\AgentLang.Cli.Tests.fsproj]",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Cli.Tests\\Program.fs(272,54): error FS3373: Invalid interpolated string. Single quote or verbatim string literals may not be used in interpolated expressions in single quote or verbatim strings. Consider using an explicit 'let' binding for the interpolation expression or use a triple quote string as the outer string literal. [D:\\code\\AgentLang\\tests\\AgentLang.Cli.Tests\\AgentLang.Cli.Tests.fsproj]",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Cli.Tests\\Program.fs(290,54): error FS3373: Invalid interpolated string. Single quote or verbatim string literals may not be used in interpolated expressions in single quote or verbatim strings. Consider using an explicit 'let' binding for the interpolation expression or use a triple quote string as the outer string literal. [D:\\code\\AgentLang\\tests\\AgentLang.Cli.Tests\\AgentLang.Cli.Tests.fsproj]",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Cli.Tests\\Program.fs(312,54): error FS3373: Invalid interpolated string. Single quote or verbatim string literals may not be used in interpolated expressions in single quote or verbatim strings. Consider using an explicit 'let' binding for the interpolation expression or use a triple quote string as the outer string literal. [D:\\code\\AgentLang\\tests\\AgentLang.Cli.Tests\\AgentLang.Cli.Tests.fsproj]",
+    "    0 Warning(s)",
+    "    4 Error(s)",
+    "",
+    "Time Elapsed 00:00:21.62"
+  ]
+}

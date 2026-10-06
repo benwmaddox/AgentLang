@@ -3,11 +3,12 @@ namespace AgentLang.Benchmarks
 open System
 open System.IO
 open System.Text.Json.Nodes
+open AgentLang
 open AgentLang.Benchmarks
 
 module Program =
     let private usage () =
-        eprintfn "Usage: AgentLang.Benchmarks run --task task.json --provider scripted|openai [--model model] [--mode flat|growing] [--baseline domain-seeded-control|primitive-only] [--project-root path] [--run-dir path] [--seed-source file] [--script responses.json] [--max-turns n] [--max-tool-calls n] [--max-output-tokens n] [--context-budget-bytes n]"
+        eprintfn "Usage: AgentLang.Benchmarks run --task task.json --provider scripted|openai [--frontend flow|stack] [--model model] [--mode flat|growing] [--baseline domain-seeded-control|primitive-only] [--project-root path] [--run-dir path] [--seed-source file] [--script responses.json] [--max-turns n] [--max-tool-calls n] [--max-output-tokens n] [--context-budget-bytes n]"
 
     let private arguments (values: string array) =
         if values.Length % 2 <> 0 then invalidArg "args" "Every option must have one value."
@@ -45,7 +46,12 @@ module Program =
 
     let private run values =
         let taskPath = Path.GetFullPath(required values "task")
-        let task = TaskFile.load taskPath
+        let frontend =
+            match option values "frontend" |> Option.defaultValue "flow" with
+            | "flow" -> SourceFrontend.Flow
+            | "stack" -> SourceFrontend.Stack
+            | _ -> invalidArg "frontend" "Option --frontend must be 'flow' or 'stack'."
+        let task = TaskFile.loadWithFrontend frontend taskPath
         let providerName = required values "provider"
         let model =
             match providerName, option values "model" with
@@ -83,6 +89,7 @@ module Program =
         let config =
             { Task = task
               Mode = mode
+              Frontend = frontend
               Model = model
               ProjectDirectory = projectDirectory
               RunDirectory = runDirectory
