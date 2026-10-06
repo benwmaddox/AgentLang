@@ -242,6 +242,82 @@ module Program =
 
         expectDiagnostic "DISCOVERY_CONTEXT_BUDGET_TOO_SMALL" (fun () -> Discovery.context index "root" 20 100 1)
 
+    let private testContextFlowReferences () =
+        let referenceWords =
+            [ word "root" [] [ TInt ] Set.empty [] "Unqualified dictionary key." None
+              word "advance" [] [ TInt ] Set.empty [] "Root name collision." None
+              word "math.advance" [] [ TInt ] Set.empty [] "Dotted name collision." None
+              word "tools.math.advance" [] [ TInt ] Set.empty [] "Qualified name collision." None
+              word "Advance" [] [ TInt ] Set.empty [] "Case-preserved root name." None
+              word "Math.Advance" [] [ TInt ] Set.empty [] "Case-preserved dotted name." None
+              word "if.target" [] [ TInt ] Set.empty [] "Reserved syntax prefix." None
+              word "match.target" [] [ TInt ] Set.empty [] "Reserved syntax prefix." None
+              word "true.target" [] [ TInt ] Set.empty [] "Reserved syntax prefix." None
+              word "false.target" [] [ TInt ] Set.empty [] "Reserved syntax prefix." None
+              word "unit.target" [] [ TInt ] Set.empty [] "Reserved syntax prefix." None
+              word "list.empty" [] [ TList TInt ] Set.empty [] "Generic constructor without type arguments." None
+              word "list.empty<Int>" [] [ TList TInt ] Set.empty [] "Legacy key intercepted by container syntax." None
+              word "Email.new" [ TString ] [ TNamed "Email" ] Set.empty [] "Capitalized scalar constructor." (Some(ScalarConstructor "Email"))
+              word "email.new" [ TString ] [ TNamed "Email" ] Set.empty [] "Lowercase scalar constructor." (Some(ScalarConstructor "Email")) ]
+            |> List.map (fun entry -> entry.Definition.Name, entry)
+            |> Map.ofList
+        let referenceIndex =
+            Discovery.build
+                referenceWords
+                Map.empty
+                (Map.ofList [ "Email", scalar "Email" TString None ])
+
+        let contextWord name =
+            let context = Discovery.context referenceIndex name 0 1 100000
+            let document = JsonNode.Parse(context.Content)
+            document["words"].AsArray() |> Seq.exactlyOne
+
+        let expectReference name expected =
+            let node = contextWord name
+            equal name (node["name"].GetValue<string>()) $"context preserves dictionary key {name}"
+            equal expected (node["flowReference"].GetValue<string>()) $"context exposes exact Flow call reference for {name}"
+            check (isNull node["flowReferenceUnavailableReason"]) $"callable context entry {name} has no unavailable reason"
+            equal (Some expected, None) (FlowParser.describeCallReference name) $"shared resolver accepts {name}"
+
+        expectReference "root" "::root"
+        expectReference "advance" "::advance"
+        expectReference "math.advance" "math::advance"
+        expectReference "tools.math.advance" "tools::math::advance"
+        expectReference "Advance" "::Advance"
+        expectReference "Math.Advance" "Math::Advance"
+        expectReference "Email.new" "Email::new"
+        expectReference "email.new" "email::new"
+
+        for prefix in [ "if"; "match"; "true"; "false"; "unit" ] do
+            let name = prefix + ".target"
+            let node = contextWord name
+            let expectedReason = $"The '{prefix}' prefix is reserved for Flow syntax."
+            check (isNull node["flowReference"]) $"context omits reserved Flow reference for {name}"
+            equal expectedReason (node["flowReferenceUnavailableReason"].GetValue<string>()) $"context explains reserved Flow prefix for {name}"
+            equal (None, Some expectedReason) (FlowParser.describeCallReference name) $"shared resolver rejects reserved prefix {name}"
+
+        let malformedConstructor = contextWord "list.empty"
+        check (isNull malformedConstructor["flowReference"]) "context omits an incomplete container constructor reference"
+        equal
+            "The candidate is not a valid ordinary Flow call (FLOW_CONSTRUCTOR_TYPE_ARGUMENTS_REQUIRED)."
+            (malformedConstructor["flowReferenceUnavailableReason"].GetValue<string>())
+            "context preserves the parser diagnostic for a generic constructor without type arguments"
+        equal
+            (None, Some "The candidate is not a valid ordinary Flow call (FLOW_CONSTRUCTOR_TYPE_ARGUMENTS_REQUIRED).")
+            (FlowParser.describeCallReference "list.empty")
+            "shared resolver preserves invalid constructor classification"
+
+        let intercepted = contextWord "list.empty<Int>"
+        check (isNull intercepted["flowReference"]) "context omits a typed constructor key intercepted by container syntax"
+        equal
+            "The candidate is intercepted by Flow syntax instead of an ordinary call."
+            (intercepted["flowReferenceUnavailableReason"].GetValue<string>())
+            "context explains a syntax-intercepted dictionary key"
+        equal
+            (None, Some "The candidate is intercepted by Flow syntax instead of an ordinary call.")
+            (FlowParser.describeCallReference "list.empty<Int>")
+            "shared resolver preserves syntax-interception classification"
+
     [<EntryPoint>]
     let main _ =
         let index = makeIndex ()
@@ -249,5 +325,6 @@ module Program =
         testGraphAndCycles index
         testValidation index
         testContextBudgets index
+        testContextFlowReferences ()
         printfn $"AgentLang.Discovery.Tests: {assertions} assertions passed."
         0

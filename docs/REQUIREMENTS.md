@@ -9,7 +9,7 @@ the existing small domain; it does not wait for the full business vocabulary,
 Remaining requirements stay in this ledger. Pilot preparation and verifier
 probes are not comparative agent results.
 
-Latest purpose checkpoint: [report 057](../reports/057-early-agent-purpose-review.md)
+Historical pilot checkpoint: [report 057](../reports/057-early-agent-purpose-review.md)
 records the completed exploratory sequence: 15 matched external-agent trials,
 300 independent behavioral evaluations, 695 passing acceptance checks, retained
 vocabulary reuse and state audits. Growing uses 84 protocol exchanges versus
@@ -73,6 +73,13 @@ overall agent-efficiency win and small-context operation remain unproven. The
 next evaluation should measure selective context and actual model usage before
 full-domain expansion, LLVM or allocator research. Clean committed-source CI
 for milestone 063 passed all 32 checks on 07d5f4d; saved evidence accompanies 064.
+
+[Checkpoint 065](../reports/065-callable-compact-context.md) verifies callable
+Flow references inside compact-context byte accounting, with a fresh 32-check
+local Release gate. Clean publication CI for 064 also passed all 32 checks on
+3b8dcd5. This is a selective-retrieval interface prerequisite; aggregate host
+retrieval limits and smaller-context agent outcomes remain pending.
+
 Latest external-agent workflow evidence: [report 054](../reports/054-flow-renewal-agent-control.md)
 records a separate inherited-history Luna/max control that created one tested
 library word by composing a retained domain word. Fresh-process acceptance
@@ -160,13 +167,13 @@ Standalone backend and baseline-audit evidence: [milestone 008](../reports/008-s
 | 38 | Verified: minimal stack gymnastics | dup/drop/swap; no extended stack operation assortment |
 | 39 | Verified: typed local bindings | Local/branch joins and demo checks |
 | 40 | Verified: deterministic structural search | Exact nested nominal input/output types, declared effects and direct dependency queries; no embeddings |
-| 41 | Verified: compact bounded dependency/type context | Complete JSON entries, recursive nominal declarations, concise docs, hard budgets/omissions and exact transported data bytes; not inferred task relevance |
+| 41 | Verified: compact bounded dependency/type context | Complete JSON entries, parser-verified call references, recursive nominal declarations, concise docs, hard budgets/omissions and exact transported data bytes; not inferred task relevance |
 | 42 | Partial: context/token accounting | Harness records complete prepared/sent request bytes and returned provider usage; exact token budget/retrieval breakdown pending |
 | 43 | Partial: complete small-business fixture | Customer language demo, conventional reference and standalone typed fixture contract; full language domain, matched adapters, 40–60 words and 50–100 tests pending |
 | 44 | Excluded from first domain: optional later simulation | Preserve for later generalization, not a V1 blocker |
 | 45 | Partial: equivalent conventional environment | Small Flow/F# fixtures and shared task vectors audited in report 057; full business fixture parity pending |
-| 46 | Partial: fresh/growing/debugging/discovery/refactoring experiments | Small fresh/growing/discovery sequence complete; controlled categories and repetitions pending |
-| 47 | Partial: all task metrics | Pilot success, exchanges, payload bytes and errors recorded; exact model usage/turns and full ordered events unavailable |
+| 46 | Partial: fresh/growing/debugging/discovery/refactoring experiments | Small fresh/growing/discovery pilot and rotated repeat complete; debugging/refactoring and broader controlled categories pending |
+| 47 | Partial: all task metrics | Pilot/repeat success, exchanges, payload bytes and error responses recorded; exact model usage/turns and full ordered events unavailable |
 | 48 | Pending: Vocabulary Reuse Ratio | Define start-of-task words and distinguish domain/test/primitive executions |
 | 49 | Partial: static primitive distance analysis | Arbitrary-precision multiplicity and cycle errors verified; runtime/task integration and actual invocation metrics pending |
 | 50 | Pending: 2k/4k/8k/16k/32k context trials | Enforced harness budgets and recorded outcomes required |
@@ -179,9 +186,9 @@ Standalone backend and baseline-audit evidence: [milestone 008](../reports/008-s
 | 57 | Partial: model-provider harness | Scripted HTTP adapter and external-subagent JSONL pilot with conventional runner; controlled provider usage, budgets and full task automation pending |
 | 58 | Partial: compact system prompt | Mandatory compact primer and per-run prompt artifact verified; live usage pending |
 | 59 | Partial: small initial context strategy | Prompt avoids dictionary dump; full requests include retrieval history and byte caps, exact token accounting pending |
-| 60 | Partial: conventional tool baseline | Path-confined read/search/CAS edit/fixed validation tools verified; actual same-model comparison pending; validation is not an OS sandbox |
+| 60 | Partial: conventional tool baseline | Path-confined broker and same-model small-domain comparison verified; full-domain comparison and ordinary repository-tool evaluation pending; validation is not an OS sandbox |
 | 61 | Partial: 60-task artifact bank | 20 simple, 20 medium, 10 debugging, 10 refactoring tasks and 180 proposed hidden cases; all execution adapters, matched fixtures, authenticated evidence and snapshot pins remain pending |
-| 62 | Partial: vocabulary-building task sequence | Initial premium demo; sequence and comparable costs pending |
+| 62 | Partial: vocabulary-building task sequence | Two five-task sequences accepted with retained-helper reuse; controlled broader comparable costs pending |
 | 63 | Partial: CLI observability | task status/log, words and bounded graph; recent-words/metrics pending; GUI optional |
 | 64 | Verified: direct and transitive dependency graph | Stable closures, callbacks/refinement validator edges, cycle/reuse markers and explicit graph limits |
 | 65 | Verified: definition-level word editing | define stages source; replace-word commits after current word and transitive caller tests pass |
@@ -193,13 +200,13 @@ Standalone backend and baseline-audit evidence: [milestone 008](../reports/008-s
 | 71 | Pending: success evidence | Compare correctness and uncertainty alongside >=20% token/turn signal; no claimed gains |
 | 72 | Pending: failure evidence | Report bypasses/duplicates/discovery/error/raw-source/conventional outcomes |
 | 73 | Pending: answers to RQ1–RQ10 | Controlled results required; missing-primitive events must be recorded |
-| 74 | Partial: Flat/Growing/Conventional comparison | 15-trial exploratory sequence accepted; standardized prompts, rotated repetitions and controlled metrics pending |
+| 74 | Partial: Flat/Growing/Conventional comparison | Pilot and standardized rotated 15-trial repeat accepted; actual model usage and small-context controlled metrics pending |
 | 75 | Excluded: follow-on curator | Explicitly not initial implementation |
 | 76 | Excluded: optional classifier-driven context | Deterministic context in section 41 remains required |
 | 77 | Excluded: optional extra maturity levels | Required user addition project/library rigor already implemented |
 | 78 | Excluded: proof-like contracts | Explicit follow-on, not V1 |
 | 79 | Verified: initial usable slice | Baseline checks; must not redefine full completion as this milestone |
-| 80 | Partial: actual agent demo and later-agent reuse | Two actual external subagent tasks passed independent checks and retained-word discovery/reuse; controlled cost comparisons pending |
+| 80 | Partial: actual agent demo and later-agent reuse | Fresh-agent discovery, tested-word creation and later-agent reuse verified in small pilot/repeat; measured model-cost help remains unproven |
 | 81 | Pending: marginal cost trend | Sequence, cost data, comparable task difficulty and correctness required |
 | 82 | Pending: full prototype outcome | Unfamiliar-project agent task plus measured help for later agents required |
 

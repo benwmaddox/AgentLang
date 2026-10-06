@@ -372,6 +372,9 @@ module Discovery =
         let definition = entry.Definition
         let node = JsonObject()
         node["name"] <- JsonValue.Create name
+        let flowReference, flowReferenceUnavailableReason = FlowParser.describeCallReference name
+        node["flowReference"] <- flowReference |> Option.map JsonValue.Create |> Option.defaultValue null
+        node["flowReferenceUnavailableReason"] <- flowReferenceUnavailableReason |> Option.map JsonValue.Create |> Option.defaultValue null
         let inputs = JsonArray()
         definition.Inputs |> List.iter (Types.format >> JsonValue.Create >> inputs.Add)
         node["inputs"] <- inputs

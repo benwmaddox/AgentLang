@@ -943,6 +943,26 @@ module FlowParser =
             Ok expression
         with LanguageException error -> Error error
 
+    /// Resolve a dictionary name to an exact ordinary Flow call spelling.
+    /// Names intercepted by Flow syntax and invalid candidates remain unavailable.
+    let describeCallReference (name: string) : string option * string option =
+        let protectedPrefixes = set [ "if"; "match"; "true"; "false"; "unit" ]
+        let separator = name.IndexOf('.')
+        let firstSegment = if separator < 0 then name else name.Substring(0, separator)
+        if separator >= 0 && protectedPrefixes.Contains firstSegment then
+            None, Some $"The '{firstSegment}' prefix is reserved for Flow syntax."
+        else
+            let qualifiedName = name.Replace(".", "::")
+            let candidateName = if separator >= 0 then qualifiedName else "::" + qualifiedName
+            match parseExpression "<describe-flow-reference>" (candidateName + "()") with
+            | Error diagnostic ->
+                None, Some $"The candidate is not a valid ordinary Flow call ({diagnostic.Code})."
+            | Ok(FlowExpression.Call(target, _, _)) when target = name -> Some candidateName, None
+            | Ok(FlowExpression.RootCall(target, _, _)) when target.Name = name -> Some candidateName, None
+            | Ok(FlowExpression.Call _ | FlowExpression.RootCall _) ->
+                None, Some "The candidate does not target the exact dictionary key."
+            | Ok _ -> None, Some "The candidate is intercepted by Flow syntax instead of an ordinary call."
+
     let parseWord file source =
         try
             let state = createState file source

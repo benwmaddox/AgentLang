@@ -316,7 +316,14 @@ The bounded interface follow-ups are verified in reports
 Flow references and conventional small patches. The versioned early-flow-002
 repeat protocol preserves prior artifacts and uses archived prompts, serial
 rotated trials and unchanged behavioral acceptance. These are preparation and
-interface results; the repeated agent outcomes remain the next priority.
+interface results. The rotated repeat is now complete in
+[purpose review 064](../reports/064-repeat-agent-purpose-review.md): all fifteen
+trials passed independent acceptance, with retained-word reuse and definition
+compression. Growing used 70 protocol exchanges, Flat 75 and Conventional 67;
+these do not establish model-token/turn savings. Prioritize selective context
+and honest application retrieval accounting before expanding the domain or
+memory/backend design. The [next bounded plan](SELECTIVE-CONTEXT-PLAN.md)
+reuses existing compact context and preserves the frozen trial evidence.
 
 1. Ship and validate the first usable slice and demo.
 2. Run a fresh external subagent through the small protocol; record supplied context, interactions, independent results, and available usage.

@@ -2141,24 +2141,6 @@ module Runtime =
             activateRuntimeSnapshot executable
             lastResults <- []
 
-        let describeFlowReference (name: string) =
-            let protectedPrefixes = set [ "if"; "match"; "true"; "false"; "unit" ]
-            let separator = name.IndexOf('.')
-            let firstSegment = if separator < 0 then name else name.Substring(0, separator)
-            if separator >= 0 && protectedPrefixes.Contains firstSegment then
-                None, Some $"The '{firstSegment}' prefix is reserved for Flow syntax."
-            else
-                let qualifiedName = name.Replace(".", "::")
-                let candidateName = if separator >= 0 then qualifiedName else "::" + qualifiedName
-                match FlowParser.parseExpression "<describe-flow-reference>" (candidateName + "()") with
-                | Error diagnostic ->
-                    None, Some $"The candidate is not a valid ordinary Flow call ({diagnostic.Code})."
-                | Ok(FlowExpression.Call(target, _, _)) when target = name -> Some candidateName, None
-                | Ok(FlowExpression.RootCall(target, _, _)) when target.Name = name -> Some candidateName, None
-                | Ok(FlowExpression.Call _ | FlowExpression.RootCall _) ->
-                    None, Some "The candidate does not target the exact dictionary key."
-                | Ok _ -> None, Some "The candidate is intercepted by Flow syntax instead of an ordinary call."
-
         let availableDescription (snapshot: RuntimeSnapshot) name =
             let state = snapshot.State
             let words = snapshot.Words
@@ -2200,7 +2182,7 @@ module Runtime =
                     | None -> "word"
                 let obj = JsonObject()
                 obj["name"] <- jstr name
-                let flowReference, flowReferenceUnavailableReason = describeFlowReference name
+                let flowReference, flowReferenceUnavailableReason = FlowParser.describeCallReference name
                 match flowReference, flowReferenceUnavailableReason with
                 | Some reference, _ ->
                     obj["flowReference"] <- jstr reference

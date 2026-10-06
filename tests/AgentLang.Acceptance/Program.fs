@@ -2423,6 +2423,32 @@ end
         equal contextPayload ((repeatedContext["data"]).ToJsonString(compactOptions)) "repeated context is deterministic"
         let contextWords = (contextData["words"]).AsArray()
         check (contextWords |> Seq.exists (fun item -> (item["name"]).GetValue<string>() = "email.filter")) "context contains the root word"
+        for contextWord in contextWords do
+            let name = contextWord["name"].GetValue<string>()
+            let described = dispatch runtime "describe" [ "word", jsonString name ] |> expectOk $"describe context word {name}" |> fun response -> response["data"]
+            let contextReference = if isNull contextWord["flowReference"] then None else Some(contextWord["flowReference"].GetValue<string>())
+            let describeReference = if isNull described["flowReference"] then None else Some(described["flowReference"].GetValue<string>())
+            let contextUnavailableReason = if isNull contextWord["flowReferenceUnavailableReason"] then None else Some(contextWord["flowReferenceUnavailableReason"].GetValue<string>())
+            let describeUnavailableReason = if isNull described["flowReferenceUnavailableReason"] then None else Some(described["flowReferenceUnavailableReason"].GetValue<string>())
+            equal (describeReference, describeUnavailableReason) (contextReference, contextUnavailableReason) $"context and describe share Flow reference metadata for {name}"
+
+        let emailConstructorContext =
+            dispatch runtime "context" [ "word", jsonString "Email.new"; "maxDepth", JsonValue.Create(0) :> JsonNode; "maxWords", JsonValue.Create(1) :> JsonNode ]
+            |> expectOk "context for generated scalar constructor"
+        let emailConstructorWord = (emailConstructorContext["data"]["words"]).AsArray() |> Seq.exactlyOne
+        equal "Email.new" (emailConstructorWord["name"].GetValue<string>()) "generated context retains constructor dictionary name"
+        equal "Email::new" (emailConstructorWord["flowReference"].GetValue<string>()) "generated context exposes exact constructor call target"
+        let filterReference =
+            contextWords
+            |> Seq.find (fun item -> item["name"].GetValue<string>() = "email.filter")
+            |> fun item -> item["flowReference"].GetValue<string>()
+        let constructorReference = emailConstructorWord["flowReference"].GetValue<string>()
+        let composedFlow =
+            dispatch runtime "eval"
+                [ "frontend", jsonString "flow"
+                  "code", jsonString $"{filterReference}(list::singleton<Email>({constructorReference}(\"context@example.com\")))" ]
+            |> expectOk "compose a typed Flow call from compact context references"
+        equal "List<Email>" (stackType composedFlow 0) "context references compose with the declared nominal type"
         let allWords = dispatch runtime "words" [] |> expectOk "inspect whole dictionary for comparison" |> fun result -> (result["data"]["words"]).AsArray()
         check (contextWords.Count < allWords.Count) "context is not an unbounded dictionary dump"
         check (not (contextPayload.Contains("discovery.write", StringComparison.Ordinal))) "context excludes unrelated words"
@@ -2458,6 +2484,9 @@ end
 
         dispatch runtime "task.begin" [ "goal", jsonString "verify discovery is read-only" ] |> expectOk "begin read-only discovery task" |> ignore
         dispatch runtime "search-effect" [ "effect", jsonString "fs.write" ] |> expectOk "inspect effect without running it" |> ignore
+        dispatch runtime "context" [ "word", jsonString "discovery.write"; "maxDepth", JsonValue.Create(0) :> JsonNode; "maxWords", JsonValue.Create(1) :> JsonNode ]
+        |> expectOk "inspect an effectful candidate through compact context"
+        |> ignore
         let status = dispatch runtime "task.status" [] |> expectOk "inspect task after query"
         equal 0 ((status["data"]["effects"]).AsObject().Count) "discovery does not record provider effects"
         equal 0 ((status["data"]["wordsUsed"]).AsArray().Count) "discovery does not invoke words"
