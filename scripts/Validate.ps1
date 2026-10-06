@@ -51,6 +51,7 @@ try {
             'business-acceptance' = 'AgentLang.Business.Tests'
             'business-contracts-acceptance' = 'AgentLang.Business.Contracts.Tests'
             'trusted-values-acceptance' = 'AgentLang.TrustedValues.Tests'
+            'business-language-acceptance' = 'AgentLang.Business.Language.Tests'
             'value-inspection-acceptance' = 'AgentLang.ValueInspection.Tests'
             'source-acceptance' = 'AgentLang.Source.Tests'
             'flow-acceptance' = 'AgentLang.Flow.Tests'

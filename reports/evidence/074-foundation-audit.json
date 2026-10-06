@@ -1,0 +1,38 @@
+{
+  "revision": "3cdc7fc988ca6be752dd34b6870fff4f9d809269",
+  "dirty": true,
+  "coreSourceChanges": [],
+  "files": [
+    {
+      "path": "examples/business-values.agent",
+      "sha256": "fe8227ce0c38ff6e193a74292a5b1d0ed0ac3e3869f0fe8feaf56eca62f30cbd"
+    },
+    {
+      "path": "examples/business-store.agent",
+      "sha256": "f7dfe3d6cafa66fd888e76c5e925fc424aa05465b40e896467c2e1f064b767f3"
+    },
+    {
+      "path": "tests/AgentLang.Business.Language.Tests/Program.fs",
+      "sha256": "98e279b7864e2feacaa00b70da9c886f33e18547436b44647a5d2637cbd6a8e9"
+    },
+    {
+      "path": "tests/AgentLang.Business.Language.Tests/AgentLang.Business.Language.Tests.fsproj",
+      "sha256": "960b134bab5a754ed7ceb1e670da93f56496699ebb760743faf0e3d50b02180a"
+    },
+    {
+      "path": "scripts/Validate.ps1",
+      "sha256": "5b17670d6a098478e02bfea9973f0db2bf4510f18f8514c7ad2dd7f10fc27f0a"
+    },
+    {
+      "path": "AgentLang.sln",
+      "sha256": "86c15636a2a0a308185e0e59ea7d52fe1cc541f87d0fcc280bdd462d7ca0280e"
+    }
+  ],
+  "authoredWords": 32,
+  "nominalScalars": 10,
+  "records": 16,
+  "attachedTests": 83,
+  "examples": 27,
+  "primitiveCount": 58,
+  "semanticBoundary": "Flow lowers through existing typed IR; no Core, IR/storage format, or provider changes"
+}

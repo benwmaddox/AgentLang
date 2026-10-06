@@ -150,6 +150,14 @@ The dictionary contains 58 primitives. Domain wrappers, Store transitions,
 quantity alignment and executable benchmark adapters remain pending; this is
 not full business parity or a new agent-efficiency result.
 
+[Checkpoint 074](../reports/074-business-language-foundation.md) adds the Flow
+business foundation: ten strict nominal scalars, sixteen records including
+lookup helper states, and 32 authored value/Store words with 83 tests and 27
+examples. Independent reference checks and library publication/reload gates
+cover this slice. Complete subscription/invoice/payment/email transitions,
+benchmark seed and paired task adapters remain pending; public record
+constructors do not enforce the reference's private-record invariants.
+
 Historical external-agent workflow evidence: [report 054](../reports/054-flow-renewal-agent-control.md)
 records a separate inherited-history Luna/max control that created one tested
 library word by composing a retained domain word. Fresh-process acceptance
@@ -239,7 +247,7 @@ Standalone backend and baseline-audit evidence: [milestone 008](../reports/008-s
 | 40 | Verified: deterministic structural search | Exact nested nominal input/output types, declared effects and direct dependency queries; no embeddings |
 | 41 | Verified: compact bounded dependency/type context | Complete JSON entries, parser-verified call references, recursive nominal declarations, concise docs, hard budgets/omissions and exact transported data bytes; not inferred task relevance |
 | 42 | Partial: context/token accounting | Harness request bytes/provider usage and optional subagent inspection admission with raw/selected/pipe-delivery counters verified; exact model-token budget/retrieval breakdown pending |
-| 43 | Partial: complete small-business fixture | Customer language demo, conventional reference and standalone typed fixture contract; full language domain, matched adapters, 40–60 words and 50–100 tests pending |
+| 43 | Partial: complete small-business fixture | Strong Flow values and immutable Store foundation (32 words, 83 tests); full transitions, benchmark seed and matched adapters pending |
 | 44 | Excluded from first domain: optional later simulation | Preserve for later generalization, not a V1 blocker |
 | 45 | Partial: equivalent conventional environment | Small Flow/F# fixtures and shared task vectors audited in report 057; full business fixture parity pending |
 | 46 | Partial: fresh/growing/debugging/discovery/refactoring experiments | Small fresh/growing/discovery pilot and rotated repeat complete; debugging/refactoring and broader controlled categories pending |

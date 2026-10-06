@@ -1,0 +1,16 @@
+{
+  "name": "focused-business-language",
+  "status": "passed",
+  "revision": "3cdc7fc988ca6be752dd34b6870fff4f9d809269",
+  "dirty": true,
+  "command": "dotnet run --project tests/AgentLang.Business.Language.Tests/AgentLang.Business.Language.Tests.fsproj --configuration Release -- --evidence reports/evidence/074-focused-business-language.json",
+  "result": "passed 6 groups, 1368 assertions",
+  "assertions": 1368,
+  "groups": 6,
+  "authoredWords": 32,
+  "authoredTypes": 26,
+  "attachedTests": 83,
+  "examplesRun": 27,
+  "reloadChecks": 156,
+  "recordConstructorBoundary": "Generated record constructors are public; Customer.kind and Product.unit-price invariants can be bypassed. Scalar validators still reject invalid Email, IDs, statuses, and Instant values."
+}

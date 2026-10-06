@@ -84,3 +84,8 @@ Clean [main CI](evidence/072-main-ci.json) passed all 32 prior checks at
 `8066875`; its [artifact](evidence/072-main-validation.json) records the exact
 revision with `dirty: false`. That proves the prior paired-trial publication,
 not this primitive implementation.
+
+Publication follow-up: clean [main CI](evidence/073-main-ci.json) succeeded at
+`3cdc7fc988ca6be752dd34b6870fff4f9d809269`. Its
+[validation artifact](evidence/073-main-validation.json) records all 33 checks
+passing with `dirty: false`, confirming the committed primitive implementation.

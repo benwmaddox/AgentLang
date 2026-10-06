@@ -4,6 +4,14 @@ Status: full business fixture design, with its trusted value prerequisites now i
 
 ## Recommendation
 
+The first implementation slice is in
+[`business-values.agent`](../examples/business-values.agent) and
+[`business-store.agent`](../examples/business-store.agent). Both use Flow/1
+syntax. The foundation acceptance runner joins them in that order and stages
+one atomic document. The schematic Stack excerpts below describe the intended
+schema; the Flow files are the executable representation. Full transitions,
+deterministic seed and matched benchmark adapters are still pending.
+
 Represent the same immutable business state in AgentLang as records containing typed lists. Use the existing closed higher-order `list.fold` construct for lookup, replacement, and invoice totals. Its callback is a statically named word with signature `Accumulator T -> Accumulator`; the fold itself has signature `List<T> Accumulator -> Accumulator`, visits elements from left to right, and returns the initial accumulator for an empty list. A callback cannot capture caller locals, so the accumulator record must carry search keys, the original store, and any values needed during the fold. This keeps the language's no-closure rule visible and avoids a business-specific host escape hatch.
 
 Keep business state transitions pure. The current runtime provides a virtual filesystem and fixed clock, but no injectable database, payment, or email providers. Model payment authorization and email delivery as explicit `Result` inputs to pure transition words: the same deterministic fake used by the F# oracle supplies an `Ok` receipt or an `Error`, and the AgentLang word either returns a new Store or a structured error. Do not label this as a real network effect. A later provider API can replace the input boundary only after host isolation and capability behavior are designed and tested.
@@ -33,7 +41,7 @@ The current `Compiler.primitives` list contains 58 trusted words, versus 49 befo
 | `instant.before?` | `String String -> Bool` | Compare the normalized UTC instants, including equality boundaries used by cancellation and renewal tasks. |
 | `instant.add-days` | `String Int -> Result<String, String>` | Support deterministic expiry windows and reminder tasks with checked date-range errors. |
 
-These nine helpers are implemented host API. Host-level null inputs are rejected by the pure helper functions; this does not add null to language values. Focused tests cover malformed inputs, boundaries, overflow, equality, offsets and UTC normalization, plus typed-IR execution and reference conformance. Preserve the immutable reference contracts and normalize valid alternate input forms at the explicit constructor boundary. The full language-domain wrappers and Store fixture below remain unimplemented.
+These nine helpers are implemented host API. Host-level null inputs are rejected by the pure helper functions; this does not add null to language values. Focused tests cover malformed inputs, boundaries, overflow, equality, offsets and UTC normalization, plus typed-IR execution and reference conformance. Preserve the immutable reference contracts and normalize valid alternate input forms at the explicit constructor boundary. The foundation files now compose these helpers; the full business transitions and benchmark fixture remain unfinished.
 
 Low-level errors are `INVALID_GUID`, `INT_OVERFLOW`, `INVALID_INSTANT` and
 `INSTANT_RANGE`. `instant.before?` requires two canonical UTC strings and raises
@@ -125,7 +133,7 @@ record BusinessError
 end
 ```
 
-`instant.is-canonical-utc?` and the other tabled operations are proposed additions, not current primitives. Do not implement canonical timestamps with permissive string heuristics. An alternative is to make `instant.parse-utc` the only public construction word and freeze a validator that calls it; scalar validators currently must return Bool, so a direct, bounded predicate is still needed for the generated `Instant.new` constructor. `DateTimeOffset.ToUniversalTime().ToString("O")` emits a round-trip string with a UTC `+00:00` offset; normalization and validation must agree on that exact representation.
+`instant.is-canonical-utc?` and the other tabled operations are implemented primitives. Use the predicate for the generated `Instant.new` validator and normalize alternate input forms through `instant.parse-utc` before construction. `DateTimeOffset.ToUniversalTime().ToString("O")` emits a round-trip string with a UTC `+00:00` offset; normalization and validation agree on that exact representation.
 
 Use nominal status wrappers because the conventional implementation uses discriminated unions. Their validators accept only the corresponding literal set; expose small constants or constructors only after the status type has been validated. Keep task fields raw where policy is not yet defined: `Customer.kind` is `String`, and `Subscription.term` is `String`. In particular, do not add premium or annual behavior to those types.
 
@@ -230,9 +238,9 @@ Effect declarations for these foundation words are `none`; they transform passed
 
 | Conventional contract | Current AgentLang gap or difference | Required decision/evidence |
 | --- | --- | --- |
-| Opaque IDs use `Guid.TryParse` and Guid equality | No GUID validator; a valid noncanonical string would remain textually unequal to the same Guid in another form | Add and test canonical `D` validation for both fixtures, or normalize through a constructor that cannot be bypassed via generated `.new`. Test uppercase, braces, `N`, `B`, `P`, malformed text, and equality. |
+| Opaque IDs use `Guid.TryParse` and Guid equality | Normalization and canonical validation primitives exist; domain construction must wire both together | Normalize accepted input forms before nominal construction; generated `.new` must reject noncanonical text. Test uppercase, braces, `N`, `B`, `P`, malformed text, and equality. |
 | Email uses the exact bounded ASCII regex in `BUSINESS.md` | Existing demo `email.valid?` only checks a few string shapes and admits extra cases | Use one trusted, documented validator with the same accepted/rejected corpus, or revise both contracts and rerun the F# oracle. |
-| Money is signed Int64 minor units; add/multiply are checked Results | `Money : Int` can preserve nominal identity, but checked overflow currently becomes a runtime diagnostic rather than the same Result code | Add checked integer primitives and map their codes into `BusinessError`; test Int64 edges without Float. |
+| Money is signed Int64 minor units; add/multiply are checked Results | Checked integer Result primitives exist; domain wrappers must retain nominal identity and map errors | Map checked operation errors into `BusinessError`; test Int64 edges without Float. |
 | Invoice quantity is F# `int` (Int32) | AgentLang `Int` is Int64 | Prefer making F# quantity Int64, or add a documented Int32 range check to AgentLang. Test the boundary on both sides. |
 | F# timestamps accept DateTimeOffset and normalize to UTC | AgentLang stores only primitive String/Int/Float; `clock.now` returns a configured string | Normalize and compare exact instants with pure date helpers and pin the input format. Require canonical UTC `+00:00` strings inside `Instant` so alternate offset strings cannot compare unequal after F# normalization. Test offsets, equality, malformed input, leap day, and date-range overflow. |
 | F# status types are discriminated unions | AgentLang has nominal scalar wrappers, not user-defined sum types | Use validated status string wrappers and test that constructors reject every other literal. Treat representation as an explicit limitation. |
@@ -244,7 +252,7 @@ Effect declarations for these foundation words are `none`; they transform passed
 
 Add one readable fixture such as `examples/business.agent`, split into separate files only if the loader's existing persistence model supports that without making agent discovery harder. Keep types and initial seed data reusable, but keep benchmark tasks and hidden acceptance checks outside the starting dictionary. The seed should use fixed IDs and normalized timestamps; it must be a pure `business.seed : Unit -> Store` word so Flat and Growing runs begin identically.
 
-Before adding the domain fixture, land `list.fold` and its Core tests in the containers milestone: empty/nonempty order, wrong callback signatures, callback dependency/caller graph, effect preflight even for empty input, instruction limits, type joins, and project reload. Exercise accumulators that carry an ID and partial Result; do not test only numeric sum.
+Reuse the validated `list.fold` implementation and its Core tests: empty/nonempty order, wrong callback signatures, callback dependency/caller graph, effect preflight even for empty input, instruction limits, type joins, and project reload. Add domain tests for accumulators that carry an ID and partial Result; do not test only numeric sum.
 
 The business-language acceptance should then verify:
 

@@ -8,10 +8,11 @@ Run `./scripts/Validate.ps1` from PowerShell to build the solution and run every
 
 CI runs the same command and uploads its JSON report. Human feedback and milestone conclusions belong in numbered Markdown reports here. Credentials must never appear in reports. Live provider traces can contain project information and should remain in the experiment's local output directory unless deliberately reviewed for publication.
 
-Current checkpoint: [073 — Strong-business value prerequisites](073-strong-business-value-primitives.md)
-adds nine pure validation/normalization/checked-arithmetic primitives, tested
-against reference contracts and through the typed IR. Domain fixture and
-benchmark adapters remain incomplete. The latest paired agent result is
+Current checkpoint: [074 — Business vocabulary foundation](074-business-language-foundation.md)
+adds strict Flow values and immutable Store lookup/add words with library
+coverage and independent reference checks. Full transitions and benchmark
+adapters remain incomplete. The preceding [073](073-strong-business-value-primitives.md)
+primitives passed clean main CI. The latest paired agent result is
 [072 — Conventional stateful comparison](072-conventional-stateful-comparison.md):
 both actors succeed, with fewer F# exchanges but no controlled cost conclusion.
 
