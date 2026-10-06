@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "trial": "repeat-001/conventional-task-3",
+  "accepted": true,
+  "independentChecks": 43,
+  "behavioralVectors": 20,
+  "exchanges": 19,
+  "requestPayloadUtf8Bytes": 2584,
+  "responsePayloadUtf8Bytes": 19752,
+  "runtimeErrors": 1,
+  "errors": [
+    {
+      "index": 4,
+      "operation": "patch",
+      "code": "HASH_INVALID"
+    }
+  ],
+  "modelTokens": null,
+  "modelTurns": null,
+  "controlledDuration": null,
+  "teardown": "Actor stopped existing session 11808 with Ctrl+C, exit 0; no additional JSONL requests.",
+  "promptAudit": "Intended prompt archived before launch; actual provider prompt bytes unavailable.",
+  "sourceAudit": {
+    "onlyAnnualRenewableDomainEdit": true,
+    "projectUnchanged": true,
+    "previousTwelveTestsPreserved": true,
+    "newOwnTestCases": 6,
+    "totalOwnTestCases": 18,
+    "successfulPatches": 2
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "trial": "repeat-001/growing-task-3",
+  "accepted": true,
+  "independentChecks": 48,
+  "behavioralVectors": 20,
+  "exchanges": 14,
+  "requestPayloadUtf8Bytes": 1578,
+  "responsePayloadUtf8Bytes": 10216,
+  "runtimeErrors": 0,
+  "errors": [],
+  "modelTokens": null,
+  "modelTurns": null,
+  "controlledDuration": null,
+  "teardown": "Actor stopped existing session 68784 with Ctrl+C, exit 0; no additional JSONL requests.",
+  "promptAudit": "Intended prompt archived before launch; actual provider prompt bytes unavailable.",
+  "typesPreserved": true,
+  "manifestHash": "b8d42474ecf2d2c8ad96b58440ff334048977381024a9db028608ef0bc2da926",
+  "persistentWords": 3,
+  "previousWordsPreserved": 2,
+  "ownTestRuns": [
+    {
+      "results": [
+        {
+          "name": "annual-and-renewable",
+          "word": "subscription.annual-renewable?",
+          "passed": true,
+          "expected": "true",
+          "actual": [
+            "true"
+          ]
+        },
+        {
+          "name": "annual-but-not-renewable",
+          "word": "subscription.annual-renewable?",
+          "passed": true,
+          "expected": "false",
+          "actual": [
+            "false"
+          ]
+        },
+        {
+          "name": "case-sensitive-term",
+          "word": "subscription.annual-renewable?",
+          "passed": true,
+          "expected": "false",
+          "actual": [
+            "false"
+          ]
+        },
+        {
+          "name": "monthly-and-renewable",
+          "word": "subscription.annual-renewable?",
+          "passed": true,
+          "expected": "false",
+          "actual": [
+            "false"
+          ]
+        }
+      ],
+      "coverage": {
+        "instructionsCovered": 7,
+        "instructionsTotal": 7,
+        "branchesCovered": 0,
+        "branchesTotal": 0,
+        "uncoveredInstructions": [],
+        "uncoveredBranchOutcomes": []
+      }
+    }
+  ]
+}

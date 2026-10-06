@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "trial": "repeat-001/flat-task-3",
+  "accepted": true,
+  "independentChecks": 48,
+  "behavioralVectors": 20,
+  "exchanges": 13,
+  "requestPayloadUtf8Bytes": 2264,
+  "responsePayloadUtf8Bytes": 8597,
+  "runtimeErrors": 1,
+  "errors": [
+    {
+      "index": 9,
+      "operation": "define",
+      "code": "FLOW_ROOT_CALL_REQUIRES_ARGUMENTS"
+    }
+  ],
+  "modelTokens": null,
+  "modelTurns": null,
+  "controlledDuration": null,
+  "teardown": "Actor stopped existing session 38877 with Ctrl+C, exit 0; no additional JSONL requests.",
+  "promptAudit": "Intended prompt archived before launch; actual provider prompt bytes unavailable.",
+  "typesPreserved": true,
+  "manifestHash": "c5821b15fe6561e2fcee1282b64f4d8208fbacb5aa052c9c682911c489d8da1f",
+  "persistentWords": 1,
+  "ownTestRuns": [
+    {
+      "results": [
+        {
+          "name": "annual-and-renewable",
+          "word": "subscription.annual-renewable?",
+          "passed": true,
+          "expected": "true",
+          "actual": [
+            "true"
+          ]
+        },
+        {
+          "name": "annual-but-not-renewable",
+          "word": "subscription.annual-renewable?",
+          "passed": true,
+          "expected": "false",
+          "actual": [
+            "false"
+          ]
+        },
+        {
+          "name": "case-sensitive-term",
+          "word": "subscription.annual-renewable?",
+          "passed": true,
+          "expected": "false",
+          "actual": [
+            "false"
+          ]
+        },
+        {
+          "name": "nonannual-but-renewable",
+          "word": "subscription.annual-renewable?",
+          "passed": true,
+          "expected": "false",
+          "actual": [
+            "false"
+          ]
+        }
+      ],
+      "coverage": {
+        "instructionsCovered": 7,
+        "instructionsTotal": 7,
+        "branchesCovered": 0,
+        "branchesTotal": 0,
+        "uncoveredInstructions": [],
+        "uncoveredBranchOutcomes": []
+      }
+    }
+  ]
+}

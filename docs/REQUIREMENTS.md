@@ -48,6 +48,12 @@ repeated trials are accepted; nine remain. Existing definitions/tests are
 preserved, and language own branch coverage is complete. No overall efficiency
 advantage or small-context success is established.
 
+[Checkpoint 062](../reports/062-repeat-eligibility-task.md) verifies all three
+annual-eligibility outcomes, bringing the repeated sequence to nine accepted
+trials. Earlier customer definitions/tests are preserved. Six multi-helper
+renewal/savings trials remain the immediate evaluation priority; interface
+recovery costs are recorded separately from behavioral correctness.
+
 Latest external-agent workflow evidence: [report 054](../reports/054-flow-renewal-agent-control.md)
 records a separate inherited-history Luna/max control that created one tested
 library word by composing a retained domain word. Fresh-process acceptance

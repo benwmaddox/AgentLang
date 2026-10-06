@@ -1,0 +1,3 @@
+test subscription.annual-renewable?/nonannual-but-renewable {
+    subscription::annual-renewable?(subscription::new("monthly", true)) => false
+}

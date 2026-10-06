@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "sourceRevision": "dc18d6efc0d002d1a752024301d42f54cdd49c07",
+  "dirty": false,
+  "configuration": "Release",
+  "createdAt": "2026-10-06T16:28:15.3305471+00:00",
+  "files": [
+    {
+      "path": "conventional-bin/AgentLang.Conventional.Cli.deps.json",
+      "bytes": 2974,
+      "sha256": "286c223538b469e3a5a6364bebc0d68051682db3c80cd6bb043def2b7b33eace"
+    },
+    {
+      "path": "conventional-bin/AgentLang.Conventional.Cli.dll",
+      "bytes": 17920,
+      "sha256": "f2d232278cb75add8e97400e60df71e6abc1ec90dcc53bc58c98475c11af9ef8"
+    },
+    {
+      "path": "conventional-bin/AgentLang.Conventional.Cli.exe",
+      "bytes": 156160,
+      "sha256": "a33569fa3d2d370a3fde704fa38b3e438653ee69b231ffe5e85e1197d2aeeb0d"
+    },
+    {
+      "path": "conventional-bin/AgentLang.Conventional.Cli.pdb",
+      "bytes": 4824,
+      "sha256": "beba77ace8b39e3297babc4d1ddaf2cb4424650acc8366d7dafdc38b0b4d3b28"
+    },
+    {
+      "path": "conventional-bin/AgentLang.Conventional.Cli.runtimeconfig.json",
+      "bytes": 340,
+      "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+    },
+    {
+      "path": "conventional-bin/AgentLang.Conventional.dll",
+      "bytes": 53248,
+      "sha256": "395f46fcdb5a54a56c2011736e79dfc9dbef8cd39ecea088328fc4d982e57a2c"
+    },
+    {
+      "path": "conventional-bin/AgentLang.Conventional.pdb",
+      "bytes": 12848,
+      "sha256": "d948c8e859f054ce370e616b72ffe4483b7a565441ba16f25bb21dc646190b30"
+    },
+    {
+      "path": "conventional-bin/AgentLang.Conventional.xml",
+      "bytes": 1055,
+      "sha256": "621b5c7c93c495c1dfc83279858dbb31ecd999f56d5237070bf05c59159b81eb"
+    },
+    {
+      "path": "conventional-bin/FSharp.Core.dll",
+      "bytes": 2314000,
+      "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+    },
+    {
+      "path": "language-bin/AgentLang.Cli.deps.json",
+      "bytes": 2903,
+      "sha256": "6382f6dc29bb8f827824839010e313b266e51a3f87a4fdb8c382931d2549e97e"
+    },
+    {
+      "path": "language-bin/AgentLang.Cli.dll",
+      "bytes": 37888,
+      "sha256": "71d1e5ccefa3e7e499b70b168ff65666434428b33025429c8f64d0a9d716ea44"
+    },
+    {
+      "path": "language-bin/AgentLang.Cli.exe",
+      "bytes": 156160,
+      "sha256": "cc126f89d0ecbfcbb6834403ab32445b6d0647c684b9c1a6c6a7322c83c1b60e"
+    },
+    {
+      "path": "language-bin/AgentLang.Cli.pdb",
+      "bytes": 10140,
+      "sha256": "eefdc7bdf30847985191664f99949303359d55bd5bb091e9c1ff47d182b107ae"
+    },
+    {
+      "path": "language-bin/AgentLang.Cli.runtimeconfig.json",
+      "bytes": 340,
+      "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+    },
+    {
+      "path": "language-bin/AgentLang.Core.dll",
+      "bytes": 2062336,
+      "sha256": "d7dab886cbe44fa1655f1b2dc3681d85220d0aa40d1b8280f10d405ad5b6ef33"
+    },
+    {
+      "path": "language-bin/AgentLang.Core.pdb",
+      "bytes": 547376,
+      "sha256": "f6e0e4ecfc0ac6e72b6e174d3130cea65a4d4710e176542177323b06e83cfcc6"
+    },
+    {
+      "path": "language-bin/AgentLang.Core.xml",
+      "bytes": 31160,
+      "sha256": "792842ac8d580931d7c67d68522b8eded68b39be37739eb3607e3f74b866bc6f"
+    },
+    {
+      "path": "language-bin/FSharp.Core.dll",
+      "bytes": 2314000,
+      "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+    }
+  ]
+}
