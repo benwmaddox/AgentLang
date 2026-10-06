@@ -1,0 +1,3 @@
+test customer.premium?/exact-match {
+    customer::premium?(customer::new("premium", 0.0)) => true
+}

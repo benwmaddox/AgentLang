@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "mode": "Conventional",
+  "task": 1,
+  "projectUnchanged": true,
+  "unrelatedEntryPointsPreserved": 4,
+  "selfTests": 7,
+  "limits": "Protocol trace validates the fixed test runner; independent 20-vector acceptance is separate."
+}

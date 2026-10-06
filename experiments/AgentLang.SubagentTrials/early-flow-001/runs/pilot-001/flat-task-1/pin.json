@@ -1,0 +1,40 @@
+{
+  "sourceRevision": "e87931a1ed22b05e60443c158cf9c2527c0ba6f6",
+  "model": "gpt-6-luna",
+  "reasoning": "max",
+  "history": "none",
+  "mode": "Flat",
+  "task": 1,
+  "startManifest": "272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e",
+  "files": [
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/agent-primer.md",
+      "sha256": "49e8ee0586167169958252418aeae51c2947ad4bc1c5960335a07e6b2ff5ef6a"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/tasks.md",
+      "sha256": "639a55a7f1d7be0ae4f6de0de7999293259e13253acfe7d71b17f621ccb3a253"
+    },
+    {
+      "path": "scripts/Start-SubagentTrialHost.ps1",
+      "sha256": "19f0ac0eae21e928dd6606a4de7be32d21338d31e21e499a50524099786f813f"
+    },
+    {
+      "path": ".agentlang/early-pilot-001/bin/AgentLang.Cli.dll",
+      "sha256": "31235b45cb3b7149abf096d579a14643157e29fe26839df3135f724c38362b00"
+    },
+    {
+      "path": ".agentlang/early-pilot-001/bin/AgentLang.Core.dll",
+      "sha256": "0b04feea4a54951138a9d07ea6e40e36c73eda3504e6ab021c0a9e6b1d2f0e1f"
+    }
+  ],
+  "exactTokens": null,
+  "limits": "Protocol-only trial instructions; same OS permissions, no enforced OS filesystem isolation. Exact model token/turn usage unavailable.",
+  "startPointer": {
+    "formatVersion": 1,
+    "generation": 3,
+    "kind": "manifest",
+    "manifestHash": "272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e"
+  },
+  "pinRecordedBeforeMutation": true
+}

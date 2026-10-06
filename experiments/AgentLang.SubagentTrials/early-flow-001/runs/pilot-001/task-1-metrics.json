@@ -1,0 +1,31 @@
+[
+  {
+    "arm": "flat",
+    "task": 1,
+    "protocolExchanges": 16,
+    "runtimeErrors": 2,
+    "errorCodes": [
+      "DISCOVERY_INVALID_ARGUMENT",
+      "FLOW_ROOT_CALL_REQUIRES_ARGUMENTS"
+    ],
+    "requestPayloadBytes": 1869.0,
+    "responsePayloadBytes": 20063.0,
+    "exactInputTokens": null,
+    "exactOutputTokens": null,
+    "modelTurns": null,
+    "limits": "Protocol counts and bytes only; not complete model context or token usage. Overlapping apparatus runs exclude controlled latency claims."
+  },
+  {
+    "arm": "conventional",
+    "task": 1,
+    "protocolExchanges": 6,
+    "runtimeErrors": 0,
+    "errorCodes": [],
+    "requestPayloadBytes": 2230.0,
+    "responsePayloadBytes": 2552.0,
+    "exactInputTokens": null,
+    "exactOutputTokens": null,
+    "modelTurns": null,
+    "limits": "Protocol counts and bytes only; not complete model context or token usage. Overlapping apparatus runs exclude controlled latency claims."
+  }
+]

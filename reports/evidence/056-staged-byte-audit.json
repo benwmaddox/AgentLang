@@ -1,0 +1,145 @@
+{
+  "passed": true,
+  "files": [
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-1/acceptance.json",
+      "gitBlob": "a566b859d675ace3f124c99eedf9a586049a3da8",
+      "matched": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-1/Domain.fs",
+      "gitBlob": "4c69c9e4de23bed92e49f925939c20ab3e124ca6",
+      "matched": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-1/EarlyPilot.fsproj",
+      "gitBlob": "44664ef86135b4a063c1e150e17b9c3d145dd13b",
+      "matched": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-1/pin.json",
+      "gitBlob": "ce300dbfe6df69d4514f8b7f6139914d0c9711f6",
+      "matched": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-1/SelfTests.fs",
+      "gitBlob": "34b682fc6c70cfaf250f107f526d8a1298696348",
+      "matched": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-1/state-audit.json",
+      "gitBlob": "17366e16effead45abe59b77daf851457b1c987c",
+      "matched": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-1/trace.jsonl",
+      "gitBlob": "5701b1bd6365b28d32c5a86b5a5f0c9a4a1c17a8",
+      "matched": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/acceptance.json",
+      "gitBlob": "a565bf0fa14fe1784fffe7664d050b7b7aaaa840",
+      "matched": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/pin.json",
+      "gitBlob": "764e626a0f0a9d859878e186719bdeb3cba2e779",
+      "matched": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/project-state/store/CURRENT",
+      "gitBlob": "e90e5fb584ee8f1801559c61e293288f3b05afbe",
+      "matched": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/project-state/store/manifests/22525a84bdaff047135df179887e4064b8844025e44f6549ab792224389a4862.json",
+      "gitBlob": "d7346110d7c292730582186ae9eca0213b49ce0a",
+      "matched": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/project-state/store/manifests/272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e.json",
+      "gitBlob": "9de68b6da7ed81b36ee0e560655cdcd36a1baa0c",
+      "matched": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/project-state/store/manifests/8ab71325aaabb58ff1c671d773c397bf61e74a1020bb39fc39425f47e950ded7.json",
+      "gitBlob": "d1498dd6a36178f15434c3b077088b07987b28e9",
+      "matched": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/project-state/store/objects/07d93dae53216b6a1010f784f3fab79d868f65d5a300e115853c1ee591c72424.agent",
+      "gitBlob": "12235f14dfc1dad72b29fcbb2e1b233859b7b99d",
+      "matched": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/project-state/store/objects/0a09ec29fa93e0951a01017f708dbdb0ae4d13cec9c30fb033fbe3de55d9c9e7.agent",
+      "gitBlob": "6e6a4f6653e1d486f179ddb382997ff8071d8661",
+      "matched": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/project-state/store/objects/2754e501440b8c7cec15f3434d0233fda4154b9d631355748f1f323df2be80f5.agent",
+      "gitBlob": "c64996ad89c48f3f63ea5ec000c0659aa94b49d6",
+      "matched": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/project-state/store/objects/3b4129d45c4a2e5f59e6e8149dcb47f228094288735844424e1ece103f129344.agent",
+      "gitBlob": "117e1d38dd8f246c1014a267346e732336073beb",
+      "matched": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/project-state/store/objects/4d1f76127f259ff47d25e8ad4bed7c2ae6c9bf18846ae243179235c28278d313.agent",
+      "gitBlob": "ee2ca71bca29bb82f71962cac7bb5e1d27b9baec",
+      "matched": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/project-state/store/objects/6b964fd1a60a1c51e0900f74a69ee486c227aacf5bca2f24a06289cecc237bf7.agent",
+      "gitBlob": "bc7ad8a9e14e2e1ab7353741534b82bcfcf5627a",
+      "matched": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/project-state/store/objects/b362735401b95e899b7400eb487e97680a73a61a65d52c3ee8458cb4617c4dc7.agent",
+      "gitBlob": "385f8d4c5acb714558097704a91556b579e4e390",
+      "matched": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/project-state/store/objects/c701fc54256ab52139509aff9f40ca54c54dcc6f31f6577dc5836f7f0fdd7ad7.agent",
+      "gitBlob": "01e65d03261c380374c72eacf73f46da6b7cc5db",
+      "matched": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/project-state/store/objects/cba51aed7789788bafdfed252595b21078bd2e16620690bd2ef0eff0179feeca.agent",
+      "gitBlob": "340f374d31b139a68aedab93cc6d47bcf0f5f6d2",
+      "matched": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/project-state/store/objects/ebfda0ad236c50a2a29cf677ba9465b108ef55c039f3edbf34db743107587893.agent",
+      "gitBlob": "1f819f245db3e66bfbf8b97573b60e5875fb1581",
+      "matched": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/project-state/store/snapshots/matched-renewal-start.json",
+      "gitBlob": "adc9ef23658c2abdb250917bc68dae71074fe3ca",
+      "matched": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/project-state/store/WRITE.lock",
+      "gitBlob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "matched": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/state-audit.json",
+      "gitBlob": "aaaa866d4cbae16964d2be622a403205baec4dfc",
+      "matched": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/trace.jsonl",
+      "gitBlob": "a9a950826d36edaba815f60279798a99d7f8233c",
+      "matched": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/task-1-metrics.json",
+      "gitBlob": "8b5ede8d9c977c6a1c119efb124ff556ac6ee187",
+      "matched": true
+    }
+  ]
+}

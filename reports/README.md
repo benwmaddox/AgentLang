@@ -32,3 +32,4 @@ Report 052 exact clean source CI passed all 27 checks on `698ebcc`
 the earlier dirty-tree gate and from subsequent report-only publication.
 
 - [055 — Early evaluation preparation](055-early-evaluation-preparation.md): five-task matched pilot contract, independent acceptance and wrong-solution controls; bounded typed fold integration. Comparative agent results remain pending.
+- [056 — Early external-agent pilot](056-early-agent-pilot.md): first fresh language/conventional task pair accepted; protocol costs and friction recorded. Cumulative reuse sequence remains in progress.

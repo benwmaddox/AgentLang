@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 1,
+  "status": "accepted-first-pair-artifact-inventory",
+  "files": [
+    {
+      "path": "conventional-task-1/acceptance.json",
+      "bytes": 9210,
+      "sha256": "947a71b383264473a29e6102f480144bf8a476626dcc584934b511440acf5e99"
+    },
+    {
+      "path": "conventional-task-1/Domain.fs",
+      "bytes": 727,
+      "sha256": "9ab970154193b8321adb1870c3f2f40724162df28a052166485072f656c410f9"
+    },
+    {
+      "path": "conventional-task-1/EarlyPilot.fsproj",
+      "bytes": 321,
+      "sha256": "90c90151c9142926d936e94721336ea709c3b3093557aa4d5133d143d6075257"
+    },
+    {
+      "path": "conventional-task-1/pin.json",
+      "bytes": 765,
+      "sha256": "315af474d50ed9f433620009904b8f259b12d3de3f147bc4c187ab8412b3a4d8"
+    },
+    {
+      "path": "conventional-task-1/SelfTests.fs",
+      "bytes": 1029,
+      "sha256": "390d7cd46d0a47a99e83884abc98a3beaa080ce244521197167167145c5c51dd"
+    },
+    {
+      "path": "conventional-task-1/state-audit.json",
+      "bytes": 260,
+      "sha256": "ba47dd0ac09f452f626106922b76d651e0380b04f3d7bce77849be8ef5c8c204"
+    },
+    {
+      "path": "conventional-task-1/trace.jsonl",
+      "bytes": 26275,
+      "sha256": "906a1de523923a45cfa02353ea555fc656fb5e2c9c8e4d027348d9d27c10a648"
+    },
+    {
+      "path": "flat-task-1/acceptance.json",
+      "bytes": 16724,
+      "sha256": "02505a69e261ed7046d1ae77bfff19b8e22785126d203ee92439fbaf9768902f"
+    },
+    {
+      "path": "flat-task-1/pin.json",
+      "bytes": 1527,
+      "sha256": "d181a109d6780bf893c463d2acba10882bddf1b111a05382e63bc039006a906c"
+    },
+    {
+      "path": "flat-task-1/project-state/store/CURRENT",
+      "bytes": 134,
+      "sha256": "b6b16f6c83c13370c626fc47541adc6073768947f45b6f8fa64d1d4b0c9f6962"
+    },
+    {
+      "path": "flat-task-1/project-state/store/manifests/22525a84bdaff047135df179887e4064b8844025e44f6549ab792224389a4862.json",
+      "bytes": 5411,
+      "sha256": "22525a84bdaff047135df179887e4064b8844025e44f6549ab792224389a4862"
+    },
+    {
+      "path": "flat-task-1/project-state/store/manifests/272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e.json",
+      "bytes": 583,
+      "sha256": "272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e"
+    },
+    {
+      "path": "flat-task-1/project-state/store/manifests/8ab71325aaabb58ff1c671d773c397bf61e74a1020bb39fc39425f47e950ded7.json",
+      "bytes": 375,
+      "sha256": "8ab71325aaabb58ff1c671d773c397bf61e74a1020bb39fc39425f47e950ded7"
+    },
+    {
+      "path": "flat-task-1/project-state/store/objects/07d93dae53216b6a1010f784f3fab79d868f65d5a300e115853c1ee591c72424.agent",
+      "bytes": 844,
+      "sha256": "07d93dae53216b6a1010f784f3fab79d868f65d5a300e115853c1ee591c72424"
+    },
+    {
+      "path": "flat-task-1/project-state/store/objects/0a09ec29fa93e0951a01017f708dbdb0ae4d13cec9c30fb033fbe3de55d9c9e7.agent",
+      "bytes": 188,
+      "sha256": "0a09ec29fa93e0951a01017f708dbdb0ae4d13cec9c30fb033fbe3de55d9c9e7"
+    },
+    {
+      "path": "flat-task-1/project-state/store/objects/2754e501440b8c7cec15f3434d0233fda4154b9d631355748f1f323df2be80f5.agent",
+      "bytes": 101,
+      "sha256": "2754e501440b8c7cec15f3434d0233fda4154b9d631355748f1f323df2be80f5"
+    },
+    {
+      "path": "flat-task-1/project-state/store/objects/3b4129d45c4a2e5f59e6e8149dcb47f228094288735844424e1ece103f129344.agent",
+      "bytes": 100,
+      "sha256": "3b4129d45c4a2e5f59e6e8149dcb47f228094288735844424e1ece103f129344"
+    },
+    {
+      "path": "flat-task-1/project-state/store/objects/4d1f76127f259ff47d25e8ad4bed7c2ae6c9bf18846ae243179235c28278d313.agent",
+      "bytes": 74,
+      "sha256": "4d1f76127f259ff47d25e8ad4bed7c2ae6c9bf18846ae243179235c28278d313"
+    },
+    {
+      "path": "flat-task-1/project-state/store/objects/6b964fd1a60a1c51e0900f74a69ee486c227aacf5bca2f24a06289cecc237bf7.agent",
+      "bytes": 69,
+      "sha256": "6b964fd1a60a1c51e0900f74a69ee486c227aacf5bca2f24a06289cecc237bf7"
+    },
+    {
+      "path": "flat-task-1/project-state/store/objects/b362735401b95e899b7400eb487e97680a73a61a65d52c3ee8458cb4617c4dc7.agent",
+      "bytes": 107,
+      "sha256": "b362735401b95e899b7400eb487e97680a73a61a65d52c3ee8458cb4617c4dc7"
+    },
+    {
+      "path": "flat-task-1/project-state/store/objects/c701fc54256ab52139509aff9f40ca54c54dcc6f31f6577dc5836f7f0fdd7ad7.agent",
+      "bytes": 91,
+      "sha256": "c701fc54256ab52139509aff9f40ca54c54dcc6f31f6577dc5836f7f0fdd7ad7"
+    },
+    {
+      "path": "flat-task-1/project-state/store/objects/cba51aed7789788bafdfed252595b21078bd2e16620690bd2ef0eff0179feeca.agent",
+      "bytes": 121,
+      "sha256": "cba51aed7789788bafdfed252595b21078bd2e16620690bd2ef0eff0179feeca"
+    },
+    {
+      "path": "flat-task-1/project-state/store/objects/ebfda0ad236c50a2a29cf677ba9465b108ef55c039f3edbf34db743107587893.agent",
+      "bytes": 104,
+      "sha256": "ebfda0ad236c50a2a29cf677ba9465b108ef55c039f3edbf34db743107587893"
+    },
+    {
+      "path": "flat-task-1/project-state/store/snapshots/matched-renewal-start.json",
+      "bytes": 157,
+      "sha256": "b936be633953f177b3cf303dfbbccd3fc1b48e6c346789670bbf546227f85998"
+    },
+    {
+      "path": "flat-task-1/project-state/store/WRITE.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "flat-task-1/state-audit.json",
+      "bytes": 352,
+      "sha256": "c01c4f9d48666e525414299eb84db71229f64db63af7fc7280d19f71d96f76e0"
+    },
+    {
+      "path": "flat-task-1/trace.jsonl",
+      "bytes": 119649,
+      "sha256": "b772a2200bdee07440f8f4ea50f2d8db569fb41f759437fbf41862d16b293bff"
+    },
+    {
+      "path": "task-1-metrics.json",
+      "bytes": 977,
+      "sha256": "ea0a9519dba9d3929f11a8880772b276cfd68ce9ba08ffdd6077676111bb7a55"
+    }
+  ],
+  "limits": "Root prepared pin metadata and separate acceptance; broker transcript is raw actual trial traffic. Supplied agent launch messages are in conversation history, not claimed to be complete token/context capture."
+}

@@ -1,0 +1,426 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "failure": null,
+  "task": 1,
+  "project": "D:\\code\\AgentLang\\.agentlang\\early-pilot-001\\conventional",
+  "adapter": "D:\\code\\AgentLang\\.agentlang\\early-conventional-acceptance-42fc89682a34477285c32c044c500b14",
+  "oracleSha256": "7ed0ba4d7925978424b98b7a17aae5276315cf1dff612a8f4688c178472c03eb",
+  "verifierSha256": "adf1da827dd5cbe1ca6ff79df3a8a087ffc9617c2aa316706a6ad09de145f907",
+  "buildOutput": [
+    "  Determining projects to restore...",
+    "  Restored D:\\code\\AgentLang\\.agentlang\\early-conventional-acceptance-42fc89682a34477285c32c044c500b14\\Acceptance.fsproj (in 161 ms).",
+    "  1 of 2 projects are up-to-date for restore.",
+    "  EarlyPilot -> D:\\code\\AgentLang\\.agentlang\\early-pilot-001\\conventional\\bin\\Release\\net9.0\\EarlyPilot.dll",
+    "  Acceptance -> D:\\code\\AgentLang\\.agentlang\\early-conventional-acceptance-42fc89682a34477285c32c044c500b14\\bin\\Release\\net9.0\\Acceptance.dll",
+    "",
+    "Build succeeded.",
+    "    0 Warning(s)",
+    "    0 Error(s)",
+    "",
+    "Time Elapsed 00:00:04.34"
+  ],
+  "checks": [
+    {
+      "name": "fresh adapter and target build",
+      "passed": true
+    },
+    {
+      "name": "acceptance process exit",
+      "passed": true
+    },
+    {
+      "name": "one response per input",
+      "passed": true
+    },
+    {
+      "name": "premium-annual-true target executes",
+      "passed": true
+    },
+    {
+      "name": "premium-annual-true independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "premium-annual-false target executes",
+      "passed": true
+    },
+    {
+      "name": "premium-annual-false independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "premium-monthly-true target executes",
+      "passed": true
+    },
+    {
+      "name": "premium-monthly-true independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "premium-monthly-false target executes",
+      "passed": true
+    },
+    {
+      "name": "premium-monthly-false independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "standard-annual-true target executes",
+      "passed": true
+    },
+    {
+      "name": "standard-annual-true independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "standard-annual-false target executes",
+      "passed": true
+    },
+    {
+      "name": "standard-annual-false independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "standard-monthly-true target executes",
+      "passed": true
+    },
+    {
+      "name": "standard-monthly-true independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "standard-monthly-false target executes",
+      "passed": true
+    },
+    {
+      "name": "standard-monthly-false independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "case-sensitive-kind target executes",
+      "passed": true
+    },
+    {
+      "name": "case-sensitive-kind independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "case-sensitive-term target executes",
+      "passed": true
+    },
+    {
+      "name": "case-sensitive-term independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "term-trailing-space target executes",
+      "passed": true
+    },
+    {
+      "name": "term-trailing-space independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "empty-kind target executes",
+      "passed": true
+    },
+    {
+      "name": "empty-kind independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "zero-balance target executes",
+      "passed": true
+    },
+    {
+      "name": "zero-balance independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "negative-balance target executes",
+      "passed": true
+    },
+    {
+      "name": "negative-balance independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "larger-eligible target executes",
+      "passed": true
+    },
+    {
+      "name": "larger-eligible independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "larger-ineligible target executes",
+      "passed": true
+    },
+    {
+      "name": "larger-ineligible independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "accent-kind target executes",
+      "passed": true
+    },
+    {
+      "name": "accent-kind independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "fractional-balance target executes",
+      "passed": true
+    },
+    {
+      "name": "fractional-balance independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "tiny-balance target executes",
+      "passed": true
+    },
+    {
+      "name": "tiny-balance independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "large-finite-balance target executes",
+      "passed": true
+    },
+    {
+      "name": "large-finite-balance independent Bool result",
+      "passed": true
+    }
+  ],
+  "requests": [
+    {
+      "task": 1,
+      "kind": "premium",
+      "balance": 100.0,
+      "term": "annual",
+      "renewable": true
+    },
+    {
+      "task": 1,
+      "kind": "premium",
+      "balance": 100.0,
+      "term": "annual",
+      "renewable": false
+    },
+    {
+      "task": 1,
+      "kind": "premium",
+      "balance": 100.0,
+      "term": "monthly",
+      "renewable": true
+    },
+    {
+      "task": 1,
+      "kind": "premium",
+      "balance": 100.0,
+      "term": "monthly",
+      "renewable": false
+    },
+    {
+      "task": 1,
+      "kind": "standard",
+      "balance": 100.0,
+      "term": "annual",
+      "renewable": true
+    },
+    {
+      "task": 1,
+      "kind": "standard",
+      "balance": 100.0,
+      "term": "annual",
+      "renewable": false
+    },
+    {
+      "task": 1,
+      "kind": "standard",
+      "balance": 100.0,
+      "term": "monthly",
+      "renewable": true
+    },
+    {
+      "task": 1,
+      "kind": "standard",
+      "balance": 100.0,
+      "term": "monthly",
+      "renewable": false
+    },
+    {
+      "task": 1,
+      "kind": "Premium",
+      "balance": 100.0,
+      "term": "annual",
+      "renewable": true
+    },
+    {
+      "task": 1,
+      "kind": "premium",
+      "balance": 100.0,
+      "term": "Annual",
+      "renewable": true
+    },
+    {
+      "task": 1,
+      "kind": "premium",
+      "balance": 100.0,
+      "term": "annual ",
+      "renewable": true
+    },
+    {
+      "task": 1,
+      "kind": "",
+      "balance": 100.0,
+      "term": "annual",
+      "renewable": true
+    },
+    {
+      "task": 1,
+      "kind": "premium",
+      "balance": 0.0,
+      "term": "annual",
+      "renewable": true
+    },
+    {
+      "task": 1,
+      "kind": "premium",
+      "balance": -100.0,
+      "term": "annual",
+      "renewable": true
+    },
+    {
+      "task": 1,
+      "kind": "premium",
+      "balance": 250.0,
+      "term": "annual",
+      "renewable": true
+    },
+    {
+      "task": 1,
+      "kind": "premium",
+      "balance": 250.0,
+      "term": "monthly",
+      "renewable": true
+    },
+    {
+      "task": 1,
+      "kind": "prémium",
+      "balance": 100.0,
+      "term": "annual",
+      "renewable": true
+    },
+    {
+      "task": 1,
+      "kind": "premium",
+      "balance": 3.141592653589793,
+      "term": "annual",
+      "renewable": true
+    },
+    {
+      "task": 1,
+      "kind": "premium",
+      "balance": 1E-100,
+      "term": "annual",
+      "renewable": true
+    },
+    {
+      "task": 1,
+      "kind": "standard",
+      "balance": 1E+100,
+      "term": "annual",
+      "renewable": true
+    }
+  ],
+  "responses": [
+    {
+      "value": true,
+      "ok": true
+    },
+    {
+      "value": true,
+      "ok": true
+    },
+    {
+      "value": true,
+      "ok": true
+    },
+    {
+      "value": true,
+      "ok": true
+    },
+    {
+      "value": false,
+      "ok": true
+    },
+    {
+      "value": false,
+      "ok": true
+    },
+    {
+      "value": false,
+      "ok": true
+    },
+    {
+      "value": false,
+      "ok": true
+    },
+    {
+      "value": false,
+      "ok": true
+    },
+    {
+      "value": true,
+      "ok": true
+    },
+    {
+      "value": true,
+      "ok": true
+    },
+    {
+      "value": false,
+      "ok": true
+    },
+    {
+      "value": true,
+      "ok": true
+    },
+    {
+      "value": true,
+      "ok": true
+    },
+    {
+      "value": true,
+      "ok": true
+    },
+    {
+      "value": true,
+      "ok": true
+    },
+    {
+      "value": false,
+      "ok": true
+    },
+    {
+      "value": true,
+      "ok": true
+    },
+    {
+      "value": true,
+      "ok": true
+    },
+    {
+      "value": false,
+      "ok": true
+    }
+  ],
+  "limits": [
+    "Independent behavioral outputs only; agent self-tests and state preservation require separate checks.",
+    "Conventional F# execution is not an OS sandbox.",
+    "No agent performance claim."
+  ]
+}

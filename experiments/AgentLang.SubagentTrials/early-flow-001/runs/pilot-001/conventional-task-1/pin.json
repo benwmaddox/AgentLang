@@ -1,0 +1,25 @@
+{
+  "sourceRevision": "e87931a1ed22b05e60443c158cf9c2527c0ba6f6",
+  "model": "gpt-6-luna",
+  "reasoning": "max",
+  "history": "none",
+  "mode": "Conventional",
+  "task": 1,
+  "files": [
+    {
+      "path": "Domain.fs",
+      "sha256": "a8d6302227e4f543363091d4a20923fc8211eb169db0da045d753aec8a9bb37a"
+    },
+    {
+      "path": "SelfTests.fs",
+      "sha256": "937b8044b65af3d686869550fae87834a9574a89f848f9ec45593d4add2a6d4f"
+    },
+    {
+      "path": "EarlyPilot.fsproj",
+      "sha256": "90c90151c9142926d936e94721336ea709c3b3093557aa4d5133d143d6075257"
+    }
+  ],
+  "exactTokens": null,
+  "overlappingTrials": true,
+  "limits": "Exploratory transport/behavior run. Overlapping trial execution prevents controlled latency comparison."
+}
