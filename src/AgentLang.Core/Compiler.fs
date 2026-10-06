@@ -73,6 +73,11 @@ module Compiler =
         | "equals" -> [ a; a ], [ TBool ]
         | "bool.and" | "bool.or" -> [ TBool; TBool ], [ TBool ]
         | "bool.not" -> [ TBool ], [ TBool ]
+        | "string.guid-canonical?" | "string.email-address-valid?" | "instant.is-canonical-utc?" -> [ TString ], [ TBool ]
+        | "string.guid-normalize" | "instant.parse-utc" -> [ TString ], [ TResult(TString, TString) ]
+        | "int.add-checked" | "int.multiply-checked" -> [ TInt; TInt ], [ TResult(TInt, TString) ]
+        | "instant.before?" -> [ TString; TString ], [ TBool ]
+        | "instant.add-days" -> [ TString; TInt ], [ TResult(TString, TString) ]
         | "string.concat" -> [ TString; TString ], [ TString ]
         | "string.contains" | "string.starts-with" | "string.ends-with" -> [ TString; TString ], [ TBool ]
         | "string.length" -> [ TString ], [ TInt ]
@@ -111,7 +116,11 @@ module Compiler =
             [ "add"; "subtract"; "multiply"; "divide"; "float.add"; "float.subtract"; "float.multiply"; "float.divide"
               "int.less-than"; "int.greater-than"; "int.less-or-equal"; "int.greater-or-equal"
               "float.less-than"; "float.greater-than"; "float.less-or-equal"; "float.greater-or-equal"
-              "equals"; "bool.and"; "bool.or"; "bool.not"; "string.concat"; "string.contains"; "string.starts-with"; "string.ends-with"
+              "equals"; "bool.and"; "bool.or"; "bool.not"
+              "string.guid-canonical?"; "string.guid-normalize"; "string.email-address-valid?"
+              "int.add-checked"; "int.multiply-checked"
+              "instant.parse-utc"; "instant.is-canonical-utc?"; "instant.before?"; "instant.add-days"
+              "string.concat"; "string.contains"; "string.starts-with"; "string.ends-with"
               "string.length"; "string.trim"; "string.to-lower"; "string.to-upper"; "int.abs"; "int.min"; "int.max"; "int.to-float"; "float.to-int"
               "float.round"; "int.to-string"; "float.to-string"; "list.count"; "list.append"; "list.concat"; "list.get"; "list.is-empty?"
               "dup"; "drop"; "swap"; "file.read"; "file.write"; "file.exists?"; "clock.now"; "console.write" ]
@@ -127,6 +136,15 @@ module Compiler =
                   Revision = 1
                   Documentation =
                     match name with
+                    | "string.guid-canonical?" -> "Returns true only for lower-case canonical D-format GUID text."
+                    | "string.guid-normalize" -> "Accepts Guid.TryParse D, N, B, P, and X forms with surrounding whitespace; returns lower-case D-format text, or INVALID_GUID."
+                    | "string.email-address-valid?" -> "Checks an ASCII address policy: local segments use letters, digits, underscore, percent, plus, or hyphen and are separated by single dots with no empty segments; the domain has at least two labels with alphanumeric ends and internal hyphens. Rejects whitespace and values over 254 characters."
+                    | "int.add-checked" -> "Adds Int64 values exactly; returns INT_OVERFLOW on overflow."
+                    | "int.multiply-checked" -> "Multiplies Int64 values exactly; returns INT_OVERFLOW on overflow."
+                    | "instant.parse-utc" -> "Parses invariant ISO yyyy-MM-ddTHH:mm:ss text with optional one-to-seven fractional digits and an explicit Z, z, or signed HH:mm offset; returns UTC round-trip text with seven fractional digits and +00:00. Unzoned or non-ISO input returns INVALID_INSTANT."
+                    | "instant.is-canonical-utc?" -> "Returns true only for the exact UTC O-format text emitted by instant.parse-utc."
+                    | "instant.before?" -> "Compares two canonical UTC O-format instants; equality is false and invalid operands raise RUNTIME_INVALID_INSTANT."
+                    | "instant.add-days" -> "Adds an integral Int64 day count to a canonical UTC O-format instant; invalid input returns INVALID_INSTANT and range failures return INSTANT_RANGE."
                     | "list.count" -> "Returns the number of elements in List<T>; the closed List<T> parameter is inferred from the input."
                     | "list.append" -> "Appends one value with exactly the element type T to List<T>."
                     | "list.concat" -> "Concatenates two lists with the same exact element type T."

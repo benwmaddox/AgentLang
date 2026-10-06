@@ -70,6 +70,9 @@ module IrInterpreter =
             "int.less-than"; "int.greater-than"; "int.less-or-equal"; "int.greater-or-equal"
             "float.less-than"; "float.greater-than"; "float.less-or-equal"; "float.greater-or-equal"
             "equals"; "bool.and"; "bool.or"; "bool.not"
+            "string.guid-canonical?"; "string.guid-normalize"; "string.email-address-valid?"
+            "int.add-checked"; "int.multiply-checked"
+            "instant.parse-utc"; "instant.is-canonical-utc?"; "instant.before?"; "instant.add-days"
             "string.concat"; "string.contains"; "string.starts-with"; "string.ends-with"
             "string.length"; "string.trim"; "string.to-lower"; "string.to-upper"
             "int.abs"; "int.min"; "int.max"; "int.to-float"; "float.to-int"; "float.round"
@@ -399,7 +402,7 @@ module IrInterpreter =
 
         and executePrimitive (operation: string) (call: IrResolvedCall) (arguments: RuntimeValue list) (site: SourceSiteId option) =
             let currentWord = call.ResolvedName
-            let sourceSpan = host.PrimitiveDefinitionSpan call.ResolvedName
+            let primitiveDefinitionSpan = host.PrimitiveDefinitionSpan call.ResolvedName
             let typedError () =
                 fail "RUNTIME_INTERNAL_TYPE" $"Builtin '{operation}' received a value outside its checked signature." (Some operation) None [] (runtimeTypeNames program arguments)
             let finiteFloat value =
@@ -410,12 +413,16 @@ module IrInterpreter =
             | "dup", [ value ] -> [ value; value ]
             | "drop", [ _ ] -> []
             | "swap", [ first; second ] -> [ second; first ]
-            | "add", [ RuntimeInt left; RuntimeInt right ] -> [ checkedIntegerOperation operation sourceSpan Checked.(+) left right ]
-            | "subtract", [ RuntimeInt left; RuntimeInt right ] -> [ checkedIntegerOperation operation sourceSpan Checked.(-) left right ]
-            | "multiply", [ RuntimeInt left; RuntimeInt right ] -> [ checkedIntegerOperation operation sourceSpan Checked.(*) left right ]
+            | "add", [ RuntimeInt left; RuntimeInt right ] -> [ checkedIntegerOperation operation primitiveDefinitionSpan Checked.(+) left right ]
+            | "subtract", [ RuntimeInt left; RuntimeInt right ] -> [ checkedIntegerOperation operation primitiveDefinitionSpan Checked.(-) left right ]
+            | "multiply", [ RuntimeInt left; RuntimeInt right ] -> [ checkedIntegerOperation operation primitiveDefinitionSpan Checked.(*) left right ]
             | "divide", [ RuntimeInt _; RuntimeInt 0L ] -> fail "RUNTIME_DIVIDE_BY_ZERO" "Integer division by zero." (Some operation) None [] []
             | "divide", [ RuntimeInt left; RuntimeInt right ] when left = Int64.MinValue && right = -1L -> fail "RUNTIME_OVERFLOW" "Integer division overflow." (Some operation) None [] []
             | "divide", [ RuntimeInt left; RuntimeInt right ] -> [ RuntimeInt(left / right) ]
+            | "int.add-checked", [ RuntimeInt left; RuntimeInt right ] ->
+                [ RuntimeResult(IrInt, IrString, TrustedValues.addChecked left right |> Result.map RuntimeInt |> Result.mapError RuntimeString) ]
+            | "int.multiply-checked", [ RuntimeInt left; RuntimeInt right ] ->
+                [ RuntimeResult(IrInt, IrString, TrustedValues.multiplyChecked left right |> Result.map RuntimeInt |> Result.mapError RuntimeString) ]
             | "float.add", [ RuntimeFloat left; RuntimeFloat right ] -> [ finiteFloat (left + right) ]
             | "float.subtract", [ RuntimeFloat left; RuntimeFloat right ] -> [ finiteFloat (left - right) ]
             | "float.multiply", [ RuntimeFloat left; RuntimeFloat right ] -> [ finiteFloat (left * right) ]
@@ -433,6 +440,21 @@ module IrInterpreter =
             | "bool.and", [ RuntimeBool left; RuntimeBool right ] -> [ RuntimeBool(left && right) ]
             | "bool.or", [ RuntimeBool left; RuntimeBool right ] -> [ RuntimeBool(left || right) ]
             | "bool.not", [ RuntimeBool value ] -> [ RuntimeBool(not value) ]
+            | "string.guid-canonical?", [ RuntimeString value ] -> [ RuntimeBool(TrustedValues.guidCanonical value) ]
+            | "string.guid-normalize", [ RuntimeString value ] ->
+                [ RuntimeResult(IrString, IrString, TrustedValues.guidNormalize value |> Result.map RuntimeString |> Result.mapError RuntimeString) ]
+            | "string.email-address-valid?", [ RuntimeString value ] -> [ RuntimeBool(TrustedValues.emailAddressValid value) ]
+            | "instant.parse-utc", [ RuntimeString value ] ->
+                [ RuntimeResult(IrString, IrString, TrustedValues.parseUtc value |> Result.map RuntimeString |> Result.mapError RuntimeString) ]
+            | "instant.is-canonical-utc?", [ RuntimeString value ] -> [ RuntimeBool(TrustedValues.instantIsCanonicalUtc value) ]
+            | "instant.before?", [ RuntimeString left; RuntimeString right ] ->
+                match TrustedValues.instantBefore left right with
+                | Ok before -> [ RuntimeBool before ]
+                | Error _ ->
+                    fail "RUNTIME_INVALID_INSTANT" "instant.before? requires two canonical UTC O-format instants." (Some currentWord) (site |> Option.bind sourceSpan)
+                        [ "canonical UTC instant"; "canonical UTC instant" ] [ left; right ]
+            | "instant.add-days", [ RuntimeString value; RuntimeInt days ] ->
+                [ RuntimeResult(IrString, IrString, TrustedValues.instantAddDays value days |> Result.map RuntimeString |> Result.mapError RuntimeString) ]
             | "string.concat", [ RuntimeString left; RuntimeString right ] ->
                 let typeDepth, typeBytes = typeFootprint currentWord site IrString
                 let estimatedBytes = saturatingAdd maxRuntimeValueOutputBytes (64L + typeBytes) (int64 left.Length * 6L + int64 right.Length * 6L)

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "sourceRevision": "806687573e6e45743f81514bbc8802bd7cf6616e",
+  "dirty": true,
+  "command": "dotnet run --project tests/AgentLang.TrustedValues.Tests -c Release",
+  "exitCode": 1,
+  "output": [
+    "PASS GUID normalization and canonical storage",
+    "PASS Email validation against the conventional fixture",
+    "PASS checked Int64 arithmetic against BigInteger and Money",
+    "PASS instant parsing against the immutable contract",
+    "PASS canonical UTC comparison and day arithmetic",
+    "PASS primitive metadata and typed IR execution",
+    "FAIL after 455 assertions: GUID normalizer returns a typed success value through verified IR: expected ResultValue",
+    "  (TString, TString, Ok (StringValue \"00112233-4455-6677-8899-aabbccddeeff\")), got ResultValue (TString, TString, Error (StringValue \"INVALID_GUID\"))"
+  ]
+}

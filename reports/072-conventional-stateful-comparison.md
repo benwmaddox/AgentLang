@@ -115,3 +115,7 @@ Clean [main CI](evidence/071-main-ci.json) passed all 32 checks at `20388a3`;
 its [artifact](evidence/071-main-validation.json) records `dirty: false`.
 This milestone changes only experiment assets, evidence and reports, with no
 compiler, runtime or broker behavior change.
+
+Publication follow-up: clean [main CI](evidence/072-main-ci.json) passed all 32
+checks at `8066875`; its [artifact](evidence/072-main-validation.json) records
+the exact revision and `dirty: false`, separately from the frozen broker pin.

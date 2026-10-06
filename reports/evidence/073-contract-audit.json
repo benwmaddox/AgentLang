@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "parentRevision": "806687573e6e45743f81514bbc8802bd7cf6616e",
+  "dirty": true,
+  "primitiveCount": 58,
+  "newPrimitiveCount": 9,
+  "unchangedLayoutFiles": [
+    "src/AgentLang.Core/TypedIR.fs",
+    "src/AgentLang.Core/Storage.fs",
+    "src/AgentLang.Core/IrFormatting.fs"
+  ],
+  "layoutDiff": [],
+  "coreSha256": "7e7f0b6acd6cf3528e663d21f2a7d8a58f8de4d964f08521e50e75e2ce1ec6e9",
+  "validationEvidence": "073-local-validation.json",
+  "focusedEvidence": "073-focused-trusted-values.json",
+  "versionDecision": "Additive catalog entries use existing fixed signatures and RuntimeResult/IrResult layouts; no IR/storage/schema layout change."
+}

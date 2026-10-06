@@ -1,6 +1,6 @@
 # AgentLang small-business fixture plan
 
-Status: full business fixture design only. No full language-domain implementation or behavioral equivalence is claimed by this document. The conventional reference is documented in [BUSINESS.md](BUSINESS.md). Closed containers, static callbacks/cases, record fields and their persistence have integrated acceptance evidence. Typed fold is implemented and validated in [milestone 055](../reports/055-early-evaluation-preparation.md); the additional business normalization helpers below remain proposed.
+Status: full business fixture design, with its trusted value prerequisites now implemented. No full language-domain implementation or behavioral equivalence is claimed by this document. The conventional reference is documented in [BUSINESS.md](BUSINESS.md). Closed containers, static callbacks/cases, record fields and their persistence have integrated acceptance evidence. Typed fold is implemented and validated in [milestone 055](../reports/055-early-evaluation-preparation.md). The nine trusted value helpers below are implemented; their focused and integrated verification is recorded in milestone 073.
 
 ## Recommendation
 
@@ -17,7 +17,7 @@ The remaining fixture work includes:
 - Build and verify domain lookup, total and replacement words using the implemented fold. Fold availability does not establish parity of the full Store fixture.
 - Record declarations currently provide nominal fields, while F# Store uses keyed maps and payment/email providers are callable interfaces. AgentLang should deliberately use lists and pure outcome data instead of simulating a hidden map or invoking .NET.
 
-The current `Compiler.primitives` list contains 49 trusted words, versus 44 in the baseline. Container constructors and branch/mapping forms are separately described syntax, not newly registered dictionary words. `list.fold` should likewise be documented as typed syntax with a closed static callback. Nine narrowly scoped helpers below would bring the dictionary primitive count to 58, inside the PRD's 50–100 range.
+The current `Compiler.primitives` list contains 58 trusted words, versus 49 before this value-prerequisite milestone. Container constructors and branch/mapping forms are separately described syntax, not newly registered dictionary words. `list.fold` is likewise typed syntax with a closed static callback. The nine helpers below keep the dictionary inside the PRD's 50–100 range.
 
 ## Minimal trusted additions
 
@@ -28,12 +28,19 @@ The current `Compiler.primitives` list contains 49 trusted words, versus 44 in t
 | `string.email-address-valid?` | `String -> Bool` | Apply the exact documented ASCII address policy from `BUSINESS.md`; keep it pure and bounded to the existing 254-character limit. The current demo's looser `email.valid?` word is not equivalent. |
 | `int.add-checked` | `Int Int -> Result<Int, String>` | Surface Int64 overflow as a value so a domain word can return the same `MONEY_OVERFLOW` code instead of leaking a runtime diagnostic. |
 | `int.multiply-checked` | `Int Int -> Result<Int, String>` | Checked line-price times quantity with no Float conversion. |
-| `instant.parse-utc` | `String -> Result<String, String>` | Parse using invariant round-trip rules and normalize to UTC `O` form, matching `DateTimeOffset.ToUniversalTime`. |
+| `instant.parse-utc` | `String -> Result<String, String>` | Match the reference's explicit-zone ISO grammar and invariant parsing, then normalize to UTC `O` form, matching `DateTimeOffset.ToUniversalTime`. |
 | `instant.is-canonical-utc?` | `String -> Bool` | Validate the exact normalized representation accepted by the `Instant` wrapper. |
 | `instant.before?` | `String String -> Bool` | Compare the normalized UTC instants, including equality boundaries used by cancellation and renewal tasks. |
 | `instant.add-days` | `String Int -> Result<String, String>` | Support deterministic expiry windows and reminder tasks with checked date-range errors. |
 
-These nine helpers are candidates, not implemented host API. Before adding them, add direct Runtime tests for null, malformed, boundary, overflow, equality, offsets, and UTC normalization. Preserve the immutable reference contracts and normalize valid alternate input forms at the explicit constructor boundary. Do not replace the current GUID, email, or instant contracts silently.
+These nine helpers are implemented host API. Host-level null inputs are rejected by the pure helper functions; this does not add null to language values. Focused tests cover malformed inputs, boundaries, overflow, equality, offsets and UTC normalization, plus typed-IR execution and reference conformance. Preserve the immutable reference contracts and normalize valid alternate input forms at the explicit constructor boundary. The full language-domain wrappers and Store fixture below remain unimplemented.
+
+Low-level errors are `INVALID_GUID`, `INT_OVERFLOW`, `INVALID_INSTANT` and
+`INSTANT_RANGE`. `instant.before?` requires two canonical UTC strings and raises
+structured `RUNTIME_INVALID_INSTANT` for invalid operands; `instant.add-days`
+requires a canonical UTC string and returns typed errors. Call `instant.parse-utc`
+explicitly before constructing Instant values. Existing `add`/`multiply`
+overflow diagnostics remain unchanged; these additions do not redefine them.
 
 `int.add-checked` and `int.multiply-checked` return a typed Result with an error code string. User words can map that low-level error to `BusinessError` using `match-result`; the primitives contain no billing rule. Generic Result support already exists. Avoid a primitive such as `invoice.total`, `customer.premium?`, `subscription.renewable?`, or a general .NET/regex invocation.
 

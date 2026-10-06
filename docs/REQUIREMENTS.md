@@ -141,6 +141,15 @@ oracle. Next priority is a broader executable strong-business task sequence
 and repeated paired evaluation; complete domain/provider parity, the 60-task
 suite and measured cost/context requirements remain open.
 
+[Checkpoint 073](../reports/073-strong-business-value-primitives.md) implements
+the nine pure GUID/email/checked-Int64/UTC prerequisites for the planned strong
+business fixture. Seven focused groups pass 476 assertions against independent
+reference and arithmetic oracles, including actual typed-IR execution and
+failure spans. Existing overflow behavior and IR/storage formats are preserved.
+The dictionary contains 58 primitives. Domain wrappers, Store transitions,
+quantity alignment and executable benchmark adapters remain pending; this is
+not full business parity or a new agent-efficiency result.
+
 Historical external-agent workflow evidence: [report 054](../reports/054-flow-renewal-agent-control.md)
 records a separate inherited-history Luna/max control that created one tested
 library word by composing a retained domain word. Fresh-process acceptance
