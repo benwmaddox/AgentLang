@@ -1,0 +1,18 @@
+{
+  "command": "dotnet run --project tests/AgentLang.Flow.Tests -c Release",
+  "revision": "469d2f5cba6e2843c4eabd36e0e0a692e9a4396f",
+  "dirty": true,
+  "exitCode": 1,
+  "output": [
+    "D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs(3115,74): warning FS0667: The field labels and expected type of this record expression or pattern do not uniquely determine a corresponding record type [D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\AgentLang.Flow.Tests.fsproj]",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs(3116,89): error FS1129: The record type 'FlowAttachmentCallBinding' does not contain a label 'OwnerId'. Maybe you want one of the following:\u001d   OwnerName\u001d   OwnerRevision [D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\AgentLang.Flow.Tests.fsproj]",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs(3118,86): error FS1129: The record type 'FlowAttachmentCallBinding' does not contain a label 'CaseName'. [D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\AgentLang.Flow.Tests.fsproj]",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs(3119,81): error FS1129: The record type 'FlowAttachmentCallBinding' does not contain a label 'Reference'. [D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\AgentLang.Flow.Tests.fsproj]",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs(3120,81): error FS1129: The record type 'FlowAttachmentCallBinding' does not contain a label 'Reference'. [D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\AgentLang.Flow.Tests.fsproj]",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs(3123,93): error FS1129: The record type 'FlowAttachmentCallBinding' does not contain a label 'SourceFile'. Maybe you want one of the following:\u001d   Source [D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\AgentLang.Flow.Tests.fsproj]",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs(3124,96): error FS1129: The record type 'FlowAttachmentCallBinding' does not contain a label 'Content'. [D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\AgentLang.Flow.Tests.fsproj]",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs(3126,141): error FS0001: Type mismatch. Expecting a\u001d    'FlowAttachmentSourceDocument -> FlowAttachmentSourceDocument'    \u001dbut given a\u001d    'FlowAttachmentCallBinding -> FlowAttachmentCallBinding'    \u001dThe type 'FlowAttachmentCallBinding' does not match the type 'FlowAttachmentSourceDocument' [D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\AgentLang.Flow.Tests.fsproj]",
+    "",
+    "The build failed. Fix the build errors and run again."
+  ]
+}

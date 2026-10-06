@@ -1,0 +1,14 @@
+{
+  "command": "dotnet run --project tests/AgentLang.Flow.Tests -c Release",
+  "revision": "469d2f5cba6e2843c4eabd36e0e0a692e9a4396f",
+  "dirty": true,
+  "exitCode": 1,
+  "output": [
+    "D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs(3217,9): error FS0010: Unexpected symbol '[' in binding. Expected incomplete structured construct at or before this point or other token. [D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\AgentLang.Flow.Tests.fsproj]",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs(3216,5): error FS3118: Incomplete value or function definition. If this is in an expression, the body of the expression must be indented to the same column as the 'let' keyword. [D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\AgentLang.Flow.Tests.fsproj]",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs(3219,5): error FS0010: Incomplete structured construct at or before this point in binding. Expected incomplete structured construct at or before this point or other token. [D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\AgentLang.Flow.Tests.fsproj]",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs(3226,1): error FS0010: Incomplete structured construct at or before this point in implementation file [D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\AgentLang.Flow.Tests.fsproj]",
+    "",
+    "The build failed. Fix the build errors and run again."
+  ]
+}

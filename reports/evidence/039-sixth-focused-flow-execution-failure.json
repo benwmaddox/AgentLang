@@ -1,0 +1,12 @@
+{
+  "command": "dotnet run --project tests/AgentLang.Flow.Tests -c Release",
+  "revision": "469d2f5cba6e2843c4eabd36e0e0a692e9a4396f",
+  "dirty": true,
+  "exitCode": -532462766,
+  "output": [
+    "Unhandled exception. System.Exception: each source attachment receives exact private markers: assertion failed",
+    "   at AgentLang.Flow.Tests.check[a](a name, Boolean condition) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs:line 11",
+    "   at AgentLang.Flow.Tests.testFlowAttachmentCallBindings() in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs:line 3076",
+    "   at AgentLang.Flow.Tests.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs:line 3291"
+  ]
+}

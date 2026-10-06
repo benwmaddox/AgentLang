@@ -68,6 +68,39 @@ let private parseExample source =
     | Ok example -> example
     | Error diagnostic -> failwith (Diagnostics.render diagnostic)
 
+let private authoredFlowAttachment
+    (kind: FlowLowering.FlowAttachmentKind)
+    (ownerId: WordId)
+    (ownerRevision: int)
+    (source: string)
+    : FlowLowering.FlowAttachmentSourceDocument =
+    let storageKind, ownerName, caseName, sourceFile =
+        match kind with
+        | FlowLowering.FlowAttachmentKind.Test ->
+            let test = parseTest source
+            StorageObjectKind.TestDefinition, test.Word, test.CaseName, test.Span.File
+        | FlowLowering.FlowAttachmentKind.Example ->
+            let example = parseExample source
+            StorageObjectKind.ExampleDefinition, example.Word, example.CaseName, example.Span.File
+    let stored = Storage.sourceObject storageKind source
+    { OwnerName = ownerName
+      OwnerId = ownerId
+      OwnerRevision = ownerRevision
+      Kind = kind
+      CaseName = caseName
+      Reference = stored.Reference
+      SourceFile = sourceFile
+      Content = source }
+
+let private flowAttachmentKey (source: FlowLowering.FlowAttachmentSourceDocument) =
+    { FlowLowering.FlowAttachmentKey.OwnerId = source.OwnerId
+      Kind = source.Kind
+      CaseName = source.CaseName }
+
+let private flowAttachmentInventory (sources: FlowLowering.FlowAttachmentSourceDocument list) : FlowLowering.FlowAttachmentInventory =
+    { ExpectedSources = sources |> List.map (fun source -> flowAttachmentKey source, source.Reference) |> Map.ofList
+      Sources = sources }
+
 let private parseExpression source =
     match FlowParser.parseExpression "<flow-test>" source with
     | Ok expression -> expression
@@ -2846,6 +2879,395 @@ let private testFlowCallBindingStructuralPaths () =
     check "generated record accessor has its stable generated ID"
         (recordSites |> List.exists (fun binding -> binding.Site.Target = FlowCallTargetIdentity.GeneratedWord(WordId "generated-customer.email")))
 
+let private testFlowAttachmentCallBindings () =
+    let ownerId = WordId "attachment-owner"
+    let answerId = WordId "domain-answer"
+    let storefrontId = WordId "storefront-select"
+    let identityId = WordId "binding-identity"
+    let ignoreId = WordId "binding-ignore"
+    let divideId = WordId "attachment-divide"
+    let emailId = WordId "storefront-email"
+    let suffixId = WordId "domain-suffix"
+    let pickId = WordId "domain-pick"
+    let emptyWordInventory: FlowLowering.FlowSourceInventory = { ExpectedFlowOwnerIds = Set.empty; Sources = [] }
+    let addWord (identity: WordId) (source: string) : FlowLowering.FlowSourceChange =
+        { RevisionIntent = FlowLowering.FlowWordRevisionIntent.Add(identity, 1); Source = authoredFlowSource identity 1 source }
+    let replaceWord (identity: WordId) (oldRevision: int) (newRevision: int) (source: string) : FlowLowering.FlowSourceChange =
+        { RevisionIntent = FlowLowering.FlowWordRevisionIntent.Replace(identity, oldRevision, newRevision)
+          Source = authoredFlowSource identity newRevision source }
+    let wordNames =
+        [ "attachment.owner"; "domain.answer"; "storefront.select"; "binding.identity"; "binding.ignore"
+          "attachment.divide"; "storefront.email"; "domain.suffix"; "domain.pick" ]
+    let initialWordChanges =
+        [ addWord ownerId """word attachment.owner() -> Int {
+    effects none
+    1
+}"""
+          addWord answerId """word domain.answer() -> Int {
+    effects none
+    42
+}"""
+          addWord storefrontId """word storefront.select(value: Option<Int>) -> Int {
+    effects none
+    match value {
+        some item => { return item }
+        none => { return 0 }
+    }
+}"""
+          addWord identityId """word binding.identity(value: Int) -> Int {
+    effects none
+    value
+}"""
+          addWord ignoreId """word binding.ignore(value: Int) -> Unit {
+    effects none
+    unit
+}"""
+          addWord divideId """word attachment.divide(value: Int) -> Int {
+    effects none
+    divide(value, 0)
+}"""
+          addWord emailId """word storefront.email(value: Email) -> String {
+    effects none
+    Email::value(value)
+}"""
+          addWord suffixId """word domain.suffix() -> Int {
+    effects none
+    41
+}"""
+          addWord pickId """word domain.pick(value: Int) -> Int {
+    effects none
+    value
+}""" ]
+    let cases =
+        [ FlowAttachmentKind.Test, "test attachment.owner/literal-test {\n    storefront::select(option::some<Int>(7))\n    => 7\n}"
+          FlowAttachmentKind.Test, "test attachment.owner/both-roles {\n    domain::answer()\n    => value domain::answer()\n}"
+          FlowAttachmentKind.Test, "test attachment.owner/coverage-split {\n    storefront::select(option::some<Int>(0))\n    => value storefront::select(option::none<Int>())\n}"
+          FlowAttachmentKind.Test, "test attachment.owner/inline-branch {\n    match option::none<Int>() {\n        some value => { value }\n        none => { 1 }\n    }\n    => 1\n}"
+          FlowAttachmentKind.Test, "test attachment.owner/runtime-error {\n    attachment::divide(1)\n    => error RUNTIME_DIVIDE_BY_ZERO\n}"
+          FlowAttachmentKind.Test, "test attachment.owner/ordered-calls {\n    list::singleton<Int>(1).each(binding::ignore)\n    if true {\n        return binding::identity(7)\n    } else {\n        return binding::identity(8)\n    }\n    => value binding::identity(7)\n}"
+          FlowAttachmentKind.Test, "test attachment.owner/no-calls {\n    3\n    => 3\n}"
+          FlowAttachmentKind.Test, "test attachment.owner/scalar-generated {\n    storefront::email(Email::new(\"a@b\"))\n    => value Email::value(Email::new(\"a@b\"))\n}"
+          FlowAttachmentKind.Test, "test attachment.owner/suffix-actual {\n    suffix()\n    => 41\n}"
+          FlowAttachmentKind.Test, "test attachment.owner/suffix-expected {\n    41\n    => value suffix()\n}"
+          FlowAttachmentKind.Test, "test attachment.owner/dot-ambiguity {\n    1.pick()\n    => 1\n}"
+          FlowAttachmentKind.Test, "test attachment.owner/dot-ambiguity-expected {\n    1\n    => value 1.pick()\n}"
+          FlowAttachmentKind.Example, "example attachment.owner/literal-example {\n    domain::answer()\n    => 42\n}"
+          FlowAttachmentKind.Example, "example attachment.owner/dot-ambiguity-example {\n    1.pick()\n    => 1\n}"
+          FlowAttachmentKind.Example, "example attachment.owner/empty-example {\n    5\n    => 5\n}" ]
+        |> List.map (fun (kind, source) -> authoredFlowAttachment kind ownerId 1 source)
+    let inventory = flowAttachmentInventory []
+    let initial =
+        FlowLowering.compileBatchFlowProjectSources (richTypeContext []) emptyWordInventory initialWordChanges inventory
+            (cases |> List.map FlowAttachmentChange.Add)
+    let context = initial.WordCompilation.Context
+    let wordInventory = flowInventory context wordNames
+    let sources =
+        initial.Attachments
+        |> List.map (function | FlowCompiledAttachment.Test(source, _) | FlowCompiledAttachment.Example(source, _) -> source)
+    let attachmentInventory = flowAttachmentInventory sources
+    let testCase (compiled: FlowLowering.FlowBoundProjectCompilation) caseName =
+        compiled.Attachments |> List.pick (function | FlowCompiledAttachment.Test(source, body) when source.CaseName = caseName -> Some(source, body) | _ -> None)
+    let exampleCase (compiled: FlowLowering.FlowBoundProjectCompilation) caseName =
+        compiled.Attachments |> List.pick (function | FlowCompiledAttachment.Example(source, body) when source.CaseName = caseName -> Some(source, body) | _ -> None)
+    let roleBindings (compiled: FlowLowering.FlowBoundProjectCompilation) caseName role =
+        compiled.AttachmentBindings |> List.filter (fun binding -> binding.Attachment.CaseName = caseName && binding.BodyRole = role)
+    let actualBindings compiled caseName = roleBindings compiled caseName FlowAttachmentBodyRole.Actual
+    let expectedBindings compiled caseName = roleBindings compiled caseName FlowAttachmentBodyRole.ExpectedExpression
+
+    equal "source-backed test and example inventory is assembled" cases.Length initial.Attachments.Length
+    let (_, literalTest) = testCase initial "literal-test"
+    equal "source-backed literal test executes" [ IntValue 7L ] (IrInterpreter.executeBody (host (ResizeArray())) "attached-literal" literalTest.Body)
+    check "literal expectation has no detached expression body" literalTest.ExpectationBody.IsNone
+    let (bothDocument, bothTest) = testCase initial "both-roles"
+    equal "source-backed actual expression executes" [ IntValue 42L ] (IrInterpreter.executeBody (host (ResizeArray())) "attached-actual" bothTest.Body)
+    let bothExpected = bothTest.ExpectationBody |> Option.defaultWith (fun () -> failwith "Expected a detached value expression.")
+    equal "source-backed expected expression executes separately" [ IntValue 42L ] (IrInterpreter.executeBody (host (ResizeArray())) "attached-expected" bothExpected)
+    let actual = actualBindings initial "both-roles"
+    let expected = expectedBindings initial "both-roles"
+    equal "actual and expected roles each bind their authored root call" (1, 1) (actual.Length, expected.Length)
+    equal "actual call retains the structural path through its body statement"
+        (FlowAstPath.FlowAstPath [ FlowAstPathSegment.BlockStatement 0; FlowAstPathSegment.EvaluateExpression ]) actual.Head.Site.Path
+    equal "expected expression retains its independent expression-root path"
+        (FlowAstPath.FlowAstPath []) expected.Head.Site.Path
+    equal "actual and expected roles retain distinct body-role keys"
+        (FlowAttachmentBodyRole.Actual, FlowAttachmentBodyRole.ExpectedExpression) (actual.Head.BodyRole, expected.Head.BodyRole)
+    equal "actual and expected roles retain the same stable attachment key" actual.Head.Attachment expected.Head.Attachment
+    equal "each role binds the exact authored source reference" (bothDocument.Reference, bothDocument.Reference) (actual.Head.Source, expected.Head.Source)
+    equal "actual and expected roles retain the same stable target identity" actual.Head.Site.Target expected.Head.Site.Target
+    equal "initial call binding records the exact candidate target revision" (Some 1) actual.Head.Site.TargetRevision
+    check "detached actual IR has no fabricated word owner"
+        ((VerifiedIrBody.inspect bothTest.Body).BodySourceMap |> Map.forall (fun _ source -> source.SiteOwner.IsNone))
+    check "detached expected IR has no fabricated word owner"
+        ((VerifiedIrBody.inspect bothExpected).BodySourceMap |> Map.forall (fun _ source -> source.SiteOwner.IsNone))
+    let (_, runtimeErrorTest) = testCase initial "runtime-error"
+    let runtimeCode =
+        try IrInterpreter.executeBody (host (ResizeArray())) "attached-runtime-error" runtimeErrorTest.Body |> ignore; None
+        with LanguageException diagnostic -> Some diagnostic.Code
+    equal "runtime-error attachment observes its declared diagnostic" (Some "RUNTIME_DIVIDE_BY_ZERO") runtimeCode
+    let (_, noCallTest) = testCase initial "no-calls"
+    equal "no-call attachment executes" [ IntValue 3L ] (IrInterpreter.executeBody (host (ResizeArray())) "attached-no-calls" noCallTest.Body)
+    equal "no-call test emits no call bindings" [] (initial.AttachmentBindings |> List.filter (fun binding -> binding.Attachment.CaseName = "no-calls"))
+    let (_, literalExample) = exampleCase initial "literal-example"
+    equal "literal example executes through the source-backed project API" [ IntValue 42L ]
+        (IrInterpreter.executeBody (host (ResizeArray())) "attached-example" literalExample.Body)
+    let (_, emptyExample) = exampleCase initial "empty-example"
+    equal "no-call example executes" [ IntValue 5L ] (IrInterpreter.executeBody (host (ResizeArray())) "attached-empty-example" emptyExample.Body)
+    equal "no-call example emits no call bindings" [] (initial.AttachmentBindings |> List.filter (fun binding -> binding.Attachment.CaseName = "empty-example"))
+
+    let program = VerifiedIrProgram.inspect initial.WordCompilation.Program
+    let recordedOutcomes (events: ResizeArray<string * SourceSiteId * string>) =
+        events |> Seq.choose (fun (name, site, outcome) ->
+            match program.SourceMap.TryFind site with
+            | Some source when name = "storefront.select" && source.SiteOwner = Some storefrontId -> Some outcome
+            | _ -> None) |> Set.ofSeq
+    let recordHost (events: ResizeArray<string * SourceSiteId * string>) =
+        { host (ResizeArray()) with RecordBranchOutcome = fun name site outcome -> events.Add(name, site, outcome) }
+    let (_, coverageTest) = testCase initial "coverage-split"
+    let actualEvents = ResizeArray<string * SourceSiteId * string>()
+    equal "actual trace exercises the library-owned some branch" [ IntValue 0L ]
+        (IrInterpreter.executeBody (recordHost actualEvents) "attached-some" coverageTest.Body)
+    equal "actual trace records only its own library some coverage" (Set.singleton "some") (recordedOutcomes actualEvents)
+    let expectedEvents = ResizeArray<string * SourceSiteId * string>()
+    let coverageExpected = coverageTest.ExpectationBody |> Option.defaultWith (fun () -> failwith "Expected coverage expression.")
+    equal "expected trace independently exercises the library-owned none branch" [ IntValue 0L ]
+        (IrInterpreter.executeBody (recordHost expectedEvents) "attached-none" coverageExpected)
+    equal "expected-expression branches do not contaminate the actual trace" (Set.singleton "none") (recordedOutcomes expectedEvents)
+    equal "actual library coverage remains the some branch" (Set.singleton "some") (recordedOutcomes actualEvents)
+    let (_, inlineBranchTest) = testCase initial "inline-branch"
+    let inlineEvents = ResizeArray<string * SourceSiteId * string>()
+    equal "inline detached branch fixture executes through the project attachment API" [ IntValue 1L ]
+        (IrInterpreter.executeBody (recordHost inlineEvents) "attached-inline" inlineBranchTest.Body)
+    let inlineBody = VerifiedIrBody.inspect inlineBranchTest.Body
+    check "same-labelled inline branch is detached from library-owned source sites"
+        (inlineEvents |> Seq.exists (fun (_, site, outcome) ->
+            outcome = "none" && (inlineBody.BodySourceMap.TryFind site |> Option.exists (fun source -> source.SiteOwner.IsNone))))
+    equal "inline branch trace cannot satisfy the library's own none coverage" Set.empty (recordedOutcomes inlineEvents)
+
+    let orderedActual = actualBindings initial "ordered-calls"
+    let orderedExpected = expectedBindings initial "ordered-calls"
+    check "attachment call inventory includes the authored static callback"
+        (orderedActual |> List.exists (fun binding -> match binding.Site.Form with | FlowCallForm.StaticCallback(_, _) -> binding.Site.Target = FlowCallTargetIdentity.UserWord ignoreId | _ -> false))
+    let identityPaths = orderedActual |> List.filter (fun binding -> binding.Site.Target = FlowCallTargetIdentity.UserWord identityId) |> List.map (fun binding -> binding.Site.Path)
+    let branchKinds =
+        identityPaths |> List.collect (fun (FlowAstPath.FlowAstPath path) -> path)
+        |> List.choose (function | FlowAstPathSegment.IfThenStatement _ -> Some "then" | FlowAstPathSegment.IfElseStatement _ -> Some "else" | _ -> None)
+        |> Set.ofList
+    equal "structural attachment paths include both branch calls" (Set.ofList [ "then"; "else" ]) branchKinds
+    let orderedPositions = orderedActual |> List.map (fun binding -> binding.Site.Span.Line, binding.Site.Span.Column)
+    equal "attachment call events retain authored callback and branch ordering" (List.sort orderedPositions) orderedPositions
+    check "expected-expression calls remain in their independent body role" (orderedExpected.Length = 1 && orderedExpected.Head.BodyRole = FlowAttachmentBodyRole.ExpectedExpression)
+
+    let (_, scalarTest) = testCase initial "scalar-generated"
+    let constructor = FlowCallTargetIdentity.GeneratedWord(WordId "generated-Email.new")
+    for sites in [ actualBindings initial "scalar-generated"; expectedBindings initial "scalar-generated" ] do
+        equal "each attachment body role has one authored generated-scalar constructor site" 1
+            (sites |> List.filter (fun binding -> binding.Site.Target = constructor) |> List.length)
+        check "implicit scalar validators do not appear as authored call bindings"
+            (sites |> List.forall (fun binding -> binding.Site.Target <> FlowCallTargetIdentity.UserWord(WordId "user-email.valid?")))
+    equal "generated scalar actual call executes" [ StringValue "a@b" ]
+        (IrInterpreter.executeBody (host (ResizeArray())) "attached-scalar" scalarTest.Body)
+    equal "generated scalar expected call executes separately" [ StringValue "a@b" ]
+        (scalarTest.ExpectationBody |> Option.defaultWith (fun () -> failwith "Expected scalar expression.")
+         |> IrInterpreter.executeBody (host (ResizeArray())) "attached-scalar-expected")
+
+    let markerSets =
+        initial.Attachments |> List.map (function
+            | FlowCompiledAttachment.Test(_, compiled) -> compiled.Lowered.Projection.SyntheticOrigins |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+            | FlowCompiledAttachment.Example(_, compiled) -> compiled.Lowered.Projection.SyntheticOrigins |> Map.toSeq |> Seq.map fst |> Set.ofSeq)
+    let markers = markerSets |> List.collect Set.toList
+    check "calls and compound bodies allocate private source markers across attachments"
+        (markerSets |> List.filter (Set.isEmpty >> not) |> List.length >= 2)
+    let (_, noCallMarkerTest) = testCase initial "no-calls"
+    equal "literal-only no-call test needs no synthetic marker allocation" Set.empty
+        (noCallMarkerTest.Lowered.Projection.SyntheticOrigins |> Map.toSeq |> Seq.map fst |> Set.ofSeq)
+    equal "private source marker allocation is disjoint across test and example cases" markers.Length (markers |> Set.ofList |> Set.count)
+    for attachment in initial.Attachments do
+        match attachment with
+        | FlowCompiledAttachment.Test(source, compiled) ->
+            equal "test retains exact authored bytes" source.Content compiled.Lowered.Definition.SourceText
+            check "test actual and expected spans resolve only to the authored source file"
+                (compiled.BodySiteOrigins |> Map.forall (fun _ span -> span.File = source.SourceFile && span.Column < 1000)
+                 && (compiled.ExpectationSiteOrigins |> Option.defaultValue Map.empty |> Map.forall (fun _ span -> span.File = source.SourceFile && span.Column < 1000)))
+        | FlowCompiledAttachment.Example(source, compiled) ->
+            equal "example retains exact authored bytes" source.Content compiled.Lowered.Definition.SourceText
+            check "example sites resolve only to the authored source file"
+                (compiled.SiteOrigins |> Map.forall (fun _ span -> span.File = source.SourceFile && span.Column < 1000))
+
+    let sourceProbe = authoredFlowAttachment FlowAttachmentKind.Test ownerId 1 "test attachment.owner/source-probe {\n    domain::answer()\n    => 42\n}"
+    let proveWordBase inventoryValue =
+        FlowLowering.compileBatchFlowProjectSources context inventoryValue [] attachmentInventory [ FlowAttachmentChange.Add sourceProbe ] |> ignore
+    expectLanguageError "attachment-only batch proves a complete base Flow word inventory" "FLOW_SOURCE_INVENTORY_INCOMPLETE" (fun () ->
+        proveWordBase { wordInventory with Sources = wordInventory.Sources |> List.tail })
+    let answerSource = wordInventory.Sources |> List.find (fun source -> source.OwnerId = answerId)
+    let alteredBytes = answerSource.Content.Replace("42", "43", StringComparison.Ordinal)
+    let alteredSource = { answerSource with Content = alteredBytes; Reference = (Storage.sourceObject StorageObjectKind.WordDefinition alteredBytes).Reference }
+    expectLanguageError "attachment-only batch authenticates the base Flow source against the exact Context snapshot" "FLOW_SOURCE_TEXT_MISMATCH" (fun () ->
+        proveWordBase { wordInventory with Sources = alteredSource :: (wordInventory.Sources |> List.filter (fun source -> source.OwnerId <> answerId)) })
+
+    let inventoryProbe = authoredFlowAttachment FlowAttachmentKind.Test ownerId 1 "test attachment.owner/inventory-probe {\n    domain::answer()\n    => 42\n}"
+    let compileWithAttachmentInventory inventoryValue =
+        FlowLowering.compileBatchFlowProjectSources context wordInventory [] inventoryValue [ FlowAttachmentChange.Add inventoryProbe ] |> ignore
+    let firstDocument = sources.Head
+    expectLanguageError "attachment inventory rejects duplicate documents" "FLOW_ATTACHMENT_INVENTORY_DUPLICATE" (fun () ->
+        compileWithAttachmentInventory { attachmentInventory with Sources = attachmentInventory.Sources @ [ firstDocument ] })
+    expectLanguageError "attachment inventory rejects missing expected keys" "FLOW_ATTACHMENT_INVENTORY_INCOMPLETE" (fun () ->
+        compileWithAttachmentInventory { attachmentInventory with ExpectedSources = Map.remove (flowAttachmentKey firstDocument) attachmentInventory.ExpectedSources })
+    let undeclaredKey = { flowAttachmentKey inventoryProbe with CaseName = "undeclared.extra" }
+    expectLanguageError "attachment inventory rejects extra expected keys" "FLOW_ATTACHMENT_INVENTORY_INCOMPLETE" (fun () ->
+        compileWithAttachmentInventory { attachmentInventory with ExpectedSources = Map.add undeclaredKey inventoryProbe.Reference attachmentInventory.ExpectedSources })
+    let wrongExpectedReference = { firstDocument.Reference with Hash = String.replicate 64 "0" }
+    expectLanguageError "attachment inventory requires each exact host-declared reference" "FLOW_ATTACHMENT_INVENTORY_REFERENCE_MISMATCH" (fun () ->
+        compileWithAttachmentInventory { attachmentInventory with ExpectedSources = Map.add (flowAttachmentKey firstDocument) wrongExpectedReference attachmentInventory.ExpectedSources })
+    let inventoryFor (mutate: FlowLowering.FlowAttachmentSourceDocument -> FlowLowering.FlowAttachmentSourceDocument) =
+        let changed = mutate firstDocument
+        let originalKey = flowAttachmentKey firstDocument
+        { ExpectedSources = Map.add (flowAttachmentKey changed) changed.Reference (Map.remove originalKey attachmentInventory.ExpectedSources)
+          Sources = changed :: (attachmentInventory.Sources |> List.filter (fun source -> flowAttachmentKey source <> originalKey)) }
+    let malformed: (string * string * (FlowLowering.FlowAttachmentSourceDocument -> FlowLowering.FlowAttachmentSourceDocument)) list =
+        [ "owner name", "FLOW_ATTACHMENT_OWNER_MISMATCH", (fun source -> { source with OwnerName = "wrong.owner" })
+          "owner ID", "FLOW_ATTACHMENT_OWNER_ID_MISMATCH", (fun source -> { source with OwnerId = answerId })
+          "owner revision", "FLOW_ATTACHMENT_OWNER_REVISION_MISMATCH", (fun source -> { source with OwnerRevision = 9 })
+          "case name", "FLOW_ATTACHMENT_CASE_MISMATCH", (fun source -> { source with CaseName = "other-case" })
+          "kind", "FLOW_ATTACHMENT_KIND_MISMATCH", (fun source -> { source with Reference = { source.Reference with Kind = StorageObjectKind.ExampleDefinition } })
+          "hash", "FLOW_ATTACHMENT_HASH_MISMATCH", (fun source -> { source with Reference = { source.Reference with Hash = String.replicate 64 "0" } })
+          "negative owner revision", "FLOW_ATTACHMENT_REVISION_INVALID", (fun source -> { source with OwnerRevision = -1 })
+          "blank owner name", "FLOW_ATTACHMENT_OWNER_INVALID", (fun source -> { source with OwnerName = " " })
+          "blank source file", "FLOW_ATTACHMENT_FILE_INVALID", (fun source -> { source with SourceFile = " " })
+          "null source bytes", "FLOW_ATTACHMENT_CONTENT_INVALID", (fun source -> { source with Content = null }) ]
+    for name, code, mutate in malformed do
+        expectLanguageError ("attachment inventory rejects malformed " + name) code (fun () -> compileWithAttachmentInventory (inventoryFor mutate))
+    let blankId = { firstDocument with OwnerId = WordId "" }
+    let blankIdInventory =
+        { ExpectedSources = Map.add (flowAttachmentKey blankId) blankId.Reference (Map.remove (flowAttachmentKey firstDocument) attachmentInventory.ExpectedSources)
+          Sources = blankId :: (attachmentInventory.Sources |> List.filter (fun source -> flowAttachmentKey source <> flowAttachmentKey firstDocument)) }
+    expectLanguageError "attachment inventory rejects an empty stable owner ID" "FLOW_ATTACHMENT_OWNER_ID_INVALID" (fun () -> compileWithAttachmentInventory blankIdInventory)
+    let badUtf16 = inventoryFor (fun source -> { source with Content = source.Content + string (char 0xD800) })
+    expectLanguageError "attachment source rejects unpaired UTF-16 rather than replacement-encoding it" "FLOW_ATTACHMENT_UTF8_INVALID" (fun () -> compileWithAttachmentInventory badUtf16)
+
+    let impureExpected = authoredFlowAttachment FlowAttachmentKind.Test ownerId 1 "test attachment.owner/impure-expected {\n    unit\n    => value console::write(\"denied\")\n}"
+    expectLanguageError "source-backed expected expression stays pure" "TEST_EXPECTED_VALUE_EFFECTS" (fun () ->
+        FlowLowering.compileBatchFlowProjectSources context wordInventory [] attachmentInventory [ FlowAttachmentChange.Add impureExpected ] |> ignore)
+    let wrongTypeExpected = authoredFlowAttachment FlowAttachmentKind.Test ownerId 1 "test attachment.owner/wrong-type {\n    unit\n    => value 1\n}"
+    expectLanguageError "source-backed expected expression is checked against the actual type" "TEST_EXPECTED_STACK" (fun () ->
+        FlowLowering.compileBatchFlowProjectSources context wordInventory [] attachmentInventory [ FlowAttachmentChange.Add wrongTypeExpected ] |> ignore)
+
+    let addedSource = authoredFlowAttachment FlowAttachmentKind.Test ownerId 1 "test attachment.owner/cas-added {\n    domain::answer()\n    => 42\n}"
+    let added = FlowLowering.compileBatchFlowProjectSources context wordInventory [] attachmentInventory [ FlowAttachmentChange.Add addedSource ]
+    equal "attachment-only Add works with no word changes" (sources.Length + 1) added.Attachments.Length
+    let afterAdd = added.Attachments |> List.map (function | FlowCompiledAttachment.Test(source, _) | FlowCompiledAttachment.Example(source, _) -> source) |> flowAttachmentInventory
+    let literalDocument = sources |> List.find (fun source -> source.CaseName = "literal-test")
+    let replacement = authoredFlowAttachment FlowAttachmentKind.Test ownerId 1 "test attachment.owner/literal-test {\n    domain::answer()\n    => 42\n}"
+    let addReplaceRemove =
+        FlowLowering.compileBatchFlowProjectSources context wordInventory [] afterAdd
+            [ FlowAttachmentChange.Replace(literalDocument.Reference, replacement)
+              FlowAttachmentChange.Remove(flowAttachmentKey addedSource, addedSource.Reference) ]
+    equal "attachment-only Replace and Remove compose with exact prior references" sources.Length addReplaceRemove.Attachments.Length
+    check "replacement keeps the key and installs the new source object"
+        (addReplaceRemove.Attachments |> List.exists (function | FlowCompiledAttachment.Test(source, _) when source.CaseName = "literal-test" -> source.Content = replacement.Content && source.Reference = replacement.Reference | _ -> false))
+    check "removed attachment is absent from the final inventory"
+        (addReplaceRemove.Attachments |> List.forall (function | FlowCompiledAttachment.Test(source, _) | FlowCompiledAttachment.Example(source, _) -> source.CaseName <> "cas-added"))
+    let staleReference = { literalDocument.Reference with Hash = String.replicate 64 "0" }
+    expectLanguageError "Replace validates the prior reference as a compare-and-swap" "FLOW_ATTACHMENT_STALE_SOURCE" (fun () ->
+        FlowLowering.compileBatchFlowProjectSources context wordInventory [] attachmentInventory [ FlowAttachmentChange.Replace(staleReference, replacement) ] |> ignore)
+    expectLanguageError "Remove validates the prior reference as a compare-and-swap" "FLOW_ATTACHMENT_STALE_SOURCE" (fun () ->
+        FlowLowering.compileBatchFlowProjectSources context wordInventory [] attachmentInventory [ FlowAttachmentChange.Remove(flowAttachmentKey literalDocument, staleReference) ] |> ignore)
+    expectLanguageError "Add rejects an existing attachment key" "FLOW_ATTACHMENT_ADD_EXISTS" (fun () ->
+        FlowLowering.compileBatchFlowProjectSources context wordInventory [] attachmentInventory [ FlowAttachmentChange.Add literalDocument ] |> ignore)
+    let missingKey = { flowAttachmentKey literalDocument with CaseName = "missing-case" }
+    let missingDocument = authoredFlowAttachment FlowAttachmentKind.Test ownerId 1 "test attachment.owner/missing-case {\n    1\n    => 1\n}"
+    expectLanguageError "Replace rejects an absent attachment key" "FLOW_ATTACHMENT_REPLACE_MISSING" (fun () ->
+        FlowLowering.compileBatchFlowProjectSources context wordInventory [] attachmentInventory [ FlowAttachmentChange.Replace(missingDocument.Reference, missingDocument) ] |> ignore)
+    expectLanguageError "Remove rejects an absent attachment key" "FLOW_ATTACHMENT_REMOVE_MISSING" (fun () ->
+        FlowLowering.compileBatchFlowProjectSources context wordInventory [] attachmentInventory [ FlowAttachmentChange.Remove(missingKey, missingDocument.Reference) ] |> ignore)
+    expectLanguageError "one batch rejects duplicate intents for a stable attachment key" "FLOW_ATTACHMENT_DUPLICATE_CHANGE" (fun () ->
+        FlowLowering.compileBatchFlowProjectSources context wordInventory [] attachmentInventory
+            [ FlowAttachmentChange.Remove(flowAttachmentKey literalDocument, literalDocument.Reference)
+              FlowAttachmentChange.Replace(literalDocument.Reference, replacement) ] |> ignore)
+
+    let changed =
+        FlowLowering.compileBatchFlowProjectSources context wordInventory
+            [ replaceWord ownerId 1 2 "word attachment.owner() -> Int {\n    effects none\n    2\n}"
+              replaceWord answerId 1 2 "word domain.answer() -> Int {\n    effects none\n    43\n}" ]
+            attachmentInventory []
+    let carriedDocument, carriedTest = testCase changed "both-roles"
+    equal "unchanged attachment keeps its source object across owner update" (bothDocument.Reference, bothDocument.Content) (carriedDocument.Reference, carriedDocument.Content)
+    equal "unchanged attachment owner revision auto-carries under the same stable owner ID" 2 carriedDocument.OwnerRevision
+    equal "retained actual re-resolves against the final candidate IR" [ IntValue 43L ] (IrInterpreter.executeBody (host (ResizeArray())) "advanced-actual" carriedTest.Body)
+    equal "retained expected expression re-resolves against the final candidate IR" [ IntValue 43L ]
+        (carriedTest.ExpectationBody |> Option.defaultWith (fun () -> failwith "Expected carried value expression.") |> IrInterpreter.executeBody (host (ResizeArray())) "advanced-expected")
+    for role in [ FlowAttachmentBodyRole.Actual; FlowAttachmentBodyRole.ExpectedExpression ] do
+        let binding = changed.AttachmentBindings |> List.find (fun site -> site.Attachment.CaseName = "both-roles" && site.BodyRole = role)
+        equal "retained binding keeps stable target identity and exact final revision" (FlowCallTargetIdentity.UserWord answerId, Some 2) (binding.Site.Target, binding.Site.TargetRevision)
+        equal "retained binding auto-carries owner revision" 2 binding.OwnerRevision
+
+    let sharedSpan = span "<same-attachment-span>" 2 5 14
+    let sharedCall = FlowExpression.Call("domain.answer", [], sharedSpan)
+    let hostAst = parseTest "test attachment.owner/transient-same-span {\n    1\n    => value 1\n}"
+    let hostAst = { hostAst with Body = [ FlowStatement.Evaluate sharedCall ]; Expected = FlowTestExpectation.Expression sharedCall; SourceText = "<host-constructed>" }
+    let hostBound = FlowLowering.compileTestWithCallBindings context initial.WordCompilation.Program hostAst
+    let hostActual = hostBound.CallSites[FlowAttachmentBodyRole.Actual].Head
+    let hostExpected = hostBound.CallSites[FlowAttachmentBodyRole.ExpectedExpression].Head
+    equal "host AST actual and expected calls preserve one identical authored span" (sharedSpan, sharedSpan) (hostActual.Span, hostExpected.Span)
+    equal "host AST actual call retains its body-statement structural path"
+        (FlowAstPath.FlowAstPath [ FlowAstPathSegment.BlockStatement 0; FlowAstPathSegment.EvaluateExpression ]) hostActual.Path
+    equal "host AST expected expression retains its own root structural path" (FlowAstPath.FlowAstPath []) hostExpected.Path
+    check "host AST helper returns actual and expected calls under separate body-role keys"
+        (Map.containsKey FlowAttachmentBodyRole.Actual hostBound.CallSites
+         && Map.containsKey FlowAttachmentBodyRole.ExpectedExpression hostBound.CallSites)
+    equal "host AST role separation retains the same stable target ID" hostActual.Target hostExpected.Target
+
+    let suffixDocs = sources |> List.filter (fun source -> source.CaseName = "suffix-actual" || source.CaseName = "suffix-expected")
+    let suffixReplacement = replaceWord suffixId 1 2 "word domain.suffix(unused: Bool) -> Int {\n    effects none\n    41\n}"
+    let exactSuffix = addWord (WordId "exact-suffix") "word suffix() -> Int {\n    effects none\n    44\n}"
+    let suffixRoleCases: (FlowLowering.FlowAttachmentSourceDocument * string) list =
+        [ (suffixDocs |> List.find (fun source -> source.CaseName = "suffix-actual"), "Actual")
+          (suffixDocs |> List.find (fun source -> source.CaseName = "suffix-expected"), "ExpectedExpression") ]
+    for document, role in suffixRoleCases do
+        let diagnostic = captureLanguageError ("unchanged " + role + " attachment rejects a real short-name redirect") "FLOW_ATTACHMENT_CALL_REBOUND" (fun () ->
+            FlowLowering.compileBatchFlowProjectSources context wordInventory [ suffixReplacement; exactSuffix ] (flowAttachmentInventory [ document ]) [] |> ignore)
+        let details = String.concat " " (diagnostic.Expected @ diagnostic.Actual @ [ diagnostic.Message ])
+        check ("redirect diagnostic identifies role/path and both stable IDs")
+            (details.Contains(role, StringComparison.Ordinal) && details.Contains("FlowAstPath", StringComparison.Ordinal)
+             && details.Contains("domain-suffix", StringComparison.Ordinal) && details.Contains("exact-suffix", StringComparison.Ordinal))
+    let anotherPick = addWord (WordId "other-pick") "word other.pick(value: Int) -> Int {\n    effects none\n    value\n}"
+    let ambiguityCases: (string * string * string) list =
+        [ "dot-ambiguity", "Actual", "test"
+          "dot-ambiguity-expected", "ExpectedExpression", "test"
+          "dot-ambiguity-example", "Actual", "example" ]
+    for caseName, role, kind in ambiguityCases do
+        let document = sources |> List.find (fun source -> source.CaseName = caseName)
+        let ambiguity = captureLanguageError ("retained " + role + " attachment reports dot ambiguity") "FLOW_AMBIGUOUS_DOT_STAGE" (fun () ->
+            FlowLowering.compileBatchFlowProjectSources context wordInventory [ anotherPick ] (flowAttachmentInventory [ document ]) [] |> ignore)
+        equal "attachment ambiguity identifies its source owner" (Some "attachment.owner") ambiguity.Word
+        check "attachment ambiguity retains its authored call span" ambiguity.Span.IsSome
+        equal "attachment diagnostic preserves both original resolution candidates" (Set.ofList [ "domain.pick"; "other.pick" ]) (Set.ofList ambiguity.Actual)
+        equal "attachment diagnostic preserves its original empty expected-candidate set" [] ambiguity.Expected
+        check "attachment ambiguity adds owner, kind, case, body role, and structural path context"
+            (ambiguity.Message.Contains("owner='attachment.owner'", StringComparison.Ordinal)
+             && ambiguity.Message.Contains("kind='" + kind + "'", StringComparison.Ordinal)
+             && ambiguity.Message.Contains("case='" + caseName + "'", StringComparison.Ordinal)
+             && ambiguity.Message.Contains(role, StringComparison.Ordinal)
+             && ambiguity.Message.Contains("FlowAstPath", StringComparison.Ordinal))
+
+    let stackWord = wordEntry "legacy.operate" [ TInt ] [ TInt ] Set.empty [ Call("int.abs", sourceSpan) ]
+    let stackContext = loweringContext [ stackWord ] (Map.ofList [ "legacy.operate", [ "value" ] ])
+    let legacyId = stackContext.CompilerContext.WordIds["legacy.operate"]
+    let stackCase = authoredFlowAttachment FlowAttachmentKind.Test legacyId 1 "test legacy.operate/stack-case {\n    4\n    => 4\n}"
+    expectLanguageError "valid source attached to a legacy Stack owner requires Flow frontend proof" "FLOW_ATTACHMENT_OWNER_FRONTEND" (fun () ->
+        FlowLowering.compileBatchFlowProjectSources stackContext emptyWordInventory [] (flowAttachmentInventory [])
+            [ FlowAttachmentChange.Add stackCase ] |> ignore)
+    let migratedCase = authoredFlowAttachment FlowAttachmentKind.Test legacyId 2 "test legacy.operate/flow-case {\n    legacy::operate(4)\n    => 5\n}"
+    let migrated =
+        FlowLowering.compileBatchFlowProjectSources stackContext emptyWordInventory
+            [ replaceWord legacyId 1 2 "word legacy.operate(value: Int) -> Int {\n    effects none\n    add(value, 1)\n}" ]
+            (flowAttachmentInventory []) [ FlowAttachmentChange.Add migratedCase ]
+    equal "same-batch Stack-to-Flow replacement admits its new case" 1 migrated.Attachments.Length
+    match migrated.Attachments with
+    | [ FlowCompiledAttachment.Test(source, compiled) ] ->
+        equal "Stack-to-Flow case preserves its owner's stable identity and final revision" (legacyId, 2) (source.OwnerId, source.OwnerRevision)
+        equal "migrated case executes on the candidate Flow definition" [ IntValue 5L ] (IrInterpreter.executeBody (host (ResizeArray())) "migrated-case" compiled.Body)
+    | other -> failwithf "Expected exactly the new Flow case after migration, got %A" other
+
 let private testFlowDiagnostics () =
     let context = loweringContext [] Map.empty
     let ambiguous = parseExpression "1.unknown(2)"
@@ -2885,6 +3307,7 @@ let main _ =
     testFlowBatchFinalValidationAndOrigins ()
     testFlowCallBindingSources ()
     testFlowCallBindingStructuralPaths ()
+    testFlowAttachmentCallBindings ()
     testFlowDiagnostics ()
     printfn "Flow tests passed: %d assertions" assertions
     0

@@ -118,6 +118,71 @@ module FlowLowering =
           SiteOrigins: Map<SourceSiteId, SourceSpan>
           CallBindings: FlowCallBinding list }
 
+    [<RequireQualifiedAccess>]
+    type FlowAttachmentKind =
+        | Test
+        | Example
+
+    /// Stable identity for one source-backed test or example attached to a word.
+    type FlowAttachmentKey =
+        { OwnerId: WordId
+          Kind: FlowAttachmentKind
+          CaseName: string }
+
+    /// Exact host-inventoried bytes for one Flow test or example.
+    type FlowAttachmentSourceDocument =
+        { OwnerName: string
+          OwnerId: WordId
+          OwnerRevision: int
+          Kind: FlowAttachmentKind
+          CaseName: string
+          Reference: SourceRef
+          SourceFile: string
+          Content: string }
+
+    type FlowAttachmentInventory =
+        { /// Host-authenticated expected key-to-object mapping. The compiler only
+          /// proves that supplied documents match this declaration and the given
+          /// Context; the host establishes durable manifest membership.
+          ExpectedSources: Map<FlowAttachmentKey, SourceRef>
+          Sources: FlowAttachmentSourceDocument list }
+
+    [<RequireQualifiedAccess>]
+    type FlowAttachmentChange =
+        | Add of FlowAttachmentSourceDocument
+        | Replace of expectedPriorReference: SourceRef * FlowAttachmentSourceDocument
+        | Remove of key: FlowAttachmentKey * expectedPriorReference: SourceRef
+
+    [<RequireQualifiedAccess>]
+    type FlowAttachmentBodyRole =
+        | Actual
+        | ExpectedExpression
+
+    type FlowAttachmentCallBinding =
+        { Attachment: FlowAttachmentKey
+          OwnerName: string
+          OwnerRevision: int
+          Source: SourceRef
+          BodyRole: FlowAttachmentBodyRole
+          Site: FlowCallSite }
+
+    [<RequireQualifiedAccess>]
+    type FlowCompiledAttachment =
+        | Test of source: FlowAttachmentSourceDocument * compiled: CompiledTest
+        | Example of source: FlowAttachmentSourceDocument * compiled: CompiledExample
+
+    type FlowBoundProjectCompilation =
+        { WordCompilation: FlowBoundBatchCompilation
+          Attachments: FlowCompiledAttachment list
+          AttachmentBindings: FlowAttachmentCallBinding list }
+
+    /// Structural call sites from a host-built attachment AST. Like the
+    /// standalone word helper, this does not authenticate source bytes or
+    /// establish project-manifest membership.
+    type CompiledCallBoundTest =
+        { Compiled: CompiledTest
+          CallSites: Map<FlowAttachmentBodyRole, FlowCallSite list> }
+
     type CompiledCallBoundWord =
         { Lowered: FlowLoweredWord
           Context: Context
@@ -191,6 +256,15 @@ module FlowLowering =
     type private ValidatedFlowSourceChange =
         { Change: FlowWordChange
           Source: FlowSourceDocument }
+
+    type private ParsedFlowAttachment =
+        | ParsedFlowTest of FlowTestDefinition
+        | ParsedFlowExample of FlowExampleDefinition
+
+    type private RetainedFlowAttachment =
+        { Document: FlowAttachmentSourceDocument
+          Parsed: ParsedFlowAttachment
+          BaseCallSites: Map<FlowAttachmentBodyRole, FlowCallSite list> }
 
     type private LoweringState =
         { mutable NextTemporary: int
@@ -1126,6 +1200,51 @@ module FlowLowering =
                     [ sprintf "%A" event.Candidate.Kind; sprintf "%A" event.Form ] [ sprintf "%A" actualCall.Operation ]
         events |> List.map (callSiteOfEvent ownerName)
 
+    let private reconcileDetachedCallEvents
+        (ownerName: string)
+        (verifiedBody: VerifiedIrBody)
+        (events: FlowCallEvent list)
+        : FlowCallSite list =
+        match events |> List.countBy (fun event -> event.Path) |> List.tryFind (fun (_, count) -> count > 1) with
+        | Some(path, _) ->
+            fail "FLOW_ATTACHMENT_BINDING_PATH_DUPLICATE" "Two authored calls in one detached attachment body resolved to the same structural AST path." (Some ownerName) None [] [ sprintf "%A" path ]
+        | None -> ()
+        let body = VerifiedIrBody.inspect verifiedBody
+        let actual = authoredCallsInBlock body.BodyBlock
+        if actual.Length <> events.Length then
+            fail "FLOW_ATTACHMENT_BINDING_IR_CALL_COUNT" "Captured attachment call events do not cover its verified detached body." (Some ownerName) None
+                [ string events.Length ] [ string actual.Length ]
+        for index, (event, actualCall) in List.zip events actual |> List.indexed do
+            let source =
+                body.BodySourceMap.TryFind actualCall.Site
+                |> Option.defaultWith (fun () -> fail "FLOW_ATTACHMENT_BINDING_IR_SITE_MISSING" "A detached attachment call-like operation has no source-map entry." (Some ownerName) (Some event.Span) [] [ sprintf "%A" actualCall.Site ])
+            if source.SiteOwner.IsSome then
+                fail "FLOW_ATTACHMENT_BINDING_IR_OWNER_MISMATCH" "A detached attachment source site must not claim to belong to a dictionary function." (Some ownerName) (Some event.Span)
+                    [ "SiteOwner=None" ] [ sprintf "%A" source.SiteOwner ]
+            if source.SiteSpan <> event.Span then
+                fail "FLOW_ATTACHMENT_BINDING_IR_SPAN_MISMATCH" "A detached call-like IR source span does not match its ordered Flow event." (Some ownerName) (Some event.Span)
+                    [ sprintf "%A" event.Span ] [ sprintf "%A" source.SiteSpan ]
+            if source.SourceKind <> expectedSourceKind event.Form then
+                fail "FLOW_ATTACHMENT_BINDING_IR_KIND_MISMATCH" "A detached call-like IR source kind does not match the authored Flow call form." (Some ownerName) (Some event.Span)
+                    [ expectedSourceKind event.Form ] [ source.SourceKind ]
+            let expectedTarget = targetIdentityOfCandidate ownerName event.Candidate
+            let actualTarget = identityOfResolvedCall actualCall.Call
+            if actualTarget <> expectedTarget then
+                fail "FLOW_ATTACHMENT_BINDING_IR_TARGET_MISMATCH" "Verified detached IR resolved an authored call to a different stable target identity." (Some ownerName) (Some event.Span)
+                    [ sprintf "%A" expectedTarget ] [ sprintf "%A" actualTarget ]
+            let expectedRevision = revisionOfCandidate event.Candidate
+            let actualRevision = revisionOfResolvedCall actualCall.Call
+            if actualRevision <> expectedRevision then
+                fail "FLOW_ATTACHMENT_BINDING_IR_TARGET_REVISION" "Verified detached IR resolved a call to a different target revision than the final signature catalog." (Some ownerName) (Some event.Span)
+                    [ sprintf "%A" expectedRevision ] [ sprintf "%A" actualRevision ]
+            if actualCall.Call.ResolvedName <> event.Candidate.Name then
+                fail "FLOW_ATTACHMENT_BINDING_IR_TARGET_NAME" "Verified detached IR resolved an authored call through a different dictionary name than the selected candidate." (Some ownerName) (Some event.Span)
+                    [ event.Candidate.Name ] [ actualCall.Call.ResolvedName ]
+            if not (operationMatchesCandidate event.Form event.Candidate actualCall.Operation) then
+                fail "FLOW_ATTACHMENT_BINDING_IR_OPERATION_MISMATCH" "Verified detached IR lowered an authored call through a different operation kind." (Some ownerName) (Some event.Span)
+                    [ sprintf "%A" event.Candidate.Kind; sprintf "%A" event.Form ] [ sprintf "%A" actualCall.Operation ]
+        events |> List.map (callSiteOfEvent ownerName)
+
     let rec private semanticExpressions (expressions: Expr list) : SemanticExpr list =
         let rec normalize = function
             | Push(literal, _) -> SemanticPush literal
@@ -1224,6 +1343,102 @@ module FlowLowering =
                         walkExpression (extendPath statementPath (FlowAstPathSegment.ReturnOutput outputIndex)) value))
         walkStatements (FlowAstPath.FlowAstPath []) flowWord.Body
         found |> Seq.toList
+
+    let private attachmentCallPathsAtSpan (attachment: ParsedFlowAttachment) (targetSpan: SourceSpan) =
+        let found = ResizeArray<FlowAttachmentBodyRole * FlowAstPath>()
+        let add role path span =
+            if span = targetSpan then found.Add((role, path))
+        let rec walkExpression role path expression =
+            match expression with
+            | FlowExpression.Call(_, arguments, span) ->
+                add role path span
+                arguments |> List.iteri (fun index argument -> walkArgument role path FlowCallForm.Direct index argument)
+            | FlowExpression.RootCall(_, arguments, span) ->
+                add role path span
+                arguments |> List.iteri (fun index argument -> walkArgument role path FlowCallForm.AbsoluteRoot index argument)
+            | FlowExpression.DotCall(receiver, stage, arguments, span) ->
+                add role path span
+                walkExpression role (extendPath path FlowAstPathSegment.DotReceiver) receiver
+                arguments |> List.iteri (fun index argument -> walkArgument role path (FlowCallForm.DotStage stage) index argument)
+            | FlowExpression.If(condition, thenStatements, elseStatements, _) ->
+                walkExpression role (extendPath path FlowAstPathSegment.IfCondition) condition
+                walkStatements role (extendPath path (FlowAstPathSegment.IfThenStatement 0)) thenStatements
+                walkStatements role (extendPath path (FlowAstPathSegment.IfElseStatement 0)) elseStatements
+            | FlowExpression.Container(_, _, payload, _) ->
+                payload |> Option.iter (walkExpression role (extendPath path FlowAstPathSegment.ContainerPayload))
+            | FlowExpression.MatchOption(scrutinee, someCase, noneCase, _) ->
+                walkExpression role (extendPath path FlowAstPathSegment.OptionScrutinee) scrutinee
+                walkStatements role (extendPath path (FlowAstPathSegment.OptionSomeStatement 0)) someCase.Statements
+                walkStatements role (extendPath path (FlowAstPathSegment.OptionNoneStatement 0)) noneCase.Statements
+            | FlowExpression.MatchResult(scrutinee, okCase, errorCase, _) ->
+                walkExpression role (extendPath path FlowAstPathSegment.ResultScrutinee) scrutinee
+                walkStatements role (extendPath path (FlowAstPathSegment.ResultOkStatement 0)) okCase.Statements
+                walkStatements role (extendPath path (FlowAstPathSegment.ResultErrorStatement 0)) errorCase.Statements
+            | FlowExpression.Literal _ | FlowExpression.Local _ -> ()
+        and walkArgument role path form index argument =
+            let argumentNodePath = extendPath path (argumentPath form index)
+            match argument with
+            | FlowArgument.Positional expression -> walkExpression role argumentNodePath expression
+            | FlowArgument.Named(_, expression, nameSpan) ->
+                add role argumentNodePath nameSpan
+                walkExpression role argumentNodePath expression
+            | FlowArgument.WordReference reference -> add role argumentNodePath reference.Span
+        and walkStatements role path statements =
+            statements
+            |> List.iteri (fun index statement ->
+                let statementPath = extendPath path (FlowAstPathSegment.BlockStatement index)
+                match statement with
+                | FlowStatement.Let(_, value, _) -> walkExpression role (extendPath statementPath FlowAstPathSegment.LetInitializer) value
+                | FlowStatement.LetMany(_, value, _) -> walkExpression role (extendPath statementPath FlowAstPathSegment.DestructureInitializer) value
+                | FlowStatement.Evaluate expression -> walkExpression role (extendPath statementPath FlowAstPathSegment.EvaluateExpression) expression
+                | FlowStatement.Return(values, _) ->
+                    values |> List.iteri (fun outputIndex value ->
+                        walkExpression role (extendPath statementPath (FlowAstPathSegment.ReturnOutput outputIndex)) value))
+        match attachment with
+        | ParsedFlowTest test ->
+            walkStatements FlowAttachmentBodyRole.Actual (FlowAstPath.FlowAstPath []) test.Body
+            match test.Expected with
+            | FlowTestExpectation.Expression expression ->
+                walkExpression FlowAttachmentBodyRole.ExpectedExpression (FlowAstPath.FlowAstPath []) expression
+            | FlowTestExpectation.Literal _ | FlowTestExpectation.RuntimeError _ -> ()
+        | ParsedFlowExample example ->
+            walkStatements FlowAttachmentBodyRole.Actual (FlowAstPath.FlowAstPath []) example.Body
+        found |> Seq.distinct |> Seq.toList
+
+    let private attachmentKindName = function
+        | FlowAttachmentKind.Test -> "test"
+        | FlowAttachmentKind.Example -> "example"
+
+    let private withAttachmentDiagnosticContext
+        (document: FlowAttachmentSourceDocument)
+        (attachment: ParsedFlowAttachment option)
+        action =
+        try action ()
+        with
+        | LanguageException diagnostic ->
+            let locations =
+                match attachment, diagnostic.Span with
+                | Some parsed, Some span -> attachmentCallPathsAtSpan parsed span
+                | _ -> []
+            let locationText =
+                match locations with
+                | [] -> ""
+                | _ ->
+                    locations
+                    |> List.map (fun (role, path) -> sprintf "%A at %A" role path)
+                    |> List.distinct
+                    |> String.concat "; "
+                    |> sprintf " Authored body location(s): %s."
+            let priorWordText =
+                match diagnostic.Word with
+                | Some word when word <> document.OwnerName -> $" Diagnostic target word: '{word}'."
+                | _ -> ""
+            let contextText =
+                $" Flow attachment context: owner='{document.OwnerName}' ({document.OwnerId}), kind='{attachmentKindName document.Kind}', case='{document.CaseName}'."
+            let owner =
+                if String.IsNullOrWhiteSpace document.OwnerName then diagnostic.Word
+                else Some document.OwnerName
+            raise (LanguageException { diagnostic with Word = owner; Message = diagnostic.Message + contextText + locationText + priorWordText })
 
     let private withFlowOwnerPath (flowWord: FlowWordDefinition) action =
         try action ()
@@ -1670,8 +1885,6 @@ module FlowLowering =
         (retainedSources: RetainedFlowSource list)
         : BatchCompilationArtifacts =
         validateContextCatalog context
-        if List.isEmpty changes then fail "FLOW_BATCH_EMPTY" "A Flow word batch must contain at least one change." None None [ "one or more word changes" ] []
-
         // Validate every intent against the immutable input before creating any
         // overlay map, so duplicate or stale requests cannot partly mutate state.
         let prepared = ResizeArray<PreparedBatchChange>()
@@ -1880,15 +2093,17 @@ module FlowLowering =
           AuthoredOwners = authoredOwners }
 
     let compileBatchWords (context: Context) (changes: FlowWordChange list) : FlowBatchCompilation =
+        if List.isEmpty changes then fail "FLOW_BATCH_EMPTY" "A Flow word batch must contain at least one change." None None [ "one or more word changes" ] []
         (compileBatchWordsCore context changes Map.empty [] ).Compilation
 
-    let compileBatchFlowSources
+    let private compileBatchFlowSourcesCore
+        allowEmpty
         (context: Context)
         (inventory: FlowSourceInventory)
         (sourceChanges: FlowSourceChange list)
         : FlowBoundBatchCompilation =
         validateContextCatalog context
-        if List.isEmpty sourceChanges then
+        if List.isEmpty sourceChanges && not allowEmpty then
             fail "FLOW_BATCH_EMPTY" "A source-backed Flow batch must contain at least one word change." None None [ "one or more source changes" ] []
         let retainedBase = validateFlowSourceInventory context inventory
         let changedSourceNames = sourceChanges |> List.map (fun change -> change.Source.OwnerName)
@@ -1991,28 +2206,40 @@ module FlowLowering =
           SiteOrigins = finalSites
           CallBindings = callBindings }
 
+    let compileBatchFlowSources
+        (context: Context)
+        (inventory: FlowSourceInventory)
+        (sourceChanges: FlowSourceChange list)
+        : FlowBoundBatchCompilation =
+        compileBatchFlowSourcesCore false context inventory sourceChanges
+
     let private requireAttachmentVersion kind word span version =
         if version <> 1 then fail "FLOW_VERSION_UNSUPPORTED" $"Only Flow syntax version 1 is supported for Flow {kind} attachments." (Some word) (Some span) [ "1" ] [ string version ]
 
-    let lowerTest (context: Context) (flowTest: FlowTestDefinition) : FlowLoweredTest =
+    let private lowerTestWithEvents
+        (context: Context)
+        (allocationOrigins: Map<SourceSpan, SourceSpan>)
+        (flowTest: FlowTestDefinition)
+        : FlowLoweredTest * FlowCallEvent list * FlowCallEvent list =
         FlowStructure.validateTestNesting flowTest
         requireAttachmentVersion "test" flowTest.Word flowTest.Span flowTest.SyntaxVersion
-        let state = freshState context
+        let state = freshStateWith allocationOrigins (signatureCatalog context)
         rememberSpan state flowTest.Span
         rememberSpan state flowTest.HeaderSpan
         rememberSpan state flowTest.ExpectationSpan
         let bodyFragment, _ = lowerStatements context state Map.empty (FlowAstPath.FlowAstPath []) flowTest.Body
-        let expected =
+        let expected, expectationCallEvents =
             match flowTest.Expected with
             | FlowTestExpectation.Literal(literal, literalSpan) ->
                 rememberSpan state literalSpan
-                ExpectedValue literal
+                ExpectedValue literal, []
             | FlowTestExpectation.RuntimeError(code, codeSpan) ->
                 rememberSpan state codeSpan
-                ExpectedRuntimeError code
+                ExpectedRuntimeError code, []
             | FlowTestExpectation.Expression expression ->
                 inferExpression context state Map.empty expression |> ignore
-                ExpectedExpression((lowerFlowExpression context state Map.empty (FlowAstPath.FlowAstPath []) expression).Expressions)
+                let loweredExpectation = lowerFlowExpression context state Map.empty (FlowAstPath.FlowAstPath []) expression
+                ExpectedExpression loweredExpectation.Expressions, loweredExpectation.CallEvents
         let definition: TestDefinition =
             { Name = flowTest.CaseName
               Word = flowTest.Word
@@ -2026,12 +2253,16 @@ module FlowLowering =
         { Definition = definition
           SourceText = flowTest.SourceText
           SyntaxVersion = flowTest.SyntaxVersion
-          Projection = projection }
+          Projection = projection }, bodyFragment.CallEvents, expectationCallEvents
 
-    let lowerExample (context: Context) (flowExample: FlowExampleDefinition) : FlowLoweredExample =
+    let private lowerExampleWithEvents
+        (context: Context)
+        (allocationOrigins: Map<SourceSpan, SourceSpan>)
+        (flowExample: FlowExampleDefinition)
+        : FlowLoweredExample * FlowCallEvent list =
         FlowStructure.validateExampleNesting flowExample
         requireAttachmentVersion "example" flowExample.Word flowExample.Span flowExample.SyntaxVersion
-        let state = freshState context
+        let state = freshStateWith allocationOrigins (signatureCatalog context)
         rememberSpan state flowExample.Span
         rememberSpan state flowExample.HeaderSpan
         rememberSpan state flowExample.ExpectationSpan
@@ -2050,7 +2281,15 @@ module FlowLowering =
         { Definition = definition
           SourceText = flowExample.SourceText
           SyntaxVersion = flowExample.SyntaxVersion
-          Projection = projection }
+          Projection = projection }, bodyFragment.CallEvents
+
+    let lowerTest (context: Context) (flowTest: FlowTestDefinition) : FlowLoweredTest =
+        let lowered, _, _ = lowerTestWithEvents context context.SourceOrigins flowTest
+        lowered
+
+    let lowerExample (context: Context) (flowExample: FlowExampleDefinition) : FlowLoweredExample =
+        let lowered, _ = lowerExampleWithEvents context context.SourceOrigins flowExample
+        lowered
 
     let compileTest (context: Context) (verifiedProgram: VerifiedIrProgram) (flowTest: FlowTestDefinition) : CompiledTest =
         let lowered = lowerTest context flowTest
@@ -2080,6 +2319,402 @@ module FlowLowering =
           Program = verifiedProgram
           Body = body
           SiteOrigins = sites }
+
+    let private compileTestWithCallEvents
+        (context: Context)
+        (verifiedProgram: VerifiedIrProgram)
+        (allocationOrigins: Map<SourceSpan, SourceSpan>)
+        (flowTest: FlowTestDefinition)
+        : CompiledTest * FlowCallEvent list * FlowCallEvent list =
+        let lowered, actualEvents, expectedEvents = lowerTestWithEvents context allocationOrigins flowTest
+        let origins = mergeOrigins context lowered.Projection
+        let body, expectationBody =
+            Compiler.compileIrTestWithExpectationAgainstProgramWithSourceOrigins
+                context.CompilerContext verifiedProgram lowered.Definition origins
+        let bodySources = VerifiedIrBody.inspect body |> fun value -> value.BodySourceMap |> sourceSites
+        let expectationSources =
+            expectationBody
+            |> Option.map (VerifiedIrBody.inspect >> fun value -> value.BodySourceMap |> sourceSites)
+        { Lowered = lowered
+          Program = verifiedProgram
+          Body = body
+          ExpectationBody = expectationBody
+          BodySiteOrigins = bodySources
+          ExpectationSiteOrigins = expectationSources }, actualEvents, expectedEvents
+
+    let private compileExampleWithCallEvents
+        (context: Context)
+        (verifiedProgram: VerifiedIrProgram)
+        (allocationOrigins: Map<SourceSpan, SourceSpan>)
+        (flowExample: FlowExampleDefinition)
+        : CompiledExample * FlowCallEvent list =
+        let lowered, events = lowerExampleWithEvents context allocationOrigins flowExample
+        let origins = mergeOrigins context lowered.Projection
+        let body =
+            Compiler.compileIrExampleAgainstProgramWithSourceOrigins
+                context.CompilerContext verifiedProgram lowered.Definition origins
+        let sites = VerifiedIrBody.inspect body |> fun value -> value.BodySourceMap |> sourceSites
+        { Lowered = lowered
+          Program = verifiedProgram
+          Body = body
+          SiteOrigins = sites }, events
+
+    /// Compile a host-built Flow test AST and reconcile its actual and expected
+    /// expression call sites with detached verified IR. This does not bind the
+    /// AST to source bytes; use the project-source API for source-backed rows.
+    let compileTestWithCallBindings
+        (context: Context)
+        (verifiedProgram: VerifiedIrProgram)
+        (flowTest: FlowTestDefinition)
+        : CompiledCallBoundTest =
+        let compiled, actualEvents, expectedEvents =
+            compileTestWithCallEvents context verifiedProgram context.SourceOrigins flowTest
+        let actualSites = reconcileDetachedCallEvents flowTest.Word compiled.Body actualEvents
+        let expectedSites =
+            compiled.ExpectationBody
+            |> Option.map (fun body -> reconcileDetachedCallEvents flowTest.Word body expectedEvents)
+        let callSites =
+            [ FlowAttachmentBodyRole.Actual, actualSites ]
+            @ (expectedSites |> Option.map (fun sites -> FlowAttachmentBodyRole.ExpectedExpression, sites) |> Option.toList)
+            |> Map.ofList
+        { Compiled = compiled
+          CallSites = callSites }
+
+    let private attachmentKeyOfDocument (document: FlowAttachmentSourceDocument) =
+        { OwnerId = document.OwnerId
+          Kind = document.Kind
+          CaseName = document.CaseName }
+
+    let private validateAttachmentKey (key: FlowAttachmentKey) =
+        match key.OwnerId with
+        | WordId raw when String.IsNullOrWhiteSpace raw ->
+            fail "FLOW_ATTACHMENT_OWNER_ID_INVALID" "A Flow attachment key requires a nonempty stable owner ID." None None [ "nonempty WordId" ] [ raw ]
+        | _ -> ()
+        if String.IsNullOrWhiteSpace key.CaseName then
+            fail "FLOW_ATTACHMENT_KEY_INVALID" "An attachment key requires a nonempty case name." None None [ "nonempty case name" ] [ key.CaseName ]
+
+    let private validateFlowAttachmentSourceDocument (document: FlowAttachmentSourceDocument) : ParsedFlowAttachment =
+        if String.IsNullOrWhiteSpace document.OwnerName then
+            fail "FLOW_ATTACHMENT_OWNER_INVALID" "A Flow attachment source document requires an owner name." None None [ "nonempty word name" ] [ document.OwnerName ]
+        if String.IsNullOrWhiteSpace document.SourceFile then
+            fail "FLOW_ATTACHMENT_FILE_INVALID" "A Flow attachment source document requires a diagnostic source-file label." (Some document.OwnerName) None [ "nonempty source file" ] [ document.SourceFile ]
+        if document.OwnerRevision < 0 then
+            fail "FLOW_ATTACHMENT_REVISION_INVALID" "A Flow attachment owner revision must be nonnegative." (Some document.OwnerName) None [ "nonnegative revision" ] [ string document.OwnerRevision ]
+        match document.OwnerId with
+        | WordId raw when String.IsNullOrWhiteSpace raw ->
+            fail "FLOW_ATTACHMENT_OWNER_ID_INVALID" "A Flow attachment requires a nonempty stable owner ID." (Some document.OwnerName) None [ "nonempty WordId" ] [ raw ]
+        | _ -> ()
+        let key = attachmentKeyOfDocument document
+        validateAttachmentKey key
+        let expectedObjectKind, kindName =
+            match document.Kind with
+            | FlowAttachmentKind.Test -> StorageObjectKind.TestDefinition, "test"
+            | FlowAttachmentKind.Example -> StorageObjectKind.ExampleDefinition, "example"
+        if document.Reference.Kind <> expectedObjectKind then
+            fail "FLOW_ATTACHMENT_KIND_MISMATCH" $"A Flow {kindName} source reference must identify a {kindName}-definition object." (Some document.OwnerName) None
+                [ string expectedObjectKind ] [ string document.Reference.Kind ]
+        if isNull document.Content then
+            fail "FLOW_ATTACHMENT_CONTENT_INVALID" "Flow attachment source content cannot be null." (Some document.OwnerName) None [ "UTF-8 source text" ] [ "null" ]
+        let actualReference =
+            try Storage.sourceObject expectedObjectKind document.Content |> fun source -> source.Reference
+            with
+            | :? EncoderFallbackException ->
+                fail "FLOW_ATTACHMENT_UTF8_INVALID" "Flow attachment source must encode as strict UTF-8 without replacement characters." (Some document.OwnerName) None [ "valid UTF-16 source text" ] [ "unpaired surrogate" ]
+        if actualReference <> document.Reference then
+            fail "FLOW_ATTACHMENT_HASH_MISMATCH" "The supplied Flow attachment reference does not match the exact strict UTF-8 source bytes." (Some document.OwnerName) None
+                [ actualReference.Hash ] [ document.Reference.Hash ]
+        let parsed =
+            match document.Kind with
+            | FlowAttachmentKind.Test ->
+                match FlowParser.parseTest document.SourceFile document.Content with
+                | Ok test -> ParsedFlowTest test
+                | Error problem -> raise (LanguageException { problem with Word = Some document.OwnerName })
+            | FlowAttachmentKind.Example ->
+                match FlowParser.parseExample document.SourceFile document.Content with
+                | Ok example -> ParsedFlowExample example
+                | Error problem -> raise (LanguageException { problem with Word = Some document.OwnerName })
+        let (parsedOwner, parsedCase, parsedSpan) =
+            match parsed with
+            | ParsedFlowTest test -> test.Word, test.CaseName, test.Span
+            | ParsedFlowExample example -> example.Word, example.CaseName, example.Span
+        if parsedOwner <> document.OwnerName then
+            fail "FLOW_ATTACHMENT_OWNER_MISMATCH" "The parsed attachment owner differs from its declared word name." (Some document.OwnerName) (Some parsedSpan)
+                [ document.OwnerName ] [ parsedOwner ]
+        if parsedCase <> document.CaseName then
+            fail "FLOW_ATTACHMENT_CASE_MISMATCH" "The parsed attachment case differs from its declared attachment key." (Some document.OwnerName) (Some parsedSpan)
+                [ document.CaseName ] [ parsedCase ]
+        parsed
+
+    let private ensureAttachmentOwner
+        (context: Context)
+        (ownerName: string)
+        (ownerId: WordId)
+        (ownerRevision: int option)
+        (span: SourceSpan option) =
+        let entry =
+            context.CompilerContext.Words.TryFind ownerName
+            |> Option.defaultWith (fun () -> fail "FLOW_ATTACHMENT_OWNER_MISSING" "A Flow attachment refers to a missing dictionary word." (Some ownerName) span [ "existing user word" ] [])
+        let actualId =
+            context.CompilerContext.WordIds.TryFind ownerName
+            |> Option.defaultWith (fun () -> fail "FLOW_ATTACHMENT_OWNER_ID_MISSING" "A Flow attachment owner has no stable dictionary ID." (Some ownerName) span [ "WordId" ] [])
+        if actualId <> ownerId then
+            fail "FLOW_ATTACHMENT_OWNER_ID_MISMATCH" "A Flow attachment owner ID differs from the dictionary ID-to-name catalog." (Some ownerName) span
+                [ sprintf "%A" actualId ] [ sprintf "%A" ownerId ]
+        if entry.Builtin.IsSome || entry.Status = Primitive then
+            fail "FLOW_ATTACHMENT_OWNER_PROTECTED" "Flow source attachments require a user-authored dictionary word." (Some ownerName) span [ "user word" ] [ ownerName ]
+        match ownerRevision with
+        | Some expected when entry.Revision <> expected || entry.Definition.Revision <> expected ->
+            fail "FLOW_ATTACHMENT_OWNER_REVISION_MISMATCH" "A Flow attachment owner revision differs from the requested dictionary snapshot." (Some ownerName) span
+                [ string entry.Revision ] [ string expected ]
+        | _ -> ()
+        entry
+
+    let private validateFlowAttachmentInventory
+        (context: Context)
+        (baseFlowOwnerIds: Set<WordId>)
+        (inventory: FlowAttachmentInventory)
+        : RetainedFlowAttachment list =
+        let duplicateKeys =
+            inventory.Sources
+            |> List.map attachmentKeyOfDocument
+            |> List.groupBy id
+            |> List.tryFind (fun (_, values) -> values.Length > 1)
+        match duplicateKeys with
+        | Some(key, _) ->
+            fail "FLOW_ATTACHMENT_INVENTORY_DUPLICATE" "A Flow attachment inventory may contain at most one document per owner/kind/case key." None None [] [ sprintf "%A" key ]
+        | None -> ()
+        for key in inventory.ExpectedSources |> Map.toSeq |> Seq.map fst do validateAttachmentKey key
+        let actualKeys = inventory.Sources |> List.map attachmentKeyOfDocument |> Set.ofList
+        let expectedKeys = inventory.ExpectedSources |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+        if actualKeys <> expectedKeys then
+            let missing = Set.difference expectedKeys actualKeys |> Set.toList
+            let undeclared = Set.difference actualKeys expectedKeys |> Set.toList
+            fail "FLOW_ATTACHMENT_INVENTORY_INCOMPLETE" "The Flow attachment inventory must exactly cover the host-declared key/reference map." None None
+                (expectedKeys |> Set.toList |> List.map (sprintf "%A"))
+                ([ yield! missing |> List.map (sprintf "missing %A")
+                   yield! undeclared |> List.map (sprintf "undeclared %A") ])
+        let parsed =
+            inventory.Sources
+            |> List.map (fun document ->
+                let key = attachmentKeyOfDocument document
+                let parsed = withAttachmentDiagnosticContext document None (fun () -> validateFlowAttachmentSourceDocument document)
+                let expectedReference = inventory.ExpectedSources[key]
+                if expectedReference <> document.Reference then
+                    fail "FLOW_ATTACHMENT_INVENTORY_REFERENCE_MISMATCH" "An attachment's content-addressed source reference differs from the host-declared inventory mapping." (Some document.OwnerName) None
+                        [ sprintf "%A" expectedReference ] [ sprintf "%A" document.Reference ]
+                let parsedSpan =
+                    match parsed with
+                    | ParsedFlowTest test -> test.Span
+                    | ParsedFlowExample example -> example.Span
+                if not (baseFlowOwnerIds.Contains document.OwnerId) then
+                    fail "FLOW_ATTACHMENT_OWNER_FRONTEND" "A base Flow test/example inventory may contain only cases attached to owners proven Flow by the host's word-source inventory." (Some document.OwnerName) (Some parsedSpan)
+                        [ "owner ID in ExpectedFlowOwnerIds" ] [ sprintf "%A" document.OwnerId ]
+                ensureAttachmentOwner context document.OwnerName document.OwnerId (Some document.OwnerRevision) (Some parsedSpan) |> ignore
+                document, parsed)
+            |> List.sortBy (fun (document, _) -> attachmentKeyOfDocument document)
+        // Detached baselines are independently checked against one immutable base program.
+        let baseProgram = Compiler.compileIrProgramWithSourceOrigins context.CompilerContext context.SourceOrigins
+        let mutable allocationOrigins = context.SourceOrigins
+        parsed
+        |> List.map (fun (document, parsedAttachment) ->
+            let key = attachmentKeyOfDocument document
+            let baseSites, projection =
+                withAttachmentDiagnosticContext document (Some parsedAttachment) (fun () ->
+                    match parsedAttachment with
+                    | ParsedFlowTest test ->
+                        let compiled, actualEvents, expectedEvents = compileTestWithCallEvents context baseProgram allocationOrigins test
+                        let sites =
+                            [ FlowAttachmentBodyRole.Actual, reconcileDetachedCallEvents document.OwnerName compiled.Body actualEvents ]
+                            @ (compiled.ExpectationBody
+                               |> Option.map (fun body -> FlowAttachmentBodyRole.ExpectedExpression, reconcileDetachedCallEvents document.OwnerName body expectedEvents)
+                               |> Option.toList)
+                        Map.ofList sites, compiled.Lowered.Projection
+                    | ParsedFlowExample example ->
+                        let compiled, events = compileExampleWithCallEvents context baseProgram allocationOrigins example
+                        Map.ofList [ FlowAttachmentBodyRole.Actual, reconcileDetachedCallEvents document.OwnerName compiled.Body events ], compiled.Lowered.Projection)
+            let overlap = projection.SyntheticOrigins |> Map.toSeq |> Seq.tryFind (fun (marker, _) -> allocationOrigins.ContainsKey marker)
+            match overlap with
+            | Some(marker, _) -> fail "FLOW_ATTACHMENT_SOURCE_ORIGIN_COLLISION" "Attachment source markers must remain disjoint across the host inventory." (Some document.OwnerName) None [] [ sprintf "%A" marker ]
+            | None -> ()
+            allocationOrigins <- Map.fold (fun found marker origin -> Map.add marker origin found) allocationOrigins projection.SyntheticOrigins
+            { Document = document
+              Parsed = parsedAttachment
+              BaseCallSites = baseSites })
+
+    let private checkRetainedAttachmentBindings
+        (document: FlowAttachmentSourceDocument)
+        (baseline: Map<FlowAttachmentBodyRole, FlowCallSite list>)
+        (proposed: Map<FlowAttachmentBodyRole, FlowCallSite list>) =
+        let ownerName = document.OwnerName
+        let key = attachmentKeyOfDocument document
+        let baseRoles = baseline |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+        let proposedRoles = proposed |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+        if baseRoles <> proposedRoles then
+            fail "FLOW_ATTACHMENT_CALL_REBOUND" $"Retained Flow attachment {key} changed its actual/expected body roles during re-resolution." (Some ownerName) None
+                (baseRoles |> Set.toList |> List.map (sprintf "%A")) (proposedRoles |> Set.toList |> List.map (sprintf "%A"))
+        for role in baseRoles do
+            let baseByPath = baseline[role] |> List.map (fun site -> site.Path, site) |> Map.ofList
+            let proposedByPath = proposed[role] |> List.map (fun site -> site.Path, site) |> Map.ofList
+            let basePaths = baseByPath |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+            let proposedPaths = proposedByPath |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+            if basePaths <> proposedPaths then
+                fail "FLOW_ATTACHMENT_CALL_REBOUND" $"Retained Flow attachment {key} changed its structural call-site set in body role {role}." (Some ownerName) None
+                    (basePaths |> Set.toList |> List.map (sprintf "%A")) (proposedPaths |> Set.toList |> List.map (sprintf "%A"))
+            for path in basePaths do
+                if baseByPath[path].Target <> proposedByPath[path].Target then
+                    fail "FLOW_ATTACHMENT_CALL_REBOUND" $"Retained Flow attachment {key} call in body role {role} at {path} would bind to a different stable target identity." (Some ownerName) (Some proposedByPath[path].Span)
+                        [ sprintf "role=%A" role; sprintf "path=%A" path; sprintf "target=%A" baseByPath[path].Target ]
+                        [ sprintf "role=%A" role; sprintf "path=%A" path; sprintf "target=%A" proposedByPath[path].Target ]
+
+    let compileBatchFlowProjectSources
+        (context: Context)
+        (wordInventory: FlowSourceInventory)
+        (wordChanges: FlowSourceChange list)
+        (attachmentInventory: FlowAttachmentInventory)
+        (attachmentChanges: FlowAttachmentChange list)
+        : FlowBoundProjectCompilation =
+        validateContextCatalog context
+        if List.isEmpty wordChanges && List.isEmpty attachmentChanges then
+            fail "FLOW_BATCH_EMPTY" "A Flow project-source batch must contain at least one word or attachment change." None None
+                [ "one or more word or attachment changes" ] []
+
+        let baseFlowOwnerIds = wordInventory.ExpectedFlowOwnerIds
+        let retainedAttachments = validateFlowAttachmentInventory context baseFlowOwnerIds attachmentInventory
+        let baseDocuments =
+            retainedAttachments
+            |> List.map (fun retained -> attachmentKeyOfDocument retained.Document, retained)
+            |> Map.ofList
+        let baseReferences = attachmentInventory.ExpectedSources
+        let changedKeys = attachmentChanges |> List.map (function
+            | FlowAttachmentChange.Add document -> attachmentKeyOfDocument document
+            | FlowAttachmentChange.Replace(_, document) -> attachmentKeyOfDocument document
+            | FlowAttachmentChange.Remove(key, _) -> key)
+        match changedKeys |> List.groupBy id |> List.tryFind (fun (_, values) -> values.Length > 1) with
+        | Some(key, _) ->
+            fail "FLOW_ATTACHMENT_DUPLICATE_CHANGE" "A Flow project-source batch may contain at most one intent per owner/kind/case key." None None [] [ sprintf "%A" key ]
+        | None -> ()
+
+        let mutable finalDocuments = retainedAttachments |> List.map (fun retained -> attachmentKeyOfDocument retained.Document, retained.Document) |> Map.ofList
+        let mutable finalParsed = retainedAttachments |> List.map (fun retained -> attachmentKeyOfDocument retained.Document, retained.Parsed) |> Map.ofList
+        for change in attachmentChanges do
+            match change with
+            | FlowAttachmentChange.Add document ->
+                let key = attachmentKeyOfDocument document
+                validateAttachmentKey key
+                if baseReferences.ContainsKey key then
+                    fail "FLOW_ATTACHMENT_ADD_EXISTS" "An attachment add requires a key absent from the base source inventory." (Some document.OwnerName) None [] [ sprintf "%A" key ]
+                let parsed = withAttachmentDiagnosticContext document None (fun () -> validateFlowAttachmentSourceDocument document)
+                finalDocuments <- Map.add key document finalDocuments
+                finalParsed <- Map.add key parsed finalParsed
+            | FlowAttachmentChange.Replace(expectedPriorReference, document) ->
+                let key = attachmentKeyOfDocument document
+                validateAttachmentKey key
+                let actualPriorReference =
+                    baseReferences.TryFind key
+                    |> Option.defaultWith (fun () -> fail "FLOW_ATTACHMENT_REPLACE_MISSING" "An attachment replacement requires an existing base source key." (Some document.OwnerName) None [ sprintf "%A" key ] [])
+                if expectedPriorReference <> actualPriorReference then
+                    fail "FLOW_ATTACHMENT_STALE_SOURCE" "The attachment replacement's expected prior source reference does not match the base inventory." (Some document.OwnerName) None
+                        [ sprintf "%A" actualPriorReference ] [ sprintf "%A" expectedPriorReference ]
+                let parsed = withAttachmentDiagnosticContext document None (fun () -> validateFlowAttachmentSourceDocument document)
+                finalDocuments <- Map.add key document finalDocuments
+                finalParsed <- Map.add key parsed finalParsed
+            | FlowAttachmentChange.Remove(key, expectedPriorReference) ->
+                validateAttachmentKey key
+                let actualPriorReference =
+                    baseReferences.TryFind key
+                    |> Option.defaultWith (fun () -> fail "FLOW_ATTACHMENT_REMOVE_MISSING" "An attachment removal requires an existing base source key." None None [ sprintf "%A" key ] [])
+                if expectedPriorReference <> actualPriorReference then
+                    fail "FLOW_ATTACHMENT_STALE_SOURCE" "The attachment removal's expected prior source reference does not match the base inventory." None None
+                        [ sprintf "%A" actualPriorReference ] [ sprintf "%A" expectedPriorReference ]
+                finalDocuments <- Map.remove key finalDocuments
+                finalParsed <- Map.remove key finalParsed
+
+        // The word inventory is checked and lowered from the immutable base;
+        // empty word changes are permitted when the batch only edits attachments.
+        let wordCompilation = compileBatchFlowSourcesCore true context wordInventory wordChanges
+        let changedKeySet = Set.ofList changedKeys
+        let finalFlowOwnerIds =
+            wordChanges
+            |> List.fold (fun owners change ->
+                let identity =
+                    match change.RevisionIntent with
+                    | FlowWordRevisionIntent.Add(wordId, _)
+                    | FlowWordRevisionIntent.Replace(wordId, _, _) -> wordId
+                Set.add identity owners) baseFlowOwnerIds
+        let mutable activeDocuments = Map.empty
+        for KeyValue(key, document) in finalDocuments do
+            if not (finalFlowOwnerIds.Contains key.OwnerId) then
+                fail "FLOW_ATTACHMENT_OWNER_FRONTEND" "A candidate Flow test/example must be attached to a base Flow owner or a word made Flow by this batch." (Some document.OwnerName) None
+                    [ "owner ID in base Flow inventory or a Flow word Add/Replace intent" ] [ sprintf "%A" key.OwnerId ]
+            let currentName =
+                wordCompilation.Context.CompilerContext.WordIds
+                |> Map.toSeq
+                |> Seq.tryPick (fun (name, identity) -> if identity = key.OwnerId then Some name else None)
+                |> Option.defaultWith (fun () -> fail "FLOW_ATTACHMENT_OWNER_MISSING" "A final Flow attachment owner ID is absent from the candidate word dictionary." (Some document.OwnerName) None [ sprintf "%A" key.OwnerId ] [])
+            if currentName <> document.OwnerName then
+                fail "FLOW_ATTACHMENT_OWNER_MISMATCH" "The final owner name for an attachment key differs from the document owner name." (Some document.OwnerName) None
+                    [ currentName ] [ document.OwnerName ]
+            let ownerEntry = ensureAttachmentOwner wordCompilation.Context document.OwnerName key.OwnerId None None
+            let outputDocument =
+                if changedKeySet.Contains key then
+                    if document.OwnerRevision <> ownerEntry.Revision then
+                        fail "FLOW_ATTACHMENT_OWNER_REVISION_MISMATCH" "An added or replaced attachment must declare the exact final owner revision." (Some document.OwnerName) None
+                            [ string ownerEntry.Revision ] [ string document.OwnerRevision ]
+                    document
+                else
+                    { document with OwnerRevision = ownerEntry.Revision }
+            activeDocuments <- Map.add key outputDocument activeDocuments
+
+        let mutable allocationOrigins = wordCompilation.Context.SourceOrigins
+        let compiledAttachments = ResizeArray<FlowCompiledAttachment>()
+        let attachmentBindings = ResizeArray<FlowAttachmentCallBinding>()
+        for KeyValue(key, document) in activeDocuments do
+            let parsed = finalParsed[key]
+            let siteMap, projection, compiledAttachment =
+                withAttachmentDiagnosticContext document (Some parsed) (fun () ->
+                    let result =
+                        match parsed with
+                        | ParsedFlowTest flowTest ->
+                            let compiled, actualEvents, expectedEvents =
+                                compileTestWithCallEvents wordCompilation.Context wordCompilation.Program allocationOrigins flowTest
+                            let actualSites = reconcileDetachedCallEvents document.OwnerName compiled.Body actualEvents
+                            let expectedSites =
+                                compiled.ExpectationBody
+                                |> Option.map (fun body -> reconcileDetachedCallEvents document.OwnerName body expectedEvents)
+                            let roles =
+                                [ FlowAttachmentBodyRole.Actual, actualSites ]
+                                @ (expectedSites |> Option.map (fun sites -> FlowAttachmentBodyRole.ExpectedExpression, sites) |> Option.toList)
+                            Map.ofList roles, compiled.Lowered.Projection, FlowCompiledAttachment.Test(document, compiled)
+                        | ParsedFlowExample flowExample ->
+                            let compiled, events =
+                                compileExampleWithCallEvents wordCompilation.Context wordCompilation.Program allocationOrigins flowExample
+                            let sites = reconcileDetachedCallEvents document.OwnerName compiled.Body events
+                            Map.ofList [ FlowAttachmentBodyRole.Actual, sites ], compiled.Lowered.Projection, FlowCompiledAttachment.Example(document, compiled)
+                    let siteMap, _, _ = result
+                    match baseDocuments.TryFind key with
+                    | Some retained when not (changedKeySet.Contains key) ->
+                        checkRetainedAttachmentBindings document retained.BaseCallSites siteMap
+                    | _ -> ()
+                    result)
+            let overlap = projection.SyntheticOrigins |> Map.toSeq |> Seq.tryFind (fun (marker, _) -> allocationOrigins.ContainsKey marker)
+            match overlap with
+            | Some(marker, _) ->
+                fail "FLOW_ATTACHMENT_SOURCE_ORIGIN_COLLISION" "Final attachment source markers must remain disjoint across the candidate project." (Some document.OwnerName) None [] [ sprintf "%A" marker ]
+            | None -> ()
+            allocationOrigins <- Map.fold (fun found marker origin -> Map.add marker origin found) allocationOrigins projection.SyntheticOrigins
+            compiledAttachments.Add compiledAttachment
+            for KeyValue(bodyRole, sites) in siteMap do
+                for site in sites do
+                    attachmentBindings.Add
+                        { Attachment = key
+                          OwnerName = document.OwnerName
+                          OwnerRevision = document.OwnerRevision
+                          Source = document.Reference
+                          BodyRole = bodyRole
+                          Site = site }
+        { WordCompilation = wordCompilation
+          Attachments = List.ofSeq compiledAttachments
+          AttachmentBindings = List.ofSeq attachmentBindings }
 
     let parameterCatalog (definitions: FlowWordDefinition list) =
         definitions

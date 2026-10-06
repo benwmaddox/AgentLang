@@ -133,3 +133,28 @@ bindings rather than omit them and publish a different meaning.
 Persist resolved call bindings explicitly in v2 revision metadata (an ordered `callBindings` list), rather than assuming they can be recovered from a newly expanded vocabulary. Each binding contains its authored source reference (kind and hash), a structural AST site key and target stable ID; the containing word ID/revision plus exact source reference scope the key. Cover the definition and every attached test/example object, including expected-expression calls, and require each source reference to belong to that revision. Site keys identify the call role/path within that exact authored object, not regenerated IR ordinals or source line numbers. Include ordinary callees, receiver stages and static callback references. Validate unique/exact site coverage and compare each entry with the final verified IR's resolved identity. Stack revisions use no Flow binding entries. A binding list is ordered deterministically by source reference then site key. Changed source receives a newly verified binding list; unchanged retained source must match its persisted list before publication. Historical revision bindings remain immutable. This is a storage contract to implement after the complete lowering/binding API exists, not a currently supported schema field.
 
 For v2 loading, treat aggregate ProjectSource as a deterministic human-readable export projection of manifest-referenced objects, not a second parser authority. Explicit frontend markers make the mixed export readable; parser dispatch uses each revision's sourceFormat. Rebuild and byte-compare the aggregate after parsing authoritative type/word/case objects and validating metadata. The manifest-selected project object still participates in the existing exact export check at commit. Missing CURRENT retains the existing explicit legacy import path.
+
+### Attachment binding schema handoff
+
+Attachment keys include stable owner ID, test/example kind and case name. Within
+the exact source object, distinguish actual and pure expected-expression bodies
+before the structural AST path. This distinction is part of the site key even
+when both expressions happen to have the same span. Definition bodies use their
+own role. Storage checks compatible source kinds, revision source membership
+and unique `(source, case, body role, path)` keys; the compiler/Runtime proves
+exact parsed site coverage and semantic correspondence.
+
+Compiler events retain emitted IR order for reconciliation. The durable list's
+canonical source-reference/site-key ordering is a serialization contract, not
+execution order: execution remains defined by semantic IR. Runtime converts
+between keyed metadata and compiler traversal without interpreting list position
+as a call identity. Binding strings, tags, indexes, spans and path depth need
+closed validation and explicit bounds; a static DTO must not introduce unchecked
+arbitrary target kinds or parser fallback.
+
+The schema audit identified three word-revision constructors to update together:
+Storage's version-aware parser, Runtime's manifest builder, and the Storage test
+fixture. V1 parsing synthesizes stack/version-1 plus an empty binding list; v1
+serialization omits new fields only when those defaults actually hold. New v2
+writing must preserve historical source references and frozen v1 bytes. The
+current compiler attachment work does not implement this schema.

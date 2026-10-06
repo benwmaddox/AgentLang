@@ -1,0 +1,13 @@
+{
+  "command": "dotnet run --project tests/AgentLang.Flow.Tests -c Release",
+  "revision": "469d2f5cba6e2843c4eabd36e0e0a692e9a4396f",
+  "dirty": true,
+  "exitCode": -532462766,
+  "output": [
+    "Unhandled exception. System.Exception: valid source attached to a legacy Stack owner requires Flow frontend proof: expected FLOW_ATTACHMENT_OWNER_FRONTEND, got FLOW_BATCH_EMPTY: A Flow project-source batch must contain at least one word or attachment change.",
+    "   at AgentLang.Flow.Tests.captureLanguageError[a,b](a name, String code, FSharpFunc`2 action) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs:line 29",
+    "   at AgentLang.Flow.Tests.expectLanguageError[a,b](a name, String code, FSharpFunc`2 action) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs:line 32",
+    "   at AgentLang.Flow.Tests.testFlowAttachmentCallBindings() in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs:line 3256",
+    "   at AgentLang.Flow.Tests.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs:line 3309"
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "command": "dotnet run --project tests/AgentLang.Flow.Tests -c Release",
+  "revision": "469d2f5cba6e2843c4eabd36e0e0a692e9a4396f",
+  "dirty": true,
+  "exitCode": -532462766,
+  "output": [
+    "Unhandled exception. AgentLang.LanguageException: LanguageException",
+    "  { Code = \"FLOW_ATTACHMENT_OWNER_FRONTEND\"",
+    "    Message =",
+    "     \"A base Flow test/example inventory may contain only cases attached to owners proven Flow by the host's word-source inventory.\"",
+    "    Word = Some \"attachment.owner\"",
+    "    Span = Some { File = \"<flow-test>\"",
+    "                  Line = 1",
+    "                  Column = 1",
+    "                  Length = 92 }",
+    "    Expected = [\"owner ID in ExpectedFlowOwnerIds\"]",
+    "    Actual = [\"WordId \"attachment-owner\"\"] }",
+    "   at AgentLang.FlowLowering.parsed@2402-2.Invoke(FlowAttachmentSourceDocument document) in D:\\code\\AgentLang\\src\\AgentLang.Core\\FlowLowering.fs:line 2414",
+    "   at AgentLang.FlowLowering.validateFlowAttachmentInventory(Context context, FSharpSet`1 baseFlowOwnerIds, FlowAttachmentInventory inventory) in D:\\code\\AgentLang\\src\\AgentLang.Core\\FlowLowering.fs:line 2401",
+    "   at AgentLang.FlowLowering.compileBatchFlowProjectSources(Context context, FlowSourceInventory wordInventory, FSharpList`1 wordChanges, FlowAttachmentInventory attachmentInventory, FSharpList`1 attachmentChanges) in D:\\code\\AgentLang\\src\\AgentLang.Core\\FlowLowering.fs:line 2485",
+    "   at AgentLang.Flow.Tests.testFlowAttachmentCallBindings() in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs:line 2957",
+    "   at AgentLang.Flow.Tests.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs:line 3280"
+  ]
+}

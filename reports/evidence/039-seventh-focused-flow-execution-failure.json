@@ -1,0 +1,12 @@
+{
+  "command": "dotnet run --project tests/AgentLang.Flow.Tests -c Release",
+  "revision": "469d2f5cba6e2843c4eabd36e0e0a692e9a4396f",
+  "dirty": true,
+  "exitCode": -532462766,
+  "output": [
+    "Unhandled exception. System.Exception: attachment ambiguity identifies its owner: expected Some(attachment.owner), got ",
+    "   at AgentLang.Flow.Tests.equal[a,b](a name, b expected, b actual) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs:line 15",
+    "   at AgentLang.Flow.Tests.testFlowAttachmentCallBindings() in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs:line 3235",
+    "   at AgentLang.Flow.Tests.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs:line 3295"
+  ]
+}

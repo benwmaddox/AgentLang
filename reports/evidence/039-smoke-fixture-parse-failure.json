@@ -1,0 +1,23 @@
+{
+  "command": "dotnet fsi --exec --reference:src/AgentLang.Core/bin/Release/net9.0/AgentLang.Core.dll reports/evidence/039-source-attachment-smoke.fsx",
+  "revision": "469d2f5cba6e2843c4eabd36e0e0a692e9a4396f",
+  "dirty": true,
+  "exitCode": 1,
+  "output": [
+    "AgentLang.LanguageException: LanguageException { Code = \"FLOW_EXPECTED_EXPRESSION\"",
+    "                    Message = \"Token '(' cannot begin an expression.\"",
+    "                    Word = Some \"smoke.increment\"",
+    "                    Span = Some { File = \"smoke-cases.flow\"",
+    "                                  Line = 3",
+    "                                  Column = 13",
+    "                                  Length = 1 }",
+    "                    Expected = []",
+    "                    Actual = [] }",
+    "   at AgentLang.FlowLowering.validateFlowAttachmentSourceDocument(FlowAttachmentSourceDocument document) in D:\\code\\AgentLang\\src\\AgentLang.Core\\FlowLowering.fs:line 2335",
+    "   at AgentLang.FlowLowering.compileBatchFlowProjectSources(Context context, FlowSourceInventory wordInventory, FSharpList`1 wordChanges, FlowAttachmentInventory attachmentInventory, FSharpList`1 attachmentChanges) in D:\\code\\AgentLang\\src\\AgentLang.Core\\FlowLowering.fs:line 2509",
+    "   at <StartupCode$FSI_0001>.$FSI_0001.main@() in D:\\code\\AgentLang\\reports\\evidence\\039-source-attachment-smoke.fsx:line 36",
+    "   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)",
+    "   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)",
+    "Stopped due to error"
+  ]
+}

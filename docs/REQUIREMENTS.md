@@ -161,3 +161,12 @@ retained source cannot silently redirect to a different stable target identity.
 Exact source/body/parameter proofs and identity-preserving Stack-to-Flow
 replacement are covered. Attachment bindings, durable manifest v2, Runtime
 dispatch/default cutover and controlled agent evaluation remain required.
+Flow source-backed attachment evidence: [report 039](../reports/039-flow-attachment-integration.md)
+records 705 focused Flow assertions and a separate 19-check client smoke on a
+freshly rebuilt Core, plus a passing 25-check Release gate. Explicit attachment inventories and compare-and-swap
+changes preserve source references, stable target identity and exact current IR
+revisions across actual, expected-expression and example bodies. Diagnostics
+identify owner, case, body role and structural path. Host-declared membership
+remains a trust boundary; this compiler proposal API does not implement durable
+manifest v2, Runtime dispatch, passing-test publication gates or default Flow
+authoring. Integrated validation and publication are tracked in report 039.

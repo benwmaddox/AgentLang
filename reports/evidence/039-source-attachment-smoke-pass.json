@@ -1,0 +1,11 @@
+{
+  "command": "dotnet fsi --exec --reference:src/AgentLang.Core/bin/Release/net9.0/AgentLang.Core.dll reports/evidence/039-source-attachment-smoke.fsx",
+  "revision": "469d2f5cba6e2843c4eabd36e0e0a692e9a4396f",
+  "dirty": true,
+  "exitCode": 0,
+  "output": [
+    "Core: D:\\code\\AgentLang\\src\\AgentLang.Core\\bin\\Release\\net9.0\\AgentLang.Core.dll",
+    "Core SHA256: 02BA66C4ED9D1490CED3E2BE398D750707061D2C33B7E0F2ACABDF7A5E143CFE",
+    "Source-backed attachment smoke passed 19 checks."
+  ]
+}
