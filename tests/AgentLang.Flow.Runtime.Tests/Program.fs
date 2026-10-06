@@ -1007,6 +1007,733 @@ module Program =
         let complete = Storage.load (Storage.create completeProject) |> Result.defaultWith (fun problem -> failwith problem.Message)
         check complete.Manifest.IsSome "actual execution of both branches permits the Flow library commit"
 
+    let private testFlowMaintenanceRenameDeprecateAndRestore root =
+        let project = Path.Combine(root, "flow-maintenance-mixed-rename")
+        let capabilities = Set.ofList [ "console.write" ]
+        let engine = Runtime.Engine(project, capabilities, "2034-05-06T07:08:09Z")
+        let store = Storage.create project
+        let defineAndCommitFlow name source tests examples =
+            defineFlow engine source tests examples []
+            |> expectOk $"define Flow maintenance fixture {name}"
+            |> ignore
+            commit engine "commit" name []
+            |> expectOk $"commit Flow maintenance fixture {name}"
+            |> ignore
+        let sourceOf reference =
+            Storage.readSource store reference |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let loadSnapshot () = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let requiredManifest () =
+            (loadSnapshot ()).Manifest |> Option.defaultWith (fun () -> failwith "Flow maintenance manifest is missing")
+        let revision (manifest: ProjectManifest) name =
+            let head = manifest.Words |> List.find (fun item -> item.CurrentName = name)
+            manifest.Revisions
+            |> List.find (fun item -> item.WordId = head.WordId && item.Revision = head.CurrentRevision)
+        let history engine name =
+            dispatch engine "history" [ "word", jstr name ]
+            |> expectOk $"read maintenance history for {name}"
+            |> fun response -> response.["data"].AsArray()
+
+        let bumpSource =
+            "word bump(value: Int, first: Int, second: Int) -> Int {\n"
+            + "    effects none\n"
+            + "    add(add(multiply(value, 100), multiply(first, 10)), second)\n"
+            + "}"
+        let bumpTest =
+            "test bump/basic {\n"
+            + "    bump(5, 1, 2)\n"
+            + "    => value bump(5, 1, 2)\n"
+            + "}"
+        let bumpExample =
+            "example bump/basic {\n"
+            + "    bump(5, 1, 2)\n"
+            + "    => 512\n"
+            + "}"
+        defineAndCommitFlow "bump" bumpSource [ bumpTest ] [ bumpExample ]
+        let bumpId = getWordId engine "bump"
+
+        let competitorSource =
+            "word math.advance(value: Int, first: Int, second: Int) -> Int {\n"
+            + "    effects none\n"
+            + "    add(add(multiply(value, 100), multiply(first, 10)), second)\n"
+            + "}"
+        let competitorTest =
+            "test math.advance/basic {\n"
+            + "    math::advance(5, 1, 2)\n"
+            + "    => 512\n"
+            + "}"
+        defineAndCommitFlow "math.advance" competitorSource [ competitorTest ] []
+        let stepSource =
+            "word step(value: Int) -> Int {\n"
+            + "    effects none\n"
+            + "    add(value, 1)\n"
+            + "}"
+        let stepTest =
+            "test step/basic {\n"
+            + "    step(4)\n"
+            + "    => value step(4)\n"
+            + "}"
+        let stepExample =
+            "example step/basic {\n"
+            + "    step(4)\n"
+            + "    => 5\n"
+            + "}"
+        defineAndCommitFlow "step" stepSource [ stepTest ] [ stepExample ]
+        let stepId = getWordId engine "step"
+
+        let stepCompetitorSource =
+            "word math.stepped(value: Int) -> Int {\n"
+            + "    effects none\n"
+            + "    add(value, 9)\n"
+            + "}"
+        let stepCompetitorTest =
+            "test math.stepped/basic {\n"
+            + "    math::stepped(4)\n"
+            + "    => 13\n"
+            + "}"
+        defineAndCommitFlow "math.stepped" stepCompetitorSource [ stepCompetitorTest ] []
+        let effectWord name label value =
+            "word probe." + name + "() -> Int {\n"
+            + "    effects console.write\n"
+            + "    console::write(\"" + label + "\");\n"
+            + "    " + string value + "\n"
+            + "}"
+        let effectTest name value =
+            "test probe." + name + "/basic {\n"
+            + "    probe::" + name + "()\n"
+            + "    => " + string value + "\n"
+            + "}"
+        defineAndCommitFlow "probe.receiver" (effectWord "receiver" "receiver" 5) [ effectTest "receiver" 5 ] []
+        defineAndCommitFlow "probe.right" (effectWord "right" "second" 2) [ effectTest "right" 2 ] []
+        defineAndCommitFlow "probe.left" (effectWord "left" "first" 1) [ effectTest "left" 1 ] []
+
+        let dotSource =
+            "word client.dot() -> Int {\n"
+            + "    effects console.write\n"
+            + "    probe::receiver().bump(second = probe::right(), first = probe::left())\n"
+            + "}"
+        let dotTest =
+            "test client.dot/basic {\n"
+            + "    client::dot()\n"
+            + "    => 512\n"
+            + "}"
+        let dotExample =
+            "example client.dot/basic {\n"
+            + "    client::dot()\n"
+            + "    => 512\n"
+            + "}"
+        defineAndCommitFlow "client.dot" dotSource [ dotTest ] [ dotExample ]
+        let directSource =
+            "word client.direct(value: Int) -> Int {\n"
+            + "    effects none\n"
+            + "    bump(value, 1, 2)\n"
+            + "}"
+        let directTest =
+            "test client.direct/basic {\n"
+            + "    client::direct(5)\n"
+            + "    => value bump(5, 1, 2)\n"
+            + "}"
+        let directExample =
+            "example client.direct/basic {\n"
+            + "    client::direct(5)\n"
+            + "    => 512\n"
+            + "}"
+        defineAndCommitFlow "client.direct" directSource [ directTest ] [ directExample ]
+        let absoluteSource =
+            "word client.absolute(value: Int) -> Int {\n"
+            + "    effects none\n"
+            + "    ::bump(value, 1, 2)\n"
+            + "}"
+        let absoluteTest =
+            "test client.absolute/basic {\n"
+            + "    client::absolute(5)\n"
+            + "    => value ::bump(5, 1, 2)\n"
+            + "}"
+        let absoluteExample =
+            "example client.absolute/basic {\n"
+            + "    client::absolute(5)\n"
+            + "    => 512\n"
+            + "}"
+        defineAndCommitFlow "client.absolute" absoluteSource [ absoluteTest ] [ absoluteExample ]
+        let expectedOnlySource =
+            "word client.expected_only() -> Int {\n"
+            + "    effects none\n"
+            + "    512\n"
+            + "}"
+        let expectedOnlyTest =
+            "test client.expected_only/target_expectation {\n"
+            + "    client::expected_only()\n"
+            + "    => value bump(5, 1, 2)\n"
+            + "}"
+        let expectedOnlyExample =
+            "example client.expected_only/basic {\n"
+            + "    client::expected_only()\n"
+            + "    => 512\n"
+            + "}"
+        defineAndCommitFlow "client.expected_only" expectedOnlySource [ expectedOnlyTest ] [ expectedOnlyExample ]
+        let directStepSource =
+            "word client.step_direct(value: Int) -> Int {\n"
+            + "    effects none\n"
+            + "    step(value)\n"
+            + "}"
+        let directStepTest =
+            "test client.step_direct/basic {\n"
+            + "    client::step_direct(4)\n"
+            + "    => value step(4)\n"
+            + "}"
+        let directStepExample =
+            "example client.step_direct/basic {\n"
+            + "    client::step_direct(4)\n"
+            + "    => 5\n"
+            + "}"
+        defineAndCommitFlow "client.step_direct" directStepSource [ directStepTest ] [ directStepExample ]
+        let absoluteStepSource =
+            "word client.step_absolute(value: Int) -> Int {\n"
+            + "    effects none\n"
+            + "    ::step(value)\n"
+            + "}"
+        let absoluteStepTest =
+            "test client.step_absolute/basic {\n"
+            + "    client::step_absolute(4)\n"
+            + "    => value ::step(4)\n"
+            + "}"
+        let absoluteStepExample =
+            "example client.step_absolute/basic {\n"
+            + "    client::step_absolute(4)\n"
+            + "    => 5\n"
+            + "}"
+        defineAndCommitFlow "client.step_absolute" absoluteStepSource [ absoluteStepTest ] [ absoluteStepExample ]
+        let mapSource =
+            "word client.map(value: Int) -> List<Int> {\n"
+            + "    effects none\n"
+            + "    list::singleton<Int>(value).map(word step)\n"
+            + "}"
+        let mapTest =
+            "test client.map/basic {\n"
+            + "    client::map(4)\n"
+            + "    => value list::singleton<Int>(5)\n"
+            + "}"
+        let mapExample =
+            "example client.map/static_callback {\n"
+            + "    list::count(list::singleton<Int>(4).map(word step))\n"
+            + "    => 1\n"
+            + "}"
+        defineAndCommitFlow "client.map" mapSource [ mapTest ] [ mapExample ]
+        let stackBumpSource =
+            "word client.stack : Int -> Int\n"
+            + "    effects none\n"
+            + "    1\n"
+            + "    2\n"
+            + "    bump\n"
+            + "end\n"
+            + "\n"
+            + "test client.stack/basic\n"
+            + "    5 client.stack\n"
+            + "    => 512\n"
+            + "end\n"
+            + "\n"
+            + "example client.stack/basic\n"
+            + "    5 client.stack\n"
+            + "    => 512\n"
+            + "end\n"
+        dispatch engine "define" [ "source", jstr stackBumpSource ]
+        |> expectOk "define a Stack caller of the Flow rename target"
+        |> ignore
+        commit engine "commit" "client.stack" [] |> expectOk "commit Stack caller of the Flow rename target" |> ignore
+        let legacySource =
+            "word legacy.bump : Int -> Int\n"
+            + "    effects none\n"
+            + "    1 add\n"
+            + "end\n"
+            + "\n"
+            + "test legacy.bump/basic\n"
+            + "    5 legacy.bump\n"
+            + "    => 6\n"
+            + "end\n"
+            + "\n"
+            + "example legacy.bump/basic\n"
+            + "    5 legacy.bump\n"
+            + "    => 6\n"
+            + "end\n"
+        dispatch engine "define" [ "source", jstr legacySource ]
+        |> expectOk "define a Stack target for Flow caller rename coverage"
+        |> ignore
+        commit engine "commit" "legacy.bump" [] |> expectOk "commit Stack target for Flow caller rename coverage" |> ignore
+        let legacyId = getWordId engine "legacy.bump"
+
+        let legacyCallerSource =
+            "word client.legacy(value: Int) -> Int {\n"
+            + "    effects none\n"
+            + "    legacy::bump(value)\n"
+            + "}"
+        let legacyCallerTest =
+            "test client.legacy/basic {\n"
+            + "    client::legacy(5)\n"
+            + "    => value legacy::bump(5)\n"
+            + "}"
+        let legacyCallerExample =
+            "example client.legacy/basic {\n"
+            + "    client::legacy(5)\n"
+            + "    => 6\n"
+            + "}"
+        defineAndCommitFlow "client.legacy" legacyCallerSource [ legacyCallerTest ] [ legacyCallerExample ]
+        let legacyCallerId = getWordId engine "client.legacy"
+
+        let beforeInvalidRenames = loadSnapshot ()
+        let beforeInvalidExport = File.ReadAllBytes(Path.Combine(project, "dictionary.agent"))
+        expectError "RENAME_COLLISION" (dispatch engine "rename" [ "word", jstr "bump"; "to", jstr "math.advance"; "actor", jstr "client" ])
+        |> ignore
+        let malformedName = dispatch engine "rename" [ "word", jstr "bump"; "to", jstr "bad..name"; "actor", jstr "client" ]
+        check (not (succeeded malformedName)) "rename rejects a destination with an empty dotted name segment"
+        check ((errorCode malformedName).StartsWith("FLOW_", StringComparison.Ordinal) || (errorCode malformedName).StartsWith("RENAME_", StringComparison.Ordinal)) "malformed Flow destination returns a structured source/maintenance diagnostic"
+        equal beforeInvalidRenames.ManifestHash (loadSnapshot ()).ManifestHash "collision and malformed Flow destination failures preserve manifest authority"
+        check (beforeInvalidExport.AsSpan().SequenceEqual(File.ReadAllBytes(Path.Combine(project, "dictionary.agent")).AsSpan())) "collision and malformed Flow destination failures preserve export bytes"
+        equal bumpId (getWordId engine "bump") "invalid rename attempts preserve the original stable target"
+
+        let beforeSnapshot = loadSnapshot ()
+        let beforeManifest = beforeSnapshot.Manifest |> Option.defaultWith (fun () -> failwith "baseline maintenance manifest is missing")
+        let beforeExportPath = Path.Combine(project, "dictionary.agent")
+        let beforeExport = File.ReadAllBytes beforeExportPath
+        let beforeBump = revision beforeManifest "bump"
+        let beforeDot = revision beforeManifest "client.dot"
+        let beforeDirect = revision beforeManifest "client.direct"
+        let beforeAbsolute = revision beforeManifest "client.absolute"
+        let beforeExpectedOnly = revision beforeManifest "client.expected_only"
+        let beforeStack = revision beforeManifest "client.stack"
+        let beforeStep = revision beforeManifest "step"
+        let beforeMap = revision beforeManifest "client.map"
+        let beforeLegacy = revision beforeManifest "legacy.bump"
+        let beforeLegacyCaller = revision beforeManifest "client.legacy"
+        let beforeCompetitor = revision beforeManifest "math.advance"
+        let beforeStepCompetitor = revision beforeManifest "math.stepped"
+        let oldBumpText = sourceOf beforeBump.Definition
+        let oldBumpTestText = sourceOf beforeBump.Tests.Head
+        let oldBumpExampleText = sourceOf beforeBump.Examples.Head
+        let oldDotText = sourceOf beforeDot.Definition
+        let oldDotExampleText = sourceOf beforeDot.Examples.Head
+        let oldExpectedTestText = sourceOf beforeExpectedOnly.Tests.Head
+        let oldStackText = sourceOf beforeStack.Definition
+        let oldLegacyCallerText = sourceOf beforeLegacyCaller.Definition
+        let oldLegacyCallerExampleText = sourceOf beforeLegacyCaller.Examples.Head
+        let oldLegacyTestText = sourceOf beforeLegacy.Tests.Head
+        let oldStepExampleText = sourceOf beforeStep.Examples.Head
+        let oldStepTestText = sourceOf beforeStep.Tests.Head
+        let oldMapExampleText = sourceOf beforeMap.Examples.Head
+        let oldLegacyExampleText = sourceOf beforeLegacy.Examples.Head
+        let oldBumpHistory = history engine "bump" |> fun rows -> rows.ToJsonString()
+        let oldDotHistory = history engine "client.dot" |> fun rows -> rows.ToJsonString()
+        dispatch engine "snapshot.save" [ "name", jstr "before-flow-maintenance" ]
+        |> expectOk "save the pre-maintenance durable snapshot"
+        |> ignore
+
+        let task = dispatch engine "task.begin" [ "goal", jstr "rename and deprecate Flow-bound words" ] |> expectOk "begin maintenance rollback task"
+        check (not (isNull task.["data"])) "maintenance task begins from a committed manifest"
+        dispatch engine "rename" [ "word", jstr "bump"; "to", jstr "advance"; "actor", jstr "client" ]
+        |> expectOk "rename Flow target inside task"
+        |> ignore
+        dispatch engine "rename" [ "word", jstr "step"; "to", jstr "stepped"; "actor", jstr "client" ]
+        |> expectOk "rename callback target inside task"
+        |> ignore
+        dispatch engine "rename" [ "word", jstr "legacy.bump"; "to", jstr "legacy.advance"; "actor", jstr "client" ]
+        |> expectOk "rename Stack target with Flow callers inside task"
+        |> ignore
+        dispatch engine "deprecate" [ "word", jstr "stepped"; "actor", jstr "client" ]
+        |> expectOk "deprecate Flow target inside task"
+        |> ignore
+        dispatch engine "task.abort" [] |> expectOk "abort successful Flow maintenance transaction" |> ignore
+        let afterAbort = loadSnapshot ()
+        equal beforeSnapshot.ManifestHash afterAbort.ManifestHash "task abort restores the exact pre-maintenance manifest authority"
+        check (beforeExport.AsSpan().SequenceEqual(File.ReadAllBytes(beforeExportPath).AsSpan())) "task abort restores exact pre-maintenance export bytes"
+        equal oldBumpHistory ((history engine "bump").ToJsonString()) "task abort restores original Flow target history"
+        equal oldDotHistory ((history engine "client.dot").ToJsonString()) "task abort restores original Flow caller history"
+        equal oldBumpText (sourceOf beforeBump.Definition) "task abort retains the original content-addressed target bytes"
+        equal oldDotText (sourceOf beforeDot.Definition) "task abort retains the original content-addressed caller bytes"
+        equal "512" (evalFlow engine "::bump(5, 1, 2)" |> expectOk "evaluate target after task abort" |> fun response -> stringValue (response.["data"].["stack"].[0])) "task abort restores the original target name and verified body"
+        expectError "NAME_UNKNOWN_WORD" (dispatch engine "describe" [ "word", jstr "advance" ]) |> ignore
+        check (not (boolValue ((dispatch engine "describe" [ "word", jstr "step" ] |> expectOk "inspect callback target after task abort").["data"].["deprecated"]))) "task abort restores the Flow target's deprecation metadata"
+
+        dispatch engine "rename" [ "word", jstr "bump"; "to", jstr "advance"; "actor", jstr "client" ]
+        |> expectOk "rename Flow target and its bound references"
+        |> ignore
+        let afterBumpSnapshot = loadSnapshot ()
+        let afterBumpManifest = afterBumpSnapshot.Manifest.Value
+        let currentRevision name = revision afterBumpManifest name
+        let assertAdvancedFromBaseline (oldRevision: WordRevision) newName label =
+            let updated = currentRevision newName
+            equal oldRevision.WordId updated.WordId $"{label} preserves stable WordId"
+            equal (oldRevision.Revision + 1) updated.Revision $"{label} advances its owner revision exactly once"
+        assertAdvancedFromBaseline beforeBump "advance" "renamed Flow target"
+        assertAdvancedFromBaseline beforeDot "client.dot" "dot caller"
+        assertAdvancedFromBaseline beforeDirect "client.direct" "direct caller"
+        assertAdvancedFromBaseline beforeAbsolute "client.absolute" "absolute-root caller"
+        assertAdvancedFromBaseline beforeExpectedOnly "client.expected_only" "expected-expression-only case owner"
+        assertAdvancedFromBaseline beforeStack "client.stack" "Stack caller"
+        equal legacyCallerId beforeLegacyCaller.WordId "unrelated Flow caller keeps its WordId"
+        equal beforeLegacyCaller (currentRevision "client.legacy") "unrelated Flow caller revision and all source metadata remain unchanged"
+        let directAfter = currentRevision "client.direct"
+        equal { Frontend = SourceFrontend.Flow; Version = 1 } directAfter.SourceFormat "rewritten direct caller remains Flow/1"
+        check (directAfter.CallBindings |> List.exists (fun binding -> binding.BodyRole = StoredCallBodyRole.Definition && binding.Target = StoredCallTarget.UserWord bumpId)) "direct caller definition remains bound to the original target ID"
+        check (directAfter.CallBindings |> List.exists (fun binding -> binding.BodyRole = StoredCallBodyRole.ExpectedExpression && binding.Target = StoredCallTarget.UserWord bumpId)) "direct caller's pure expected expression is rewritten by stable target ID"
+        equal { Frontend = SourceFrontend.Stack; Version = 1 } (currentRevision "client.stack").SourceFormat "rewritten Stack caller remains Stack/1"
+        equal [] (currentRevision "client.stack").CallBindings "rewritten Stack caller does not acquire Flow call metadata"
+        let dotAfter = currentRevision "client.dot"
+        let dotDefinition = sourceOf dotAfter.Definition
+        check (dotDefinition.Contains("::advance", StringComparison.Ordinal)) "dot rename writes an explicit root-qualified target after a same-signature suffix competitor appears"
+        let dotBinding = dotAfter.CallBindings |> List.find (fun binding -> binding.BodyRole = StoredCallBodyRole.Definition && binding.Target = StoredCallTarget.UserWord bumpId)
+        equal StoredCallForm.AbsoluteRoot dotBinding.Form "rewritten dot call is stored as an absolute-root call"
+        let expectedOnlyAfter = currentRevision "client.expected_only"
+        equal beforeExpectedOnly.Definition expectedOnlyAfter.Definition "expected-only rewrite leaves the owner's executable definition object unchanged"
+        check (beforeExpectedOnly.Tests <> expectedOnlyAfter.Tests) "expected-only rewrite replaces the authored test object"
+        let expectedOnlyBinding =
+            expectedOnlyAfter.CallBindings
+            |> List.find (fun binding -> binding.BodyRole = StoredCallBodyRole.ExpectedExpression && binding.Target = StoredCallTarget.UserWord bumpId)
+        check (expectedOnlyBinding.Source = expectedOnlyAfter.Tests.Head) "expected-expression call metadata points to the rewritten test source object"
+        let expectedOnlyTestAfter = sourceOf expectedOnlyAfter.Tests.Head
+        check (expectedOnlyTestAfter.Contains("::advance", StringComparison.Ordinal)) "expected-only case source rewrites its expression call"
+        check (not (expectedOnlyTestAfter.Contains("bump(", StringComparison.Ordinal))) "expected-only case has no stale call to the previous name"
+        equal beforeCompetitor (currentRevision "math.advance") "same-signature namespace competitor remains byte-for-byte and revision-for-revision unchanged"
+        equal oldBumpText (sourceOf beforeBump.Definition) "Flow rename retains historical definition bytes"
+        equal oldBumpTestText (sourceOf beforeBump.Tests.Head) "Flow rename retains historical target test bytes"
+        equal oldBumpExampleText (sourceOf beforeBump.Examples.Head) "Flow rename retains historical example bytes"
+        equal oldDotText (sourceOf beforeDot.Definition) "Flow rename retains historical caller bytes"
+        equal oldDotExampleText (sourceOf beforeDot.Examples.Head) "Flow rename retains historical dot example bytes"
+        equal oldExpectedTestText (sourceOf beforeExpectedOnly.Tests.Head) "Flow rename retains historical expected-expression test bytes"
+        equal oldStackText (sourceOf beforeStack.Definition) "Flow rename retains historical Stack caller bytes"
+        let bumpHistoryAfterRename = history engine "advance"
+        equal oldBumpText (stringValue (bumpHistoryAfterRename.[0].["source"])) "rename history exposes the exact previous Flow source"
+        let stackAfterBumpText = sourceOf (currentRevision "client.stack").Definition
+        check (stackAfterBumpText.Contains("advance", StringComparison.Ordinal)) "Stack source caller rewrites the Flow target name"
+        check (not (stackAfterBumpText.Contains("bump", StringComparison.Ordinal)) ) "Stack source caller no longer references the old Flow name"
+        let flowEvalBeforeStepRename = evalFlow engine "client::dot()" |> expectOk "run effectful named-argument dot call after Flow rename"
+        equal "512" (stringValue (flowEvalBeforeStepRename.["data"].["stack"].[0])) "renamed dot call preserves its result"
+        equal [ "receiver"; "second"; "first" ] (jsonArrayStrings flowEvalBeforeStepRename.["data"].["console"]) "dot receiver evaluates once before explicit named arguments in written order"
+        assertAllPassed 1 (dispatch engine "test" [ "word", jstr "advance" ] |> expectOk "run renamed target's Flow actual and expected call sites")
+        let renamedBumpExample = dispatch engine "example" [ "word", jstr "advance"; "caseName", jstr "basic" ] |> expectOk "run renamed target example"
+        check (boolValue (renamedBumpExample.["data"].["results"].[0].["passed"])) "Flow target example actual call is rewritten and still passes"
+        let renamedDotExample = dispatch engine "example" [ "word", jstr "client.dot"; "caseName", jstr "basic" ] |> expectOk "run rewritten dot caller example"
+        check (boolValue (renamedDotExample.["data"].["results"].[0].["passed"])) "Flow dot caller example remains attached and executable"
+        assertAllPassed 1 (dispatch engine "test" [ "word", jstr "client.expected_only" ] |> expectOk "run expected-expression-only owner after rename")
+        assertAllPassed 1 (dispatch engine "test" [ "word", jstr "client.stack" ] |> expectOk "run Stack caller after Flow target rename")
+
+        dispatch engine "rename" [ "word", jstr "step"; "to", jstr "stepped"; "actor", jstr "client" ]
+        |> expectOk "rename Flow callback target and rewrite direct, root, callback, and attachment sites"
+        |> ignore
+        let afterStepSnapshot = loadSnapshot ()
+        let afterStepManifest = afterStepSnapshot.Manifest.Value
+        let stepRevision name = revision afterStepManifest name
+        let assertStepAdvanced (oldRevision: WordRevision) newName label =
+            let updated = stepRevision newName
+            equal oldRevision.WordId updated.WordId $"{label} preserves stable WordId"
+            equal (oldRevision.Revision + 1) updated.Revision $"{label} advances once for callback target rename"
+        assertStepAdvanced beforeStep "stepped" "renamed callback target"
+        assertStepAdvanced beforeMap "client.map" "static callback owner"
+        assertStepAdvanced (revision beforeManifest "client.step_direct") "client.step_direct" "direct short-name owner"
+        assertStepAdvanced (revision beforeManifest "client.step_absolute") "client.step_absolute" "root-call owner"
+        equal beforeStepCompetitor (stepRevision "math.stepped") "callback suffix competitor remains unchanged"
+        let mapAfter = stepRevision "client.map"
+        let callbackBinding =
+            mapAfter.CallBindings
+            |> List.find (fun binding -> binding.BodyRole = StoredCallBodyRole.Definition && binding.Target = StoredCallTarget.UserWord stepId)
+        match callbackBinding.Form with
+        | StoredCallForm.StaticCallback(_, FlowWordReferenceQualification.AbsoluteRoot) -> ()
+        | form -> failwith $"static callback rewrite must use absolute-root qualification after suffix collision, got {form}"
+        check ((sourceOf mapAfter.Definition).Contains("::stepped", StringComparison.Ordinal)) "static callback source is explicitly root-qualified"
+        equal oldStepExampleText (sourceOf beforeStep.Examples.Head) "callback rename retains the target's exact historical example bytes"
+        equal oldStepTestText (sourceOf beforeStep.Tests.Head) "callback rename retains the target's exact historical test bytes"
+        equal oldMapExampleText (sourceOf beforeMap.Examples.Head) "callback rename retains the caller example's exact historical source bytes"
+        let directStepAfter = stepRevision "client.step_direct"
+        check ((sourceOf directStepAfter.Definition).Contains("::stepped(", StringComparison.Ordinal)) "short direct call is made unambiguous by explicit root qualification"
+        equal oldBumpText (sourceOf beforeBump.Definition) "second rename does not change prior historical Flow source"
+        equal [ "receiver"; "second"; "first" ] (jsonArrayStrings ((evalFlow engine "client::dot()" |> expectOk "recheck effectful dot call after callback rename").["data"].["console"])) "dot-call receiver and named arguments keep their order through subsequent maintenance"
+        assertAllPassed 1 (dispatch engine "test" [ "word", jstr "client.map" ] |> expectOk "run static callback case after target rename")
+        let renamedCallbackExample = dispatch engine "example" [ "word", jstr "client.map"; "caseName", jstr "static_callback" ] |> expectOk "run rewritten callback from an example actual body"
+        check (boolValue (renamedCallbackExample.["data"].["results"].[0].["passed"])) "example actual call through a renamed static callback still passes"
+        let renamedStepExample = dispatch engine "example" [ "word", jstr "stepped"; "caseName", jstr "basic" ] |> expectOk "run renamed callback target example"
+        check (boolValue (renamedStepExample.["data"].["results"].[0].["passed"])) "callback target example call is rewritten and still passes"
+
+        dispatch engine "rename" [ "word", jstr "legacy.bump"; "to", jstr "legacy.advance"; "actor", jstr "client" ]
+        |> expectOk "rename Stack target selected by Flow identities"
+        |> ignore
+        let afterLegacySnapshot = loadSnapshot ()
+        let afterLegacyManifest = afterLegacySnapshot.Manifest.Value
+        let legacyAfter = revision afterLegacyManifest "legacy.advance"
+        let legacyCallerAfter = revision afterLegacyManifest "client.legacy"
+        equal legacyId legacyAfter.WordId "Stack target rename preserves its stable identity"
+        equal (beforeLegacy.Revision + 1) legacyAfter.Revision "Stack target rename advances its revision once"
+        equal legacyCallerId legacyCallerAfter.WordId "Flow caller of Stack target keeps its identity"
+        equal (beforeLegacyCaller.Revision + 1) legacyCallerAfter.Revision "Flow definition, actual, expected, and example owner advances once"
+        equal { Frontend = SourceFrontend.Flow; Version = 1 } legacyCallerAfter.SourceFormat "Stack target rewrite retains Flow caller format"
+        let legacyBinding = legacyCallerAfter.CallBindings |> List.find (fun binding -> binding.Target = StoredCallTarget.UserWord legacyId)
+        equal "legacy.advance" legacyBinding.RequestedName "Flow binding resolves the renamed Stack target by stable ID"
+        check ((sourceOf legacyCallerAfter.Definition).Contains("legacy::advance", StringComparison.Ordinal)) "Flow caller source is rewritten for a Stack target rename"
+        equal oldLegacyCallerText (sourceOf beforeLegacyCaller.Definition) "Stack-target rename retains prior Flow caller bytes in history"
+        equal oldLegacyCallerExampleText (sourceOf beforeLegacyCaller.Examples.Head) "Stack-target rename retains the prior Flow caller example bytes"
+        equal oldLegacyTestText (sourceOf beforeLegacy.Tests.Head) "Stack-target rename retains the prior Stack target test bytes"
+        equal oldLegacyExampleText (sourceOf beforeLegacy.Examples.Head) "Stack-target rename retains the prior Stack target example bytes"
+        let legacyHistory = history engine "legacy.advance"
+        equal (sourceOf beforeLegacy.Definition) (stringValue (legacyHistory.[0].["source"])) "Stack target rename preserves its exact historical definition text"
+        let freshCurrent = Runtime.Engine(project, capabilities, "2034-05-06T07:08:09Z")
+        equal bumpId (getWordId freshCurrent "advance") "fresh Engine reload preserves renamed Flow target identity"
+        equal stepId (getWordId freshCurrent "stepped") "fresh Engine reload preserves renamed callback identity"
+        equal legacyId (getWordId freshCurrent "legacy.advance") "fresh Engine reload preserves renamed Stack target identity"
+        equal "512" (stringValue (evalFlow freshCurrent "::advance(5, 1, 2)" |> expectOk "invoke renamed root target after reload" |> fun response -> response.["data"].["stack"].[0])) "fresh Engine reload executes renamed Flow source"
+        equal "6" (stringValue (evalFlow freshCurrent "client::legacy(5)" |> expectOk "invoke Flow caller of renamed Stack target" |> fun response -> response.["data"].["stack"].[0])) "fresh Engine resolves the Flow caller against the renamed Stack WordId"
+        let cliResponse = cliEval project "::advance(5, 1, 2)" |> expectOk "fresh-process CLI loads Flow maintenance result"
+        equal "512" (stringValue (cliResponse.["data"].["stack"].[0])) "fresh CLI executes the renamed Flow target"
+        let oldCliName = cliEval project "::bump(5, 1, 2)"
+        check (not (succeeded oldCliName)) "fresh CLI does not retain the old Flow target spelling"
+        assertAllPassed 1 (dispatch freshCurrent "test" [ "word", jstr "legacy.advance" ] |> expectOk "run renamed Stack target case after reload")
+        assertAllPassed 1 (dispatch freshCurrent "test" [ "word", jstr "client.legacy" ] |> expectOk "run Flow caller case after Stack rename and reload")
+        let legacyExample = dispatch freshCurrent "example" [ "word", jstr "legacy.advance"; "caseName", jstr "basic" ] |> expectOk "run renamed Stack target example after reload"
+        check (boolValue (legacyExample.["data"].["results"].[0].["passed"])) "Stack target example remains attached after Flow caller binding rewrite"
+        let legacyCallerExample = dispatch freshCurrent "example" [ "word", jstr "client.legacy"; "caseName", jstr "basic" ] |> expectOk "run Flow caller example after Stack target rename"
+        check (boolValue (legacyCallerExample.["data"].["results"].[0].["passed"])) "Flow caller example invokes the renamed Stack target"
+
+        let beforeDeprecation = requiredManifest () |> fun manifest -> revision manifest "stepped"
+        let beforeDeprecationSource = sourceOf beforeDeprecation.Definition
+        let beforeDeprecationBindings = beforeDeprecation.CallBindings
+        let beforeDeprecationTests = beforeDeprecation.Tests
+        let beforeDeprecationExamples = beforeDeprecation.Examples
+        let deprecateResponse =
+            dispatch engine "deprecate" [ "word", jstr "stepped"; "actor", jstr "client" ]
+            |> expectOk "deprecate a Flow-authored word without rewriting its source"
+        equal stepId (stringValue (deprecateResponse.["data"].["id"])) "Flow deprecation preserves stable identity"
+        equal (beforeDeprecation.Revision + 1) ((deprecateResponse.["data"].["revision"]).GetValue<int>()) "Flow deprecation advances metadata revision once"
+        let afterDeprecation = requiredManifest () |> fun manifest -> revision manifest "stepped"
+        equal (beforeDeprecation.Revision + 1) afterDeprecation.Revision "durable Flow deprecation has one new revision"
+        check afterDeprecation.Deprecated "Flow deprecation metadata is durable"
+        equal beforeDeprecation.Definition afterDeprecation.Definition "deprecation leaves the authored definition SourceRef unchanged"
+        equal beforeDeprecationTests afterDeprecation.Tests "deprecation leaves authored test SourceRefs unchanged"
+        equal beforeDeprecationExamples afterDeprecation.Examples "deprecation leaves authored example SourceRefs unchanged"
+        equal beforeDeprecationBindings afterDeprecation.CallBindings "deprecation leaves stored call bindings unchanged"
+        equal beforeDeprecationSource (sourceOf afterDeprecation.Definition) "deprecation keeps exact authored Flow bytes"
+        let historyAfterDeprecation = history engine "stepped"
+        equal 3 historyAfterDeprecation.Count "deprecation appends exactly one metadata revision after rename history"
+        equal beforeDeprecationSource (stringValue (historyAfterDeprecation.[2].["source"])) "deprecation history repeats exact authored Flow source"
+        assertAllPassed 1 (dispatch engine "test" [ "word", jstr "stepped" ] |> expectOk "Flow deprecation requires and preserves passing tests")
+        equal "5" (stringValue (evalFlow engine "::stepped(4)" |> expectOk "deprecated Flow word remains callable" |> fun response -> response.["data"].["stack"].[0])) "deprecated Flow word remains callable"
+        equal "[5]" (stringValue (evalFlow engine "client::map(4)" |> expectOk "deprecated callback remains callable through a Flow caller" |> fun response -> response.["data"].["stack"].[0])) "Flow static callback still returns the deprecated target's mapped value"
+        let beforeIdempotentDeprecation = (loadSnapshot ()).ManifestHash
+        dispatch engine "deprecate" [ "word", jstr "stepped"; "actor", jstr "client" ]
+        |> expectOk "repeat Flow deprecation idempotently"
+        |> ignore
+        equal beforeIdempotentDeprecation (loadSnapshot ()).ManifestHash "repeated Flow deprecation does not create another revision"
+        equal 3 (history engine "stepped").Count "repeated Flow deprecation leaves history length unchanged"
+        let freshDeprecated = Runtime.Engine(project, capabilities, "2040-02-02T00:00:00Z")
+        check (boolValue ((dispatch freshDeprecated "describe" [ "word", jstr "stepped" ] |> expectOk "reload deprecated Flow metadata").["data"].["deprecated"])) "Flow deprecation metadata reloads from durable authority"
+        equal "5" (stringValue (evalFlow freshDeprecated "::stepped(4)" |> expectOk "invoke deprecated word after fresh reload" |> fun response -> response.["data"].["stack"].[0])) "fresh Engine keeps the deprecated Flow word callable"
+
+        let restoredEngine = Runtime.Engine(project, capabilities, "2044-01-01T00:00:00Z")
+        dispatch restoredEngine "snapshot.load" [ "name", jstr "before-flow-maintenance" ]
+        |> expectOk "restore the exact pre-maintenance named snapshot"
+        |> ignore
+        let afterSnapshotRestore = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        equal beforeSnapshot.ManifestHash afterSnapshotRestore.ManifestHash "named snapshot restores the exact pre-maintenance authority"
+        check (beforeExport.AsSpan().SequenceEqual(File.ReadAllBytes(beforeExportPath).AsSpan())) "named snapshot restores exact pre-maintenance export bytes"
+        equal bumpId (getWordId restoredEngine "bump") "named snapshot restores the original Flow target ID and name"
+        equal stepId (getWordId restoredEngine "step") "named snapshot restores the original callback target ID and name"
+        equal legacyId (getWordId restoredEngine "legacy.bump") "named snapshot restores the original Stack target ID and name"
+        expectError "NAME_UNKNOWN_WORD" (dispatch restoredEngine "describe" [ "word", jstr "advance" ]) |> ignore
+        check (not (boolValue ((dispatch restoredEngine "describe" [ "word", jstr "step" ] |> expectOk "inspect snapshot-restored callback").["data"].["deprecated"]))) "named snapshot restores pre-deprecation metadata"
+        equal oldBumpHistory ((history restoredEngine "bump").ToJsonString()) "named snapshot restores exact Flow target history"
+        equal oldDotHistory ((history restoredEngine "client.dot").ToJsonString()) "named snapshot restores exact mixed-caller history"
+        equal oldBumpText (sourceOf beforeBump.Definition) "named snapshot leaves original target object bytes available"
+        equal "512" (stringValue (evalFlow restoredEngine "::bump(5, 1, 2)" |> expectOk "evaluate restored snapshot Flow target" |> fun response -> response.["data"].["stack"].[0])) "named snapshot reactivates the original verified Flow program"
+
+    let private testFlowMaintenanceRejectsUntouchedRebind root =
+        let project = Path.Combine(root, "flow-maintenance-untouched-rebind")
+        let engine = Runtime.Engine(project, Set.empty, "2034-05-06T07:08:09Z")
+        let store = Storage.create project
+        let bumpSource = "word bump(value: Int, first: Int, second: Int) -> Int {\n    effects none\n    add(add(value, first), second)\n}"
+        let bumpTest = "test bump/basic {\n    bump(5, 1, 2)\n    => 8\n}"
+        defineFlow engine bumpSource [ bumpTest ] [] [] |> expectOk "define target for untouched-call rebind guard" |> ignore
+        commit engine "commit" "bump" [] |> expectOk "commit target for untouched-call rebind guard" |> ignore
+        let bumpId = getWordId engine "bump"
+        let competitor = "word math.advance(value: Int, first: Int, second: Int) -> Int {\n    effects none\n    add(add(value, first), second)\n}"
+        let competitorTest = "test math.advance/basic {\n    math::advance(5, 1, 2)\n    => 8\n}"
+        defineFlow engine competitor [ competitorTest ] [] [] |> expectOk "define pre-existing suffix competitor" |> ignore
+        commit engine "commit" "math.advance" [] |> expectOk "commit pre-existing suffix competitor" |> ignore
+        let competitorId = getWordId engine "math.advance"
+        let caller =
+            "word client.paired(value: Int) -> Int {\n"
+            + "    effects none\n"
+            + "    let renamed = bump(value, 1, 2);\n"
+            + "    let untouched = advance(value, 1, 2);\n"
+            + "    add(renamed, untouched)\n"
+            + "}"
+        let callerTest =
+            "test client.paired/basic {\n"
+            + "    client::paired(5)\n"
+            + "    => value client::paired(5)\n"
+            + "}"
+        defineFlow engine caller [ callerTest ] [] [] |> expectOk "define one document with a renamed site and an untouched competitor call" |> ignore
+        commit engine "commit" "client.paired" [] |> expectOk "commit caller before target rename" |> ignore
+        let pairedId = getWordId engine "client.paired"
+        let before = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let beforeExport = File.ReadAllBytes(Path.Combine(project, "dictionary.agent"))
+        let oldBindingTargets =
+            before.Manifest.Value.Revisions
+            |> List.find (fun item -> item.Name = "client.paired")
+            |> fun item -> item.CallBindings |> List.map _.Target
+        check (oldBindingTargets |> List.contains (StoredCallTarget.UserWord bumpId)) "fixture has a distinct binding to the requested rename target"
+        check (oldBindingTargets |> List.contains (StoredCallTarget.UserWord competitorId)) "fixture has a distinct untouched call to the suffix competitor"
+        let failed = dispatch engine "rename" [ "word", jstr "bump"; "to", jstr "advance"; "actor", jstr "client" ]
+        check (not (succeeded failed)) "rename refuses to publish when an untouched source call would resolve to a different target"
+        equal "FLOW_AMBIGUOUS_CALL" (errorCode failed) "rename rejects the newly ambiguous untouched short call during final source resolution"
+        let after = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        equal before.ManifestHash after.ManifestHash "rejected untouched-call rebind leaves exact manifest authority unchanged"
+        check (beforeExport.AsSpan().SequenceEqual(File.ReadAllBytes(Path.Combine(project, "dictionary.agent")).AsSpan())) "rejected untouched-call rebind leaves export bytes unchanged"
+        equal bumpId (getWordId engine "bump") "rejected rebind keeps the old Flow target active"
+        equal pairedId (getWordId engine "client.paired") "rejected rebind preserves caller identity"
+        equal "16" (stringValue (evalFlow engine "client::paired(5)" |> expectOk "run caller after refused rebind" |> fun response -> response.["data"].["stack"].[0])) "rejected rebind leaves the prior live caller executable"
+        expectError "NAME_UNKNOWN_WORD" (dispatch engine "describe" [ "word", jstr "advance" ]) |> ignore
+
+    let private testFlowMaintenanceFailureAndLibraryCoverage root =
+        let failingProject = Path.Combine(root, "flow-maintenance-failed-deprecate")
+        let capabilities = Set.singleton "clock.read"
+        let savedClock = "2034-05-06T07:08:09Z"
+        let changedClock = "2040-01-02T03:04:05Z"
+        let failingEngine = Runtime.Engine(failingProject, capabilities, savedClock)
+        let guardedSource =
+            "word guarded.answer() -> String {\n"
+            + "    effects clock.read\n"
+            + "    clock::now()\n"
+            + "}"
+        let guardedTest =
+            "test guarded.answer/provider_guard {\n"
+            + "    guarded::answer()\n"
+            + "    => \"" + savedClock + "\"\n"
+            + "}"
+        defineFlow failingEngine guardedSource [ guardedTest ] [] []
+        |> expectOk "define Flow word with a provider-backed passing guard test"
+        |> ignore
+        commit failingEngine "commit" "guarded.answer" [] |> expectOk "commit Flow word with passing guard test" |> ignore
+        let failingStore = Storage.create failingProject
+        let beforeFailure = Storage.load failingStore |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let beforeGuardRevision = beforeFailure.Manifest.Value.Revisions |> List.find (fun item -> item.Name = "guarded.answer")
+        let beforeGuardHistory = dispatch failingEngine "history" [ "word", jstr "guarded.answer" ] |> expectOk "capture guard history before deprecation"
+        let changedClockEngine = Runtime.Engine(failingProject, capabilities, changedClock)
+        expectError "DEPRECATE_TESTS_FAILED" (dispatch changedClockEngine "deprecate" [ "word", jstr "guarded.answer"; "actor", jstr "client" ])
+        |> ignore
+        let afterFailure = Storage.load failingStore |> Result.defaultWith (fun problem -> failwith problem.Message)
+        equal beforeFailure.ManifestHash afterFailure.ManifestHash "failed deprecation test leaves durable authority unchanged"
+        let afterGuardRevision = afterFailure.Manifest.Value.Revisions |> List.find (fun item -> item.Name = "guarded.answer")
+        equal beforeGuardRevision afterGuardRevision "failed deprecation leaves word revision and source references unchanged"
+        equal ((beforeGuardHistory.["data"]).ToJsonString()) (((dispatch changedClockEngine "history" [ "word", jstr "guarded.answer" ] |> expectOk "read history after failed deprecation").["data"]).ToJsonString()) "failed deprecation adds no history entry"
+        check (not (boolValue ((dispatch changedClockEngine "describe" [ "word", jstr "guarded.answer" ] |> expectOk "inspect live word after failed deprecation").["data"].["deprecated"]))) "failed deprecation leaves the word non-deprecated after reopening with a different clock"
+        equal ("\"" + changedClock + "\"") (stringValue (evalFlow changedClockEngine "guarded::answer()" |> expectOk "execute word after failed deprecation" |> fun response -> response.["data"].["stack"].[0])) "failed deprecation leaves the persisted implementation callable under the new clock"
+
+        let libraryProject = Path.Combine(root, "flow-maintenance-library-coverage")
+        let libraryEngine = Runtime.Engine(libraryProject, capabilities, savedClock)
+        let librarySource =
+            "word coverage.branch(value: String) -> Int {\n"
+            + "    effects clock.read\n"
+            + "    if equals(clock::now(), value) { 1 } else { 1 }\n"
+            + "}"
+        let matchingClockTest =
+            "test coverage.branch/current_clock {\n"
+            + "    coverage::branch(\"" + savedClock + "\")\n"
+            + "    => 1\n"
+            + "}"
+        let nonmatchingTest =
+            "test coverage.branch/nonmatching {\n"
+            + "    coverage::branch(\"not-the-clock\")\n"
+            + "    => 1\n"
+            + "}"
+        defineFlow libraryEngine librarySource [ matchingClockTest; nonmatchingTest ] [] []
+        |> expectOk "define library with owner tests for both fixed-clock outcomes"
+        |> ignore
+        commit libraryEngine "commit" "coverage.branch" [ "library", jbool true ]
+        |> expectOk "commit Flow library with actual own-site coverage of both clock comparison branches"
+        |> ignore
+        assertAllPassed 2 (dispatch libraryEngine "test" [ "word", jstr "coverage.branch" ] |> expectOk "verify both coverage fixture tests pass before mutation")
+        let libraryId = getWordId libraryEngine "coverage.branch"
+        let libraryStore = Storage.create libraryProject
+        let beforeLibraryRename = Storage.load libraryStore |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let beforeLibraryRevision = beforeLibraryRename.Manifest.Value.Revisions |> List.find (fun item -> item.Name = "coverage.branch")
+        let beforeLibraryExport = File.ReadAllBytes(Path.Combine(libraryProject, "dictionary.agent"))
+        let changedClockLibrary = Runtime.Engine(libraryProject, capabilities, changedClock)
+        assertAllPassed 2 (dispatch changedClockLibrary "test" [ "word", jstr "coverage.branch" ] |> expectOk "both tests still pass after the fixed clock changes")
+        let rejectedRename = dispatch changedClockLibrary "rename" [ "word", jstr "coverage.branch"; "to", jstr "coverage.conditional"; "actor", jstr "client" ]
+        expectError "LIBRARY_COVERAGE_INCOMPLETE" rejectedRename |> ignore
+        let afterLibraryRename = Storage.load libraryStore |> Result.defaultWith (fun problem -> failwith problem.Message)
+        equal beforeLibraryRename.ManifestHash afterLibraryRename.ManifestHash "library rename without actual branch coverage leaves authority unchanged"
+        check (beforeLibraryExport.AsSpan().SequenceEqual(File.ReadAllBytes(Path.Combine(libraryProject, "dictionary.agent")).AsSpan())) "library coverage rejection leaves exact export bytes unchanged"
+        equal libraryId (getWordId changedClockLibrary "coverage.branch") "library coverage rejection leaves stable owner active under its original name"
+        equal beforeLibraryRevision (afterLibraryRename.Manifest.Value.Revisions |> List.find (fun item -> item.Name = "coverage.branch")) "library coverage rejection leaves source refs and revision unchanged"
+        expectError "NAME_UNKNOWN_WORD" (dispatch changedClockLibrary "describe" [ "word", jstr "coverage.conditional" ]) |> ignore
+        equal "1" (stringValue (evalFlow changedClockLibrary "coverage::branch(\"not-the-clock\")" |> expectOk "old library remains callable after refused rename" |> fun response -> response.["data"].["stack"].[0])) "failed coverage gate leaves the live library body executable"
+        let beforeLibraryDeprecate = Storage.load libraryStore |> Result.defaultWith (fun problem -> failwith problem.Message)
+        expectError "LIBRARY_COVERAGE_INCOMPLETE" (dispatch changedClockLibrary "deprecate" [ "word", jstr "coverage.branch"; "actor", jstr "client" ])
+        |> ignore
+        equal beforeLibraryDeprecate.ManifestHash (Storage.load libraryStore |> Result.defaultWith (fun problem -> failwith problem.Message)).ManifestHash "library deprecation also requires current actual branch coverage"
+
+    let private testFlowValidatorCannotBeRenamedAfterTypeCommit root =
+        let project = Path.Combine(root, "flow-validator-frozen")
+        let engine = Runtime.Engine(project, Set.empty, "2034-05-06T07:08:09Z")
+        let store = Storage.create project
+        let validatorSource =
+            "word email.valid?(value: String) -> Bool {\n"
+            + "    effects none\n"
+            + "    string::contains(value, \"@\")\n"
+            + "}"
+        let validTest =
+            "test email.valid?/valid {\n"
+            + "    email::valid?(\"a@b\")\n"
+            + "    => true\n"
+            + "}"
+        let invalidTest =
+            "test email.valid?/invalid {\n"
+            + "    email::valid?(\"missing\")\n"
+            + "    => false\n"
+            + "}"
+        defineFlow engine validatorSource [ validTest; invalidTest ] [] []
+        |> expectOk "define Flow-authored scalar validator with passing cases"
+        |> ignore
+        commit engine "commit" "email.valid?" [] |> expectOk "commit Flow-authored scalar validator" |> ignore
+        let validatorId = getWordId engine "email.valid?"
+
+        let emailTypeSource =
+            "type Email : String\n"
+            + "    validate email.valid?\n"
+            + "end\n"
+            + "\n"
+            + "word email.roundtrip : String -> String\n"
+            + "    effects none\n"
+            + "    Email.new Email.value\n"
+            + "end\n"
+            + "\n"
+            + "test email.roundtrip/valid\n"
+            + "    \"a@b\" email.roundtrip\n"
+            + "    => \"a@b\"\n"
+            + "end\n"
+        dispatch engine "define" [ "source", jstr emailTypeSource ]
+        |> expectOk "stage a Stack scalar type whose validator is Flow-authored"
+        |> ignore
+        dispatch engine "commit" []
+        |> expectOk "commit the Flow validator closure and tested nominal constructor caller"
+        |> ignore
+        assertAllPassed 1 (dispatch engine "test" [ "word", jstr "email.roundtrip" ] |> expectOk "run committed nominal caller through Flow validator")
+
+        let before = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let beforeManifest = before.Manifest.Value
+        let validatorHead = beforeManifest.Words |> List.find (fun head -> head.WordId = validatorId)
+        let beforeRevision = beforeManifest.Revisions |> List.find (fun item -> item.WordId = validatorId && item.Revision = validatorHead.CurrentRevision)
+        let beforeExport = File.ReadAllBytes(Path.Combine(project, "dictionary.agent"))
+        let beforeHistory = dispatch engine "history" [ "word", jstr "email.valid?" ] |> expectOk "capture Flow validator history before frozen-closure guard"
+        expectError "TYPE_VALIDATOR_FROZEN" (dispatch engine "rename" [ "word", jstr "email.valid?"; "to", jstr "email.accepts?"; "actor", jstr "client" ])
+        |> ignore
+        let after = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        equal before.ManifestHash after.ManifestHash "frozen Flow validator rename leaves exact durable authority unchanged"
+        check (beforeExport.AsSpan().SequenceEqual(File.ReadAllBytes(Path.Combine(project, "dictionary.agent")).AsSpan())) "frozen Flow validator rename leaves exact export bytes unchanged"
+        let afterManifest = after.Manifest.Value
+        let afterRevision = afterManifest.Revisions |> List.find (fun item -> item.WordId = validatorId && item.Revision = beforeRevision.Revision)
+        equal beforeRevision afterRevision "frozen Flow validator retains exact revision and authored references"
+        equal validatorId (getWordId engine "email.valid?") "frozen Flow validator retains stable identity and name"
+        expectError "NAME_UNKNOWN_WORD" (dispatch engine "describe" [ "word", jstr "email.accepts?" ]) |> ignore
+        equal ((beforeHistory.["data"]).ToJsonString()) (((dispatch engine "history" [ "word", jstr "email.valid?" ] |> expectOk "read Flow validator history after refused rename").["data"]).ToJsonString()) "frozen validator refusal adds no history entry"
+        assertAllPassed 2 (dispatch engine "test" [ "word", jstr "email.valid?" ] |> expectOk "Flow validator cases remain active after refused rename")
+        equal "\"a@b\"" (stringValue (dispatch engine "eval" [ "code", jstr "\"a@b\" Email.new Email.value" ] |> expectOk "construct nominal value through retained Flow validator" |> fun response -> response.["data"].["stack"].[0])) "committed Stack nominal type keeps its Flow validator callable"
+
     [<EntryPoint>]
     let main _ =
         let root = newRoot ()
@@ -1022,7 +1749,11 @@ module Program =
             testPersistedBindingsAreVerified root
             testRetainedDotBindingAcrossReplacement root
             testExpectationCoverageIsNotActualCoverage root
-            printfn $"Flow Runtime tests passed: 11 groups, {assertions} assertions."
+            testFlowMaintenanceRenameDeprecateAndRestore root
+            testFlowMaintenanceRejectsUntouchedRebind root
+            testFlowMaintenanceFailureAndLibraryCoverage root
+            testFlowValidatorCannotBeRenamedAfterTypeCommit root
+            printfn $"Flow Runtime tests passed: 15 groups, {assertions} assertions."
             0
         finally
             if Directory.Exists root then Directory.Delete(root, true)

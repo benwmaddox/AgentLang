@@ -197,6 +197,15 @@ project source only for manifest-derived generated owners; user and Flow cases
 remain revision-bound. V1 keeps its legacy aggregate semantic comparison and
 frozen golden, while v2 still byte-compares the complete canonical project
 source. Exact committed-source CI passed all 26 checks (run 37417536333). Flow remains opt-in.
-Flow-aware rename/deprecate conformance, default frontend cutover, and controlled
+Default frontend cutover and controlled
 agent evaluation remain open. No research benefit is inferred from these
 implementation checks.
+
+Flow-aware maintenance has focused acceptance evidence, with independent pure
+rewrite and durable Runtime acceptance in [report 047](../reports/047-flow-maintenance-integration.md)
+and [report 048](../reports/048-flow-maintenance-acceptance.md). Complete call-site
+identity, argument evaluation order, attachment-only revision changes, library
+actual-site coverage, immutable history and reload/rollback are acceptance
+requirements. The full local 26-check Release gate passes; Runtime has 15 groups /
+399 assertions and Flow has 832 assertions. Exact committed-source CI is pending.
+Public test-result spans remain an observability gap, recorded in report 048.

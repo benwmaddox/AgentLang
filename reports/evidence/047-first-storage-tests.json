@@ -1,0 +1,10 @@
+{
+  "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Storage.Tests",
+  "revision": "00076c11d1cd3780a789011983c031127d2c80ca",
+  "dirty": true,
+  "exitCode": 0,
+  "durationMilliseconds": 5132,
+  "output": [
+    "Storage tests passed: 14 groups, 228 assertions."
+  ]
+}

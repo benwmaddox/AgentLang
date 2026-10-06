@@ -1,0 +1,13 @@
+{
+  "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Flow.Runtime.Tests",
+  "revision": "00076c11d1cd3780a789011983c031127d2c80ca",
+  "dirty": true,
+  "exitCode": -532462766,
+  "durationMilliseconds": 18226,
+  "output": [
+    "Unhandled exception. System.Exception: commit Flow word with passing guard test: expected success, got COMMIT_TESTS_FAILED: Candidate tests must pass against the proposed dictionary before commit.",
+    "   at AgentLang.Flow.Runtime.Tests.Program.expectOk[a](a label, JsonObject response) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Runtime.Tests\\Program.fs:line 58",
+    "   at AgentLang.Flow.Runtime.Tests.Program.testFlowMaintenanceFailureAndLibraryCoverage(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Runtime.Tests\\Program.fs:line 1610",
+    "   at AgentLang.Flow.Runtime.Tests.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Runtime.Tests\\Program.fs:line 1762"
+  ]
+}

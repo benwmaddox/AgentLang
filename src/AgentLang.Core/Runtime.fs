@@ -3311,34 +3311,9 @@ module Runtime =
                         error "RENAME_STAGED_CHANGES" "Commit or discard staged edits before renaming persistent vocabulary." None None [] []
                     else
                         let effective = effectiveWords data
-                        let flowBindingsReference identity (bindings: StoredCallBinding list option) =
-                            let targetMatches = function
-                                | StoredCallTarget.UserWord targetIdentity
-                                | StoredCallTarget.GeneratedWord targetIdentity -> targetIdentity = identity
-                                | StoredCallTarget.Primitive _ -> false
-                            bindings |> Option.exists (List.exists (fun binding -> targetMatches binding.Target))
-                        let flowCallers =
-                            data.FlowWords
-                            |> Map.toList
-                            |> List.exists (fun (_, authored) ->
-                                match data.WordIds.TryFind oldName with
-                                | Some identity -> flowBindingsReference identity authored.StoredBindings
-                                | None -> false)
-                            || (data.FlowTests |> Map.exists (fun _ authored ->
-                                match data.WordIds.TryFind oldName with
-                                | Some identity -> flowBindingsReference identity authored.StoredBindings
-                                | None -> false))
-                            || (data.FlowExamples |> Map.exists (fun _ authored ->
-                                match data.WordIds.TryFind oldName with
-                                | Some identity -> flowBindingsReference identity authored.StoredBindings
-                                | None -> false))
                         match data.Words.TryFind oldName with
                         | None -> error "NAME_UNKNOWN_WORD" $"Word '{oldName}' is not a user-defined word." (Some oldName) None [] []
                         | Some original when original.Builtin.IsSome -> error "WORD_MAINTENANCE_IMMUTABLE" "Primitive and generated words cannot be renamed." (Some oldName) None [] []
-                        | Some _ when data.WordIds.TryFind oldName |> Option.exists (fun identity -> data.FlowWords.ContainsKey identity) ->
-                            error "FLOW_MAINTENANCE_REQUIRES_FLOW" "A Flow word cannot be renamed through the Stack source rewriter; a binding-aware Flow rename is required." (Some oldName) None [ "frontend: flow" ] [ "frontend: stack" ]
-                        | Some _ when flowCallers ->
-                            error "FLOW_MAINTENANCE_REQUIRES_FLOW" "A word referenced from Flow source cannot be renamed through the Stack source rewriter; rewrite and rebind the Flow source explicitly." (Some oldName) None [ "frontend: flow" ] [ "frontend: stack" ]
                         | Some original when original.Status <> Persistent -> error "WORD_MAINTENANCE_REQUIRES_COMMIT" "Only committed words can be renamed." (Some oldName) None [ "persistent" ] [ string original.Status ]
                         | Some _ ->
                             if effective.ContainsKey newName || (knownTypes data).Contains newName then
@@ -3346,62 +3321,278 @@ module Runtime =
                             let frozen = frozenValidatorWords data effective
                             if frozen.Contains oldName then
                                 error "TYPE_VALIDATOR_FROZEN" $"Cannot rename '{oldName}' because it belongs to a persistent scalar validator closure." (Some oldName) None [] [ oldName ]
-                            let renamedTests =
-                                data.Tests
+                            let baselineState = data
+                            let data = (compileRuntimeSnapshot baselineState).State
+                            let identity = data.WordIds.TryFind oldName |> Option.defaultWith (fun () -> error "WORD_ID_MISSING" $"Word '{oldName}' has no stable identity." (Some oldName) None [] [])
+                            let target = StoredCallTarget.UserWord identity
+                            let flowWordNames =
+                                data.FlowWords
                                 |> Map.toSeq
-                                |> Seq.map (fun (_, item) -> Source.renameTestOwner oldName newName item)
-                                |> Seq.fold addTest Map.empty
-                            let renamedExamples =
-                                data.Examples
-                                |> Map.toSeq
-                                |> Seq.map (fun (_, item) -> Source.renameExampleOwner oldName newName item)
-                                |> Seq.fold addExample Map.empty
-                            let changedTestOwners =
-                                data.Tests
-                                |> Map.toSeq
-                                |> Seq.choose (fun (_, previous) ->
-                                    let rewritten = Source.renameTestOwner oldName newName previous
-                                    if Source.renderTest rewritten <> Source.renderTest previous then Some rewritten.Word else None)
+                                |> Seq.map (fun (_, authored) -> authored.Source.OwnerName)
                                 |> Set.ofSeq
-                            let changedExampleOwners =
-                                data.Examples
+                            let flowTestNames =
+                                data.FlowTests
                                 |> Map.toSeq
-                                |> Seq.choose (fun (_, previous) ->
-                                    let rewritten = Source.renameExampleOwner oldName newName previous
-                                    if Source.renderExample rewritten <> Source.renderExample previous then Some rewritten.Word else None)
+                                |> Seq.map (fun (_, authored) -> authored.Source.OwnerName + "/" + authored.Source.CaseName)
                                 |> Set.ofSeq
-                            let changedAttachmentOwners = Set.union changedTestOwners changedExampleOwners
-                            let updates =
+                            let flowExampleNames =
+                                data.FlowExamples
+                                |> Map.toSeq
+                                |> Seq.map (fun (_, authored) -> authored.Source.OwnerName + "/" + authored.Source.CaseName)
+                                |> Set.ofSeq
+                            let requireBindings description = function
+                                | Some bindings -> bindings
+                                | None -> error "FLOW_RUNTIME_BINDINGS_MISSING" $"Cannot rename '{oldName}' because {description} has no verified source binding inventory." (Some oldName) None [ "verified Flow call bindings" ] []
+                            let rewriteResult description = function
+                                | Ok result -> result
+                                | Error diagnostic -> raise (LanguageException diagnostic)
+                            let rewrittenFlowWords: Map<string, FlowAuthoredWord * FlowRewriteResult<FlowWordDefinition> * bool * string> =
+                                data.FlowWords
+                                |> Map.map (fun _ authored ->
+                                    let prior = requireBindings ("Flow definition '" + authored.Source.OwnerName + "'") authored.StoredBindings
+                                    let result =
+                                        FlowRewrite.rewriteWord oldName newName target authored.Definition prior
+                                        |> rewriteResult authored.Source.OwnerName
+                                    let changed = result.Definition.Name <> authored.Definition.Name || result.Bindings <> prior
+                                    let content = if changed then result.Definition.SourceText else authored.Source.Content
+                                    authored, result, changed, content)
+                            let rewrittenFlowTests: Map<string, FlowAuthoredAttachment * FlowRewriteResult<FlowTestDefinition> * bool * string> =
+                                data.FlowTests
+                                |> Map.map (fun _ authored ->
+                                    let parsed =
+                                        match FlowParser.parseTest authored.Source.SourceFile authored.Source.Content with
+                                        | Ok definition -> definition
+                                        | Error diagnostic -> raise (LanguageException diagnostic)
+                                    let prior = requireBindings ("Flow test '" + authored.Source.OwnerName + "/" + authored.Source.CaseName + "'") authored.StoredBindings
+                                    let result =
+                                        FlowRewrite.rewriteTest oldName newName target parsed prior
+                                        |> rewriteResult (authored.Source.OwnerName + "/" + authored.Source.CaseName)
+                                    let changed = result.Definition.Word <> parsed.Word || result.Bindings <> prior
+                                    let content = if changed then result.Definition.SourceText else authored.Source.Content
+                                    authored, result, changed, content)
+                            let rewrittenFlowExamples: Map<string, FlowAuthoredAttachment * FlowRewriteResult<FlowExampleDefinition> * bool * string> =
+                                data.FlowExamples
+                                |> Map.map (fun _ authored ->
+                                    let parsed =
+                                        match FlowParser.parseExample authored.Source.SourceFile authored.Source.Content with
+                                        | Ok definition -> definition
+                                        | Error diagnostic -> raise (LanguageException diagnostic)
+                                    let prior = requireBindings ("Flow example '" + authored.Source.OwnerName + "/" + authored.Source.CaseName + "'") authored.StoredBindings
+                                    let result =
+                                        FlowRewrite.rewriteExample oldName newName target parsed prior
+                                        |> rewriteResult (authored.Source.OwnerName + "/" + authored.Source.CaseName)
+                                    let changed = result.Definition.Word <> parsed.Word || result.Bindings <> prior
+                                    let content = if changed then result.Definition.SourceText else authored.Source.Content
+                                    authored, result, changed, content)
+                            let changedFlowWordIds =
+                                rewrittenFlowWords
+                                |> Map.toSeq
+                                |> Seq.choose (fun (ownerId, (_, _, changed, _)) -> if changed then Some ownerId else None)
+                                |> Set.ofSeq
+                            let changedFlowTestOwners =
+                                rewrittenFlowTests
+                                |> Map.toSeq
+                                |> Seq.choose (fun (_, (authored, _, changed, _)) -> if changed then Some(wordIdText authored.Source.OwnerId) else None)
+                                |> Set.ofSeq
+                            let changedFlowExampleOwners =
+                                rewrittenFlowExamples
+                                |> Map.toSeq
+                                |> Seq.choose (fun (_, (authored, _, changed, _)) -> if changed then Some(wordIdText authored.Source.OwnerId) else None)
+                                |> Set.ofSeq
+                            let flowOwnerIds = data.FlowWords |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+                            let changedFlowOwnerIds =
+                                Set.unionMany [ changedFlowWordIds; changedFlowTestOwners; changedFlowExampleOwners ]
+                                |> fun changed -> if flowOwnerIds.Contains identity then Set.add identity changed else changed
+                            let flowRevision ownerId =
+                                let authored =
+                                    data.FlowWords.TryFind ownerId
+                                    |> Option.defaultWith (fun () -> error "FLOW_RUNTIME_ORPHAN_ATTACHMENT" "A Flow attachment owner has no Flow word while preparing a rename." (Some oldName) None [] [ ownerId ])
+                                let owner =
+                                    data.Words.TryFind authored.Source.OwnerName
+                                    |> Option.defaultWith (fun () -> error "FLOW_RUNTIME_OWNER_MISSING" "A Flow source has no executable owner entry while preparing a rename." (Some authored.Source.OwnerName) None [] [])
+                                owner.Revision + (if changedFlowOwnerIds.Contains ownerId then 1 else 0)
+                            let flowSourceFile ownerName revision = $"<flow:{ownerName}/{revision}>"
+                            let flowTestSourceFile ownerName revision reference = $"<flow:{ownerName}/{revision}>/test:{reference.Hash}"
+                            let flowExampleSourceFile ownerName revision reference = $"<flow:{ownerName}/{revision}>/example:{reference.Hash}"
+                            let finalFlowWords: Map<string, FlowAuthoredWord> =
+                                rewrittenFlowWords
+                                |> Map.map (fun ownerId (authored, result, _, content) ->
+                                    let ownerName = result.Definition.Name
+                                    let revision = flowRevision ownerId
+                                    let sourceObject = Storage.sourceObject StorageObjectKind.WordDefinition content
+                                    let sourceFile = flowSourceFile ownerName revision
+                                    let definition =
+                                        match FlowParser.parseWord sourceFile content with
+                                        | Ok parsed when parsed.Name = ownerName && parsed.SyntaxVersion = 1 -> parsed
+                                        | Ok parsed -> error "FLOW_REWRITE_OWNER_MISMATCH" "Rewritten Flow source did not preserve its stable owner name and syntax version." (Some ownerName) (Some parsed.Span) [ ownerName; "Flow/1" ] [ parsed.Name; string parsed.SyntaxVersion ]
+                                        | Error diagnostic -> raise (LanguageException diagnostic)
+                                    let source =
+                                        { authored.Source with
+                                            OwnerName = ownerName
+                                            OwnerRevision = revision
+                                            Reference = sourceObject.Reference
+                                            SourceFile = sourceFile
+                                            Content = content }
+                                    let bindings = result.Bindings |> List.map (fun binding -> { binding with Source = source.Reference })
+                                    { Definition = definition; Source = source; StoredBindings = Some bindings })
+                            let finalFlowTests: Map<string, FlowAuthoredAttachment> =
+                                rewrittenFlowTests
+                                |> Map.toList
+                                |> List.map (fun (_, (authored, result, _, content)) ->
+                                    let ownerId = wordIdText authored.Source.OwnerId
+                                    let ownerName = result.Definition.Word
+                                    let revision = flowRevision ownerId
+                                    let sourceObject = Storage.sourceObject StorageObjectKind.TestDefinition content
+                                    let sourceFile = flowTestSourceFile ownerName revision sourceObject.Reference
+                                    let definition =
+                                        match FlowParser.parseTest sourceFile content with
+                                        | Ok parsed when parsed.Word = ownerName && parsed.CaseName = authored.Source.CaseName -> parsed
+                                        | Ok parsed -> error "FLOW_REWRITE_OWNER_MISMATCH" "Rewritten Flow test did not preserve its stable owner and case name." (Some(ownerName + "/" + authored.Source.CaseName)) (Some parsed.Span) [ ownerName; authored.Source.CaseName ] [ parsed.Word; parsed.CaseName ]
+                                        | Error diagnostic -> raise (LanguageException diagnostic)
+                                    let source =
+                                        { authored.Source with
+                                            OwnerName = ownerName
+                                            OwnerRevision = revision
+                                            Reference = sourceObject.Reference
+                                            SourceFile = sourceFile
+                                            Content = content }
+                                    let bindings = result.Bindings |> List.map (fun binding -> { binding with Source = source.Reference })
+                                    flowAttachmentKey authored.Source.OwnerId definition.CaseName,
+                                    { Source = source; StoredBindings = Some bindings })
+                                |> Map.ofList
+                            let finalFlowExamples: Map<string, FlowAuthoredAttachment> =
+                                rewrittenFlowExamples
+                                |> Map.toList
+                                |> List.map (fun (_, (authored, result, _, content)) ->
+                                    let ownerId = wordIdText authored.Source.OwnerId
+                                    let ownerName = result.Definition.Word
+                                    let revision = flowRevision ownerId
+                                    let sourceObject = Storage.sourceObject StorageObjectKind.ExampleDefinition content
+                                    let sourceFile = flowExampleSourceFile ownerName revision sourceObject.Reference
+                                    let definition =
+                                        match FlowParser.parseExample sourceFile content with
+                                        | Ok parsed when parsed.Word = ownerName && parsed.CaseName = authored.Source.CaseName -> parsed
+                                        | Ok parsed -> error "FLOW_REWRITE_OWNER_MISMATCH" "Rewritten Flow example did not preserve its stable owner and case name." (Some(ownerName + "/" + authored.Source.CaseName)) (Some parsed.Span) [ ownerName; authored.Source.CaseName ] [ parsed.Word; parsed.CaseName ]
+                                        | Error diagnostic -> raise (LanguageException diagnostic)
+                                    let source =
+                                        { authored.Source with
+                                            OwnerName = ownerName
+                                            OwnerRevision = revision
+                                            Reference = sourceObject.Reference
+                                            SourceFile = sourceFile
+                                            Content = content }
+                                    let bindings = result.Bindings |> List.map (fun binding -> { binding with Source = source.Reference })
+                                    flowAttachmentKey authored.Source.OwnerId definition.CaseName,
+                                    { Source = source; StoredBindings = Some bindings })
+                                |> Map.ofList
+                            let stackTestSources =
+                                data.Tests
+                                |> Map.toList
+                                |> List.map snd
+                                |> List.filter (fun test -> not (flowTestNames.Contains(test.Word + "/" + test.Name)))
+                            let rewrittenStackTests = stackTestSources |> List.map (fun test -> test, Source.renameTestOwner oldName newName test)
+                            let changedStackTestOwners =
+                                rewrittenStackTests
+                                |> List.choose (fun (before, after) -> if Source.renderTest before <> Source.renderTest after then Some after.Word else None)
+                                |> Set.ofList
+                            let stackExampleSources =
+                                data.Examples
+                                |> Map.toList
+                                |> List.map snd
+                                |> List.filter (fun example -> not (flowExampleNames.Contains(example.Word + "/" + example.Name)))
+                            let rewrittenStackExamples = stackExampleSources |> List.map (fun example -> example, Source.renameExampleOwner oldName newName example)
+                            let changedStackExampleOwners =
+                                rewrittenStackExamples
+                                |> List.choose (fun (before, after) -> if Source.renderExample before <> Source.renderExample after then Some after.Word else None)
+                                |> Set.ofList
+                            let changedStackAttachmentOwners = Set.union changedStackTestOwners changedStackExampleOwners
+                            let stackDefinitionChanges =
                                 data.Words
                                 |> Map.toList
                                 |> List.choose (fun (oldKey, item) ->
-                                    if item.Builtin.IsSome then None
+                                    if item.Builtin.IsSome || flowWordNames.Contains oldKey then None
                                     else
                                         let renamed = Source.renameWordDefinition oldName newName item.Definition
-                                        if oldKey <> oldName
-                                           && renamed.Body = item.Definition.Body
-                                           && not (changedAttachmentOwners.Contains renamed.Name) then None
+                                        let changed = renamed.Name <> item.Definition.Name || renamed.Body <> item.Definition.Body || changedStackAttachmentOwners.Contains renamed.Name
+                                        if not changed then None
                                         else
                                             let revision = item.Revision + 1
                                             let definition = { renamed with Revision = revision; Maturity = item.Maturity }
-                                            let definition = { definition with SourceText = Source.renderWord true definition }
-                                            Some(oldKey, definition.Name, { item with Definition = definition; Revision = revision }))
-                            let identity = data.WordIds.TryFind oldName |> Option.defaultWith (fun () -> error "WORD_ID_MISSING" $"Word '{oldName}' has no stable identity." (Some oldName) None [] [])
-                            let wordIds = data.WordIds |> Map.remove oldName |> Map.add newName identity
+                                            let rendered = Source.renderWord true definition
+                                            let sourceObject = Storage.sourceObject StorageObjectKind.WordDefinition rendered
+                                            let sourceFile = $"<revision:{definition.Name}/{revision}>/definition:{sourceObject.Reference.Hash}"
+                                            match Parser.parse sourceFile rendered with
+                                            | Error diagnostic -> raise (LanguageException diagnostic)
+                                            | Ok parsed when parsed.Words.Length = 1 && parsed.Records.IsEmpty && parsed.Scalars.IsEmpty && parsed.Tests.IsEmpty && parsed.Examples.IsEmpty ->
+                                                let parsedDefinition = parsed.Words.Head
+                                                Some(oldKey, parsedDefinition.Name, { item with Definition = parsedDefinition; Revision = revision })
+                                            | Ok _ -> error "RENAME_INVALID_SOURCE" "Renaming a Stack word did not produce exactly one valid word definition." (Some renamed.Name) (Some renamed.Span) [] [] )
+                            let stackOwnerRevision ownerName =
+                                match stackDefinitionChanges |> List.tryFind (fun (_, renamedName, _) -> renamedName = ownerName) with
+                                | Some(_, _, entry) -> entry.Revision
+                                | None -> data.Words.TryFind ownerName |> Option.map (fun entry -> entry.Revision) |> Option.defaultValue 0
+                            let reparseChangedStackTest (before: TestDefinition, after: TestDefinition) =
+                                if Source.renderTest before = Source.renderTest after then after
+                                else
+                                    let content = Source.renderTest after
+                                    let sourceObject = Storage.sourceObject StorageObjectKind.TestDefinition content
+                                    let sourceFile = $"<revision:{after.Word}/{stackOwnerRevision after.Word}>/test:{sourceObject.Reference.Hash}"
+                                    let parsed = parseProjectSource sourceFile content
+                                    match parsed.Tests, parsed.Words, parsed.Records, parsed.Scalars, parsed.Examples with
+                                    | [ test ], [], [], [], [] when test.Word = after.Word && test.Name = after.Name -> test
+                                    | _ -> error "RENAME_INVALID_SOURCE" "Renaming a Stack test did not produce exactly one valid test definition." (Some(after.Word + "/" + after.Name)) (Some after.Span) [] []
+                            let reparseChangedStackExample (before: ExampleDefinition, after: ExampleDefinition) =
+                                if Source.renderExample before = Source.renderExample after then after
+                                else
+                                    let content = Source.renderExample after
+                                    let sourceObject = Storage.sourceObject StorageObjectKind.ExampleDefinition content
+                                    let sourceFile = $"<revision:{after.Word}/{stackOwnerRevision after.Word}>/example:{sourceObject.Reference.Hash}"
+                                    let parsed = parseProjectSource sourceFile content
+                                    match parsed.Examples, parsed.Words, parsed.Records, parsed.Scalars, parsed.Tests with
+                                    | [ example ], [], [], [], [] when example.Word = after.Word && example.Name = after.Name -> example
+                                    | _ -> error "RENAME_INVALID_SOURCE" "Renaming a Stack example did not produce exactly one valid example definition." (Some(after.Word + "/" + after.Name)) (Some after.Span) [] []
+                            let tests =
+                                rewrittenStackTests
+                                |> List.map reparseChangedStackTest
+                                |> List.fold addTest Map.empty
+                            let examples =
+                                rewrittenStackExamples
+                                |> List.map reparseChangedStackExample
+                                |> List.fold addExample Map.empty
+                            let changedStackOwnerNames =
+                                stackDefinitionChanges
+                                |> List.map (fun (_, name, _) -> name)
+                                |> Set.ofList
+                            let flowWordEntries =
+                                finalFlowWords
+                                |> Map.toList
+                                |> List.map (fun (ownerId, authored) ->
+                                    let originalAuthored = data.FlowWords[ownerId]
+                                    let originalEntry = data.Words[originalAuthored.Source.OwnerName]
+                                    let revision = flowRevision ownerId
+                                    let definition =
+                                        { originalEntry.Definition with
+                                            Name = authored.Definition.Name
+                                            Inputs = authored.Definition.Parameters |> List.map (fun parameter -> parameter.Type)
+                                            Outputs = authored.Definition.Outputs
+                                            Effects = authored.Definition.Effects
+                                            Maturity = originalEntry.Maturity
+                                            Revision = revision
+                                            Documentation = authored.Definition.Documentation
+                                            SourceText = authored.Source.Content
+                                            Span = authored.Definition.Span }
+                                    let entry = { originalEntry with Definition = definition; Revision = revision }
+                                    authored.Source.OwnerName, entry)
+                            let stackWords =
+                                data.Words
+                                |> Map.filter (fun name _ -> not (flowWordNames.Contains name) && name <> oldName)
+                                |> fun found ->
+                                    stackDefinitionChanges
+                                    |> List.fold (fun current (_, name, item) -> Map.add name item current) found
                             let words =
-                                updates
-                                |> List.fold (fun found (_, name, item) -> Map.add name item found) (Map.remove oldName data.Words)
-                            let expectationOnlyTestOwners =
-                                data.Tests
-                                |> Map.toSeq
-                                |> Seq.choose (fun (_, test) ->
-                                    match test.Expected with
-                                    | ExpectedExpression expressions when (Compiler.dependencies expressions).Contains oldName ->
-                                        Some(if test.Word = oldName then newName else test.Word)
-                                    | _ -> None)
-                                |> Set.ofSeq
-                            let tests = renamedTests
-                            let examples = renamedExamples
+                                flowWordEntries
+                                |> List.fold (fun found (name, item) -> Map.add name item found) stackWords
+                            let wordIds = data.WordIds |> Map.remove oldName |> Map.add newName identity
                             let scalars =
                                 data.Scalars
                                 |> Map.map (fun _ item ->
@@ -3409,28 +3600,35 @@ module Runtime =
                                     if definition.Validator = item.Definition.Validator then item
                                     else { item with Definition = definition })
                             let deprecated = if data.Deprecated.Contains oldName then data.Deprecated |> Set.remove oldName |> Set.add newName else data.Deprecated
-                            let rewritten = { data with Words = words; WordIds = wordIds; Deprecated = deprecated; Scalars = scalars; Tests = tests; Examples = examples; Replacements = Map.empty }
-                            let parsed = parseProjectSource "<rename>" (sourceFor rewritten)
-                            let parsedProposed = parsedState parsed rewritten wordIds
                             let movedHistory: Map<string, WordDefinition list> =
                                 match data.History.TryFind oldName with
                                 | Some oldHistory -> data.History |> Map.remove oldName |> Map.add newName oldHistory
                                 | None -> data.History
-                            let history: Map<string, WordDefinition list> =
-                                updates
-                                |> List.fold (fun found (_, name, item) ->
-                                    let previous = found.TryFind name |> Option.defaultValue []
-                                    Map.add name (previous @ [ item.Definition ]) found) movedHistory
-                            let proposed = { parsedProposed with History = history; Deprecated = deprecated }
+                            let proposed =
+                                { data with
+                                    Words = words
+                                    WordIds = wordIds
+                                    Deprecated = deprecated
+                                    Scalars = scalars
+                                    Tests = tests
+                                    Examples = examples
+                                    FlowWords = finalFlowWords
+                                    FlowTests = finalFlowTests
+                                    FlowExamples = finalFlowExamples
+                                    Replacements = Map.empty }
                             let executable = compileRuntimeSnapshot proposed
-                            let affectedNames = updates |> List.map (fun (_, name, _) -> name) |> Set.ofList
-                            let testOwnersToRun = Set.unionMany [ affectedNames; expectationOnlyTestOwners; changedAttachmentOwners ]
-                            let wordsAfter = executable.Words
+                            let changedFlowOwnerNames =
+                                changedFlowOwnerIds
+                                |> Set.toList
+                                |> List.choose (fun ownerId -> executable.State.FlowWords.TryFind ownerId |> Option.map (fun authored -> authored.Source.OwnerName))
+                                |> Set.ofList
+                            let changedWordNames = Set.union changedStackOwnerNames changedFlowOwnerNames
+                            let testOwnersToRun = Set.union changedWordNames changedStackAttachmentOwners
                             let results =
                                 testOwnersToRun
                                 |> Set.toList
                                 |> List.collect (fun name ->
-                                    let attached = proposed.Tests |> Map.toSeq |> Seq.map snd |> Seq.filter (fun test -> test.Word = name) |> Seq.toList
+                                    let attached = executable.State.Tests |> Map.toSeq |> Seq.map snd |> Seq.filter (fun test -> test.Word = name) |> Seq.toList
                                     if List.isEmpty attached then
                                         error "RENAME_TESTS_REQUIRED" $"Renaming or rewriting '{name}' requires at least one attached test." (Some name) None [ "attached passing test" ] []
                                     runTestsFor executable (Some name))
@@ -3439,9 +3637,9 @@ module Runtime =
                             let failed = results |> List.filter (fun item -> not item.Passed)
                             if not (List.isEmpty failed) then
                                 error "RENAME_TESTS_FAILED" "Affected tests must pass before the rename can be published." None None [] (failed |> List.map (fun item -> $"{item.Word}/{item.Name}"))
-                            for name in affectedNames do
-                                let candidate = wordsAfter[name]
-                                if candidate.Maturity = LibraryWord then
+                            for name in changedWordNames do
+                                match executable.Words.TryFind name with
+                                | Some candidate when candidate.Maturity = LibraryWord ->
                                     let ownTests = results |> List.filter (fun test -> test.Word = name)
                                     let requiredInstructions, requiredBranches = coverageObligations executable name
                                     let coveredInstructions = ownTests |> List.fold (fun found test -> Set.union found test.Instructions) Set.empty
@@ -3450,15 +3648,35 @@ module Runtime =
                                     let missingBranches = Set.difference requiredBranches coveredBranches
                                     if not (Set.isEmpty uncovered && Set.isEmpty missingBranches && not (List.isEmpty ownTests)) then
                                         error "LIBRARY_COVERAGE_INCOMPLETE" $"Renamed library word '{name}' requires complete attached test coverage." (Some name) None [] (coverageGapLabels executable uncovered missingBranches)
-                            let durableSnapshot = compileRuntimeSnapshot (durableState executable.State)
-                            publish data durableSnapshot.State actor
-                            activateRuntimeSnapshot executable
+                                | _ -> ()
+                            let history =
+                                changedWordNames
+                                |> Set.fold (fun (found: Map<string, WordDefinition list>) name ->
+                                    match executable.State.Words.TryFind name with
+                                    | None -> found
+                                    | Some item ->
+                                        let previous = found.TryFind name |> Option.defaultValue []
+                                        Map.add name (previous @ [ item.Definition ]) found) movedHistory
+                            let flowHistory =
+                                changedFlowOwnerIds
+                                |> Set.fold (fun (found: Map<string, FlowAuthoredWord list>) ownerId ->
+                                    match executable.State.FlowWords.TryFind ownerId with
+                                    | None -> found
+                                    | Some authored ->
+                                        let previous = found.TryFind ownerId |> Option.defaultValue []
+                                        if previous |> List.exists (fun item -> item.Source.OwnerRevision = authored.Source.OwnerRevision) then found
+                                        else Map.add ownerId (previous @ [ authored ]) found) executable.State.FlowHistory
+                            let finalExecutable =
+                                { executable with State = { executable.State with History = history; FlowHistory = flowHistory } }
+                            let durableSnapshot = compileRuntimeSnapshot (durableState finalExecutable.State)
+                            publish baselineState durableSnapshot.State actor
+                            activateRuntimeSnapshot finalExecutable
                             lastResults <- results
                             let payload = JsonObject()
                             payload["id"] <- jstr identity
                             payload["from"] <- jstr oldName
                             payload["to"] <- jstr newName
-                            payload["rewrittenWords"] <- jsonNode (affectedNames |> Set.toList)
+                            payload["rewrittenWords"] <- jsonNode (changedWordNames |> Set.toList)
                             success "rename" $"Renamed '{oldName}' to '{newName}' and validated {results.Length} affected test(s)." (Some payload)
                 | "deprecate" ->
                     let name = readString args "word" ""
@@ -3473,8 +3691,6 @@ module Runtime =
                         match data.Words.TryFind name with
                         | None -> error "NAME_UNKNOWN_WORD" $"Word '{name}' is not a user-defined word." (Some name) None [] []
                         | Some item when item.Builtin.IsSome -> error "WORD_MAINTENANCE_IMMUTABLE" "Primitive and generated words cannot be deprecated." (Some name) None [] []
-                        | Some _ when data.WordIds.TryFind name |> Option.exists (fun identity -> data.FlowWords.ContainsKey identity) ->
-                            error "FLOW_MAINTENANCE_REQUIRES_FLOW" "Flow owner revision metadata must be updated with an authored Flow definition change; Stack maintenance cannot rewrite it." (Some name) None [ "frontend: flow" ] [ "frontend: stack" ]
                         | Some item when item.Status <> Persistent -> error "WORD_MAINTENANCE_REQUIRES_COMMIT" "Only committed words can be deprecated." (Some name) None [ "persistent" ] [ string item.Status ]
                         | Some item when data.Deprecated.Contains name ->
                             let payload = JsonObject()
@@ -3483,29 +3699,102 @@ module Runtime =
                             success "deprecate" $"Word '{name}' is already deprecated." (Some payload)
                         | Some item ->
                             let revision = item.Revision + 1
-                            let definition = { item.Definition with Revision = revision }
-                            let definition = { definition with SourceText = Source.renderWord true definition }
-                            let updated = { item with Definition = definition; Revision = revision }
-                            let proposedWords = Map.add name updated data.Words
-                            let testSnapshot = compileRuntimeSnapshot { data with Words = proposedWords }
+                            let identity =
+                                data.WordIds.TryFind name
+                                |> Option.defaultWith (fun () -> error "WORD_ID_MISSING" $"Word '{name}' has no stable identity." (Some name) None [] [])
+                            let proposed =
+                                match data.FlowWords.TryFind identity with
+                                | Some authored ->
+                                    let definitionObject = Storage.sourceObject StorageObjectKind.WordDefinition authored.Source.Content
+                                    if definitionObject.Reference <> authored.Source.Reference then
+                                        error "FLOW_RUNTIME_SOURCE_MISMATCH" "A Flow definition source no longer matches its immutable source reference." (Some name) None [ authored.Source.Reference.Hash ] [ definitionObject.Reference.Hash ]
+                                    let sourceFile = $"<flow:{name}/{revision}>"
+                                    let definition =
+                                        match FlowParser.parseWord sourceFile authored.Source.Content with
+                                        | Ok parsed when parsed.Name = name && parsed.SyntaxVersion = authored.Definition.SyntaxVersion -> parsed
+                                        | Ok parsed -> error "FLOW_RUNTIME_OWNER_MISMATCH" "Flow deprecation metadata does not match the authored owner and syntax version." (Some name) (Some parsed.Span) [ name; string authored.Definition.SyntaxVersion ] [ parsed.Name; string parsed.SyntaxVersion ]
+                                        | Error diagnostic -> raise (LanguageException diagnostic)
+                                    let nextWord =
+                                        { authored with
+                                            Definition = definition
+                                            Source = { authored.Source with OwnerRevision = revision; SourceFile = sourceFile } }
+                                    let flowTests =
+                                        data.FlowTests
+                                        |> Map.map (fun _ attachment ->
+                                            if attachment.Source.OwnerId <> authored.Source.OwnerId then attachment
+                                            else
+                                                let sourceObject = Storage.sourceObject StorageObjectKind.TestDefinition attachment.Source.Content
+                                                if sourceObject.Reference <> attachment.Source.Reference then
+                                                    error "FLOW_RUNTIME_SOURCE_MISMATCH" "A Flow test source no longer matches its immutable source reference." (Some(name + "/" + attachment.Source.CaseName)) None [ attachment.Source.Reference.Hash ] [ sourceObject.Reference.Hash ]
+                                                { attachment with
+                                                    Source =
+                                                        { attachment.Source with
+                                                            OwnerRevision = revision
+                                                            SourceFile = $"<flow:{name}/{revision}>/test:{attachment.Source.Reference.Hash}" } })
+                                    let flowExamples =
+                                        data.FlowExamples
+                                        |> Map.map (fun _ attachment ->
+                                            if attachment.Source.OwnerId <> authored.Source.OwnerId then attachment
+                                            else
+                                                let sourceObject = Storage.sourceObject StorageObjectKind.ExampleDefinition attachment.Source.Content
+                                                if sourceObject.Reference <> attachment.Source.Reference then
+                                                    error "FLOW_RUNTIME_SOURCE_MISMATCH" "A Flow example source no longer matches its immutable source reference." (Some(name + "/" + attachment.Source.CaseName)) None [ attachment.Source.Reference.Hash ] [ sourceObject.Reference.Hash ]
+                                                { attachment with
+                                                    Source =
+                                                        { attachment.Source with
+                                                            OwnerRevision = revision
+                                                            SourceFile = $"<flow:{name}/{revision}>/example:{attachment.Source.Reference.Hash}" } })
+                                    let projectedDefinition =
+                                        { item.Definition with
+                                            Revision = revision
+                                            SourceText = authored.Source.Content
+                                            Span = definition.Span }
+                                    { data with
+                                        Words = Map.add name { item with Definition = projectedDefinition; Revision = revision } data.Words
+                                        Deprecated = Set.add name data.Deprecated
+                                        FlowWords = Map.add identity nextWord data.FlowWords
+                                        FlowTests = flowTests
+                                        FlowExamples = flowExamples }
+                                | None ->
+                                    let definition = { item.Definition with Revision = revision }
+                                    let definition = { definition with SourceText = Source.renderWord true definition }
+                                    let updated = { item with Definition = definition; Revision = revision }
+                                    { data with
+                                        Words = Map.add name updated data.Words
+                                        Deprecated = Set.add name data.Deprecated }
+                            let testSnapshot = compileRuntimeSnapshot proposed
                             let tests = runTestsFor testSnapshot (Some name)
                             if List.isEmpty tests then error "DEPRECATE_TESTS_REQUIRED" $"Word '{name}' needs an attached test before it can be deprecated." (Some name) None [ "attached passing test" ] []
+                            preflightStructuredTestResults testSnapshot.Program tests
                             recordTestResults tests
                             let failed = tests |> List.filter (fun result -> not result.Passed)
                             if not (List.isEmpty failed) then error "DEPRECATE_TESTS_FAILED" "The word's attached tests must pass before deprecation." (Some name) None [] (failed |> List.map (fun result -> result.Name))
-                            let history = data.History.TryFind name |> Option.defaultValue []
-                            let proposed =
-                                { data with
-                                    Words = proposedWords
-                                    Deprecated = Set.add name data.Deprecated
-                                    History = Map.add name (history @ [ definition ]) data.History }
-                            let executable = compileRuntimeSnapshot proposed
+                            if item.Maturity = LibraryWord then
+                                let requiredInstructions, requiredBranches = coverageObligations testSnapshot name
+                                let coveredInstructions = tests |> List.fold (fun found test -> Set.union found test.Instructions) Set.empty
+                                let coveredBranches = tests |> List.fold (fun found test -> Set.union found test.BranchOutcomes) Set.empty
+                                let uncovered = Set.difference requiredInstructions coveredInstructions
+                                let missingBranches = Set.difference requiredBranches coveredBranches
+                                if not (Set.isEmpty uncovered && Set.isEmpty missingBranches && not (List.isEmpty tests)) then
+                                    error "LIBRARY_COVERAGE_INCOMPLETE" $"Library word '{name}' requires complete attached test coverage before deprecation." (Some name) None [] (coverageGapLabels testSnapshot uncovered missingBranches)
+                            let history =
+                                let previous = data.History.TryFind name |> Option.defaultValue []
+                                Map.add name (previous @ [ testSnapshot.State.Words[name].Definition ]) testSnapshot.State.History
+                            let flowHistory =
+                                match testSnapshot.State.WordIds.TryFind name with
+                                | Some ownerId when testSnapshot.State.FlowWords.ContainsKey ownerId ->
+                                    let authored = testSnapshot.State.FlowWords[ownerId]
+                                    let previous = testSnapshot.State.FlowHistory.TryFind ownerId |> Option.defaultValue []
+                                    if previous |> List.exists (fun prior -> prior.Source.OwnerRevision = authored.Source.OwnerRevision) then testSnapshot.State.FlowHistory
+                                    else Map.add ownerId (previous @ [ authored ]) testSnapshot.State.FlowHistory
+                                | _ -> testSnapshot.State.FlowHistory
+                            let executable = { testSnapshot with State = { testSnapshot.State with History = history; FlowHistory = flowHistory } }
                             let durableSnapshot = compileRuntimeSnapshot (durableState executable.State)
                             publish data durableSnapshot.State actor
                             activateRuntimeSnapshot executable
                             lastResults <- tests
                             let payload = JsonObject()
-                            payload["id"] <- jstr (wordIdentity proposed updated)
+                            payload["id"] <- jstr identity
                             payload["deprecated"] <- jbool true
                             payload["revision"] <- jint revision
                             success "deprecate" $"Deprecated '{name}' after {tests.Length} passing test(s)." (Some payload)

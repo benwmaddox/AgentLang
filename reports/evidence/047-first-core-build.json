@@ -1,0 +1,32 @@
+{
+  "command": "dotnet build src/AgentLang.Core/AgentLang.Core.fsproj --configuration Release",
+  "revision": "00076c11d1cd3780a789011983c031127d2c80ca",
+  "dirty": true,
+  "exitCode": 1,
+  "durationMilliseconds": 9311,
+  "output": [
+    "  Determining projects to restore...",
+    "  All projects are up-to-date for restore.",
+    "D:\\code\\AgentLang\\src\\AgentLang.Core\\FlowRewrite.fs(145,21): error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved. [D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj]",
+    "D:\\code\\AgentLang\\src\\AgentLang.Core\\FlowRewrite.fs(479,40): error FS0001: Type mismatch. Expecting a\u001d    'FlowWordDefinition -> (StoredCallBodyRole * FlowExpression list * FlowStatement list) list'    \u001dbut given a\u001d    'FlowExampleDefinition -> (StoredCallBodyRole * 'a list * FlowStatement list) list'    \u001dThe type 'FlowExampleDefinition' does not match the type 'FlowWordDefinition' [D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj]",
+    "D:\\code\\AgentLang\\src\\AgentLang.Core\\FlowRewrite.fs(503,23): error FS0001: This expression was expected to have type\u001d    'Literal'    \u001dbut here has type\u001d    'FlowTestExpectation' [D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj]",
+    "D:\\code\\AgentLang\\src\\AgentLang.Core\\FlowRewrite.fs(504,23): error FS0001: This expression was expected to have type\u001d    'Literal'    \u001dbut here has type\u001d    'FlowTestExpectation' [D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj]",
+    "D:\\code\\AgentLang\\src\\AgentLang.Core\\FlowRewrite.fs(504,55): error FS0001: This expression was expected to have type\u001d    'Literal'    \u001dbut here has type\u001d    'FlowTestExpectation' [D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj]",
+    "D:\\code\\AgentLang\\src\\AgentLang.Core\\FlowRewrite.fs(502,27): warning FS0025: Incomplete pattern matches on this expression. [D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj]",
+    "D:\\code\\AgentLang\\src\\AgentLang.Core\\FlowRewrite.fs(509,40): error FS0001: Type mismatch. Expecting a\u001d    'FlowTestDefinition -> (StoredCallBodyRole * FlowExpression list * FlowStatement list) list'    \u001dbut given a\u001d    'FlowExampleDefinition -> (StoredCallBodyRole * FlowExpression list * FlowStatement list) list'    \u001dThe type 'FlowExampleDefinition' does not match the type 'FlowTestDefinition' [D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj]",
+    "",
+    "Build FAILED.",
+    "",
+    "D:\\code\\AgentLang\\src\\AgentLang.Core\\FlowRewrite.fs(502,27): warning FS0025: Incomplete pattern matches on this expression. [D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj]",
+    "D:\\code\\AgentLang\\src\\AgentLang.Core\\FlowRewrite.fs(145,21): error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved. [D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj]",
+    "D:\\code\\AgentLang\\src\\AgentLang.Core\\FlowRewrite.fs(479,40): error FS0001: Type mismatch. Expecting a\u001d    'FlowWordDefinition -> (StoredCallBodyRole * FlowExpression list * FlowStatement list) list'    \u001dbut given a\u001d    'FlowExampleDefinition -> (StoredCallBodyRole * 'a list * FlowStatement list) list'    \u001dThe type 'FlowExampleDefinition' does not match the type 'FlowWordDefinition' [D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj]",
+    "D:\\code\\AgentLang\\src\\AgentLang.Core\\FlowRewrite.fs(503,23): error FS0001: This expression was expected to have type\u001d    'Literal'    \u001dbut here has type\u001d    'FlowTestExpectation' [D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj]",
+    "D:\\code\\AgentLang\\src\\AgentLang.Core\\FlowRewrite.fs(504,23): error FS0001: This expression was expected to have type\u001d    'Literal'    \u001dbut here has type\u001d    'FlowTestExpectation' [D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj]",
+    "D:\\code\\AgentLang\\src\\AgentLang.Core\\FlowRewrite.fs(504,55): error FS0001: This expression was expected to have type\u001d    'Literal'    \u001dbut here has type\u001d    'FlowTestExpectation' [D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj]",
+    "D:\\code\\AgentLang\\src\\AgentLang.Core\\FlowRewrite.fs(509,40): error FS0001: Type mismatch. Expecting a\u001d    'FlowTestDefinition -> (StoredCallBodyRole * FlowExpression list * FlowStatement list) list'    \u001dbut given a\u001d    'FlowExampleDefinition -> (StoredCallBodyRole * FlowExpression list * FlowStatement list) list'    \u001dThe type 'FlowExampleDefinition' does not match the type 'FlowTestDefinition' [D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj]",
+    "    1 Warning(s)",
+    "    6 Error(s)",
+    "",
+    "Time Elapsed 00:00:09.08"
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "command": "README Flow JSON requests through fresh Release CLI",
+  "revision": "00076c11d1cd3780a789011983c031127d2c80ca",
+  "dirty": true,
+  "exitCode": 0,
+  "passed": null,
+  "requests": [
+    "{\"op\":\"define\",\"frontend\":\"flow\",\"source\":\"word increment(value: Int) -> Int {\\n    effects none\\n    value.add(1)\\n}\",\"tests\":[\"test increment/basic {\\n    ::increment(41)\\n    => 42\\n}\"]}",
+    "{\"op\":\"test\",\"word\":\"increment\"}",
+    "{\"op\":\"commit\",\"word\":\"increment\"}",
+    "{\"op\":\"eval\",\"frontend\":\"flow\",\"code\":\"::increment(41)\"}",
+    "{\"op\":\"source\",\"word\":\"increment\"}"
+  ],
+  "responses": [
+    {
+      "ok": true,
+      "kind": "defined",
+      "text": "Flow definition, tests, examples, and retained source bindings validated and staged.",
+      "data": {
+        "frontend": "flow",
+        "name": "increment",
+        "id": "word_c8bee69a415d443f904a1e932598fecd",
+        "revision": 1,
+        "tests": [
+          "basic"
+        ],
+        "examples": []
+      }
+    },
+    {
+      "ok": true,
+      "kind": "test",
+      "text": "1/1 test(s) passed.",
+      "data": {
+        "results": [
+          {
+            "name": "basic",
+            "word": "increment",
+            "passed": true,
+            "expected": "42",
+            "actual": [
+              "42"
+            ]
+          }
+        ],
+        "coverage": {
+          "instructionsCovered": 3,
+          "instructionsTotal": 3,
+          "branchesCovered": 0,
+          "branchesTotal": 0,
+          "uncoveredInstructions": [],
+          "uncoveredBranchOutcomes": []
+        }
+      }
+    },
+    {
+      "ok": true,
+      "kind": "commit",
+      "text": "1 attached test(s) passed; selected candidates committed.",
+      "data": [
+        "increment/basic"
+      ]
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "42",
+      "data": {
+        "stack": [
+          "42"
+        ],
+        "stackTypes": [
+          "Int"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "source",
+      "text": "word increment(value: Int) -> Int {\n    effects none\n    value.add(1)\n}",
+      "data": "word increment(value: Int) -> Int {\n    effects none\n    value.add(1)\n}"
+    }
+  ]
+}

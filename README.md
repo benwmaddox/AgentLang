@@ -6,7 +6,7 @@ AI agents are external coding tools that use the language. The language runtime 
 
 This repository implements a prototype slice. The compiler checks and lowers source into verified typed semantic IR; the public runtime executes that IR through the interpreter, with no AST execution fallback. Effectful language primitives use virtual providers only; there is no host filesystem, network, or database access from language programs. An optional external experiment harness and a conventional business foundation are included; no measured agent comparison is claimed. The Customer demo uses binary floating point and is not suitable for exact money. The Email validator below demonstrates a modest local policy and does not claim conformance with the full Internet email standard.
 
-The currently executable source frontend is RPN. The next authoring milestone is [expression/dot data flow](docs/FRONTEND-MIGRATION.md): retain typed words and semantic IR, introduce named inputs/immutable locals and static dot calls, and preserve explicit effects and tested-library gates. Close-to-first-use will be lint; mutable language globals will not be introduced. The syntax below documents current behavior, not the unimplemented migration target.
+The default source frontend is still Stack/RPN. An explicit `frontend: "flow"` protocol selector enables [expression/dot data flow](docs/FRONTEND-MIGRATION.md), including named typed inputs, immutable locals, static dot calls, tests, examples and durable word commits. Both frontends execute the same verified semantic IR. Flow-aware rename and deprecation preserve authored source and call bindings; default authoring cutover remains required. Close-to-first-use is advisory lint, and unrestricted mutable language globals are excluded. The Customer demo and syntax section below document the legacy default.
 
 The decisions and scope live in [docs/PRD.md](docs/PRD.md) and [docs/DECISIONS.md](docs/DECISIONS.md).
 
@@ -20,6 +20,28 @@ From the repository root:
 dotnet build AgentLang.sln
 dotnet run --project tests/AgentLang.Acceptance
 ~~~
+
+## Try the opt-in Flow frontend
+
+Start the JSON-lines CLI:
+
+~~~powershell
+dotnet run --project src/AgentLang.Cli -- --project .agentlang-flow --jsonl
+~~~
+
+Send these requests, one per line:
+
+~~~json
+{"op":"define","frontend":"flow","source":"word increment(value: Int) -> Int {\n    effects none\n    value.add(1)\n}","tests":["test increment/basic {\n    ::increment(41)\n    => 42\n}"]}
+{"op":"test","word":"increment"}
+{"op":"commit","word":"increment"}
+{"op":"eval","frontend":"flow","code":"::increment(41)"}
+{"op":"source","word":"increment"}
+~~~
+
+Evaluation produces 42, and source inspection returns the authored Flow word.
+The explicit frontend selector is currently required for `define` and `eval`;
+the human REPL still uses Stack syntax by default.
 
 ## Run the Customer demo
 
@@ -39,7 +61,7 @@ At the agentlang> prompt, stage the example, run its tests, and commit the proje
 :quit
 ~~~
 
-Each word commit requires attached passing tests, and dependencies are committed before their callers. The record definition commits with the first word. Start a fresh process to reuse the committed vocabulary:
+A word commit requires attached passing tests, and dependencies are committed before their callers. Library commits additionally require their own tests to cover every instruction and supported branch outcome; project words have a lighter coverage gate. The record definition commits with the first word. Start a fresh process to reuse the committed vocabulary:
 
 ~~~powershell
 dotnet run --project src/AgentLang.Cli -- --project .agentlang --eval '"premium" 100.0 customer.new customer.discounted-balance'

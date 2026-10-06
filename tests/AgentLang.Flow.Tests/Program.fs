@@ -3655,6 +3655,444 @@ let private testFlowPersistenceBindings () =
     check "attachment binding adapter retains a changed stable target identity"
         (FlowPersistence.attachmentBindings [ changedAttachmentIdentity ] <> [ List.head storedAttachments ])
 
+let private testFlowRewrite () =
+    let storedForm = function
+        | FlowCallForm.Direct -> StoredCallForm.Direct
+        | FlowCallForm.AbsoluteRoot -> StoredCallForm.AbsoluteRoot
+        | FlowCallForm.DotStage stage -> StoredCallForm.DotStage stage
+        | FlowCallForm.StaticCallback(stage, qualification) -> StoredCallForm.StaticCallback(stage, qualification)
+
+    let storedTarget = function
+        | FlowCallTargetIdentity.UserWord(WordId identity) -> StoredCallTarget.UserWord identity
+        | FlowCallTargetIdentity.Primitive(PrimitiveId identity) -> StoredCallTarget.Primitive identity
+        | FlowCallTargetIdentity.GeneratedWord(WordId identity) -> StoredCallTarget.GeneratedWord identity
+
+    let bindingForSite (source: SourceRef) caseName bodyRole (site: FlowCallSite) : StoredCallBinding =
+        { Source = source
+          CaseName = caseName
+          BodyRole = bodyRole
+          Path = site.Path
+          Form = storedForm site.Form
+          RequestedName = site.RequestedName
+          Target = storedTarget site.Target }
+
+    let wordRows content (sites: FlowCallSite list) =
+        let source = Storage.sourceObject StorageObjectKind.WordDefinition content
+        sites |> List.map (bindingForSite source.Reference None StoredCallBodyRole.Definition)
+
+    let flatEntries =
+        [ wordEntry "pick" [ TInt ] [ TInt ] Set.empty []
+          wordEntry "other" [ TInt ] [ TInt ] Set.empty []
+          wordEntry "pair" [ TInt ] [ TInt; TInt ] Set.empty [ Call("dup", sourceSpan) ]
+          wordEntry "stage" [ TInt; TInt; TInt ] [ TInt ] Set.empty
+              [ Call("add", sourceSpan); Call("add", sourceSpan) ] ]
+    let flatParameters =
+        Map.ofList
+            [ "pick", [ "value" ]
+              "other", [ "value" ]
+              "pair", [ "value" ]
+              "stage", [ "receiver"; "second"; "third" ] ]
+    let flatContext = loweringContext flatEntries flatParameters
+    let pickTarget =
+        match flatContext.CompilerContext.WordIds["pick"] with
+        | WordId identity -> StoredCallTarget.UserWord identity
+    let otherTarget =
+        match flatContext.CompilerContext.WordIds["other"] with
+        | WordId identity -> StoredCallTarget.UserWord identity
+    let pairTarget =
+        match flatContext.CompilerContext.WordIds["pair"] with
+        | WordId identity -> StoredCallTarget.UserWord identity
+    let stageTarget =
+        match flatContext.CompilerContext.WordIds["stage"] with
+        | WordId identity -> StoredCallTarget.UserWord identity
+
+    let flatCallerText =
+        """word rewrite.caller(value: Int, values: List<Int>) -> Int {
+    effects none
+    let direct = pick(value);
+    let absolute = ::pick(value);
+    let short = values.map(word pick);
+    let root-callback = values.map(::pick);
+    let untouched = other(direct);
+    let dotted = value.pick();
+    let literal = "pick";
+    let nested = if true {
+        option::some<Int>(pick(value))
+    } else {
+        option::some<Int>(pick(value))
+    };
+    let selected = match nested {
+        some item => { pick(item) }
+        none => { pick(value) }
+    };
+    return pick(selected)
+}"""
+    let flatCaller = parseWord flatCallerText
+    let flatCompiled = FlowLowering.compileWordWithCallBindings flatContext (WordId "rewrite-caller") flatCaller
+    let flatRows = wordRows flatCallerText flatCompiled.CallSites
+    let flatRewrite =
+        match FlowRewrite.rewriteWord "pick" "choose" pickTarget flatCaller flatRows with
+        | Ok value -> assertions <- assertions + 1; value
+        | Error problem -> failwith $"Flat Flow rename fixture failed: {Diagnostics.render problem}"
+
+    let expectedFlatRows =
+        flatRows
+        |> List.map (fun row ->
+            if row.Target <> pickTarget then row
+            else
+                let form =
+                    match row.Form with
+                    | StoredCallForm.StaticCallback(stage, _) -> StoredCallForm.StaticCallback(stage, FlowWordReferenceQualification.AbsoluteRoot)
+                    | StoredCallForm.Direct | StoredCallForm.AbsoluteRoot | StoredCallForm.DotStage _ -> StoredCallForm.AbsoluteRoot
+                { row with Form = form; RequestedName = "choose" })
+    equal "flat rewrite preserves every binding row and stable target while mapping all target forms" expectedFlatRows flatRewrite.Bindings
+    check "flat rewrite changes the caller source" flatRewrite.Changed
+    equal "caller header is unchanged when another word is renamed" "rewrite.caller" flatRewrite.Definition.Name
+    equal "flat rewrite preserves the exact old immutable source refs for Runtime to replace later"
+        (flatRows |> List.map (fun row -> row.Source)) (flatRewrite.Bindings |> List.map (fun row -> row.Source))
+    let rewrittenFlatText = FlowSource.renderWord flatRewrite.Definition
+    check "source literal text equal to the old target name remains literal"
+        (rewrittenFlatText.Contains("\"pick\"", StringComparison.Ordinal))
+    match flatRewrite.Definition.Body with
+    | FlowStatement.Let("direct", FlowExpression.RootCall({ Name = "choose" }, _, _), _)
+      :: FlowStatement.Let("absolute", FlowExpression.RootCall({ Name = "choose" }, _, _), _)
+      :: FlowStatement.Let("short", FlowExpression.DotCall(_, "map", [ FlowArgument.WordReference shortReference ], _), _)
+      :: FlowStatement.Let("root-callback", FlowExpression.DotCall(_, "map", [ FlowArgument.WordReference rootReference ], _), _)
+      :: _ ->
+        equal "short callback becomes an explicit root callback" FlowWordReferenceQualification.AbsoluteRoot shortReference.Qualification
+        equal "root callback retains explicit root qualification" FlowWordReferenceQualification.AbsoluteRoot rootReference.Qualification
+        equal "both callback references name the renamed stable target" ("choose", "choose") (shortReference.Name, rootReference.Name)
+    | other -> failwithf "Expected flat/root/callback call forms after rewrite, got %A" other
+
+    let rewrittenTargetRows = flatRewrite.Bindings |> List.filter (fun row -> row.Target = pickTarget)
+    equal "every targeted nested call remains mapped once" (flatRows |> List.filter (fun row -> row.Target = pickTarget) |> List.length) rewrittenTargetRows.Length
+    equal "rewriting simple direct/root/dot calls preserves their structural roots"
+        (flatRows |> List.filter (fun row -> row.Target = pickTarget) |> List.map (fun row -> row.Path))
+        (rewrittenTargetRows |> List.map (fun row -> row.Path))
+    let pathSegments (FlowAstPath.FlowAstPath segments) = segments
+    let flatTargetSegments = rewrittenTargetRows |> List.collect (fun row -> pathSegments row.Path)
+    for required in
+        [ FlowAstPathSegment.IfThenStatement 0
+          FlowAstPathSegment.IfElseStatement 0
+          FlowAstPathSegment.ContainerPayload
+          FlowAstPathSegment.OptionSomeStatement 0
+          FlowAstPathSegment.OptionNoneStatement 0 ] do
+        check $"target bindings retain nested structural path segment {required}" (flatTargetSegments |> List.contains required)
+
+    let namespaceContext =
+        loweringContext
+            [ wordEntry "ns.pick" [ TInt ] [ TInt ] Set.empty [] ]
+            (Map.ofList [ "ns.pick", [ "value" ] ])
+    let namespaceTarget =
+        match namespaceContext.CompilerContext.WordIds["ns.pick"] with
+        | WordId identity -> StoredCallTarget.UserWord identity
+    let namespaceCallerText =
+        """word rewrite.namespace(value: Int, values: List<Int>) -> Int {
+    effects none
+    let direct = ns::pick(value);
+    let mapped = values.map(ns::pick);
+    return direct
+}"""
+    let namespaceCaller = parseWord namespaceCallerText
+    let namespaceCompiled = FlowLowering.compileWordWithCallBindings namespaceContext (WordId "rewrite-namespace") namespaceCaller
+    let namespaceRows = wordRows namespaceCallerText namespaceCompiled.CallSites
+    let namespaceRewrite =
+        match FlowRewrite.rewriteWord "ns.pick" "modern.pick" namespaceTarget namespaceCaller namespaceRows with
+        | Ok value -> assertions <- assertions + 1; value
+        | Error problem -> failwith $"Namespaced Flow rename fixture failed: {Diagnostics.render problem}"
+    equal "dotted rename retains a qualified ordinary-call form and exact target identity"
+        (namespaceRows |> List.map (fun row -> { row with RequestedName = "modern.pick" })) namespaceRewrite.Bindings
+    match namespaceRewrite.Definition.Body with
+    | FlowStatement.Let("direct", FlowExpression.Call("modern.pick", _, _), _)
+      :: FlowStatement.Let("mapped", FlowExpression.DotCall(_, "map", [ FlowArgument.WordReference reference ], _), _)
+      :: _ ->
+        equal "dotted callback rename retains namespace qualification" FlowWordReferenceQualification.NamespaceQualified reference.Qualification
+        equal "dotted callback names the exact renamed namespace identity" "modern.pick" reference.Name
+    | other -> failwithf "Expected namespace-qualified call forms after dotted rename, got %A" other
+
+    let qualifiedContext = loweringContext flatEntries flatParameters
+    let qualifiedCallerText =
+        """word rewrite.qualified(value: Int, values: List<Int>) -> Int {
+    effects none
+    let direct = pick(value);
+    let root = ::pick(value);
+    let callback = values.map(::pick);
+    return direct
+}"""
+    let qualifiedCaller = parseWord qualifiedCallerText
+    let qualifiedCompiled = FlowLowering.compileWordWithCallBindings qualifiedContext (WordId "rewrite-qualified") qualifiedCaller
+    let qualifiedRows = wordRows qualifiedCallerText qualifiedCompiled.CallSites
+    let qualifiedRewrite =
+        match FlowRewrite.rewriteWord "pick" "modern.pick" pickTarget qualifiedCaller qualifiedRows with
+        | Ok value -> assertions <- assertions + 1; value
+        | Error problem -> failwith $"Dotted exact-name rewrite fixture failed: {Diagnostics.render problem}"
+    equal "root and direct target forms map to exact dotted-name bindings"
+        (qualifiedRows
+         |> List.map (fun row ->
+             if row.Target <> pickTarget then row
+             else
+                 let form =
+                     match row.Form with
+                     | StoredCallForm.StaticCallback(stage, _) -> StoredCallForm.StaticCallback(stage, FlowWordReferenceQualification.NamespaceQualified)
+                     | StoredCallForm.Direct | StoredCallForm.AbsoluteRoot | StoredCallForm.DotStage _ -> StoredCallForm.Direct
+                 { row with RequestedName = "modern.pick"; Form = form }))
+        qualifiedRewrite.Bindings
+    match qualifiedRewrite.Definition.Body with
+    | FlowStatement.Let("direct", FlowExpression.Call("modern.pick", _, _), _)
+      :: FlowStatement.Let("root", FlowExpression.Call("modern.pick", _, _), _)
+      :: FlowStatement.Let("callback", FlowExpression.DotCall(_, "map", [ FlowArgument.WordReference reference ], _), _)
+      :: _ ->
+        equal "absolute-root callback maps to namespace qualification for dotted names" FlowWordReferenceQualification.NamespaceQualified reference.Qualification
+        equal "absolute-root callback maps to the exact dotted target name" "modern.pick" reference.Name
+    | other -> failwithf "Expected qualified ordinary call forms after dotted rename, got %A" other
+
+    let pathCallerText =
+        """word rewrite.paths(value: Int) -> (Int, Int) {
+    effects none
+    let (left, right) = pair(value);
+    let branch = if true {
+        pick(left)
+    } else {
+        pick(right)
+    };
+    let wrapped = option::some<Int>(pick(branch));
+    let matched = match wrapped {
+        some item => { pick(item) }
+        none => { pick(value) }
+    };
+    let result = result::ok<Int, String>(pick(matched));
+    let result-value = match result {
+        ok item => { pick(item) }
+        error message => { pick(value) }
+    };
+    return (pick(left), other(right))
+}"""
+    let pathCaller = parseWord pathCallerText
+    let pathCompiled = FlowLowering.compileWordWithCallBindings flatContext (WordId "rewrite-paths") pathCaller
+    let pathRows = wordRows pathCallerText pathCompiled.CallSites
+    let pathRewrite =
+        match FlowRewrite.rewriteWord "pick" "choose" pickTarget pathCaller pathRows with
+        | Ok value -> assertions <- assertions + 1; value
+        | Error problem -> failwith $"Structural path rewrite fixture failed: {Diagnostics.render problem}"
+    equal "nested path rewriting preserves all unrelated stable target rows"
+        (pathRows |> List.map (fun row -> if row.Target = pickTarget then { row with Form = StoredCallForm.AbsoluteRoot; RequestedName = "choose" } else row))
+        pathRewrite.Bindings
+    let allPathSegments = pathRewrite.Bindings |> List.collect (fun row -> pathSegments row.Path)
+    for required in
+        [ FlowAstPathSegment.DestructureInitializer
+          FlowAstPathSegment.IfThenStatement 0
+          FlowAstPathSegment.IfElseStatement 0
+          FlowAstPathSegment.ContainerPayload
+          FlowAstPathSegment.OptionSomeStatement 0
+          FlowAstPathSegment.OptionNoneStatement 0
+          FlowAstPathSegment.ResultOkStatement 0
+          FlowAstPathSegment.ResultErrorStatement 0
+          FlowAstPathSegment.ReturnOutput 0
+          FlowAstPathSegment.ReturnOutput 1 ] do
+        check $"rewrite mapping preserves nested/multireturn path {required}" (allPathSegments |> List.contains required)
+
+    let dotContext = loweringContext flatEntries flatParameters
+    let dotCallerText =
+        """word rewrite.dot(value: Int) -> Int {
+    effects none
+    let result = other(other(value)).stage(third = other(other(1)), 2);
+    return result
+}"""
+    let dotCaller = parseWord dotCallerText
+    let dotCompiled = FlowLowering.compileWordWithCallBindings dotContext (WordId "rewrite-dot") dotCaller
+    let dotRows = wordRows dotCallerText dotCompiled.CallSites
+    let dotPath =
+        dotRows
+        |> List.find (fun row -> row.Target = stageTarget && row.Form = StoredCallForm.DotStage "stage")
+        |> fun row -> pathSegments row.Path
+    let replacePathPrefix
+        (prefix: FlowAstPathSegment list)
+        (replacement: FlowAstPathSegment list)
+        (path: FlowAstPath) =
+        let segments = pathSegments path
+        if segments.Length >= prefix.Length && List.take prefix.Length segments = prefix then
+            FlowAstPath.FlowAstPath(replacement @ List.skip prefix.Length segments)
+        else path
+    let expectedDotRows newName outputForm receiverSegment argumentSegment =
+        dotRows
+        |> List.map (fun row ->
+            let rowPath = pathSegments row.Path
+            let mappedPath =
+                if row.Target = stageTarget && row.Form = StoredCallForm.DotStage "stage" then row.Path
+                else
+                    let receiverPrefix = dotPath @ [ FlowAstPathSegment.DotReceiver ]
+                    let argumentIndex =
+                        if rowPath.Length > dotPath.Length && List.take dotPath.Length rowPath = dotPath then
+                            match rowPath[dotPath.Length] with
+                            | FlowAstPathSegment.DotArgument index -> Some index
+                            | _ -> None
+                        else None
+                    if rowPath.Length >= receiverPrefix.Length && List.take receiverPrefix.Length rowPath = receiverPrefix then
+                        replacePathPrefix receiverPrefix (dotPath @ [ receiverSegment 0 ]) row.Path
+                    else
+                        match argumentIndex with
+                        | Some index ->
+                            let prefix = dotPath @ [ FlowAstPathSegment.DotArgument index ]
+                            replacePathPrefix prefix (dotPath @ [ argumentSegment (index + 1) ]) row.Path
+                        | None -> row.Path
+            if row.Target = stageTarget then
+                { row with Path = mappedPath; Form = outputForm; RequestedName = newName }
+            else { row with Path = mappedPath })
+    let dotRewrite =
+        match FlowRewrite.rewriteWord "stage" "choose" stageTarget dotCaller dotRows with
+        | Ok value -> assertions <- assertions + 1; value
+        | Error problem -> failwith $"Dot-to-root rewrite fixture failed: {Diagnostics.render problem}"
+    let expectedRootDotRows = expectedDotRows "choose" StoredCallForm.AbsoluteRoot FlowAstPathSegment.RootCallArgument FlowAstPathSegment.RootCallArgument
+    equal "dot-to-root rewrite remaps receiver and all written argument descendants" expectedRootDotRows dotRewrite.Bindings
+    match dotRewrite.Definition.Body with
+    | FlowStatement.Let("result",
+        FlowExpression.RootCall({ Name = "choose" },
+            [ FlowArgument.Positional(FlowExpression.Call("other", [ FlowArgument.Positional(FlowExpression.Call("other", _, _)) ], _))
+              FlowArgument.Named("third", FlowExpression.Call("other", [ FlowArgument.Positional(FlowExpression.Call("other", _, _)) ], _), _)
+              FlowArgument.Positional(FlowExpression.Literal(LInt 2L, _)) ], _), _)
+      :: _ -> check "dot receiver is evaluated once and prepended before written mixed arguments" true
+    | other -> failwithf "Expected receiver-first root call with preserved mixed argument order, got %A" other
+
+    let dottedDotRewrite =
+        match FlowRewrite.rewriteWord "stage" "modern.stage" stageTarget dotCaller dotRows with
+        | Ok value -> assertions <- assertions + 1; value
+        | Error problem -> failwith $"Dot-to-qualified-call rewrite fixture failed: {Diagnostics.render problem}"
+    let expectedQualifiedDotRows = expectedDotRows "modern.stage" StoredCallForm.Direct FlowAstPathSegment.CallArgument FlowAstPathSegment.CallArgument
+    equal "dot-to-qualified-call remaps receiver and written arguments to CallArgument paths" expectedQualifiedDotRows dottedDotRewrite.Bindings
+    match dottedDotRewrite.Definition.Body with
+    | FlowStatement.Let("result", FlowExpression.Call("modern.stage", FlowArgument.Positional _ :: FlowArgument.Named("third", _, _) :: FlowArgument.Positional _ :: _, _), _) :: _ ->
+        check "dotted dot fallback emits a qualified ordinary call in written order" true
+    | other -> failwithf "Expected receiver-first qualified Call form, got %A" other
+
+    let testText =
+        """test pick/roles {
+    pick(5)
+    => value pick(6)
+}"""
+    let testDefinition = parseTest testText
+    let testProgram = Compiler.compileIrProgram flatContext.CompilerContext
+    let compiledTest = FlowLowering.compileTestWithCallBindings flatContext testProgram testDefinition
+    let testSource = Storage.sourceObject StorageObjectKind.TestDefinition testText
+    let testRows =
+        compiledTest.CallSites
+        |> Map.toList
+        |> List.collect (fun (role, sites) ->
+            let storedRole =
+                match role with
+                | FlowAttachmentBodyRole.Actual -> StoredCallBodyRole.Actual
+                | FlowAttachmentBodyRole.ExpectedExpression -> StoredCallBodyRole.ExpectedExpression
+            sites |> List.map (bindingForSite testSource.Reference (Some testDefinition.CaseName) storedRole))
+    let rewrittenTest =
+        match FlowRewrite.rewriteTest "pick" "choose" pickTarget testDefinition testRows with
+        | Ok value -> assertions <- assertions + 1; value
+        | Error problem -> failwith $"Test attachment rewrite fixture failed: {Diagnostics.render problem}"
+    equal "test header follows rename when the test is attached to the renamed owner" "choose" rewrittenTest.Definition.Word
+    equal "test attachment retains both distinct body roles and their root paths"
+        (testRows |> List.map (fun row -> { row with Form = StoredCallForm.AbsoluteRoot; RequestedName = "choose" })) rewrittenTest.Bindings
+    check "actual test call rewrites independently"
+        (match rewrittenTest.Definition.Body with | [ FlowStatement.Evaluate(FlowExpression.RootCall({ Name = "choose" }, _, _)) ] -> true | _ -> false)
+    check "expected-expression test call rewrites independently"
+        (match rewrittenTest.Definition.Expected with | FlowTestExpectation.Expression(FlowExpression.RootCall({ Name = "choose" }, _, _)) -> true | _ -> false)
+    equal "test binding input contains actual and expected-expression sites" 2 rewrittenTest.Bindings.Length
+    check "test case name and old source reference remain attached until Runtime rehashes the rendered source"
+        (rewrittenTest.Bindings |> List.forall (fun row -> row.CaseName = Some "roles" && row.Source = testSource.Reference))
+
+    let callerTestText = "test rewrite.caller/does-not-rename-owner {\n    pick(1)\n    => 1\n}"
+    let callerTest = parseTest callerTestText
+    let callerTestCompiled = FlowLowering.compileTestWithCallBindings flatContext testProgram callerTest
+    let callerTestSource = Storage.sourceObject StorageObjectKind.TestDefinition callerTestText
+    let callerTestRows =
+        callerTestCompiled.CallSites
+        |> Map.toList
+        |> List.collect (fun (role, sites) ->
+            let storedRole = if role = FlowAttachmentBodyRole.Actual then StoredCallBodyRole.Actual else StoredCallBodyRole.ExpectedExpression
+            sites |> List.map (bindingForSite callerTestSource.Reference (Some callerTest.CaseName) storedRole))
+    let callerTestRewrite =
+        match FlowRewrite.rewriteTest "pick" "choose" pickTarget callerTest callerTestRows with
+        | Ok value -> assertions <- assertions + 1; value
+        | Error problem -> failwith $"Unrelated test owner fixture failed: {Diagnostics.render problem}"
+    equal "caller test owner stays unchanged while its resolved call target is rewritten" "rewrite.caller" callerTestRewrite.Definition.Word
+
+    let exampleText =
+        """example pick/visible {
+    pick(5)
+    => 5
+}"""
+    let exampleDefinition = parseExample exampleText
+    let exampleSource = Storage.sourceObject StorageObjectKind.ExampleDefinition exampleText
+    let exampleRow: StoredCallBinding =
+        { Source = exampleSource.Reference
+          CaseName = Some exampleDefinition.CaseName
+          BodyRole = StoredCallBodyRole.Actual
+          Path = FlowAstPath.FlowAstPath [ FlowAstPathSegment.BlockStatement 0; FlowAstPathSegment.EvaluateExpression ]
+          Form = StoredCallForm.Direct
+          RequestedName = "pick"
+          Target = pickTarget }
+    let rewrittenExample =
+        match FlowRewrite.rewriteExample "pick" "choose" pickTarget exampleDefinition [ exampleRow ] with
+        | Ok value -> assertions <- assertions + 1; value
+        | Error problem -> failwith $"Example attachment rewrite fixture failed: {Diagnostics.render problem}"
+    equal "example header follows owner rename" "choose" rewrittenExample.Definition.Word
+    equal "example actual binding retains its role and stable target with transformed call metadata"
+        [ { exampleRow with Form = StoredCallForm.AbsoluteRoot; RequestedName = "choose" } ] rewrittenExample.Bindings
+    check "example actual call is rewritten"
+        (match rewrittenExample.Definition.Body with | [ FlowStatement.Evaluate(FlowExpression.RootCall({ Name = "choose" }, _, _)) ] -> true | _ -> false)
+
+    let ownerText =
+        """word pick(value: Int) -> Int {
+    effects none
+    let label = "pick";
+    return value
+}"""
+    let ownerDefinition = parseWord ownerText
+    let rewrittenOwner =
+        match FlowRewrite.rewriteWord "pick" "choose" pickTarget ownerDefinition [] with
+        | Ok value -> assertions <- assertions + 1; value
+        | Error problem -> failwith $"Owner-header rewrite fixture failed: {Diagnostics.render problem}"
+    equal "renamed definition header changes while retaining stable source-level owner identity" "choose" rewrittenOwner.Definition.Name
+    check "owner-only rewrite changes source bytes" rewrittenOwner.Changed
+    check "owner-only rewrite preserves literal text identical to the old word name"
+        ((FlowSource.renderWord rewrittenOwner.Definition).Contains("\"pick\"", StringComparison.Ordinal))
+
+    let missingBinding = FlowRewrite.rewriteWord "pick" "choose" pickTarget flatCaller (List.tail flatRows)
+    match missingBinding with
+    | Error problem -> equal "incomplete persisted site inventory is rejected" "FLOW_REWRITE_BINDING_MISSING" problem.Code
+    | Ok _ -> failwith "Flow rewrite accepted an incomplete persisted binding inventory."
+    let duplicateBinding = FlowRewrite.rewriteWord "pick" "choose" pickTarget flatCaller (flatRows @ [ List.head flatRows ])
+    match duplicateBinding with
+    | Error problem -> equal "duplicate persisted site key is rejected" "FLOW_REWRITE_BINDING_DUPLICATE" problem.Code
+    | Ok _ -> failwith "Flow rewrite accepted duplicate persisted binding rows."
+    let mismatchedBinding =
+        flatRows
+        |> List.mapi (fun index row -> if index = 0 then { row with Form = StoredCallForm.AbsoluteRoot } else row)
+        |> FlowRewrite.rewriteWord "pick" "choose" pickTarget flatCaller
+    match mismatchedBinding with
+    | Error problem -> equal "persisted form/name must match the authored AST site" "FLOW_REWRITE_BINDING_MISMATCH" problem.Code
+    | Ok _ -> failwith "Flow rewrite accepted a binding whose form does not match its authored call."
+    let unmappedBinding =
+        flatRows
+        |> List.mapi (fun index row -> if index = 0 then { row with Path = FlowAstPath.FlowAstPath [] } else row)
+        |> FlowRewrite.rewriteWord "pick" "choose" pickTarget flatCaller
+    match unmappedBinding with
+    | Error problem -> equal "binding path must map to an authored call site" "FLOW_REWRITE_BINDING_UNMAPPED" problem.Code
+    | Ok _ -> failwith "Flow rewrite accepted an unmapped structural path."
+
+    let callbackReference: FlowWordReference =
+        { Name = "pick"
+          Qualification = FlowWordReferenceQualification.ExplicitShort
+          Span = sourceSpan }
+    let malformedCallback =
+        { flatCaller with
+            Body =
+                [ FlowStatement.Evaluate(
+                    FlowExpression.DotCall(
+                        FlowExpression.Local("values", sourceSpan), "map",
+                        [ FlowArgument.WordReference callbackReference
+                          FlowArgument.Positional(FlowExpression.Literal(LInt 1L, sourceSpan)) ], sourceSpan)) ] }
+    match FlowRewrite.rewriteWord "pick" "choose" pickTarget malformedCallback [] with
+    | Error problem -> equal "malformed host-built callback shape is rejected before rewrite" "FLOW_REWRITE_CALLBACK_SHAPE" problem.Code
+    | Ok _ -> failwith "Flow rewrite accepted a malformed host-built callback call."
+
 let private testFlowDiagnostics () =
     let context = loweringContext [] Map.empty
     let ambiguous = parseExpression "1.unknown(2)"
@@ -3697,6 +4135,7 @@ let main _ =
     testFlowCallBindingStructuralPaths ()
     testFlowAttachmentCallBindings ()
     testFlowPersistenceBindings ()
+    testFlowRewrite ()
     testFlowDiagnostics ()
     printfn "Flow tests passed: %d assertions" assertions
     0
