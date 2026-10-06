@@ -20,6 +20,13 @@ and protocol recovery, followed by rotated repetitions. Full-domain expansion,
 allocator/mailbox work and LLVM stay deferred behind agent validation. The older
 milestone entries below are scoped historical evidence, not current trial status.
 
+Interface follow-up: [report 058](../reports/058-compact-discovery.md) records
+names-only `words` discovery and exact parser-verified Flow references, with a
+passing fresh 32-check Release gate. On the default dictionary, compact response
+bytes are 968 versus 12,913 full. This verifies a smaller interface, not cheaper
+agent tasks. Frozen pilot-001 evidence remains unchanged; rotated external-agent
+repetitions remain the next research priority.
+
 Status: **verified** means the listed scoped behavior has observed acceptance evidence; **partial** means some behavior exists but the full section is not proven; **pending** means implementation or evidence is missing; **design** means a principle/advisory requirement; **excluded** means a V1 non-goal or explicitly optional follow-on. A green build is not evidence of research success.
 
 Latest external-agent workflow evidence: [report 054](../reports/054-flow-renewal-agent-control.md)

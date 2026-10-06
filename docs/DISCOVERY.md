@@ -30,6 +30,21 @@ This foundation provides exact structural queries, not semantic or embedding sea
 
 ## Runtime and CLI command protocol
 
+`{"op":"words","compact":true}` returns a names-only inventory: sorted
+ordinary dictionary names in `data.words`, sorted syntax names in
+`data.constructs`, and `data.compact:true`. The default listing and explicit
+`compact:false` retain the full metadata rows. The compact option must be a JSON
+Boolean. The human equivalent is `:words --compact`; other arguments are errors.
+
+Actual word descriptions include `flowReference`, an exact Flow target spelling
+validated by the parser. Root `add` is `::add`; dictionary name
+`customer.discounted-balance` is `customer::discounted-balance`. Use the
+dictionary name for protocol queries and the reference for Flow source. A null
+reference carries `flowReferenceUnavailableReason` when syntax cannot express
+the ordinary target. Syntax descriptors do not gain ordinary word references.
+The reference names a target; its signature still determines valid arguments,
+output use and static callback eligibility.
+
 The JSON-lines dispatcher and human REPL expose these commands:
 
 | Operation | Required arguments | Result |

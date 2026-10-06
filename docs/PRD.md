@@ -180,6 +180,13 @@ The commit operation selects the quality level explicitly, for example `commit-w
 
 Required discovery operations are words, describe, source, dependencies, callers, search, effects, ir, tests, test, test-all, examples, and recent-words. Describe includes implementation kind, lifecycle, signature, effect set, dependencies, documentation, revision, and test status. A test status must say whether tests were run on the current revision; stale results must not appear as current passes.
 
+Discovery should be progressive: a names-only inventory is available through
+`words` with `compact:true`, followed by full metadata for selected words.
+Descriptions provide parser-verified exact Flow target spellings, or an explicit
+reason a legacy identity cannot be expressed. Smaller payloads and fewer naming
+errors are interface improvements; external-agent trials must establish whether
+they reduce the cost of correct changes.
+
 Search initially matches names and documentation deterministically. Type/output/effect/dependency filters, transitive graph queries, compact context generation, duplicate warnings, and vocabulary maintenance can be added after the first slice. Structural duplicate detection warns; it does not prove semantic equivalence.
 
 Every operation supports a stable JSON representation through the agent protocol. Responses identify success or failure and carry typed payloads or diagnostics. Diagnostics include code, message, word/operation where applicable, source span, and expected/actual type or stack state. Human presentation is an adapter over these same results.

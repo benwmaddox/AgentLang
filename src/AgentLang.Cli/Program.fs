@@ -33,7 +33,7 @@ and preserve the runtime default when a request omits one.
 Human REPL commands:
   :define FILE [--replace --expected-revision N]
                      Stage declarations from a .agent file (quoted or unquoted paths)
-  :words             List available words
+  :words [--compact] List available words
   :describe WORD     Show a word's metadata
   :source --type TYPE Show the exact authored type declaration
   :type-of WORD      Show the same type and declaration metadata
@@ -279,7 +279,15 @@ Human REPL commands:
                 else
                     if rest <> "" then args["word"] <- jsonString rest
                     engine.Dispatch(command, args)
-            | "words" | "test-all" | "failed-tests" | "stack" | "task.status" | "task.commit" | "task.abort" | "task.log" | "storage.status" ->
+            | "words" ->
+                match commandWords rest with
+                | Error message -> commandError "CLI_INVALID_COMMAND" message
+                | Ok [] -> engine.Dispatch(command, args)
+                | Ok [ "--compact" ] ->
+                    args["compact"] <- JsonValue.Create(true)
+                    engine.Dispatch(command, args)
+                | Ok _ -> commandError "CLI_INVALID_COMMAND" ":words accepts no arguments or one --compact option."
+            | "test-all" | "failed-tests" | "stack" | "task.status" | "task.commit" | "task.abort" | "task.log" | "storage.status" ->
                 engine.Dispatch(command, args)
             | _ ->
                 let message = $"Unknown REPL command ':{command}'. Use :help for available commands."

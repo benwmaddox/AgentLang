@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "mode": "read-only independent review",
+  "reviewer": "gpt-6-luna",
+  "reasoning": "max",
+  "scope": ["Runtime compact inventory and Flow references", "CLI compact option", "changed acceptance tests", "parser target semantics"],
+  "findings": [],
+  "report": "No concrete correctness or compatibility findings in the requested diff. Compact mode validates the optional JSON boolean before effectiveWords/logging, derives names from the identical filtered entries as the full response, sorts both name inventories, and leaves the existing full branch structurally unchanged. The Flow helper verifies the parsed AST call target against the dictionary key, including RootCall for unqualified keys, and returns null with a reason on parse/interception cases. CLI tokenization rejects unknown, duplicate and extra flags without source evaluation.",
+  "limits": "Reviewer did not build or run tests. Compiler failures in new test syntax were repaired separately; root serial validation is authoritative."
+}

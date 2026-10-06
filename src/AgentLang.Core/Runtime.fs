@@ -2141,6 +2141,24 @@ module Runtime =
             activateRuntimeSnapshot executable
             lastResults <- []
 
+        let describeFlowReference (name: string) =
+            let protectedPrefixes = set [ "if"; "match"; "true"; "false"; "unit" ]
+            let separator = name.IndexOf('.')
+            let firstSegment = if separator < 0 then name else name.Substring(0, separator)
+            if separator >= 0 && protectedPrefixes.Contains firstSegment then
+                None, Some $"The '{firstSegment}' prefix is reserved for Flow syntax."
+            else
+                let qualifiedName = name.Replace(".", "::")
+                let candidateName = if separator >= 0 then qualifiedName else "::" + qualifiedName
+                match FlowParser.parseExpression "<describe-flow-reference>" (candidateName + "()") with
+                | Error diagnostic ->
+                    None, Some $"The candidate is not a valid ordinary Flow call ({diagnostic.Code})."
+                | Ok(FlowExpression.Call(target, _, _)) when target = name -> Some candidateName, None
+                | Ok(FlowExpression.RootCall(target, _, _)) when target.Name = name -> Some candidateName, None
+                | Ok(FlowExpression.Call _ | FlowExpression.RootCall _) ->
+                    None, Some "The candidate does not target the exact dictionary key."
+                | Ok _ -> None, Some "The candidate is intercepted by Flow syntax instead of an ordinary call."
+
         let availableDescription (snapshot: RuntimeSnapshot) name =
             let state = snapshot.State
             let words = snapshot.Words
@@ -2182,6 +2200,17 @@ module Runtime =
                     | None -> "word"
                 let obj = JsonObject()
                 obj["name"] <- jstr name
+                let flowReference, flowReferenceUnavailableReason = describeFlowReference name
+                match flowReference, flowReferenceUnavailableReason with
+                | Some reference, _ ->
+                    obj["flowReference"] <- jstr reference
+                    obj["flowReferenceUnavailableReason"] <- null
+                | None, Some reason ->
+                    obj["flowReference"] <- null
+                    obj["flowReferenceUnavailableReason"] <- jstr reason
+                | None, None ->
+                    obj["flowReference"] <- null
+                    obj["flowReferenceUnavailableReason"] <- jstr "The exact Flow call could not be determined."
                 obj["inputs"] <- jsonNode (definition.Inputs |> List.map Types.format)
                 obj["outputs"] <- jsonNode (definition.Outputs |> List.map Types.format)
                 let parameters =
@@ -3528,27 +3557,37 @@ module Runtime =
                             registerParsed parsed (readBool args "temporary" false)
                             success "defined" "Definitions parsed, type checked, and staged." (Some(jsonNode (parsed.Words |> List.map (fun word -> word.Name))))
                 | "words" ->
+                    let compact = readOptionalStrictBool args "compact" false
                     let words = effectiveWords data
                     let entries = words |> Map.toList |> List.map snd |> List.filter (fun item -> item.Status <> Primitive || item.Builtin.IsSome)
-                    let array = JsonArray()
-                    entries |> List.sortBy (fun item -> item.Definition.Name) |> List.iter (fun item ->
-                        log "inspect" item.Definition.Name
-                        let value = JsonObject()
-                        value["name"] <- jstr item.Definition.Name
-                        value["id"] <- jstr (wordIdentity data item)
-                        value["inputs"] <- jsonNode (item.Definition.Inputs |> List.map Types.format)
-                        value["outputs"] <- jsonNode (item.Definition.Outputs |> List.map Types.format)
-                        value["effects"] <- jsonNode (item.Definition.Effects |> Set.toList)
-                        value["status"] <- jstr (match item.Status with Primitive -> "primitive" | Candidate -> "candidate" | Temporary -> "temporary" | Persistent -> "persistent")
-                        value["maturity"] <- jstr (if item.Maturity = LibraryWord then "library" else "project")
-                        value["deprecated"] <- jbool (data.Deprecated.Contains item.Definition.Name)
-                        array.Add value)
-                    let payload = JsonObject()
-                    payload["words"] <- array
-                    let constructs = JsonArray()
-                    syntaxDescriptors |> List.iter (syntaxDescriptorJson >> constructs.Add)
-                    payload["constructs"] <- constructs
-                    success "words" $"{entries.Length} word(s)." (Some payload)
+                    if compact then
+                        let orderedEntries = entries |> List.sortBy (fun item -> item.Definition.Name)
+                        orderedEntries |> List.iter (fun item -> log "inspect" item.Definition.Name)
+                        let payload = JsonObject()
+                        payload["compact"] <- jbool true
+                        payload["words"] <- jsonNode (orderedEntries |> List.map (fun item -> item.Definition.Name))
+                        payload["constructs"] <- jsonNode (syntaxDescriptors |> List.map (fun descriptor -> descriptor.Name) |> List.sort)
+                        success "words" $"{entries.Length} word(s)." (Some payload)
+                    else
+                        let array = JsonArray()
+                        entries |> List.sortBy (fun item -> item.Definition.Name) |> List.iter (fun item ->
+                            log "inspect" item.Definition.Name
+                            let value = JsonObject()
+                            value["name"] <- jstr item.Definition.Name
+                            value["id"] <- jstr (wordIdentity data item)
+                            value["inputs"] <- jsonNode (item.Definition.Inputs |> List.map Types.format)
+                            value["outputs"] <- jsonNode (item.Definition.Outputs |> List.map Types.format)
+                            value["effects"] <- jsonNode (item.Definition.Effects |> Set.toList)
+                            value["status"] <- jstr (match item.Status with Primitive -> "primitive" | Candidate -> "candidate" | Temporary -> "temporary" | Persistent -> "persistent")
+                            value["maturity"] <- jstr (if item.Maturity = LibraryWord then "library" else "project")
+                            value["deprecated"] <- jbool (data.Deprecated.Contains item.Definition.Name)
+                            array.Add value)
+                        let payload = JsonObject()
+                        payload["words"] <- array
+                        let constructs = JsonArray()
+                        syntaxDescriptors |> List.iter (syntaxDescriptorJson >> constructs.Add)
+                        payload["constructs"] <- constructs
+                        success "words" $"{entries.Length} word(s)." (Some payload)
                 | "describe" ->
                     let name = readString args "word" ""
                     success "describe" $"Description for {name}." (Some(describeJson name))

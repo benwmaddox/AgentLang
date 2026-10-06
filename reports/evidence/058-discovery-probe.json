@@ -1,0 +1,13 @@
+{
+  "sourceRevision": "995c29e7b6bc6d2e46e99373532d2335f1b535c4",
+  "dirty": true,
+  "fixture": "fresh default dictionary",
+  "wordCount": 49,
+  "constructCount": 12,
+  "fullResponseUtf8Bytes": 12913,
+  "compactResponseUtf8Bytes": 968,
+  "rootReference": "::add",
+  "namespacedReference": "float::add",
+  "cliSha256": "2b46ee2db256d32a0750e49fc050636d9be27300a2fdce898d9a88209bb15848",
+  "coreSha256": "b1b86111e7e74b130ce1b57648d567c29f6bd967fd876b619bb4f51fe6df5af1"
+}

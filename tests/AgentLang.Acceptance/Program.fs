@@ -2466,6 +2466,121 @@ end
         equal "false" (stackValue missingFile 0) "discovery did not run the effectful candidate"
         dispatch runtime "task.abort" [] |> expectOk "abort read-only discovery task" |> ignore
 
+    let private testCompactWords root =
+        let path = makeProject root "compact-words"
+        let runtime = engine path [ "fs.write" ]
+        let initialVocabulary =
+            """record InventoryProbe
+    field value Int
+end
+
+word inventory.retained : Int -> Int
+    effects none
+    1 add
+end
+
+test inventory.retained/basic
+    1 inventory.retained
+    => 2
+end
+"""
+        define runtime initialVocabulary |> expectOk "define compact inventory schema and persistent word" |> ignore
+        dispatch runtime "commit" [ "word", jsonString "InventoryProbe" ] |> expectOk "commit compact inventory schema" |> ignore
+        dispatch runtime "commit" [ "word", jsonString "inventory.retained" ] |> expectOk "commit compact inventory word" |> ignore
+        dispatch runtime "deprecate" [ "word", jsonString "inventory.retained" ] |> expectOk "deprecate compact inventory word" |> ignore
+
+        let stagedVocabulary =
+            """word inventory.candidate : Int -> Int
+    effects none
+    2 add
+end
+
+word inventory.writer : Unit -> Unit
+    effects fs.write
+    drop
+    "compact-provider" "called" file.write
+end
+"""
+        define runtime stagedVocabulary |> expectOk "define candidate compact inventory words" |> ignore
+        dispatch runtime "define"
+            [ "source", jsonString "word inventory.temporary : Int -> Int\n    effects none\n    3 add\nend\n"
+              "temporary", jsonBool true ]
+        |> expectOk "define temporary compact inventory word"
+        |> ignore
+
+        let fullDefault = dispatch runtime "words" [] |> expectOk "list the full compact fixture inventory"
+        let fullFalse = dispatch runtime "words" [ "compact", jsonBool false ] |> expectOk "list full words with compact false"
+        equal (fullDefault.ToJsonString()) (fullFalse.ToJsonString()) "default and compact=false preserve the exact full response"
+        let fullData = fullDefault.["data"]
+        check (not (fullData.AsObject().ContainsKey("compact"))) "full response has no compact marker"
+        let fullWordEntries = fullData.["words"].AsArray()
+        let fullNames = fullWordEntries |> Seq.map (fun item -> item.["name"].GetValue<string>()) |> Seq.toList
+        let expectedNames = fullNames |> List.sort
+        let fullConstructNames = fullData.["constructs"].AsArray() |> Seq.map (fun item -> item.["name"].GetValue<string>()) |> Seq.toList
+        let expectedConstructNames = fullConstructNames |> List.sort
+        for name in [ "add"; "inventoryProbe.new"; "inventory.retained"; "inventory.candidate"; "inventory.temporary"; "inventory.writer" ] do
+            check (expectedNames |> List.contains name) $"full inventory includes {name}"
+
+        let descriptionData name =
+            dispatch runtime "describe" [ "word", jsonString name ]
+            |> expectOk $"capture full description of {name}"
+            |> fun response -> response.["data"]
+        let describedNames = [ "add"; "inventoryProbe.new"; "inventory.retained"; "inventory.candidate"; "inventory.temporary"; "inventory.writer" ]
+        let descriptionsBefore = describedNames |> List.map (fun name -> name, (descriptionData name).ToJsonString())
+        equal "persistent" ((descriptionData "inventory.retained").["status"].GetValue<string>()) "persistent inventory word remains persistent"
+        check ((descriptionData "inventory.retained").["deprecated"].GetValue<bool>()) "deprecated inventory word remains marked deprecated"
+        equal "candidate" ((descriptionData "inventory.candidate").["status"].GetValue<string>()) "candidate inventory word remains a candidate"
+        equal "temporary" ((descriptionData "inventory.temporary").["status"].GetValue<string>()) "temporary inventory word remains temporary"
+        equal "generated" ((descriptionData "inventoryProbe.new").["kind"].GetValue<string>()) "generated inventory word retains its kind"
+
+        let compact = dispatch runtime "words" [ "compact", jsonBool true ] |> expectOk "list compact words"
+        let compactData = compact.["data"]
+        check (compactData.["compact"].GetValue<bool>()) "compact response identifies its shape"
+        equal 3 (compactData.AsObject().Count) "compact response contains only its marker and inventories"
+        let compactNames = compactData.["words"].AsArray() |> Seq.map (fun item -> item.GetValue<string>()) |> Seq.toList
+        equal expectedNames compactNames "compact word names exactly match the full sorted inventory"
+        let compactConstructNames = compactData.["constructs"].AsArray() |> Seq.map (fun item -> item.GetValue<string>()) |> Seq.toList
+        equal expectedConstructNames compactConstructNames "compact construct names exactly match the sorted syntax inventory"
+        for name, before in descriptionsBefore do
+            equal before ((descriptionData name).ToJsonString()) $"compact inventory leaves full {name} metadata unchanged"
+
+        let fullBytes = Encoding.UTF8.GetByteCount(Protocol.serializeResponse fullDefault)
+        let compactBytes = Encoding.UTF8.GetByteCount(Protocol.serializeResponse compact)
+        check (compactBytes * 100 <= fullBytes * 30) $"compact response is at most 30 percent of full response ({compactBytes} vs {fullBytes} UTF-8 bytes)"
+
+        dispatch runtime "task.begin" [ "goal", jsonString "validate compact argument behavior" ] |> expectOk "begin compact argument task" |> ignore
+        let taskFingerprint (response: JsonObject) =
+            let task = response.["data"]
+            [ "wordsInspected"; "wordsUsed"; "wordsCreated"; "effects" ]
+            |> List.map (fun key -> task.[key].ToJsonString())
+        let taskBefore = dispatch runtime "task.status" [] |> expectOk "capture compact task state" |> taskFingerprint
+        let invalidCompactValues: JsonNode list = [ jsonString "true"; null; JsonValue.Create(7) :> JsonNode ]
+        for value in invalidCompactValues do
+            dispatch runtime "words" [ "compact", value ]
+            |> expectError "EVAL_INVALID_ARGUMENT"
+            |> ignore
+            let taskAfter = dispatch runtime "task.status" [] |> expectOk "inspect task after invalid compact argument" |> taskFingerprint
+            equal taskBefore taskAfter "invalid compact argument does not inspect or invoke words or providers"
+        let fullAfterInvalid = dispatch runtime "words" [] |> expectOk "verify inventory after invalid compact arguments"
+        equal (fullDefault.ToJsonString()) (fullAfterInvalid.ToJsonString()) "invalid compact arguments leave the dictionary inventory unchanged"
+
+        dispatch runtime "task.abort" [] |> expectOk "end compact argument task" |> ignore
+        let topLevelProtocol = Protocol.dispatchLine runtime "{\"op\":\"words\",\"compact\":true}" |> expectOk "route top-level compact JSONL argument"
+        let nestedProtocol = Protocol.dispatchLine runtime "{\"op\":\"words\",\"args\":{\"compact\":true}}" |> expectOk "route nested compact JSONL argument"
+        check (topLevelProtocol.["data"].["compact"].GetValue<bool>()) "top-level compact argument passes through the JSONL protocol"
+        check (nestedProtocol.["data"].["compact"].GetValue<bool>()) "nested compact argument passes through the JSONL protocol"
+        equal (topLevelProtocol.["data"].ToJsonString()) (nestedProtocol.["data"].ToJsonString()) "top-level and nested protocol inventories match"
+
+        let logRuntime = engine (makeProject root "compact-words-logs") []
+        dispatch logRuntime "task.begin" [ "goal", jsonString "compare compact inspection logs" ] |> expectOk "begin full inventory log task" |> ignore
+        dispatch logRuntime "words" [] |> expectOk "inspect full inventory" |> ignore
+        let fullInspectionLog = dispatch logRuntime "task.status" [] |> expectOk "read full inventory inspection log" |> fun response -> response.["data"].["wordsInspected"].ToJsonString()
+        dispatch logRuntime "task.abort" [] |> expectOk "reset full inventory inspection task" |> ignore
+        dispatch logRuntime "task.begin" [ "goal", jsonString "compare compact inspection logs" ] |> expectOk "begin compact inventory log task" |> ignore
+        dispatch logRuntime "words" [ "compact", jsonBool true ] |> expectOk "inspect compact inventory" |> ignore
+        let compactInspectionLog = dispatch logRuntime "task.status" [] |> expectOk "read compact inventory inspection log" |> fun response -> response.["data"].["wordsInspected"].ToJsonString()
+        equal fullInspectionLog compactInspectionLog "compact inventory preserves full inspection logging"
+
     let private testVerifiedIrRuntimeSurface root =
         let path = makeProject root "verified-ir-runtime"
         let runtime = engine path []
@@ -2567,6 +2682,7 @@ end
               "typed containers and syntax metadata", testTypedContainersAndLanguageConstructs
               "container library coverage", testContainerLibraryCoverage
               "live bounded Discovery commands", testDiscoveryCommands
+              "compact word inventory", testCompactWords
               "verified IR runtime snapshots and formatter", testVerifiedIrRuntimeSurface ]
         let failures = ResizeArray<string>()
         try

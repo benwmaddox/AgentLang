@@ -101,6 +101,46 @@ module Program =
         try (response["error"]["code"]).GetValue<string>()
         with _ -> ""
 
+    let private humanDataObject (output: string) =
+        let start = output.IndexOf("{", StringComparison.Ordinal)
+        if start < 0 then failwith $"CLI output did not contain a JSON data object:\n{output}"
+        let mutable depth = 0
+        let mutable inString = false
+        let mutable escaped = false
+        let mutable finish = -1
+        let mutable index = start
+        while index < output.Length && finish < 0 do
+            let ch = output[index]
+            if inString then
+                if escaped then escaped <- false
+                elif ch = '\\' then escaped <- true
+                elif ch = '"' then inString <- false
+            elif ch = '"' then inString <- true
+            elif ch = '{' then depth <- depth + 1
+            elif ch = '}' then
+                depth <- depth - 1
+                if depth = 0 then finish <- index
+            index <- index + 1
+        if finish < 0 then failwith $"CLI output contained an incomplete JSON data object:\n{output}"
+        match JsonNode.Parse(output.Substring(start, finish - start + 1)) with
+        | :? JsonObject as data -> data
+        | _ -> failwith $"CLI data payload was not a JSON object:\n{output}"
+
+    let private stringArray (data: JsonNode) (field: string) =
+        data[field].AsArray()
+        |> Seq.map (fun item -> item.GetValue<string>())
+        |> Seq.toList
+
+    let private assertCompactData label (data: JsonNode) =
+        check (data["compact"].GetValue<bool>()) $"{label} marks the payload as compact"
+        let words = stringArray data "words"
+        let constructs = stringArray data "constructs"
+        check (not (List.isEmpty words)) $"{label} includes word names"
+        check (not (List.isEmpty constructs)) $"{label} includes construct names"
+        equal words (List.sort words) $"{label} sorts word names"
+        equal constructs (List.sort constructs) $"{label} sorts construct names"
+        check (List.contains "add" words) $"{label} includes the add word name"
+
     let private quotedPath (path: string) = "\"" + path.Replace("\"", "\\\"", StringComparison.Ordinal) + "\""
 
     let private expectExit (expected: int) (invocation: Invocation) (label: string) =
@@ -161,6 +201,56 @@ module Program =
             let mixedRequest = runCli project [ "--frontend"; "stack"; "--request"; "{\"op\":\"eval\",\"frontend\":\"flow\",\"code\":\"add(2,3)\"}" ] [] 10000
             expectExit 2 mixedRequest "reject frontend flag with one-shot request"
             contains "request" mixedRequest.StandardError "one-shot request selector conflict is explicit")
+
+    let private testWordsCommands () =
+        withProject (fun project ->
+            let compact = runCli project [] [ ":words --compact"; ":quit" ] 10000
+            expectExit 0 compact "compact human REPL words request"
+            let compactData = humanDataObject compact.StandardOutput
+            assertCompactData "human REPL compact words request" compactData
+            check (not (compact.StandardOutput.Contains("\"id\"", StringComparison.Ordinal))) "compact human REPL output omits stable IDs"
+            check (not (compact.StandardOutput.Contains("\"inputs\"", StringComparison.Ordinal))) "compact human REPL output omits typed metadata"
+
+            let full = runCli project [] [ ":words"; ":quit" ] 10000
+            expectExit 0 full "full human REPL words request"
+            let fullData = humanDataObject full.StandardOutput
+            check (isNull fullData["compact"]) "the default words request does not set the compact marker"
+            let fullWords = fullData["words"].AsArray()
+            let add =
+                fullWords
+                |> Seq.tryFind (fun item -> item["name"].GetValue<string>() = "add")
+                |> Option.defaultWith (fun () -> failwith "Full words output did not include add.")
+            equal "primitive_add" (add["id"].GetValue<string>()) "full words output retains add's stable identity"
+            check ((add["inputs"].AsArray()).Count > 0) "full words output retains typed input metadata"
+            check ((add["outputs"].AsArray()).Count > 0) "full words output retains typed output metadata"
+
+            let invalidAndRecovered =
+                runCli project []
+                    [ ":words --not-a-words-option"
+                      "add(20, 22)"
+                      ":words --compact --compact"
+                      ":words --compact unexpected"
+                      ":words --compact"
+                      ":quit" ] 10000
+            expectExit 0 invalidAndRecovered "invalid words options preserve the interactive session"
+            equal 3 (Regex.Matches(invalidAndRecovered.StandardOutput, @"\[CLI_INVALID_COMMAND\]").Count) "unknown, duplicate, and extra words arguments are rejected"
+            contains "42" invalidAndRecovered.StandardOutput "the REPL evaluates a later expression after a rejected words flag"
+            check (not (invalidAndRecovered.StandardOutput.Contains("FLOW_", StringComparison.Ordinal))) "invalid words flags do not fall through to source evaluation"
+            contains "\"compact\": true" invalidAndRecovered.StandardOutput "the REPL accepts a valid compact request after errors"
+
+            let oneShotCompact =
+                runCli project [ "--request"; "{\"op\":\"words\",\"compact\":true}" ] [] 10000
+            expectExit 0 oneShotCompact "one-shot compact words request"
+            assertCompactData "one-shot compact words request" (humanDataObject oneShotCompact.StandardOutput)
+
+            let jsonLinesCompact =
+                runCli project [ "--jsonl" ] [ "{\"op\":\"words\",\"compact\":true}" ] 10000
+            expectExit 0 jsonLinesCompact "JSONL compact words request"
+            let jsonLines = responseLines jsonLinesCompact.StandardOutput
+            equal 1 jsonLines.Length "JSONL emits one compact words response"
+            let response = JsonNode.Parse(jsonLines.Head)
+            check (response["ok"].GetValue<bool>()) "JSONL compact words request succeeds"
+            assertCompactData "JSONL compact words request" response["data"])
 
     let private testFlowInteractiveBuffering () =
         withProject (fun project ->
@@ -389,6 +479,7 @@ module Program =
     let main _ =
         try
             group "CLI frontend selection and protocol authority" testFrontendSelection
+            group "compact and full words CLI requests" testWordsCommands
             group "Flow parser-driven interactive buffering" testFlowInteractiveBuffering
             group "Flow incomplete EOF and malformed recovery" testIncompleteEofAndMalformedInput
             group "Flow file definition, CAS, and stable source identity" testFlowFileDefineCasAndSourceIdentity

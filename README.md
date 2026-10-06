@@ -194,6 +194,10 @@ search-type/output/effect/dependency, transitive graphs and bounded compact
 context. Context bytes are measured payload bytes, not model tokens.
 See [discovery contracts](docs/DISCOVERY.md) and `:help` for CLI controls.
 
+Use `{"op":"words","compact":true}` or `:words --compact` for a names-only
+inventory, then `describe` for the selected word's full metadata. Descriptions
+include a parser-verified `flowReference` for exact calls in Flow source.
+
 ## Effect permissions
 
 Language programs can invoke only trusted primitives. A primitive's declared effect does not grant permission to perform it. The host denies effects by default; pass explicit capabilities to enable them:

@@ -296,6 +296,80 @@ module Program =
         check (not (succeeded malformedDefaultDefine)) "malformed omitted-frontend definition is rejected"
         check ((errorCode malformedDefaultDefine).StartsWith("FLOW_", StringComparison.Ordinal)) "malformed omitted-frontend definition is not passed to the Stack parser"
 
+    let private testDescribeFlowReferences root =
+        let engine = Runtime.Engine(Path.Combine(root, "describe-flow-references"), Set.empty)
+        let stackSource =
+            "record Cart\n"
+            + "    field value Int\n"
+            + "end\n\n"
+            + "word advance : Int -> Int\n    effects none\n    100 add\nend\n\n"
+            + "word math.advance : Int -> Int\n    effects none\n    1 add\nend\n\n"
+            + "word tools.math.advance : Int -> Int\n    effects none\n    10 add\nend\n\n"
+            + "word if.target : Int -> Int\n    effects none\n    dup\n    drop\nend\n\n"
+            + "word match.target : Int -> Int\n    effects none\n    dup\n    drop\nend\n\n"
+            + "word true.target : Int -> Int\n    effects none\n    dup\n    drop\nend\n\n"
+            + "word false.target : Int -> Int\n    effects none\n    dup\n    drop\nend\n\n"
+            + "word unit.target : Int -> Int\n    effects none\n    dup\n    drop\nend\n"
+        defineStack engine stackSource [] |> expectOk "define exact root, nested names, record, and protected-prefix words" |> ignore
+
+        let describe name =
+            dispatch engine "describe" [ "word", jstr name ] |> expectOk $"describe {name}" |> fun response -> response.["data"]
+        let flowReference name =
+            let data = describe name
+            check (not (isNull data.["flowReference"])) $"{name} has a Flow reference"
+            stringValue data.["flowReference"]
+
+        let advanceReference = flowReference "advance"
+        equal "::advance" advanceReference "unqualified dictionary keys use exact-root Flow references"
+        let namespaceReference = flowReference "tools.math.advance"
+        equal "tools::math::advance" namespaceReference "multi-segment dictionary keys preserve every exact namespace segment"
+        equal "102" (stringValue (evalFlow engine $"{advanceReference}(2)" |> expectOk "evaluate described exact-root reference" |> fun response -> response.["data"].["stack"].[0])) "described root reference resolves to the exact root word"
+        equal "11" (stringValue (evalFlow engine $"{namespaceReference}(1)" |> expectOk "evaluate described multi-segment reference" |> fun response -> response.["data"].["stack"].[0])) "described multi-segment reference survives root and suffix collisions"
+        let mathReference = flowReference "math.advance"
+        equal "2" (stringValue (evalFlow engine $"{mathReference}(1)" |> expectOk "evaluate described suffix namespace reference" |> fun response -> response.["data"].["stack"].[0])) "the shorter namespace reference resolves to its exact dictionary key"
+
+        let floatReference = flowReference "float.add"
+        equal "float::add" floatReference "primitive Float references use exact namespace qualification"
+        let floatResult = evalFlow engine $"{floatReference}(1.5, 2.25)" |> expectOk "evaluate described primitive Float reference"
+        equal "Float" (stringValue floatResult.["data"].["stackTypes"].[0]) "described primitive Float reference keeps its Float type"
+        equal "3.75" (stringValue floatResult.["data"].["stack"].[0]) "described primitive Float reference computes its value"
+
+        let scalarSource =
+            "type Email : String { }\n\n"
+            + "word local.shadow(advance: Int) -> Int {\n"
+            + "    effects none\n"
+            + $"    {advanceReference}(5)\n"
+            + "}\n\n"
+            + "word callbacks.map-values(values: List<Int>) -> List<Int> {\n"
+            + "    effects none\n"
+            + $"    values.map({advanceReference})\n"
+            + "}"
+        defineFlowProject engine scalarSource [] |> expectOk "define Flow scalar and root-shadowing caller" |> ignore
+        let recordReference = flowReference "cart.new"
+        equal "cart::new" recordReference "generated record constructors expose their exact Flow call spelling"
+        let recordResult = evalFlow engine $"{recordReference}(value = 7)" |> expectOk "evaluate described generated record reference"
+        equal "Cart" (stringValue recordResult.["data"].["stackTypes"].[0]) "described record constructor returns the exact nominal record"
+        let scalarReference = flowReference "Email.new"
+        equal "Email::new" scalarReference "generated scalar constructors expose their exact Flow call spelling"
+        let scalarResult = evalFlow engine $"{scalarReference}(\"contact@example.com\")" |> expectOk "evaluate described generated scalar reference"
+        equal "Email" (stringValue scalarResult.["data"].["stackTypes"].[0]) "described scalar constructor returns the exact nominal scalar"
+        equal "105" (stringValue (evalFlow engine "local::shadow(0)" |> expectOk "call root target while a same-named local exists" |> fun response -> response.["data"].["stack"].[0])) "absolute-root reference bypasses a same-named local"
+        let callbackResult = evalFlow engine "callbacks::map-values(list::singleton<Int>(1))" |> expectOk "evaluate metadata-derived callback reference through map"
+        equal "[101]" (stringValue callbackResult.["data"].["stack"].[0]) "static map callback uses the exact root word despite suffix collisions"
+        let callbackDescription = describe "callbacks.map-values"
+        let callbackDependencies = jsonArrayStrings callbackDescription.["dependencies"]
+        check (callbackDependencies |> List.contains "advance") "Flow description retains the exact static callback dependency"
+
+        for prefix in [ "if"; "match"; "true"; "false"; "unit" ] do
+            let unavailable = describe (prefix + ".target")
+            check (isNull unavailable.["flowReference"]) $"{prefix} namespace prefix does not produce an intercepted Flow spelling"
+            check (not (String.IsNullOrWhiteSpace(stringValue unavailable.["flowReferenceUnavailableReason"]))) $"{prefix} protected-prefix case explains the missing reference"
+
+        let syntax = describe "list.empty"
+        equal "syntax" (stringValue syntax.["kind"]) "container constructors remain syntax descriptors"
+        check (not (syntax.AsObject().ContainsKey("flowReference"))) "syntax descriptions do not expose a word Flow reference"
+        check (not (syntax.AsObject().ContainsKey("flowReferenceUnavailableReason"))) "syntax descriptions do not expose a word-reference failure reason"
+
     let private testGeneratedRecordCasesPersistBesideFlow root =
         let project = Path.Combine(root, "flow-generated-record-cases")
         let engine = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z")
@@ -2485,6 +2559,7 @@ module Program =
         try
             testExplicitFrontendAndDurableReload root
             testExplicitFrontendCannotFallBack root
+            testDescribeFlowReferences root
             testGeneratedRecordCasesPersistBesideFlow root
             testStackGeneratedCasesSurviveV1Manifest root
             testStackOwnerMigrationToFlow root
@@ -2502,7 +2577,7 @@ module Program =
             testFlowStaticListFold root
             testFlowValidatorCannotBeRenamedAfterTypeCommit root
             testFlowProjectDocumentTypesCommitAndReload root
-            printfn $"Flow Runtime tests passed: 19 groups, {assertions} assertions."
+            printfn $"Flow Runtime tests passed: 20 groups, {assertions} assertions."
             0
         finally
             if Directory.Exists root then Directory.Delete(root, true)
