@@ -94,7 +94,7 @@ full-gate handoff.
 
 ## Flow project document contract
 
-The typed-document Runtime gate and all 26 local release checks pass; committed-source CI and publication are pending. See [report 050](../reports/050-flow-project-documents.md).
+The typed-document Runtime gate and all 26 local release checks pass; exact committed-source CI also passes (run 37430916129, source 471f795). See [report 050](../reports/050-flow-project-documents.md).
 The existing `define` operation with `frontend: "flow"` accepts a complete
 project document, including typed declarations, words and attached cases:
 

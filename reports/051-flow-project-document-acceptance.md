@@ -62,3 +62,15 @@ warnings and zero errors. Evidence is saved in
 at this report revision. The earlier foundation pass and expected pre-route
 failure above are retained as history, not used as evidence for the new
 project-document Runtime feature.
+
+
+## Exact committed-source CI
+
+Source commit `471f795d0244e72d154c6bdd5798fac247442e2c` passed
+[CI run 37430916129](https://github.com/benwmaddox/AgentLang/actions/runs/37430916129).
+The downloaded artifact reports the exact source revision, a clean checkout,
+`passed: true`, all 26 checks and zero nonzero exit codes. Saved evidence:
+[run metadata](evidence/050-committed-source-ci.json) and
+[full validation](evidence/050-committed-source-validation.json).
+The subsequent publication change is documentation/evidence only; the tested
+source is unchanged. Main integration follows the project's fast-forward policy.

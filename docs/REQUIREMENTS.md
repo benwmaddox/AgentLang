@@ -217,6 +217,6 @@ v3 typed source markers/validator identities, exact authored type inspection,
 and reload/rollback conformance. A fresh Release solution build passed with zero warnings/errors; the focused
 Flow Runtime suite passed 16 groups / 491 assertions, including atomic document
 staging, selected type commits, exact type source, v3 reload and lifecycle cases.
-All 26 local release checks pass, with zero build warnings/errors. Exact
-committed-source CI remains pending. The preceding
+All 26 local release checks pass, with zero build warnings/errors. Exact committed-source CI passed all 26 checks
+(run 37430916129, source 471f795, clean checkout). The preceding
 publication commit e615918 has clean main CI evidence (run 37425519500).
