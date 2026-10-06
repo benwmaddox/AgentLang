@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "files": 118,
+  "scope": "experiments/AgentLang.SubagentTrials/debug-flow-001/runs",
+  "mismatches": 0,
+  "method": "Every staged blob matches git hash-object --no-filters of its corresponding working-copy file."
+}

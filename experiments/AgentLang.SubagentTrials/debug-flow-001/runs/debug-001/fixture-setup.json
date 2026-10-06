@@ -1,0 +1,844 @@
+{
+  "schemaVersion": 1,
+  "sourceRevision": "412f249814ca21e7b7c014b6336ec5a258bf5f32",
+  "requests": [
+    {
+      "goal": "Host fixture setup: inject signed-balance defect",
+      "op": "task.begin"
+    },
+    {
+      "replace": true,
+      "expectedRevision": 1,
+      "frontend": "flow",
+      "op": "define",
+      "source": "word customer.discounted-balance(customer: Customer) -> Float {\n    effects none\n    let balance = customer::balance(customer);\n    if float::less-than(balance, 0.0) {\n        0.0\n    } else {\n        if customer::premium?(customer) {\n            float::multiply(balance, 0.9)\n        } else {\n            balance\n        }\n    }\n}\ntest customer.discounted-balance/negative-balance-clamped {\n    customer::discounted-balance(customer::new(\"premium\", -100.0)) => 0.0\n}"
+    },
+    {
+      "word": "customer.discounted-balance",
+      "op": "test"
+    },
+    {
+      "library": true,
+      "op": "replace-word",
+      "actor": "host",
+      "word": "customer.discounted-balance"
+    },
+    {
+      "actor": "host",
+      "op": "task.commit"
+    },
+    {
+      "op": "test-all"
+    },
+    {
+      "word": "customer.discounted-balance",
+      "op": "describe"
+    },
+    {
+      "word": "customer.renewal-balance",
+      "op": "describe"
+    }
+  ],
+  "responses": [
+    {
+      "ok": true,
+      "kind": "task.begin",
+      "text": "Started task-0005.",
+      "data": {
+        "task": "task-0005",
+        "goal": "Host fixture setup: inject signed-balance defect",
+        "active": true,
+        "wordsInspected": [],
+        "wordsUsed": [],
+        "wordsCreated": [],
+        "testsRun": 0,
+        "testsFailed": 0,
+        "effects": {},
+        "errors": []
+      }
+    },
+    {
+      "ok": true,
+      "kind": "defined",
+      "text": "Flow definition, tests, examples, and retained source bindings validated and staged.",
+      "data": {
+        "frontend": "flow",
+        "name": "customer.discounted-balance",
+        "id": "word_21fd2d9fc602470ab02bd272fb7b80df",
+        "revision": 2,
+        "tests": [
+          "case-sensitive-kind",
+          "negative-balance-clamped",
+          "other-kind-unchanged",
+          "premium-discount",
+          "premium-zero-balance"
+        ],
+        "examples": []
+      }
+    },
+    {
+      "ok": true,
+      "kind": "test",
+      "text": "5/5 test(s) passed.",
+      "data": {
+        "results": [
+          {
+            "name": "case-sensitive-kind",
+            "word": "customer.discounted-balance",
+            "passed": true,
+            "expected": "25",
+            "actual": [
+              "25"
+            ]
+          },
+          {
+            "name": "negative-balance-clamped",
+            "word": "customer.discounted-balance",
+            "passed": true,
+            "expected": "0",
+            "actual": [
+              "0"
+            ]
+          },
+          {
+            "name": "other-kind-unchanged",
+            "word": "customer.discounted-balance",
+            "passed": true,
+            "expected": "100",
+            "actual": [
+              "100"
+            ]
+          },
+          {
+            "name": "premium-discount",
+            "word": "customer.discounted-balance",
+            "passed": true,
+            "expected": "90",
+            "actual": [
+              "90"
+            ]
+          },
+          {
+            "name": "premium-zero-balance",
+            "word": "customer.discounted-balance",
+            "passed": true,
+            "expected": "0",
+            "actual": [
+              "0"
+            ]
+          }
+        ],
+        "coverage": {
+          "instructionsCovered": 15,
+          "instructionsTotal": 15,
+          "branchesCovered": 4,
+          "branchesTotal": 4,
+          "uncoveredInstructions": [],
+          "uncoveredBranchOutcomes": []
+        }
+      }
+    },
+    {
+      "ok": true,
+      "kind": "replace-word",
+      "text": "Replacement of 'customer.discounted-balance' passed caller checks and was committed.",
+      "data": [
+        "customer.discounted-balance/case-sensitive-kind",
+        "customer.discounted-balance/negative-balance-clamped",
+        "customer.discounted-balance/other-kind-unchanged",
+        "customer.discounted-balance/premium-discount",
+        "customer.discounted-balance/premium-zero-balance",
+        "customer.renewal-balance/exact-kind-and-term",
+        "customer.renewal-balance/premium-annual-not-renewable",
+        "customer.renewal-balance/premium-annual-renewable",
+        "customer.renewal-balance/premium-monthly-renewable",
+        "customer.renewal-balance/standard-annual-renewable",
+        "customer.renewal-balance/zero-balance"
+      ]
+    },
+    {
+      "ok": true,
+      "kind": "task.commit",
+      "text": "Task committed and temporary words were cleared. The task log was saved.",
+      "data": {
+        "task": "task-0005",
+        "goal": "Host fixture setup: inject signed-balance defect",
+        "active": false,
+        "wordsInspected": [],
+        "wordsUsed": [
+          "bool.and",
+          "customer.balance",
+          "customer.discounted-balance",
+          "customer.kind",
+          "customer.new",
+          "customer.premium?",
+          "customer.renewal-balance",
+          "equals",
+          "float.less-than",
+          "float.multiply",
+          "subscription.annual-renewable?",
+          "subscription.new",
+          "subscription.renewable",
+          "subscription.term"
+        ],
+        "wordsCreated": [
+          "customer.discounted-balance"
+        ],
+        "testsRun": 16,
+        "testsFailed": 0,
+        "effects": {},
+        "errors": []
+      }
+    },
+    {
+      "ok": true,
+      "kind": "test",
+      "text": "18/18 test(s) passed.",
+      "data": {
+        "results": [
+          {
+            "name": "case-sensitive-kind",
+            "word": "customer.discounted-balance",
+            "passed": true,
+            "expected": "25",
+            "actual": [
+              "25"
+            ]
+          },
+          {
+            "name": "negative-balance-clamped",
+            "word": "customer.discounted-balance",
+            "passed": true,
+            "expected": "0",
+            "actual": [
+              "0"
+            ]
+          },
+          {
+            "name": "other-kind-unchanged",
+            "word": "customer.discounted-balance",
+            "passed": true,
+            "expected": "100",
+            "actual": [
+              "100"
+            ]
+          },
+          {
+            "name": "premium-discount",
+            "word": "customer.discounted-balance",
+            "passed": true,
+            "expected": "90",
+            "actual": [
+              "90"
+            ]
+          },
+          {
+            "name": "premium-zero-balance",
+            "word": "customer.discounted-balance",
+            "passed": true,
+            "expected": "0",
+            "actual": [
+              "0"
+            ]
+          },
+          {
+            "name": "case-sensitive",
+            "word": "customer.premium?",
+            "passed": true,
+            "expected": "false",
+            "actual": [
+              "false"
+            ]
+          },
+          {
+            "name": "other-kind",
+            "word": "customer.premium?",
+            "passed": true,
+            "expected": "false",
+            "actual": [
+              "false"
+            ]
+          },
+          {
+            "name": "premium-kind",
+            "word": "customer.premium?",
+            "passed": true,
+            "expected": "true",
+            "actual": [
+              "true"
+            ]
+          },
+          {
+            "name": "exact-kind-and-term",
+            "word": "customer.renewal-balance",
+            "passed": true,
+            "expected": "100",
+            "actual": [
+              "100"
+            ]
+          },
+          {
+            "name": "premium-annual-not-renewable",
+            "word": "customer.renewal-balance",
+            "passed": true,
+            "expected": "90",
+            "actual": [
+              "90"
+            ]
+          },
+          {
+            "name": "premium-annual-renewable",
+            "word": "customer.renewal-balance",
+            "passed": true,
+            "expected": "85.5",
+            "actual": [
+              "85.5"
+            ]
+          },
+          {
+            "name": "premium-monthly-renewable",
+            "word": "customer.renewal-balance",
+            "passed": true,
+            "expected": "90",
+            "actual": [
+              "90"
+            ]
+          },
+          {
+            "name": "standard-annual-renewable",
+            "word": "customer.renewal-balance",
+            "passed": true,
+            "expected": "95",
+            "actual": [
+              "95"
+            ]
+          },
+          {
+            "name": "zero-balance",
+            "word": "customer.renewal-balance",
+            "passed": true,
+            "expected": "0",
+            "actual": [
+              "0"
+            ]
+          },
+          {
+            "name": "annual-and-renewable",
+            "word": "subscription.annual-renewable?",
+            "passed": true,
+            "expected": "true",
+            "actual": [
+              "true"
+            ]
+          },
+          {
+            "name": "annual-but-not-renewable",
+            "word": "subscription.annual-renewable?",
+            "passed": true,
+            "expected": "false",
+            "actual": [
+              "false"
+            ]
+          },
+          {
+            "name": "case-sensitive-term",
+            "word": "subscription.annual-renewable?",
+            "passed": true,
+            "expected": "false",
+            "actual": [
+              "false"
+            ]
+          },
+          {
+            "name": "monthly-and-renewable",
+            "word": "subscription.annual-renewable?",
+            "passed": true,
+            "expected": "false",
+            "actual": [
+              "false"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "ok": true,
+      "kind": "describe",
+      "text": "Description for customer.discounted-balance.",
+      "data": {
+        "name": "customer.discounted-balance",
+        "flowReference": "customer::discounted-balance",
+        "flowReferenceUnavailableReason": null,
+        "inputs": [
+          "Customer"
+        ],
+        "outputs": [
+          "Float"
+        ],
+        "parameters": [
+          {
+            "name": "customer",
+            "type": "Customer"
+          }
+        ],
+        "effects": [],
+        "documentation": "",
+        "id": "word_21fd2d9fc602470ab02bd272fb7b80df",
+        "dependencies": [
+          "customer.balance",
+          "customer.premium?",
+          "float.less-than",
+          "float.multiply"
+        ],
+        "transitiveDependencies": [
+          "customer.balance",
+          "customer.kind",
+          "customer.premium?",
+          "equals",
+          "float.less-than",
+          "float.multiply"
+        ],
+        "callers": [
+          "customer.renewal-balance"
+        ],
+        "tests": [
+          "case-sensitive-kind",
+          "negative-balance-clamped",
+          "other-kind-unchanged",
+          "premium-discount",
+          "premium-zero-balance"
+        ],
+        "examples": [],
+        "source": "<flow:customer.discounted-balance/2>",
+        "line": 1,
+        "kind": "word",
+        "status": "persistent",
+        "maturity": "library",
+        "deprecated": false,
+        "revision": 2,
+        "testCount": 5,
+        "exampleCount": 0,
+        "coverage": {
+          "instructionsCovered": 15,
+          "instructionsTotal": 15,
+          "branchesCovered": 4,
+          "branchesTotal": 4,
+          "uncoveredInstructions": [],
+          "uncoveredBranchOutcomes": [],
+          "status": "current"
+        }
+      }
+    },
+    {
+      "ok": true,
+      "kind": "describe",
+      "text": "Description for customer.renewal-balance.",
+      "data": {
+        "name": "customer.renewal-balance",
+        "flowReference": "customer::renewal-balance",
+        "flowReferenceUnavailableReason": null,
+        "inputs": [
+          "Customer",
+          "Subscription"
+        ],
+        "outputs": [
+          "Float"
+        ],
+        "parameters": [
+          {
+            "name": "customer",
+            "type": "Customer"
+          },
+          {
+            "name": "subscription",
+            "type": "Subscription"
+          }
+        ],
+        "effects": [],
+        "documentation": "",
+        "id": "word_92757c5089eb45808d1d2ddfa844f32a",
+        "dependencies": [
+          "customer.discounted-balance",
+          "float.multiply",
+          "subscription.annual-renewable?"
+        ],
+        "transitiveDependencies": [
+          "bool.and",
+          "customer.balance",
+          "customer.discounted-balance",
+          "customer.kind",
+          "customer.premium?",
+          "equals",
+          "float.less-than",
+          "float.multiply",
+          "subscription.annual-renewable?",
+          "subscription.renewable",
+          "subscription.term"
+        ],
+        "callers": [],
+        "tests": [
+          "exact-kind-and-term",
+          "premium-annual-not-renewable",
+          "premium-annual-renewable",
+          "premium-monthly-renewable",
+          "standard-annual-renewable",
+          "zero-balance"
+        ],
+        "examples": [],
+        "source": "<revision:customer.renewal-balance/1>",
+        "line": 1,
+        "kind": "word",
+        "status": "persistent",
+        "maturity": "library",
+        "deprecated": false,
+        "revision": 1,
+        "testCount": 6,
+        "exampleCount": 0,
+        "coverage": {
+          "instructionsCovered": 10,
+          "instructionsTotal": 10,
+          "branchesCovered": 2,
+          "branchesTotal": 2,
+          "uncoveredInstructions": [],
+          "uncoveredBranchOutcomes": [],
+          "status": "current"
+        }
+      }
+    }
+  ],
+  "runtimeFiles": [
+    {
+      "path": "AgentLang.Cli.deps.json",
+      "bytes": 2903,
+      "sha256": "6382f6dc29bb8f827824839010e313b266e51a3f87a4fdb8c382931d2549e97e"
+    },
+    {
+      "path": "AgentLang.Cli.dll",
+      "bytes": 37888,
+      "sha256": "90c0672f68a019e3e7ae3a0707c2da4f40edb9719cc1f50dc310e78ce622e13e"
+    },
+    {
+      "path": "AgentLang.Cli.exe",
+      "bytes": 156160,
+      "sha256": "a88f9eb3bb96036232a45ca99f31a12c254ad614edc2932fbfd29b4f8d89a00b"
+    },
+    {
+      "path": "AgentLang.Cli.pdb",
+      "bytes": 10140,
+      "sha256": "17a72a54fbee2eaf946af79b47cac0cc07a8da7bb120617428db6741e3880828"
+    },
+    {
+      "path": "AgentLang.Cli.runtimeconfig.json",
+      "bytes": 340,
+      "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+    },
+    {
+      "path": "AgentLang.Core.deps.json",
+      "bytes": 2474,
+      "sha256": "fdb608cd25481963ace0ddb4a8312aac36030e6f63deb069865ef2e610c99558"
+    },
+    {
+      "path": "AgentLang.Core.dll",
+      "bytes": 2062848,
+      "sha256": "8bb78d493484405499b886dbf15b2b09c348224872c796f7ce6abe6fb801950e"
+    },
+    {
+      "path": "AgentLang.Core.pdb",
+      "bytes": 547508,
+      "sha256": "5a2ac5dc537a4bb7de468a25904f350b6c2c6bebc1a340019b185adc7c6bcb8f"
+    },
+    {
+      "path": "AgentLang.Core.xml",
+      "bytes": 31418,
+      "sha256": "89d78ea4564d459ee03ba96628df479b1d4ade875bebcff99a48ae49ff4f8dec"
+    },
+    {
+      "path": "cs\\FSharp.Core.resources.dll",
+      "bytes": 34600,
+      "sha256": "eb8bd755cfe0d39ce27615027fe22556e8b9dcb470f2b47a36f4bfbf3c31be64"
+    },
+    {
+      "path": "de\\FSharp.Core.resources.dll",
+      "bytes": 35592,
+      "sha256": "7419e4f5ceed9e03821686e865fed7d29c6217fdf5d3a46a2919a369c98c38ce"
+    },
+    {
+      "path": "es\\FSharp.Core.resources.dll",
+      "bytes": 34600,
+      "sha256": "636866649564c72eb763eb3942e021b52b1f9b3869d037aca48f73d4474353c5"
+    },
+    {
+      "path": "fr\\FSharp.Core.resources.dll",
+      "bytes": 35128,
+      "sha256": "f38f2fd6bc4c4e233dd098a36b315a2bc87673cf2f07c6ba3daf71a3264f4a64"
+    },
+    {
+      "path": "FSharp.Core.dll",
+      "bytes": 2314000,
+      "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+    },
+    {
+      "path": "it\\FSharp.Core.resources.dll",
+      "bytes": 34576,
+      "sha256": "61a0be9c6a2ed95f8e98493b17c54a55c68cef84e23a0d82114319e2c5f3c2cd"
+    },
+    {
+      "path": "ja\\FSharp.Core.resources.dll",
+      "bytes": 37160,
+      "sha256": "dd7f36036d906e991da5505b074ef889a603f449d3324750fda5f5445ba2854f"
+    },
+    {
+      "path": "ko\\FSharp.Core.resources.dll",
+      "bytes": 36104,
+      "sha256": "0f3ef625e379577e3b60c15d8cc3759d3dc8840f99894282df1e702b4a166462"
+    },
+    {
+      "path": "pl\\FSharp.Core.resources.dll",
+      "bytes": 35632,
+      "sha256": "755bab9fbd85e5e4b4771870c9c4d655e91e3ce39cc1c2735fe0bc7cec6b84c3"
+    },
+    {
+      "path": "pt-BR\\FSharp.Core.resources.dll",
+      "bytes": 34096,
+      "sha256": "a4bbbdaabf2003a5fdff5f5bc4143c3fd4a064f2681fc481f449d4558074dc61"
+    },
+    {
+      "path": "ru\\FSharp.Core.resources.dll",
+      "bytes": 41232,
+      "sha256": "a1133f9ab7e661803d1af0c2489626bd53ac33a11dfe891f5a02f3186f2f5d78"
+    },
+    {
+      "path": "tr\\FSharp.Core.resources.dll",
+      "bytes": 34072,
+      "sha256": "6b0cba5139a86ee681909fdfcebac07c99afba3bfcff4fb8ab12b9c2112a0b31"
+    },
+    {
+      "path": "zh-Hans\\FSharp.Core.resources.dll",
+      "bytes": 32552,
+      "sha256": "25f82f35a9234bcaab272921b0d50054ddb4a669d96c111907c9d31f5b18c121"
+    },
+    {
+      "path": "zh-Hant\\FSharp.Core.resources.dll",
+      "bytes": 32032,
+      "sha256": "ac03ee7c4112c755705776c700033794586f980fe9476e6a13811a7153beabb8"
+    }
+  ],
+  "originalSeedFiles": [
+    {
+      "path": ".agentlang\\store\\CURRENT",
+      "bytes": 134,
+      "sha256": "ef7a8ec59306421f5a5a33ddeff7de3ae5c49f63cec97886795a853d0ab4b522"
+    },
+    {
+      "path": ".agentlang\\store\\manifests\\0f49bb93de56333575e4dbd84eeba7f5e199ff4c2afac6223759474eefe1f37b.json",
+      "bytes": 26218,
+      "sha256": "0f49bb93de56333575e4dbd84eeba7f5e199ff4c2afac6223759474eefe1f37b"
+    },
+    {
+      "path": ".agentlang\\store\\manifests\\272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e.json",
+      "bytes": 583,
+      "sha256": "272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e"
+    },
+    {
+      "path": ".agentlang\\store\\manifests\\3b219e8faf1f23a352f89797984f5144c44658376978393878739aa80b6d59fc.json",
+      "bytes": 4522,
+      "sha256": "3b219e8faf1f23a352f89797984f5144c44658376978393878739aa80b6d59fc"
+    },
+    {
+      "path": ".agentlang\\store\\manifests\\8ab71325aaabb58ff1c671d773c397bf61e74a1020bb39fc39425f47e950ded7.json",
+      "bytes": 375,
+      "sha256": "8ab71325aaabb58ff1c671d773c397bf61e74a1020bb39fc39425f47e950ded7"
+    },
+    {
+      "path": ".agentlang\\store\\manifests\\b8d42474ecf2d2c8ad96b58440ff334048977381024a9db028608ef0bc2da926.json",
+      "bytes": 16416,
+      "sha256": "b8d42474ecf2d2c8ad96b58440ff334048977381024a9db028608ef0bc2da926"
+    },
+    {
+      "path": ".agentlang\\store\\manifests\\eea54a49b5985b7ba3e88b04f15fdf72e6061aa7556453705693dc7c258f9f14.json",
+      "bytes": 10575,
+      "sha256": "eea54a49b5985b7ba3e88b04f15fdf72e6061aa7556453705693dc7c258f9f14"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\0a09ec29fa93e0951a01017f708dbdb0ae4d13cec9c30fb033fbe3de55d9c9e7.agent",
+      "bytes": 188,
+      "sha256": "0a09ec29fa93e0951a01017f708dbdb0ae4d13cec9c30fb033fbe3de55d9c9e7"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\13e29f6e79f5372b3d68d9f452467225d3a29d0ee773368f65db47b45b65f377.agent",
+      "bytes": 133,
+      "sha256": "13e29f6e79f5372b3d68d9f452467225d3a29d0ee773368f65db47b45b65f377"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\1d89f396a411eb6cbcd9d7d8216b5b2912f8a080ff6601097d387853e16bbd41.agent",
+      "bytes": 160,
+      "sha256": "1d89f396a411eb6cbcd9d7d8216b5b2912f8a080ff6601097d387853e16bbd41"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\2754e501440b8c7cec15f3434d0233fda4154b9d631355748f1f323df2be80f5.agent",
+      "bytes": 101,
+      "sha256": "2754e501440b8c7cec15f3434d0233fda4154b9d631355748f1f323df2be80f5"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\46bb9bd2c5c701f35cb3acb1c2c8f52823a9ac1f1f0c609209cf344dbfdfb2be.agent",
+      "bytes": 127,
+      "sha256": "46bb9bd2c5c701f35cb3acb1c2c8f52823a9ac1f1f0c609209cf344dbfdfb2be"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\48fb0dd39e609c978f7e0ee81331ad0634bee3771e21f08ebfefcfd567dc2776.agent",
+      "bytes": 129,
+      "sha256": "48fb0dd39e609c978f7e0ee81331ad0634bee3771e21f08ebfefcfd567dc2776"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\4d1f76127f259ff47d25e8ad4bed7c2ae6c9bf18846ae243179235c28278d313.agent",
+      "bytes": 74,
+      "sha256": "4d1f76127f259ff47d25e8ad4bed7c2ae6c9bf18846ae243179235c28278d313"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\57811cb5d5e949f549740165f2db15e06744eb72c9ee6e3f5a803512cbbcd170.agent",
+      "bytes": 149,
+      "sha256": "57811cb5d5e949f549740165f2db15e06744eb72c9ee6e3f5a803512cbbcd170"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\5b80e275b9e2e8d6a01d170c17d213ba9d8ffb9d1aa1e6e0314251a2b4922eab.agent",
+      "bytes": 1578,
+      "sha256": "5b80e275b9e2e8d6a01d170c17d213ba9d8ffb9d1aa1e6e0314251a2b4922eab"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\6806c6b8b7ba035e7dbf3c1f27e90f703b3e4366c1e7c0ec1757d35843d10e7e.agent",
+      "bytes": 169,
+      "sha256": "6806c6b8b7ba035e7dbf3c1f27e90f703b3e4366c1e7c0ec1757d35843d10e7e"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\6b964fd1a60a1c51e0900f74a69ee486c227aacf5bca2f24a06289cecc237bf7.agent",
+      "bytes": 69,
+      "sha256": "6b964fd1a60a1c51e0900f74a69ee486c227aacf5bca2f24a06289cecc237bf7"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\6ea5bee3651bca4d345ced10c37cc590e435225df08a0ef11d5455791acca7cb.agent",
+      "bytes": 3913,
+      "sha256": "6ea5bee3651bca4d345ced10c37cc590e435225df08a0ef11d5455791acca7cb"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\81c7758787d510564e504106823b25108f66be5cc3cbe25390d2327492e95c5e.agent",
+      "bytes": 2473,
+      "sha256": "81c7758787d510564e504106823b25108f66be5cc3cbe25390d2327492e95c5e"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\84495d36556de99318e1e3b2c604a21bfb6175bd5260ab9c7653b1f5ea2b2640.agent",
+      "bytes": 145,
+      "sha256": "84495d36556de99318e1e3b2c604a21bfb6175bd5260ab9c7653b1f5ea2b2640"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\87ae782de5e5ccc8c7323f04a9f58b1e58add7481d537be2d734290199d61156.agent",
+      "bytes": 166,
+      "sha256": "87ae782de5e5ccc8c7323f04a9f58b1e58add7481d537be2d734290199d61156"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\907b65b6a35841fed8c4e3396100fdff2cce865813f710d09864345eac92aad2.agent",
+      "bytes": 221,
+      "sha256": "907b65b6a35841fed8c4e3396100fdff2cce865813f710d09864345eac92aad2"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\925da768579b541edebe26a053d9b95fcbbf7d024d41c7119ef25eab6b32136d.agent",
+      "bytes": 166,
+      "sha256": "925da768579b541edebe26a053d9b95fcbbf7d024d41c7119ef25eab6b32136d"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\aef0989b24710f09ece0578a1e0388bcc11d41b3016a2385fc1669999bfb225e.agent",
+      "bytes": 101,
+      "sha256": "aef0989b24710f09ece0578a1e0388bcc11d41b3016a2385fc1669999bfb225e"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\afc265dc6f94452468e30b9c48ba66600f45f00a586fdd3a624a0cfcbb40fa22.agent",
+      "bytes": 713,
+      "sha256": "afc265dc6f94452468e30b9c48ba66600f45f00a586fdd3a624a0cfcbb40fa22"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\b365659283c5f52808dddf75ffc2dc1c5a2f2b3b6bf1a17236a9670fc9ddc5bc.agent",
+      "bytes": 128,
+      "sha256": "b365659283c5f52808dddf75ffc2dc1c5a2f2b3b6bf1a17236a9670fc9ddc5bc"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\baa5d002af5287fdfd774b9c1cea0352e05e940fde2f0b1238e0331942e67671.agent",
+      "bytes": 233,
+      "sha256": "baa5d002af5287fdfd774b9c1cea0352e05e940fde2f0b1238e0331942e67671"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\c4c206c67fc7499729e77af0a7e51833b47e65a0fa1d9f9df0a9d801409a7050.agent",
+      "bytes": 142,
+      "sha256": "c4c206c67fc7499729e77af0a7e51833b47e65a0fa1d9f9df0a9d801409a7050"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\c701fc54256ab52139509aff9f40ca54c54dcc6f31f6577dc5836f7f0fdd7ad7.agent",
+      "bytes": 91,
+      "sha256": "c701fc54256ab52139509aff9f40ca54c54dcc6f31f6577dc5836f7f0fdd7ad7"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\cba51aed7789788bafdfed252595b21078bd2e16620690bd2ef0eff0179feeca.agent",
+      "bytes": 121,
+      "sha256": "cba51aed7789788bafdfed252595b21078bd2e16620690bd2ef0eff0179feeca"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\e84f4a26267d08e8c8e0dbd81ad1b569779eb7d9f62045f1ff2764041c4d06b0.agent",
+      "bytes": 164,
+      "sha256": "e84f4a26267d08e8c8e0dbd81ad1b569779eb7d9f62045f1ff2764041c4d06b0"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\ebfda0ad236c50a2a29cf677ba9465b108ef55c039f3edbf34db743107587893.agent",
+      "bytes": 104,
+      "sha256": "ebfda0ad236c50a2a29cf677ba9465b108ef55c039f3edbf34db743107587893"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\f36b44ed0299a50c0c2a146b129c8d3d207dbba58ed016d429757d2edea83675.agent",
+      "bytes": 139,
+      "sha256": "f36b44ed0299a50c0c2a146b129c8d3d207dbba58ed016d429757d2edea83675"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\f97e48f3dd20a91c905c5618acfb9b0df9df69c81cbb7c05c7d78c7b8bdfc564.agent",
+      "bytes": 302,
+      "sha256": "f97e48f3dd20a91c905c5618acfb9b0df9df69c81cbb7c05c7d78c7b8bdfc564"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\fdda8e1ce305dd11db42d30b8f3db1829bb703c1bbd4cc68de8216993441acc1.agent",
+      "bytes": 139,
+      "sha256": "fdda8e1ce305dd11db42d30b8f3db1829bb703c1bbd4cc68de8216993441acc1"
+    },
+    {
+      "path": ".agentlang\\store\\snapshots\\matched-renewal-start.json",
+      "bytes": 157,
+      "sha256": "b936be633953f177b3cf303dfbbccd3fc1b48e6c346789670bbf546227f85998"
+    },
+    {
+      "path": ".agentlang\\store\\WRITE.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "dictionary.agent",
+      "bytes": 3913,
+      "sha256": "6ea5bee3651bca4d345ced10c37cc590e435225df08a0ef11d5455791acca7cb"
+    },
+    {
+      "path": "history\\task-0001.json",
+      "bytes": 549,
+      "sha256": "9e7bcb7d58bd3ee79c2349f84ab0f1cc7b9876921bd0b6b463e1abc43f650fb2"
+    },
+    {
+      "path": "history\\task-0002.json",
+      "bytes": 1678,
+      "sha256": "a05c577174b14b450468bc6345b9061ad3b3c22631441e410e2786169fc50a41"
+    },
+    {
+      "path": "history\\task-0003.json",
+      "bytes": 1777,
+      "sha256": "95c938cbae45304bfe0b22298391b7894a5ef534ee9494be83ab045537d6037b"
+    },
+    {
+      "path": "history\\task-0004.json",
+      "bytes": 828,
+      "sha256": "7f152dac87cb91d628192a17bde1c89afb32b88a289c23128f8d9c58dc599610"
+    }
+  ],
+  "injection": "Shared discount helper clamps all negative balances; new historical self-test incorrectly expects zero. Existing cases remain unchanged."
+}

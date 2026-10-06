@@ -95,6 +95,15 @@ vectors and complete trace audits. Compact guidance used more inspection bytes
 fresh-agent discovery/reuse and tested composition, not general efficiency or
 model-context benefits. Debugging/refactoring behavior is the next priority.
 
+[Checkpoint 068](../reports/068-shared-defect-agent-debugging.md) verifies one
+fresh external agent repairing an upstream signed-balance defect and mistaken
+self-test, preserving its caller body and unrelated vocabulary. Independent
+helper/caller checks pass 96 assertions over 40 behavioral vectors; 111 durable
+state checks preserve identities, history and valid cases. The seeded defect
+passed full coverage/self-tests before independent rejection, so coverage is
+not treated as correctness proof. Refactoring and stronger domain/stateful
+tasks remain the immediate evaluation priority; controlled costs stay unproven.
+
 Latest external-agent workflow evidence: [report 054](../reports/054-flow-renewal-agent-control.md)
 records a separate inherited-history Luna/max control that created one tested
 library word by composing a retained domain word. Fresh-process acceptance

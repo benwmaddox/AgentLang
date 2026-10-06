@@ -140,3 +140,6 @@ actors on one small String/Float domain cannot establish the PRD's full
 cost-reduction, strong business-type, domain-generalization or small-context
 success criteria. Exact model usage remains unavailable. The full PRD goal
 remains active.
+Publication verification: clean [main CI](evidence/067-main-ci.json) for this
+report/evidence milestone passed all 32 checks at `412f249`; the saved
+[validation artifact](evidence/067-main-validation.json) records `dirty: false`.

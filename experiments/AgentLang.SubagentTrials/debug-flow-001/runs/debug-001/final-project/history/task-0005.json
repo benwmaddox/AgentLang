@@ -1,0 +1,29 @@
+{
+  "task": "task-0005",
+  "goal": "Host fixture setup: inject signed-balance defect",
+  "active": false,
+  "wordsInspected": [],
+  "wordsUsed": [
+    "bool.and",
+    "customer.balance",
+    "customer.discounted-balance",
+    "customer.kind",
+    "customer.new",
+    "customer.premium?",
+    "customer.renewal-balance",
+    "equals",
+    "float.less-than",
+    "float.multiply",
+    "subscription.annual-renewable?",
+    "subscription.new",
+    "subscription.renewable",
+    "subscription.term"
+  ],
+  "wordsCreated": [
+    "customer.discounted-balance"
+  ],
+  "testsRun": 16,
+  "testsFailed": 0,
+  "effects": {},
+  "errors": []
+}

@@ -1,0 +1,24 @@
+{
+  "task": "task-0001",
+  "goal": "Add reusable premium-customer predicate: customer.premium? : Customer -\u003E Bool, true exactly when kind equals premium, with relevant tests.",
+  "active": false,
+  "wordsInspected": [
+    "customer.balance",
+    "customer.kind",
+    "customer.new",
+    "equals"
+  ],
+  "wordsUsed": [
+    "customer.kind",
+    "customer.new",
+    "customer.premium?",
+    "equals"
+  ],
+  "wordsCreated": [
+    "customer.premium?"
+  ],
+  "testsRun": 6,
+  "testsFailed": 0,
+  "effects": {},
+  "errors": []
+}

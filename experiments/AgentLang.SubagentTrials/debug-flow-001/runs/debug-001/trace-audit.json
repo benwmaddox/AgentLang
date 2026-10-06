@@ -1,0 +1,215 @@
+{
+  "schemaVersion": 1,
+  "errors": [
+    {
+      "op": "commit",
+      "error": {
+        "code": "COMMIT_NOT_CANDIDATE",
+        "message": "'customer.renewal-balance' is not a candidate word or type.",
+        "word": "customer.renewal-balance",
+        "expected": [],
+        "actual": []
+      },
+      "index": 17
+    }
+  ],
+  "selectedResponsePayloadBytes": 27517,
+  "passed": true,
+  "requests": [
+    {
+      "word": null,
+      "op": "words",
+      "requestBytes": 30,
+      "responseBytes": 1193,
+      "ok": true
+    },
+    {
+      "word": null,
+      "op": "search",
+      "requestBytes": 35,
+      "responseBytes": 186,
+      "ok": true
+    },
+    {
+      "word": "customer.renewal-balance",
+      "op": "context",
+      "requestBytes": 100,
+      "responseBytes": 4108,
+      "ok": true
+    },
+    {
+      "word": "customer.renewal-balance",
+      "op": "describe",
+      "requestBytes": 52,
+      "responseBytes": 1992,
+      "ok": true
+    },
+    {
+      "word": "customer.discounted-balance",
+      "op": "describe",
+      "requestBytes": 55,
+      "responseBytes": 2259,
+      "ok": true
+    },
+    {
+      "word": "customer.renewal-balance",
+      "op": "source",
+      "requestBytes": 50,
+      "responseBytes": 678,
+      "ok": true
+    },
+    {
+      "word": "customer.discounted-balance",
+      "op": "source",
+      "requestBytes": 53,
+      "responseBytes": 744,
+      "ok": true
+    },
+    {
+      "word": "customer.discounted-balance",
+      "op": "tests",
+      "requestBytes": 52,
+      "responseBytes": 179,
+      "ok": true
+    },
+    {
+      "word": "customer.new",
+      "op": "source",
+      "requestBytes": 38,
+      "responseBytes": 204,
+      "ok": true
+    },
+    {
+      "word": "customer.new",
+      "op": "describe",
+      "requestBytes": 40,
+      "responseBytes": 791,
+      "ok": true
+    },
+    {
+      "word": null,
+      "op": "task.begin",
+      "requestBytes": 203,
+      "responseBytes": 392,
+      "ok": true
+    },
+    {
+      "word": null,
+      "op": "define",
+      "requestBytes": 616,
+      "responseBytes": 409,
+      "ok": true
+    },
+    {
+      "word": "customer.discounted-balance",
+      "op": "test",
+      "requestBytes": 51,
+      "responseBytes": 929,
+      "ok": true
+    },
+    {
+      "word": null,
+      "op": "define",
+      "requestBytes": 412,
+      "responseBytes": 490,
+      "ok": true
+    },
+    {
+      "word": "customer.renewal-balance",
+      "op": "test",
+      "requestBytes": 48,
+      "responseBytes": 1179,
+      "ok": true
+    },
+    {
+      "word": "customer.discounted-balance",
+      "op": "replace-word",
+      "requestBytes": 74,
+      "responseBytes": 879,
+      "ok": true
+    },
+    {
+      "word": "customer.renewal-balance",
+      "op": "commit",
+      "requestBytes": 65,
+      "responseBytes": 339,
+      "ok": false
+    },
+    {
+      "word": "customer.renewal-balance",
+      "op": "describe",
+      "requestBytes": 52,
+      "responseBytes": 1382,
+      "ok": true
+    },
+    {
+      "word": "customer.discounted-balance",
+      "op": "describe",
+      "requestBytes": 55,
+      "responseBytes": 1132,
+      "ok": true
+    },
+    {
+      "word": null,
+      "op": "task.status",
+      "requestBytes": 21,
+      "responseBytes": 791,
+      "ok": true
+    },
+    {
+      "word": null,
+      "op": "test-all",
+      "requestBytes": 18,
+      "responseBytes": 2529,
+      "ok": true
+    },
+    {
+      "word": null,
+      "op": "task.commit",
+      "requestBytes": 21,
+      "responseBytes": 843,
+      "ok": true
+    },
+    {
+      "word": "customer.discounted-balance",
+      "op": "describe",
+      "requestBytes": 55,
+      "responseBytes": 1781,
+      "ok": true
+    },
+    {
+      "word": "customer.discounted-balance",
+      "op": "test",
+      "requestBytes": 51,
+      "responseBytes": 929,
+      "ok": true
+    },
+    {
+      "word": "customer.renewal-balance",
+      "op": "test",
+      "requestBytes": 48,
+      "responseBytes": 1179,
+      "ok": true
+    }
+  ],
+  "requestPayloadBytes": 2295,
+  "limits": [
+    "Schema 1 records selected responses before stdout flush; no delivery/model-consumption claim.",
+    "Payload counts exclude LF but include CR.",
+    "No exact model tokens, turns, controlled latency or window measurement.",
+    "One debugging smoke; no matched conventional comparison."
+  ],
+  "sessionEnd": {
+    "event": "session-end",
+    "finishedUtc": "2026-10-06T16:50:08.1104211-04:00",
+    "exchangeCount": 25,
+    "hostExitCode": 0,
+    "runtimeExitCode": 0,
+    "runtimeStderrPrefixBytes": 0,
+    "runtimeStderrTotalBytes": 0,
+    "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runtimeStderrCaptureTruncated": false
+  },
+  "exchanges": 25,
+  "traceSha256": "a6d57ad51f2ffa6dcd128fcb02b0da4593f262078bc416b808ae9233d3523c1e"
+}

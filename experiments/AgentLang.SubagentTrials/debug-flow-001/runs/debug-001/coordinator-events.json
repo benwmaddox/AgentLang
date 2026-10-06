@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "agent": "/root/debug_signed_01",
+  "model": "gpt-6-luna",
+  "reasoningEffort": "max",
+  "forkTurns": "none",
+  "session": 54230,
+  "completionObserved": true,
+  "teardown": "Ctrl+C after completed response on same session",
+  "hostExitCode": 0,
+  "extraProtocolRequests": 0,
+  "recordedUtc": "2026-10-06T20:53:20.1923299Z"
+}
