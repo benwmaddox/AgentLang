@@ -1,0 +1,10 @@
+word customer.discounted-balance(customer: Customer) -> Float {
+    effects none
+    doc "Returns 90 percent of the balance for premium customers and the original balance for every other kind."
+    let balance = customer.balance();
+    if customer.premium?() {
+        float::multiply(balance, 0.9)
+    } else {
+        balance
+    }
+}

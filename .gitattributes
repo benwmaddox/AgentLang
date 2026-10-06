@@ -1,1 +1,5 @@
 * text=auto eol=lf
+# Frozen trial inputs are byte-addressed; checkout must preserve their hashes.
+experiments/AgentLang.SubagentTrials/matched-renewal-001/snapshots/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+experiments/AgentLang.SubagentTrials/matched-renewal-001/fixtures/flow/flat.agent -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+experiments/AgentLang.SubagentTrials/matched-renewal-001/fixtures/flow/growing.agent -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

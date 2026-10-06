@@ -1,5 +1,52 @@
 # Matched renewal fixture set
 
+## Flow comparison preparation
+
+The separate `fixtures/flow` seeds target the current default frontend.
+`fixtures/flow/conventional/MatchedRenewal.Flow.fsproj` preserves the baseline
+helpers and unsolved implementation but corrects the standard/annual/renewable
+oracle to 95, as required by [the shared task](task.md). The archived conventional
+oracle below incorrectly expects 100 for that case. Its verifier is retained for
+historical replay, not as proof of equivalence with the task contract.
+
+The Flow verifier is `scripts/Verify-FlowMatchedRenewalFixtures.ps1`. Flat starts
+with schemas only; Growing has the two retained helpers and seven tests;
+Conventional has equivalent helpers to Growing. The Flow verifier commits seeds,
+checks library tests, saves snapshots and reloads them in a separate process.
+Preparing these inputs is not an agent trial or a performance measurement.
+
+Build and verify the Flow inputs from the repository root:
+
+```powershell
+dotnet build AgentLang.sln --configuration Release
+pwsh -NoProfile -File scripts/Verify-FlowMatchedRenewalFixtures.ps1 `
+  -CliDll src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll `
+  -ConventionalDll experiments/AgentLang.SubagentTrials/matched-renewal-001/fixtures/flow/conventional/bin/Release/net9.0/MatchedRenewal.Flow.dll `
+  -EvidencePath .agentlang/reports/flow-matched-renewal-fixtures.json
+```
+
+The current full validation gate runs both the archived verifier and this Flow
+verifier. Run the conventional broker against the `fixtures/flow/conventional`
+directory with host-configured `--validation-project MatchedRenewal.Flow.fsproj`
+for the corrected comparison, rather than the archived project below.
+
+`snapshots/flat` and `snapshots/growing` are reviewed, content-hashed storage
+bundles with frozen word identities. Restore either into a **new** project:
+
+```powershell
+pwsh -NoProfile -File scripts/Restore-MatchedRenewalSnapshot.ps1 `
+  -Profile growing -ProjectPath .agentlang/trials/new-growing-run
+```
+
+Then send `{"op":"snapshot.load","args":{"name":"matched-renewal-start"}}`
+to the pinned AgentLang JSONL host. Restore verifies file hashes and sizes before
+creating the destination; existing project directories are refused. The bundle
+does not set host capabilities or supply a runtime binary. Pin those separately
+for each actual trial. `Verify-MatchedRenewalSnapshots.ps1` checks these public
+bundles through fresh-process runtime load and attached test execution in CI.
+
+## Archived Stack/RPN preparation
+
 This directory prepares three starting environments for one future matched
 renewal task. It is fixture and protocol groundwork; it contains no new-agent
 run, no measured comparison, and no claim about token, context, or latency

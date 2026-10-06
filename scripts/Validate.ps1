@@ -84,6 +84,11 @@ try {
         $cliBinaryPath = "src/AgentLang.Cli/bin/$Configuration/net9.0/AgentLang.Cli.dll"
         $conventionalBinaryPath = "experiments/AgentLang.SubagentTrials/matched-renewal-001/fixtures/conventional/bin/$Configuration/net9.0/MatchedRenewal.dll"
         $null = Invoke-ValidationCheck 'matched-renewal-fixtures' 'pwsh' @('-NoProfile', '-File', 'scripts/Verify-MatchedRenewalFixtures.ps1', '-CliDll', $cliBinaryPath, '-ConventionalDll', $conventionalBinaryPath, '-EvidencePath', $fixtureReportPath)
+        $flowFixtureReportPath = [System.IO.Path]::ChangeExtension($ReportPath, 'flow-matched-fixtures.json')
+        $flowConventionalBinaryPath = "experiments/AgentLang.SubagentTrials/matched-renewal-001/fixtures/flow/conventional/bin/$Configuration/net9.0/MatchedRenewal.Flow.dll"
+        $null = Invoke-ValidationCheck 'flow-matched-renewal-fixtures' 'pwsh' @('-NoProfile', '-File', 'scripts/Verify-FlowMatchedRenewalFixtures.ps1', '-CliDll', $cliBinaryPath, '-ConventionalDll', $flowConventionalBinaryPath, '-EvidencePath', $flowFixtureReportPath)
+        $snapshotReportPath = [System.IO.Path]::ChangeExtension($ReportPath, 'matched-snapshots.json')
+        $null = Invoke-ValidationCheck 'matched-renewal-snapshots' 'pwsh' @('-NoProfile', '-File', 'scripts/Verify-MatchedRenewalSnapshots.ps1', '-CliDll', $cliBinaryPath, '-EvidencePath', $snapshotReportPath)
         $hostReportPath = [System.IO.Path]::ChangeExtension($ReportPath, 'subagent-host.json')
         $cliBinaryPath = "src/AgentLang.Cli/bin/$Configuration/net9.0/AgentLang.Cli.dll"
         $null = Invoke-ValidationCheck 'subagent-trial-host' 'pwsh' @('-NoProfile', '-File', 'scripts/Verify-SubagentTrialHost.ps1', '-CliDll', $cliBinaryPath, '-EvidencePath', $hostReportPath)

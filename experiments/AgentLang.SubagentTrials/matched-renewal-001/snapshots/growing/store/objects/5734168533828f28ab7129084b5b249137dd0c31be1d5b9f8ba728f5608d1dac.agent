@@ -1,0 +1,4 @@
+test customer.discounted-balance/premium-larger-balance {
+    customer::discounted-balance(customer::new(kind = "premium", balance = 250.0))
+    => 225.0
+}

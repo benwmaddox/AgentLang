@@ -8,10 +8,11 @@ Run `./scripts/Validate.ps1` from PowerShell to build the solution and run every
 
 CI runs the same command and uploads its JSON report. Human feedback and milestone conclusions belong in numbered Markdown reports here. Credentials must never appear in reports. Live provider traces can contain project information and should remain in the experiment's local output directory unless deliberately reviewed for publication.
 
-Latest local checkpoint: [052 — default Flow authoring](052-default-flow-authoring.md)
-passed the complete 27-check Release gate. Exact source CI and private publication
-are recorded in that report separately; the full PRD and controlled research
-outcomes remain incomplete.
+Latest local checkpoint: [053 — Flow renewal fixtures](053-flow-renewal-fixtures.md)
+passed the complete 29-check Release gate, including 129 Flow fixture checks and
+26 frozen snapshot checks. It corrects a task/oracle mismatch and prepares
+reproducible starting identities. Exact source CI and private publication are
+tracked separately; the full PRD and controlled research outcomes remain incomplete.
 
 Report 052 exact clean source CI passed all 27 checks on `698ebcc`
 (run 37442447178). Saved identity and validation artifacts distinguish this from

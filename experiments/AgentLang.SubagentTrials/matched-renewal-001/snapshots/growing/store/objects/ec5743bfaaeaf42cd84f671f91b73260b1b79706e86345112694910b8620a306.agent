@@ -1,0 +1,83 @@
+// frontend: flow/1
+
+record Customer {
+    field kind: String;
+    field balance: Float;
+}
+
+// frontend: flow/1
+
+record Subscription {
+    field term: String;
+    field renewable: Bool;
+}
+
+// frontend: flow/1
+
+word customer.discounted-balance(customer: Customer) -> Float {
+    effects none
+    doc "Returns 90 percent of the balance for premium customers and the original balance for every other kind."
+    let balance = customer.balance();
+    if customer.premium?() {
+        float::multiply(balance, 0.9)
+    } else {
+        balance
+    }
+}
+
+// frontend: flow/1
+
+word customer.premium?(customer: Customer) -> Bool {
+    effects none
+    doc "Returns true only when the customer kind is exactly premium."
+    equals(customer.kind(), "premium")
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/case-sensitive {
+    customer::discounted-balance(customer::new(kind = "Premium", balance = 80))
+    => 80
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/premium {
+    customer::discounted-balance(customer::new(kind = "premium", balance = 100))
+    => 90
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/premium-larger-balance {
+    customer::discounted-balance(customer::new(kind = "premium", balance = 250))
+    => 225
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/standard {
+    customer::discounted-balance(customer::new(kind = "standard", balance = 100))
+    => 100
+}
+
+// frontend: flow/1
+
+test customer.premium?/case-sensitive {
+    customer::premium?(customer::new(kind = "Premium", balance = 100))
+    => false
+}
+
+// frontend: flow/1
+
+test customer.premium?/premium {
+    customer::premium?(customer::new(kind = "premium", balance = 100))
+    => true
+}
+
+// frontend: flow/1
+
+test customer.premium?/standard {
+    customer::premium?(customer::new(kind = "standard", balance = 100))
+    => false
+}

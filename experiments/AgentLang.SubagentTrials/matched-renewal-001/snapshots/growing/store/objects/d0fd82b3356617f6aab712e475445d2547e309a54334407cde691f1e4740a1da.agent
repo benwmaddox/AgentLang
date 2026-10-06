@@ -1,0 +1,4 @@
+test customer.premium?/premium {
+    customer::premium?(customer::new(kind = "premium", balance = 100.0))
+    => true
+}

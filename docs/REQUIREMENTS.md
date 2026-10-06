@@ -4,6 +4,13 @@ The active goal is completion of the prototype and evaluation requirements in th
 
 Status: **verified** means the listed scoped behavior has observed acceptance evidence; **partial** means some behavior exists but the full section is not proven; **pending** means implementation or evidence is missing; **design** means a principle/advisory requirement; **excluded** means a V1 non-goal or explicitly optional follow-on. A green build is not evidence of research success.
 
+Latest experimental preparation: [report 053](../reports/053-flow-renewal-fixtures.md)
+records a passing complete local **29-check Release gate**, 129 Flow renewal
+fixture checks, and 26 frozen snapshot checks. Separate Flow seeds preserve the
+archived RPN materials, pin persistent identities, and correct the conventional
+oracle to the shared task's rule. This is preparation for external-subagent
+trials, not a completed controlled comparison or the full strong business domain.
+
 Latest scoped evidence: [report 052](../reports/052-default-flow-authoring.md)
 records the default Flow authoring cutover and a passing complete local
 **27-check Release gate**, with zero build warnings/errors. Flow has 981

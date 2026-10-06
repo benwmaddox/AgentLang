@@ -1,0 +1,4 @@
+test customer.discounted-balance/case-sensitive {
+    customer::discounted-balance(customer::new(kind = "Premium", balance = 80.0))
+    => 80.0
+}

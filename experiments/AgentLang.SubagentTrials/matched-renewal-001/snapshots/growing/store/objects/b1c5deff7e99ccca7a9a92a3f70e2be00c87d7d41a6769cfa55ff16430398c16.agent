@@ -1,0 +1,4 @@
+test customer.premium?/case-sensitive {
+    customer::premium?(customer::new(kind = "Premium", balance = 100.0))
+    => false
+}

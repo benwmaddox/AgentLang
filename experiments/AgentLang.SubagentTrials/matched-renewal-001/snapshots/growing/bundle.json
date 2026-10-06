@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "profile": "growing",
+  "frontend": "flow",
+  "snapshot": "matched-renewal-start",
+  "manifestHash": "480feeaec8a8ad5d860349890bbbe151b2345f7c746f1400e926da68eb181521",
+  "seedSourceSha256": "411876a35f05a6d9b08c076d1b5e3509f1568c4bbf467ea2406096056db6e217",
+  "preparedFromRevision": "f3955d5ed98d2f8786ebeb5a7762f9ec745e646e",
+  "files": [
+    {
+      "path": "CURRENT",
+      "bytes": 134,
+      "sha256": "5c43833f2630401ee00438121bc86c823d32786bdd8fe00c2f6c66cc6994ee0f"
+    },
+    {
+      "path": "manifests/272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e.json",
+      "bytes": 583,
+      "sha256": "272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e"
+    },
+    {
+      "path": "manifests/480feeaec8a8ad5d860349890bbbe151b2345f7c746f1400e926da68eb181521.json",
+      "bytes": 9888,
+      "sha256": "480feeaec8a8ad5d860349890bbbe151b2345f7c746f1400e926da68eb181521"
+    },
+    {
+      "path": "manifests/7c215812021d148a9d2ab15deb8172963561c9f786d4ac3a71e82dce14f5deb2.json",
+      "bytes": 4499,
+      "sha256": "7c215812021d148a9d2ab15deb8172963561c9f786d4ac3a71e82dce14f5deb2"
+    },
+    {
+      "path": "manifests/8ab71325aaabb58ff1c671d773c397bf61e74a1020bb39fc39425f47e950ded7.json",
+      "bytes": 375,
+      "sha256": "8ab71325aaabb58ff1c671d773c397bf61e74a1020bb39fc39425f47e950ded7"
+    },
+    {
+      "path": "objects/0a09ec29fa93e0951a01017f708dbdb0ae4d13cec9c30fb033fbe3de55d9c9e7.agent",
+      "bytes": 188,
+      "sha256": "0a09ec29fa93e0951a01017f708dbdb0ae4d13cec9c30fb033fbe3de55d9c9e7"
+    },
+    {
+      "path": "objects/148337b3c5a1071a9a726219ed40eb93ff810f95bb039beb82150cb5285cbdb8.agent",
+      "bytes": 139,
+      "sha256": "148337b3c5a1071a9a726219ed40eb93ff810f95bb039beb82150cb5285cbdb8"
+    },
+    {
+      "path": "objects/274a2fdf942e9e07f1e404c9f1cc876ecef3697f6b24fe5677039df96056e95f.agent",
+      "bytes": 823,
+      "sha256": "274a2fdf942e9e07f1e404c9f1cc876ecef3697f6b24fe5677039df96056e95f"
+    },
+    {
+      "path": "objects/31dab1b769431ed233189bad7a188bc395cc7e13112c03e65aeb649eb8fbcbd7.agent",
+      "bytes": 142,
+      "sha256": "31dab1b769431ed233189bad7a188bc395cc7e13112c03e65aeb649eb8fbcbd7"
+    },
+    {
+      "path": "objects/40e63bb7f842b5076fed83e010f6ef084fdd408862826962366292d94fd1ad31.agent",
+      "bytes": 181,
+      "sha256": "40e63bb7f842b5076fed83e010f6ef084fdd408862826962366292d94fd1ad31"
+    },
+    {
+      "path": "objects/4d1f76127f259ff47d25e8ad4bed7c2ae6c9bf18846ae243179235c28278d313.agent",
+      "bytes": 74,
+      "sha256": "4d1f76127f259ff47d25e8ad4bed7c2ae6c9bf18846ae243179235c28278d313"
+    },
+    {
+      "path": "objects/5734168533828f28ab7129084b5b249137dd0c31be1d5b9f8ba728f5608d1dac.agent",
+      "bytes": 155,
+      "sha256": "5734168533828f28ab7129084b5b249137dd0c31be1d5b9f8ba728f5608d1dac"
+    },
+    {
+      "path": "objects/6b964fd1a60a1c51e0900f74a69ee486c227aacf5bca2f24a06289cecc237bf7.agent",
+      "bytes": 69,
+      "sha256": "6b964fd1a60a1c51e0900f74a69ee486c227aacf5bca2f24a06289cecc237bf7"
+    },
+    {
+      "path": "objects/6c8cf2f4bf1276739d9cc2cf90ff753b23090f9beef26ef9a4516104b2f37c03.agent",
+      "bytes": 335,
+      "sha256": "6c8cf2f4bf1276739d9cc2cf90ff753b23090f9beef26ef9a4516104b2f37c03"
+    },
+    {
+      "path": "objects/7a491259614a348a0a39613285cab391d0f8c6cf4298fd80eb31eaf669f470dd.agent",
+      "bytes": 145,
+      "sha256": "7a491259614a348a0a39613285cab391d0f8c6cf4298fd80eb31eaf669f470dd"
+    },
+    {
+      "path": "objects/b1c5deff7e99ccca7a9a92a3f70e2be00c87d7d41a6769cfa55ff16430398c16.agent",
+      "bytes": 127,
+      "sha256": "b1c5deff7e99ccca7a9a92a3f70e2be00c87d7d41a6769cfa55ff16430398c16"
+    },
+    {
+      "path": "objects/c701fc54256ab52139509aff9f40ca54c54dcc6f31f6577dc5836f7f0fdd7ad7.agent",
+      "bytes": 91,
+      "sha256": "c701fc54256ab52139509aff9f40ca54c54dcc6f31f6577dc5836f7f0fdd7ad7"
+    },
+    {
+      "path": "objects/cc3fab33fb1a091dfe0cc55ca042d71a73eaea72da71819e77f417f4e05304da.agent",
+      "bytes": 122,
+      "sha256": "cc3fab33fb1a091dfe0cc55ca042d71a73eaea72da71819e77f417f4e05304da"
+    },
+    {
+      "path": "objects/d0fd82b3356617f6aab712e475445d2547e309a54334407cde691f1e4740a1da.agent",
+      "bytes": 119,
+      "sha256": "d0fd82b3356617f6aab712e475445d2547e309a54334407cde691f1e4740a1da"
+    },
+    {
+      "path": "objects/ec5743bfaaeaf42cd84f671f91b73260b1b79706e86345112694910b8620a306.agent",
+      "bytes": 1838,
+      "sha256": "ec5743bfaaeaf42cd84f671f91b73260b1b79706e86345112694910b8620a306"
+    },
+    {
+      "path": "snapshots/matched-renewal-start.json",
+      "bytes": 157,
+      "sha256": "d55c16904ed6f732d1cfac516f76cfb0ec24d43b12a88bd877992b71270cb89b"
+    },
+    {
+      "path": "snapshots/review-seed.json",
+      "bytes": 157,
+      "sha256": "d55c16904ed6f732d1cfac516f76cfb0ec24d43b12a88bd877992b71270cb89b"
+    }
+  ],
+  "limits": "Reviewed toy baseline, not an agent run. Capabilities, compiled runtime and trial prompts are pinned separately."
+}

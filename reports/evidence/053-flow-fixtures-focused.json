@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "passed": false,
+  "failure": "The property 'Count' cannot be found on this object. Verify that the property exists.",
+  "frontend": "flow",
+  "cli": {
+    "path": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+    "sha256": "e33252c6b25fff93be208601e1cc764630eef1a1c722383a0996d43ccf654307",
+    "files": [
+      {
+        "name": "AgentLang.Cli.deps.json",
+        "sha256": "6382f6dc29bb8f827824839010e313b266e51a3f87a4fdb8c382931d2549e97e"
+      },
+      {
+        "name": "AgentLang.Cli.dll",
+        "sha256": "e33252c6b25fff93be208601e1cc764630eef1a1c722383a0996d43ccf654307"
+      },
+      {
+        "name": "AgentLang.Cli.runtimeconfig.json",
+        "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+      },
+      {
+        "name": "AgentLang.Core.dll",
+        "sha256": "1ac260e54204062e6da30231fe6c491f098d60b793c59531fdb10d5531ca7416"
+      },
+      {
+        "name": "FSharp.Core.dll",
+        "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+      }
+    ]
+  },
+  "conventional": {
+    "path": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\matched-renewal-001\\fixtures\\flow\\conventional\\bin\\Release\\net9.0\\MatchedRenewal.Flow.dll",
+    "sha256": "32bec6c322c595c83f816ba7aec5834dde523e7d71394ad060c4186ef8769c16",
+    "files": [
+      {
+        "name": "FSharp.Core.dll",
+        "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+      },
+      {
+        "name": "MatchedRenewal.Flow.deps.json",
+        "sha256": "f7968eb44a30279ddc180a9c0c79836647f51676557a168903994ae722d283ca"
+      },
+      {
+        "name": "MatchedRenewal.Flow.dll",
+        "sha256": "32bec6c322c595c83f816ba7aec5834dde523e7d71394ad060c4186ef8769c16"
+      },
+      {
+        "name": "MatchedRenewal.Flow.runtimeconfig.json",
+        "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+      }
+    ],
+    "sourceFiles": [
+      {
+        "path": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\matched-renewal-001\\fixtures\\flow\\flat.agent",
+        "sha256": "be2559a6727b018c3b4f837647fb90280a38208cbb7437667e8161af6458d844"
+      },
+      {
+        "path": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\matched-renewal-001\\fixtures\\flow\\growing.agent",
+        "sha256": "411876a35f05a6d9b08c076d1b5e3509f1568c4bbf467ea2406096056db6e217"
+      },
+      {
+        "path": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\matched-renewal-001\\fixtures\\flow\\conventional\\MatchedRenewal.Flow.fsproj",
+        "sha256": "215da0a60ace696a4be87a3a7e3548ff1495b128e3b00d52da95d2d614403cc2"
+      },
+      {
+        "path": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\matched-renewal-001\\fixtures\\flow\\conventional\\Domain.fs",
+        "sha256": "d6ee10628e358ba3742d6d61f70ccd8c741ba8109f928d5a989c4ead3a633fb6"
+      },
+      {
+        "path": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\matched-renewal-001\\fixtures\\flow\\conventional\\Program.fs",
+        "sha256": "0b35f760769c7a9a4b39a49f7c97d834b17fc0f9ea416277a2e0e5bcd5b0d746"
+      }
+    ]
+  },
+  "verifierPath": "D:\\code\\AgentLang\\scripts\\Verify-FlowMatchedRenewalFixtures.ps1",
+  "verifierSha256": "23e9acb07ebf1daca4cf6e9a45fa78e75942b4e74128dd43272c2b1bb03f2d21",
+  "taskSha256": "34fc7bf29602ec91d3c3cb330c714f8ae79b9242fd529d480a47115d5c937341",
+  "scratchRoot": "D:\\code\\AgentLang\\.agentlang\\matched-fixture-flow-verification\\3952773dee0244839cbb87051cc99805",
+  "profiles": [],
+  "checks": [
+    {
+      "name": "Flow seeds preserve exact baseline record declarations",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Flow growing seed declares exactly two library words and seven cases",
+      "passed": true,
+      "detail": "words=2 tests=7"
+    },
+    {
+      "name": "Flow and archived Stack growing fixtures retain matching test case names",
+      "passed": true,
+      "detail": "Flow=customer.discounted-balance/case-sensitive,customer.discounted-balance/premium,customer.discounted-balance/premium-larger-balance,customer.discounted-balance/standard,customer.premium?/case-sensitive,customer.premium?/premium,customer.premium?/standard Stack=customer.discounted-balance/case-sensitive,customer.discounted-balance/premium,customer.discounted-balance/premium-larger-balance,customer.discounted-balance/standard,customer.premium?/case-sensitive,customer.premium?/premium,customer.premium?/standard"
+    },
+    {
+      "name": "Flow seed owns no renewal solution",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "traces": [],
+  "limits": [
+    "The 12 baseline inputs are a selected finite Float/String check, not exhaustive domain or signed-zero proof.",
+    "Snapshot hashes and stable IDs prove only the generated seed projects; root publication must pin and review generated snapshot bundles before trials.",
+    "The renewal adapter is an unsolved placeholder check; no agent trial, task solution, latency, or performance claim is made.",
+    "The sample uses String, Float, and Bool fields; it does not validate refined Email, Money, identifier, or time types."
+  ]
+}

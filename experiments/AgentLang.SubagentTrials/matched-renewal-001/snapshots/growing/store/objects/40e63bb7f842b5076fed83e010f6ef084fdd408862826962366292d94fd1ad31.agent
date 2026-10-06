@@ -1,0 +1,5 @@
+word customer.premium?(customer: Customer) -> Bool {
+    effects none
+    doc "Returns true only when the customer kind is exactly premium."
+    equals(customer.kind(), "premium")
+}

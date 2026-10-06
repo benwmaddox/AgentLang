@@ -1,0 +1,9 @@
+record Customer {
+    field kind: String;
+    field balance: Float;
+}
+
+record Subscription {
+    field term: String;
+    field renewable: Bool;
+}

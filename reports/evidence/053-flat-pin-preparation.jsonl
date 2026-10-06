@@ -1,0 +1,6 @@
+{"ok":true,"kind":"defined","text":"Flow project declarations, attached cases, refined type metadata, and bindings validated atomically.","data":{"frontend":"flow","words":[],"types":["Customer","Subscription"]}}
+{"ok":true,"kind":"commit","text":"0 attached test(s) passed; selected candidates committed.","data":[]}
+{"ok":true,"kind":"commit","text":"0 attached test(s) passed; selected candidates committed.","data":[]}
+{"ok":true,"kind":"snapshot.save","text":"Saved committed snapshot \u0027matched-renewal-start\u0027 with 0 staged item(s) excluded.","data":{"name":"matched-renewal-start","excludedCandidates":[]}}
+{"ok":true,"kind":"snapshot.load","text":"Loaded committed snapshot \u0027matched-renewal-start\u0027.","data":{"name":"matched-renewal-start","manifestHash":"272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e","virtualFiles":0,"clockValue":"2000-01-01T00:00:00Z"}}
+{"ok":true,"kind":"test","text":"0/0 test(s) passed.","data":{"results":[]}}
