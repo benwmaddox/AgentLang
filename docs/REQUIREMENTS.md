@@ -10,6 +10,9 @@ fixture checks, and 26 frozen snapshot checks. Separate Flow seeds preserve the
 archived RPN materials, pin persistent identities, and correct the conventional
 oracle to the shared task's rule. This is preparation for external-subagent
 trials, not a completed controlled comparison or the full strong business domain.
+Exact clean source CI run 37448525155 passed all 29 checks on `63e80cb`;
+downloaded identity, full validation and fixture/snapshot artifacts are saved
+in report 053 separately from the earlier dirty local gate.
 
 Latest scoped evidence: [report 052](../reports/052-default-flow-authoring.md)
 records the default Flow authoring cutover and a passing complete local

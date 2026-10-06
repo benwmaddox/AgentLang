@@ -1,6 +1,6 @@
 # Flow renewal experiment preparation
 
-Status: focused checks and complete local Release validation passed. This is fixture preparation,
+Status: focused checks, complete local Release validation and clean committed-source CI passed. This is fixture preparation,
 not a new agent trial or evidence of an efficiency improvement.
 
 The default Flow authoring milestone is now independently verified on published
@@ -21,6 +21,9 @@ words and seven tests from the earlier pilot. Conventional starts with the same
 baseline helpers as Growing. Thus Flat versus Growing investigates retained
 vocabulary, while Growing versus Conventional compares representations with
 equivalent starting helpers. A single task cannot establish cumulative savings.
+This is a single-task seeded control with explicit pilot provenance, not the
+original PRD's primitive-origin, same-model Growing/Conventional task sequence.
+Those cumulative sequence experiments remain required and unrun.
 
 The shared task applies the existing baseline customer discount, then a further
 5% when the subscription is exactly annual and renewable. That further discount
@@ -94,7 +97,21 @@ seeds and the snapshot bundles, while retaining whitespace checks with CRLF
 recognized as a line ending. All **34 byte-addressed files** have identical raw
 and staged Git blob hashes; [the byte audit](evidence/053-staged-byte-audit.json)
 records the comparison. Committed-source CI will also exercise a fresh checkout.
-Source CI and publication will be recorded after those checks succeed. No native
+Exact committed-source CI run
+[37448525155](https://github.com/benwmaddox/AgentLang/actions/runs/37448525155)
+passed all **29 checks** on a clean `prototype` checkout of
+`63e80cb639a29b76a5be4f4013424a77cdd2ef51`. The job completed in 4m7s. Downloaded
+[run identity](evidence/053-committed-source-ci.json),
+[full validation](evidence/053-committed-source-validation.json),
+[Flow fixture evidence](evidence/053-committed-source-flow-fixtures.json), and
+[frozen snapshot evidence](evidence/053-committed-source-snapshots.json) were
+audited separately from the earlier dirty local gate. The fresh checkout also
+verified the byte-preservation attributes. The following evidence-only commit
+updates reports and the requirement ledger; no executable source changes after
+this CI run. Publication fast-forwards private `main` and `prototype` together;
+postpublication main CI is a separate run to audit subsequently.
+
+No native
 allocator, mailbox execution or LLVM backend is delivered by this step. The
 optional bounded persistent-state plus processing-arena candidate remains in the
 PRD and memory research documents; it is not current runtime behavior.

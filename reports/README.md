@@ -14,6 +14,10 @@ passed the complete 29-check Release gate, including 129 Flow fixture checks and
 reproducible starting identities. Exact source CI and private publication are
 tracked separately; the full PRD and controlled research outcomes remain incomplete.
 
+Report 053 exact clean source CI passed all 29 checks on `63e80cb`
+(run 37448525155), including fresh-checkout frozen snapshot validation. Saved
+identity and validation artifacts distinguish this from the earlier local gate.
+
 Report 052 exact clean source CI passed all 27 checks on `698ebcc`
 (run 37442447178). Saved identity and validation artifacts distinguish this from
 the earlier dirty-tree gate and from subsequent report-only publication.
