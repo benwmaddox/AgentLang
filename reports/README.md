@@ -12,3 +12,7 @@ Latest local checkpoint: [052 — default Flow authoring](052-default-flow-autho
 passed the complete 27-check Release gate. Exact source CI and private publication
 are recorded in that report separately; the full PRD and controlled research
 outcomes remain incomplete.
+
+Report 052 exact clean source CI passed all 27 checks on `698ebcc`
+(run 37442447178). Saved identity and validation artifacts distinguish this from
+the earlier dirty-tree gate and from subsequent report-only publication.

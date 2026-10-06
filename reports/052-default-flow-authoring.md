@@ -1,6 +1,6 @@
 # Default Flow authoring cutover
 
-Status: complete local 27-check Release gate passed, 2026-10-06; clean committed-source CI and private publication pending.
+Status: complete local and exact clean committed-source 27-check Release gates passed, 2026-10-06. Private main integration uses the report/evidence commit after source CI.
 
 Default Flow authoring, interactive source/case editing and matching harness
 selection passed complete Release validation. Explicit Stack compatibility and
@@ -347,3 +347,26 @@ does not complete real confined host providers, full business-language fixtures,
 complete task/usage/reuse metrics, all named introspection commands, or controlled
 Flat/Growing/Conventional trials. No native allocator, mailbox, LLVM backend or
 measured agent benefit is claimed. The complete PRD goal remains active.
+
+## Exact committed-source CI and publication
+
+Source plus milestone reports were committed as
+`698ebccd0b8d4b2efd473222be2a0c479ee4c9d2`
+(`Make Flow the default authoring frontend`) and pushed to private prototype.
+[CI run 37442447178](https://github.com/benwmaddox/AgentLang/actions/runs/37442447178)
+completed successfully. The downloaded validation artifact was audited for exact
+full source SHA, branch prototype, `dirty: false`, `passed: true`, and all
+**27 checks with exit code 0**. See [CI identity/status](evidence/052-committed-source-ci.json)
+and [clean source validation](evidence/052-committed-source-validation.json).
+
+No source, tests, scripts, experiment code, workflow or solution files changed
+after that source CI. The next commit contains only this report/ledger update and
+CI evidence. Publication uses a guarded atomic fast-forward push of prototype
+and main, retaining the canonical prototype checkout and updating local main by
+compare-and-swap. Git refs are checked after the push; no force push or new
+worktree is used. A subsequent main CI is observed separately.
+
+The full PRD remains open. The next research preparation is a read-only audit of
+existing matched renewal fixtures for an equivalent Flow translation, preserving
+archived trials. Actual experiments use external subagents. Controlled outcomes,
+accurate model usage/cost and the remaining prototype capabilities are unproven.
