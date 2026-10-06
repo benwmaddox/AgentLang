@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "actor": "stateful_conventional_01",
+  "model": "gpt-6-luna",
+  "reasoningEffort": "max",
+  "forkTurns": "none",
+  "sessionId": 34185,
+  "coordinatorRepairHints": [],
+  "teardown": "Actor resumed only to close existing host with Ctrl+C; terminal exit 0.",
+  "acceptance": "Independent frozen oracle passed 34 checks on disposable copies.",
+  "sourceReview": "Helper returned path feeds Exists/Read/Write; four own category tests assert result/state/counts; documented runnable example executes."
+}

@@ -1,0 +1,147 @@
+[
+  {
+    "path": "acceptance-preflight-setup.json",
+    "bytes": 769,
+    "sha256": "70c1024ae763ab8ff8b1e629b39d7a9564d9993f46d1b11359fc77777a1fddf6"
+  },
+  {
+    "path": "acceptance-preflight.json",
+    "bytes": 23796,
+    "sha256": "cca74e8a7f1250d8526d01692c88c48fdb30c0e8d44956438e18535fa78ef88e"
+  },
+  {
+    "path": "acceptance.json",
+    "bytes": 23756,
+    "sha256": "846ed9ceb67026f667ad2f899e1b8bc8e0e0a7cc64cccbe1305ed1e7484cfb7b"
+  },
+  {
+    "path": "accepted-control-project\\Domain.fs",
+    "bytes": 2374,
+    "sha256": "89c23ef88ef88cd74e0baf9649a29bb71dbdf78af76dcd01d3d8cace38d3bdc0"
+  },
+  {
+    "path": "accepted-control-project\\Operations.fs",
+    "bytes": 513,
+    "sha256": "97fd3b36596b37dac7f855dfa1180e62b099b7e3ce619a7142fa763219479583"
+  },
+  {
+    "path": "accepted-control-project\\SelfTests.fs",
+    "bytes": 2221,
+    "sha256": "abdfa0220a3be27ef7ee2d3e273ca00750c8c9b66e6862089e05aa244b200031"
+  },
+  {
+    "path": "accepted-control-project\\StatefulPilot.fsproj",
+    "bytes": 360,
+    "sha256": "9435284d144a8723127e39ed5e3e3d3b7993e374612de80ecd7828b31bbeb570"
+  },
+  {
+    "path": "actor-report.md",
+    "bytes": 444,
+    "sha256": "105000d3d3c505dd71a40c727f089acdb9f91dbe1d138a5007d53125c59ef2f5"
+  },
+  {
+    "path": "console-preflight.json",
+    "bytes": 900,
+    "sha256": "6736300676b3b6dca87b0327f3df8ae69dbcabf072ccf2fbeb98a9ea7d2f307e"
+  },
+  {
+    "path": "coordinator-events.json",
+    "bytes": 534,
+    "sha256": "44b8c0122dda18d990233fd3b42707ada0c678b71dfda24377f9fcad9a7677d6"
+  },
+  {
+    "path": "final-project\\Domain.fs",
+    "bytes": 2374,
+    "sha256": "89c23ef88ef88cd74e0baf9649a29bb71dbdf78af76dcd01d3d8cace38d3bdc0"
+  },
+  {
+    "path": "final-project\\Operations.fs",
+    "bytes": 591,
+    "sha256": "c40a6041046ef0696c4050bde2289e51d40cd3eac032bf23a4741995826e4def"
+  },
+  {
+    "path": "final-project\\SelfTests.fs",
+    "bytes": 3734,
+    "sha256": "fd1d2e3ff7c5fad654465527dd3e10c3dd78789b7747de8be0b56a80a22da8b1"
+  },
+  {
+    "path": "final-project\\StatefulPilot.fsproj",
+    "bytes": 360,
+    "sha256": "9435284d144a8723127e39ed5e3e3d3b7993e374612de80ecd7828b31bbeb570"
+  },
+  {
+    "path": "no-op-acceptance.json",
+    "bytes": 4721,
+    "sha256": "3c718d05222798e84271cdcdae07a707c876d1fe3474662e9ef05d13bc260d69"
+  },
+  {
+    "path": "prelaunch.json",
+    "bytes": 5593,
+    "sha256": "e5ddb5e60b78064819ef4c95f5dc8bacc4003f627fc915918b84b3dfa958db00"
+  },
+  {
+    "path": "prompt.txt",
+    "bytes": 6253,
+    "sha256": "eeb668ea5e8d4d7993071f8c450ced855f17c8985fa67a1441664aaca678fa0a"
+  },
+  {
+    "path": "starting-project\\Domain.fs",
+    "bytes": 2374,
+    "sha256": "89c23ef88ef88cd74e0baf9649a29bb71dbdf78af76dcd01d3d8cace38d3bdc0"
+  },
+  {
+    "path": "starting-project\\Operations.fs",
+    "bytes": 169,
+    "sha256": "553fb9cc317c96032d5a1f3601e810de95bfc8f40b649293f007b5839ed359a4"
+  },
+  {
+    "path": "starting-project\\SelfTests.fs",
+    "bytes": 805,
+    "sha256": "031a19a4767e308e0e918dbade44dbde807483f4e93134b4491e1421fd7b910f"
+  },
+  {
+    "path": "starting-project\\StatefulPilot.fsproj",
+    "bytes": 360,
+    "sha256": "9435284d144a8723127e39ed5e3e3d3b7993e374612de80ecd7828b31bbeb570"
+  },
+  {
+    "path": "starting-state.json",
+    "bytes": 2295,
+    "sha256": "34cd10067b1d1467b950bfc431047bf683daeafe0bc9145cf721ec4259e3d365"
+  },
+  {
+    "path": "trace-audit.json",
+    "bytes": 2949,
+    "sha256": "ecea9a409a521f5588bd76e01f196d9dab12051677cbfb03bd08b222a359343b"
+  },
+  {
+    "path": "trace.jsonl",
+    "bytes": 55566,
+    "sha256": "7210329ad1d449d599ce8b025a878d36b03977e2c0c72c2dde873f88f90092d8"
+  },
+  {
+    "path": "wrong-empty-acceptance.json",
+    "bytes": 12024,
+    "sha256": "a639df18d9730c29ce2bdf1d9045004700774ce5e81ca19e79e31418c5c039a6"
+  },
+  {
+    "path": "wrong-empty-project\\Domain.fs",
+    "bytes": 2374,
+    "sha256": "89c23ef88ef88cd74e0baf9649a29bb71dbdf78af76dcd01d3d8cace38d3bdc0"
+  },
+  {
+    "path": "wrong-empty-project\\Operations.fs",
+    "bytes": 599,
+    "sha256": "84a821a3ad64633a67346fb7fcfe8245589e20440f23a7bfd9c8a091b2347025"
+  },
+  {
+    "path": "wrong-empty-project\\SelfTests.fs",
+    "bytes": 2221,
+    "sha256": "abdfa0220a3be27ef7ee2d3e273ca00750c8c9b66e6862089e05aa244b200031"
+  },
+  {
+    "path": "wrong-empty-project\\StatefulPilot.fsproj",
+    "bytes": 360,
+    "sha256": "9435284d144a8723127e39ed5e3e3d3b7993e374612de80ecd7828b31bbeb570"
+  }
+]

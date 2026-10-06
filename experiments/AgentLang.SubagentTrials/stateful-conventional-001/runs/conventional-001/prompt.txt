@@ -1,0 +1,86 @@
+Run conventional-001 as a fresh GPT-6 Luna/max coding agent with no inherited turns.
+Your ownership is only Operations.fs and SelfTests.fs in D:\code\AgentLang\.agentlang\stateful-conventional-001\actor-01 through the supplied broker. You are not alone; preserve other agents' files. Domain.fs and StatefulPilot.fsproj must remain byte-identical. Preserve runSeedTests exactly; add your tests through runOwnTests. Inspect existing capabilities before editing, reuse useful abstractions, and preserve seeded behavior.
+
+Human authorization covers isolated trial-project edits and local tests: "Yes, run the remaining isolated experiments". If automatic approval rejects an operation, report the rejection and stop dependent work; do not bypass it. No arbitrary shell commands, raw file tools, coordinator files, independent oracles, sibling runs or previous solutions. Do not spawn or delegate.
+
+# Queue an invoice reminder exactly once
+
+Inspect the seeded invoice types, helper, and self-test entry point. Implement
+`ReminderOperations.queueOnce` in `Operations.fs` with this signature:
+
+```fsharp
+IReminderFiles -> Invoice -> string
+```
+
+Use `Invoice.reminderPath` to derive `outbox/invoice-reminders/<invoice-id>`.
+When the status text is exactly `open` (case-sensitive), check whether the
+path exists. If it does, read and return the exact contents without changing
+them. If it does not, write `queued` and return `queued`. For every other
+status, return `not-open` without calling `Exists`, `Read`, or `Write`.
+
+Use the explicit provider passed to the operation. The supplied
+`Execution.run` wrapper preflights read and write permission before invoking
+an operation; if either permission is missing, it raises
+`InvalidOperationException("CAPABILITY_DENIED")` before any provider call.
+Do not modify `Domain.fs`, `StatefulPilot.fsproj`, or the bytes between the
+`<immutable-seed-tests>` markers in `SelfTests.fs`.
+
+Add a concise XML documentation comment for `queueOnce`. Add meaningful
+assertion-based self-tests to `SelfTests.fs` for a missing reminder, an
+existing `queued` reminder, an existing reminder with different marker text,
+and a non-open invoice with unchanged state and zero provider calls. Run all
+four from `runOwnTests()` and print `OWN_TESTS_PASSED=4` only after their
+assertions pass. Also add a runnable example function to `SelfTests.fs`, invoke
+it from `runOwnTests()`, and print `EXAMPLE_QUEUE_REMINDER=queued` when its
+open-invoice example succeeds. The seeded console entry point already runs the
+retained helper tests and then `runOwnTests()`.
+
+Run the supplied broker's `validate` operation and preserve the two seeded
+path-helper tests. The broker selects `StatefulPilot.fsproj` for local execution.
+
+
+You work in a conventional F# console project through a small repository JSONL
+broker. Start the exact supplied trial host once and send one request per line
+through its returned session. The coordinator fixes the project and validation
+target; you cannot choose arbitrary commands.
+
+```json
+{"op":"search","query":"Customer"}
+{"op":"read","path":"Domain.fs"}
+{"op":"inspect","path":"Domain.fs"}
+```
+
+Read returns exact UTF-8 content and a SHA-256 hash. Paths must be relative to
+the editable project. A small edit uses a unique exact context anchor:
+
+```json
+{"op":"patch","path":"Domain.fs","expectedSha256":"<hash from read>","oldText":"<unique current text>","newText":"<replacement text>"}
+```
+
+All fields are required strings. Empty newText deletes the matched text.
+OldText must be nonempty and occur exactly once, including overlapping matches.
+Matching is ordinal; no newline normalization or fuzzy matching occurs. Stale
+hashes, missing/ambiguous anchors, invalid paths and oversized results fail
+without editing. Success returns the new hash. Re-read after uncertainty.
+Full-file `replace` remains available with path, expectedSha256 and content.
+
+```json
+{"op":"validate"}
+```
+
+Validate runs the host-selected F# project including your self-tests. Add
+meaningful branch and boundary assertions, and preserve earlier behavior/tests.
+The independent coordinator oracle is separate from these self-tests. Requests
+can use top-level fields or nested args, with exactly the documented fields.
+The host permits inspect, read, search, patch, replace and validate. F# module
+order follows ordinary lexical name resolution. Do not invoke raw file tools,
+shell edits, other executables or arbitrary build commands during the trial.
+
+
+This task uses an explicit injected virtual-file provider. Exists and Read each count as fs.read; Write counts as fs.write. Snapshot state is a Map exposed by the fixture provider. Execution.run is a host-style preflight wrapper; retain it and do not implement a new capability policy. F# self-tests use the conventional console runner; no instruction-coverage tooling is supplied. Add the required meaningful test categories, plus a documented runnable example. Do not invent coverage or model-token measurements.
+
+Execute exactly this PowerShell command using exec_command with workdir D:\code\AgentLang, sandbox_permissions require_escalated, tty true, short initial yield. The known sandbox ACL helper requires host execution; this is the authorized local isolated experiment.
+
+& 'D:\code\AgentLang\scripts\Start-SubagentTrialHost.ps1' -CliDll 'D:\code\AgentLang\.agentlang\stateful-conventional-001\broker-bin\AgentLang.Conventional.Cli.dll' -ProjectPath 'D:\code\AgentLang\.agentlang\stateful-conventional-001\actor-01' -TracePath 'D:\code\AgentLang\experiments\AgentLang.SubagentTrials\stateful-conventional-001\runs\conventional-001\trace.jsonl' -AllowedOperations @('inspect','read','search','patch','replace','validate') -Profile conventional -AdditionalCliArguments @('--validation-project','StatefulPilot.fsproj') -ExchangeTimeoutMilliseconds 120000 -MaxExchanges 100
+
+No startup banner is printed. Send one JSONL request per line on the same write_stdin session. An observation timeout is not failure: resume the same handle without replaying an uncertain request. Leave the host open when finished and report its session ID for coordinator teardown. Do not send quit commands, EOF or control characters. Report actual validation outcomes, errors and missing capabilities.

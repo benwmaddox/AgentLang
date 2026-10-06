@@ -1,0 +1,23 @@
+{
+  "sourceRevision": "20388a3faa781f8318af3c503a794108e8e63776",
+  "createdAtUtc": "2026-10-06T22:10:14.2543452+00:00",
+  "files": [
+    {
+      "path": "Domain.fs",
+      "sha256": "89c23ef88ef88cd74e0baf9649a29bb71dbdf78af76dcd01d3d8cace38d3bdc0"
+    },
+    {
+      "path": "Operations.fs",
+      "sha256": "97fd3b36596b37dac7f855dfa1180e62b099b7e3ce619a7142fa763219479583"
+    },
+    {
+      "path": "SelfTests.fs",
+      "sha256": "abdfa0220a3be27ef7ee2d3e273ca00750c8c9b66e6862089e05aa244b200031"
+    },
+    {
+      "path": "StatefulPilot.fsproj",
+      "sha256": "9435284d144a8723127e39ed5e3e3d3b7993e374612de80ecd7828b31bbeb570"
+    }
+  ],
+  "controlPath": "D:\\code\\AgentLang\\.agentlang\\stateful-conventional-001\\acceptance-control"
+}

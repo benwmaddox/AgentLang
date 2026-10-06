@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "sourceRevision": "20388a3faa781f8318af3c503a794108e8e63776",
+  "runs": [
+    {
+      "project": "seed-project/StatefulPilot.fsproj",
+      "command": "dotnet run --project .agentlang/stateful-conventional-001/seed-project/StatefulPilot.fsproj -c Release",
+      "exitCode": 0,
+      "output": [
+        "Seed helper tests passed: 2"
+      ]
+    },
+    {
+      "project": "acceptance-control/StatefulPilot.fsproj",
+      "command": "dotnet run --project .agentlang/stateful-conventional-001/acceptance-control/StatefulPilot.fsproj -c Release",
+      "exitCode": 0,
+      "output": [
+        "Seed helper tests passed: 2",
+        "OWN_TESTS_PASSED=4",
+        "EXAMPLE_QUEUE_REMINDER=queued"
+      ]
+    }
+  ],
+  "limits": [
+    "Preparation/self-test control only; no agent trial outcome.",
+    "Independent oracle has not yet been frozen."
+  ]
+}

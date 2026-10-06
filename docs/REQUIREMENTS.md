@@ -130,6 +130,17 @@ snapshot mismatch is retained and the fixture uses a relative path. Complete
 providers/domain parity, matched stateful controls and controlled costs remain
 open; this smoke is not a completed full-bank task adapter.
 
+[Checkpoint 072](../reports/072-conventional-stateful-comparison.md) adds the
+fresh conventional stateful control: 34 independent checks, preserved nominal
+types/helper/tests, a runnable example and cross-process provider restoration.
+Both arms complete the reminder task and reuse their retained helper. F# uses
+12 protocol exchanges versus AgentLang's 22; differing tool/publication work
+and absent model usage prevent a controlled efficiency conclusion. A wrong
+empty-marker implementation passes its own tests but fails the independent
+oracle. Next priority is a broader executable strong-business task sequence
+and repeated paired evaluation; complete domain/provider parity, the 60-task
+suite and measured cost/context requirements remain open.
+
 Historical external-agent workflow evidence: [report 054](../reports/054-flow-renewal-agent-control.md)
 records a separate inherited-history Luna/max control that created one tested
 library word by composing a retained domain word. Fresh-process acceptance

@@ -1,0 +1,157 @@
+[
+  {
+    "path": "experiments/AgentLang.SubagentTrials/stateful-conventional-001/runs/conventional-001/acceptance-preflight-setup.json",
+    "sha256": "70c1024ae763ab8ff8b1e629b39d7a9564d9993f46d1b11359fc77777a1fddf6",
+    "gitObject": "4e646f740095397cc4c1b678e174ca32e730eeed"
+  },
+  {
+    "path": "experiments/AgentLang.SubagentTrials/stateful-conventional-001/runs/conventional-001/acceptance-preflight.json",
+    "sha256": "cca74e8a7f1250d8526d01692c88c48fdb30c0e8d44956438e18535fa78ef88e",
+    "gitObject": "5cbcc0c08acbfecd9a3ede750a559a82a37b06f3"
+  },
+  {
+    "path": "experiments/AgentLang.SubagentTrials/stateful-conventional-001/runs/conventional-001/acceptance.json",
+    "sha256": "846ed9ceb67026f667ad2f899e1b8bc8e0e0a7cc64cccbe1305ed1e7484cfb7b",
+    "gitObject": "a5fd742333f0885d630dbb16af83f521daa41eed"
+  },
+  {
+    "path": "experiments/AgentLang.SubagentTrials/stateful-conventional-001/runs/conventional-001/accepted-control-project/Domain.fs",
+    "sha256": "89c23ef88ef88cd74e0baf9649a29bb71dbdf78af76dcd01d3d8cace38d3bdc0",
+    "gitObject": "88fb71ff8bb49f191f23c6585796af444addc25b"
+  },
+  {
+    "path": "experiments/AgentLang.SubagentTrials/stateful-conventional-001/runs/conventional-001/accepted-control-project/Operations.fs",
+    "sha256": "97fd3b36596b37dac7f855dfa1180e62b099b7e3ce619a7142fa763219479583",
+    "gitObject": "bd58567040ec71a2a1f1376c770b5abdf4287adb"
+  },
+  {
+    "path": "experiments/AgentLang.SubagentTrials/stateful-conventional-001/runs/conventional-001/accepted-control-project/SelfTests.fs",
+    "sha256": "abdfa0220a3be27ef7ee2d3e273ca00750c8c9b66e6862089e05aa244b200031",
+    "gitObject": "5995dfba4e7609eaeb6eb6356cbbf2807a583873"
+  },
+  {
+    "path": "experiments/AgentLang.SubagentTrials/stateful-conventional-001/runs/conventional-001/accepted-control-project/StatefulPilot.fsproj",
+    "sha256": "9435284d144a8723127e39ed5e3e3d3b7993e374612de80ecd7828b31bbeb570",
+    "gitObject": "10f9a81d35432ad311de7a960f365387a0735ef5"
+  },
+  {
+    "path": "experiments/AgentLang.SubagentTrials/stateful-conventional-001/runs/conventional-001/actor-report.md",
+    "sha256": "105000d3d3c505dd71a40c727f089acdb9f91dbe1d138a5007d53125c59ef2f5",
+    "gitObject": "8bc053eac40341cc1e65f056b97171f0f36ec90f"
+  },
+  {
+    "path": "experiments/AgentLang.SubagentTrials/stateful-conventional-001/runs/conventional-001/artifact-inventory.json",
+    "sha256": "e2656369d956a41e522d8fdec8b5e0b3b03f77268134ad565a109d65e64ea9f6",
+    "gitObject": "4a7209d0aad712cb2d7e13b1d790f3d68c3bf7d3"
+  },
+  {
+    "path": "experiments/AgentLang.SubagentTrials/stateful-conventional-001/runs/conventional-001/console-preflight.json",
+    "sha256": "6736300676b3b6dca87b0327f3df8ae69dbcabf072ccf2fbeb98a9ea7d2f307e",
+    "gitObject": "21cb252153ed62e29258673943c0002c1458662c"
+  },
+  {
+    "path": "experiments/AgentLang.SubagentTrials/stateful-conventional-001/runs/conventional-001/coordinator-events.json",
+    "sha256": "44b8c0122dda18d990233fd3b42707ada0c678b71dfda24377f9fcad9a7677d6",
+    "gitObject": "6e2c11586d3a5a1dc292f4e78bf351cefcaafbf2"
+  },
+  {
+    "path": "experiments/AgentLang.SubagentTrials/stateful-conventional-001/runs/conventional-001/final-project/Domain.fs",
+    "sha256": "89c23ef88ef88cd74e0baf9649a29bb71dbdf78af76dcd01d3d8cace38d3bdc0",
+    "gitObject": "88fb71ff8bb49f191f23c6585796af444addc25b"
+  },
+  {
+    "path": "experiments/AgentLang.SubagentTrials/stateful-conventional-001/runs/conventional-001/final-project/Operations.fs",
+    "sha256": "c40a6041046ef0696c4050bde2289e51d40cd3eac032bf23a4741995826e4def",
+    "gitObject": "b8ec80753fb7d29b27b54b1db12cb33ddab27534"
+  },
+  {
+    "path": "experiments/AgentLang.SubagentTrials/stateful-conventional-001/runs/conventional-001/final-project/SelfTests.fs",
+    "sha256": "fd1d2e3ff7c5fad654465527dd3e10c3dd78789b7747de8be0b56a80a22da8b1",
+    "gitObject": "988e80a1c34ab85f9d907782701208d1240cc6d0"
+  },
+  {
+    "path": "experiments/AgentLang.SubagentTrials/stateful-conventional-001/runs/conventional-001/final-project/StatefulPilot.fsproj",
+    "sha256": "9435284d144a8723127e39ed5e3e3d3b7993e374612de80ecd7828b31bbeb570",
+    "gitObject": "10f9a81d35432ad311de7a960f365387a0735ef5"
+  },
+  {
+    "path": "experiments/AgentLang.SubagentTrials/stateful-conventional-001/runs/conventional-001/no-op-acceptance.json",
+    "sha256": "3c718d05222798e84271cdcdae07a707c876d1fe3474662e9ef05d13bc260d69",
+    "gitObject": "f50a3897c53095587377e03dadf8d662f51c3b3d"
+  },
+  {
+    "path": "experiments/AgentLang.SubagentTrials/stateful-conventional-001/runs/conventional-001/prelaunch.json",
+    "sha256": "e5ddb5e60b78064819ef4c95f5dc8bacc4003f627fc915918b84b3dfa958db00",
+    "gitObject": "8ba631da49e79862790da778a62009ae7b7fcf17"
+  },
+  {
+    "path": "experiments/AgentLang.SubagentTrials/stateful-conventional-001/runs/conventional-001/prompt.txt",
+    "sha256": "eeb668ea5e8d4d7993071f8c450ced855f17c8985fa67a1441664aaca678fa0a",
+    "gitObject": "dfed451a5275896fcee351432898b14d57eda18f"
+  },
+  {
+    "path": "experiments/AgentLang.SubagentTrials/stateful-conventional-001/runs/conventional-001/starting-project/Domain.fs",
+    "sha256": "89c23ef88ef88cd74e0baf9649a29bb71dbdf78af76dcd01d3d8cace38d3bdc0",
+    "gitObject": "88fb71ff8bb49f191f23c6585796af444addc25b"
+  },
+  {
+    "path": "experiments/AgentLang.SubagentTrials/stateful-conventional-001/runs/conventional-001/starting-project/Operations.fs",
+    "sha256": "553fb9cc317c96032d5a1f3601e810de95bfc8f40b649293f007b5839ed359a4",
+    "gitObject": "d7e461d0f1133427645ef74199b5829dc64e0be9"
+  },
+  {
+    "path": "experiments/AgentLang.SubagentTrials/stateful-conventional-001/runs/conventional-001/starting-project/SelfTests.fs",
+    "sha256": "031a19a4767e308e0e918dbade44dbde807483f4e93134b4491e1421fd7b910f",
+    "gitObject": "e17673afeec8f4c6ef46d4060a16e922dfa6dd37"
+  },
+  {
+    "path": "experiments/AgentLang.SubagentTrials/stateful-conventional-001/runs/conventional-001/starting-project/StatefulPilot.fsproj",
+    "sha256": "9435284d144a8723127e39ed5e3e3d3b7993e374612de80ecd7828b31bbeb570",
+    "gitObject": "10f9a81d35432ad311de7a960f365387a0735ef5"
+  },
+  {
+    "path": "experiments/AgentLang.SubagentTrials/stateful-conventional-001/runs/conventional-001/starting-state.json",
+    "sha256": "34cd10067b1d1467b950bfc431047bf683daeafe0bc9145cf721ec4259e3d365",
+    "gitObject": "b4baeb934f7ee143c3d0afd9a3a48631b6212be7"
+  },
+  {
+    "path": "experiments/AgentLang.SubagentTrials/stateful-conventional-001/runs/conventional-001/trace-audit.json",
+    "sha256": "ecea9a409a521f5588bd76e01f196d9dab12051677cbfb03bd08b222a359343b",
+    "gitObject": "ad250fed27a0d664f019e70d434e45b742abd3ff"
+  },
+  {
+    "path": "experiments/AgentLang.SubagentTrials/stateful-conventional-001/runs/conventional-001/trace.jsonl",
+    "sha256": "7210329ad1d449d599ce8b025a878d36b03977e2c0c72c2dde873f88f90092d8",
+    "gitObject": "796aff5ead3ba5340623dee99ebd58be5eb974ba"
+  },
+  {
+    "path": "experiments/AgentLang.SubagentTrials/stateful-conventional-001/runs/conventional-001/wrong-empty-acceptance.json",
+    "sha256": "a639df18d9730c29ce2bdf1d9045004700774ce5e81ca19e79e31418c5c039a6",
+    "gitObject": "7e74b0f300171a4dd83ccc0ddb6f252a22ea9a31"
+  },
+  {
+    "path": "experiments/AgentLang.SubagentTrials/stateful-conventional-001/runs/conventional-001/wrong-empty-project/Domain.fs",
+    "sha256": "89c23ef88ef88cd74e0baf9649a29bb71dbdf78af76dcd01d3d8cace38d3bdc0",
+    "gitObject": "88fb71ff8bb49f191f23c6585796af444addc25b"
+  },
+  {
+    "path": "experiments/AgentLang.SubagentTrials/stateful-conventional-001/runs/conventional-001/wrong-empty-project/Operations.fs",
+    "sha256": "84a821a3ad64633a67346fb7fcfe8245589e20440f23a7bfd9c8a091b2347025",
+    "gitObject": "1eeda3badaed6ff0471ff2915a4dac7cc303ad66"
+  },
+  {
+    "path": "experiments/AgentLang.SubagentTrials/stateful-conventional-001/runs/conventional-001/wrong-empty-project/SelfTests.fs",
+    "sha256": "abdfa0220a3be27ef7ee2d3e273ca00750c8c9b66e6862089e05aa244b200031",
+    "gitObject": "5995dfba4e7609eaeb6eb6356cbbf2807a583873"
+  },
+  {
+    "path": "experiments/AgentLang.SubagentTrials/stateful-conventional-001/runs/conventional-001/wrong-empty-project/StatefulPilot.fsproj",
+    "sha256": "9435284d144a8723127e39ed5e3e3d3b7993e374612de80ecd7828b31bbeb570",
+    "gitObject": "10f9a81d35432ad311de7a960f365387a0735ef5"
+  },
+  {
+    "path": "reports/evidence/072-verify-conventional-stateful.ps1",
+    "sha256": "d9fb0f6fa7eb5295238756b3a80b02db8c0230fbedffe37ec3ac4927343c8a65",
+    "gitObject": "8cb217b22ce536908eec55f23568e7b4dc60123a"
+  }
+]

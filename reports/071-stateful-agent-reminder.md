@@ -128,3 +128,8 @@ Next priority is a matched conventional stateful control and broader executable
 business tasks, keeping prompts/fixtures and acceptance equivalent. The full
 60-task suite, controlled cost/context results and complete PRD audit remain
 required. LLVM, arenas and mailbox research stay deferred; the goal stays active.
+
+Publication follow-up: clean [main CI](evidence/071-main-ci.json) passed all 32
+checks at `20388a3`; its [validation artifact](evidence/071-main-validation.json)
+records the exact revision and `dirty: false`. This is separate from the frozen
+trial source/runtime pin above.

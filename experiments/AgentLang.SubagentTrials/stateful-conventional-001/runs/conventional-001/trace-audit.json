@@ -1,0 +1,114 @@
+{
+  "requests": [
+    {
+      "responseBytes": 221,
+      "ok": true,
+      "op": "inspect",
+      "requestBytes": 40,
+      "path": "Operations.fs"
+    },
+    {
+      "responseBytes": 409,
+      "ok": true,
+      "op": "read",
+      "requestBytes": 37,
+      "path": "Operations.fs"
+    },
+    {
+      "responseBytes": 220,
+      "ok": true,
+      "op": "inspect",
+      "requestBytes": 39,
+      "path": "SelfTests.fs"
+    },
+    {
+      "responseBytes": 2792,
+      "ok": true,
+      "op": "read",
+      "requestBytes": 33,
+      "path": "Domain.fs"
+    },
+    {
+      "responseBytes": 1156,
+      "ok": true,
+      "op": "read",
+      "requestBytes": 36,
+      "path": "SelfTests.fs"
+    },
+    {
+      "responseBytes": 192,
+      "ok": true,
+      "op": "patch",
+      "requestBytes": 807,
+      "path": "Operations.fs"
+    },
+    {
+      "responseBytes": 191,
+      "ok": true,
+      "op": "patch",
+      "requestBytes": 3441,
+      "path": "SelfTests.fs"
+    },
+    {
+      "responseBytes": 425,
+      "ok": true,
+      "op": "validate",
+      "requestBytes": 18,
+      "path": null
+    },
+    {
+      "responseBytes": 215,
+      "ok": true,
+      "op": "inspect",
+      "requestBytes": 36,
+      "path": "Domain.fs"
+    },
+    {
+      "responseBytes": 240,
+      "ok": true,
+      "op": "inspect",
+      "requestBytes": 47,
+      "path": "StatefulPilot.fsproj"
+    },
+    {
+      "responseBytes": 222,
+      "ok": true,
+      "op": "inspect",
+      "requestBytes": 40,
+      "path": "Operations.fs"
+    },
+    {
+      "responseBytes": 222,
+      "ok": true,
+      "op": "inspect",
+      "requestBytes": 39,
+      "path": "SelfTests.fs"
+    }
+  ],
+  "exchanges": 12,
+  "traceSha256": "7210329ad1d449d599ce8b025a878d36b03977e2c0c72c2dde873f88f90092d8",
+  "startingStateSha256": "34cd10067b1d1467b950bfc431047bf683daeafe0bc9145cf721ec4259e3d365",
+  "selectedResponsePayloadBytes": 6505,
+  "errors": [],
+  "schemaVersion": 1,
+  "limits": [
+    "Schema 1 records selected responses before stdout flush; no delivery/model-consumption claim.",
+    "Payload counts exclude LF but include CR.",
+    "No exact model tokens, turns, controlled latency or context-window measurement.",
+    "One paired stateful feasibility task; explicit provider differs from runtime effect boundary."
+  ],
+  "requestPayloadBytes": 4613,
+  "passed": true,
+  "sessionEnd": {
+    "event": "session-end",
+    "finishedUtc": "2026-10-06T18:22:19.3926603-04:00",
+    "exchangeCount": 12,
+    "hostExitCode": 0,
+    "runtimeExitCode": 0,
+    "runtimeStderrPrefixBytes": 0,
+    "runtimeStderrTotalBytes": 0,
+    "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runtimeStderrCaptureTruncated": false
+  },
+  "independentAcceptanceScriptSha256": "d9fb0f6fa7eb5295238756b3a80b02db8c0230fbedffe37ec3ac4927343c8a65"
+}

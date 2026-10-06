@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "sourceHead": "20388a3faa781f8318af3c503a794108e8e63776",
+  "seedProjectPath": ".agentlang/stateful-conventional-001/seed-project",
+  "actorProjectPath": ".agentlang/stateful-conventional-001/actor-01",
+  "startingProjectPath": "experiments/AgentLang.SubagentTrials/stateful-conventional-001/runs/conventional-001/starting-project",
+  "seedProjectFiles": [
+    {
+      "path": "Domain.fs",
+      "bytes": 2374,
+      "sha256": "89c23ef88ef88cd74e0baf9649a29bb71dbdf78af76dcd01d3d8cace38d3bdc0"
+    },
+    {
+      "path": "Operations.fs",
+      "bytes": 169,
+      "sha256": "553fb9cc317c96032d5a1f3601e810de95bfc8f40b649293f007b5839ed359a4"
+    },
+    {
+      "path": "SelfTests.fs",
+      "bytes": 805,
+      "sha256": "031a19a4767e308e0e918dbade44dbde807483f4e93134b4491e1421fd7b910f"
+    },
+    {
+      "path": "StatefulPilot.fsproj",
+      "bytes": 360,
+      "sha256": "9435284d144a8723127e39ed5e3e3d3b7993e374612de80ecd7828b31bbeb570"
+    }
+  ],
+  "actorProjectFiles": [
+    {
+      "path": "Domain.fs",
+      "bytes": 2374,
+      "sha256": "89c23ef88ef88cd74e0baf9649a29bb71dbdf78af76dcd01d3d8cace38d3bdc0"
+    },
+    {
+      "path": "Operations.fs",
+      "bytes": 169,
+      "sha256": "553fb9cc317c96032d5a1f3601e810de95bfc8f40b649293f007b5839ed359a4"
+    },
+    {
+      "path": "SelfTests.fs",
+      "bytes": 805,
+      "sha256": "031a19a4767e308e0e918dbade44dbde807483f4e93134b4491e1421fd7b910f"
+    },
+    {
+      "path": "StatefulPilot.fsproj",
+      "bytes": 360,
+      "sha256": "9435284d144a8723127e39ed5e3e3d3b7993e374612de80ecd7828b31bbeb570"
+    }
+  ],
+  "startingProjectFiles": [
+    {
+      "path": "Domain.fs",
+      "bytes": 2374,
+      "sha256": "89c23ef88ef88cd74e0baf9649a29bb71dbdf78af76dcd01d3d8cace38d3bdc0"
+    },
+    {
+      "path": "Operations.fs",
+      "bytes": 169,
+      "sha256": "553fb9cc317c96032d5a1f3601e810de95bfc8f40b649293f007b5839ed359a4"
+    },
+    {
+      "path": "SelfTests.fs",
+      "bytes": 805,
+      "sha256": "031a19a4767e308e0e918dbade44dbde807483f4e93134b4491e1421fd7b910f"
+    },
+    {
+      "path": "StatefulPilot.fsproj",
+      "bytes": 360,
+      "sha256": "9435284d144a8723127e39ed5e3e3d3b7993e374612de80ecd7828b31bbeb570"
+    }
+  ]
+}

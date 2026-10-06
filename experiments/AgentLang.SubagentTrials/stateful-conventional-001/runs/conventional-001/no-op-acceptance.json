@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "passed": false,
+  "failure": "Conventional stateful acceptance failed: queueOnce has adjacent XML documentation. ",
+  "project": "D:\\code\\AgentLang\\.agentlang\\stateful-conventional-001\\actor-01",
+  "seed": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\stateful-conventional-001\\runs\\conventional-001\\starting-project",
+  "output": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\stateful-conventional-001\\runs\\conventional-001\\no-op-acceptance.json",
+  "snapshotPath": "D:\\code\\AgentLang\\.agentlang\\stateful-conventional-acceptance-5c8f55916f8346a1bcd86f2ad12bec6e\\after-first-reminder.json",
+  "verifierSha256": "d9fb0f6fa7eb5295238756b3a80b02db8c0230fbedffe37ec3ac4927343c8a65",
+  "checks": [
+    {
+      "name": "frozen seed and actor project are separate",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\stateful-conventional-001\\actor-01"
+    },
+    {
+      "name": "evidence path is outside the source and frozen seed",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\stateful-conventional-001\\runs\\conventional-001\\no-op-acceptance.json"
+    },
+    {
+      "name": "Domain.fs remains byte-identical to the seed",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "StatefulPilot.fsproj remains byte-identical to the seed",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "frozen seed self-test prefix and implementation are retained byte-for-byte",
+      "passed": true,
+      "details": "marker-delimited helper test body"
+    },
+    {
+      "name": "entry point still invokes both frozen and actor test hooks in order",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "only Operations.fs and SelfTests.fs may change from the seed",
+      "passed": true,
+      "details": "changed=; added=; removed="
+    },
+    {
+      "name": "queueOnce has adjacent XML documentation",
+      "passed": false,
+      "details": ""
+    }
+  ],
+  "processes": [],
+  "seedInventoryBefore": [
+    {
+      "path": "Domain.fs",
+      "sha256": "89c23ef88ef88cd74e0baf9649a29bb71dbdf78af76dcd01d3d8cace38d3bdc0"
+    },
+    {
+      "path": "Operations.fs",
+      "sha256": "553fb9cc317c96032d5a1f3601e810de95bfc8f40b649293f007b5839ed359a4"
+    },
+    {
+      "path": "SelfTests.fs",
+      "sha256": "031a19a4767e308e0e918dbade44dbde807483f4e93134b4491e1421fd7b910f"
+    },
+    {
+      "path": "StatefulPilot.fsproj",
+      "sha256": "9435284d144a8723127e39ed5e3e3d3b7993e374612de80ecd7828b31bbeb570"
+    }
+  ],
+  "seedInventoryAfter": [
+    {
+      "path": "Domain.fs",
+      "sha256": "89c23ef88ef88cd74e0baf9649a29bb71dbdf78af76dcd01d3d8cace38d3bdc0"
+    },
+    {
+      "path": "Operations.fs",
+      "sha256": "553fb9cc317c96032d5a1f3601e810de95bfc8f40b649293f007b5839ed359a4"
+    },
+    {
+      "path": "SelfTests.fs",
+      "sha256": "031a19a4767e308e0e918dbade44dbde807483f4e93134b4491e1421fd7b910f"
+    },
+    {
+      "path": "StatefulPilot.fsproj",
+      "sha256": "9435284d144a8723127e39ed5e3e3d3b7993e374612de80ecd7828b31bbeb570"
+    }
+  ],
+  "projectInventoryBefore": [
+    {
+      "path": "Domain.fs",
+      "sha256": "89c23ef88ef88cd74e0baf9649a29bb71dbdf78af76dcd01d3d8cace38d3bdc0"
+    },
+    {
+      "path": "Operations.fs",
+      "sha256": "553fb9cc317c96032d5a1f3601e810de95bfc8f40b649293f007b5839ed359a4"
+    },
+    {
+      "path": "SelfTests.fs",
+      "sha256": "031a19a4767e308e0e918dbade44dbde807483f4e93134b4491e1421fd7b910f"
+    },
+    {
+      "path": "StatefulPilot.fsproj",
+      "sha256": "9435284d144a8723127e39ed5e3e3d3b7993e374612de80ecd7828b31bbeb570"
+    }
+  ],
+  "projectInventoryAfter": [
+    {
+      "path": "Domain.fs",
+      "sha256": "89c23ef88ef88cd74e0baf9649a29bb71dbdf78af76dcd01d3d8cace38d3bdc0"
+    },
+    {
+      "path": "Operations.fs",
+      "sha256": "553fb9cc317c96032d5a1f3601e810de95bfc8f40b649293f007b5839ed359a4"
+    },
+    {
+      "path": "SelfTests.fs",
+      "sha256": "031a19a4767e308e0e918dbade44dbde807483f4e93134b4491e1421fd7b910f"
+    },
+    {
+      "path": "StatefulPilot.fsproj",
+      "sha256": "9435284d144a8723127e39ed5e3e3d3b7993e374612de80ecd7828b31bbeb570"
+    }
+  ],
+  "limits": [
+    "Fresh copied conventional project and in-memory provider only; this is not a filesystem sandbox.",
+    "F# self-test markers are runner evidence; independent behavior, effect-count, state, capability and nominal-type probes are separate.",
+    "F# instruction and branch coverage and AgentLang effect-runtime parity are not claimed."
+  ]
+}

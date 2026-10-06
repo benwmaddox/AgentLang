@@ -1,0 +1,238 @@
+{
+  "schemaVersion": 1,
+  "passed": false,
+  "failure": "Conventional stateful acceptance failed: existing empty marker returns an empty string without rewriting. ",
+  "project": "D:\\code\\AgentLang\\.agentlang\\stateful-conventional-001\\acceptance-wrong-empty",
+  "seed": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\stateful-conventional-001\\runs\\conventional-001\\starting-project",
+  "output": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\stateful-conventional-001\\runs\\conventional-001\\wrong-empty-acceptance.json",
+  "snapshotPath": "D:\\code\\AgentLang\\.agentlang\\stateful-conventional-acceptance-d12e8d4fd8a64fd8b269b91c52959457\\after-first-reminder.json",
+  "verifierSha256": "d9fb0f6fa7eb5295238756b3a80b02db8c0230fbedffe37ec3ac4927343c8a65",
+  "checks": [
+    {
+      "name": "frozen seed and actor project are separate",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\stateful-conventional-001\\acceptance-wrong-empty"
+    },
+    {
+      "name": "evidence path is outside the source and frozen seed",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\stateful-conventional-001\\runs\\conventional-001\\wrong-empty-acceptance.json"
+    },
+    {
+      "name": "Domain.fs remains byte-identical to the seed",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "StatefulPilot.fsproj remains byte-identical to the seed",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "frozen seed self-test prefix and implementation are retained byte-for-byte",
+      "passed": true,
+      "details": "marker-delimited helper test body"
+    },
+    {
+      "name": "entry point still invokes both frozen and actor test hooks in order",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "only Operations.fs and SelfTests.fs may change from the seed",
+      "passed": true,
+      "details": "changed=; added=; removed="
+    },
+    {
+      "name": "queueOnce has adjacent XML documentation",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "IndependentAcceptance output directory exists after setup",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "fresh copied-project self-tests and example exit successfully",
+      "passed": true,
+      "details": "timeout=False; exit=0; launch=; stderr="
+    },
+    {
+      "name": "frozen helper tests run in the fresh process",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "four actor-owned tests report success",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "runnable example reports the queued marker",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "independent behavioral adapter builds against the public typed API",
+      "passed": true,
+      "details": "timeout=False; exit=0; launch=; stderr="
+    },
+    {
+      "name": "seeded helper derives two distinct outbox paths",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "new open invoice writes and returns queued with exact effects",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "repeat open invoice returns the existing queued marker",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "second open invoice gets an independent marker",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "existing arbitrary marker and unrelated state are preserved",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "existing empty marker returns an empty string without rewriting",
+      "passed": false,
+      "details": ""
+    }
+  ],
+  "processes": [
+    {
+      "purpose": "fresh copied-project console tests and example",
+      "arguments": [
+        "run",
+        "--project",
+        "D:\\code\\AgentLang\\.agentlang\\stateful-conventional-acceptance-d12e8d4fd8a64fd8b269b91c52959457\\actor-project\\StatefulPilot.fsproj",
+        "--configuration",
+        "Release",
+        "--no-launch-profile"
+      ],
+      "workingDirectory": "D:\\code\\AgentLang\\.agentlang\\stateful-conventional-acceptance-d12e8d4fd8a64fd8b269b91c52959457\\actor-project",
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "stdout": "Seed helper tests passed: 2\r\nOWN_TESTS_PASSED=4\r\nEXAMPLE_QUEUE_REMINDER=queued\r\n",
+      "stderr": ""
+    },
+    {
+      "purpose": "fresh independent behavioral adapter build",
+      "arguments": [
+        "build",
+        "D:\\code\\AgentLang\\.agentlang\\stateful-conventional-acceptance-d12e8d4fd8a64fd8b269b91c52959457\\acceptance-adapter\\Acceptance.fsproj",
+        "--configuration",
+        "Release",
+        "--nologo"
+      ],
+      "workingDirectory": "D:\\code\\AgentLang\\.agentlang\\stateful-conventional-acceptance-d12e8d4fd8a64fd8b269b91c52959457\\acceptance-adapter",
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "stdout": "  Determining projects to restore...\r\n  Restored D:\\code\\AgentLang\\.agentlang\\stateful-conventional-acceptance-d12e8d4fd8a64fd8b269b91c52959457\\acceptance-adapter\\Acceptance.fsproj (in 159 ms).\r\n  1 of 2 projects are up-to-date for restore.\r\n  StatefulPilot -> D:\\code\\AgentLang\\.agentlang\\stateful-conventional-acceptance-d12e8d4fd8a64fd8b269b91c52959457\\actor-project\\bin\\Release\\net9.0\\StatefulPilot.dll\r\n  Acceptance -> D:\\code\\AgentLang\\.agentlang\\stateful-conventional-acceptance-d12e8d4fd8a64fd8b269b91c52959457\\acceptance-adapter\\bin\\Release\\net9.0\\Acceptance.dll\r\n\r\nBuild succeeded.\r\n    0 Warning(s)\r\n    0 Error(s)\r\n\r\nTime Elapsed 00:00:02.59\r\n",
+      "stderr": ""
+    },
+    {
+      "purpose": "independent state, marker, effects, and denial probes",
+      "arguments": [
+        "D:\\code\\AgentLang\\.agentlang\\stateful-conventional-acceptance-d12e8d4fd8a64fd8b269b91c52959457\\acceptance-adapter\\bin\\Release\\net9.0\\Acceptance.dll",
+        "probe",
+        "D:\\code\\AgentLang\\.agentlang\\stateful-conventional-acceptance-d12e8d4fd8a64fd8b269b91c52959457\\after-first-reminder.json"
+      ],
+      "workingDirectory": "D:\\code\\AgentLang\\.agentlang\\stateful-conventional-acceptance-d12e8d4fd8a64fd8b269b91c52959457\\acceptance-adapter",
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "stdout": "{\"mode\":\"probe\",\"processId\":25100,\"helperPaths\":{\"custom\":\"outbox/invoice-reminders/conv-custom-001\",\"empty\":\"outbox/invoice-reminders/conv-empty-marker-001\",\"first\":\"outbox/invoice-reminders/conv-open-001\",\"second\":\"outbox/invoice-reminders/conv-open-002\"},\"probes\":[{\"name\":\"new-open\",\"path\":\"outbox/invoice-reminders/conv-open-001\",\"result\":\"queued\",\"error\":null,\"readCount\":1,\"writeCount\":1,\"state\":{\"outbox/invoice-reminders/conv-open-001\":\"queued\"}},{\"name\":\"repeat\",\"path\":\"outbox/invoice-reminders/conv-open-001\",\"result\":\"queued\",\"error\":null,\"readCount\":2,\"writeCount\":0,\"state\":{\"outbox/invoice-reminders/conv-open-001\":\"queued\"}},{\"name\":\"second-id\",\"path\":\"outbox/invoice-reminders/conv-open-002\",\"result\":\"queued\",\"error\":null,\"readCount\":1,\"writeCount\":1,\"state\":{\"outbox/invoice-reminders/conv-open-001\":\"queued\",\"outbox/invoice-reminders/conv-open-002\":\"queued\"}},{\"name\":\"custom-marker\",\"path\":\"outbox/invoice-reminders/conv-custom-001\",\"result\":\"held for manual review\",\"error\":null,\"readCount\":2,\"writeCount\":0,\"state\":{\"outbox/invoice-reminders/conv-custom-001\":\"held for manual review\",\"unrelated/keep\":\"untouched\"}},{\"name\":\"empty-marker\",\"path\":\"outbox/invoice-reminders/conv-empty-marker-001\",\"result\":\"queued\",\"error\":null,\"readCount\":2,\"writeCount\":0,\"state\":{\"outbox/invoice-reminders/conv-empty-marker-001\":\"\"}},{\"name\":\"paid\",\"path\":\"outbox/invoice-reminders/conv-paid-001\",\"result\":\"not-open\",\"error\":null,\"readCount\":0,\"writeCount\":0,\"state\":{}},{\"name\":\"cancelled\",\"path\":\"outbox/invoice-reminders/conv-cancelled-001\",\"result\":\"not-open\",\"error\":null,\"readCount\":0,\"writeCount\":0,\"state\":{}},{\"name\":\"uppercase\",\"path\":\"outbox/invoice-reminders/conv-uppercase-001\",\"result\":\"not-open\",\"error\":null,\"readCount\":0,\"writeCount\":0,\"state\":{}},{\"name\":\"denied-no-capabilities\",\"path\":\"outbox/invoice-reminders/conv-denied-001\",\"result\":\"\",\"error\":\"InvalidOperationException:CAPABILITY_DENIED\",\"readCount\":0,\"writeCount\":0,\"state\":{}},{\"name\":\"denied-no-read\",\"path\":\"outbox/invoice-reminders/conv-denied-read-001\",\"result\":\"\",\"error\":\"InvalidOperationException:CAPABILITY_DENIED\",\"readCount\":0,\"writeCount\":0,\"state\":{}},{\"name\":\"denied-no-write\",\"path\":\"outbox/invoice-reminders/conv-denied-write-001\",\"result\":\"\",\"error\":\"InvalidOperationException:CAPABILITY_DENIED\",\"readCount\":0,\"writeCount\":0,\"state\":{}},{\"name\":\"non-open-denied\",\"path\":\"outbox/invoice-reminders/conv-denied-paid-001\",\"result\":\"\",\"error\":\"InvalidOperationException:CAPABILITY_DENIED\",\"readCount\":0,\"writeCount\":0,\"state\":{}}]}\r\n",
+      "stderr": ""
+    }
+  ],
+  "seedInventoryBefore": [
+    {
+      "path": "Domain.fs",
+      "sha256": "89c23ef88ef88cd74e0baf9649a29bb71dbdf78af76dcd01d3d8cace38d3bdc0"
+    },
+    {
+      "path": "Operations.fs",
+      "sha256": "553fb9cc317c96032d5a1f3601e810de95bfc8f40b649293f007b5839ed359a4"
+    },
+    {
+      "path": "SelfTests.fs",
+      "sha256": "031a19a4767e308e0e918dbade44dbde807483f4e93134b4491e1421fd7b910f"
+    },
+    {
+      "path": "StatefulPilot.fsproj",
+      "sha256": "9435284d144a8723127e39ed5e3e3d3b7993e374612de80ecd7828b31bbeb570"
+    }
+  ],
+  "seedInventoryAfter": [
+    {
+      "path": "Domain.fs",
+      "sha256": "89c23ef88ef88cd74e0baf9649a29bb71dbdf78af76dcd01d3d8cace38d3bdc0"
+    },
+    {
+      "path": "Operations.fs",
+      "sha256": "553fb9cc317c96032d5a1f3601e810de95bfc8f40b649293f007b5839ed359a4"
+    },
+    {
+      "path": "SelfTests.fs",
+      "sha256": "031a19a4767e308e0e918dbade44dbde807483f4e93134b4491e1421fd7b910f"
+    },
+    {
+      "path": "StatefulPilot.fsproj",
+      "sha256": "9435284d144a8723127e39ed5e3e3d3b7993e374612de80ecd7828b31bbeb570"
+    }
+  ],
+  "projectInventoryBefore": [
+    {
+      "path": "Domain.fs",
+      "sha256": "89c23ef88ef88cd74e0baf9649a29bb71dbdf78af76dcd01d3d8cace38d3bdc0"
+    },
+    {
+      "path": "Operations.fs",
+      "sha256": "84a821a3ad64633a67346fb7fcfe8245589e20440f23a7bfd9c8a091b2347025"
+    },
+    {
+      "path": "SelfTests.fs",
+      "sha256": "abdfa0220a3be27ef7ee2d3e273ca00750c8c9b66e6862089e05aa244b200031"
+    },
+    {
+      "path": "StatefulPilot.fsproj",
+      "sha256": "9435284d144a8723127e39ed5e3e3d3b7993e374612de80ecd7828b31bbeb570"
+    }
+  ],
+  "projectInventoryAfter": [
+    {
+      "path": "Domain.fs",
+      "sha256": "89c23ef88ef88cd74e0baf9649a29bb71dbdf78af76dcd01d3d8cace38d3bdc0"
+    },
+    {
+      "path": "Operations.fs",
+      "sha256": "84a821a3ad64633a67346fb7fcfe8245589e20440f23a7bfd9c8a091b2347025"
+    },
+    {
+      "path": "SelfTests.fs",
+      "sha256": "abdfa0220a3be27ef7ee2d3e273ca00750c8c9b66e6862089e05aa244b200031"
+    },
+    {
+      "path": "StatefulPilot.fsproj",
+      "sha256": "9435284d144a8723127e39ed5e3e3d3b7993e374612de80ecd7828b31bbeb570"
+    }
+  ],
+  "limits": [
+    "Fresh copied conventional project and in-memory provider only; this is not a filesystem sandbox.",
+    "F# self-test markers are runner evidence; independent behavior, effect-count, state, capability and nominal-type probes are separate.",
+    "F# instruction and branch coverage and AgentLang effect-runtime parity are not claimed."
+  ]
+}
