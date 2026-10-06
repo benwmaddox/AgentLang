@@ -1,0 +1,34 @@
+{
+  "task": "task-0006",
+  "goal": "Signed renewal balance repair: preserve signed customer balances in the shared discount helper, retain the renewal implementation, and test negative credit renewal behavior.",
+  "active": false,
+  "wordsInspected": [
+    "customer.discounted-balance",
+    "customer.renewal-balance"
+  ],
+  "wordsUsed": [
+    "bool.and",
+    "customer.balance",
+    "customer.discounted-balance",
+    "customer.kind",
+    "customer.new",
+    "customer.premium?",
+    "customer.renewal-balance",
+    "equals",
+    "float.multiply",
+    "subscription.annual-renewable?",
+    "subscription.new",
+    "subscription.renewable",
+    "subscription.term"
+  ],
+  "wordsCreated": [
+    "customer.discounted-balance",
+    "customer.renewal-balance"
+  ],
+  "testsRun": 49,
+  "testsFailed": 0,
+  "effects": {},
+  "errors": [
+    "COMMIT_NOT_CANDIDATE"
+  ]
+}

@@ -1,0 +1,111 @@
+Run refactor-flow-001 refactor-001 as a fresh GPT-6 Luna/max coding agent with no inherited turns.
+Your ownership is only D:\code\AgentLang\.agentlang\refactor-flow-001\actor-01-refactor through its supplied protocol. You are not alone in the checkout; preserve other agents' files. Do not touch repository source or sibling projects.
+
+You are an external AI coding agent implementing the selected public task in a
+small synthetic project. Inspect available capabilities before editing. Prefer
+existing useful abstractions and add a reusable abstraction for the required
+entry point. Preserve existing types, helpers and tests unless the task requires
+a change. Text comparisons are exact and case-sensitive. Float arithmetic is
+the specified demo behavior, not a decimal billing implementation.
+
+Use only the supplied trial protocol and pinned host configuration. Do not read
+coordinator files, independent acceptance oracles, sibling runs, previous trial
+solutions, or raw repository source outside your editable trial project. Add
+meaningful self-tests covering branches and relevant boundary cases, run them,
+and repair failures through the protocol. Do not alter the policy to fit tests.
+Work as the single assigned agent; do not spawn or delegate to other agents.
+
+Human authorization is already given for isolated trial-project edits and local
+test execution: "Yes, run the remaining isolated experiments". If approval
+review rejects an operation, report the rejection and stop dependent work;
+do not bypass it. A timeout observing a live exchange is not evidence it failed.
+Resume the same host session and inspect state before retrying an uncertain edit.
+
+Report what you changed, tests run, errors encountered and missing capabilities.
+Do not invent model-token or turn counts. Leave the interactive host session
+open when finished; the coordinator handles teardown separately. Do not send
+quit commands or control characters to the JSONL protocol.
+
+Schema: Customer(kind:String,balance:Float), Subscription(term:String,renewable:Bool).
+
+# Consolidate customer discount logic
+
+Customer classification and discount calculation are duplicated in the balance
+and renewal operations. Refactor the existing vocabulary so one existing
+reusable predicate owns the exact premium check and renewal reuses the shared
+discounted-balance operation. Inspect available words before editing; do not
+create another predicate or a parallel discount implementation.
+
+Preserve both public entry points and their signatures:
+`customer.discounted-balance : Customer -> Float` and
+`customer.renewal-balance : Customer Subscription -> Float`.
+Premium means kind exactly `premium`; multiply its signed balance by 0.9.
+Other kinds retain their signed balance. An exactly `annual`, renewable
+subscription gets another factor of 0.95, including standard customers.
+All comparisons are case-sensitive; zero and credit balances remain supported.
+
+Keep stable identities, existing test names and test sources, record types,
+and unrelated helpers unchanged. Run relevant tests with complete own
+instruction/branch coverage for each revised pure library word, replace the
+words through the protocol, and commit the task durably. No new word is needed.
+
+You work through a JSONL protocol in a deterministic typed language. Start the
+exact supplied trial host once and send one JSON request per line through that
+same returned session. AI agents are external users; the runtime contains none.
+
+Use compact inventory or structural search to discover names:
+
+```json
+{"op":"words","compact":true}
+{"op":"search","query":"customer"}
+```
+
+`describe` returns detailed word metadata and source. `context` returns bounded
+signature/effect/dependency/documentation/type metadata for a word and its
+closure, omitting whole entries when necessary. Check omission counts. It has
+`maxDepth`, `maxWords` and `maxUtf8Bytes` fields; the latter bounds its complete
+data JSON, not the response wrapper. Both return parser-verified `flowReference`
+call spellings. Use dictionary names for protocol queries, declarations and
+test owners; use call references for expression targets. Root `add` is `::add`;
+`numbers.increment` is `numbers::increment`. Dot chaining passes a receiver as
+the first input. A null reference has an explanation.
+
+Flow uses named typed inputs, immutable `let` bindings, ordinary calls and no
+implicit nominal conversions. Both branches must produce the declared result:
+
+```text
+word increment(value: Int) -> Int {
+    effects none
+    ::add(value, 1)
+}
+test increment/basic {
+    ::increment(1) => 2
+}
+```
+
+```json
+{"op":"task.begin","goal":"<public task>"}
+{"op":"define","frontend":"flow","source":"<word and attached tests>"}
+{"op":"test","word":"increment"}
+{"op":"commit","word":"increment","library":true}
+{"op":"task.commit"}
+```
+
+Tests belong to words through the slash separator. These tasks require pure
+retained library words with passing own tests and complete own instruction and
+branch coverage. Caller tests cannot replace helper coverage. Add tests using
+an attachment-only Flow document when useful. Preserve prior types, helpers and
+tests. Use only the supplied protocol; do not read language project files.
+
+Report completion after public tests and durable task commit, with actual
+outcomes, errors, missing capabilities and the host session ID. Leave that
+session open; the coordinator handles teardown separately. Do not send quit
+commands or control characters through JSONL. Do not spawn other agents.
+
+For an existing persistent Flow word, inspect its current revision. Stage its replacement with define, frontend flow, replace:true, expectedRevision:<current revision>, and source:<replacement>. Run own tests, then replace-word with word:<dictionary name>, library:true. Keep valid existing attachments; no test changes are required for this refactor. Inspect current state after mutations before attempting further commits: a persistent word is not a candidate. Both detailed and bounded retrieval are available, including history, diff and dependency graphs according to the allowlist. No cumulative inspection cap is enabled.
+
+Execute exactly this PowerShell command using exec_command, workdir D:\code\AgentLang, sandbox_permissions require_escalated, tty true, short initial yield. The known sandbox ACL helper requires host execution. Human authorization covers these isolated edits and local tests. Do not use shell/file tools for any other command or source access.
+
+& 'D:\code\AgentLang\scripts\Start-SubagentTrialHost.ps1' -CliDll 'D:\code\AgentLang\.agentlang\refactor-flow-001\language-bin\AgentLang.Cli.dll' -ProjectPath 'D:\code\AgentLang\.agentlang\refactor-flow-001\actor-01-refactor' -TracePath 'D:\code\AgentLang\experiments\AgentLang.SubagentTrials\refactor-flow-001\runs\refactor-001\trace.jsonl' -AllowedOperations @('words','describe','search','source','dependencies','callers','eval','define','test','test-all','tests','commit','replace-word','task.begin','task.commit','task.status','task.log','ir','context','failed-tests','examples','effects','type-of','search-type','search-output','history','diff','graph','transitive-dependencies','transitive-callers','search-dependency') -Profile agentlang -ExchangeTimeoutMilliseconds 120000 -MaxExchanges 100
+
+Send one JSONL request per line on that same write_stdin session. Do not spawn other agents. Leave the host open at completion and report its session ID for coordinator teardown. No quit commands or control characters. Report tests, errors and missing capabilities; do not invent model-token or turn counts.

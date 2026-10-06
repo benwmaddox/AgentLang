@@ -46,6 +46,11 @@ branch coverage. Caller tests cannot replace helper coverage. Add tests using
 an attachment-only Flow document when useful. Preserve prior types, helpers and
 tests. Use only the supplied protocol; do not read language project files.
 
+`describe.coverage` currently reflects the most recent test batch. Testing one
+word replaces that batch; another word can then display `not-run` even when its
+earlier own suite passed. Use the returned `test` coverage for that run, or
+`test-all` before inspecting several words' current own coverage together.
+
 The same host operation allowlist and inspection-response byte cap apply to all
 actors. Whole inspection responses may be denied by that cap; no partial JSON
 is supplied. A denial after inspection does not mean the query was unexecuted.

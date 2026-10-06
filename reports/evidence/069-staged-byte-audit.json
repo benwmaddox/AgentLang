@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "files": 147,
+  "scope": "experiments/AgentLang.SubagentTrials/refactor-flow-001/runs",
+  "mismatches": 0,
+  "method": "Every staged blob matches git hash-object --no-filters of its corresponding working-copy file."
+}

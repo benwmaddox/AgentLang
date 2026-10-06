@@ -1,0 +1,280 @@
+{
+  "passed": true,
+  "selectedResponsePayloadBytes": 39563,
+  "requestPayloadBytes": 2378,
+  "exchanges": 36,
+  "schemaVersion": 1,
+  "traceSha256": "d5b5d5b9664052fd50833b271fe7bb843842ab68527f5675d874c2dab142bdfb",
+  "errors": [],
+  "sessionEnd": {
+    "event": "session-end",
+    "finishedUtc": "2026-10-06T17:02:33.2574962-04:00",
+    "exchangeCount": 36,
+    "hostExitCode": 0,
+    "runtimeExitCode": 0,
+    "runtimeStderrPrefixBytes": 0,
+    "runtimeStderrTotalBytes": 0,
+    "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runtimeStderrCaptureTruncated": false
+  },
+  "requests": [
+    {
+      "op": "words",
+      "responseBytes": 1193,
+      "requestBytes": 30,
+      "word": null,
+      "ok": true
+    },
+    {
+      "op": "search",
+      "responseBytes": 186,
+      "requestBytes": 35,
+      "word": null,
+      "ok": true
+    },
+    {
+      "op": "describe",
+      "responseBytes": 1908,
+      "requestBytes": 55,
+      "word": "customer.discounted-balance",
+      "ok": true
+    },
+    {
+      "op": "describe",
+      "responseBytes": 2683,
+      "requestBytes": 52,
+      "word": "customer.renewal-balance",
+      "ok": true
+    },
+    {
+      "op": "describe",
+      "responseBytes": 1075,
+      "requestBytes": 45,
+      "word": "customer.premium?",
+      "ok": true
+    },
+    {
+      "op": "describe",
+      "responseBytes": 1529,
+      "requestBytes": 58,
+      "word": "subscription.annual-renewable?",
+      "ok": true
+    },
+    {
+      "op": "source",
+      "responseBytes": 608,
+      "requestBytes": 53,
+      "word": "customer.discounted-balance",
+      "ok": true
+    },
+    {
+      "op": "source",
+      "responseBytes": 974,
+      "requestBytes": 50,
+      "word": "customer.renewal-balance",
+      "ok": true
+    },
+    {
+      "op": "source",
+      "responseBytes": 326,
+      "requestBytes": 43,
+      "word": "customer.premium?",
+      "ok": true
+    },
+    {
+      "op": "source",
+      "responseBytes": 532,
+      "requestBytes": 56,
+      "word": "subscription.annual-renewable?",
+      "ok": true
+    },
+    {
+      "op": "task.begin",
+      "responseBytes": 254,
+      "requestBytes": 65,
+      "word": null,
+      "ok": true
+    },
+    {
+      "op": "define",
+      "responseBytes": 409,
+      "requestBytes": 330,
+      "word": null,
+      "ok": true
+    },
+    {
+      "op": "define",
+      "responseBytes": 490,
+      "requestBytes": 393,
+      "word": null,
+      "ok": true
+    },
+    {
+      "op": "describe",
+      "responseBytes": 1780,
+      "requestBytes": 55,
+      "word": "customer.discounted-balance",
+      "ok": true
+    },
+    {
+      "op": "describe",
+      "responseBytes": 1994,
+      "requestBytes": 52,
+      "word": "customer.renewal-balance",
+      "ok": true
+    },
+    {
+      "op": "task.status",
+      "responseBytes": 370,
+      "requestBytes": 21,
+      "word": null,
+      "ok": true
+    },
+    {
+      "op": "test",
+      "responseBytes": 929,
+      "requestBytes": 51,
+      "word": "customer.discounted-balance",
+      "ok": true
+    },
+    {
+      "op": "test",
+      "responseBytes": 1179,
+      "requestBytes": 48,
+      "word": "customer.renewal-balance",
+      "ok": true
+    },
+    {
+      "op": "replace-word",
+      "responseBytes": 455,
+      "requestBytes": 74,
+      "word": "customer.discounted-balance",
+      "ok": true
+    },
+    {
+      "op": "describe",
+      "responseBytes": 1132,
+      "requestBytes": 55,
+      "word": "customer.discounted-balance",
+      "ok": true
+    },
+    {
+      "op": "describe",
+      "responseBytes": 1994,
+      "requestBytes": 52,
+      "word": "customer.renewal-balance",
+      "ok": true
+    },
+    {
+      "op": "test",
+      "responseBytes": 1179,
+      "requestBytes": 48,
+      "word": "customer.renewal-balance",
+      "ok": true
+    },
+    {
+      "op": "describe",
+      "responseBytes": 1381,
+      "requestBytes": 52,
+      "word": "customer.renewal-balance",
+      "ok": true
+    },
+    {
+      "op": "replace-word",
+      "responseBytes": 568,
+      "requestBytes": 71,
+      "word": "customer.renewal-balance",
+      "ok": true
+    },
+    {
+      "op": "describe",
+      "responseBytes": 1781,
+      "requestBytes": 55,
+      "word": "customer.discounted-balance",
+      "ok": true
+    },
+    {
+      "op": "describe",
+      "responseBytes": 1382,
+      "requestBytes": 52,
+      "word": "customer.renewal-balance",
+      "ok": true
+    },
+    {
+      "op": "task.status",
+      "responseBytes": 631,
+      "requestBytes": 21,
+      "word": null,
+      "ok": true
+    },
+    {
+      "op": "test",
+      "responseBytes": 929,
+      "requestBytes": 51,
+      "word": "customer.discounted-balance",
+      "ok": true
+    },
+    {
+      "op": "test",
+      "responseBytes": 1179,
+      "requestBytes": 48,
+      "word": "customer.renewal-balance",
+      "ok": true
+    },
+    {
+      "op": "describe",
+      "responseBytes": 1781,
+      "requestBytes": 55,
+      "word": "customer.discounted-balance",
+      "ok": true
+    },
+    {
+      "op": "describe",
+      "responseBytes": 1382,
+      "requestBytes": 52,
+      "word": "customer.renewal-balance",
+      "ok": true
+    },
+    {
+      "op": "task.status",
+      "responseBytes": 631,
+      "requestBytes": 21,
+      "word": null,
+      "ok": true
+    },
+    {
+      "op": "test",
+      "responseBytes": 929,
+      "requestBytes": 51,
+      "word": "customer.discounted-balance",
+      "ok": true
+    },
+    {
+      "op": "describe",
+      "responseBytes": 1132,
+      "requestBytes": 55,
+      "word": "customer.discounted-balance",
+      "ok": true
+    },
+    {
+      "op": "describe",
+      "responseBytes": 1995,
+      "requestBytes": 52,
+      "word": "customer.renewal-balance",
+      "ok": true
+    },
+    {
+      "op": "task.commit",
+      "responseBytes": 683,
+      "requestBytes": 21,
+      "word": null,
+      "ok": true
+    }
+  ],
+  "limits": [
+    "Schema 1 records selected responses before stdout flush; no delivery/model-consumption claim.",
+    "Payload counts exclude LF but include CR.",
+    "No exact model tokens, turns, controlled latency or window measurement.",
+    "One debugging smoke; no matched conventional comparison."
+  ]
+}

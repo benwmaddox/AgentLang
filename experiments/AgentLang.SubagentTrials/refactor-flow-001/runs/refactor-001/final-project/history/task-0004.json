@@ -1,0 +1,28 @@
+{
+  "task": "task-0004",
+  "goal": "Calculate customer renewal balance: apply a 10% discount only for kind exactly premium, then apply an additional 5% discount only for annual renewable subscriptions for any customer kind. Preserve all existing types, helpers, and attached tests.",
+  "active": false,
+  "wordsInspected": [],
+  "wordsUsed": [
+    "bool.and",
+    "customer.balance",
+    "customer.discounted-balance",
+    "customer.kind",
+    "customer.new",
+    "customer.premium?",
+    "customer.renewal-balance",
+    "equals",
+    "float.multiply",
+    "subscription.annual-renewable?",
+    "subscription.new",
+    "subscription.renewable",
+    "subscription.term"
+  ],
+  "wordsCreated": [
+    "customer.renewal-balance"
+  ],
+  "testsRun": 12,
+  "testsFailed": 0,
+  "effects": {},
+  "errors": []
+}

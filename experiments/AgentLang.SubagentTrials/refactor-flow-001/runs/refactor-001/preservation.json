@@ -1,0 +1,360 @@
+{
+  "checks": [
+    {
+      "passed": true,
+      "name": "manifest hash matches CURRENT"
+    },
+    {
+      "passed": true,
+      "name": "manifest hash matches CURRENT"
+    },
+    {
+      "passed": true,
+      "name": "exact type definitions retained"
+    },
+    {
+      "passed": true,
+      "name": "same word inventory and stable identities"
+    },
+    {
+      "passed": true,
+      "name": "unrelated current word unchanged customer.premium?"
+    },
+    {
+      "passed": true,
+      "name": "unrelated revisions unchanged customer.premium?"
+    },
+    {
+      "passed": true,
+      "name": "unrelated current word unchanged subscription.annual-renewable?"
+    },
+    {
+      "passed": true,
+      "name": "unrelated revisions unchanged subscription.annual-renewable?"
+    },
+    {
+      "passed": true,
+      "name": "exact historical revision retained"
+    },
+    {
+      "passed": true,
+      "name": "exact historical revision retained"
+    },
+    {
+      "passed": true,
+      "name": "exact historical revision retained"
+    },
+    {
+      "passed": true,
+      "name": "exact historical revision retained"
+    },
+    {
+      "passed": true,
+      "name": "exact historical revision retained"
+    },
+    {
+      "passed": true,
+      "name": "exact historical revision retained"
+    },
+    {
+      "passed": true,
+      "name": "exact historical revision retained"
+    },
+    {
+      "passed": true,
+      "name": "exact historical revision retained"
+    },
+    {
+      "passed": true,
+      "name": "exact historical revision retained"
+    },
+    {
+      "passed": true,
+      "name": "revised existing library word customer.discounted-balance"
+    },
+    {
+      "passed": true,
+      "name": "exact existing test objects retained customer.discounted-balance"
+    },
+    {
+      "passed": true,
+      "name": "exact examples retained customer.discounted-balance"
+    },
+    {
+      "passed": true,
+      "name": "revised existing library word customer.renewal-balance"
+    },
+    {
+      "passed": true,
+      "name": "exact existing test objects retained customer.renewal-balance"
+    },
+    {
+      "passed": true,
+      "name": "exact examples retained customer.renewal-balance"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\WRITE.lock"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\manifests\\088a6a8bdd3245f371c7db6c645871760b8be2016501d8261060b50e580c9f6f.json"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\manifests\\0f49bb93de56333575e4dbd84eeba7f5e199ff4c2afac6223759474eefe1f37b.json"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\manifests\\1c654679792069fbaf5fdc2ac1d6302f72f98bb70dfc5d0d57cd0686acdb9f75.json"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\manifests\\272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e.json"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\manifests\\3b219e8faf1f23a352f89797984f5144c44658376978393878739aa80b6d59fc.json"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\manifests\\8ab71325aaabb58ff1c671d773c397bf61e74a1020bb39fc39425f47e950ded7.json"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\manifests\\b8d42474ecf2d2c8ad96b58440ff334048977381024a9db028608ef0bc2da926.json"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\manifests\\eafa746c243a426de87904d78c5ced7f8d5d7bdf3760704ba926277b2258396f.json"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\manifests\\eea54a49b5985b7ba3e88b04f15fdf72e6061aa7556453705693dc7c258f9f14.json"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\manifests\\f8513a81c30f662e0030cfcd5e83503318a101f01cc3ba327ccea4914942e8d9.json"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\00dbd42ca3ba4dc2e785bd7fcdc2daa213840c2b8cf1b606c49b5ea981abbbc7.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\0a09ec29fa93e0951a01017f708dbdb0ae4d13cec9c30fb033fbe3de55d9c9e7.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\0fb8802a4955f3cc0fa1aef22ec9a47c2c8ab9306387a394f77a85457f11a43c.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\13e29f6e79f5372b3d68d9f452467225d3a29d0ee773368f65db47b45b65f377.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\1aaaaa710dc4ada3060c07044e4994e39e861ffb1b1e9cde6c22c826502bea6d.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\1c48deb4896bea9cd10bf11296699b0b8937051ffedab579ad6fa47fef8449c8.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\1d89f396a411eb6cbcd9d7d8216b5b2912f8a080ff6601097d387853e16bbd41.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\2754e501440b8c7cec15f3434d0233fda4154b9d631355748f1f323df2be80f5.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\46bb9bd2c5c701f35cb3acb1c2c8f52823a9ac1f1f0c609209cf344dbfdfb2be.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\48d11471fdec13bb5396f310718560b8c58719c6f599218ef41ae0c3c013f216.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\48fb0dd39e609c978f7e0ee81331ad0634bee3771e21f08ebfefcfd567dc2776.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\4d1f76127f259ff47d25e8ad4bed7c2ae6c9bf18846ae243179235c28278d313.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\57811cb5d5e949f549740165f2db15e06744eb72c9ee6e3f5a803512cbbcd170.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\5b80e275b9e2e8d6a01d170c17d213ba9d8ffb9d1aa1e6e0314251a2b4922eab.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\5ef3232a2ec6e4c4d260ce062560fbc2980ec4b20340e306699172fa274d58a3.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\6806c6b8b7ba035e7dbf3c1f27e90f703b3e4366c1e7c0ec1757d35843d10e7e.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\6a47bcd0f4483651f5b430cc17c0d2f5218ba129dcb3ae5b8d14ef90096d1583.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\6b964fd1a60a1c51e0900f74a69ee486c227aacf5bca2f24a06289cecc237bf7.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\6ea5bee3651bca4d345ced10c37cc590e435225df08a0ef11d5455791acca7cb.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\73b82bd0bcea5ede073d48b2f08282e439a8d219379ea58784fc933a4640b170.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\81c7758787d510564e504106823b25108f66be5cc3cbe25390d2327492e95c5e.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\84495d36556de99318e1e3b2c604a21bfb6175bd5260ab9c7653b1f5ea2b2640.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\87ae782de5e5ccc8c7323f04a9f58b1e58add7481d537be2d734290199d61156.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\907b65b6a35841fed8c4e3396100fdff2cce865813f710d09864345eac92aad2.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\925da768579b541edebe26a053d9b95fcbbf7d024d41c7119ef25eab6b32136d.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\959b422518dadc34d310426d002d1a5504a69f27b467795313a6a2a6b1ee06df.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\ab43c70270a21dd59ccc2d652fbacf9ed8eaff693cccc1f73cf1037b6031bae7.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\ad3c4c16f833569ddbbf6e21113423fd138fbd76b048b9f0757c3b31cba176e9.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\aef0989b24710f09ece0578a1e0388bcc11d41b3016a2385fc1669999bfb225e.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\afc265dc6f94452468e30b9c48ba66600f45f00a586fdd3a624a0cfcbb40fa22.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\b365659283c5f52808dddf75ffc2dc1c5a2f2b3b6bf1a17236a9670fc9ddc5bc.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\baa5d002af5287fdfd774b9c1cea0352e05e940fde2f0b1238e0331942e67671.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\c4c206c67fc7499729e77af0a7e51833b47e65a0fa1d9f9df0a9d801409a7050.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\c701fc54256ab52139509aff9f40ca54c54dcc6f31f6577dc5836f7f0fdd7ad7.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\cba51aed7789788bafdfed252595b21078bd2e16620690bd2ef0eff0179feeca.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\d362f5c0479517f4a3eecb5723a6781a06930112188c1b88fa88dd74660f5f5a.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\df3f601da938987f6e6c71d0032e791fa5baa261035650f6706b06aece68da71.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\e84f4a26267d08e8c8e0dbd81ad1b569779eb7d9f62045f1ff2764041c4d06b0.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\ebfda0ad236c50a2a29cf677ba9465b108ef55c039f3edbf34db743107587893.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\f36b44ed0299a50c0c2a146b129c8d3d207dbba58ed016d429757d2edea83675.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\f97e48f3dd20a91c905c5618acfb9b0df9df69c81cbb7c05c7d78c7b8bdfc564.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\objects\\fdda8e1ce305dd11db42d30b8f3db1829bb703c1bbd4cc68de8216993441acc1.agent"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained .agentlang\\store\\snapshots\\matched-renewal-start.json"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained history\\task-0001.json"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained history\\task-0002.json"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained history\\task-0003.json"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained history\\task-0004.json"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained history\\task-0005.json"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained history\\task-0006.json"
+    },
+    {
+      "passed": true,
+      "name": "immutable seed file retained history\\task-0007.json"
+    },
+    {
+      "passed": true,
+      "name": "independent acceptance passed after-task-2.json"
+    },
+    {
+      "passed": true,
+      "name": "required direct dependencies after-task-2.json"
+    },
+    {
+      "passed": true,
+      "name": "independent acceptance passed after-task-4.json"
+    },
+    {
+      "passed": true,
+      "name": "required direct dependencies after-task-4.json"
+    }
+  ],
+  "passed": true,
+  "failure": null,
+  "scope": "Stable inventory/identities; exact type/unrelated-word/test/example/history preservation; in-place revisions; retained immutable files; independent behavior/library coverage and exact direct dependency sets proving reuse instead of duplicated classification.",
+  "schemaVersion": 1
+}

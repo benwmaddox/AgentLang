@@ -1,0 +1,732 @@
+[
+  {
+    "path": "actor-report.md",
+    "bytes": 1059,
+    "sha256": "bde813a9c4e5f58cf55452afa0611f936c5f5edb706ca3da7a73e536aa4d4beb"
+  },
+  {
+    "path": "after-task-2.json",
+    "bytes": 21996,
+    "sha256": "411a49854d4e7c37e249196c1dffaa38f2add15801cd08d046b54271d5214eee"
+  },
+  {
+    "path": "after-task-4.json",
+    "bytes": 23516,
+    "sha256": "5adfa3c9d2ba895dcfa2e8ce05acfeb0caac6e46fea738ecd2ef0e340b60b9c4"
+  },
+  {
+    "path": "before-task-2.json",
+    "bytes": 21940,
+    "sha256": "90d9e4731c0fc0c05bb33104de6a72d8fdfdd5eae677c78a1ba4c7e27764167b"
+  },
+  {
+    "path": "before-task-4.json",
+    "bytes": 23796,
+    "sha256": "51a63a499a4b0378550b6cb0efbf1e474173058ebb7392c402ec500006932919"
+  },
+  {
+    "path": "coordinator-events.json",
+    "bytes": 366,
+    "sha256": "8e6a507121d816aa006e1a00c75d0ea170105e3bf659d8f999a15ecbbd24202c"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\CURRENT",
+    "bytes": 135,
+    "sha256": "aaadbbcb78b9586f5c7bed74afd3a683802a2eea43cd163f9fad04f93169ca3d"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\manifests\\088a6a8bdd3245f371c7db6c645871760b8be2016501d8261060b50e580c9f6f.json",
+    "bytes": 52540,
+    "sha256": "088a6a8bdd3245f371c7db6c645871760b8be2016501d8261060b50e580c9f6f"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\manifests\\0f49bb93de56333575e4dbd84eeba7f5e199ff4c2afac6223759474eefe1f37b.json",
+    "bytes": 26218,
+    "sha256": "0f49bb93de56333575e4dbd84eeba7f5e199ff4c2afac6223759474eefe1f37b"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\manifests\\1c654679792069fbaf5fdc2ac1d6302f72f98bb70dfc5d0d57cd0686acdb9f75.json",
+    "bytes": 73673,
+    "sha256": "1c654679792069fbaf5fdc2ac1d6302f72f98bb70dfc5d0d57cd0686acdb9f75"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\manifests\\272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e.json",
+    "bytes": 583,
+    "sha256": "272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\manifests\\3b219e8faf1f23a352f89797984f5144c44658376978393878739aa80b6d59fc.json",
+    "bytes": 4522,
+    "sha256": "3b219e8faf1f23a352f89797984f5144c44658376978393878739aa80b6d59fc"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\manifests\\7249ac3e55e1d7d705067f2dc9a56663197e79a26b8f5a82ffee606cb5e76582.json",
+    "bytes": 93192,
+    "sha256": "7249ac3e55e1d7d705067f2dc9a56663197e79a26b8f5a82ffee606cb5e76582"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\manifests\\8ab71325aaabb58ff1c671d773c397bf61e74a1020bb39fc39425f47e950ded7.json",
+    "bytes": 375,
+    "sha256": "8ab71325aaabb58ff1c671d773c397bf61e74a1020bb39fc39425f47e950ded7"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\manifests\\b8d42474ecf2d2c8ad96b58440ff334048977381024a9db028608ef0bc2da926.json",
+    "bytes": 16416,
+    "sha256": "b8d42474ecf2d2c8ad96b58440ff334048977381024a9db028608ef0bc2da926"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\manifests\\e2c15d328007de2dfef0efa3342e46adb8ff420c3356ea3bcea96815a40ede4c.json",
+    "bytes": 80792,
+    "sha256": "e2c15d328007de2dfef0efa3342e46adb8ff420c3356ea3bcea96815a40ede4c"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\manifests\\eafa746c243a426de87904d78c5ced7f8d5d7bdf3760704ba926277b2258396f.json",
+    "bytes": 33021,
+    "sha256": "eafa746c243a426de87904d78c5ced7f8d5d7bdf3760704ba926277b2258396f"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\manifests\\eea54a49b5985b7ba3e88b04f15fdf72e6061aa7556453705693dc7c258f9f14.json",
+    "bytes": 10575,
+    "sha256": "eea54a49b5985b7ba3e88b04f15fdf72e6061aa7556453705693dc7c258f9f14"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\manifests\\f8513a81c30f662e0030cfcd5e83503318a101f01cc3ba327ccea4914942e8d9.json",
+    "bytes": 60050,
+    "sha256": "f8513a81c30f662e0030cfcd5e83503318a101f01cc3ba327ccea4914942e8d9"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\00dbd42ca3ba4dc2e785bd7fcdc2daa213840c2b8cf1b606c49b5ea981abbbc7.agent",
+    "bytes": 257,
+    "sha256": "00dbd42ca3ba4dc2e785bd7fcdc2daa213840c2b8cf1b606c49b5ea981abbbc7"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\0a09ec29fa93e0951a01017f708dbdb0ae4d13cec9c30fb033fbe3de55d9c9e7.agent",
+    "bytes": 188,
+    "sha256": "0a09ec29fa93e0951a01017f708dbdb0ae4d13cec9c30fb033fbe3de55d9c9e7"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\0fb8802a4955f3cc0fa1aef22ec9a47c2c8ab9306387a394f77a85457f11a43c.agent",
+    "bytes": 139,
+    "sha256": "0fb8802a4955f3cc0fa1aef22ec9a47c2c8ab9306387a394f77a85457f11a43c"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\13e29f6e79f5372b3d68d9f452467225d3a29d0ee773368f65db47b45b65f377.agent",
+    "bytes": 133,
+    "sha256": "13e29f6e79f5372b3d68d9f452467225d3a29d0ee773368f65db47b45b65f377"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\1aaaaa710dc4ada3060c07044e4994e39e861ffb1b1e9cde6c22c826502bea6d.agent",
+    "bytes": 4165,
+    "sha256": "1aaaaa710dc4ada3060c07044e4994e39e861ffb1b1e9cde6c22c826502bea6d"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\1c48deb4896bea9cd10bf11296699b0b8937051ffedab579ad6fa47fef8449c8.agent",
+    "bytes": 177,
+    "sha256": "1c48deb4896bea9cd10bf11296699b0b8937051ffedab579ad6fa47fef8449c8"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\1d89f396a411eb6cbcd9d7d8216b5b2912f8a080ff6601097d387853e16bbd41.agent",
+    "bytes": 160,
+    "sha256": "1d89f396a411eb6cbcd9d7d8216b5b2912f8a080ff6601097d387853e16bbd41"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\2754e501440b8c7cec15f3434d0233fda4154b9d631355748f1f323df2be80f5.agent",
+    "bytes": 101,
+    "sha256": "2754e501440b8c7cec15f3434d0233fda4154b9d631355748f1f323df2be80f5"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\46bb9bd2c5c701f35cb3acb1c2c8f52823a9ac1f1f0c609209cf344dbfdfb2be.agent",
+    "bytes": 127,
+    "sha256": "46bb9bd2c5c701f35cb3acb1c2c8f52823a9ac1f1f0c609209cf344dbfdfb2be"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\48d11471fdec13bb5396f310718560b8c58719c6f599218ef41ae0c3c013f216.agent",
+    "bytes": 135,
+    "sha256": "48d11471fdec13bb5396f310718560b8c58719c6f599218ef41ae0c3c013f216"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\48fb0dd39e609c978f7e0ee81331ad0634bee3771e21f08ebfefcfd567dc2776.agent",
+    "bytes": 129,
+    "sha256": "48fb0dd39e609c978f7e0ee81331ad0634bee3771e21f08ebfefcfd567dc2776"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\4d1f76127f259ff47d25e8ad4bed7c2ae6c9bf18846ae243179235c28278d313.agent",
+    "bytes": 74,
+    "sha256": "4d1f76127f259ff47d25e8ad4bed7c2ae6c9bf18846ae243179235c28278d313"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\57811cb5d5e949f549740165f2db15e06744eb72c9ee6e3f5a803512cbbcd170.agent",
+    "bytes": 149,
+    "sha256": "57811cb5d5e949f549740165f2db15e06744eb72c9ee6e3f5a803512cbbcd170"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\5b80e275b9e2e8d6a01d170c17d213ba9d8ffb9d1aa1e6e0314251a2b4922eab.agent",
+    "bytes": 1578,
+    "sha256": "5b80e275b9e2e8d6a01d170c17d213ba9d8ffb9d1aa1e6e0314251a2b4922eab"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\5ef3232a2ec6e4c4d260ce062560fbc2980ec4b20340e306699172fa274d58a3.agent",
+    "bytes": 435,
+    "sha256": "5ef3232a2ec6e4c4d260ce062560fbc2980ec4b20340e306699172fa274d58a3"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\6806c6b8b7ba035e7dbf3c1f27e90f703b3e4366c1e7c0ec1757d35843d10e7e.agent",
+    "bytes": 169,
+    "sha256": "6806c6b8b7ba035e7dbf3c1f27e90f703b3e4366c1e7c0ec1757d35843d10e7e"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\6a47bcd0f4483651f5b430cc17c0d2f5218ba129dcb3ae5b8d14ef90096d1583.agent",
+    "bytes": 4658,
+    "sha256": "6a47bcd0f4483651f5b430cc17c0d2f5218ba129dcb3ae5b8d14ef90096d1583"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\6b964fd1a60a1c51e0900f74a69ee486c227aacf5bca2f24a06289cecc237bf7.agent",
+    "bytes": 69,
+    "sha256": "6b964fd1a60a1c51e0900f74a69ee486c227aacf5bca2f24a06289cecc237bf7"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\6ea5bee3651bca4d345ced10c37cc590e435225df08a0ef11d5455791acca7cb.agent",
+    "bytes": 3913,
+    "sha256": "6ea5bee3651bca4d345ced10c37cc590e435225df08a0ef11d5455791acca7cb"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\73b82bd0bcea5ede073d48b2f08282e439a8d219379ea58784fc933a4640b170.agent",
+    "bytes": 239,
+    "sha256": "73b82bd0bcea5ede073d48b2f08282e439a8d219379ea58784fc933a4640b170"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\81c7758787d510564e504106823b25108f66be5cc3cbe25390d2327492e95c5e.agent",
+    "bytes": 2473,
+    "sha256": "81c7758787d510564e504106823b25108f66be5cc3cbe25390d2327492e95c5e"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\84495d36556de99318e1e3b2c604a21bfb6175bd5260ab9c7653b1f5ea2b2640.agent",
+    "bytes": 145,
+    "sha256": "84495d36556de99318e1e3b2c604a21bfb6175bd5260ab9c7653b1f5ea2b2640"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\87ae782de5e5ccc8c7323f04a9f58b1e58add7481d537be2d734290199d61156.agent",
+    "bytes": 166,
+    "sha256": "87ae782de5e5ccc8c7323f04a9f58b1e58add7481d537be2d734290199d61156"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\907b65b6a35841fed8c4e3396100fdff2cce865813f710d09864345eac92aad2.agent",
+    "bytes": 221,
+    "sha256": "907b65b6a35841fed8c4e3396100fdff2cce865813f710d09864345eac92aad2"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\925da768579b541edebe26a053d9b95fcbbf7d024d41c7119ef25eab6b32136d.agent",
+    "bytes": 166,
+    "sha256": "925da768579b541edebe26a053d9b95fcbbf7d024d41c7119ef25eab6b32136d"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\942704a90f745a68b1219713fec82d77545b26fef5c2bba4eb9b7954c2010678.agent",
+    "bytes": 4757,
+    "sha256": "942704a90f745a68b1219713fec82d77545b26fef5c2bba4eb9b7954c2010678"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\959b422518dadc34d310426d002d1a5504a69f27b467795313a6a2a6b1ee06df.agent",
+    "bytes": 331,
+    "sha256": "959b422518dadc34d310426d002d1a5504a69f27b467795313a6a2a6b1ee06df"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\a33e83f5fab606218d610ffbb5529c93848a092a0d8d9800e949e0751ca18670.agent",
+    "bytes": 240,
+    "sha256": "a33e83f5fab606218d610ffbb5529c93848a092a0d8d9800e949e0751ca18670"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\ab43c70270a21dd59ccc2d652fbacf9ed8eaff693cccc1f73cf1037b6031bae7.agent",
+    "bytes": 136,
+    "sha256": "ab43c70270a21dd59ccc2d652fbacf9ed8eaff693cccc1f73cf1037b6031bae7"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\ad3c4c16f833569ddbbf6e21113423fd138fbd76b048b9f0757c3b31cba176e9.agent",
+    "bytes": 175,
+    "sha256": "ad3c4c16f833569ddbbf6e21113423fd138fbd76b048b9f0757c3b31cba176e9"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\aef0989b24710f09ece0578a1e0388bcc11d41b3016a2385fc1669999bfb225e.agent",
+    "bytes": 101,
+    "sha256": "aef0989b24710f09ece0578a1e0388bcc11d41b3016a2385fc1669999bfb225e"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\afc265dc6f94452468e30b9c48ba66600f45f00a586fdd3a624a0cfcbb40fa22.agent",
+    "bytes": 713,
+    "sha256": "afc265dc6f94452468e30b9c48ba66600f45f00a586fdd3a624a0cfcbb40fa22"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\b365659283c5f52808dddf75ffc2dc1c5a2f2b3b6bf1a17236a9670fc9ddc5bc.agent",
+    "bytes": 128,
+    "sha256": "b365659283c5f52808dddf75ffc2dc1c5a2f2b3b6bf1a17236a9670fc9ddc5bc"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\baa5d002af5287fdfd774b9c1cea0352e05e940fde2f0b1238e0331942e67671.agent",
+    "bytes": 233,
+    "sha256": "baa5d002af5287fdfd774b9c1cea0352e05e940fde2f0b1238e0331942e67671"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\c4c206c67fc7499729e77af0a7e51833b47e65a0fa1d9f9df0a9d801409a7050.agent",
+    "bytes": 142,
+    "sha256": "c4c206c67fc7499729e77af0a7e51833b47e65a0fa1d9f9df0a9d801409a7050"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\c701fc54256ab52139509aff9f40ca54c54dcc6f31f6577dc5836f7f0fdd7ad7.agent",
+    "bytes": 91,
+    "sha256": "c701fc54256ab52139509aff9f40ca54c54dcc6f31f6577dc5836f7f0fdd7ad7"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\cba51aed7789788bafdfed252595b21078bd2e16620690bd2ef0eff0179feeca.agent",
+    "bytes": 121,
+    "sha256": "cba51aed7789788bafdfed252595b21078bd2e16620690bd2ef0eff0179feeca"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\d362f5c0479517f4a3eecb5723a6781a06930112188c1b88fa88dd74660f5f5a.agent",
+    "bytes": 4774,
+    "sha256": "d362f5c0479517f4a3eecb5723a6781a06930112188c1b88fa88dd74660f5f5a"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\d5f4193e131c03e3cc0ffdd53c9363cdb347a215455266c79fb4062f9c06d48d.agent",
+    "bytes": 303,
+    "sha256": "d5f4193e131c03e3cc0ffdd53c9363cdb347a215455266c79fb4062f9c06d48d"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\df3f601da938987f6e6c71d0032e791fa5baa261035650f6706b06aece68da71.agent",
+    "bytes": 4641,
+    "sha256": "df3f601da938987f6e6c71d0032e791fa5baa261035650f6706b06aece68da71"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\e84f4a26267d08e8c8e0dbd81ad1b569779eb7d9f62045f1ff2764041c4d06b0.agent",
+    "bytes": 164,
+    "sha256": "e84f4a26267d08e8c8e0dbd81ad1b569779eb7d9f62045f1ff2764041c4d06b0"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\ebfda0ad236c50a2a29cf677ba9465b108ef55c039f3edbf34db743107587893.agent",
+    "bytes": 104,
+    "sha256": "ebfda0ad236c50a2a29cf677ba9465b108ef55c039f3edbf34db743107587893"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\f36b44ed0299a50c0c2a146b129c8d3d207dbba58ed016d429757d2edea83675.agent",
+    "bytes": 139,
+    "sha256": "f36b44ed0299a50c0c2a146b129c8d3d207dbba58ed016d429757d2edea83675"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\f97e48f3dd20a91c905c5618acfb9b0df9df69c81cbb7c05c7d78c7b8bdfc564.agent",
+    "bytes": 302,
+    "sha256": "f97e48f3dd20a91c905c5618acfb9b0df9df69c81cbb7c05c7d78c7b8bdfc564"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\fdda8e1ce305dd11db42d30b8f3db1829bb703c1bbd4cc68de8216993441acc1.agent",
+    "bytes": 139,
+    "sha256": "fdda8e1ce305dd11db42d30b8f3db1829bb703c1bbd4cc68de8216993441acc1"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\snapshots\\matched-renewal-start.json",
+    "bytes": 157,
+    "sha256": "b936be633953f177b3cf303dfbbccd3fc1b48e6c346789670bbf546227f85998"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\WRITE.lock",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "final-project\\dictionary.agent",
+    "bytes": 4641,
+    "sha256": "df3f601da938987f6e6c71d0032e791fa5baa261035650f6706b06aece68da71"
+  },
+  {
+    "path": "final-project\\history\\task-0001.json",
+    "bytes": 549,
+    "sha256": "9e7bcb7d58bd3ee79c2349f84ab0f1cc7b9876921bd0b6b463e1abc43f650fb2"
+  },
+  {
+    "path": "final-project\\history\\task-0002.json",
+    "bytes": 1678,
+    "sha256": "a05c577174b14b450468bc6345b9061ad3b3c22631441e410e2786169fc50a41"
+  },
+  {
+    "path": "final-project\\history\\task-0003.json",
+    "bytes": 1777,
+    "sha256": "95c938cbae45304bfe0b22298391b7894a5ef534ee9494be83ab045537d6037b"
+  },
+  {
+    "path": "final-project\\history\\task-0004.json",
+    "bytes": 828,
+    "sha256": "7f152dac87cb91d628192a17bde1c89afb32b88a289c23128f8d9c58dc599610"
+  },
+  {
+    "path": "final-project\\history\\task-0005.json",
+    "bytes": 658,
+    "sha256": "daa1b8e681d42a7614d37c6ddcbcfe4552e22ac793cec3da277059bb27cbb92e"
+  },
+  {
+    "path": "final-project\\history\\task-0006.json",
+    "bytes": 896,
+    "sha256": "f35951721a914fb13a9cb23624af0c082df60e50d2f2f0617dfa1fb32f8dcd9d"
+  },
+  {
+    "path": "final-project\\history\\task-0007.json",
+    "bytes": 662,
+    "sha256": "4a0855087190231d4be8f759c773c4d0cd508aaaaf0e5e7a69a23a4ed534f90d"
+  },
+  {
+    "path": "final-project\\history\\task-0008.json",
+    "bytes": 726,
+    "sha256": "a660e1d9bff76d1f83b4ec4b7b80ed0da8b3a45d8beabfbc37a0b14fc99d8585"
+  },
+  {
+    "path": "fixture-setup.json",
+    "bytes": 38166,
+    "sha256": "ce9e01afd6cfcd87e1d333ef44e5ff69f13773f288aacbe57b61f4fb0b380e16"
+  },
+  {
+    "path": "no-op-state-audit.json",
+    "bytes": 2137,
+    "sha256": "538ec4bdb30b1c2a54da7cc6d7a96ec1b9901e26081e3a6782f594ce79ba2249"
+  },
+  {
+    "path": "prelaunch.json",
+    "bytes": 6119,
+    "sha256": "07363d8404baed13c3db29501f203cb0f63813ad6684609273472f0cbe3538b8"
+  },
+  {
+    "path": "preservation.json",
+    "bytes": 13585,
+    "sha256": "7e8ae80539878d61f168e8445df4cfae359b7e8a16cb7316fb2fd7fec6d4cd1e"
+  },
+  {
+    "path": "prompt.txt",
+    "bytes": 7592,
+    "sha256": "21ab07568747e87d360c483f5940db6f71f34c090d656b45d8766f3d794fd8f3"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\CURRENT",
+    "bytes": 135,
+    "sha256": "40a4ed1a1df68f1231227c1080374d4fd971801229e5a9c02d9f9541baa7bb7e"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\manifests\\088a6a8bdd3245f371c7db6c645871760b8be2016501d8261060b50e580c9f6f.json",
+    "bytes": 52540,
+    "sha256": "088a6a8bdd3245f371c7db6c645871760b8be2016501d8261060b50e580c9f6f"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\manifests\\0f49bb93de56333575e4dbd84eeba7f5e199ff4c2afac6223759474eefe1f37b.json",
+    "bytes": 26218,
+    "sha256": "0f49bb93de56333575e4dbd84eeba7f5e199ff4c2afac6223759474eefe1f37b"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\manifests\\1c654679792069fbaf5fdc2ac1d6302f72f98bb70dfc5d0d57cd0686acdb9f75.json",
+    "bytes": 73673,
+    "sha256": "1c654679792069fbaf5fdc2ac1d6302f72f98bb70dfc5d0d57cd0686acdb9f75"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\manifests\\272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e.json",
+    "bytes": 583,
+    "sha256": "272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\manifests\\3b219e8faf1f23a352f89797984f5144c44658376978393878739aa80b6d59fc.json",
+    "bytes": 4522,
+    "sha256": "3b219e8faf1f23a352f89797984f5144c44658376978393878739aa80b6d59fc"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\manifests\\8ab71325aaabb58ff1c671d773c397bf61e74a1020bb39fc39425f47e950ded7.json",
+    "bytes": 375,
+    "sha256": "8ab71325aaabb58ff1c671d773c397bf61e74a1020bb39fc39425f47e950ded7"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\manifests\\b8d42474ecf2d2c8ad96b58440ff334048977381024a9db028608ef0bc2da926.json",
+    "bytes": 16416,
+    "sha256": "b8d42474ecf2d2c8ad96b58440ff334048977381024a9db028608ef0bc2da926"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\manifests\\eafa746c243a426de87904d78c5ced7f8d5d7bdf3760704ba926277b2258396f.json",
+    "bytes": 33021,
+    "sha256": "eafa746c243a426de87904d78c5ced7f8d5d7bdf3760704ba926277b2258396f"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\manifests\\eea54a49b5985b7ba3e88b04f15fdf72e6061aa7556453705693dc7c258f9f14.json",
+    "bytes": 10575,
+    "sha256": "eea54a49b5985b7ba3e88b04f15fdf72e6061aa7556453705693dc7c258f9f14"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\manifests\\f8513a81c30f662e0030cfcd5e83503318a101f01cc3ba327ccea4914942e8d9.json",
+    "bytes": 60050,
+    "sha256": "f8513a81c30f662e0030cfcd5e83503318a101f01cc3ba327ccea4914942e8d9"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\00dbd42ca3ba4dc2e785bd7fcdc2daa213840c2b8cf1b606c49b5ea981abbbc7.agent",
+    "bytes": 257,
+    "sha256": "00dbd42ca3ba4dc2e785bd7fcdc2daa213840c2b8cf1b606c49b5ea981abbbc7"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\0a09ec29fa93e0951a01017f708dbdb0ae4d13cec9c30fb033fbe3de55d9c9e7.agent",
+    "bytes": 188,
+    "sha256": "0a09ec29fa93e0951a01017f708dbdb0ae4d13cec9c30fb033fbe3de55d9c9e7"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\0fb8802a4955f3cc0fa1aef22ec9a47c2c8ab9306387a394f77a85457f11a43c.agent",
+    "bytes": 139,
+    "sha256": "0fb8802a4955f3cc0fa1aef22ec9a47c2c8ab9306387a394f77a85457f11a43c"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\13e29f6e79f5372b3d68d9f452467225d3a29d0ee773368f65db47b45b65f377.agent",
+    "bytes": 133,
+    "sha256": "13e29f6e79f5372b3d68d9f452467225d3a29d0ee773368f65db47b45b65f377"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\1aaaaa710dc4ada3060c07044e4994e39e861ffb1b1e9cde6c22c826502bea6d.agent",
+    "bytes": 4165,
+    "sha256": "1aaaaa710dc4ada3060c07044e4994e39e861ffb1b1e9cde6c22c826502bea6d"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\1c48deb4896bea9cd10bf11296699b0b8937051ffedab579ad6fa47fef8449c8.agent",
+    "bytes": 177,
+    "sha256": "1c48deb4896bea9cd10bf11296699b0b8937051ffedab579ad6fa47fef8449c8"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\1d89f396a411eb6cbcd9d7d8216b5b2912f8a080ff6601097d387853e16bbd41.agent",
+    "bytes": 160,
+    "sha256": "1d89f396a411eb6cbcd9d7d8216b5b2912f8a080ff6601097d387853e16bbd41"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\2754e501440b8c7cec15f3434d0233fda4154b9d631355748f1f323df2be80f5.agent",
+    "bytes": 101,
+    "sha256": "2754e501440b8c7cec15f3434d0233fda4154b9d631355748f1f323df2be80f5"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\46bb9bd2c5c701f35cb3acb1c2c8f52823a9ac1f1f0c609209cf344dbfdfb2be.agent",
+    "bytes": 127,
+    "sha256": "46bb9bd2c5c701f35cb3acb1c2c8f52823a9ac1f1f0c609209cf344dbfdfb2be"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\48d11471fdec13bb5396f310718560b8c58719c6f599218ef41ae0c3c013f216.agent",
+    "bytes": 135,
+    "sha256": "48d11471fdec13bb5396f310718560b8c58719c6f599218ef41ae0c3c013f216"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\48fb0dd39e609c978f7e0ee81331ad0634bee3771e21f08ebfefcfd567dc2776.agent",
+    "bytes": 129,
+    "sha256": "48fb0dd39e609c978f7e0ee81331ad0634bee3771e21f08ebfefcfd567dc2776"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\4d1f76127f259ff47d25e8ad4bed7c2ae6c9bf18846ae243179235c28278d313.agent",
+    "bytes": 74,
+    "sha256": "4d1f76127f259ff47d25e8ad4bed7c2ae6c9bf18846ae243179235c28278d313"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\57811cb5d5e949f549740165f2db15e06744eb72c9ee6e3f5a803512cbbcd170.agent",
+    "bytes": 149,
+    "sha256": "57811cb5d5e949f549740165f2db15e06744eb72c9ee6e3f5a803512cbbcd170"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\5b80e275b9e2e8d6a01d170c17d213ba9d8ffb9d1aa1e6e0314251a2b4922eab.agent",
+    "bytes": 1578,
+    "sha256": "5b80e275b9e2e8d6a01d170c17d213ba9d8ffb9d1aa1e6e0314251a2b4922eab"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\5ef3232a2ec6e4c4d260ce062560fbc2980ec4b20340e306699172fa274d58a3.agent",
+    "bytes": 435,
+    "sha256": "5ef3232a2ec6e4c4d260ce062560fbc2980ec4b20340e306699172fa274d58a3"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\6806c6b8b7ba035e7dbf3c1f27e90f703b3e4366c1e7c0ec1757d35843d10e7e.agent",
+    "bytes": 169,
+    "sha256": "6806c6b8b7ba035e7dbf3c1f27e90f703b3e4366c1e7c0ec1757d35843d10e7e"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\6a47bcd0f4483651f5b430cc17c0d2f5218ba129dcb3ae5b8d14ef90096d1583.agent",
+    "bytes": 4658,
+    "sha256": "6a47bcd0f4483651f5b430cc17c0d2f5218ba129dcb3ae5b8d14ef90096d1583"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\6b964fd1a60a1c51e0900f74a69ee486c227aacf5bca2f24a06289cecc237bf7.agent",
+    "bytes": 69,
+    "sha256": "6b964fd1a60a1c51e0900f74a69ee486c227aacf5bca2f24a06289cecc237bf7"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\6ea5bee3651bca4d345ced10c37cc590e435225df08a0ef11d5455791acca7cb.agent",
+    "bytes": 3913,
+    "sha256": "6ea5bee3651bca4d345ced10c37cc590e435225df08a0ef11d5455791acca7cb"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\73b82bd0bcea5ede073d48b2f08282e439a8d219379ea58784fc933a4640b170.agent",
+    "bytes": 239,
+    "sha256": "73b82bd0bcea5ede073d48b2f08282e439a8d219379ea58784fc933a4640b170"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\81c7758787d510564e504106823b25108f66be5cc3cbe25390d2327492e95c5e.agent",
+    "bytes": 2473,
+    "sha256": "81c7758787d510564e504106823b25108f66be5cc3cbe25390d2327492e95c5e"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\84495d36556de99318e1e3b2c604a21bfb6175bd5260ab9c7653b1f5ea2b2640.agent",
+    "bytes": 145,
+    "sha256": "84495d36556de99318e1e3b2c604a21bfb6175bd5260ab9c7653b1f5ea2b2640"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\87ae782de5e5ccc8c7323f04a9f58b1e58add7481d537be2d734290199d61156.agent",
+    "bytes": 166,
+    "sha256": "87ae782de5e5ccc8c7323f04a9f58b1e58add7481d537be2d734290199d61156"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\907b65b6a35841fed8c4e3396100fdff2cce865813f710d09864345eac92aad2.agent",
+    "bytes": 221,
+    "sha256": "907b65b6a35841fed8c4e3396100fdff2cce865813f710d09864345eac92aad2"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\925da768579b541edebe26a053d9b95fcbbf7d024d41c7119ef25eab6b32136d.agent",
+    "bytes": 166,
+    "sha256": "925da768579b541edebe26a053d9b95fcbbf7d024d41c7119ef25eab6b32136d"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\959b422518dadc34d310426d002d1a5504a69f27b467795313a6a2a6b1ee06df.agent",
+    "bytes": 331,
+    "sha256": "959b422518dadc34d310426d002d1a5504a69f27b467795313a6a2a6b1ee06df"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\ab43c70270a21dd59ccc2d652fbacf9ed8eaff693cccc1f73cf1037b6031bae7.agent",
+    "bytes": 136,
+    "sha256": "ab43c70270a21dd59ccc2d652fbacf9ed8eaff693cccc1f73cf1037b6031bae7"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\ad3c4c16f833569ddbbf6e21113423fd138fbd76b048b9f0757c3b31cba176e9.agent",
+    "bytes": 175,
+    "sha256": "ad3c4c16f833569ddbbf6e21113423fd138fbd76b048b9f0757c3b31cba176e9"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\aef0989b24710f09ece0578a1e0388bcc11d41b3016a2385fc1669999bfb225e.agent",
+    "bytes": 101,
+    "sha256": "aef0989b24710f09ece0578a1e0388bcc11d41b3016a2385fc1669999bfb225e"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\afc265dc6f94452468e30b9c48ba66600f45f00a586fdd3a624a0cfcbb40fa22.agent",
+    "bytes": 713,
+    "sha256": "afc265dc6f94452468e30b9c48ba66600f45f00a586fdd3a624a0cfcbb40fa22"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\b365659283c5f52808dddf75ffc2dc1c5a2f2b3b6bf1a17236a9670fc9ddc5bc.agent",
+    "bytes": 128,
+    "sha256": "b365659283c5f52808dddf75ffc2dc1c5a2f2b3b6bf1a17236a9670fc9ddc5bc"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\baa5d002af5287fdfd774b9c1cea0352e05e940fde2f0b1238e0331942e67671.agent",
+    "bytes": 233,
+    "sha256": "baa5d002af5287fdfd774b9c1cea0352e05e940fde2f0b1238e0331942e67671"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\c4c206c67fc7499729e77af0a7e51833b47e65a0fa1d9f9df0a9d801409a7050.agent",
+    "bytes": 142,
+    "sha256": "c4c206c67fc7499729e77af0a7e51833b47e65a0fa1d9f9df0a9d801409a7050"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\c701fc54256ab52139509aff9f40ca54c54dcc6f31f6577dc5836f7f0fdd7ad7.agent",
+    "bytes": 91,
+    "sha256": "c701fc54256ab52139509aff9f40ca54c54dcc6f31f6577dc5836f7f0fdd7ad7"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\cba51aed7789788bafdfed252595b21078bd2e16620690bd2ef0eff0179feeca.agent",
+    "bytes": 121,
+    "sha256": "cba51aed7789788bafdfed252595b21078bd2e16620690bd2ef0eff0179feeca"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\d362f5c0479517f4a3eecb5723a6781a06930112188c1b88fa88dd74660f5f5a.agent",
+    "bytes": 4774,
+    "sha256": "d362f5c0479517f4a3eecb5723a6781a06930112188c1b88fa88dd74660f5f5a"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\df3f601da938987f6e6c71d0032e791fa5baa261035650f6706b06aece68da71.agent",
+    "bytes": 4641,
+    "sha256": "df3f601da938987f6e6c71d0032e791fa5baa261035650f6706b06aece68da71"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\e84f4a26267d08e8c8e0dbd81ad1b569779eb7d9f62045f1ff2764041c4d06b0.agent",
+    "bytes": 164,
+    "sha256": "e84f4a26267d08e8c8e0dbd81ad1b569779eb7d9f62045f1ff2764041c4d06b0"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\ebfda0ad236c50a2a29cf677ba9465b108ef55c039f3edbf34db743107587893.agent",
+    "bytes": 104,
+    "sha256": "ebfda0ad236c50a2a29cf677ba9465b108ef55c039f3edbf34db743107587893"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\f36b44ed0299a50c0c2a146b129c8d3d207dbba58ed016d429757d2edea83675.agent",
+    "bytes": 139,
+    "sha256": "f36b44ed0299a50c0c2a146b129c8d3d207dbba58ed016d429757d2edea83675"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\f97e48f3dd20a91c905c5618acfb9b0df9df69c81cbb7c05c7d78c7b8bdfc564.agent",
+    "bytes": 302,
+    "sha256": "f97e48f3dd20a91c905c5618acfb9b0df9df69c81cbb7c05c7d78c7b8bdfc564"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\fdda8e1ce305dd11db42d30b8f3db1829bb703c1bbd4cc68de8216993441acc1.agent",
+    "bytes": 139,
+    "sha256": "fdda8e1ce305dd11db42d30b8f3db1829bb703c1bbd4cc68de8216993441acc1"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\snapshots\\matched-renewal-start.json",
+    "bytes": 157,
+    "sha256": "b936be633953f177b3cf303dfbbccd3fc1b48e6c346789670bbf546227f85998"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\WRITE.lock",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "starting-project\\dictionary.agent",
+    "bytes": 4774,
+    "sha256": "d362f5c0479517f4a3eecb5723a6781a06930112188c1b88fa88dd74660f5f5a"
+  },
+  {
+    "path": "starting-project\\history\\task-0001.json",
+    "bytes": 549,
+    "sha256": "9e7bcb7d58bd3ee79c2349f84ab0f1cc7b9876921bd0b6b463e1abc43f650fb2"
+  },
+  {
+    "path": "starting-project\\history\\task-0002.json",
+    "bytes": 1678,
+    "sha256": "a05c577174b14b450468bc6345b9061ad3b3c22631441e410e2786169fc50a41"
+  },
+  {
+    "path": "starting-project\\history\\task-0003.json",
+    "bytes": 1777,
+    "sha256": "95c938cbae45304bfe0b22298391b7894a5ef534ee9494be83ab045537d6037b"
+  },
+  {
+    "path": "starting-project\\history\\task-0004.json",
+    "bytes": 828,
+    "sha256": "7f152dac87cb91d628192a17bde1c89afb32b88a289c23128f8d9c58dc599610"
+  },
+  {
+    "path": "starting-project\\history\\task-0005.json",
+    "bytes": 658,
+    "sha256": "daa1b8e681d42a7614d37c6ddcbcfe4552e22ac793cec3da277059bb27cbb92e"
+  },
+  {
+    "path": "starting-project\\history\\task-0006.json",
+    "bytes": 896,
+    "sha256": "f35951721a914fb13a9cb23624af0c082df60e50d2f2f0617dfa1fb32f8dcd9d"
+  },
+  {
+    "path": "starting-project\\history\\task-0007.json",
+    "bytes": 662,
+    "sha256": "4a0855087190231d4be8f759c773c4d0cd508aaaaf0e5e7a69a23a4ed534f90d"
+  },
+  {
+    "path": "starting-state.json",
+    "bytes": 13544,
+    "sha256": "b840cc4c8c12cefcfbafdf5c8d42e005faa05bb9477fa338f2b4e16c2ae62366"
+  },
+  {
+    "path": "trace-audit.json",
+    "bytes": 6473,
+    "sha256": "b3cf314cbb12b15d2fd4672c502fd4bd6f0b12cda8cfaea2497e7698b920743a"
+  },
+  {
+    "path": "trace.jsonl",
+    "bytes": 216344,
+    "sha256": "d5b5d5b9664052fd50833b271fe7bb843842ab68527f5675d874c2dab142bdfb"
+  }
+]

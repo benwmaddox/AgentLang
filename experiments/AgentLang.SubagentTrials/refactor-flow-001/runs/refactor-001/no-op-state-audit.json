@@ -1,0 +1,80 @@
+{
+  "scope": "Stable inventory/identities; exact type/unrelated-word/test/example/history preservation; in-place revisions; retained immutable files; independent behavior/library coverage and exact direct dependency sets proving reuse instead of duplicated classification.",
+  "failure": "revised existing library word customer.discounted-balance",
+  "checks": [
+    {
+      "name": "manifest hash matches CURRENT",
+      "passed": true
+    },
+    {
+      "name": "manifest hash matches CURRENT",
+      "passed": true
+    },
+    {
+      "name": "exact type definitions retained",
+      "passed": true
+    },
+    {
+      "name": "same word inventory and stable identities",
+      "passed": true
+    },
+    {
+      "name": "unrelated current word unchanged customer.premium?",
+      "passed": true
+    },
+    {
+      "name": "unrelated revisions unchanged customer.premium?",
+      "passed": true
+    },
+    {
+      "name": "unrelated current word unchanged subscription.annual-renewable?",
+      "passed": true
+    },
+    {
+      "name": "unrelated revisions unchanged subscription.annual-renewable?",
+      "passed": true
+    },
+    {
+      "name": "exact historical revision retained",
+      "passed": true
+    },
+    {
+      "name": "exact historical revision retained",
+      "passed": true
+    },
+    {
+      "name": "exact historical revision retained",
+      "passed": true
+    },
+    {
+      "name": "exact historical revision retained",
+      "passed": true
+    },
+    {
+      "name": "exact historical revision retained",
+      "passed": true
+    },
+    {
+      "name": "exact historical revision retained",
+      "passed": true
+    },
+    {
+      "name": "exact historical revision retained",
+      "passed": true
+    },
+    {
+      "name": "exact historical revision retained",
+      "passed": true
+    },
+    {
+      "name": "exact historical revision retained",
+      "passed": true
+    },
+    {
+      "name": "revised existing library word customer.discounted-balance",
+      "passed": false
+    }
+  ],
+  "schemaVersion": 1,
+  "passed": false
+}

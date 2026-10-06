@@ -104,6 +104,15 @@ passed full coverage/self-tests before independent rejection, so coverage is
 not treated as correctness proof. Refactoring and stronger domain/stateful
 tasks remain the immediate evaluation priority; controlled costs stay unproven.
 
+[Checkpoint 069](../reports/069-existing-vocabulary-agent-refactoring.md) verifies
+one fresh agent removing duplicated logic by discovering/composing existing
+words. Both operations pass 96 independent checks and 88 state/structure checks;
+all test sources and identities are preserved. Coverage introspection currently
+shows only the latest test batch, which prompted repeat queries; the current
+primer clarifies this scope. The [next strong-type trial](STRONG-TYPE-AGENT-TRIAL-PLAN.md)
+is planned but not executed. Full-domain, stateful, suite-wide and controlled
+efficiency requirements remain open.
+
 Latest external-agent workflow evidence: [report 054](../reports/054-flow-renewal-agent-control.md)
 records a separate inherited-history Luna/max control that created one tested
 library word by composing a retained domain word. Fresh-process acceptance

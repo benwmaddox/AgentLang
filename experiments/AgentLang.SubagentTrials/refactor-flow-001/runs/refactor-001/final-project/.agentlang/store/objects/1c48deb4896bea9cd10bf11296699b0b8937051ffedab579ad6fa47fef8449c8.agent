@@ -1,0 +1,3 @@
+test customer.renewal-balance/negative-standard-annual-renewable {
+    customer::renewal-balance(customer::new("standard", -100.0), subscription::new("annual", true)) => -95.0
+}

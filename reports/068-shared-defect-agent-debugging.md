@@ -104,3 +104,7 @@ F# or host behavior change. It is not the full debugging/refactoring task suite,
 strong business domain, controlled cost evaluation or 2k–32k context study. The
 next short step is a fresh-agent refactoring task, followed by stronger nominal
 domain-type and stateful behavior tasks. The full PRD goal remains active.
+
+Publication verification: clean [main CI](evidence/068-main-ci.json) passed
+all 32 checks at `9c20fba`; the saved
+[validation artifact](evidence/068-main-validation.json) records `dirty: false`.

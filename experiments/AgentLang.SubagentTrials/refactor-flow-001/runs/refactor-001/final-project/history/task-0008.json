@@ -1,0 +1,32 @@
+{
+  "task": "task-0008",
+  "goal": "Consolidate customer discount logic",
+  "active": false,
+  "wordsInspected": [
+    "customer.discounted-balance",
+    "customer.renewal-balance"
+  ],
+  "wordsUsed": [
+    "bool.and",
+    "customer.balance",
+    "customer.discounted-balance",
+    "customer.kind",
+    "customer.new",
+    "customer.premium?",
+    "customer.renewal-balance",
+    "equals",
+    "float.multiply",
+    "subscription.annual-renewable?",
+    "subscription.new",
+    "subscription.renewable",
+    "subscription.term"
+  ],
+  "wordsCreated": [
+    "customer.discounted-balance",
+    "customer.renewal-balance"
+  ],
+  "testsRun": 56,
+  "testsFailed": 0,
+  "effects": {},
+  "errors": []
+}

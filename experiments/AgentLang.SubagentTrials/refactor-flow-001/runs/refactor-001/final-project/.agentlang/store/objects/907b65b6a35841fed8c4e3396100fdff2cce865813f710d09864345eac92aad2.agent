@@ -1,0 +1,7 @@
+word subscription.annual-renewable?(subscription: Subscription) -> Bool {
+    effects none
+    bool::and(
+        ::equals(subscription::term(subscription), "annual"),
+        subscription::renewable(subscription)
+    )
+}

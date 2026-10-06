@@ -1,0 +1,9 @@
+word customer.discounted-balance(customer: Customer) -> Float {
+    effects none
+    let balance = customer::balance(customer);
+    if ::equals(customer::kind(customer), "premium") {
+        float::multiply(balance, 0.9)
+    } else {
+        balance
+    }
+}

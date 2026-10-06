@@ -1,0 +1,198 @@
+// frontend: flow/1
+
+record Customer {
+    field kind: String;
+    field balance: Float;
+}
+
+// frontend: flow/1
+
+record Subscription {
+    field term: String;
+    field renewable: Bool;
+}
+
+// frontend: flow/1
+
+word customer.discounted-balance(customer: Customer) -> Float {
+    effects none
+    let balance = customer::balance(customer);
+    if ::equals(customer::kind(customer), "premium") {
+        float::multiply(balance, 0.9)
+    } else {
+        balance
+    }
+}
+
+// frontend: flow/1
+
+word customer.premium?(customer: Customer) -> Bool {
+    effects none
+    ::equals(customer::kind(customer), "premium")
+}
+
+// frontend: flow/1
+
+word customer.renewal-balance(customer: Customer, subscription: Subscription) -> Float {
+    effects none
+    let discounted = customer::discounted-balance(customer);
+    if subscription::annual-renewable?(subscription) {
+        float::multiply(discounted, 0.95)
+    } else {
+        discounted
+    }
+}
+
+// frontend: flow/1
+
+word subscription.annual-renewable?(subscription: Subscription) -> Bool {
+    effects none
+    bool::and(::equals(subscription::term(subscription), "annual"), subscription::renewable(subscription))
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/case-sensitive-kind {
+    customer::discounted-balance(customer::new("Premium", 25))
+    => 25
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/negative-balance-clamped {
+    customer::discounted-balance(customer::new("standard", -100))
+    => -100
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/negative-premium-credit {
+    customer::discounted-balance(customer::new("premium", -100))
+    => -90
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/other-kind-unchanged {
+    customer::discounted-balance(customer::new("standard", 100))
+    => 100
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/premium-discount {
+    customer::discounted-balance(customer::new("premium", 100))
+    => 90
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/premium-zero-balance {
+    customer::discounted-balance(customer::new("premium", 0))
+    => 0
+}
+
+// frontend: flow/1
+
+test customer.premium?/case-sensitive {
+    customer::premium?(customer::new("Premium", 0))
+    => false
+}
+
+// frontend: flow/1
+
+test customer.premium?/other-kind {
+    customer::premium?(customer::new("standard", 0))
+    => false
+}
+
+// frontend: flow/1
+
+test customer.premium?/premium-kind {
+    customer::premium?(customer::new("premium", 0))
+    => true
+}
+
+// frontend: flow/1
+
+test customer.renewal-balance/exact-kind-and-term {
+    customer::renewal-balance(customer::new("Premium", 100), subscription::new("Annual", true))
+    => 100
+}
+
+// frontend: flow/1
+
+test customer.renewal-balance/negative-premium-annual-renewable {
+    customer::renewal-balance(customer::new("premium", -100), subscription::new("annual", true))
+    => -85.5
+}
+
+// frontend: flow/1
+
+test customer.renewal-balance/negative-standard-annual-renewable {
+    customer::renewal-balance(customer::new("standard", -100), subscription::new("annual", true))
+    => -95
+}
+
+// frontend: flow/1
+
+test customer.renewal-balance/premium-annual-not-renewable {
+    customer::renewal-balance(customer::new("premium", 100), subscription::new("annual", false))
+    => 90
+}
+
+// frontend: flow/1
+
+test customer.renewal-balance/premium-annual-renewable {
+    customer::renewal-balance(customer::new("premium", 100), subscription::new("annual", true))
+    => 85.5
+}
+
+// frontend: flow/1
+
+test customer.renewal-balance/premium-monthly-renewable {
+    customer::renewal-balance(customer::new("premium", 100), subscription::new("monthly", true))
+    => 90
+}
+
+// frontend: flow/1
+
+test customer.renewal-balance/standard-annual-renewable {
+    customer::renewal-balance(customer::new("standard", 100), subscription::new("annual", true))
+    => 95
+}
+
+// frontend: flow/1
+
+test customer.renewal-balance/zero-balance {
+    customer::renewal-balance(customer::new("premium", 0), subscription::new("annual", true))
+    => 0
+}
+
+// frontend: flow/1
+
+test subscription.annual-renewable?/annual-and-renewable {
+    subscription::annual-renewable?(subscription::new("annual", true))
+    => true
+}
+
+// frontend: flow/1
+
+test subscription.annual-renewable?/annual-but-not-renewable {
+    subscription::annual-renewable?(subscription::new("annual", false))
+    => false
+}
+
+// frontend: flow/1
+
+test subscription.annual-renewable?/case-sensitive-term {
+    subscription::annual-renewable?(subscription::new("Annual", true))
+    => false
+}
+
+// frontend: flow/1
+
+test subscription.annual-renewable?/monthly-and-renewable {
+    subscription::annual-renewable?(subscription::new("monthly", true))
+    => false
+}
