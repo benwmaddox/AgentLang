@@ -1,0 +1,3 @@
+test delivery.speed-kph/positive {
+    delivery::speed-kph(delivery::new(Email::new("dispatch@example.test"), MetersPerSecond::new(10.0))) => value KilometersPerHour::new(36.0)
+}

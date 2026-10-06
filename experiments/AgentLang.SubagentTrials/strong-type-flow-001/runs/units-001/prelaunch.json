@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 1,
+  "preparedAtUtc": "2026-10-06T21:22:54.0934718+00:00",
+  "sourceRevision": "8d52195cd02a1b4f65a33f320bb00e41335de4f0",
+  "model": "gpt-6-luna",
+  "reasoningEffort": "max",
+  "forkTurns": "none",
+  "projectPath": "D:\\code\\AgentLang\\.agentlang\\strong-type-flow-001\\actor-01-units",
+  "launchCommand": "& 'D:\\code\\AgentLang\\scripts\\Start-SubagentTrialHost.ps1' -CliDll 'D:\\code\\AgentLang\\.agentlang\\strong-type-flow-001\\language-bin\\AgentLang.Cli.dll' -ProjectPath 'D:\\code\\AgentLang\\.agentlang\\strong-type-flow-001\\actor-01-units' -TracePath 'D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\strong-type-flow-001\\runs\\units-001\\trace.jsonl' -AllowedOperations @('words','describe','search','source','dependencies','callers','eval','define','test','test-all','tests','commit','replace-word','task.begin','task.commit','task.status','task.log','ir','context','failed-tests','examples','effects','type-of','search-type','search-output','history','diff','graph','transitive-dependencies','transitive-callers','search-dependency') -Profile agentlang -ExchangeTimeoutMilliseconds 120000 -MaxExchanges 100",
+  "allowedOperations": [
+    "words",
+    "describe",
+    "search",
+    "source",
+    "dependencies",
+    "callers",
+    "eval",
+    "define",
+    "test",
+    "test-all",
+    "tests",
+    "commit",
+    "replace-word",
+    "task.begin",
+    "task.commit",
+    "task.status",
+    "task.log",
+    "ir",
+    "context",
+    "failed-tests",
+    "examples",
+    "effects",
+    "type-of",
+    "search-type",
+    "search-output",
+    "history",
+    "diff",
+    "graph",
+    "transitive-dependencies",
+    "transitive-callers",
+    "search-dependency"
+  ],
+  "exchangeTimeoutMilliseconds": 120000,
+  "maxExchanges": 100,
+  "inspectionBudgetEnabled": false,
+  "capabilities": [],
+  "clockValue": "2000-01-01T00:00:00Z",
+  "runtimeFiles": [
+    {
+      "path": "AgentLang.Cli.deps.json",
+      "bytes": 2903,
+      "sha256": "6382f6dc29bb8f827824839010e313b266e51a3f87a4fdb8c382931d2549e97e"
+    },
+    {
+      "path": "AgentLang.Cli.dll",
+      "bytes": 37888,
+      "sha256": "c1a3b1dce20858d51c66a5bec16bbe910694ba1c8c24e8a5869b31e1bd5785c2"
+    },
+    {
+      "path": "AgentLang.Cli.exe",
+      "bytes": 156160,
+      "sha256": "f76fe5253f3d2049033a022f1de7881530550d76b9678cebd88defc7cb054a97"
+    },
+    {
+      "path": "AgentLang.Cli.pdb",
+      "bytes": 10136,
+      "sha256": "1652d23c39b287371b47aebb17cdb1f07dd8e2412e373192bf30e95ea62e23d2"
+    },
+    {
+      "path": "AgentLang.Cli.runtimeconfig.json",
+      "bytes": 340,
+      "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+    },
+    {
+      "path": "AgentLang.Core.deps.json",
+      "bytes": 2474,
+      "sha256": "fdb608cd25481963ace0ddb4a8312aac36030e6f63deb069865ef2e610c99558"
+    },
+    {
+      "path": "AgentLang.Core.dll",
+      "bytes": 2062848,
+      "sha256": "3ea76705892258b1009ace0ddcf1b8042c1662a37812c1bb0652e88658930fc1"
+    },
+    {
+      "path": "AgentLang.Core.pdb",
+      "bytes": 547504,
+      "sha256": "499238c1782b679b8da8eef2e55e2e4c48ce5b21d0a84dba75556a97583dbafb"
+    },
+    {
+      "path": "AgentLang.Core.xml",
+      "bytes": 31418,
+      "sha256": "89d78ea4564d459ee03ba96628df479b1d4ade875bebcff99a48ae49ff4f8dec"
+    },
+    {
+      "path": "cs\\FSharp.Core.resources.dll",
+      "bytes": 34600,
+      "sha256": "eb8bd755cfe0d39ce27615027fe22556e8b9dcb470f2b47a36f4bfbf3c31be64"
+    },
+    {
+      "path": "de\\FSharp.Core.resources.dll",
+      "bytes": 35592,
+      "sha256": "7419e4f5ceed9e03821686e865fed7d29c6217fdf5d3a46a2919a369c98c38ce"
+    },
+    {
+      "path": "es\\FSharp.Core.resources.dll",
+      "bytes": 34600,
+      "sha256": "636866649564c72eb763eb3942e021b52b1f9b3869d037aca48f73d4474353c5"
+    },
+    {
+      "path": "fr\\FSharp.Core.resources.dll",
+      "bytes": 35128,
+      "sha256": "f38f2fd6bc4c4e233dd098a36b315a2bc87673cf2f07c6ba3daf71a3264f4a64"
+    },
+    {
+      "path": "FSharp.Core.dll",
+      "bytes": 2314000,
+      "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+    },
+    {
+      "path": "it\\FSharp.Core.resources.dll",
+      "bytes": 34576,
+      "sha256": "61a0be9c6a2ed95f8e98493b17c54a55c68cef84e23a0d82114319e2c5f3c2cd"
+    },
+    {
+      "path": "ja\\FSharp.Core.resources.dll",
+      "bytes": 37160,
+      "sha256": "dd7f36036d906e991da5505b074ef889a603f449d3324750fda5f5445ba2854f"
+    },
+    {
+      "path": "ko\\FSharp.Core.resources.dll",
+      "bytes": 36104,
+      "sha256": "0f3ef625e379577e3b60c15d8cc3759d3dc8840f99894282df1e702b4a166462"
+    },
+    {
+      "path": "pl\\FSharp.Core.resources.dll",
+      "bytes": 35632,
+      "sha256": "755bab9fbd85e5e4b4771870c9c4d655e91e3ce39cc1c2735fe0bc7cec6b84c3"
+    },
+    {
+      "path": "pt-BR\\FSharp.Core.resources.dll",
+      "bytes": 34096,
+      "sha256": "a4bbbdaabf2003a5fdff5f5bc4143c3fd4a064f2681fc481f449d4558074dc61"
+    },
+    {
+      "path": "ru\\FSharp.Core.resources.dll",
+      "bytes": 41232,
+      "sha256": "a1133f9ab7e661803d1af0c2489626bd53ac33a11dfe891f5a02f3186f2f5d78"
+    },
+    {
+      "path": "tr\\FSharp.Core.resources.dll",
+      "bytes": 34072,
+      "sha256": "6b0cba5139a86ee681909fdfcebac07c99afba3bfcff4fb8ab12b9c2112a0b31"
+    },
+    {
+      "path": "zh-Hans\\FSharp.Core.resources.dll",
+      "bytes": 32552,
+      "sha256": "25f82f35a9234bcaab272921b0d50054ddb4a669d96c111907c9d31f5b18c121"
+    },
+    {
+      "path": "zh-Hant\\FSharp.Core.resources.dll",
+      "bytes": 32032,
+      "sha256": "ac03ee7c4112c755705776c700033794586f980fe9476e6a13811a7153beabb8"
+    }
+  ],
+  "hostSha256": "d3b60698ef29cc6e7d9b42f37d9a298a311f409cb3f85112ca2a5dccf6148c4d",
+  "promptSha256": "a7c3abfb52923595b1369bb65f4ea31210acc6ee1ee06d7b4a626899a75278e0",
+  "promptUtf8Bytes": 7729,
+  "startingStateSha256": "1ca2be7c762ae910d9fd8fd223bac0db56e25ef96e966bf1a196b341ab837e07",
+  "independentAcceptanceScriptSha256": "4a443843470b826ccb941a17d5766486fac510ffe17574a46167d654eb6b8667"
+}

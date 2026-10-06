@@ -1,0 +1,149 @@
+{
+  "sessionEnd": {
+    "event": "session-end",
+    "finishedUtc": "2026-10-06T17:25:09.7737466-04:00",
+    "exchangeCount": 17,
+    "hostExitCode": 0,
+    "runtimeExitCode": 0,
+    "runtimeStderrPrefixBytes": 0,
+    "runtimeStderrTotalBytes": 0,
+    "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runtimeStderrCaptureTruncated": false
+  },
+  "limits": [
+    "Schema 1 records selected responses before stdout flush; no delivery/model-consumption claim.",
+    "Payload counts exclude LF but include CR.",
+    "No exact model tokens, turns, controlled latency or window measurement.",
+    "One strong-type usability smoke; no matched conventional comparison."
+  ],
+  "selectedResponsePayloadBytes": 16111,
+  "requests": [
+    {
+      "op": "words",
+      "requestBytes": 30,
+      "responseBytes": 1157,
+      "word": null,
+      "ok": true
+    },
+    {
+      "op": "describe",
+      "requestBytes": 42,
+      "responseBytes": 769,
+      "word": "delivery.speed",
+      "ok": true
+    },
+    {
+      "op": "describe",
+      "requestBytes": 40,
+      "responseBytes": 800,
+      "word": "delivery.new",
+      "ok": true
+    },
+    {
+      "op": "describe",
+      "requestBytes": 49,
+      "responseBytes": 816,
+      "word": "MetersPerSecond.value",
+      "ok": true
+    },
+    {
+      "op": "describe",
+      "requestBytes": 49,
+      "responseBytes": 829,
+      "word": "KilometersPerHour.new",
+      "ok": true
+    },
+    {
+      "op": "task.begin",
+      "requestBytes": 359,
+      "responseBytes": 548,
+      "word": null,
+      "ok": true
+    },
+    {
+      "op": "describe",
+      "requestBytes": 42,
+      "responseBytes": 762,
+      "word": "float.multiply",
+      "ok": true
+    },
+    {
+      "op": "describe",
+      "requestBytes": 47,
+      "responseBytes": 819,
+      "word": "MetersPerSecond.new",
+      "ok": true
+    },
+    {
+      "op": "describe",
+      "requestBytes": 44,
+      "responseBytes": 769,
+      "word": "delivery.contact",
+      "ok": true
+    },
+    {
+      "op": "tests",
+      "requestBytes": 37,
+      "responseBytes": 66,
+      "word": "delivery.new",
+      "ok": true
+    },
+    {
+      "op": "define",
+      "requestBytes": 971,
+      "responseBytes": 300,
+      "word": null,
+      "ok": true
+    },
+    {
+      "op": "test",
+      "requestBytes": 42,
+      "responseBytes": 2589,
+      "word": "delivery.speed-kph",
+      "ok": true
+    },
+    {
+      "op": "commit",
+      "requestBytes": 59,
+      "responseBytes": 220,
+      "word": "delivery.speed-kph",
+      "ok": true
+    },
+    {
+      "op": "task.commit",
+      "requestBytes": 21,
+      "responseBytes": 927,
+      "word": null,
+      "ok": true
+    },
+    {
+      "op": "describe",
+      "requestBytes": 46,
+      "responseBytes": 1275,
+      "word": "delivery.speed-kph",
+      "ok": true
+    },
+    {
+      "op": "task.status",
+      "requestBytes": 21,
+      "responseBytes": 876,
+      "word": null,
+      "ok": true
+    },
+    {
+      "op": "test",
+      "requestBytes": 42,
+      "responseBytes": 2589,
+      "word": "delivery.speed-kph",
+      "ok": true
+    }
+  ],
+  "traceSha256": "c27da3531551b63c373c4ae56fecc7619dd4a5dca58958a5d604dc8bd8392a76",
+  "requestPayloadBytes": 1941,
+  "schemaVersion": 1,
+  "errors": [],
+  "passed": true,
+  "exchanges": 17,
+  "independentAcceptanceScriptSha256": "4a443843470b826ccb941a17d5766486fac510ffe17574a46167d654eb6b8667",
+  "startingStateSha256": "1ca2be7c762ae910d9fd8fd223bac0db56e25ef96e966bf1a196b341ab837e07"
+}

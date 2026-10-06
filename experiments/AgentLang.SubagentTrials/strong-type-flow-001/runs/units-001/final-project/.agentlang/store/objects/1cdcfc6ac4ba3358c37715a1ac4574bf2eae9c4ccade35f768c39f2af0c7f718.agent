@@ -1,0 +1,80 @@
+// frontend: flow/1
+
+type Email : String {
+    validate email::valid?;
+}
+
+// frontend: flow/1
+
+type KilometersPerHour : Float {
+}
+
+// frontend: flow/1
+
+type MetersPerSecond : Float {
+}
+
+// frontend: flow/1
+
+word email.valid?(address: String) -> Bool {
+    effects none
+    let contains-at = string::contains(address, "@");
+    let contains-dot = string::contains(address, ".");
+    let contains-space = string::contains(address, " ");
+    let starts-with-at = string::starts-with(address, "@");
+    let ends-with-at = string::ends-with(address, "@");
+    let has-required-parts = bool::and(contains-at, contains-dot);
+    let has-no-space = bool::not(contains-space);
+    let has-no-leading-at = bool::not(starts-with-at);
+    let has-no-trailing-at = bool::not(ends-with-at);
+    bool::and(bool::and(bool::and(has-required-parts, has-no-space), has-no-leading-at), has-no-trailing-at)
+}
+
+// frontend: flow/1
+
+test email.valid?/leading-at {
+    email::valid?("@dev.example")
+    => false
+}
+
+// frontend: flow/1
+
+test email.valid?/missing-at {
+    email::valid?("dev.example.com")
+    => false
+}
+
+// frontend: flow/1
+
+test email.valid?/missing-dot {
+    email::valid?("dev@examplecom")
+    => false
+}
+
+// frontend: flow/1
+
+test email.valid?/spaces {
+    email::valid?("dev @example.com")
+    => false
+}
+
+// frontend: flow/1
+
+test email.valid?/trailing-at {
+    email::valid?("dev.example@")
+    => false
+}
+
+// frontend: flow/1
+
+test email.valid?/valid {
+    email::valid?("dev@example.com")
+    => true
+}
+
+// frontend: flow/1
+
+example email.valid?/accepted-shape {
+    email::valid?("dev@example.com")
+    => true
+}

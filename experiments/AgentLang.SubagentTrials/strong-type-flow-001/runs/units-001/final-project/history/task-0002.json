@@ -1,0 +1,33 @@
+{
+  "task": "task-0002",
+  "goal": "Add pure delivery.speed-kph converting Delivery speed from meters per second to kilometers per hour with explicit nominal accessors and constructor; add meaningful zero, positive, fractional, and signed tests; achieve complete own instruction and branch coverage; commit as a library word while preserving seeded project content.",
+  "active": false,
+  "wordsInspected": [
+    "MetersPerSecond.new",
+    "delivery.contact",
+    "float.multiply"
+  ],
+  "wordsUsed": [
+    "Email.new",
+    "KilometersPerHour.new",
+    "MetersPerSecond.new",
+    "MetersPerSecond.value",
+    "bool.and",
+    "bool.not",
+    "delivery.new",
+    "delivery.speed",
+    "delivery.speed-kph",
+    "email.valid?",
+    "float.multiply",
+    "string.contains",
+    "string.ends-with",
+    "string.starts-with"
+  ],
+  "wordsCreated": [
+    "delivery.speed-kph"
+  ],
+  "testsRun": 8,
+  "testsFailed": 0,
+  "effects": {},
+  "errors": []
+}

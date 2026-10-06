@@ -1,0 +1,68 @@
+[
+  {
+    "op": "task.begin",
+    "goal": "Prepare immutable strong-type agent study seed"
+  },
+  {
+    "op": "define",
+    "frontend": "flow",
+    "source": "type Email : String {\n    validate email::valid?;\n}\n\ntype MetersPerSecond : Float { }\n\ntype KilometersPerHour : Float { }\n\nrecord Delivery {\n    field contact: Email;\n    field speed: MetersPerSecond;\n}\n\nword email.valid?(address: String) -> Bool {\n    effects none\n    let contains-at = string::contains(address, \"@\");\n    let contains-dot = string::contains(address, \".\");\n    let contains-space = string::contains(address, \" \");\n    let starts-with-at = string::starts-with(address, \"@\");\n    let ends-with-at = string::ends-with(address, \"@\");\n    let has-required-parts = bool::and(contains-at, contains-dot);\n    let has-no-space = bool::not(contains-space);\n    let has-no-leading-at = bool::not(starts-with-at);\n    let has-no-trailing-at = bool::not(ends-with-at);\n    bool::and(\n        bool::and(\n            bool::and(has-required-parts, has-no-space),\n            has-no-leading-at),\n        has-no-trailing-at)\n}\n\ntest email.valid?/valid {\n    email::valid?(\"dev@example.com\")\n    => true\n}\n\ntest email.valid?/missing-at {\n    email::valid?(\"dev.example.com\")\n    => false\n}\n\ntest email.valid?/missing-dot {\n    email::valid?(\"dev@examplecom\")\n    => false\n}\n\ntest email.valid?/spaces {\n    email::valid?(\"dev @example.com\")\n    => false\n}\n\ntest email.valid?/leading-at {\n    email::valid?(\"@dev.example\")\n    => false\n}\n\ntest email.valid?/trailing-at {\n    email::valid?(\"dev.example@\")\n    => false\n}\n\nexample email.valid?/accepted-shape {\n    email::valid?(\"dev@example.com\")\n    => true\n}"
+  },
+  {
+    "op": "test",
+    "word": "email.valid?"
+  },
+  {
+    "op": "commit",
+    "word": "email.valid?",
+    "library": true
+  },
+  {
+    "op": "commit",
+    "word": "Email"
+  },
+  {
+    "op": "commit",
+    "word": "MetersPerSecond"
+  },
+  {
+    "op": "commit",
+    "word": "KilometersPerHour"
+  },
+  {
+    "op": "commit",
+    "word": "Delivery"
+  },
+  {
+    "op": "test-all"
+  },
+  {
+    "op": "describe",
+    "word": "email.valid?"
+  },
+  {
+    "op": "source",
+    "type": "Email"
+  },
+  {
+    "op": "source",
+    "type": "MetersPerSecond"
+  },
+  {
+    "op": "source",
+    "type": "KilometersPerHour"
+  },
+  {
+    "op": "source",
+    "type": "Delivery"
+  },
+  {
+    "op": "example",
+    "word": "email.valid?",
+    "caseName": "accepted-shape"
+  },
+  {
+    "op": "task.commit",
+    "actor": "host"
+  }
+]

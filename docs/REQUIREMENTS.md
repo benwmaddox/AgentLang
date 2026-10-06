@@ -113,6 +113,14 @@ primer clarifies this scope. The [next strong-type trial](STRONG-TYPE-AGENT-TRIA
 is planned but not executed. Full-domain, stateful, suite-wide and controlled
 efficiency requirements remain open.
 
+[Checkpoint 070](../reports/070-strong-type-agent-conversion.md) verifies one
+fresh agent discovering refined Email and distinct speed types, then publishing
+a pure explicit conversion with four passing own tests and full own coverage.
+Independent acceptance passes 118 checks, six numeric vectors and four atomic
+type-rejection probes. Seeded types/validator/history remain unchanged. This is
+one strong-type usability outcome, without a conventional cost comparison;
+stateful evaluation and strong business-domain expansion are the next priority.
+
 Latest external-agent workflow evidence: [report 054](../reports/054-flow-renewal-agent-control.md)
 records a separate inherited-history Luna/max control that created one tested
 library word by composing a retained domain word. Fresh-process acceptance

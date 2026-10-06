@@ -1,0 +1,4 @@
+test email.valid?/missing-dot {
+    email::valid?("dev@examplecom")
+    => false
+}

@@ -1,0 +1,17 @@
+word email.valid?(address: String) -> Bool {
+    effects none
+    let contains-at = string::contains(address, "@");
+    let contains-dot = string::contains(address, ".");
+    let contains-space = string::contains(address, " ");
+    let starts-with-at = string::starts-with(address, "@");
+    let ends-with-at = string::ends-with(address, "@");
+    let has-required-parts = bool::and(contains-at, contains-dot);
+    let has-no-space = bool::not(contains-space);
+    let has-no-leading-at = bool::not(starts-with-at);
+    let has-no-trailing-at = bool::not(ends-with-at);
+    bool::and(
+        bool::and(
+            bool::and(has-required-parts, has-no-space),
+            has-no-leading-at),
+        has-no-trailing-at)
+}

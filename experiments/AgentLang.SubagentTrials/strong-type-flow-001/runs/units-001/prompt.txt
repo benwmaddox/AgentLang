@@ -1,0 +1,119 @@
+Run strong-type-flow-001 units-001 as a fresh GPT-6 Luna/max coding agent with no inherited turns.
+Your ownership is only D:\code\AgentLang\.agentlang\strong-type-flow-001\actor-01-units through its supplied protocol. You are not alone in the checkout; preserve other agents' files. Do not touch repository source or sibling projects.
+
+You are an external AI coding agent implementing the selected public task in a
+small synthetic project. Inspect available capabilities before editing. Prefer
+existing useful abstractions and add a reusable abstraction for the required
+entry point. Preserve existing types, helpers and tests unless the task requires
+a change. Text comparisons are exact and case-sensitive. Float arithmetic is
+the specified demo behavior, not a decimal billing implementation.
+
+Use only the supplied trial protocol and pinned host configuration. Do not read
+coordinator files, independent acceptance oracles, sibling runs, previous trial
+solutions, or raw repository source outside your editable trial project. Add
+meaningful self-tests covering branches and relevant boundary cases, run them,
+and repair failures through the protocol. Do not alter the policy to fit tests.
+Work as the single assigned agent; do not spawn or delegate to other agents.
+
+Human authorization is already given for isolated trial-project edits and local
+test execution: "Yes, run the remaining isolated experiments". If approval
+review rejects an operation, report the rejection and stop dependent work;
+do not bypass it. A timeout observing a live exchange is not evidence it failed.
+Resume the same host session and inspect state before retrying an uncertain edit.
+
+Report what you changed, tests run, errors encountered and missing capabilities.
+Do not invent model-token or turn counts. Leave the interactive host session
+open when finished; the coordinator handles teardown separately. Do not send
+quit commands or control characters to the JSONL protocol.
+
+
+# Add an explicit speed conversion
+
+Inspect the available project types and add a pure library word named
+delivery.speed-kph with the signature:
+
+    Delivery -> KilometersPerHour
+
+It should convert the Delivery speed from meters per second to kilometers per
+hour by multiplying by 3.6. Use the nominal value accessors and constructors
+explicitly so the conversion between the two unit types is visible in the word.
+
+Add meaningful tests for zero, positive, fractional, and signed speed inputs,
+run them with complete own instruction and branch coverage, and commit the tested word durably through the language
+protocol. Preserve the seeded types, validator, record, and existing tests.
+
+The Email policy is illustrative: require an at sign and dot, reject spaces,
+and reject leading or trailing at signs. It is not the full Internet email
+standard. Both speed types are distinct Float wrappers with no range restriction;
+zero, fractional, and signed speeds remain supported. Do not add implicit unit
+conversion or change that policy to make a test pass.
+
+
+You work through a JSONL protocol in a deterministic typed language. Start the
+exact supplied trial host once and send one JSON request per line through that
+same returned session. AI agents are external users; the runtime contains none.
+
+Use compact inventory or structural search to discover names:
+
+```json
+{"op":"words","compact":true}
+{"op":"search","query":"customer"}
+```
+
+`describe` returns detailed word metadata and source. `context` returns bounded
+signature/effect/dependency/documentation/type metadata for a word and its
+closure, omitting whole entries when necessary. Check omission counts. It has
+`maxDepth`, `maxWords` and `maxUtf8Bytes` fields; the latter bounds its complete
+data JSON, not the response wrapper. Both return parser-verified `flowReference`
+call spellings. Use dictionary names for protocol queries, declarations and
+test owners; use call references for expression targets. Root `add` is `::add`;
+`numbers.increment` is `numbers::increment`. Dot chaining passes a receiver as
+the first input. A null reference has an explanation.
+
+Flow uses named typed inputs, immutable `let` bindings, ordinary calls and no
+implicit nominal conversions. Both branches must produce the declared result:
+
+```text
+word increment(value: Int) -> Int {
+    effects none
+    ::add(value, 1)
+}
+test increment/basic {
+    ::increment(1) => 2
+}
+```
+
+```json
+{"op":"task.begin","goal":"<public task>"}
+{"op":"define","frontend":"flow","source":"<word and attached tests>"}
+{"op":"test","word":"increment"}
+{"op":"commit","word":"increment","library":true}
+{"op":"task.commit"}
+```
+
+Tests belong to words through the slash separator. These tasks require pure
+retained library words with passing own tests and complete own instruction and
+branch coverage. Caller tests cannot replace helper coverage. Add tests using
+an attachment-only Flow document when useful. Preserve prior types, helpers and
+tests. Use only the supplied protocol; do not read language project files.
+
+`describe.coverage` currently reflects the most recent test batch. Testing one
+word replaces that batch; another word can then display `not-run` even when its
+earlier own suite passed. Use the returned `test` coverage for that run, or
+`test-all` before inspecting several words' current own coverage together.
+
+No cumulative inspection-response cap is enabled. Never automatically repeat an uncertain request; observe the same live session and inspect state first. The configured exchange count and deadline still apply. No model tokens or context windows are measured.
+
+Report completion after public tests and durable task commit, with actual
+outcomes, errors, missing capabilities and the host session ID. Leave that
+session open; the coordinator handles teardown separately. Do not send quit
+commands or control characters through JSONL. Do not spawn other agents.
+
+
+This task uses distinct nominal Float types and a validated String type. Discover their generated constructors and accessors through the protocol. Literal inference can use expected types; explicit typed values have no implicit cross-type conversion. Test nominal outputs using '=> value <constructor expression>'; structured failures use '=> error <code>'. Tests belong to words by the slash separator.
+
+Execute exactly this PowerShell command using exec_command, workdir D:\code\AgentLang, sandbox_permissions require_escalated, tty true, short initial yield. The known sandbox ACL helper requires host execution. Human authorization covers these isolated edits and local tests. Do not use shell/file tools for any other command or source access.
+
+& 'D:\code\AgentLang\scripts\Start-SubagentTrialHost.ps1' -CliDll 'D:\code\AgentLang\.agentlang\strong-type-flow-001\language-bin\AgentLang.Cli.dll' -ProjectPath 'D:\code\AgentLang\.agentlang\strong-type-flow-001\actor-01-units' -TracePath 'D:\code\AgentLang\experiments\AgentLang.SubagentTrials\strong-type-flow-001\runs\units-001\trace.jsonl' -AllowedOperations @('words','describe','search','source','dependencies','callers','eval','define','test','test-all','tests','commit','replace-word','task.begin','task.commit','task.status','task.log','ir','context','failed-tests','examples','effects','type-of','search-type','search-output','history','diff','graph','transitive-dependencies','transitive-callers','search-dependency') -Profile agentlang -ExchangeTimeoutMilliseconds 120000 -MaxExchanges 100
+
+Send one JSONL request per line on that same write_stdin session. Do not spawn other agents. Leave the host open at completion and report its session ID for coordinator teardown. No quit commands or control characters. Report tests, errors and missing capabilities; do not invent model-token or turn counts.

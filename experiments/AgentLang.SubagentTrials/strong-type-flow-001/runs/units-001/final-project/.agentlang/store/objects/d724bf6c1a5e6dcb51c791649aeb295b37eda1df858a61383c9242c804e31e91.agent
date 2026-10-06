@@ -1,0 +1,4 @@
+test email.valid?/valid {
+    email::valid?("dev@example.com")
+    => true
+}

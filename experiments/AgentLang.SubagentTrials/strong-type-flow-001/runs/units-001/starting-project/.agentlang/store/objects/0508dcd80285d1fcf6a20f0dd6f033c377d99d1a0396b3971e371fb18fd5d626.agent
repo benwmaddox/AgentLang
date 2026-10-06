@@ -1,0 +1,4 @@
+test email.valid?/missing-at {
+    email::valid?("dev.example.com")
+    => false
+}

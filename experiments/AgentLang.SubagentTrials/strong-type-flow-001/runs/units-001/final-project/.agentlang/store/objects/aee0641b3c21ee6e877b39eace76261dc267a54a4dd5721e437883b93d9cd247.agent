@@ -1,0 +1,4 @@
+example email.valid?/accepted-shape {
+    email::valid?("dev@example.com")
+    => true
+}

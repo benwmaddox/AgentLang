@@ -1,0 +1,31 @@
+{
+  "task": "task-0001",
+  "goal": "Prepare immutable strong-type agent study seed",
+  "active": false,
+  "wordsInspected": [
+    "Delivery",
+    "Email",
+    "KilometersPerHour",
+    "MetersPerSecond",
+    "email.valid?"
+  ],
+  "wordsUsed": [
+    "bool.and",
+    "bool.not",
+    "email.valid?",
+    "string.contains",
+    "string.ends-with",
+    "string.starts-with"
+  ],
+  "wordsCreated": [
+    "Delivery",
+    "Email",
+    "KilometersPerHour",
+    "MetersPerSecond",
+    "email.valid?"
+  ],
+  "testsRun": 18,
+  "testsFailed": 0,
+  "effects": {},
+  "errors": []
+}

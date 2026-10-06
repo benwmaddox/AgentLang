@@ -1,0 +1,4384 @@
+{
+  "schemaVersion": 1,
+  "passed": false,
+  "failure": "Acceptance check failed: structured compile-time type rejection: cross-unit constructor (code=FLOW_EFFECTS_TRAILING)",
+  "sourceRevision": "8d52195cd02a1b4f65a33f320bb00e41335de4f0",
+  "cliPath": "D:\\code\\AgentLang\\.agentlang\\strong-type-flow-001\\language-bin\\AgentLang.Cli.dll",
+  "cliSha256": "c1a3b1dce20858d51c66a5bec16bbe910694ba1c8c24e8a5869b31e1bd5785c2",
+  "seedProject": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\strong-type-flow-001\\runs\\units-001\\starting-project",
+  "finalProject": "D:\\code\\AgentLang\\.agentlang\\strong-type-flow-001\\acceptance-preflight",
+  "targetWord": "delivery.speed-kph",
+  "noOpControl": "Running against starting-project must fail the required persisted target check; it is the no-op rejection control.",
+  "checks": [
+    {
+      "name": "pinned CLI assembly exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\strong-type-flow-001\\language-bin\\AgentLang.Cli.dll"
+    },
+    {
+      "name": "frozen starting project exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\strong-type-flow-001\\runs\\units-001\\starting-project"
+    },
+    {
+      "name": "final project is separate from the frozen seed",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\strong-type-flow-001\\acceptance-preflight"
+    },
+    {
+      "name": "manifest hash validates for D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\strong-type-flow-001\\runs\\units-001\\starting-project",
+      "passed": true,
+      "details": "dfcd160ec06e8c3af34e6265471ecaf5bfecc01e95c47a95303587bffdf50ac1"
+    },
+    {
+      "name": "manifest hash validates for D:\\code\\AgentLang\\.agentlang\\strong-type-flow-001\\acceptance-preflight",
+      "passed": true,
+      "details": "552681dc6800483377abf0d09aa961ab4476fbf2634f6d7d7f2609bcb9fd1376"
+    },
+    {
+      "name": "required persisted target exists exactly once",
+      "passed": true,
+      "details": "found=1"
+    },
+    {
+      "name": "all seeded type declarations and validator binding are unchanged",
+      "passed": true,
+      "details": "type source references, formats and validator targets must match byte for byte"
+    },
+    {
+      "name": "stable prior word head email.valid?",
+      "passed": true,
+      "details": "prior name, ID, current revision and deprecation state"
+    },
+    {
+      "name": "retained prior revision email.valid?/1",
+      "passed": true,
+      "details": "historical revision metadata and attached-source hashes"
+    },
+    {
+      "name": "Email validator revisions and all attached tests are unchanged",
+      "passed": true,
+      "details": "seed=1, final=1 revisions"
+    },
+    {
+      "name": "the only new persistent user word is the requested conversion",
+      "passed": true,
+      "details": "newWords=delivery.speed-kph"
+    },
+    {
+      "name": "immutable seeded file retained .agentlang\\store\\manifests\\2719fb4b9800c8445abea77f17dc4bd7541b40010be9553b8226557fb2eefd3f.json",
+      "passed": true,
+      "details": "pre-existing content-addressed source/history data must not change"
+    },
+    {
+      "name": "immutable seeded file retained .agentlang\\store\\manifests\\5b4088753d4db89097ae8c2bfddb6fb41036fa3f804579971dc9dff48225bac1.json",
+      "passed": true,
+      "details": "pre-existing content-addressed source/history data must not change"
+    },
+    {
+      "name": "immutable seeded file retained .agentlang\\store\\manifests\\c70ace0eae4342db03aa6ac53c9de696b6ba31dd134b40b4fb4be07284ff445f.json",
+      "passed": true,
+      "details": "pre-existing content-addressed source/history data must not change"
+    },
+    {
+      "name": "immutable seeded file retained .agentlang\\store\\manifests\\dfcd160ec06e8c3af34e6265471ecaf5bfecc01e95c47a95303587bffdf50ac1.json",
+      "passed": true,
+      "details": "pre-existing content-addressed source/history data must not change"
+    },
+    {
+      "name": "immutable seeded file retained .agentlang\\store\\manifests\\e1510892ac1efa0d5049e4136bd1dfbc8fe85c6350e8e2814d456be41e9e3e5f.json",
+      "passed": true,
+      "details": "pre-existing content-addressed source/history data must not change"
+    },
+    {
+      "name": "immutable seeded file retained .agentlang\\store\\objects\\00f404443abbb179bb0e6c32c3b373739367ac3ebf21622acf6745700ff7e5ca.agent",
+      "passed": true,
+      "details": "pre-existing content-addressed source/history data must not change"
+    },
+    {
+      "name": "immutable seeded file retained .agentlang\\store\\objects\\0508dcd80285d1fcf6a20f0dd6f033c377d99d1a0396b3971e371fb18fd5d626.agent",
+      "passed": true,
+      "details": "pre-existing content-addressed source/history data must not change"
+    },
+    {
+      "name": "immutable seeded file retained .agentlang\\store\\objects\\1cdcfc6ac4ba3358c37715a1ac4574bf2eae9c4ccade35f768c39f2af0c7f718.agent",
+      "passed": true,
+      "details": "pre-existing content-addressed source/history data must not change"
+    },
+    {
+      "name": "immutable seeded file retained .agentlang\\store\\objects\\2f8fa712a30594f0b2c14be86dc47c4060a2ecd263a6a52b10328a5bc68a49fc.agent",
+      "passed": true,
+      "details": "pre-existing content-addressed source/history data must not change"
+    },
+    {
+      "name": "immutable seeded file retained .agentlang\\store\\objects\\36887a28a5dbb89dd4f0811574721f1b93859403aa56d1e7ed039667a9fbae83.agent",
+      "passed": true,
+      "details": "pre-existing content-addressed source/history data must not change"
+    },
+    {
+      "name": "immutable seeded file retained .agentlang\\store\\objects\\5e5c3231577553615fde2e7785925bd03fea454bc734c47069da397beed1491c.agent",
+      "passed": true,
+      "details": "pre-existing content-addressed source/history data must not change"
+    },
+    {
+      "name": "immutable seeded file retained .agentlang\\store\\objects\\6153a15362bd4a45c782455fdded2f6b8b3938e07b9edcac5f20fda9c534e3c9.agent",
+      "passed": true,
+      "details": "pre-existing content-addressed source/history data must not change"
+    },
+    {
+      "name": "immutable seeded file retained .agentlang\\store\\objects\\6c709b8f8b63577e003d971d0318aa5c0a5cf9b37ee6359b45f0981cb87774aa.agent",
+      "passed": true,
+      "details": "pre-existing content-addressed source/history data must not change"
+    },
+    {
+      "name": "immutable seeded file retained .agentlang\\store\\objects\\a9338b930067b500fb56efc5601b2e7e337e3d61706eba97c0957ffbd1f5c102.agent",
+      "passed": true,
+      "details": "pre-existing content-addressed source/history data must not change"
+    },
+    {
+      "name": "immutable seeded file retained .agentlang\\store\\objects\\ab2ef63a88a81b97c02a75359f2baea068775d3067a04fdec99ad20cd71c18a9.agent",
+      "passed": true,
+      "details": "pre-existing content-addressed source/history data must not change"
+    },
+    {
+      "name": "immutable seeded file retained .agentlang\\store\\objects\\acab128376e6bf28ef5d3dd08a1b8b990e3fcbbad8a9952b7dbb6b5dc884d5fc.agent",
+      "passed": true,
+      "details": "pre-existing content-addressed source/history data must not change"
+    },
+    {
+      "name": "immutable seeded file retained .agentlang\\store\\objects\\aece6f2a58f58230e0556a2fb00290b342db14e083b1712cc6739652f499de53.agent",
+      "passed": true,
+      "details": "pre-existing content-addressed source/history data must not change"
+    },
+    {
+      "name": "immutable seeded file retained .agentlang\\store\\objects\\aee0641b3c21ee6e877b39eace76261dc267a54a4dd5721e437883b93d9cd247.agent",
+      "passed": true,
+      "details": "pre-existing content-addressed source/history data must not change"
+    },
+    {
+      "name": "immutable seeded file retained .agentlang\\store\\objects\\b44d70a1a2c8bd768276b075b5b0b3e697e02f4f8ed59dbd846c806d5146c558.agent",
+      "passed": true,
+      "details": "pre-existing content-addressed source/history data must not change"
+    },
+    {
+      "name": "immutable seeded file retained .agentlang\\store\\objects\\c05b9b2ddc170312ddec20e8f0265d4f0f8846f5014d2e962f7d51371d6e42fa.agent",
+      "passed": true,
+      "details": "pre-existing content-addressed source/history data must not change"
+    },
+    {
+      "name": "immutable seeded file retained .agentlang\\store\\objects\\c2cf6abdbe94ce09577519c1ec7f10d2817af213c6c4f721da5cd1f0bd6b0b16.agent",
+      "passed": true,
+      "details": "pre-existing content-addressed source/history data must not change"
+    },
+    {
+      "name": "immutable seeded file retained .agentlang\\store\\objects\\d724bf6c1a5e6dcb51c791649aeb295b37eda1df858a61383c9242c804e31e91.agent",
+      "passed": true,
+      "details": "pre-existing content-addressed source/history data must not change"
+    },
+    {
+      "name": "immutable seeded file retained .agentlang\\store\\WRITE.lock",
+      "passed": true,
+      "details": "pre-existing content-addressed source/history data must not change"
+    },
+    {
+      "name": "immutable seeded file retained history\\task-0001.json",
+      "passed": true,
+      "details": "pre-existing content-addressed source/history data must not change"
+    },
+    {
+      "name": "seed contains validated Email and two distinct unit types plus Delivery",
+      "passed": true,
+      "details": "Email, MetersPerSecond, KilometersPerHour and Delivery are required"
+    },
+    {
+      "name": "source object hash validates type-definition/6153a15362bd4a45c782455fdded2f6b8b3938e07b9edcac5f20fda9c534e3c9",
+      "passed": true,
+      "details": "6153a15362bd4a45c782455fdded2f6b8b3938e07b9edcac5f20fda9c534e3c9"
+    },
+    {
+      "name": "source object hash validates type-definition/6c709b8f8b63577e003d971d0318aa5c0a5cf9b37ee6359b45f0981cb87774aa",
+      "passed": true,
+      "details": "6c709b8f8b63577e003d971d0318aa5c0a5cf9b37ee6359b45f0981cb87774aa"
+    },
+    {
+      "name": "source object hash validates type-definition/c2cf6abdbe94ce09577519c1ec7f10d2817af213c6c4f721da5cd1f0bd6b0b16",
+      "passed": true,
+      "details": "c2cf6abdbe94ce09577519c1ec7f10d2817af213c6c4f721da5cd1f0bd6b0b16"
+    },
+    {
+      "name": "source object hash validates type-definition/00f404443abbb179bb0e6c32c3b373739367ac3ebf21622acf6745700ff7e5ca",
+      "passed": true,
+      "details": "00f404443abbb179bb0e6c32c3b373739367ac3ebf21622acf6745700ff7e5ca"
+    },
+    {
+      "name": "seed Email validator closure was already persistent",
+      "passed": true,
+      "details": "Email must have a frozen validator target and revision history"
+    },
+    {
+      "name": "JSONL response count for seed baseline tests",
+      "passed": true,
+      "details": "requests=1, responses=1"
+    },
+    {
+      "name": "runtime process exit for seed baseline tests",
+      "passed": true,
+      "details": "exit=0; stderr="
+    },
+    {
+      "name": "seed test baseline passed",
+      "passed": true,
+      "details": "tests=6"
+    },
+    {
+      "name": "source object hash validates word-definition/45c8532817eec6e92d5cd290c211143db270050e5b0f1b5f2fb558d95f42623a",
+      "passed": true,
+      "details": "45c8532817eec6e92d5cd290c211143db270050e5b0f1b5f2fb558d95f42623a"
+    },
+    {
+      "name": "source object hash validates test-definition/246b85a5e9c3496a860654b461e246f8038efbf59702816169fa0c0d0573eba5",
+      "passed": true,
+      "details": "246b85a5e9c3496a860654b461e246f8038efbf59702816169fa0c0d0573eba5"
+    },
+    {
+      "name": "source object hash validates test-definition/5acfd92b24a802134f1c98f6fbefe1c953999c0cf648e934dcbe5308ee68bd43",
+      "passed": true,
+      "details": "5acfd92b24a802134f1c98f6fbefe1c953999c0cf648e934dcbe5308ee68bd43"
+    },
+    {
+      "name": "source object hash validates test-definition/febb24987043c4f6aa54dd0a0786e745cf5ce320b2e53081f0078fba08787348",
+      "passed": true,
+      "details": "febb24987043c4f6aa54dd0a0786e745cf5ce320b2e53081f0078fba08787348"
+    },
+    {
+      "name": "source object hash validates test-definition/ff7674ffd7166a98f2e1b70eaff2d32d361681f47aeea33e1f8b021023621962",
+      "passed": true,
+      "details": "ff7674ffd7166a98f2e1b70eaff2d32d361681f47aeea33e1f8b021023621962"
+    },
+    {
+      "name": "conversion has at least three independent attached test cases",
+      "passed": true,
+      "details": "count=4"
+    },
+    {
+      "name": "attached tests exercise zero, positive, fractional and negative inputs",
+      "passed": true,
+      "details": "fractional, negative, positive, zero"
+    },
+    {
+      "name": "conversion source explicitly applies factor 3.6",
+      "passed": true,
+      "details": "independent vectors below verify conversion behavior"
+    },
+    {
+      "name": "new word is persisted as a library revision",
+      "passed": true,
+      "details": "maturity=library, deprecated=False"
+    },
+    {
+      "name": "JSONL response count for fresh-process final acceptance",
+      "passed": true,
+      "details": "requests=23, responses=23"
+    },
+    {
+      "name": "runtime process exit for fresh-process final acceptance",
+      "passed": true,
+      "details": "exit=0; stderr="
+    },
+    {
+      "name": "target attached test run succeeds",
+      "passed": true,
+      "details": "results=4, attachments=4"
+    },
+    {
+      "name": "library has nonzero full authored instruction coverage",
+      "passed": true,
+      "details": "instructions=6/6"
+    },
+    {
+      "name": "every authored branch outcome is covered when branches exist",
+      "passed": true,
+      "details": "branches=0/0"
+    },
+    {
+      "name": "fresh-process project test-all passes every test",
+      "passed": true,
+      "details": "results=10, minimum=10"
+    },
+    {
+      "name": "reloaded target signature is Delivery to KilometersPerHour",
+      "passed": true,
+      "details": "inputs=[\"Delivery\"], outputs=[\"KilometersPerHour\"]"
+    },
+    {
+      "name": "reloaded target is pure persistent library vocabulary",
+      "passed": true,
+      "details": "status=persistent, maturity=library, effects=[]"
+    },
+    {
+      "name": "describe exposes all attached passing tests and full coverage",
+      "passed": true,
+      "details": "fresh process describes the committed word after test-all"
+    },
+    {
+      "name": "compiled dependencies expose field read, explicit unit unwrap, multiply, and unit constructor",
+      "passed": true,
+      "details": "KilometersPerHour.new, MetersPerSecond.value, delivery.speed, float.multiply"
+    },
+    {
+      "name": "reloaded strong type constructor: Email",
+      "passed": true,
+      "details": "inputs=[\"String\"], outputs=[\"Email\"]"
+    },
+    {
+      "name": "reloaded strong type constructor: MetersPerSecond",
+      "passed": true,
+      "details": "inputs=[\"Float\"], outputs=[\"MetersPerSecond\"]"
+    },
+    {
+      "name": "reloaded strong type constructor: KilometersPerHour",
+      "passed": true,
+      "details": "inputs=[\"Float\"], outputs=[\"KilometersPerHour\"]"
+    },
+    {
+      "name": "reloaded strong type constructor: Delivery",
+      "passed": true,
+      "details": "inputs=[\"Email\",\"MetersPerSecond\"], outputs=[\"Delivery\"]"
+    },
+    {
+      "name": "runtime source is the committed implementation",
+      "passed": true,
+      "details": "source command must return the exact persisted word body"
+    },
+    {
+      "name": "independent explicit-unit conversion vector 0 m/s",
+      "passed": true,
+      "details": "nominal=KilometersPerHour, actual=0, expected=0"
+    },
+    {
+      "name": "independent explicit-unit conversion vector 1 m/s",
+      "passed": true,
+      "details": "nominal=KilometersPerHour, actual=3.6, expected=3.6"
+    },
+    {
+      "name": "independent explicit-unit conversion vector 2.5 m/s",
+      "passed": true,
+      "details": "nominal=KilometersPerHour, actual=9, expected=9"
+    },
+    {
+      "name": "independent explicit-unit conversion vector -3 m/s",
+      "passed": true,
+      "details": "nominal=KilometersPerHour, actual=-10.8, expected=-10.8"
+    },
+    {
+      "name": "independent explicit-unit conversion vector 0.125 m/s",
+      "passed": true,
+      "details": "nominal=KilometersPerHour, actual=0.45, expected=0.45"
+    },
+    {
+      "name": "independent explicit-unit conversion vector 100 m/s",
+      "passed": true,
+      "details": "nominal=KilometersPerHour, actual=360, expected=360"
+    },
+    {
+      "name": "valid Email constructs and explicitly unwraps",
+      "passed": true,
+      "details": "Email remains a nominal String refinement with explicit access"
+    },
+    {
+      "name": "invalid Email construction reports refinement failure",
+      "passed": true,
+      "details": "{\"code\":\"REFINEMENT_FAILED\",\"message\":\"Value does not satisfy Email's refinement validator.\",\"word\":\"Email.new\",\"span\":{\"file\":\"<generated>\",\"line\":1,\"column\":1,\"length\":9},\"expected\":[\"validator returns true\"],\"actual\":[\"false\"]}"
+    },
+    {
+      "name": "source object hash validates type-definition/6153a15362bd4a45c782455fdded2f6b8b3938e07b9edcac5f20fda9c534e3c9",
+      "passed": true,
+      "details": "6153a15362bd4a45c782455fdded2f6b8b3938e07b9edcac5f20fda9c534e3c9"
+    },
+    {
+      "name": "source object hash validates type-definition/6c709b8f8b63577e003d971d0318aa5c0a5cf9b37ee6359b45f0981cb87774aa",
+      "passed": true,
+      "details": "6c709b8f8b63577e003d971d0318aa5c0a5cf9b37ee6359b45f0981cb87774aa"
+    },
+    {
+      "name": "source object hash validates type-definition/c2cf6abdbe94ce09577519c1ec7f10d2817af213c6c4f721da5cd1f0bd6b0b16",
+      "passed": true,
+      "details": "c2cf6abdbe94ce09577519c1ec7f10d2817af213c6c4f721da5cd1f0bd6b0b16"
+    },
+    {
+      "name": "source object hash validates type-definition/00f404443abbb179bb0e6c32c3b373739367ac3ebf21622acf6745700ff7e5ca",
+      "passed": true,
+      "details": "00f404443abbb179bb0e6c32c3b373739367ac3ebf21622acf6745700ff7e5ca"
+    },
+    {
+      "name": "source object hash validates type-definition/6153a15362bd4a45c782455fdded2f6b8b3938e07b9edcac5f20fda9c534e3c9",
+      "passed": true,
+      "details": "6153a15362bd4a45c782455fdded2f6b8b3938e07b9edcac5f20fda9c534e3c9"
+    },
+    {
+      "name": "type source retained exactly: Delivery",
+      "passed": true,
+      "details": "all existing nominal/refined and record sources are unchanged"
+    },
+    {
+      "name": "source object hash validates type-definition/6c709b8f8b63577e003d971d0318aa5c0a5cf9b37ee6359b45f0981cb87774aa",
+      "passed": true,
+      "details": "6c709b8f8b63577e003d971d0318aa5c0a5cf9b37ee6359b45f0981cb87774aa"
+    },
+    {
+      "name": "type source retained exactly: Email",
+      "passed": true,
+      "details": "all existing nominal/refined and record sources are unchanged"
+    },
+    {
+      "name": "source object hash validates type-definition/c2cf6abdbe94ce09577519c1ec7f10d2817af213c6c4f721da5cd1f0bd6b0b16",
+      "passed": true,
+      "details": "c2cf6abdbe94ce09577519c1ec7f10d2817af213c6c4f721da5cd1f0bd6b0b16"
+    },
+    {
+      "name": "type source retained exactly: KilometersPerHour",
+      "passed": true,
+      "details": "all existing nominal/refined and record sources are unchanged"
+    },
+    {
+      "name": "source object hash validates type-definition/00f404443abbb179bb0e6c32c3b373739367ac3ebf21622acf6745700ff7e5ca",
+      "passed": true,
+      "details": "00f404443abbb179bb0e6c32c3b373739367ac3ebf21622acf6745700ff7e5ca"
+    },
+    {
+      "name": "type source retained exactly: MetersPerSecond",
+      "passed": true,
+      "details": "all existing nominal/refined and record sources are unchanged"
+    },
+    {
+      "name": "JSONL response count for negative probe cross-unit constructor",
+      "passed": true,
+      "details": "requests=8, responses=8"
+    },
+    {
+      "name": "runtime process exit for negative probe cross-unit constructor",
+      "passed": true,
+      "details": "exit=0; stderr="
+    },
+    {
+      "name": "structured compile-time type rejection: cross-unit constructor",
+      "passed": false,
+      "details": "code=FLOW_EFFECTS_TRAILING"
+    }
+  ],
+  "independentVectors": [
+    {
+      "metersPerSecond": 0.0,
+      "nominalType": "KilometersPerHour",
+      "actualKph": "0",
+      "expectedKph": 0.0,
+      "absoluteError": 0.0,
+      "nominalResponse": {
+        "ok": true,
+        "kind": "eval",
+        "text": "KilometersPerHour(0)",
+        "data": {
+          "stack": [
+            "KilometersPerHour(0)"
+          ],
+          "stackTypes": [
+            "KilometersPerHour"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      },
+      "unwrappedResponse": {
+        "ok": true,
+        "kind": "eval",
+        "text": "0",
+        "data": {
+          "stack": [
+            "0"
+          ],
+          "stackTypes": [
+            "Float"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      }
+    },
+    {
+      "metersPerSecond": 1.0,
+      "nominalType": "KilometersPerHour",
+      "actualKph": "3.6",
+      "expectedKph": 3.6,
+      "absoluteError": 0.0,
+      "nominalResponse": {
+        "ok": true,
+        "kind": "eval",
+        "text": "KilometersPerHour(3.6)",
+        "data": {
+          "stack": [
+            "KilometersPerHour(3.6)"
+          ],
+          "stackTypes": [
+            "KilometersPerHour"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      },
+      "unwrappedResponse": {
+        "ok": true,
+        "kind": "eval",
+        "text": "3.6",
+        "data": {
+          "stack": [
+            "3.6"
+          ],
+          "stackTypes": [
+            "Float"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      }
+    },
+    {
+      "metersPerSecond": 2.5,
+      "nominalType": "KilometersPerHour",
+      "actualKph": "9",
+      "expectedKph": 9.0,
+      "absoluteError": 0.0,
+      "nominalResponse": {
+        "ok": true,
+        "kind": "eval",
+        "text": "KilometersPerHour(9)",
+        "data": {
+          "stack": [
+            "KilometersPerHour(9)"
+          ],
+          "stackTypes": [
+            "KilometersPerHour"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      },
+      "unwrappedResponse": {
+        "ok": true,
+        "kind": "eval",
+        "text": "9",
+        "data": {
+          "stack": [
+            "9"
+          ],
+          "stackTypes": [
+            "Float"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      }
+    },
+    {
+      "metersPerSecond": -3.0,
+      "nominalType": "KilometersPerHour",
+      "actualKph": "-10.8",
+      "expectedKph": -10.8,
+      "absoluteError": 0.0,
+      "nominalResponse": {
+        "ok": true,
+        "kind": "eval",
+        "text": "KilometersPerHour(-10.8)",
+        "data": {
+          "stack": [
+            "KilometersPerHour(-10.8)"
+          ],
+          "stackTypes": [
+            "KilometersPerHour"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      },
+      "unwrappedResponse": {
+        "ok": true,
+        "kind": "eval",
+        "text": "-10.8",
+        "data": {
+          "stack": [
+            "-10.8"
+          ],
+          "stackTypes": [
+            "Float"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      }
+    },
+    {
+      "metersPerSecond": 0.125,
+      "nominalType": "KilometersPerHour",
+      "actualKph": "0.45",
+      "expectedKph": 0.45,
+      "absoluteError": 0.0,
+      "nominalResponse": {
+        "ok": true,
+        "kind": "eval",
+        "text": "KilometersPerHour(0.45)",
+        "data": {
+          "stack": [
+            "KilometersPerHour(0.45)"
+          ],
+          "stackTypes": [
+            "KilometersPerHour"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      },
+      "unwrappedResponse": {
+        "ok": true,
+        "kind": "eval",
+        "text": "0.45",
+        "data": {
+          "stack": [
+            "0.45"
+          ],
+          "stackTypes": [
+            "Float"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      }
+    },
+    {
+      "metersPerSecond": 100.0,
+      "nominalType": "KilometersPerHour",
+      "actualKph": "360",
+      "expectedKph": 360.0,
+      "absoluteError": 0.0,
+      "nominalResponse": {
+        "ok": true,
+        "kind": "eval",
+        "text": "KilometersPerHour(360)",
+        "data": {
+          "stack": [
+            "KilometersPerHour(360)"
+          ],
+          "stackTypes": [
+            "KilometersPerHour"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      },
+      "unwrappedResponse": {
+        "ok": true,
+        "kind": "eval",
+        "text": "360",
+        "data": {
+          "stack": [
+            "360"
+          ],
+          "stackTypes": [
+            "Float"
+          ],
+          "console": [],
+          "effects": {}
+        }
+      }
+    }
+  ],
+  "negativeTypeProbes": [],
+  "protocolSessions": [
+    {
+      "name": "seed baseline tests",
+      "project": "D:\\code\\AgentLang\\.agentlang\\strong-type-flow-001\\acceptance-tmp-c47798d7bfa74c1b9cbcb96f651fd6b6\\seed-baseline",
+      "requests": [
+        {
+          "op": "test-all"
+        }
+      ],
+      "rawResponseLines": [
+        "{\"ok\":true,\"kind\":\"test\",\"text\":\"6/6 test(s) passed.\",\"data\":{\"results\":[{\"name\":\"leading-at\",\"word\":\"email.valid?\",\"passed\":true,\"expected\":\"false\",\"actual\":[\"false\"]},{\"name\":\"missing-at\",\"word\":\"email.valid?\",\"passed\":true,\"expected\":\"false\",\"actual\":[\"false\"]},{\"name\":\"missing-dot\",\"word\":\"email.valid?\",\"passed\":true,\"expected\":\"false\",\"actual\":[\"false\"]},{\"name\":\"spaces\",\"word\":\"email.valid?\",\"passed\":true,\"expected\":\"false\",\"actual\":[\"false\"]},{\"name\":\"trailing-at\",\"word\":\"email.valid?\",\"passed\":true,\"expected\":\"false\",\"actual\":[\"false\"]},{\"name\":\"valid\",\"word\":\"email.valid?\",\"passed\":true,\"expected\":\"true\",\"actual\":[\"true\"]}]}}"
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "test",
+          "text": "6/6 test(s) passed.",
+          "data": {
+            "results": [
+              {
+                "name": "leading-at",
+                "word": "email.valid?",
+                "passed": true,
+                "expected": "false",
+                "actual": [
+                  "false"
+                ]
+              },
+              {
+                "name": "missing-at",
+                "word": "email.valid?",
+                "passed": true,
+                "expected": "false",
+                "actual": [
+                  "false"
+                ]
+              },
+              {
+                "name": "missing-dot",
+                "word": "email.valid?",
+                "passed": true,
+                "expected": "false",
+                "actual": [
+                  "false"
+                ]
+              },
+              {
+                "name": "spaces",
+                "word": "email.valid?",
+                "passed": true,
+                "expected": "false",
+                "actual": [
+                  "false"
+                ]
+              },
+              {
+                "name": "trailing-at",
+                "word": "email.valid?",
+                "passed": true,
+                "expected": "false",
+                "actual": [
+                  "false"
+                ]
+              },
+              {
+                "name": "valid",
+                "word": "email.valid?",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "name": "fresh-process final acceptance",
+      "project": "D:\\code\\AgentLang\\.agentlang\\strong-type-flow-001\\acceptance-preflight",
+      "requests": [
+        {
+          "op": "test",
+          "word": "delivery.speed-kph"
+        },
+        {
+          "op": "test-all"
+        },
+        {
+          "op": "describe",
+          "word": "delivery.speed-kph"
+        },
+        {
+          "op": "source",
+          "word": "delivery.speed-kph"
+        },
+        {
+          "op": "describe",
+          "word": "Email.new"
+        },
+        {
+          "op": "describe",
+          "word": "MetersPerSecond.new"
+        },
+        {
+          "op": "describe",
+          "word": "KilometersPerHour.new"
+        },
+        {
+          "op": "describe",
+          "word": "delivery.new"
+        },
+        {
+          "op": "eval",
+          "frontend": "flow",
+          "code": "delivery::speed-kph(delivery::new(contact = Email::new(\"dev@example.com\"), speed = MetersPerSecond::new(0.0)))"
+        },
+        {
+          "op": "eval",
+          "frontend": "flow",
+          "code": "KilometersPerHour::value(delivery::speed-kph(delivery::new(contact = Email::new(\"dev@example.com\"), speed = MetersPerSecond::new(0.0))))"
+        },
+        {
+          "op": "eval",
+          "frontend": "flow",
+          "code": "delivery::speed-kph(delivery::new(contact = Email::new(\"dev@example.com\"), speed = MetersPerSecond::new(1.0)))"
+        },
+        {
+          "op": "eval",
+          "frontend": "flow",
+          "code": "KilometersPerHour::value(delivery::speed-kph(delivery::new(contact = Email::new(\"dev@example.com\"), speed = MetersPerSecond::new(1.0))))"
+        },
+        {
+          "op": "eval",
+          "frontend": "flow",
+          "code": "delivery::speed-kph(delivery::new(contact = Email::new(\"dev@example.com\"), speed = MetersPerSecond::new(2.5)))"
+        },
+        {
+          "op": "eval",
+          "frontend": "flow",
+          "code": "KilometersPerHour::value(delivery::speed-kph(delivery::new(contact = Email::new(\"dev@example.com\"), speed = MetersPerSecond::new(2.5))))"
+        },
+        {
+          "op": "eval",
+          "frontend": "flow",
+          "code": "delivery::speed-kph(delivery::new(contact = Email::new(\"dev@example.com\"), speed = MetersPerSecond::new(-3.0)))"
+        },
+        {
+          "op": "eval",
+          "frontend": "flow",
+          "code": "KilometersPerHour::value(delivery::speed-kph(delivery::new(contact = Email::new(\"dev@example.com\"), speed = MetersPerSecond::new(-3.0))))"
+        },
+        {
+          "op": "eval",
+          "frontend": "flow",
+          "code": "delivery::speed-kph(delivery::new(contact = Email::new(\"dev@example.com\"), speed = MetersPerSecond::new(0.125)))"
+        },
+        {
+          "op": "eval",
+          "frontend": "flow",
+          "code": "KilometersPerHour::value(delivery::speed-kph(delivery::new(contact = Email::new(\"dev@example.com\"), speed = MetersPerSecond::new(0.125))))"
+        },
+        {
+          "op": "eval",
+          "frontend": "flow",
+          "code": "delivery::speed-kph(delivery::new(contact = Email::new(\"dev@example.com\"), speed = MetersPerSecond::new(100.0)))"
+        },
+        {
+          "op": "eval",
+          "frontend": "flow",
+          "code": "KilometersPerHour::value(delivery::speed-kph(delivery::new(contact = Email::new(\"dev@example.com\"), speed = MetersPerSecond::new(100.0))))"
+        },
+        {
+          "op": "eval",
+          "frontend": "flow",
+          "code": "Email::new(\"dev@example.com\")"
+        },
+        {
+          "op": "eval",
+          "frontend": "flow",
+          "code": "Email::value(Email::new(\"dev@example.com\"))"
+        },
+        {
+          "op": "eval",
+          "frontend": "flow",
+          "code": "Email::new(\"missing-at-sign\")"
+        }
+      ],
+      "rawResponseLines": [
+        "{\"ok\":true,\"kind\":\"test\",\"text\":\"4/4 test(s) passed.\",\"data\":{\"results\":[{\"name\":\"fraction\",\"word\":\"delivery.speed-kph\",\"passed\":true,\"expectedKind\":\"value-expression\",\"actualStructured\":{\"formatVersion\":1,\"values\":[{\"kind\":\"scalar\",\"name\":\"KilometersPerHour\",\"typeKey\":2,\"baseType\":{\"kind\":\"float\"},\"value\":{\"kind\":\"float\",\"value\":\"9\",\"negativeZero\":false}}]},\"expected\":\"KilometersPerHour(9)\",\"expectedType\":\"KilometersPerHour\",\"expectedStructured\":{\"formatVersion\":1,\"values\":[{\"kind\":\"scalar\",\"name\":\"KilometersPerHour\",\"typeKey\":2,\"baseType\":{\"kind\":\"float\"},\"value\":{\"kind\":\"float\",\"value\":\"9\",\"negativeZero\":false}}]},\"actual\":[\"KilometersPerHour(9)\"]},{\"name\":\"negative\",\"word\":\"delivery.speed-kph\",\"passed\":true,\"expectedKind\":\"value-expression\",\"actualStructured\":{\"formatVersion\":1,\"values\":[{\"kind\":\"scalar\",\"name\":\"KilometersPerHour\",\"typeKey\":2,\"baseType\":{\"kind\":\"float\"},\"value\":{\"kind\":\"float\",\"value\":\"-7.2\",\"negativeZero\":false}}]},\"expected\":\"KilometersPerHour(-7.2)\",\"expectedType\":\"KilometersPerHour\",\"expectedStructured\":{\"formatVersion\":1,\"values\":[{\"kind\":\"scalar\",\"name\":\"KilometersPerHour\",\"typeKey\":2,\"baseType\":{\"kind\":\"float\"},\"value\":{\"kind\":\"float\",\"value\":\"-7.2\",\"negativeZero\":false}}]},\"actual\":[\"KilometersPerHour(-7.2)\"]},{\"name\":\"unit\",\"word\":\"delivery.speed-kph\",\"passed\":true,\"expectedKind\":\"value-expression\",\"actualStructured\":{\"formatVersion\":1,\"values\":[{\"kind\":\"scalar\",\"name\":\"KilometersPerHour\",\"typeKey\":2,\"baseType\":{\"kind\":\"float\"},\"value\":{\"kind\":\"float\",\"value\":\"3.6\",\"negativeZero\":false}}]},\"expected\":\"KilometersPerHour(3.6)\",\"expectedType\":\"KilometersPerHour\",\"expectedStructured\":{\"formatVersion\":1,\"values\":[{\"kind\":\"scalar\",\"name\":\"KilometersPerHour\",\"typeKey\":2,\"baseType\":{\"kind\":\"float\"},\"value\":{\"kind\":\"float\",\"value\":\"3.6\",\"negativeZero\":false}}]},\"actual\":[\"KilometersPerHour(3.6)\"]},{\"name\":\"zero\",\"word\":\"delivery.speed-kph\",\"passed\":true,\"expectedKind\":\"value-expression\",\"actualStructured\":{\"formatVersion\":1,\"values\":[{\"kind\":\"scalar\",\"name\":\"KilometersPerHour\",\"typeKey\":2,\"baseType\":{\"kind\":\"float\"},\"value\":{\"kind\":\"float\",\"value\":\"0\",\"negativeZero\":false}}]},\"expected\":\"KilometersPerHour(0)\",\"expectedType\":\"KilometersPerHour\",\"expectedStructured\":{\"formatVersion\":1,\"values\":[{\"kind\":\"scalar\",\"name\":\"KilometersPerHour\",\"typeKey\":2,\"baseType\":{\"kind\":\"float\"},\"value\":{\"kind\":\"float\",\"value\":\"0\",\"negativeZero\":false}}]},\"actual\":[\"KilometersPerHour(0)\"]}],\"coverage\":{\"instructionsCovered\":6,\"instructionsTotal\":6,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[]}}}",
+        "{\"ok\":true,\"kind\":\"test\",\"text\":\"10/10 test(s) passed.\",\"data\":{\"results\":[{\"name\":\"fraction\",\"word\":\"delivery.speed-kph\",\"passed\":true,\"expectedKind\":\"value-expression\",\"actualStructured\":{\"formatVersion\":1,\"values\":[{\"kind\":\"scalar\",\"name\":\"KilometersPerHour\",\"typeKey\":2,\"baseType\":{\"kind\":\"float\"},\"value\":{\"kind\":\"float\",\"value\":\"9\",\"negativeZero\":false}}]},\"expected\":\"KilometersPerHour(9)\",\"expectedType\":\"KilometersPerHour\",\"expectedStructured\":{\"formatVersion\":1,\"values\":[{\"kind\":\"scalar\",\"name\":\"KilometersPerHour\",\"typeKey\":2,\"baseType\":{\"kind\":\"float\"},\"value\":{\"kind\":\"float\",\"value\":\"9\",\"negativeZero\":false}}]},\"actual\":[\"KilometersPerHour(9)\"]},{\"name\":\"negative\",\"word\":\"delivery.speed-kph\",\"passed\":true,\"expectedKind\":\"value-expression\",\"actualStructured\":{\"formatVersion\":1,\"values\":[{\"kind\":\"scalar\",\"name\":\"KilometersPerHour\",\"typeKey\":2,\"baseType\":{\"kind\":\"float\"},\"value\":{\"kind\":\"float\",\"value\":\"-7.2\",\"negativeZero\":false}}]},\"expected\":\"KilometersPerHour(-7.2)\",\"expectedType\":\"KilometersPerHour\",\"expectedStructured\":{\"formatVersion\":1,\"values\":[{\"kind\":\"scalar\",\"name\":\"KilometersPerHour\",\"typeKey\":2,\"baseType\":{\"kind\":\"float\"},\"value\":{\"kind\":\"float\",\"value\":\"-7.2\",\"negativeZero\":false}}]},\"actual\":[\"KilometersPerHour(-7.2)\"]},{\"name\":\"unit\",\"word\":\"delivery.speed-kph\",\"passed\":true,\"expectedKind\":\"value-expression\",\"actualStructured\":{\"formatVersion\":1,\"values\":[{\"kind\":\"scalar\",\"name\":\"KilometersPerHour\",\"typeKey\":2,\"baseType\":{\"kind\":\"float\"},\"value\":{\"kind\":\"float\",\"value\":\"3.6\",\"negativeZero\":false}}]},\"expected\":\"KilometersPerHour(3.6)\",\"expectedType\":\"KilometersPerHour\",\"expectedStructured\":{\"formatVersion\":1,\"values\":[{\"kind\":\"scalar\",\"name\":\"KilometersPerHour\",\"typeKey\":2,\"baseType\":{\"kind\":\"float\"},\"value\":{\"kind\":\"float\",\"value\":\"3.6\",\"negativeZero\":false}}]},\"actual\":[\"KilometersPerHour(3.6)\"]},{\"name\":\"zero\",\"word\":\"delivery.speed-kph\",\"passed\":true,\"expectedKind\":\"value-expression\",\"actualStructured\":{\"formatVersion\":1,\"values\":[{\"kind\":\"scalar\",\"name\":\"KilometersPerHour\",\"typeKey\":2,\"baseType\":{\"kind\":\"float\"},\"value\":{\"kind\":\"float\",\"value\":\"0\",\"negativeZero\":false}}]},\"expected\":\"KilometersPerHour(0)\",\"expectedType\":\"KilometersPerHour\",\"expectedStructured\":{\"formatVersion\":1,\"values\":[{\"kind\":\"scalar\",\"name\":\"KilometersPerHour\",\"typeKey\":2,\"baseType\":{\"kind\":\"float\"},\"value\":{\"kind\":\"float\",\"value\":\"0\",\"negativeZero\":false}}]},\"actual\":[\"KilometersPerHour(0)\"]},{\"name\":\"leading-at\",\"word\":\"email.valid?\",\"passed\":true,\"expected\":\"false\",\"actual\":[\"false\"]},{\"name\":\"missing-at\",\"word\":\"email.valid?\",\"passed\":true,\"expected\":\"false\",\"actual\":[\"false\"]},{\"name\":\"missing-dot\",\"word\":\"email.valid?\",\"passed\":true,\"expected\":\"false\",\"actual\":[\"false\"]},{\"name\":\"spaces\",\"word\":\"email.valid?\",\"passed\":true,\"expected\":\"false\",\"actual\":[\"false\"]},{\"name\":\"trailing-at\",\"word\":\"email.valid?\",\"passed\":true,\"expected\":\"false\",\"actual\":[\"false\"]},{\"name\":\"valid\",\"word\":\"email.valid?\",\"passed\":true,\"expected\":\"true\",\"actual\":[\"true\"]}]}}",
+        "{\"ok\":true,\"kind\":\"describe\",\"text\":\"Description for delivery.speed-kph.\",\"data\":{\"name\":\"delivery.speed-kph\",\"flowReference\":\"delivery::speed-kph\",\"flowReferenceUnavailableReason\":null,\"inputs\":[\"Delivery\"],\"outputs\":[\"KilometersPerHour\"],\"parameters\":[{\"name\":\"delivery\",\"type\":\"Delivery\"}],\"effects\":[],\"documentation\":\"\",\"id\":\"word_6774a95bdf45437fa95891fce06e21ae\",\"dependencies\":[\"KilometersPerHour.new\",\"MetersPerSecond.value\",\"delivery.speed\",\"float.multiply\"],\"transitiveDependencies\":[\"KilometersPerHour.new\",\"MetersPerSecond.value\",\"delivery.speed\",\"float.multiply\"],\"callers\":[],\"tests\":[\"fraction\",\"negative\",\"unit\",\"zero\"],\"examples\":[],\"source\":\"\\u003Crevision:delivery.speed-kph/1\\u003E\",\"line\":1,\"kind\":\"word\",\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false,\"revision\":1,\"testCount\":4,\"exampleCount\":0,\"coverage\":{\"instructionsCovered\":6,\"instructionsTotal\":6,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[],\"status\":\"current\"}}}",
+        "{\"ok\":true,\"kind\":\"source\",\"text\":\"word delivery.speed-kph(delivery: Delivery) -\\u003E KilometersPerHour {\\n    effects none\\n    KilometersPerHour::new(float::multiply(MetersPerSecond::value(delivery::speed(delivery)), 3.6))\\n}\",\"data\":\"word delivery.speed-kph(delivery: Delivery) -\\u003E KilometersPerHour {\\n    effects none\\n    KilometersPerHour::new(float::multiply(MetersPerSecond::value(delivery::speed(delivery)), 3.6))\\n}\"}",
+        "{\"ok\":true,\"kind\":\"describe\",\"text\":\"Description for Email.new.\",\"data\":{\"name\":\"Email.new\",\"flowReference\":\"Email::new\",\"flowReferenceUnavailableReason\":null,\"inputs\":[\"String\"],\"outputs\":[\"Email\"],\"parameters\":[],\"effects\":[],\"documentation\":\"Constructs a nominal scalar; an optional pure validator must accept it.\",\"id\":\"generated_Email.new\",\"dependencies\":[\"email.valid?\"],\"transitiveDependencies\":[\"bool.and\",\"bool.not\",\"email.valid?\",\"string.contains\",\"string.ends-with\",\"string.starts-with\"],\"callers\":[],\"tests\":[],\"examples\":[],\"source\":\"\\u003Cgenerated\\u003E\",\"line\":1,\"kind\":\"generated\",\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false,\"revision\":1,\"testCount\":0,\"exampleCount\":0,\"coverage\":{\"instructionsCovered\":0,\"instructionsTotal\":0,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[],\"status\":\"not-run\"}}}",
+        "{\"ok\":true,\"kind\":\"describe\",\"text\":\"Description for MetersPerSecond.new.\",\"data\":{\"name\":\"MetersPerSecond.new\",\"flowReference\":\"MetersPerSecond::new\",\"flowReferenceUnavailableReason\":null,\"inputs\":[\"Float\"],\"outputs\":[\"MetersPerSecond\"],\"parameters\":[],\"effects\":[],\"documentation\":\"Constructs a nominal scalar; an optional pure validator must accept it.\",\"id\":\"generated_MetersPerSecond.new\",\"dependencies\":[],\"transitiveDependencies\":[],\"callers\":[],\"tests\":[],\"examples\":[],\"source\":\"\\u003Cgenerated\\u003E\",\"line\":1,\"kind\":\"generated\",\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false,\"revision\":1,\"testCount\":0,\"exampleCount\":0,\"coverage\":{\"instructionsCovered\":0,\"instructionsTotal\":0,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[],\"status\":\"not-run\"}}}",
+        "{\"ok\":true,\"kind\":\"describe\",\"text\":\"Description for KilometersPerHour.new.\",\"data\":{\"name\":\"KilometersPerHour.new\",\"flowReference\":\"KilometersPerHour::new\",\"flowReferenceUnavailableReason\":null,\"inputs\":[\"Float\"],\"outputs\":[\"KilometersPerHour\"],\"parameters\":[],\"effects\":[],\"documentation\":\"Constructs a nominal scalar; an optional pure validator must accept it.\",\"id\":\"generated_KilometersPerHour.new\",\"dependencies\":[],\"transitiveDependencies\":[],\"callers\":[\"delivery.speed-kph\"],\"tests\":[],\"examples\":[],\"source\":\"\\u003Cgenerated\\u003E\",\"line\":1,\"kind\":\"generated\",\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false,\"revision\":1,\"testCount\":0,\"exampleCount\":0,\"coverage\":{\"instructionsCovered\":0,\"instructionsTotal\":0,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[],\"status\":\"not-run\"}}}",
+        "{\"ok\":true,\"kind\":\"describe\",\"text\":\"Description for delivery.new.\",\"data\":{\"name\":\"delivery.new\",\"flowReference\":\"delivery::new\",\"flowReferenceUnavailableReason\":null,\"inputs\":[\"Email\",\"MetersPerSecond\"],\"outputs\":[\"Delivery\"],\"parameters\":[],\"effects\":[],\"documentation\":\"Constructs a value after all record fields pass their declared types.\",\"id\":\"generated_delivery.new\",\"dependencies\":[],\"transitiveDependencies\":[],\"callers\":[],\"tests\":[],\"examples\":[],\"source\":\"\\u003Cgenerated\\u003E\",\"line\":1,\"kind\":\"generated\",\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false,\"revision\":1,\"testCount\":0,\"exampleCount\":0,\"coverage\":{\"instructionsCovered\":0,\"instructionsTotal\":0,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[],\"status\":\"not-run\"}}}",
+        "{\"ok\":true,\"kind\":\"eval\",\"text\":\"KilometersPerHour(0)\",\"data\":{\"stack\":[\"KilometersPerHour(0)\"],\"stackTypes\":[\"KilometersPerHour\"],\"console\":[],\"effects\":{}}}",
+        "{\"ok\":true,\"kind\":\"eval\",\"text\":\"0\",\"data\":{\"stack\":[\"0\"],\"stackTypes\":[\"Float\"],\"console\":[],\"effects\":{}}}",
+        "{\"ok\":true,\"kind\":\"eval\",\"text\":\"KilometersPerHour(3.6)\",\"data\":{\"stack\":[\"KilometersPerHour(3.6)\"],\"stackTypes\":[\"KilometersPerHour\"],\"console\":[],\"effects\":{}}}",
+        "{\"ok\":true,\"kind\":\"eval\",\"text\":\"3.6\",\"data\":{\"stack\":[\"3.6\"],\"stackTypes\":[\"Float\"],\"console\":[],\"effects\":{}}}",
+        "{\"ok\":true,\"kind\":\"eval\",\"text\":\"KilometersPerHour(9)\",\"data\":{\"stack\":[\"KilometersPerHour(9)\"],\"stackTypes\":[\"KilometersPerHour\"],\"console\":[],\"effects\":{}}}",
+        "{\"ok\":true,\"kind\":\"eval\",\"text\":\"9\",\"data\":{\"stack\":[\"9\"],\"stackTypes\":[\"Float\"],\"console\":[],\"effects\":{}}}",
+        "{\"ok\":true,\"kind\":\"eval\",\"text\":\"KilometersPerHour(-10.8)\",\"data\":{\"stack\":[\"KilometersPerHour(-10.8)\"],\"stackTypes\":[\"KilometersPerHour\"],\"console\":[],\"effects\":{}}}",
+        "{\"ok\":true,\"kind\":\"eval\",\"text\":\"-10.8\",\"data\":{\"stack\":[\"-10.8\"],\"stackTypes\":[\"Float\"],\"console\":[],\"effects\":{}}}",
+        "{\"ok\":true,\"kind\":\"eval\",\"text\":\"KilometersPerHour(0.45)\",\"data\":{\"stack\":[\"KilometersPerHour(0.45)\"],\"stackTypes\":[\"KilometersPerHour\"],\"console\":[],\"effects\":{}}}",
+        "{\"ok\":true,\"kind\":\"eval\",\"text\":\"0.45\",\"data\":{\"stack\":[\"0.45\"],\"stackTypes\":[\"Float\"],\"console\":[],\"effects\":{}}}",
+        "{\"ok\":true,\"kind\":\"eval\",\"text\":\"KilometersPerHour(360)\",\"data\":{\"stack\":[\"KilometersPerHour(360)\"],\"stackTypes\":[\"KilometersPerHour\"],\"console\":[],\"effects\":{}}}",
+        "{\"ok\":true,\"kind\":\"eval\",\"text\":\"360\",\"data\":{\"stack\":[\"360\"],\"stackTypes\":[\"Float\"],\"console\":[],\"effects\":{}}}",
+        "{\"ok\":true,\"kind\":\"eval\",\"text\":\"Email(\\u0022dev@example.com\\u0022)\",\"data\":{\"stack\":[\"Email(\\u0022dev@example.com\\u0022)\"],\"stackTypes\":[\"Email\"],\"console\":[],\"effects\":{}}}",
+        "{\"ok\":true,\"kind\":\"eval\",\"text\":\"\\u0022dev@example.com\\u0022\",\"data\":{\"stack\":[\"\\u0022dev@example.com\\u0022\"],\"stackTypes\":[\"String\"],\"console\":[],\"effects\":{}}}",
+        "{\"ok\":false,\"kind\":\"error\",\"text\":\"REFINEMENT_FAILED in Email.new at \\u003Cgenerated\\u003E:1:1: Value does not satisfy Email\\u0027s refinement validator.\",\"error\":{\"code\":\"REFINEMENT_FAILED\",\"message\":\"Value does not satisfy Email\\u0027s refinement validator.\",\"word\":\"Email.new\",\"span\":{\"file\":\"\\u003Cgenerated\\u003E\",\"line\":1,\"column\":1,\"length\":9},\"expected\":[\"validator returns true\"],\"actual\":[\"false\"]}}"
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "test",
+          "text": "4/4 test(s) passed.",
+          "data": {
+            "results": [
+              {
+                "name": "fraction",
+                "word": "delivery.speed-kph",
+                "passed": true,
+                "expectedKind": "value-expression",
+                "actualStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "scalar",
+                      "name": "KilometersPerHour",
+                      "typeKey": 2,
+                      "baseType": {
+                        "kind": "float"
+                      },
+                      "value": {
+                        "kind": "float",
+                        "value": "9",
+                        "negativeZero": false
+                      }
+                    }
+                  ]
+                },
+                "expected": "KilometersPerHour(9)",
+                "expectedType": "KilometersPerHour",
+                "expectedStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "scalar",
+                      "name": "KilometersPerHour",
+                      "typeKey": 2,
+                      "baseType": {
+                        "kind": "float"
+                      },
+                      "value": {
+                        "kind": "float",
+                        "value": "9",
+                        "negativeZero": false
+                      }
+                    }
+                  ]
+                },
+                "actual": [
+                  "KilometersPerHour(9)"
+                ]
+              },
+              {
+                "name": "negative",
+                "word": "delivery.speed-kph",
+                "passed": true,
+                "expectedKind": "value-expression",
+                "actualStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "scalar",
+                      "name": "KilometersPerHour",
+                      "typeKey": 2,
+                      "baseType": {
+                        "kind": "float"
+                      },
+                      "value": {
+                        "kind": "float",
+                        "value": "-7.2",
+                        "negativeZero": false
+                      }
+                    }
+                  ]
+                },
+                "expected": "KilometersPerHour(-7.2)",
+                "expectedType": "KilometersPerHour",
+                "expectedStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "scalar",
+                      "name": "KilometersPerHour",
+                      "typeKey": 2,
+                      "baseType": {
+                        "kind": "float"
+                      },
+                      "value": {
+                        "kind": "float",
+                        "value": "-7.2",
+                        "negativeZero": false
+                      }
+                    }
+                  ]
+                },
+                "actual": [
+                  "KilometersPerHour(-7.2)"
+                ]
+              },
+              {
+                "name": "unit",
+                "word": "delivery.speed-kph",
+                "passed": true,
+                "expectedKind": "value-expression",
+                "actualStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "scalar",
+                      "name": "KilometersPerHour",
+                      "typeKey": 2,
+                      "baseType": {
+                        "kind": "float"
+                      },
+                      "value": {
+                        "kind": "float",
+                        "value": "3.6",
+                        "negativeZero": false
+                      }
+                    }
+                  ]
+                },
+                "expected": "KilometersPerHour(3.6)",
+                "expectedType": "KilometersPerHour",
+                "expectedStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "scalar",
+                      "name": "KilometersPerHour",
+                      "typeKey": 2,
+                      "baseType": {
+                        "kind": "float"
+                      },
+                      "value": {
+                        "kind": "float",
+                        "value": "3.6",
+                        "negativeZero": false
+                      }
+                    }
+                  ]
+                },
+                "actual": [
+                  "KilometersPerHour(3.6)"
+                ]
+              },
+              {
+                "name": "zero",
+                "word": "delivery.speed-kph",
+                "passed": true,
+                "expectedKind": "value-expression",
+                "actualStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "scalar",
+                      "name": "KilometersPerHour",
+                      "typeKey": 2,
+                      "baseType": {
+                        "kind": "float"
+                      },
+                      "value": {
+                        "kind": "float",
+                        "value": "0",
+                        "negativeZero": false
+                      }
+                    }
+                  ]
+                },
+                "expected": "KilometersPerHour(0)",
+                "expectedType": "KilometersPerHour",
+                "expectedStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "scalar",
+                      "name": "KilometersPerHour",
+                      "typeKey": 2,
+                      "baseType": {
+                        "kind": "float"
+                      },
+                      "value": {
+                        "kind": "float",
+                        "value": "0",
+                        "negativeZero": false
+                      }
+                    }
+                  ]
+                },
+                "actual": [
+                  "KilometersPerHour(0)"
+                ]
+              }
+            ],
+            "coverage": {
+              "instructionsCovered": 6,
+              "instructionsTotal": 6,
+              "branchesCovered": 0,
+              "branchesTotal": 0,
+              "uncoveredInstructions": [],
+              "uncoveredBranchOutcomes": []
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "test",
+          "text": "10/10 test(s) passed.",
+          "data": {
+            "results": [
+              {
+                "name": "fraction",
+                "word": "delivery.speed-kph",
+                "passed": true,
+                "expectedKind": "value-expression",
+                "actualStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "scalar",
+                      "name": "KilometersPerHour",
+                      "typeKey": 2,
+                      "baseType": {
+                        "kind": "float"
+                      },
+                      "value": {
+                        "kind": "float",
+                        "value": "9",
+                        "negativeZero": false
+                      }
+                    }
+                  ]
+                },
+                "expected": "KilometersPerHour(9)",
+                "expectedType": "KilometersPerHour",
+                "expectedStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "scalar",
+                      "name": "KilometersPerHour",
+                      "typeKey": 2,
+                      "baseType": {
+                        "kind": "float"
+                      },
+                      "value": {
+                        "kind": "float",
+                        "value": "9",
+                        "negativeZero": false
+                      }
+                    }
+                  ]
+                },
+                "actual": [
+                  "KilometersPerHour(9)"
+                ]
+              },
+              {
+                "name": "negative",
+                "word": "delivery.speed-kph",
+                "passed": true,
+                "expectedKind": "value-expression",
+                "actualStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "scalar",
+                      "name": "KilometersPerHour",
+                      "typeKey": 2,
+                      "baseType": {
+                        "kind": "float"
+                      },
+                      "value": {
+                        "kind": "float",
+                        "value": "-7.2",
+                        "negativeZero": false
+                      }
+                    }
+                  ]
+                },
+                "expected": "KilometersPerHour(-7.2)",
+                "expectedType": "KilometersPerHour",
+                "expectedStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "scalar",
+                      "name": "KilometersPerHour",
+                      "typeKey": 2,
+                      "baseType": {
+                        "kind": "float"
+                      },
+                      "value": {
+                        "kind": "float",
+                        "value": "-7.2",
+                        "negativeZero": false
+                      }
+                    }
+                  ]
+                },
+                "actual": [
+                  "KilometersPerHour(-7.2)"
+                ]
+              },
+              {
+                "name": "unit",
+                "word": "delivery.speed-kph",
+                "passed": true,
+                "expectedKind": "value-expression",
+                "actualStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "scalar",
+                      "name": "KilometersPerHour",
+                      "typeKey": 2,
+                      "baseType": {
+                        "kind": "float"
+                      },
+                      "value": {
+                        "kind": "float",
+                        "value": "3.6",
+                        "negativeZero": false
+                      }
+                    }
+                  ]
+                },
+                "expected": "KilometersPerHour(3.6)",
+                "expectedType": "KilometersPerHour",
+                "expectedStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "scalar",
+                      "name": "KilometersPerHour",
+                      "typeKey": 2,
+                      "baseType": {
+                        "kind": "float"
+                      },
+                      "value": {
+                        "kind": "float",
+                        "value": "3.6",
+                        "negativeZero": false
+                      }
+                    }
+                  ]
+                },
+                "actual": [
+                  "KilometersPerHour(3.6)"
+                ]
+              },
+              {
+                "name": "zero",
+                "word": "delivery.speed-kph",
+                "passed": true,
+                "expectedKind": "value-expression",
+                "actualStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "scalar",
+                      "name": "KilometersPerHour",
+                      "typeKey": 2,
+                      "baseType": {
+                        "kind": "float"
+                      },
+                      "value": {
+                        "kind": "float",
+                        "value": "0",
+                        "negativeZero": false
+                      }
+                    }
+                  ]
+                },
+                "expected": "KilometersPerHour(0)",
+                "expectedType": "KilometersPerHour",
+                "expectedStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "scalar",
+                      "name": "KilometersPerHour",
+                      "typeKey": 2,
+                      "baseType": {
+                        "kind": "float"
+                      },
+                      "value": {
+                        "kind": "float",
+                        "value": "0",
+                        "negativeZero": false
+                      }
+                    }
+                  ]
+                },
+                "actual": [
+                  "KilometersPerHour(0)"
+                ]
+              },
+              {
+                "name": "leading-at",
+                "word": "email.valid?",
+                "passed": true,
+                "expected": "false",
+                "actual": [
+                  "false"
+                ]
+              },
+              {
+                "name": "missing-at",
+                "word": "email.valid?",
+                "passed": true,
+                "expected": "false",
+                "actual": [
+                  "false"
+                ]
+              },
+              {
+                "name": "missing-dot",
+                "word": "email.valid?",
+                "passed": true,
+                "expected": "false",
+                "actual": [
+                  "false"
+                ]
+              },
+              {
+                "name": "spaces",
+                "word": "email.valid?",
+                "passed": true,
+                "expected": "false",
+                "actual": [
+                  "false"
+                ]
+              },
+              {
+                "name": "trailing-at",
+                "word": "email.valid?",
+                "passed": true,
+                "expected": "false",
+                "actual": [
+                  "false"
+                ]
+              },
+              {
+                "name": "valid",
+                "word": "email.valid?",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "describe",
+          "text": "Description for delivery.speed-kph.",
+          "data": {
+            "name": "delivery.speed-kph",
+            "flowReference": "delivery::speed-kph",
+            "flowReferenceUnavailableReason": null,
+            "inputs": [
+              "Delivery"
+            ],
+            "outputs": [
+              "KilometersPerHour"
+            ],
+            "parameters": [
+              {
+                "name": "delivery",
+                "type": "Delivery"
+              }
+            ],
+            "effects": [],
+            "documentation": "",
+            "id": "word_6774a95bdf45437fa95891fce06e21ae",
+            "dependencies": [
+              "KilometersPerHour.new",
+              "MetersPerSecond.value",
+              "delivery.speed",
+              "float.multiply"
+            ],
+            "transitiveDependencies": [
+              "KilometersPerHour.new",
+              "MetersPerSecond.value",
+              "delivery.speed",
+              "float.multiply"
+            ],
+            "callers": [],
+            "tests": [
+              "fraction",
+              "negative",
+              "unit",
+              "zero"
+            ],
+            "examples": [],
+            "source": "<revision:delivery.speed-kph/1>",
+            "line": 1,
+            "kind": "word",
+            "status": "persistent",
+            "maturity": "library",
+            "deprecated": false,
+            "revision": 1,
+            "testCount": 4,
+            "exampleCount": 0,
+            "coverage": {
+              "instructionsCovered": 6,
+              "instructionsTotal": 6,
+              "branchesCovered": 0,
+              "branchesTotal": 0,
+              "uncoveredInstructions": [],
+              "uncoveredBranchOutcomes": [],
+              "status": "current"
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "source",
+          "text": "word delivery.speed-kph(delivery: Delivery) -> KilometersPerHour {\n    effects none\n    KilometersPerHour::new(float::multiply(MetersPerSecond::value(delivery::speed(delivery)), 3.6))\n}",
+          "data": "word delivery.speed-kph(delivery: Delivery) -> KilometersPerHour {\n    effects none\n    KilometersPerHour::new(float::multiply(MetersPerSecond::value(delivery::speed(delivery)), 3.6))\n}"
+        },
+        {
+          "ok": true,
+          "kind": "describe",
+          "text": "Description for Email.new.",
+          "data": {
+            "name": "Email.new",
+            "flowReference": "Email::new",
+            "flowReferenceUnavailableReason": null,
+            "inputs": [
+              "String"
+            ],
+            "outputs": [
+              "Email"
+            ],
+            "parameters": [],
+            "effects": [],
+            "documentation": "Constructs a nominal scalar; an optional pure validator must accept it.",
+            "id": "generated_Email.new",
+            "dependencies": [
+              "email.valid?"
+            ],
+            "transitiveDependencies": [
+              "bool.and",
+              "bool.not",
+              "email.valid?",
+              "string.contains",
+              "string.ends-with",
+              "string.starts-with"
+            ],
+            "callers": [],
+            "tests": [],
+            "examples": [],
+            "source": "<generated>",
+            "line": 1,
+            "kind": "generated",
+            "status": "persistent",
+            "maturity": "library",
+            "deprecated": false,
+            "revision": 1,
+            "testCount": 0,
+            "exampleCount": 0,
+            "coverage": {
+              "instructionsCovered": 0,
+              "instructionsTotal": 0,
+              "branchesCovered": 0,
+              "branchesTotal": 0,
+              "uncoveredInstructions": [],
+              "uncoveredBranchOutcomes": [],
+              "status": "not-run"
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "describe",
+          "text": "Description for MetersPerSecond.new.",
+          "data": {
+            "name": "MetersPerSecond.new",
+            "flowReference": "MetersPerSecond::new",
+            "flowReferenceUnavailableReason": null,
+            "inputs": [
+              "Float"
+            ],
+            "outputs": [
+              "MetersPerSecond"
+            ],
+            "parameters": [],
+            "effects": [],
+            "documentation": "Constructs a nominal scalar; an optional pure validator must accept it.",
+            "id": "generated_MetersPerSecond.new",
+            "dependencies": [],
+            "transitiveDependencies": [],
+            "callers": [],
+            "tests": [],
+            "examples": [],
+            "source": "<generated>",
+            "line": 1,
+            "kind": "generated",
+            "status": "persistent",
+            "maturity": "library",
+            "deprecated": false,
+            "revision": 1,
+            "testCount": 0,
+            "exampleCount": 0,
+            "coverage": {
+              "instructionsCovered": 0,
+              "instructionsTotal": 0,
+              "branchesCovered": 0,
+              "branchesTotal": 0,
+              "uncoveredInstructions": [],
+              "uncoveredBranchOutcomes": [],
+              "status": "not-run"
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "describe",
+          "text": "Description for KilometersPerHour.new.",
+          "data": {
+            "name": "KilometersPerHour.new",
+            "flowReference": "KilometersPerHour::new",
+            "flowReferenceUnavailableReason": null,
+            "inputs": [
+              "Float"
+            ],
+            "outputs": [
+              "KilometersPerHour"
+            ],
+            "parameters": [],
+            "effects": [],
+            "documentation": "Constructs a nominal scalar; an optional pure validator must accept it.",
+            "id": "generated_KilometersPerHour.new",
+            "dependencies": [],
+            "transitiveDependencies": [],
+            "callers": [
+              "delivery.speed-kph"
+            ],
+            "tests": [],
+            "examples": [],
+            "source": "<generated>",
+            "line": 1,
+            "kind": "generated",
+            "status": "persistent",
+            "maturity": "library",
+            "deprecated": false,
+            "revision": 1,
+            "testCount": 0,
+            "exampleCount": 0,
+            "coverage": {
+              "instructionsCovered": 0,
+              "instructionsTotal": 0,
+              "branchesCovered": 0,
+              "branchesTotal": 0,
+              "uncoveredInstructions": [],
+              "uncoveredBranchOutcomes": [],
+              "status": "not-run"
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "describe",
+          "text": "Description for delivery.new.",
+          "data": {
+            "name": "delivery.new",
+            "flowReference": "delivery::new",
+            "flowReferenceUnavailableReason": null,
+            "inputs": [
+              "Email",
+              "MetersPerSecond"
+            ],
+            "outputs": [
+              "Delivery"
+            ],
+            "parameters": [],
+            "effects": [],
+            "documentation": "Constructs a value after all record fields pass their declared types.",
+            "id": "generated_delivery.new",
+            "dependencies": [],
+            "transitiveDependencies": [],
+            "callers": [],
+            "tests": [],
+            "examples": [],
+            "source": "<generated>",
+            "line": 1,
+            "kind": "generated",
+            "status": "persistent",
+            "maturity": "library",
+            "deprecated": false,
+            "revision": 1,
+            "testCount": 0,
+            "exampleCount": 0,
+            "coverage": {
+              "instructionsCovered": 0,
+              "instructionsTotal": 0,
+              "branchesCovered": 0,
+              "branchesTotal": 0,
+              "uncoveredInstructions": [],
+              "uncoveredBranchOutcomes": [],
+              "status": "not-run"
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "KilometersPerHour(0)",
+          "data": {
+            "stack": [
+              "KilometersPerHour(0)"
+            ],
+            "stackTypes": [
+              "KilometersPerHour"
+            ],
+            "console": [],
+            "effects": {}
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "0",
+          "data": {
+            "stack": [
+              "0"
+            ],
+            "stackTypes": [
+              "Float"
+            ],
+            "console": [],
+            "effects": {}
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "KilometersPerHour(3.6)",
+          "data": {
+            "stack": [
+              "KilometersPerHour(3.6)"
+            ],
+            "stackTypes": [
+              "KilometersPerHour"
+            ],
+            "console": [],
+            "effects": {}
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "3.6",
+          "data": {
+            "stack": [
+              "3.6"
+            ],
+            "stackTypes": [
+              "Float"
+            ],
+            "console": [],
+            "effects": {}
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "KilometersPerHour(9)",
+          "data": {
+            "stack": [
+              "KilometersPerHour(9)"
+            ],
+            "stackTypes": [
+              "KilometersPerHour"
+            ],
+            "console": [],
+            "effects": {}
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "9",
+          "data": {
+            "stack": [
+              "9"
+            ],
+            "stackTypes": [
+              "Float"
+            ],
+            "console": [],
+            "effects": {}
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "KilometersPerHour(-10.8)",
+          "data": {
+            "stack": [
+              "KilometersPerHour(-10.8)"
+            ],
+            "stackTypes": [
+              "KilometersPerHour"
+            ],
+            "console": [],
+            "effects": {}
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "-10.8",
+          "data": {
+            "stack": [
+              "-10.8"
+            ],
+            "stackTypes": [
+              "Float"
+            ],
+            "console": [],
+            "effects": {}
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "KilometersPerHour(0.45)",
+          "data": {
+            "stack": [
+              "KilometersPerHour(0.45)"
+            ],
+            "stackTypes": [
+              "KilometersPerHour"
+            ],
+            "console": [],
+            "effects": {}
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "0.45",
+          "data": {
+            "stack": [
+              "0.45"
+            ],
+            "stackTypes": [
+              "Float"
+            ],
+            "console": [],
+            "effects": {}
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "KilometersPerHour(360)",
+          "data": {
+            "stack": [
+              "KilometersPerHour(360)"
+            ],
+            "stackTypes": [
+              "KilometersPerHour"
+            ],
+            "console": [],
+            "effects": {}
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "360",
+          "data": {
+            "stack": [
+              "360"
+            ],
+            "stackTypes": [
+              "Float"
+            ],
+            "console": [],
+            "effects": {}
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "Email(\"dev@example.com\")",
+          "data": {
+            "stack": [
+              "Email(\"dev@example.com\")"
+            ],
+            "stackTypes": [
+              "Email"
+            ],
+            "console": [],
+            "effects": {}
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "\"dev@example.com\"",
+          "data": {
+            "stack": [
+              "\"dev@example.com\""
+            ],
+            "stackTypes": [
+              "String"
+            ],
+            "console": [],
+            "effects": {}
+          }
+        },
+        {
+          "ok": false,
+          "kind": "error",
+          "text": "REFINEMENT_FAILED in Email.new at <generated>:1:1: Value does not satisfy Email's refinement validator.",
+          "error": {
+            "code": "REFINEMENT_FAILED",
+            "message": "Value does not satisfy Email's refinement validator.",
+            "word": "Email.new",
+            "span": {
+              "file": "<generated>",
+              "line": 1,
+              "column": 1,
+              "length": 9
+            },
+            "expected": [
+              "validator returns true"
+            ],
+            "actual": [
+              "false"
+            ]
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "name": "negative probe cross-unit constructor",
+      "project": "D:\\code\\AgentLang\\.agentlang\\strong-type-flow-001\\acceptance-tmp-c47798d7bfa74c1b9cbcb96f651fd6b6\\probe-cd8a6941adfd4a95899cd8ddc173345f",
+      "requests": [
+        {
+          "op": "task.begin",
+          "goal": "Acceptance negative type probe: cross-unit constructor"
+        },
+        {
+          "op": "words"
+        },
+        {
+          "op": "task.status"
+        },
+        {
+          "op": "source",
+          "type": "ProbeUnit"
+        },
+        {
+          "op": "define",
+          "source": "type ProbeUnit : Float { }\nrecord ProbeRecord { field amount: Float; }\nword probe.sentinel(value: Int) -> Int { effects none ::add(value, 1) }\nword probe.wrong-unit(speed: KilometersPerHour) -> MetersPerSecond { effects none MetersPerSecond::new(speed) }",
+          "frontend": "flow"
+        },
+        {
+          "op": "words"
+        },
+        {
+          "op": "task.status"
+        },
+        {
+          "op": "source",
+          "type": "ProbeUnit"
+        }
+      ],
+      "rawResponseLines": [
+        "{\"ok\":true,\"kind\":\"task.begin\",\"text\":\"Started task-0003.\",\"data\":{\"task\":\"task-0003\",\"goal\":\"Acceptance negative type probe: cross-unit constructor\",\"active\":true,\"wordsInspected\":[],\"wordsUsed\":[],\"wordsCreated\":[],\"testsRun\":0,\"testsFailed\":0,\"effects\":{},\"errors\":[]}}",
+        "{\"ok\":true,\"kind\":\"words\",\"text\":\"60 word(s).\",\"data\":{\"words\":[{\"name\":\"Email.new\",\"id\":\"generated_Email.new\",\"inputs\":[\"String\"],\"outputs\":[\"Email\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"Email.value\",\"id\":\"generated_Email.value\",\"inputs\":[\"Email\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"KilometersPerHour.new\",\"id\":\"generated_KilometersPerHour.new\",\"inputs\":[\"Float\"],\"outputs\":[\"KilometersPerHour\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"KilometersPerHour.value\",\"id\":\"generated_KilometersPerHour.value\",\"inputs\":[\"KilometersPerHour\"],\"outputs\":[\"Float\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"MetersPerSecond.new\",\"id\":\"generated_MetersPerSecond.new\",\"inputs\":[\"Float\"],\"outputs\":[\"MetersPerSecond\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"MetersPerSecond.value\",\"id\":\"generated_MetersPerSecond.value\",\"inputs\":[\"MetersPerSecond\"],\"outputs\":[\"Float\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"add\",\"id\":\"primitive_add\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"bool.and\",\"id\":\"primitive_bool.and\",\"inputs\":[\"Bool\",\"Bool\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"bool.not\",\"id\":\"primitive_bool.not\",\"inputs\":[\"Bool\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"bool.or\",\"id\":\"primitive_bool.or\",\"inputs\":[\"Bool\",\"Bool\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"clock.now\",\"id\":\"primitive_clock.now\",\"inputs\":[],\"outputs\":[\"String\"],\"effects\":[\"clock.read\"],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"console.write\",\"id\":\"primitive_console.write\",\"inputs\":[\"String\"],\"outputs\":[\"Unit\"],\"effects\":[\"console.write\"],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"delivery.contact\",\"id\":\"generated_delivery.contact\",\"inputs\":[\"Delivery\"],\"outputs\":[\"Email\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"delivery.new\",\"id\":\"generated_delivery.new\",\"inputs\":[\"Email\",\"MetersPerSecond\"],\"outputs\":[\"Delivery\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"delivery.speed\",\"id\":\"generated_delivery.speed\",\"inputs\":[\"Delivery\"],\"outputs\":[\"MetersPerSecond\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"delivery.speed-kph\",\"id\":\"word_6774a95bdf45437fa95891fce06e21ae\",\"inputs\":[\"Delivery\"],\"outputs\":[\"KilometersPerHour\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"divide\",\"id\":\"primitive_divide\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"drop\",\"id\":\"primitive_drop\",\"inputs\":[\"a\"],\"outputs\":[],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"dup\",\"id\":\"primitive_dup\",\"inputs\":[\"a\"],\"outputs\":[\"a\",\"a\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"email.valid?\",\"id\":\"word_76315c4b82cc45529829a29f25fef8b5\",\"inputs\":[\"String\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"equals\",\"id\":\"primitive_equals\",\"inputs\":[\"a\",\"a\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"file.exists?\",\"id\":\"primitive_file.exists?\",\"inputs\":[\"String\"],\"outputs\":[\"Bool\"],\"effects\":[\"fs.read\"],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"file.read\",\"id\":\"primitive_file.read\",\"inputs\":[\"String\"],\"outputs\":[\"String\"],\"effects\":[\"fs.read\"],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"file.write\",\"id\":\"primitive_file.write\",\"inputs\":[\"String\",\"String\"],\"outputs\":[\"Unit\"],\"effects\":[\"fs.write\"],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.add\",\"id\":\"primitive_float.add\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Float\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.divide\",\"id\":\"primitive_float.divide\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Float\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.greater-or-equal\",\"id\":\"primitive_float.greater-or-equal\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.greater-than\",\"id\":\"primitive_float.greater-than\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.less-or-equal\",\"id\":\"primitive_float.less-or-equal\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.less-than\",\"id\":\"primitive_float.less-than\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.multiply\",\"id\":\"primitive_float.multiply\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Float\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.round\",\"id\":\"primitive_float.round\",\"inputs\":[\"Float\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.subtract\",\"id\":\"primitive_float.subtract\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Float\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.to-int\",\"id\":\"primitive_float.to-int\",\"inputs\":[\"Float\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.to-string\",\"id\":\"primitive_float.to-string\",\"inputs\":[\"Float\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.abs\",\"id\":\"primitive_int.abs\",\"inputs\":[\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.greater-or-equal\",\"id\":\"primitive_int.greater-or-equal\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.greater-than\",\"id\":\"primitive_int.greater-than\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.less-or-equal\",\"id\":\"primitive_int.less-or-equal\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.less-than\",\"id\":\"primitive_int.less-than\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.max\",\"id\":\"primitive_int.max\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.min\",\"id\":\"primitive_int.min\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.to-float\",\"id\":\"primitive_int.to-float\",\"inputs\":[\"Int\"],\"outputs\":[\"Float\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.to-string\",\"id\":\"primitive_int.to-string\",\"inputs\":[\"Int\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"list.append\",\"id\":\"primitive_list.append\",\"inputs\":[\"List\\u003Ca\\u003E\",\"a\"],\"outputs\":[\"List\\u003Ca\\u003E\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"list.concat\",\"id\":\"primitive_list.concat\",\"inputs\":[\"List\\u003Ca\\u003E\",\"List\\u003Ca\\u003E\"],\"outputs\":[\"List\\u003Ca\\u003E\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"list.count\",\"id\":\"primitive_list.count\",\"inputs\":[\"List\\u003Ca\\u003E\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"list.get\",\"id\":\"primitive_list.get\",\"inputs\":[\"List\\u003Ca\\u003E\",\"Int\"],\"outputs\":[\"Option\\u003Ca\\u003E\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"list.is-empty?\",\"id\":\"primitive_list.is-empty?\",\"inputs\":[\"List\\u003Ca\\u003E\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"multiply\",\"id\":\"primitive_multiply\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.concat\",\"id\":\"primitive_string.concat\",\"inputs\":[\"String\",\"String\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.contains\",\"id\":\"primitive_string.contains\",\"inputs\":[\"String\",\"String\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.ends-with\",\"id\":\"primitive_string.ends-with\",\"inputs\":[\"String\",\"String\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.length\",\"id\":\"primitive_string.length\",\"inputs\":[\"String\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.starts-with\",\"id\":\"primitive_string.starts-with\",\"inputs\":[\"String\",\"String\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.to-lower\",\"id\":\"primitive_string.to-lower\",\"inputs\":[\"String\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.to-upper\",\"id\":\"primitive_string.to-upper\",\"inputs\":[\"String\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.trim\",\"id\":\"primitive_string.trim\",\"inputs\":[\"String\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"subtract\",\"id\":\"primitive_subtract\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"swap\",\"id\":\"primitive_swap\",\"inputs\":[\"a\",\"b\"],\"outputs\":[\"b\",\"a\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false}],\"constructs\":[{\"name\":\"list.empty\",\"kind\":\"syntax\",\"syntax\":\"list.empty\\u003CT\\u003E\",\"inputs\":[],\"outputs\":[\"List\\u003CT\\u003E\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"none\",\"documentation\":\"Constructs an empty List\\u003CT\\u003E. T must be a declared closed type.\",\"coverageOutcomes\":[]},{\"name\":\"list.singleton\",\"kind\":\"syntax\",\"syntax\":\"T list.singleton\\u003CT\\u003E\",\"inputs\":[\"T\"],\"outputs\":[\"List\\u003CT\\u003E\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"none\",\"documentation\":\"Constructs a one-element List\\u003CT\\u003E after checking the payload against the explicit T.\",\"coverageOutcomes\":[]},{\"name\":\"option.none\",\"kind\":\"syntax\",\"syntax\":\"option.none\\u003CT\\u003E\",\"inputs\":[],\"outputs\":[\"Option\\u003CT\\u003E\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"none\",\"documentation\":\"Constructs a typed none; the element type is always explicit.\",\"coverageOutcomes\":[]},{\"name\":\"option.some\",\"kind\":\"syntax\",\"syntax\":\"T option.some\\u003CT\\u003E\",\"inputs\":[\"T\"],\"outputs\":[\"Option\\u003CT\\u003E\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"none\",\"documentation\":\"Constructs a typed some after checking the payload against the explicit T.\",\"coverageOutcomes\":[]},{\"name\":\"result.ok\",\"kind\":\"syntax\",\"syntax\":\"T result.ok\\u003CT, E\\u003E\",\"inputs\":[\"T\"],\"outputs\":[\"Result\\u003CT, E\\u003E\"],\"typeParameters\":[\"T\",\"E\"],\"effects\":[],\"effectRule\":\"none\",\"documentation\":\"Constructs a typed ok; both result type parameters are always explicit.\",\"coverageOutcomes\":[]},{\"name\":\"result.error\",\"kind\":\"syntax\",\"syntax\":\"E result.error\\u003CT, E\\u003E\",\"inputs\":[\"E\"],\"outputs\":[\"Result\\u003CT, E\\u003E\"],\"typeParameters\":[\"T\",\"E\"],\"effects\":[],\"effectRule\":\"none\",\"documentation\":\"Constructs a typed error; the inactive success type remains explicit.\",\"coverageOutcomes\":[]},{\"name\":\"list.map\",\"kind\":\"syntax\",\"syntax\":\"list.map \\u003Cword\\u003E\",\"inputs\":[\"List\\u003CT\\u003E\"],\"outputs\":[\"List\\u003CU\\u003E\"],\"typeParameters\":[\"T\",\"U\"],\"effects\":[],\"effectRule\":\"inherits callback word effects\",\"documentation\":\"Statically names one callback word with signature T -\\u003E U. The callback is type checked before any element is visited.\",\"coverageOutcomes\":[\"empty\",\"nonempty\"]},{\"name\":\"list.filter\",\"kind\":\"syntax\",\"syntax\":\"list.filter \\u003Cword\\u003E\",\"inputs\":[\"List\\u003CT\\u003E\"],\"outputs\":[\"List\\u003CT\\u003E\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"inherits callback word effects\",\"documentation\":\"Statically names one callback word with signature T -\\u003E Bool. Retains elements for true and drops them for false.\",\"coverageOutcomes\":[\"empty\",\"nonempty\",\"keep\",\"drop\"]},{\"name\":\"list.each\",\"kind\":\"syntax\",\"syntax\":\"list.each \\u003Cword\\u003E\",\"inputs\":[\"List\\u003CT\\u003E\"],\"outputs\":[\"Unit\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"inherits callback word effects\",\"documentation\":\"Statically names one callback word with signature T -\\u003E Unit and visits each element.\",\"coverageOutcomes\":[\"empty\",\"nonempty\"]},{\"name\":\"list.fold\",\"kind\":\"syntax\",\"syntax\":\"list.fold \\u003Cword\\u003E\",\"inputs\":[\"List\\u003CT\\u003E\",\"Accumulator\"],\"outputs\":[\"Accumulator\"],\"typeParameters\":[\"T\",\"Accumulator\"],\"effects\":[],\"effectRule\":\"inherits callback word effects\",\"documentation\":\"Statically names one callback with signature Accumulator Item -\\u003E Accumulator. Visits items from left to right; an empty list returns the initial accumulator unchanged. The callback cannot capture caller locals.\",\"coverageOutcomes\":[\"empty\",\"nonempty\"]},{\"name\":\"match-option\",\"kind\":\"syntax\",\"syntax\":\"match-option / some \\u003Clocal\\u003E / none / end\",\"inputs\":[\"Option\\u003CT\\u003E (top of stack)\"],\"outputs\":[\"same stack from both cases\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"union of both case effects\",\"documentation\":\"Requires both cases. The some payload local exists only inside its case; both cases must leave identical stack and outer-local types.\",\"coverageOutcomes\":[\"some\",\"none\"]},{\"name\":\"match-result\",\"kind\":\"syntax\",\"syntax\":\"match-result / ok \\u003Clocal\\u003E / error \\u003Clocal\\u003E / end\",\"inputs\":[\"Result\\u003CT, E\\u003E (top of stack)\"],\"outputs\":[\"same stack from both cases\"],\"typeParameters\":[\"T\",\"E\"],\"effects\":[],\"effectRule\":\"union of both case effects\",\"documentation\":\"Requires both cases. Each payload local exists only inside its own case; both cases must leave identical stack and outer-local types.\",\"coverageOutcomes\":[\"ok\",\"error\"]}]}}",
+        "{\"ok\":true,\"kind\":\"task.status\",\"text\":\"Status for task-0003.\",\"data\":{\"task\":\"task-0003\",\"goal\":\"Acceptance negative type probe: cross-unit constructor\",\"active\":true,\"wordsInspected\":[\"Email.new\",\"Email.value\",\"KilometersPerHour.new\",\"KilometersPerHour.value\",\"MetersPerSecond.new\",\"MetersPerSecond.value\",\"add\",\"bool.and\",\"bool.not\",\"bool.or\",\"clock.now\",\"console.write\",\"delivery.contact\",\"delivery.new\",\"delivery.speed\",\"delivery.speed-kph\",\"divide\",\"drop\",\"dup\",\"email.valid?\",\"equals\",\"file.exists?\",\"file.read\",\"file.write\",\"float.add\",\"float.divide\",\"float.greater-or-equal\",\"float.greater-than\",\"float.less-or-equal\",\"float.less-than\",\"float.multiply\",\"float.round\",\"float.subtract\",\"float.to-int\",\"float.to-string\",\"int.abs\",\"int.greater-or-equal\",\"int.greater-than\",\"int.less-or-equal\",\"int.less-than\",\"int.max\",\"int.min\",\"int.to-float\",\"int.to-string\",\"list.append\",\"list.concat\",\"list.count\",\"list.get\",\"list.is-empty?\",\"multiply\",\"string.concat\",\"string.contains\",\"string.ends-with\",\"string.length\",\"string.starts-with\",\"string.to-lower\",\"string.to-upper\",\"string.trim\",\"subtract\",\"swap\"],\"wordsUsed\":[],\"wordsCreated\":[],\"testsRun\":0,\"testsFailed\":0,\"effects\":{},\"errors\":[]}}",
+        "{\"ok\":false,\"kind\":\"error\",\"text\":\"DISCOVERY_UNKNOWN_TYPE in ProbeUnit: Type source \\u0027ProbeUnit\\u0027 is not defined.\",\"error\":{\"code\":\"DISCOVERY_UNKNOWN_TYPE\",\"message\":\"Type source \\u0027ProbeUnit\\u0027 is not defined.\",\"word\":\"ProbeUnit\",\"expected\":[\"declared record or scalar type\"],\"actual\":[]}}",
+        "{\"ok\":false,\"kind\":\"error\",\"text\":\"FLOW_EFFECTS_TRAILING at \\u003Cflow-project\\u003E:3:55: \\u0027none\\u0027 cannot be combined with named effects.\",\"error\":{\"code\":\"FLOW_EFFECTS_TRAILING\",\"message\":\"\\u0027none\\u0027 cannot be combined with named effects.\",\"span\":{\"file\":\"\\u003Cflow-project\\u003E\",\"line\":3,\"column\":55,\"length\":2},\"expected\":[],\"actual\":[]}}",
+        "{\"ok\":true,\"kind\":\"words\",\"text\":\"60 word(s).\",\"data\":{\"words\":[{\"name\":\"Email.new\",\"id\":\"generated_Email.new\",\"inputs\":[\"String\"],\"outputs\":[\"Email\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"Email.value\",\"id\":\"generated_Email.value\",\"inputs\":[\"Email\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"KilometersPerHour.new\",\"id\":\"generated_KilometersPerHour.new\",\"inputs\":[\"Float\"],\"outputs\":[\"KilometersPerHour\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"KilometersPerHour.value\",\"id\":\"generated_KilometersPerHour.value\",\"inputs\":[\"KilometersPerHour\"],\"outputs\":[\"Float\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"MetersPerSecond.new\",\"id\":\"generated_MetersPerSecond.new\",\"inputs\":[\"Float\"],\"outputs\":[\"MetersPerSecond\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"MetersPerSecond.value\",\"id\":\"generated_MetersPerSecond.value\",\"inputs\":[\"MetersPerSecond\"],\"outputs\":[\"Float\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"add\",\"id\":\"primitive_add\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"bool.and\",\"id\":\"primitive_bool.and\",\"inputs\":[\"Bool\",\"Bool\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"bool.not\",\"id\":\"primitive_bool.not\",\"inputs\":[\"Bool\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"bool.or\",\"id\":\"primitive_bool.or\",\"inputs\":[\"Bool\",\"Bool\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"clock.now\",\"id\":\"primitive_clock.now\",\"inputs\":[],\"outputs\":[\"String\"],\"effects\":[\"clock.read\"],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"console.write\",\"id\":\"primitive_console.write\",\"inputs\":[\"String\"],\"outputs\":[\"Unit\"],\"effects\":[\"console.write\"],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"delivery.contact\",\"id\":\"generated_delivery.contact\",\"inputs\":[\"Delivery\"],\"outputs\":[\"Email\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"delivery.new\",\"id\":\"generated_delivery.new\",\"inputs\":[\"Email\",\"MetersPerSecond\"],\"outputs\":[\"Delivery\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"delivery.speed\",\"id\":\"generated_delivery.speed\",\"inputs\":[\"Delivery\"],\"outputs\":[\"MetersPerSecond\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"delivery.speed-kph\",\"id\":\"word_6774a95bdf45437fa95891fce06e21ae\",\"inputs\":[\"Delivery\"],\"outputs\":[\"KilometersPerHour\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"divide\",\"id\":\"primitive_divide\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"drop\",\"id\":\"primitive_drop\",\"inputs\":[\"a\"],\"outputs\":[],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"dup\",\"id\":\"primitive_dup\",\"inputs\":[\"a\"],\"outputs\":[\"a\",\"a\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"email.valid?\",\"id\":\"word_76315c4b82cc45529829a29f25fef8b5\",\"inputs\":[\"String\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"equals\",\"id\":\"primitive_equals\",\"inputs\":[\"a\",\"a\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"file.exists?\",\"id\":\"primitive_file.exists?\",\"inputs\":[\"String\"],\"outputs\":[\"Bool\"],\"effects\":[\"fs.read\"],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"file.read\",\"id\":\"primitive_file.read\",\"inputs\":[\"String\"],\"outputs\":[\"String\"],\"effects\":[\"fs.read\"],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"file.write\",\"id\":\"primitive_file.write\",\"inputs\":[\"String\",\"String\"],\"outputs\":[\"Unit\"],\"effects\":[\"fs.write\"],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.add\",\"id\":\"primitive_float.add\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Float\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.divide\",\"id\":\"primitive_float.divide\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Float\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.greater-or-equal\",\"id\":\"primitive_float.greater-or-equal\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.greater-than\",\"id\":\"primitive_float.greater-than\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.less-or-equal\",\"id\":\"primitive_float.less-or-equal\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.less-than\",\"id\":\"primitive_float.less-than\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.multiply\",\"id\":\"primitive_float.multiply\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Float\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.round\",\"id\":\"primitive_float.round\",\"inputs\":[\"Float\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.subtract\",\"id\":\"primitive_float.subtract\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Float\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.to-int\",\"id\":\"primitive_float.to-int\",\"inputs\":[\"Float\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.to-string\",\"id\":\"primitive_float.to-string\",\"inputs\":[\"Float\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.abs\",\"id\":\"primitive_int.abs\",\"inputs\":[\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.greater-or-equal\",\"id\":\"primitive_int.greater-or-equal\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.greater-than\",\"id\":\"primitive_int.greater-than\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.less-or-equal\",\"id\":\"primitive_int.less-or-equal\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.less-than\",\"id\":\"primitive_int.less-than\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.max\",\"id\":\"primitive_int.max\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.min\",\"id\":\"primitive_int.min\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.to-float\",\"id\":\"primitive_int.to-float\",\"inputs\":[\"Int\"],\"outputs\":[\"Float\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.to-string\",\"id\":\"primitive_int.to-string\",\"inputs\":[\"Int\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"list.append\",\"id\":\"primitive_list.append\",\"inputs\":[\"List\\u003Ca\\u003E\",\"a\"],\"outputs\":[\"List\\u003Ca\\u003E\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"list.concat\",\"id\":\"primitive_list.concat\",\"inputs\":[\"List\\u003Ca\\u003E\",\"List\\u003Ca\\u003E\"],\"outputs\":[\"List\\u003Ca\\u003E\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"list.count\",\"id\":\"primitive_list.count\",\"inputs\":[\"List\\u003Ca\\u003E\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"list.get\",\"id\":\"primitive_list.get\",\"inputs\":[\"List\\u003Ca\\u003E\",\"Int\"],\"outputs\":[\"Option\\u003Ca\\u003E\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"list.is-empty?\",\"id\":\"primitive_list.is-empty?\",\"inputs\":[\"List\\u003Ca\\u003E\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"multiply\",\"id\":\"primitive_multiply\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.concat\",\"id\":\"primitive_string.concat\",\"inputs\":[\"String\",\"String\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.contains\",\"id\":\"primitive_string.contains\",\"inputs\":[\"String\",\"String\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.ends-with\",\"id\":\"primitive_string.ends-with\",\"inputs\":[\"String\",\"String\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.length\",\"id\":\"primitive_string.length\",\"inputs\":[\"String\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.starts-with\",\"id\":\"primitive_string.starts-with\",\"inputs\":[\"String\",\"String\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.to-lower\",\"id\":\"primitive_string.to-lower\",\"inputs\":[\"String\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.to-upper\",\"id\":\"primitive_string.to-upper\",\"inputs\":[\"String\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.trim\",\"id\":\"primitive_string.trim\",\"inputs\":[\"String\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"subtract\",\"id\":\"primitive_subtract\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"swap\",\"id\":\"primitive_swap\",\"inputs\":[\"a\",\"b\"],\"outputs\":[\"b\",\"a\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false}],\"constructs\":[{\"name\":\"list.empty\",\"kind\":\"syntax\",\"syntax\":\"list.empty\\u003CT\\u003E\",\"inputs\":[],\"outputs\":[\"List\\u003CT\\u003E\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"none\",\"documentation\":\"Constructs an empty List\\u003CT\\u003E. T must be a declared closed type.\",\"coverageOutcomes\":[]},{\"name\":\"list.singleton\",\"kind\":\"syntax\",\"syntax\":\"T list.singleton\\u003CT\\u003E\",\"inputs\":[\"T\"],\"outputs\":[\"List\\u003CT\\u003E\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"none\",\"documentation\":\"Constructs a one-element List\\u003CT\\u003E after checking the payload against the explicit T.\",\"coverageOutcomes\":[]},{\"name\":\"option.none\",\"kind\":\"syntax\",\"syntax\":\"option.none\\u003CT\\u003E\",\"inputs\":[],\"outputs\":[\"Option\\u003CT\\u003E\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"none\",\"documentation\":\"Constructs a typed none; the element type is always explicit.\",\"coverageOutcomes\":[]},{\"name\":\"option.some\",\"kind\":\"syntax\",\"syntax\":\"T option.some\\u003CT\\u003E\",\"inputs\":[\"T\"],\"outputs\":[\"Option\\u003CT\\u003E\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"none\",\"documentation\":\"Constructs a typed some after checking the payload against the explicit T.\",\"coverageOutcomes\":[]},{\"name\":\"result.ok\",\"kind\":\"syntax\",\"syntax\":\"T result.ok\\u003CT, E\\u003E\",\"inputs\":[\"T\"],\"outputs\":[\"Result\\u003CT, E\\u003E\"],\"typeParameters\":[\"T\",\"E\"],\"effects\":[],\"effectRule\":\"none\",\"documentation\":\"Constructs a typed ok; both result type parameters are always explicit.\",\"coverageOutcomes\":[]},{\"name\":\"result.error\",\"kind\":\"syntax\",\"syntax\":\"E result.error\\u003CT, E\\u003E\",\"inputs\":[\"E\"],\"outputs\":[\"Result\\u003CT, E\\u003E\"],\"typeParameters\":[\"T\",\"E\"],\"effects\":[],\"effectRule\":\"none\",\"documentation\":\"Constructs a typed error; the inactive success type remains explicit.\",\"coverageOutcomes\":[]},{\"name\":\"list.map\",\"kind\":\"syntax\",\"syntax\":\"list.map \\u003Cword\\u003E\",\"inputs\":[\"List\\u003CT\\u003E\"],\"outputs\":[\"List\\u003CU\\u003E\"],\"typeParameters\":[\"T\",\"U\"],\"effects\":[],\"effectRule\":\"inherits callback word effects\",\"documentation\":\"Statically names one callback word with signature T -\\u003E U. The callback is type checked before any element is visited.\",\"coverageOutcomes\":[\"empty\",\"nonempty\"]},{\"name\":\"list.filter\",\"kind\":\"syntax\",\"syntax\":\"list.filter \\u003Cword\\u003E\",\"inputs\":[\"List\\u003CT\\u003E\"],\"outputs\":[\"List\\u003CT\\u003E\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"inherits callback word effects\",\"documentation\":\"Statically names one callback word with signature T -\\u003E Bool. Retains elements for true and drops them for false.\",\"coverageOutcomes\":[\"empty\",\"nonempty\",\"keep\",\"drop\"]},{\"name\":\"list.each\",\"kind\":\"syntax\",\"syntax\":\"list.each \\u003Cword\\u003E\",\"inputs\":[\"List\\u003CT\\u003E\"],\"outputs\":[\"Unit\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"inherits callback word effects\",\"documentation\":\"Statically names one callback word with signature T -\\u003E Unit and visits each element.\",\"coverageOutcomes\":[\"empty\",\"nonempty\"]},{\"name\":\"list.fold\",\"kind\":\"syntax\",\"syntax\":\"list.fold \\u003Cword\\u003E\",\"inputs\":[\"List\\u003CT\\u003E\",\"Accumulator\"],\"outputs\":[\"Accumulator\"],\"typeParameters\":[\"T\",\"Accumulator\"],\"effects\":[],\"effectRule\":\"inherits callback word effects\",\"documentation\":\"Statically names one callback with signature Accumulator Item -\\u003E Accumulator. Visits items from left to right; an empty list returns the initial accumulator unchanged. The callback cannot capture caller locals.\",\"coverageOutcomes\":[\"empty\",\"nonempty\"]},{\"name\":\"match-option\",\"kind\":\"syntax\",\"syntax\":\"match-option / some \\u003Clocal\\u003E / none / end\",\"inputs\":[\"Option\\u003CT\\u003E (top of stack)\"],\"outputs\":[\"same stack from both cases\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"union of both case effects\",\"documentation\":\"Requires both cases. The some payload local exists only inside its case; both cases must leave identical stack and outer-local types.\",\"coverageOutcomes\":[\"some\",\"none\"]},{\"name\":\"match-result\",\"kind\":\"syntax\",\"syntax\":\"match-result / ok \\u003Clocal\\u003E / error \\u003Clocal\\u003E / end\",\"inputs\":[\"Result\\u003CT, E\\u003E (top of stack)\"],\"outputs\":[\"same stack from both cases\"],\"typeParameters\":[\"T\",\"E\"],\"effects\":[],\"effectRule\":\"union of both case effects\",\"documentation\":\"Requires both cases. Each payload local exists only inside its own case; both cases must leave identical stack and outer-local types.\",\"coverageOutcomes\":[\"ok\",\"error\"]}]}}",
+        "{\"ok\":true,\"kind\":\"task.status\",\"text\":\"Status for task-0003.\",\"data\":{\"task\":\"task-0003\",\"goal\":\"Acceptance negative type probe: cross-unit constructor\",\"active\":true,\"wordsInspected\":[\"Email.new\",\"Email.value\",\"KilometersPerHour.new\",\"KilometersPerHour.value\",\"MetersPerSecond.new\",\"MetersPerSecond.value\",\"add\",\"bool.and\",\"bool.not\",\"bool.or\",\"clock.now\",\"console.write\",\"delivery.contact\",\"delivery.new\",\"delivery.speed\",\"delivery.speed-kph\",\"divide\",\"drop\",\"dup\",\"email.valid?\",\"equals\",\"file.exists?\",\"file.read\",\"file.write\",\"float.add\",\"float.divide\",\"float.greater-or-equal\",\"float.greater-than\",\"float.less-or-equal\",\"float.less-than\",\"float.multiply\",\"float.round\",\"float.subtract\",\"float.to-int\",\"float.to-string\",\"int.abs\",\"int.greater-or-equal\",\"int.greater-than\",\"int.less-or-equal\",\"int.less-than\",\"int.max\",\"int.min\",\"int.to-float\",\"int.to-string\",\"list.append\",\"list.concat\",\"list.count\",\"list.get\",\"list.is-empty?\",\"multiply\",\"string.concat\",\"string.contains\",\"string.ends-with\",\"string.length\",\"string.starts-with\",\"string.to-lower\",\"string.to-upper\",\"string.trim\",\"subtract\",\"swap\"],\"wordsUsed\":[],\"wordsCreated\":[],\"testsRun\":0,\"testsFailed\":0,\"effects\":{},\"errors\":[\"DISCOVERY_UNKNOWN_TYPE\",\"FLOW_EFFECTS_TRAILING\"]}}",
+        "{\"ok\":false,\"kind\":\"error\",\"text\":\"DISCOVERY_UNKNOWN_TYPE in ProbeUnit: Type source \\u0027ProbeUnit\\u0027 is not defined.\",\"error\":{\"code\":\"DISCOVERY_UNKNOWN_TYPE\",\"message\":\"Type source \\u0027ProbeUnit\\u0027 is not defined.\",\"word\":\"ProbeUnit\",\"expected\":[\"declared record or scalar type\"],\"actual\":[]}}"
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "task.begin",
+          "text": "Started task-0003.",
+          "data": {
+            "task": "task-0003",
+            "goal": "Acceptance negative type probe: cross-unit constructor",
+            "active": true,
+            "wordsInspected": [],
+            "wordsUsed": [],
+            "wordsCreated": [],
+            "testsRun": 0,
+            "testsFailed": 0,
+            "effects": {},
+            "errors": []
+          }
+        },
+        {
+          "ok": true,
+          "kind": "words",
+          "text": "60 word(s).",
+          "data": {
+            "words": [
+              {
+                "name": "Email.new",
+                "id": "generated_Email.new",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Email"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "Email.value",
+                "id": "generated_Email.value",
+                "inputs": [
+                  "Email"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "KilometersPerHour.new",
+                "id": "generated_KilometersPerHour.new",
+                "inputs": [
+                  "Float"
+                ],
+                "outputs": [
+                  "KilometersPerHour"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "KilometersPerHour.value",
+                "id": "generated_KilometersPerHour.value",
+                "inputs": [
+                  "KilometersPerHour"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "MetersPerSecond.new",
+                "id": "generated_MetersPerSecond.new",
+                "inputs": [
+                  "Float"
+                ],
+                "outputs": [
+                  "MetersPerSecond"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "MetersPerSecond.value",
+                "id": "generated_MetersPerSecond.value",
+                "inputs": [
+                  "MetersPerSecond"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "add",
+                "id": "primitive_add",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "bool.and",
+                "id": "primitive_bool.and",
+                "inputs": [
+                  "Bool",
+                  "Bool"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "bool.not",
+                "id": "primitive_bool.not",
+                "inputs": [
+                  "Bool"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "bool.or",
+                "id": "primitive_bool.or",
+                "inputs": [
+                  "Bool",
+                  "Bool"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "clock.now",
+                "id": "primitive_clock.now",
+                "inputs": [],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [
+                  "clock.read"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "console.write",
+                "id": "primitive_console.write",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Unit"
+                ],
+                "effects": [
+                  "console.write"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "delivery.contact",
+                "id": "generated_delivery.contact",
+                "inputs": [
+                  "Delivery"
+                ],
+                "outputs": [
+                  "Email"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "delivery.new",
+                "id": "generated_delivery.new",
+                "inputs": [
+                  "Email",
+                  "MetersPerSecond"
+                ],
+                "outputs": [
+                  "Delivery"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "delivery.speed",
+                "id": "generated_delivery.speed",
+                "inputs": [
+                  "Delivery"
+                ],
+                "outputs": [
+                  "MetersPerSecond"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "delivery.speed-kph",
+                "id": "word_6774a95bdf45437fa95891fce06e21ae",
+                "inputs": [
+                  "Delivery"
+                ],
+                "outputs": [
+                  "KilometersPerHour"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "divide",
+                "id": "primitive_divide",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "drop",
+                "id": "primitive_drop",
+                "inputs": [
+                  "a"
+                ],
+                "outputs": [],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "dup",
+                "id": "primitive_dup",
+                "inputs": [
+                  "a"
+                ],
+                "outputs": [
+                  "a",
+                  "a"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "email.valid?",
+                "id": "word_76315c4b82cc45529829a29f25fef8b5",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "equals",
+                "id": "primitive_equals",
+                "inputs": [
+                  "a",
+                  "a"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "file.exists?",
+                "id": "primitive_file.exists?",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [
+                  "fs.read"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "file.read",
+                "id": "primitive_file.read",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [
+                  "fs.read"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "file.write",
+                "id": "primitive_file.write",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "Unit"
+                ],
+                "effects": [
+                  "fs.write"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.add",
+                "id": "primitive_float.add",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.divide",
+                "id": "primitive_float.divide",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.greater-or-equal",
+                "id": "primitive_float.greater-or-equal",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.greater-than",
+                "id": "primitive_float.greater-than",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.less-or-equal",
+                "id": "primitive_float.less-or-equal",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.less-than",
+                "id": "primitive_float.less-than",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.multiply",
+                "id": "primitive_float.multiply",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.round",
+                "id": "primitive_float.round",
+                "inputs": [
+                  "Float"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.subtract",
+                "id": "primitive_float.subtract",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.to-int",
+                "id": "primitive_float.to-int",
+                "inputs": [
+                  "Float"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.to-string",
+                "id": "primitive_float.to-string",
+                "inputs": [
+                  "Float"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.abs",
+                "id": "primitive_int.abs",
+                "inputs": [
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.greater-or-equal",
+                "id": "primitive_int.greater-or-equal",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.greater-than",
+                "id": "primitive_int.greater-than",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.less-or-equal",
+                "id": "primitive_int.less-or-equal",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.less-than",
+                "id": "primitive_int.less-than",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.max",
+                "id": "primitive_int.max",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.min",
+                "id": "primitive_int.min",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.to-float",
+                "id": "primitive_int.to-float",
+                "inputs": [
+                  "Int"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.to-string",
+                "id": "primitive_int.to-string",
+                "inputs": [
+                  "Int"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.append",
+                "id": "primitive_list.append",
+                "inputs": [
+                  "List<a>",
+                  "a"
+                ],
+                "outputs": [
+                  "List<a>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.concat",
+                "id": "primitive_list.concat",
+                "inputs": [
+                  "List<a>",
+                  "List<a>"
+                ],
+                "outputs": [
+                  "List<a>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.count",
+                "id": "primitive_list.count",
+                "inputs": [
+                  "List<a>"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.get",
+                "id": "primitive_list.get",
+                "inputs": [
+                  "List<a>",
+                  "Int"
+                ],
+                "outputs": [
+                  "Option<a>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.is-empty?",
+                "id": "primitive_list.is-empty?",
+                "inputs": [
+                  "List<a>"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "multiply",
+                "id": "primitive_multiply",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.concat",
+                "id": "primitive_string.concat",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.contains",
+                "id": "primitive_string.contains",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.ends-with",
+                "id": "primitive_string.ends-with",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.length",
+                "id": "primitive_string.length",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.starts-with",
+                "id": "primitive_string.starts-with",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.to-lower",
+                "id": "primitive_string.to-lower",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.to-upper",
+                "id": "primitive_string.to-upper",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.trim",
+                "id": "primitive_string.trim",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "subtract",
+                "id": "primitive_subtract",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "swap",
+                "id": "primitive_swap",
+                "inputs": [
+                  "a",
+                  "b"
+                ],
+                "outputs": [
+                  "b",
+                  "a"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              }
+            ],
+            "constructs": [
+              {
+                "name": "list.empty",
+                "kind": "syntax",
+                "syntax": "list.empty<T>",
+                "inputs": [],
+                "outputs": [
+                  "List<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs an empty List<T>. T must be a declared closed type.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "list.singleton",
+                "kind": "syntax",
+                "syntax": "T list.singleton<T>",
+                "inputs": [
+                  "T"
+                ],
+                "outputs": [
+                  "List<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a one-element List<T> after checking the payload against the explicit T.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "option.none",
+                "kind": "syntax",
+                "syntax": "option.none<T>",
+                "inputs": [],
+                "outputs": [
+                  "Option<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a typed none; the element type is always explicit.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "option.some",
+                "kind": "syntax",
+                "syntax": "T option.some<T>",
+                "inputs": [
+                  "T"
+                ],
+                "outputs": [
+                  "Option<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a typed some after checking the payload against the explicit T.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "result.ok",
+                "kind": "syntax",
+                "syntax": "T result.ok<T, E>",
+                "inputs": [
+                  "T"
+                ],
+                "outputs": [
+                  "Result<T, E>"
+                ],
+                "typeParameters": [
+                  "T",
+                  "E"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a typed ok; both result type parameters are always explicit.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "result.error",
+                "kind": "syntax",
+                "syntax": "E result.error<T, E>",
+                "inputs": [
+                  "E"
+                ],
+                "outputs": [
+                  "Result<T, E>"
+                ],
+                "typeParameters": [
+                  "T",
+                  "E"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a typed error; the inactive success type remains explicit.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "list.map",
+                "kind": "syntax",
+                "syntax": "list.map <word>",
+                "inputs": [
+                  "List<T>"
+                ],
+                "outputs": [
+                  "List<U>"
+                ],
+                "typeParameters": [
+                  "T",
+                  "U"
+                ],
+                "effects": [],
+                "effectRule": "inherits callback word effects",
+                "documentation": "Statically names one callback word with signature T -> U. The callback is type checked before any element is visited.",
+                "coverageOutcomes": [
+                  "empty",
+                  "nonempty"
+                ]
+              },
+              {
+                "name": "list.filter",
+                "kind": "syntax",
+                "syntax": "list.filter <word>",
+                "inputs": [
+                  "List<T>"
+                ],
+                "outputs": [
+                  "List<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "inherits callback word effects",
+                "documentation": "Statically names one callback word with signature T -> Bool. Retains elements for true and drops them for false.",
+                "coverageOutcomes": [
+                  "empty",
+                  "nonempty",
+                  "keep",
+                  "drop"
+                ]
+              },
+              {
+                "name": "list.each",
+                "kind": "syntax",
+                "syntax": "list.each <word>",
+                "inputs": [
+                  "List<T>"
+                ],
+                "outputs": [
+                  "Unit"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "inherits callback word effects",
+                "documentation": "Statically names one callback word with signature T -> Unit and visits each element.",
+                "coverageOutcomes": [
+                  "empty",
+                  "nonempty"
+                ]
+              },
+              {
+                "name": "list.fold",
+                "kind": "syntax",
+                "syntax": "list.fold <word>",
+                "inputs": [
+                  "List<T>",
+                  "Accumulator"
+                ],
+                "outputs": [
+                  "Accumulator"
+                ],
+                "typeParameters": [
+                  "T",
+                  "Accumulator"
+                ],
+                "effects": [],
+                "effectRule": "inherits callback word effects",
+                "documentation": "Statically names one callback with signature Accumulator Item -> Accumulator. Visits items from left to right; an empty list returns the initial accumulator unchanged. The callback cannot capture caller locals.",
+                "coverageOutcomes": [
+                  "empty",
+                  "nonempty"
+                ]
+              },
+              {
+                "name": "match-option",
+                "kind": "syntax",
+                "syntax": "match-option / some <local> / none / end",
+                "inputs": [
+                  "Option<T> (top of stack)"
+                ],
+                "outputs": [
+                  "same stack from both cases"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "union of both case effects",
+                "documentation": "Requires both cases. The some payload local exists only inside its case; both cases must leave identical stack and outer-local types.",
+                "coverageOutcomes": [
+                  "some",
+                  "none"
+                ]
+              },
+              {
+                "name": "match-result",
+                "kind": "syntax",
+                "syntax": "match-result / ok <local> / error <local> / end",
+                "inputs": [
+                  "Result<T, E> (top of stack)"
+                ],
+                "outputs": [
+                  "same stack from both cases"
+                ],
+                "typeParameters": [
+                  "T",
+                  "E"
+                ],
+                "effects": [],
+                "effectRule": "union of both case effects",
+                "documentation": "Requires both cases. Each payload local exists only inside its own case; both cases must leave identical stack and outer-local types.",
+                "coverageOutcomes": [
+                  "ok",
+                  "error"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "task.status",
+          "text": "Status for task-0003.",
+          "data": {
+            "task": "task-0003",
+            "goal": "Acceptance negative type probe: cross-unit constructor",
+            "active": true,
+            "wordsInspected": [
+              "Email.new",
+              "Email.value",
+              "KilometersPerHour.new",
+              "KilometersPerHour.value",
+              "MetersPerSecond.new",
+              "MetersPerSecond.value",
+              "add",
+              "bool.and",
+              "bool.not",
+              "bool.or",
+              "clock.now",
+              "console.write",
+              "delivery.contact",
+              "delivery.new",
+              "delivery.speed",
+              "delivery.speed-kph",
+              "divide",
+              "drop",
+              "dup",
+              "email.valid?",
+              "equals",
+              "file.exists?",
+              "file.read",
+              "file.write",
+              "float.add",
+              "float.divide",
+              "float.greater-or-equal",
+              "float.greater-than",
+              "float.less-or-equal",
+              "float.less-than",
+              "float.multiply",
+              "float.round",
+              "float.subtract",
+              "float.to-int",
+              "float.to-string",
+              "int.abs",
+              "int.greater-or-equal",
+              "int.greater-than",
+              "int.less-or-equal",
+              "int.less-than",
+              "int.max",
+              "int.min",
+              "int.to-float",
+              "int.to-string",
+              "list.append",
+              "list.concat",
+              "list.count",
+              "list.get",
+              "list.is-empty?",
+              "multiply",
+              "string.concat",
+              "string.contains",
+              "string.ends-with",
+              "string.length",
+              "string.starts-with",
+              "string.to-lower",
+              "string.to-upper",
+              "string.trim",
+              "subtract",
+              "swap"
+            ],
+            "wordsUsed": [],
+            "wordsCreated": [],
+            "testsRun": 0,
+            "testsFailed": 0,
+            "effects": {},
+            "errors": []
+          }
+        },
+        {
+          "ok": false,
+          "kind": "error",
+          "text": "DISCOVERY_UNKNOWN_TYPE in ProbeUnit: Type source 'ProbeUnit' is not defined.",
+          "error": {
+            "code": "DISCOVERY_UNKNOWN_TYPE",
+            "message": "Type source 'ProbeUnit' is not defined.",
+            "word": "ProbeUnit",
+            "expected": [
+              "declared record or scalar type"
+            ],
+            "actual": []
+          }
+        },
+        {
+          "ok": false,
+          "kind": "error",
+          "text": "FLOW_EFFECTS_TRAILING at <flow-project>:3:55: 'none' cannot be combined with named effects.",
+          "error": {
+            "code": "FLOW_EFFECTS_TRAILING",
+            "message": "'none' cannot be combined with named effects.",
+            "span": {
+              "file": "<flow-project>",
+              "line": 3,
+              "column": 55,
+              "length": 2
+            },
+            "expected": [],
+            "actual": []
+          }
+        },
+        {
+          "ok": true,
+          "kind": "words",
+          "text": "60 word(s).",
+          "data": {
+            "words": [
+              {
+                "name": "Email.new",
+                "id": "generated_Email.new",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Email"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "Email.value",
+                "id": "generated_Email.value",
+                "inputs": [
+                  "Email"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "KilometersPerHour.new",
+                "id": "generated_KilometersPerHour.new",
+                "inputs": [
+                  "Float"
+                ],
+                "outputs": [
+                  "KilometersPerHour"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "KilometersPerHour.value",
+                "id": "generated_KilometersPerHour.value",
+                "inputs": [
+                  "KilometersPerHour"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "MetersPerSecond.new",
+                "id": "generated_MetersPerSecond.new",
+                "inputs": [
+                  "Float"
+                ],
+                "outputs": [
+                  "MetersPerSecond"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "MetersPerSecond.value",
+                "id": "generated_MetersPerSecond.value",
+                "inputs": [
+                  "MetersPerSecond"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "add",
+                "id": "primitive_add",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "bool.and",
+                "id": "primitive_bool.and",
+                "inputs": [
+                  "Bool",
+                  "Bool"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "bool.not",
+                "id": "primitive_bool.not",
+                "inputs": [
+                  "Bool"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "bool.or",
+                "id": "primitive_bool.or",
+                "inputs": [
+                  "Bool",
+                  "Bool"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "clock.now",
+                "id": "primitive_clock.now",
+                "inputs": [],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [
+                  "clock.read"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "console.write",
+                "id": "primitive_console.write",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Unit"
+                ],
+                "effects": [
+                  "console.write"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "delivery.contact",
+                "id": "generated_delivery.contact",
+                "inputs": [
+                  "Delivery"
+                ],
+                "outputs": [
+                  "Email"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "delivery.new",
+                "id": "generated_delivery.new",
+                "inputs": [
+                  "Email",
+                  "MetersPerSecond"
+                ],
+                "outputs": [
+                  "Delivery"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "delivery.speed",
+                "id": "generated_delivery.speed",
+                "inputs": [
+                  "Delivery"
+                ],
+                "outputs": [
+                  "MetersPerSecond"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "delivery.speed-kph",
+                "id": "word_6774a95bdf45437fa95891fce06e21ae",
+                "inputs": [
+                  "Delivery"
+                ],
+                "outputs": [
+                  "KilometersPerHour"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "divide",
+                "id": "primitive_divide",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "drop",
+                "id": "primitive_drop",
+                "inputs": [
+                  "a"
+                ],
+                "outputs": [],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "dup",
+                "id": "primitive_dup",
+                "inputs": [
+                  "a"
+                ],
+                "outputs": [
+                  "a",
+                  "a"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "email.valid?",
+                "id": "word_76315c4b82cc45529829a29f25fef8b5",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "equals",
+                "id": "primitive_equals",
+                "inputs": [
+                  "a",
+                  "a"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "file.exists?",
+                "id": "primitive_file.exists?",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [
+                  "fs.read"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "file.read",
+                "id": "primitive_file.read",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [
+                  "fs.read"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "file.write",
+                "id": "primitive_file.write",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "Unit"
+                ],
+                "effects": [
+                  "fs.write"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.add",
+                "id": "primitive_float.add",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.divide",
+                "id": "primitive_float.divide",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.greater-or-equal",
+                "id": "primitive_float.greater-or-equal",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.greater-than",
+                "id": "primitive_float.greater-than",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.less-or-equal",
+                "id": "primitive_float.less-or-equal",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.less-than",
+                "id": "primitive_float.less-than",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.multiply",
+                "id": "primitive_float.multiply",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.round",
+                "id": "primitive_float.round",
+                "inputs": [
+                  "Float"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.subtract",
+                "id": "primitive_float.subtract",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.to-int",
+                "id": "primitive_float.to-int",
+                "inputs": [
+                  "Float"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.to-string",
+                "id": "primitive_float.to-string",
+                "inputs": [
+                  "Float"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.abs",
+                "id": "primitive_int.abs",
+                "inputs": [
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.greater-or-equal",
+                "id": "primitive_int.greater-or-equal",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.greater-than",
+                "id": "primitive_int.greater-than",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.less-or-equal",
+                "id": "primitive_int.less-or-equal",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.less-than",
+                "id": "primitive_int.less-than",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.max",
+                "id": "primitive_int.max",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.min",
+                "id": "primitive_int.min",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.to-float",
+                "id": "primitive_int.to-float",
+                "inputs": [
+                  "Int"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.to-string",
+                "id": "primitive_int.to-string",
+                "inputs": [
+                  "Int"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.append",
+                "id": "primitive_list.append",
+                "inputs": [
+                  "List<a>",
+                  "a"
+                ],
+                "outputs": [
+                  "List<a>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.concat",
+                "id": "primitive_list.concat",
+                "inputs": [
+                  "List<a>",
+                  "List<a>"
+                ],
+                "outputs": [
+                  "List<a>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.count",
+                "id": "primitive_list.count",
+                "inputs": [
+                  "List<a>"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.get",
+                "id": "primitive_list.get",
+                "inputs": [
+                  "List<a>",
+                  "Int"
+                ],
+                "outputs": [
+                  "Option<a>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.is-empty?",
+                "id": "primitive_list.is-empty?",
+                "inputs": [
+                  "List<a>"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "multiply",
+                "id": "primitive_multiply",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.concat",
+                "id": "primitive_string.concat",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.contains",
+                "id": "primitive_string.contains",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.ends-with",
+                "id": "primitive_string.ends-with",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.length",
+                "id": "primitive_string.length",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.starts-with",
+                "id": "primitive_string.starts-with",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.to-lower",
+                "id": "primitive_string.to-lower",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.to-upper",
+                "id": "primitive_string.to-upper",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.trim",
+                "id": "primitive_string.trim",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "subtract",
+                "id": "primitive_subtract",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "swap",
+                "id": "primitive_swap",
+                "inputs": [
+                  "a",
+                  "b"
+                ],
+                "outputs": [
+                  "b",
+                  "a"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              }
+            ],
+            "constructs": [
+              {
+                "name": "list.empty",
+                "kind": "syntax",
+                "syntax": "list.empty<T>",
+                "inputs": [],
+                "outputs": [
+                  "List<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs an empty List<T>. T must be a declared closed type.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "list.singleton",
+                "kind": "syntax",
+                "syntax": "T list.singleton<T>",
+                "inputs": [
+                  "T"
+                ],
+                "outputs": [
+                  "List<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a one-element List<T> after checking the payload against the explicit T.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "option.none",
+                "kind": "syntax",
+                "syntax": "option.none<T>",
+                "inputs": [],
+                "outputs": [
+                  "Option<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a typed none; the element type is always explicit.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "option.some",
+                "kind": "syntax",
+                "syntax": "T option.some<T>",
+                "inputs": [
+                  "T"
+                ],
+                "outputs": [
+                  "Option<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a typed some after checking the payload against the explicit T.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "result.ok",
+                "kind": "syntax",
+                "syntax": "T result.ok<T, E>",
+                "inputs": [
+                  "T"
+                ],
+                "outputs": [
+                  "Result<T, E>"
+                ],
+                "typeParameters": [
+                  "T",
+                  "E"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a typed ok; both result type parameters are always explicit.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "result.error",
+                "kind": "syntax",
+                "syntax": "E result.error<T, E>",
+                "inputs": [
+                  "E"
+                ],
+                "outputs": [
+                  "Result<T, E>"
+                ],
+                "typeParameters": [
+                  "T",
+                  "E"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a typed error; the inactive success type remains explicit.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "list.map",
+                "kind": "syntax",
+                "syntax": "list.map <word>",
+                "inputs": [
+                  "List<T>"
+                ],
+                "outputs": [
+                  "List<U>"
+                ],
+                "typeParameters": [
+                  "T",
+                  "U"
+                ],
+                "effects": [],
+                "effectRule": "inherits callback word effects",
+                "documentation": "Statically names one callback word with signature T -> U. The callback is type checked before any element is visited.",
+                "coverageOutcomes": [
+                  "empty",
+                  "nonempty"
+                ]
+              },
+              {
+                "name": "list.filter",
+                "kind": "syntax",
+                "syntax": "list.filter <word>",
+                "inputs": [
+                  "List<T>"
+                ],
+                "outputs": [
+                  "List<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "inherits callback word effects",
+                "documentation": "Statically names one callback word with signature T -> Bool. Retains elements for true and drops them for false.",
+                "coverageOutcomes": [
+                  "empty",
+                  "nonempty",
+                  "keep",
+                  "drop"
+                ]
+              },
+              {
+                "name": "list.each",
+                "kind": "syntax",
+                "syntax": "list.each <word>",
+                "inputs": [
+                  "List<T>"
+                ],
+                "outputs": [
+                  "Unit"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "inherits callback word effects",
+                "documentation": "Statically names one callback word with signature T -> Unit and visits each element.",
+                "coverageOutcomes": [
+                  "empty",
+                  "nonempty"
+                ]
+              },
+              {
+                "name": "list.fold",
+                "kind": "syntax",
+                "syntax": "list.fold <word>",
+                "inputs": [
+                  "List<T>",
+                  "Accumulator"
+                ],
+                "outputs": [
+                  "Accumulator"
+                ],
+                "typeParameters": [
+                  "T",
+                  "Accumulator"
+                ],
+                "effects": [],
+                "effectRule": "inherits callback word effects",
+                "documentation": "Statically names one callback with signature Accumulator Item -> Accumulator. Visits items from left to right; an empty list returns the initial accumulator unchanged. The callback cannot capture caller locals.",
+                "coverageOutcomes": [
+                  "empty",
+                  "nonempty"
+                ]
+              },
+              {
+                "name": "match-option",
+                "kind": "syntax",
+                "syntax": "match-option / some <local> / none / end",
+                "inputs": [
+                  "Option<T> (top of stack)"
+                ],
+                "outputs": [
+                  "same stack from both cases"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "union of both case effects",
+                "documentation": "Requires both cases. The some payload local exists only inside its case; both cases must leave identical stack and outer-local types.",
+                "coverageOutcomes": [
+                  "some",
+                  "none"
+                ]
+              },
+              {
+                "name": "match-result",
+                "kind": "syntax",
+                "syntax": "match-result / ok <local> / error <local> / end",
+                "inputs": [
+                  "Result<T, E> (top of stack)"
+                ],
+                "outputs": [
+                  "same stack from both cases"
+                ],
+                "typeParameters": [
+                  "T",
+                  "E"
+                ],
+                "effects": [],
+                "effectRule": "union of both case effects",
+                "documentation": "Requires both cases. Each payload local exists only inside its own case; both cases must leave identical stack and outer-local types.",
+                "coverageOutcomes": [
+                  "ok",
+                  "error"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "task.status",
+          "text": "Status for task-0003.",
+          "data": {
+            "task": "task-0003",
+            "goal": "Acceptance negative type probe: cross-unit constructor",
+            "active": true,
+            "wordsInspected": [
+              "Email.new",
+              "Email.value",
+              "KilometersPerHour.new",
+              "KilometersPerHour.value",
+              "MetersPerSecond.new",
+              "MetersPerSecond.value",
+              "add",
+              "bool.and",
+              "bool.not",
+              "bool.or",
+              "clock.now",
+              "console.write",
+              "delivery.contact",
+              "delivery.new",
+              "delivery.speed",
+              "delivery.speed-kph",
+              "divide",
+              "drop",
+              "dup",
+              "email.valid?",
+              "equals",
+              "file.exists?",
+              "file.read",
+              "file.write",
+              "float.add",
+              "float.divide",
+              "float.greater-or-equal",
+              "float.greater-than",
+              "float.less-or-equal",
+              "float.less-than",
+              "float.multiply",
+              "float.round",
+              "float.subtract",
+              "float.to-int",
+              "float.to-string",
+              "int.abs",
+              "int.greater-or-equal",
+              "int.greater-than",
+              "int.less-or-equal",
+              "int.less-than",
+              "int.max",
+              "int.min",
+              "int.to-float",
+              "int.to-string",
+              "list.append",
+              "list.concat",
+              "list.count",
+              "list.get",
+              "list.is-empty?",
+              "multiply",
+              "string.concat",
+              "string.contains",
+              "string.ends-with",
+              "string.length",
+              "string.starts-with",
+              "string.to-lower",
+              "string.to-upper",
+              "string.trim",
+              "subtract",
+              "swap"
+            ],
+            "wordsUsed": [],
+            "wordsCreated": [],
+            "testsRun": 0,
+            "testsFailed": 0,
+            "effects": {},
+            "errors": [
+              "DISCOVERY_UNKNOWN_TYPE",
+              "FLOW_EFFECTS_TRAILING"
+            ]
+          }
+        },
+        {
+          "ok": false,
+          "kind": "error",
+          "text": "DISCOVERY_UNKNOWN_TYPE in ProbeUnit: Type source 'ProbeUnit' is not defined.",
+          "error": {
+            "code": "DISCOVERY_UNKNOWN_TYPE",
+            "message": "Type source 'ProbeUnit' is not defined.",
+            "word": "ProbeUnit",
+            "expected": [
+              "declared record or scalar type"
+            ],
+            "actual": []
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0
+    }
+  ],
+  "scope": "Fresh-process reload, final word signature/purity/library maturity, own tests and coverage, unchanged refined types/Email validator history, explicit cross-unit calculations, structured no-partial-stage type failures, and read-only preservation of seed/final projects."
+}

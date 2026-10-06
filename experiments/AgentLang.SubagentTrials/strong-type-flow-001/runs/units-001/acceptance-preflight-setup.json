@@ -1,0 +1,315 @@
+{
+  "responses": [
+    {
+      "ok": true,
+      "kind": "task.begin",
+      "text": "Started task-0002.",
+      "data": {
+        "task": "task-0002",
+        "goal": "Coordinator acceptance preflight; not an agent outcome",
+        "active": true,
+        "wordsInspected": [],
+        "wordsUsed": [],
+        "wordsCreated": [],
+        "testsRun": 0,
+        "testsFailed": 0,
+        "effects": {},
+        "errors": []
+      }
+    },
+    {
+      "ok": true,
+      "kind": "defined",
+      "text": "Flow definition, tests, examples, and retained source bindings validated and staged.",
+      "data": {
+        "frontend": "flow",
+        "name": "delivery.speed-kph",
+        "id": "word_6774a95bdf45437fa95891fce06e21ae",
+        "revision": 1,
+        "tests": [
+          "fraction",
+          "negative",
+          "unit",
+          "zero"
+        ],
+        "examples": []
+      }
+    },
+    {
+      "ok": true,
+      "kind": "test",
+      "text": "4/4 test(s) passed.",
+      "data": {
+        "results": [
+          {
+            "name": "fraction",
+            "word": "delivery.speed-kph",
+            "passed": true,
+            "expectedKind": "value-expression",
+            "actualStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "scalar",
+                  "name": "KilometersPerHour",
+                  "typeKey": 2,
+                  "baseType": {
+                    "kind": "float"
+                  },
+                  "value": {
+                    "kind": "float",
+                    "value": "9",
+                    "negativeZero": false
+                  }
+                }
+              ]
+            },
+            "expected": "KilometersPerHour(9)",
+            "expectedType": "KilometersPerHour",
+            "expectedStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "scalar",
+                  "name": "KilometersPerHour",
+                  "typeKey": 2,
+                  "baseType": {
+                    "kind": "float"
+                  },
+                  "value": {
+                    "kind": "float",
+                    "value": "9",
+                    "negativeZero": false
+                  }
+                }
+              ]
+            },
+            "actual": [
+              "KilometersPerHour(9)"
+            ]
+          },
+          {
+            "name": "negative",
+            "word": "delivery.speed-kph",
+            "passed": true,
+            "expectedKind": "value-expression",
+            "actualStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "scalar",
+                  "name": "KilometersPerHour",
+                  "typeKey": 2,
+                  "baseType": {
+                    "kind": "float"
+                  },
+                  "value": {
+                    "kind": "float",
+                    "value": "-7.2",
+                    "negativeZero": false
+                  }
+                }
+              ]
+            },
+            "expected": "KilometersPerHour(-7.2)",
+            "expectedType": "KilometersPerHour",
+            "expectedStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "scalar",
+                  "name": "KilometersPerHour",
+                  "typeKey": 2,
+                  "baseType": {
+                    "kind": "float"
+                  },
+                  "value": {
+                    "kind": "float",
+                    "value": "-7.2",
+                    "negativeZero": false
+                  }
+                }
+              ]
+            },
+            "actual": [
+              "KilometersPerHour(-7.2)"
+            ]
+          },
+          {
+            "name": "unit",
+            "word": "delivery.speed-kph",
+            "passed": true,
+            "expectedKind": "value-expression",
+            "actualStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "scalar",
+                  "name": "KilometersPerHour",
+                  "typeKey": 2,
+                  "baseType": {
+                    "kind": "float"
+                  },
+                  "value": {
+                    "kind": "float",
+                    "value": "3.6",
+                    "negativeZero": false
+                  }
+                }
+              ]
+            },
+            "expected": "KilometersPerHour(3.6)",
+            "expectedType": "KilometersPerHour",
+            "expectedStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "scalar",
+                  "name": "KilometersPerHour",
+                  "typeKey": 2,
+                  "baseType": {
+                    "kind": "float"
+                  },
+                  "value": {
+                    "kind": "float",
+                    "value": "3.6",
+                    "negativeZero": false
+                  }
+                }
+              ]
+            },
+            "actual": [
+              "KilometersPerHour(3.6)"
+            ]
+          },
+          {
+            "name": "zero",
+            "word": "delivery.speed-kph",
+            "passed": true,
+            "expectedKind": "value-expression",
+            "actualStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "scalar",
+                  "name": "KilometersPerHour",
+                  "typeKey": 2,
+                  "baseType": {
+                    "kind": "float"
+                  },
+                  "value": {
+                    "kind": "float",
+                    "value": "0",
+                    "negativeZero": false
+                  }
+                }
+              ]
+            },
+            "expected": "KilometersPerHour(0)",
+            "expectedType": "KilometersPerHour",
+            "expectedStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "scalar",
+                  "name": "KilometersPerHour",
+                  "typeKey": 2,
+                  "baseType": {
+                    "kind": "float"
+                  },
+                  "value": {
+                    "kind": "float",
+                    "value": "0",
+                    "negativeZero": false
+                  }
+                }
+              ]
+            },
+            "actual": [
+              "KilometersPerHour(0)"
+            ]
+          }
+        ],
+        "coverage": {
+          "instructionsCovered": 6,
+          "instructionsTotal": 6,
+          "branchesCovered": 0,
+          "branchesTotal": 0,
+          "uncoveredInstructions": [],
+          "uncoveredBranchOutcomes": []
+        }
+      }
+    },
+    {
+      "ok": true,
+      "kind": "commit",
+      "text": "4 attached test(s) passed; selected candidates committed.",
+      "data": [
+        "delivery.speed-kph/fraction",
+        "delivery.speed-kph/negative",
+        "delivery.speed-kph/unit",
+        "delivery.speed-kph/zero"
+      ]
+    },
+    {
+      "ok": true,
+      "kind": "task.commit",
+      "text": "Task committed and temporary words were cleared. The task log was saved.",
+      "data": {
+        "task": "task-0002",
+        "goal": "Coordinator acceptance preflight; not an agent outcome",
+        "active": false,
+        "wordsInspected": [],
+        "wordsUsed": [
+          "Email.new",
+          "KilometersPerHour.new",
+          "MetersPerSecond.new",
+          "MetersPerSecond.value",
+          "bool.and",
+          "bool.not",
+          "delivery.new",
+          "delivery.speed",
+          "delivery.speed-kph",
+          "email.valid?",
+          "float.multiply",
+          "string.contains",
+          "string.ends-with",
+          "string.starts-with"
+        ],
+        "wordsCreated": [
+          "delivery.speed-kph"
+        ],
+        "testsRun": 8,
+        "testsFailed": 0,
+        "effects": {},
+        "errors": []
+      }
+    }
+  ],
+  "requests": [
+    {
+      "op": "task.begin",
+      "goal": "Coordinator acceptance preflight; not an agent outcome"
+    },
+    {
+      "op": "define",
+      "source": "word delivery.speed-kph(delivery: Delivery) -> KilometersPerHour {\n    effects none\n    KilometersPerHour::new(float::multiply(MetersPerSecond::value(delivery::speed(delivery)), 3.6))\n}\ntest delivery.speed-kph/zero {\n    delivery::speed-kph(delivery::new(contact = Email::new(\"a@example.com\"), speed = MetersPerSecond::new(0.0)))\n    => value KilometersPerHour::new(0.0)\n}\ntest delivery.speed-kph/unit {\n    delivery::speed-kph(delivery::new(contact = Email::new(\"a@example.com\"), speed = MetersPerSecond::new(1.0)))\n    => value KilometersPerHour::new(3.6)\n}\ntest delivery.speed-kph/fraction {\n    delivery::speed-kph(delivery::new(contact = Email::new(\"a@example.com\"), speed = MetersPerSecond::new(2.5)))\n    => value KilometersPerHour::new(9.0)\n}\ntest delivery.speed-kph/negative {\n    delivery::speed-kph(delivery::new(contact = Email::new(\"a@example.com\"), speed = MetersPerSecond::new(-2.0)))\n    => value KilometersPerHour::new(-7.2)\n}",
+      "frontend": "flow"
+    },
+    {
+      "op": "test",
+      "word": "delivery.speed-kph"
+    },
+    {
+      "op": "commit",
+      "word": "delivery.speed-kph",
+      "actor": "host",
+      "library": true
+    },
+    {
+      "op": "task.commit",
+      "actor": "host"
+    }
+  ],
+  "scope": "Coordinator-created disposable control only; never supplied to the actor."
+}

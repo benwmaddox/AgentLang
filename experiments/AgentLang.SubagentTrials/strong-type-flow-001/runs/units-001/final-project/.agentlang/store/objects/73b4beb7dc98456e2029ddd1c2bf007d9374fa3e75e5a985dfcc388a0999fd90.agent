@@ -1,0 +1,4 @@
+word delivery.speed-kph(shipment: Delivery) -> KilometersPerHour {
+    effects none
+    KilometersPerHour::new(float::multiply(MetersPerSecond::value(delivery::speed(shipment)), 3.6))
+}

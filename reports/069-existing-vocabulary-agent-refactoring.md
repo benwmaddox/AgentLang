@@ -117,3 +117,7 @@ distinct speed units, explicit conversion and wrong-unit/type rejection using
 existing Flow facilities. It is a plan, not an executed result. The full strong
 business domain, stateful tasks, complete debugging/refactoring suite, controlled
 costs and model-context comparisons remain required. The full PRD goal stays active.
+
+Publication follow-up: clean [main CI](evidence/069-main-ci.json) for `8d52195`
+completed successfully. Its [validation artifact](evidence/069-main-validation.json)
+records all 32 checks passing with `dirty: false` at that exact revision.

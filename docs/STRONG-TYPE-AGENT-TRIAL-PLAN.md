@@ -1,6 +1,10 @@
 # Next bounded strong-type agent trial
 
-Status: planned after refactoring checkpoint 069; no actor result yet. A read-only
+Status: executed in [report 070](../reports/070-strong-type-agent-conversion.md).
+A fresh agent added the tested conversion; independent acceptance passed 118
+checks with six vectors and four atomic type-rejection probes. This scoped
+trial does not complete the strong business-domain or comparative evaluation.
+The original bounded plan follows. A read-only
 Luna/max planning pass identified an executable trial using existing language
 features. No new runtime feature or full-domain expansion is a prerequisite.
 

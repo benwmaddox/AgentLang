@@ -1,0 +1,4 @@
+record Delivery {
+    field contact: Email;
+    field speed: MetersPerSecond;
+}

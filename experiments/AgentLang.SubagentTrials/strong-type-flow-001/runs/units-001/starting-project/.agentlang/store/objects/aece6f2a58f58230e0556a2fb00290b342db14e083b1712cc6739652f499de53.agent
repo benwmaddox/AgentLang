@@ -1,0 +1,4 @@
+test email.valid?/trailing-at {
+    email::valid?("dev.example@")
+    => false
+}

@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "passed": false,
+  "failure": "Acceptance check failed: required persisted target exists exactly once (found=0)",
+  "sourceRevision": "8d52195cd02a1b4f65a33f320bb00e41335de4f0",
+  "cliPath": "D:\\code\\AgentLang\\.agentlang\\strong-type-flow-001\\language-bin\\AgentLang.Cli.dll",
+  "cliSha256": "c1a3b1dce20858d51c66a5bec16bbe910694ba1c8c24e8a5869b31e1bd5785c2",
+  "seedProject": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\strong-type-flow-001\\runs\\units-001\\starting-project",
+  "finalProject": "D:\\code\\AgentLang\\.agentlang\\strong-type-flow-001\\actor-01-units",
+  "targetWord": "delivery.speed-kph",
+  "noOpControl": "Running against starting-project must fail the required persisted target check; it is the no-op rejection control.",
+  "checks": [
+    {
+      "name": "pinned CLI assembly exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\strong-type-flow-001\\language-bin\\AgentLang.Cli.dll"
+    },
+    {
+      "name": "frozen starting project exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\strong-type-flow-001\\runs\\units-001\\starting-project"
+    },
+    {
+      "name": "final project is separate from the frozen seed",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\strong-type-flow-001\\actor-01-units"
+    },
+    {
+      "name": "manifest hash validates for D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\strong-type-flow-001\\runs\\units-001\\starting-project",
+      "passed": true,
+      "details": "dfcd160ec06e8c3af34e6265471ecaf5bfecc01e95c47a95303587bffdf50ac1"
+    },
+    {
+      "name": "manifest hash validates for D:\\code\\AgentLang\\.agentlang\\strong-type-flow-001\\actor-01-units",
+      "passed": true,
+      "details": "dfcd160ec06e8c3af34e6265471ecaf5bfecc01e95c47a95303587bffdf50ac1"
+    },
+    {
+      "name": "required persisted target exists exactly once",
+      "passed": false,
+      "details": "found=0"
+    }
+  ],
+  "independentVectors": null,
+  "negativeTypeProbes": [],
+  "protocolSessions": [],
+  "scope": "Fresh-process reload, final word signature/purity/library maturity, own tests and coverage, unchanged refined types/Email validator history, explicit cross-unit calculations, structured no-partial-stage type failures, and read-only preservation of seed/final projects."
+}

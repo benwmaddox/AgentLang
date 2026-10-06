@@ -1,0 +1,36 @@
+[
+  {
+    "event": "actor-launch",
+    "agent": "/root/strong_units_01",
+    "recordedAtUtc": "2026-10-06T17:23:58.5503495-04:00",
+    "model": "gpt-6-luna",
+    "reasoningEffort": "max",
+    "forkTurns": "none",
+    "prelaunch": "prelaunch.json",
+    "repairHintsSupplied": false
+  },
+  {
+    "event": "actor-complete",
+    "agent": "/root/strong_units_01",
+    "sessionId": 41941,
+    "durableWord": "delivery.speed-kph",
+    "reportedOwnTestsPassed": 4,
+    "reportedErrors": 0,
+    "repairHintsSupplied": false
+  },
+  {
+    "event": "actor-teardown",
+    "sessionId": 41941,
+    "control": "Ctrl+C",
+    "additionalJsonlRequests": 0,
+    "exitCode": 0
+  },
+  {
+    "event": "independent-acceptance",
+    "passed": true,
+    "checks": 118,
+    "vectors": 6,
+    "negativeTypeProbes": 4,
+    "oracleChangedAfterLaunch": false
+  }
+]

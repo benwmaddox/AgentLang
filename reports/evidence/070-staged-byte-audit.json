@@ -1,0 +1,468 @@
+{
+  "checks": [
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/acceptance-preflight-01.json",
+      "stagedBlob": "e6904ec5a084a0f433486cbc2e1d2bfdd8bb22fb",
+      "workingBytesBlob": "e6904ec5a084a0f433486cbc2e1d2bfdd8bb22fb",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/acceptance-preflight-setup.json",
+      "stagedBlob": "c593d4d89ff41b5a4ff7a0535e0fdde96096e150",
+      "workingBytesBlob": "c593d4d89ff41b5a4ff7a0535e0fdde96096e150",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/acceptance-preflight.json",
+      "stagedBlob": "a13c6143defc2ef2563877f4cc6bc5be6d987dd6",
+      "workingBytesBlob": "a13c6143defc2ef2563877f4cc6bc5be6d987dd6",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/acceptance.json",
+      "stagedBlob": "2960bc8f4bf181b1ddff0c20e9cb90ec1ed9fae4",
+      "workingBytesBlob": "2960bc8f4bf181b1ddff0c20e9cb90ec1ed9fae4",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/actor-report.md",
+      "stagedBlob": "c50ca6d1522b0201880f7ec2ff4753a9c2333569",
+      "workingBytesBlob": "c50ca6d1522b0201880f7ec2ff4753a9c2333569",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/artifact-inventory.json",
+      "stagedBlob": "334a3110e1f33543cbccaea5c8f1e76a0f5e92e1",
+      "workingBytesBlob": "334a3110e1f33543cbccaea5c8f1e76a0f5e92e1",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/coordinator-events.json",
+      "stagedBlob": "3902b9df5a4e493108b856f8d79f522bc11680e9",
+      "workingBytesBlob": "3902b9df5a4e493108b856f8d79f522bc11680e9",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/.agentlang/store/CURRENT",
+      "stagedBlob": "182cda2a293460d7beaa3b636433942364e47ed0",
+      "workingBytesBlob": "182cda2a293460d7beaa3b636433942364e47ed0",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/.agentlang/store/WRITE.lock",
+      "stagedBlob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "workingBytesBlob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/.agentlang/store/manifests/2719fb4b9800c8445abea77f17dc4bd7541b40010be9553b8226557fb2eefd3f.json",
+      "stagedBlob": "fc3df5449ed58826fdc48d9a4f9ae587815883c9",
+      "workingBytesBlob": "fc3df5449ed58826fdc48d9a4f9ae587815883c9",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/.agentlang/store/manifests/5b4088753d4db89097ae8c2bfddb6fb41036fa3f804579971dc9dff48225bac1.json",
+      "stagedBlob": "f07d668e7fb6ad097b9981f0ed8ff45c3e546cae",
+      "workingBytesBlob": "f07d668e7fb6ad097b9981f0ed8ff45c3e546cae",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/.agentlang/store/manifests/c70ace0eae4342db03aa6ac53c9de696b6ba31dd134b40b4fb4be07284ff445f.json",
+      "stagedBlob": "89909ba551c74aee480f289c91f9524c950b1481",
+      "workingBytesBlob": "89909ba551c74aee480f289c91f9524c950b1481",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/.agentlang/store/manifests/ceac75aec83e2427ef30227fe43d7b8d02449130e31358d3984e6794a893759c.json",
+      "stagedBlob": "6935abd8e2edd011c56927cf47984a9e38649041",
+      "workingBytesBlob": "6935abd8e2edd011c56927cf47984a9e38649041",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/.agentlang/store/manifests/dfcd160ec06e8c3af34e6265471ecaf5bfecc01e95c47a95303587bffdf50ac1.json",
+      "stagedBlob": "7599f0b60a1c660b19ab7c234ff51e2543c4c47f",
+      "workingBytesBlob": "7599f0b60a1c660b19ab7c234ff51e2543c4c47f",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/.agentlang/store/manifests/e1510892ac1efa0d5049e4136bd1dfbc8fe85c6350e8e2814d456be41e9e3e5f.json",
+      "stagedBlob": "ae1c968f0ba0158e4adfbbb335ba1e14c7e2ecd1",
+      "workingBytesBlob": "ae1c968f0ba0158e4adfbbb335ba1e14c7e2ecd1",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/.agentlang/store/objects/00f404443abbb179bb0e6c32c3b373739367ac3ebf21622acf6745700ff7e5ca.agent",
+      "stagedBlob": "64917d2e9e50d6c7a0b7c2b201ce8bb6e6a6cf37",
+      "workingBytesBlob": "64917d2e9e50d6c7a0b7c2b201ce8bb6e6a6cf37",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/.agentlang/store/objects/02ced54d580dbac58e83462f71f3d973fa5f769ba45c76b5fb9c8c45714ad49c.agent",
+      "stagedBlob": "e427338f3ac601acf060b15be6d79f4cff74b54d",
+      "workingBytesBlob": "e427338f3ac601acf060b15be6d79f4cff74b54d",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/.agentlang/store/objects/0508dcd80285d1fcf6a20f0dd6f033c377d99d1a0396b3971e371fb18fd5d626.agent",
+      "stagedBlob": "b42b29f06c92147ffdc1f8d6aa0817f7bc62b69c",
+      "workingBytesBlob": "b42b29f06c92147ffdc1f8d6aa0817f7bc62b69c",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/.agentlang/store/objects/1cdcfc6ac4ba3358c37715a1ac4574bf2eae9c4ccade35f768c39f2af0c7f718.agent",
+      "stagedBlob": "8eb5d5acea48c0eca9b9abcbcf563235a719b17c",
+      "workingBytesBlob": "8eb5d5acea48c0eca9b9abcbcf563235a719b17c",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/.agentlang/store/objects/2f8fa712a30594f0b2c14be86dc47c4060a2ecd263a6a52b10328a5bc68a49fc.agent",
+      "stagedBlob": "d04d2f4ac42f0c242d58bdec131f8ba7684b6cfb",
+      "workingBytesBlob": "d04d2f4ac42f0c242d58bdec131f8ba7684b6cfb",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/.agentlang/store/objects/35f1fb39fbc9a53499add197a178900c64a87d1cc10efaf69202e81e89ecc426.agent",
+      "stagedBlob": "16549ab22cfdec384c329f5f236deabeb35e541b",
+      "workingBytesBlob": "16549ab22cfdec384c329f5f236deabeb35e541b",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/.agentlang/store/objects/36887a28a5dbb89dd4f0811574721f1b93859403aa56d1e7ed039667a9fbae83.agent",
+      "stagedBlob": "d5023893e8e3c6020bc38189c2cbb16ca34ce89d",
+      "workingBytesBlob": "d5023893e8e3c6020bc38189c2cbb16ca34ce89d",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/.agentlang/store/objects/5e5c3231577553615fde2e7785925bd03fea454bc734c47069da397beed1491c.agent",
+      "stagedBlob": "67328f4cde13f01e36e31f9bd728da604c79e33b",
+      "workingBytesBlob": "67328f4cde13f01e36e31f9bd728da604c79e33b",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/.agentlang/store/objects/6153a15362bd4a45c782455fdded2f6b8b3938e07b9edcac5f20fda9c534e3c9.agent",
+      "stagedBlob": "73e1507812446e66301d75c9e3050a8a7a01ee96",
+      "workingBytesBlob": "73e1507812446e66301d75c9e3050a8a7a01ee96",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/.agentlang/store/objects/6c709b8f8b63577e003d971d0318aa5c0a5cf9b37ee6359b45f0981cb87774aa.agent",
+      "stagedBlob": "517b95202345b6e8229dadb5bc4f21466a64e824",
+      "workingBytesBlob": "517b95202345b6e8229dadb5bc4f21466a64e824",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/.agentlang/store/objects/73b4beb7dc98456e2029ddd1c2bf007d9374fa3e75e5a985dfcc388a0999fd90.agent",
+      "stagedBlob": "91238d4827bd10c565efcf590fc463e26b2f3cd3",
+      "workingBytesBlob": "91238d4827bd10c565efcf590fc463e26b2f3cd3",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/.agentlang/store/objects/94b87a742267a75b1f62ffe2fe44d9b169159321f51257f3348c7a444c13a2a7.agent",
+      "stagedBlob": "7605808d8c3afb8a0a23c109bb458dc46f619924",
+      "workingBytesBlob": "7605808d8c3afb8a0a23c109bb458dc46f619924",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/.agentlang/store/objects/9de351949ccfa616ddf3bbb0106fcd353dff807b3d8a5a55eefeda847e57855e.agent",
+      "stagedBlob": "95bfea6f5fef553b263feff45752c9209807ccb0",
+      "workingBytesBlob": "95bfea6f5fef553b263feff45752c9209807ccb0",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/.agentlang/store/objects/a9338b930067b500fb56efc5601b2e7e337e3d61706eba97c0957ffbd1f5c102.agent",
+      "stagedBlob": "20ec4a6cd69fc0f64c2b857696f12e49eec394ca",
+      "workingBytesBlob": "20ec4a6cd69fc0f64c2b857696f12e49eec394ca",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/.agentlang/store/objects/ab2ef63a88a81b97c02a75359f2baea068775d3067a04fdec99ad20cd71c18a9.agent",
+      "stagedBlob": "477c5db4a64f44b328707df79943d1231d4f5166",
+      "workingBytesBlob": "477c5db4a64f44b328707df79943d1231d4f5166",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/.agentlang/store/objects/acab128376e6bf28ef5d3dd08a1b8b990e3fcbbad8a9952b7dbb6b5dc884d5fc.agent",
+      "stagedBlob": "a46383a35041582b164b91c6d594e0f347738df7",
+      "workingBytesBlob": "a46383a35041582b164b91c6d594e0f347738df7",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/.agentlang/store/objects/aece6f2a58f58230e0556a2fb00290b342db14e083b1712cc6739652f499de53.agent",
+      "stagedBlob": "3eebc874ed469a5a4f6b960d9dd3c801baee2221",
+      "workingBytesBlob": "3eebc874ed469a5a4f6b960d9dd3c801baee2221",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/.agentlang/store/objects/aee0641b3c21ee6e877b39eace76261dc267a54a4dd5721e437883b93d9cd247.agent",
+      "stagedBlob": "4a4e7fa5b6b4214118faabd6dc2a82415dd78271",
+      "workingBytesBlob": "4a4e7fa5b6b4214118faabd6dc2a82415dd78271",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/.agentlang/store/objects/b44d70a1a2c8bd768276b075b5b0b3e697e02f4f8ed59dbd846c806d5146c558.agent",
+      "stagedBlob": "d3febe905cfefc88309c91156d8c12001fb99962",
+      "workingBytesBlob": "d3febe905cfefc88309c91156d8c12001fb99962",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/.agentlang/store/objects/c05b9b2ddc170312ddec20e8f0265d4f0f8846f5014d2e962f7d51371d6e42fa.agent",
+      "stagedBlob": "077b58229b74d6d954cde7522ee89d090641ee97",
+      "workingBytesBlob": "077b58229b74d6d954cde7522ee89d090641ee97",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/.agentlang/store/objects/c2cf6abdbe94ce09577519c1ec7f10d2817af213c6c4f721da5cd1f0bd6b0b16.agent",
+      "stagedBlob": "179c4944948e96f10eb0260dd182a95ef83daa56",
+      "workingBytesBlob": "179c4944948e96f10eb0260dd182a95ef83daa56",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/.agentlang/store/objects/c81af2f059863db807d836d5c4e921e25bbb3f194d78528af84053af486f669d.agent",
+      "stagedBlob": "eff9c17bc351d517e0accb1123bd7ae0d26ab8ad",
+      "workingBytesBlob": "eff9c17bc351d517e0accb1123bd7ae0d26ab8ad",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/.agentlang/store/objects/d724bf6c1a5e6dcb51c791649aeb295b37eda1df858a61383c9242c804e31e91.agent",
+      "stagedBlob": "92b581c6535b81359d664ce1bc33a8a366101e29",
+      "workingBytesBlob": "92b581c6535b81359d664ce1bc33a8a366101e29",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/dictionary.agent",
+      "stagedBlob": "eff9c17bc351d517e0accb1123bd7ae0d26ab8ad",
+      "workingBytesBlob": "eff9c17bc351d517e0accb1123bd7ae0d26ab8ad",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/history/task-0001.json",
+      "stagedBlob": "2387f547362b5b8383f894189794ac57a1458ed3",
+      "workingBytesBlob": "2387f547362b5b8383f894189794ac57a1458ed3",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/final-project/history/task-0002.json",
+      "stagedBlob": "f2afa328d850bbf9ef40f901bc41767eeaa21a60",
+      "workingBytesBlob": "f2afa328d850bbf9ef40f901bc41767eeaa21a60",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/fixture-setup.json",
+      "stagedBlob": "009ccf127d312add43f58302054b390937397cfe",
+      "workingBytesBlob": "009ccf127d312add43f58302054b390937397cfe",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/no-op-acceptance.json",
+      "stagedBlob": "8e5a62a808ac0e42e9d39f158d591ce392d7b2c4",
+      "workingBytesBlob": "8e5a62a808ac0e42e9d39f158d591ce392d7b2c4",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/prelaunch.json",
+      "stagedBlob": "2e42e37042fdb2db42b6c2acc99ce10f9c51e032",
+      "workingBytesBlob": "2e42e37042fdb2db42b6c2acc99ce10f9c51e032",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/prompt.txt",
+      "stagedBlob": "8609a90d16829da6b26483fd283904ccbc710de6",
+      "workingBytesBlob": "8609a90d16829da6b26483fd283904ccbc710de6",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/raw-responses.json",
+      "stagedBlob": "c975a22a49bca5cb891f5fc4368d54ab240b9bf3",
+      "workingBytesBlob": "c975a22a49bca5cb891f5fc4368d54ab240b9bf3",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/requests.json",
+      "stagedBlob": "c1e81d66063d8807c9e769a90b85e27c2ae29021",
+      "workingBytesBlob": "c1e81d66063d8807c9e769a90b85e27c2ae29021",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/responses.json",
+      "stagedBlob": "bb4e6c7c1c510cfa2f5738687fcdfbd3c61e0302",
+      "workingBytesBlob": "bb4e6c7c1c510cfa2f5738687fcdfbd3c61e0302",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/starting-project/.agentlang/store/CURRENT",
+      "stagedBlob": "2fba3ee681710fb6b0b5d4d36238ef19686a7ba9",
+      "workingBytesBlob": "2fba3ee681710fb6b0b5d4d36238ef19686a7ba9",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/starting-project/.agentlang/store/WRITE.lock",
+      "stagedBlob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "workingBytesBlob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/starting-project/.agentlang/store/manifests/2719fb4b9800c8445abea77f17dc4bd7541b40010be9553b8226557fb2eefd3f.json",
+      "stagedBlob": "fc3df5449ed58826fdc48d9a4f9ae587815883c9",
+      "workingBytesBlob": "fc3df5449ed58826fdc48d9a4f9ae587815883c9",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/starting-project/.agentlang/store/manifests/5b4088753d4db89097ae8c2bfddb6fb41036fa3f804579971dc9dff48225bac1.json",
+      "stagedBlob": "f07d668e7fb6ad097b9981f0ed8ff45c3e546cae",
+      "workingBytesBlob": "f07d668e7fb6ad097b9981f0ed8ff45c3e546cae",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/starting-project/.agentlang/store/manifests/c70ace0eae4342db03aa6ac53c9de696b6ba31dd134b40b4fb4be07284ff445f.json",
+      "stagedBlob": "89909ba551c74aee480f289c91f9524c950b1481",
+      "workingBytesBlob": "89909ba551c74aee480f289c91f9524c950b1481",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/starting-project/.agentlang/store/manifests/dfcd160ec06e8c3af34e6265471ecaf5bfecc01e95c47a95303587bffdf50ac1.json",
+      "stagedBlob": "7599f0b60a1c660b19ab7c234ff51e2543c4c47f",
+      "workingBytesBlob": "7599f0b60a1c660b19ab7c234ff51e2543c4c47f",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/starting-project/.agentlang/store/manifests/e1510892ac1efa0d5049e4136bd1dfbc8fe85c6350e8e2814d456be41e9e3e5f.json",
+      "stagedBlob": "ae1c968f0ba0158e4adfbbb335ba1e14c7e2ecd1",
+      "workingBytesBlob": "ae1c968f0ba0158e4adfbbb335ba1e14c7e2ecd1",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/starting-project/.agentlang/store/objects/00f404443abbb179bb0e6c32c3b373739367ac3ebf21622acf6745700ff7e5ca.agent",
+      "stagedBlob": "64917d2e9e50d6c7a0b7c2b201ce8bb6e6a6cf37",
+      "workingBytesBlob": "64917d2e9e50d6c7a0b7c2b201ce8bb6e6a6cf37",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/starting-project/.agentlang/store/objects/0508dcd80285d1fcf6a20f0dd6f033c377d99d1a0396b3971e371fb18fd5d626.agent",
+      "stagedBlob": "b42b29f06c92147ffdc1f8d6aa0817f7bc62b69c",
+      "workingBytesBlob": "b42b29f06c92147ffdc1f8d6aa0817f7bc62b69c",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/starting-project/.agentlang/store/objects/1cdcfc6ac4ba3358c37715a1ac4574bf2eae9c4ccade35f768c39f2af0c7f718.agent",
+      "stagedBlob": "8eb5d5acea48c0eca9b9abcbcf563235a719b17c",
+      "workingBytesBlob": "8eb5d5acea48c0eca9b9abcbcf563235a719b17c",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/starting-project/.agentlang/store/objects/2f8fa712a30594f0b2c14be86dc47c4060a2ecd263a6a52b10328a5bc68a49fc.agent",
+      "stagedBlob": "d04d2f4ac42f0c242d58bdec131f8ba7684b6cfb",
+      "workingBytesBlob": "d04d2f4ac42f0c242d58bdec131f8ba7684b6cfb",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/starting-project/.agentlang/store/objects/36887a28a5dbb89dd4f0811574721f1b93859403aa56d1e7ed039667a9fbae83.agent",
+      "stagedBlob": "d5023893e8e3c6020bc38189c2cbb16ca34ce89d",
+      "workingBytesBlob": "d5023893e8e3c6020bc38189c2cbb16ca34ce89d",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/starting-project/.agentlang/store/objects/5e5c3231577553615fde2e7785925bd03fea454bc734c47069da397beed1491c.agent",
+      "stagedBlob": "67328f4cde13f01e36e31f9bd728da604c79e33b",
+      "workingBytesBlob": "67328f4cde13f01e36e31f9bd728da604c79e33b",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/starting-project/.agentlang/store/objects/6153a15362bd4a45c782455fdded2f6b8b3938e07b9edcac5f20fda9c534e3c9.agent",
+      "stagedBlob": "73e1507812446e66301d75c9e3050a8a7a01ee96",
+      "workingBytesBlob": "73e1507812446e66301d75c9e3050a8a7a01ee96",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/starting-project/.agentlang/store/objects/6c709b8f8b63577e003d971d0318aa5c0a5cf9b37ee6359b45f0981cb87774aa.agent",
+      "stagedBlob": "517b95202345b6e8229dadb5bc4f21466a64e824",
+      "workingBytesBlob": "517b95202345b6e8229dadb5bc4f21466a64e824",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/starting-project/.agentlang/store/objects/a9338b930067b500fb56efc5601b2e7e337e3d61706eba97c0957ffbd1f5c102.agent",
+      "stagedBlob": "20ec4a6cd69fc0f64c2b857696f12e49eec394ca",
+      "workingBytesBlob": "20ec4a6cd69fc0f64c2b857696f12e49eec394ca",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/starting-project/.agentlang/store/objects/ab2ef63a88a81b97c02a75359f2baea068775d3067a04fdec99ad20cd71c18a9.agent",
+      "stagedBlob": "477c5db4a64f44b328707df79943d1231d4f5166",
+      "workingBytesBlob": "477c5db4a64f44b328707df79943d1231d4f5166",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/starting-project/.agentlang/store/objects/acab128376e6bf28ef5d3dd08a1b8b990e3fcbbad8a9952b7dbb6b5dc884d5fc.agent",
+      "stagedBlob": "a46383a35041582b164b91c6d594e0f347738df7",
+      "workingBytesBlob": "a46383a35041582b164b91c6d594e0f347738df7",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/starting-project/.agentlang/store/objects/aece6f2a58f58230e0556a2fb00290b342db14e083b1712cc6739652f499de53.agent",
+      "stagedBlob": "3eebc874ed469a5a4f6b960d9dd3c801baee2221",
+      "workingBytesBlob": "3eebc874ed469a5a4f6b960d9dd3c801baee2221",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/starting-project/.agentlang/store/objects/aee0641b3c21ee6e877b39eace76261dc267a54a4dd5721e437883b93d9cd247.agent",
+      "stagedBlob": "4a4e7fa5b6b4214118faabd6dc2a82415dd78271",
+      "workingBytesBlob": "4a4e7fa5b6b4214118faabd6dc2a82415dd78271",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/starting-project/.agentlang/store/objects/b44d70a1a2c8bd768276b075b5b0b3e697e02f4f8ed59dbd846c806d5146c558.agent",
+      "stagedBlob": "d3febe905cfefc88309c91156d8c12001fb99962",
+      "workingBytesBlob": "d3febe905cfefc88309c91156d8c12001fb99962",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/starting-project/.agentlang/store/objects/c05b9b2ddc170312ddec20e8f0265d4f0f8846f5014d2e962f7d51371d6e42fa.agent",
+      "stagedBlob": "077b58229b74d6d954cde7522ee89d090641ee97",
+      "workingBytesBlob": "077b58229b74d6d954cde7522ee89d090641ee97",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/starting-project/.agentlang/store/objects/c2cf6abdbe94ce09577519c1ec7f10d2817af213c6c4f721da5cd1f0bd6b0b16.agent",
+      "stagedBlob": "179c4944948e96f10eb0260dd182a95ef83daa56",
+      "workingBytesBlob": "179c4944948e96f10eb0260dd182a95ef83daa56",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/starting-project/.agentlang/store/objects/d724bf6c1a5e6dcb51c791649aeb295b37eda1df858a61383c9242c804e31e91.agent",
+      "stagedBlob": "92b581c6535b81359d664ce1bc33a8a366101e29",
+      "workingBytesBlob": "92b581c6535b81359d664ce1bc33a8a366101e29",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/starting-project/dictionary.agent",
+      "stagedBlob": "67328f4cde13f01e36e31f9bd728da604c79e33b",
+      "workingBytesBlob": "67328f4cde13f01e36e31f9bd728da604c79e33b",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/starting-project/history/task-0001.json",
+      "stagedBlob": "2387f547362b5b8383f894189794ac57a1458ed3",
+      "workingBytesBlob": "2387f547362b5b8383f894189794ac57a1458ed3",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/starting-state.json",
+      "stagedBlob": "62c0c1d136fd5c4ccfe0cb610c2a14b70d226f32",
+      "workingBytesBlob": "62c0c1d136fd5c4ccfe0cb610c2a14b70d226f32",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/trace-audit.json",
+      "stagedBlob": "c807a034271aec179acbf779ed1c597a547409ea",
+      "workingBytesBlob": "c807a034271aec179acbf779ed1c597a547409ea",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/units-001/trace.jsonl",
+      "stagedBlob": "49f0e64c440858cbf7270e063a4ed6d03c0ab78e",
+      "workingBytesBlob": "49f0e64c440858cbf7270e063a4ed6d03c0ab78e",
+      "passed": true
+    }
+  ],
+  "scope": "Staged trial files match frozen working bytes with no text conversion.",
+  "passed": true
+}

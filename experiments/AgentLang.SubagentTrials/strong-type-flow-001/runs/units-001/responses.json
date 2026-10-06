@@ -1,0 +1,359 @@
+[
+  {
+    "ok": true,
+    "kind": "task.begin",
+    "text": "Started task-0001.",
+    "data": {
+      "task": "task-0001",
+      "goal": "Prepare immutable strong-type agent study seed",
+      "active": true,
+      "wordsInspected": [],
+      "wordsUsed": [],
+      "wordsCreated": [],
+      "testsRun": 0,
+      "testsFailed": 0,
+      "effects": {},
+      "errors": []
+    }
+  },
+  {
+    "ok": true,
+    "kind": "defined",
+    "text": "Flow project declarations, attached cases, refined type metadata, and bindings validated atomically.",
+    "data": {
+      "frontend": "flow",
+      "words": [
+        {
+          "name": "email.valid?",
+          "id": "word_76315c4b82cc45529829a29f25fef8b5",
+          "revision": 1
+        }
+      ],
+      "types": [
+        "Delivery",
+        "Email",
+        "KilometersPerHour",
+        "MetersPerSecond"
+      ]
+    }
+  },
+  {
+    "ok": true,
+    "kind": "test",
+    "text": "6/6 test(s) passed.",
+    "data": {
+      "results": [
+        {
+          "name": "leading-at",
+          "word": "email.valid?",
+          "passed": true,
+          "expected": "false",
+          "actual": [
+            "false"
+          ]
+        },
+        {
+          "name": "missing-at",
+          "word": "email.valid?",
+          "passed": true,
+          "expected": "false",
+          "actual": [
+            "false"
+          ]
+        },
+        {
+          "name": "missing-dot",
+          "word": "email.valid?",
+          "passed": true,
+          "expected": "false",
+          "actual": [
+            "false"
+          ]
+        },
+        {
+          "name": "spaces",
+          "word": "email.valid?",
+          "passed": true,
+          "expected": "false",
+          "actual": [
+            "false"
+          ]
+        },
+        {
+          "name": "trailing-at",
+          "word": "email.valid?",
+          "passed": true,
+          "expected": "false",
+          "actual": [
+            "false"
+          ]
+        },
+        {
+          "name": "valid",
+          "word": "email.valid?",
+          "passed": true,
+          "expected": "true",
+          "actual": [
+            "true"
+          ]
+        }
+      ],
+      "coverage": {
+        "instructionsCovered": 40,
+        "instructionsTotal": 40,
+        "branchesCovered": 0,
+        "branchesTotal": 0,
+        "uncoveredInstructions": [],
+        "uncoveredBranchOutcomes": []
+      }
+    }
+  },
+  {
+    "ok": true,
+    "kind": "commit",
+    "text": "6 attached test(s) passed; selected candidates committed.",
+    "data": [
+      "email.valid?/leading-at",
+      "email.valid?/missing-at",
+      "email.valid?/missing-dot",
+      "email.valid?/spaces",
+      "email.valid?/trailing-at",
+      "email.valid?/valid"
+    ]
+  },
+  {
+    "ok": true,
+    "kind": "commit",
+    "text": "0 attached test(s) passed; selected candidates committed.",
+    "data": []
+  },
+  {
+    "ok": true,
+    "kind": "commit",
+    "text": "0 attached test(s) passed; selected candidates committed.",
+    "data": []
+  },
+  {
+    "ok": true,
+    "kind": "commit",
+    "text": "0 attached test(s) passed; selected candidates committed.",
+    "data": []
+  },
+  {
+    "ok": true,
+    "kind": "commit",
+    "text": "0 attached test(s) passed; selected candidates committed.",
+    "data": []
+  },
+  {
+    "ok": true,
+    "kind": "test",
+    "text": "6/6 test(s) passed.",
+    "data": {
+      "results": [
+        {
+          "name": "leading-at",
+          "word": "email.valid?",
+          "passed": true,
+          "expected": "false",
+          "actual": [
+            "false"
+          ]
+        },
+        {
+          "name": "missing-at",
+          "word": "email.valid?",
+          "passed": true,
+          "expected": "false",
+          "actual": [
+            "false"
+          ]
+        },
+        {
+          "name": "missing-dot",
+          "word": "email.valid?",
+          "passed": true,
+          "expected": "false",
+          "actual": [
+            "false"
+          ]
+        },
+        {
+          "name": "spaces",
+          "word": "email.valid?",
+          "passed": true,
+          "expected": "false",
+          "actual": [
+            "false"
+          ]
+        },
+        {
+          "name": "trailing-at",
+          "word": "email.valid?",
+          "passed": true,
+          "expected": "false",
+          "actual": [
+            "false"
+          ]
+        },
+        {
+          "name": "valid",
+          "word": "email.valid?",
+          "passed": true,
+          "expected": "true",
+          "actual": [
+            "true"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "ok": true,
+    "kind": "describe",
+    "text": "Description for email.valid?.",
+    "data": {
+      "name": "email.valid?",
+      "flowReference": "email::valid?",
+      "flowReferenceUnavailableReason": null,
+      "inputs": [
+        "String"
+      ],
+      "outputs": [
+        "Bool"
+      ],
+      "parameters": [
+        {
+          "name": "address",
+          "type": "String"
+        }
+      ],
+      "effects": [],
+      "documentation": "",
+      "id": "word_76315c4b82cc45529829a29f25fef8b5",
+      "dependencies": [
+        "bool.and",
+        "bool.not",
+        "string.contains",
+        "string.ends-with",
+        "string.starts-with"
+      ],
+      "transitiveDependencies": [
+        "bool.and",
+        "bool.not",
+        "string.contains",
+        "string.ends-with",
+        "string.starts-with"
+      ],
+      "callers": [],
+      "tests": [
+        "leading-at",
+        "missing-at",
+        "missing-dot",
+        "spaces",
+        "trailing-at",
+        "valid"
+      ],
+      "examples": [
+        "accepted-shape"
+      ],
+      "source": "<flow:email.valid?/1:c05b9b2ddc170312ddec20e8f0265d4f0f8846f5014d2e962f7d51371d6e42fa>",
+      "line": 1,
+      "kind": "word",
+      "status": "persistent",
+      "maturity": "library",
+      "deprecated": false,
+      "revision": 1,
+      "testCount": 6,
+      "exampleCount": 1,
+      "coverage": {
+        "instructionsCovered": 40,
+        "instructionsTotal": 40,
+        "branchesCovered": 0,
+        "branchesTotal": 0,
+        "uncoveredInstructions": [],
+        "uncoveredBranchOutcomes": [],
+        "status": "current"
+      }
+    }
+  },
+  {
+    "ok": true,
+    "kind": "source",
+    "text": "type Email : String {\n    validate email::valid?;\n}",
+    "data": "type Email : String {\n    validate email::valid?;\n}"
+  },
+  {
+    "ok": true,
+    "kind": "source",
+    "text": "type MetersPerSecond : Float { }",
+    "data": "type MetersPerSecond : Float { }"
+  },
+  {
+    "ok": true,
+    "kind": "source",
+    "text": "type KilometersPerHour : Float { }",
+    "data": "type KilometersPerHour : Float { }"
+  },
+  {
+    "ok": true,
+    "kind": "source",
+    "text": "record Delivery {\n    field contact: Email;\n    field speed: MetersPerSecond;\n}",
+    "data": "record Delivery {\n    field contact: Email;\n    field speed: MetersPerSecond;\n}"
+  },
+  {
+    "ok": true,
+    "kind": "example",
+    "text": "1/1 example(s) passed.",
+    "data": {
+      "results": [
+        {
+          "word": "email.valid?",
+          "name": "accepted-shape",
+          "source": "example email.valid?/accepted-shape {\n    email::valid?(\"dev@example.com\")\n    => true\n}",
+          "expected": "true",
+          "passed": true,
+          "actual": [
+            "true"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "ok": true,
+    "kind": "task.commit",
+    "text": "Task committed and temporary words were cleared. The task log was saved.",
+    "data": {
+      "task": "task-0001",
+      "goal": "Prepare immutable strong-type agent study seed",
+      "active": false,
+      "wordsInspected": [
+        "Delivery",
+        "Email",
+        "KilometersPerHour",
+        "MetersPerSecond",
+        "email.valid?"
+      ],
+      "wordsUsed": [
+        "bool.and",
+        "bool.not",
+        "email.valid?",
+        "string.contains",
+        "string.ends-with",
+        "string.starts-with"
+      ],
+      "wordsCreated": [
+        "Delivery",
+        "Email",
+        "KilometersPerHour",
+        "MetersPerSecond",
+        "email.valid?"
+      ],
+      "testsRun": 18,
+      "testsFailed": 0,
+      "effects": {},
+      "errors": []
+    }
+  }
+]

@@ -1,0 +1,4 @@
+test email.valid?/leading-at {
+    email::valid?("@dev.example")
+    => false
+}

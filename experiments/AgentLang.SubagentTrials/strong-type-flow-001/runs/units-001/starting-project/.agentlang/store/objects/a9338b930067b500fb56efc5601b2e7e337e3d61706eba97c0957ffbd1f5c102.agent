@@ -1,0 +1,4 @@
+test email.valid?/spaces {
+    email::valid?("dev @example.com")
+    => false
+}
