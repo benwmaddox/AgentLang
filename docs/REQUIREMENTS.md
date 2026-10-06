@@ -207,5 +207,5 @@ and [report 048](../reports/048-flow-maintenance-acceptance.md). Complete call-s
 identity, argument evaluation order, attachment-only revision changes, library
 actual-site coverage, immutable history and reload/rollback are acceptance
 requirements. The full local 26-check Release gate passes; Runtime has 15 groups /
-399 assertions and Flow has 832 assertions. Exact committed-source CI is pending.
+399 assertions and Flow has 832 assertions. Exact committed-source CI passed all 26 checks (run 37425011313, source f16dfa6).
 Public test-result spans remain an observability gap, recorded in report 048.

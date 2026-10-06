@@ -86,7 +86,7 @@ Manifest v2 adds `sourceFormat: { frontend, version }` to each word revision. Te
 Rename may rewrite affected resolved dot calls to qualified ordinary calls with the receiver first, while preserving the authored argument order and evaluating the receiver once. It must reject a rename when that transformation cannot be proven safe, using stable `WordId` bindings and source spans to identify affected sites.
 
 The first schema slice preserved frozen v1 bytes and added version-aware v2 serialization, storage-neutral per-revision format/binding DTOs, membership and bound validation. At that milestone Runtime rejected Flow revisions; that guard-only state was superseded by the opt-in Runtime integration recorded in report 045. Focused Runtime acceptance now passes all 11 groups and 203 assertions, including durable publish/reload, task rollback, populated snapshot restore, mixed frontend reload, and v1 generated-accessor cases. The final local 26-check Release gate passed with zero build warnings or errors; exact committed-source CI passed all 26 checks (run 37417536333). Flow-aware default frontend cutover remains open. Rename/deprecate focused acceptance now
-passes 15 groups / 399 assertions; the full local maintenance gate passes all 26 checks. Exact-source CI is pending.
+passes 15 groups / 399 assertions; the full local maintenance gate passes all 26 checks. Exact-source CI passed all 26 checks (run 37425011313, source f16dfa6).
 
 ## Concrete schema and compatibility prerequisites
 
@@ -209,6 +209,6 @@ Ordinary user and Flow cases remain bound to their revision references; there is
 no general source fallback. The frozen v1 golden remains unchanged and v1 keeps
 its aggregate semantic comparison; v2 still byte-compares the complete
 canonical project export. Exact committed-source CI passed all 26 checks (run 37417536333). Default frontend cutover remains open. Rename/deprecate focused acceptance now
-passes 15 groups / 399 assertions; the full local maintenance gate passes all 26 checks. Exact-source CI is pending. Report
+passes 15 groups / 399 assertions; the full local maintenance gate passes all 26 checks. Exact-source CI passed all 26 checks (run 37425011313, source f16dfa6). Report
 046 tracks the acceptance oracles; do not treat this opt-in route as the default
 or as completion of the larger PRD.

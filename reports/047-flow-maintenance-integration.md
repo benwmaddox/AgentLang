@@ -1,6 +1,6 @@
 # Flow-aware vocabulary maintenance
 
-Status: local milestone validated; exact committed-source CI is pending. The full PRD remains the active
+Status: local and exact committed-source CI validated; publication evidence recorded. The full PRD remains the active
 objective; this milestone does not replace default frontend cutover or controlled
 external-agent evaluation.
 
@@ -199,3 +199,20 @@ runtime behavior, not a token, latency or memory benefit.
 
 Publication will push the source with these reports, audit CI against that
 exact commit, then integrate a report-only CI evidence update into main.
+
+## Exact committed-source validation
+
+Source commit `f16dfa60d59f7d1c8c0a5c946425cc408e66dd3a` passed
+[CI run 37425011313](https://github.com/benwmaddox/AgentLang/actions/runs/37425011313).
+The downloaded artifact identifies that exact commit, branch `prototype`, a
+clean checkout and all 26 checks with zero exit codes. Retained
+[run identity](evidence/047-committed-source-ci.json) and
+[validation artifact](evidence/047-committed-source-validation.json) are audited.
+The subsequent publication commit changes reports/docs/evidence only; executable
+source is the tested commit. Main integration uses a fast-forward and an atomic
+push of both branches. Post-publication CI is a distinct run to audit later.
+
+The next phase is [Flow project document authoring](049-flow-project-authoring-plan.md):
+records, refined nominal types, multiple words/cases and atomic validation,
+followed by durable type-source preservation and the default tooling cutover.
+Syntax and any storage version change must be resolved before implementation.

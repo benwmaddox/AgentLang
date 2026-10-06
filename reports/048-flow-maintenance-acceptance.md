@@ -41,3 +41,9 @@ with zero warnings/errors. See [local validation](evidence/047-publication-valid
 The report correctly labels parent revision `00076c1` as dirty; exact-source CI
 will be audited after committing. The changed-case span observability limitation
 above remains open, and no default frontend or experimental benefit is claimed.
+
+Exact source commit `f16dfa6` also passed all 26 checks in
+[CI run 37425011313](https://github.com/benwmaddox/AgentLang/actions/runs/37425011313).
+The [downloaded validation artifact](evidence/047-committed-source-validation.json)
+is clean and matches the full source commit. Runtime acceptance remains
+15 groups / 399 assertions; the direct case-span observability gap is unchanged.
