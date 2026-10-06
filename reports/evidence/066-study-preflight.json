@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "sourceRevision": "d691592dbef2127c5aa2e31241e00ace3ece55d4",
+  "runtimeFiles": [
+    {
+      "name": "AgentLang.Cli.deps.json",
+      "sha256": "6382f6dc29bb8f827824839010e313b266e51a3f87a4fdb8c382931d2549e97e"
+    },
+    {
+      "name": "AgentLang.Cli.dll",
+      "sha256": "83c1f1e0b907b2a40154e5904808cbb961654f62e04d4f11f65226d73ad31bdf"
+    },
+    {
+      "name": "AgentLang.Cli.runtimeconfig.json",
+      "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+    },
+    {
+      "name": "AgentLang.Core.dll",
+      "sha256": "40cd52d3bc30c6506ff8360741bb87b52dba9afb5331b217df68ac70eec6ac99"
+    },
+    {
+      "name": "FSharp.Core.dll",
+      "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+    }
+  ],
+  "seedTests": 11,
+  "allSeedTestsPassed": true,
+  "queries": [
+    {
+      "op": "describe",
+      "word": "customer.discounted-balance",
+      "responsePayloadUtf8Bytes": 1055,
+      "contextWordNames": [],
+      "contextTypeNames": [],
+      "wordsOmitted": null,
+      "typesOmitted": null,
+      "dataUtf8Bytes": null,
+      "serializedJsonUtf8Bytes": 1054
+    },
+    {
+      "op": "describe",
+      "word": "subscription.annual-renewable?",
+      "responsePayloadUtf8Bytes": 1080,
+      "contextWordNames": [],
+      "contextTypeNames": [],
+      "wordsOmitted": null,
+      "typesOmitted": null,
+      "dataUtf8Bytes": null,
+      "serializedJsonUtf8Bytes": 1079
+    },
+    {
+      "op": "context",
+      "word": "customer.discounted-balance",
+      "responsePayloadUtf8Bytes": 2122,
+      "contextWordNames": [
+        "customer.discounted-balance",
+        "customer.balance",
+        "customer.premium?",
+        "float.multiply",
+        "customer.kind",
+        "equals"
+      ],
+      "contextTypeNames": [
+        "Customer"
+      ],
+      "wordsOmitted": 0,
+      "typesOmitted": 0,
+      "dataUtf8Bytes": 2014,
+      "serializedJsonUtf8Bytes": 2121
+    },
+    {
+      "op": "context",
+      "word": "subscription.annual-renewable?",
+      "responsePayloadUtf8Bytes": 1902,
+      "contextWordNames": [
+        "subscription.annual-renewable?",
+        "bool.and",
+        "equals",
+        "subscription.renewable",
+        "subscription.term"
+      ],
+      "contextTypeNames": [
+        "Subscription"
+      ],
+      "wordsOmitted": 0,
+      "typesOmitted": 0,
+      "dataUtf8Bytes": 1791,
+      "serializedJsonUtf8Bytes": 1901
+    }
+  ],
+  "scope": "Read-only metadata preflight plus existing test execution on a separate copy; no task solution or agent outcome.",
+  "rawFramesArtifact": "066-raw-preflight-frames.json"
+}

@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "selectedBeforeAnyActorLaunch": true,
+  "maxInspectionResponseBytes": 16000,
+  "sharedDiscoveryPayloadBytes": 1481,
+  "fullMetadataPrefixPayloadBytes": 5039,
+  "compactMetadataPrefixPayloadBytes": 5505,
+  "compactContextLimits": {
+    "maxWords": 16,
+    "maxDepth": 4,
+    "maxUtf8Bytes": 6000
+  },
+  "measurements": [
+    {
+      "request": {
+        "op": "words",
+        "compact": true
+      },
+      "responsePayloadUtf8Bytes": 1166,
+      "serializedJsonUtf8Bytes": 1165
+    },
+    {
+      "request": {
+        "op": "search",
+        "query": "customer"
+      },
+      "responsePayloadUtf8Bytes": 159,
+      "serializedJsonUtf8Bytes": 158
+    },
+    {
+      "request": {
+        "op": "search",
+        "query": "subscription"
+      },
+      "responsePayloadUtf8Bytes": 156,
+      "serializedJsonUtf8Bytes": 155
+    },
+    {
+      "request": {
+        "op": "source",
+        "word": "customer.discounted-balance"
+      },
+      "responsePayloadUtf8Bytes": 538,
+      "serializedJsonUtf8Bytes": 537
+    },
+    {
+      "request": {
+        "op": "source",
+        "word": "subscription.annual-renewable?"
+      },
+      "responsePayloadUtf8Bytes": 532,
+      "serializedJsonUtf8Bytes": 531
+    },
+    {
+      "request": {
+        "op": "dependencies",
+        "word": "customer.discounted-balance"
+      },
+      "responsePayloadUtf8Bytes": 172,
+      "serializedJsonUtf8Bytes": 171
+    },
+    {
+      "request": {
+        "op": "dependencies",
+        "word": "subscription.annual-renewable?"
+      },
+      "responsePayloadUtf8Bytes": 181,
+      "serializedJsonUtf8Bytes": 180
+    }
+  ],
+  "rationale": "16,000 admits both raw-frame discovery/metadata prefixes, with at least 10,495 payload bytes remaining for legitimate fallback and diagnostic retrieval. Payload includes CR but excludes LF. This is a feasibility allowance, not a model-window or total-input cap. No trial outcome was observed when selecting it.",
+  "requestArtifactSha256": "88abdb46fa0d15f4a6419d6c2a7ecd16ea41c6875d4869391385472809a5c90b",
+  "responseArtifactSha256": "0ba75f1111e476a546591568dd9c0af8496f820316cf7541d762f452bfbf79b6",
+  "rawFramesArtifactSha256": "2baf741158e6c1ccb67941e8298bacc244ff260230392d7b44f354d812b2593b"
+}

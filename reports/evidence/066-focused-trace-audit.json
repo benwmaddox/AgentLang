@@ -1,0 +1,149 @@
+{
+  "schema2Sessions": 14,
+  "schemaVersion": 1,
+  "passed": true,
+  "scope": "Actual trace payload/wire hashes, selected-to-delivered order, all counter snapshots and complete-response admission; pipe delivery is not model consumption.",
+  "verificationSha256": "102776f41ea0abb60c0e3a14f9e377237d625b2d0c601d8861d2f297c7256cf3",
+  "runs": [
+    {
+      "selectedBytes": 1449,
+      "rawValidBytes": 1150,
+      "traceSha256": "2f7f88a2d5d86bd44afcbb4a2820ceea715aab42b4f1e62004b67ba9d12faa7c",
+      "run": "language-write-zero-inspection-budget",
+      "passed": true,
+      "events": 14,
+      "admittedBytes": 0,
+      "deliveries": 6
+    },
+    {
+      "selectedBytes": 11,
+      "rawValidBytes": 11,
+      "traceSha256": "799943e780db687fde727243d9762103548196e68f9c4eea5e93331133ba0562",
+      "run": "inspection-under-budget",
+      "passed": true,
+      "events": 4,
+      "admittedBytes": 11,
+      "deliveries": 1
+    },
+    {
+      "selectedBytes": 11,
+      "rawValidBytes": 11,
+      "traceSha256": "bdcd8c599e4ae1d2b78d562e23127b3abf940dfd51998cf36ad2e3e0f22fa34b",
+      "run": "inspection-equal-budget",
+      "passed": true,
+      "events": 4,
+      "admittedBytes": 11,
+      "deliveries": 1
+    },
+    {
+      "selectedBytes": 321,
+      "rawValidBytes": 22,
+      "traceSha256": "eae9517900dda3aaed9915852055b4af49a08c264becd373a0815d848efe71b6",
+      "run": "inspection-cumulative-boundary",
+      "passed": true,
+      "events": 8,
+      "admittedBytes": 22,
+      "deliveries": 3
+    },
+    {
+      "selectedBytes": 299,
+      "rawValidBytes": 0,
+      "traceSha256": "5d32001a8474dd3530b7448066f72cbca3f97f3d918ad65f97a018d8747bb8d3",
+      "run": "inspection-zero-budget",
+      "passed": true,
+      "events": 4,
+      "admittedBytes": 0,
+      "deliveries": 1
+    },
+    {
+      "selectedBytes": 336,
+      "rawValidBytes": 29,
+      "traceSha256": "33b68185c08e3ee1809fe9f2ec5a87bdb6b61cf9c461314ca8d26dedd9a9236b",
+      "run": "inspection-positive-remaining-over-budget",
+      "passed": true,
+      "events": 4,
+      "admittedBytes": 0,
+      "deliveries": 1
+    },
+    {
+      "selectedBytes": 86,
+      "rawValidBytes": 86,
+      "traceSha256": "a346194a27e726bac0f6cce3509033b868488b0e0c051c52a9a46fe67f3f3702",
+      "run": "inspection-runtime-diagnostic",
+      "passed": true,
+      "events": 4,
+      "admittedBytes": 86,
+      "deliveries": 1
+    },
+    {
+      "selectedBytes": 24,
+      "rawValidBytes": 24,
+      "traceSha256": "461d0ec620f5392825179961622e9aa42455304e9419c6cfc73967eae09c326d",
+      "run": "inspection-utf8-crlf-boundary",
+      "passed": true,
+      "events": 4,
+      "admittedBytes": 24,
+      "deliveries": 1
+    },
+    {
+      "selectedBytes": 11,
+      "rawValidBytes": 11,
+      "traceSha256": "92432f73cc762606309609a61369128b3d8ba99930fb2e2f20e55635cc20f8b2",
+      "run": "inspection-fresh-session-reset",
+      "passed": true,
+      "events": 4,
+      "admittedBytes": 11,
+      "deliveries": 1
+    },
+    {
+      "selectedBytes": 144,
+      "rawValidBytes": 144,
+      "traceSha256": "0ab2ea04502e701eef27c7b9d59d8f99eab63060cc9a0c4189b18361d5ac10f4",
+      "run": "noninspection-results-visible-over-budget",
+      "passed": true,
+      "events": 8,
+      "admittedBytes": 0,
+      "deliveries": 3
+    },
+    {
+      "selectedBytes": 347,
+      "rawValidBytes": 22,
+      "traceSha256": "a1902266e68f5c2ed0fc92225b2809fdb99fa7a1161987df714d0c76b45dbe8b",
+      "run": "inspection-profile-classifier",
+      "passed": true,
+      "events": 6,
+      "admittedBytes": 0,
+      "deliveries": 2
+    },
+    {
+      "selectedBytes": 11,
+      "rawValidBytes": 11,
+      "traceSha256": "de460e64488dafde338e9a3d4d19752fa659b7720bf1f4835db1baee82b27cd9",
+      "run": "conventional-profile-classifier",
+      "passed": true,
+      "events": 4,
+      "admittedBytes": 11,
+      "deliveries": 1
+    },
+    {
+      "selectedBytes": 245,
+      "rawValidBytes": 0,
+      "traceSha256": "bb23c3ffdc03e6eeac8f044abf7d8ca96cf324dc0665ce1fd72e46cb882b12ee",
+      "run": "terminal-control-accounting",
+      "passed": true,
+      "events": 5,
+      "admittedBytes": 0,
+      "deliveries": 1
+    },
+    {
+      "selectedBytes": 466,
+      "rawValidBytes": 11,
+      "traceSha256": "54251b3bab0679f00807927803c7430c7998fbd02c2562d4d416112a3a59bad6",
+      "run": "valid-response-before-write-timeout",
+      "passed": true,
+      "events": 4,
+      "admittedBytes": 0,
+      "deliveries": 1
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "rawFramesChecked": 12,
+  "byteAddressedArtifactHashesChecked": 3,
+  "shared": 1481.0,
+  "full": 5039.0,
+  "compact": 5505.0,
+  "cap": 16000,
+  "scope": "Raw base64 length, CR/LF framing, strict UTF8/valid successful JSON, derived prefix sums and artifact hash pins; no actor outcome."
+}

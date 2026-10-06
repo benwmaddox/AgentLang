@@ -1,0 +1,5 @@
+{"op":"test-all"}
+{"op":"describe","word":"customer.discounted-balance"}
+{"op":"describe","word":"subscription.annual-renewable?"}
+{"op":"context","maxDepth":4,"word":"customer.discounted-balance","maxWords":16,"maxUtf8Bytes":6000}
+{"op":"context","maxDepth":4,"word":"subscription.annual-renewable?","maxWords":16,"maxUtf8Bytes":6000}

@@ -9,3 +9,9 @@ experiments/AgentLang.SubagentTrials/matched-renewal-001/flow-renewal-acceptance
 experiments/AgentLang.SubagentTrials/early-flow-001/acceptance.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 experiments/AgentLang.SubagentTrials/early-flow-001/runs/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 experiments/AgentLang.SubagentTrials/early-flow-002/runs/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+# Selective-retrieval preflight and trial evidence is also byte-addressed.
+reports/evidence/066-*preflight*.jsonl -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+reports/evidence/066-raw-preflight-frames.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+reports/evidence/066-focused-host.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+reports/evidence/066-local-subagent-host.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+experiments/AgentLang.SubagentTrials/selective-flow-001/runs/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

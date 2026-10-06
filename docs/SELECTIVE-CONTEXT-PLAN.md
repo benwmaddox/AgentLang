@@ -1,8 +1,9 @@
 # Selective context and external-agent evaluation
 
-Status: callable-context prerequisite verified in
-[report 065](../reports/065-callable-compact-context.md); retrieval-budget and
-evaluation work remains planned, 2026-10-06. This follows the completed
+Status: callable context verified in
+[report 065](../reports/065-callable-compact-context.md) and inspection admission
+locally verified in [report 066](../reports/066-inspection-response-budget.md);
+evaluation remains planned, 2026-10-06. This follows the completed
 [rotated repeat](../reports/064-repeat-agent-purpose-review.md). The full PRD
 remains open; this plan advances context generation and evaluation without
 changing language semantics or adopting a native/memory backend.
@@ -38,7 +39,7 @@ The HTTP harness already caps complete prepared provider-request bytes. That
 does not control an external Codex subagent's model window. The trial host has
 per-line request/response and exchange limits, but no aggregate retrieval cap.
 
-A later optional cap should apply to a documented, audited set of inspection
+The optional cap applies to a documented, audited set of inspection
 operations. Admit complete runtime responses, including their diagnostics,
 atomically. Preserve raw responses in the forensic trace when a fixed host
 budget-denial response is selected. Never hide mutation, test or validation
@@ -78,3 +79,9 @@ unavailable unless the subagent interface supplies it. The PRD's 2k–32k model-
 context comparisons and success criteria are not satisfied by this plan alone.
 Broader domain, small-context outcomes and controlled cost evidence remain
 required after this prerequisite.
+
+The [matched retrieval study](SELECTIVE-RETRIEVAL-STUDY.md) is the next bounded
+outcome comparison: four fresh actors on one common retained-vocabulary task,
+same allowlist and 16,000-byte inspection allowance, with Full/Compact guidance
+and detailed fallback allowed. The starting-state audit and metadata preflight
+are preparation only; actual trials wait for the published budget host's pin.

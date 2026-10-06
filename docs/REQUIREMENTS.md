@@ -80,6 +80,13 @@ local Release gate. Clean publication CI for 064 also passed all 32 checks on
 3b8dcd5. This is a selective-retrieval interface prerequisite; aggregate host
 retrieval limits and smaller-context agent outcomes remain pending.
 
+[Checkpoint 066](../reports/066-inspection-response-budget.md) locally verifies
+optional cumulative inspection admission and separate raw/selected/post-flush
+accounting. The fresh 32-check Release gate includes 33 focused host checks;
+trace-derived counters pass across 14 enabled sessions. The four-actor matched
+retrieval study is prepared but not executed. This application byte budget does
+not establish model-token or context-window limits.
+
 Latest external-agent workflow evidence: [report 054](../reports/054-flow-renewal-agent-control.md)
 records a separate inherited-history Luna/max control that created one tested
 library word by composing a retained domain word. Fresh-process acceptance
@@ -168,7 +175,7 @@ Standalone backend and baseline-audit evidence: [milestone 008](../reports/008-s
 | 39 | Verified: typed local bindings | Local/branch joins and demo checks |
 | 40 | Verified: deterministic structural search | Exact nested nominal input/output types, declared effects and direct dependency queries; no embeddings |
 | 41 | Verified: compact bounded dependency/type context | Complete JSON entries, parser-verified call references, recursive nominal declarations, concise docs, hard budgets/omissions and exact transported data bytes; not inferred task relevance |
-| 42 | Partial: context/token accounting | Harness records complete prepared/sent request bytes and returned provider usage; exact token budget/retrieval breakdown pending |
+| 42 | Partial: context/token accounting | Harness request bytes/provider usage and optional subagent inspection admission with raw/selected/pipe-delivery counters verified; exact model-token budget/retrieval breakdown pending |
 | 43 | Partial: complete small-business fixture | Customer language demo, conventional reference and standalone typed fixture contract; full language domain, matched adapters, 40–60 words and 50–100 tests pending |
 | 44 | Excluded from first domain: optional later simulation | Preserve for later generalization, not a V1 blocker |
 | 45 | Partial: equivalent conventional environment | Small Flow/F# fixtures and shared task vectors audited in report 057; full business fixture parity pending |

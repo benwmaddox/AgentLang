@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "checkedUtc": "2026-10-06T19:31:17.4140164+00:00",
+  "coordinatorRevision": "d691592dbef2127c5aa2e31241e00ace3ece55d4",
+  "seed": "experiments/AgentLang.SubagentTrials/early-flow-002/runs/repeat-001/growing-task-3/final-project",
+  "inventory": "experiments/AgentLang.SubagentTrials/early-flow-002/runs/repeat-001/growing-task-4/starting-state.json",
+  "inventorySha256": "413df8fbca67708b696a63b6c1f0f2593191449fd53891f2a85f21bd86b7f5aa",
+  "matchedFiles": 33,
+  "passed": true,
+  "scope": "Exact file count, byte lengths and SHA256 were checked against the archived task4 starting inventory; no new runtime or agent outcome is implied."
+}

@@ -51,6 +51,53 @@ include it. A configured request limit is at most 512 KiB, a response limit is
 at most 1 MiB, the deadline is at most 120 seconds, and a session is limited
 to 100 exchanges. The default maximum runtime response is 512 KiB.
 
+## Optional cumulative inspection budget
+
+`MaxInspectionResponseBytes` is an optional nonnegative cumulative budget over
+complete runtime inspection response payloads. Omit it for the unchanged
+schema-1 relay. An explicit zero enables the budget and denies inspection before
+forwarding; it differs from omission. The budget excludes the terminating LF,
+includes a preceding CR when present, and counts runtime diagnostics as well as
+successful inspection data. Complete responses are admitted atomically; the
+broker never truncates JSON to fit. The separate per-line response limit still
+applies first.
+
+The host classifies operations, independently of request fields. Conventional
+inspection is `inspect`, `read` and `search`. AgentLang inspection includes word,
+type, dependency and source queries, bounded context/graph queries, metadata
+tests/examples listings, history/diff, task/status logs, storage status and
+stack inspection. `failed-tests` executes tests and is excluded, as are
+`test`, `test-all`, example execution, eval, definitions, commits, snapshots and
+all mutations. Inspection can still record task bookkeeping; it does not promise
+zero host-state changes.
+
+When no allowance remains, `TRIAL_INSPECTION_BUDGET_EXHAUSTED` reports a query
+that was not sent or executed. When a complete valid response exceeds a positive
+remaining allowance, `TRIAL_INSPECTION_BUDGET_EXCEEDED` replaces the agent-facing
+response while the raw runtime response remains in the trace. The query was
+observed to finish; denial does not imply rollback. Noninspection results stay
+visible regardless of the remaining inspection allowance. Timeout, invalid JSON,
+oversized responses and other uncertain execution keep their existing handling;
+the host never automatically replays a request.
+
+Enabled sessions use trace schema 2 and distinguish raw runtime payloads,
+selected host responses, admitted inspection payloads, noninspection payloads
+and host denial/control responses. A post-flush `response-delivered` event
+records successful pipe delivery, separately from selection before the write.
+It does not establish model consumption. The cap does not bound total agent
+input: tests/mutations, denial responses and the actor's supplied instructions
+are outside it. Do not describe these bytes as tokens or a model context window.
+
+In schema 2, an exchange's `observedRuntimeResponse` retains complete valid
+runtime payloads, including withheld ones, with payload/wire hashes and base64.
+The existing `response` field is the selected line before the stdout write.
+`inspectionBudget` records classification, admission decision and before/after
+allowance. `responseAccounting` separates raw valid runtime bytes, selected
+bytes, admitted inspection bytes, noninspection runtime bytes, host control
+bytes and post-flush pipe delivery totals. The terminal `session-end` includes
+the final counters. Partial or invalid observed responses keep their existing
+forensic completeness flags and do not consume inspection admission.
+
 ## Profiles and host arguments
 
 `agentlang` is the default profile. It supplies the fixed clock and, when

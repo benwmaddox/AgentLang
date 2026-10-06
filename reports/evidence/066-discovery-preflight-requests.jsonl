@@ -1,0 +1,7 @@
+{"op":"words","compact":true}
+{"op":"search","query":"customer"}
+{"op":"search","query":"subscription"}
+{"op":"source","word":"customer.discounted-balance"}
+{"op":"source","word":"subscription.annual-renewable?"}
+{"op":"dependencies","word":"customer.discounted-balance"}
+{"op":"dependencies","word":"subscription.annual-renewable?"}

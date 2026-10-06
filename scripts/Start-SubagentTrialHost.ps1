@@ -11,6 +11,7 @@ param(
     [string]$ClockValue = '2000-01-01T00:00:00Z',
     [ValidateRange(1, 524288)][int]$MaxRequestBytes = 262144,
     [ValidateRange(1, 1048576)][int]$MaxResponseBytes = 524288,
+    [Nullable[long]]$MaxInspectionResponseBytes = $null,
     [ValidateRange(1, 120000)][int]$ExchangeTimeoutMilliseconds = 15000,
     [ValidateRange(1, 100)][int]$MaxExchanges = 100
 )
@@ -112,6 +113,65 @@ namespace AgentLang.SubagentTrialHost
         public long TotalBytes;
     }
 
+    internal sealed class ResponseAccounting
+    {
+        public long RawValidRuntimeResponsePayloadUtf8Bytes { get; private set; }
+        public long SelectedResponsePayloadUtf8Bytes { get; private set; }
+        public long AdmittedInspectionPayloadUtf8Bytes { get; private set; }
+        public long NonInspectionRuntimeResponsePayloadUtf8Bytes { get; private set; }
+        public long HostDenialControlResponsePayloadUtf8Bytes { get; private set; }
+        public long StdoutPipeDeliveredResponseCount { get; private set; }
+        public long StdoutPipeDeliveredResponsePayloadUtf8Bytes { get; private set; }
+        public long StdoutPipeDeliveredResponseWireUtf8Bytes { get; private set; }
+
+        public void RecordExchange(long rawValidRuntimePayloadBytes, bool inspection, long admittedInspectionBytes,
+            long selectedPayloadBytes, bool selectedHostControlResponse)
+        {
+            RawValidRuntimeResponsePayloadUtf8Bytes = Add(RawValidRuntimeResponsePayloadUtf8Bytes, rawValidRuntimePayloadBytes);
+            if (inspection)
+                AdmittedInspectionPayloadUtf8Bytes = Add(AdmittedInspectionPayloadUtf8Bytes, admittedInspectionBytes);
+            else
+                NonInspectionRuntimeResponsePayloadUtf8Bytes = Add(NonInspectionRuntimeResponsePayloadUtf8Bytes, rawValidRuntimePayloadBytes);
+            SelectedResponsePayloadUtf8Bytes = Add(SelectedResponsePayloadUtf8Bytes, selectedPayloadBytes);
+            if (selectedHostControlResponse)
+                HostDenialControlResponsePayloadUtf8Bytes = Add(HostDenialControlResponsePayloadUtf8Bytes, selectedPayloadBytes);
+        }
+
+        public void RecordTerminalHostResponse(long selectedPayloadBytes)
+        {
+            SelectedResponsePayloadUtf8Bytes = Add(SelectedResponsePayloadUtf8Bytes, selectedPayloadBytes);
+            HostDenialControlResponsePayloadUtf8Bytes = Add(HostDenialControlResponsePayloadUtf8Bytes, selectedPayloadBytes);
+        }
+
+        public void RecordPipeDelivery(long payloadBytes, long wireBytes)
+        {
+            StdoutPipeDeliveredResponseCount = Add(StdoutPipeDeliveredResponseCount, 1);
+            StdoutPipeDeliveredResponsePayloadUtf8Bytes = Add(StdoutPipeDeliveredResponsePayloadUtf8Bytes, payloadBytes);
+            StdoutPipeDeliveredResponseWireUtf8Bytes = Add(StdoutPipeDeliveredResponseWireUtf8Bytes, wireBytes);
+        }
+
+        public object Snapshot()
+        {
+            return new Dictionary<string, object> {
+                ["rawValidRuntimeResponsePayloadUtf8Bytes"] = RawValidRuntimeResponsePayloadUtf8Bytes,
+                ["selectedResponsePayloadUtf8Bytes"] = SelectedResponsePayloadUtf8Bytes,
+                ["admittedInspectionPayloadUtf8Bytes"] = AdmittedInspectionPayloadUtf8Bytes,
+                ["nonInspectionRuntimeResponsePayloadUtf8Bytes"] = NonInspectionRuntimeResponsePayloadUtf8Bytes,
+                ["hostDenialControlResponsePayloadUtf8Bytes"] = HostDenialControlResponsePayloadUtf8Bytes,
+                ["stdoutPipeDeliveredResponseCount"] = StdoutPipeDeliveredResponseCount,
+                ["stdoutPipeDeliveredResponsePayloadUtf8Bytes"] = StdoutPipeDeliveredResponsePayloadUtf8Bytes,
+                ["stdoutPipeDeliveredResponseWireUtf8Bytes"] = StdoutPipeDeliveredResponseWireUtf8Bytes,
+                ["pipeDeliveryMeaning"] = "A response-delivered event means the host stdout write and flush completed; it does not establish model-context consumption."
+            };
+        }
+
+        private static long Add(long current, long value)
+        {
+            if (value <= 0) return current;
+            return current > Int64.MaxValue - value ? Int64.MaxValue : current + value;
+        }
+    }
+
     public static class TrialHost
     {
         private static readonly UTF8Encoding StrictUtf8 = new UTF8Encoding(false, true);
@@ -120,10 +180,19 @@ namespace AgentLang.SubagentTrialHost
             "fs.read", "fs.write", "db.read", "db.write", "network.read", "network.write",
             "process.execute", "clock.read", "random.read", "console.write"
         };
+        private static readonly string[] CommonInspectionOperations = new string[] { "inspect", "read", "search" };
+        private static readonly string[] AuditedAgentLangInspectionOperations = new string[] {
+            "words", "describe", "type-of", "search-type", "search-output", "search-effect", "search-dependency",
+            "transitive-dependencies", "transitive-callers", "graph", "context", "source", "dependencies", "callers",
+            "effects", "ir", "tests", "examples", "history", "diff", "task.status", "task.log", "storage.status", "stack"
+        };
+        private const string InspectionClassifierVersion = "trial-host-inspection-v1";
+        private const string InspectionBudgetExhaustedMessage = "The cumulative inspection response budget is exhausted; this inspection request was not forwarded.";
+        private const string InspectionBudgetExceededMessage = "The complete inspection response exceeded the remaining cumulative budget; the response was withheld after execution.";
 
         public static int Run(string cliDll, string projectPath, string tracePath, string[] allowedOperations,
             string profile, string[] additionalCliArguments, string[] capabilities, string clockValue, int maxRequestBytes, int maxResponseBytes,
-            int timeoutMilliseconds, int maxExchanges)
+            long? maxInspectionResponseBytes, int timeoutMilliseconds, int maxExchanges)
         {
             Process process = null;
             JobObject job = null;
@@ -139,16 +208,18 @@ namespace AgentLang.SubagentTrialHost
             try
             {
                 ValidateConfiguration(ref cliDll, ref projectPath, ref tracePath, allowedOperations,
-                    profile, additionalCliArguments, capabilities, clockValue, maxRequestBytes, maxResponseBytes, timeoutMilliseconds, maxExchanges);
+                    profile, additionalCliArguments, capabilities, clockValue, maxRequestBytes, maxResponseBytes,
+                    maxInspectionResponseBytes, timeoutMilliseconds, maxExchanges);
                 trace = new TraceFile(tracePath);
                 job = JobObject.Create();
                 process = StartRuntime(cliDll, projectPath, capabilities, clockValue, profile, additionalCliArguments);
                 job.Assign(process.Handle);
                 stderrTask = DrainStderrAsync(process.StandardError.BaseStream, 8192);
 
-                trace.Write(new Dictionary<string, object> {
+                var accounting = maxInspectionResponseBytes.HasValue ? new ResponseAccounting() : null;
+                var sessionStart = new Dictionary<string, object> {
                     ["event"] = "session-start",
-                    ["schemaVersion"] = 1,
+                    ["schemaVersion"] = accounting == null ? 1 : 2,
                     ["startedUtc"] = DateTimeOffset.UtcNow.ToString("O"),
                     ["hostProcessId"] = Process.GetCurrentProcess().Id,
                     ["runtimeProcessId"] = process.Id,
@@ -169,7 +240,13 @@ namespace AgentLang.SubagentTrialHost
                         ["maxExchanges"] = maxExchanges
                     },
                     ["cleanup"] = "Windows job object kill-on-close plus explicit process cleanup"
-                });
+                };
+                if (accounting != null)
+                {
+                    sessionStart["inspectionBudget"] = InspectionBudgetMetadata(maxInspectionResponseBytes.Value, profile);
+                    sessionStart["responseAccounting"] = accounting.Snapshot();
+                }
+                trace.Write(sessionStart);
 
                 Console.CancelKeyPress += cancelHandler;
                 var inputReader = new BoundedLineReader(Console.OpenStandardInput());
@@ -185,7 +262,8 @@ namespace AgentLang.SubagentTrialHost
                     var winner = Task.WhenAny(readTask, cancelled.Task).GetAwaiter().GetResult();
                     if (winner == cancelled.Task)
                     {
-                        WriteHostResponse(output, "TRIAL_CANCELLED", "The trial host was cancelled; the runtime process is stopping.");
+                        WriteAccountedHostResponse(output, trace, "TRIAL_CANCELLED", "The trial host was cancelled; the runtime process is stopping.",
+                            "cancelled-before-request", exchangeCount, accounting);
                         trace.Write(new Dictionary<string, object> {
                             ["event"] = "host-cancelled",
                             ["atUtc"] = DateTimeOffset.UtcNow.ToString("O"),
@@ -199,7 +277,8 @@ namespace AgentLang.SubagentTrialHost
                     try { requestFrame = readTask.GetAwaiter().GetResult(); }
                     catch (LineLimitException limitError)
                     {
-                        WriteHostResponse(output, "TRIAL_REQUEST_TOO_LARGE", "The request line exceeded the configured byte limit; the session is closing.");
+                        WriteAccountedHostResponse(output, trace, "TRIAL_REQUEST_TOO_LARGE", "The request line exceeded the configured byte limit; the session is closing.",
+                            "oversized-request", exchangeCount, accounting);
                         trace.Write(new Dictionary<string, object> {
                             ["event"] = "request-rejected",
                             ["atUtc"] = DateTimeOffset.UtcNow.ToString("O"),
@@ -232,7 +311,8 @@ namespace AgentLang.SubagentTrialHost
 
                     if (!requestFrame.Terminated)
                     {
-                        WriteHostResponse(output, "TRIAL_UNTERMINATED_REQUEST", "JSONL requests must end with LF; the unterminated final request was not forwarded.");
+                        WriteAccountedHostResponse(output, trace, "TRIAL_UNTERMINATED_REQUEST", "JSONL requests must end with LF; the unterminated final request was not forwarded.",
+                            "unterminated-request", exchangeCount, accounting);
                         trace.Write(new Dictionary<string, object> {
                             ["event"] = "request-rejected",
                             ["atUtc"] = DateTimeOffset.UtcNow.ToString("O"),
@@ -248,7 +328,8 @@ namespace AgentLang.SubagentTrialHost
                     exchangeCount++;
                     if (exchangeCount > maxExchanges)
                     {
-                        WriteHostResponse(output, "TRIAL_EXCHANGE_LIMIT", "The session exceeded its configured exchange limit and is closing.");
+                        WriteAccountedHostResponse(output, trace, "TRIAL_EXCHANGE_LIMIT", "The session exceeded its configured exchange limit and is closing.",
+                            "exchange-limit", exchangeCount, accounting);
                         trace.Write(new Dictionary<string, object> {
                             ["event"] = "exchange-rejected",
                             ["atUtc"] = DateTimeOffset.UtcNow.ToString("O"),
@@ -307,6 +388,17 @@ namespace AgentLang.SubagentTrialHost
                         requestErrorMessage = "Operation is not in the trial host's allowed protocol operation set.";
                     }
 
+                    bool inspectionOperation = accounting != null && IsInspectionOperation(profile, op);
+                    long admittedInspectionBeforeBytes = accounting == null ? 0 : accounting.AdmittedInspectionPayloadUtf8Bytes;
+                    long inspectionRemainingBeforeBytes = accounting == null ? 0 : maxInspectionResponseBytes.Value - admittedInspectionBeforeBytes;
+                    string inspectionBudgetDecision = "not-applicable";
+                    if (requestErrorCode == null && inspectionOperation && inspectionRemainingBeforeBytes == 0)
+                    {
+                        requestErrorCode = "TRIAL_INSPECTION_BUDGET_EXHAUSTED";
+                        requestErrorMessage = InspectionBudgetExhaustedMessage;
+                        inspectionBudgetDecision = "rejected-before-forwarding";
+                    }
+
                     var stopwatch = Stopwatch.StartNew();
                     byte[] responseBytes = null;
                     string responseSource = "runtime";
@@ -320,12 +412,17 @@ namespace AgentLang.SubagentTrialHost
                     byte[] observedResponseBytes = null;
                     bool? observedResponseComplete = null;
                     bool? observedResponseValidJson = null;
+                    byte[] rawRuntimeResponseBytes = null;
+                    string rawRuntimeCanonicalResponse = null;
+                    bool rawRuntimeResponseValid = false;
+                    bool admittedInspectionResponse = false;
                     bool terminate = false;
 
                     if (requestErrorCode != null)
                     {
                         responseSource = "host";
-                        outcome = requestErrorCode == "TRIAL_OPERATION_DENIED" ? "denied" : "malformed";
+                        outcome = requestErrorCode == "TRIAL_OPERATION_DENIED" ? "denied" :
+                            requestErrorCode == "TRIAL_INSPECTION_BUDGET_EXHAUSTED" ? "inspection-budget-exhausted" : "malformed";
                         responseBytes = MakeErrorResponse(requestErrorCode, requestErrorMessage);
                         canonicalResponse = CanonicalizeUtf8(responseBytes);
                     }
@@ -354,6 +451,7 @@ namespace AgentLang.SubagentTrialHost
                             {
                                 responseSource = "host";
                                 outcome = "cancelled";
+                                executionState = "uncertain";
                                 requestErrorCode = "TRIAL_CANCELLED";
                                 requestErrorMessage = "The trial host was cancelled during request delivery or response wait. Execution outcome is uncertain; do not retry automatically, inspect persisted project state first.";
                                 if (writeTask.Status == TaskStatus.RanToCompletion)
@@ -362,6 +460,8 @@ namespace AgentLang.SubagentTrialHost
                                     confirmedRequestBytes = wireRequest.Length;
                                 }
                                 observedResponseBytes = CapturePendingRuntimeResponse(responseReadTask, runtimeOutputReader, out observedResponseComplete);
+                                CaptureValidObservedRuntimeResponse(observedResponseBytes, observedResponseComplete, accounting != null,
+                                    ref rawRuntimeResponseBytes, ref rawRuntimeCanonicalResponse, ref rawRuntimeResponseValid, ref observedResponseValidJson);
                                 responseBytes = MakeErrorResponse(requestErrorCode, requestErrorMessage);
                                 canonicalResponse = CanonicalizeUtf8(responseBytes);
                                 terminate = true;
@@ -371,6 +471,7 @@ namespace AgentLang.SubagentTrialHost
                             {
                                 responseSource = "host";
                                 outcome = "timeout";
+                                executionState = "uncertain";
                                 requestErrorCode = "TRIAL_EXCHANGE_TIMEOUT";
                                 requestErrorMessage = "Request delivery and response did not both complete before the single exchange deadline. Execution outcome is uncertain; do not retry automatically, inspect persisted project state first.";
                                 if (writeTask.Status == TaskStatus.RanToCompletion)
@@ -379,6 +480,8 @@ namespace AgentLang.SubagentTrialHost
                                     confirmedRequestBytes = wireRequest.Length;
                                 }
                                 observedResponseBytes = CapturePendingRuntimeResponse(responseReadTask, runtimeOutputReader, out observedResponseComplete);
+                                CaptureValidObservedRuntimeResponse(observedResponseBytes, observedResponseComplete, accounting != null,
+                                    ref rawRuntimeResponseBytes, ref rawRuntimeCanonicalResponse, ref rawRuntimeResponseValid, ref observedResponseValidJson);
                                 responseBytes = MakeErrorResponse(requestErrorCode, requestErrorMessage);
                                 canonicalResponse = CanonicalizeUtf8(responseBytes);
                                 terminate = true;
@@ -398,8 +501,15 @@ namespace AgentLang.SubagentTrialHost
                                     transportError = ex;
                                     responseSource = "host";
                                     outcome = "child-exited";
+                                    executionState = "uncertain";
                                     requestErrorCode = "TRIAL_CHILD_EXITED";
                                     requestErrorMessage = "The runtime process exited or stopped accepting input before the complete request was delivered. Execution outcome is uncertain; do not retry automatically, inspect persisted project state first.";
+                                    if (accounting != null)
+                                    {
+                                        observedResponseBytes = CapturePendingRuntimeResponse(responseReadTask, runtimeOutputReader, out observedResponseComplete);
+                                        CaptureValidObservedRuntimeResponse(observedResponseBytes, observedResponseComplete, true,
+                                            ref rawRuntimeResponseBytes, ref rawRuntimeCanonicalResponse, ref rawRuntimeResponseValid, ref observedResponseValidJson);
+                                    }
                                     responseBytes = MakeErrorResponse(requestErrorCode, requestErrorMessage);
                                     canonicalResponse = CanonicalizeUtf8(responseBytes);
                                     terminate = true;
@@ -447,6 +557,15 @@ namespace AgentLang.SubagentTrialHost
                                     {
                                         canonicalResponse = CanonicalizeUtf8(responseBytes);
                                         executionState = "response-observed";
+                                        if (accounting != null)
+                                        {
+                                            rawRuntimeResponseBytes = runtimeFrame.Data;
+                                            rawRuntimeCanonicalResponse = canonicalResponse;
+                                            rawRuntimeResponseValid = true;
+                                            observedResponseBytes = runtimeFrame.Data;
+                                            observedResponseComplete = true;
+                                            observedResponseValidJson = true;
+                                        }
                                     }
                                     catch (Exception ex)
                                     {
@@ -467,11 +586,36 @@ namespace AgentLang.SubagentTrialHost
                                 }
                             }
                         }
+
+                        if (!terminate && requestErrorCode == null && inspectionOperation && rawRuntimeResponseValid)
+                        {
+                            if ((long)rawRuntimeResponseBytes.Length > inspectionRemainingBeforeBytes)
+                            {
+                                responseSource = "host";
+                                outcome = "inspection-budget-exceeded";
+                                requestErrorCode = "TRIAL_INSPECTION_BUDGET_EXCEEDED";
+                                requestErrorMessage = InspectionBudgetExceededMessage;
+                                inspectionBudgetDecision = "withheld-after-response";
+                                responseBytes = MakeErrorResponse(requestErrorCode, requestErrorMessage);
+                                canonicalResponse = CanonicalizeUtf8(responseBytes);
+                            }
+                            else
+                            {
+                                admittedInspectionResponse = true;
+                                inspectionBudgetDecision = "admitted";
+                            }
+                        }
                     }
 
                     stopwatch.Stop();
                     var requestWireBytes = wireRequest;
                     var responseWireBytes = WithLf(responseBytes);
+                    long rawValidRuntimePayloadBytes = rawRuntimeResponseValid ? rawRuntimeResponseBytes.Length : 0;
+                    long admittedInspectionPayloadBytes = admittedInspectionResponse ? rawRuntimeResponseBytes.Length : 0;
+                    if (accounting != null)
+                        accounting.RecordExchange(rawValidRuntimePayloadBytes, inspectionOperation, admittedInspectionPayloadBytes,
+                            responseBytes.Length, responseSource == "host");
+                    long admittedInspectionAfterBytes = accounting == null ? 0 : accounting.AdmittedInspectionPayloadUtf8Bytes;
                     var record = new Dictionary<string, object> {
                         ["event"] = "exchange",
                         ["index"] = exchangeCount,
@@ -515,10 +659,57 @@ namespace AgentLang.SubagentTrialHost
                         ["errorCode"] = requestErrorCode,
                         ["errorMessage"] = requestErrorMessage
                     };
+                    if (accounting != null)
+                    {
+                        if (inspectionOperation && rawRuntimeResponseValid && !admittedInspectionResponse &&
+                            inspectionBudgetDecision == "not-applicable")
+                            inspectionBudgetDecision = "observed-not-admitted-uncertain";
+                        var observed = record["observedRuntimeResponse"] as Dictionary<string, object>;
+                        if (observed != null && rawRuntimeResponseValid)
+                        {
+                            observed["canonical"] = rawRuntimeCanonicalResponse;
+                            observed["wireUtf8Bytes"] = rawRuntimeResponseBytes.Length + 1;
+                            observed["wireSha256"] = Sha256(WithLf(rawRuntimeResponseBytes));
+                            observed["wireBase64"] = Convert.ToBase64String(WithLf(rawRuntimeResponseBytes));
+                        }
+                        ((Dictionary<string, object>)record["response"])["payloadSha256"] = Sha256(responseBytes);
+                        record["inspectionBudget"] = new Dictionary<string, object> {
+                            ["classifierVersion"] = InspectionClassifierVersion,
+                            ["operationClass"] = inspectionOperation ? "inspection" : "non-inspection",
+                            ["decision"] = inspectionBudgetDecision,
+                            ["maximumPayloadUtf8Bytes"] = maxInspectionResponseBytes.Value,
+                            ["admittedBeforePayloadUtf8Bytes"] = admittedInspectionBeforeBytes,
+                            ["remainingBeforePayloadUtf8Bytes"] = inspectionRemainingBeforeBytes,
+                            ["rawRuntimeResponsePayloadUtf8Bytes"] = rawRuntimeResponseValid ? (object)rawRuntimeResponseBytes.Length : null,
+                            ["admittedPayloadUtf8Bytes"] = admittedInspectionPayloadBytes,
+                            ["admittedAfterPayloadUtf8Bytes"] = admittedInspectionAfterBytes,
+                            ["remainingAfterPayloadUtf8Bytes"] = maxInspectionResponseBytes.Value - admittedInspectionAfterBytes
+                        };
+                        record["responseAccounting"] = accounting.Snapshot();
+                    }
                     trace.Write(record);
                     output.Write(responseBytes, 0, responseBytes.Length);
                     output.WriteByte(10);
                     output.Flush();
+                    if (accounting != null)
+                    {
+                        accounting.RecordPipeDelivery(responseBytes.Length, responseWireBytes.Length);
+                        trace.Write(new Dictionary<string, object> {
+                            ["event"] = "response-delivered",
+                            ["schemaVersion"] = 2,
+                            ["index"] = exchangeCount,
+                            ["atUtc"] = DateTimeOffset.UtcNow.ToString("O"),
+                            ["source"] = responseSource,
+                            ["pipeWriteFlushCompleted"] = true,
+                            ["selectedResponse"] = new Dictionary<string, object> {
+                                ["payloadUtf8Bytes"] = responseBytes.Length,
+                                ["payloadSha256"] = Sha256(responseBytes),
+                                ["wireUtf8Bytes"] = responseWireBytes.Length,
+                                ["wireSha256"] = Sha256(responseWireBytes)
+                            },
+                            ["responseAccounting"] = accounting.Snapshot()
+                        });
+                    }
 
                     if (terminate) done = true;
                 }
@@ -534,7 +725,7 @@ namespace AgentLang.SubagentTrialHost
                     if (process.HasExited) childExitCode = process.ExitCode;
                 }
                 CapturedText stderr = GetCapturedStderr(stderrTask);
-                trace.Write(new Dictionary<string, object> {
+                var sessionEnd = new Dictionary<string, object> {
                     ["event"] = "session-end",
                     ["finishedUtc"] = DateTimeOffset.UtcNow.ToString("O"),
                     ["exchangeCount"] = exchangeCount,
@@ -544,7 +735,13 @@ namespace AgentLang.SubagentTrialHost
                     ["runtimeStderrTotalBytes"] = stderr.TotalBytes,
                     ["runtimeStderrPrefixSha256"] = Sha256(stderr.PrefixBytes),
                     ["runtimeStderrCaptureTruncated"] = stderr.TotalBytes > stderr.PrefixBytes.Length || (stderrTask != null && !stderrTask.IsCompleted)
-                });
+                };
+                if (accounting != null)
+                {
+                    sessionEnd["schemaVersion"] = 2;
+                    sessionEnd["responseAccounting"] = accounting.Snapshot();
+                }
+                trace.Write(sessionEnd);
                 return exitCode;
             }
             catch (Exception ex)
@@ -578,9 +775,11 @@ namespace AgentLang.SubagentTrialHost
 
         private static void ValidateConfiguration(ref string cliDll, ref string projectPath, ref string tracePath,
             string[] allowedOperations, string profile, string[] additionalCliArguments, string[] capabilities, string clockValue, int maxRequestBytes,
-            int maxResponseBytes, int timeoutMilliseconds, int maxExchanges)
+            int maxResponseBytes, long? maxInspectionResponseBytes, int timeoutMilliseconds, int maxExchanges)
         {
             AssertJobObjectLayout();
+            if (maxInspectionResponseBytes.HasValue && maxInspectionResponseBytes.Value < 0)
+                throw new ArgumentOutOfRangeException("maxInspectionResponseBytes", "Inspection response budget must be nonnegative.");
             if (String.IsNullOrWhiteSpace(cliDll) || String.IsNullOrWhiteSpace(projectPath) || String.IsNullOrWhiteSpace(tracePath))
                 throw new ArgumentException("CLI DLL, project path, and trace path are required.");
             cliDll = Path.GetFullPath(cliDll);
@@ -841,6 +1040,107 @@ namespace AgentLang.SubagentTrialHost
             return StrictUtf8.GetBytes(JsonSerializer.Serialize(response, CompactJson));
         }
 
+        private static string[] InspectionOperationsForProfile(string profile)
+        {
+            if (profile == "conventional") return CommonInspectionOperations.OrderBy(x => x, StringComparer.Ordinal).ToArray();
+            return new string[] { "search" }.Concat(AuditedAgentLangInspectionOperations).Distinct(StringComparer.Ordinal)
+                .OrderBy(x => x, StringComparer.Ordinal).ToArray();
+        }
+
+        private static bool IsInspectionOperation(string profile, string operation)
+        {
+            return operation != null && InspectionOperationsForProfile(profile).Contains(operation, StringComparer.Ordinal);
+        }
+
+        private static object InspectionBudgetMetadata(long maximumPayloadBytes, string profile)
+        {
+            return new Dictionary<string, object> {
+                ["classifierVersion"] = InspectionClassifierVersion,
+                ["profile"] = profile,
+                ["operations"] = InspectionOperationsForProfile(profile),
+                ["classificationRule"] = profile == "conventional"
+                    ? "Exact conventional inspect/read/search operation names are inspection."
+                    : "Exact audited AgentLang query operation names are inspection; failed-tests, test execution, example execution, evaluation, and mutations are excluded.",
+                ["maximumPayloadUtf8Bytes"] = maximumPayloadBytes,
+                ["payloadCounting"] = "Complete runtime response payload bytes before terminating LF; a preceding CR is included.",
+                ["admission"] = "Whole complete valid JSON runtime responses, including diagnostics, are admitted atomically when payload bytes are at most the remaining budget."
+            };
+        }
+
+        private static void CaptureValidObservedRuntimeResponse(byte[] bytes, bool? complete, bool accountingEnabled,
+            ref byte[] rawRuntimeResponseBytes, ref string rawRuntimeCanonicalResponse, ref bool rawRuntimeResponseValid,
+            ref bool? observedResponseValidJson)
+        {
+            if (!accountingEnabled || bytes == null || complete != true) return;
+            try
+            {
+                rawRuntimeCanonicalResponse = CanonicalizeUtf8(bytes);
+                rawRuntimeResponseBytes = bytes;
+                rawRuntimeResponseValid = true;
+                observedResponseValidJson = true;
+            }
+            catch
+            {
+                observedResponseValidJson = false;
+            }
+        }
+
+        private static void WriteAccountedHostResponse(Stream output, TraceFile trace, string code, string message,
+            string reason, int exchangeCount, ResponseAccounting accounting)
+        {
+            if (accounting == null)
+            {
+                WriteHostResponse(output, code, message);
+                return;
+            }
+
+            byte[] bytes = MakeErrorResponse(code, message);
+            byte[] wireBytes = WithLf(bytes);
+            string canonical = CanonicalizeUtf8(bytes);
+            accounting.RecordTerminalHostResponse(bytes.Length);
+            trace.Write(new Dictionary<string, object> {
+                ["event"] = "host-response-selected",
+                ["schemaVersion"] = 2,
+                ["atUtc"] = DateTimeOffset.UtcNow.ToString("O"),
+                ["scope"] = "terminal-control",
+                ["reason"] = reason,
+                ["exchangeCount"] = exchangeCount,
+                ["code"] = code,
+                ["selectedResponse"] = new Dictionary<string, object> {
+                    ["rawLine"] = TryDecode(bytes),
+                    ["canonical"] = canonical,
+                    ["wireBase64"] = Convert.ToBase64String(wireBytes),
+                    ["payloadUtf8Bytes"] = bytes.Length,
+                    ["wireUtf8Bytes"] = wireBytes.Length,
+                    ["payloadSha256"] = Sha256(bytes),
+                    ["wireSha256"] = Sha256(wireBytes)
+                },
+                ["responseAccounting"] = accounting.Snapshot()
+            });
+            output.Write(bytes, 0, bytes.Length);
+            output.WriteByte(10);
+            output.Flush();
+            accounting.RecordPipeDelivery(bytes.Length, wireBytes.Length);
+            trace.Write(new Dictionary<string, object> {
+                ["event"] = "response-delivered",
+                ["schemaVersion"] = 2,
+                ["index"] = null,
+                ["exchangeCount"] = exchangeCount,
+                ["atUtc"] = DateTimeOffset.UtcNow.ToString("O"),
+                ["source"] = "host",
+                ["scope"] = "terminal-control",
+                ["code"] = code,
+                ["pipeWriteFlushCompleted"] = true,
+                ["selectedResponse"] = new Dictionary<string, object> {
+                    ["payloadUtf8Bytes"] = bytes.Length,
+                    ["payloadSha256"] = Sha256(bytes),
+                    ["wireUtf8Bytes"] = wireBytes.Length,
+                    ["wireSha256"] = Sha256(wireBytes)
+                },
+                ["responseAccounting"] = accounting.Snapshot()
+            });
+        }
+
         private static void WriteHostResponse(Stream output, string code, string message)
         {
             byte[] bytes = MakeErrorResponse(code, message);
@@ -1076,7 +1376,7 @@ try {
     Add-Type -TypeDefinition $hostSource -Language CSharp
     $exitCode = [AgentLang.SubagentTrialHost.TrialHost]::Run(
         $CliDll, $ProjectPath, $TracePath, $allowed, $Profile, $AdditionalCliArguments, $Capabilities, $ClockValue,
-        $MaxRequestBytes, $MaxResponseBytes, $ExchangeTimeoutMilliseconds, $MaxExchanges)
+        $MaxRequestBytes, $MaxResponseBytes, $MaxInspectionResponseBytes, $ExchangeTimeoutMilliseconds, $MaxExchanges)
     exit $exitCode
 } catch {
     [Console]::Error.WriteLine(('TRIAL_HOST_CONFIGURATION_FAILURE: ' + $_.Exception.Message))
