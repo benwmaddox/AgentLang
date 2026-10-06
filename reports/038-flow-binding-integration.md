@@ -314,6 +314,25 @@ and the 31-assertion probe using the freshly built Core assembly. Saved
 [final gate](evidence/038-flow-binding-final-validation.json) and four companion
 files. This remains local dirty-checkout evidence, not committed CI proof.
 
+## Committed CI and publication
+
+Source milestone `cff4a2d8036c8c2f0c20ef4a5f7b30913a0a45a2` passed
+[exact committed CI](https://github.com/benwmaddox/AgentLang/actions/runs/37392039718).
+The downloaded artifact independently identifies that revision, a clean checkout,
+all 25 successful checks and no build warnings/errors. Saved
+[run identity](evidence/038-source-ci-run.json),
+[gate](evidence/038-source-ci-validation.json) and four companion outputs.
+The repository privacy check returned true before pushing. This reports-only
+publication updates the lowering document's final local-gate status and preserves
+the committed CI evidence; no executable files change after the validated source.
+Main integration uses a fast-forward, with no force push or worktree.
+
+The PRD also clarifies the optional static retained-state candidate: declared
+bounded layout may contain mutable data through typed explicit access, while the
+processing arena may contain the program-data stack. Scratch references cannot
+escape to retained state, queues or responses. This is research, not an allocator
+implemented by this milestone.
+
 ## Remaining full scope
 
 Authored binding capture/stability, complete attachments, versioned durable Flow
