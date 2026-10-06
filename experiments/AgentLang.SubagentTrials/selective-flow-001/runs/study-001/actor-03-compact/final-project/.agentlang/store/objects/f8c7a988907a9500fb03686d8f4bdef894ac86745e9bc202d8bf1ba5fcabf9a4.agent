@@ -1,0 +1,3 @@
+test customer.renewal-balance/standard-monthly-renewable {
+    customer::renewal-balance(customer::new("standard", 100.0), subscription::new("monthly", true)) => 100.0
+}

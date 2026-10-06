@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "agent": "/root/selective_full_04",
+  "model": "gpt-6-luna",
+  "reasoningEffort": "max",
+  "forkTurns": "none",
+  "hostSession": 62623,
+  "completionObserved": true,
+  "teardown": "Ctrl+C after completed actor response, same live session",
+  "exitCode": 0,
+  "extraProtocolRequests": 0,
+  "recordedUtc": "2026-10-06T20:35:43.6240111Z"
+}

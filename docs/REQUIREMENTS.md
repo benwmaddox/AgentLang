@@ -83,9 +83,17 @@ retrieval limits and smaller-context agent outcomes remain pending.
 [Checkpoint 066](../reports/066-inspection-response-budget.md) locally verifies
 optional cumulative inspection admission and separate raw/selected/post-flush
 accounting. The fresh 32-check Release gate includes 33 focused host checks;
-trace-derived counters pass across 14 enabled sessions. The four-actor matched
-retrieval study is prepared but not executed. This application byte budget does
-not establish model-token or context-window limits.
+trace-derived counters pass across 14 enabled sessions. Clean main CI at 94a2d7f
+subsequently passed all 32 checks. This application byte budget does not establish
+model-token or context-window limits.
+
+[Review 067](../reports/067-selective-retrieval-study.md) completes the matched
+four-actor selective-retrieval study on fresh pinned 94a2d7f binaries. All four
+pass 192 acceptance and 164 preservation checks, with 80 independent behavioral
+vectors and complete trace audits. Compact guidance used more inspection bytes
+(15,341 versus 13,739), with permitted detailed fallbacks. This demonstrates
+fresh-agent discovery/reuse and tested composition, not general efficiency or
+model-context benefits. Debugging/refactoring behavior is the next priority.
 
 Latest external-agent workflow evidence: [report 054](../reports/054-flow-renewal-agent-control.md)
 records a separate inherited-history Luna/max control that created one tested

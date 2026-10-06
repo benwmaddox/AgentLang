@@ -1,0 +1,144 @@
+{
+  "scope": "Four serial fresh Luna/max actors, identical seed/runtime/host/allowlist/inspection cap, ABBA guidance order. Fallbacks retained under assigned guidance. Protocol traffic only, no model usage or statistical generalization.",
+  "sourceRevision": "94a2d7f409eb7463654013e6a6bb3981ee0293a9",
+  "independentBehavioralVectors": 80,
+  "arms": [
+    {
+      "actors": 2,
+      "requestBytes": 4383.0,
+      "responseBytes": 21224.0,
+      "exchanges": 28.0,
+      "inspectionBytes": 13739.0,
+      "guidance": "full",
+      "errors": 0.0
+    },
+    {
+      "actors": 2,
+      "requestBytes": 4749.0,
+      "responseBytes": 21720.0,
+      "exchanges": 24.0,
+      "inspectionBytes": 15341.0,
+      "guidance": "compact",
+      "errors": 1.0
+    }
+  ],
+  "passed": true,
+  "schemaVersion": 1,
+  "preservationChecks": 164,
+  "actors": [
+    {
+      "responseBytes": 8607,
+      "requestBytes": 2074.0,
+      "actor": "actor-01-full",
+      "hostControlBytes": 0,
+      "guidance": "full",
+      "errors": 0,
+      "accepted": true,
+      "ownCoverage": {
+        "instructionsCovered": 10,
+        "instructionsTotal": 10,
+        "branchesCovered": 2,
+        "branchesTotal": 2,
+        "uncoveredInstructions": [],
+        "uncoveredBranchOutcomes": [],
+        "status": "current"
+      },
+      "selfTests": 6,
+      "traceSha256": "9929c83dcd30f194b0e0d294f118fc83aae28d7d98683b4eb5dee28fdb9a561b",
+      "inspectionBytes": 5594,
+      "dependencies": [
+        "customer.discounted-balance",
+        "float.multiply",
+        "subscription.annual-renewable?"
+      ],
+      "suppressedInspectionBytes": 0,
+      "exchanges": 11
+    },
+    {
+      "responseBytes": 12698,
+      "requestBytes": 2609.0,
+      "actor": "actor-02-compact",
+      "hostControlBytes": 0,
+      "guidance": "compact",
+      "errors": 0,
+      "accepted": true,
+      "ownCoverage": {
+        "instructionsCovered": 10,
+        "instructionsTotal": 10,
+        "branchesCovered": 2,
+        "branchesTotal": 2,
+        "uncoveredInstructions": [],
+        "uncoveredBranchOutcomes": [],
+        "status": "current"
+      },
+      "selfTests": 6,
+      "traceSha256": "bea4fda83c4e4072cb5335ff3ae64f1290c5b190b036677a14c685ab2fbc918f",
+      "inspectionBytes": 9011,
+      "dependencies": [
+        "customer.discounted-balance",
+        "float.multiply",
+        "subscription.annual-renewable?"
+      ],
+      "suppressedInspectionBytes": 0,
+      "exchanges": 13
+    },
+    {
+      "responseBytes": 9022,
+      "requestBytes": 2140.0,
+      "actor": "actor-03-compact",
+      "hostControlBytes": 0,
+      "guidance": "compact",
+      "errors": 1,
+      "accepted": true,
+      "ownCoverage": {
+        "instructionsCovered": 10,
+        "instructionsTotal": 10,
+        "branchesCovered": 2,
+        "branchesTotal": 2,
+        "uncoveredInstructions": [],
+        "uncoveredBranchOutcomes": [],
+        "status": "current"
+      },
+      "selfTests": 5,
+      "traceSha256": "805a9e8254daef355a98b84c6f2330ffb33b866fca7d8aba1b1a6c9f05477942",
+      "inspectionBytes": 6330,
+      "dependencies": [
+        "customer.discounted-balance",
+        "float.multiply",
+        "subscription.annual-renewable?"
+      ],
+      "suppressedInspectionBytes": 0,
+      "exchanges": 11
+    },
+    {
+      "responseBytes": 12617,
+      "requestBytes": 2309.0,
+      "actor": "actor-04-full",
+      "hostControlBytes": 0,
+      "guidance": "full",
+      "errors": 0,
+      "accepted": true,
+      "ownCoverage": {
+        "instructionsCovered": 10,
+        "instructionsTotal": 10,
+        "branchesCovered": 2,
+        "branchesTotal": 2,
+        "uncoveredInstructions": [],
+        "uncoveredBranchOutcomes": [],
+        "status": "current"
+      },
+      "selfTests": 5,
+      "traceSha256": "09bed0bb2e88af6cb258112780b88cfc2df83741cefda645c790402f4e76646d",
+      "inspectionBytes": 8145,
+      "dependencies": [
+        "customer.discounted-balance",
+        "float.multiply",
+        "subscription.annual-renewable?"
+      ],
+      "suppressedInspectionBytes": 0,
+      "exchanges": 17
+    }
+  ],
+  "acceptedTasks": 4,
+  "acceptanceChecks": 192
+}

@@ -1,0 +1,1 @@
+Coordinator preparation assertion used nonexistent data.passed; actual test-all data.results contains 11 passing results. No actors launched. Assertion corrected; failed preflight copy preserved locally.

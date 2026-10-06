@@ -1,0 +1,1059 @@
+{
+  "schemaVersion": 1,
+  "sourceRevision": "94a2d7f409eb7463654013e6a6bb3981ee0293a9",
+  "runtimeFiles": [
+    {
+      "path": "AgentLang.Cli.deps.json",
+      "bytes": 2903,
+      "sha256": "6382f6dc29bb8f827824839010e313b266e51a3f87a4fdb8c382931d2549e97e"
+    },
+    {
+      "path": "AgentLang.Cli.dll",
+      "bytes": 37888,
+      "sha256": "87ad0d1f1471c603d88077ccd1ce248b3ccb778278f75e476db1c622a8941d96"
+    },
+    {
+      "path": "AgentLang.Cli.exe",
+      "bytes": 156160,
+      "sha256": "b6fbecbf00366374f6784f60a25760aa77252b1c5950752f91fdc5cfd5958f19"
+    },
+    {
+      "path": "AgentLang.Cli.pdb",
+      "bytes": 10140,
+      "sha256": "b872f35fa8d144d8b0d1efe2396634ae6909ece8c38ad6a06575ba88c2667099"
+    },
+    {
+      "path": "AgentLang.Cli.runtimeconfig.json",
+      "bytes": 340,
+      "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+    },
+    {
+      "path": "AgentLang.Core.deps.json",
+      "bytes": 2474,
+      "sha256": "fdb608cd25481963ace0ddb4a8312aac36030e6f63deb069865ef2e610c99558"
+    },
+    {
+      "path": "AgentLang.Core.dll",
+      "bytes": 2062848,
+      "sha256": "d2b2440d444192d6df858009c850f392061f458c7807e14f294abed0c3874cf0"
+    },
+    {
+      "path": "AgentLang.Core.pdb",
+      "bytes": 547508,
+      "sha256": "09d30561b42484a8ba3cd0cdd1a0f2c59839a7ac1cdb21137264906a2f28cf50"
+    },
+    {
+      "path": "AgentLang.Core.xml",
+      "bytes": 31418,
+      "sha256": "89d78ea4564d459ee03ba96628df479b1d4ade875bebcff99a48ae49ff4f8dec"
+    },
+    {
+      "path": "cs\\FSharp.Core.resources.dll",
+      "bytes": 34600,
+      "sha256": "eb8bd755cfe0d39ce27615027fe22556e8b9dcb470f2b47a36f4bfbf3c31be64"
+    },
+    {
+      "path": "de\\FSharp.Core.resources.dll",
+      "bytes": 35592,
+      "sha256": "7419e4f5ceed9e03821686e865fed7d29c6217fdf5d3a46a2919a369c98c38ce"
+    },
+    {
+      "path": "es\\FSharp.Core.resources.dll",
+      "bytes": 34600,
+      "sha256": "636866649564c72eb763eb3942e021b52b1f9b3869d037aca48f73d4474353c5"
+    },
+    {
+      "path": "fr\\FSharp.Core.resources.dll",
+      "bytes": 35128,
+      "sha256": "f38f2fd6bc4c4e233dd098a36b315a2bc87673cf2f07c6ba3daf71a3264f4a64"
+    },
+    {
+      "path": "FSharp.Core.dll",
+      "bytes": 2314000,
+      "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+    },
+    {
+      "path": "it\\FSharp.Core.resources.dll",
+      "bytes": 34576,
+      "sha256": "61a0be9c6a2ed95f8e98493b17c54a55c68cef84e23a0d82114319e2c5f3c2cd"
+    },
+    {
+      "path": "ja\\FSharp.Core.resources.dll",
+      "bytes": 37160,
+      "sha256": "dd7f36036d906e991da5505b074ef889a603f449d3324750fda5f5445ba2854f"
+    },
+    {
+      "path": "ko\\FSharp.Core.resources.dll",
+      "bytes": 36104,
+      "sha256": "0f3ef625e379577e3b60c15d8cc3759d3dc8840f99894282df1e702b4a166462"
+    },
+    {
+      "path": "pl\\FSharp.Core.resources.dll",
+      "bytes": 35632,
+      "sha256": "755bab9fbd85e5e4b4771870c9c4d655e91e3ce39cc1c2735fe0bc7cec6b84c3"
+    },
+    {
+      "path": "pt-BR\\FSharp.Core.resources.dll",
+      "bytes": 34096,
+      "sha256": "a4bbbdaabf2003a5fdff5f5bc4143c3fd4a064f2681fc481f449d4558074dc61"
+    },
+    {
+      "path": "ru\\FSharp.Core.resources.dll",
+      "bytes": 41232,
+      "sha256": "a1133f9ab7e661803d1af0c2489626bd53ac33a11dfe891f5a02f3186f2f5d78"
+    },
+    {
+      "path": "tr\\FSharp.Core.resources.dll",
+      "bytes": 34072,
+      "sha256": "6b0cba5139a86ee681909fdfcebac07c99afba3bfcff4fb8ab12b9c2112a0b31"
+    },
+    {
+      "path": "zh-Hans\\FSharp.Core.resources.dll",
+      "bytes": 32552,
+      "sha256": "25f82f35a9234bcaab272921b0d50054ddb4a669d96c111907c9d31f5b18c121"
+    },
+    {
+      "path": "zh-Hant\\FSharp.Core.resources.dll",
+      "bytes": 32032,
+      "sha256": "ac03ee7c4112c755705776c700033794586f980fe9476e6a13811a7153beabb8"
+    }
+  ],
+  "hostSha256": "d3b60698ef29cc6e7d9b42f37d9a298a311f409cb3f85112ca2a5dccf6148c4d",
+  "requests": [
+    {
+      "op": "test-all"
+    },
+    {
+      "word": "customer.premium?",
+      "op": "describe"
+    },
+    {
+      "word": "customer.discounted-balance",
+      "op": "describe"
+    },
+    {
+      "word": "subscription.annual-renewable?",
+      "op": "describe"
+    },
+    {
+      "word": "customer.new",
+      "op": "describe"
+    },
+    {
+      "word": "subscription.new",
+      "op": "describe"
+    },
+    {
+      "op": "context",
+      "maxUtf8Bytes": 6000,
+      "maxWords": 16,
+      "word": "customer.discounted-balance",
+      "maxDepth": 4
+    },
+    {
+      "op": "context",
+      "maxUtf8Bytes": 6000,
+      "maxWords": 16,
+      "word": "subscription.annual-renewable?",
+      "maxDepth": 4
+    },
+    {
+      "compact": true,
+      "op": "words"
+    },
+    {
+      "query": "customer",
+      "op": "search"
+    },
+    {
+      "query": "subscription",
+      "op": "search"
+    },
+    {
+      "word": "customer.discounted-balance",
+      "op": "source"
+    },
+    {
+      "word": "subscription.annual-renewable?",
+      "op": "source"
+    },
+    {
+      "word": "customer.discounted-balance",
+      "op": "dependencies"
+    },
+    {
+      "word": "subscription.annual-renewable?",
+      "op": "dependencies"
+    }
+  ],
+  "responses": [
+    {
+      "ok": true,
+      "kind": "test",
+      "text": "11/11 test(s) passed.",
+      "data": {
+        "results": [
+          {
+            "name": "case-sensitive-kind",
+            "word": "customer.discounted-balance",
+            "passed": true,
+            "expected": "25",
+            "actual": [
+              "25"
+            ]
+          },
+          {
+            "name": "other-kind-unchanged",
+            "word": "customer.discounted-balance",
+            "passed": true,
+            "expected": "100",
+            "actual": [
+              "100"
+            ]
+          },
+          {
+            "name": "premium-discount",
+            "word": "customer.discounted-balance",
+            "passed": true,
+            "expected": "90",
+            "actual": [
+              "90"
+            ]
+          },
+          {
+            "name": "premium-zero-balance",
+            "word": "customer.discounted-balance",
+            "passed": true,
+            "expected": "0",
+            "actual": [
+              "0"
+            ]
+          },
+          {
+            "name": "case-sensitive",
+            "word": "customer.premium?",
+            "passed": true,
+            "expected": "false",
+            "actual": [
+              "false"
+            ]
+          },
+          {
+            "name": "other-kind",
+            "word": "customer.premium?",
+            "passed": true,
+            "expected": "false",
+            "actual": [
+              "false"
+            ]
+          },
+          {
+            "name": "premium-kind",
+            "word": "customer.premium?",
+            "passed": true,
+            "expected": "true",
+            "actual": [
+              "true"
+            ]
+          },
+          {
+            "name": "annual-and-renewable",
+            "word": "subscription.annual-renewable?",
+            "passed": true,
+            "expected": "true",
+            "actual": [
+              "true"
+            ]
+          },
+          {
+            "name": "annual-but-not-renewable",
+            "word": "subscription.annual-renewable?",
+            "passed": true,
+            "expected": "false",
+            "actual": [
+              "false"
+            ]
+          },
+          {
+            "name": "case-sensitive-term",
+            "word": "subscription.annual-renewable?",
+            "passed": true,
+            "expected": "false",
+            "actual": [
+              "false"
+            ]
+          },
+          {
+            "name": "monthly-and-renewable",
+            "word": "subscription.annual-renewable?",
+            "passed": true,
+            "expected": "false",
+            "actual": [
+              "false"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "ok": true,
+      "kind": "describe",
+      "text": "Description for customer.premium?.",
+      "data": {
+        "name": "customer.premium?",
+        "flowReference": "customer::premium?",
+        "flowReferenceUnavailableReason": null,
+        "inputs": [
+          "Customer"
+        ],
+        "outputs": [
+          "Bool"
+        ],
+        "parameters": [
+          {
+            "name": "customer",
+            "type": "Customer"
+          }
+        ],
+        "effects": [],
+        "documentation": "",
+        "id": "word_b11de4164a8d49e29937960746b8af35",
+        "dependencies": [
+          "customer.kind",
+          "equals"
+        ],
+        "transitiveDependencies": [
+          "customer.kind",
+          "equals"
+        ],
+        "callers": [
+          "customer.discounted-balance"
+        ],
+        "tests": [
+          "case-sensitive",
+          "other-kind",
+          "premium-kind"
+        ],
+        "examples": [],
+        "source": "<revision:customer.premium?/1>",
+        "line": 1,
+        "kind": "word",
+        "status": "persistent",
+        "maturity": "library",
+        "deprecated": false,
+        "revision": 1,
+        "testCount": 3,
+        "exampleCount": 0,
+        "coverage": {
+          "instructionsCovered": 4,
+          "instructionsTotal": 4,
+          "branchesCovered": 0,
+          "branchesTotal": 0,
+          "uncoveredInstructions": [],
+          "uncoveredBranchOutcomes": [],
+          "status": "current"
+        }
+      }
+    },
+    {
+      "ok": true,
+      "kind": "describe",
+      "text": "Description for customer.discounted-balance.",
+      "data": {
+        "name": "customer.discounted-balance",
+        "flowReference": "customer::discounted-balance",
+        "flowReferenceUnavailableReason": null,
+        "inputs": [
+          "Customer"
+        ],
+        "outputs": [
+          "Float"
+        ],
+        "parameters": [
+          {
+            "name": "customer",
+            "type": "Customer"
+          }
+        ],
+        "effects": [],
+        "documentation": "",
+        "id": "word_21fd2d9fc602470ab02bd272fb7b80df",
+        "dependencies": [
+          "customer.balance",
+          "customer.premium?",
+          "float.multiply"
+        ],
+        "transitiveDependencies": [
+          "customer.balance",
+          "customer.kind",
+          "customer.premium?",
+          "equals",
+          "float.multiply"
+        ],
+        "callers": [],
+        "tests": [
+          "case-sensitive-kind",
+          "other-kind-unchanged",
+          "premium-discount",
+          "premium-zero-balance"
+        ],
+        "examples": [],
+        "source": "<revision:customer.discounted-balance/1>",
+        "line": 1,
+        "kind": "word",
+        "status": "persistent",
+        "maturity": "library",
+        "deprecated": false,
+        "revision": 1,
+        "testCount": 4,
+        "exampleCount": 0,
+        "coverage": {
+          "instructionsCovered": 9,
+          "instructionsTotal": 9,
+          "branchesCovered": 2,
+          "branchesTotal": 2,
+          "uncoveredInstructions": [],
+          "uncoveredBranchOutcomes": [],
+          "status": "current"
+        }
+      }
+    },
+    {
+      "ok": true,
+      "kind": "describe",
+      "text": "Description for subscription.annual-renewable?.",
+      "data": {
+        "name": "subscription.annual-renewable?",
+        "flowReference": "subscription::annual-renewable?",
+        "flowReferenceUnavailableReason": null,
+        "inputs": [
+          "Subscription"
+        ],
+        "outputs": [
+          "Bool"
+        ],
+        "parameters": [
+          {
+            "name": "subscription",
+            "type": "Subscription"
+          }
+        ],
+        "effects": [],
+        "documentation": "",
+        "id": "word_884c6d5f6b714b6e997c99e64fb3168d",
+        "dependencies": [
+          "bool.and",
+          "equals",
+          "subscription.renewable",
+          "subscription.term"
+        ],
+        "transitiveDependencies": [
+          "bool.and",
+          "equals",
+          "subscription.renewable",
+          "subscription.term"
+        ],
+        "callers": [],
+        "tests": [
+          "annual-and-renewable",
+          "annual-but-not-renewable",
+          "case-sensitive-term",
+          "monthly-and-renewable"
+        ],
+        "examples": [],
+        "source": "<revision:subscription.annual-renewable?/1>",
+        "line": 1,
+        "kind": "word",
+        "status": "persistent",
+        "maturity": "library",
+        "deprecated": false,
+        "revision": 1,
+        "testCount": 4,
+        "exampleCount": 0,
+        "coverage": {
+          "instructionsCovered": 7,
+          "instructionsTotal": 7,
+          "branchesCovered": 0,
+          "branchesTotal": 0,
+          "uncoveredInstructions": [],
+          "uncoveredBranchOutcomes": [],
+          "status": "current"
+        }
+      }
+    },
+    {
+      "ok": true,
+      "kind": "describe",
+      "text": "Description for customer.new.",
+      "data": {
+        "name": "customer.new",
+        "flowReference": "customer::new",
+        "flowReferenceUnavailableReason": null,
+        "inputs": [
+          "String",
+          "Float"
+        ],
+        "outputs": [
+          "Customer"
+        ],
+        "parameters": [],
+        "effects": [],
+        "documentation": "Constructs a value after all record fields pass their declared types.",
+        "id": "generated_customer.new",
+        "dependencies": [],
+        "transitiveDependencies": [],
+        "callers": [],
+        "tests": [],
+        "examples": [],
+        "source": "<generated>",
+        "line": 1,
+        "kind": "generated",
+        "status": "persistent",
+        "maturity": "library",
+        "deprecated": false,
+        "revision": 1,
+        "testCount": 0,
+        "exampleCount": 0,
+        "coverage": {
+          "instructionsCovered": 0,
+          "instructionsTotal": 0,
+          "branchesCovered": 0,
+          "branchesTotal": 0,
+          "uncoveredInstructions": [],
+          "uncoveredBranchOutcomes": [],
+          "status": "not-run"
+        }
+      }
+    },
+    {
+      "ok": true,
+      "kind": "describe",
+      "text": "Description for subscription.new.",
+      "data": {
+        "name": "subscription.new",
+        "flowReference": "subscription::new",
+        "flowReferenceUnavailableReason": null,
+        "inputs": [
+          "String",
+          "Bool"
+        ],
+        "outputs": [
+          "Subscription"
+        ],
+        "parameters": [],
+        "effects": [],
+        "documentation": "Constructs a value after all record fields pass their declared types.",
+        "id": "generated_subscription.new",
+        "dependencies": [],
+        "transitiveDependencies": [],
+        "callers": [],
+        "tests": [],
+        "examples": [],
+        "source": "<generated>",
+        "line": 1,
+        "kind": "generated",
+        "status": "persistent",
+        "maturity": "library",
+        "deprecated": false,
+        "revision": 1,
+        "testCount": 0,
+        "exampleCount": 0,
+        "coverage": {
+          "instructionsCovered": 0,
+          "instructionsTotal": 0,
+          "branchesCovered": 0,
+          "branchesTotal": 0,
+          "uncoveredInstructions": [],
+          "uncoveredBranchOutcomes": [],
+          "status": "not-run"
+        }
+      }
+    },
+    {
+      "ok": true,
+      "kind": "context",
+      "text": "Budgeted context for 'customer.discounted-balance'.",
+      "data": {
+        "root": "customer.discounted-balance",
+        "maxDepth": 4,
+        "maxWords": 16,
+        "maxUtf8Bytes": 6000,
+        "words": [
+          {
+            "name": "customer.discounted-balance",
+            "flowReference": "customer::discounted-balance",
+            "flowReferenceUnavailableReason": null,
+            "inputs": [
+              "Customer"
+            ],
+            "outputs": [
+              "Float"
+            ],
+            "effects": [],
+            "dependencies": [
+              "customer.balance",
+              "customer.premium?",
+              "float.multiply"
+            ],
+            "documentation": "",
+            "documentationTruncated": false,
+            "maturity": "library"
+          },
+          {
+            "name": "customer.balance",
+            "flowReference": "customer::balance",
+            "flowReferenceUnavailableReason": null,
+            "inputs": [
+              "Customer"
+            ],
+            "outputs": [
+              "Float"
+            ],
+            "effects": [],
+            "dependencies": [],
+            "documentation": "Returns the balance field of a Customer.",
+            "documentationTruncated": false,
+            "maturity": "library"
+          },
+          {
+            "name": "customer.premium?",
+            "flowReference": "customer::premium?",
+            "flowReferenceUnavailableReason": null,
+            "inputs": [
+              "Customer"
+            ],
+            "outputs": [
+              "Bool"
+            ],
+            "effects": [],
+            "dependencies": [
+              "customer.kind",
+              "equals"
+            ],
+            "documentation": "",
+            "documentationTruncated": false,
+            "maturity": "library"
+          },
+          {
+            "name": "float.multiply",
+            "flowReference": "float::multiply",
+            "flowReferenceUnavailableReason": null,
+            "inputs": [
+              "Float",
+              "Float"
+            ],
+            "outputs": [
+              "Float"
+            ],
+            "effects": [],
+            "dependencies": [],
+            "documentation": "Trusted deterministic value operation.",
+            "documentationTruncated": false,
+            "maturity": "library"
+          },
+          {
+            "name": "customer.kind",
+            "flowReference": "customer::kind",
+            "flowReferenceUnavailableReason": null,
+            "inputs": [
+              "Customer"
+            ],
+            "outputs": [
+              "String"
+            ],
+            "effects": [],
+            "dependencies": [],
+            "documentation": "Returns the kind field of a Customer.",
+            "documentationTruncated": false,
+            "maturity": "library"
+          },
+          {
+            "name": "equals",
+            "flowReference": "::equals",
+            "flowReferenceUnavailableReason": null,
+            "inputs": [
+              "a",
+              "a"
+            ],
+            "outputs": [
+              "Bool"
+            ],
+            "effects": [],
+            "dependencies": [],
+            "documentation": "Trusted deterministic value operation.",
+            "documentationTruncated": false,
+            "maturity": "library"
+          }
+        ],
+        "types": [
+          {
+            "name": "Customer",
+            "kind": "record",
+            "fields": [
+              {
+                "name": "kind",
+                "type": "String"
+              },
+              {
+                "name": "balance",
+                "type": "Float"
+              }
+            ]
+          }
+        ],
+        "wordsOmitted": 0,
+        "typesOmitted": 0,
+        "truncated": false,
+        "truncationReasons": [],
+        "utf8Bytes": 2014
+      }
+    },
+    {
+      "ok": true,
+      "kind": "context",
+      "text": "Budgeted context for 'subscription.annual-renewable?'.",
+      "data": {
+        "root": "subscription.annual-renewable?",
+        "maxDepth": 4,
+        "maxWords": 16,
+        "maxUtf8Bytes": 6000,
+        "words": [
+          {
+            "name": "subscription.annual-renewable?",
+            "flowReference": "subscription::annual-renewable?",
+            "flowReferenceUnavailableReason": null,
+            "inputs": [
+              "Subscription"
+            ],
+            "outputs": [
+              "Bool"
+            ],
+            "effects": [],
+            "dependencies": [
+              "bool.and",
+              "equals",
+              "subscription.renewable",
+              "subscription.term"
+            ],
+            "documentation": "",
+            "documentationTruncated": false,
+            "maturity": "library"
+          },
+          {
+            "name": "bool.and",
+            "flowReference": "bool::and",
+            "flowReferenceUnavailableReason": null,
+            "inputs": [
+              "Bool",
+              "Bool"
+            ],
+            "outputs": [
+              "Bool"
+            ],
+            "effects": [],
+            "dependencies": [],
+            "documentation": "Trusted deterministic value operation.",
+            "documentationTruncated": false,
+            "maturity": "library"
+          },
+          {
+            "name": "equals",
+            "flowReference": "::equals",
+            "flowReferenceUnavailableReason": null,
+            "inputs": [
+              "a",
+              "a"
+            ],
+            "outputs": [
+              "Bool"
+            ],
+            "effects": [],
+            "dependencies": [],
+            "documentation": "Trusted deterministic value operation.",
+            "documentationTruncated": false,
+            "maturity": "library"
+          },
+          {
+            "name": "subscription.renewable",
+            "flowReference": "subscription::renewable",
+            "flowReferenceUnavailableReason": null,
+            "inputs": [
+              "Subscription"
+            ],
+            "outputs": [
+              "Bool"
+            ],
+            "effects": [],
+            "dependencies": [],
+            "documentation": "Returns the renewable field of a Subscription.",
+            "documentationTruncated": false,
+            "maturity": "library"
+          },
+          {
+            "name": "subscription.term",
+            "flowReference": "subscription::term",
+            "flowReferenceUnavailableReason": null,
+            "inputs": [
+              "Subscription"
+            ],
+            "outputs": [
+              "String"
+            ],
+            "effects": [],
+            "dependencies": [],
+            "documentation": "Returns the term field of a Subscription.",
+            "documentationTruncated": false,
+            "maturity": "library"
+          }
+        ],
+        "types": [
+          {
+            "name": "Subscription",
+            "kind": "record",
+            "fields": [
+              {
+                "name": "term",
+                "type": "String"
+              },
+              {
+                "name": "renewable",
+                "type": "Bool"
+              }
+            ]
+          }
+        ],
+        "wordsOmitted": 0,
+        "typesOmitted": 0,
+        "truncated": false,
+        "truncationReasons": [],
+        "utf8Bytes": 1791
+      }
+    },
+    {
+      "ok": true,
+      "kind": "words",
+      "text": "58 word(s).",
+      "data": {
+        "compact": true,
+        "words": [
+          "add",
+          "bool.and",
+          "bool.not",
+          "bool.or",
+          "clock.now",
+          "console.write",
+          "customer.balance",
+          "customer.discounted-balance",
+          "customer.kind",
+          "customer.new",
+          "customer.premium?",
+          "divide",
+          "drop",
+          "dup",
+          "equals",
+          "file.exists?",
+          "file.read",
+          "file.write",
+          "float.add",
+          "float.divide",
+          "float.greater-or-equal",
+          "float.greater-than",
+          "float.less-or-equal",
+          "float.less-than",
+          "float.multiply",
+          "float.round",
+          "float.subtract",
+          "float.to-int",
+          "float.to-string",
+          "int.abs",
+          "int.greater-or-equal",
+          "int.greater-than",
+          "int.less-or-equal",
+          "int.less-than",
+          "int.max",
+          "int.min",
+          "int.to-float",
+          "int.to-string",
+          "list.append",
+          "list.concat",
+          "list.count",
+          "list.get",
+          "list.is-empty?",
+          "multiply",
+          "string.concat",
+          "string.contains",
+          "string.ends-with",
+          "string.length",
+          "string.starts-with",
+          "string.to-lower",
+          "string.to-upper",
+          "string.trim",
+          "subscription.annual-renewable?",
+          "subscription.new",
+          "subscription.renewable",
+          "subscription.term",
+          "subtract",
+          "swap"
+        ],
+        "constructs": [
+          "list.each",
+          "list.empty",
+          "list.filter",
+          "list.fold",
+          "list.map",
+          "list.singleton",
+          "match-option",
+          "match-result",
+          "option.none",
+          "option.some",
+          "result.error",
+          "result.ok"
+        ]
+      }
+    },
+    {
+      "ok": true,
+      "kind": "search",
+      "text": "5 match(es).",
+      "data": [
+        "customer.balance",
+        "customer.discounted-balance",
+        "customer.kind",
+        "customer.new",
+        "customer.premium?"
+      ]
+    },
+    {
+      "ok": true,
+      "kind": "search",
+      "text": "4 match(es).",
+      "data": [
+        "subscription.annual-renewable?",
+        "subscription.new",
+        "subscription.renewable",
+        "subscription.term"
+      ]
+    },
+    {
+      "ok": true,
+      "kind": "source",
+      "text": "word customer.discounted-balance(customer: Customer) -> Float {\n    effects none\n    if customer::premium?(customer) {\n        float::multiply(customer::balance(customer), 0.9)\n    } else {\n        customer::balance(customer)\n    }\n}",
+      "data": "word customer.discounted-balance(customer: Customer) -> Float {\n    effects none\n    if customer::premium?(customer) {\n        float::multiply(customer::balance(customer), 0.9)\n    } else {\n        customer::balance(customer)\n    }\n}"
+    },
+    {
+      "ok": true,
+      "kind": "source",
+      "text": "word subscription.annual-renewable?(subscription: Subscription) -> Bool {\n    effects none\n    bool::and(\n        ::equals(subscription::term(subscription), \"annual\"),\n        subscription::renewable(subscription)\n    )\n}",
+      "data": "word subscription.annual-renewable?(subscription: Subscription) -> Bool {\n    effects none\n    bool::and(\n        ::equals(subscription::term(subscription), \"annual\"),\n        subscription::renewable(subscription)\n    )\n}"
+    },
+    {
+      "ok": true,
+      "kind": "dependencies",
+      "text": "3 direct dependency/dependencies.",
+      "data": {
+        "dependencies": [
+          "customer.balance",
+          "customer.premium?",
+          "float.multiply"
+        ],
+        "callers": []
+      }
+    },
+    {
+      "ok": true,
+      "kind": "dependencies",
+      "text": "4 direct dependency/dependencies.",
+      "data": {
+        "dependencies": [
+          "bool.and",
+          "equals",
+          "subscription.renewable",
+          "subscription.term"
+        ],
+        "callers": []
+      }
+    }
+  ],
+  "frames": [
+    {
+      "payloadUtf8Bytes": 1338,
+      "base64": "eyJvayI6dHJ1ZSwia2luZCI6InRlc3QiLCJ0ZXh0IjoiMTEvMTEgdGVzdChzKSBwYXNzZWQuIiwiZGF0YSI6eyJyZXN1bHRzIjpbeyJuYW1lIjoiY2FzZS1zZW5zaXRpdmUta2luZCIsIndvcmQiOiJjdXN0b21lci5kaXNjb3VudGVkLWJhbGFuY2UiLCJwYXNzZWQiOnRydWUsImV4cGVjdGVkIjoiMjUiLCJhY3R1YWwiOlsiMjUiXX0seyJuYW1lIjoib3RoZXIta2luZC11bmNoYW5nZWQiLCJ3b3JkIjoiY3VzdG9tZXIuZGlzY291bnRlZC1iYWxhbmNlIiwicGFzc2VkIjp0cnVlLCJleHBlY3RlZCI6IjEwMCIsImFjdHVhbCI6WyIxMDAiXX0seyJuYW1lIjoicHJlbWl1bS1kaXNjb3VudCIsIndvcmQiOiJjdXN0b21lci5kaXNjb3VudGVkLWJhbGFuY2UiLCJwYXNzZWQiOnRydWUsImV4cGVjdGVkIjoiOTAiLCJhY3R1YWwiOlsiOTAiXX0seyJuYW1lIjoicHJlbWl1bS16ZXJvLWJhbGFuY2UiLCJ3b3JkIjoiY3VzdG9tZXIuZGlzY291bnRlZC1iYWxhbmNlIiwicGFzc2VkIjp0cnVlLCJleHBlY3RlZCI6IjAiLCJhY3R1YWwiOlsiMCJdfSx7Im5hbWUiOiJjYXNlLXNlbnNpdGl2ZSIsIndvcmQiOiJjdXN0b21lci5wcmVtaXVtPyIsInBhc3NlZCI6dHJ1ZSwiZXhwZWN0ZWQiOiJmYWxzZSIsImFjdHVhbCI6WyJmYWxzZSJdfSx7Im5hbWUiOiJvdGhlci1raW5kIiwid29yZCI6ImN1c3RvbWVyLnByZW1pdW0/IiwicGFzc2VkIjp0cnVlLCJleHBlY3RlZCI6ImZhbHNlIiwiYWN0dWFsIjpbImZhbHNlIl19LHsibmFtZSI6InByZW1pdW0ta2luZCIsIndvcmQiOiJjdXN0b21lci5wcmVtaXVtPyIsInBhc3NlZCI6dHJ1ZSwiZXhwZWN0ZWQiOiJ0cnVlIiwiYWN0dWFsIjpbInRydWUiXX0seyJuYW1lIjoiYW5udWFsLWFuZC1yZW5ld2FibGUiLCJ3b3JkIjoic3Vic2NyaXB0aW9uLmFubnVhbC1yZW5ld2FibGU/IiwicGFzc2VkIjp0cnVlLCJleHBlY3RlZCI6InRydWUiLCJhY3R1YWwiOlsidHJ1ZSJdfSx7Im5hbWUiOiJhbm51YWwtYnV0LW5vdC1yZW5ld2FibGUiLCJ3b3JkIjoic3Vic2NyaXB0aW9uLmFubnVhbC1yZW5ld2FibGU/IiwicGFzc2VkIjp0cnVlLCJleHBlY3RlZCI6ImZhbHNlIiwiYWN0dWFsIjpbImZhbHNlIl19LHsibmFtZSI6ImNhc2Utc2Vuc2l0aXZlLXRlcm0iLCJ3b3JkIjoic3Vic2NyaXB0aW9uLmFubnVhbC1yZW5ld2FibGU/IiwicGFzc2VkIjp0cnVlLCJleHBlY3RlZCI6ImZhbHNlIiwiYWN0dWFsIjpbImZhbHNlIl19LHsibmFtZSI6Im1vbnRobHktYW5kLXJlbmV3YWJsZSIsIndvcmQiOiJzdWJzY3JpcHRpb24uYW5udWFsLXJlbmV3YWJsZT8iLCJwYXNzZWQiOnRydWUsImV4cGVjdGVkIjoiZmFsc2UiLCJhY3R1YWwiOlsiZmFsc2UiXX1dfX0N",
+      "sha256": "5aec7c8c3458717217bf37979bd8d9f8d3faa87f714bb452543531444739c3cb"
+    },
+    {
+      "payloadUtf8Bytes": 914,
+      "base64": "eyJvayI6dHJ1ZSwia2luZCI6ImRlc2NyaWJlIiwidGV4dCI6IkRlc2NyaXB0aW9uIGZvciBjdXN0b21lci5wcmVtaXVtPy4iLCJkYXRhIjp7Im5hbWUiOiJjdXN0b21lci5wcmVtaXVtPyIsImZsb3dSZWZlcmVuY2UiOiJjdXN0b21lcjo6cHJlbWl1bT8iLCJmbG93UmVmZXJlbmNlVW5hdmFpbGFibGVSZWFzb24iOm51bGwsImlucHV0cyI6WyJDdXN0b21lciJdLCJvdXRwdXRzIjpbIkJvb2wiXSwicGFyYW1ldGVycyI6W3sibmFtZSI6ImN1c3RvbWVyIiwidHlwZSI6IkN1c3RvbWVyIn1dLCJlZmZlY3RzIjpbXSwiZG9jdW1lbnRhdGlvbiI6IiIsImlkIjoid29yZF9iMTFkZTQxNjRhOGQ0OWUyOTkzNzk2MDc0NmI4YWYzNSIsImRlcGVuZGVuY2llcyI6WyJjdXN0b21lci5raW5kIiwiZXF1YWxzIl0sInRyYW5zaXRpdmVEZXBlbmRlbmNpZXMiOlsiY3VzdG9tZXIua2luZCIsImVxdWFscyJdLCJjYWxsZXJzIjpbImN1c3RvbWVyLmRpc2NvdW50ZWQtYmFsYW5jZSJdLCJ0ZXN0cyI6WyJjYXNlLXNlbnNpdGl2ZSIsIm90aGVyLWtpbmQiLCJwcmVtaXVtLWtpbmQiXSwiZXhhbXBsZXMiOltdLCJzb3VyY2UiOiJcdTAwM0NyZXZpc2lvbjpjdXN0b21lci5wcmVtaXVtPy8xXHUwMDNFIiwibGluZSI6MSwia2luZCI6IndvcmQiLCJzdGF0dXMiOiJwZXJzaXN0ZW50IiwibWF0dXJpdHkiOiJsaWJyYXJ5IiwiZGVwcmVjYXRlZCI6ZmFsc2UsInJldmlzaW9uIjoxLCJ0ZXN0Q291bnQiOjMsImV4YW1wbGVDb3VudCI6MCwiY292ZXJhZ2UiOnsiaW5zdHJ1Y3Rpb25zQ292ZXJlZCI6NCwiaW5zdHJ1Y3Rpb25zVG90YWwiOjQsImJyYW5jaGVzQ292ZXJlZCI6MCwiYnJhbmNoZXNUb3RhbCI6MCwidW5jb3ZlcmVkSW5zdHJ1Y3Rpb25zIjpbXSwidW5jb3ZlcmVkQnJhbmNoT3V0Y29tZXMiOltdLCJzdGF0dXMiOiJjdXJyZW50In19fQ0=",
+      "sha256": "58c0793624871b8612076ad7a41a9f8a00828315481449456454902a49ba264d"
+    },
+    {
+      "payloadUtf8Bytes": 1055,
+      "base64": "eyJvayI6dHJ1ZSwia2luZCI6ImRlc2NyaWJlIiwidGV4dCI6IkRlc2NyaXB0aW9uIGZvciBjdXN0b21lci5kaXNjb3VudGVkLWJhbGFuY2UuIiwiZGF0YSI6eyJuYW1lIjoiY3VzdG9tZXIuZGlzY291bnRlZC1iYWxhbmNlIiwiZmxvd1JlZmVyZW5jZSI6ImN1c3RvbWVyOjpkaXNjb3VudGVkLWJhbGFuY2UiLCJmbG93UmVmZXJlbmNlVW5hdmFpbGFibGVSZWFzb24iOm51bGwsImlucHV0cyI6WyJDdXN0b21lciJdLCJvdXRwdXRzIjpbIkZsb2F0Il0sInBhcmFtZXRlcnMiOlt7Im5hbWUiOiJjdXN0b21lciIsInR5cGUiOiJDdXN0b21lciJ9XSwiZWZmZWN0cyI6W10sImRvY3VtZW50YXRpb24iOiIiLCJpZCI6IndvcmRfMjFmZDJkOWZjNjAyNDcwYWIwMmJkMjcyZmI3YjgwZGYiLCJkZXBlbmRlbmNpZXMiOlsiY3VzdG9tZXIuYmFsYW5jZSIsImN1c3RvbWVyLnByZW1pdW0/IiwiZmxvYXQubXVsdGlwbHkiXSwidHJhbnNpdGl2ZURlcGVuZGVuY2llcyI6WyJjdXN0b21lci5iYWxhbmNlIiwiY3VzdG9tZXIua2luZCIsImN1c3RvbWVyLnByZW1pdW0/IiwiZXF1YWxzIiwiZmxvYXQubXVsdGlwbHkiXSwiY2FsbGVycyI6W10sInRlc3RzIjpbImNhc2Utc2Vuc2l0aXZlLWtpbmQiLCJvdGhlci1raW5kLXVuY2hhbmdlZCIsInByZW1pdW0tZGlzY291bnQiLCJwcmVtaXVtLXplcm8tYmFsYW5jZSJdLCJleGFtcGxlcyI6W10sInNvdXJjZSI6Ilx1MDAzQ3JldmlzaW9uOmN1c3RvbWVyLmRpc2NvdW50ZWQtYmFsYW5jZS8xXHUwMDNFIiwibGluZSI6MSwia2luZCI6IndvcmQiLCJzdGF0dXMiOiJwZXJzaXN0ZW50IiwibWF0dXJpdHkiOiJsaWJyYXJ5IiwiZGVwcmVjYXRlZCI6ZmFsc2UsInJldmlzaW9uIjoxLCJ0ZXN0Q291bnQiOjQsImV4YW1wbGVDb3VudCI6MCwiY292ZXJhZ2UiOnsiaW5zdHJ1Y3Rpb25zQ292ZXJlZCI6OSwiaW5zdHJ1Y3Rpb25zVG90YWwiOjksImJyYW5jaGVzQ292ZXJlZCI6MiwiYnJhbmNoZXNUb3RhbCI6MiwidW5jb3ZlcmVkSW5zdHJ1Y3Rpb25zIjpbXSwidW5jb3ZlcmVkQnJhbmNoT3V0Y29tZXMiOltdLCJzdGF0dXMiOiJjdXJyZW50In19fQ0=",
+      "sha256": "a784b2f93d5fbb9aed859c822668aa05c9b355333db03b785abca0119bc03b6d"
+    },
+    {
+      "payloadUtf8Bytes": 1080,
+      "base64": "eyJvayI6dHJ1ZSwia2luZCI6ImRlc2NyaWJlIiwidGV4dCI6IkRlc2NyaXB0aW9uIGZvciBzdWJzY3JpcHRpb24uYW5udWFsLXJlbmV3YWJsZT8uIiwiZGF0YSI6eyJuYW1lIjoic3Vic2NyaXB0aW9uLmFubnVhbC1yZW5ld2FibGU/IiwiZmxvd1JlZmVyZW5jZSI6InN1YnNjcmlwdGlvbjo6YW5udWFsLXJlbmV3YWJsZT8iLCJmbG93UmVmZXJlbmNlVW5hdmFpbGFibGVSZWFzb24iOm51bGwsImlucHV0cyI6WyJTdWJzY3JpcHRpb24iXSwib3V0cHV0cyI6WyJCb29sIl0sInBhcmFtZXRlcnMiOlt7Im5hbWUiOiJzdWJzY3JpcHRpb24iLCJ0eXBlIjoiU3Vic2NyaXB0aW9uIn1dLCJlZmZlY3RzIjpbXSwiZG9jdW1lbnRhdGlvbiI6IiIsImlkIjoid29yZF84ODRjNmQ1ZjZiNzE0YjZlOTk3Yzk5ZTY0ZmIzMTY4ZCIsImRlcGVuZGVuY2llcyI6WyJib29sLmFuZCIsImVxdWFscyIsInN1YnNjcmlwdGlvbi5yZW5ld2FibGUiLCJzdWJzY3JpcHRpb24udGVybSJdLCJ0cmFuc2l0aXZlRGVwZW5kZW5jaWVzIjpbImJvb2wuYW5kIiwiZXF1YWxzIiwic3Vic2NyaXB0aW9uLnJlbmV3YWJsZSIsInN1YnNjcmlwdGlvbi50ZXJtIl0sImNhbGxlcnMiOltdLCJ0ZXN0cyI6WyJhbm51YWwtYW5kLXJlbmV3YWJsZSIsImFubnVhbC1idXQtbm90LXJlbmV3YWJsZSIsImNhc2Utc2Vuc2l0aXZlLXRlcm0iLCJtb250aGx5LWFuZC1yZW5ld2FibGUiXSwiZXhhbXBsZXMiOltdLCJzb3VyY2UiOiJcdTAwM0NyZXZpc2lvbjpzdWJzY3JpcHRpb24uYW5udWFsLXJlbmV3YWJsZT8vMVx1MDAzRSIsImxpbmUiOjEsImtpbmQiOiJ3b3JkIiwic3RhdHVzIjoicGVyc2lzdGVudCIsIm1hdHVyaXR5IjoibGlicmFyeSIsImRlcHJlY2F0ZWQiOmZhbHNlLCJyZXZpc2lvbiI6MSwidGVzdENvdW50Ijo0LCJleGFtcGxlQ291bnQiOjAsImNvdmVyYWdlIjp7Imluc3RydWN0aW9uc0NvdmVyZWQiOjcsImluc3RydWN0aW9uc1RvdGFsIjo3LCJicmFuY2hlc0NvdmVyZWQiOjAsImJyYW5jaGVzVG90YWwiOjAsInVuY292ZXJlZEluc3RydWN0aW9ucyI6W10sInVuY292ZXJlZEJyYW5jaE91dGNvbWVzIjpbXSwic3RhdHVzIjoiY3VycmVudCJ9fX0N",
+      "sha256": "1d1ee573893c61474e8c214108beea088a58888b2aacfb3b005d5435d5bb57c0"
+    },
+    {
+      "payloadUtf8Bytes": 791,
+      "base64": "eyJvayI6dHJ1ZSwia2luZCI6ImRlc2NyaWJlIiwidGV4dCI6IkRlc2NyaXB0aW9uIGZvciBjdXN0b21lci5uZXcuIiwiZGF0YSI6eyJuYW1lIjoiY3VzdG9tZXIubmV3IiwiZmxvd1JlZmVyZW5jZSI6ImN1c3RvbWVyOjpuZXciLCJmbG93UmVmZXJlbmNlVW5hdmFpbGFibGVSZWFzb24iOm51bGwsImlucHV0cyI6WyJTdHJpbmciLCJGbG9hdCJdLCJvdXRwdXRzIjpbIkN1c3RvbWVyIl0sInBhcmFtZXRlcnMiOltdLCJlZmZlY3RzIjpbXSwiZG9jdW1lbnRhdGlvbiI6IkNvbnN0cnVjdHMgYSB2YWx1ZSBhZnRlciBhbGwgcmVjb3JkIGZpZWxkcyBwYXNzIHRoZWlyIGRlY2xhcmVkIHR5cGVzLiIsImlkIjoiZ2VuZXJhdGVkX2N1c3RvbWVyLm5ldyIsImRlcGVuZGVuY2llcyI6W10sInRyYW5zaXRpdmVEZXBlbmRlbmNpZXMiOltdLCJjYWxsZXJzIjpbXSwidGVzdHMiOltdLCJleGFtcGxlcyI6W10sInNvdXJjZSI6Ilx1MDAzQ2dlbmVyYXRlZFx1MDAzRSIsImxpbmUiOjEsImtpbmQiOiJnZW5lcmF0ZWQiLCJzdGF0dXMiOiJwZXJzaXN0ZW50IiwibWF0dXJpdHkiOiJsaWJyYXJ5IiwiZGVwcmVjYXRlZCI6ZmFsc2UsInJldmlzaW9uIjoxLCJ0ZXN0Q291bnQiOjAsImV4YW1wbGVDb3VudCI6MCwiY292ZXJhZ2UiOnsiaW5zdHJ1Y3Rpb25zQ292ZXJlZCI6MCwiaW5zdHJ1Y3Rpb25zVG90YWwiOjAsImJyYW5jaGVzQ292ZXJlZCI6MCwiYnJhbmNoZXNUb3RhbCI6MCwidW5jb3ZlcmVkSW5zdHJ1Y3Rpb25zIjpbXSwidW5jb3ZlcmVkQnJhbmNoT3V0Y29tZXMiOltdLCJzdGF0dXMiOiJub3QtcnVuIn19fQ0=",
+      "sha256": "e7ea02ffe99c8c8cac51f2526f1234e93e8af24ed7f5c7aef4fcf1884838e2e3"
+    },
+    {
+      "payloadUtf8Bytes": 810,
+      "base64": "eyJvayI6dHJ1ZSwia2luZCI6ImRlc2NyaWJlIiwidGV4dCI6IkRlc2NyaXB0aW9uIGZvciBzdWJzY3JpcHRpb24ubmV3LiIsImRhdGEiOnsibmFtZSI6InN1YnNjcmlwdGlvbi5uZXciLCJmbG93UmVmZXJlbmNlIjoic3Vic2NyaXB0aW9uOjpuZXciLCJmbG93UmVmZXJlbmNlVW5hdmFpbGFibGVSZWFzb24iOm51bGwsImlucHV0cyI6WyJTdHJpbmciLCJCb29sIl0sIm91dHB1dHMiOlsiU3Vic2NyaXB0aW9uIl0sInBhcmFtZXRlcnMiOltdLCJlZmZlY3RzIjpbXSwiZG9jdW1lbnRhdGlvbiI6IkNvbnN0cnVjdHMgYSB2YWx1ZSBhZnRlciBhbGwgcmVjb3JkIGZpZWxkcyBwYXNzIHRoZWlyIGRlY2xhcmVkIHR5cGVzLiIsImlkIjoiZ2VuZXJhdGVkX3N1YnNjcmlwdGlvbi5uZXciLCJkZXBlbmRlbmNpZXMiOltdLCJ0cmFuc2l0aXZlRGVwZW5kZW5jaWVzIjpbXSwiY2FsbGVycyI6W10sInRlc3RzIjpbXSwiZXhhbXBsZXMiOltdLCJzb3VyY2UiOiJcdTAwM0NnZW5lcmF0ZWRcdTAwM0UiLCJsaW5lIjoxLCJraW5kIjoiZ2VuZXJhdGVkIiwic3RhdHVzIjoicGVyc2lzdGVudCIsIm1hdHVyaXR5IjoibGlicmFyeSIsImRlcHJlY2F0ZWQiOmZhbHNlLCJyZXZpc2lvbiI6MSwidGVzdENvdW50IjowLCJleGFtcGxlQ291bnQiOjAsImNvdmVyYWdlIjp7Imluc3RydWN0aW9uc0NvdmVyZWQiOjAsImluc3RydWN0aW9uc1RvdGFsIjowLCJicmFuY2hlc0NvdmVyZWQiOjAsImJyYW5jaGVzVG90YWwiOjAsInVuY292ZXJlZEluc3RydWN0aW9ucyI6W10sInVuY292ZXJlZEJyYW5jaE91dGNvbWVzIjpbXSwic3RhdHVzIjoibm90LXJ1biJ9fX0N",
+      "sha256": "ff30dd98f361f6b4e9f46c59b5028f76558caad6d45a748b9fd577607e4fe328"
+    },
+    {
+      "payloadUtf8Bytes": 2122,
+      "base64": "eyJvayI6dHJ1ZSwia2luZCI6ImNvbnRleHQiLCJ0ZXh0IjoiQnVkZ2V0ZWQgY29udGV4dCBmb3IgXHUwMDI3Y3VzdG9tZXIuZGlzY291bnRlZC1iYWxhbmNlXHUwMDI3LiIsImRhdGEiOnsicm9vdCI6ImN1c3RvbWVyLmRpc2NvdW50ZWQtYmFsYW5jZSIsIm1heERlcHRoIjo0LCJtYXhXb3JkcyI6MTYsIm1heFV0ZjhCeXRlcyI6NjAwMCwid29yZHMiOlt7Im5hbWUiOiJjdXN0b21lci5kaXNjb3VudGVkLWJhbGFuY2UiLCJmbG93UmVmZXJlbmNlIjoiY3VzdG9tZXI6OmRpc2NvdW50ZWQtYmFsYW5jZSIsImZsb3dSZWZlcmVuY2VVbmF2YWlsYWJsZVJlYXNvbiI6bnVsbCwiaW5wdXRzIjpbIkN1c3RvbWVyIl0sIm91dHB1dHMiOlsiRmxvYXQiXSwiZWZmZWN0cyI6W10sImRlcGVuZGVuY2llcyI6WyJjdXN0b21lci5iYWxhbmNlIiwiY3VzdG9tZXIucHJlbWl1bT8iLCJmbG9hdC5tdWx0aXBseSJdLCJkb2N1bWVudGF0aW9uIjoiIiwiZG9jdW1lbnRhdGlvblRydW5jYXRlZCI6ZmFsc2UsIm1hdHVyaXR5IjoibGlicmFyeSJ9LHsibmFtZSI6ImN1c3RvbWVyLmJhbGFuY2UiLCJmbG93UmVmZXJlbmNlIjoiY3VzdG9tZXI6OmJhbGFuY2UiLCJmbG93UmVmZXJlbmNlVW5hdmFpbGFibGVSZWFzb24iOm51bGwsImlucHV0cyI6WyJDdXN0b21lciJdLCJvdXRwdXRzIjpbIkZsb2F0Il0sImVmZmVjdHMiOltdLCJkZXBlbmRlbmNpZXMiOltdLCJkb2N1bWVudGF0aW9uIjoiUmV0dXJucyB0aGUgYmFsYW5jZSBmaWVsZCBvZiBhIEN1c3RvbWVyLiIsImRvY3VtZW50YXRpb25UcnVuY2F0ZWQiOmZhbHNlLCJtYXR1cml0eSI6ImxpYnJhcnkifSx7Im5hbWUiOiJjdXN0b21lci5wcmVtaXVtPyIsImZsb3dSZWZlcmVuY2UiOiJjdXN0b21lcjo6cHJlbWl1bT8iLCJmbG93UmVmZXJlbmNlVW5hdmFpbGFibGVSZWFzb24iOm51bGwsImlucHV0cyI6WyJDdXN0b21lciJdLCJvdXRwdXRzIjpbIkJvb2wiXSwiZWZmZWN0cyI6W10sImRlcGVuZGVuY2llcyI6WyJjdXN0b21lci5raW5kIiwiZXF1YWxzIl0sImRvY3VtZW50YXRpb24iOiIiLCJkb2N1bWVudGF0aW9uVHJ1bmNhdGVkIjpmYWxzZSwibWF0dXJpdHkiOiJsaWJyYXJ5In0seyJuYW1lIjoiZmxvYXQubXVsdGlwbHkiLCJmbG93UmVmZXJlbmNlIjoiZmxvYXQ6Om11bHRpcGx5IiwiZmxvd1JlZmVyZW5jZVVuYXZhaWxhYmxlUmVhc29uIjpudWxsLCJpbnB1dHMiOlsiRmxvYXQiLCJGbG9hdCJdLCJvdXRwdXRzIjpbIkZsb2F0Il0sImVmZmVjdHMiOltdLCJkZXBlbmRlbmNpZXMiOltdLCJkb2N1bWVudGF0aW9uIjoiVHJ1c3RlZCBkZXRlcm1pbmlzdGljIHZhbHVlIG9wZXJhdGlvbi4iLCJkb2N1bWVudGF0aW9uVHJ1bmNhdGVkIjpmYWxzZSwibWF0dXJpdHkiOiJsaWJyYXJ5In0seyJuYW1lIjoiY3VzdG9tZXIua2luZCIsImZsb3dSZWZlcmVuY2UiOiJjdXN0b21lcjo6a2luZCIsImZsb3dSZWZlcmVuY2VVbmF2YWlsYWJsZVJlYXNvbiI6bnVsbCwiaW5wdXRzIjpbIkN1c3RvbWVyIl0sIm91dHB1dHMiOlsiU3RyaW5nIl0sImVmZmVjdHMiOltdLCJkZXBlbmRlbmNpZXMiOltdLCJkb2N1bWVudGF0aW9uIjoiUmV0dXJucyB0aGUga2luZCBmaWVsZCBvZiBhIEN1c3RvbWVyLiIsImRvY3VtZW50YXRpb25UcnVuY2F0ZWQiOmZhbHNlLCJtYXR1cml0eSI6ImxpYnJhcnkifSx7Im5hbWUiOiJlcXVhbHMiLCJmbG93UmVmZXJlbmNlIjoiOjplcXVhbHMiLCJmbG93UmVmZXJlbmNlVW5hdmFpbGFibGVSZWFzb24iOm51bGwsImlucHV0cyI6WyJhIiwiYSJdLCJvdXRwdXRzIjpbIkJvb2wiXSwiZWZmZWN0cyI6W10sImRlcGVuZGVuY2llcyI6W10sImRvY3VtZW50YXRpb24iOiJUcnVzdGVkIGRldGVybWluaXN0aWMgdmFsdWUgb3BlcmF0aW9uLiIsImRvY3VtZW50YXRpb25UcnVuY2F0ZWQiOmZhbHNlLCJtYXR1cml0eSI6ImxpYnJhcnkifV0sInR5cGVzIjpbeyJuYW1lIjoiQ3VzdG9tZXIiLCJraW5kIjoicmVjb3JkIiwiZmllbGRzIjpbeyJuYW1lIjoia2luZCIsInR5cGUiOiJTdHJpbmcifSx7Im5hbWUiOiJiYWxhbmNlIiwidHlwZSI6IkZsb2F0In1dfV0sIndvcmRzT21pdHRlZCI6MCwidHlwZXNPbWl0dGVkIjowLCJ0cnVuY2F0ZWQiOmZhbHNlLCJ0cnVuY2F0aW9uUmVhc29ucyI6W10sInV0ZjhCeXRlcyI6MjAxNH19DQ==",
+      "sha256": "35adedcd809509630b89b6784abe3960424bc86a5e8cbe07946aecc1b6701eba"
+    },
+    {
+      "payloadUtf8Bytes": 1902,
+      "base64": "eyJvayI6dHJ1ZSwia2luZCI6ImNvbnRleHQiLCJ0ZXh0IjoiQnVkZ2V0ZWQgY29udGV4dCBmb3IgXHUwMDI3c3Vic2NyaXB0aW9uLmFubnVhbC1yZW5ld2FibGU/XHUwMDI3LiIsImRhdGEiOnsicm9vdCI6InN1YnNjcmlwdGlvbi5hbm51YWwtcmVuZXdhYmxlPyIsIm1heERlcHRoIjo0LCJtYXhXb3JkcyI6MTYsIm1heFV0ZjhCeXRlcyI6NjAwMCwid29yZHMiOlt7Im5hbWUiOiJzdWJzY3JpcHRpb24uYW5udWFsLXJlbmV3YWJsZT8iLCJmbG93UmVmZXJlbmNlIjoic3Vic2NyaXB0aW9uOjphbm51YWwtcmVuZXdhYmxlPyIsImZsb3dSZWZlcmVuY2VVbmF2YWlsYWJsZVJlYXNvbiI6bnVsbCwiaW5wdXRzIjpbIlN1YnNjcmlwdGlvbiJdLCJvdXRwdXRzIjpbIkJvb2wiXSwiZWZmZWN0cyI6W10sImRlcGVuZGVuY2llcyI6WyJib29sLmFuZCIsImVxdWFscyIsInN1YnNjcmlwdGlvbi5yZW5ld2FibGUiLCJzdWJzY3JpcHRpb24udGVybSJdLCJkb2N1bWVudGF0aW9uIjoiIiwiZG9jdW1lbnRhdGlvblRydW5jYXRlZCI6ZmFsc2UsIm1hdHVyaXR5IjoibGlicmFyeSJ9LHsibmFtZSI6ImJvb2wuYW5kIiwiZmxvd1JlZmVyZW5jZSI6ImJvb2w6OmFuZCIsImZsb3dSZWZlcmVuY2VVbmF2YWlsYWJsZVJlYXNvbiI6bnVsbCwiaW5wdXRzIjpbIkJvb2wiLCJCb29sIl0sIm91dHB1dHMiOlsiQm9vbCJdLCJlZmZlY3RzIjpbXSwiZGVwZW5kZW5jaWVzIjpbXSwiZG9jdW1lbnRhdGlvbiI6IlRydXN0ZWQgZGV0ZXJtaW5pc3RpYyB2YWx1ZSBvcGVyYXRpb24uIiwiZG9jdW1lbnRhdGlvblRydW5jYXRlZCI6ZmFsc2UsIm1hdHVyaXR5IjoibGlicmFyeSJ9LHsibmFtZSI6ImVxdWFscyIsImZsb3dSZWZlcmVuY2UiOiI6OmVxdWFscyIsImZsb3dSZWZlcmVuY2VVbmF2YWlsYWJsZVJlYXNvbiI6bnVsbCwiaW5wdXRzIjpbImEiLCJhIl0sIm91dHB1dHMiOlsiQm9vbCJdLCJlZmZlY3RzIjpbXSwiZGVwZW5kZW5jaWVzIjpbXSwiZG9jdW1lbnRhdGlvbiI6IlRydXN0ZWQgZGV0ZXJtaW5pc3RpYyB2YWx1ZSBvcGVyYXRpb24uIiwiZG9jdW1lbnRhdGlvblRydW5jYXRlZCI6ZmFsc2UsIm1hdHVyaXR5IjoibGlicmFyeSJ9LHsibmFtZSI6InN1YnNjcmlwdGlvbi5yZW5ld2FibGUiLCJmbG93UmVmZXJlbmNlIjoic3Vic2NyaXB0aW9uOjpyZW5ld2FibGUiLCJmbG93UmVmZXJlbmNlVW5hdmFpbGFibGVSZWFzb24iOm51bGwsImlucHV0cyI6WyJTdWJzY3JpcHRpb24iXSwib3V0cHV0cyI6WyJCb29sIl0sImVmZmVjdHMiOltdLCJkZXBlbmRlbmNpZXMiOltdLCJkb2N1bWVudGF0aW9uIjoiUmV0dXJucyB0aGUgcmVuZXdhYmxlIGZpZWxkIG9mIGEgU3Vic2NyaXB0aW9uLiIsImRvY3VtZW50YXRpb25UcnVuY2F0ZWQiOmZhbHNlLCJtYXR1cml0eSI6ImxpYnJhcnkifSx7Im5hbWUiOiJzdWJzY3JpcHRpb24udGVybSIsImZsb3dSZWZlcmVuY2UiOiJzdWJzY3JpcHRpb246OnRlcm0iLCJmbG93UmVmZXJlbmNlVW5hdmFpbGFibGVSZWFzb24iOm51bGwsImlucHV0cyI6WyJTdWJzY3JpcHRpb24iXSwib3V0cHV0cyI6WyJTdHJpbmciXSwiZWZmZWN0cyI6W10sImRlcGVuZGVuY2llcyI6W10sImRvY3VtZW50YXRpb24iOiJSZXR1cm5zIHRoZSB0ZXJtIGZpZWxkIG9mIGEgU3Vic2NyaXB0aW9uLiIsImRvY3VtZW50YXRpb25UcnVuY2F0ZWQiOmZhbHNlLCJtYXR1cml0eSI6ImxpYnJhcnkifV0sInR5cGVzIjpbeyJuYW1lIjoiU3Vic2NyaXB0aW9uIiwia2luZCI6InJlY29yZCIsImZpZWxkcyI6W3sibmFtZSI6InRlcm0iLCJ0eXBlIjoiU3RyaW5nIn0seyJuYW1lIjoicmVuZXdhYmxlIiwidHlwZSI6IkJvb2wifV19XSwid29yZHNPbWl0dGVkIjowLCJ0eXBlc09taXR0ZWQiOjAsInRydW5jYXRlZCI6ZmFsc2UsInRydW5jYXRpb25SZWFzb25zIjpbXSwidXRmOEJ5dGVzIjoxNzkxfX0N",
+      "sha256": "3c28193229df4d9a379d124d6411de58c279c3e9baa368000e112d47d8e7c0a0"
+    },
+    {
+      "payloadUtf8Bytes": 1166,
+      "base64": "eyJvayI6dHJ1ZSwia2luZCI6IndvcmRzIiwidGV4dCI6IjU4IHdvcmQocykuIiwiZGF0YSI6eyJjb21wYWN0Ijp0cnVlLCJ3b3JkcyI6WyJhZGQiLCJib29sLmFuZCIsImJvb2wubm90IiwiYm9vbC5vciIsImNsb2NrLm5vdyIsImNvbnNvbGUud3JpdGUiLCJjdXN0b21lci5iYWxhbmNlIiwiY3VzdG9tZXIuZGlzY291bnRlZC1iYWxhbmNlIiwiY3VzdG9tZXIua2luZCIsImN1c3RvbWVyLm5ldyIsImN1c3RvbWVyLnByZW1pdW0/IiwiZGl2aWRlIiwiZHJvcCIsImR1cCIsImVxdWFscyIsImZpbGUuZXhpc3RzPyIsImZpbGUucmVhZCIsImZpbGUud3JpdGUiLCJmbG9hdC5hZGQiLCJmbG9hdC5kaXZpZGUiLCJmbG9hdC5ncmVhdGVyLW9yLWVxdWFsIiwiZmxvYXQuZ3JlYXRlci10aGFuIiwiZmxvYXQubGVzcy1vci1lcXVhbCIsImZsb2F0Lmxlc3MtdGhhbiIsImZsb2F0Lm11bHRpcGx5IiwiZmxvYXQucm91bmQiLCJmbG9hdC5zdWJ0cmFjdCIsImZsb2F0LnRvLWludCIsImZsb2F0LnRvLXN0cmluZyIsImludC5hYnMiLCJpbnQuZ3JlYXRlci1vci1lcXVhbCIsImludC5ncmVhdGVyLXRoYW4iLCJpbnQubGVzcy1vci1lcXVhbCIsImludC5sZXNzLXRoYW4iLCJpbnQubWF4IiwiaW50Lm1pbiIsImludC50by1mbG9hdCIsImludC50by1zdHJpbmciLCJsaXN0LmFwcGVuZCIsImxpc3QuY29uY2F0IiwibGlzdC5jb3VudCIsImxpc3QuZ2V0IiwibGlzdC5pcy1lbXB0eT8iLCJtdWx0aXBseSIsInN0cmluZy5jb25jYXQiLCJzdHJpbmcuY29udGFpbnMiLCJzdHJpbmcuZW5kcy13aXRoIiwic3RyaW5nLmxlbmd0aCIsInN0cmluZy5zdGFydHMtd2l0aCIsInN0cmluZy50by1sb3dlciIsInN0cmluZy50by11cHBlciIsInN0cmluZy50cmltIiwic3Vic2NyaXB0aW9uLmFubnVhbC1yZW5ld2FibGU/Iiwic3Vic2NyaXB0aW9uLm5ldyIsInN1YnNjcmlwdGlvbi5yZW5ld2FibGUiLCJzdWJzY3JpcHRpb24udGVybSIsInN1YnRyYWN0Iiwic3dhcCJdLCJjb25zdHJ1Y3RzIjpbImxpc3QuZWFjaCIsImxpc3QuZW1wdHkiLCJsaXN0LmZpbHRlciIsImxpc3QuZm9sZCIsImxpc3QubWFwIiwibGlzdC5zaW5nbGV0b24iLCJtYXRjaC1vcHRpb24iLCJtYXRjaC1yZXN1bHQiLCJvcHRpb24ubm9uZSIsIm9wdGlvbi5zb21lIiwicmVzdWx0LmVycm9yIiwicmVzdWx0Lm9rIl19fQ0=",
+      "sha256": "d2c15ae9333eff10c9ab70ffc28f07abb126d968924f5a5430e5fabd20330f85"
+    },
+    {
+      "payloadUtf8Bytes": 159,
+      "base64": "eyJvayI6dHJ1ZSwia2luZCI6InNlYXJjaCIsInRleHQiOiI1IG1hdGNoKGVzKS4iLCJkYXRhIjpbImN1c3RvbWVyLmJhbGFuY2UiLCJjdXN0b21lci5kaXNjb3VudGVkLWJhbGFuY2UiLCJjdXN0b21lci5raW5kIiwiY3VzdG9tZXIubmV3IiwiY3VzdG9tZXIucHJlbWl1bT8iXX0N",
+      "sha256": "2021f823e89950e7f4323c43ad4bd1b5305066fad62df31acfd4c80701538f8d"
+    },
+    {
+      "payloadUtf8Bytes": 156,
+      "base64": "eyJvayI6dHJ1ZSwia2luZCI6InNlYXJjaCIsInRleHQiOiI0IG1hdGNoKGVzKS4iLCJkYXRhIjpbInN1YnNjcmlwdGlvbi5hbm51YWwtcmVuZXdhYmxlPyIsInN1YnNjcmlwdGlvbi5uZXciLCJzdWJzY3JpcHRpb24ucmVuZXdhYmxlIiwic3Vic2NyaXB0aW9uLnRlcm0iXX0N",
+      "sha256": "653e93a7b44fa73b4846d160f28606e9109dff33da74820ee1288d0558345a7a"
+    },
+    {
+      "payloadUtf8Bytes": 538,
+      "base64": "eyJvayI6dHJ1ZSwia2luZCI6InNvdXJjZSIsInRleHQiOiJ3b3JkIGN1c3RvbWVyLmRpc2NvdW50ZWQtYmFsYW5jZShjdXN0b21lcjogQ3VzdG9tZXIpIC1cdTAwM0UgRmxvYXQge1xuICAgIGVmZmVjdHMgbm9uZVxuICAgIGlmIGN1c3RvbWVyOjpwcmVtaXVtPyhjdXN0b21lcikge1xuICAgICAgICBmbG9hdDo6bXVsdGlwbHkoY3VzdG9tZXI6OmJhbGFuY2UoY3VzdG9tZXIpLCAwLjkpXG4gICAgfSBlbHNlIHtcbiAgICAgICAgY3VzdG9tZXI6OmJhbGFuY2UoY3VzdG9tZXIpXG4gICAgfVxufSIsImRhdGEiOiJ3b3JkIGN1c3RvbWVyLmRpc2NvdW50ZWQtYmFsYW5jZShjdXN0b21lcjogQ3VzdG9tZXIpIC1cdTAwM0UgRmxvYXQge1xuICAgIGVmZmVjdHMgbm9uZVxuICAgIGlmIGN1c3RvbWVyOjpwcmVtaXVtPyhjdXN0b21lcikge1xuICAgICAgICBmbG9hdDo6bXVsdGlwbHkoY3VzdG9tZXI6OmJhbGFuY2UoY3VzdG9tZXIpLCAwLjkpXG4gICAgfSBlbHNlIHtcbiAgICAgICAgY3VzdG9tZXI6OmJhbGFuY2UoY3VzdG9tZXIpXG4gICAgfVxufSJ9DQ==",
+      "sha256": "fc58324709d25a149484f0eb350be2d312d14438c53babe9e0301ee53c56e72a"
+    },
+    {
+      "payloadUtf8Bytes": 532,
+      "base64": "eyJvayI6dHJ1ZSwia2luZCI6InNvdXJjZSIsInRleHQiOiJ3b3JkIHN1YnNjcmlwdGlvbi5hbm51YWwtcmVuZXdhYmxlPyhzdWJzY3JpcHRpb246IFN1YnNjcmlwdGlvbikgLVx1MDAzRSBCb29sIHtcbiAgICBlZmZlY3RzIG5vbmVcbiAgICBib29sOjphbmQoXG4gICAgICAgIDo6ZXF1YWxzKHN1YnNjcmlwdGlvbjo6dGVybShzdWJzY3JpcHRpb24pLCBcdTAwMjJhbm51YWxcdTAwMjIpLFxuICAgICAgICBzdWJzY3JpcHRpb246OnJlbmV3YWJsZShzdWJzY3JpcHRpb24pXG4gICAgKVxufSIsImRhdGEiOiJ3b3JkIHN1YnNjcmlwdGlvbi5hbm51YWwtcmVuZXdhYmxlPyhzdWJzY3JpcHRpb246IFN1YnNjcmlwdGlvbikgLVx1MDAzRSBCb29sIHtcbiAgICBlZmZlY3RzIG5vbmVcbiAgICBib29sOjphbmQoXG4gICAgICAgIDo6ZXF1YWxzKHN1YnNjcmlwdGlvbjo6dGVybShzdWJzY3JpcHRpb24pLCBcdTAwMjJhbm51YWxcdTAwMjIpLFxuICAgICAgICBzdWJzY3JpcHRpb246OnJlbmV3YWJsZShzdWJzY3JpcHRpb24pXG4gICAgKVxufSJ9DQ==",
+      "sha256": "c500a6213723d6dd5e6c175ee7949d29894f6bb2ece4e2ad4e1739161830ab67"
+    },
+    {
+      "payloadUtf8Bytes": 172,
+      "base64": "eyJvayI6dHJ1ZSwia2luZCI6ImRlcGVuZGVuY2llcyIsInRleHQiOiIzIGRpcmVjdCBkZXBlbmRlbmN5L2RlcGVuZGVuY2llcy4iLCJkYXRhIjp7ImRlcGVuZGVuY2llcyI6WyJjdXN0b21lci5iYWxhbmNlIiwiY3VzdG9tZXIucHJlbWl1bT8iLCJmbG9hdC5tdWx0aXBseSJdLCJjYWxsZXJzIjpbXX19DQ==",
+      "sha256": "8c48e1a45e7ab907bccd50b81ce90ee78373ae64490e0ca356f55daf04058ebe"
+    },
+    {
+      "payloadUtf8Bytes": 181,
+      "base64": "eyJvayI6dHJ1ZSwia2luZCI6ImRlcGVuZGVuY2llcyIsInRleHQiOiI0IGRpcmVjdCBkZXBlbmRlbmN5L2RlcGVuZGVuY2llcy4iLCJkYXRhIjp7ImRlcGVuZGVuY2llcyI6WyJib29sLmFuZCIsImVxdWFscyIsInN1YnNjcmlwdGlvbi5yZW5ld2FibGUiLCJzdWJzY3JpcHRpb24udGVybSJdLCJjYWxsZXJzIjpbXX19DQ==",
+      "sha256": "3a65ea7b9ffb91b8ec07234b6a29dcb7cbfc047ea6204ffbd1dd6be84478d313"
+    }
+  ],
+  "exitCode": 0,
+  "stderr": "",
+  "seedTests": 11,
+  "inspectionCap": 16000,
+  "capSelectedBeforeActors": true
+}

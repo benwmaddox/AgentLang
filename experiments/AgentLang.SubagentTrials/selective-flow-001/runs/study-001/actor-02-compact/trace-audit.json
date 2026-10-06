@@ -1,0 +1,60 @@
+{
+  "errorResponses": 0,
+  "pipeDeliveredPayloadBytes": 12698,
+  "pipeDeliveredResponses": 13,
+  "passed": true,
+  "schemaVersion": 1,
+  "exchanges": 13,
+  "operations": [
+    "words",
+    "search",
+    "context",
+    "context",
+    "describe",
+    "source",
+    "task.begin",
+    "context",
+    "context",
+    "define",
+    "test",
+    "commit",
+    "task.commit"
+  ],
+  "rawValidRuntimeResponsePayloadBytes": 12698,
+  "suppressedInspectionPayloadBytes": 0,
+  "pipeDeliveredWireBytes": 12711,
+  "admittedInspectionPayloadBytes": 9011,
+  "limits": [
+    "Trace-derived pipe-delivery audit; no independent capture of actor stdout.",
+    "Pipe delivery is not model consumption.",
+    "No model tokens, turns, controlled timing or context-window measurement."
+  ],
+  "sessionEnd": {
+    "event": "session-end",
+    "finishedUtc": "2026-10-06T16:27:56.8070113-04:00",
+    "exchangeCount": 13,
+    "hostExitCode": 0,
+    "runtimeExitCode": 0,
+    "runtimeStderrPrefixBytes": 0,
+    "runtimeStderrTotalBytes": 0,
+    "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runtimeStderrCaptureTruncated": false,
+    "schemaVersion": 2,
+    "responseAccounting": {
+      "rawValidRuntimeResponsePayloadUtf8Bytes": 12698,
+      "selectedResponsePayloadUtf8Bytes": 12698,
+      "admittedInspectionPayloadUtf8Bytes": 9011,
+      "nonInspectionRuntimeResponsePayloadUtf8Bytes": 3687,
+      "hostDenialControlResponsePayloadUtf8Bytes": 0,
+      "stdoutPipeDeliveredResponseCount": 13,
+      "stdoutPipeDeliveredResponsePayloadUtf8Bytes": 12698,
+      "stdoutPipeDeliveredResponseWireUtf8Bytes": 12711,
+      "pipeDeliveryMeaning": "A response-delivered event means the host stdout write and flush completed; it does not establish model-context consumption."
+    }
+  },
+  "hostControlPayloadBytes": 0,
+  "nonInspectionRuntimeResponsePayloadBytes": 3687,
+  "rawInspectionPayloadBytes": 9011,
+  "traceSha256": "bea4fda83c4e4072cb5335ff3ae64f1290c5b190b036677a14c685ab2fbc918f",
+  "selectedResponsePayloadBytes": 12698
+}

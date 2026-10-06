@@ -1,6 +1,9 @@
 # Selective retrieval feasibility comparison
 
-Status: prepared protocol; no actor outcomes yet.
+Status: study-001 complete. [Review 067](../../../reports/067-selective-retrieval-study.md)
+records four independently accepted results, preserved state and audited traffic.
+Compact guidance retrieved more inspection bytes on this task; no general
+efficiency or model-context claim is supported.
 
 Follow [the matched study](../../../docs/SELECTIVE-RETRIEVAL-STUDY.md). This is
 a new apparatus version; do not alter early-flow-001/002 evidence. Four fresh
@@ -9,8 +12,9 @@ Every actor gets an exact isolated copy of repeat Growing task 3's final state,
 the same runtime and host pins, allowlist, test policy and cumulative inspection
 response cap of 16,000 payload bytes selected before the first launch. The
 [selection evidence](../../../reports/evidence/066-study-budget-selection.json)
-records shared discovery and both metadata prefixes; runtime/host pins remain
-pending validation and publication.
+records shared discovery and both metadata prefixes. The
+[published-runtime preflight](runs/study-001/published-preflight.json) freezes
+fresh runtime/host pins and verifies all 11 seed tests before actor launch.
 
 Compose the full prompt from the archived selected public task, schema,
 early-flow-002 common instructions, this package's shared primer, assigned

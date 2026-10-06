@@ -1,0 +1,1 @@
+The first coordinator aggregate audit cast JSON DateTime values back to culture-specific strings before parsing, losing UTC kind and incorrectly rejecting prelaunch ordering. Corrected to direct DateTimeOffset conversion, preserving UTC/local kind. No timestamp, actor outcome, limit or artifact changed; the audit was rerun against the same completed traces.

@@ -84,4 +84,8 @@ The [matched retrieval study](SELECTIVE-RETRIEVAL-STUDY.md) is the next bounded
 outcome comparison: four fresh actors on one common retained-vocabulary task,
 same allowlist and 16,000-byte inspection allowance, with Full/Compact guidance
 and detailed fallback allowed. The starting-state audit and metadata preflight
-are preparation only; actual trials wait for the published budget host's pin.
+are preparation only. [Checkpoint 067](../reports/067-selective-retrieval-study.md)
+records all four accepted trials on the published budget host and newly built
+pinned runtime. Compact guidance used more inspection bytes in this bounded
+comparison; keep both retrieval routes available. Broader efficiency and
+small-context outcomes remain unproven.

@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "files": 212,
+  "scope": "experiments/AgentLang.SubagentTrials/selective-flow-001/runs",
+  "method": "Compare every staged Git blob ID with git hash-object --no-filters on the corresponding working-copy file. Preserves exact byte-addressed trial artifacts.",
+  "mismatches": 0
+}

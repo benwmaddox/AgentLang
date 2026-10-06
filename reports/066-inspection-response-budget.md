@@ -68,8 +68,10 @@ built fresh artifacts and passed all 32 checks. Saved
 with this change. The [read-only audit script](evidence/066-audit-host-traces.ps1)
 checks actual raw/selected byte hashes, admission prefixes and every counter
 snapshot against the trace stream and independently captured stdout totals.
-Clean committed-source CI remains pending
-publication. No F# runtime, type, effect, semantic IR or storage version changed.
+Clean committed-source [main CI](evidence/066-main-ci.json) subsequently passed
+all 32 checks at `94a2d7f`, with `dirty: false` in the saved
+[validation artifact](evidence/066-main-validation.json).
+No F# runtime, type, effect, semantic IR or storage version changed.
 
 No new comparative agent outcome is claimed. The next milestone is the pinned
 four-actor matched retrieval study. Existing frozen pilot and repeat artifacts

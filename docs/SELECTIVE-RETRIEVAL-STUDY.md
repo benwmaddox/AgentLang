@@ -1,7 +1,8 @@
 # Matched selective-retrieval study
 
-Status: protocol plan, 2026-10-06. Launch only after the pinned runtime and
-optional inspection-budget host pass validation. This follows
+Status: frozen protocol, 2026-10-06; [study-001 checkpoint](../reports/067-selective-retrieval-study.md)
+records execution on published 94a2d7f binaries after clean CI and fresh preflight.
+This follows
 [purpose review 064](../reports/064-repeat-agent-purpose-review.md) and the
 [context plan](SELECTIVE-CONTEXT-PLAN.md). It studies external AI coding tools;
 the language has no embedded AI agents.

@@ -1,0 +1,28 @@
+{
+  "task": "task-0004",
+  "goal": "Calculate renewal balance by applying the premium customer discount, then the annual renewable discount when applicable, through customer.renewal-balance.",
+  "active": false,
+  "wordsInspected": [],
+  "wordsUsed": [
+    "bool.and",
+    "customer.balance",
+    "customer.discounted-balance",
+    "customer.kind",
+    "customer.new",
+    "customer.premium?",
+    "customer.renewal-balance",
+    "equals",
+    "float.multiply",
+    "subscription.annual-renewable?",
+    "subscription.new",
+    "subscription.renewable",
+    "subscription.term"
+  ],
+  "wordsCreated": [
+    "customer.renewal-balance"
+  ],
+  "testsRun": 10,
+  "testsFailed": 0,
+  "effects": {},
+  "errors": []
+}

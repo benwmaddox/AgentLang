@@ -1,0 +1,3 @@
+test customer.renewal-balance/case-sensitive-values {
+    customer::renewal-balance(customer::new("Premium", 100.0), subscription::new("Annual", true)) => 100.0
+}

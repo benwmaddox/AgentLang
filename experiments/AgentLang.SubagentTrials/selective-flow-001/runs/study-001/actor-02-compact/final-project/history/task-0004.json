@@ -1,0 +1,35 @@
+{
+  "task": "task-0004",
+  "goal": "Calculate customer renewal balance. First multiply the balance by 0.9 for kind exactly \u0022premium\u0022; otherwise keep it. Then multiply that result by 0.95 when subscription term is exactly \u0022annual\u0022 and renewable is true. That additional discount applies to standard customers too. Required entry point: AgentLang customer.renewal-balance : Customer Subscription -\u003E Float; F# Customer.renewalBalance : Customer -\u003E Subscription -\u003E float. Add relevant tests.",
+  "active": false,
+  "wordsInspected": [
+    "Customer",
+    "Subscription",
+    "context:customer.new",
+    "context:subscription.new",
+    "customer.new",
+    "subscription.new"
+  ],
+  "wordsUsed": [
+    "bool.and",
+    "customer.balance",
+    "customer.discounted-balance",
+    "customer.kind",
+    "customer.new",
+    "customer.premium?",
+    "customer.renewal-balance",
+    "equals",
+    "float.multiply",
+    "subscription.annual-renewable?",
+    "subscription.new",
+    "subscription.renewable",
+    "subscription.term"
+  ],
+  "wordsCreated": [
+    "customer.renewal-balance"
+  ],
+  "testsRun": 12,
+  "testsFailed": 0,
+  "effects": {},
+  "errors": []
+}

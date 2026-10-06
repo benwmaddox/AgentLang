@@ -1,0 +1,58 @@
+{
+  "admittedInspectionPayloadBytes": 5594,
+  "passed": true,
+  "rawValidRuntimeResponsePayloadBytes": 8607,
+  "limits": [
+    "Trace-derived pipe-delivery audit; no independent capture of actor stdout.",
+    "Pipe delivery is not model consumption.",
+    "No model tokens, turns, controlled timing or context-window measurement."
+  ],
+  "exchanges": 11,
+  "selectedResponsePayloadBytes": 8607,
+  "rawInspectionPayloadBytes": 5594,
+  "pipeDeliveredWireBytes": 8618,
+  "schemaVersion": 1,
+  "sessionEnd": {
+    "event": "session-end",
+    "finishedUtc": "2026-10-06T16:24:29.5297636-04:00",
+    "exchangeCount": 11,
+    "hostExitCode": 0,
+    "runtimeExitCode": 0,
+    "runtimeStderrPrefixBytes": 0,
+    "runtimeStderrTotalBytes": 0,
+    "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runtimeStderrCaptureTruncated": false,
+    "schemaVersion": 2,
+    "responseAccounting": {
+      "rawValidRuntimeResponsePayloadUtf8Bytes": 8607,
+      "selectedResponsePayloadUtf8Bytes": 8607,
+      "admittedInspectionPayloadUtf8Bytes": 5594,
+      "nonInspectionRuntimeResponsePayloadUtf8Bytes": 3013,
+      "hostDenialControlResponsePayloadUtf8Bytes": 0,
+      "stdoutPipeDeliveredResponseCount": 11,
+      "stdoutPipeDeliveredResponsePayloadUtf8Bytes": 8607,
+      "stdoutPipeDeliveredResponseWireUtf8Bytes": 8618,
+      "pipeDeliveryMeaning": "A response-delivered event means the host stdout write and flush completed; it does not establish model-context consumption."
+    }
+  },
+  "hostControlPayloadBytes": 0,
+  "pipeDeliveredPayloadBytes": 8607,
+  "pipeDeliveredResponses": 11,
+  "traceSha256": "9929c83dcd30f194b0e0d294f118fc83aae28d7d98683b4eb5dee28fdb9a561b",
+  "errorResponses": 0,
+  "nonInspectionRuntimeResponsePayloadBytes": 3013,
+  "suppressedInspectionPayloadBytes": 0,
+  "operations": [
+    "words",
+    "search",
+    "describe",
+    "source",
+    "describe",
+    "source",
+    "task.begin",
+    "define",
+    "test",
+    "commit",
+    "task.commit"
+  ]
+}

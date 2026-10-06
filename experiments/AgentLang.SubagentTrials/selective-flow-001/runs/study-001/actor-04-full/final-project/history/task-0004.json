@@ -1,0 +1,28 @@
+{
+  "task": "task-0004",
+  "goal": "Calculate customer renewal balance: multiply balance by 0.9 for kind exactly premium; then multiply the result by 0.95 when subscription term is exactly annual and renewable is true. Required AgentLang entry point customer.renewal-balance : Customer Subscription -\u003E Float. Preserve accepted types, helpers, and tests; add relevant tests.",
+  "active": false,
+  "wordsInspected": [],
+  "wordsUsed": [
+    "bool.and",
+    "customer.balance",
+    "customer.discounted-balance",
+    "customer.kind",
+    "customer.new",
+    "customer.premium?",
+    "customer.renewal-balance",
+    "equals",
+    "float.multiply",
+    "subscription.annual-renewable?",
+    "subscription.new",
+    "subscription.renewable",
+    "subscription.term"
+  ],
+  "wordsCreated": [
+    "customer.renewal-balance"
+  ],
+  "testsRun": 18,
+  "testsFailed": 0,
+  "effects": {},
+  "errors": []
+}
