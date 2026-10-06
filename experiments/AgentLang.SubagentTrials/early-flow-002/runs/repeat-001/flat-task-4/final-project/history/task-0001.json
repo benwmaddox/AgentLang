@@ -1,0 +1,33 @@
+{
+  "task": "task-0001",
+  "goal": "Implement Customer renewal balance calculation in AgentLang, preserving existing library work and adding meaningful tests for premium and annual renewable discount behavior.",
+  "active": false,
+  "wordsInspected": [
+    "customer.balance",
+    "customer.kind",
+    "customer.new",
+    "equals",
+    "float.multiply",
+    "subscription.new",
+    "subscription.renewable",
+    "subscription.term"
+  ],
+  "wordsUsed": [
+    "customer.balance",
+    "customer.kind",
+    "customer.new",
+    "customer.renewal-balance",
+    "equals",
+    "float.multiply",
+    "subscription.new",
+    "subscription.renewable",
+    "subscription.term"
+  ],
+  "wordsCreated": [
+    "customer.renewal-balance"
+  ],
+  "testsRun": 12,
+  "testsFailed": 0,
+  "effects": {},
+  "errors": []
+}

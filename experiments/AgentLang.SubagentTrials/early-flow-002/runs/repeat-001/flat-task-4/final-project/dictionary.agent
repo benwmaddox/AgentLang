@@ -1,0 +1,75 @@
+// frontend: flow/1
+
+record Customer {
+    field kind: String;
+    field balance: Float;
+}
+
+// frontend: flow/1
+
+record Subscription {
+    field term: String;
+    field renewable: Bool;
+}
+
+// frontend: flow/1
+
+word customer.renewal-balance(customer: Customer, subscription: Subscription) -> Float {
+    effects none
+    let initialBalance = if ::equals(customer::kind(customer), "premium") {
+    float::multiply(customer::balance(customer), 0.9)
+} else {
+    customer::balance(customer)
+};
+    if ::equals(subscription::term(subscription), "annual") {
+        if subscription::renewable(subscription) {
+            float::multiply(initialBalance, 0.95)
+        } else {
+            initialBalance
+        }
+    } else {
+        initialBalance
+    }
+}
+
+// frontend: flow/1
+
+test customer.renewal-balance/premium_annual_nonrenewable {
+    customer::renewal-balance(customer::new("premium", 100), subscription::new("annual", false))
+    => 90
+}
+
+// frontend: flow/1
+
+test customer.renewal-balance/premium_annual_renewable {
+    customer::renewal-balance(customer::new("premium", 100), subscription::new("annual", true))
+    => 85.5
+}
+
+// frontend: flow/1
+
+test customer.renewal-balance/premium_monthly_renewable {
+    customer::renewal-balance(customer::new("premium", 100), subscription::new("monthly", true))
+    => 90
+}
+
+// frontend: flow/1
+
+test customer.renewal-balance/standard_annual_renewable {
+    customer::renewal-balance(customer::new("standard", 100), subscription::new("annual", true))
+    => 95
+}
+
+// frontend: flow/1
+
+test customer.renewal-balance/strings_are_exact {
+    customer::renewal-balance(customer::new("Premium", 100), subscription::new("Annual", true))
+    => 100
+}
+
+// frontend: flow/1
+
+test customer.renewal-balance/zero_balance {
+    customer::renewal-balance(customer::new("premium", 0), subscription::new("annual", true))
+    => 0
+}

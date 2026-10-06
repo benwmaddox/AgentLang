@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "recordedBeforeLaunch": true,
+  "trial": "repeat-001/conventional-task-4",
+  "arm": "Conventional",
+  "task": 4,
+  "sourceRevision": "dc18d6efc0d002d1a752024301d42f54cdd49c07",
+  "coordinatorRevision": "42a9c6e510ae677288372297c9c4968d2cd39fcb",
+  "model": "gpt-6-luna",
+  "reasoning": "max",
+  "forkTurns": "none",
+  "preparedAt": "2026-10-06T17:59:14.9566854+00:00",
+  "promptUtf8Bytes": 5859,
+  "promptSha256": "265352458d7f533807ba3a6460cf344ce5d4d6e6643d66e3b7f86187fb4ed193",
+  "commonSha256": "4ef0dc782cdf16edffd9a93da5c0c84a98ecb4ba0b07b8723e1b08238be4b7f2",
+  "primerSha256": "55873b72a7912901d4c6eae20866d7d714f1ea1f5975a05121c7447f8bbe504b",
+  "publicTasksSha256": "639a55a7f1d7be0ae4f6de0de7999293259e13253acfe7d71b17f621ccb3a253",
+  "startingFiles": [
+    {
+      "path": "Domain.fs",
+      "bytes": 812,
+      "sha256": "073d951251fae31d22c4959905d4cae1790ce15037f8c484b420bd5f8b5a37f8"
+    },
+    {
+      "path": "EarlyPilot.fsproj",
+      "bytes": 321,
+      "sha256": "90c90151c9142926d936e94721336ea709c3b3093557aa4d5133d143d6075257"
+    },
+    {
+      "path": "SelfTests.fs",
+      "bytes": 2852,
+      "sha256": "beb651bbc3c3f1dd26c5a6c8fa99fe74cf2c20ad6c44e6d88bcc50d60e62eda6"
+    }
+  ],
+  "cliSha256": "f2d232278cb75add8e97400e60df71e6abc1ec90dcc53bc58c98475c11af9ef8",
+  "allowedOperations": [
+    "inspect",
+    "read",
+    "search",
+    "patch",
+    "replace",
+    "validate"
+  ],
+  "additionalCliArguments": [
+    "--validation-project",
+    "EarlyPilot.fsproj"
+  ],
+  "hostCommand": "& 'D:\\code\\AgentLang\\scripts\\Start-SubagentTrialHost.ps1' -CliDll 'D:\\code\\AgentLang\\.agentlang\\early-repeat-002\\conventional-bin\\AgentLang.Conventional.Cli.dll' -ProjectPath 'D:\\code\\AgentLang\\.agentlang\\early-repeat-002\\conventional' -TracePath 'D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\early-flow-002\\runs\\repeat-001\\conventional-task-4\\trace.jsonl' -AllowedOperations @('inspect','read','search','patch','replace','validate') -Profile conventional -AdditionalCliArguments @('--validation-project','EarlyPilot.fsproj') -ExchangeTimeoutMilliseconds 120000 -MaxExchanges 100",
+  "projectPath": "D:\\code\\AgentLang\\.agentlang\\early-repeat-002\\conventional",
+  "tracePath": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\early-flow-002\\runs\\repeat-001\\conventional-task-4\\trace.jsonl",
+  "maxExchanges": 100,
+  "exchangeTimeoutMilliseconds": 120000,
+  "maxRequestBytes": 262144,
+  "maxResponseBytes": 524288,
+  "profile": "conventional",
+  "capabilities": [],
+  "clockValue": "2000-01-01T00:00:00Z"
+}

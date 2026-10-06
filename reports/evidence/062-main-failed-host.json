@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 1,
+  "kind": "subagent-trial-host-wrapper-verification",
+  "outcome": "failed",
+  "createdUtc": "2026-10-06T18:04:00.8546095+00:00",
+  "repoRoot": "D:\\a\\AgentLang\\AgentLang",
+  "testedHead": "42a9c6e510ae677288372297c9c4968d2cd39fcb",
+  "workingTreeDirty": false,
+  "cliDll": "D:\\a\\AgentLang\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+  "cliFiles": [
+    {
+      "name": "AgentLang.Cli.deps.json",
+      "sha256": "be2b5c552c88ae78e6cfd9f6ea223d1761afd2dd41d6a0bfa244f064ef099d80"
+    },
+    {
+      "name": "AgentLang.Cli.dll",
+      "sha256": "aa263be179460da3d2f65982c1629ed2490e2af1d3d78424f3752e1459b24a43"
+    },
+    {
+      "name": "AgentLang.Cli.runtimeconfig.json",
+      "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+    },
+    {
+      "name": "AgentLang.Core.dll",
+      "sha256": "df8a18fc23670c6eb892e37398aba71fedf8f9dd83a9eb54f37d8f85d2be11e5"
+    },
+    {
+      "name": "FSharp.Core.dll",
+      "sha256": "39b0b7f06c11bedd93f94b6f101fffd645f1c4437a5a6d3ee79259f855aeb11a"
+    }
+  ],
+  "wrapperFiles": [
+    {
+      "path": "scripts\\Start-SubagentTrialHost.ps1",
+      "sha256": "19f0ac0eae21e928dd6606a4de7be32d21338d31e21e499a50524099786f813f"
+    },
+    {
+      "path": "scripts\\Verify-SubagentTrialHost.ps1",
+      "sha256": "4db7e24b0112dd804a20ddc324510fbc977b7d381cbf8a8c2a7953c177369300"
+    },
+    {
+      "path": "docs\\SUBAGENT-TRIAL-HOST.md",
+      "sha256": "f2971a28df77c5ff891a2a51d3f5991011765b79f57be0bd112cb7f9919b7a3c"
+    }
+  ],
+  "artifacts": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-534ec9c1caec40d98fdffd7a6217b872",
+  "error": "Verification failed: language write session exits cleanly — exit=124; stderr=",
+  "checks": [
+    {
+      "name": "language write session exits cleanly",
+      "passed": false,
+      "detail": "exit=124; stderr="
+    }
+  ],
+  "runs": [
+    {
+      "name": "language-write-session",
+      "tracePath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\reports\\trial-host-534ec9c1caec40d98fdffd7a6217b872-language-write-session.jsonl",
+      "exitCode": 124,
+      "timedOut": false,
+      "durationMilliseconds": 7941.81,
+      "responseCount": 1,
+      "responses": [
+        {
+          "ok": false,
+          "kind": "error",
+          "text": "Request delivery and response did not both complete before the single exchange deadline. Execution outcome is uncertain; do not retry automatically, inspect persisted project state first.",
+          "error": {
+            "code": "TRIAL_EXCHANGE_TIMEOUT",
+            "message": "Request delivery and response did not both complete before the single exchange deadline. Execution outcome is uncertain; do not retry automatically, inspect persisted project state first."
+          }
+        }
+      ],
+      "responseEntriesOmitted": 0,
+      "traceEventCount": 3,
+      "traceEvents": [
+        {
+          "event": "session-start",
+          "schemaVersion": 1,
+          "startedUtc": "2026-10-06T18:03:57.2961871+00:00",
+          "hostProcessId": 4048,
+          "runtimeProcessId": 4112,
+          "runtimeExecutable": "dotnet",
+          "processArchitecture": "x64",
+          "jobObjectLayout": {
+            "basicLimitInformationBytes": 64,
+            "basicLimitFlagsOffset": 16,
+            "ioCountersBytes": 48,
+            "extendedLimitInformationBytes": 144,
+            "extendedIoInfoOffset": 64,
+            "processMemoryLimitOffset": 112,
+            "jobMemoryLimitOffset": 120,
+            "peakProcessMemoryUsedOffset": 128,
+            "peakJobMemoryUsedOffset": 136
+          },
+          "cliDll": "D:\\a\\AgentLang\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+          "cliFiles": [
+            {
+              "name": "AgentLang.Cli.deps.json",
+              "sha256": "be2b5c552c88ae78e6cfd9f6ea223d1761afd2dd41d6a0bfa244f064ef099d80"
+            },
+            {
+              "name": "AgentLang.Cli.dll",
+              "sha256": "aa263be179460da3d2f65982c1629ed2490e2af1d3d78424f3752e1459b24a43"
+            },
+            {
+              "name": "AgentLang.Cli.runtimeconfig.json",
+              "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+            },
+            {
+              "name": "AgentLang.Core.dll",
+              "sha256": "df8a18fc23670c6eb892e37398aba71fedf8f9dd83a9eb54f37d8f85d2be11e5"
+            },
+            {
+              "name": "FSharp.Core.dll",
+              "sha256": "39b0b7f06c11bedd93f94b6f101fffd645f1c4437a5a6d3ee79259f855aeb11a"
+            }
+          ],
+          "projectPath": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-534ec9c1caec40d98fdffd7a6217b872\\language-write-session",
+          "profile": "agentlang",
+          "allowedOperations": [
+            "commit",
+            "define",
+            "task.begin",
+            "task.commit",
+            "test"
+          ],
+          "additionalCliArguments": [],
+          "capabilities": [],
+          "limits": {
+            "maxRequestBytes": 262144,
+            "maxResponseBytes": 524288,
+            "exchangeTimeoutMilliseconds": 2000,
+            "maxExchanges": 100
+          },
+          "cleanup": "Windows job object kill-on-close plus explicit process cleanup"
+        },
+        {
+          "event": "exchange",
+          "index": 1,
+          "atUtc": "2026-10-06T18:04:00.3628594+00:00",
+          "operation": "task.begin",
+          "outcome": "timeout",
+          "requestDelivery": {
+            "state": "uncertain",
+            "attemptedUtf8Bytes": 66,
+            "confirmedUtf8Bytes": null,
+            "completeLineConfirmed": false
+          },
+          "executionState": "uncertain",
+          "automaticRetry": "never; inspect authoritative stored state after any uncertain outcome",
+          "observedRuntimeResponse": {
+            "complete": false,
+            "validJson": null,
+            "utf8Bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "base64": ""
+          },
+          "request": {
+            "rawLine": "{\"goal\":\"wrapper persistent-flow verification\",\"op\":\"task.begin\"}",
+            "canonical": "{\"goal\":\"wrapper persistent-flow verification\",\"op\":\"task.begin\"}",
+            "wireBase64": "eyJnb2FsIjoid3JhcHBlciBwZXJzaXN0ZW50LWZsb3cgdmVyaWZpY2F0aW9uIiwib3AiOiJ0YXNrLmJlZ2luIn0K",
+            "payloadUtf8Bytes": 65,
+            "wireUtf8Bytes": 66,
+            "sha256": "646a111520d5162b1ba8616940f79feb9442c85b6afec730acadcb6264ae1d18"
+          },
+          "response": {
+            "source": "host",
+            "rawLine": "{\"ok\":false,\"kind\":\"error\",\"text\":\"Request delivery and response did not both complete before the single exchange deadline. Execution outcome is uncertain; do not retry automatically, inspect persisted project state first.\",\"error\":{\"code\":\"TRIAL_EXCHANGE_TIMEOUT\",\"message\":\"Request delivery and response did not both complete before the single exchange deadline. Execution outcome is uncertain; do not retry automatically, inspect persisted project state first.\"}}",
+            "canonical": "{\"error\":{\"code\":\"TRIAL_EXCHANGE_TIMEOUT\",\"message\":\"Request delivery and response did not both complete before the single exchange deadline. Execution outcome is uncertain; do not retry automatically, inspect persisted project state first.\"},\"kind\":\"error\",\"ok\":false,\"text\":\"Request delivery and response did not both complete before the single exchange deadline. Execution outcome is uncertain; do not retry automatically, inspect persisted project state first.\"}",
+            "wireBase64": "eyJvayI6ZmFsc2UsImtpbmQiOiJlcnJvciIsInRleHQiOiJSZXF1ZXN0IGRlbGl2ZXJ5IGFuZCByZXNwb25zZSBkaWQgbm90IGJvdGggY29tcGxldGUgYmVmb3JlIHRoZSBzaW5nbGUgZXhjaGFuZ2UgZGVhZGxpbmUuIEV4ZWN1dGlvbiBvdXRjb21lIGlzIHVuY2VydGFpbjsgZG8gbm90IHJldHJ5IGF1dG9tYXRpY2FsbHksIGluc3BlY3QgcGVyc2lzdGVkIHByb2plY3Qgc3RhdGUgZmlyc3QuIiwiZXJyb3IiOnsiY29kZSI6IlRSSUFMX0VYQ0hBTkdFX1RJTUVPVVQiLCJtZXNzYWdlIjoiUmVxdWVzdCBkZWxpdmVyeSBhbmQgcmVzcG9uc2UgZGlkIG5vdCBib3RoIGNvbXBsZXRlIGJlZm9yZSB0aGUgc2luZ2xlIGV4Y2hhbmdlIGRlYWRsaW5lLiBFeGVjdXRpb24gb3V0Y29tZSBpcyB1bmNlcnRhaW47IGRvIG5vdCByZXRyeSBhdXRvbWF0aWNhbGx5LCBpbnNwZWN0IHBlcnNpc3RlZCBwcm9qZWN0IHN0YXRlIGZpcnN0LiJ9fQo=",
+            "payloadUtf8Bytes": 466,
+            "wireUtf8Bytes": 467,
+            "sha256": "22f356027e45d83df020604ff2158f148740d75c1bcf75facbc300ad7588e45a",
+            "parseError": null
+          },
+          "elapsedMilliseconds": 2018.8145,
+          "errorCode": "TRIAL_EXCHANGE_TIMEOUT",
+          "errorMessage": "Request delivery and response did not both complete before the single exchange deadline. Execution outcome is uncertain; do not retry automatically, inspect persisted project state first."
+        },
+        {
+          "event": "session-end",
+          "finishedUtc": "2026-10-06T18:04:00.4744689+00:00",
+          "exchangeCount": 1,
+          "hostExitCode": 124,
+          "runtimeExitCode": 0,
+          "runtimeStderrPrefixBytes": 0,
+          "runtimeStderrTotalBytes": 0,
+          "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "runtimeStderrCaptureTruncated": false
+        }
+      ],
+      "traceEventEntriesOmitted": 0
+    }
+  ]
+}

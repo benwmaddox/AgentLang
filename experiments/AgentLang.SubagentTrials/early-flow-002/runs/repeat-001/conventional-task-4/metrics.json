@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "trial": "repeat-001/conventional-task-4",
+  "accepted": true,
+  "independentChecks": 43,
+  "behavioralVectors": 20,
+  "exchanges": 14,
+  "requestPayloadUtf8Bytes": 8428,
+  "responsePayloadUtf8Bytes": 13631,
+  "runtimeErrors": 2,
+  "errors": [
+    {
+      "index": 9,
+      "operation": "patch",
+      "code": "HASH_INVALID"
+    },
+    {
+      "index": 11,
+      "operation": "patch",
+      "code": "HASH_INVALID"
+    }
+  ],
+  "modelTokens": null,
+  "modelTurns": null,
+  "controlledDuration": null,
+  "teardown": "Actor stopped existing session 91308 with Ctrl+C, exit 0; no additional JSONL requests.",
+  "promptAudit": "Intended prompt archived before launch; actual provider prompt bytes unavailable.",
+  "sourceAudit": {
+    "recordsAndThreePreviousHelpersPreserved": true,
+    "futureSavingsStubPreserved": true,
+    "projectUnchanged": true,
+    "previousEighteenTestCasesPreserved": true,
+    "newOwnTestCases": 10,
+    "totalOwnTestCases": 28,
+    "moduleOrderChanged": "Subscription moved before Customer for lexical resolution",
+    "commentUpdated": true,
+    "reuses": [
+      "Customer.discountedBalance",
+      "Subscription.annualRenewable"
+    ]
+  }
+}

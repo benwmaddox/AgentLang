@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "reviewer": "host_ci_timeout",
+  "model": "gpt-6-luna",
+  "reasoning": "max",
+  "scope": "Read-only independent review before narrow test edit",
+  "ciRun": 37507670551,
+  "diagnosis": "CI exchange exceeded test-only 2000ms deadline. Delay source unconfirmed; original focused test passed locally after fresh build. Host uncertainty/no-retry behavior matched configured deadline.",
+  "plan": "Explicit 15000ms exchange timeout only for language write and reload success scenarios; outer budgets 90000/60000ms for five/three requests. Shared defaults, product host and all adversarial assertions unchanged."
+}

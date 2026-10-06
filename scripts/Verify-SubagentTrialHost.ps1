@@ -499,8 +499,10 @@ end
         (New-JsonLine @{ op = 'commit'; word = 'trial.success' }),
         (New-JsonLine @{ op = 'task.commit' })
     )
+    # Happy-path real-runtime sessions use the host's 15-second allowance and outer budgets for their request counts.
     $initial = Invoke-TrialHost -Name 'language-write-session' -Requests $initialRequests `
-        -AllowedOperations @('task.begin', 'define', 'test', 'commit', 'task.commit')
+        -AllowedOperations @('task.begin', 'define', 'test', 'commit', 'task.commit') `
+        -ExchangeTimeoutMilliseconds 15000 -OuterTimeoutMilliseconds 90000
     Assert-Check -Name 'language write session exits cleanly' -Passed ($initial.process.exitCode -eq 0 -and -not $initial.process.timedOut) -Detail "exit=$($initial.process.exitCode); stderr=$($initial.process.stderr)"
     Assert-Check -Name 'language write responses all succeed' -Passed ($initial.responses.Count -eq 5 -and @($initial.responses | Where-Object { -not $_.ok }).Count -eq 0) -Detail "responses=$($initial.responses.Count)"
     Assert-Check -Name 'language write session confirms full request delivery' -Passed (@($initial.traceEvents | Where-Object { $_.event -eq 'exchange' -and $_.requestDelivery.state -ne 'confirmed' }).Count -eq 0) -Detail 'All five forwarded exchanges have a confirmed complete line.'
@@ -524,7 +526,8 @@ end
         (New-JsonLine @{ op = 'describe'; word = 'trial.success' })
     )
     $reload = Invoke-TrialHost -Name 'language-reload-session' -ProjectPath $initial.projectPath -Requests $reloadRequests `
-        -AllowedOperations @('tests', 'test', 'describe')
+        -AllowedOperations @('tests', 'test', 'describe') `
+        -ExchangeTimeoutMilliseconds 15000 -OuterTimeoutMilliseconds 60000
     Assert-Check -Name 'fresh process loads committed definition and tests' -Passed (
         $reload.process.exitCode -eq 0 -and $reload.responses.Count -eq 3 -and
         $reload.responses[0].ok -and $reload.responses[0].data -contains 'basic' -and

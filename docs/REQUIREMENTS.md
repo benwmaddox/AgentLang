@@ -54,6 +54,15 @@ trials. Earlier customer definitions/tests are preserved. Six multi-helper
 renewal/savings trials remain the immediate evaluation priority; interface
 recovery costs are recorded separately from behavioral correctness.
 
+[Checkpoint 063](../reports/063-repeat-renewal-composition.md) verifies all three
+renewal-composition outcomes, bringing the repeated sequence to twelve accepted
+trials. Growing preserves all three earlier word revisions and composes two
+helpers; Conventional composes its earlier helpers too. Three final savings
+trials remain. The preceding publication CI failed a test-only 2-second timing
+allowance; the original local check did not reproduce it. Only two functional
+verifier scenarios now use the host's 15-second allowance. Fresh local Release
+validation passes all 32 checks; frozen trial runtime and adversarial deadline
+checks are unchanged. This is not a comparative model-cost result.
 Latest external-agent workflow evidence: [report 054](../reports/054-flow-renewal-agent-control.md)
 records a separate inherited-history Luna/max control that created one tested
 library word by composing a retained domain word. Fresh-process acceptance

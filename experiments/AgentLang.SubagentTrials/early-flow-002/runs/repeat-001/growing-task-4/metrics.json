@@ -1,0 +1,203 @@
+{
+  "schemaVersion": 1,
+  "trial": "repeat-001/growing-task-4",
+  "accepted": true,
+  "independentChecks": 48,
+  "behavioralVectors": 20,
+  "exchanges": 19,
+  "requestPayloadUtf8Bytes": 2899,
+  "responsePayloadUtf8Bytes": 16167,
+  "runtimeErrors": 0,
+  "errors": [],
+  "modelTokens": null,
+  "modelTurns": null,
+  "controlledDuration": null,
+  "teardown": "Actor stopped existing session 80853 with Ctrl+C; exit 0; no extra protocol request.",
+  "promptAudit": "Intended prompt archived before launch; actual provider prompt bytes unavailable.",
+  "typesPreserved": true,
+  "manifestHash": "87321af4340ce2192883e3e26b944f86e2b376cdcf4860fa9ca017a5243e29a0",
+  "persistentWords": 4,
+  "previousWordsPreserved": 3,
+  "ownTestRuns": [
+    {
+      "results": [
+        {
+          "name": "annual-term-is-case-sensitive",
+          "word": "customer.renewal-balance",
+          "passed": true,
+          "expected": "100",
+          "actual": [
+            "100"
+          ]
+        },
+        {
+          "name": "monthly-standard-unchanged",
+          "word": "customer.renewal-balance",
+          "passed": true,
+          "expected": "100",
+          "actual": [
+            "100"
+          ]
+        },
+        {
+          "name": "premium-annual-not-renewable",
+          "word": "customer.renewal-balance",
+          "passed": true,
+          "expected": "90",
+          "actual": [
+            "90"
+          ]
+        },
+        {
+          "name": "premium-annual-renewable",
+          "word": "customer.renewal-balance",
+          "passed": true,
+          "expected": "85.5",
+          "actual": [
+            "85.5"
+          ]
+        },
+        {
+          "name": "premium-kind-is-case-sensitive",
+          "word": "customer.renewal-balance",
+          "passed": true,
+          "expected": "95",
+          "actual": [
+            "95"
+          ]
+        },
+        {
+          "name": "premium-monthly-renewable",
+          "word": "customer.renewal-balance",
+          "passed": true,
+          "expected": "90",
+          "actual": [
+            "90"
+          ]
+        },
+        {
+          "name": "standard-annual-renewable",
+          "word": "customer.renewal-balance",
+          "passed": true,
+          "expected": "95",
+          "actual": [
+            "95"
+          ]
+        },
+        {
+          "name": "zero-balance",
+          "word": "customer.renewal-balance",
+          "passed": true,
+          "expected": "0",
+          "actual": [
+            "0"
+          ]
+        }
+      ],
+      "coverage": {
+        "instructionsCovered": 10,
+        "instructionsTotal": 10,
+        "branchesCovered": 2,
+        "branchesTotal": 2,
+        "uncoveredInstructions": [],
+        "uncoveredBranchOutcomes": []
+      }
+    },
+    {
+      "results": [
+        {
+          "name": "case-sensitive-kind",
+          "word": "customer.discounted-balance",
+          "passed": true,
+          "expected": "25",
+          "actual": [
+            "25"
+          ]
+        },
+        {
+          "name": "other-kind-unchanged",
+          "word": "customer.discounted-balance",
+          "passed": true,
+          "expected": "100",
+          "actual": [
+            "100"
+          ]
+        },
+        {
+          "name": "premium-discount",
+          "word": "customer.discounted-balance",
+          "passed": true,
+          "expected": "90",
+          "actual": [
+            "90"
+          ]
+        },
+        {
+          "name": "premium-zero-balance",
+          "word": "customer.discounted-balance",
+          "passed": true,
+          "expected": "0",
+          "actual": [
+            "0"
+          ]
+        }
+      ],
+      "coverage": {
+        "instructionsCovered": 9,
+        "instructionsTotal": 9,
+        "branchesCovered": 2,
+        "branchesTotal": 2,
+        "uncoveredInstructions": [],
+        "uncoveredBranchOutcomes": []
+      }
+    },
+    {
+      "results": [
+        {
+          "name": "annual-and-renewable",
+          "word": "subscription.annual-renewable?",
+          "passed": true,
+          "expected": "true",
+          "actual": [
+            "true"
+          ]
+        },
+        {
+          "name": "annual-but-not-renewable",
+          "word": "subscription.annual-renewable?",
+          "passed": true,
+          "expected": "false",
+          "actual": [
+            "false"
+          ]
+        },
+        {
+          "name": "case-sensitive-term",
+          "word": "subscription.annual-renewable?",
+          "passed": true,
+          "expected": "false",
+          "actual": [
+            "false"
+          ]
+        },
+        {
+          "name": "monthly-and-renewable",
+          "word": "subscription.annual-renewable?",
+          "passed": true,
+          "expected": "false",
+          "actual": [
+            "false"
+          ]
+        }
+      ],
+      "coverage": {
+        "instructionsCovered": 7,
+        "instructionsTotal": 7,
+        "branchesCovered": 0,
+        "branchesTotal": 0,
+        "uncoveredInstructions": [],
+        "uncoveredBranchOutcomes": []
+      }
+    }
+  ]
+}

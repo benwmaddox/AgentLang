@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "trial": "repeat-001/flat-task-4",
+  "accepted": true,
+  "independentChecks": 48,
+  "behavioralVectors": 20,
+  "exchanges": 14,
+  "requestPayloadUtf8Bytes": 2347,
+  "responsePayloadUtf8Bytes": 10178,
+  "runtimeErrors": 0,
+  "errors": [],
+  "modelTokens": null,
+  "modelTurns": null,
+  "controlledDuration": null,
+  "teardown": "Actor stopped existing session 28956 with Ctrl+C; exit 0; no extra protocol request.",
+  "promptAudit": "Intended prompt archived before launch; actual provider prompt bytes unavailable.",
+  "typesPreserved": true,
+  "manifestHash": "ab0c6852380b1dd90a77fb38805e528a2b06c2b74f6be856c87a02ecb415c822",
+  "persistentWords": 1,
+  "ownTestRuns": [
+    {
+      "results": [
+        {
+          "name": "premium_annual_nonrenewable",
+          "word": "customer.renewal-balance",
+          "passed": true,
+          "expected": "90",
+          "actual": [
+            "90"
+          ]
+        },
+        {
+          "name": "premium_annual_renewable",
+          "word": "customer.renewal-balance",
+          "passed": true,
+          "expected": "85.5",
+          "actual": [
+            "85.5"
+          ]
+        },
+        {
+          "name": "premium_monthly_renewable",
+          "word": "customer.renewal-balance",
+          "passed": true,
+          "expected": "90",
+          "actual": [
+            "90"
+          ]
+        },
+        {
+          "name": "standard_annual_renewable",
+          "word": "customer.renewal-balance",
+          "passed": true,
+          "expected": "95",
+          "actual": [
+            "95"
+          ]
+        },
+        {
+          "name": "strings_are_exact",
+          "word": "customer.renewal-balance",
+          "passed": true,
+          "expected": "100",
+          "actual": [
+            "100"
+          ]
+        },
+        {
+          "name": "zero_balance",
+          "word": "customer.renewal-balance",
+          "passed": true,
+          "expected": "0",
+          "actual": [
+            "0"
+          ]
+        }
+      ],
+      "coverage": {
+        "instructionsCovered": 25,
+        "instructionsTotal": 25,
+        "branchesCovered": 6,
+        "branchesTotal": 6,
+        "uncoveredInstructions": [],
+        "uncoveredBranchOutcomes": []
+      }
+    }
+  ]
+}

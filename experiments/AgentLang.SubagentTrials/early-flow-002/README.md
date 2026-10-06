@@ -1,6 +1,6 @@
 # Repeated external-agent comparison
 
-Status: nine of fifteen repeated trials accepted; see [checkpoint 062](../../../reports/062-repeat-eligibility-task.md).
+Status: twelve of fifteen repeated trials accepted; see [checkpoint 063](../../../reports/063-repeat-renewal-composition.md).
 
 Repeat the five public tasks from `../early-flow-001/tasks.md` with the same
 schema-only Flat seed, conventional seed and independent 20-vector/task oracle.

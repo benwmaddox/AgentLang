@@ -1,0 +1,17 @@
+word customer.renewal-balance(customer: Customer, subscription: Subscription) -> Float {
+    effects none
+    let initialBalance = if ::equals(customer::kind(customer), "premium") {
+        float::multiply(customer::balance(customer), 0.9)
+    } else {
+        customer::balance(customer)
+    }
+    if ::equals(subscription::term(subscription), "annual") {
+        if subscription::renewable(subscription) {
+            float::multiply(initialBalance, 0.95)
+        } else {
+            initialBalance
+        }
+    } else {
+        initialBalance
+    }
+}
