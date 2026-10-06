@@ -195,6 +195,13 @@ module Program =
         manifest, [ project; definition; test; example ], projectText
 
     let private flowFormat : SourceFormat = { Frontend = SourceFrontend.Flow; Version = 1 }
+    let private stackFormat : SourceFormat = { Frontend = SourceFrontend.Stack; Version = 1 }
+
+    let private typeSource name definition sourceFormat validatorTarget : TypeSource =
+        { Name = name
+          Definition = definition
+          SourceFormat = sourceFormat
+          ValidatorTarget = validatorTarget }
 
     let private callBinding
         (sourceReference: SourceRef)
@@ -247,6 +254,23 @@ module Program =
                 CallBindings = callBindings }
         { manifest with FormatVersion = 2; Revisions = [ revision ] }, sources, projectText
 
+    let private flowV3Fixture suffix =
+        let manifest, sources, projectText = flowV2Fixture suffix
+        let record = source StorageObjectKind.TypeDefinition $"type {suffix}.Record = record"
+        let flowRecord = source StorageObjectKind.TypeDefinition $"type {suffix}.FlowRecord = flow"
+        let userValidatedScalar = source StorageObjectKind.TypeDefinition $"type {suffix}.Email = scalar"
+        let primitiveValidatedScalar = source StorageObjectKind.TypeDefinition $"type {suffix}.Flag = scalar"
+        let generatedValidatedScalar = source StorageObjectKind.TypeDefinition $"type {suffix}.Wrapped = scalar"
+        let types =
+            [ typeSource $"{suffix}.Record" record.Reference stackFormat None
+              typeSource $"{suffix}.FlowRecord" flowRecord.Reference flowFormat None
+              typeSource $"{suffix}.Email" userValidatedScalar.Reference flowFormat (Some(StoredCallTarget.UserWord "word-stable-1"))
+              typeSource $"{suffix}.Flag" primitiveValidatedScalar.Reference flowFormat (Some(StoredCallTarget.Primitive "string.contains"))
+              typeSource $"{suffix}.Wrapped" generatedValidatedScalar.Reference flowFormat (Some(StoredCallTarget.GeneratedWord "generated:scalar.wrap")) ]
+        { manifest with FormatVersion = 3; Types = types },
+        sources @ [ record; flowRecord; userValidatedScalar; primitiveValidatedScalar; generatedValidatedScalar ],
+        projectText
+
     let private appendFlowRevision (baseManifest: ProjectManifest) suffix =
         let flowManifest, sources, projectText = flowV2Fixture suffix
         let maxRevision = baseManifest.Revisions |> List.map (fun item -> item.Revision) |> List.max
@@ -291,6 +315,16 @@ module Program =
                 Path.Combine(storageRoot project, "manifests", loaded.ManifestHash.Value + ".json"))
         store, JsonNode.Parse(raw).AsObject()
 
+    let private cloneValidFlowV3Manifest project =
+        let store = Storage.create project
+        let manifest, sources, text = flowV3Fixture "raw-v3"
+        Storage.commit store 0L manifest sources text |> ok "write raw-manifest v3 base" |> ignore
+        let loaded = Storage.load store |> ok "load raw-manifest v3 base"
+        let raw =
+            File.ReadAllText(
+                Path.Combine(storageRoot project, "manifests", loaded.ManifestHash.Value + ".json"))
+        store, JsonNode.Parse(raw).AsObject()
+
     let private firstRevisionObject (manifest: JsonObject) =
         let revisions = manifest["revisions"].AsArray()
         (revisions.[0]).AsObject()
@@ -300,12 +334,21 @@ module Program =
         let bindings = revision["callBindings"].AsArray()
         (bindings.[0]).AsObject()
 
+    let private firstTypeSourceObject (manifest: JsonObject) =
+        let types = manifest["types"].AsArray()
+        (types.[0]).AsObject()
+
     let private commitFixture store generation suffix =
         let manifest, sources, projectText = fixture suffix
         Storage.commit store generation manifest sources projectText |> ok "commit fixture"
 
     let private testManifestV1WriterRefusesMeaningfulV2Fields root =
-        let manifest, sources, projectText = fixture "v1-writer"
+        let baseManifest, baseSources, projectText = fixture "v1-writer"
+        let stackTypeObject = source StorageObjectKind.TypeDefinition "type v1-writer.Record = record"
+        let manifest =
+            { baseManifest with
+                Types = [ typeSource "v1-writer.Record" stackTypeObject.Reference stackFormat None ] }
+        let sources = stackTypeObject :: baseSources
         let flowSourceFormat = { Frontend = SourceFrontend.Flow; Version = 1 }
         let changedFormat =
             { manifest with
@@ -320,10 +363,22 @@ module Program =
         let changedBindings =
             { manifest with
                 Revisions = [ { manifest.Revisions.Head with CallBindings = [ definitionBinding ] } ] }
+        let changedTypeFrontend =
+            { manifest with
+                Types = [ { manifest.Types.Head with SourceFormat = flowFormat } ] }
+        let changedTypeTarget =
+            { manifest with
+                Types = [ { manifest.Types.Head with ValidatorTarget = Some(StoredCallTarget.UserWord "validator-word-id") } ] }
+        let changedTypeVersion =
+            { manifest with
+                Types = [ { manifest.Types.Head with SourceFormat = { Frontend = SourceFrontend.Stack; Version = 2 } } ] }
         for name, invalid, expectedCode in
             [ "frontend", changedFormat, "STORAGE_INVALID_MANIFEST"
               "source-version", changedVersion, "STORAGE_UNSUPPORTED_VERSION"
-              "bindings", changedBindings, "STORAGE_INVALID_MANIFEST" ] do
+              "bindings", changedBindings, "STORAGE_INVALID_MANIFEST"
+              "type-frontend", changedTypeFrontend, "STORAGE_INVALID_MANIFEST"
+              "type-validator-target", changedTypeTarget, "STORAGE_INVALID_MANIFEST"
+              "type-source-version", changedTypeVersion, "STORAGE_UNSUPPORTED_VERSION" ] do
             let project = Path.Combine(root, "v1-writer-" + name)
             let store = Storage.create project
             Storage.commit store 0L invalid sources projectText |> error expectedCode |> ignore
@@ -336,8 +391,14 @@ module Program =
         let store = Storage.create project
         Storage.commit store 0L manifest sources projectText |> ok "write v1 parser-field base" |> ignore
         let loaded = Storage.load store |> ok "load v1 parser-field base"
+        let loadedType = loaded.Manifest.Value.Types.Head
+        equal stackFormat loadedType.SourceFormat "v1 type source defaults to Stack/1"
+        equal None loadedType.ValidatorTarget "v1 type source defaults to no validator target"
         let rawPath = Path.Combine(storageRoot project, "manifests", loaded.ManifestHash.Value + ".json")
         let raw = JsonNode.Parse(File.ReadAllText rawPath).AsObject()
+        let rawType = firstTypeSourceObject raw
+        check (not (rawType.ContainsKey "sourceFormat")) "v1 type source encoding omits sourceFormat"
+        check (not (rawType.ContainsKey "validatorTarget")) "v1 type source encoding omits validatorTarget"
         let revision = firstRevisionObject raw
         let flowNode = JsonObject()
         flowNode["frontend"] <- JsonValue.Create("flow")
@@ -348,7 +409,12 @@ module Program =
         Storage.load store |> error "STORAGE_INVALID_MANIFEST" |> ignore
 
     let private testManifestV2RoundTripAndCanonicalBindings root =
-        let manifest, sources, projectText = flowV2Fixture "roundtrip"
+        let baseManifest, baseSources, projectText = flowV2Fixture "roundtrip"
+        let stackTypeObject = source StorageObjectKind.TypeDefinition "type roundtrip.Record = record"
+        let manifest =
+            { baseManifest with
+                Types = [ typeSource "roundtrip.Record" stackTypeObject.Reference stackFormat None ] }
+        let sources = stackTypeObject :: baseSources
         let firstProject = Path.Combine(root, "v2-first")
         let firstStore = Storage.create firstProject
         let committed = Storage.commit firstStore 0L manifest sources projectText |> ok "commit v2 source-format manifest"
@@ -356,6 +422,7 @@ module Program =
         equal committed.ManifestHash loaded.ManifestHash "v2 reload keeps manifest hash"
         let loadedManifest = loaded.Manifest.Value
         equal 2 loadedManifest.FormatVersion "manifest schema version 2 round trips"
+        equal [ typeSource "roundtrip.Record" stackTypeObject.Reference stackFormat None ] loadedManifest.Types "v2 type sources default to Stack/1 without validator targets"
         let expectedRevision = manifest.Revisions.Head
         let actualRevision = loadedManifest.Revisions.Head
         equal flowFormat actualRevision.SourceFormat "v2 Flow/1 frontend metadata round trips"
@@ -367,6 +434,9 @@ module Program =
         check (actualRevision.CallBindings |> List.exists (fun item -> item.Target = StoredCallTarget.Primitive "int.add")) "stable primitive target identity round trips"
         let rawManifestText = File.ReadAllText(Path.Combine(storageRoot firstProject, "manifests", loaded.ManifestHash.Value + ".json"))
         let rawManifest = JsonNode.Parse(rawManifestText).AsObject()
+        let rawType = firstTypeSourceObject rawManifest
+        check (not (rawType.ContainsKey "sourceFormat")) "v2 type source encoding omits sourceFormat"
+        check (not (rawType.ContainsKey "validatorTarget")) "v2 type source encoding omits validatorTarget"
         let rawRevision = firstRevisionObject rawManifest
         let rawBindings = rawRevision["callBindings"].AsArray()
         for bindingNode in rawBindings do
@@ -392,6 +462,159 @@ module Program =
         let reversedStore = Storage.create (Path.Combine(root, "v2-reversed"))
         let reversed = Storage.commit reversedStore 0L reversedManifest sources projectText |> ok "commit reversed input call-binding order"
         equal committed.ManifestHash reversed.ManifestHash "v2 canonical serialization ignores input binding order"
+
+    let private testManifestV3TypeSourceRoundTripAndValidation root =
+        let manifest, sources, projectText = flowV3Fixture "v3-roundtrip"
+        let firstProject = Path.Combine(root, "v3-first")
+        let firstStore = Storage.create firstProject
+        let committed = Storage.commit firstStore 0L manifest sources projectText |> ok "commit v3 type-source manifest"
+        let loaded = Storage.load firstStore |> ok "load v3 type-source manifest"
+        equal committed.ManifestHash loaded.ManifestHash "v3 reload keeps the exact manifest hash"
+        let loadedManifest = loaded.Manifest.Value
+        equal 3 loadedManifest.FormatVersion "manifest schema version 3 round trips"
+        equal (manifest.Types |> List.sortBy _.Name) loadedManifest.Types "v3 source formats and validator identities round trip"
+        equal flowFormat loadedManifest.Revisions.Head.SourceFormat "v3 word revision keeps the v2 Flow/1 metadata"
+        equal (Set.ofList manifest.Revisions.Head.CallBindings) (Set.ofList loadedManifest.Revisions.Head.CallBindings) "v3 word call-binding encoding remains v2-compatible"
+        for item in loadedManifest.Types do
+            equal (Storage.readSource firstStore item.Definition |> ok "read v3 type source") (List.find (fun candidate -> candidate.Reference = item.Definition) sources).Content $"v3 type source {item.Name} remains hash-addressed"
+
+        let manifestPath = Path.Combine(storageRoot firstProject, "manifests", loaded.ManifestHash.Value + ".json")
+        let rawText = File.ReadAllText manifestPath
+        equal loaded.ManifestHash.Value (digest rawText) "v3 manifest bytes match the content-addressed filename"
+        let rawManifest = JsonNode.Parse(rawText).AsObject()
+        let rawTypes = rawManifest["types"].AsArray() |> Seq.cast<JsonNode> |> Seq.map (fun node -> node.AsObject()) |> Seq.toList
+        let typeNode name = rawTypes |> List.find (fun item -> item["name"].GetValue<string>() = name)
+        let v3Revision = firstRevisionObject rawManifest
+        let expectedWordRevisionProperties =
+            [ "actor"; "callBindings"; "definition"; "deprecated"; "examples"; "maturity"; "name"; "revision"
+              "sourceFormat"; "taskId"; "tests"; "timestampUtc"; "wordId" ]
+        equal expectedWordRevisionProperties (v3Revision |> Seq.map (fun pair -> pair.Key) |> Seq.sort |> Seq.toList) "v3 word revision wire fields remain identical to v2"
+        let recordNode = typeNode "v3-roundtrip.Record"
+        check (recordNode.ContainsKey "sourceFormat") "v3 type source includes required sourceFormat"
+        check (recordNode.ContainsKey "validatorTarget") "v3 unvalidated type includes explicit nullable validatorTarget"
+        let recordFrontend = recordNode["sourceFormat"]["frontend"]
+        equal "stack" (recordFrontend.GetValue<string>()) "v3 Stack type source frontend is explicit"
+        check (isNull recordNode["validatorTarget"]) "v3 record has no validator identity"
+        let flowRecordNode = typeNode "v3-roundtrip.FlowRecord"
+        let flowRecordFrontend = flowRecordNode["sourceFormat"]["frontend"]
+        equal "flow" (flowRecordFrontend.GetValue<string>()) "v3 Flow type source frontend is explicit"
+        check (isNull flowRecordNode["validatorTarget"]) "v3 unvalidated Flow type preserves a null validator"
+        for name, kind, identity in
+            [ "v3-roundtrip.Email", "userWord", "word-stable-1"
+              "v3-roundtrip.Flag", "primitive", "string.contains"
+              "v3-roundtrip.Wrapped", "generatedWord", "generated:scalar.wrap" ] do
+            let ownerTypeNode = typeNode name
+            let targetNode = ownerTypeNode["validatorTarget"]
+            let target = targetNode.AsObject()
+            let targetKind = target["kind"]
+            let targetIdentity = target["identity"]
+            equal kind (targetKind.GetValue<string>()) $"v3 {name} validator target kind"
+            equal identity (targetIdentity.GetValue<string>()) $"v3 {name} stable validator target identity"
+            check (not (target.ContainsKey "revision")) $"v3 {name} validator target does not persist a mutable revision"
+
+        let current = JsonNode.Parse(File.ReadAllText(Path.Combine(storageRoot firstProject, "CURRENT"))).AsObject()
+        equal 1 (current["formatVersion"].GetValue<int>()) "CURRENT pointer envelope remains version 1 for a v3 manifest"
+        Storage.saveSnapshot firstStore loaded.Generation "manifest-v3" Map.empty None |> ok "snapshot v3 manifest under v1 snapshot envelope"
+        let snapshotPath = Path.Combine(storageRoot firstProject, "snapshots", "manifest-v3.json")
+        let snapshotJson = JsonNode.Parse(File.ReadAllText snapshotPath).AsObject()
+        equal 1 (snapshotJson["formatVersion"].GetValue<int>()) "named snapshot envelope remains version 1 for a v3 manifest"
+        let snapshot = Storage.readSnapshot firstStore "manifest-v3" |> ok "read v3 manifest snapshot"
+        equal 3 snapshot.Manifest.FormatVersion "v1 snapshot envelope can reference v3 manifest"
+        equal loaded.ManifestHash.Value snapshot.ManifestHash "v3 snapshot retains the exact manifest identity"
+
+        let reversedManifest = { manifest with Types = List.rev manifest.Types }
+        let reversedStore = Storage.create (Path.Combine(root, "v3-reversed-types"))
+        let reversed = Storage.commit reversedStore 0L reversedManifest sources projectText |> ok "commit reversed v3 type input order"
+        equal committed.ManifestHash reversed.ManifestHash "v3 canonical serialization ignores input type order"
+        let reversedRaw = File.ReadAllBytes(Path.Combine(storageRoot (Path.Combine(root, "v3-reversed-types")), "manifests", reversed.ManifestHash.Value + ".json"))
+        check (bytesEqual (File.ReadAllBytes manifestPath) reversedRaw) "v3 canonical serialization re-emits byte-identical manifest bytes"
+
+        let typeToCorrupt = loadedManifest.Types |> List.find (fun item -> item.Name = "v3-roundtrip.Record")
+        let corruptTypePath = Path.Combine(storageRoot firstProject, "objects", typeToCorrupt.Definition.Hash + ".agent")
+        File.WriteAllText(corruptTypePath, "tampered type source", UTF8Encoding(false))
+        Storage.load firstStore |> error "STORAGE_HASH_MISMATCH" |> ignore
+
+        let expectRawFailure name expectedCode mutate =
+            let project = Path.Combine(root, "invalid-v3-type-" + name)
+            let store, raw = cloneValidFlowV3Manifest project
+            mutate (firstTypeSourceObject raw)
+            installedRawManifest project (raw.ToJsonString()) |> ignore
+            Storage.load store |> error expectedCode |> ignore
+
+        let expectRawRevisionFailure name expectedCode mutate =
+            let project = Path.Combine(root, "invalid-v3-word-revision-" + name)
+            let store, raw = cloneValidFlowV3Manifest project
+            mutate (firstRevisionObject raw)
+            installedRawManifest project (raw.ToJsonString()) |> ignore
+            Storage.load store |> error expectedCode |> ignore
+
+        expectRawFailure "missing-source-format" "STORAGE_INVALID_JSON" (fun item ->
+            item.Remove("sourceFormat") |> ignore)
+        expectRawFailure "missing-validator-target" "STORAGE_INVALID_JSON" (fun item ->
+            item.Remove("validatorTarget") |> ignore)
+        expectRawFailure "missing-frontend" "STORAGE_INVALID_JSON" (fun item ->
+            let sourceFormat = item["sourceFormat"].AsObject()
+            sourceFormat.Remove("frontend") |> ignore)
+        expectRawFailure "missing-source-version" "STORAGE_INVALID_JSON" (fun item ->
+            let sourceFormat = item["sourceFormat"].AsObject()
+            sourceFormat.Remove("version") |> ignore)
+        expectRawFailure "unknown-frontend" "STORAGE_UNSUPPORTED_FRONTEND" (fun item ->
+            item["sourceFormat"]["frontend"] <- JsonValue.Create("future"))
+        expectRawFailure "unsupported-source-version" "STORAGE_UNSUPPORTED_VERSION" (fun item ->
+            item["sourceFormat"]["version"] <- JsonValue.Create(77))
+        expectRawFailure "unknown-target-kind" "STORAGE_INVALID_MANIFEST" (fun item ->
+            item["validatorTarget"]["kind"] <- JsonValue.Create("dynamic"))
+        expectRawFailure "missing-userword-head" "STORAGE_INVALID_MANIFEST" (fun item ->
+            item["validatorTarget"]["identity"] <- JsonValue.Create("word-not-in-manifest"))
+        expectRawFailure "target-revision-field" "STORAGE_INVALID_MANIFEST" (fun item ->
+            item["validatorTarget"]["revision"] <- JsonValue.Create(1))
+        expectRawFailure "nonobject-target" "STORAGE_INVALID_JSON" (fun item ->
+            item["validatorTarget"] <- JsonValue.Create("word-stable-1"))
+        expectRawFailure "missing-target-kind" "STORAGE_INVALID_JSON" (fun item ->
+            let target = item["validatorTarget"].AsObject()
+            target.Remove("kind") |> ignore)
+        expectRawFailure "missing-target-identity" "STORAGE_INVALID_JSON" (fun item ->
+            let target = item["validatorTarget"].AsObject()
+            target.Remove("identity") |> ignore)
+        expectRawFailure "empty-target-identity" "STORAGE_INVALID_MANIFEST" (fun item ->
+            item["validatorTarget"]["identity"] <- JsonValue.Create(""))
+        expectRawFailure "overlong-target-identity" "STORAGE_INVALID_MANIFEST" (fun item ->
+            item["validatorTarget"]["identity"] <- JsonValue.Create(String.replicate 129 "x"))
+        expectRawRevisionFailure "missing-source-format" "STORAGE_INVALID_JSON" (fun revision ->
+            revision.Remove("sourceFormat") |> ignore)
+        expectRawRevisionFailure "missing-call-bindings" "STORAGE_INVALID_JSON" (fun revision ->
+            revision.Remove("callBindings") |> ignore)
+
+        let v2Manifest, v2Sources, v2Text = flowV2Fixture "v2-type-guard"
+        let flowTypeObject = source StorageObjectKind.TypeDefinition "type v2-type-guard.FlowType = record"
+        let validV2WithType =
+            { v2Manifest with
+                Types = [ typeSource "v2-type-guard.FlowType" flowTypeObject.Reference flowFormat None ] }
+        let v2WithSources = flowTypeObject :: v2Sources
+        Storage.commit (Storage.create (Path.Combine(root, "v2-flow-type-refused"))) 0L validV2WithType v2WithSources v2Text
+        |> error "STORAGE_INVALID_MANIFEST"
+        |> ignore
+        let validatorTypeObject = source StorageObjectKind.TypeDefinition "type v2-type-guard.Validated = scalar"
+        let validV2WithValidator =
+            { v2Manifest with
+                Types = [ typeSource "v2-type-guard.Validated" validatorTypeObject.Reference stackFormat (Some(StoredCallTarget.UserWord "validator-word-id")) ] }
+        Storage.commit (Storage.create (Path.Combine(root, "v2-validator-type-refused"))) 0L validV2WithValidator (validatorTypeObject :: v2Sources) v2Text
+        |> error "STORAGE_INVALID_MANIFEST"
+        |> ignore
+
+        let userValidatedType = manifest.Types |> List.find (fun item -> item.ValidatorTarget.IsSome)
+        let invalidTypeMetadata =
+            [ "empty-validator-id", { userValidatedType with ValidatorTarget = Some(StoredCallTarget.UserWord "") }
+              "overlong-validator-id", { userValidatedType with ValidatorTarget = Some(StoredCallTarget.UserWord(String.replicate 129 "x")) } ]
+        for name, invalidType in invalidTypeMetadata do
+            let invalidManifest =
+                { manifest with
+                    Types = manifest.Types |> List.map (fun item -> if item.Name = invalidType.Name then invalidType else item) }
+            let invalidStore = Storage.create (Path.Combine(root, "v3-invalid-writer-" + name))
+            Storage.commit invalidStore 0L invalidManifest sources projectText |> error "STORAGE_INVALID_MANIFEST" |> ignore
+            let unchanged = Storage.load invalidStore |> ok "load after invalid v3 type-target writer refusal"
+            equal EmptyAuthority unchanged.Authority $"invalid {name} leaves v3 authority empty"
+            equal 0L unchanged.Generation $"invalid {name} leaves v3 generation unchanged"
 
     let private testV1HistoryMigrationAndSnapshotRestore root =
         let project = Path.Combine(root, "history-migration")
@@ -960,6 +1183,7 @@ module Program =
             testFrozenV1Compatibility root
             testManifestV1WriterRefusesMeaningfulV2Fields root
             testManifestV2RoundTripAndCanonicalBindings root
+            testManifestV3TypeSourceRoundTripAndValidation root
             testV1HistoryMigrationAndSnapshotRestore root
             testManifestV2ValidationAndLimits root
             testRuntimePublishesV2AsStackByDefault root
@@ -971,7 +1195,7 @@ module Program =
             testTamperingUnsupportedVersionAndNoFallback root
             testTaskLogValidation root
             testReparsePointRefusal root
-            printfn $"Storage tests passed: 14 groups, {assertions} assertions."
+            printfn $"Storage tests passed: 15 groups, {assertions} assertions."
             0
         finally
             if Directory.Exists root then Directory.Delete(root, true)

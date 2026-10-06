@@ -50,3 +50,22 @@ Files are flushed before atomic same-directory replacement, and the lock relies 
 ## Focused validation
 
 The storage-only executable is `dotnet run --project tests/AgentLang.Storage.Tests/AgentLang.Storage.Tests.fsproj`. It exercises commit/reload and stable revision IDs, rename/archive history, stale generations and writer exclusion, injected failures on both sides of the pointer boundary, legacy and empty rollback, named provider snapshots, hash/schema/path/missing-object/reparse rejection, and task-log validation. These tests establish the storage contract only; they do not establish that a language source graph is semantically valid or that Runtime has applied provider state correctly.
+
+## Manifest frontend versions
+
+Manifest v1 retains the original Stack source encoding. V2 adds explicit word
+source formats and retained call bindings. V3 keeps that revision encoding and
+adds `sourceFormat` plus a required nullable `validatorTarget` to each type
+source. Flow types use frontend `flow`, version 1; legacy types use `stack`,
+version 1. A validator target identifies the resolved primitive, generated word
+or stable user word rather than permitting a later name-based redirect.
+
+V1/v2 serialization omits the v3 type fields and rejects nondefault metadata;
+loading supplies their legacy defaults without changing historical object
+bytes. The pointer and named snapshot envelopes remain version 1. Runtime uses
+v3 for Flow types and retains v3 once selected. Type declarations are immutable
+source objects, not word revisions. Their exact authored bytes are hash-checked
+and returned by type source inspection; aggregate project export is a separate,
+deterministic frontend-marked rendering. Runtime reparses with the declared
+frontend, validates the complete typed graph and frozen validator target, and
+checks canonical export before activation. Parser fallback is forbidden.

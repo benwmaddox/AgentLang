@@ -91,3 +91,40 @@ tests cover root/namespace collisions, output signatures, effects, argument
 order, callback selection, receiver chaining, attachment round-trips, spans,
 and malformed host-built nodes. See report 033 for focused validation and the
 full-gate handoff.
+
+## Flow project document contract
+
+The typed-document Runtime gate and all 26 local release checks pass; committed-source CI and publication are pending. See [report 050](../reports/050-flow-project-documents.md).
+The existing `define` operation with `frontend: "flow"` accepts a complete
+project document, including typed declarations, words and attached cases:
+
+```text
+record Customer { field email: Email; }
+type Email : String { validate email::valid?; }
+word email.valid?(value: String) -> Bool {
+    effects none
+    value.contains("@")
+}
+```
+
+Record fields are named and end with semicolons. Nominal scalar bases remain
+Int, Float or String in this prototype; the optional validator uses an explicit
+absolute-root or namespace-qualified reference, resolves to a stable target,
+and obeys the existing pure scalar-to-Bool/frozen-closure rules. Email values
+require explicit construction and unwrapping; no base-type coercion is added.
+The modest example validator is a project policy, not Internet email conformance.
+
+Document staging is atomic: validate all proposed declarations, generated type
+vocabulary, words, attachments and bindings before making any member visible.
+New document members are additions; existing single-owner replacement/CAS and
+attachment request forms retain their behavior. Later word/type commits still
+select the existing dependency closure; the document does not introduce an
+indivisible batch transaction. Temporary documents cannot introduce project types
+until a temporary-type lifecycle is specified.
+
+Persist Flow type source with explicit format metadata in manifest v3; maintain
+v1/v2 encodings and hashes. Reload uses the declared parser without fallback,
+verifies source hashes and validator identity, and preserves authored declaration
+bytes through source inspection, snapshots and task abort. Type sources are
+immutable rather than fabricated word revisions. Default frontend cutover still
+requires complete document/runtime/storage acceptance and CLI migration.

@@ -139,6 +139,17 @@ type FlowExampleDefinition =
       HeaderSpan: SourceSpan
       ExpectationSpan: SourceSpan }
 
+/// A parsed Flow project document. Declarations retain their own exact source
+/// slices and source spans, while SourceText retains the complete input bytes.
+type FlowProjectDocument =
+    { SyntaxVersion: int
+      SourceText: string
+      Records: RecordDefinition list
+      Scalars: ScalarTypeDefinition list
+      Words: FlowWordDefinition list
+      Tests: FlowTestDefinition list
+      Examples: FlowExampleDefinition list }
+
 type FlowSourceProjection =
     { AuthoredSpans: Set<SourceSpan>
       /// Zero-length temporary/scope spans point at authored source positions.
@@ -527,3 +538,105 @@ module FlowSource =
         lines.Add("    => " + renderLiteral definition.Expected)
         lines.Add("}")
         String.concat "\n" lines
+
+    let private reservedTypeNames =
+        set [ "Int"; "Float"; "Bool"; "String"; "Unit"; "List"; "Option"; "Result"; "a"; "b"; "c" ]
+
+    let private validTypeName (name: string) =
+        not (System.String.IsNullOrWhiteSpace name)
+        && System.Char.IsLetter name[0]
+        && (name |> Seq.forall System.Char.IsLetterOrDigit)
+        && not (reservedTypeNames.Contains name)
+
+    let private validFieldName (name: string) =
+        let reservedWordNames =
+            set [ "if"; "else"; "end"; "let"; "true"; "false"; "unit"
+                  "match-option"; "match-result"; "some"; "none"; "ok"; "error"
+                  "list.empty"; "list.singleton"; "option.none"; "option.some"; "result.ok"; "result.error"
+                  "list.map"; "list.filter"; "list.each" ]
+        not (System.String.IsNullOrWhiteSpace name)
+        && System.Char.IsLetter name[0]
+        && (name |> Seq.forall (fun value -> System.Char.IsLetterOrDigit value || value = '.' || value = '-' || value = '_' || value = '?' || value = '!'))
+        && not (name.Contains('.') || reservedWordNames.Contains name)
+
+    let private validateTypeShape name span requireClosed typeValue =
+        let pending = System.Collections.Generic.Stack<LangType * int>()
+        pending.Push(typeValue, 1)
+        while pending.Count > 0 do
+            let current, depth = pending.Pop()
+            if depth > FlowStructure.maxExpressionDepth then
+                Diagnostics.raiseError "FLOW_NESTING_LIMIT" $"Flow syntax exceeds the nesting limit of {FlowStructure.maxExpressionDepth}." (Some name) (Some span) [] []
+            match current with
+            | TList item | TOption item -> pending.Push(item, depth + 1)
+            | TResult(okType, errorType) -> pending.Push(okType, depth + 1); pending.Push(errorType, depth + 1)
+            | TVar variable when requireClosed ->
+                Diagnostics.raiseError "FLOW_TYPE_OPEN" "Flow project declarations require closed types; free type variables are not supported." (Some name) (Some span) [] [ variable ]
+            | TVar _ -> ()
+            | TInt | TFloat | TBool | TString | TUnit | TNamed _ -> ()
+
+    let private validateClosedType name span typeValue =
+        validateTypeShape name span true typeValue
+
+    let renderRecord (definition: RecordDefinition) =
+        if not (validTypeName definition.Name) then
+            Diagnostics.raiseError "FLOW_TYPE_NAME_INVALID" "Record names must be identifiers and cannot shadow built-in types or reserved type variables." (Some definition.Name) (Some definition.Span) [ "non-reserved type identifier" ] [ definition.Name ]
+        if List.isEmpty definition.Fields then
+            Diagnostics.raiseError "FLOW_RECORD_EMPTY" "A Flow record must declare at least one field." (Some definition.Name) (Some definition.Span) [ "one or more fields" ] []
+        let seen = System.Collections.Generic.HashSet<string>(System.StringComparer.Ordinal)
+        for field in definition.Fields do
+            if not (validFieldName field.Name) then
+                Diagnostics.raiseError "FLOW_RECORD_FIELD_NAME_INVALID" "Record fields must use non-reserved identifier names." (Some definition.Name) (Some definition.Span) [ "field identifier" ] [ field.Name ]
+            if not (seen.Add field.Name) then
+                Diagnostics.raiseError "FLOW_RECORD_DUPLICATE_FIELD" $"Record field '{field.Name}' is repeated." (Some definition.Name) (Some definition.Span) [] [ field.Name ]
+            validateClosedType definition.Name definition.Span field.Type
+        let fields =
+            definition.Fields
+            |> List.map (fun field -> "    field " + field.Name + ": " + Types.format field.Type + ";")
+        String.concat "\n" ([ "record " + definition.Name + " {" ] @ fields @ [ "}" ])
+
+    let renderScalar (definition: ScalarTypeDefinition) =
+        if not (validTypeName definition.Name) then
+            Diagnostics.raiseError "FLOW_TYPE_NAME_INVALID" "Scalar type names must be identifiers and cannot shadow built-in types or reserved type variables." (Some definition.Name) (Some definition.Span) [ "non-reserved type identifier" ] [ definition.Name ]
+        // Scalar diagnostics format unsupported host-built types below. Bound
+        // their nesting before calling the recursive formatter, just as the
+        // parser does for source-authored type expressions.
+        validateTypeShape definition.Name definition.Span false definition.BaseType
+        match definition.BaseType with
+        | TInt | TFloat | TString -> ()
+        | other ->
+            Diagnostics.raiseError "FLOW_SCALAR_BASE_UNSUPPORTED" "Nominal scalar wrappers currently require an Int, Float, or String base type." (Some definition.Name) (Some definition.Span) [ "Int"; "Float"; "String" ] [ Types.format other ]
+        let validatorLine =
+            match definition.Validator with
+            | None -> []
+            | Some name ->
+                let segments =
+                    if System.String.IsNullOrEmpty name then [||]
+                    else name.Split('.', System.StringSplitOptions.None)
+                let validSegment (segment: string) =
+                    not (System.String.IsNullOrWhiteSpace segment)
+                    && (System.Char.IsLetter segment[0] || segment[0] = '_')
+                    && (segment |> Seq.skip 1 |> Seq.forall (fun value -> System.Char.IsLetterOrDigit value || value = '_' || value = '-' || value = '?' || value = '!'))
+                if segments.Length = 0 || (segments |> Array.exists (validSegment >> not)) then
+                    Diagnostics.raiseError "FLOW_SCALAR_VALIDATOR_REFERENCE" "A scalar validator must name one exact dictionary word using a root or namespace-qualified reference." (Some definition.Name) (Some definition.Span) [ "::word"; "namespace::word" ] [ name ]
+                let qualified =
+                    if segments.Length = 1 then "::" + segments[0]
+                    else String.concat "::" segments
+                [ "    validate " + qualified + ";" ]
+        String.concat "\n" ([ "type " + definition.Name + " : " + Types.format definition.BaseType + " {" ] @ validatorLine @ [ "}" ])
+
+    let renderDocument (document: FlowProjectDocument) =
+        if document.SyntaxVersion <> 1 then
+            Diagnostics.raiseError "FLOW_VERSION_UNSUPPORTED" "Only Flow project syntax version 1 is supported by this renderer." None None [ "1" ] [ string document.SyntaxVersion ]
+        let typeNames =
+            (document.Records |> List.map (fun definition -> definition.Name))
+            @ (document.Scalars |> List.map (fun definition -> definition.Name))
+        let duplicateType = typeNames |> List.groupBy id |> List.tryFind (fun (_, values) -> values.Length > 1)
+        match duplicateType with
+        | Some(name, _) -> Diagnostics.raiseError "FLOW_PROJECT_DUPLICATE_TYPE" $"Type name '{name}' is declared more than once in the Flow project." (Some name) None [] [ name ]
+        | None -> ()
+        [ yield! document.Records |> List.map renderRecord
+          yield! document.Scalars |> List.map renderScalar
+          yield! document.Words |> List.map renderWord
+          yield! document.Tests |> List.map renderTest
+          yield! document.Examples |> List.map renderExample ]
+        |> String.concat "\n\n"

@@ -43,6 +43,30 @@ Evaluation produces 42, and source inspection returns the authored Flow word.
 The explicit frontend selector is currently required for `define` and `eval`;
 the human REPL still uses Stack syntax by default.
 
+
+Flow `define` also accepts a complete document in its `source` field:
+
+~~~text
+type MetersPerSecond : Float {}
+word speed.roundtrip(value: MetersPerSecond) -> MetersPerSecond {
+    effects none
+    MetersPerSecond::new(MetersPerSecond::value(value))
+}
+test speed.roundtrip/basic {
+    speed::roundtrip(MetersPerSecond::new(1.0))
+    => value MetersPerSecond::new(1.0)
+}
+~~~
+
+Records, refined scalar types, words, tests and examples stage together only
+when the whole document validates. Commit still selects a word/type and its
+dependency closure; word commits require passing attached tests. Types remain
+nominal: passing an Int or Float directly to `speed.roundtrip` is a type error.
+Use `{"op":"source","type":"MetersPerSecond"}` to inspect the exact authored
+type declaration. New documents are add-only; use the existing single-word
+replacement route for revisions. Temporary documents cannot introduce types.
+Flow type sources use manifest v3 while historical v1/v2 projects remain readable.
+
 ## Run the Customer demo
 
 Start the human REPL in a project directory:

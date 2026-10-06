@@ -359,6 +359,33 @@ let private testIterativeAstDepthLimit () =
         let mutable currentType = TInt
         for _ in 1 .. levels do currentType <- TList currentType
         currentType
+    let recordWithFieldType fieldType =
+        { Name = "DepthRecord"
+          Fields = [ { Name = "value"; Type = fieldType } ]
+          SourceText = "host-built record"
+          Span = sourceSpan }
+    let scalarWithBaseType baseType =
+        { Name = "DepthScalar"
+          BaseType = baseType
+          Validator = None
+          SourceText = "host-built scalar"
+          Span = sourceSpan }
+    let shallowRecordSource = FlowSource.renderRecord (recordWithFieldType (nestedListType 2))
+    check "record renderer keeps ordinary closed container field types"
+        (shallowRecordSource.Contains("field value: List<List<Int>>;", StringComparison.Ordinal))
+    let recordBoundaryType = nestedListType (FlowStructure.maxExpressionDepth - 1)
+    let recordBoundarySource = FlowSource.renderRecord (recordWithFieldType recordBoundaryType)
+    check "record renderer accepts the exact closed-type depth boundary" (not (String.IsNullOrWhiteSpace recordBoundarySource))
+    let overdeepRecord = recordWithFieldType (nestedListType (FlowStructure.maxExpressionDepth + 1))
+    let recordTypeDepthError = captureLanguageError "record renderer bounds host-built field type depth" "FLOW_NESTING_LIMIT" (fun () ->
+        FlowSource.renderRecord overdeepRecord |> ignore)
+    equal "record renderer depth error points to its authored declaration" (Some sourceSpan) recordTypeDepthError.Span
+    let scalarSource = FlowSource.renderScalar (scalarWithBaseType TString)
+    check "scalar renderer keeps ordinary primitive bases" (scalarSource.Contains("type DepthScalar : String", StringComparison.Ordinal))
+    let overdeepScalar = scalarWithBaseType (nestedListType (FlowStructure.maxExpressionDepth + 1))
+    let scalarTypeDepthError = captureLanguageError "scalar renderer bounds type depth before formatting an unsupported base" "FLOW_NESTING_LIMIT" (fun () ->
+        FlowSource.renderScalar overdeepScalar |> ignore)
+    equal "scalar renderer depth error points to its authored declaration" (Some sourceSpan) scalarTypeDepthError.Span
     let typeExpression typeValue =
         FlowExpression.Container(FlowContainerConstructor.ListEmpty, [ { Type = typeValue; Span = sourceSpan } ], None, sourceSpan)
     let boundaryType = nestedListType (FlowStructure.maxExpressionDepth - 1)
@@ -4112,6 +4139,180 @@ let private testFlowDiagnostics () =
     let qualified = FlowLowering.compileExpression qualifiedContext (parseExpression "one::same(-3)")
     equal "explicit namespace qualification resolves the intended word" [ IntValue 3L ] (IrInterpreter.executeBody (host (ResizeArray())) "qualified" qualified.Body)
 
+let private testFlowProjectDocumentParser () =
+    let file = "<flow-project>"
+    let recordSource =
+        """record Customer {
+    field email: Email;
+    field balance: Float;
+}"""
+    let scalarSource =
+        """type Email : String {
+    validate email::valid;
+}"""
+    let validatorSource =
+        """word email.valid(value: String) -> Bool {
+    effects none
+    true
+}"""
+    let identitySource =
+        """word customer.identity(value: Customer) -> Customer {
+    effects none
+    value
+}"""
+    let firstTestSource =
+        """test email.valid/literal {
+    true
+    => true
+}"""
+    let secondTestSource =
+        """test customer.identity/literal {
+    17
+    => 17
+}"""
+    let exampleSource =
+        """example customer.identity/sample {
+    17
+    => 17
+}"""
+    let source =
+        [ recordSource
+          scalarSource
+          validatorSource
+          identitySource
+          firstTestSource
+          secondTestSource
+          exampleSource ]
+        |> String.concat "\n"
+    let parseDocument text =
+        match FlowParser.parseDocument file text with
+        | Ok document -> document
+        | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+    let document = parseDocument source
+
+    equal "project parser preserves source syntax version" 1 document.SyntaxVersion
+    equal "project parser retains exact complete authored bytes" source document.SourceText
+    equal "project parser retains record source order" [ "Customer" ] (document.Records |> List.map (fun record -> record.Name))
+    equal "record field order and resolved syntax types are retained"
+        [ "email", TNamed "Email"; "balance", TFloat ]
+        (document.Records.Head.Fields |> List.map (fun field -> field.Name, field.Type))
+    equal "project parser retains scalar source order" [ "Email" ] (document.Scalars |> List.map (fun scalar -> scalar.Name))
+    equal "scalar base and qualified validator are retained" (TString, Some "email.valid")
+        (document.Scalars.Head.BaseType, document.Scalars.Head.Validator)
+    equal "project parser retains word source order" [ "email.valid"; "customer.identity" ] (document.Words |> List.map (fun word -> word.Name))
+    equal "validator word signature is parsed" ([ TString ], [ TBool ])
+        (document.Words.Head.Parameters |> List.map (fun parameter -> parameter.Type), document.Words.Head.Outputs)
+    equal "dependent word names its authored record type" ([ TNamed "Customer" ], [ TNamed "Customer" ])
+        (document.Words[1].Parameters |> List.map (fun parameter -> parameter.Type), document.Words[1].Outputs)
+    equal "project parser retains attached test order" [ "email.valid", "literal"; "customer.identity", "literal" ]
+        (document.Tests |> List.map (fun test -> test.Word, test.CaseName))
+    equal "project parser retains attached examples" [ "customer.identity", "sample" ]
+        (document.Examples |> List.map (fun example -> example.Word, example.CaseName))
+
+    let assertGlobalSpan name (memberSource: string) (memberSpan: SourceSpan) =
+        let offset = source.IndexOf(memberSource, StringComparison.Ordinal)
+        check (name + " source slice occurs in project") (offset >= 0)
+        equal (name + " span reports the document file") file memberSpan.File
+        let prefix = source.Substring(0, offset)
+        let expectedLine = 1 + (prefix |> Seq.filter ((=) '\n') |> Seq.length)
+        let lastLineBreak = prefix.LastIndexOf('\n')
+        let expectedColumn = offset - lastLineBreak
+        equal (name + " span line is document-global") expectedLine memberSpan.Line
+        equal (name + " span column is document-global") expectedColumn memberSpan.Column
+        equal (name + " span covers the exact local source slice") memberSource.Length memberSpan.Length
+
+    for record in document.Records do
+        equal "record source bytes are its exact declaration slice" recordSource record.SourceText
+        assertGlobalSpan "record" record.SourceText record.Span
+    for scalar in document.Scalars do
+        equal "scalar source bytes are its exact declaration slice" scalarSource scalar.SourceText
+        assertGlobalSpan "scalar" scalar.SourceText scalar.Span
+    for word in document.Words do
+        assertGlobalSpan ("word " + word.Name) word.SourceText word.Span
+    for test in document.Tests do
+        assertGlobalSpan ("test " + test.CaseName) test.SourceText test.Span
+    for example in document.Examples do
+        assertGlobalSpan ("example " + example.CaseName) example.SourceText example.Span
+    let parameter = document.Words.Head.Parameters.Head
+    assertGlobalSpan "nested parameter" "value: String" parameter.Span
+
+    let expectedRecord =
+        """record Customer {
+    field email: Email;
+    field balance: Float;
+}"""
+    let expectedScalar =
+        """type Email : String {
+    validate email::valid;
+}"""
+    equal "Flow record renderer emits canonical field declarations" expectedRecord (FlowSource.renderRecord document.Records.Head)
+    equal "Flow scalar renderer emits canonical qualified validator" expectedScalar (FlowSource.renderScalar document.Scalars.Head)
+
+    let canonical = FlowSource.renderDocument document
+    let canonicalAgain = canonical |> parseDocument |> FlowSource.renderDocument
+    equal "mixed Flow project rendering is canonical and idempotent" canonical canonicalAgain
+    let declarationOffset (text: string) = canonical.IndexOf(text, StringComparison.Ordinal)
+    check "document renderer writes records before scalars" (declarationOffset "record Customer" < declarationOffset "type Email")
+    check "document renderer writes scalars before words" (declarationOffset "type Email" < declarationOffset "word email.valid")
+    check "document renderer writes words before tests" (declarationOffset "word customer.identity" < declarationOffset "test email.valid/literal")
+    check "document renderer writes tests before examples" (declarationOffset "test customer.identity/literal" < declarationOffset "example customer.identity/sample")
+
+    let reparsed = parseDocument canonical
+    let semanticProjection (value: FlowProjectDocument) =
+        (value.Records |> List.map (fun record -> record.Name, record.Fields |> List.map (fun field -> field.Name, field.Type)),
+         value.Scalars |> List.map (fun scalar -> scalar.Name, scalar.BaseType, scalar.Validator),
+         value.Words |> List.map (fun word -> word.Name, word.Parameters |> List.map (fun parameter -> parameter.Name, parameter.Type), word.Outputs, word.Effects, FlowSource.renderWord word),
+         value.Tests |> List.map (fun test -> test.Word, test.CaseName, FlowSource.renderTest test),
+         value.Examples |> List.map (fun example -> example.Word, example.CaseName, FlowSource.renderExample example))
+    equal "parse/render preserves mixed document declaration semantics" (semanticProjection document) (semanticProjection reparsed)
+
+    let expectDocumentError name code badSource =
+        let diagnostic = expectError name code (FlowParser.parseDocument file badSource)
+        check (name + " has a diagnostic message") (not (String.IsNullOrWhiteSpace diagnostic.Message))
+        match diagnostic.Span with
+        | Some diagnosticSpan ->
+            equal (name + " diagnostic points to the document") file diagnosticSpan.File
+            check (name + " diagnostic has positive source coordinates") (diagnosticSpan.Line > 0 && diagnosticSpan.Column > 0 && diagnosticSpan.Length > 0)
+        | None -> failwith (name + ": expected a source span on the structured diagnostic")
+
+    expectDocumentError "empty records are rejected" "FLOW_RECORD_EMPTY" "record Empty { }"
+    expectDocumentError "duplicate record fields are rejected" "FLOW_RECORD_DUPLICATE_FIELD"
+        "record Customer { field email: String; field email: Float; }"
+    expectDocumentError "built-in type names cannot be redeclared" "FLOW_TYPE_NAME_INVALID" "type Int : String { }"
+    expectDocumentError "unsupported scalar primitive bases are rejected" "FLOW_SCALAR_BASE_UNSUPPORTED" "type Flag : Bool { }"
+    expectDocumentError "container scalar bases are rejected" "FLOW_SCALAR_BASE_UNSUPPORTED" "type Tags : List<String> { }"
+    expectDocumentError "record scalar bases are rejected" "FLOW_SCALAR_BASE_UNSUPPORTED"
+        "record Customer { field email: String; } type CustomerId : Customer { }"
+    expectDocumentError "duplicate validators are rejected" "FLOW_SCALAR_VALIDATOR_DUPLICATE"
+        "type Email : String { validate email::valid; validate email::check; }"
+    expectDocumentError "short scalar validators require qualification" "FLOW_SCALAR_VALIDATOR_QUALIFICATION"
+        "type Email : String { validate valid; }"
+    expectDocumentError "dotted scalar validators require namespace qualification" "FLOW_SCALAR_VALIDATOR_QUALIFICATION"
+        "type Email : String { validate email.valid; }"
+    expectDocumentError "scalar validators cannot be written as calls" "FLOW_SCALAR_VALIDATOR_CALL"
+        "type Email : String { validate email::valid(); }"
+    expectDocumentError "record fields require a semicolon" "FLOW_RECORD_FIELD_SEMICOLON"
+        "record Customer { field email: String }"
+    expectDocumentError "incomplete top-level declarations are structured" "FLOW_INCOMPLETE_INPUT"
+        "record Customer { field email: String;"
+    expectDocumentError "duplicate project type names are rejected across categories" "FLOW_PROJECT_DUPLICATE_TYPE"
+        "record Customer { field email: String; } type Customer : String { }"
+    expectDocumentError "unknown project declarations are structured" "FLOW_PROJECT_UNKNOWN_DECLARATION"
+        "namespace account { }"
+
+    let nestedType = String.replicate 130 "List<" + "Int" + String.replicate 130 ">"
+    expectDocumentError "project type nesting limit is enforced" "FLOW_NESTING_LIMIT"
+        ($"record Deep {{ field value: {nestedType}; }}")
+    expectDocumentError "project source length limit is enforced" "FLOW_SOURCE_LIMIT" (String.replicate 1_000_001 " ")
+    expectDocumentError "project token limit is enforced" "FLOW_TOKEN_LIMIT" (String.replicate 100_001 "x ")
+
+    expectError "standalone word parser still rejects trailing declarations" "FLOW_TRAILING_INPUT"
+        (FlowParser.parseWord file (validatorSource + "\n" + identitySource)) |> ignore
+    expectError "standalone test parser still rejects trailing declarations" "FLOW_TRAILING_INPUT"
+        (FlowParser.parseTest file (firstTestSource + "\n" + secondTestSource)) |> ignore
+    expectError "standalone example parser still rejects trailing declarations" "FLOW_TRAILING_INPUT"
+        (FlowParser.parseExample file (exampleSource + "\n" + exampleSource)) |> ignore
+
 [<EntryPoint>]
 let main _ =
     testParserLocationsAndQualification ()
@@ -4137,5 +4338,6 @@ let main _ =
     testFlowPersistenceBindings ()
     testFlowRewrite ()
     testFlowDiagnostics ()
+    testFlowProjectDocumentParser ()
     printfn "Flow tests passed: %d assertions" assertions
     0

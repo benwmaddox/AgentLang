@@ -52,16 +52,24 @@ Future collection types are `List<T>`, `Option<T>`, and `Result<T,E>`. These are
 
 Named semantic types are required in the first release. `Email` is distinct from `String`; `MetersPerSecond` is distinct from `Float` and from other units over Float. A wrapper has one underlying scalar type, an optional pure validation predicate, and generated construction/unwrapping operations. Construction checks the predicate before creating a value and returns a structured refinement error on rejection. No implicit coercion or representation-based interchange is allowed. Nominal distinction is checked statically; value predicates are checked at construction time. A constructed value retains its nominal type throughout stack checking, records, calls, and persistence.
 
-For example, the intended declaration contract is:
+For example, the target Flow declaration contract is:
 
 ```text
-type Email : String
-    validate email.valid?
-end
-
-type MetersPerSecond : Float
-end
+type Email : String { validate email::valid?; }
+type MetersPerSecond : Float {}
 ```
+
+The explicit validator reference addresses the dictionary word `email.valid?`.
+Flow project documents can declare records, scalar types, words, tests and
+examples together. The existing definition operation must validate the complete
+proposed dictionary before exposing any member: a failed declaration must not
+leave partially staged types, generated constructors or words. Commit remains
+an explicit dependency-closure operation with the existing test and library
+coverage gates. Preserve each authored type declaration's exact source bytes,
+frontend version and validator identity across persistence, reload, snapshots
+and task abort. See [the migration contract](FRONTEND-MIGRATION.md) for the
+implementation and cutover gates; this specification does not claim those gates
+have already passed.
 
 The validator must have the underlying scalar as its sole input and Bool as its sole output, declare no effects, and have no transitive effects. It must be discoverable and retained with the type. `Email.new : String -> Email` validates; `Email.value : Email -> String` explicitly unwraps. An Email passed to a String operation without unwrapping fails compilation. Cross-unit arithmetic also requires explicitly defined typed words.
 

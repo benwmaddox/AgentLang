@@ -1,0 +1,10 @@
+{
+  "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Flow.Tests",
+  "revision": "e61591809fa308f943baa114473d2ad4a21f5c4f",
+  "dirty": true,
+  "exitCode": 0,
+  "durationMilliseconds": 2584,
+  "output": [
+    "Flow tests passed: 971 assertions"
+  ]
+}

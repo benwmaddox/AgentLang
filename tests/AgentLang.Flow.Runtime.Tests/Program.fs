@@ -101,6 +101,9 @@ module Program =
             @ extra
         dispatch engine "define" fields
 
+    let private defineFlowProject (engine: Runtime.Engine) source extra =
+        dispatch engine "define" ([ "frontend", jstr "flow"; "source", jstr source ] @ extra)
+
     let private commit (engine: Runtime.Engine) operation name extra =
         dispatch engine operation ([ "word", jstr name ] @ extra)
 
@@ -1734,6 +1737,296 @@ module Program =
         assertAllPassed 2 (dispatch engine "test" [ "word", jstr "email.valid?" ] |> expectOk "Flow validator cases remain active after refused rename")
         equal "\"a@b\"" (stringValue (dispatch engine "eval" [ "code", jstr "\"a@b\" Email.new Email.value" ] |> expectOk "construct nominal value through retained Flow validator" |> fun response -> response.["data"].["stack"].[0])) "committed Stack nominal type keeps its Flow validator callable"
 
+    let private testFlowProjectDocumentTypesCommitAndReload root =
+        let project = Path.Combine(root, "flow-project-document")
+        let engine = Runtime.Engine(project, Set.empty, "2038-04-05T06:07:08Z")
+        let store = Storage.create project
+        let recordSource =
+            "record Customer {\n"
+            + "    field email: Email;\n"
+            + "}"
+        let emailTypeSource =
+            "type Email : String {\n"
+            + "    validate email::valid?;\n"
+            + "}"
+        let speedTypeSource = "type MetersPerSecond : Float { }"
+        let validatorSource =
+            "word email.valid?(value: String) -> Bool {\n"
+            + "    effects none\n"
+            + "    string::contains(value, \"@\")\n"
+            + "}"
+        let customerWordSource =
+            "word customer.accepts-email(value: Customer) -> Bool {\n"
+            + "    effects none\n"
+            + "    email::valid?(Email::value(value.email()))\n"
+            + "}"
+        let speedWordSource =
+            "word speed.roundtrip(value: MetersPerSecond) -> MetersPerSecond {\n"
+            + "    effects none\n"
+            + "    MetersPerSecond::new(MetersPerSecond::value(value))\n"
+            + "}"
+        let validatorValidTest =
+            "test email.valid?/valid {\n"
+            + "    email::valid?(\"a@b\")\n"
+            + "    => true\n"
+            + "}"
+        let validatorInvalidTest =
+            "test email.valid?/invalid {\n"
+            + "    email::valid?(\"missing\")\n"
+            + "    => false\n"
+            + "}"
+        let customerValidTest =
+            "test customer.accepts-email/valid {\n"
+            + "    customer::accepts-email(customer::new(email = Email::new(\"a@b\")))\n"
+            + "    => true\n"
+            + "}"
+        let customerInvalidTest =
+            "test customer.accepts-email/invalid {\n"
+            + "    customer::accepts-email(customer::new(email = Email::new(\"missing\")))\n"
+            + "    => error REFINEMENT_FAILED\n"
+            + "}"
+        let speedTest =
+            "test speed.roundtrip/unit {\n"
+            + "    speed::roundtrip(MetersPerSecond::new(1.0))\n"
+            + "    => value MetersPerSecond::new(1.0)\n"
+            + "}"
+        let customerExample =
+            "example customer.accepts-email/valid {\n"
+            + "    customer::accepts-email(customer::new(email = Email::new(\"a@b\")))\n"
+            + "    => true\n"
+            + "}"
+        let document =
+            [ recordSource
+              emailTypeSource
+              speedTypeSource
+              validatorSource
+              customerWordSource
+              speedWordSource
+              validatorValidTest
+              validatorInvalidTest
+              customerValidTest
+              customerInvalidTest
+              speedTest
+              customerExample ]
+            |> String.concat "\n\n"
+
+        let sourceType (target: Runtime.Engine) name =
+            dispatch target "source" [ "type", jstr name ]
+        let wordInventory (target: Runtime.Engine) =
+            dispatch target "words" []
+            |> expectOk "capture project word inventory"
+            |> fun response -> response.["data"].["words"].ToJsonString()
+        let assertStructuredFailure label (response: JsonObject) =
+            check (not (succeeded response)) $"{label} is rejected without fallback: {response.ToJsonString()}"
+            check (not (String.IsNullOrWhiteSpace(errorCode response))) $"{label} keeps a structured diagnostic"
+
+        let defined = defineFlowProject engine document [] |> expectOk "stage one complete Flow project document"
+        equal "flow" (stringValue (defined.["data"].["frontend"])) "project reports the explicit Flow frontend"
+        let declaredWords =
+            defined.["data"].["words"].AsArray()
+            |> Seq.map (fun item -> stringValue (item.["name"]))
+            |> Seq.sort
+            |> Seq.toList
+        equal [ "customer.accepts-email"; "email.valid?"; "speed.roundtrip" ] declaredWords "project response identifies all authored words"
+        let declaredTypes =
+            defined.["data"].["types"].AsArray()
+            |> Seq.map stringValue
+            |> Seq.sort
+            |> Seq.toList
+        equal [ "Customer"; "Email"; "MetersPerSecond" ] declaredTypes "project response identifies all authored types"
+
+        // Existing names reject the whole incoming document, including its new members.
+        let wordsBeforeTypeCollision = wordInventory engine
+        let typeCollision =
+            "type Customer : String { }\n\n"
+            + "word collision.never-staged(value: Int) -> Int {\n"
+            + "    effects none\n"
+            + "    add(value, 1)\n"
+            + "}"
+        assertStructuredFailure "a project colliding with an existing type" (defineFlowProject engine typeCollision [])
+        equal wordsBeforeTypeCollision (wordInventory engine) "a type collision does not partially stage new generated words or definitions"
+        let wordsBeforeWordCollision = wordInventory engine
+        let wordCollision =
+            "type FreshType : String { }\n\n"
+            + "word email.valid?(value: String) -> Bool {\n"
+            + "    effects none\n"
+            + "    true\n"
+            + "}\n\n"
+            + "test email.valid?/collision {\n"
+            + "    email::valid?(\"x\")\n"
+            + "    => true\n"
+            + "}"
+        assertStructuredFailure "a project colliding with an existing word" (defineFlowProject engine wordCollision [])
+        equal wordsBeforeWordCollision (wordInventory engine) "a word collision does not partially stage a new project type"
+
+        for name, count in [ "email.valid?", 2; "customer.accepts-email", 2; "speed.roundtrip", 1 ] do
+            assertAllPassed count (dispatch engine "test" [ "word", jstr name ] |> expectOk $"run staged project cases for {name}")
+
+        // Type selection uses the existing commit closure. An unrelated validator,
+        // record and user word remain candidates when only the Float wrapper is selected.
+        commit engine "commit" "MetersPerSecond" [] |> expectOk "commit the selected nominal Float type" |> ignore
+        let firstManifest = Storage.load store |> Result.defaultWith (fun problem -> failwith $"load type-only manifest: {problem.Code}: {problem.Message}")
+        let firstAuthority = firstManifest.Manifest |> Option.defaultWith (fun () -> failwith "type-only commit did not create a manifest")
+        equal 3 firstAuthority.FormatVersion "Flow type publication selects manifest v3"
+        equal [ "MetersPerSecond" ] (firstAuthority.Types |> List.map _.Name) "type-only commit publishes only its selected type closure"
+        equal [] firstAuthority.Revisions "type-only commit does not fabricate word revisions"
+        check ((findWord (dispatch engine "words" [] |> expectOk "inspect remaining candidates") "email.valid?").["status"].GetValue<string>() = "candidate") "unrelated Flow validator remains a candidate after selected type commit"
+
+        commit engine "commit" "Email" [] |> expectOk "commit refined Email and its validator closure" |> ignore
+        commit engine "commit" "Customer" [] |> expectOk "commit Customer and its referenced Email type" |> ignore
+        commit engine "commit" "customer.accepts-email" [] |> expectOk "commit the dependent record word with its cases" |> ignore
+        commit engine "commit" "speed.roundtrip" [] |> expectOk "commit the nominal wrapper word with its case" |> ignore
+
+        assertAllPassed 2 (dispatch engine "test" [ "word", jstr "email.valid?" ] |> expectOk "run committed scalar validator cases")
+        assertAllPassed 2 (dispatch engine "test" [ "word", jstr "customer.accepts-email" ] |> expectOk "run committed record word cases")
+        assertAllPassed 1 (dispatch engine "test" [ "word", jstr "speed.roundtrip" ] |> expectOk "run committed nominal wrapper case")
+        let example = dispatch engine "example" [ "word", jstr "customer.accepts-email"; "caseName", jstr "valid" ] |> expectOk "run inline project example"
+        check (boolValue (example.["data"].["results"].[0].["passed"])) "inline project example passes before reload"
+
+        let committed = Storage.load store |> Result.defaultWith (fun problem -> failwith $"load Flow type manifest: {problem.Code}: {problem.Message}")
+        let manifest = committed.Manifest |> Option.defaultWith (fun () -> failwith "Flow project manifest is missing")
+        equal 3 manifest.FormatVersion "mixed Flow project remains in manifest v3"
+        equal [ "Customer"; "Email"; "MetersPerSecond" ] (manifest.Types |> List.map _.Name |> List.sort) "selected type commits persist all required type sources"
+        let emailType = manifest.Types |> List.find (fun item -> item.Name = "Email")
+        let customerType = manifest.Types |> List.find (fun item -> item.Name = "Customer")
+        let speedType = manifest.Types |> List.find (fun item -> item.Name = "MetersPerSecond")
+        equal { Frontend = SourceFrontend.Flow; Version = 1 } emailType.SourceFormat "Email source is tagged Flow/1"
+        equal { Frontend = SourceFrontend.Flow; Version = 1 } customerType.SourceFormat "record source is tagged Flow/1"
+        equal { Frontend = SourceFrontend.Flow; Version = 1 } speedType.SourceFormat "nominal wrapper source is tagged Flow/1"
+        equal (digest emailTypeSource) emailType.Definition.Hash "Email type object hash covers exact authored declaration bytes"
+        equal (digest recordSource) customerType.Definition.Hash "record type object hash covers exact authored declaration bytes"
+        equal emailTypeSource (Storage.readSource store emailType.Definition |> Result.defaultWith (fun problem -> failwith problem.Message)) "Email type source object preserves its exact authored bytes"
+        equal recordSource (Storage.readSource store customerType.Definition |> Result.defaultWith (fun problem -> failwith problem.Message)) "record type source object preserves its exact authored bytes"
+        let validatorId = getWordId engine "email.valid?"
+        equal (Some(StoredCallTarget.UserWord validatorId)) emailType.ValidatorTarget "scalar validator target metadata binds the stable user word ID"
+        equal None customerType.ValidatorTarget "record type source carries no scalar validator identity"
+        equal None speedType.ValidatorTarget "unvalidated scalar source carries no validator identity"
+        check (manifest.Revisions |> List.exists (fun revision -> revision.WordId = validatorId && revision.Name = "email.valid?")) "the validator is persisted as its own authored Flow word revision"
+        check (manifest.Revisions |> List.forall (fun revision -> not ([ "Customer"; "Email"; "MetersPerSecond" ] |> List.contains revision.Name))) "types remain immutable sources rather than fabricated word revisions"
+
+        let aggregate = committed.ProjectSource |> Option.defaultWith (fun () -> failwith "Flow project aggregate source is missing")
+        check (aggregate.Contains("// frontend: flow/1", StringComparison.Ordinal)) "canonical aggregate export identifies Flow declarations"
+        check (aggregate.Contains(FlowSource.renderScalar (FlowParser.parseDocument "<type>" emailTypeSource |> Result.defaultWith (fun diagnostic -> failwith (Diagnostics.render diagnostic))).Scalars.Head, StringComparison.Ordinal)) "canonical aggregate export renders the Flow scalar declaration"
+        check (aggregate <> document) "canonical aggregate export is separate from the original whole-document input"
+
+        let reloaded = Runtime.Engine(project, Set.empty, "2038-04-05T06:07:08Z")
+        equal validatorId (getWordId reloaded "email.valid?") "reload preserves scalar validator stable identity"
+        equal emailTypeSource (stringValue (sourceType reloaded "Email" |> expectOk "read authored Flow scalar source after reload" |> fun response -> response.["data"])) "source(type) returns the exact authored scalar declaration"
+        equal recordSource (stringValue (sourceType reloaded "Customer" |> expectOk "read authored Flow record source after reload" |> fun response -> response.["data"])) "source(type) returns the exact authored record declaration"
+        equal "MetersPerSecond" (stringValue (evalFlow reloaded "speed::roundtrip(MetersPerSecond::new(1.0))" |> expectOk "evaluate a reloaded nominal Float wrapper" |> fun response -> response.["data"].["stackTypes"].[0])) "nominal wrapper remains distinct from its Float base after reload"
+        equal "1" (stringValue (evalFlow reloaded "MetersPerSecond::value(MetersPerSecond::new(1.0))" |> expectOk "construct and explicitly unwrap the reloaded nominal wrapper" |> fun response -> response.["data"].["stack"].[0])) "nominal payload is available only through the generated accessor"
+        assertAllPassed 2 (dispatch reloaded "test" [ "word", jstr "customer.accepts-email" ] |> expectOk "run reloaded dependent record cases")
+        expectError "REFINEMENT_FAILED"
+            (evalFlow reloaded "customer::accepts-email(customer::new(email = Email::new(\"missing\")))")
+        |> ignore
+        let reloadedExample = dispatch reloaded "example" [ "word", jstr "customer.accepts-email"; "caseName", jstr "valid" ] |> expectOk "run reloaded project example"
+        check (boolValue (reloadedExample.["data"].["results"].[0].["passed"])) "reloaded example still executes against the nominal record"
+        let cli = cliEval project "customer::accepts-email(customer::new(email = Email::new(\"a@b\")))" |> expectOk "fresh-process CLI loads the Flow project"
+        equal "true" (stringValue (cli.["data"].["stack"].[0])) "fresh-process CLI resolves the Flow validator and generated record vocabulary"
+
+        // Failed later declarations, nominal payload mismatches, invalid validators,
+        // and temporary typed documents all leave the candidate vocabulary intact.
+        let assertRejectedWithoutPartialStage label (target: Runtime.Engine) source extra =
+            let before = wordInventory target
+            let response = defineFlowProject target source extra
+            assertStructuredFailure label response
+            equal before (wordInventory target) $"{label} leaves no partial words, generated words, or type vocabulary"
+            response
+
+        let lateFailureEngine = Runtime.Engine(Path.Combine(root, "flow-project-late-failure"), Set.empty)
+        let lateFailureDocument =
+            "type EarlyType : String { }\n\n"
+            + "word early.good(value: Int) -> Int {\n"
+            + "    effects none\n"
+            + "    add(value, 1)\n"
+            + "}\n\n"
+            + "test early.good/basic {\n"
+            + "    early::good(1)\n"
+            + "    => value early::good(1)\n"
+            + "}\n\n"
+            + "word later.bad(value: Int) -> Int {\n"
+            + "    effects none\n"
+            + "    missing::word(value)\n"
+            + "}"
+        assertRejectedWithoutPartialStage "a later invalid project word" lateFailureEngine lateFailureDocument [] |> ignore
+
+        let wrongPayloadEngine = Runtime.Engine(Path.Combine(root, "flow-project-wrong-nominal-payload"), Set.empty)
+        let wrongPayloadDocument =
+            "type MetersPerSecond : Float { }\n\n"
+            + "word speed.invalid(value: Int) -> MetersPerSecond {\n"
+            + "    effects none\n"
+            + "    MetersPerSecond::new(value)\n"
+            + "}"
+        let wrongPayload = assertRejectedWithoutPartialStage "a primitive payload passed to the nominal constructor" wrongPayloadEngine wrongPayloadDocument []
+        equal "FLOW_ARGUMENT_TYPE" (errorCode wrongPayload) "nominal constructor rejects Int where its Float payload is required"
+
+        let badSignatureEngine = Runtime.Engine(Path.Combine(root, "flow-project-bad-validator-signature"), Set.empty)
+        let badSignatureDocument =
+            "type Email : String { validate email::valid?; }\n\n"
+            + "word email.valid?(value: String) -> Int {\n"
+            + "    effects none\n"
+            + "    1\n"
+            + "}"
+        let badSignature = assertRejectedWithoutPartialStage "a non-Bool scalar validator" badSignatureEngine badSignatureDocument []
+        equal "TYPE_VALIDATOR_SIGNATURE" (errorCode badSignature) "validator must have the base-to-Bool signature"
+
+        let effectfulValidatorEngine = Runtime.Engine(Path.Combine(root, "flow-project-effectful-validator"), Set.empty, "2038-04-05T06:07:08Z")
+        let effectfulValidatorDocument =
+            "type Email : String { validate email::valid?; }\n\n"
+            + "word email.valid?(value: String) -> Bool {\n"
+            + "    effects clock.read\n"
+            + "    string::contains(clock::now(), value)\n"
+            + "}"
+        let effectfulValidator = assertRejectedWithoutPartialStage "an effectful scalar validator" effectfulValidatorEngine effectfulValidatorDocument []
+        equal "TYPE_VALIDATOR_EFFECT" (errorCode effectfulValidator) "effectful scalar validator is rejected by the purity guard"
+
+        let temporaryEngine = Runtime.Engine(Path.Combine(root, "flow-project-temporary-types"), Set.empty)
+        let temporaryDocument = "type TemporaryEmail : String { }"
+        assertRejectedWithoutPartialStage "a temporary project containing types" temporaryEngine temporaryDocument [ "temporary", jbool true ] |> ignore
+
+        let discardProject = Path.Combine(root, "flow-project-discard")
+        let discardEngine = Runtime.Engine(discardProject, Set.empty)
+        let discardDocument =
+            "type Ephemeral : String { }\n\n"
+            + "word ephemeral.echo(value: Ephemeral) -> Ephemeral {\n"
+            + "    effects none\n"
+            + "    Ephemeral::new(Ephemeral::value(value))\n"
+            + "}\n\n"
+            + "test ephemeral.echo/basic {\n"
+            + "    ephemeral::echo(Ephemeral::new(\"ok\"))\n"
+            + "    => value Ephemeral::new(\"ok\")\n"
+            + "}"
+        defineFlowProject discardEngine discardDocument [] |> expectOk "stage a typed document for discard" |> ignore
+        dispatch discardEngine "discard" [ "word", jstr "ephemeral.echo" ] |> expectOk "discard the dependent Flow word before its type" |> ignore
+        dispatch discardEngine "discard" [ "word", jstr "Ephemeral" ] |> expectOk "discard the candidate scalar type" |> ignore
+        assertStructuredFailure "discarded Flow type source" (sourceType discardEngine "Ephemeral")
+        let discardReload = Runtime.Engine(discardProject, Set.empty)
+        assertStructuredFailure "discarded Flow type after fresh reload" (sourceType discardReload "Ephemeral")
+
+        let beforeTask = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let beforeTaskManifest = beforeTask.Manifest |> Option.defaultWith (fun () -> failwith "committed Flow type authority is missing")
+        dispatch reloaded "task.begin" [ "goal", jstr "rollback a committed Flow type" ] |> expectOk "begin type-source rollback task" |> ignore
+        defineFlowProject reloaded "type TaskOnly : Float { }" [] |> expectOk "stage a new Flow type inside a task" |> ignore
+        commit reloaded "commit" "TaskOnly" [] |> expectOk "commit a Flow type inside a task" |> ignore
+        dispatch reloaded "task.abort" [] |> expectOk "abort the committed Flow type task" |> ignore
+        let afterTask = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        equal beforeTask.ManifestHash afterTask.ManifestHash "task abort restores the exact Flow type manifest authority"
+        equal beforeTaskManifest.Types afterTask.Manifest.Value.Types "task abort restores exact type SourceRefs and stable validator metadata"
+        assertStructuredFailure "task-aborted Flow type source" (sourceType reloaded "TaskOnly")
+
+        dispatch reloaded "snapshot.save" [ "name", jstr "flow-type-baseline" ] |> expectOk "save committed Flow type sources" |> ignore
+        let snapshotBaseline = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        defineFlowProject reloaded "type SnapshotOnly : String { }" [] |> expectOk "stage a Flow type after snapshot" |> ignore
+        commit reloaded "commit" "SnapshotOnly" [] |> expectOk "commit a Flow type after snapshot" |> ignore
+        let snapshotChanged = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        check (snapshotChanged.ManifestHash <> snapshotBaseline.ManifestHash) "committing another Flow type advances durable authority after snapshot"
+        let snapshotReload = Runtime.Engine(project, Set.empty, "2040-01-01T00:00:00Z")
+        dispatch snapshotReload "snapshot.load" [ "name", jstr "flow-type-baseline" ] |> expectOk "restore named Flow type snapshot" |> ignore
+        let afterSnapshot = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        equal snapshotBaseline.ManifestHash afterSnapshot.ManifestHash "snapshot restore reinstates exact Flow type authority"
+        equal emailTypeSource (stringValue (sourceType snapshotReload "Email" |> expectOk "read Flow scalar source after snapshot restore" |> fun response -> response.["data"])) "snapshot restore retains exact authored Flow type bytes"
+        assertStructuredFailure "snapshot-removed Flow type source" (sourceType snapshotReload "SnapshotOnly")
+
     [<EntryPoint>]
     let main _ =
         let root = newRoot ()
@@ -1753,7 +2046,8 @@ module Program =
             testFlowMaintenanceRejectsUntouchedRebind root
             testFlowMaintenanceFailureAndLibraryCoverage root
             testFlowValidatorCannotBeRenamedAfterTypeCommit root
-            printfn $"Flow Runtime tests passed: 15 groups, {assertions} assertions."
+            testFlowProjectDocumentTypesCommitAndReload root
+            printfn $"Flow Runtime tests passed: 16 groups, {assertions} assertions."
             0
         finally
             if Directory.Exists root then Directory.Delete(root, true)

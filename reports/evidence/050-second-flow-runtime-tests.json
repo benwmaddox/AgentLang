@@ -1,0 +1,13 @@
+{
+  "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Flow.Runtime.Tests",
+  "revision": "e61591809fa308f943baa114473d2ad4a21f5c4f",
+  "dirty": true,
+  "exitCode": -532462766,
+  "durationMilliseconds": 18240,
+  "output": [
+    "Unhandled exception. System.Exception: stage one complete Flow project document: expected success, got FLOW_EXPECTED_TOKEN: Expected 'word', found 'record'.",
+    "   at AgentLang.Flow.Runtime.Tests.Program.expectOk[a](a label, JsonObject response) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Runtime.Tests\\Program.fs:line 58",
+    "   at AgentLang.Flow.Runtime.Tests.Program.testFlowProjectDocumentTypesCommitAndReload(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Runtime.Tests\\Program.fs:line 1823",
+    "   at AgentLang.Flow.Runtime.Tests.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Runtime.Tests\\Program.fs:line 2013"
+  ]
+}

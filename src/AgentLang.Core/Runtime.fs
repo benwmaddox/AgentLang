@@ -23,6 +23,12 @@ module Runtime =
           /// Bindings retained from durable metadata, or None for a staged edit.
           StoredBindings: StoredCallBinding list option }
 
+    type private AuthoredTypeSource =
+        { SourceFormat: SourceFormat
+          Content: string
+          Reference: SourceRef
+          ValidatorTarget: StoredCallTarget option }
+
     type private ReplacementBackup =
         { Word: WordEntry
           Tests: Map<string, TestDefinition>
@@ -37,6 +43,7 @@ module Runtime =
           Deprecated: Set<string>
           Records: Map<string, RecordEntry>
           Scalars: Map<string, ScalarEntry>
+          TypeSources: Map<string, AuthoredTypeSource>
           Tests: Map<string, TestDefinition>
           Examples: Map<string, ExampleDefinition>
           History: Map<string, WordDefinition list>
@@ -257,6 +264,7 @@ module Runtime =
               Deprecated = Set.empty
               Records = Map.empty
               Scalars = Map.empty
+              TypeSources = Map.empty
               Tests = Map.empty
               Examples = Map.empty
               History = Map.empty
@@ -351,6 +359,60 @@ module Runtime =
                 match state.WordIds.TryFind item.Definition.Name with
                 | Some identity -> identity
                 | None -> error "WORD_ID_MISSING" $"Word '{item.Definition.Name}' has no stable identity." (Some item.Definition.Name) None [] []
+
+        let storedTarget (state: DictionaryState) (item: WordEntry) =
+            let identity = wordIdentity state item
+            match item.Builtin with
+            | Some(BuiltinOp _) -> StoredCallTarget.Primitive identity
+            | Some _ -> StoredCallTarget.GeneratedWord identity
+            | None -> StoredCallTarget.UserWord identity
+
+        let defaultTypeSource (state: DictionaryState) name =
+            let definitionSource =
+                match state.Records.TryFind name, state.Scalars.TryFind name with
+                | Some record, _ -> Source.renderRecord record.Definition
+                | _, Some scalar -> Source.renderScalar scalar.Definition
+                | _ -> error "TYPE_SOURCE_OWNER_MISSING" $"Type source metadata has no declared type '{name}'." (Some name) None [] []
+            let sourceObject = Storage.sourceObject StorageObjectKind.TypeDefinition definitionSource
+            { SourceFormat = { Frontend = SourceFrontend.Stack; Version = 1 }
+              Content = sourceObject.Content
+              Reference = sourceObject.Reference
+              ValidatorTarget = None }
+
+        let resolvedValidatorTarget (state: DictionaryState) typeName (definition: ScalarTypeDefinition) =
+            match definition.Validator with
+            | None -> None
+            | Some name ->
+                let words = effectiveWords state
+                match words.TryFind name with
+                | Some item -> Some(storedTarget state item)
+                | None -> error "TYPE_VALIDATOR_UNKNOWN_WORD" $"Scalar type '{typeName}' validator '{name}' is not an exact dictionary word." (Some typeName) (Some definition.Span) [ "exact word key" ] [ name ]
+
+        let validateTypeSourceMetadata (state: DictionaryState) =
+            for KeyValue(name, source) in state.TypeSources do
+                match source.SourceFormat.Frontend, source.SourceFormat.Version with
+                | SourceFrontend.Stack, 1
+                | SourceFrontend.Flow, 1 -> ()
+                | frontend, version ->
+                    let frontendName = if frontend = SourceFrontend.Flow then "Flow" else "Stack"
+                    error "RUNTIME_UNSUPPORTED_TYPE_FRONTEND" $"Type '{name}' uses unsupported {frontendName} syntax version {version}." (Some name) None [ "Stack/1 or Flow/1" ] [ $"{frontendName}/{version}" ]
+                match state.Records.TryFind name, state.Scalars.TryFind name with
+                | Some _, Some _ -> error "TYPE_SOURCE_OWNER_AMBIGUOUS" $"Type source '{name}' maps to both a record and scalar." (Some name) None [] []
+                | Some _, None when source.ValidatorTarget.IsSome ->
+                    error "TYPE_VALIDATOR_TARGET_INVALID" $"Record type '{name}' cannot carry a scalar validator target." (Some name) None [] [ string source.ValidatorTarget.Value ]
+                | Some _, None -> ()
+                | None, Some scalar ->
+                    match scalar.Definition.Validator, source.ValidatorTarget with
+                    | None, Some target -> error "TYPE_VALIDATOR_TARGET_INVALID" $"Scalar type '{name}' has a validator target but no validator declaration." (Some name) None [] [ string target ]
+                    | Some _, Some target ->
+                        let actual = resolvedValidatorTarget state name scalar.Definition
+                        if actual <> Some target then
+                            error "TYPE_VALIDATOR_TARGET_MISMATCH" $"Scalar type '{name}' validator does not resolve to its stored stable target." (Some name) (Some scalar.Definition.Span)
+                                (Some target |> Option.map string |> Option.toList) (actual |> Option.map string |> Option.toList)
+                    | Some _, None when source.SourceFormat.Frontend = SourceFrontend.Flow ->
+                        error "TYPE_VALIDATOR_TARGET_MISSING" $"Flow scalar type '{name}' requires a stable validator target binding." (Some name) (Some scalar.Definition.Span) [ "resolved user, generated, or primitive target" ] []
+                    | _ -> ()
+                | None, None -> error "TYPE_SOURCE_OWNER_MISSING" $"Type source metadata has no declared type '{name}'." (Some name) None [] []
 
         let log (kind: string) (name: string) =
             match activeTask with
@@ -458,12 +520,17 @@ module Runtime =
                     if item.Builtin.IsSome then None
                     else restored.WordIds.TryFind name |> Option.map WordId)
                 |> Set.ofSeq
+            let persistentTypeNames =
+                Set.union
+                    (restored.Records |> Map.toSeq |> Seq.choose (fun (name, item) -> if item.Status = Persistent then Some name else None) |> Set.ofSeq)
+                    (restored.Scalars |> Map.toSeq |> Seq.choose (fun (name, item) -> if item.Status = Persistent then Some name else None) |> Set.ofSeq)
             let projected =
                 { restored with
                     Words = persistentWords
                     WordIds = restored.WordIds |> Map.filter (fun name _ -> persistentWords.ContainsKey name)
                     Records = restored.Records |> Map.filter (fun _ value -> value.Status = Persistent)
                     Scalars = restored.Scalars |> Map.filter (fun _ value -> value.Status = Persistent)
+                    TypeSources = restored.TypeSources |> Map.filter (fun name _ -> persistentTypeNames.Contains name)
                     Tests = Map.empty
                     Examples = Map.empty
                     FlowWords = restored.FlowWords |> Map.filter (fun _ authored -> persistentOwnerIds.Contains authored.Source.OwnerId)
@@ -491,15 +558,30 @@ module Runtime =
         let sourceFor (state: DictionaryState) =
             let state = durableState state
             let sections = ResizeArray<string>()
-            let hasFlow = not (Map.isEmpty state.FlowWords)
+            let flowTypeNames =
+                state.TypeSources
+                |> Map.toSeq
+                |> Seq.choose (fun (name, source) -> if source.SourceFormat.Frontend = SourceFrontend.Flow then Some name else None)
+                |> Set.ofSeq
+            let hasFlow = not (Map.isEmpty state.FlowWords) || not flowTypeNames.IsEmpty
             let stackWordNames = state.FlowWords |> Map.toSeq |> Seq.map (fun (_, authored) -> authored.Source.OwnerName) |> Set.ofSeq
             let flowTestKeys = state.FlowTests |> Map.toSeq |> Seq.map (fun (_, item) -> item.Source.OwnerName + "/" + item.Source.CaseName) |> Set.ofSeq
             let flowExampleKeys = state.FlowExamples |> Map.toSeq |> Seq.map (fun (_, item) -> item.Source.OwnerName + "/" + item.Source.CaseName) |> Set.ofSeq
             let addSection (frontend: string) (source: string) =
                 if hasFlow then sections.Add("// frontend: " + frontend + "/1")
                 sections.Add(source.Replace("\r\n", "\n"))
-            for _, item in state.Records |> Map.toSeq |> Seq.sortBy fst do if item.Status = Persistent then addSection "stack" (Source.renderRecord item.Definition)
-            for _, item in state.Scalars |> Map.toSeq |> Seq.sortBy fst do if item.Status = Persistent then addSection "stack" (Source.renderScalar item.Definition)
+            for name, item in state.Records |> Map.toSeq |> Seq.sortBy fst do
+                if item.Status = Persistent then
+                    match (state.TypeSources.TryFind name |> Option.defaultValue (defaultTypeSource state name)).SourceFormat with
+                    | { Frontend = SourceFrontend.Stack; Version = 1 } -> addSection "stack" (Source.renderRecord item.Definition)
+                    | { Frontend = SourceFrontend.Flow; Version = 1 } -> addSection "flow" (FlowSource.renderRecord item.Definition)
+                    | format -> error "RUNTIME_UNSUPPORTED_TYPE_FRONTEND" $"Type '{name}' uses unsupported source format {format.Frontend}/{format.Version}." (Some name) None [ "Stack/1 or Flow/1" ] [ $"{format.Frontend}/{format.Version}" ]
+            for name, item in state.Scalars |> Map.toSeq |> Seq.sortBy fst do
+                if item.Status = Persistent then
+                    match (state.TypeSources.TryFind name |> Option.defaultValue (defaultTypeSource state name)).SourceFormat with
+                    | { Frontend = SourceFrontend.Stack; Version = 1 } -> addSection "stack" (Source.renderScalar item.Definition)
+                    | { Frontend = SourceFrontend.Flow; Version = 1 } -> addSection "flow" (FlowSource.renderScalar item.Definition)
+                    | format -> error "RUNTIME_UNSUPPORTED_TYPE_FRONTEND" $"Type '{name}' uses unsupported source format {format.Frontend}/{format.Version}." (Some name) None [ "Stack/1 or Flow/1" ] [ $"{format.Frontend}/{format.Version}" ]
             for word in topologicalWords state do
                 if not (stackWordNames.Contains word.Definition.Name) then addSection "stack" (Source.renderWord true word.Definition)
             state.FlowWords
@@ -599,6 +681,7 @@ module Runtime =
                     Deprecated = Set.empty
                     Records = records
                     Scalars = scalars
+                    TypeSources = Map.empty
                     Tests = parsed.Tests |> List.fold addTest Map.empty
                     Examples = parsed.Examples |> List.fold addExample Map.empty
                     History = Map.empty
@@ -612,17 +695,35 @@ module Runtime =
             let sourceObjects = ResizeArray<SourceObject>()
             sourceObjects.Add projectObject
 
+            let manifestBase = currentManifest |> Option.defaultValue { FormatVersion = 2; ProjectSource = projectObject.Reference; Types = []; Words = []; Revisions = [] }
             let typeSources =
                 [ for KeyValue(name, item) in durable.Records do
-                      let sourceObject = Storage.sourceObject StorageObjectKind.TypeDefinition (Source.renderRecord item.Definition)
+                      let authored = durable.TypeSources.TryFind name |> Option.defaultValue (defaultTypeSource durable name)
+                      let sourceObject = Storage.sourceObject StorageObjectKind.TypeDefinition authored.Content
+                      if sourceObject.Reference <> authored.Reference then
+                          error "TYPE_SOURCE_REFERENCE_MISMATCH" $"Type source '{name}' does not match its immutable source reference." (Some name) None [ authored.Reference.Hash ] [ sourceObject.Reference.Hash ]
                       sourceObjects.Add sourceObject
-                      yield { Name = name; Definition = sourceObject.Reference }
+                      if authored.ValidatorTarget.IsSome then
+                          error "TYPE_VALIDATOR_TARGET_INVALID" $"Record type '{name}' cannot carry a scalar validator target." (Some name) None [] []
+                      yield { Name = name; Definition = sourceObject.Reference; SourceFormat = authored.SourceFormat; ValidatorTarget = None }
                   for KeyValue(name, item) in durable.Scalars do
-                      let sourceObject = Storage.sourceObject StorageObjectKind.TypeDefinition (Source.renderScalar item.Definition)
+                      let authored = durable.TypeSources.TryFind name |> Option.defaultValue (defaultTypeSource durable name)
+                      let sourceObject = Storage.sourceObject StorageObjectKind.TypeDefinition authored.Content
+                      if sourceObject.Reference <> authored.Reference then
+                          error "TYPE_SOURCE_REFERENCE_MISMATCH" $"Type source '{name}' does not match its immutable source reference." (Some name) None [ authored.Reference.Hash ] [ sourceObject.Reference.Hash ]
                       sourceObjects.Add sourceObject
-                      yield { Name = name; Definition = sourceObject.Reference } ]
-
-            let manifestBase = currentManifest |> Option.defaultValue { FormatVersion = 2; ProjectSource = projectObject.Reference; Types = []; Words = []; Revisions = [] }
+                      let resolved = resolvedValidatorTarget durable name item.Definition
+                      match authored.ValidatorTarget, resolved with
+                      | Some stored, Some actual when stored <> actual ->
+                          error "TYPE_VALIDATOR_TARGET_MISMATCH" $"Scalar type '{name}' validator target changed since its authored source was accepted." (Some name) (Some item.Definition.Span) [ string stored ] [ string actual ]
+                      | Some _, None ->
+                          error "TYPE_VALIDATOR_TARGET_INVALID" $"Scalar type '{name}' has a stored validator target without a validator declaration." (Some name) (Some item.Definition.Span) [] []
+                      | _ -> ()
+                      yield { Name = name; Definition = sourceObject.Reference; SourceFormat = authored.SourceFormat; ValidatorTarget = resolved } ]
+            let manifestVersion =
+                if manifestBase.FormatVersion >= 3
+                   || (typeSources |> List.exists (fun source -> source.SourceFormat.Frontend = SourceFrontend.Flow || source.ValidatorTarget.IsSome)) then 3
+                else 2
             let revisions = ResizeArray<WordRevision>(manifestBase.Revisions)
             let mutable revisionKeys = revisions |> Seq.map (fun item -> item.WordId, item.Revision) |> Set.ofSeq
             let taskId = activeTask |> Option.filter (fun task -> task.Active) |> Option.map (fun task -> task.Id)
@@ -822,7 +923,7 @@ module Runtime =
                 |> Seq.toList
 
             let manifest =
-                { FormatVersion = 2
+                { FormatVersion = manifestVersion
                   ProjectSource = projectObject.Reference
                   Types = typeSources
                   Words = heads
@@ -1287,6 +1388,7 @@ module Runtime =
                         Deprecated = Set.empty
                         Records = Map.empty
                         Scalars = Map.empty
+                        TypeSources = Map.empty
                         Tests = Map.empty
                         Examples = Map.empty
                         History = Map.empty
@@ -1310,6 +1412,7 @@ module Runtime =
                 let hash = manifestHash |> Option.defaultWith (fun () -> error "STORAGE_INVALID_MANIFEST" "Manifest authority has no manifest hash." None None [] [])
                 let records = ResizeArray<RecordDefinition>()
                 let scalars = ResizeArray<ScalarTypeDefinition>()
+                let loadedTypeSources = ResizeArray<string * AuthoredTypeSource>()
                 let stackWords = ResizeArray<WordDefinition>()
                 let stackTests = ResizeArray<TestDefinition>()
                 let stackExamples = ResizeArray<ExampleDefinition>()
@@ -1323,11 +1426,35 @@ module Runtime =
                     match Storage.readSource projectStore typeSource.Definition with
                     | Error storageError -> raiseStorageError storageError
                     | Ok source ->
-                        let parsed = parseProjectSource ($"<type:{typeSource.Name}>") source
-                        match parsed.Records, parsed.Scalars with
-                        | [ record ], [] when record.Name = typeSource.Name && parsed.Words.IsEmpty && parsed.Tests.IsEmpty && parsed.Examples.IsEmpty -> records.Add record
-                        | [], [ scalar ] when scalar.Name = typeSource.Name && parsed.Words.IsEmpty && parsed.Tests.IsEmpty && parsed.Examples.IsEmpty -> scalars.Add scalar
-                        | _ -> mismatch $"Manifest type object '{typeSource.Name}' does not contain exactly that type." (Some typeSource.Name)
+                        let authored =
+                            match typeSource.SourceFormat.Frontend, typeSource.SourceFormat.Version with
+                            | SourceFrontend.Stack, 1 ->
+                                let parsed = parseProjectSource ($"<type:{typeSource.Name}>") source
+                                match parsed.Records, parsed.Scalars with
+                                | [ record ], [] when record.Name = typeSource.Name && parsed.Words.IsEmpty && parsed.Tests.IsEmpty && parsed.Examples.IsEmpty ->
+                                    records.Add record
+                                    { SourceFormat = typeSource.SourceFormat; Content = source; Reference = typeSource.Definition; ValidatorTarget = typeSource.ValidatorTarget }
+                                | [], [ scalar ] when scalar.Name = typeSource.Name && parsed.Words.IsEmpty && parsed.Tests.IsEmpty && parsed.Examples.IsEmpty ->
+                                    scalars.Add scalar
+                                    { SourceFormat = typeSource.SourceFormat; Content = source; Reference = typeSource.Definition; ValidatorTarget = typeSource.ValidatorTarget }
+                                | _ -> mismatch $"Manifest type object '{typeSource.Name}' does not contain exactly that type." (Some typeSource.Name)
+                            | SourceFrontend.Flow, 1 ->
+                                let file = $"<type:{typeSource.Name}/{typeSource.Definition.Hash}>"
+                                let parsed =
+                                    match FlowParser.parseDocument file source with
+                                    | Ok document -> document
+                                    | Error diagnostic -> raise (LanguageException diagnostic)
+                                match parsed.Records, parsed.Scalars with
+                                | [ record ], [] when record.Name = typeSource.Name && parsed.Words.IsEmpty && parsed.Tests.IsEmpty && parsed.Examples.IsEmpty ->
+                                    records.Add record
+                                    { SourceFormat = typeSource.SourceFormat; Content = source; Reference = typeSource.Definition; ValidatorTarget = typeSource.ValidatorTarget }
+                                | [], [ scalar ] when scalar.Name = typeSource.Name && parsed.Words.IsEmpty && parsed.Tests.IsEmpty && parsed.Examples.IsEmpty ->
+                                    scalars.Add scalar
+                                    { SourceFormat = typeSource.SourceFormat; Content = source; Reference = typeSource.Definition; ValidatorTarget = typeSource.ValidatorTarget }
+                                | _ -> mismatch $"Manifest Flow type object '{typeSource.Name}' does not contain exactly that type." (Some typeSource.Name)
+                            | frontend, version ->
+                                error "RUNTIME_UNSUPPORTED_TYPE_FRONTEND" $"Stored type '{typeSource.Name}' uses unsupported {frontend}/{version}." (Some typeSource.Name) None [ "Stack/1 or Flow/1" ] [ $"{frontend}/{version}" ]
+                        loadedTypeSources.Add(typeSource.Name, authored)
 
                 let validateSourceFormat (metadata: WordRevision) =
                     let frontendName = function SourceFrontend.Stack -> "Stack" | SourceFrontend.Flow -> "Flow"
@@ -1508,7 +1635,8 @@ module Runtime =
                       Words = List.ofSeq stackWords
                       Tests = List.ofSeq stackTests
                       Examples = List.ofSeq stackExamples }
-                let stackState = parsedState stackParsed data identities
+                let parsedStackState = parsedState stackParsed data identities
+                let stackState = { parsedStackState with TypeSources = loadedTypeSources |> Map.ofSeq }
                 // Generated record/scalar words do not have WordRevision
                 // identities, so manifest revisions have nowhere to store
                 // their attached Stack cases except in the hash-verified
@@ -1519,9 +1647,10 @@ module Runtime =
                 // behavior, where the aggregate was the source of these cases.
                 let generatedProjectCases =
                     match value.FormatVersion, projectSource with
-                    | version, Some exact when version = 1 || version = 2 ->
+                    | version, Some exact when version = 1 || version = 2 || version = 3 ->
                         let stackSource =
-                            if currentFlowWords.Count = 0 then exact
+                            if currentFlowWords.Count = 0
+                               && (loadedTypeSources |> Seq.forall (fun (_, authored) -> authored.SourceFormat.Frontend = SourceFrontend.Stack)) then exact
                             else
                                 let stackSections = ResizeArray<string>()
                                 let currentSection = ResizeArray<string>()
@@ -1561,21 +1690,37 @@ module Runtime =
                 if Set.ofList (value.Types |> List.map (fun item -> item.Name)) <> knownTypes stackState then
                     mismatch "Manifest type names do not match the authoritative type source objects." None
                 for typeSource in value.Types do
+                    let authored = stackState.TypeSources[typeSource.Name]
                     let expected =
                         match stackState.Records.TryFind typeSource.Name, stackState.Scalars.TryFind typeSource.Name with
+                        | Some record, _ when typeSource.SourceFormat.Frontend = SourceFrontend.Flow -> FlowSource.renderRecord record.Definition
                         | Some record, _ -> Source.renderRecord record.Definition
+                        | _, Some scalar when typeSource.SourceFormat.Frontend = SourceFrontend.Flow -> FlowSource.renderScalar scalar.Definition
                         | _, Some scalar -> Source.renderScalar scalar.Definition
                         | _ -> mismatch $"Manifest type '{typeSource.Name}' is not present in the loaded type source objects." (Some typeSource.Name)
-                    match Storage.readSource projectStore typeSource.Definition with
-                    | Error storageError -> raiseStorageError storageError
-                    | Ok source ->
-                        let parsed = parseProjectSource ($"<type:{typeSource.Name}>") source
-                        let rendered =
+                    if authored.Reference <> typeSource.Definition
+                       || authored.SourceFormat <> typeSource.SourceFormat
+                       || authored.ValidatorTarget <> typeSource.ValidatorTarget then
+                        mismatch $"Manifest type metadata for '{typeSource.Name}' differs from its authoritative source object." (Some typeSource.Name)
+                    let canonical =
+                        match typeSource.SourceFormat.Frontend with
+                        | SourceFrontend.Flow ->
+                            let file = $"<type:{typeSource.Name}/{typeSource.Definition.Hash}>"
+                            let parsed =
+                                match FlowParser.parseDocument file authored.Content with
+                                | Ok document -> document
+                                | Error diagnostic -> raise (LanguageException diagnostic)
                             match parsed.Records, parsed.Scalars with
-                            | [ record ], [] when record.Name = typeSource.Name && parsed.Words.IsEmpty && parsed.Tests.IsEmpty && parsed.Examples.IsEmpty -> Source.renderRecord record
-                            | [], [ scalar ] when scalar.Name = typeSource.Name && parsed.Words.IsEmpty && parsed.Tests.IsEmpty && parsed.Examples.IsEmpty -> Source.renderScalar scalar
+                            | [ record ], [] -> FlowSource.renderRecord record
+                            | [], [ scalar ] -> FlowSource.renderScalar scalar
+                            | _ -> mismatch $"Manifest Flow type object '{typeSource.Name}' does not contain exactly that type." (Some typeSource.Name)
+                        | SourceFrontend.Stack ->
+                            let parsed = parseProjectSource ($"<type:{typeSource.Name}>") authored.Content
+                            match parsed.Records, parsed.Scalars with
+                            | [ record ], [] -> Source.renderRecord record
+                            | [], [ scalar ] -> Source.renderScalar scalar
                             | _ -> mismatch $"Manifest type object '{typeSource.Name}' does not contain exactly that type." (Some typeSource.Name)
-                        if rendered <> expected then mismatch $"Manifest type '{typeSource.Name}' differs from its source object." (Some typeSource.Name)
+                    if canonical <> expected then mismatch $"Manifest type '{typeSource.Name}' differs from its source object." (Some typeSource.Name)
 
                 let flowWords = currentFlowWords |> Seq.map (fun (authored, _) -> wordIdText authored.Source.OwnerId, authored) |> Map.ofSeq
                 let flowTests = currentFlowTests |> Map.ofSeq
@@ -1619,6 +1764,7 @@ module Runtime =
                         FlowExamples = flowExamples
                         FlowHistory = loadedFlowHistory
                         Replacements = Map.empty }
+                validateTypeSourceMetadata proposed
                 if proposed.Words.Count - Compiler.primitives.Count <> value.Words.Length then
                     mismatch "Manifest word heads do not match the revision-authored word sources." None
                 for head in value.Words do
@@ -2649,7 +2795,248 @@ module Runtime =
                     |> Seq.toList
                 | value -> flowArgumentError "removeAttachments" "an array of attachment removal objects" (flowJsonKind value)
 
-        let registerFlowParsed (arguments: JsonObject) =
+        let registerFlowProjectParsed (arguments: JsonObject) (document: FlowProjectDocument) =
+            let old = data
+            let temporary = readOptionalStrictBool arguments "temporary" false
+            let hasTypes = not document.Records.IsEmpty || not document.Scalars.IsEmpty
+            if document.SyntaxVersion <> 1 then
+                error "FLOW_VERSION_UNSUPPORTED" "Only Flow project syntax version 1 is supported by this runtime." None None [ "1" ] [ string document.SyntaxVersion ]
+            if document.Records.IsEmpty && document.Scalars.IsEmpty && document.Words.IsEmpty then
+                error "FLOW_PROJECT_EMPTY" "A Flow project document must declare at least one type or word." None None [ "record, type, or word declaration" ] []
+            if hasTypes && temporary then
+                error "FLOW_PROJECT_TEMPORARY_TYPES_UNSUPPORTED" "Flow types do not have a temporary lifecycle; define the typed project as candidates or omit its type declarations." None None [ "temporary=false for project types" ] [ "temporary=true" ]
+            if readOptionalStrictBool arguments "replace" false
+               || arguments.ContainsKey "expectedRevision"
+               || arguments.ContainsKey "removeAttachments"
+               || (arguments.ContainsKey "tests" && not (flowSourceStrings arguments "tests").IsEmpty)
+               || (arguments.ContainsKey "examples" && not (flowSourceStrings arguments "examples").IsEmpty) then
+                error "FLOW_PROJECT_REQUEST_SHAPE" "A multi-declaration Flow project is add-only; put tests and examples in the document and use the existing one-word CAS route for replacement." None None
+                    [ "new project declarations with inline test/example sources" ] [ "replace, expectedRevision, or external attachment changes" ]
+
+            let typeNames = (document.Records |> List.map (fun item -> item.Name)) @ (document.Scalars |> List.map (fun item -> item.Name))
+            let wordNames = document.Words |> List.map (fun item -> item.Name)
+            let duplicateWord = wordNames |> List.groupBy id |> List.tryFind (fun (_, grouped) -> grouped.Length > 1)
+            match duplicateWord with
+            | Some(name, _) -> error "FLOW_PROJECT_DUPLICATE_WORD" $"Word '{name}' is declared more than once in the Flow project." (Some name) None [] [ name ]
+            | None -> ()
+            match Set.intersect (Set.ofList typeNames) (Set.ofList wordNames) |> Set.toList with
+            | name :: _ -> error "FLOW_PROJECT_NAME_COLLISION" $"'{name}' is declared as both a type and a word." (Some name) None [] [ name ]
+            | [] -> ()
+            for name in typeNames do
+                if (knownTypes old).Contains name then
+                    error "FLOW_PROJECT_TYPE_ALREADY_EXISTS" $"Type '{name}' already exists; project documents do not replace type sources." (Some name) None [ "unused type name" ] [ name ]
+            let existingWords = effectiveWords old
+            let typeCollisionState =
+                let records: Map<string, RecordEntry> =
+                    document.Records
+                    |> List.fold (fun found definition -> Map.add definition.Name ({ Definition = definition; Status = Candidate }: RecordEntry) found) old.Records
+                let scalars: Map<string, ScalarEntry> =
+                    document.Scalars
+                    |> List.fold (fun found definition -> Map.add definition.Name ({ Definition = definition; Status = Candidate }: ScalarEntry) found) old.Scalars
+                { old with Records = records; Scalars = scalars }
+            let generatedBeforeWords = makeGenerated typeCollisionState
+            for name in wordNames do
+                if existingWords.ContainsKey name || generatedBeforeWords.ContainsKey name then
+                    error "FLOW_PROJECT_WORD_ALREADY_EXISTS" $"Word '{name}' already exists as a primitive, generated word, or user word." (Some name) None [ "unused word name" ] [ name ]
+
+            let newRecords: (string * RecordEntry * AuthoredTypeSource) list =
+                document.Records
+                |> List.map (fun parsed ->
+                    let content = parsed.SourceText
+                    let sourceObject = Storage.sourceObject StorageObjectKind.TypeDefinition content
+                    let file = $"<flow-type:{parsed.Name}/{sourceObject.Reference.Hash}>"
+                    let reparsed =
+                        match FlowParser.parseDocument file content with
+                        | Ok value -> value
+                        | Error diagnostic -> raise (LanguageException diagnostic)
+                    match reparsed.Records, reparsed.Scalars, reparsed.Words, reparsed.Tests, reparsed.Examples with
+                    | [ definition ], [], [], [], [] when definition.Name = parsed.Name ->
+                        parsed.Name,
+                        ({ Definition = definition; Status = Candidate }: RecordEntry),
+                        { SourceFormat = { Frontend = SourceFrontend.Flow; Version = 1 }
+                          Content = content
+                          Reference = sourceObject.Reference
+                          ValidatorTarget = None }
+                    | _ -> error "FLOW_PROJECT_TYPE_SOURCE_INVALID" $"Record source '{parsed.Name}' must contain exactly its authored Flow record declaration." (Some parsed.Name) (Some parsed.Span) [] [] )
+            let newScalars: (string * ScalarEntry * AuthoredTypeSource) list =
+                document.Scalars
+                |> List.map (fun parsed ->
+                    let content = parsed.SourceText
+                    let sourceObject = Storage.sourceObject StorageObjectKind.TypeDefinition content
+                    let file = $"<flow-type:{parsed.Name}/{sourceObject.Reference.Hash}>"
+                    let reparsed =
+                        match FlowParser.parseDocument file content with
+                        | Ok value -> value
+                        | Error diagnostic -> raise (LanguageException diagnostic)
+                    match reparsed.Records, reparsed.Scalars, reparsed.Words, reparsed.Tests, reparsed.Examples with
+                    | [], [ definition ], [], [], [] when definition.Name = parsed.Name ->
+                        parsed.Name,
+                        ({ Definition = definition; Status = Candidate }: ScalarEntry),
+                        { SourceFormat = { Frontend = SourceFrontend.Flow; Version = 1 }
+                          Content = content
+                          Reference = sourceObject.Reference
+                          ValidatorTarget = None }
+                    | _ -> error "FLOW_PROJECT_TYPE_SOURCE_INVALID" $"Scalar source '{parsed.Name}' must contain exactly its authored Flow type declaration." (Some parsed.Name) (Some parsed.Span) [] [] )
+
+            let identities =
+                document.Words
+                |> List.map (fun definition -> definition.Name, WordId(newWordIdentity ()))
+                |> Map.ofList
+            let revision = 1
+            let wordRows =
+                document.Words
+                |> List.map (fun parsed ->
+                    if parsed.SyntaxVersion <> 1 then
+                        error "FLOW_VERSION_UNSUPPORTED" "Only Flow word syntax version 1 is supported by this runtime." (Some parsed.Name) (Some parsed.Span) [ "1" ] [ string parsed.SyntaxVersion ]
+                    let ownerId = identities[parsed.Name]
+                    let content = parsed.SourceText
+                    let sourceObject = Storage.sourceObject StorageObjectKind.WordDefinition content
+                    let sourceFile = $"<flow:{parsed.Name}/{revision}:{sourceObject.Reference.Hash}>"
+                    let definition =
+                        match FlowParser.parseWord sourceFile content with
+                        | Ok value when value.Name = parsed.Name -> value
+                        | Ok value -> error "FLOW_RUNTIME_OWNER_MISMATCH" "A standalone Flow word source changed its declared owner during validation." (Some parsed.Name) (Some value.Span) [ parsed.Name ] [ value.Name ]
+                        | Error diagnostic -> raise (LanguageException diagnostic)
+                    let source: FlowLowering.FlowSourceDocument =
+                        { OwnerName = definition.Name
+                          OwnerId = ownerId
+                          OwnerRevision = revision
+                          Reference = sourceObject.Reference
+                          SourceFile = sourceFile
+                          Content = content }
+                    let authored: FlowAuthoredWord = { Definition = definition; Source = source; StoredBindings = None }
+                    let projected: WordDefinition =
+                        { Name = definition.Name
+                          Inputs = definition.Parameters |> List.map (fun parameter -> parameter.Type)
+                          Outputs = definition.Outputs
+                          Effects = definition.Effects
+                          Maturity = ProjectWord
+                          Revision = revision
+                          Documentation = definition.Documentation
+                          Body = []
+                          SourceText = content
+                          Span = definition.Span }
+                    let status = if temporary then Temporary else Candidate
+                    definition.Name, entry projected None status ProjectWord revision, authored)
+            let newWordMap = wordRows |> List.map (fun (name, word, _) -> name, word) |> Map.ofList
+            let flowWordMap = wordRows |> List.map (fun (_, _, authored) -> wordIdText authored.Source.OwnerId, authored) |> Map.ofList
+            let ensureAttachmentOwner kind owner caseName span =
+                match identities.TryFind owner with
+                | Some identity -> identity
+                | None ->
+                    error "FLOW_ATTACHMENT_OWNER_MISMATCH" $"A Flow project {kind} '{caseName}' must attach to a word declared in the same project document." (Some owner) (Some span) wordNames [ owner ]
+            let newTests =
+                document.Tests
+                |> List.map (fun parsed ->
+                    let identity = ensureAttachmentOwner "test" parsed.Word parsed.CaseName parsed.Span
+                    let content = parsed.SourceText
+                    let sourceObject = Storage.sourceObject StorageObjectKind.TestDefinition content
+                    let sourceFile = $"<flow:{parsed.Word}/{revision}>/test:{sourceObject.Reference.Hash}"
+                    let definition =
+                        match FlowParser.parseTest sourceFile content with
+                        | Ok value when value.Word = parsed.Word -> value
+                        | Ok value -> error "FLOW_ATTACHMENT_OWNER_MISMATCH" "A standalone Flow test source changed its declared owner during validation." (Some parsed.Word) (Some value.Span) [ parsed.Word ] [ value.Word ]
+                        | Error diagnostic -> raise (LanguageException diagnostic)
+                    let source: FlowLowering.FlowAttachmentSourceDocument =
+                        { OwnerName = parsed.Word
+                          OwnerId = identity
+                          OwnerRevision = revision
+                          Kind = FlowLowering.FlowAttachmentKind.Test
+                          CaseName = definition.CaseName
+                          Reference = sourceObject.Reference
+                          SourceFile = sourceFile
+                          Content = content }
+                    flowAttachmentKey identity definition.CaseName, { Source = source; StoredBindings = None })
+            let newExamples =
+                document.Examples
+                |> List.map (fun parsed ->
+                    let identity = ensureAttachmentOwner "example" parsed.Word parsed.CaseName parsed.Span
+                    let content = parsed.SourceText
+                    let sourceObject = Storage.sourceObject StorageObjectKind.ExampleDefinition content
+                    let sourceFile = $"<flow:{parsed.Word}/{revision}>/example:{sourceObject.Reference.Hash}"
+                    let definition =
+                        match FlowParser.parseExample sourceFile content with
+                        | Ok value when value.Word = parsed.Word -> value
+                        | Ok value -> error "FLOW_ATTACHMENT_OWNER_MISMATCH" "A standalone Flow example source changed its declared owner during validation." (Some parsed.Word) (Some value.Span) [ parsed.Word ] [ value.Word ]
+                        | Error diagnostic -> raise (LanguageException diagnostic)
+                    let source: FlowLowering.FlowAttachmentSourceDocument =
+                        { OwnerName = parsed.Word
+                          OwnerId = identity
+                          OwnerRevision = revision
+                          Kind = FlowLowering.FlowAttachmentKind.Example
+                          CaseName = definition.CaseName
+                          Reference = sourceObject.Reference
+                          SourceFile = sourceFile
+                          Content = content }
+                    flowAttachmentKey identity definition.CaseName, { Source = source; StoredBindings = None })
+            let duplicates rows kind =
+                match rows |> List.groupBy fst |> List.tryFind (fun (_, grouped) -> grouped.Length > 1) with
+                | Some(key, _) -> error "FLOW_ATTACHMENT_DUPLICATE_CHANGE" $"A Flow project may declare one {kind} case key only once." (Some key) None [] [ key ]
+                | None -> ()
+            duplicates newTests "test"
+            duplicates newExamples "example"
+
+            let records = newRecords |> List.fold (fun found (name, item, _) -> Map.add name item found) old.Records
+            let scalars = newScalars |> List.fold (fun found (name, item, _) -> Map.add name item found) old.Scalars
+            let typeSourceRows =
+                (newRecords |> List.map (fun (name, _, source) -> name, source))
+                @ (newScalars |> List.map (fun (name, _, source) -> name, source))
+            let typeSources = typeSourceRows |> List.fold (fun found (name, source) -> Map.add name source found) old.TypeSources
+            let words = newWordMap |> Map.fold (fun found name item -> Map.add name item found) old.Words
+            let wordIds = identities |> Map.fold (fun found name identity -> Map.add name (wordIdText identity) found) old.WordIds
+            let flowWords = flowWordMap |> Map.fold (fun found identity item -> Map.add identity item found) old.FlowWords
+            let flowTests = newTests |> List.fold (fun found (key, item) -> Map.add key item found) old.FlowTests
+            let flowExamples = newExamples |> List.fold (fun found (key, item) -> Map.add key item found) old.FlowExamples
+            let proposed: DictionaryState =
+                { old with
+                    Words = words
+                    WordIds = wordIds
+                    Records = records
+                    Scalars = scalars
+                    TypeSources = typeSources
+                    FlowWords = flowWords
+                    FlowTests = flowTests
+                    FlowExamples = flowExamples }
+            let stableTypeSources =
+                proposed.TypeSources
+                |> Map.map (fun name authored ->
+                    match proposed.Scalars.TryFind name with
+                    | Some scalar -> { authored with ValidatorTarget = resolvedValidatorTarget proposed name scalar.Definition }
+                    | None -> authored)
+            let proposed = { proposed with TypeSources = stableTypeSources }
+            validateTypeSourceMetadata proposed
+            let executable = compileRuntimeSnapshot proposed
+            let frozen = frozenValidatorWords old (effectiveWords old)
+            let changedWords = Set.ofList wordNames
+            match Set.intersect frozen changedWords |> Set.toList with
+            | name :: _ -> error "TYPE_VALIDATOR_FROZEN" $"Cannot replace validator dependency '{name}' while a scalar type is persistent." (Some name) None [] [ name ]
+            | [] -> ()
+            activateRuntimeSnapshot executable
+            lastResults <- []
+            for name in typeNames @ wordNames do log "create" name
+            let payload = JsonObject()
+            payload["frontend"] <- jstr "flow"
+            let wordPayload = JsonArray()
+            for name in wordNames do
+                let item = executable.State.Words[name]
+                let row = JsonObject()
+                row["name"] <- jstr name
+                row["id"] <- jstr (wordIdentity executable.State item)
+                row["revision"] <- jint item.Revision
+                wordPayload.Add row
+            payload["words"] <- wordPayload
+            payload["types"] <- jsonNode (typeNames |> List.sort)
+            if wordNames.Length = 1 && typeNames.IsEmpty then
+                let name = wordNames.Head
+                let item = executable.State.Words[name]
+                payload["name"] <- jstr name
+                payload["id"] <- jstr (wordIdentity executable.State item)
+                payload["revision"] <- jint item.Revision
+                payload["tests"] <- jsonNode (newTests |> List.map (fun (_, attachment) -> attachment.Source.CaseName) |> List.sort)
+                payload["examples"] <- jsonNode (newExamples |> List.map (fun (_, attachment) -> attachment.Source.CaseName) |> List.sort)
+            success "defined" "Flow project declarations, attached cases, refined type metadata, and bindings validated atomically." (Some payload)
+
+        let registerFlowParsedLegacy (arguments: JsonObject) =
             let old = data
             let source = requiredFlowString arguments "source"
             let parsedWord =
@@ -2886,6 +3273,31 @@ module Runtime =
             payload["tests"] <- jsonNode (executable.State.FlowTests |> Map.toList |> List.map snd |> List.filter (fun item -> item.Source.OwnerId = ownerId) |> List.map (fun item -> item.Source.CaseName) |> List.sort)
             payload["examples"] <- jsonNode (executable.State.FlowExamples |> Map.toList |> List.map snd |> List.filter (fun item -> item.Source.OwnerId = ownerId) |> List.map (fun item -> item.Source.CaseName) |> List.sort)
             success "defined" "Flow definition, tests, examples, and retained source bindings validated and staged." (Some payload)
+
+        let registerFlowParsed (arguments: JsonObject) =
+            let source = requiredFlowString arguments "source"
+            let document =
+                match FlowParser.parseDocument "<flow-project>" source with
+                | Ok value -> value
+                | Error diagnostic -> raise (LanguageException diagnostic)
+            if document.Records.IsEmpty && document.Scalars.IsEmpty && document.Words.Length = 1 then
+                if document.Tests.IsEmpty && document.Examples.IsEmpty then
+                    // Preserve the byte-for-byte legacy source object for the established
+                    // one-word request shape, including comments and trailing whitespace.
+                    registerFlowParsedLegacy arguments
+                else
+                    // Inline cases are a convenient document form for a single owner. The
+                    // existing owner CAS implementation remains the authority for updates.
+                    let routed = JsonObject()
+                    for KeyValue(key, value) in arguments do
+                        if key <> "source" && key <> "tests" && key <> "examples" then
+                            routed[key] <- if isNull value then null else JsonNode.Parse(value.ToJsonString())
+                    routed["source"] <- jstr document.Words.Head.SourceText
+                    routed["tests"] <- jsonNode ((flowSourceStrings arguments "tests") @ (document.Tests |> List.map (fun test -> test.SourceText)))
+                    routed["examples"] <- jsonNode ((flowSourceStrings arguments "examples") @ (document.Examples |> List.map (fun example -> example.SourceText)))
+                    registerFlowParsedLegacy routed
+            else
+                registerFlowProjectParsed arguments document
 
         let discoveryArgumentKind (value: JsonNode) : string =
             match value with
@@ -3158,33 +3570,43 @@ module Runtime =
                     // is not part of that payload budget.
                     success operation $"Budgeted context for '{root}'." (Some(JsonNode.Parse context.Content))
                 | "source" ->
-                    let name = readString args "word" ""
-                    match syntaxDescriptors |> List.tryFind (fun descriptor -> descriptor.Name = name) with
-                    | Some descriptor ->
+                    if args.ContainsKey "type" then
+                        if args.ContainsKey "word" then
+                            error "SOURCE_SELECTOR_AMBIGUOUS" "Source inspection accepts exactly one of 'word' or 'type'." None None [ "one selector" ] [ "word and type" ]
+                        let name = requiredFlowString args "type"
+                        if not ((knownTypes data).Contains name) then
+                            error "DISCOVERY_UNKNOWN_TYPE" $"Type source '{name}' is not defined." (Some name) None [ "declared record or scalar type" ] []
+                        let authored = data.TypeSources.TryFind name |> Option.defaultValue (defaultTypeSource data name)
                         log "inspect" name
-                        let source = "syntax " + descriptor.Syntax + " : " + (String.concat " " descriptor.Inputs) + " -> " + (String.concat " " descriptor.Outputs)
-                        success "source" source (Some(jstr source))
-                    | None ->
-                        let snapshot = currentSnapshot ()
-                        let words = snapshot.Words
-                        match words.TryFind name with
-                        | None -> error "NAME_UNKNOWN_WORD" $"Word '{name}' is not defined." (Some name) None [] []
-                        | Some item ->
+                        success "source" authored.Content (Some(jstr authored.Content))
+                    else
+                        let name = readString args "word" ""
+                        match syntaxDescriptors |> List.tryFind (fun descriptor -> descriptor.Name = name) with
+                        | Some descriptor ->
                             log "inspect" name
-                            let authoredFlowSource =
-                                snapshot.State.WordIds.TryFind name
-                                |> Option.bind (fun identity -> snapshot.State.FlowWords.TryFind identity)
-                                |> Option.map (fun authored -> authored.Source.Content)
-                            let source =
-                                match authoredFlowSource, item.Builtin with
-                                | Some exactSource, _ -> exactSource
-                                | None, Some(BuiltinOp _) ->
-                                    let inputText = String.concat " " (item.Definition.Inputs |> List.map Types.format)
-                                    let outputText = String.concat " " (item.Definition.Outputs |> List.map Types.format)
-                                    $"primitive {name} : {inputText} -> {outputText}"
-                                | None, Some _ -> sourceForAgent item.Definition.SourceText
-                                | None, None -> sourceForAgent item.Definition.SourceText
+                            let source = "syntax " + descriptor.Syntax + " : " + (String.concat " " descriptor.Inputs) + " -> " + (String.concat " " descriptor.Outputs)
                             success "source" source (Some(jstr source))
+                        | None ->
+                            let snapshot = currentSnapshot ()
+                            let words = snapshot.Words
+                            match words.TryFind name with
+                            | None -> error "NAME_UNKNOWN_WORD" $"Word '{name}' is not defined." (Some name) None [] []
+                            | Some item ->
+                                log "inspect" name
+                                let authoredFlowSource =
+                                    snapshot.State.WordIds.TryFind name
+                                    |> Option.bind (fun identity -> snapshot.State.FlowWords.TryFind identity)
+                                    |> Option.map (fun authored -> authored.Source.Content)
+                                let source =
+                                    match authoredFlowSource, item.Builtin with
+                                    | Some exactSource, _ -> exactSource
+                                    | None, Some(BuiltinOp _) ->
+                                        let inputText = String.concat " " (item.Definition.Inputs |> List.map Types.format)
+                                        let outputText = String.concat " " (item.Definition.Outputs |> List.map Types.format)
+                                        $"primitive {name} : {inputText} -> {outputText}"
+                                    | None, Some _ -> sourceForAgent item.Definition.SourceText
+                                    | None, None -> sourceForAgent item.Definition.SourceText
+                                success "source" source (Some(jstr source))
                 | "dependencies" ->
                     let name = readString args "word" ""
                     let words = effectiveWords data
@@ -3867,6 +4289,7 @@ module Runtime =
                         let proposed =
                             { data with
                                 Records = Map.remove name data.Records
+                                TypeSources = Map.remove name data.TypeSources
                                 Tests = data.Tests |> Map.filter (fun _ test -> not (owns test.Word))
                                 Examples = data.Examples |> Map.filter (fun _ example -> not (owns example.Word)) }
                         let executable = compileRuntimeSnapshot proposed
@@ -3879,6 +4302,7 @@ module Runtime =
                         let proposed =
                             { data with
                                 Scalars = Map.remove name data.Scalars
+                                TypeSources = Map.remove name data.TypeSources
                                 Tests = data.Tests |> Map.filter (fun _ test -> not (owns test.Word))
                                 Examples = data.Examples |> Map.filter (fun _ example -> not (owns example.Word)) }
                         let executable = compileRuntimeSnapshot proposed

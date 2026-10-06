@@ -92,7 +92,9 @@ type WordHead =
 
 type TypeSource =
     { Name: string
-      Definition: SourceRef }
+      Definition: SourceRef
+      SourceFormat: SourceFormat
+      ValidatorTarget: StoredCallTarget option }
 
 /// Immutable metadata for one committed project state. Storage deliberately
 /// does not parse ProjectSource or validate its language-level meaning.
@@ -187,7 +189,7 @@ module Storage =
     // CURRENT and named snapshots remain version 1 independently from manifests.
     let private pointerSnapshotFormatVersion = 1
     let private minimumManifestFormatVersion = 1
-    let private maximumManifestFormatVersion = 2
+    let private maximumManifestFormatVersion = 3
     let private storeDirectoryName = ".agentlang"
     let private storeDirectory = "store"
     let private objectDirectory = "objects"
@@ -351,6 +353,8 @@ module Storage =
         { Frontend = SourceFrontend.Stack
           Version = 1 }
 
+    let private defaultTypeSourceFormat = defaultSourceFormat
+
     let private sourceFrontendName = function
         | SourceFrontend.Stack -> "stack"
         | SourceFrontend.Flow -> "flow"
@@ -510,6 +514,12 @@ module Storage =
         | "generatedWord" -> StoredCallTarget.GeneratedWord identity
         | item -> failure "STORAGE_INVALID_MANIFEST" $"Unknown call binding target kind '{item}'." path
 
+    let private parseTypeValidatorTarget path node =
+        let value = requireObject "type validator target" node
+        if value |> Seq.exists (fun property -> property.Key <> "kind" && property.Key <> "identity") then
+            failure "STORAGE_INVALID_MANIFEST" "A type validator target must contain only kind and identity; target revisions are not persisted." path
+        parseStoredCallTarget path (value :> JsonNode)
+
     let private storedCallBindingNode (binding: StoredCallBinding) =
         let node = JsonObject()
         node["source"] <- sourceRefNode binding.Source
@@ -596,7 +606,7 @@ module Storage =
         let isDefaultSource = revision.SourceFormat = defaultSourceFormat && List.isEmpty revision.CallBindings
         if manifestVersion = 1 && not isDefaultSource then
             failure "STORAGE_INVALID_MANIFEST" "A version-1 manifest can only serialize Stack version 1 revisions with no call bindings." None
-        if manifestVersion <> 1 && manifestVersion <> 2 then
+        if manifestVersion <> 1 && manifestVersion <> 2 && manifestVersion <> 3 then
             failure "STORAGE_UNSUPPORTED_VERSION" $"Manifest format {manifestVersion} is not supported." None
         let node = JsonObject()
         node["wordId"] <- jsonString revision.WordId
@@ -614,7 +624,7 @@ module Storage =
         node["taskId"] <- revision.TaskId |> Option.map jsonString |> Option.defaultValue null
         node["timestampUtc"] <- jsonString (revision.TimestampUtc.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture))
         node["deprecated"] <- jsonBool revision.Deprecated
-        if manifestVersion = 2 then
+        if manifestVersion >= 2 then
             node["sourceFormat"] <- sourceFormatNode revision.SourceFormat
             let bindings = JsonArray()
             revision.CallBindings |> List.sortBy storedCallBindingSortKey |> List.iter (storedCallBindingNode >> bindings.Add)
@@ -629,10 +639,16 @@ module Storage =
         node["deprecated"] <- jsonBool head.Deprecated
         node :> JsonNode
 
-    let private typeSourceNode (item: TypeSource) =
+    let private typeSourceNode manifestVersion (item: TypeSource) =
+        let isDefaultTypeMetadata = item.SourceFormat = defaultTypeSourceFormat && item.ValidatorTarget.IsNone
+        if manifestVersion < 3 && not isDefaultTypeMetadata then
+            failure "STORAGE_INVALID_MANIFEST" $"Manifest version {manifestVersion} can only serialize Stack version 1 type sources without validator targets." None
         let node = JsonObject()
         node["name"] <- jsonString item.Name
         node["definition"] <- sourceRefNode item.Definition
+        if manifestVersion = 3 then
+            node["sourceFormat"] <- sourceFormatNode item.SourceFormat
+            node["validatorTarget"] <- item.ValidatorTarget |> Option.map storedCallTargetNode |> Option.defaultValue null
         node :> JsonNode
 
     let private manifestNode (manifest: ProjectManifest) =
@@ -643,7 +659,7 @@ module Storage =
         node["formatVersion"] <- jsonInt manifest.FormatVersion
         node["projectSource"] <- sourceRefNode manifest.ProjectSource
         let types = JsonArray()
-        manifest.Types |> List.sortBy (fun item -> item.Name) |> List.iter (typeSourceNode >> types.Add)
+        manifest.Types |> List.sortBy (fun item -> item.Name) |> List.iter (typeSourceNode manifest.FormatVersion >> types.Add)
         node["types"] <- types
         let words = JsonArray()
         manifest.Words |> List.sortBy (fun item -> item.WordId) |> List.iter (wordHeadNode >> words.Add)
@@ -674,11 +690,12 @@ module Storage =
                     if value.ContainsKey "callBindings" then parseArray "word revision call bindings" (parseStoredCallBinding path) value["callBindings"]
                     else []
                 sourceFormat, callBindings
-            | 2 ->
+            | 2
+            | 3 ->
                 if not (value.ContainsKey "sourceFormat") then
-                    failure "STORAGE_INVALID_JSON" "Version-2 word revisions require sourceFormat." path
+                    failure "STORAGE_INVALID_JSON" $"Version-{manifestVersion} word revisions require sourceFormat." path
                 if not (value.ContainsKey "callBindings") then
-                    failure "STORAGE_INVALID_JSON" "Version-2 word revisions require callBindings." path
+                    failure "STORAGE_INVALID_JSON" $"Version-{manifestVersion} word revisions require callBindings." path
                 parseSourceFormat path value["sourceFormat"],
                 parseArray "word revision call bindings" (parseStoredCallBinding path) value["callBindings"]
             | version ->
@@ -709,10 +726,34 @@ module Storage =
           CurrentRevision = requireInt "word head revision" value["currentRevision"]
           Deprecated = requireBool "word head deprecated flag" value["deprecated"] }
 
-    let private parseTypeSource path node =
+    let private parseTypeSource path manifestVersion node =
         let value = requireObject "type source" node
+        let sourceFormat, validatorTarget =
+            match manifestVersion with
+            | 1
+            | 2 ->
+                let sourceFormat =
+                    if value.ContainsKey "sourceFormat" then parseSourceFormat path value["sourceFormat"]
+                    else defaultTypeSourceFormat
+                let validatorTarget =
+                    if value.ContainsKey "validatorTarget" then
+                        let target = value["validatorTarget"]
+                        if isNull target then None else Some(parseTypeValidatorTarget path target)
+                    else None
+                sourceFormat, validatorTarget
+            | 3 ->
+                if not (value.ContainsKey "sourceFormat") then
+                    failure "STORAGE_INVALID_JSON" "Version-3 type sources require sourceFormat." path
+                if not (value.ContainsKey "validatorTarget") then
+                    failure "STORAGE_INVALID_JSON" "Version-3 type sources require validatorTarget (use null when no validator is declared)." path
+                let target = value["validatorTarget"]
+                parseSourceFormat path value["sourceFormat"],
+                (if isNull target then None else Some(parseTypeValidatorTarget path target))
+            | version -> failure "STORAGE_UNSUPPORTED_VERSION" $"Manifest format {version} is not supported." path
         { Name = requireString "type source name" value["name"]
-          Definition = parseSourceRef path value["definition"] }
+          Definition = parseSourceRef path value["definition"]
+          SourceFormat = sourceFormat
+          ValidatorTarget = validatorTarget }
 
     let private preflightCallBindingWireBounds path (revisionNodes: JsonArray) =
         let mutable bindingCount = 0
@@ -739,12 +780,12 @@ module Storage =
         // version-specific revision fields so errors are stable and structured.
         let manifestVersion = requireInt "manifest format version" value["formatVersion"]
         if manifestVersion < minimumManifestFormatVersion || manifestVersion > maximumManifestFormatVersion then
-            failure "STORAGE_UNSUPPORTED_VERSION" $"Manifest format {manifestVersion} is not supported (expected 1 or 2)." path
+            failure "STORAGE_UNSUPPORTED_VERSION" $"Manifest format {manifestVersion} is not supported (expected 1, 2, or 3)." path
         let revisionNodes = requireArray "manifest revisions" value["revisions"]
         preflightCallBindingWireBounds path revisionNodes
         { FormatVersion = manifestVersion
           ProjectSource = parseSourceRef path value["projectSource"]
-          Types = parseArray "manifest types" (parseTypeSource path) value["types"]
+          Types = parseArray "manifest types" (parseTypeSource path manifestVersion) value["types"]
           Words = parseArray "manifest words" parseWordHead value["words"]
           Revisions = parseArray "manifest revisions" (parseWordRevision path manifestVersion) (revisionNodes :> JsonNode) }
 
@@ -773,7 +814,7 @@ module Storage =
 
     let private validateManifest (manifest: ProjectManifest) path =
         if manifest.FormatVersion < minimumManifestFormatVersion || manifest.FormatVersion > maximumManifestFormatVersion then
-            failure "STORAGE_UNSUPPORTED_VERSION" $"Manifest format {manifest.FormatVersion} is not supported (expected 1 or 2)." path
+            failure "STORAGE_UNSUPPORTED_VERSION" $"Manifest format {manifest.FormatVersion} is not supported (expected 1, 2, or 3)." path
         validateCallBindingBounds path manifest.Revisions
         if manifest.ProjectSource.Kind <> StorageObjectKind.ProjectSource then
             failure "STORAGE_INVALID_MANIFEST" "Manifest projectSource must reference a project-source object." path
@@ -789,10 +830,27 @@ module Storage =
             validMetadataText "Type name" 256 path item.Name
             if item.Definition.Kind <> StorageObjectKind.TypeDefinition then
                 failure "STORAGE_INVALID_MANIFEST" $"Type '{item.Name}' must reference a type-definition object." path
+            if item.SourceFormat.Version <> 1 then
+                failure "STORAGE_UNSUPPORTED_VERSION" $"Type source syntax version {item.SourceFormat.Version} is not supported." path
+            if manifest.FormatVersion < 3 && (item.SourceFormat <> defaultTypeSourceFormat || item.ValidatorTarget.IsSome) then
+                failure "STORAGE_INVALID_MANIFEST" $"Manifest version {manifest.FormatVersion} only supports Stack version 1 type sources without validator targets." path
+            match item.ValidatorTarget with
+            | Some(StoredCallTarget.UserWord identity)
+            | Some(StoredCallTarget.Primitive identity)
+            | Some(StoredCallTarget.GeneratedWord identity) ->
+                validMetadataText "Type validator target identity" 128 path identity
+            | None -> ()
 
         uniqueBy "word ID" (fun item -> item.WordId) manifest.Words
         uniqueBy "current word name" (fun item -> item.CurrentName) manifest.Words
         uniqueBy "revision identity" (fun (item: WordRevision) -> item.WordId, item.Revision) manifest.Revisions
+
+        let currentWordIds = manifest.Words |> List.map (fun item -> item.WordId) |> Set.ofList
+        for item in manifest.Types do
+            match item.ValidatorTarget with
+            | Some(StoredCallTarget.UserWord identity) when not (Set.contains identity currentWordIds) ->
+                failure "STORAGE_INVALID_MANIFEST" $"Type '{item.Name}' validator target '{identity}' does not name a current word in this manifest." path
+            | _ -> ()
 
         let revisionsByIdentity = manifest.Revisions |> List.map (fun item -> (item.WordId, item.Revision), item) |> Map.ofList
         for head in manifest.Words do

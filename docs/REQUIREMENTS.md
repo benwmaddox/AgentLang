@@ -209,3 +209,14 @@ actual-site coverage, immutable history and reload/rollback are acceptance
 requirements. The full local 26-check Release gate passes; Runtime has 15 groups /
 399 assertions and Flow has 832 assertions. Exact committed-source CI passed all 26 checks (run 37425011313, source f16dfa6).
 Public test-result spans remain an observability gap, recorded in report 048.
+
+Flow project document authoring is now the active prerequisite to default cutover
+([report 050](../reports/050-flow-project-documents.md)). Required work includes
+brace-based records/refined types, multiword/case documents, atomic staging,
+v3 typed source markers/validator identities, exact authored type inspection,
+and reload/rollback conformance. A fresh Release solution build passed with zero warnings/errors; the focused
+Flow Runtime suite passed 16 groups / 491 assertions, including atomic document
+staging, selected type commits, exact type source, v3 reload and lifecycle cases.
+All 26 local release checks pass, with zero build warnings/errors. Exact
+committed-source CI remains pending. The preceding
+publication commit e615918 has clean main CI evidence (run 37425519500).

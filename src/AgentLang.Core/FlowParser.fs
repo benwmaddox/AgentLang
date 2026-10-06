@@ -186,6 +186,11 @@ module FlowParser =
             | None -> startToken.Text.Length
         { File = file; Line = startToken.Line; Column = startToken.Column; Length = max 1 length }
 
+    let private sourceSlice (state: State) (startToken: Token) (endToken: Token) =
+        let startOffset = startToken.Offset
+        let endOffset = endToken.Offset + endToken.Text.Length
+        state.Source.Substring(startOffset, endOffset - startOffset)
+
     let private withDepth (state: State) action =
         state.Depth <- state.Depth + 1
         if state.Depth > maxNesting then
@@ -687,17 +692,19 @@ module FlowParser =
             let declaredEffects = effects |> Option.defaultWith (fun () -> tokenError state "FLOW_EFFECTS_REQUIRED" "Word definitions require an explicit effects declaration.")
             let body = parseBlockBody state
             let endToken = expect state "}"
-            if not (atEnd state) then tokenError state "FLOW_TRAILING_INPUT" "Unexpected content follows the word definition."
             let span = sourceSpan state.File wordToken (Some endToken)
-            { Name = name
-              Parameters = List.ofSeq parameters
-              Outputs = outputs
-              Effects = declaredEffects
-              Documentation = documentation
-              Body = body
-              SourceText = state.Source
-              Span = span
-              SyntaxVersion = 1 })
+            let definition =
+                { Name = name
+                  Parameters = List.ofSeq parameters
+                  Outputs = outputs
+                  Effects = declaredEffects
+                  Documentation = documentation
+                  Body = body
+                  SourceText = sourceSlice state wordToken endToken
+                  Span = span
+                  SyntaxVersion = 1 }
+            FlowStructure.validateWordNesting definition
+            definition)
 
     and private parseBlockBody state =
         parseBlockStatements state
@@ -754,13 +761,12 @@ module FlowParser =
                 fail state.File startToken.Line startToken.Column startToken.Text.Length "FLOW_EXPECTATION_BODY_EMPTY" "Runtime-error and value-expression tests require a nonempty actual body."
             | _ -> ()
             let endToken = closeCase state "test"
-            if not (atEnd state) then tokenError state "FLOW_TRAILING_INPUT" "Unexpected content follows the Flow test definition."
             let definition =
                 { Word = word
                   CaseName = caseName
                   Body = body
                   Expected = expected
-                  SourceText = state.Source
+                  SourceText = sourceSlice state startToken endToken
                   Span = sourceSpan state.File startToken (Some endToken)
                   SyntaxVersion = 1
                   HeaderSpan = headerSpan
@@ -787,14 +793,13 @@ module FlowParser =
             if List.isEmpty body then
                 fail state.File startToken.Line startToken.Column startToken.Text.Length "FLOW_EXPECTATION_BODY_EMPTY" "A Flow example requires a nonempty actual body."
             let endToken = closeCase state "example"
-            if not (atEnd state) then tokenError state "FLOW_TRAILING_INPUT" "Unexpected content follows the Flow example definition."
             let definition =
                 { Word = word
                   CaseName = caseName
                   Body = body
                   Expected = expected
                   ExpectedSpan = expectedSpan
-                  SourceText = state.Source
+                  SourceText = sourceSlice state startToken endToken
                   Span = sourceSpan state.File startToken (Some endToken)
                   SyntaxVersion = 1
                   HeaderSpan = headerSpan
@@ -802,10 +807,119 @@ module FlowParser =
             FlowStructure.validateExampleNesting definition
             definition)
 
+    let private reservedTypeNames =
+        set [ "Int"; "Float"; "Bool"; "String"; "Unit"; "List"; "Option"; "Result"; "a"; "b"; "c" ]
+
+    let private validTypeName (name: string) =
+        not (String.IsNullOrWhiteSpace name)
+        && Char.IsLetter name[0]
+        && (name |> Seq.forall Char.IsLetterOrDigit)
+        && not (reservedTypeNames.Contains name)
+
+    let private validFieldName (name: string) =
+        let reservedWordNames =
+            set [ "if"; "else"; "end"; "let"; "true"; "false"; "unit"
+                  "match-option"; "match-result"; "some"; "none"; "ok"; "error"
+                  "list.empty"; "list.singleton"; "option.none"; "option.some"; "result.ok"; "result.error"
+                  "list.map"; "list.filter"; "list.each" ]
+        not (String.IsNullOrWhiteSpace name)
+        && Char.IsLetter name[0]
+        && (name |> Seq.forall (fun value -> Char.IsLetterOrDigit value || value = '.' || value = '-' || value = '_' || value = '?' || value = '!'))
+        && not (name.Contains('.') || reservedWordNames.Contains name)
+
+    let private parseRecordState (state: State) =
+        let startToken = expect state "record"
+        let nameToken = expectIdentifier state
+        if not (validTypeName nameToken.Text) then
+            fail state.File nameToken.Line nameToken.Column nameToken.Text.Length "FLOW_TYPE_NAME_INVALID" "Record names must be identifiers and cannot shadow built-in types or reserved type variables."
+        expect state "{" |> ignore
+        let fields = ResizeArray<RecordField>()
+        let fieldNames = HashSet<string>(StringComparer.Ordinal)
+        while not (atEnd state) && peek state <> Some "}" do
+            expect state "field" |> ignore
+            let fieldName = expectIdentifier state
+            if not (validFieldName fieldName.Text) then
+                fail state.File fieldName.Line fieldName.Column fieldName.Text.Length "FLOW_RECORD_FIELD_NAME_INVALID" "Record fields must use non-reserved identifier names."
+            if not (fieldNames.Add fieldName.Text) then
+                fail state.File fieldName.Line fieldName.Column fieldName.Text.Length "FLOW_RECORD_DUPLICATE_FIELD" $"Record field '{fieldName.Text}' is repeated."
+            expect state ":" |> ignore
+            let fieldType = parseType state
+            match current state with
+            | Some token when token.Text = ";" -> consume state |> ignore
+            | Some token -> fail state.File token.Line token.Column token.Text.Length "FLOW_RECORD_FIELD_SEMICOLON" "Every Flow record field must end with ';'."
+            | None -> tokenError state "FLOW_INCOMPLETE_INPUT" "Expected ';' after the Flow record field."
+            fields.Add { Name = fieldName.Text; Type = fieldType }
+        let endToken = expect state "}"
+        if fields.Count = 0 then
+            fail state.File startToken.Line startToken.Column (endToken.Offset + endToken.Text.Length - startToken.Offset) "FLOW_RECORD_EMPTY" "A Flow record must declare at least one field."
+        { Name = nameToken.Text
+          Fields = List.ofSeq fields
+          SourceText = sourceSlice state startToken endToken
+          Span = sourceSpan state.File startToken (Some endToken) }
+
+    let private parseValidatorName (state: State) =
+        match current state with
+        | Some root when root.Text = "::" ->
+            consume state |> ignore
+            let target = expectIdentifier state
+            if peek state = Some "::" then
+                let next = current state |> Option.get
+                fail state.File root.Line root.Column (next.Offset + next.Text.Length - root.Offset) "FLOW_SCALAR_VALIDATOR_QUALIFICATION" "An absolute-root scalar validator must name one unqualified dictionary key."
+            target.Text
+        | Some first when first.Kind = Identifier ->
+            consume state |> ignore
+            if not (accept state "::") then
+                fail state.File first.Line first.Column first.Text.Length "FLOW_SCALAR_VALIDATOR_QUALIFICATION" "Scalar validators require an explicit '::rootName' or 'namespace::wordName' reference."
+            let segments = ResizeArray<string>()
+            segments.Add first.Text
+            segments.Add((expectIdentifier state).Text)
+            while accept state "::" do segments.Add((expectIdentifier state).Text)
+            String.concat "." segments
+        | Some token -> fail state.File token.Line token.Column token.Text.Length "FLOW_SCALAR_VALIDATOR_QUALIFICATION" "Scalar validators require an explicit '::rootName' or 'namespace::wordName' reference."
+        | None -> tokenError state "FLOW_INCOMPLETE_INPUT" "Expected a qualified scalar validator reference."
+
+    let private parseScalarState (state: State) =
+        let startToken = expect state "type"
+        let nameToken = expectIdentifier state
+        if not (validTypeName nameToken.Text) then
+            fail state.File nameToken.Line nameToken.Column nameToken.Text.Length "FLOW_TYPE_NAME_INVALID" "Scalar type names must be identifiers and cannot shadow built-in types or reserved type variables."
+        expect state ":" |> ignore
+        let baseType = parseType state
+        match baseType with
+        | TInt | TFloat | TString -> ()
+        | other ->
+            let typeSpan = sourceSpan state.File nameToken (previous state)
+            fail state.File typeSpan.Line typeSpan.Column typeSpan.Length "FLOW_SCALAR_BASE_UNSUPPORTED" "Nominal scalar wrappers currently require an Int, Float, or String base type."
+        expect state "{" |> ignore
+        let mutable validator = None
+        while not (atEnd state) && peek state <> Some "}" do
+            let validateToken = expect state "validate"
+            if validator.IsSome then
+                fail state.File validateToken.Line validateToken.Column validateToken.Text.Length "FLOW_SCALAR_VALIDATOR_DUPLICATE" "A scalar type may declare at most one validator."
+            let validatorName = parseValidatorName state
+            if peek state = Some "(" then
+                let token = current state |> Option.get
+                fail state.File token.Line token.Column token.Text.Length "FLOW_SCALAR_VALIDATOR_CALL" "Scalar validator declarations name a word; they cannot invoke it."
+            expect state ";" |> ignore
+            validator <- Some validatorName
+        let endToken = expect state "}"
+        { Name = nameToken.Text
+          BaseType = baseType
+          Validator = validator
+          SourceText = sourceSlice state startToken endToken
+          Span = sourceSpan state.File startToken (Some endToken) }
+
+    let private createState file source =
+        let tokens, endLine, endColumn = tokenize file source
+        { File = file; Source = source; Tokens = tokens; Index = 0; Depth = 0; EndLine = endLine; EndColumn = endColumn }
+
+    let private rejectTrailing (state: State) kind =
+        if not (atEnd state) then
+            tokenError state "FLOW_TRAILING_INPUT" $"Unexpected content follows the Flow {kind} definition."
+
     let parseExpression file source =
         try
-            let tokens, endLine, endColumn = tokenize file source
-            let state = { File = file; Source = source; Tokens = tokens; Index = 0; Depth = 0; EndLine = endLine; EndColumn = endColumn }
+            let state = createState file source
             let expression = parseExpressionState state
             if not (atEnd state) then tokenError state "FLOW_TRAILING_INPUT" "Unexpected token follows the Flow expression."
             FlowStructure.validateExpressionNesting [ expression ]
@@ -814,23 +928,61 @@ module FlowParser =
 
     let parseWord file source =
         try
-            let tokens, endLine, endColumn = tokenize file source
-            let state = { File = file; Source = source; Tokens = tokens; Index = 0; Depth = 0; EndLine = endLine; EndColumn = endColumn }
+            let state = createState file source
             let definition = parseWordState state
-            FlowStructure.validateWordNesting definition
-            Ok definition
+            rejectTrailing state "word"
+            Ok { definition with SourceText = source }
         with LanguageException error -> Error error
 
     let parseTest file source =
         try
-            let tokens, endLine, endColumn = tokenize file source
-            let state = { File = file; Source = source; Tokens = tokens; Index = 0; Depth = 0; EndLine = endLine; EndColumn = endColumn }
-            Ok(parseTestState state)
+            let state = createState file source
+            let definition = parseTestState state
+            rejectTrailing state "test"
+            Ok { definition with SourceText = source }
         with LanguageException error -> Error error
 
     let parseExample file source =
         try
-            let tokens, endLine, endColumn = tokenize file source
-            let state = { File = file; Source = source; Tokens = tokens; Index = 0; Depth = 0; EndLine = endLine; EndColumn = endColumn }
-            Ok(parseExampleState state)
+            let state = createState file source
+            let definition = parseExampleState state
+            rejectTrailing state "example"
+            Ok { definition with SourceText = source }
+        with LanguageException error -> Error error
+
+    let parseDocument file source =
+        try
+            let state = createState file source
+            let records = ResizeArray<RecordDefinition>()
+            let scalars = ResizeArray<ScalarTypeDefinition>()
+            let words = ResizeArray<FlowWordDefinition>()
+            let tests = ResizeArray<FlowTestDefinition>()
+            let examples = ResizeArray<FlowExampleDefinition>()
+            let typeNames = HashSet<string>(StringComparer.Ordinal)
+            let addType (name: string) (span: SourceSpan) =
+                if not (typeNames.Add name) then
+                    fail state.File span.Line span.Column span.Length "FLOW_PROJECT_DUPLICATE_TYPE" $"Type name '{name}' is declared more than once in the Flow project."
+            while not (atEnd state) do
+                match peek state with
+                | Some "record" ->
+                    let definition = parseRecordState state
+                    addType definition.Name definition.Span
+                    records.Add definition
+                | Some "type" ->
+                    let definition = parseScalarState state
+                    addType definition.Name definition.Span
+                    scalars.Add definition
+                | Some "word" -> words.Add(parseWordState state)
+                | Some "test" -> tests.Add(parseTestState state)
+                | Some "example" -> examples.Add(parseExampleState state)
+                | Some _ -> tokenError state "FLOW_PROJECT_UNKNOWN_DECLARATION" "A Flow project document contains only record, type, word, test, and example declarations."
+                | None -> ()
+            Ok
+                { SyntaxVersion = 1
+                  SourceText = source
+                  Records = List.ofSeq records
+                  Scalars = List.ofSeq scalars
+                  Words = List.ofSeq words
+                  Tests = List.ofSeq tests
+                  Examples = List.ofSeq examples }
         with LanguageException error -> Error error
