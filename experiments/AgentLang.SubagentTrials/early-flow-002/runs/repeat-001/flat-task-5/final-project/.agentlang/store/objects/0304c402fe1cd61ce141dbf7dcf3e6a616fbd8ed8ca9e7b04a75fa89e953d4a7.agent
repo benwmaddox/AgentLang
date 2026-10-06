@@ -1,0 +1,3 @@
+test customer.renewal-savings/zero-balance {
+    customer::renewal-savings(customer::new("premium", 0.0), subscription::new("annual", true)) => 0.0
+}

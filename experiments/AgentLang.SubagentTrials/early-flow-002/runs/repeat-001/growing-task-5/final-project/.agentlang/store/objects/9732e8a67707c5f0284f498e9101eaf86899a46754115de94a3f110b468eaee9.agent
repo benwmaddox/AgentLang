@@ -1,0 +1,3 @@
+test customer.renewal-savings/standard-monthly-not-renewable {
+    customer::renewal-savings(customer::new("standard", 100.0), subscription::new("monthly", false)) => 0.0
+}

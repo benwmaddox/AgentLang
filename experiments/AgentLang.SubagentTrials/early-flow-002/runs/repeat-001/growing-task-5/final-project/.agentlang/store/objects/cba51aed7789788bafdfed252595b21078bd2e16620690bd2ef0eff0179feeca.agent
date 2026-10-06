@@ -1,0 +1,4 @@
+word customer.premium?(customer: Customer) -> Bool {
+    effects none
+    ::equals(customer::kind(customer), "premium")
+}

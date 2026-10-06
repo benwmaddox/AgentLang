@@ -1,0 +1,17 @@
+[
+  {
+    "path": "Domain.fs",
+    "bytes": 891,
+    "sha256": "72c2f749a210cbed2925bfc4b7ac5ed4a424dc80737c338a6715e2c20c6172c2"
+  },
+  {
+    "path": "SelfTests.fs",
+    "bytes": 4616,
+    "sha256": "f276759dcb8478895a994f8af3a7e607bdfca85ae88b1ce1121f69bd3bd102a2"
+  },
+  {
+    "path": "EarlyPilot.fsproj",
+    "bytes": 321,
+    "sha256": "90c90151c9142926d936e94721336ea709c3b3093557aa4d5133d143d6075257"
+  }
+]

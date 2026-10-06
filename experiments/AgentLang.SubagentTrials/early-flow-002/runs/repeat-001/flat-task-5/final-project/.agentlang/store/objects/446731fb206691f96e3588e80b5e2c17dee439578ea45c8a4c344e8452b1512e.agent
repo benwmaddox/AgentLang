@@ -1,0 +1,3 @@
+test customer.renewal-savings/annual-only {
+    customer::renewal-savings(customer::new("standard", 100.0), subscription::new("annual", true)) => 5.0
+}

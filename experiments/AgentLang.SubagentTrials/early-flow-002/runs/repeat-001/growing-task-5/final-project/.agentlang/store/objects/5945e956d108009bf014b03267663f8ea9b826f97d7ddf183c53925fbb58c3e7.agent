@@ -1,0 +1,9 @@
+word customer.renewal-balance(customer: Customer, subscription: Subscription) -> Float {
+    effects none
+    let balance = customer::discounted-balance(customer)
+    if subscription::annual-renewable?(subscription) {
+        float::multiply(balance, 0.95)
+    } else {
+        balance
+    }
+}

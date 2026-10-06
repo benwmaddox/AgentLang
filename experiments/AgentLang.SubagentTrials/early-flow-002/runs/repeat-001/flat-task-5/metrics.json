@@ -1,0 +1,222 @@
+{
+  "schemaVersion": 1,
+  "trial": "repeat-001/flat-task-5",
+  "accepted": true,
+  "independentChecks": 48,
+  "behavioralVectors": 20,
+  "exchanges": 22,
+  "requestPayloadUtf8Bytes": 4287,
+  "responsePayloadUtf8Bytes": 17371,
+  "runtimeErrors": 2,
+  "errors": [
+    {
+      "index": 11,
+      "operation": "describe",
+      "code": "NAME_UNKNOWN_WORD"
+    },
+    {
+      "index": 13,
+      "operation": "define",
+      "code": "FLOW_EXPECTED_TOKEN"
+    }
+  ],
+  "modelTokens": null,
+  "modelTurns": null,
+  "controlledDuration": null,
+  "teardown": "Actor stopped existing session 46679 with Ctrl+C; exit 0; no extra protocol request.",
+  "promptAudit": "Intended prompt archived before launch; actual provider prompt bytes unavailable.",
+  "typesPreserved": true,
+  "manifestHash": "6bffbae718eba13be722941a8b9825ec5ed2ce16a8b092c2e03c1b24f7c9222c",
+  "persistentWords": 1,
+  "ownTestRuns": [
+    {
+      "results": [
+        {
+          "name": "annual-only",
+          "word": "customer.renewal-savings",
+          "passed": true,
+          "expected": "5",
+          "actual": [
+            "5"
+          ]
+        },
+        {
+          "name": "case-sensitive",
+          "word": "customer.renewal-savings",
+          "passed": true,
+          "expected": "0",
+          "actual": [
+            "0"
+          ]
+        },
+        {
+          "name": "combined",
+          "word": "customer.renewal-savings",
+          "passed": true,
+          "expected": "14.5",
+          "actual": [
+            "14.5"
+          ]
+        },
+        {
+          "name": "not-renewable",
+          "word": "customer.renewal-savings",
+          "passed": true,
+          "expected": "10",
+          "actual": [
+            "10"
+          ]
+        },
+        {
+          "name": "premium-only",
+          "word": "customer.renewal-savings",
+          "passed": true,
+          "expected": "10",
+          "actual": [
+            "10"
+          ]
+        }
+      ],
+      "coverage": {
+        "instructionsCovered": 35,
+        "instructionsTotal": 35,
+        "branchesCovered": 4,
+        "branchesTotal": 4,
+        "uncoveredInstructions": [],
+        "uncoveredBranchOutcomes": []
+      }
+    },
+    {
+      "results": [
+        {
+          "name": "annual-only",
+          "word": "customer.renewal-savings",
+          "passed": true,
+          "expected": "5",
+          "actual": [
+            "5"
+          ]
+        },
+        {
+          "name": "case-sensitive",
+          "word": "customer.renewal-savings",
+          "passed": true,
+          "expected": "0",
+          "actual": [
+            "0"
+          ]
+        },
+        {
+          "name": "combined",
+          "word": "customer.renewal-savings",
+          "passed": true,
+          "expected": "14.5",
+          "actual": [
+            "14.5"
+          ]
+        },
+        {
+          "name": "not-renewable",
+          "word": "customer.renewal-savings",
+          "passed": true,
+          "expected": "10",
+          "actual": [
+            "10"
+          ]
+        },
+        {
+          "name": "premium-only",
+          "word": "customer.renewal-savings",
+          "passed": true,
+          "expected": "10",
+          "actual": [
+            "10"
+          ]
+        },
+        {
+          "name": "zero-balance",
+          "word": "customer.renewal-savings",
+          "passed": true,
+          "expected": "0",
+          "actual": [
+            "0"
+          ]
+        }
+      ],
+      "coverage": {
+        "instructionsCovered": 35,
+        "instructionsTotal": 35,
+        "branchesCovered": 4,
+        "branchesTotal": 4,
+        "uncoveredInstructions": [],
+        "uncoveredBranchOutcomes": []
+      }
+    },
+    {
+      "results": [
+        {
+          "name": "annual-only",
+          "word": "customer.renewal-savings",
+          "passed": true,
+          "expected": "5",
+          "actual": [
+            "5"
+          ]
+        },
+        {
+          "name": "case-sensitive",
+          "word": "customer.renewal-savings",
+          "passed": true,
+          "expected": "0",
+          "actual": [
+            "0"
+          ]
+        },
+        {
+          "name": "combined",
+          "word": "customer.renewal-savings",
+          "passed": true,
+          "expected": "14.5",
+          "actual": [
+            "14.5"
+          ]
+        },
+        {
+          "name": "not-renewable",
+          "word": "customer.renewal-savings",
+          "passed": true,
+          "expected": "10",
+          "actual": [
+            "10"
+          ]
+        },
+        {
+          "name": "premium-only",
+          "word": "customer.renewal-savings",
+          "passed": true,
+          "expected": "10",
+          "actual": [
+            "10"
+          ]
+        },
+        {
+          "name": "zero-balance",
+          "word": "customer.renewal-savings",
+          "passed": true,
+          "expected": "0",
+          "actual": [
+            "0"
+          ]
+        }
+      ],
+      "coverage": {
+        "instructionsCovered": 35,
+        "instructionsTotal": 35,
+        "branchesCovered": 4,
+        "branchesTotal": 4,
+        "uncoveredInstructions": [],
+        "uncoveredBranchOutcomes": []
+      }
+    }
+  ]
+}

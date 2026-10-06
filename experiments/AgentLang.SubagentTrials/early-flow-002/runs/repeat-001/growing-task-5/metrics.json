@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "trial": "repeat-001/growing-task-5",
+  "accepted": true,
+  "independentChecks": 48,
+  "behavioralVectors": 20,
+  "exchanges": 12,
+  "requestPayloadUtf8Bytes": 2197,
+  "responsePayloadUtf8Bytes": 10272,
+  "runtimeErrors": 0,
+  "errors": [],
+  "modelTokens": null,
+  "modelTurns": null,
+  "controlledDuration": null,
+  "teardown": "Actor stopped existing session 92937 with Ctrl+C; exit 0; no extra protocol request.",
+  "promptAudit": "Intended prompt archived before launch; actual provider prompt bytes unavailable.",
+  "typesPreserved": true,
+  "manifestHash": "f2c7180277a55b294234986f853031d8d398cfaacf98a4f83e5b81e4ddf16475",
+  "persistentWords": 5,
+  "previousWordsPreserved": 4,
+  "ownTestRuns": [
+    {
+      "results": [
+        {
+          "name": "annual-term-is-case-sensitive",
+          "word": "customer.renewal-savings",
+          "passed": true,
+          "expected": "10",
+          "actual": [
+            "10"
+          ]
+        },
+        {
+          "name": "premium-annual-not-renewable",
+          "word": "customer.renewal-savings",
+          "passed": true,
+          "expected": "10",
+          "actual": [
+            "10"
+          ]
+        },
+        {
+          "name": "premium-annual-renewable",
+          "word": "customer.renewal-savings",
+          "passed": true,
+          "expected": "14.5",
+          "actual": [
+            "14.5"
+          ]
+        },
+        {
+          "name": "premium-kind-is-case-sensitive",
+          "word": "customer.renewal-savings",
+          "passed": true,
+          "expected": "5",
+          "actual": [
+            "5"
+          ]
+        },
+        {
+          "name": "standard-annual-renewable",
+          "word": "customer.renewal-savings",
+          "passed": true,
+          "expected": "5",
+          "actual": [
+            "5"
+          ]
+        },
+        {
+          "name": "standard-monthly-not-renewable",
+          "word": "customer.renewal-savings",
+          "passed": true,
+          "expected": "0",
+          "actual": [
+            "0"
+          ]
+        },
+        {
+          "name": "zero-balance",
+          "word": "customer.renewal-savings",
+          "passed": true,
+          "expected": "0",
+          "actual": [
+            "0"
+          ]
+        }
+      ],
+      "coverage": {
+        "instructionsCovered": 6,
+        "instructionsTotal": 6,
+        "branchesCovered": 0,
+        "branchesTotal": 0,
+        "uncoveredInstructions": [],
+        "uncoveredBranchOutcomes": []
+      }
+    }
+  ]
+}

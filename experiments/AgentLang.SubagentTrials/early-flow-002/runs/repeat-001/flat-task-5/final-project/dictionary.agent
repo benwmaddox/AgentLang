@@ -1,0 +1,76 @@
+// frontend: flow/1
+
+record Customer {
+    field kind: String;
+    field balance: Float;
+}
+
+// frontend: flow/1
+
+record Subscription {
+    field term: String;
+    field renewable: Bool;
+}
+
+// frontend: flow/1
+
+word customer.renewal-savings(customer: Customer, subscription: Subscription) -> Float {
+    effects none
+    let originalBalance = customer::balance(customer);
+    let premiumFactor = if ::equals(customer::kind(customer), "premium") {
+    0.9
+} else {
+    1
+};
+    let afterPremium = float::multiply(originalBalance, premiumFactor);
+    let annualAndRenewable = bool::and(::equals(subscription::term(subscription), "annual"), subscription::renewable(subscription));
+    let annualFactor = if annualAndRenewable {
+    0.95
+} else {
+    1
+};
+    let renewalBalance = float::multiply(afterPremium, annualFactor);
+    float::subtract(originalBalance, renewalBalance)
+}
+
+// frontend: flow/1
+
+test customer.renewal-savings/annual-only {
+    customer::renewal-savings(customer::new("standard", 100), subscription::new("annual", true))
+    => 5
+}
+
+// frontend: flow/1
+
+test customer.renewal-savings/case-sensitive {
+    customer::renewal-savings(customer::new("Premium", 100), subscription::new("Annual", true))
+    => 0
+}
+
+// frontend: flow/1
+
+test customer.renewal-savings/combined {
+    customer::renewal-savings(customer::new("premium", 100), subscription::new("annual", true))
+    => 14.5
+}
+
+// frontend: flow/1
+
+test customer.renewal-savings/not-renewable {
+    customer::renewal-savings(customer::new("premium", 100), subscription::new("annual", false))
+    => 10
+}
+
+// frontend: flow/1
+
+test customer.renewal-savings/premium-only {
+    customer::renewal-savings(customer::new("premium", 100), subscription::new("monthly", true))
+    => 10
+}
+
+// frontend: flow/1
+
+test customer.renewal-savings/zero-balance {
+    customer::renewal-savings(customer::new("premium", 0), subscription::new("annual", true))
+    => 0
+}

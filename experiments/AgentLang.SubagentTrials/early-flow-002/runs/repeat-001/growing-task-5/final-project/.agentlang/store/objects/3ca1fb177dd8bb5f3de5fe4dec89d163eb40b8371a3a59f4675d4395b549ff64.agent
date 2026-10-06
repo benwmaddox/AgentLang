@@ -1,0 +1,4 @@
+word customer.renewal-savings(customer: Customer, subscription: Subscription) -> Float {
+    effects none
+    float::subtract(customer::balance(customer), customer::renewal-balance(customer, subscription))
+}

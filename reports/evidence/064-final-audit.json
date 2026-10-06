@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "review": "Root final inventory and aggregate audit",
+  "acceptedTrials": 15,
+  "artifactFilesVerified": 391,
+  "recordedWireAndProvenanceChecks": 454,
+  "traceMetricMismatches": 0,
+  "overallExchanges": 212,
+  "coordinatorIssue": "Initial analysis helper invocation produced all-pending output; corrected and reconciled before publication. No trial state changed."
+}

@@ -63,6 +63,16 @@ allowance; the original local check did not reproduce it. Only two functional
 verifier scenarios now use the host's 15-second allowance. Fresh local Release
 validation passes all 32 checks; frozen trial runtime and adversarial deadline
 checks are unchanged. This is not a comparative model-cost result.
+[Purpose review 064](../reports/064-repeat-agent-purpose-review.md) completes the
+rotated five-task repeat: 15 accepted trials, 300 independent behavioral
+evaluations and 695 acceptance checks. Growing retains five tested library
+words and earlier revisions; Conventional also reuses its retained helpers.
+Protocol exchanges total Growing 70, Flat 75 and Conventional 67; these are not
+model turns or tokens. Reuse and definition compression are observed, while an
+overall agent-efficiency win and small-context operation remain unproven. The
+next evaluation should measure selective context and actual model usage before
+full-domain expansion, LLVM or allocator research. Clean committed-source CI
+for milestone 063 passed all 32 checks on 07d5f4d; saved evidence accompanies 064.
 Latest external-agent workflow evidence: [report 054](../reports/054-flow-renewal-agent-control.md)
 records a separate inherited-history Luna/max control that created one tested
 library word by composing a retained domain word. Fresh-process acceptance

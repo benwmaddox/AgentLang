@@ -1,0 +1,793 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "failure": null,
+  "task": 5,
+  "word": "customer.renewal-savings",
+  "cliSha256": "71d1e5ccefa3e7e499b70b168ff65666434428b33025429c8f64d0a9d716ea44",
+  "oracleSha256": "7ed0ba4d7925978424b98b7a17aae5276315cf1dff612a8f4688c178472c03eb",
+  "verifierSha256": "e8748381ab8d87e1baf8e8386205927951072909f250faa808473af6eb35cace",
+  "checks": [
+    {
+      "name": "fresh process exit",
+      "passed": true
+    },
+    {
+      "name": "one response per request",
+      "passed": true
+    },
+    {
+      "name": "all requests succeed",
+      "passed": true
+    },
+    {
+      "name": "all attached tests pass",
+      "passed": true
+    },
+    {
+      "name": "exact target signature",
+      "passed": true
+    },
+    {
+      "name": "pure persistent library target",
+      "passed": true
+    },
+    {
+      "name": "target has attached tests",
+      "passed": true
+    },
+    {
+      "name": "complete current own coverage",
+      "passed": true
+    },
+    {
+      "name": "premium-annual-true exact output shape",
+      "passed": true
+    },
+    {
+      "name": "premium-annual-true independent Float result",
+      "passed": true
+    },
+    {
+      "name": "premium-annual-false exact output shape",
+      "passed": true
+    },
+    {
+      "name": "premium-annual-false independent Float result",
+      "passed": true
+    },
+    {
+      "name": "premium-monthly-true exact output shape",
+      "passed": true
+    },
+    {
+      "name": "premium-monthly-true independent Float result",
+      "passed": true
+    },
+    {
+      "name": "premium-monthly-false exact output shape",
+      "passed": true
+    },
+    {
+      "name": "premium-monthly-false independent Float result",
+      "passed": true
+    },
+    {
+      "name": "standard-annual-true exact output shape",
+      "passed": true
+    },
+    {
+      "name": "standard-annual-true independent Float result",
+      "passed": true
+    },
+    {
+      "name": "standard-annual-false exact output shape",
+      "passed": true
+    },
+    {
+      "name": "standard-annual-false independent Float result",
+      "passed": true
+    },
+    {
+      "name": "standard-monthly-true exact output shape",
+      "passed": true
+    },
+    {
+      "name": "standard-monthly-true independent Float result",
+      "passed": true
+    },
+    {
+      "name": "standard-monthly-false exact output shape",
+      "passed": true
+    },
+    {
+      "name": "standard-monthly-false independent Float result",
+      "passed": true
+    },
+    {
+      "name": "case-sensitive-kind exact output shape",
+      "passed": true
+    },
+    {
+      "name": "case-sensitive-kind independent Float result",
+      "passed": true
+    },
+    {
+      "name": "case-sensitive-term exact output shape",
+      "passed": true
+    },
+    {
+      "name": "case-sensitive-term independent Float result",
+      "passed": true
+    },
+    {
+      "name": "term-trailing-space exact output shape",
+      "passed": true
+    },
+    {
+      "name": "term-trailing-space independent Float result",
+      "passed": true
+    },
+    {
+      "name": "empty-kind exact output shape",
+      "passed": true
+    },
+    {
+      "name": "empty-kind independent Float result",
+      "passed": true
+    },
+    {
+      "name": "zero-balance exact output shape",
+      "passed": true
+    },
+    {
+      "name": "zero-balance independent Float result",
+      "passed": true
+    },
+    {
+      "name": "negative-balance exact output shape",
+      "passed": true
+    },
+    {
+      "name": "negative-balance independent Float result",
+      "passed": true
+    },
+    {
+      "name": "larger-eligible exact output shape",
+      "passed": true
+    },
+    {
+      "name": "larger-eligible independent Float result",
+      "passed": true
+    },
+    {
+      "name": "larger-ineligible exact output shape",
+      "passed": true
+    },
+    {
+      "name": "larger-ineligible independent Float result",
+      "passed": true
+    },
+    {
+      "name": "accent-kind exact output shape",
+      "passed": true
+    },
+    {
+      "name": "accent-kind independent Float result",
+      "passed": true
+    },
+    {
+      "name": "fractional-balance exact output shape",
+      "passed": true
+    },
+    {
+      "name": "fractional-balance independent Float result",
+      "passed": true
+    },
+    {
+      "name": "tiny-balance exact output shape",
+      "passed": true
+    },
+    {
+      "name": "tiny-balance independent Float result",
+      "passed": true
+    },
+    {
+      "name": "large-finite-balance exact output shape",
+      "passed": true
+    },
+    {
+      "name": "large-finite-balance independent Float result",
+      "passed": true
+    }
+  ],
+  "requests": [
+    {
+      "op": "test-all"
+    },
+    {
+      "op": "describe",
+      "word": "customer.renewal-savings"
+    },
+    {
+      "op": "dependencies",
+      "word": "customer.renewal-savings"
+    },
+    {
+      "op": "source",
+      "word": "customer.renewal-savings"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"annual\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"annual\", renewable = false))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"monthly\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"monthly\", renewable = false))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-savings(customer::new(kind = \"standard\", balance = 100.0), subscription::new(term = \"annual\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-savings(customer::new(kind = \"standard\", balance = 100.0), subscription::new(term = \"annual\", renewable = false))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-savings(customer::new(kind = \"standard\", balance = 100.0), subscription::new(term = \"monthly\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-savings(customer::new(kind = \"standard\", balance = 100.0), subscription::new(term = \"monthly\", renewable = false))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-savings(customer::new(kind = \"Premium\", balance = 100.0), subscription::new(term = \"annual\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"Annual\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"annual \", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-savings(customer::new(kind = \"\", balance = 100.0), subscription::new(term = \"annual\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = 0.0), subscription::new(term = \"annual\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = -100.0), subscription::new(term = \"annual\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = 250.0), subscription::new(term = \"annual\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = 250.0), subscription::new(term = \"monthly\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-savings(customer::new(kind = \"prémium\", balance = 100.0), subscription::new(term = \"annual\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = 3.141592653589793), subscription::new(term = \"annual\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = 1E-100), subscription::new(term = \"annual\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-savings(customer::new(kind = \"standard\", balance = 1E+100), subscription::new(term = \"annual\", renewable = true))"
+    }
+  ],
+  "responses": [
+    {
+      "ok": true,
+      "kind": "test",
+      "text": "6/6 test(s) passed.",
+      "data": {
+        "results": [
+          {
+            "name": "annual-only",
+            "word": "customer.renewal-savings",
+            "passed": true,
+            "expected": "5",
+            "actual": [
+              "5"
+            ]
+          },
+          {
+            "name": "case-sensitive",
+            "word": "customer.renewal-savings",
+            "passed": true,
+            "expected": "0",
+            "actual": [
+              "0"
+            ]
+          },
+          {
+            "name": "combined",
+            "word": "customer.renewal-savings",
+            "passed": true,
+            "expected": "14.5",
+            "actual": [
+              "14.5"
+            ]
+          },
+          {
+            "name": "not-renewable",
+            "word": "customer.renewal-savings",
+            "passed": true,
+            "expected": "10",
+            "actual": [
+              "10"
+            ]
+          },
+          {
+            "name": "premium-only",
+            "word": "customer.renewal-savings",
+            "passed": true,
+            "expected": "10",
+            "actual": [
+              "10"
+            ]
+          },
+          {
+            "name": "zero-balance",
+            "word": "customer.renewal-savings",
+            "passed": true,
+            "expected": "0",
+            "actual": [
+              "0"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "ok": true,
+      "kind": "describe",
+      "text": "Description for customer.renewal-savings.",
+      "data": {
+        "name": "customer.renewal-savings",
+        "flowReference": "customer::renewal-savings",
+        "flowReferenceUnavailableReason": null,
+        "inputs": [
+          "Customer",
+          "Subscription"
+        ],
+        "outputs": [
+          "Float"
+        ],
+        "parameters": [
+          {
+            "name": "customer",
+            "type": "Customer"
+          },
+          {
+            "name": "subscription",
+            "type": "Subscription"
+          }
+        ],
+        "effects": [],
+        "documentation": "",
+        "id": "word_6ee5a4e8037e497cb1c3c932a8e7b742",
+        "dependencies": [
+          "bool.and",
+          "customer.balance",
+          "customer.kind",
+          "equals",
+          "float.multiply",
+          "float.subtract",
+          "subscription.renewable",
+          "subscription.term"
+        ],
+        "transitiveDependencies": [
+          "bool.and",
+          "customer.balance",
+          "customer.kind",
+          "equals",
+          "float.multiply",
+          "float.subtract",
+          "subscription.renewable",
+          "subscription.term"
+        ],
+        "callers": [],
+        "tests": [
+          "annual-only",
+          "case-sensitive",
+          "combined",
+          "not-renewable",
+          "premium-only",
+          "zero-balance"
+        ],
+        "examples": [],
+        "source": "<revision:customer.renewal-savings/2>",
+        "line": 1,
+        "kind": "word",
+        "status": "persistent",
+        "maturity": "library",
+        "deprecated": false,
+        "revision": 2,
+        "testCount": 6,
+        "exampleCount": 0,
+        "coverage": {
+          "instructionsCovered": 35,
+          "instructionsTotal": 35,
+          "branchesCovered": 4,
+          "branchesTotal": 4,
+          "uncoveredInstructions": [],
+          "uncoveredBranchOutcomes": [],
+          "status": "current"
+        }
+      }
+    },
+    {
+      "ok": true,
+      "kind": "dependencies",
+      "text": "8 direct dependency/dependencies.",
+      "data": {
+        "dependencies": [
+          "bool.and",
+          "customer.balance",
+          "customer.kind",
+          "equals",
+          "float.multiply",
+          "float.subtract",
+          "subscription.renewable",
+          "subscription.term"
+        ],
+        "callers": []
+      }
+    },
+    {
+      "ok": true,
+      "kind": "source",
+      "text": "word customer.renewal-savings(customer: Customer, subscription: Subscription) -> Float {\n    effects none\n    let originalBalance = customer::balance(customer)\n    let premiumFactor = if ::equals(customer::kind(customer), \"premium\") { 0.9 } else { 1.0 }\n    let afterPremium = float::multiply(originalBalance, premiumFactor)\n    let annualAndRenewable = bool::and(::equals(subscription::term(subscription), \"annual\"), subscription::renewable(subscription))\n    let annualFactor = if annualAndRenewable { 0.95 } else { 1.0 }\n    let renewalBalance = float::multiply(afterPremium, annualFactor)\n    float::subtract(originalBalance, renewalBalance)\n}",
+      "data": "word customer.renewal-savings(customer: Customer, subscription: Subscription) -> Float {\n    effects none\n    let originalBalance = customer::balance(customer)\n    let premiumFactor = if ::equals(customer::kind(customer), \"premium\") { 0.9 } else { 1.0 }\n    let afterPremium = float::multiply(originalBalance, premiumFactor)\n    let annualAndRenewable = bool::and(::equals(subscription::term(subscription), \"annual\"), subscription::renewable(subscription))\n    let annualFactor = if annualAndRenewable { 0.95 } else { 1.0 }\n    let renewalBalance = float::multiply(afterPremium, annualFactor)\n    float::subtract(originalBalance, renewalBalance)\n}"
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "14.5",
+      "data": {
+        "stack": [
+          "14.5"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "10",
+      "data": {
+        "stack": [
+          "10"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "10",
+      "data": {
+        "stack": [
+          "10"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "10",
+      "data": {
+        "stack": [
+          "10"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "5",
+      "data": {
+        "stack": [
+          "5"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "0",
+      "data": {
+        "stack": [
+          "0"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "0",
+      "data": {
+        "stack": [
+          "0"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "0",
+      "data": {
+        "stack": [
+          "0"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "5",
+      "data": {
+        "stack": [
+          "5"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "10",
+      "data": {
+        "stack": [
+          "10"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "10",
+      "data": {
+        "stack": [
+          "10"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "5",
+      "data": {
+        "stack": [
+          "5"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "0",
+      "data": {
+        "stack": [
+          "0"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "-14.5",
+      "data": {
+        "stack": [
+          "-14.5"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "36.25",
+      "data": {
+        "stack": [
+          "36.25"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "25",
+      "data": {
+        "stack": [
+          "25"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "5",
+      "data": {
+        "stack": [
+          "5"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "0.4555309347705201",
+      "data": {
+        "stack": [
+          "0.4555309347705201"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "1.45E-101",
+      "data": {
+        "stack": [
+          "1.45E-101"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "5.000000000000011E+98",
+      "data": {
+        "stack": [
+          "5.000000000000011E+98"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    }
+  ],
+  "limits": [
+    "Behavioral acceptance only; no model-efficiency claim.",
+    "Float tolerance is not bitwise or signed-zero equivalence.",
+    "Whole-state preservation and retained-helper quality require a separate audit."
+  ]
+}

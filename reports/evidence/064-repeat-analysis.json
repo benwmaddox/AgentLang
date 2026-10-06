@@ -1,0 +1,241 @@
+{
+  "Study": "repeat-001",
+  "AcceptedTrials": 15,
+  "PendingTrials": [],
+  "Trials": [
+    {
+      "Trial": "conventional-task-1",
+      "Status": "accepted",
+      "Exchanges": 15,
+      "RequestBytes": 5908,
+      "ResponseBytes": 6251,
+      "Errors": 3,
+      "ErrorDetails": [
+        "9:patch:HASH_INVALID",
+        "10:patch:HASH_INVALID",
+        "13:patch:HASH_INVALID"
+      ],
+      "MetricsMatch": true
+    },
+    {
+      "Trial": "conventional-task-2",
+      "Status": "accepted",
+      "Exchanges": 9,
+      "RequestBytes": 1798,
+      "ResponseBytes": 7681,
+      "Errors": 0,
+      "ErrorDetails": [],
+      "MetricsMatch": true
+    },
+    {
+      "Trial": "conventional-task-3",
+      "Status": "accepted",
+      "Exchanges": 19,
+      "RequestBytes": 2584,
+      "ResponseBytes": 19752,
+      "Errors": 1,
+      "ErrorDetails": [
+        "4:patch:HASH_INVALID"
+      ],
+      "MetricsMatch": true
+    },
+    {
+      "Trial": "conventional-task-4",
+      "Status": "accepted",
+      "Exchanges": 14,
+      "RequestBytes": 8428,
+      "ResponseBytes": 13631,
+      "Errors": 2,
+      "ErrorDetails": [
+        "9:patch:HASH_INVALID",
+        "11:patch:HASH_INVALID"
+      ],
+      "MetricsMatch": true
+    },
+    {
+      "Trial": "conventional-task-5",
+      "Status": "accepted",
+      "Exchanges": 10,
+      "RequestBytes": 2900,
+      "ResponseBytes": 27961,
+      "Errors": 0,
+      "ErrorDetails": [],
+      "MetricsMatch": true
+    },
+    {
+      "Trial": "growing-task-1",
+      "Status": "accepted",
+      "Exchanges": 11,
+      "RequestBytes": 1008,
+      "ResponseBytes": 6188,
+      "Errors": 0,
+      "ErrorDetails": [],
+      "MetricsMatch": true
+    },
+    {
+      "Trial": "growing-task-2",
+      "Status": "accepted",
+      "Exchanges": 14,
+      "RequestBytes": 1442,
+      "ResponseBytes": 8837,
+      "Errors": 0,
+      "ErrorDetails": [],
+      "MetricsMatch": true
+    },
+    {
+      "Trial": "growing-task-3",
+      "Status": "accepted",
+      "Exchanges": 14,
+      "RequestBytes": 1578,
+      "ResponseBytes": 10216,
+      "Errors": 0,
+      "ErrorDetails": [],
+      "MetricsMatch": true
+    },
+    {
+      "Trial": "growing-task-4",
+      "Status": "accepted",
+      "Exchanges": 19,
+      "RequestBytes": 2899,
+      "ResponseBytes": 16167,
+      "Errors": 0,
+      "ErrorDetails": [],
+      "MetricsMatch": true
+    },
+    {
+      "Trial": "growing-task-5",
+      "Status": "accepted",
+      "Exchanges": 12,
+      "RequestBytes": 2197,
+      "ResponseBytes": 10272,
+      "Errors": 0,
+      "ErrorDetails": [],
+      "MetricsMatch": true
+    },
+    {
+      "Trial": "flat-task-1",
+      "Status": "accepted",
+      "Exchanges": 9,
+      "RequestBytes": 1145,
+      "ResponseBytes": 5531,
+      "Errors": 0,
+      "ErrorDetails": [],
+      "MetricsMatch": true
+    },
+    {
+      "Trial": "flat-task-2",
+      "Status": "accepted",
+      "Exchanges": 17,
+      "RequestBytes": 2690,
+      "ResponseBytes": 12483,
+      "Errors": 2,
+      "ErrorDetails": [
+        "9:define:FLOW_UNKNOWN_LOCAL",
+        "10:describe:NAME_UNKNOWN_WORD"
+      ],
+      "MetricsMatch": true
+    },
+    {
+      "Trial": "flat-task-3",
+      "Status": "accepted",
+      "Exchanges": 13,
+      "RequestBytes": 2264,
+      "ResponseBytes": 8597,
+      "Errors": 1,
+      "ErrorDetails": [
+        "9:define:FLOW_ROOT_CALL_REQUIRES_ARGUMENTS"
+      ],
+      "MetricsMatch": true
+    },
+    {
+      "Trial": "flat-task-4",
+      "Status": "accepted",
+      "Exchanges": 14,
+      "RequestBytes": 2347,
+      "ResponseBytes": 10178,
+      "Errors": 0,
+      "ErrorDetails": [],
+      "MetricsMatch": true
+    },
+    {
+      "Trial": "flat-task-5",
+      "Status": "accepted",
+      "Exchanges": 22,
+      "RequestBytes": 4287,
+      "ResponseBytes": 17371,
+      "Errors": 2,
+      "ErrorDetails": [
+        "11:describe:NAME_UNKNOWN_WORD",
+        "13:define:FLOW_EXPECTED_TOKEN"
+      ],
+      "MetricsMatch": true
+    }
+  ],
+  "CompleteTaskTotals": [
+    {
+      "Task": 1,
+      "Exchanges": 35,
+      "RequestBytes": 8061,
+      "ResponseBytes": 17970,
+      "Errors": 3
+    },
+    {
+      "Task": 2,
+      "Exchanges": 40,
+      "RequestBytes": 5930,
+      "ResponseBytes": 29001,
+      "Errors": 2
+    },
+    {
+      "Task": 3,
+      "Exchanges": 46,
+      "RequestBytes": 6426,
+      "ResponseBytes": 38565,
+      "Errors": 2
+    },
+    {
+      "Task": 4,
+      "Exchanges": 47,
+      "RequestBytes": 13674,
+      "ResponseBytes": 39976,
+      "Errors": 2
+    },
+    {
+      "Task": 5,
+      "Exchanges": 44,
+      "RequestBytes": 9384,
+      "ResponseBytes": 55604,
+      "Errors": 2
+    }
+  ],
+  "CompleteArmTotals": [
+    {
+      "Arm": "conventional",
+      "Exchanges": 67,
+      "RequestBytes": 21618,
+      "ResponseBytes": 75276,
+      "Errors": 6
+    },
+    {
+      "Arm": "growing",
+      "Exchanges": 70,
+      "RequestBytes": 9124,
+      "ResponseBytes": 51680,
+      "Errors": 0
+    },
+    {
+      "Arm": "flat",
+      "Exchanges": 75,
+      "RequestBytes": 12733,
+      "ResponseBytes": 54160,
+      "Errors": 5
+    }
+  ],
+  "OverallTotals": {
+    "Exchanges": 212,
+    "RequestBytes": 43475,
+    "ResponseBytes": 181116,
+    "Errors": 11
+  },
+  "TraceMetricsMismatchTrials": []
+}

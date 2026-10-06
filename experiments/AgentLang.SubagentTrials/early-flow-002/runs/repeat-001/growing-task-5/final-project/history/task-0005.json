@@ -1,0 +1,36 @@
+{
+  "task": "task-0005",
+  "goal": "Implement customer.renewal-savings : Customer Subscription -\u003E Float (Customer.renewalSavings in F#) as original balance minus renewal balance, applying the exact premium 10% and renewable annual 5% multiplicative discounts, with meaningful self-tests.",
+  "active": false,
+  "wordsInspected": [
+    "customer.balance",
+    "customer.discounted-balance",
+    "customer.new",
+    "customer.renewal-balance",
+    "subscription.new"
+  ],
+  "wordsUsed": [
+    "bool.and",
+    "customer.balance",
+    "customer.discounted-balance",
+    "customer.kind",
+    "customer.new",
+    "customer.premium?",
+    "customer.renewal-balance",
+    "customer.renewal-savings",
+    "equals",
+    "float.multiply",
+    "float.subtract",
+    "subscription.annual-renewable?",
+    "subscription.new",
+    "subscription.renewable",
+    "subscription.term"
+  ],
+  "wordsCreated": [
+    "customer.renewal-savings"
+  ],
+  "testsRun": 14,
+  "testsFailed": 0,
+  "effects": {},
+  "errors": []
+}

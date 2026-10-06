@@ -1,0 +1,28 @@
+{
+  "task": "task-0001",
+  "goal": "Implement customer renewal savings: apply an exact premium 10% multiplicative discount, then an exact annual-and-renewable 5% multiplicative discount, and return original balance minus renewal balance. Preserve existing project content and add meaningful branch and boundary tests.",
+  "active": false,
+  "wordsInspected": [],
+  "wordsUsed": [
+    "bool.and",
+    "customer.balance",
+    "customer.kind",
+    "customer.new",
+    "customer.renewal-savings",
+    "equals",
+    "float.multiply",
+    "float.subtract",
+    "subscription.new",
+    "subscription.renewable",
+    "subscription.term"
+  ],
+  "wordsCreated": [
+    "customer.renewal-savings"
+  ],
+  "testsRun": 17,
+  "testsFailed": 0,
+  "effects": {},
+  "errors": [
+    "FLOW_EXPECTED_TOKEN"
+  ]
+}
