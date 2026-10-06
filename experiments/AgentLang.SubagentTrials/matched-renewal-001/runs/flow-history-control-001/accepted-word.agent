@@ -1,0 +1,14 @@
+word customer.renewal-balance(customer: Customer, subscription: Subscription) -> Float {
+    effects none
+    doc "Returns the existing customer discount, with a further 5 percent reduction for renewable annual subscriptions."
+    let baseline = customer.discounted-balance();
+    if equals(subscription.term(), "annual") {
+        if subscription.renewable() {
+            float::multiply(baseline, 0.95)
+        } else {
+            baseline
+        }
+    } else {
+        baseline
+    }
+}

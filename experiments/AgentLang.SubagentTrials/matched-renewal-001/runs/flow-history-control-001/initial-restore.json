@@ -1,0 +1,8 @@
+{
+  "profile": "growing",
+  "project": "D:\\code\\AgentLang\\.agentlang\\subagent-flow-renewal\\history-control-001\\project",
+  "snapshot": "matched-renewal-start",
+  "manifestHash": "480feeaec8a8ad5d860349890bbbe151b2345f7c746f1400e926da68eb181521",
+  "bundleSha256": "4b88ad1a244230c91fc1b453dd3f2b472ae983d91cfb9c755a5b69023ee8e678",
+  "limits": "Runtime load still validates storage semantics. Host capabilities and binaries are pinned separately."
+}

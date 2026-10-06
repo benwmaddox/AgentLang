@@ -89,6 +89,10 @@ try {
         $null = Invoke-ValidationCheck 'flow-matched-renewal-fixtures' 'pwsh' @('-NoProfile', '-File', 'scripts/Verify-FlowMatchedRenewalFixtures.ps1', '-CliDll', $cliBinaryPath, '-ConventionalDll', $flowConventionalBinaryPath, '-EvidencePath', $flowFixtureReportPath)
         $snapshotReportPath = [System.IO.Path]::ChangeExtension($ReportPath, 'matched-snapshots.json')
         $null = Invoke-ValidationCheck 'matched-renewal-snapshots' 'pwsh' @('-NoProfile', '-File', 'scripts/Verify-MatchedRenewalSnapshots.ps1', '-CliDll', $cliBinaryPath, '-EvidencePath', $snapshotReportPath)
+        $renewalAcceptanceReportPath = [System.IO.Path]::ChangeExtension($ReportPath, 'renewal-acceptance-gate.json')
+        $null = Invoke-ValidationCheck 'flow-renewal-acceptance-gate' 'pwsh' @('-NoProfile', '-File', 'scripts/Verify-FlowRenewalAcceptanceGate.ps1', '-CliDll', $cliBinaryPath, '-EvidencePath', $renewalAcceptanceReportPath)
+        $renewalReplayReportPath = [System.IO.Path]::ChangeExtension($ReportPath, 'renewal-replay.json')
+        $null = Invoke-ValidationCheck 'flow-renewal-replay' 'pwsh' @('-NoProfile', '-File', 'scripts/Verify-FlowRenewalReplay.ps1', '-CliDll', $cliBinaryPath, '-EvidencePath', $renewalReplayReportPath)
         $hostReportPath = [System.IO.Path]::ChangeExtension($ReportPath, 'subagent-host.json')
         $cliBinaryPath = "src/AgentLang.Cli/bin/$Configuration/net9.0/AgentLang.Cli.dll"
         $null = Invoke-ValidationCheck 'subagent-trial-host' 'pwsh' @('-NoProfile', '-File', 'scripts/Verify-SubagentTrialHost.ps1', '-CliDll', $cliBinaryPath, '-EvidencePath', $hostReportPath)

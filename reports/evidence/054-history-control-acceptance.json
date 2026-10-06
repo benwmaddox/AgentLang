@@ -1,0 +1,2111 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "failure": null,
+  "project": "D:\\code\\AgentLang\\.agentlang\\subagent-flow-renewal\\history-control-audit-001",
+  "cliSha256": "733359acc8cfa18911b2d477d12045407d96c9fd498631d0a2bda762d7f80909",
+  "oracleSha256": "937633354809f58c8f318525ec8dd87cc3c0d28db5fd227838e2b5bbef8f5ccc",
+  "verifierSha256": "5f3d6bcd12d116403bf815607f0c93126a914d3bedfc8cca486f21a25980328e",
+  "cases": [
+    {
+      "name": "premium-annual-true",
+      "kind": "premium",
+      "balance": 100.0,
+      "term": "annual",
+      "renewable": true,
+      "expected": 85.5
+    },
+    {
+      "name": "premium-annual-false",
+      "kind": "premium",
+      "balance": 100.0,
+      "term": "annual",
+      "renewable": false,
+      "expected": 90.0
+    },
+    {
+      "name": "premium-monthly-true",
+      "kind": "premium",
+      "balance": 100.0,
+      "term": "monthly",
+      "renewable": true,
+      "expected": 90.0
+    },
+    {
+      "name": "premium-monthly-false",
+      "kind": "premium",
+      "balance": 100.0,
+      "term": "monthly",
+      "renewable": false,
+      "expected": 90.0
+    },
+    {
+      "name": "standard-annual-true",
+      "kind": "standard",
+      "balance": 100.0,
+      "term": "annual",
+      "renewable": true,
+      "expected": 95.0
+    },
+    {
+      "name": "standard-annual-false",
+      "kind": "standard",
+      "balance": 100.0,
+      "term": "annual",
+      "renewable": false,
+      "expected": 100.0
+    },
+    {
+      "name": "standard-monthly-true",
+      "kind": "standard",
+      "balance": 100.0,
+      "term": "monthly",
+      "renewable": true,
+      "expected": 100.0
+    },
+    {
+      "name": "standard-monthly-false",
+      "kind": "standard",
+      "balance": 100.0,
+      "term": "monthly",
+      "renewable": false,
+      "expected": 100.0
+    },
+    {
+      "name": "case-sensitive-kind",
+      "kind": "Premium",
+      "balance": 100.0,
+      "term": "annual",
+      "renewable": true,
+      "expected": 95.0
+    },
+    {
+      "name": "case-sensitive-term",
+      "kind": "premium",
+      "balance": 100.0,
+      "term": "Annual",
+      "renewable": true,
+      "expected": 90.0
+    },
+    {
+      "name": "term-trailing-space",
+      "kind": "premium",
+      "balance": 100.0,
+      "term": "annual ",
+      "renewable": true,
+      "expected": 90.0
+    },
+    {
+      "name": "empty-kind",
+      "kind": "",
+      "balance": 100.0,
+      "term": "annual",
+      "renewable": true,
+      "expected": 95.0
+    },
+    {
+      "name": "zero-balance",
+      "kind": "premium",
+      "balance": 0.0,
+      "term": "annual",
+      "renewable": true,
+      "expected": 0.0
+    },
+    {
+      "name": "negative-balance",
+      "kind": "premium",
+      "balance": -100.0,
+      "term": "annual",
+      "renewable": true,
+      "expected": -85.5
+    },
+    {
+      "name": "larger-eligible",
+      "kind": "premium",
+      "balance": 250.0,
+      "term": "annual",
+      "renewable": true,
+      "expected": 213.75
+    },
+    {
+      "name": "larger-ineligible",
+      "kind": "premium",
+      "balance": 250.0,
+      "term": "monthly",
+      "renewable": true,
+      "expected": 225.0
+    },
+    {
+      "name": "accent-kind",
+      "kind": "prémium",
+      "balance": 100.0,
+      "term": "annual",
+      "renewable": true,
+      "expected": 95.0
+    },
+    {
+      "name": "fractional-balance",
+      "kind": "premium",
+      "balance": 3.141592653589793,
+      "term": "annual",
+      "renewable": true,
+      "expected": 2.686061718819273
+    },
+    {
+      "name": "tiny-balance",
+      "kind": "premium",
+      "balance": 1E-100,
+      "term": "annual",
+      "renewable": true,
+      "expected": 8.55E-101
+    },
+    {
+      "name": "large-finite-balance",
+      "kind": "standard",
+      "balance": 1E+100,
+      "term": "annual",
+      "renewable": true,
+      "expected": 9.5E+99
+    }
+  ],
+  "checks": [
+    {
+      "name": "fresh process exit",
+      "passed": true
+    },
+    {
+      "name": "one response per request",
+      "passed": true
+    },
+    {
+      "name": "all requests succeed",
+      "passed": true
+    },
+    {
+      "name": "all attached tests pass",
+      "passed": true
+    },
+    {
+      "name": "exact target signature",
+      "passed": true
+    },
+    {
+      "name": "pure persistent library target",
+      "passed": true
+    },
+    {
+      "name": "target has passing attached tests",
+      "passed": true
+    },
+    {
+      "name": "target own instruction and branch coverage complete",
+      "passed": true
+    },
+    {
+      "name": "premium-annual-true exact Float output shape",
+      "passed": true
+    },
+    {
+      "name": "premium-annual-true independent numerical result",
+      "passed": true
+    },
+    {
+      "name": "premium-annual-false exact Float output shape",
+      "passed": true
+    },
+    {
+      "name": "premium-annual-false independent numerical result",
+      "passed": true
+    },
+    {
+      "name": "premium-monthly-true exact Float output shape",
+      "passed": true
+    },
+    {
+      "name": "premium-monthly-true independent numerical result",
+      "passed": true
+    },
+    {
+      "name": "premium-monthly-false exact Float output shape",
+      "passed": true
+    },
+    {
+      "name": "premium-monthly-false independent numerical result",
+      "passed": true
+    },
+    {
+      "name": "standard-annual-true exact Float output shape",
+      "passed": true
+    },
+    {
+      "name": "standard-annual-true independent numerical result",
+      "passed": true
+    },
+    {
+      "name": "standard-annual-false exact Float output shape",
+      "passed": true
+    },
+    {
+      "name": "standard-annual-false independent numerical result",
+      "passed": true
+    },
+    {
+      "name": "standard-monthly-true exact Float output shape",
+      "passed": true
+    },
+    {
+      "name": "standard-monthly-true independent numerical result",
+      "passed": true
+    },
+    {
+      "name": "standard-monthly-false exact Float output shape",
+      "passed": true
+    },
+    {
+      "name": "standard-monthly-false independent numerical result",
+      "passed": true
+    },
+    {
+      "name": "case-sensitive-kind exact Float output shape",
+      "passed": true
+    },
+    {
+      "name": "case-sensitive-kind independent numerical result",
+      "passed": true
+    },
+    {
+      "name": "case-sensitive-term exact Float output shape",
+      "passed": true
+    },
+    {
+      "name": "case-sensitive-term independent numerical result",
+      "passed": true
+    },
+    {
+      "name": "term-trailing-space exact Float output shape",
+      "passed": true
+    },
+    {
+      "name": "term-trailing-space independent numerical result",
+      "passed": true
+    },
+    {
+      "name": "empty-kind exact Float output shape",
+      "passed": true
+    },
+    {
+      "name": "empty-kind independent numerical result",
+      "passed": true
+    },
+    {
+      "name": "zero-balance exact Float output shape",
+      "passed": true
+    },
+    {
+      "name": "zero-balance independent numerical result",
+      "passed": true
+    },
+    {
+      "name": "negative-balance exact Float output shape",
+      "passed": true
+    },
+    {
+      "name": "negative-balance independent numerical result",
+      "passed": true
+    },
+    {
+      "name": "larger-eligible exact Float output shape",
+      "passed": true
+    },
+    {
+      "name": "larger-eligible independent numerical result",
+      "passed": true
+    },
+    {
+      "name": "larger-ineligible exact Float output shape",
+      "passed": true
+    },
+    {
+      "name": "larger-ineligible independent numerical result",
+      "passed": true
+    },
+    {
+      "name": "accent-kind exact Float output shape",
+      "passed": true
+    },
+    {
+      "name": "accent-kind independent numerical result",
+      "passed": true
+    },
+    {
+      "name": "fractional-balance exact Float output shape",
+      "passed": true
+    },
+    {
+      "name": "fractional-balance independent numerical result",
+      "passed": true
+    },
+    {
+      "name": "tiny-balance exact Float output shape",
+      "passed": true
+    },
+    {
+      "name": "tiny-balance independent numerical result",
+      "passed": true
+    },
+    {
+      "name": "large-finite-balance exact Float output shape",
+      "passed": true
+    },
+    {
+      "name": "large-finite-balance independent numerical result",
+      "passed": true
+    }
+  ],
+  "requests": [
+    {
+      "op": "test-all"
+    },
+    {
+      "op": "describe",
+      "word": "customer.renewal-balance"
+    },
+    {
+      "op": "source",
+      "word": "customer.renewal-balance"
+    },
+    {
+      "op": "dependencies",
+      "word": "customer.renewal-balance"
+    },
+    {
+      "op": "words"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"annual\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"annual\", renewable = false))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"monthly\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"monthly\", renewable = false))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-balance(customer::new(kind = \"standard\", balance = 100.0), subscription::new(term = \"annual\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-balance(customer::new(kind = \"standard\", balance = 100.0), subscription::new(term = \"annual\", renewable = false))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-balance(customer::new(kind = \"standard\", balance = 100.0), subscription::new(term = \"monthly\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-balance(customer::new(kind = \"standard\", balance = 100.0), subscription::new(term = \"monthly\", renewable = false))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-balance(customer::new(kind = \"Premium\", balance = 100.0), subscription::new(term = \"annual\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"Annual\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"annual \", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-balance(customer::new(kind = \"\", balance = 100.0), subscription::new(term = \"annual\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = 0.0), subscription::new(term = \"annual\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = -100.0), subscription::new(term = \"annual\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = 250.0), subscription::new(term = \"annual\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = 250.0), subscription::new(term = \"monthly\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-balance(customer::new(kind = \"prémium\", balance = 100.0), subscription::new(term = \"annual\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = 3.141592653589793), subscription::new(term = \"annual\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = 1E-100), subscription::new(term = \"annual\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::renewal-balance(customer::new(kind = \"standard\", balance = 1E+100), subscription::new(term = \"annual\", renewable = true))"
+    }
+  ],
+  "responses": [
+    {
+      "ok": true,
+      "kind": "test",
+      "text": "15/15 test(s) passed.",
+      "data": {
+        "results": [
+          {
+            "name": "case-sensitive",
+            "word": "customer.discounted-balance",
+            "passed": true,
+            "expected": "80",
+            "actual": [
+              "80"
+            ]
+          },
+          {
+            "name": "premium",
+            "word": "customer.discounted-balance",
+            "passed": true,
+            "expected": "90",
+            "actual": [
+              "90"
+            ]
+          },
+          {
+            "name": "premium-larger-balance",
+            "word": "customer.discounted-balance",
+            "passed": true,
+            "expected": "225",
+            "actual": [
+              "225"
+            ]
+          },
+          {
+            "name": "standard",
+            "word": "customer.discounted-balance",
+            "passed": true,
+            "expected": "100",
+            "actual": [
+              "100"
+            ]
+          },
+          {
+            "name": "case-sensitive",
+            "word": "customer.premium?",
+            "passed": true,
+            "expected": "false",
+            "actual": [
+              "false"
+            ]
+          },
+          {
+            "name": "premium",
+            "word": "customer.premium?",
+            "passed": true,
+            "expected": "true",
+            "actual": [
+              "true"
+            ]
+          },
+          {
+            "name": "standard",
+            "word": "customer.premium?",
+            "passed": true,
+            "expected": "false",
+            "actual": [
+              "false"
+            ]
+          },
+          {
+            "name": "premium-annual-not-renewable",
+            "word": "customer.renewal-balance",
+            "passed": true,
+            "expected": "90",
+            "actual": [
+              "90"
+            ]
+          },
+          {
+            "name": "premium-annual-renewable",
+            "word": "customer.renewal-balance",
+            "passed": true,
+            "expected": "85.5",
+            "actual": [
+              "85.5"
+            ]
+          },
+          {
+            "name": "premium-monthly-not-renewable",
+            "word": "customer.renewal-balance",
+            "passed": true,
+            "expected": "90",
+            "actual": [
+              "90"
+            ]
+          },
+          {
+            "name": "premium-monthly-renewable",
+            "word": "customer.renewal-balance",
+            "passed": true,
+            "expected": "90",
+            "actual": [
+              "90"
+            ]
+          },
+          {
+            "name": "standard-annual-not-renewable",
+            "word": "customer.renewal-balance",
+            "passed": true,
+            "expected": "100",
+            "actual": [
+              "100"
+            ]
+          },
+          {
+            "name": "standard-annual-renewable",
+            "word": "customer.renewal-balance",
+            "passed": true,
+            "expected": "95",
+            "actual": [
+              "95"
+            ]
+          },
+          {
+            "name": "standard-monthly-not-renewable",
+            "word": "customer.renewal-balance",
+            "passed": true,
+            "expected": "100",
+            "actual": [
+              "100"
+            ]
+          },
+          {
+            "name": "standard-monthly-renewable",
+            "word": "customer.renewal-balance",
+            "passed": true,
+            "expected": "100",
+            "actual": [
+              "100"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "ok": true,
+      "kind": "describe",
+      "text": "Description for customer.renewal-balance.",
+      "data": {
+        "name": "customer.renewal-balance",
+        "inputs": [
+          "Customer",
+          "Subscription"
+        ],
+        "outputs": [
+          "Float"
+        ],
+        "parameters": [
+          {
+            "name": "customer",
+            "type": "Customer"
+          },
+          {
+            "name": "subscription",
+            "type": "Subscription"
+          }
+        ],
+        "effects": [],
+        "documentation": "Returns the existing customer discount, with a further 5 percent reduction for renewable annual subscriptions.",
+        "id": "word_7565d5e80a254b6b882235712753434e",
+        "dependencies": [
+          "customer.discounted-balance",
+          "equals",
+          "float.multiply",
+          "subscription.renewable",
+          "subscription.term"
+        ],
+        "transitiveDependencies": [
+          "customer.balance",
+          "customer.discounted-balance",
+          "customer.kind",
+          "customer.premium?",
+          "equals",
+          "float.multiply",
+          "subscription.renewable",
+          "subscription.term"
+        ],
+        "callers": [],
+        "tests": [
+          "premium-annual-not-renewable",
+          "premium-annual-renewable",
+          "premium-monthly-not-renewable",
+          "premium-monthly-renewable",
+          "standard-annual-not-renewable",
+          "standard-annual-renewable",
+          "standard-monthly-not-renewable",
+          "standard-monthly-renewable"
+        ],
+        "examples": [],
+        "source": "<revision:customer.renewal-balance/1>",
+        "line": 1,
+        "kind": "word",
+        "status": "persistent",
+        "maturity": "library",
+        "deprecated": false,
+        "revision": 1,
+        "testCount": 8,
+        "exampleCount": 0,
+        "coverage": {
+          "instructionsCovered": 16,
+          "instructionsTotal": 16,
+          "branchesCovered": 4,
+          "branchesTotal": 4,
+          "uncoveredInstructions": [],
+          "uncoveredBranchOutcomes": [],
+          "status": "current"
+        }
+      }
+    },
+    {
+      "ok": true,
+      "kind": "source",
+      "text": "word customer.renewal-balance(customer: Customer, subscription: Subscription) -> Float {\n    effects none\n    doc \"Returns the existing customer discount, with a further 5 percent reduction for renewable annual subscriptions.\"\n    let baseline = customer.discounted-balance();\n    if equals(subscription.term(), \"annual\") {\n        if subscription.renewable() {\n            float::multiply(baseline, 0.95)\n        } else {\n            baseline\n        }\n    } else {\n        baseline\n    }\n}",
+      "data": "word customer.renewal-balance(customer: Customer, subscription: Subscription) -> Float {\n    effects none\n    doc \"Returns the existing customer discount, with a further 5 percent reduction for renewable annual subscriptions.\"\n    let baseline = customer.discounted-balance();\n    if equals(subscription.term(), \"annual\") {\n        if subscription.renewable() {\n            float::multiply(baseline, 0.95)\n        } else {\n            baseline\n        }\n    } else {\n        baseline\n    }\n}"
+    },
+    {
+      "ok": true,
+      "kind": "dependencies",
+      "text": "5 direct dependency/dependencies.",
+      "data": {
+        "dependencies": [
+          "customer.discounted-balance",
+          "equals",
+          "float.multiply",
+          "subscription.renewable",
+          "subscription.term"
+        ],
+        "callers": []
+      }
+    },
+    {
+      "ok": true,
+      "kind": "words",
+      "text": "58 word(s).",
+      "data": {
+        "words": [
+          {
+            "name": "add",
+            "id": "primitive_add",
+            "inputs": [
+              "Int",
+              "Int"
+            ],
+            "outputs": [
+              "Int"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "bool.and",
+            "id": "primitive_bool.and",
+            "inputs": [
+              "Bool",
+              "Bool"
+            ],
+            "outputs": [
+              "Bool"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "bool.not",
+            "id": "primitive_bool.not",
+            "inputs": [
+              "Bool"
+            ],
+            "outputs": [
+              "Bool"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "bool.or",
+            "id": "primitive_bool.or",
+            "inputs": [
+              "Bool",
+              "Bool"
+            ],
+            "outputs": [
+              "Bool"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "clock.now",
+            "id": "primitive_clock.now",
+            "inputs": [],
+            "outputs": [
+              "String"
+            ],
+            "effects": [
+              "clock.read"
+            ],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "console.write",
+            "id": "primitive_console.write",
+            "inputs": [
+              "String"
+            ],
+            "outputs": [
+              "Unit"
+            ],
+            "effects": [
+              "console.write"
+            ],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "customer.balance",
+            "id": "generated_customer.balance",
+            "inputs": [
+              "Customer"
+            ],
+            "outputs": [
+              "Float"
+            ],
+            "effects": [],
+            "status": "persistent",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "customer.discounted-balance",
+            "id": "word_90c3fe0f880848bf84d63dd72b8707bf",
+            "inputs": [
+              "Customer"
+            ],
+            "outputs": [
+              "Float"
+            ],
+            "effects": [],
+            "status": "persistent",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "customer.kind",
+            "id": "generated_customer.kind",
+            "inputs": [
+              "Customer"
+            ],
+            "outputs": [
+              "String"
+            ],
+            "effects": [],
+            "status": "persistent",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "customer.new",
+            "id": "generated_customer.new",
+            "inputs": [
+              "String",
+              "Float"
+            ],
+            "outputs": [
+              "Customer"
+            ],
+            "effects": [],
+            "status": "persistent",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "customer.premium?",
+            "id": "word_6f1915c78d344e4386fedc1ffecc01f0",
+            "inputs": [
+              "Customer"
+            ],
+            "outputs": [
+              "Bool"
+            ],
+            "effects": [],
+            "status": "persistent",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "customer.renewal-balance",
+            "id": "word_7565d5e80a254b6b882235712753434e",
+            "inputs": [
+              "Customer",
+              "Subscription"
+            ],
+            "outputs": [
+              "Float"
+            ],
+            "effects": [],
+            "status": "persistent",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "divide",
+            "id": "primitive_divide",
+            "inputs": [
+              "Int",
+              "Int"
+            ],
+            "outputs": [
+              "Int"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "drop",
+            "id": "primitive_drop",
+            "inputs": [
+              "a"
+            ],
+            "outputs": [],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "dup",
+            "id": "primitive_dup",
+            "inputs": [
+              "a"
+            ],
+            "outputs": [
+              "a",
+              "a"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "equals",
+            "id": "primitive_equals",
+            "inputs": [
+              "a",
+              "a"
+            ],
+            "outputs": [
+              "Bool"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "file.exists?",
+            "id": "primitive_file.exists?",
+            "inputs": [
+              "String"
+            ],
+            "outputs": [
+              "Bool"
+            ],
+            "effects": [
+              "fs.read"
+            ],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "file.read",
+            "id": "primitive_file.read",
+            "inputs": [
+              "String"
+            ],
+            "outputs": [
+              "String"
+            ],
+            "effects": [
+              "fs.read"
+            ],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "file.write",
+            "id": "primitive_file.write",
+            "inputs": [
+              "String",
+              "String"
+            ],
+            "outputs": [
+              "Unit"
+            ],
+            "effects": [
+              "fs.write"
+            ],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "float.add",
+            "id": "primitive_float.add",
+            "inputs": [
+              "Float",
+              "Float"
+            ],
+            "outputs": [
+              "Float"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "float.divide",
+            "id": "primitive_float.divide",
+            "inputs": [
+              "Float",
+              "Float"
+            ],
+            "outputs": [
+              "Float"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "float.greater-or-equal",
+            "id": "primitive_float.greater-or-equal",
+            "inputs": [
+              "Float",
+              "Float"
+            ],
+            "outputs": [
+              "Bool"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "float.greater-than",
+            "id": "primitive_float.greater-than",
+            "inputs": [
+              "Float",
+              "Float"
+            ],
+            "outputs": [
+              "Bool"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "float.less-or-equal",
+            "id": "primitive_float.less-or-equal",
+            "inputs": [
+              "Float",
+              "Float"
+            ],
+            "outputs": [
+              "Bool"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "float.less-than",
+            "id": "primitive_float.less-than",
+            "inputs": [
+              "Float",
+              "Float"
+            ],
+            "outputs": [
+              "Bool"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "float.multiply",
+            "id": "primitive_float.multiply",
+            "inputs": [
+              "Float",
+              "Float"
+            ],
+            "outputs": [
+              "Float"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "float.round",
+            "id": "primitive_float.round",
+            "inputs": [
+              "Float"
+            ],
+            "outputs": [
+              "Int"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "float.subtract",
+            "id": "primitive_float.subtract",
+            "inputs": [
+              "Float",
+              "Float"
+            ],
+            "outputs": [
+              "Float"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "float.to-int",
+            "id": "primitive_float.to-int",
+            "inputs": [
+              "Float"
+            ],
+            "outputs": [
+              "Int"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "float.to-string",
+            "id": "primitive_float.to-string",
+            "inputs": [
+              "Float"
+            ],
+            "outputs": [
+              "String"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "int.abs",
+            "id": "primitive_int.abs",
+            "inputs": [
+              "Int"
+            ],
+            "outputs": [
+              "Int"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "int.greater-or-equal",
+            "id": "primitive_int.greater-or-equal",
+            "inputs": [
+              "Int",
+              "Int"
+            ],
+            "outputs": [
+              "Bool"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "int.greater-than",
+            "id": "primitive_int.greater-than",
+            "inputs": [
+              "Int",
+              "Int"
+            ],
+            "outputs": [
+              "Bool"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "int.less-or-equal",
+            "id": "primitive_int.less-or-equal",
+            "inputs": [
+              "Int",
+              "Int"
+            ],
+            "outputs": [
+              "Bool"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "int.less-than",
+            "id": "primitive_int.less-than",
+            "inputs": [
+              "Int",
+              "Int"
+            ],
+            "outputs": [
+              "Bool"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "int.max",
+            "id": "primitive_int.max",
+            "inputs": [
+              "Int",
+              "Int"
+            ],
+            "outputs": [
+              "Int"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "int.min",
+            "id": "primitive_int.min",
+            "inputs": [
+              "Int",
+              "Int"
+            ],
+            "outputs": [
+              "Int"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "int.to-float",
+            "id": "primitive_int.to-float",
+            "inputs": [
+              "Int"
+            ],
+            "outputs": [
+              "Float"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "int.to-string",
+            "id": "primitive_int.to-string",
+            "inputs": [
+              "Int"
+            ],
+            "outputs": [
+              "String"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "list.append",
+            "id": "primitive_list.append",
+            "inputs": [
+              "List<a>",
+              "a"
+            ],
+            "outputs": [
+              "List<a>"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "list.concat",
+            "id": "primitive_list.concat",
+            "inputs": [
+              "List<a>",
+              "List<a>"
+            ],
+            "outputs": [
+              "List<a>"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "list.count",
+            "id": "primitive_list.count",
+            "inputs": [
+              "List<a>"
+            ],
+            "outputs": [
+              "Int"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "list.get",
+            "id": "primitive_list.get",
+            "inputs": [
+              "List<a>",
+              "Int"
+            ],
+            "outputs": [
+              "Option<a>"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "list.is-empty?",
+            "id": "primitive_list.is-empty?",
+            "inputs": [
+              "List<a>"
+            ],
+            "outputs": [
+              "Bool"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "multiply",
+            "id": "primitive_multiply",
+            "inputs": [
+              "Int",
+              "Int"
+            ],
+            "outputs": [
+              "Int"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "string.concat",
+            "id": "primitive_string.concat",
+            "inputs": [
+              "String",
+              "String"
+            ],
+            "outputs": [
+              "String"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "string.contains",
+            "id": "primitive_string.contains",
+            "inputs": [
+              "String",
+              "String"
+            ],
+            "outputs": [
+              "Bool"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "string.ends-with",
+            "id": "primitive_string.ends-with",
+            "inputs": [
+              "String",
+              "String"
+            ],
+            "outputs": [
+              "Bool"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "string.length",
+            "id": "primitive_string.length",
+            "inputs": [
+              "String"
+            ],
+            "outputs": [
+              "Int"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "string.starts-with",
+            "id": "primitive_string.starts-with",
+            "inputs": [
+              "String",
+              "String"
+            ],
+            "outputs": [
+              "Bool"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "string.to-lower",
+            "id": "primitive_string.to-lower",
+            "inputs": [
+              "String"
+            ],
+            "outputs": [
+              "String"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "string.to-upper",
+            "id": "primitive_string.to-upper",
+            "inputs": [
+              "String"
+            ],
+            "outputs": [
+              "String"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "string.trim",
+            "id": "primitive_string.trim",
+            "inputs": [
+              "String"
+            ],
+            "outputs": [
+              "String"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "subscription.new",
+            "id": "generated_subscription.new",
+            "inputs": [
+              "String",
+              "Bool"
+            ],
+            "outputs": [
+              "Subscription"
+            ],
+            "effects": [],
+            "status": "persistent",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "subscription.renewable",
+            "id": "generated_subscription.renewable",
+            "inputs": [
+              "Subscription"
+            ],
+            "outputs": [
+              "Bool"
+            ],
+            "effects": [],
+            "status": "persistent",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "subscription.term",
+            "id": "generated_subscription.term",
+            "inputs": [
+              "Subscription"
+            ],
+            "outputs": [
+              "String"
+            ],
+            "effects": [],
+            "status": "persistent",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "subtract",
+            "id": "primitive_subtract",
+            "inputs": [
+              "Int",
+              "Int"
+            ],
+            "outputs": [
+              "Int"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          },
+          {
+            "name": "swap",
+            "id": "primitive_swap",
+            "inputs": [
+              "a",
+              "b"
+            ],
+            "outputs": [
+              "b",
+              "a"
+            ],
+            "effects": [],
+            "status": "primitive",
+            "maturity": "library",
+            "deprecated": false
+          }
+        ],
+        "constructs": [
+          {
+            "name": "list.empty",
+            "kind": "syntax",
+            "syntax": "list.empty<T>",
+            "inputs": [],
+            "outputs": [
+              "List<T>"
+            ],
+            "typeParameters": [
+              "T"
+            ],
+            "effects": [],
+            "effectRule": "none",
+            "documentation": "Constructs an empty List<T>. T must be a declared closed type.",
+            "coverageOutcomes": []
+          },
+          {
+            "name": "list.singleton",
+            "kind": "syntax",
+            "syntax": "T list.singleton<T>",
+            "inputs": [
+              "T"
+            ],
+            "outputs": [
+              "List<T>"
+            ],
+            "typeParameters": [
+              "T"
+            ],
+            "effects": [],
+            "effectRule": "none",
+            "documentation": "Constructs a one-element List<T> after checking the payload against the explicit T.",
+            "coverageOutcomes": []
+          },
+          {
+            "name": "option.none",
+            "kind": "syntax",
+            "syntax": "option.none<T>",
+            "inputs": [],
+            "outputs": [
+              "Option<T>"
+            ],
+            "typeParameters": [
+              "T"
+            ],
+            "effects": [],
+            "effectRule": "none",
+            "documentation": "Constructs a typed none; the element type is always explicit.",
+            "coverageOutcomes": []
+          },
+          {
+            "name": "option.some",
+            "kind": "syntax",
+            "syntax": "T option.some<T>",
+            "inputs": [
+              "T"
+            ],
+            "outputs": [
+              "Option<T>"
+            ],
+            "typeParameters": [
+              "T"
+            ],
+            "effects": [],
+            "effectRule": "none",
+            "documentation": "Constructs a typed some after checking the payload against the explicit T.",
+            "coverageOutcomes": []
+          },
+          {
+            "name": "result.ok",
+            "kind": "syntax",
+            "syntax": "T result.ok<T, E>",
+            "inputs": [
+              "T"
+            ],
+            "outputs": [
+              "Result<T, E>"
+            ],
+            "typeParameters": [
+              "T",
+              "E"
+            ],
+            "effects": [],
+            "effectRule": "none",
+            "documentation": "Constructs a typed ok; both result type parameters are always explicit.",
+            "coverageOutcomes": []
+          },
+          {
+            "name": "result.error",
+            "kind": "syntax",
+            "syntax": "E result.error<T, E>",
+            "inputs": [
+              "E"
+            ],
+            "outputs": [
+              "Result<T, E>"
+            ],
+            "typeParameters": [
+              "T",
+              "E"
+            ],
+            "effects": [],
+            "effectRule": "none",
+            "documentation": "Constructs a typed error; the inactive success type remains explicit.",
+            "coverageOutcomes": []
+          },
+          {
+            "name": "list.map",
+            "kind": "syntax",
+            "syntax": "list.map <word>",
+            "inputs": [
+              "List<T>"
+            ],
+            "outputs": [
+              "List<U>"
+            ],
+            "typeParameters": [
+              "T",
+              "U"
+            ],
+            "effects": [],
+            "effectRule": "inherits callback word effects",
+            "documentation": "Statically names one callback word with signature T -> U. The callback is type checked before any element is visited.",
+            "coverageOutcomes": [
+              "empty",
+              "nonempty"
+            ]
+          },
+          {
+            "name": "list.filter",
+            "kind": "syntax",
+            "syntax": "list.filter <word>",
+            "inputs": [
+              "List<T>"
+            ],
+            "outputs": [
+              "List<T>"
+            ],
+            "typeParameters": [
+              "T"
+            ],
+            "effects": [],
+            "effectRule": "inherits callback word effects",
+            "documentation": "Statically names one callback word with signature T -> Bool. Retains elements for true and drops them for false.",
+            "coverageOutcomes": [
+              "empty",
+              "nonempty",
+              "keep",
+              "drop"
+            ]
+          },
+          {
+            "name": "list.each",
+            "kind": "syntax",
+            "syntax": "list.each <word>",
+            "inputs": [
+              "List<T>"
+            ],
+            "outputs": [
+              "Unit"
+            ],
+            "typeParameters": [
+              "T"
+            ],
+            "effects": [],
+            "effectRule": "inherits callback word effects",
+            "documentation": "Statically names one callback word with signature T -> Unit and visits each element.",
+            "coverageOutcomes": [
+              "empty",
+              "nonempty"
+            ]
+          },
+          {
+            "name": "match-option",
+            "kind": "syntax",
+            "syntax": "match-option / some <local> / none / end",
+            "inputs": [
+              "Option<T> (top of stack)"
+            ],
+            "outputs": [
+              "same stack from both cases"
+            ],
+            "typeParameters": [
+              "T"
+            ],
+            "effects": [],
+            "effectRule": "union of both case effects",
+            "documentation": "Requires both cases. The some payload local exists only inside its case; both cases must leave identical stack and outer-local types.",
+            "coverageOutcomes": [
+              "some",
+              "none"
+            ]
+          },
+          {
+            "name": "match-result",
+            "kind": "syntax",
+            "syntax": "match-result / ok <local> / error <local> / end",
+            "inputs": [
+              "Result<T, E> (top of stack)"
+            ],
+            "outputs": [
+              "same stack from both cases"
+            ],
+            "typeParameters": [
+              "T",
+              "E"
+            ],
+            "effects": [],
+            "effectRule": "union of both case effects",
+            "documentation": "Requires both cases. Each payload local exists only inside its own case; both cases must leave identical stack and outer-local types.",
+            "coverageOutcomes": [
+              "ok",
+              "error"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "85.5",
+      "data": {
+        "stack": [
+          "85.5"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "90",
+      "data": {
+        "stack": [
+          "90"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "90",
+      "data": {
+        "stack": [
+          "90"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "90",
+      "data": {
+        "stack": [
+          "90"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "95",
+      "data": {
+        "stack": [
+          "95"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "100",
+      "data": {
+        "stack": [
+          "100"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "100",
+      "data": {
+        "stack": [
+          "100"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "100",
+      "data": {
+        "stack": [
+          "100"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "95",
+      "data": {
+        "stack": [
+          "95"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "90",
+      "data": {
+        "stack": [
+          "90"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "90",
+      "data": {
+        "stack": [
+          "90"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "95",
+      "data": {
+        "stack": [
+          "95"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "0",
+      "data": {
+        "stack": [
+          "0"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "-85.5",
+      "data": {
+        "stack": [
+          "-85.5"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "213.75",
+      "data": {
+        "stack": [
+          "213.75"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "225",
+      "data": {
+        "stack": [
+          "225"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "95",
+      "data": {
+        "stack": [
+          "95"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "2.686061718819273",
+      "data": {
+        "stack": [
+          "2.686061718819273"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "8.55E-101",
+      "data": {
+        "stack": [
+          "8.55E-101"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "9.5E+99",
+      "data": {
+        "stack": [
+          "9.5E+99"
+        ],
+        "stackTypes": [
+          "Float"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    }
+  ],
+  "limits": [
+    "Selected numerical Float behavior, not bitwise/signed-zero proof.",
+    "No token, latency or comparative-efficiency claim.",
+    "All-new-word library policy and minimal edits require separate final-state audit."
+  ]
+}

@@ -4,6 +4,18 @@ The active goal is completion of the prototype and evaluation requirements in th
 
 Status: **verified** means the listed scoped behavior has observed acceptance evidence; **partial** means some behavior exists but the full section is not proven; **pending** means implementation or evidence is missing; **design** means a principle/advisory requirement; **excluded** means a V1 non-goal or explicitly optional follow-on. A green build is not evidence of research success.
 
+Latest external-agent workflow evidence: [report 054](../reports/054-flow-renewal-agent-control.md)
+records a separate inherited-history Luna/max control that created one tested
+library word by composing a retained domain word. Fresh-process acceptance
+passed 48 checks, and eight durable-state checks confirm the seed was preserved.
+The preceding fresh-context attempt was blocked before definition by automatic
+approval review. These outcomes do not prove comparative efficiency or
+small-context operation. Deterministic replay passed 45 checks; negative controls
+passed 70 checks and reject incorrect behavior despite passing self-tests/full
+coverage. The complete local 31-check Release gate passed with zero build
+warnings/errors against dirty parent `44e20b5`. Clean source CI and private
+publication are pending; the full PRD remains incomplete.
+
 Latest experimental preparation: [report 053](../reports/053-flow-renewal-fixtures.md)
 records a passing complete local **29-check Release gate**, 129 Flow renewal
 fixture checks, and 26 frozen snapshot checks. Separate Flow seeds preserve the

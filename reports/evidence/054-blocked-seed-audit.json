@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "initialManifest": "480feeaec8a8ad5d860349890bbbe151b2345f7c746f1400e926da68eb181521",
+  "finalManifest": "480feeaec8a8ad5d860349890bbbe151b2345f7c746f1400e926da68eb181521",
+  "claim": "Blocked trial durable dictionary unchanged; active task was session-local and broker is terminal."
+}

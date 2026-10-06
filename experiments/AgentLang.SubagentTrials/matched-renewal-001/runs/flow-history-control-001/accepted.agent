@@ -1,0 +1,46 @@
+word customer.renewal-balance(customer: Customer, subscription: Subscription) -> Float {
+    effects none
+    doc "Returns the existing customer discount, with a further 5 percent reduction for renewable annual subscriptions."
+    let baseline = customer.discounted-balance();
+    if equals(subscription.term(), "annual") {
+        if subscription.renewable() {
+            float::multiply(baseline, 0.95)
+        } else {
+            baseline
+        }
+    } else {
+        baseline
+    }
+}
+
+test customer.renewal-balance/premium-annual-renewable {
+    customer::renewal-balance(customer::new("premium", 100.0), subscription::new("annual", true)) => 85.5
+}
+
+test customer.renewal-balance/premium-annual-not-renewable {
+    customer::renewal-balance(customer::new("premium", 100.0), subscription::new("annual", false)) => 90.0
+}
+
+test customer.renewal-balance/premium-monthly-renewable {
+    customer::renewal-balance(customer::new("premium", 100.0), subscription::new("monthly", true)) => 90.0
+}
+
+test customer.renewal-balance/premium-monthly-not-renewable {
+    customer::renewal-balance(customer::new("premium", 100.0), subscription::new("monthly", false)) => 90.0
+}
+
+test customer.renewal-balance/standard-annual-renewable {
+    customer::renewal-balance(customer::new("standard", 100.0), subscription::new("annual", true)) => 95.0
+}
+
+test customer.renewal-balance/standard-annual-not-renewable {
+    customer::renewal-balance(customer::new("standard", 100.0), subscription::new("annual", false)) => 100.0
+}
+
+test customer.renewal-balance/standard-monthly-renewable {
+    customer::renewal-balance(customer::new("standard", 100.0), subscription::new("monthly", true)) => 100.0
+}
+
+test customer.renewal-balance/standard-monthly-not-renewable {
+    customer::renewal-balance(customer::new("standard", 100.0), subscription::new("monthly", false)) => 100.0
+}

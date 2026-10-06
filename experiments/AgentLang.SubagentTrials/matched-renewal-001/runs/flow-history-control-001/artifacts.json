@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "files": [
+    {
+      "name": "accepted-word.agent",
+      "bytes": 491,
+      "sha256": "4271e9da2b050b3dfccca25fdccb4d28f84591dd98fa9b9d97a36d5a779821e7"
+    },
+    {
+      "name": "accepted.agent",
+      "bytes": 1858,
+      "sha256": "51359a9d1cd44b7e39ea848596af05b0a39fc3c867bf6fff166cf9bd034aa459"
+    },
+    {
+      "name": "delegation.txt",
+      "bytes": 1939,
+      "sha256": "4c48b6b7bdbf7d8b79fa42d4621fbdb690d8dc06b1e309b7c29e9d9ab8e3c2f0"
+    },
+    {
+      "name": "initial-restore.json",
+      "bytes": 464,
+      "sha256": "6ed94f8a2ca547b761f95c67c80bf9569fc85c349b44b8f4108e9ec2d9154ad3"
+    },
+    {
+      "name": "primer-reference.txt",
+      "bytes": 4602,
+      "sha256": "d42607aef20f5dfe9f79f1249657864ab2ae6bf306d0b550c5999b92f16483b6"
+    },
+    {
+      "name": "protocol.jsonl",
+      "bytes": 166987,
+      "sha256": "71fd454509925beae9c3d07f9f503b24aa8490537e187a0e89a66c031ac8c21e"
+    },
+    {
+      "name": "trial.json",
+      "bytes": 3717,
+      "sha256": "b775e3a081109b0ea51e4c6d522fb73a04c8e31bfde27c2ed8ece209febb38c2"
+    }
+  ],
+  "review": "Toy domain instructions and protocol only; no binaries or credentials",
+  "limits": "Inherited-history workflow control, not fresh discovery or comparative efficiency"
+}

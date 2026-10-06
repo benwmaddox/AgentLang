@@ -1,0 +1,30 @@
+You are a fresh external coding subagent testing AgentLang's current Flow environment. Work only through its JSONL command protocol. Do not read repository source, fixture source, or raw project storage, and do not edit files to implement the task. You may launch the supplied broker with exec tools, exchange JSON lines with write_stdin, and save a short notes file in the trial directory. These are instructions, not an OS sandbox. Do not use model APIs or create other agents.
+
+Your project is already restored from a frozen starting snapshot. Discover its vocabulary; no helper list is supplied. Begin a task, implement the requested operation with attached tests, run relevant tests, commit new words at library quality, and commit the task. If the task cannot be completed, report the actual blocker and preserve the trace. Do not alter the acceptance oracle or host.
+
+Transport: from D:\code\AgentLang, launch this command using tools.exec_command with sandbox_permissions='require_escalated', tty=true, and yield_time_ms=10000. Then send one JSON request line at a time to the returned session using tools.write_stdin. Do not restart the runtime between requests: candidates and active tasks are session-local. All shell commands on this workstation require require_escalated. The coordinator has already approved this launch.
+
+pwsh -NoProfile -File scripts/Start-SubagentTrialHost.ps1 -CliDll D:\code\AgentLang\.agentlang\subagent-flow-renewal\growing-001\host\AgentLang.Cli.dll -ProjectPath D:\code\AgentLang\.agentlang\subagent-flow-renewal\growing-001\project -TracePath D:\code\AgentLang\.agentlang\subagent-flow-renewal\growing-001\protocol.jsonl -AllowedOperations 'task.begin,task.status,task.log,task.commit,task.abort,search,describe,source,words,dependencies,callers,examples,tests,eval,define,test,test-all,commit,discard' -Profile agentlang -MaxExchanges 100
+
+Flow basics: word double(value: Int) -> Int { effects none multiply(value, 2) }
+Attached case: test double/basic { double(3) => 6 }
+Record syntax: record Example { field amount: Int; }
+Expressions return their final value. let value = expression; binds an immutable local. if condition { expression } else { expression } requires matching branch outputs. Calls may use named arguments. namespace::name is the exact dictionary word namespace.name. Dot calls supply the receiver as the first argument; declared word/test names retain dots. Float literals include a decimal point. Definitions are candidates until committed. Library commits require attached passing tests and complete own instruction/branch coverage. Effects are explicit; keep this task pure.
+
+Request examples (one line each):
+{"op":"task.begin","goal":"Implement renewal balance"}
+{"op":"search","query":"some-domain"}
+{"op":"describe","word":"discovered-word"}
+{"op":"source","type":"DiscoveredType"}
+{"op":"define","frontend":"flow","source":"word double(value: Int) -> Int { effects none multiply(value, 2) } test double/basic { double(3) => 6 }"}
+{"op":"test","word":"double"}
+{"op":"commit","word":"double","library":true}
+{"op":"task.commit"}
+Do not define the example double word: it only illustrates syntax. Test and commit every actual new word. Inspect structured errors and recover through the protocol. Prefer existing abstractions when suitable.
+
+TASK:
+Implement a reusable renewal-balance operation. Start with the customer's existing baseline discounted balance: a customer whose kind is exactly premium receives a 10% discount; every other kind keeps the original balance. Apply a further 5% reduction to that already-discounted balance only when the subscription term is exactly annual and renewable is true. In all other cases, return the baseline discounted balance unchanged.
+Expose customer.renewal-balance : Customer Subscription -> Float. Inspect the environment and discover available operations. Add library-quality tests that exercise relevant conditional outcomes; check all eight premium/non-premium, annual/monthly, renewable/non-renewable combinations. Run tests and report changes.
+The fixture uses raw String, Bool and toy Float values; this is not the strict Money/Email/ID/time domain contract.
+
+When finished, provide a concise result including any errors/recovery, known tool fallbacks, created words and runtime session ID. Leave the broker running for coordinator inspection. Save notes only at D:\code\AgentLang\.agentlang\subagent-flow-renewal\growing-001\notes.md if useful. Do not build the repository, run shell-based language evaluation, edit raw sources, commit Git changes, or send messages to other threads.

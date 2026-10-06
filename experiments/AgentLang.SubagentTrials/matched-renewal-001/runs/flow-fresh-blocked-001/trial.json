@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "status": "blocked-before-definition-terminal",
+  "mode": "growing",
+  "startingProfile": "single-task-domain-seeded-control",
+  "repositoryRevision": "44e20b5b6af9300dc2a7ff8f4608bc3eca4d325d",
+  "model": "gpt-6-luna",
+  "reasoning": "max",
+  "history": "none",
+  "usage": null,
+  "usageReason": "Subagent interface does not expose exact usage",
+  "runtimeFiles": [
+    {
+      "name": "AgentLang.Cli.deps.json",
+      "bytes": 2903,
+      "sha256": "6382f6dc29bb8f827824839010e313b266e51a3f87a4fdb8c382931d2549e97e"
+    },
+    {
+      "name": "AgentLang.Cli.dll",
+      "bytes": 37376,
+      "sha256": "733359acc8cfa18911b2d477d12045407d96c9fd498631d0a2bda762d7f80909"
+    },
+    {
+      "name": "AgentLang.Cli.runtimeconfig.json",
+      "bytes": 340,
+      "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+    },
+    {
+      "name": "AgentLang.Core.dll",
+      "bytes": 2038272,
+      "sha256": "d5a70c4594e83486741a954c31418798c41cdf2989fedc2d4daaf410ad2b9978"
+    },
+    {
+      "name": "FSharp.Core.dll",
+      "bytes": 2314000,
+      "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+    }
+  ],
+  "initialRestore": {
+    "profile": "growing",
+    "project": "D:\\code\\AgentLang\\.agentlang\\subagent-flow-renewal\\growing-001\\project",
+    "snapshot": "matched-renewal-start",
+    "manifestHash": "480feeaec8a8ad5d860349890bbbe151b2345f7c746f1400e926da68eb181521",
+    "bundleSha256": "4b88ad1a244230c91fc1b453dd3f2b472ae983d91cfb9c755a5b69023ee8e678",
+    "limits": "Runtime load still validates storage semantics. Host capabilities and binaries are pinned separately."
+  },
+  "taskSha256": "34fc7bf29602ec91d3c3cb330c714f8ae79b9242fd529d480a47115d5c937341",
+  "protocolInstructionOnly": true,
+  "limits": [
+    "Host protocol instructions are not OS tool isolation.",
+    "Single seeded task, not cumulative vocabulary or controlled efficiency evidence.",
+    "Toy String/Bool/Float domain, not strong business type parity."
+  ],
+  "agentTask": "/root/flow_renewal_growing_trial",
+  "dispatchWindow": {
+    "earliestUtc": "2026-10-06T10:27:13.1284925Z",
+    "observedByUtc": "2026-10-06T06:28:15.4898804-04:00"
+  },
+  "bootstrapUtf8Bytes": 759,
+  "promptUtf8Bytes": 4602,
+  "approvalInterventions": [
+    {
+      "attempt": 1,
+      "action": "define customer.renewal-balance with8tests",
+      "delivered": false,
+      "reason": "Task prompt was treated as untrusted authorization"
+    },
+    {
+      "attempt": 2,
+      "action": "same define",
+      "delivered": false,
+      "reason": "Coordinator authorization untrusted; trusted user messages did not authorize unrelated renewal mutation"
+    }
+  ],
+  "historyControl": {
+    "agentTask": "/root/flow_renewal_history_control",
+    "model": "gpt-6-luna",
+    "reasoning": "max",
+    "history": "all",
+    "dispatchedObservedAtUtc": "2026-10-06T06:41:03.6797614-04:00",
+    "limits": "No fresh-discovery, small-context or comparative-efficiency claim; original user context inherited."
+  },
+  "finalBrokerEvidence": {
+    "event": "session-end",
+    "finishedUtc": "2026-10-06T06:46:57.8906412-04:00",
+    "exchangeCount": 17,
+    "hostExitCode": 0,
+    "runtimeExitCode": 0,
+    "runtimeStderrPrefixBytes": 0,
+    "runtimeStderrTotalBytes": 0,
+    "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runtimeStderrCaptureTruncated": false
+  },
+  "brokerExchanges": 17,
+  "finalRuntimeStatus": {
+    "ok": true,
+    "kind": "task.status",
+    "text": "Status for task-0001.",
+    "data": {
+      "task": "task-0001",
+      "goal": "Implement reusable customer renewal-balance operation with attached eight-case coverage",
+      "active": true,
+      "wordsInspected": [
+        "Customer",
+        "Subscription",
+        "customer.discounted-balance",
+        "customer.new",
+        "equals",
+        "float.multiply",
+        "subscription.new"
+      ],
+      "wordsUsed": [],
+      "wordsCreated": [],
+      "testsRun": 0,
+      "testsFailed": 0,
+      "effects": {},
+      "errors": []
+    }
+  },
+  "ownerCleanup": "Owner Ctrl+C wrapper exit 1; broker trace host/runtime exit 0, 17 exchanges, no retry"
+}

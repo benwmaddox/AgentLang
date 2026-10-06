@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "checks": [
+    {
+      "path": "experiments/AgentLang.SubagentTrials/matched-renewal-001/runs/flow-fresh-blocked-001/artifacts.json",
+      "passed": true,
+      "rawBlob": "ba3483d6f77c0ca4d3cdd0944bc4580bb8b365d7",
+      "stagedBlob": "ba3483d6f77c0ca4d3cdd0944bc4580bb8b365d7"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/matched-renewal-001/runs/flow-fresh-blocked-001/bootstrap.txt",
+      "passed": true,
+      "rawBlob": "fe25b674e21b03f0cf5faf3af78c86ee635761e5",
+      "stagedBlob": "fe25b674e21b03f0cf5faf3af78c86ee635761e5"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/matched-renewal-001/runs/flow-fresh-blocked-001/initial-restore.json",
+      "passed": true,
+      "rawBlob": "2d3550a94affec25fb954a76f9c692e7b2b3ee12",
+      "stagedBlob": "2d3550a94affec25fb954a76f9c692e7b2b3ee12"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/matched-renewal-001/runs/flow-fresh-blocked-001/oracle-metadata.json",
+      "passed": true,
+      "rawBlob": "08e145d8dc5ed5789e4032ab5ca579e9c4ac24e4",
+      "stagedBlob": "08e145d8dc5ed5789e4032ab5ca579e9c4ac24e4"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/matched-renewal-001/runs/flow-fresh-blocked-001/prompt-metadata.json",
+      "passed": true,
+      "rawBlob": "ce4f3faf9c679c466e2191b695671ce9f43f948b",
+      "stagedBlob": "ce4f3faf9c679c466e2191b695671ce9f43f948b"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/matched-renewal-001/runs/flow-fresh-blocked-001/prompt.txt",
+      "passed": true,
+      "rawBlob": "db52c4db882dcd05e8d7012f742d4931e1163661",
+      "stagedBlob": "db52c4db882dcd05e8d7012f742d4931e1163661"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/matched-renewal-001/runs/flow-fresh-blocked-001/protocol.jsonl",
+      "passed": true,
+      "rawBlob": "975cc1efa67447dea5c645ef38e2a646e37c6fd9",
+      "stagedBlob": "975cc1efa67447dea5c645ef38e2a646e37c6fd9"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/matched-renewal-001/runs/flow-fresh-blocked-001/trial.json",
+      "passed": true,
+      "rawBlob": "650283077e70ebbba8c7350a80245b06ac094be7",
+      "stagedBlob": "650283077e70ebbba8c7350a80245b06ac094be7"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/matched-renewal-001/runs/flow-history-control-001/accepted-word.agent",
+      "passed": true,
+      "rawBlob": "bdf64a04e447f35298a996b29c1938f607d96105",
+      "stagedBlob": "bdf64a04e447f35298a996b29c1938f607d96105"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/matched-renewal-001/runs/flow-history-control-001/accepted.agent",
+      "passed": true,
+      "rawBlob": "0dec116d30d4ee9cf823ad81758daccb37935a2d",
+      "stagedBlob": "0dec116d30d4ee9cf823ad81758daccb37935a2d"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/matched-renewal-001/runs/flow-history-control-001/artifacts.json",
+      "passed": true,
+      "rawBlob": "44bb935d68a039b4e7f5a28d164bba3352d8fcd7",
+      "stagedBlob": "44bb935d68a039b4e7f5a28d164bba3352d8fcd7"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/matched-renewal-001/runs/flow-history-control-001/delegation.txt",
+      "passed": true,
+      "rawBlob": "ed9932c5b62d29e1393f366a5be238df2750543c",
+      "stagedBlob": "ed9932c5b62d29e1393f366a5be238df2750543c"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/matched-renewal-001/runs/flow-history-control-001/initial-restore.json",
+      "passed": true,
+      "rawBlob": "dfe645a003f210b3008b1d9294f3190fc4e768da",
+      "stagedBlob": "dfe645a003f210b3008b1d9294f3190fc4e768da"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/matched-renewal-001/runs/flow-history-control-001/primer-reference.txt",
+      "passed": true,
+      "rawBlob": "db52c4db882dcd05e8d7012f742d4931e1163661",
+      "stagedBlob": "db52c4db882dcd05e8d7012f742d4931e1163661"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/matched-renewal-001/runs/flow-history-control-001/protocol.jsonl",
+      "passed": true,
+      "rawBlob": "2d0967a064e48196d5100fd9b658c65c75a26e38",
+      "stagedBlob": "2d0967a064e48196d5100fd9b658c65c75a26e38"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/matched-renewal-001/runs/flow-history-control-001/trial.json",
+      "passed": true,
+      "rawBlob": "d0779ac0bd5025a49ce10b097326ccfa6d67ac10",
+      "stagedBlob": "d0779ac0bd5025a49ce10b097326ccfa6d67ac10"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/matched-renewal-001/flow-renewal-acceptance.json",
+      "passed": true,
+      "rawBlob": "fc6fb5abb07d0a4f5f130b278bb74559637c48f4",
+      "stagedBlob": "fc6fb5abb07d0a4f5f130b278bb74559637c48f4"
+    }
+  ],
+  "claim": "All byte-addressed trial files and oracle match staged Git blobs."
+}

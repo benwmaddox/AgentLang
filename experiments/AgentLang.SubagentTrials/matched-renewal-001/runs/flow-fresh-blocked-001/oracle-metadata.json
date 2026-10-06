@@ -1,0 +1,7 @@
+{
+  "path": "experiments/AgentLang.SubagentTrials/matched-renewal-001/flow-renewal-acceptance.json",
+  "sha256": "937633354809f58c8f318525ec8dd87cc3c0d28db5fd227838e2b5bbef8f5ccc",
+  "lastWriteUtc": "2026-10-06T10:31:06.2193207Z",
+  "cases": 20,
+  "frozenBeforeAnyDefinitionReachedRuntime": true
+}

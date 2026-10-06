@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "status": "completed-independent-acceptance-passed",
+  "kind": "inherited-history-workflow-control",
+  "history": "all",
+  "model": "gpt-6-luna",
+  "reasoning": "max",
+  "runtimePin": ".agentlang/subagent-flow-renewal/growing-001/host",
+  "initialManifestHash": "480feeaec8a8ad5d860349890bbbe151b2345f7c746f1400e926da68eb181521",
+  "originalBrokerHandle": 61199,
+  "handoffProblem": "write_stdin Unknown process id in sibling subagent; session handles are scoped",
+  "newBrokerRationale": "Separate control with own broker, not restart of original live trial",
+  "usage": null,
+  "acceptedSourceSha256": "51359a9d1cd44b7e39ea848596af05b0a39fc3c867bf6fff166cf9bd034aa459",
+  "finalRuntimeStatus": {
+    "ok": true,
+    "kind": "task.status",
+    "text": "Status for task-0001.",
+    "data": {
+      "task": "task-0001",
+      "goal": "Implement pure customer renewal balance with full premium, term, and renewable branch tests",
+      "active": false,
+      "wordsInspected": [
+        "Customer",
+        "Subscription",
+        "customer.balance",
+        "customer.discounted-balance",
+        "customer.new",
+        "customer.premium?",
+        "customer.renewal-balance",
+        "equals",
+        "float.multiply",
+        "subscription.new",
+        "subscription.renewable",
+        "subscription.term"
+      ],
+      "wordsUsed": [
+        "customer.balance",
+        "customer.discounted-balance",
+        "customer.kind",
+        "customer.new",
+        "customer.premium?",
+        "customer.renewal-balance",
+        "equals",
+        "float.multiply",
+        "subscription.new",
+        "subscription.renewable",
+        "subscription.term"
+      ],
+      "wordsCreated": [
+        "customer.renewal-balance"
+      ],
+      "testsRun": 31,
+      "testsFailed": 0,
+      "effects": {},
+      "errors": [
+        "FLOW_EXPECTED_TOKEN",
+        "FLOW_UNKNOWN_LOCAL",
+        "FLOW_UNKNOWN_LOCAL"
+      ]
+    }
+  },
+  "terminal": {
+    "event": "session-end",
+    "finishedUtc": "2026-10-06T07:02:01.9465276-04:00",
+    "exchangeCount": 32,
+    "hostExitCode": 0,
+    "runtimeExitCode": 0,
+    "runtimeStderrPrefixBytes": 0,
+    "runtimeStderrTotalBytes": 0,
+    "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runtimeStderrCaptureTruncated": false
+  },
+  "acceptanceChecks": 48,
+  "durableStateChecks": 8,
+  "definitionAttempts": 4,
+  "repositoryRevision": "44e20b5b6af9300dc2a7ff8f4608bc3eca4d325d",
+  "runtimeFiles": [
+    {
+      "name": "AgentLang.Cli.deps.json",
+      "bytes": 2903,
+      "sha256": "6382f6dc29bb8f827824839010e313b266e51a3f87a4fdb8c382931d2549e97e"
+    },
+    {
+      "name": "AgentLang.Cli.dll",
+      "bytes": 37376,
+      "sha256": "733359acc8cfa18911b2d477d12045407d96c9fd498631d0a2bda762d7f80909"
+    },
+    {
+      "name": "AgentLang.Cli.runtimeconfig.json",
+      "bytes": 340,
+      "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+    },
+    {
+      "name": "AgentLang.Core.dll",
+      "bytes": 2038272,
+      "sha256": "d5a70c4594e83486741a954c31418798c41cdf2989fedc2d4daaf410ad2b9978"
+    },
+    {
+      "name": "FSharp.Core.dll",
+      "bytes": 2314000,
+      "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+    }
+  ],
+  "limits": [
+    "Inherited original human and task history; no fresh-discovery or efficiency claim.",
+    "Runtime protocol instructions are not OS isolation.",
+    "Exact model input/output tokens and turns unavailable.",
+    "Toy String/Bool/Float domain, not complete strong business types."
+  ]
+}

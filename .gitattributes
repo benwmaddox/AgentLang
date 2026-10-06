@@ -3,3 +3,6 @@
 experiments/AgentLang.SubagentTrials/matched-renewal-001/snapshots/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 experiments/AgentLang.SubagentTrials/matched-renewal-001/fixtures/flow/flat.agent -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 experiments/AgentLang.SubagentTrials/matched-renewal-001/fixtures/flow/growing.agent -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+# Trial transcripts and acceptance hashes preserve the original byte streams.
+experiments/AgentLang.SubagentTrials/matched-renewal-001/runs/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+experiments/AgentLang.SubagentTrials/matched-renewal-001/flow-renewal-acceptance.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

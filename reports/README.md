@@ -8,6 +8,15 @@ Run `./scripts/Validate.ps1` from PowerShell to build the solution and run every
 
 CI runs the same command and uploads its JSON report. Human feedback and milestone conclusions belong in numbered Markdown reports here. Credentials must never appear in reports. Live provider traces can contain project information and should remain in the experiment's local output directory unless deliberately reviewed for publication.
 
+Latest external-agent control: [054 — Flow renewal agent control](054-flow-renewal-agent-control.md)
+completed an inherited-history inspect/define/test/library-commit workflow,
+with 48 fresh-process acceptance checks and eight seed-preservation checks.
+Its earlier fresh-context attempt was blocked before definition. Replay passed
+45 checks and negative controls passed 70; both are required in the 31-check
+Release gate, which passed locally with zero build warnings/errors. Clean
+source CI and private publication remain pending; no comparative efficiency
+claim is made.
+
 Latest local checkpoint: [053 — Flow renewal fixtures](053-flow-renewal-fixtures.md)
 passed the complete 29-check Release gate, including 129 Flow fixture checks and
 26 frozen snapshot checks. It corrects a task/oracle mismatch and prepares

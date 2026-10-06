@@ -108,7 +108,12 @@ The F# fixture's independent baseline adapter can be exercised directly with
 It accepts one strict `{ "kind": string, "balance": finite-number }` case per
 line and returns the original fields plus the established baseline result.
 
-No fresh matched agent task has been run. Framework thread-capacity prevented
-creating a fresh trial thread; this fixture preserves the task setup only, and
-the available external-agent result in report 004 is exploratory, not a
-Flat/Growing/Conventional comparison.
+The archived Stack pilot was exploratory, not a Flat/Growing/Conventional
+comparison. The separate Flow fixtures and frozen seeds were delivered in
+[report 053](../../../reports/053-flow-renewal-fixtures.md). A subsequent fresh
+external-agent attempt was blocked by automatic approval review before any
+definition reached the runtime; its unchanged seed and terminal trace are
+preserved under `runs/flow-fresh-blocked-001`. A separate inherited-history
+workflow control and independent acceptance are tracked in
+[report 054](../../../reports/054-flow-renewal-agent-control.md). Neither supplies
+controlled comparative efficiency evidence.

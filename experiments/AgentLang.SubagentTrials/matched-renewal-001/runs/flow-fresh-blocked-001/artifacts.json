@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "status": "blocked-before-definition",
+  "artifactReview": "Toy domain protocol and instructions only; no binaries, credentials or arbitrary user data",
+  "files": [
+    {
+      "name": "bootstrap.txt",
+      "bytes": 759,
+      "sha256": "7ba741340866139117888ae4b2d01861dc11e9d7fae03d7b9b42aa1168a9faea"
+    },
+    {
+      "name": "initial-restore.json",
+      "bytes": 456,
+      "sha256": "4ded5f6614fb06fcc269fc9f8b74667084dfec7e492b1bf305ca1f6e5f4241ee"
+    },
+    {
+      "name": "oracle-metadata.json",
+      "bytes": 305,
+      "sha256": "676218e0f47e2ee88bd97089bbb0cfda2f569136fce3dfd03eea7c9822e033ca"
+    },
+    {
+      "name": "prompt-metadata.json",
+      "bytes": 131,
+      "sha256": "7335dd6293881e80b8a03473ff6f22d642dc5ced267162911f5c2741a37d8a64"
+    },
+    {
+      "name": "prompt.txt",
+      "bytes": 4602,
+      "sha256": "d42607aef20f5dfe9f79f1249657864ab2ae6bf306d0b550c5999b92f16483b6"
+    },
+    {
+      "name": "protocol.jsonl",
+      "bytes": 55191,
+      "sha256": "b68cd7984af7849d6e5dea8b5a535c0d05521e79b2ff2d290eeb98942759134c"
+    },
+    {
+      "name": "trial.json",
+      "bytes": 4327,
+      "sha256": "57476f1b3d85e561cd4180e832d9796c502ca85e69c4c23a44df38ca304b12f5"
+    }
+  ],
+  "limits": [
+    "Authorization intervention followup text not captured as exact artifact; rejection metadata and terminal runtime state retained.",
+    "Subagent model input/output token usage and model turns unavailable.",
+    "No OS isolation; protocol scope was an instruction and host allowlist."
+  ]
+}

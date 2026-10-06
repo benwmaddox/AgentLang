@@ -1,0 +1,943 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "initialManifest": "480feeaec8a8ad5d860349890bbbe151b2345f7c746f1400e926da68eb181521",
+  "finalManifest": "959ca08b8bb2c7bfc4106c12e12e031f6efd85ef92e43ccd081fb4d2d84eebd8",
+  "checks": [
+    {
+      "name": "types Customer unchanged",
+      "passed": true
+    },
+    {
+      "name": "types Subscription unchanged",
+      "passed": true
+    },
+    {
+      "name": "words word_6f1915c78d344e4386fedc1ffecc01f0 unchanged",
+      "passed": true
+    },
+    {
+      "name": "words word_90c3fe0f880848bf84d63dd72b8707bf unchanged",
+      "passed": true
+    },
+    {
+      "name": "revisions word_6f1915c78d344e4386fedc1ffecc01f0 unchanged",
+      "passed": true
+    },
+    {
+      "name": "revisions word_90c3fe0f880848bf84d63dd72b8707bf unchanged",
+      "passed": true
+    },
+    {
+      "name": "one new target and no extra types",
+      "passed": true
+    },
+    {
+      "name": "new library revision1 eight tests",
+      "passed": true
+    }
+  ],
+  "newWords": [
+    {
+      "wordId": "word_7565d5e80a254b6b882235712753434e",
+      "currentName": "customer.renewal-balance",
+      "currentRevision": 1,
+      "deprecated": false
+    }
+  ],
+  "newRevisions": [
+    {
+      "wordId": "word_7565d5e80a254b6b882235712753434e",
+      "name": "customer.renewal-balance",
+      "revision": 1,
+      "definition": {
+        "kind": "word-definition",
+        "hash": "4271e9da2b050b3dfccca25fdccb4d28f84591dd98fa9b9d97a36d5a779821e7"
+      },
+      "tests": [
+        {
+          "kind": "test-definition",
+          "hash": "679c1c95133fdbbdd82c36d095ceb162a5b5cd15a1aa18d9ade510cba4ad90b3"
+        },
+        {
+          "kind": "test-definition",
+          "hash": "6806c6b8b7ba035e7dbf3c1f27e90f703b3e4366c1e7c0ec1757d35843d10e7e"
+        },
+        {
+          "kind": "test-definition",
+          "hash": "87ae782de5e5ccc8c7323f04a9f58b1e58add7481d537be2d734290199d61156"
+        },
+        {
+          "kind": "test-definition",
+          "hash": "925da768579b541edebe26a053d9b95fcbbf7d024d41c7119ef25eab6b32136d"
+        },
+        {
+          "kind": "test-definition",
+          "hash": "bb00065f622ec63f2954b7892bad8412332fa659f14745a6ab2b3c96509f8e3a"
+        },
+        {
+          "kind": "test-definition",
+          "hash": "e26a64fe6ecd92793604dd4721ba34a82b2121f0f657c898c0c28b17f6fd8b64"
+        },
+        {
+          "kind": "test-definition",
+          "hash": "e84f4a26267d08e8c8e0dbd81ad1b569779eb7d9f62045f1ff2764041c4d06b0"
+        },
+        {
+          "kind": "test-definition",
+          "hash": "f8c7a988907a9500fb03686d8f4bdef894ac86745e9bc202d8bf1ba5fcabf9a4"
+        }
+      ],
+      "examples": [],
+      "maturity": "library",
+      "actor": "client",
+      "taskId": "task-0001",
+      "timestampUtc": "1999-12-31T19:00:00-05:00",
+      "deprecated": false,
+      "sourceFormat": {
+        "frontend": "flow",
+        "version": 1
+      },
+      "callBindings": [
+        {
+          "source": {
+            "kind": "test-definition",
+            "hash": "679c1c95133fdbbdd82c36d095ceb162a5b5cd15a1aa18d9ade510cba4ad90b3"
+          },
+          "caseName": "premium-monthly-not-renewable",
+          "bodyRole": "actual",
+          "path": [
+            {
+              "segment": "blockStatement",
+              "index": 0
+            },
+            {
+              "segment": "evaluateExpression"
+            }
+          ],
+          "form": {
+            "kind": "direct"
+          },
+          "requestedName": "customer.renewal-balance",
+          "target": {
+            "kind": "userWord",
+            "identity": "word_7565d5e80a254b6b882235712753434e"
+          }
+        },
+        {
+          "source": {
+            "kind": "test-definition",
+            "hash": "679c1c95133fdbbdd82c36d095ceb162a5b5cd15a1aa18d9ade510cba4ad90b3"
+          },
+          "caseName": "premium-monthly-not-renewable",
+          "bodyRole": "actual",
+          "path": [
+            {
+              "segment": "blockStatement",
+              "index": 0
+            },
+            {
+              "segment": "evaluateExpression"
+            },
+            {
+              "segment": "callArgument",
+              "index": 0
+            }
+          ],
+          "form": {
+            "kind": "direct"
+          },
+          "requestedName": "customer.new",
+          "target": {
+            "kind": "generatedWord",
+            "identity": "generated_customer.new"
+          }
+        },
+        {
+          "source": {
+            "kind": "test-definition",
+            "hash": "679c1c95133fdbbdd82c36d095ceb162a5b5cd15a1aa18d9ade510cba4ad90b3"
+          },
+          "caseName": "premium-monthly-not-renewable",
+          "bodyRole": "actual",
+          "path": [
+            {
+              "segment": "blockStatement",
+              "index": 0
+            },
+            {
+              "segment": "evaluateExpression"
+            },
+            {
+              "segment": "callArgument",
+              "index": 1
+            }
+          ],
+          "form": {
+            "kind": "direct"
+          },
+          "requestedName": "subscription.new",
+          "target": {
+            "kind": "generatedWord",
+            "identity": "generated_subscription.new"
+          }
+        },
+        {
+          "source": {
+            "kind": "test-definition",
+            "hash": "6806c6b8b7ba035e7dbf3c1f27e90f703b3e4366c1e7c0ec1757d35843d10e7e"
+          },
+          "caseName": "premium-annual-not-renewable",
+          "bodyRole": "actual",
+          "path": [
+            {
+              "segment": "blockStatement",
+              "index": 0
+            },
+            {
+              "segment": "evaluateExpression"
+            }
+          ],
+          "form": {
+            "kind": "direct"
+          },
+          "requestedName": "customer.renewal-balance",
+          "target": {
+            "kind": "userWord",
+            "identity": "word_7565d5e80a254b6b882235712753434e"
+          }
+        },
+        {
+          "source": {
+            "kind": "test-definition",
+            "hash": "6806c6b8b7ba035e7dbf3c1f27e90f703b3e4366c1e7c0ec1757d35843d10e7e"
+          },
+          "caseName": "premium-annual-not-renewable",
+          "bodyRole": "actual",
+          "path": [
+            {
+              "segment": "blockStatement",
+              "index": 0
+            },
+            {
+              "segment": "evaluateExpression"
+            },
+            {
+              "segment": "callArgument",
+              "index": 0
+            }
+          ],
+          "form": {
+            "kind": "direct"
+          },
+          "requestedName": "customer.new",
+          "target": {
+            "kind": "generatedWord",
+            "identity": "generated_customer.new"
+          }
+        },
+        {
+          "source": {
+            "kind": "test-definition",
+            "hash": "6806c6b8b7ba035e7dbf3c1f27e90f703b3e4366c1e7c0ec1757d35843d10e7e"
+          },
+          "caseName": "premium-annual-not-renewable",
+          "bodyRole": "actual",
+          "path": [
+            {
+              "segment": "blockStatement",
+              "index": 0
+            },
+            {
+              "segment": "evaluateExpression"
+            },
+            {
+              "segment": "callArgument",
+              "index": 1
+            }
+          ],
+          "form": {
+            "kind": "direct"
+          },
+          "requestedName": "subscription.new",
+          "target": {
+            "kind": "generatedWord",
+            "identity": "generated_subscription.new"
+          }
+        },
+        {
+          "source": {
+            "kind": "test-definition",
+            "hash": "87ae782de5e5ccc8c7323f04a9f58b1e58add7481d537be2d734290199d61156"
+          },
+          "caseName": "standard-annual-renewable",
+          "bodyRole": "actual",
+          "path": [
+            {
+              "segment": "blockStatement",
+              "index": 0
+            },
+            {
+              "segment": "evaluateExpression"
+            }
+          ],
+          "form": {
+            "kind": "direct"
+          },
+          "requestedName": "customer.renewal-balance",
+          "target": {
+            "kind": "userWord",
+            "identity": "word_7565d5e80a254b6b882235712753434e"
+          }
+        },
+        {
+          "source": {
+            "kind": "test-definition",
+            "hash": "87ae782de5e5ccc8c7323f04a9f58b1e58add7481d537be2d734290199d61156"
+          },
+          "caseName": "standard-annual-renewable",
+          "bodyRole": "actual",
+          "path": [
+            {
+              "segment": "blockStatement",
+              "index": 0
+            },
+            {
+              "segment": "evaluateExpression"
+            },
+            {
+              "segment": "callArgument",
+              "index": 0
+            }
+          ],
+          "form": {
+            "kind": "direct"
+          },
+          "requestedName": "customer.new",
+          "target": {
+            "kind": "generatedWord",
+            "identity": "generated_customer.new"
+          }
+        },
+        {
+          "source": {
+            "kind": "test-definition",
+            "hash": "87ae782de5e5ccc8c7323f04a9f58b1e58add7481d537be2d734290199d61156"
+          },
+          "caseName": "standard-annual-renewable",
+          "bodyRole": "actual",
+          "path": [
+            {
+              "segment": "blockStatement",
+              "index": 0
+            },
+            {
+              "segment": "evaluateExpression"
+            },
+            {
+              "segment": "callArgument",
+              "index": 1
+            }
+          ],
+          "form": {
+            "kind": "direct"
+          },
+          "requestedName": "subscription.new",
+          "target": {
+            "kind": "generatedWord",
+            "identity": "generated_subscription.new"
+          }
+        },
+        {
+          "source": {
+            "kind": "test-definition",
+            "hash": "925da768579b541edebe26a053d9b95fcbbf7d024d41c7119ef25eab6b32136d"
+          },
+          "caseName": "premium-monthly-renewable",
+          "bodyRole": "actual",
+          "path": [
+            {
+              "segment": "blockStatement",
+              "index": 0
+            },
+            {
+              "segment": "evaluateExpression"
+            }
+          ],
+          "form": {
+            "kind": "direct"
+          },
+          "requestedName": "customer.renewal-balance",
+          "target": {
+            "kind": "userWord",
+            "identity": "word_7565d5e80a254b6b882235712753434e"
+          }
+        },
+        {
+          "source": {
+            "kind": "test-definition",
+            "hash": "925da768579b541edebe26a053d9b95fcbbf7d024d41c7119ef25eab6b32136d"
+          },
+          "caseName": "premium-monthly-renewable",
+          "bodyRole": "actual",
+          "path": [
+            {
+              "segment": "blockStatement",
+              "index": 0
+            },
+            {
+              "segment": "evaluateExpression"
+            },
+            {
+              "segment": "callArgument",
+              "index": 0
+            }
+          ],
+          "form": {
+            "kind": "direct"
+          },
+          "requestedName": "customer.new",
+          "target": {
+            "kind": "generatedWord",
+            "identity": "generated_customer.new"
+          }
+        },
+        {
+          "source": {
+            "kind": "test-definition",
+            "hash": "925da768579b541edebe26a053d9b95fcbbf7d024d41c7119ef25eab6b32136d"
+          },
+          "caseName": "premium-monthly-renewable",
+          "bodyRole": "actual",
+          "path": [
+            {
+              "segment": "blockStatement",
+              "index": 0
+            },
+            {
+              "segment": "evaluateExpression"
+            },
+            {
+              "segment": "callArgument",
+              "index": 1
+            }
+          ],
+          "form": {
+            "kind": "direct"
+          },
+          "requestedName": "subscription.new",
+          "target": {
+            "kind": "generatedWord",
+            "identity": "generated_subscription.new"
+          }
+        },
+        {
+          "source": {
+            "kind": "test-definition",
+            "hash": "bb00065f622ec63f2954b7892bad8412332fa659f14745a6ab2b3c96509f8e3a"
+          },
+          "caseName": "standard-monthly-not-renewable",
+          "bodyRole": "actual",
+          "path": [
+            {
+              "segment": "blockStatement",
+              "index": 0
+            },
+            {
+              "segment": "evaluateExpression"
+            }
+          ],
+          "form": {
+            "kind": "direct"
+          },
+          "requestedName": "customer.renewal-balance",
+          "target": {
+            "kind": "userWord",
+            "identity": "word_7565d5e80a254b6b882235712753434e"
+          }
+        },
+        {
+          "source": {
+            "kind": "test-definition",
+            "hash": "bb00065f622ec63f2954b7892bad8412332fa659f14745a6ab2b3c96509f8e3a"
+          },
+          "caseName": "standard-monthly-not-renewable",
+          "bodyRole": "actual",
+          "path": [
+            {
+              "segment": "blockStatement",
+              "index": 0
+            },
+            {
+              "segment": "evaluateExpression"
+            },
+            {
+              "segment": "callArgument",
+              "index": 0
+            }
+          ],
+          "form": {
+            "kind": "direct"
+          },
+          "requestedName": "customer.new",
+          "target": {
+            "kind": "generatedWord",
+            "identity": "generated_customer.new"
+          }
+        },
+        {
+          "source": {
+            "kind": "test-definition",
+            "hash": "bb00065f622ec63f2954b7892bad8412332fa659f14745a6ab2b3c96509f8e3a"
+          },
+          "caseName": "standard-monthly-not-renewable",
+          "bodyRole": "actual",
+          "path": [
+            {
+              "segment": "blockStatement",
+              "index": 0
+            },
+            {
+              "segment": "evaluateExpression"
+            },
+            {
+              "segment": "callArgument",
+              "index": 1
+            }
+          ],
+          "form": {
+            "kind": "direct"
+          },
+          "requestedName": "subscription.new",
+          "target": {
+            "kind": "generatedWord",
+            "identity": "generated_subscription.new"
+          }
+        },
+        {
+          "source": {
+            "kind": "test-definition",
+            "hash": "e26a64fe6ecd92793604dd4721ba34a82b2121f0f657c898c0c28b17f6fd8b64"
+          },
+          "caseName": "standard-annual-not-renewable",
+          "bodyRole": "actual",
+          "path": [
+            {
+              "segment": "blockStatement",
+              "index": 0
+            },
+            {
+              "segment": "evaluateExpression"
+            }
+          ],
+          "form": {
+            "kind": "direct"
+          },
+          "requestedName": "customer.renewal-balance",
+          "target": {
+            "kind": "userWord",
+            "identity": "word_7565d5e80a254b6b882235712753434e"
+          }
+        },
+        {
+          "source": {
+            "kind": "test-definition",
+            "hash": "e26a64fe6ecd92793604dd4721ba34a82b2121f0f657c898c0c28b17f6fd8b64"
+          },
+          "caseName": "standard-annual-not-renewable",
+          "bodyRole": "actual",
+          "path": [
+            {
+              "segment": "blockStatement",
+              "index": 0
+            },
+            {
+              "segment": "evaluateExpression"
+            },
+            {
+              "segment": "callArgument",
+              "index": 0
+            }
+          ],
+          "form": {
+            "kind": "direct"
+          },
+          "requestedName": "customer.new",
+          "target": {
+            "kind": "generatedWord",
+            "identity": "generated_customer.new"
+          }
+        },
+        {
+          "source": {
+            "kind": "test-definition",
+            "hash": "e26a64fe6ecd92793604dd4721ba34a82b2121f0f657c898c0c28b17f6fd8b64"
+          },
+          "caseName": "standard-annual-not-renewable",
+          "bodyRole": "actual",
+          "path": [
+            {
+              "segment": "blockStatement",
+              "index": 0
+            },
+            {
+              "segment": "evaluateExpression"
+            },
+            {
+              "segment": "callArgument",
+              "index": 1
+            }
+          ],
+          "form": {
+            "kind": "direct"
+          },
+          "requestedName": "subscription.new",
+          "target": {
+            "kind": "generatedWord",
+            "identity": "generated_subscription.new"
+          }
+        },
+        {
+          "source": {
+            "kind": "test-definition",
+            "hash": "e84f4a26267d08e8c8e0dbd81ad1b569779eb7d9f62045f1ff2764041c4d06b0"
+          },
+          "caseName": "premium-annual-renewable",
+          "bodyRole": "actual",
+          "path": [
+            {
+              "segment": "blockStatement",
+              "index": 0
+            },
+            {
+              "segment": "evaluateExpression"
+            }
+          ],
+          "form": {
+            "kind": "direct"
+          },
+          "requestedName": "customer.renewal-balance",
+          "target": {
+            "kind": "userWord",
+            "identity": "word_7565d5e80a254b6b882235712753434e"
+          }
+        },
+        {
+          "source": {
+            "kind": "test-definition",
+            "hash": "e84f4a26267d08e8c8e0dbd81ad1b569779eb7d9f62045f1ff2764041c4d06b0"
+          },
+          "caseName": "premium-annual-renewable",
+          "bodyRole": "actual",
+          "path": [
+            {
+              "segment": "blockStatement",
+              "index": 0
+            },
+            {
+              "segment": "evaluateExpression"
+            },
+            {
+              "segment": "callArgument",
+              "index": 0
+            }
+          ],
+          "form": {
+            "kind": "direct"
+          },
+          "requestedName": "customer.new",
+          "target": {
+            "kind": "generatedWord",
+            "identity": "generated_customer.new"
+          }
+        },
+        {
+          "source": {
+            "kind": "test-definition",
+            "hash": "e84f4a26267d08e8c8e0dbd81ad1b569779eb7d9f62045f1ff2764041c4d06b0"
+          },
+          "caseName": "premium-annual-renewable",
+          "bodyRole": "actual",
+          "path": [
+            {
+              "segment": "blockStatement",
+              "index": 0
+            },
+            {
+              "segment": "evaluateExpression"
+            },
+            {
+              "segment": "callArgument",
+              "index": 1
+            }
+          ],
+          "form": {
+            "kind": "direct"
+          },
+          "requestedName": "subscription.new",
+          "target": {
+            "kind": "generatedWord",
+            "identity": "generated_subscription.new"
+          }
+        },
+        {
+          "source": {
+            "kind": "test-definition",
+            "hash": "f8c7a988907a9500fb03686d8f4bdef894ac86745e9bc202d8bf1ba5fcabf9a4"
+          },
+          "caseName": "standard-monthly-renewable",
+          "bodyRole": "actual",
+          "path": [
+            {
+              "segment": "blockStatement",
+              "index": 0
+            },
+            {
+              "segment": "evaluateExpression"
+            }
+          ],
+          "form": {
+            "kind": "direct"
+          },
+          "requestedName": "customer.renewal-balance",
+          "target": {
+            "kind": "userWord",
+            "identity": "word_7565d5e80a254b6b882235712753434e"
+          }
+        },
+        {
+          "source": {
+            "kind": "test-definition",
+            "hash": "f8c7a988907a9500fb03686d8f4bdef894ac86745e9bc202d8bf1ba5fcabf9a4"
+          },
+          "caseName": "standard-monthly-renewable",
+          "bodyRole": "actual",
+          "path": [
+            {
+              "segment": "blockStatement",
+              "index": 0
+            },
+            {
+              "segment": "evaluateExpression"
+            },
+            {
+              "segment": "callArgument",
+              "index": 0
+            }
+          ],
+          "form": {
+            "kind": "direct"
+          },
+          "requestedName": "customer.new",
+          "target": {
+            "kind": "generatedWord",
+            "identity": "generated_customer.new"
+          }
+        },
+        {
+          "source": {
+            "kind": "test-definition",
+            "hash": "f8c7a988907a9500fb03686d8f4bdef894ac86745e9bc202d8bf1ba5fcabf9a4"
+          },
+          "caseName": "standard-monthly-renewable",
+          "bodyRole": "actual",
+          "path": [
+            {
+              "segment": "blockStatement",
+              "index": 0
+            },
+            {
+              "segment": "evaluateExpression"
+            },
+            {
+              "segment": "callArgument",
+              "index": 1
+            }
+          ],
+          "form": {
+            "kind": "direct"
+          },
+          "requestedName": "subscription.new",
+          "target": {
+            "kind": "generatedWord",
+            "identity": "generated_subscription.new"
+          }
+        },
+        {
+          "source": {
+            "kind": "word-definition",
+            "hash": "4271e9da2b050b3dfccca25fdccb4d28f84591dd98fa9b9d97a36d5a779821e7"
+          },
+          "caseName": null,
+          "bodyRole": "definition",
+          "path": [
+            {
+              "segment": "blockStatement",
+              "index": 0
+            },
+            {
+              "segment": "letInitializer"
+            }
+          ],
+          "form": {
+            "kind": "dotStage",
+            "stage": "discounted-balance"
+          },
+          "requestedName": "discounted-balance",
+          "target": {
+            "kind": "userWord",
+            "identity": "word_90c3fe0f880848bf84d63dd72b8707bf"
+          }
+        },
+        {
+          "source": {
+            "kind": "word-definition",
+            "hash": "4271e9da2b050b3dfccca25fdccb4d28f84591dd98fa9b9d97a36d5a779821e7"
+          },
+          "caseName": null,
+          "bodyRole": "definition",
+          "path": [
+            {
+              "segment": "blockStatement",
+              "index": 1
+            },
+            {
+              "segment": "evaluateExpression"
+            },
+            {
+              "segment": "ifCondition"
+            }
+          ],
+          "form": {
+            "kind": "direct"
+          },
+          "requestedName": "equals",
+          "target": {
+            "kind": "primitive",
+            "identity": "equals"
+          }
+        },
+        {
+          "source": {
+            "kind": "word-definition",
+            "hash": "4271e9da2b050b3dfccca25fdccb4d28f84591dd98fa9b9d97a36d5a779821e7"
+          },
+          "caseName": null,
+          "bodyRole": "definition",
+          "path": [
+            {
+              "segment": "blockStatement",
+              "index": 1
+            },
+            {
+              "segment": "evaluateExpression"
+            },
+            {
+              "segment": "ifCondition"
+            },
+            {
+              "segment": "callArgument",
+              "index": 0
+            }
+          ],
+          "form": {
+            "kind": "dotStage",
+            "stage": "term"
+          },
+          "requestedName": "term",
+          "target": {
+            "kind": "generatedWord",
+            "identity": "generated_subscription.term"
+          }
+        },
+        {
+          "source": {
+            "kind": "word-definition",
+            "hash": "4271e9da2b050b3dfccca25fdccb4d28f84591dd98fa9b9d97a36d5a779821e7"
+          },
+          "caseName": null,
+          "bodyRole": "definition",
+          "path": [
+            {
+              "segment": "blockStatement",
+              "index": 1
+            },
+            {
+              "segment": "evaluateExpression"
+            },
+            {
+              "segment": "ifThenStatement",
+              "index": 0
+            },
+            {
+              "segment": "blockStatement",
+              "index": 0
+            },
+            {
+              "segment": "evaluateExpression"
+            },
+            {
+              "segment": "ifCondition"
+            }
+          ],
+          "form": {
+            "kind": "dotStage",
+            "stage": "renewable"
+          },
+          "requestedName": "renewable",
+          "target": {
+            "kind": "generatedWord",
+            "identity": "generated_subscription.renewable"
+          }
+        },
+        {
+          "source": {
+            "kind": "word-definition",
+            "hash": "4271e9da2b050b3dfccca25fdccb4d28f84591dd98fa9b9d97a36d5a779821e7"
+          },
+          "caseName": null,
+          "bodyRole": "definition",
+          "path": [
+            {
+              "segment": "blockStatement",
+              "index": 1
+            },
+            {
+              "segment": "evaluateExpression"
+            },
+            {
+              "segment": "ifThenStatement",
+              "index": 0
+            },
+            {
+              "segment": "blockStatement",
+              "index": 0
+            },
+            {
+              "segment": "evaluateExpression"
+            },
+            {
+              "segment": "ifThenStatement",
+              "index": 0
+            },
+            {
+              "segment": "blockStatement",
+              "index": 0
+            },
+            {
+              "segment": "evaluateExpression"
+            }
+          ],
+          "form": {
+            "kind": "direct"
+          },
+          "requestedName": "float.multiply",
+          "target": {
+            "kind": "primitive",
+            "identity": "float.multiply"
+          }
+        }
+      ]
+    }
+  ]
+}

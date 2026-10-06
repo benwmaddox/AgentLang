@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "checks": [
+    {
+      "name": "flow-fresh-blocked-001/bootstrap.txt",
+      "passed": true
+    },
+    {
+      "name": "flow-fresh-blocked-001/initial-restore.json",
+      "passed": true
+    },
+    {
+      "name": "flow-fresh-blocked-001/oracle-metadata.json",
+      "passed": true
+    },
+    {
+      "name": "flow-fresh-blocked-001/prompt-metadata.json",
+      "passed": true
+    },
+    {
+      "name": "flow-fresh-blocked-001/prompt.txt",
+      "passed": true
+    },
+    {
+      "name": "flow-fresh-blocked-001/protocol.jsonl",
+      "passed": true
+    },
+    {
+      "name": "flow-fresh-blocked-001/trial.json",
+      "passed": true
+    },
+    {
+      "name": "flow-history-control-001/accepted-word.agent",
+      "passed": true
+    },
+    {
+      "name": "flow-history-control-001/accepted.agent",
+      "passed": true
+    },
+    {
+      "name": "flow-history-control-001/delegation.txt",
+      "passed": true
+    },
+    {
+      "name": "flow-history-control-001/initial-restore.json",
+      "passed": true
+    },
+    {
+      "name": "flow-history-control-001/primer-reference.txt",
+      "passed": true
+    },
+    {
+      "name": "flow-history-control-001/protocol.jsonl",
+      "passed": true
+    },
+    {
+      "name": "flow-history-control-001/trial.json",
+      "passed": true
+    }
+  ],
+  "limits": "Local recorded artifact byte integrity; staged blob and clean checkout checks remain separate."
+}

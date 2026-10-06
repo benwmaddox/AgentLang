@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "cases": 20,
+  "oracleSha256": "937633354809f58c8f318525ec8dd87cc3c0d28db5fd227838e2b5bbef8f5ccc",
+  "rule": "Ordinal premium => balance*0.9; ordinal annual and renewable => baseline*0.95; otherwise baseline",
+  "limits": "Independent formula audit of stored vectors, not a program solution or agent success."
+}
