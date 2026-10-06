@@ -29,6 +29,33 @@ type FlowRootTarget =
       /// Authored span of the leading `::` and its unqualified name.
       Span: SourceSpan }
 
+/// Stable structural positions for binding records. Paths distinguish authored
+/// nodes even when a host-built AST assigns them identical source spans.
+[<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
+type FlowAstPathSegment =
+    | BlockStatement of int
+    | LetInitializer
+    | DestructureInitializer
+    | EvaluateExpression
+    | ReturnOutput of int
+    | CallArgument of int
+    | RootCallArgument of int
+    | DotReceiver
+    | DotArgument of int
+    | IfCondition
+    | IfThenStatement of int
+    | IfElseStatement of int
+    | ContainerPayload
+    | OptionScrutinee
+    | OptionSomeStatement of int
+    | OptionNoneStatement of int
+    | ResultScrutinee
+    | ResultOkStatement of int
+    | ResultErrorStatement of int
+
+[<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
+type FlowAstPath = FlowAstPath of FlowAstPathSegment list
+
 type FlowWordReference =
     { Name: string
       Qualification: FlowWordReferenceQualification

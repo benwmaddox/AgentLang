@@ -1,0 +1,10 @@
+{
+  "command": "dotnet run --project tests/AgentLang.Flow.Tests -c Release",
+  "result": {
+    "chunk_id": "858a5f",
+    "wall_time_seconds": 1.6308284,
+    "exit_code": 1,
+    "original_token_count": 118,
+    "output": "D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs(2660,9): error FS0010: Unexpected keyword 'base' in binding [D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\AgentLang.Flow.Tests.fsproj]\r\nD:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs(2667,54): error FS0010: Unexpected identifier in expression. Expected '.' or other token. [D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\AgentLang.Flow.Tests.fsproj]\r\n\r\nThe build failed. Fix the build errors and run again.\r\n"
+  }
+}

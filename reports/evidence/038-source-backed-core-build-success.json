@@ -1,0 +1,17 @@
+{
+  "command": "dotnet build src/AgentLang.Core/AgentLang.Core.fsproj --configuration Release --no-incremental",
+  "initial": {
+    "chunk_id": "d8e316",
+    "wall_time_seconds": 10.0107404,
+    "session_id": 44707,
+    "original_token_count": 21,
+    "output": "  Determining projects to restore...\r\n  All projects are up-to-date for restore.\r\n"
+  },
+  "terminal": {
+    "chunk_id": "2d1a1a",
+    "wall_time_seconds": 0.0000093,
+    "exit_code": 0,
+    "original_token_count": 45,
+    "output": "  AgentLang.Core -> D:\\code\\AgentLang\\src\\AgentLang.Core\\bin\\Release\\net9.0\\AgentLang.Core.dll\r\n\r\nBuild succeeded.\r\n    0 Warning(s)\r\n    0 Error(s)\r\n\r\nTime Elapsed 00:00:10.68\r\n"
+  }
+}

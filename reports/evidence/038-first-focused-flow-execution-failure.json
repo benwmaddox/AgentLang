@@ -1,0 +1,10 @@
+{
+  "command": "dotnet run --project tests/AgentLang.Flow.Tests -c Release",
+  "result": {
+    "chunk_id": "6df1a3",
+    "wall_time_seconds": 6.9938948,
+    "exit_code": 1,
+    "original_token_count": 319,
+    "output": "Unhandled exception. AgentLang.LanguageException: LanguageException\n  { Code = \"FLOW_AMBIGUOUS_CALL\"\n    Message =\n     \"Call 'answer' matches more than one word; use namespace::word qualification. Flow AST path(s): FlowAstPath [BlockStatement 0; EvaluateExpression].\"\n    Word = Some \"client.answer\"\n    Span = Some { File = \"<flow-test>\"\n                  Line = 3\n                  Column = 5\n                  Length = 8 }\n    Expected = []\n    Actual = [\"client.answer\"; \"domain.answer\"] }\r\n   at AgentLang.FlowLowering.withFlowOwnerPath[a](FlowWordDefinition flowWord, FSharpFunc`2 action) in D:\\code\\AgentLang\\src\\AgentLang.Core\\FlowLowering.fs:line 1240\r\n   at AgentLang.FlowLowering.compileBatchWordsCore(Context context, FSharpList`1 changes, FSharpMap`2 sourceDocuments, FSharpList`1 retainedSources) in D:\\code\\AgentLang\\src\\AgentLang.Core\\FlowLowering.fs:line 1748\r\n   at AgentLang.FlowLowering.compileBatchWords(Context context, FSharpList`1 changes) in D:\\code\\AgentLang\\src\\AgentLang.Core\\FlowLowering.fs:line 1883\r\n   at AgentLang.Flow.Tests.testFlowCallBindingSources() in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs:line 2529\r\n   at AgentLang.Flow.Tests.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs:line 2833\n"
+  }
+}

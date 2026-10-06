@@ -1,0 +1,7 @@
+{
+  "chunk_id": "00d9b8",
+  "wall_time_seconds": 6.5170594,
+  "exit_code": 1,
+  "original_token_count": 231,
+  "output": "  Determining projects to restore...\r\n  All projects are up-to-date for restore.\r\nD:\\code\\AgentLang\\src\\AgentLang.Core\\FlowLowering.fs(841,78): error FS0003: This value is not a function and cannot be applied. [D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj]\r\nD:\\code\\AgentLang\\src\\AgentLang.Core\\FlowLowering.fs(842,78): error FS0003: This value is not a function and cannot be applied. [D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj]\r\n\r\nBuild FAILED.\r\n\r\nD:\\code\\AgentLang\\src\\AgentLang.Core\\FlowLowering.fs(841,78): error FS0003: This value is not a function and cannot be applied. [D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj]\r\nD:\\code\\AgentLang\\src\\AgentLang.Core\\FlowLowering.fs(842,78): error FS0003: This value is not a function and cannot be applied. [D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj]\r\n    0 Warning(s)\r\n    2 Error(s)\r\n\r\nTime Elapsed 00:00:06.17\r\n"
+}

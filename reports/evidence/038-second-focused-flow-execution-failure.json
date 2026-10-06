@@ -1,0 +1,10 @@
+{
+  "command": "dotnet run --project tests/AgentLang.Flow.Tests -c Release",
+  "result": {
+    "chunk_id": "01e2bc",
+    "wall_time_seconds": 7.5762179,
+    "exit_code": 1,
+    "original_token_count": 180,
+    "output": "Unhandled exception. System.Exception: retained ordinary short call rejects a same-signature stable-ID redirect: expected FLOW_CALL_REBOUND, got FLOW_AMBIGUOUS_CALL: Call 'answer' matches more than one word; use namespace::word qualification. Flow AST path(s): FlowAstPath [BlockStatement 0; EvaluateExpression].\r\n   at AgentLang.Flow.Tests.captureLanguageError[a,b](a name, String code, FSharpFunc`2 action) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs:line 29\r\n   at AgentLang.Flow.Tests.testFlowCallBindingSources() in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs:line 2550\r\n   at AgentLang.Flow.Tests.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs:line 2833\n"
+  }
+}

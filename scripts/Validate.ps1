@@ -71,6 +71,10 @@ try {
             # missing project as a failed check instead of silently omitting it.
             $null = Invoke-ValidationCheck $checkName 'dotnet' @('run', '--no-build', '--configuration', $Configuration, '--project', $projectDirectory)
         }
+        # The structural binding probe uses host-built duplicate-span nodes;
+        # load the assembly from this gate's build rather than an older pin.
+        $coreBinaryPath = "src/AgentLang.Core/bin/$Configuration/net9.0/AgentLang.Core.dll"
+        $null = Invoke-ValidationCheck 'flow-call-binding-probe' 'dotnet' @('fsi', '--exec', "--reference:$coreBinaryPath", 'scripts/Verify-FlowCallBindings.fsx')
         $projectionReportPath = [System.IO.Path]::ChangeExtension($ReportPath, 'projection.json')
         $cliBinaryPath = "src/AgentLang.Cli/bin/$Configuration/net9.0/AgentLang.Cli.dll"
         $null = Invoke-ValidationCheck 'fresh-process-projection' 'pwsh' @('-NoProfile', '-File', 'scripts/Verify-PersistenceProjection.ps1', '-CliDll', $cliBinaryPath, '-EvidencePath', $projectionReportPath)

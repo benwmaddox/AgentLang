@@ -2,6 +2,7 @@ module AgentLang.Flow.Tests
 
 open System
 open AgentLang
+open AgentLang.FlowLowering
 
 let mutable private assertions = 0
 
@@ -34,6 +35,28 @@ let private parseWord source =
     match FlowParser.parseWord "<flow-test>" source with
     | Ok word -> word
     | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+
+let private authoredFlowSource (ownerId: WordId) (ownerRevision: int) (source: string) : FlowLowering.FlowSourceDocument =
+    let definition =
+        match FlowParser.parseWord "<flow-test>" source with
+        | Ok word -> word
+        | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+    let stored = Storage.sourceObject StorageObjectKind.WordDefinition source
+    { OwnerName = definition.Name
+      OwnerId = ownerId
+      OwnerRevision = ownerRevision
+      Reference = stored.Reference
+      SourceFile = definition.Span.File
+      Content = source }
+
+let private flowInventory (context: FlowLowering.Context) (names: string list) : FlowLowering.FlowSourceInventory =
+    let sources =
+        names
+        |> List.map (fun name ->
+            let entry = context.CompilerContext.Words[name]
+            authoredFlowSource context.CompilerContext.WordIds[name] entry.Revision entry.Definition.SourceText)
+    { ExpectedFlowOwnerIds = sources |> List.map (fun source -> source.OwnerId) |> Set.ofList
+      Sources = sources }
 
 let private parseTest source =
     match FlowParser.parseTest "<flow-test>" source with
@@ -2334,6 +2357,495 @@ let private testFlowBatchFinalValidationAndOrigins () =
     expectLanguageError "invalid origin values on replaced words cannot be pruned away" "IR_SOURCE_ORIGIN_INVALID" (fun () ->
         FlowLowering.compileBatchWords invalidOwnedOrigin [ replacement ] |> ignore)
 
+let private testFlowCallBindingSources () =
+    let transientContext =
+        loweringContext
+            [ wordEntry "left.value" [] [ TInt ] Set.empty [ Push(LInt 1L, sourceSpan) ]
+              wordEntry "right.value" [] [ TInt ] Set.empty [ Push(LInt 2L, sourceSpan) ] ]
+            Map.empty
+    let duplicateSpan = span "<host-flow-ast>" 4 7 12
+    let transientWord: FlowWordDefinition =
+        { Name = "call-binding.same-span"
+          Parameters = []
+          Outputs = [ TInt ]
+          Effects = Set.empty
+          Documentation = ""
+          Body =
+            [ FlowStatement.Evaluate(FlowExpression.Call("left.value", [], duplicateSpan))
+              FlowStatement.Return([ FlowExpression.Call("right.value", [], duplicateSpan) ], duplicateSpan) ]
+          SourceText = "<host-constructed Flow AST>"
+          Span = span "<host-flow-ast>" 1 1 24
+          SyntaxVersion = 1 }
+    let transient = FlowLowering.compileWordWithCallBindings transientContext (WordId "call-binding-same-span") transientWord
+    equal "same-span host AST calls retain separate structural paths" 2 (transient.CallSites |> List.map (fun site -> site.Path) |> Set.ofList |> Set.count)
+    equal "same-span host AST calls preserve both source spans" [ duplicateSpan; duplicateSpan ] (transient.CallSites |> List.map (fun site -> site.Span))
+    equal "same-span host AST calls bind to their distinct stable identities"
+        [ FlowCallTargetIdentity.UserWord(WordId "user-left.value"); FlowCallTargetIdentity.UserWord(WordId "user-right.value") ]
+        (transient.CallSites |> List.map (fun site -> site.Target))
+    equal "same-span evaluation and return paths remain distinguishable"
+        [ FlowAstPath.FlowAstPath [ FlowAstPathSegment.BlockStatement 0; FlowAstPathSegment.EvaluateExpression ]
+          FlowAstPath.FlowAstPath [ FlowAstPathSegment.BlockStatement 1; FlowAstPathSegment.ReturnOutput 0 ] ]
+        (transient.CallSites |> List.map (fun site -> site.Path))
+
+    let scaleSource =
+        """word library.scale(value: Int) -> Int {
+    effects none
+    add(value, 1)
+}"""
+    let callerSource =
+        """word client.read(value: Int) -> Int {
+    effects none
+    library::scale(value)
+}"""
+    let emptyContext = loweringContext [] Map.empty
+    let change (source: string) (identity: string) : FlowLowering.FlowWordChange =
+        { Definition = parseWord source
+          RevisionIntent = FlowLowering.FlowWordRevisionIntent.Add(WordId identity, 1) }
+    let seeded =
+        FlowLowering.compileBatchWords emptyContext
+            [ change scaleSource "library-scale"
+              change callerSource "client-read" ]
+    let persistentScale =
+        { seeded.Context.CompilerContext.Words["library.scale"] with
+            Status = Persistent
+            Maturity = LibraryWord
+            Definition =
+                { seeded.Context.CompilerContext.Words["library.scale"].Definition with
+                    Maturity = LibraryWord } }
+    let baseContext =
+        { seeded.Context with
+            CompilerContext =
+                { seeded.Context.CompilerContext with
+                    Words = Map.add "library.scale" persistentScale seeded.Context.CompilerContext.Words } }
+    let inventory = flowInventory baseContext [ "library.scale"; "client.read" ]
+    let oldCallerSource = inventory.Sources |> List.find (fun source -> source.OwnerName = "client.read")
+    let changedScale =
+        authoredFlowSource (WordId "library-scale") 2
+            """word library.scale(value: Int) -> Int {
+    effects none
+    add(value, 2)
+}"""
+    let replacement: FlowSourceChange =
+        { RevisionIntent = FlowWordRevisionIntent.Replace(WordId "library-scale", 1, 2)
+          Source = changedScale }
+    let rebound =
+        FlowLowering.compileBatchFlowSources baseContext inventory [ replacement ]
+    let retainedBinding = rebound.CallBindings |> List.find (fun binding -> binding.OwnerName = "client.read")
+    equal "retained call binds to its unchanged stable target ID"
+        (FlowCallTargetIdentity.UserWord(WordId "library-scale")) retainedBinding.Site.Target
+    equal "retained call accepts a target revision advance with the same identity" (Some 2) retainedBinding.Site.TargetRevision
+    equal "retained owner revision remains unchanged" 1 retainedBinding.OwnerRevision
+    equal "retained binding records the exact old caller SourceRef" oldCallerSource.Reference retainedBinding.Source
+    let replacedEntry = rebound.Context.CompilerContext.Words["library.scale"]
+    equal "source-backed replacement preserves the old stable ID" (WordId "library-scale") rebound.Context.CompilerContext.WordIds["library.scale"]
+    equal "source-backed replacement preserves persistent status" Persistent replacedEntry.Status
+    equal "source-backed replacement preserves library maturity" LibraryWord replacedEntry.Maturity
+    equal "source-backed replacement advances entry and definition revisions together" (2, 2) (replacedEntry.Revision, replacedEntry.Definition.Revision)
+    check "bound result includes unchanged and changed Flow owners"
+        (rebound.LoweredWords |> List.map (fun word -> word.Definition.Name) |> Set.ofList = Set.ofList [ "library.scale"; "client.read" ])
+    check "source-backed result includes final origins for retained owners"
+        (rebound.SiteOrigins |> Map.exists (fun _ source -> source.File = "<flow-test>"))
+
+    let validNewSource =
+        authoredFlowSource (WordId "new-source-id") 1
+            """word new.branch(value: Int) -> Int {
+    effects none
+    add(value, 1)
+}"""
+    let newChange: FlowSourceChange =
+        { RevisionIntent = FlowWordRevisionIntent.Add(WordId "new-source-id", 1)
+          Source = validNewSource }
+    let runWith inventoryValue sourceChange =
+        FlowLowering.compileBatchFlowSources baseContext inventoryValue [ sourceChange ] |> ignore
+    expectLanguageError "source inventory rejects a missing host-declared Flow owner" "FLOW_SOURCE_INVENTORY_INCOMPLETE" (fun () ->
+        runWith { inventory with Sources = inventory.Sources |> List.tail } newChange)
+    expectLanguageError "source inventory rejects duplicate owner IDs" "FLOW_SOURCE_INVENTORY_DUPLICATE_ID" (fun () ->
+        runWith { inventory with Sources = inventory.Sources @ [ inventory.Sources.Head ] } newChange)
+    let badKindSource =
+        { inventory.Sources.Head with
+            Reference = { inventory.Sources.Head.Reference with Kind = StorageObjectKind.TestDefinition } }
+    expectLanguageError "source inventory requires the WordDefinition source kind" "FLOW_SOURCE_KIND_MISMATCH" (fun () ->
+        runWith { inventory with Sources = badKindSource :: inventory.Sources.Tail } newChange)
+    let badBaseHash =
+        { inventory.Sources.Head with
+            Reference = { inventory.Sources.Head.Reference with Hash = String.replicate 64 "0" } }
+    expectLanguageError "source inventory verifies exact content hashes" "FLOW_SOURCE_HASH_MISMATCH" (fun () ->
+        runWith { inventory with Sources = badBaseHash :: inventory.Sources.Tail } newChange)
+    let badOwnerName = { inventory.Sources.Head with OwnerName = "wrong.owner" }
+    expectLanguageError "source inventory parses bytes and matches the declared owner name" "FLOW_SOURCE_OWNER_NAME_MISMATCH" (fun () ->
+        runWith { inventory with Sources = badOwnerName :: inventory.Sources.Tail } newChange)
+    let badOwnerRevision = { inventory.Sources.Head with OwnerRevision = 9 }
+    expectLanguageError "source inventory checks the current owner revision" "FLOW_SOURCE_OWNER_REVISION_MISMATCH" (fun () ->
+        runWith { inventory with Sources = badOwnerRevision :: inventory.Sources.Tail } newChange)
+    let wrongFileLabel = { inventory.Sources.Head with SourceFile = "<other-flow-file>" }
+    expectLanguageError "source inventory retains the exact source label used by base source spans" "FLOW_SOURCE_FILE_MISMATCH" (fun () ->
+        runWith { inventory with Sources = wrongFileLabel :: inventory.Sources.Tail } newChange)
+    let validRenameContext =
+        { baseContext with
+            ParameterNames = Map.add "library.scale" [ "quantity" ] baseContext.ParameterNames }
+    equal "semantic metadata fixture keeps valid parameter arity" 1 validRenameContext.ParameterNames["library.scale"].Length
+    expectLanguageError "source proof rejects valid same-arity but different parameter metadata" "FLOW_SOURCE_PARAMETER_METADATA_MISMATCH" (fun () ->
+        FlowLowering.compileBatchFlowSources validRenameContext inventory [ newChange ] |> ignore)
+    let missingParameterContext =
+        { baseContext with ParameterNames = Map.remove "library.scale" baseContext.ParameterNames }
+    expectLanguageError "source proof rejects missing named-parameter metadata" "FLOW_SOURCE_PARAMETER_METADATA_MISSING" (fun () ->
+        FlowLowering.compileBatchFlowSources missingParameterContext inventory [ newChange ] |> ignore)
+    let originalScaleEntry = baseContext.CompilerContext.Words["library.scale"]
+    let originalAddSpans =
+        originalScaleEntry.Definition.Body
+        |> List.choose (function | Call("add", callSpan) -> Some callSpan | _ -> None)
+    equal "semantic body fixture starts with one add operation" 1 originalAddSpans.Length
+    let alteredScaleBody =
+        originalScaleEntry.Definition.Body
+        |> List.map (function | Call("add", callSpan) -> Call("subtract", callSpan) | expression -> expression)
+    let alteredSubtractSpans =
+        alteredScaleBody
+        |> List.choose (function | Call("subtract", callSpan) -> Some callSpan | _ -> None)
+    equal "type-correct body mutation preserves the operation source span" originalAddSpans alteredSubtractSpans
+    check "body mutation changes semantics while retaining authored metadata" (alteredScaleBody <> originalScaleEntry.Definition.Body)
+    let alteredScaleEntry =
+        { originalScaleEntry with
+            Definition = { originalScaleEntry.Definition with Body = alteredScaleBody } }
+    let alteredBodyContext =
+        { baseContext with
+            CompilerContext =
+                { baseContext.CompilerContext with
+                    Words = Map.add "library.scale" alteredScaleEntry baseContext.CompilerContext.Words } }
+    equal "body mutation leaves exact base source origins unchanged" baseContext.SourceOrigins alteredBodyContext.SourceOrigins
+    let alteredBodyProgram = Compiler.compileIrProgramWithSourceOrigins alteredBodyContext.CompilerContext alteredBodyContext.SourceOrigins
+    let alteredScaleCalls =
+        VerifiedIrProgram.inspect alteredBodyProgram
+        |> fun program -> program.FunctionsById[WordId "library-scale"].FunctionBody
+        |> resolvedCallsInBlock
+    check "mutated base body still compiles as a type-correct program"
+        (alteredScaleCalls |> List.exists (fun call -> call.ResolvedName = "subtract"))
+    expectLanguageError "source proof rejects a type-correct verified base body that differs from its source" "FLOW_SOURCE_BODY_MISMATCH" (fun () ->
+        FlowLowering.compileBatchFlowSources alteredBodyContext inventory [ newChange ] |> ignore)
+    let changedBaseBytes =
+        { inventory.Sources.Head with
+            Content = inventory.Sources.Head.Content.Replace("add(value, 1)", "add(value, 3)", StringComparison.Ordinal)
+            Reference =
+                (Storage.sourceObject StorageObjectKind.WordDefinition
+                    (inventory.Sources.Head.Content.Replace("add(value, 1)", "add(value, 3)", StringComparison.Ordinal))).Reference }
+    expectLanguageError "source inventory cannot substitute different bytes for the retained base definition" "FLOW_SOURCE_TEXT_MISMATCH" (fun () ->
+        runWith { inventory with Sources = changedBaseBytes :: inventory.Sources.Tail } newChange)
+    let invalidUtf16 =
+        { validNewSource with
+            Content = validNewSource.Content + string (char 0xD800)
+            Reference = { validNewSource.Reference with Hash = String.replicate 64 "0" } }
+    expectLanguageError "source hash validation rejects unpaired UTF-16 instead of replacement-encoding it" "FLOW_SOURCE_UTF8_INVALID" (fun () ->
+        FlowLowering.compileBatchFlowSources baseContext inventory [ { newChange with Source = invalidUtf16 } ] |> ignore)
+    let badChangeHash =
+        { validNewSource with Reference = { validNewSource.Reference with Hash = String.replicate 64 "0" } }
+    expectLanguageError "new source bytes must match the supplied content-addressed reference" "FLOW_SOURCE_HASH_MISMATCH" (fun () ->
+        FlowLowering.compileBatchFlowSources baseContext inventory [ { newChange with Source = badChangeHash } ] |> ignore)
+    let changeIdMismatch =
+        { newChange with RevisionIntent = FlowWordRevisionIntent.Add(WordId "different-id", 1) }
+    expectLanguageError "new source owner IDs must match host revision intent" "FLOW_SOURCE_CHANGE_REVISION_MISMATCH" (fun () ->
+        FlowLowering.compileBatchFlowSources baseContext inventory [ changeIdMismatch ] |> ignore)
+
+    let stackTarget = wordEntry "math.bump" [ TInt ] [ TInt ] Set.empty [ Call("int.abs", sourceSpan) ]
+    let dotCallerSource =
+        """word client.dot(value: Int) -> Int {
+    effects none
+    value.bump()
+}"""
+    let dotBase =
+        FlowLowering.compileBatchWords (loweringContext [ stackTarget ] Map.empty)
+            [ change dotCallerSource "client-dot" ]
+    let dotInventory = flowInventory dotBase.Context [ "client.dot" ]
+    let secondBump =
+        authoredFlowSource (WordId "other-bump") 1
+            """word other.bump(value: Int) -> Int {
+    effects none
+    add(value, 1)
+}"""
+    let ambiguous = captureLanguageError "retained dot call rejects a new candidate that makes it ambiguous" "FLOW_AMBIGUOUS_DOT_STAGE" (fun () ->
+        FlowLowering.compileBatchFlowSources dotBase.Context dotInventory
+            [ { RevisionIntent = FlowWordRevisionIntent.Add(WordId "other-bump", 1); Source = secondBump } ] |> ignore)
+    equal "retained dot ambiguity names the unchanged caller" (Some "client.dot") ambiguous.Word
+    check "retained dot ambiguity retains its source span" ambiguous.Span.IsSome
+    check "retained dot ambiguity reports the structural Flow AST path" (ambiguous.Message.Contains("Flow AST path(s):", StringComparison.Ordinal))
+
+    let redirectionBase =
+        FlowLowering.compileBatchWords emptyContext
+            [ change
+                """word domain.answer() -> Int {
+    effects none
+    41
+}"""
+                "domain-answer"
+              change
+                """word client.use-answer() -> Int {
+    effects none
+    answer()
+}"""
+                "client-answer" ]
+    let redirectionInventory = flowInventory redirectionBase.Context [ "domain.answer"; "client.use-answer" ]
+    let exactAnswer =
+        authoredFlowSource (WordId "exact-answer") 1
+            """word answer() -> Int {
+    effects none
+    42
+}"""
+    let narrowedDomainAnswer =
+        authoredFlowSource (WordId "domain-answer") 2
+            """word domain.answer(unused: Bool) -> Int {
+    effects none
+    41
+}"""
+    let redirectionChanges: FlowSourceChange list =
+        [ { RevisionIntent = FlowWordRevisionIntent.Replace(WordId "domain-answer", 1, 2)
+            Source = narrowedDomainAnswer }
+          { RevisionIntent = FlowWordRevisionIntent.Add(WordId "exact-answer", 1)
+            Source = exactAnswer } ]
+    let redirection = captureLanguageError "retained ordinary short call rejects a same-signature stable-ID redirect" "FLOW_CALL_REBOUND" (fun () ->
+        FlowLowering.compileBatchFlowSources redirectionBase.Context redirectionInventory redirectionChanges |> ignore)
+    equal "ordinary call redirection identifies its unchanged caller" (Some "client.use-answer") redirection.Word
+    check "ordinary call redirection retains an authored call span" redirection.Span.IsSome
+    let redirectDetails = String.concat " " (redirection.Expected @ redirection.Actual)
+    check "ordinary call redirection reports its structural Flow path" (redirectDetails.Contains("FlowAstPath", StringComparison.Ordinal))
+    check "ordinary call redirection names both stable target identities"
+        (redirectDetails.Contains("domain-answer", StringComparison.Ordinal)
+         && redirectDetails.Contains("exact-answer", StringComparison.Ordinal))
+
+    let rootBase =
+        FlowLowering.compileBatchWords emptyContext
+            [ change
+                """word identity(value: Int) -> Int {
+    effects none
+    value
+}"""
+                "root-identity-target"
+              change
+                """word domain.identity(value: Int) -> Int {
+    effects none
+    value
+}"""
+                "domain-identity-target"
+              change
+                """word client.root(value: Int) -> Int {
+    effects none
+    ::identity(value)
+}"""
+                "client-root" ]
+    let rootInventory = flowInventory rootBase.Context [ "identity"; "domain.identity"; "client.root" ]
+    let newlyAddedSuffix =
+        authoredFlowSource (WordId "other-identity-target") 1
+            """word other.identity(value: Int) -> Int {
+    effects none
+    add(value, 1)
+}"""
+    let rootStable =
+        FlowLowering.compileBatchFlowSources rootBase.Context rootInventory
+            [ { RevisionIntent = FlowWordRevisionIntent.Add(WordId "other-identity-target", 1); Source = newlyAddedSuffix } ]
+    let rootBinding = rootStable.CallBindings |> List.find (fun binding -> binding.OwnerName = "client.root")
+    equal "absolute-root resolution stays bound to its exact key as suffix candidates grow"
+        (FlowCallTargetIdentity.UserWord(WordId "root-identity-target")) rootBinding.Site.Target
+    equal "absolute-root target revision remains exact" (Some 1) rootBinding.Site.TargetRevision
+
+    let legacyTarget = wordEntry "legacy.operate" [ TInt ] [ TInt ] Set.empty [ Call("int.abs", sourceSpan) ]
+    let stackCaller = wordEntry "legacy.caller" [ TInt ] [ TInt ] Set.empty [ Call("legacy.operate", sourceSpan) ]
+    let stackBase = loweringContext [ legacyTarget; stackCaller ] (Map.ofList [ "legacy.operate", [ "value" ]; "legacy.caller", [ "value" ] ])
+    let flowReplacement =
+        authoredFlowSource stackBase.CompilerContext.WordIds["legacy.operate"] 2
+            """word legacy.operate(value: Int) -> Int {
+    effects none
+    add(value, 5)
+}"""
+    let migrated =
+        FlowLowering.compileBatchFlowSources stackBase
+            { ExpectedFlowOwnerIds = Set.empty; Sources = [] }
+            [ { RevisionIntent = FlowWordRevisionIntent.Replace(stackBase.CompilerContext.WordIds["legacy.operate"], 1, 2)
+                Source = flowReplacement } ]
+    let migratedEntry = migrated.Context.CompilerContext.Words["legacy.operate"]
+    equal "Stack-to-Flow replacement preserves stable ID" stackBase.CompilerContext.WordIds["legacy.operate"] migrated.Context.CompilerContext.WordIds["legacy.operate"]
+    equal "Stack-to-Flow replacement keeps entry status" Persistent migratedEntry.Status
+    equal "Stack-to-Flow replacement advances the definition revision" 2 migratedEntry.Definition.Revision
+    let stackCallerCall =
+        VerifiedIrProgram.inspect migrated.Program
+        |> fun program -> program.FunctionsById[stackBase.CompilerContext.WordIds["legacy.caller"]].FunctionBody
+        |> resolvedCallsInBlock
+        |> List.find (fun call -> call.ResolvedName = "legacy.operate")
+    equal "retained Stack caller is verified against the migrated Flow target revision"
+        (UserWordTarget(stackBase.CompilerContext.WordIds["legacy.operate"], 2)) stackCallerCall.ResolvedTarget
+    check "Stack callers without Flow source documents receive no invented Flow binding"
+        (migrated.CallBindings |> List.forall (fun binding -> binding.OwnerName <> "legacy.caller"))
+
+let private testFlowCallBindingStructuralPaths () =
+    let helperSources =
+        [ ("binding.identity", """word binding.identity(value: Int) -> Int {
+    effects none
+    value
+}""", "binding-identity")
+          ("binding.flag", """word binding.flag() -> Bool {
+    effects none
+    true
+}""", "binding-flag")
+          ("binding.option", """word binding.option() -> Option<Int> {
+    effects none
+    option::some<Int>(1)
+}""", "binding-option")
+          ("binding.result", """word binding.result() -> Result<Int, String> {
+    effects none
+    result::ok<Int, String>(1)
+}""", "binding-result")
+          ("binding.multi", """word binding.multi() -> (Int, String) {
+    effects none
+    return (1, "label")
+}""", "binding-multi")
+          ("binding.positive?", """word binding.positive?(value: Int) -> Bool {
+    effects none
+    true
+}""", "binding-positive")
+          ("binding.ignore", """word binding.ignore(value: Int) -> Unit {
+    effects none
+    unit
+}""", "binding-ignore")
+          ("binding.bump", """word binding.bump(value: Int, amount: Int) -> Int {
+    effects none
+    add(value, amount)
+}""", "binding-bump")
+          ("identity", """word identity(value: Int) -> Int {
+    effects none
+    value
+}""", "root-identity") ]
+    let emptyFlowContext =
+        loweringContext [] (Map.ofList [ "add", [ "left"; "right" ] ])
+    let helperChanges: FlowLowering.FlowWordChange list =
+        helperSources
+        |> List.map (fun (_, source, identity) ->
+            { Definition = parseWord source
+              RevisionIntent = FlowLowering.FlowWordRevisionIntent.Add(WordId identity, 1) })
+    let seeded = FlowLowering.compileBatchWords emptyFlowContext helperChanges
+    let coverageSource =
+        """word binding.coverage(value: Int, values: List<Int>) -> (Int, Int, Int) {
+    effects none
+    let (first, label) = binding::multi();
+    let wrapped = option::some<Int>(binding::identity(value));
+    let branch = if binding::flag() { binding::identity(value) } else { binding::identity(first) };
+    let option-value = match binding::option() { some item => { binding::identity(item) } none => { binding::identity(first) } };
+    let result-value = match binding::result() { ok item => { binding::identity(item) } error message => { binding::identity(first) } };
+    let mapped = values.map(binding::identity);
+    let filtered = mapped.filter(binding::positive?);
+    filtered.each(binding::ignore);
+    let bumped = binding::identity(value).bump(amount = binding::identity(first));
+    let summed = binding::bump(first, binding::identity(value));
+    let rooted = ::identity(::identity(value));
+    let root-mapped = values.map(::identity);
+    return (binding::identity(branch), binding::identity(option-value), binding::identity(result-value))
+}"""
+    let coverageChange: FlowSourceChange =
+        { RevisionIntent = FlowWordRevisionIntent.Add(WordId "binding-coverage", 1)
+          Source = authoredFlowSource (WordId "binding-coverage") 1 coverageSource }
+    let inventory = flowInventory seeded.Context (helperSources |> List.map (fun (name, _, _) -> name))
+    let bound = FlowLowering.compileBatchFlowSources seeded.Context inventory [ coverageChange ]
+    let coverageBindings = bound.CallBindings |> List.filter (fun binding -> binding.OwnerName = "binding.coverage")
+    let segments =
+        coverageBindings
+        |> List.collect (fun binding ->
+            let (FlowAstPath.FlowAstPath path) = binding.Site.Path
+            path)
+        |> Set.ofList
+    for expected in
+        [ FlowAstPathSegment.DestructureInitializer
+          FlowAstPathSegment.ContainerPayload
+          FlowAstPathSegment.IfCondition
+          FlowAstPathSegment.IfThenStatement 0
+          FlowAstPathSegment.IfElseStatement 0
+          FlowAstPathSegment.OptionScrutinee
+          FlowAstPathSegment.OptionSomeStatement 0
+          FlowAstPathSegment.OptionNoneStatement 0
+          FlowAstPathSegment.ResultScrutinee
+          FlowAstPathSegment.ResultOkStatement 0
+          FlowAstPathSegment.ResultErrorStatement 0
+          FlowAstPathSegment.DotReceiver
+          FlowAstPathSegment.DotArgument 0
+          FlowAstPathSegment.CallArgument 1
+          FlowAstPathSegment.RootCallArgument 0
+          FlowAstPathSegment.ReturnOutput 0
+          FlowAstPathSegment.ReturnOutput 1
+          FlowAstPathSegment.ReturnOutput 2 ] do
+        check ($"binding capture covers AST path role {expected}") (segments.Contains expected)
+    for callbackName in [ "binding.identity"; "binding.positive?"; "binding.ignore"; "identity" ] do
+        let sites =
+            coverageBindings
+            |> List.filter (fun binding ->
+                match binding.Site.Form with
+                | FlowCallForm.StaticCallback(_, _) -> binding.Site.RequestedName = callbackName
+                | _ -> false)
+        check ($"callback binding is captured for {callbackName}") (not (List.isEmpty sites))
+        for site in sites do
+            check ($"callback source span is retained for {callbackName}")
+                (site.Site.Span.File = "<flow-test>" && site.Site.Span.Line > 0 && site.Site.Span.Column > 0 && site.Site.Span.Length > 0)
+        let expectedTarget =
+            match callbackName with
+            | "binding.identity" -> FlowCallTargetIdentity.UserWord(WordId "binding-identity")
+            | "binding.positive?" -> FlowCallTargetIdentity.UserWord(WordId "binding-positive")
+            | "binding.ignore" -> FlowCallTargetIdentity.UserWord(WordId "binding-ignore")
+            | "identity" -> FlowCallTargetIdentity.UserWord(WordId "root-identity")
+            | _ -> failwithf "Unexpected callback fixture: %s" callbackName
+        check ($"callback resolves to exact stable identity {callbackName}")
+            (sites |> List.forall (fun site -> site.Site.Target = expectedTarget))
+    let rootCall =
+        coverageBindings
+        |> List.find (fun binding -> binding.Site.Form = FlowCallForm.AbsoluteRoot)
+    equal "absolute-root argument keeps its exact path" true
+        (let (FlowAstPath.FlowAstPath path) = rootCall.Site.Path
+         path |> List.contains (FlowAstPathSegment.RootCallArgument 0))
+    let dotCall = coverageBindings |> List.find (fun binding -> match binding.Site.Form with | FlowCallForm.DotStage "bump" -> true | _ -> false)
+    equal "dot stage resolves to its exact stable target" (FlowCallTargetIdentity.UserWord(WordId "binding-bump")) dotCall.Site.Target
+    let (FlowAstPath.FlowAstPath dotParentPath) = dotCall.Site.Path
+    let receiverPath = FlowAstPath.FlowAstPath(dotParentPath @ [ FlowAstPathSegment.DotReceiver ])
+    let namedArgumentPath = FlowAstPath.FlowAstPath(dotParentPath @ [ FlowAstPathSegment.DotArgument 0 ])
+    let receiverSite =
+        coverageBindings
+        |> List.find (fun binding -> binding.Site.Path = receiverPath)
+    let namedArgumentSite =
+        coverageBindings
+        |> List.find (fun binding -> binding.Site.Path = namedArgumentPath)
+    equal "named dot receiver selects the receiver-side word" (FlowCallTargetIdentity.UserWord(WordId "binding-identity")) receiverSite.Site.Target
+    equal "named dot argument selects the written argument word" (FlowCallTargetIdentity.UserWord(WordId "binding-identity")) namedArgumentSite.Site.Target
+    let dotStagePosition = coverageBindings |> List.findIndex (fun binding -> binding = dotCall)
+    let receiverPosition = coverageBindings |> List.findIndex (fun binding -> binding = receiverSite)
+    let argumentPosition = coverageBindings |> List.findIndex (fun binding -> binding = namedArgumentSite)
+    check "named dot calls reconcile receiver before nested written argument and outer stage"
+        (receiverPosition < argumentPosition && argumentPosition < dotStagePosition)
+
+    let scalarContext = richTypeContext []
+    let scalarSource =
+        """word email.wrap(value: String) -> Email {
+    effects none
+    Email::new(value)
+}"""
+    let scalarChange: FlowSourceChange =
+        { RevisionIntent = FlowWordRevisionIntent.Add(WordId "email-wrap", 1)
+          Source = authoredFlowSource (WordId "email-wrap") 1 scalarSource }
+    let scalarBound =
+        FlowLowering.compileBatchFlowSources scalarContext { ExpectedFlowOwnerIds = Set.empty; Sources = [] } [ scalarChange ]
+    let scalarSites = scalarBound.CallBindings |> List.filter (fun binding -> binding.OwnerName = "email.wrap")
+    equal "scalar constructor's implicit validator creates no extra authored binding" 1 scalarSites.Length
+    equal "scalar wrapper binds to its generated constructor identity" (FlowCallTargetIdentity.GeneratedWord(WordId "generated-Email.new")) scalarSites.Head.Site.Target
+    equal "scalar constructor binding records the source call once" FlowCallForm.Direct scalarSites.Head.Site.Form
+
+    let recordSource =
+        """word record.identity(value: Email) -> Email {
+    effects none
+    let customer = customer::new(email = value);
+    customer.email()
+}"""
+    let recordChange: FlowSourceChange =
+        { RevisionIntent = FlowWordRevisionIntent.Add(WordId "record-identity", 1)
+          Source = authoredFlowSource (WordId "record-identity") 1 recordSource }
+    let recordBound =
+        FlowLowering.compileBatchFlowSources scalarContext { ExpectedFlowOwnerIds = Set.empty; Sources = [] } [ recordChange ]
+    let recordSites = recordBound.CallBindings |> List.filter (fun binding -> binding.OwnerName = "record.identity")
+    equal "Flow call sidecar captures generated record constructor and accessor" 2 recordSites.Length
+    check "generated record constructor has its stable generated ID"
+        (recordSites |> List.exists (fun binding -> binding.Site.Target = FlowCallTargetIdentity.GeneratedWord(WordId "generated-customer.new")))
+    check "generated record accessor has its stable generated ID"
+        (recordSites |> List.exists (fun binding -> binding.Site.Target = FlowCallTargetIdentity.GeneratedWord(WordId "generated-customer.email")))
+
 let private testFlowDiagnostics () =
     let context = loweringContext [] Map.empty
     let ambiguous = parseExpression "1.unknown(2)"
@@ -2371,6 +2883,8 @@ let main _ =
     testFlowBatchSignatureKindsAndNamedArguments ()
     testFlowBatchReplacementAndValidation ()
     testFlowBatchFinalValidationAndOrigins ()
+    testFlowCallBindingSources ()
+    testFlowCallBindingStructuralPaths ()
     testFlowDiagnostics ()
     printfn "Flow tests passed: %d assertions" assertions
     0

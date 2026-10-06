@@ -115,7 +115,7 @@ Still required or incomplete: recent-words, parse, ast, types, metrics, replace 
 
 Proposed memory follow-on: [scoped arena lifetime contract](MEMORY-REGIONS.md), including escape/promotion, generation/snapshot retention, cleanup, capacity and used/reserved/peak measurements. This is pending design/implementation and must not be confused with existing temporary words, managed GC or the value-size safety bounds. It follows the early authoring migration; native allocator integration remains conditional later work.
 
-User-directed early frontend migration now precedes further controlled agent experiments: [expression/dot source plan](FRONTEND-MIGRATION.md). Preserve words, strong types, effects, library gates and authoritative semantic IR; implement named inputs/locals, static first-input dot calls, explicit versioned source/persistence, complete legacy semantic coverage and default cutover. Close-to-first-use is lint. Do not introduce mutable language globals; retain explicit values/effects. The default Runtime/protocol frontend is still RPN. The opt-in Flow frontend now supports typed expressions, closed containers/cases, static callbacks, ordered output vectors, authored tests/examples and exact root calls. Complete batch lowering/call bindings, durable authored metadata and default cutover remain required. Focused compiler checks do not establish the migration acceptance criteria.
+User-directed early frontend migration now precedes further controlled agent experiments: [expression/dot source plan](FRONTEND-MIGRATION.md). Preserve words, strong types, effects, library gates and authoritative semantic IR; implement named inputs/locals, static first-input dot calls, explicit versioned source/persistence, complete legacy semantic coverage and default cutover. Close-to-first-use is lint. Do not introduce mutable language globals; retain explicit values/effects. The default Runtime/protocol frontend is still RPN. The opt-in Flow frontend now supports typed expressions, closed containers/cases, static callbacks, ordered output vectors, authored tests/examples and exact root calls. Word-batch signature/body compilation is verified in report 036. Source-backed call bindings/re-resolution, complete attachment assembly, durable authored metadata and default cutover remain required. Focused compiler checks do not establish the migration acceptance criteria.
 
 User addition: the typed semantic IR must become the authoritative executable representation. Runtime now routes through the verified IR interpreter; report 010 records cutover validation. Further source-stage inspection remains pending; LLVM development JIT and release AOT remain conditional follow-ons after successful agent experiments. See [the backend plan](BACKENDS.md).
 
@@ -149,6 +149,15 @@ Flow word-batch evidence: [report 036](../reports/036-flow-batch-integration.md)
 records 473 passing focused Flow assertions. A type-distinct signature catalog
 enables forward ordinary/dot/callback references and explicit identity/revision
 preserving replacements; final real bodies use the existing IR compiler.
-Catalog and pre-prune origin checks reject malformed host data. Full integration
-is tracked in the report. Authored call bindings/re-resolution, complete project
+Catalog and pre-prune origin checks reject malformed host data. The fresh 24-check
+Release gate and exact source-commit CI passed; post-publication main CI is
+recorded in report 038. Authored call bindings/re-resolution, complete project
 attachments, durable Flow storage/history and default cutover remain required.
+
+Flow source-binding evidence: [report 038](../reports/038-flow-binding-integration.md)
+records 564 Flow assertions, a 31-assertion independent probe and the final
+passing 25-check Release gate. Structural call paths reconcile with verified IR;
+retained source cannot silently redirect to a different stable target identity.
+Exact source/body/parameter proofs and identity-preserving Stack-to-Flow
+replacement are covered. Attachment bindings, durable manifest v2, Runtime
+dispatch/default cutover and controlled agent evaluation remain required.

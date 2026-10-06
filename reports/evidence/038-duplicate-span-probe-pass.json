@@ -1,0 +1,10 @@
+{
+  "command": "dotnet fsi --exec --reference:.agentlang/binding-probe/43555fb9119bf94e15c1575adb4b7f5e6604f1450ce3dbb4ef7c2e3d0e7bda59/AgentLang.Core.dll scripts/Verify-FlowCallBindings.fsx",
+  "result": {
+    "chunk_id": "74b875",
+    "wall_time_seconds": 1.5086499,
+    "exit_code": 0,
+    "original_token_count": 80,
+    "output": "Core checkpoint: D:\\code\\AgentLang\\.agentlang\\binding-probe\\43555fb9119bf94e15c1575adb4b7f5e6604f1450ce3dbb4ef7c2e3d0e7bda59\\AgentLang.Core.dll\r\nCore LastWriteTimeUtc: 10/5/2026 11:21:01 PM\r\nCore SHA256: 43555fb9119bf94e15c1575adb4b7f5e6604f1450ce3dbb4ef7c2e3d0e7bda59\r\nFlow call-binding probe passed 10 assertions.\r\n"
+  }
+}

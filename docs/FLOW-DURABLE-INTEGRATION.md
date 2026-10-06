@@ -27,7 +27,7 @@ Keep Flow authorship separate from the legacy-compatible compiler projection. Ad
 
 At load, dispatch directly from `WordRevision` source metadata to the matching parser. Parse and validate all objects into a proposed authored state, build the complete compiler context and Flow parameter catalog, resolve calls against the complete proposed dictionary, lower every Flow definition, compile the verified program, and compile source-aware tests/examples. Validate heads, revision metadata, type declarations, dependencies, effects, and source projections before activating the new runtime snapshot. A failed parse or compile leaves the active state untouched. A missing `CURRENT` remains the explicit read-only legacy import path; a malformed Flow object never triggers legacy parsing.
 
-The whole-project compilation path must first predeclare every name, complete signature, preserved word ID, and parameter name, then resolve and lower every body against that closed proposed vocabulary. The current incremental `compileWord` path refuses an existing name and is not a reload or replacement mechanism. Do not verify empty placeholder bodies or allocate new IDs to sidestep replacement checks. This batch path must handle forward references, recursion policy, and ambiguous dot stages as properties of the complete proposed program. Allocate globally disjoint origin markers across all lowered words and rebuild the projection when edits or deletions change the source set; do not infer the next marker from `Map.Count` when marker IDs may have gaps.
+The whole-project compilation path must first predeclare every name, complete signature, preserved word ID, and parameter name, then resolve and lower every body against that closed proposed vocabulary. The implemented `compileBatchWords` prerequisite supports forward references and checked additions/replacements through a body-free signature catalog and one final real-body compile (report 036). The incremental `compileWord` path still refuses existing names. Neither API alone is complete durable project editing: authored binding stability, unchanged-source re-resolution and complete attachment assembly remain required. Do not verify empty placeholder bodies or allocate new IDs to sidestep replacement checks. Allocate globally disjoint origin markers across all lowered words and rebuild the projection when edits or deletions change the source set; do not infer the next marker from `Map.Count` when marker IDs may have gaps.
 
 At publication, derive a complete proposed source state first. Run the existing candidate, transitive durable-caller, validator-closure, test, and library-coverage gates against that exact verified program. Persist Flow definition/test/example bytes and a v2 manifest only after those checks pass. The current manifest's content-addressed revision refs preserve provenance and attached cases. Failed gates must leave the old `CURRENT` pointer authoritative; orphaned immutable objects are acceptable because they are unreachable.
 
@@ -35,7 +35,7 @@ At publication, derive a complete proposed source state first. Run the existing 
 
 - `Storage.fs`: versioned v1/v2 manifest serialization/parsing; per-revision frontend/version metadata; v1 hash compatibility; retain current pointer/restore/CAS semantics. Keep the current source-object kinds unless a separate syntax version cannot be represented safely in revision metadata.
 - `FlowSyntax.fs` / `FlowParser.fs` / `FlowSource`: parse a complete project/source object set, render canonical Flow definitions/tests/examples, and expose syntax version in source metadata. Add tree-based rename operations. Keep type declarations and validators explicit.
-- `FlowLowering.fs` / `Compiler.fs`: provide a whole-project lowering entry point, named parameter catalog, stable resolved-call identities, and origin-aware test/example compilation. The origin-aware `compileIrTestWithExpectationAgainstProgramWithSourceOrigins` and `compileIrExampleAgainstProgramWithSourceOrigins` APIs are implemented and covered by report 026. Use them with the full retained context origins plus disjoint attachment markers against the exact verified snapshot; the legacy wrappers intentionally retain empty-origin behavior. Flow-authored attachment parsing/lowering is the next Core slice, and Runtime integration remains separate. Compile pure expected expressions as separate isolated bodies and never merge their traces into tested-word coverage.
+- `FlowLowering.fs` / `Compiler.fs`: extend the implemented word-batch prerequisite with authored bindings and complete project attachment assembly. The origin-aware `compileIrTestWithExpectationAgainstProgramWithSourceOrigins` and `compileIrExampleAgainstProgramWithSourceOrigins` APIs are implemented and covered by report 026; Flow-authored attachment parsing/lowering is implemented in reports 031/032. Use them with the full retained context origins plus disjoint attachment markers against the exact verified snapshot; the legacy wrappers intentionally retain empty-origin behavior. Runtime/durable integration remains separate. Compile pure expected expressions as separate isolated bodies and never merge their traces into tested-word coverage.
 - `Runtime.fs`: extend `DictionaryState` with authored source by stable ID; retain compiled words only as derived/staged views. Update `sourceFor`, `currentManifestFor`, `parsedState`, `validateStoredProject`, `loadProject`, `commitCandidates`, replace, rename, history/diff, snapshot load, and task rollback. `describe` must read Flow parameter names; `source` and history must return actual authored Flow, not translated RPN.
 - `Source.fs`: retain explicit legacy render/rename APIs and add Flow-aware render/rename/history helpers. Preserve old revision bytes. Shared name rewrites must visit calls, static callback references, test/example bodies, scalar validators, and ownership references.
 - `Protocol.fs` / CLI: add explicit opt-in Flow operations or a strictly validated frontend field for `eval`/`define` during stage 3. Keep stack parsing on a named legacy route. Change the default only in the later cutover stage after the complete Flow acceptance gate.
@@ -83,13 +83,52 @@ Manifest v2 adds `sourceFormat: { frontend, version }` to each word revision. Te
 
 Rename may rewrite affected resolved dot calls to qualified ordinary calls with the receiver first, while preserving the authored argument order and evaluating the receiver once. It must reject a rename when that transformation cannot be proven safe, using stable `WordId` bindings and source spans to identify affected sites.
 
-The remaining implementation audit is to cross-check the frozen v1 serialization/hash fixtures; verify manifest-selected parser dispatch and complete-program predeclaration; check the in-progress origin-aware compiler APIs against exact verified snapshots; and exercise mixed-format reload, rename, rollback, snapshot restore, branch coverage, and library gates in fresh processes. These are future acceptance gates, not claims that durable Flow integration already works.
+The remaining implementation audit is to preserve the validated frozen v1 bytes while adding v2 serialization; implement manifest-selected parser dispatch and authored binding stability; assemble complete attachments through the implemented origin-aware compiler APIs; and exercise mixed-format reload, rename, rollback, snapshot restore, branch coverage, and library gates in fresh processes. These are future acceptance gates, not claims that durable Flow integration already works.
 
 ## Concrete schema and compatibility prerequisites
 
 The single current `Storage.formatVersion = 1` is reused by manifest validation, CURRENT pointers and named snapshots. Split these concerns before adding manifest v2: pointer and snapshot writers/parsers remain version 1; manifest readers accept 1/2 and serializers use the manifest's own schema. Revision parsing must receive its enclosing manifest version. For v1, synthesize stack/version-1 source metadata internally and omit all new fields when serializing a v1 manifest. Keep the nested v2 `sourceFormat: { frontend, version }` shape specified above; do not let a shared constant accidentally upgrade pointers or snapshots.
 
-Existing Storage fixtures construct v1 manifests through the current serializer and therefore do not freeze compatibility bytes. Add a literal v1 CURRENT, manifest and referenced word/test/example/project objects with pinned hashes, independent of production serialization. Prove load, history, capture/restore and named snapshot restore retain those exact object bytes and manifest identity. Later v2 tests must add a revision under the same stable word ID while every historical v1 reference and object hash remains unchanged.
+The literal v1 prerequisite is implemented in `tests/AgentLang.Storage.Tests/fixtures/v1-golden`: CURRENT, manifest and referenced word/test/example/project objects have six pinned hashes independent of production serialization. Load, history, capture/restore and named snapshot restore preserve exact bytes and manifest identity; reports 032/036 record passing storage checks (9 groups / 105 assertions). This proves current v1 behavior, not v2 compatibility. Later v2 tests must add a revision under the same stable word ID while every historical v1 reference and object hash remains unchanged.
+
+### Audited version boundaries
+
+The current implementation has three independent serialized boundaries sharing
+one private constant. The migration must address each explicitly:
+
+| Boundary | Current implementation | Required migration |
+| --- | --- | --- |
+| Manifest | `Storage.manifestNode`, `parseManifest`, `parseWordRevision`, `validateManifest` | Read the enclosing version before revision parsing; version-aware revision encoding; accept manifest 1/2 only |
+| CURRENT authority pointer | `Storage.pointerNode` and pointer parsing | Keep version 1 and existing authority/generation encoding |
+| Named snapshot | `Storage.snapshotFileNode`, `parseSnapshotFile` | Keep version 1; its referenced manifest may be 1 or 2 |
+| Runtime publication | `Runtime.currentManifestFor` constructs both the initial manifest and final manifest with literal version 1 | Select the format from the actual authored revisions; preserve existing historical source refs and metadata |
+| Runtime source export/load | `Runtime.sourceFor`, `serializeWord`, `parseProjectSource` currently render/parse stack source | Dispatch authoritative revision objects by source format; do not run Flow through stack metadata insertion or parse the mixed export as stack source |
+
+F# compilation order is also a boundary: `Storage.fs` precedes `TypedIR.fs`,
+`Compiler.fs` and `FlowLowering.fs`. Persisted binding DTOs must therefore not
+depend on `FlowLowering.FlowCallBinding` or verified IR types. Use storage-neutral
+identity/source/path representations and an explicit validated conversion at
+the Runtime/compiler boundary. `FlowSyntax.fs` already precedes Storage, but
+sharing structural path types does not make compiler-owned target resolution a
+storage responsibility. Storage validates schema, ownership and exact object
+references; Runtime validates the authored binding against verified semantics.
+
+Acceptance must exercise a version-1 snapshot referring to a version-2 manifest,
+as well as a frozen version-1 manifest round trip. Reject unsupported manifest
+versions before attempting version-specific revision fields so failures remain
+structured and deterministic. The existing golden tests exercise load, history,
+captured restore and named restore; they do not yet prove these mixed-version
+cases.
+
+The storage-neutral target representation distinguishes user, primitive and
+generated targets with a stable string identity; it does not persist the target
+revision as a rebinding key. Runtime still checks each newly compiled IR call's
+exact revision. Bound binding counts, structural path depth/indexes and identity
+text before recursive consumers. Validate source membership and duplicate
+`(source reference, structural site)` keys in Storage, and account for binding
+metadata in capacity limits. Only parsed/verified semantics can establish exact
+site completeness. A version-1 serializer must reject Flow metadata or nonempty
+bindings rather than omit them and publish a different meaning.
 
 Persist resolved call bindings explicitly in v2 revision metadata (an ordered `callBindings` list), rather than assuming they can be recovered from a newly expanded vocabulary. Each binding contains its authored source reference (kind and hash), a structural AST site key and target stable ID; the containing word ID/revision plus exact source reference scope the key. Cover the definition and every attached test/example object, including expected-expression calls, and require each source reference to belong to that revision. Site keys identify the call role/path within that exact authored object, not regenerated IR ordinals or source line numbers. Include ordinary callees, receiver stages and static callback references. Validate unique/exact site coverage and compare each entry with the final verified IR's resolved identity. Stack revisions use no Flow binding entries. A binding list is ordered deterministically by source reference then site key. Changed source receives a newly verified binding list; unchanged retained source must match its persisted list before publication. Historical revision bindings remain immutable. This is a storage contract to implement after the complete lowering/binding API exists, not a currently supported schema field.
 

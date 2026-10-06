@@ -1,6 +1,8 @@
 namespace AgentLang
 
 open System
+open System.Security.Cryptography
+open System.Text
 
 /// Lowering for the first explicit Flow syntax slice. Resolution is static and
 /// the output remains ordinary Expr consumed by the existing checked compiler.
@@ -58,6 +60,71 @@ module FlowLowering =
           Program: VerifiedIrProgram
           SiteOrigins: Map<SourceSiteId, SourceSpan> }
 
+    /// Exact source bytes plus the host's owner assertion. The lowering API
+    /// checks the hash and compiler snapshot identity; the host remains
+    /// responsible for establishing manifest membership.
+    type FlowSourceDocument =
+        { OwnerName: string
+          OwnerId: WordId
+          OwnerRevision: int
+          Reference: SourceRef
+          SourceFile: string
+          Content: string }
+
+    /// The owner set is explicitly declared by the host because a legacy
+    /// compiler Context does not say which definitions were authored in Flow.
+    type FlowSourceInventory =
+        { ExpectedFlowOwnerIds: Set<WordId>
+          Sources: FlowSourceDocument list }
+
+    type FlowSourceChange =
+        { RevisionIntent: FlowWordRevisionIntent
+          Source: FlowSourceDocument }
+
+    [<RequireQualifiedAccess>]
+    type FlowCallForm =
+        | Direct
+        | AbsoluteRoot
+        | DotStage of string
+        | StaticCallback of string * FlowWordReferenceQualification
+
+    [<RequireQualifiedAccess>]
+    type FlowCallTargetIdentity =
+        | UserWord of WordId
+        | Primitive of PrimitiveId
+        | GeneratedWord of WordId
+
+    type FlowCallSite =
+        { Path: FlowAstPath
+          Span: SourceSpan
+          Form: FlowCallForm
+          RequestedName: string
+          Target: FlowCallTargetIdentity
+          TargetRevision: int option }
+
+    /// A transient binding proof, scoped to exact owner source bytes and a
+    /// structural AST path rather than source-span uniqueness or IR ordinals.
+    type FlowCallBinding =
+        { OwnerName: string
+          OwnerId: WordId
+          OwnerRevision: int
+          Source: SourceRef
+          Site: FlowCallSite }
+
+    type FlowBoundBatchCompilation =
+        { LoweredWords: FlowLoweredWord list
+          Context: Context
+          Program: VerifiedIrProgram
+          SiteOrigins: Map<SourceSiteId, SourceSpan>
+          CallBindings: FlowCallBinding list }
+
+    type CompiledCallBoundWord =
+        { Lowered: FlowLoweredWord
+          Context: Context
+          Program: VerifiedIrProgram
+          SiteOrigins: Map<SourceSiteId, SourceSpan>
+          CallSites: FlowCallSite list }
+
     type private Binding =
         { InternalName: string
           Type: LangType }
@@ -78,6 +145,52 @@ module FlowLowering =
           Identity: WordId option
           Revision: int
           Span: SourceSpan }
+
+    type private FlowCallEvent =
+        { Path: FlowAstPath
+          Span: SourceSpan
+          Form: FlowCallForm
+          RequestedName: string
+          Candidate: Candidate }
+
+    type private LoweredFragment =
+        { Expressions: Expr list
+          CallEvents: FlowCallEvent list }
+
+    type private SemanticExpr =
+        | SemanticPush of Literal
+        | SemanticCall of string
+        | SemanticConstruct of ContainerConstructor * LangType list
+        | SemanticMapList of string
+        | SemanticFilterList of string
+        | SemanticEachList of string
+        | SemanticLet of string
+        | SemanticLoad of string
+        | SemanticIf of SemanticExpr list * SemanticExpr list
+        | SemanticScope of SemanticExpr list
+        | SemanticMatchOption of string * SemanticExpr list * SemanticExpr list
+        | SemanticMatchResult of string * string * SemanticExpr list * SemanticExpr list
+
+    type private RetainedFlowSource =
+        { Document: FlowSourceDocument
+          Definition: FlowWordDefinition
+          BaseBindings: FlowCallSite list }
+
+    type private AuthoredLoweredOwner =
+        { Document: FlowSourceDocument option
+          OwnerName: string
+          OwnerId: WordId
+          OwnerRevision: int
+          Lowered: FlowLoweredWord
+          CallEvents: FlowCallEvent list }
+
+    type private BatchCompilationArtifacts =
+        { Compilation: FlowBatchCompilation
+          AuthoredOwners: AuthoredLoweredOwner list }
+
+    type private ValidatedFlowSourceChange =
+        { Change: FlowWordChange
+          Source: FlowSourceDocument }
 
     type private LoweringState =
         { mutable NextTemporary: int
@@ -620,27 +733,51 @@ module FlowLowering =
         rememberSpan state span
         span
 
-    let rec private lowerFlowExpression (context: Context) (state: LoweringState) (environment: Map<string, Binding>) expression : Expr list =
+    let private extendPath (FlowAstPath.FlowAstPath segments) segment = FlowAstPath.FlowAstPath(segments @ [ segment ])
+
+    let private fragment expressions callEvents =
+        { Expressions = expressions
+          CallEvents = callEvents }
+
+    let private appendFragments (fragments: LoweredFragment list) trailingExpressions =
+        { Expressions = (fragments |> List.collect (fun value -> value.Expressions)) @ trailingExpressions
+          CallEvents = fragments |> List.collect (fun value -> value.CallEvents) }
+
+    let private argumentPath form index =
+        match form with
+        | FlowCallForm.Direct -> FlowAstPathSegment.CallArgument index
+        | FlowCallForm.AbsoluteRoot -> FlowAstPathSegment.RootCallArgument index
+        | FlowCallForm.DotStage _ -> FlowAstPathSegment.DotArgument index
+        | FlowCallForm.StaticCallback _ -> invalidArg (nameof form) "Static callbacks do not lower through ordinary argument binding."
+
+    let private callEvent path form requestedName candidate span =
+        { Path = path
+          Span = span
+          Form = form
+          RequestedName = requestedName
+          Candidate = candidate }
+
+    let rec private lowerFlowExpression (context: Context) (state: LoweringState) (environment: Map<string, Binding>) (path: FlowAstPath) expression : LoweredFragment =
         let span = spanOfExpression expression
         rememberSpan state span
         match expression with
-        | FlowExpression.Literal(literal, sourceSpan) -> [ Push(literal, sourceSpan) ]
+        | FlowExpression.Literal(literal, sourceSpan) -> fragment [ Push(literal, sourceSpan) ] []
         | FlowExpression.Local(name, sourceSpan) ->
             match environment.TryFind name with
-            | Some binding -> [ Load(binding.InternalName, sourceSpan) ]
+            | Some binding -> fragment [ Load(binding.InternalName, sourceSpan) ] []
             | None -> fail "FLOW_UNKNOWN_LOCAL" $"Local '{name}' is not available before its immutable binding." None (Some sourceSpan) [] [ name ]
         | FlowExpression.Call(name, arguments, callSpan) ->
             match callbackReferenceIn arguments with
             | Some reference -> rejectWordReferenceContext reference
             | None -> ()
             let candidate, bound, _ = selectCallOutputs context state environment name None arguments callSpan
-            lowerResolvedCall context state environment candidate bound None arguments callSpan
+            lowerResolvedCall context state environment path FlowCallForm.Direct name candidate bound None arguments callSpan
         | FlowExpression.RootCall(target, arguments, callSpan) ->
             match callbackReferenceIn arguments with
             | Some reference -> rejectWordReferenceContext reference
             | None -> ()
             let candidate, bound, _ = selectRootCallOutputs context state environment target arguments callSpan
-            lowerResolvedCall context state environment candidate bound None arguments callSpan
+            lowerResolvedCall context state environment path FlowCallForm.AbsoluteRoot target.Name candidate bound None arguments callSpan
         | FlowExpression.DotCall(receiver, stage, arguments, callSpan) ->
             match listCallbackOperation stage, arguments with
             | Some operation, [ FlowArgument.WordReference reference ] ->
@@ -649,14 +786,17 @@ module FlowLowering =
                 match receiverType with
                 | TList itemType ->
                     let candidate, _ = resolveListCallback context state reference itemType (callbackRequiredOutput operation)
-                    let receiverCode = lowerFlowExpression context state environment receiver
+                    let receiverFragment = lowerFlowExpression context state environment (extendPath path FlowAstPathSegment.DotReceiver) receiver
                     let listOperation =
                         match operation with
                         | ListCallbackOperation.Map -> MapList(candidate.Name, reference.Span)
                         | ListCallbackOperation.Filter -> FilterList(candidate.Name, reference.Span)
                         | ListCallbackOperation.Each -> EachList(candidate.Name, reference.Span)
                     rememberSpan state reference.Span
-                    receiverCode @ [ listOperation ]
+                    let event = callEvent (extendPath path (FlowAstPathSegment.DotArgument 0))
+                                    (FlowCallForm.StaticCallback(stage, reference.Qualification)) reference.Name candidate reference.Span
+                    let lowered = appendFragments [ receiverFragment ] [ listOperation ]
+                    { lowered with CallEvents = lowered.CallEvents @ [ event ] }
                 | actual -> fail "FLOW_CALLBACK_REQUIRES_LIST" $"Static '{stage}' callback stages require a List<T> receiver." None (Some reference.Span) [ "List<T>" ] [ Types.format actual ]
             | _, _ when Option.isSome (callbackReferenceIn arguments) ->
                 match callbackReferenceIn arguments with
@@ -667,20 +807,22 @@ module FlowLowering =
             | _ ->
                 let receiverType = inferExpression context state environment receiver
                 let candidate, bound, _ = selectCallOutputs context state environment stage (Some receiverType) arguments callSpan
-                lowerResolvedCall context state environment candidate bound (Some receiver) arguments callSpan
+                lowerResolvedCall context state environment path (FlowCallForm.DotStage stage) stage candidate bound (Some receiver) arguments callSpan
         | FlowExpression.Container(kind, typeArguments, payload, constructorSpan) ->
             inferExpression context state environment expression |> ignore
-            let payloadCode = payload |> Option.map (lowerFlowExpression context state environment) |> Option.defaultValue []
-            payloadCode @ [ ConstructContainer(coreConstructor kind, typeArguments |> List.map (fun argument -> argument.Type), constructorSpan) ]
+            let payloadFragment = payload |> Option.map (lowerFlowExpression context state environment (extendPath path FlowAstPathSegment.ContainerPayload))
+            appendFragments (payloadFragment |> Option.toList) [ ConstructContainer(coreConstructor kind, typeArguments |> List.map (fun argument -> argument.Type), constructorSpan) ]
         | FlowExpression.MatchOption(scrutinee, someCase, noneCase, matchSpan) ->
             inferOutputs context state environment expression |> ignore
             let someType = inferExpression context state environment scrutinee |> function | TOption item -> item | _ -> failwith "validated option match changed type"
             let someEnvironment = Map.add someCase.Name { InternalName = someCase.Name; Type = someType } environment
-            let someCode, _ = lowerStatements context state someEnvironment someCase.Statements
-            let noneCode, _ = lowerStatements context state environment noneCase.Statements
-            let someScope = Scope(someCode, syntheticSpan state someCase.Span)
-            let noneScope = Scope(noneCode, syntheticSpan state noneCase.Span)
-            lowerFlowExpression context state environment scrutinee @ [ MatchOption(someCase.Name, [ someScope ], [ noneScope ], matchSpan) ]
+            let someFragment, _ = lowerStatements context state someEnvironment (extendPath path (FlowAstPathSegment.OptionSomeStatement 0)) someCase.Statements
+            let noneFragment, _ = lowerStatements context state environment (extendPath path (FlowAstPathSegment.OptionNoneStatement 0)) noneCase.Statements
+            let someScope = Scope(someFragment.Expressions, syntheticSpan state someCase.Span)
+            let noneScope = Scope(noneFragment.Expressions, syntheticSpan state noneCase.Span)
+            let scrutineeFragment = lowerFlowExpression context state environment (extendPath path FlowAstPathSegment.OptionScrutinee) scrutinee
+            { Expressions = scrutineeFragment.Expressions @ [ MatchOption(someCase.Name, [ someScope ], [ noneScope ], matchSpan) ]
+              CallEvents = scrutineeFragment.CallEvents @ someFragment.CallEvents @ noneFragment.CallEvents }
         | FlowExpression.MatchResult(scrutinee, okCase, errorCase, matchSpan) ->
             inferOutputs context state environment expression |> ignore
             let okType, errorType =
@@ -689,22 +831,26 @@ module FlowLowering =
                 | _ -> failwith "validated result match changed type"
             let okEnvironment = Map.add okCase.Name { InternalName = okCase.Name; Type = okType } environment
             let errorEnvironment = Map.add errorCase.Name { InternalName = errorCase.Name; Type = errorType } environment
-            let okCode, _ = lowerStatements context state okEnvironment okCase.Statements
-            let errorCode, _ = lowerStatements context state errorEnvironment errorCase.Statements
-            let okScope = Scope(okCode, syntheticSpan state okCase.Span)
-            let errorScope = Scope(errorCode, syntheticSpan state errorCase.Span)
-            lowerFlowExpression context state environment scrutinee @ [ MatchResult(okCase.Name, errorCase.Name, [ okScope ], [ errorScope ], matchSpan) ]
+            let okFragment, _ = lowerStatements context state okEnvironment (extendPath path (FlowAstPathSegment.ResultOkStatement 0)) okCase.Statements
+            let errorFragment, _ = lowerStatements context state errorEnvironment (extendPath path (FlowAstPathSegment.ResultErrorStatement 0)) errorCase.Statements
+            let okScope = Scope(okFragment.Expressions, syntheticSpan state okCase.Span)
+            let errorScope = Scope(errorFragment.Expressions, syntheticSpan state errorCase.Span)
+            let scrutineeFragment = lowerFlowExpression context state environment (extendPath path FlowAstPathSegment.ResultScrutinee) scrutinee
+            { Expressions = scrutineeFragment.Expressions @ [ MatchResult(okCase.Name, errorCase.Name, [ okScope ], [ errorScope ], matchSpan) ]
+              CallEvents = scrutineeFragment.CallEvents @ okFragment.CallEvents @ errorFragment.CallEvents }
         | FlowExpression.If(condition, thenStatements, elseStatements, ifSpan) ->
             inferOutputs context state environment expression |> ignore
             let conditionType = inferExpression context state environment condition
             if conditionType <> TBool then fail "FLOW_IF_CONDITION_TYPE" "Flow if condition must have type Bool." None (Some(spanOfExpression condition)) [ "Bool" ] [ Types.format conditionType ]
-            let thenCode, _ = lowerStatements context state environment thenStatements
-            let elseCode, _ = lowerStatements context state environment elseStatements
-            let thenScope = Scope(thenCode, syntheticSpan state ifSpan)
-            let elseScope = Scope(elseCode, syntheticSpan state ifSpan)
-            lowerFlowExpression context state environment condition @ [ If([ thenScope ], [ elseScope ], ifSpan) ]
+            let thenFragment, _ = lowerStatements context state environment (extendPath path (FlowAstPathSegment.IfThenStatement 0)) thenStatements
+            let elseFragment, _ = lowerStatements context state environment (extendPath path (FlowAstPathSegment.IfElseStatement 0)) elseStatements
+            let thenScope = Scope(thenFragment.Expressions, syntheticSpan state ifSpan)
+            let elseScope = Scope(elseFragment.Expressions, syntheticSpan state ifSpan)
+            let conditionFragment = lowerFlowExpression context state environment (extendPath path FlowAstPathSegment.IfCondition) condition
+            { Expressions = conditionFragment.Expressions @ [ If([ thenScope ], [ elseScope ], ifSpan) ]
+              CallEvents = conditionFragment.CallEvents @ thenFragment.CallEvents @ elseFragment.CallEvents }
 
-    and private lowerResolvedCall context state environment candidate (bound: BoundArguments) receiver arguments callSpan =
+    and private lowerResolvedCall context state environment path form requestedName candidate (bound: BoundArguments) receiver arguments callSpan =
         let argumentFormalIndexes =
             let offset = if receiver.IsSome then 1 else 0
             let mutable positional = offset
@@ -718,34 +864,44 @@ module FlowLowering =
                     | _ -> -1
                 | FlowArgument.WordReference reference -> rejectWordReferenceContext reference)
         let targetName = candidate.Name
+        let receiverPath = extendPath path FlowAstPathSegment.DotReceiver
+        let valuePath index = extendPath path (argumentPath form index)
+        let lowerArgument index = function
+            | FlowArgument.Positional value | FlowArgument.Named(_, value, _) ->
+                lowerFlowExpression context state environment (valuePath index) value
+            | FlowArgument.WordReference reference -> rejectWordReferenceContext reference
+        let event = callEvent path form requestedName candidate callSpan
         if not bound.HasNamedArguments then
-            let receiverCode = receiver |> Option.map (lowerFlowExpression context state environment) |> Option.defaultValue []
-            let explicitCode =
-                arguments
-                |> List.collect (function
-                    | FlowArgument.Positional value | FlowArgument.Named(_, value, _) -> lowerFlowExpression context state environment value
-                    | FlowArgument.WordReference reference -> rejectWordReferenceContext reference)
-            receiverCode @ explicitCode @ [ Call(targetName, callSpan) ]
+            let receiverFragment = receiver |> Option.map (lowerFlowExpression context state environment receiverPath)
+            let argumentFragments = arguments |> List.mapi lowerArgument
+            let fragments = (receiverFragment |> Option.toList) @ argumentFragments
+            let lowered = appendFragments fragments [ Call(targetName, callSpan) ]
+            { lowered with CallEvents = lowered.CallEvents @ [ event ] }
         else
             let wrapperSpan = syntheticSpan state callSpan
             let mutable tempByParameter = Map.empty
             let setup = ResizeArray<Expr>()
+            let evaluatedFragments = ResizeArray<LoweredFragment>()
             match receiver with
             | Some expression ->
                 let receiverOrigin = spanOfExpression expression
                 let temporary, tempSpan = freshTemporary state receiverOrigin
-                setup.AddRange(lowerFlowExpression context state environment expression)
+                let receiverFragment = lowerFlowExpression context state environment receiverPath expression
+                evaluatedFragments.Add receiverFragment
+                setup.AddRange receiverFragment.Expressions
                 setup.Add(Let(temporary, tempSpan))
                 tempByParameter <- Map.add 0 temporary tempByParameter
             | None -> ()
-            for argument, formalIndex in List.zip arguments argumentFormalIndexes do
+            for index, (argument, formalIndex) in List.zip arguments argumentFormalIndexes |> List.indexed do
                 let value =
                     match argument with
                     | FlowArgument.Positional value | FlowArgument.Named(_, value, _) -> value
                     | FlowArgument.WordReference reference -> rejectWordReferenceContext reference
                 let origin = match argument with | FlowArgument.Named(_, _, namedSpan) -> namedSpan | _ -> spanOfExpression value
                 let temporary, tempSpan = freshTemporary state origin
-                setup.AddRange(lowerFlowExpression context state environment value)
+                let argumentFragment = lowerArgument index argument
+                evaluatedFragments.Add argumentFragment
+                setup.AddRange argumentFragment.Expressions
                 setup.Add(Let(temporary, tempSpan))
                 tempByParameter <- Map.add formalIndex temporary tempByParameter
             let loads =
@@ -758,18 +914,23 @@ module FlowLowering =
                         match argument with
                         | Some _ -> fail "FLOW_ARGUMENT_REORDER_INVARIANT" "A named argument was not evaluated into its source-order temporary." (Some targetName) (Some callSpan) [] [ string parameterIndex ]
                         | None -> fail "FLOW_ARGUMENT_VALUE_MISSING" "A call input has no lowered value." (Some targetName) (Some callSpan) [] [ string parameterIndex ])
-            Expr.Scope(List.ofSeq setup @ loads @ [ Call(targetName, callSpan) ], wrapperSpan) |> List.singleton
+            { Expressions = [ Expr.Scope(List.ofSeq setup @ loads @ [ Call(targetName, callSpan) ], wrapperSpan) ]
+              CallEvents = (evaluatedFragments |> Seq.collect (fun value -> value.CallEvents) |> Seq.toList) @ [ event ] }
 
-    and private lowerStatements context state initialEnvironment statements =
+    and private lowerStatements context state initialEnvironment path statements =
         let mutable environment = initialEnvironment
         let output = ResizeArray<Expr>()
+        let callEvents = ResizeArray<FlowCallEvent>()
         for index, statement in statements |> List.indexed do
+            let statementPath = extendPath path (FlowAstPathSegment.BlockStatement index)
             match statement with
             | FlowStatement.Let(name, value, statementSpan) ->
                 rememberSpan state statementSpan
                 if environment.ContainsKey name then fail "FLOW_LOCAL_REBOUND" $"Immutable local '{name}' is already declared in this lexical scope." None (Some statementSpan) [] [ name ]
                 let valueType = inferExpression context state environment value
-                output.AddRange(lowerFlowExpression context state environment value)
+                let valueFragment = lowerFlowExpression context state environment (extendPath statementPath FlowAstPathSegment.LetInitializer) value
+                output.AddRange valueFragment.Expressions
+                callEvents.AddRange valueFragment.CallEvents
                 output.Add(Let(name, statementSpan))
                 environment <- Map.add name { InternalName = name; Type = valueType } environment
             | FlowStatement.LetMany(bindings, value, statementSpan) ->
@@ -780,14 +941,17 @@ module FlowLowering =
                 for name, nameSpan in bindings do
                     rememberSpan state nameSpan
                     if environment.ContainsKey name then fail "FLOW_LOCAL_REBOUND" $"Immutable local '{name}' is already declared in this lexical scope." None (Some nameSpan) [] [ name ]
-                output.AddRange(lowerFlowExpression context state environment value)
+                let valueFragment = lowerFlowExpression context state environment (extendPath statementPath FlowAstPathSegment.DestructureInitializer) value
+                output.AddRange valueFragment.Expressions
+                callEvents.AddRange valueFragment.CallEvents
                 for (name, nameSpan), valueType in List.zip (List.rev bindings) (List.rev valueTypes) do
                     output.Add(Let(name, nameSpan))
                     environment <- Map.add name { InternalName = name; Type = valueType } environment
             | FlowStatement.Evaluate expression ->
                 inferExpression context state environment expression |> ignore
-                let code = lowerFlowExpression context state environment expression
-                output.AddRange code
+                let valueFragment = lowerFlowExpression context state environment (extendPath statementPath FlowAstPathSegment.EvaluateExpression) expression
+                output.AddRange valueFragment.Expressions
+                callEvents.AddRange valueFragment.CallEvents
                 if index < statements.Length - 1 then
                     let origin = spanOfExpression expression
                     let temporary, tempSpan = freshTemporary state origin
@@ -796,8 +960,11 @@ module FlowLowering =
             | FlowStatement.Return(values, statementSpan) ->
                 rememberSpan state statementSpan
                 for value in values do inferExpression context state environment value |> ignore
-                output.AddRange(values |> List.collect (lowerFlowExpression context state environment))
-        List.ofSeq output, environment
+                for returnIndex, value in List.indexed values do
+                    let valueFragment = lowerFlowExpression context state environment (extendPath statementPath (FlowAstPathSegment.ReturnOutput returnIndex)) value
+                    output.AddRange valueFragment.Expressions
+                    callEvents.AddRange valueFragment.CallEvents
+        fragment (List.ofSeq output) (List.ofSeq callEvents), environment
 
     let private makeProjection (state: LoweringState) : FlowSourceProjection =
         { AuthoredSpans = state.AuthoredSpans
@@ -820,11 +987,263 @@ module FlowLowering =
     let private sourceSites (sourceMap: Map<SourceSiteId, IrSourceSite>) =
         sourceMap |> Map.map (fun _ source -> source.SiteSpan)
 
+    type private IrAuthoredCall =
+        { Site: SourceSiteId
+          Call: IrResolvedCall
+          Operation: IrOperation }
+
+    let private authoredCallsInBlock (block: IrBlock) =
+        let rec walk (current: IrBlock) =
+            current.Code
+            |> List.collect (fun instruction ->
+                let authored =
+                    match instruction.Operation with
+                    | IrOperation.Call call
+                    | IrOperation.ListMap(call, _, _)
+                    | IrOperation.ListFilter(call, _)
+                    | IrOperation.ListEach(call, _)
+                    | IrOperation.MakeRecord(call, _)
+                    | IrOperation.GetRecordField(call, _, _)
+                    | IrOperation.UnwrapScalar(call, _) ->
+                        [ { Site = instruction.Site; Call = call; Operation = instruction.Operation } ]
+                    | IrOperation.WrapScalar(call, _, _) ->
+                        // The validator is an implicit type contract, not an
+                        // authored Flow call site.
+                        [ { Site = instruction.Site; Call = call; Operation = instruction.Operation } ]
+                    | _ -> []
+                let nested =
+                    match instruction.Operation with
+                    | IrOperation.Scope inner -> walk inner
+                    | IrOperation.If(thenBlock, elseBlock) -> walk thenBlock @ walk elseBlock
+                    | IrOperation.MatchOption(_, someBlock, noneBlock) -> walk someBlock @ walk noneBlock
+                    | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> walk okBlock @ walk errorBlock
+                    | _ -> []
+                authored @ nested)
+        walk block
+
+    let private targetIdentityOfCandidate ownerName (candidate: Candidate) =
+        match candidate.Kind with
+        | SignatureKind.TrustedPrimitive operation -> FlowCallTargetIdentity.Primitive(PrimitiveId operation)
+        | SignatureKind.Generated _ ->
+            match candidate.Identity with
+            | Some identity -> FlowCallTargetIdentity.GeneratedWord identity
+            | None -> fail "FLOW_BINDING_TARGET_ID_MISSING" "A generated Flow call has no stable target identity." (Some ownerName) (Some candidate.Span) [ "generated WordId" ] [ candidate.Name ]
+        | SignatureKind.UserWord ->
+            match candidate.Identity with
+            | Some identity -> FlowCallTargetIdentity.UserWord identity
+            | None -> fail "FLOW_BINDING_TARGET_ID_MISSING" "A user Flow call has no stable target identity." (Some ownerName) (Some candidate.Span) [ "user WordId" ] [ candidate.Name ]
+
+    let private revisionOfCandidate (candidate: Candidate) =
+        match candidate.Kind with
+        | SignatureKind.TrustedPrimitive _ -> None
+        | SignatureKind.Generated _ | SignatureKind.UserWord -> Some candidate.Revision
+
+    let private callSiteOfEvent ownerName (event: FlowCallEvent) : FlowCallSite =
+        { Path = event.Path
+          Span = event.Span
+          Form = event.Form
+          RequestedName = event.RequestedName
+          Target = targetIdentityOfCandidate ownerName event.Candidate
+          TargetRevision = revisionOfCandidate event.Candidate }
+
+    let private identityOfResolvedCall (call: IrResolvedCall) =
+        match call.ResolvedTarget with
+        | UserWordTarget(identity, _) -> FlowCallTargetIdentity.UserWord identity
+        | PrimitiveTarget identity -> FlowCallTargetIdentity.Primitive identity
+        | GeneratedWordTarget(identity, _) -> FlowCallTargetIdentity.GeneratedWord identity
+
+    let private revisionOfResolvedCall (call: IrResolvedCall) =
+        match call.ResolvedTarget with
+        | UserWordTarget(_, revision)
+        | GeneratedWordTarget(_, revision) -> Some revision
+        | PrimitiveTarget _ -> None
+
+    let private operationMatchesCandidate form (candidate: Candidate) operation =
+        match form with
+        | FlowCallForm.StaticCallback("map", _) -> match operation with | IrOperation.ListMap _ -> true | _ -> false
+        | FlowCallForm.StaticCallback("filter", _) -> match operation with | IrOperation.ListFilter _ -> true | _ -> false
+        | FlowCallForm.StaticCallback("each", _) -> match operation with | IrOperation.ListEach _ -> true | _ -> false
+        | FlowCallForm.StaticCallback _ -> false
+        | _ ->
+            match candidate.Kind, operation with
+            | SignatureKind.Generated(RecordConstructor _), IrOperation.MakeRecord _ -> true
+            | SignatureKind.Generated(RecordAccessor _), IrOperation.GetRecordField _ -> true
+            | SignatureKind.Generated(ScalarConstructor _), IrOperation.WrapScalar _ -> true
+            | SignatureKind.Generated(ScalarAccessor _), IrOperation.UnwrapScalar _ -> true
+            | SignatureKind.Generated _, _ -> false
+            | (SignatureKind.TrustedPrimitive _ | SignatureKind.UserWord), IrOperation.Call _ -> true
+            | _ -> false
+
+    let private expectedSourceKind = function
+        | FlowCallForm.StaticCallback("map", _) -> "list-map"
+        | FlowCallForm.StaticCallback("filter", _) -> "list-filter"
+        | FlowCallForm.StaticCallback("each", _) -> "list-each"
+        | FlowCallForm.StaticCallback _ -> "invalid-list-callback"
+        | _ -> "call"
+
+    let private reconcileCallEvents (program: VerifiedIrProgram) ownerName ownerId ownerRevision (events: FlowCallEvent list) =
+        match events |> List.countBy (fun event -> event.Path) |> List.tryFind (fun (_, count) -> count > 1) with
+        | Some(path, _) -> fail "FLOW_BINDING_PATH_DUPLICATE" "Two authored call events resolved to the same structural AST path." (Some ownerName) None [] [ sprintf "%A" path ]
+        | None -> ()
+        let programData = VerifiedIrProgram.inspect program
+        let functionValue =
+            programData.FunctionsById.TryFind ownerId
+            |> Option.defaultWith (fun () -> fail "FLOW_BINDING_OWNER_MISSING" "The verified program has no Flow binding owner function." (Some ownerName) None [ sprintf "%A" ownerId ] [])
+        if functionValue.FunctionRevision <> ownerRevision then
+            fail "FLOW_BINDING_OWNER_REVISION" "The verified owner revision does not match its Flow call-binding source." (Some ownerName) None [ string ownerRevision ] [ string functionValue.FunctionRevision ]
+        let actual = authoredCallsInBlock functionValue.FunctionBody
+        if actual.Length <> events.Length then
+            fail "FLOW_BINDING_IR_CALL_COUNT" "The captured Flow call events do not cover the verified owner's call-like IR operations." (Some ownerName) None
+                [ string events.Length ] [ string actual.Length ]
+        for index, (event, actualCall) in List.zip events actual |> List.indexed do
+            let site =
+                programData.SourceMap.TryFind actualCall.Site
+                |> Option.defaultWith (fun () -> fail "FLOW_BINDING_IR_SITE_MISSING" "A verified call-like operation has no source-map entry." (Some ownerName) (Some event.Span) [] [ sprintf "%A" actualCall.Site ])
+            if site.SiteOwner <> Some ownerId then
+                fail "FLOW_BINDING_IR_OWNER_MISMATCH" "A call-like IR source site belongs to a different word than the captured Flow event." (Some ownerName) (Some event.Span)
+                    [ sprintf "%A" ownerId ] [ sprintf "%A" site.SiteOwner ]
+            if site.SiteSpan <> event.Span then
+                fail "FLOW_BINDING_IR_SPAN_MISMATCH" "A call-like IR source span does not match its ordered Flow event." (Some ownerName) (Some event.Span)
+                    [ sprintf "%A" event.Span ] [ sprintf "%A" site.SiteSpan ]
+            if site.SourceKind <> expectedSourceKind event.Form then
+                fail "FLOW_BINDING_IR_KIND_MISMATCH" "A call-like IR source kind does not match the authored Flow call form." (Some ownerName) (Some event.Span)
+                    [ expectedSourceKind event.Form ] [ site.SourceKind ]
+            let expectedTarget = targetIdentityOfCandidate ownerName event.Candidate
+            let actualTarget = identityOfResolvedCall actualCall.Call
+            if actualTarget <> expectedTarget then
+                fail "FLOW_BINDING_IR_TARGET_MISMATCH" "Verified IR resolved a Flow call to a different stable target identity." (Some ownerName) (Some event.Span)
+                    [ sprintf "%A" expectedTarget ] [ sprintf "%A" actualTarget ]
+            let expectedRevision = revisionOfCandidate event.Candidate
+            let actualRevision = revisionOfResolvedCall actualCall.Call
+            if actualRevision <> expectedRevision then
+                fail "FLOW_BINDING_IR_TARGET_REVISION" "Verified IR resolved a Flow call to a different target revision than the final signature catalog." (Some ownerName) (Some event.Span)
+                    [ sprintf "%A" expectedRevision ] [ sprintf "%A" actualRevision ]
+            if actualCall.Call.ResolvedName <> event.Candidate.Name then
+                fail "FLOW_BINDING_IR_TARGET_NAME" "Verified IR resolved a Flow call through a different dictionary name than the selected candidate." (Some ownerName) (Some event.Span)
+                    [ event.Candidate.Name ] [ actualCall.Call.ResolvedName ]
+            if not (operationMatchesCandidate event.Form event.Candidate actualCall.Operation) then
+                fail "FLOW_BINDING_IR_OPERATION_MISMATCH" "Verified IR lowered a Flow call through a different operation kind." (Some ownerName) (Some event.Span)
+                    [ sprintf "%A" event.Candidate.Kind; sprintf "%A" event.Form ] [ sprintf "%A" actualCall.Operation ]
+        events |> List.map (callSiteOfEvent ownerName)
+
+    let rec private semanticExpressions (expressions: Expr list) : SemanticExpr list =
+        let rec normalize = function
+            | Push(literal, _) -> SemanticPush literal
+            | Call(name, _) -> SemanticCall name
+            | ConstructContainer(kind, typeArguments, _) -> SemanticConstruct(kind, typeArguments)
+            | MapList(name, _) -> SemanticMapList name
+            | FilterList(name, _) -> SemanticFilterList name
+            | EachList(name, _) -> SemanticEachList name
+            | Let(name, _) -> SemanticLet name
+            | Load(name, _) -> SemanticLoad name
+            | If(thenBranch, elseBranch, _) -> SemanticIf(semanticExpressions thenBranch, semanticExpressions elseBranch)
+            | Scope(body, _) -> SemanticScope(semanticExpressions body)
+            | MatchOption(name, someBranch, noneBranch, _) -> SemanticMatchOption(name, semanticExpressions someBranch, semanticExpressions noneBranch)
+            | MatchResult(okName, errorName, okBranch, errorBranch, _) ->
+                SemanticMatchResult(okName, errorName, semanticExpressions okBranch, semanticExpressions errorBranch)
+        expressions |> List.map normalize
+
+    let private validateFlowSourceDocument (document: FlowSourceDocument) =
+        if String.IsNullOrWhiteSpace document.OwnerName then
+            fail "FLOW_SOURCE_OWNER_INVALID" "An authored Flow source document requires an owner name." None None [ "nonempty word name" ] [ document.OwnerName ]
+        if String.IsNullOrWhiteSpace document.SourceFile then
+            fail "FLOW_SOURCE_FILE_INVALID" "An authored Flow source document requires a source file label for diagnostics." (Some document.OwnerName) None [ "nonempty source file" ] [ document.SourceFile ]
+        if document.OwnerRevision < 0 then
+            fail "FLOW_SOURCE_REVISION_INVALID" "An authored Flow source revision must be nonnegative." (Some document.OwnerName) None [ "nonnegative revision" ] [ string document.OwnerRevision ]
+        match document.OwnerId with
+        | WordId raw when String.IsNullOrWhiteSpace raw ->
+            fail "FLOW_SOURCE_OWNER_ID_INVALID" "An authored Flow source document requires a nonempty stable owner ID." (Some document.OwnerName) None [ "nonempty WordId" ] [ raw ]
+        | _ -> ()
+        if document.Reference.Kind <> StorageObjectKind.WordDefinition then
+            fail "FLOW_SOURCE_KIND_MISMATCH" "Flow word source references must identify word-definition objects." (Some document.OwnerName) None
+                [ string StorageObjectKind.WordDefinition ] [ string document.Reference.Kind ]
+        if isNull document.Content then
+            fail "FLOW_SOURCE_CONTENT_INVALID" "Authored Flow source content cannot be null." (Some document.OwnerName) None [ "UTF-8 source text" ] [ "null" ]
+        let actualReference =
+            try Storage.sourceObject StorageObjectKind.WordDefinition document.Content |> fun source -> source.Reference
+            with
+            | :? EncoderFallbackException ->
+                fail "FLOW_SOURCE_UTF8_INVALID" "Authored Flow source must encode as strict UTF-8 without replacement characters." (Some document.OwnerName) None [ "valid UTF-16 source text" ] [ "unpaired surrogate" ]
+        if actualReference <> document.Reference then
+            fail "FLOW_SOURCE_HASH_MISMATCH" "The supplied Flow source reference does not match the exact strict UTF-8 source bytes." (Some document.OwnerName) None
+                [ actualReference.Hash ] [ document.Reference.Hash ]
+        match FlowParser.parseWord document.SourceFile document.Content with
+        | Ok definition when definition.Name = document.OwnerName -> definition
+        | Ok definition ->
+            fail "FLOW_SOURCE_OWNER_NAME_MISMATCH" "The parsed Flow source word name differs from its host-declared owner name." (Some document.OwnerName) (Some definition.Span)
+                [ document.OwnerName ] [ definition.Name ]
+        | Error problem -> raise (LanguageException { problem with Word = Some document.OwnerName })
+
+    let private flowPathsAtSpan (flowWord: FlowWordDefinition) (targetSpan: SourceSpan) =
+        let found = ResizeArray<FlowAstPath>()
+        let add path span =
+            if span = targetSpan then found.Add path
+        let rec walkExpression path expression =
+            add path (spanOfExpression expression)
+            match expression with
+            | FlowExpression.Call(_, arguments, _) ->
+                arguments |> List.iteri (fun index argument -> walkArgument path FlowCallForm.Direct index argument)
+            | FlowExpression.RootCall(_, arguments, _) ->
+                arguments |> List.iteri (fun index argument -> walkArgument path FlowCallForm.AbsoluteRoot index argument)
+            | FlowExpression.DotCall(receiver, stage, arguments, _) ->
+                walkExpression (extendPath path FlowAstPathSegment.DotReceiver) receiver
+                arguments |> List.iteri (fun index argument -> walkArgument path (FlowCallForm.DotStage stage) index argument)
+            | FlowExpression.If(condition, thenStatements, elseStatements, _) ->
+                walkExpression (extendPath path FlowAstPathSegment.IfCondition) condition
+                walkStatements (extendPath path (FlowAstPathSegment.IfThenStatement 0)) thenStatements
+                walkStatements (extendPath path (FlowAstPathSegment.IfElseStatement 0)) elseStatements
+            | FlowExpression.Container(_, _, payload, _) ->
+                payload |> Option.iter (walkExpression (extendPath path FlowAstPathSegment.ContainerPayload))
+            | FlowExpression.MatchOption(scrutinee, someCase, noneCase, _) ->
+                walkExpression (extendPath path FlowAstPathSegment.OptionScrutinee) scrutinee
+                walkStatements (extendPath path (FlowAstPathSegment.OptionSomeStatement 0)) someCase.Statements
+                walkStatements (extendPath path (FlowAstPathSegment.OptionNoneStatement 0)) noneCase.Statements
+            | FlowExpression.MatchResult(scrutinee, okCase, errorCase, _) ->
+                walkExpression (extendPath path FlowAstPathSegment.ResultScrutinee) scrutinee
+                walkStatements (extendPath path (FlowAstPathSegment.ResultOkStatement 0)) okCase.Statements
+                walkStatements (extendPath path (FlowAstPathSegment.ResultErrorStatement 0)) errorCase.Statements
+            | FlowExpression.Literal _ | FlowExpression.Local _ -> ()
+        and walkArgument path form index argument =
+            let argumentPath = extendPath path (argumentPath form index)
+            match argument with
+            | FlowArgument.Positional expression -> walkExpression argumentPath expression
+            | FlowArgument.Named(_, expression, nameSpan) ->
+                add argumentPath nameSpan
+                walkExpression argumentPath expression
+            | FlowArgument.WordReference reference -> add argumentPath reference.Span
+        and walkStatements path statements =
+            statements
+            |> List.iteri (fun index statement ->
+                let statementPath = extendPath path (FlowAstPathSegment.BlockStatement index)
+                match statement with
+                | FlowStatement.Let(_, value, _) -> walkExpression (extendPath statementPath FlowAstPathSegment.LetInitializer) value
+                | FlowStatement.LetMany(_, value, _) -> walkExpression (extendPath statementPath FlowAstPathSegment.DestructureInitializer) value
+                | FlowStatement.Evaluate expression -> walkExpression (extendPath statementPath FlowAstPathSegment.EvaluateExpression) expression
+                | FlowStatement.Return(values, _) ->
+                    values |> List.iteri (fun outputIndex value ->
+                        walkExpression (extendPath statementPath (FlowAstPathSegment.ReturnOutput outputIndex)) value))
+        walkStatements (FlowAstPath.FlowAstPath []) flowWord.Body
+        found |> Seq.toList
+
+    let private withFlowOwnerPath (flowWord: FlowWordDefinition) action =
+        try action ()
+        with
+        | LanguageException diagnostic ->
+            let paths =
+                diagnostic.Span
+                |> Option.map (flowPathsAtSpan flowWord)
+                |> Option.defaultValue []
+            let pathText = paths |> List.map (sprintf "%A") |> String.concat ", "
+            let message =
+                if List.isEmpty paths then diagnostic.Message
+                else diagnostic.Message + " Flow AST path(s): " + pathText + "."
+            raise (LanguageException { diagnostic with Word = Some flowWord.Name; Message = message })
+
     let private lowerExpressionBody context expression : FlowLoweredExpression =
         let state = freshState context
         inferExpression context state Map.empty expression |> ignore
-        let lowered = lowerFlowExpression context state Map.empty expression
-        { Expressions = lowered
+        let lowered = lowerFlowExpression context state Map.empty (FlowAstPath.FlowAstPath []) expression
+        { Expressions = lowered.Expressions
           SourceText = FlowSource.renderExpression expression
           SyntaxVersion = 1
           Projection = makeProjection state }
@@ -852,7 +1271,11 @@ module FlowLowering =
           Body = body
           SiteOrigins = sourceSites bodyData.BodySourceMap }
 
-    let private lowerWordWithSignatures context signatures retainedOrigins (flowWord: FlowWordDefinition) : FlowLoweredWord =
+    type private LoweredWordArtifacts =
+        { Lowered: FlowLoweredWord
+          CallEvents: FlowCallEvent list }
+
+    let private lowerWordWithSignaturesAndEvents context signatures retainedOrigins (flowWord: FlowWordDefinition) : LoweredWordArtifacts =
         FlowStructure.validateWordNesting flowWord
         if flowWord.SyntaxVersion <> 1 then fail "FLOW_VERSION_UNSUPPORTED" "Only Flow syntax version 1 is supported by this compiler slice." (Some flowWord.Name) (Some flowWord.Span) [ "1" ] [ string flowWord.SyntaxVersion ]
         let names = flowWord.Parameters |> List.map (fun parameter -> parameter.Name)
@@ -870,7 +1293,7 @@ module FlowLowering =
             |> List.mapi (fun index parameter -> index, parameter)
             |> List.rev
             |> List.map (fun (index, parameter) -> Let(internalParameterName index, syntheticSpan state parameter.Span))
-        let body, _ = lowerStatements context state environment flowWord.Body
+        let body, _ = lowerStatements context state environment (FlowAstPath.FlowAstPath []) flowWord.Body
         let definition =
             { Name = flowWord.Name
               Inputs = flowWord.Parameters |> List.map (fun parameter -> parameter.Type)
@@ -879,14 +1302,19 @@ module FlowLowering =
               Maturity = ProjectWord
               Revision = 0
               Documentation = flowWord.Documentation
-              Body = parameterBindings @ body
+              Body = parameterBindings @ body.Expressions
               SourceText = flowWord.SourceText
               Span = flowWord.Span }
-        { Definition = definition
-          ParameterNames = names
-          SourceText = flowWord.SourceText
-          SyntaxVersion = flowWord.SyntaxVersion
-          Projection = makeProjection state }
+        { Lowered =
+            { Definition = definition
+              ParameterNames = names
+              SourceText = flowWord.SourceText
+              SyntaxVersion = flowWord.SyntaxVersion
+              Projection = makeProjection state }
+          CallEvents = body.CallEvents }
+
+    let private lowerWordWithSignatures context signatures retainedOrigins flowWord =
+        (lowerWordWithSignaturesAndEvents context signatures retainedOrigins flowWord).Lowered
 
     let lowerWord context (flowWord: FlowWordDefinition) : FlowLoweredWord =
         lowerWordWithSignatures context (signatureCatalog context) context.SourceOrigins flowWord
@@ -924,6 +1352,169 @@ module FlowLowering =
             |> Map.filter (fun _ source -> source.SiteOwner = Some wordId)
             |> sourceSites
         { Lowered = lowered; Context = nextContext; Program = program; SiteOrigins = sites }
+
+    /// Compile a new Flow word and reconcile its transient AST call events with
+    /// the verified IR. This result proves the input AST-to-IR correspondence;
+    /// it does not claim that the AST came from authenticated persisted bytes.
+    let compileWordWithCallBindings (context: Context) (wordId: WordId) (flowWord: FlowWordDefinition) : CompiledCallBoundWord =
+        let signatures = signatureCatalog context
+        let artifacts = withFlowOwnerPath flowWord (fun () -> lowerWordWithSignaturesAndEvents context signatures context.SourceOrigins flowWord)
+        let lowered = artifacts.Lowered
+        Compiler.checkDefinition (knownTypes context) context.CompilerContext.Words lowered.Definition |> ignore
+        if context.CompilerContext.Words.ContainsKey lowered.Definition.Name then
+            fail "FLOW_WORD_EXISTS" $"Word '{lowered.Definition.Name}' already exists in the supplied compiler snapshot." (Some lowered.Definition.Name) (Some flowWord.Span) [] [ lowered.Definition.Name ]
+        if context.CompilerContext.WordIds.ContainsKey lowered.Definition.Name then
+            fail "FLOW_WORD_ID_EXISTS" $"Stable ID for '{lowered.Definition.Name}' already exists in the supplied compiler snapshot." (Some lowered.Definition.Name) (Some flowWord.Span) [] [ lowered.Definition.Name ]
+        let rawWordId = match wordId with | WordId value -> value
+        if String.IsNullOrWhiteSpace rawWordId then
+            fail "FLOW_WORD_ID_INVALID" "A compiled Flow word requires a nonempty stable identity." (Some lowered.Definition.Name) (Some flowWord.Span) [ "nonempty WordId" ] [ rawWordId ]
+        if context.CompilerContext.WordIds |> Map.exists (fun _ existing -> existing = wordId) then
+            fail "FLOW_WORD_ID_COLLISION" "A compiled Flow word must use a stable identity not assigned to another dictionary word." (Some lowered.Definition.Name) (Some flowWord.Span) [ "unused WordId" ] [ rawWordId ]
+        let entry =
+            { Definition = lowered.Definition
+              Builtin = None
+              Status = Candidate
+              Maturity = ProjectWord
+              Revision = lowered.Definition.Revision }
+        let compilerContext =
+            { context.CompilerContext with
+                Words = Map.add lowered.Definition.Name entry context.CompilerContext.Words
+                WordIds = Map.add lowered.Definition.Name wordId context.CompilerContext.WordIds }
+        let combinedOrigins = mergeOrigins context lowered.Projection
+        let nextContext =
+            { CompilerContext = compilerContext
+              ParameterNames = Map.add lowered.Definition.Name lowered.ParameterNames context.ParameterNames
+              SourceOrigins = combinedOrigins }
+        let program = Compiler.compileIrProgramWithSourceOrigins compilerContext combinedOrigins
+        let callSites = reconcileCallEvents program lowered.Definition.Name wordId lowered.Definition.Revision artifacts.CallEvents
+        let programData = VerifiedIrProgram.inspect program
+        let sites =
+            programData.SourceMap
+            |> Map.filter (fun _ source -> source.SiteOwner = Some wordId)
+            |> sourceSites
+        { Lowered = lowered
+          Context = nextContext
+          Program = program
+          SiteOrigins = sites
+          CallSites = callSites }
+
+    let private validateBaseFlowSource (context: Context) (baseProgram: VerifiedIrProgram) (document: FlowSourceDocument) (flowWord: FlowWordDefinition) : RetainedFlowSource =
+        let entry =
+            context.CompilerContext.Words.TryFind document.OwnerName
+            |> Option.defaultWith (fun () -> fail "FLOW_SOURCE_OWNER_MISSING" "A declared Flow source owner is absent from the base dictionary." (Some document.OwnerName) (Some flowWord.Span) [] [])
+        let identity =
+            context.CompilerContext.WordIds.TryFind document.OwnerName
+            |> Option.defaultWith (fun () -> fail "FLOW_SOURCE_OWNER_ID_MISSING" "A declared Flow source owner has no base stable ID." (Some document.OwnerName) (Some flowWord.Span) [] [])
+        if identity <> document.OwnerId then
+            fail "FLOW_SOURCE_OWNER_ID_MISMATCH" "The host-declared Flow owner ID differs from the base dictionary identity." (Some document.OwnerName) (Some flowWord.Span)
+                [ sprintf "%A" identity ] [ sprintf "%A" document.OwnerId ]
+        if entry.Builtin.IsSome || entry.Status = Primitive then
+            fail "FLOW_SOURCE_OWNER_PROTECTED" "A Flow source inventory may contain only user-authored dictionary words." (Some document.OwnerName) (Some flowWord.Span) [ "user word" ] [ document.OwnerName ]
+        if entry.Revision <> document.OwnerRevision || entry.Definition.Revision <> document.OwnerRevision then
+            fail "FLOW_SOURCE_OWNER_REVISION_MISMATCH" "The host-declared Flow source revision differs from the synchronized base word revision." (Some document.OwnerName) (Some flowWord.Span)
+                [ string entry.Revision ] [ string document.OwnerRevision ]
+        if entry.Definition.SourceText <> document.Content then
+            fail "FLOW_SOURCE_TEXT_MISMATCH" "The exact Flow source bytes differ from the source text retained by the base word definition." (Some document.OwnerName) (Some flowWord.Span)
+                [ "exact retained source text" ] [ "different source text" ]
+        if entry.Definition.Span.File <> document.SourceFile then
+            fail "FLOW_SOURCE_FILE_MISMATCH" "The diagnostic source label must match the base definition so byte-identical source reparses to the exact retained spans." (Some document.OwnerName) (Some flowWord.Span)
+                [ entry.Definition.Span.File ] [ document.SourceFile ]
+        let artifacts =
+            withFlowOwnerPath flowWord (fun () ->
+                lowerWordWithSignaturesAndEvents context (signatureCatalog context) context.SourceOrigins flowWord)
+        let lowered = artifacts.Lowered
+        let actual = entry.Definition
+        if lowered.Definition.Name <> actual.Name
+           || lowered.Definition.Inputs <> actual.Inputs
+           || lowered.Definition.Outputs <> actual.Outputs
+           || lowered.Definition.Effects <> actual.Effects
+           || lowered.Definition.Documentation <> actual.Documentation
+           || semanticExpressions lowered.Definition.Body <> semanticExpressions actual.Body then
+            fail "FLOW_SOURCE_BODY_MISMATCH" "The parsed Flow source does not reproduce the base signature, documentation, effects, or semantic body." (Some document.OwnerName) (Some flowWord.Span)
+                [ "exact base Flow semantics" ] [ "source differs from base definition" ]
+        match entryParameterNames context document.OwnerName entry with
+        | Some names when names = lowered.ParameterNames -> ()
+        | Some names ->
+            fail "FLOW_SOURCE_PARAMETER_METADATA_MISMATCH" "The parsed Flow parameter names differ from the exact base parameter catalog." (Some document.OwnerName) (Some flowWord.Span)
+                names lowered.ParameterNames
+        | None ->
+            fail "FLOW_SOURCE_PARAMETER_METADATA_MISSING" "A source-backed Flow owner requires retained named-parameter metadata." (Some document.OwnerName) (Some flowWord.Span)
+                [ "parameter names including an empty list" ] []
+        let bindings = reconcileCallEvents baseProgram document.OwnerName document.OwnerId document.OwnerRevision artifacts.CallEvents
+        { Document = document
+          Definition = flowWord
+          BaseBindings = bindings }
+
+    let private validateFlowSourceInventory (context: Context) (inventory: FlowSourceInventory) : RetainedFlowSource list =
+        let ownerIds = inventory.Sources |> List.map (fun document -> document.OwnerId)
+        let ownerNames = inventory.Sources |> List.map (fun document -> document.OwnerName)
+        let duplicateIds = ownerIds |> List.groupBy id |> List.tryFind (fun (_, values) -> values.Length > 1)
+        match duplicateIds with
+        | Some(identity, _) ->
+            fail "FLOW_SOURCE_INVENTORY_DUPLICATE_ID" "A Flow source inventory may contain at most one document per stable owner ID." None None [] [ sprintf "%A" identity ]
+        | None -> ()
+        let duplicateNames = ownerNames |> List.groupBy id |> List.tryFind (fun (_, values) -> values.Length > 1)
+        match duplicateNames with
+        | Some(name, _) -> fail "FLOW_SOURCE_INVENTORY_DUPLICATE_NAME" "A Flow source inventory may contain at most one document per owner name." (Some name) None [] [ name ]
+        | None -> ()
+        let actualIds = Set.ofList ownerIds
+        let missingIds = Set.difference inventory.ExpectedFlowOwnerIds actualIds
+        let undeclaredIds = Set.difference actualIds inventory.ExpectedFlowOwnerIds
+        if not (Set.isEmpty missingIds) || not (Set.isEmpty undeclaredIds) then
+            fail "FLOW_SOURCE_INVENTORY_INCOMPLETE" "The Flow source inventory must exactly cover the host-declared current Flow owner IDs." None None
+                (inventory.ExpectedFlowOwnerIds |> Set.toList |> List.map string)
+                ([ yield! missingIds |> Set.toList |> List.map (sprintf "missing %A")
+                   yield! undeclaredIds |> Set.toList |> List.map (sprintf "undeclared %A") ])
+        let namesById =
+            context.CompilerContext.WordIds
+            |> Map.toList
+            |> List.map (fun (name, identity) -> identity, name)
+            |> Map.ofList
+        for identity in inventory.ExpectedFlowOwnerIds do
+            if not (namesById.ContainsKey identity) then
+                fail "FLOW_SOURCE_INVENTORY_OWNER_MISSING" "A host-declared Flow owner ID is absent from the base dictionary." None None [ sprintf "%A" identity ] []
+        let parsed =
+            inventory.Sources
+            |> List.map (fun document -> document, validateFlowSourceDocument document)
+        // Verify the supplied base snapshot independently. This baseline check
+        // is distinct from the one final compile of all proposed real bodies.
+        let baseProgram = Compiler.compileIrProgramWithSourceOrigins context.CompilerContext context.SourceOrigins
+        parsed
+        |> List.map (fun (document, definition) ->
+            match namesById.TryFind document.OwnerId with
+            | Some ownerName when ownerName = document.OwnerName -> ()
+            | Some ownerName ->
+                fail "FLOW_SOURCE_OWNER_NAME_MISMATCH" "The host-declared owner name differs from the base ID-to-name catalog." (Some document.OwnerName) (Some definition.Span)
+                    [ ownerName ] [ document.OwnerName ]
+            | None ->
+                fail "FLOW_SOURCE_OWNER_ID_MISSING" "A Flow source document refers to an ID that is not assigned in the base dictionary." (Some document.OwnerName) (Some definition.Span)
+                    [ "base owner ID" ] [ sprintf "%A" document.OwnerId ]
+            validateBaseFlowSource context baseProgram document definition)
+        |> List.sortBy (fun retained -> retained.Document.OwnerName)
+
+    let private checkRetainedBindingStability ownerName (baseline: FlowCallSite list) (proposed: FlowCallSite list) =
+        let baselineByPath = baseline |> List.map (fun site -> site.Path, site) |> Map.ofList
+        let proposedByPath = proposed |> List.map (fun site -> site.Path, site) |> Map.ofList
+        let baselinePaths = baselineByPath |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+        let proposedPaths = proposedByPath |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+        let removedPaths = Set.difference baselinePaths proposedPaths
+        let addedPaths = Set.difference proposedPaths baselinePaths
+        if not (Set.isEmpty removedPaths) || not (Set.isEmpty addedPaths) then
+            let path, span =
+                match addedPaths |> Set.toList |> List.tryHead with
+                | Some path -> path, proposedByPath[path].Span
+                | None ->
+                    let path = removedPaths |> Set.toList |> List.head
+                    path, baselineByPath[path].Span
+            fail "FLOW_CALL_BINDING_SITE_SET_CHANGED" "Re-lowering unchanged Flow source changed its structural call-site set." (Some ownerName) (Some span)
+                (baselinePaths |> Set.toList |> List.map (sprintf "%A"))
+                (proposedPaths |> Set.toList |> List.map (sprintf "%A"))
+        for path in baselinePaths do
+            let previous = baselineByPath[path]
+            let current = proposedByPath[path]
+            if previous.Target <> current.Target then
+                fail "FLOW_CALL_REBOUND" "An unchanged authored Flow call now resolves to a different stable target identity." (Some ownerName) (Some current.Span)
+                    [ sprintf "%A at %A" previous.Target path ] [ sprintf "%A at %A" current.Target path ]
 
     let private zeroWidthMarkers (expressions: Expr list) =
         let rec collect body =
@@ -1067,7 +1658,17 @@ module FlowLowering =
           Revision: int
           Previous: WordEntry option }
 
-    let compileBatchWords (context: Context) (changes: FlowWordChange list) : FlowBatchCompilation =
+    type private PreparedLoweredBatchChange =
+        { Prepared: PreparedBatchChange
+          Artifacts: LoweredWordArtifacts
+          Source: FlowSourceDocument option }
+
+    let private compileBatchWordsCore
+        (context: Context)
+        (changes: FlowWordChange list)
+        (sourceDocuments: Map<string, FlowSourceDocument>)
+        (retainedSources: RetainedFlowSource list)
+        : BatchCompilationArtifacts =
         validateContextCatalog context
         if List.isEmpty changes then fail "FLOW_BATCH_EMPTY" "A Flow word batch must contain at least one change." None None [ "one or more word changes" ] []
 
@@ -1124,11 +1725,30 @@ module FlowLowering =
                       Span = flowWord.Span }
                 Map.add flowWord.Name candidate signatures) baseSignatures
 
+        let changedNameSet = prepared |> Seq.map (fun item -> item.Definition.Name) |> Set.ofSeq
+        let retainedNameSet = retainedSources |> List.map (fun source -> source.Document.OwnerName) |> Set.ofList
+        let retainedDuplicates = retainedSources |> List.groupBy (fun source -> source.Document.OwnerName) |> List.tryFind (fun (_, values) -> values.Length > 1)
+        match retainedDuplicates with
+        | Some(name, _) -> fail "FLOW_SOURCE_INVENTORY_DUPLICATE_NAME" "A retained Flow source owner may appear only once." (Some name) None [] [ name ]
+        | None -> ()
+        let changedRetainedCollision = Set.intersect changedNameSet retainedNameSet
+        if not (Set.isEmpty changedRetainedCollision) then
+            fail "FLOW_SOURCE_INVENTORY_CHANGED_OWNER_RETAINED" "A Flow owner cannot be both changed and retained in one source-backed batch." None None [] (changedRetainedCollision |> Set.toList)
+        if not (Map.isEmpty sourceDocuments) then
+            let expectedSourceNames = changedNameSet
+            let actualSourceNames = sourceDocuments |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+            if expectedSourceNames <> actualSourceNames then
+                fail "FLOW_SOURCE_CHANGE_COVERAGE" "Every source-backed word change must have exactly one parsed source document." None None
+                    (expectedSourceNames |> Set.toList) (actualSourceNames |> Set.toList)
+
         let mutable allocationOrigins = context.SourceOrigins
-        let loweredChanges =
+        let loweredChangeArtifacts =
             prepared
             |> Seq.map (fun item ->
-                let lowered = lowerWordWithSignatures context signatureOverlay allocationOrigins item.Definition
+                let loweredArtifacts =
+                    withFlowOwnerPath item.Definition (fun () ->
+                        lowerWordWithSignaturesAndEvents context signatureOverlay allocationOrigins item.Definition)
+                let lowered = loweredArtifacts.Lowered
                 let collision = lowered.Projection.SyntheticOrigins |> Map.toSeq |> Seq.tryFind (fun (marker, _) -> allocationOrigins.ContainsKey marker)
                 match collision with
                 | Some(marker, _) -> fail "FLOW_SOURCE_ORIGIN_COLLISION" "Batch Flow source markers must remain unique across words." (Some item.Definition.Name) (Some item.Definition.Span) [] [ sprintf "%A" marker ]
@@ -1138,28 +1758,78 @@ module FlowLowering =
                     match item.Previous with
                     | Some previous -> { lowered.Definition with Revision = item.Revision; Maturity = previous.Maturity }
                     | None -> { lowered.Definition with Revision = item.Revision }
-                { lowered with Definition = definition })
+                let lowered = { lowered with Definition = definition }
+                let source = sourceDocuments.TryFind item.Definition.Name
+                match source with
+                | Some document when document.OwnerId <> item.Identity || document.OwnerRevision <> item.Revision ->
+                    fail "FLOW_SOURCE_CHANGE_REVISION_MISMATCH" "A changed source owner ID/revision differs from its validated batch revision intent." (Some item.Definition.Name) (Some item.Definition.Span)
+                        [ sprintf "%A@%d" item.Identity item.Revision ] [ sprintf "%A@%d" document.OwnerId document.OwnerRevision ]
+                | _ -> ()
+                { Prepared = item
+                  Artifacts = { loweredArtifacts with Lowered = lowered }
+                  Source = source })
             |> Seq.toList
 
-        let loweredByName = loweredChanges |> List.map (fun lowered -> lowered.Definition.Name, lowered) |> Map.ofList
+        let loweredRetainedArtifacts =
+            retainedSources
+            |> List.sortBy (fun source -> source.Document.OwnerName)
+            |> List.map (fun retained ->
+                let ownerName = retained.Document.OwnerName
+                let previous =
+                    context.CompilerContext.Words.TryFind ownerName
+                    |> Option.defaultWith (fun () -> fail "FLOW_SOURCE_OWNER_MISSING" "A retained Flow source owner disappeared from the base context." (Some ownerName) None [] [])
+                let ownerId =
+                    context.CompilerContext.WordIds.TryFind ownerName
+                    |> Option.defaultWith (fun () -> fail "FLOW_SOURCE_OWNER_ID_MISSING" "A retained Flow source owner has no stable ID in the base context." (Some ownerName) None [] [])
+                let loweredArtifacts =
+                    withFlowOwnerPath retained.Definition (fun () ->
+                        lowerWordWithSignaturesAndEvents context signatureOverlay allocationOrigins retained.Definition)
+                let lowered = loweredArtifacts.Lowered
+                let collision = lowered.Projection.SyntheticOrigins |> Map.toSeq |> Seq.tryFind (fun (marker, _) -> allocationOrigins.ContainsKey marker)
+                match collision with
+                | Some(marker, _) -> fail "FLOW_SOURCE_ORIGIN_COLLISION" "Re-lowered retained Flow source markers must remain unique across the batch." (Some ownerName) (Some retained.Definition.Span) [] [ sprintf "%A" marker ]
+                | None -> ()
+                allocationOrigins <- Map.fold (fun found marker origin -> Map.add marker origin found) allocationOrigins lowered.Projection.SyntheticOrigins
+                let lowered =
+                    { lowered with
+                        Definition =
+                            { lowered.Definition with
+                                Revision = previous.Revision
+                                Maturity = previous.Maturity } }
+                let loweredArtifacts = { loweredArtifacts with Lowered = lowered }
+                let proposedBindings = loweredArtifacts.CallEvents |> List.map (callSiteOfEvent ownerName)
+                checkRetainedBindingStability ownerName retained.BaseBindings proposedBindings
+                { Document = Some retained.Document
+                  OwnerName = ownerName
+                  OwnerId = ownerId
+                  OwnerRevision = previous.Revision
+                  Lowered = lowered
+                  CallEvents = loweredArtifacts.CallEvents })
+
+        let loweredChanges = loweredChangeArtifacts |> List.map (fun item -> item.Artifacts.Lowered)
         let finalWords =
-            loweredChanges
-            |> List.fold (fun words lowered ->
+            loweredChangeArtifacts
+            |> List.fold (fun words change ->
+                let lowered = change.Artifacts.Lowered
                 let name = lowered.Definition.Name
-                let preparedChange = prepared |> Seq.find (fun item -> item.Definition.Name = name)
                 let entry =
-                    match preparedChange.Previous with
+                    match change.Prepared.Previous with
                     | Some previous ->
                         { previous with
                             Definition = lowered.Definition
-                            Revision = preparedChange.Revision }
+                            Revision = change.Prepared.Revision }
                     | None ->
                         { Definition = lowered.Definition
                           Builtin = None
                           Status = Candidate
                           Maturity = ProjectWord
-                          Revision = preparedChange.Revision }
+                          Revision = change.Prepared.Revision }
                 Map.add name entry words) context.CompilerContext.Words
+        let finalWords =
+            loweredRetainedArtifacts
+            |> List.fold (fun (words: Map<string, WordEntry>) (retained: AuthoredLoweredOwner) ->
+                let previous = words[retained.OwnerName]
+                Map.add retained.OwnerName { previous with Definition = retained.Lowered.Definition; Revision = retained.OwnerRevision } words) finalWords
         let finalIds =
             prepared
             |> Seq.fold (fun ids item -> Map.add item.Definition.Name item.Identity ids) context.CompilerContext.WordIds
@@ -1168,7 +1838,7 @@ module FlowLowering =
                 Words = finalWords
                 WordIds = finalIds }
         let finalParameterNames =
-            loweredChanges
+            (loweredChanges @ (loweredRetainedArtifacts |> List.map (fun item -> item.Lowered)))
             |> List.fold (fun parameters lowered -> Map.add lowered.Definition.Name lowered.ParameterNames parameters) context.ParameterNames
         let finalMarkers = contextZeroWidthMarkers finalCompilerContext
         let retainedOrigins = allocationOrigins |> Map.filter (fun marker _ -> finalMarkers.Contains marker)
@@ -1190,11 +1860,136 @@ module FlowLowering =
             programData.SourceMap
             |> Map.filter (fun _ source -> source.SiteOwner |> Option.exists changedIds.Contains)
             |> sourceSites
-        let _ = loweredByName
-        { LoweredWords = loweredChanges
-          Context = finalContext
-          Program = program
-          SiteOrigins = sites }
+        let authoredChangedOwners =
+            loweredChangeArtifacts
+            |> List.choose (fun item ->
+                item.Source
+                |> Option.map (fun document ->
+                    { Document = Some document
+                      OwnerName = document.OwnerName
+                      OwnerId = document.OwnerId
+                      OwnerRevision = document.OwnerRevision
+                      Lowered = item.Artifacts.Lowered
+                      CallEvents = item.Artifacts.CallEvents }))
+        let authoredOwners = (authoredChangedOwners @ loweredRetainedArtifacts) |> List.sortBy (fun item -> item.OwnerName)
+        { Compilation =
+            { LoweredWords = loweredChanges
+              Context = finalContext
+              Program = program
+              SiteOrigins = sites }
+          AuthoredOwners = authoredOwners }
+
+    let compileBatchWords (context: Context) (changes: FlowWordChange list) : FlowBatchCompilation =
+        (compileBatchWordsCore context changes Map.empty [] ).Compilation
+
+    let compileBatchFlowSources
+        (context: Context)
+        (inventory: FlowSourceInventory)
+        (sourceChanges: FlowSourceChange list)
+        : FlowBoundBatchCompilation =
+        validateContextCatalog context
+        if List.isEmpty sourceChanges then
+            fail "FLOW_BATCH_EMPTY" "A source-backed Flow batch must contain at least one word change." None None [ "one or more source changes" ] []
+        let retainedBase = validateFlowSourceInventory context inventory
+        let changedSourceNames = sourceChanges |> List.map (fun change -> change.Source.OwnerName)
+        let changedSourceIds = sourceChanges |> List.map (fun change -> change.Source.OwnerId)
+        let duplicateNames = changedSourceNames |> List.groupBy id |> List.tryFind (fun (_, values) -> values.Length > 1)
+        match duplicateNames with
+        | Some(name, _) -> fail "FLOW_BATCH_DUPLICATE_NAME" "A source-backed batch may change a word name only once." (Some name) None [] [ name ]
+        | None -> ()
+        let duplicateIds = changedSourceIds |> List.groupBy id |> List.tryFind (fun (_, values) -> values.Length > 1)
+        match duplicateIds with
+        | Some(identity, _) -> fail "FLOW_BATCH_ID_COLLISION" "A source-backed batch may change a stable owner ID only once." None None [] [ sprintf "%A" identity ]
+        | None -> ()
+        let validatedChanges: ValidatedFlowSourceChange list =
+            sourceChanges
+            |> List.map (fun (change: FlowSourceChange) ->
+                let definition = validateFlowSourceDocument change.Source
+                match change.RevisionIntent with
+                | FlowWordRevisionIntent.Add(identity, revision) ->
+                    if identity <> change.Source.OwnerId || revision <> change.Source.OwnerRevision then
+                        fail "FLOW_SOURCE_CHANGE_REVISION_MISMATCH" "An added Flow source owner ID/revision must match its add intent." (Some definition.Name) (Some definition.Span)
+                            [ sprintf "%A@%d" identity revision ] [ sprintf "%A@%d" change.Source.OwnerId change.Source.OwnerRevision ]
+                | FlowWordRevisionIntent.Replace(identity, expectedRevision, revision) ->
+                    if identity <> change.Source.OwnerId || revision <> change.Source.OwnerRevision then
+                        fail "FLOW_SOURCE_CHANGE_REVISION_MISMATCH" "A replacement Flow source owner ID/revision must match its replacement intent." (Some definition.Name) (Some definition.Span)
+                            [ sprintf "%A@%d" identity revision ] [ sprintf "%A@%d" change.Source.OwnerId change.Source.OwnerRevision ]
+                    let previous =
+                        context.CompilerContext.Words.TryFind definition.Name
+                        |> Option.defaultWith (fun () ->
+                            fail "FLOW_BATCH_REPLACE_MISSING" "Cannot replace a missing base word." (Some definition.Name) (Some definition.Span) [ "existing user word" ] [])
+                    let previousIdentity =
+                        context.CompilerContext.WordIds.TryFind definition.Name
+                        |> Option.defaultWith (fun () ->
+                            fail "FLOW_BATCH_BASE_ID_MAP" "The base word has no stable identity." (Some definition.Name) (Some definition.Span) [ "existing WordId" ] [])
+                    if previousIdentity <> identity then
+                        fail "FLOW_BATCH_REPLACE_ID_MISMATCH" "The replacement owner ID differs from the base word identity." (Some definition.Name) (Some definition.Span)
+                            [ sprintf "%A" previousIdentity ] [ sprintf "%A" identity ]
+                    if previous.Revision <> expectedRevision then
+                        fail "FLOW_BATCH_STALE_REVISION" "Replacement intent does not match the base word revision." (Some definition.Name) (Some definition.Span)
+                            [ string previous.Revision ] [ string expectedRevision ]
+                    if revision <= expectedRevision then
+                        fail "FLOW_BATCH_REVISION_NOT_ADVANCED" "Replacement revision must advance beyond the revision it replaces." (Some definition.Name) (Some definition.Span)
+                            [ $"> {expectedRevision}" ] [ string revision ]
+                    if previous.Builtin.IsSome || previous.Status = Primitive then
+                        fail "FLOW_BATCH_REPLACE_PROTECTED" "Built-in or generated words cannot be replaced by Flow." (Some definition.Name) (Some definition.Span)
+                            [ "user-authored word" ] [ definition.Name ]
+                    if inventory.ExpectedFlowOwnerIds.Contains identity then
+                        let baseline =
+                            retainedBase
+                            |> List.tryFind (fun retained -> retained.Document.OwnerName = definition.Name)
+                            |> Option.defaultWith (fun () ->
+                                fail "FLOW_SOURCE_REPLACE_OWNER_UNAUTHORED" "Replacing a Flow owner requires its exact current source document in the base inventory." (Some definition.Name) (Some definition.Span)
+                                    [ "inventoried Flow owner source" ] [])
+                        if baseline.Document.OwnerId <> identity then
+                            fail "FLOW_BATCH_REPLACE_ID_MISMATCH" "The replacement owner ID differs from the inventoried base Flow owner ID." (Some definition.Name) (Some definition.Span)
+                                [ sprintf "%A" baseline.Document.OwnerId ] [ sprintf "%A" identity ]
+                        if baseline.Document.OwnerRevision <> expectedRevision then
+                            fail "FLOW_BATCH_STALE_REVISION" "Replacement intent does not match the inventoried base Flow owner revision." (Some definition.Name) (Some definition.Span)
+                                [ string baseline.Document.OwnerRevision ] [ string expectedRevision ]
+                { Change =
+                    { Definition = definition
+                      RevisionIntent = change.RevisionIntent }
+                  Source = change.Source })
+        let changes = validatedChanges |> List.map (fun value -> value.Change)
+        let sourceDocuments =
+            validatedChanges
+            |> List.map (fun value -> value.Source.OwnerName, value.Source)
+            |> Map.ofList
+        let replacedNames =
+            validatedChanges
+            |> List.choose (fun value ->
+                match value.Change.RevisionIntent with
+                | FlowWordRevisionIntent.Replace _ -> Some value.Source.OwnerName
+                | FlowWordRevisionIntent.Add _ -> None)
+            |> Set.ofList
+        let retainedSources = retainedBase |> List.filter (fun retained -> not (replacedNames.Contains retained.Document.OwnerName))
+        let artifacts = compileBatchWordsCore context changes sourceDocuments retainedSources
+        let callBindings =
+            artifacts.AuthoredOwners
+            |> List.collect (fun owner ->
+                let document =
+                    owner.Document
+                    |> Option.defaultWith (fun () -> fail "FLOW_BINDING_SOURCE_MISSING" "A source-backed batch owner has no exact authored source reference." (Some owner.OwnerName) None [] [])
+                reconcileCallEvents artifacts.Compilation.Program owner.OwnerName owner.OwnerId owner.OwnerRevision owner.CallEvents
+                |> List.map (fun site ->
+                    { OwnerName = owner.OwnerName
+                      OwnerId = owner.OwnerId
+                      OwnerRevision = owner.OwnerRevision
+                      Source = document.Reference
+                      Site = site }))
+        let flowOwnerIds = artifacts.AuthoredOwners |> List.map (fun owner -> owner.OwnerId) |> Set.ofList
+        let finalSites =
+            VerifiedIrProgram.inspect artifacts.Compilation.Program
+            |> fun programData ->
+                programData.SourceMap
+                |> Map.filter (fun _ source -> source.SiteOwner |> Option.exists flowOwnerIds.Contains)
+                |> sourceSites
+        { LoweredWords = artifacts.AuthoredOwners |> List.map (fun owner -> owner.Lowered)
+          Context = artifacts.Compilation.Context
+          Program = artifacts.Compilation.Program
+          SiteOrigins = finalSites
+          CallBindings = callBindings }
 
     let private requireAttachmentVersion kind word span version =
         if version <> 1 then fail "FLOW_VERSION_UNSUPPORTED" $"Only Flow syntax version 1 is supported for Flow {kind} attachments." (Some word) (Some span) [ "1" ] [ string version ]
@@ -1206,7 +2001,7 @@ module FlowLowering =
         rememberSpan state flowTest.Span
         rememberSpan state flowTest.HeaderSpan
         rememberSpan state flowTest.ExpectationSpan
-        let body, _ = lowerStatements context state Map.empty flowTest.Body
+        let bodyFragment, _ = lowerStatements context state Map.empty (FlowAstPath.FlowAstPath []) flowTest.Body
         let expected =
             match flowTest.Expected with
             | FlowTestExpectation.Literal(literal, literalSpan) ->
@@ -1217,11 +2012,11 @@ module FlowLowering =
                 ExpectedRuntimeError code
             | FlowTestExpectation.Expression expression ->
                 inferExpression context state Map.empty expression |> ignore
-                ExpectedExpression(lowerFlowExpression context state Map.empty expression)
+                ExpectedExpression((lowerFlowExpression context state Map.empty (FlowAstPath.FlowAstPath []) expression).Expressions)
         let definition: TestDefinition =
             { Name = flowTest.CaseName
               Word = flowTest.Word
-              Body = body
+              Body = bodyFragment.Expressions
               Expected = expected
               SourceText = flowTest.SourceText
               Span = flowTest.Span }
@@ -1241,11 +2036,11 @@ module FlowLowering =
         rememberSpan state flowExample.HeaderSpan
         rememberSpan state flowExample.ExpectationSpan
         rememberSpan state flowExample.ExpectedSpan
-        let body, _ = lowerStatements context state Map.empty flowExample.Body
+        let bodyFragment, _ = lowerStatements context state Map.empty (FlowAstPath.FlowAstPath []) flowExample.Body
         let definition: ExampleDefinition =
             { Name = flowExample.CaseName
               Word = flowExample.Word
-              Body = body
+              Body = bodyFragment.Expressions
               Expected = flowExample.Expected
               SourceText = flowExample.SourceText
               Span = flowExample.Span }

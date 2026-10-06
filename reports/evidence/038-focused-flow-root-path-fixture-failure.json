@@ -1,0 +1,17 @@
+{
+  "command": "dotnet run --project tests/AgentLang.Flow.Tests -c Release",
+  "initial": {
+    "chunk_id": "9a47ca",
+    "wall_time_seconds": 10.0089277,
+    "session_id": 50934,
+    "original_token_count": 124,
+    "output": "Unhandled exception. System.Exception: binding capture covers AST path role RootCallArgument 0: assertion failed\r\n   at AgentLang.Flow.Tests.check[a](a name, Boolean condition) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs:line 11\r\n   at AgentLang.Flow.Tests.testFlowCallBindingStructuralPaths() in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs:line 2728\r\n   at AgentLang.Flow.Tests.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs:line 2845\n"
+  },
+  "terminal": {
+    "chunk_id": "c898a4",
+    "wall_time_seconds": 0.0000079,
+    "exit_code": 1,
+    "original_token_count": 0,
+    "output": ""
+  }
+}
