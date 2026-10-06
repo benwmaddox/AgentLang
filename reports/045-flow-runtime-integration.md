@@ -300,3 +300,14 @@ The local artifact correctly reports a dirty checkout at the parent revision;
 exact clean source-commit CI must be audited separately after push. Independent
 review checked the final origin, inventory, rename and generated-case fixes;
 behavioral and compatibility oracles remain the evidence for their execution.
+
+Exact source commit `a24e9f5e201908b6ab1364331fa02e2ba8b0f31e` passed
+[CI run 37417536333](https://github.com/benwmaddox/AgentLang/actions/runs/37417536333).
+Its downloaded artifact identifies branch `prototype`, a clean checkout, all
+26 checks passing, and zero build warnings/errors. The audited
+[run identity](evidence/045-committed-source-ci.json) and
+[full validation artifact](evidence/045-committed-source-validation.json), plus
+its projection/matched-fixture/subagent-host/parser JSON companions, are saved.
+Publication adds only reports/evidence and documentation after this tested
+source commit; integration targets private `prototype` and `main` by fast-forward.
+Post-publication CI is distinct from the exact source CI recorded here.

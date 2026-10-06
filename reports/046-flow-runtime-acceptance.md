@@ -4,7 +4,7 @@ Status: the eleventh focused Runtime run passed all eleven groups and 203
 assertions, including mixed Flow/Stack generated-record attachments and a
 Stack-only v2-to-v1 manifest migration followed by fresh-Engine reload. The
 final publication gate passed all 26 checks with a clean Release build; source
-CI remains pending. The test project also passed compile-only builds against
+CI passed all 26 checks against the clean source commit. The test project also passed compile-only builds against
 the fresh Core checkpoint with zero warnings and errors. The first Runtime run stopped because qualified Flow calls used dot
 syntax; the fixtures now use `namespace::word(...)`.
 The second passed durable/reload and fresh-process CLI checks, then exposed a
@@ -183,4 +183,7 @@ ten groups and 189 assertions, followed by the eleventh run passing all eleven
 groups and 203 assertions including the v1 migration oracle. Final publication
 validation is recorded in `reports/evidence/045-publication-validation.json`:
 all 26 checks passed and the Release build completed with zero warnings and
-errors. Source CI remains pending.
+errors. Source CI passed all 26 checks against the clean source commit
+`a24e9f5e201908b6ab1364331fa02e2ba8b0f31e`; see
+[run 37417536333](https://github.com/benwmaddox/AgentLang/actions/runs/37417536333)
+and [the audited artifact](evidence/045-committed-source-validation.json).

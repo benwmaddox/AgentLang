@@ -1,13 +1,13 @@
 # Durable Flow source integration
 
-Status: opt-in Flow Runtime integration is implemented. The dedicated Runtime suite passes all 11 groups / 203 assertions. The final local 26-check Release gate also passes with zero build warnings or errors; exact committed-source CI remains pending. Flow remains opt-in and the default frontend remains Stack. See [report 045](../reports/045-flow-runtime-integration.md), the [acceptance plan/report](../reports/046-flow-runtime-acceptance.md), [focused Runtime evidence](../reports/evidence/045-eleventh-runtime-tests.json), and [publication-gate evidence](../reports/evidence/045-publication-validation.json).
+Status: opt-in Flow Runtime integration is implemented. The dedicated Runtime suite passes all 11 groups / 203 assertions. The final local 26-check Release gate also passes with zero build warnings or errors; exact committed-source CI passed all 26 checks (run 37417536333). Flow remains opt-in and the default frontend remains Stack. See [report 045](../reports/045-flow-runtime-integration.md), the [acceptance plan/report](../reports/046-flow-runtime-acceptance.md), [focused Runtime evidence](../reports/evidence/045-eleventh-runtime-tests.json), and [publication-gate evidence](../reports/evidence/045-publication-validation.json).
 
 ## Current repository evidence
 
 - `Storage.SourceRef` contains an object kind and lowercase SHA-256 hash. `Storage.SourceObject.Content` is hashed as its exact UTF-8 bytes. Existing kinds already include project, word, type, test, and example source.
 - `CURRENT` and named snapshots remain format 1. Manifest readers accept formats 1 and 2. Version-1 revisions default to Stack syntax version 1 with no call bindings; version-2 revisions store `sourceFormat` and canonical authored call bindings. The exact v1 golden manifest format remains available for compatibility.
 - `Storage.commit` checks that the supplied export bytes equal the manifest's project-source object, writes immutable objects and the manifest, then atomically replaces `CURRENT`. Export refresh is post-commit and can report a warning. If `CURRENT` is absent, `Storage.load` exposes `dictionary.agent` as read-only `LegacyAuthority`; the first successful manifest commit migrates the live project while recording baseline revision objects.
-- Runtime now has an explicit opt-in Flow path. Stack export sections use `Source` rendering, while Flow sections retain authored definitions and case source. Manifest v2 records each word revision's frontend/version and call bindings; `validateStoredProject` dispatches from that metadata, validates historical objects in their own format, and rebuilds current Flow heads before checking the aggregate export. Omitted frontend selection still uses Stack. Focused Runtime acceptance passes 11 groups / 203 assertions, and the final local 26-check Release gate passed with zero build warnings or errors. Exact committed-source CI remains pending.
+- Runtime now has an explicit opt-in Flow path. Stack export sections use `Source` rendering, while Flow sections retain authored definitions and case source. Manifest v2 records each word revision's frontend/version and call bindings; `validateStoredProject` dispatches from that metadata, validates historical objects in their own format, and rebuilds current Flow heads before checking the aggregate export. Omitted frontend selection still uses Stack. Focused Runtime acceptance passes 11 groups / 203 assertions, and the final local 26-check Release gate passed with zero build warnings or errors. Exact committed-source CI passed all 26 checks (run 37417536333).
 - `DictionaryState.WordIds` maps current names to stable IDs. IDs are generated when no manifest head supplies one; rename moves the existing ID. Runtime's rename path walks `Expr` bodies with the RPN-only `Source.renameReferences`, rechecks callers/tests, then persists.
 - Tests/examples already have content-addressed revision references. `Runtime.TaskSession` snapshots in-memory dictionary state, the executable snapshot, storage authority/export bytes, manifest identity, and virtual provider/clock state. Abort uses `Storage.restore`, which advances the storage generation without manufacturing revisions. Named snapshots retain the manifest hash plus virtual files and clock.
 - Runtime now retains authored Flow words and test/example cases by stable owner ID, together with compiler-verified source-call bindings and Flow revision history. Current Flow revisions can be committed and reloaded through a fresh Engine/CLI. The focused Runtime suite passed replacement/CAS, temporary/task cleanup, task rollback, populated snapshot/provider restore, mixed-frontend interoperation, and v1 generated-accessor case reload cases. Stack `Source` rename operations remain RPN-only; Flow-aware rename/deprecate conformance and the default frontend cutover remain open. The origin-aware compiler test/example APIs and their focused gates are recorded in reports 026 and 032.
@@ -85,7 +85,7 @@ Manifest v2 adds `sourceFormat: { frontend, version }` to each word revision. Te
 
 Rename may rewrite affected resolved dot calls to qualified ordinary calls with the receiver first, while preserving the authored argument order and evaluating the receiver once. It must reject a rename when that transformation cannot be proven safe, using stable `WordId` bindings and source spans to identify affected sites.
 
-The first schema slice preserved frozen v1 bytes and added version-aware v2 serialization, storage-neutral per-revision format/binding DTOs, membership and bound validation. At that milestone Runtime rejected Flow revisions; that guard-only state was superseded by the opt-in Runtime integration recorded in report 045. Focused Runtime acceptance now passes all 11 groups and 203 assertions, including durable publish/reload, task rollback, populated snapshot restore, mixed frontend reload, and v1 generated-accessor cases. The final local 26-check Release gate passed with zero build warnings or errors; exact committed-source CI remains pending. Flow-aware rename/deprecate conformance and default frontend cutover remain open.
+The first schema slice preserved frozen v1 bytes and added version-aware v2 serialization, storage-neutral per-revision format/binding DTOs, membership and bound validation. At that milestone Runtime rejected Flow revisions; that guard-only state was superseded by the opt-in Runtime integration recorded in report 045. Focused Runtime acceptance now passes all 11 groups and 203 assertions, including durable publish/reload, task rollback, populated snapshot restore, mixed frontend reload, and v1 generated-accessor cases. The final local 26-check Release gate passed with zero build warnings or errors; exact committed-source CI passed all 26 checks (run 37417536333). Flow-aware rename/deprecate conformance and default frontend cutover remain open.
 
 ## Concrete schema and compatibility prerequisites
 
@@ -104,7 +104,7 @@ version-1 `CURRENT` pointer and named snapshot envelopes:
 | Manifest | `Storage.manifestNode`, `parseManifest`, `parseWordRevision`, `validateManifest` | Implemented: parse/write 1/2 by manifest version; v1 defaults to Stack/1 and no bindings; v2 includes revision format and binding metadata |
 | CURRENT authority pointer | `Storage.pointerNode` and pointer parsing | Keep version 1 and existing authority/generation encoding |
 | Named snapshot | `Storage.snapshotFileNode`, `parseSnapshotFile` | Keep version 1; its referenced manifest may be 1 or 2 |
-| Runtime publication | `Runtime.currentManifestFor` | Stack and explicit Flow commits write manifest v2; Flow revisions retain authored source references and checked call bindings. Focused Runtime acceptance passed 11 groups / 203 assertions; the final local 26-check Release gate passed with zero build warnings/errors. Exact committed-source CI remains pending |
+| Runtime publication | `Runtime.currentManifestFor` | Stack and explicit Flow commits write manifest v2; Flow revisions retain authored source references and checked call bindings. Focused Runtime acceptance passed 11 groups / 203 assertions; the final local 26-check Release gate passed with zero build warnings/errors. Exact committed-source CI passed all 26 checks (run 37417536333) |
 | Runtime source export/load | `Runtime.sourceFor`, `serializeWord`, `parseProjectSource` | Explicit metadata selects Stack or Flow parsing; Flow source is rehydrated and the aggregate export is checked. Generated accessor cases alone may be recovered for manifest-derived generated owners from the hash-verified project source; ordinary user and Flow cases remain revision-bound. The full v2 canonical project export is byte-compared. Flow rename/deprecate conformance and default frontend cutover remain open |
 
 F# compilation order is also a boundary: `Storage.fs` precedes `TypedIR.fs`,
@@ -123,7 +123,7 @@ version-specific revision fields. It passed 14 groups and 229 assertions; see
 [the acceptance report](../reports/044-manifest-v2-acceptance.md). The literal
 v1 object hashes remain unchanged. The later opt-in Flow Runtime work is
 described separately below; its focused Runtime suite and final local Release
-gate have passed, while exact committed-source CI remains pending.
+gate have passed, while exact committed-source CI passed all 26 checks (run 37417536333).
 
 The storage-neutral target representation distinguishes user, primitive and
 generated targets with a stable string identity; it does not persist the target
@@ -198,7 +198,7 @@ the hash-verified project source only for manifest-derived generated owners.
 Ordinary user and Flow cases remain bound to their revision references; there is
 no general source fallback. The frozen v1 golden remains unchanged and v1 keeps
 its aggregate semantic comparison; v2 still byte-compares the complete
-canonical project export. Exact committed-source CI remains pending. Flow-aware
+canonical project export. Exact committed-source CI passed all 26 checks (run 37417536333). Flow-aware
 rename/deprecate conformance and default frontend cutover remain open. Report
 046 tracks the acceptance oracles; do not treat this opt-in route as the default
 or as completion of the larger PRD.
