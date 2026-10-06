@@ -1,0 +1,23 @@
+{
+  "command": "dotnet build tests/AgentLang.Flow.Runtime.Tests/AgentLang.Flow.Runtime.Tests.fsproj -c Release --no-incremental",
+  "exitCode": 1,
+  "output": [
+    "  Determining projects to restore...",
+    "  All projects are up-to-date for restore.",
+    "D:\\code\\AgentLang\\src\\AgentLang.Core\\Runtime.fs(2461,44): error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved. [D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj]",
+    "D:\\code\\AgentLang\\src\\AgentLang.Core\\Runtime.fs(2463,65): error FS0001: This expression was expected to have type\u001d    'FlowAuthoredAttachment'    \u001dbut here has type\u001d    'FlowAuthoredWord' [D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj]",
+    "D:\\code\\AgentLang\\src\\AgentLang.Core\\Runtime.fs(2463,84): error FS0001: Type mismatch. Expecting a\u001d    'Map<string,FlowAuthoredAttachment list>'    \u001dbut given a\u001d    'Map<string,FlowAuthoredWord list>'    \u001dThe type 'FlowAuthoredAttachment' does not match the type 'FlowAuthoredWord' [D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj]",
+    "D:\\code\\AgentLang\\src\\AgentLang.Core\\Runtime.fs(2466,78): error FS0001: The type 'FlowAuthoredWord' does not match the type 'FlowAuthoredAttachment' [D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj]",
+    "",
+    "Build FAILED.",
+    "",
+    "D:\\code\\AgentLang\\src\\AgentLang.Core\\Runtime.fs(2461,44): error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved. [D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj]",
+    "D:\\code\\AgentLang\\src\\AgentLang.Core\\Runtime.fs(2463,65): error FS0001: This expression was expected to have type\u001d    'FlowAuthoredAttachment'    \u001dbut here has type\u001d    'FlowAuthoredWord' [D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj]",
+    "D:\\code\\AgentLang\\src\\AgentLang.Core\\Runtime.fs(2463,84): error FS0001: Type mismatch. Expecting a\u001d    'Map<string,FlowAuthoredAttachment list>'    \u001dbut given a\u001d    'Map<string,FlowAuthoredWord list>'    \u001dThe type 'FlowAuthoredAttachment' does not match the type 'FlowAuthoredWord' [D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj]",
+    "D:\\code\\AgentLang\\src\\AgentLang.Core\\Runtime.fs(2466,78): error FS0001: The type 'FlowAuthoredWord' does not match the type 'FlowAuthoredAttachment' [D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj]",
+    "    0 Warning(s)",
+    "    4 Error(s)",
+    "",
+    "Time Elapsed 00:00:08.73"
+  ]
+}

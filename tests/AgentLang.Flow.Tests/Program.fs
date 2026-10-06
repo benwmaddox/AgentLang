@@ -2319,6 +2319,89 @@ let private testFlowBatchReplacementAndValidation () =
             [ { Definition = unknownEffectWord; RevisionIntent = FlowLowering.FlowWordRevisionIntent.Add(WordId "unknown-effect", 1) } ]
         |> ignore)
 
+let private testFlowWordRehydrate () =
+    let context = loweringContext [] Map.empty
+    let emptyWordInventory: FlowLowering.FlowSourceInventory =
+        { ExpectedFlowOwnerIds = Set.empty
+          Sources = [] }
+    let emptyAttachmentInventory = flowAttachmentInventory []
+    let libraryDocument =
+        authoredFlowSource (WordId "rehydrated-library") 7
+            "word restore.library(value: Int) -> Int {\n    effects none\n    add(value, 1)\n}"
+    let temporaryDocument =
+        authoredFlowSource (WordId "rehydrated-temporary") 0
+            "word restore.temporary(value: Int) -> Int {\n    effects none\n    value\n}"
+    let candidateDocument =
+        authoredFlowSource (WordId "ordinary-flow-add") 2
+            "word restore.candidate(value: Int) -> Int {\n    effects none\n    value\n}"
+    let sourceChanges: FlowLowering.FlowSourceChange list =
+        [ { RevisionIntent = FlowLowering.FlowWordRevisionIntent.Rehydrate(WordId "rehydrated-library", 7, Persistent, LibraryWord)
+            Source = libraryDocument }
+          { RevisionIntent = FlowLowering.FlowWordRevisionIntent.Rehydrate(WordId "rehydrated-temporary", 0, Temporary, ProjectWord)
+            Source = temporaryDocument }
+          { RevisionIntent = FlowLowering.FlowWordRevisionIntent.Add(WordId "ordinary-flow-add", 2)
+            Source = candidateDocument } ]
+    let rebuilt =
+        FlowLowering.compileBatchFlowProjectSources
+            context emptyWordInventory sourceChanges emptyAttachmentInventory []
+    let finalContext = rebuilt.WordCompilation.Context.CompilerContext
+    let assertEntry (name: string) (identity: string) (revision: int) (status: WordStatus) (maturity: WordMaturity) =
+        let entry = finalContext.Words[name]
+        equal (name + " stable ID") (WordId identity) finalContext.WordIds[name]
+        equal (name + " entry revision") revision entry.Revision
+        equal (name + " definition revision") revision entry.Definition.Revision
+        equal (name + " lifecycle status") status entry.Status
+        equal (name + " entry maturity") maturity entry.Maturity
+        equal (name + " definition maturity") maturity entry.Definition.Maturity
+
+    assertEntry "restore.library" "rehydrated-library" 7 Persistent LibraryWord
+    assertEntry "restore.temporary" "rehydrated-temporary" 0 Temporary ProjectWord
+    assertEntry "restore.candidate" "ordinary-flow-add" 2 Candidate ProjectWord
+    let verified = VerifiedIrProgram.inspect rebuilt.WordCompilation.Program
+    equal "rehydrated library metadata reaches verified function revision" 7
+        verified.FunctionsById[WordId "rehydrated-library"].FunctionRevision
+    equal "rehydrated temporary metadata reaches verified function revision" 0
+        verified.FunctionsById[WordId "rehydrated-temporary"].FunctionRevision
+    equal "ordinary source-backed Add still publishes its requested function revision" 2
+        verified.FunctionsById[WordId "ordinary-flow-add"].FunctionRevision
+
+    let execute (name: string) (value: int64) =
+        let body =
+            Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+                finalContext rebuilt.WordCompilation.Program "rehydrate-test" []
+                [ Push(LInt value, sourceSpan); Call(name, sourceSpan) ] rebuilt.WordCompilation.Context.SourceOrigins
+        IrInterpreter.executeBody (host (ResizeArray())) "rehydrate-test" body
+    equal "rehydrated persistent library Flow body remains executable" [ IntValue 10L ] (execute "restore.library" 9L)
+    equal "rehydrated temporary project Flow body remains executable" [ IntValue 9L ] (execute "restore.temporary" 9L)
+
+    let addedDefinition = parseWord "word restore.invalid(value: Int) -> Int {\n    effects none\n    value\n}"
+    let directChange (intent: FlowLowering.FlowWordRevisionIntent) : FlowLowering.FlowWordChange =
+        { Definition = addedDefinition
+          RevisionIntent = intent }
+    expectLanguageError "rehydrate rejects negative persisted revisions" "FLOW_BATCH_REVISION_INVALID" (fun () ->
+        FlowLowering.compileBatchWords context
+            [ directChange (FlowLowering.FlowWordRevisionIntent.Rehydrate(WordId "negative-rehydrate", -1, Persistent, ProjectWord)) ]
+        |> ignore)
+    expectLanguageError "rehydrate rejects primitive lifecycle status" "FLOW_BATCH_REHYDRATE_METADATA_INVALID" (fun () ->
+        FlowLowering.compileBatchWords context
+            [ directChange (FlowLowering.FlowWordRevisionIntent.Rehydrate(WordId "primitive-rehydrate", 1, Primitive, ProjectWord)) ]
+        |> ignore)
+
+    let firstDuplicateDocument =
+        authoredFlowSource (WordId "duplicate-rehydrate") 1
+            "word restore.first(value: Int) -> Int {\n    effects none\n    value\n}"
+    let secondDuplicateDocument =
+        authoredFlowSource (WordId "duplicate-rehydrate") 1
+            "word restore.second(value: Int) -> Int {\n    effects none\n    value\n}"
+    let duplicateIdChanges: FlowLowering.FlowSourceChange list =
+        [ { RevisionIntent = FlowLowering.FlowWordRevisionIntent.Rehydrate(WordId "duplicate-rehydrate", 1, Persistent, LibraryWord)
+            Source = firstDuplicateDocument }
+          { RevisionIntent = FlowLowering.FlowWordRevisionIntent.Rehydrate(WordId "duplicate-rehydrate", 1, Temporary, ProjectWord)
+            Source = secondDuplicateDocument } ]
+    expectLanguageError "rehydrate rejects duplicate stable IDs across source owners" "FLOW_BATCH_ID_COLLISION" (fun () ->
+        FlowLowering.compileBatchFlowProjectSources context emptyWordInventory duplicateIdChanges emptyAttachmentInventory []
+        |> ignore)
+
 let private testFlowBatchFinalValidationAndOrigins () =
     let context = loweringContext [] Map.empty
     let added (source: string) (identity: string) : FlowLowering.FlowWordChange =
@@ -3268,6 +3351,310 @@ let private testFlowAttachmentCallBindings () =
         equal "migrated case executes on the candidate Flow definition" [ IntValue 5L ] (IrInterpreter.executeBody (host (ResizeArray())) "migrated-case" compiled.Body)
     | other -> failwithf "Expected exactly the new Flow case after migration, got %A" other
 
+    let retained = FlowLowering.compileFlowProjectSnapshot context wordInventory attachmentInventory
+    let resolveOrigin (origins: Map<SourceSpan, SourceSpan>) (authoredSpan: SourceSpan) =
+        origins.TryFind authoredSpan |> Option.defaultValue authoredSpan
+    let originValues origins = origins |> Map.toList |> List.map snd |> List.sort
+    let mergeOrigins origins projection =
+        Map.fold (fun found marker authored -> Map.add marker authored found) origins projection.SyntheticOrigins
+    let rec normalizeExpression origins = function
+        | Push(literal, sourceSpan) -> Push(literal, resolveOrigin origins sourceSpan)
+        | Call(name, sourceSpan) -> Call(name, resolveOrigin origins sourceSpan)
+        | ConstructContainer(constructor, arguments, sourceSpan) -> ConstructContainer(constructor, arguments, resolveOrigin origins sourceSpan)
+        | MapList(name, sourceSpan) -> MapList(name, resolveOrigin origins sourceSpan)
+        | FilterList(name, sourceSpan) -> FilterList(name, resolveOrigin origins sourceSpan)
+        | EachList(name, sourceSpan) -> EachList(name, resolveOrigin origins sourceSpan)
+        | Let(name, sourceSpan) -> Let(name, resolveOrigin origins sourceSpan)
+        | Load(name, sourceSpan) -> Load(name, resolveOrigin origins sourceSpan)
+        | If(thenBranch, elseBranch, sourceSpan) ->
+            If(normalizeExpressions origins thenBranch, normalizeExpressions origins elseBranch, resolveOrigin origins sourceSpan)
+        | Scope(body, sourceSpan) -> Scope(normalizeExpressions origins body, resolveOrigin origins sourceSpan)
+        | MatchOption(name, someBranch, noneBranch, sourceSpan) ->
+            MatchOption(name, normalizeExpressions origins someBranch, normalizeExpressions origins noneBranch, resolveOrigin origins sourceSpan)
+        | MatchResult(okName, errorName, okBranch, errorBranch, sourceSpan) ->
+            MatchResult(okName, errorName, normalizeExpressions origins okBranch, normalizeExpressions origins errorBranch, resolveOrigin origins sourceSpan)
+    and normalizeExpressions origins expressions = expressions |> List.map (normalizeExpression origins)
+    let normalizeSpanMap origins sourceSpans = sourceSpans |> Map.map (fun _ sourceSpan -> resolveOrigin origins sourceSpan)
+    let normalizeProgram program origins =
+        let data = VerifiedIrProgram.inspect program
+        { data with SourceMap = data.SourceMap |> Map.map (fun _ source -> { source with SiteSpan = resolveOrigin origins source.SiteSpan }) }
+    let wordRows (compiled: FlowLowering.FlowBoundProjectCompilation) =
+        let origins = compiled.WordCompilation.Context.SourceOrigins
+        compiled.WordCompilation.LoweredWords
+        |> List.map (fun word ->
+            let definition = word.Definition
+            let wordOrigins = mergeOrigins origins word.Projection
+            (definition.Name, definition.Inputs, definition.Outputs, definition.Effects, definition.Maturity,
+             definition.Revision, definition.Documentation, normalizeExpressions wordOrigins definition.Body,
+             definition.SourceText, resolveOrigin wordOrigins definition.Span, word.ParameterNames,
+             word.SourceText, word.SyntaxVersion, word.Projection.AuthoredSpans, originValues word.Projection.SyntheticOrigins))
+    equal "no-op snapshot retains every authored word projection and normalized origin" (wordRows initial) (wordRows retained)
+    equal "no-op snapshot retains the named-parameter catalog" initial.WordCompilation.Context.ParameterNames retained.WordCompilation.Context.ParameterNames
+    equal "no-op snapshot retains all private-marker authored origin destinations"
+        (originValues initial.WordCompilation.Context.SourceOrigins) (originValues retained.WordCompilation.Context.SourceOrigins)
+    equal "no-op snapshot retains definition source origins after marker normalization"
+        (normalizeSpanMap initial.WordCompilation.Context.SourceOrigins initial.WordCompilation.SiteOrigins)
+        (normalizeSpanMap retained.WordCompilation.Context.SourceOrigins retained.WordCompilation.SiteOrigins)
+    equal "no-op snapshot retains definition call bindings including exact target revisions" initial.WordCompilation.CallBindings retained.WordCompilation.CallBindings
+    equal "no-op snapshot retains the complete verified IR program after marker normalization"
+        (normalizeProgram initial.WordCompilation.Program initial.WordCompilation.Context.SourceOrigins)
+        (normalizeProgram retained.WordCompilation.Program retained.WordCompilation.Context.SourceOrigins)
+    equal "no-op snapshot retains the complete attachment call-binding inventory" initial.AttachmentBindings retained.AttachmentBindings
+    let normalizeBody origins body =
+        let data = VerifiedIrBody.inspect body
+        { data with BodySourceMap = data.BodySourceMap |> Map.map (fun _ source -> { source with SiteSpan = resolveOrigin origins source.SiteSpan }) }
+    let testArtifacts (compiled: FlowLowering.FlowBoundProjectCompilation) =
+        compiled.Attachments
+        |> List.choose (function
+            | FlowCompiledAttachment.Test(source, value) ->
+                let origins = mergeOrigins compiled.WordCompilation.Context.SourceOrigins value.Lowered.Projection
+                let definition = value.Lowered.Definition
+                let expectation =
+                    match definition.Expected with
+                    | ExpectedExpression expressions -> ExpectedExpression(normalizeExpressions origins expressions)
+                    | other -> other
+                let normalizedDefinition =
+                    { definition with
+                        Body = normalizeExpressions origins definition.Body
+                        Expected = expectation
+                        Span = resolveOrigin origins definition.Span }
+                Some(source, normalizedDefinition, value.Lowered.SourceText, value.Lowered.SyntaxVersion,
+                     value.Lowered.Projection.AuthoredSpans, originValues value.Lowered.Projection.SyntheticOrigins,
+                     normalizeBody origins value.Body,
+                     value.ExpectationBody |> Option.map (normalizeBody origins),
+                     normalizeSpanMap origins value.BodySiteOrigins,
+                     value.ExpectationSiteOrigins |> Option.map (normalizeSpanMap origins))
+            | FlowCompiledAttachment.Example _ -> None)
+    let exampleArtifacts (compiled: FlowLowering.FlowBoundProjectCompilation) =
+        compiled.Attachments
+        |> List.choose (function
+            | FlowCompiledAttachment.Example(source, value) ->
+                let origins = mergeOrigins compiled.WordCompilation.Context.SourceOrigins value.Lowered.Projection
+                let definition = value.Lowered.Definition
+                let normalizedDefinition =
+                    { definition with
+                        Body = normalizeExpressions origins definition.Body
+                        Span = resolveOrigin origins definition.Span }
+                Some(source, normalizedDefinition, value.Lowered.SourceText, value.Lowered.SyntaxVersion,
+                     value.Lowered.Projection.AuthoredSpans, originValues value.Lowered.Projection.SyntheticOrigins,
+                     normalizeBody origins value.Body, normalizeSpanMap origins value.SiteOrigins)
+            | FlowCompiledAttachment.Test _ -> None)
+    equal "no-op snapshot retains each test source, actual body, pure expected body, and exact authored origins"
+        (testArtifacts initial) (testArtifacts retained)
+    equal "no-op snapshot retains each example source, body, and exact authored origins"
+        (exampleArtifacts initial) (exampleArtifacts retained)
+    let (_, retainedBothTest) = testCase retained "both-roles"
+    let retainedExpected = retainedBothTest.ExpectationBody |> Option.defaultWith (fun () -> failwith "Expected a retained expected-expression body.")
+    check "retained test actual body references the exact snapshot program"
+        (Object.ReferenceEquals(VerifiedIrBody.program retainedBothTest.Body, retained.WordCompilation.Program))
+    check "retained expected-expression body references the exact snapshot program"
+        (Object.ReferenceEquals(VerifiedIrBody.program retainedExpected, retained.WordCompilation.Program))
+    equal "retained actual body remains executable" [ IntValue 42L ]
+        (IrInterpreter.executeBody (host (ResizeArray())) "retained-actual" retainedBothTest.Body)
+    equal "retained expected-expression body remains separately executable" [ IntValue 42L ]
+        (IrInterpreter.executeBody (host (ResizeArray())) "retained-expected" retainedExpected)
+    let (_, retainedExample) = exampleCase retained "literal-example"
+    equal "retained example body remains executable" [ IntValue 42L ]
+        (IrInterpreter.executeBody (host (ResizeArray())) "retained-example" retainedExample.Body)
+
+    expectLanguageError "no-op snapshot rejects an incomplete retained word inventory" "FLOW_SOURCE_INVENTORY_INCOMPLETE" (fun () ->
+        FlowLowering.compileFlowProjectSnapshot context
+            { wordInventory with Sources = wordInventory.Sources |> List.tail }
+            attachmentInventory |> ignore)
+    expectLanguageError "no-op snapshot rejects an incomplete retained attachment inventory" "FLOW_ATTACHMENT_INVENTORY_INCOMPLETE" (fun () ->
+        FlowLowering.compileFlowProjectSnapshot context wordInventory
+            { attachmentInventory with Sources = attachmentInventory.Sources |> List.tail } |> ignore)
+
+    let replacementAnswerId = WordId "replacement-domain-answer"
+    let answerSource = wordInventory.Sources |> List.find (fun source -> source.OwnerId = answerId)
+    let reboundContext =
+        { context with
+            CompilerContext =
+                { context.CompilerContext with
+                    WordIds = Map.add "domain.answer" replacementAnswerId context.CompilerContext.WordIds } }
+    let reboundWordInventory =
+        { ExpectedFlowOwnerIds = wordInventory.ExpectedFlowOwnerIds |> Set.remove answerId |> Set.add replacementAnswerId
+          Sources =
+            wordInventory.Sources
+            |> List.map (fun source -> if source.OwnerId = answerId then { source with OwnerId = replacementAnswerId } else source) }
+    let reboundAnswerSource = reboundWordInventory.Sources |> List.find (fun source -> source.OwnerId = replacementAnswerId)
+    equal "rebind fixture changes only its declared stable owner ID"
+        (answerSource.Content, answerSource.Reference, answerSource.OwnerRevision)
+        (reboundAnswerSource.Content, reboundAnswerSource.Reference, reboundAnswerSource.OwnerRevision)
+    let reboundSnapshot = FlowLowering.compileFlowProjectSnapshot reboundContext reboundWordInventory attachmentInventory
+    let originalAnswerBindings =
+        initial.AttachmentBindings
+        |> List.filter (fun binding -> binding.Attachment.CaseName = "both-roles")
+    let reboundAnswerBindings =
+        reboundSnapshot.AttachmentBindings
+        |> List.filter (fun binding -> binding.Attachment.CaseName = "both-roles")
+    equal "no-op snapshot regenerates both actual and expected bindings for the changed target identity"
+        (2, Set.ofList [ FlowAttachmentBodyRole.Actual; FlowAttachmentBodyRole.ExpectedExpression ])
+        (reboundAnswerBindings.Length, reboundAnswerBindings |> List.map (fun binding -> binding.BodyRole) |> Set.ofList)
+    check "regenerated source bindings expose the different stable target ID for Runtime reconciliation"
+        (reboundAnswerBindings |> List.forall (fun binding -> binding.Site.Target = FlowCallTargetIdentity.UserWord replacementAnswerId))
+    check "durable adapter rows detect the changed target identity for Runtime to reject against retained manifest metadata"
+        (FlowPersistence.attachmentBindings reboundAnswerBindings
+         <> (FlowPersistence.attachmentBindings originalAnswerBindings))
+
+    let emptyStackSnapshot = FlowLowering.compileFlowProjectSnapshot stackContext emptyWordInventory (flowAttachmentInventory [])
+    equal "empty Flow inventories retain a valid Stack-only program" (VerifiedIrProgram.inspect (Compiler.compileIrProgram stackContext.CompilerContext))
+        (VerifiedIrProgram.inspect emptyStackSnapshot.WordCompilation.Program)
+    equal "empty Flow inventories add no authored Flow words" [] emptyStackSnapshot.WordCompilation.LoweredWords
+    equal "empty Flow inventories add no definition bindings" [] emptyStackSnapshot.WordCompilation.CallBindings
+    equal "empty Flow inventories add no attachments" [] emptyStackSnapshot.Attachments
+    equal "empty Flow inventories add no attachment bindings" [] emptyStackSnapshot.AttachmentBindings
+    let detachedSpan = span "stack-only.agent" 1 1 1
+    let detachedStackTest: TestDefinition =
+        { Name = "detached-stack-case"
+          Word = "legacy.operate"
+          Body = [ Push(LInt 4L, detachedSpan); Call("legacy.operate", detachedSpan) ]
+          Expected = ExpectedValue(LInt 4L)
+          SourceText = ""
+          Span = detachedSpan }
+    let detachedBody, detachedExpected =
+        Compiler.compileIrTestWithExpectationAgainstProgram stackContext.CompilerContext emptyStackSnapshot.WordCompilation.Program detachedStackTest
+    equal "empty Flow snapshot still compiles the detached Stack test body" [ IntValue 4L ]
+        (IrInterpreter.executeBody (host (ResizeArray())) "detached-stack-case" detachedBody)
+    check "detached Stack test remains ownerless and does not enter the Flow source inventory"
+        ((VerifiedIrBody.inspect detachedBody).BodySourceMap |> Map.forall (fun _ source -> source.SiteOwner.IsNone)
+         && detachedExpected.IsNone)
+
+let private testFlowPersistenceBindings () =
+    let path =
+        FlowAstPath.FlowAstPath
+            [ FlowAstPathSegment.BlockStatement 1
+              FlowAstPathSegment.LetInitializer
+              FlowAstPathSegment.DestructureInitializer
+              FlowAstPathSegment.EvaluateExpression
+              FlowAstPathSegment.ReturnOutput 2
+              FlowAstPathSegment.CallArgument 3
+              FlowAstPathSegment.RootCallArgument 4
+              FlowAstPathSegment.DotReceiver
+              FlowAstPathSegment.DotArgument 5
+              FlowAstPathSegment.IfCondition
+              FlowAstPathSegment.IfThenStatement 6
+              FlowAstPathSegment.IfElseStatement 7
+              FlowAstPathSegment.ContainerPayload
+              FlowAstPathSegment.OptionScrutinee
+              FlowAstPathSegment.OptionSomeStatement 8
+              FlowAstPathSegment.OptionNoneStatement 9
+              FlowAstPathSegment.ResultScrutinee
+              FlowAstPathSegment.ResultOkStatement 10
+              FlowAstPathSegment.ResultErrorStatement 11 ]
+    let callSpan = span "persisted-bindings.flow" 9 4 18
+    let forms: (FlowCallForm * StoredCallForm) list =
+        [ FlowCallForm.Direct, StoredCallForm.Direct
+          FlowCallForm.AbsoluteRoot, StoredCallForm.AbsoluteRoot
+          FlowCallForm.DotStage "select", StoredCallForm.DotStage "select"
+          FlowCallForm.StaticCallback("map", FlowWordReferenceQualification.ExplicitShort),
+              StoredCallForm.StaticCallback("map", FlowWordReferenceQualification.ExplicitShort)
+          FlowCallForm.StaticCallback("filter", FlowWordReferenceQualification.NamespaceQualified),
+              StoredCallForm.StaticCallback("filter", FlowWordReferenceQualification.NamespaceQualified)
+          FlowCallForm.StaticCallback("each", FlowWordReferenceQualification.AbsoluteRoot),
+              StoredCallForm.StaticCallback("each", FlowWordReferenceQualification.AbsoluteRoot) ]
+    let targets: (FlowCallTargetIdentity * StoredCallTarget) list =
+        [ FlowCallTargetIdentity.UserWord(WordId "stable/user-word"), StoredCallTarget.UserWord "stable/user-word"
+          FlowCallTargetIdentity.Primitive(PrimitiveId "primitive-id"), StoredCallTarget.Primitive "primitive-id"
+          FlowCallTargetIdentity.GeneratedWord(WordId "stable/generated-word"), StoredCallTarget.GeneratedWord "stable/generated-word" ]
+    let wordSource = (Storage.sourceObject StorageObjectKind.WordDefinition "word persisted.owner() -> Int {\n    effects none\n    1\n}\n").Reference
+    let testSource = (Storage.sourceObject StorageObjectKind.TestDefinition "test persisted.owner/shared-case {\n    1\n    => 1\n}\n").Reference
+    let exampleSource = (Storage.sourceObject StorageObjectKind.ExampleDefinition "example persisted.owner/shared-case {\n    1\n    => 1\n}\n").Reference
+    let site form target revision : FlowCallSite =
+        { Path = path
+          Span = callSpan
+          Form = form
+          RequestedName = "requested.call"
+          Target = target
+          TargetRevision = Some revision }
+    let wordBindings: FlowCallBinding list =
+        [ for form, _ in forms do
+              for target, _ in targets do
+                  yield
+                      { OwnerName = "persisted.owner"
+                        OwnerId = WordId "persisted-owner-id"
+                        OwnerRevision = 12
+                        Source = wordSource
+                        Site = site form target 7 } ]
+    let storedWords = FlowPersistence.wordBindings wordBindings
+    let expectedWords =
+        [ for binding in wordBindings do
+              let storedForm = forms |> List.find (fun (form, _) -> form = binding.Site.Form) |> snd
+              let storedTarget = targets |> List.find (fun (target, _) -> target = binding.Site.Target) |> snd
+              yield
+                  { Source = wordSource
+                    CaseName = None
+                    BodyRole = StoredCallBodyRole.Definition
+                    Path = path
+                    Form = storedForm
+                    RequestedName = "requested.call"
+                    Target = storedTarget } ]
+    equal "word binding adapter exhaustively retains forms, callback qualifications, target kinds, source, and path"
+        expectedWords storedWords
+    equal "word binding adapter preserves compiler traversal order" expectedWords storedWords
+    let wordBindingsWithNewTargetRevisions =
+        wordBindings
+        |> List.map (fun binding -> { binding with Site = { binding.Site with TargetRevision = Some 991 } })
+    equal "word binding adapter intentionally omits transient target revisions" storedWords
+        (FlowPersistence.wordBindings wordBindingsWithNewTargetRevisions)
+    let firstWordBinding = List.head wordBindings
+    let changedWordIdentity =
+        { firstWordBinding with
+            Site = { firstWordBinding.Site with Target = FlowCallTargetIdentity.UserWord(WordId "different-stable-id") } }
+    check "word binding adapter retains a changed stable target identity"
+        (FlowPersistence.wordBindings [ changedWordIdentity ] <> [ List.head storedWords ])
+
+    let attachmentSources =
+        [ StorageObjectKind.TestDefinition, FlowAttachmentKind.Test, testSource, "shared-case"
+          StorageObjectKind.ExampleDefinition, FlowAttachmentKind.Example, exampleSource, "shared-case" ]
+    let roles =
+        [ FlowAttachmentBodyRole.Actual, StoredCallBodyRole.Actual
+          FlowAttachmentBodyRole.ExpectedExpression, StoredCallBodyRole.ExpectedExpression ]
+    let attachmentBindings: FlowAttachmentCallBinding list =
+        [ for sourceKind, kind, source, caseName in attachmentSources do
+              equal "attachment fixture uses the case-kind-matched source reference" sourceKind source.Kind
+              for bodyRole, _ in roles do
+                  for form, _ in forms do
+                      for target, _ in targets do
+                          yield
+                              { Attachment =
+                                    { OwnerId = WordId "persisted-owner-id"
+                                      Kind = kind
+                                      CaseName = caseName }
+                                OwnerName = "persisted.owner"
+                                OwnerRevision = 12
+                                Source = source
+                                BodyRole = bodyRole
+                                Site = site form target 7 } ]
+    let storedAttachments = FlowPersistence.attachmentBindings attachmentBindings
+    let expectedAttachments =
+        [ for binding in attachmentBindings do
+              let storedForm = forms |> List.find (fun (form, _) -> form = binding.Site.Form) |> snd
+              let storedTarget = targets |> List.find (fun (target, _) -> target = binding.Site.Target) |> snd
+              let storedRole = roles |> List.find (fun (role, _) -> role = binding.BodyRole) |> snd
+              yield
+                  { Source = binding.Source
+                    CaseName = Some binding.Attachment.CaseName
+                    BodyRole = storedRole
+                    Path = path
+                    Form = storedForm
+                    RequestedName = "requested.call"
+                    Target = storedTarget } ]
+    equal "attachment adapter exhaustively retains case, body role, source kind, forms, targets, and path"
+        expectedAttachments storedAttachments
+    equal "attachment adapter preserves compiler traversal order" expectedAttachments storedAttachments
+    let attachmentBindingsWithNewTargetRevisions =
+        attachmentBindings
+        |> List.map (fun binding -> { binding with Site = { binding.Site with TargetRevision = Some 991 } })
+    equal "attachment binding adapter intentionally omits transient target revisions" storedAttachments
+        (FlowPersistence.attachmentBindings attachmentBindingsWithNewTargetRevisions)
+    let firstAttachmentBinding = List.head attachmentBindings
+    let changedAttachmentIdentity =
+        { firstAttachmentBinding with
+            Site = { firstAttachmentBinding.Site with Target = FlowCallTargetIdentity.GeneratedWord(WordId "different-generated-id") } }
+    check "attachment binding adapter retains a changed stable target identity"
+        (FlowPersistence.attachmentBindings [ changedAttachmentIdentity ] <> [ List.head storedAttachments ])
+
 let private testFlowDiagnostics () =
     let context = loweringContext [] Map.empty
     let ambiguous = parseExpression "1.unknown(2)"
@@ -3304,10 +3691,12 @@ let main _ =
     testFlowBatchForwardResolution ()
     testFlowBatchSignatureKindsAndNamedArguments ()
     testFlowBatchReplacementAndValidation ()
+    testFlowWordRehydrate ()
     testFlowBatchFinalValidationAndOrigins ()
     testFlowCallBindingSources ()
     testFlowCallBindingStructuralPaths ()
     testFlowAttachmentCallBindings ()
+    testFlowPersistenceBindings ()
     testFlowDiagnostics ()
     printfn "Flow tests passed: %d assertions" assertions
     0

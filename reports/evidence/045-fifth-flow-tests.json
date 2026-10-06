@@ -1,0 +1,7 @@
+{
+  "command": "dotnet run --project tests/AgentLang.Flow.Tests -c Release",
+  "exitCode": 0,
+  "output": [
+    "Flow tests passed: 768 assertions"
+  ]
+}

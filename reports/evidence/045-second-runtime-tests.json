@@ -1,0 +1,19 @@
+{
+  "command": "dotnet run --project tests/AgentLang.Flow.Runtime.Tests -c Release --no-build",
+  "dependencies": "fresh fourth API build",
+  "exitCode": -532462766,
+  "output": [
+    "Unhandled exception. System.Exception: baseline Stack test bytes are captured: expected test migration.increment/basic",
+    "    41 migration.increment",
+    "    expect 42",
+    "end",
+    ", got test migration.increment/basic",
+    "    41",
+    "    migration.increment",
+    "    => 42",
+    "end",
+    "   at AgentLang.Flow.Runtime.Tests.Program.equal[a,b](a expected, a actual, b message) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Runtime.Tests\\Program.fs:line 20",
+    "   at AgentLang.Flow.Runtime.Tests.Program.testStackOwnerMigrationToFlow(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Runtime.Tests\\Program.fs:line 271",
+    "   at AgentLang.Flow.Runtime.Tests.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Runtime.Tests\\Program.fs:line 813"
+  ]
+}

@@ -15,6 +15,7 @@
     <Compile Include="TypedIR.fs" />
     <Compile Include="Compiler.fs" />
     <Compile Include="FlowLowering.fs" />
+    <Compile Include="FlowPersistence.fs" />
     <Compile Include="IrFormatting.fs" />
     <Compile Include="IrInterpreter.fs" />
     <Compile Include="ValueInspection.fs" />

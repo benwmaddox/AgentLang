@@ -48,6 +48,9 @@ module FlowLowering =
     [<RequireQualifiedAccess>]
     type FlowWordRevisionIntent =
         | Add of WordId * revision: int
+        /// Host-only hydration intent for an existing persisted Flow revision.
+        /// It preserves the manifest's lifecycle metadata without advancing it.
+        | Rehydrate of WordId * revision: int * status: WordStatus * maturity: WordMaturity
         | Replace of WordId * expectedRevision: int * revision: int
 
     type FlowWordChange =
@@ -1691,21 +1694,28 @@ module FlowLowering =
         let parsed =
             inventory.Sources
             |> List.map (fun document -> document, validateFlowSourceDocument document)
-        // Verify the supplied base snapshot independently. This baseline check
-        // is distinct from the one final compile of all proposed real bodies.
-        let baseProgram = Compiler.compileIrProgramWithSourceOrigins context.CompilerContext context.SourceOrigins
-        parsed
-        |> List.map (fun (document, definition) ->
-            match namesById.TryFind document.OwnerId with
-            | Some ownerName when ownerName = document.OwnerName -> ()
-            | Some ownerName ->
-                fail "FLOW_SOURCE_OWNER_NAME_MISMATCH" "The host-declared owner name differs from the base ID-to-name catalog." (Some document.OwnerName) (Some definition.Span)
-                    [ ownerName ] [ document.OwnerName ]
-            | None ->
-                fail "FLOW_SOURCE_OWNER_ID_MISSING" "A Flow source document refers to an ID that is not assigned in the base dictionary." (Some document.OwnerName) (Some definition.Span)
-                    [ "base owner ID" ] [ sprintf "%A" document.OwnerId ]
-            validateBaseFlowSource context baseProgram document definition)
-        |> List.sortBy (fun retained -> retained.Document.OwnerName)
+        // Verify the supplied base snapshot independently when it contains
+        // retained source. With an empty inventory there is no authored base
+        // body to prove; compiling the provisional context here would reject
+        // valid forward references from Stack words to Flow words that this
+        // same batch is about to rehydrate. The complete candidate is still
+        // compiled once below after all real Flow bodies have been lowered.
+        match parsed with
+        | [] -> []
+        | _ ->
+            let baseProgram = Compiler.compileIrProgramWithSourceOrigins context.CompilerContext context.SourceOrigins
+            parsed
+            |> List.map (fun (document, definition) ->
+                match namesById.TryFind document.OwnerId with
+                | Some ownerName when ownerName = document.OwnerName -> ()
+                | Some ownerName ->
+                    fail "FLOW_SOURCE_OWNER_NAME_MISMATCH" "The host-declared owner name differs from the base ID-to-name catalog." (Some document.OwnerName) (Some definition.Span)
+                        [ ownerName ] [ document.OwnerName ]
+                | None ->
+                    fail "FLOW_SOURCE_OWNER_ID_MISSING" "A Flow source document refers to an ID that is not assigned in the base dictionary." (Some document.OwnerName) (Some definition.Span)
+                        [ "base owner ID" ] [ sprintf "%A" document.OwnerId ]
+                validateBaseFlowSource context baseProgram document definition)
+            |> List.sortBy (fun retained -> retained.Document.OwnerName)
 
     let private checkRetainedBindingStability ownerName (baseline: FlowCallSite list) (proposed: FlowCallSite list) =
         let baselineByPath = baseline |> List.map (fun site -> site.Path, site) |> Map.ofList
@@ -1871,6 +1881,8 @@ module FlowLowering =
         { Definition: FlowWordDefinition
           Identity: WordId
           Revision: int
+          Status: WordStatus
+          Maturity: WordMaturity
           Previous: WordEntry option }
 
     type private PreparedLoweredBatchChange =
@@ -1905,7 +1917,34 @@ module FlowLowering =
                 if revision < 0 then fail "FLOW_BATCH_REVISION_INVALID" "New word revisions must be nonnegative." (Some flowWord.Name) (Some flowWord.Span) [ "nonnegative revision" ] [ string revision ]
                 if baseIds.Contains identity || not (addedIds.Add identity) then
                     fail "FLOW_BATCH_ID_COLLISION" "A new word must use a stable ID not assigned to any base or other added word." (Some flowWord.Name) (Some flowWord.Span) [ "unused WordId" ] [ rawIdentity ]
-                prepared.Add { Definition = flowWord; Identity = identity; Revision = revision; Previous = None }
+                prepared.Add
+                    { Definition = flowWord
+                      Identity = identity
+                      Revision = revision
+                      Status = Candidate
+                      Maturity = ProjectWord
+                      Previous = None }
+            | FlowWordRevisionIntent.Rehydrate(identity, revision, status, maturity) ->
+                if context.CompilerContext.Words.ContainsKey flowWord.Name || context.CompilerContext.WordIds.ContainsKey flowWord.Name then
+                    fail "FLOW_BATCH_ADD_EXISTS" $"Cannot hydrate '{flowWord.Name}' because that word already exists." (Some flowWord.Name) (Some flowWord.Span) [ "unused dictionary name" ] [ flowWord.Name ]
+                let rawIdentity = match identity with | WordId value -> value
+                if String.IsNullOrWhiteSpace rawIdentity then fail "FLOW_BATCH_ID_INVALID" "Hydrated words require a nonempty stable ID." (Some flowWord.Name) (Some flowWord.Span) [ "nonempty WordId" ] [ rawIdentity ]
+                if revision < 0 then fail "FLOW_BATCH_REVISION_INVALID" "Hydrated word revisions must be nonnegative." (Some flowWord.Name) (Some flowWord.Span) [ "nonnegative revision" ] [ string revision ]
+                if status = Primitive || (status <> Candidate && status <> Temporary && status <> Persistent) then
+                    fail "FLOW_BATCH_REHYDRATE_METADATA_INVALID" "A hydrated Flow revision must retain Candidate, Temporary, or Persistent status." (Some flowWord.Name) (Some flowWord.Span)
+                        [ "Candidate"; "Temporary"; "Persistent" ] [ string status ]
+                if maturity <> ProjectWord && maturity <> LibraryWord then
+                    fail "FLOW_BATCH_REHYDRATE_METADATA_INVALID" "A hydrated Flow revision must retain Project or Library maturity." (Some flowWord.Name) (Some flowWord.Span)
+                        [ "ProjectWord"; "LibraryWord" ] [ string maturity ]
+                if baseIds.Contains identity || not (addedIds.Add identity) then
+                    fail "FLOW_BATCH_ID_COLLISION" "A hydrated word must use a stable ID not assigned to any base or other added word." (Some flowWord.Name) (Some flowWord.Span) [ "unused WordId" ] [ rawIdentity ]
+                prepared.Add
+                    { Definition = flowWord
+                      Identity = identity
+                      Revision = revision
+                      Status = status
+                      Maturity = maturity
+                      Previous = None }
             | FlowWordRevisionIntent.Replace(identity, expectedRevision, revision) ->
                 let previous =
                     context.CompilerContext.Words.TryFind flowWord.Name
@@ -1919,7 +1958,13 @@ module FlowLowering =
                     fail "FLOW_BATCH_STALE_REVISION" "Replacement intent does not match the current word revision." (Some flowWord.Name) (Some flowWord.Span) [ string previous.Revision ] [ string expectedRevision ]
                 if revision <= expectedRevision then
                     fail "FLOW_BATCH_REVISION_NOT_ADVANCED" "Replacement revision must advance beyond the revision it replaces." (Some flowWord.Name) (Some flowWord.Span) [ $"> {expectedRevision}" ] [ string revision ]
-                prepared.Add { Definition = flowWord; Identity = identity; Revision = revision; Previous = Some previous }
+                prepared.Add
+                    { Definition = flowWord
+                      Identity = identity
+                      Revision = revision
+                      Status = previous.Status
+                      Maturity = previous.Maturity
+                      Previous = Some previous }
 
         let baseSignatures = signatureCatalog context
         let signatureOverlay =
@@ -1969,8 +2014,8 @@ module FlowLowering =
                 allocationOrigins <- Map.fold (fun found marker origin -> Map.add marker origin found) allocationOrigins lowered.Projection.SyntheticOrigins
                 let definition =
                     match item.Previous with
-                    | Some previous -> { lowered.Definition with Revision = item.Revision; Maturity = previous.Maturity }
-                    | None -> { lowered.Definition with Revision = item.Revision }
+                    | Some _ -> { lowered.Definition with Revision = item.Revision; Maturity = item.Maturity }
+                    | None -> { lowered.Definition with Revision = item.Revision; Maturity = item.Maturity }
                 let lowered = { lowered with Definition = definition }
                 let source = sourceDocuments.TryFind item.Definition.Name
                 match source with
@@ -2030,12 +2075,14 @@ module FlowLowering =
                     | Some previous ->
                         { previous with
                             Definition = lowered.Definition
+                            Status = change.Prepared.Status
+                            Maturity = change.Prepared.Maturity
                             Revision = change.Prepared.Revision }
                     | None ->
                         { Definition = lowered.Definition
                           Builtin = None
-                          Status = Candidate
-                          Maturity = ProjectWord
+                          Status = change.Prepared.Status
+                          Maturity = change.Prepared.Maturity
                           Revision = change.Prepared.Revision }
                 Map.add name entry words) context.CompilerContext.Words
         let finalWords =
@@ -2121,7 +2168,8 @@ module FlowLowering =
             |> List.map (fun (change: FlowSourceChange) ->
                 let definition = validateFlowSourceDocument change.Source
                 match change.RevisionIntent with
-                | FlowWordRevisionIntent.Add(identity, revision) ->
+                | FlowWordRevisionIntent.Add(identity, revision)
+                | FlowWordRevisionIntent.Rehydrate(identity, revision, _, _) ->
                     if identity <> change.Source.OwnerId || revision <> change.Source.OwnerRevision then
                         fail "FLOW_SOURCE_CHANGE_REVISION_MISMATCH" "An added Flow source owner ID/revision must match its add intent." (Some definition.Name) (Some definition.Span)
                             [ sprintf "%A@%d" identity revision ] [ sprintf "%A@%d" change.Source.OwnerId change.Source.OwnerRevision ]
@@ -2176,7 +2224,8 @@ module FlowLowering =
             |> List.choose (fun value ->
                 match value.Change.RevisionIntent with
                 | FlowWordRevisionIntent.Replace _ -> Some value.Source.OwnerName
-                | FlowWordRevisionIntent.Add _ -> None)
+                | FlowWordRevisionIntent.Add _
+                | FlowWordRevisionIntent.Rehydrate _ -> None)
             |> Set.ofList
         let retainedSources = retainedBase |> List.filter (fun retained -> not (replacedNames.Contains retained.Document.OwnerName))
         let artifacts = compileBatchWordsCore context changes sourceDocuments retainedSources
@@ -2512,34 +2561,41 @@ module FlowLowering =
                 ensureAttachmentOwner context document.OwnerName document.OwnerId (Some document.OwnerRevision) (Some parsedSpan) |> ignore
                 document, parsed)
             |> List.sortBy (fun (document, _) -> attachmentKeyOfDocument document)
-        // Detached baselines are independently checked against one immutable base program.
-        let baseProgram = Compiler.compileIrProgramWithSourceOrigins context.CompilerContext context.SourceOrigins
-        let mutable allocationOrigins = context.SourceOrigins
-        parsed
-        |> List.map (fun (document, parsedAttachment) ->
-            let key = attachmentKeyOfDocument document
-            let baseSites, projection =
-                withAttachmentDiagnosticContext document (Some parsedAttachment) (fun () ->
-                    match parsedAttachment with
-                    | ParsedFlowTest test ->
-                        let compiled, actualEvents, expectedEvents = compileTestWithCallEvents context baseProgram allocationOrigins test
-                        let sites =
-                            [ FlowAttachmentBodyRole.Actual, reconcileDetachedCallEvents document.OwnerName compiled.Body actualEvents ]
-                            @ (compiled.ExpectationBody
-                               |> Option.map (fun body -> FlowAttachmentBodyRole.ExpectedExpression, reconcileDetachedCallEvents document.OwnerName body expectedEvents)
-                               |> Option.toList)
-                        Map.ofList sites, compiled.Lowered.Projection
-                    | ParsedFlowExample example ->
-                        let compiled, events = compileExampleWithCallEvents context baseProgram allocationOrigins example
-                        Map.ofList [ FlowAttachmentBodyRole.Actual, reconcileDetachedCallEvents document.OwnerName compiled.Body events ], compiled.Lowered.Projection)
-            let overlap = projection.SyntheticOrigins |> Map.toSeq |> Seq.tryFind (fun (marker, _) -> allocationOrigins.ContainsKey marker)
-            match overlap with
-            | Some(marker, _) -> fail "FLOW_ATTACHMENT_SOURCE_ORIGIN_COLLISION" "Attachment source markers must remain disjoint across the host inventory." (Some document.OwnerName) None [] [ sprintf "%A" marker ]
-            | None -> ()
-            allocationOrigins <- Map.fold (fun found marker origin -> Map.add marker origin found) allocationOrigins projection.SyntheticOrigins
-            { Document = document
-              Parsed = parsedAttachment
-              BaseCallSites = baseSites })
+        // Detached baselines are independently checked against one immutable
+        // base program when there are retained attachments. An empty inventory
+        // has no prior case sites to prove and may be a fresh Flow rehydrate
+        // whose Stack callers resolve only after the candidate Flow bodies are
+        // lowered. The final candidate still compiles every authored body.
+        match parsed with
+        | [] -> []
+        | _ ->
+            let baseProgram = Compiler.compileIrProgramWithSourceOrigins context.CompilerContext context.SourceOrigins
+            let mutable allocationOrigins = context.SourceOrigins
+            parsed
+            |> List.map (fun (document, parsedAttachment) ->
+                let key = attachmentKeyOfDocument document
+                let baseSites, projection =
+                    withAttachmentDiagnosticContext document (Some parsedAttachment) (fun () ->
+                        match parsedAttachment with
+                        | ParsedFlowTest test ->
+                            let compiled, actualEvents, expectedEvents = compileTestWithCallEvents context baseProgram allocationOrigins test
+                            let sites =
+                                [ FlowAttachmentBodyRole.Actual, reconcileDetachedCallEvents document.OwnerName compiled.Body actualEvents ]
+                                @ (compiled.ExpectationBody
+                                   |> Option.map (fun body -> FlowAttachmentBodyRole.ExpectedExpression, reconcileDetachedCallEvents document.OwnerName body expectedEvents)
+                                   |> Option.toList)
+                            Map.ofList sites, compiled.Lowered.Projection
+                        | ParsedFlowExample example ->
+                            let compiled, events = compileExampleWithCallEvents context baseProgram allocationOrigins example
+                            Map.ofList [ FlowAttachmentBodyRole.Actual, reconcileDetachedCallEvents document.OwnerName compiled.Body events ], compiled.Lowered.Projection)
+                let overlap = projection.SyntheticOrigins |> Map.toSeq |> Seq.tryFind (fun (marker, _) -> allocationOrigins.ContainsKey marker)
+                match overlap with
+                | Some(marker, _) -> fail "FLOW_ATTACHMENT_SOURCE_ORIGIN_COLLISION" "Attachment source markers must remain disjoint across the host inventory." (Some document.OwnerName) None [] [ sprintf "%A" marker ]
+                | None -> ()
+                allocationOrigins <- Map.fold (fun found marker origin -> Map.add marker origin found) allocationOrigins projection.SyntheticOrigins
+                { Document = document
+                  Parsed = parsedAttachment
+                  BaseCallSites = baseSites })
 
     let private checkRetainedAttachmentBindings
         (document: FlowAttachmentSourceDocument)
@@ -2566,7 +2622,7 @@ module FlowLowering =
                         [ sprintf "role=%A" role; sprintf "path=%A" path; sprintf "target=%A" baseByPath[path].Target ]
                         [ sprintf "role=%A" role; sprintf "path=%A" path; sprintf "target=%A" proposedByPath[path].Target ]
 
-    let compileBatchFlowProjectSources
+    let private compileBatchFlowProjectSourcesCore allowEmpty
         (context: Context)
         (wordInventory: FlowSourceInventory)
         (wordChanges: FlowSourceChange list)
@@ -2574,7 +2630,7 @@ module FlowLowering =
         (attachmentChanges: FlowAttachmentChange list)
         : FlowBoundProjectCompilation =
         validateContextCatalog context
-        if List.isEmpty wordChanges && List.isEmpty attachmentChanges then
+        if not allowEmpty && List.isEmpty wordChanges && List.isEmpty attachmentChanges then
             fail "FLOW_BATCH_EMPTY" "A Flow project-source batch must contain at least one word or attachment change." None None
                 [ "one or more word or attachment changes" ] []
 
@@ -2639,6 +2695,7 @@ module FlowLowering =
                 let identity =
                     match change.RevisionIntent with
                     | FlowWordRevisionIntent.Add(wordId, _)
+                    | FlowWordRevisionIntent.Rehydrate(wordId, _, _, _)
                     | FlowWordRevisionIntent.Replace(wordId, _, _) -> wordId
                 Set.add identity owners) baseFlowOwnerIds
         let mutable activeDocuments = Map.empty
@@ -2715,6 +2772,25 @@ module FlowLowering =
         { WordCompilation = wordCompilation
           Attachments = List.ofSeq compiledAttachments
           AttachmentBindings = List.ofSeq attachmentBindings }
+
+    let compileBatchFlowProjectSources
+        (context: Context)
+        (wordInventory: FlowSourceInventory)
+        (wordChanges: FlowSourceChange list)
+        (attachmentInventory: FlowAttachmentInventory)
+        (attachmentChanges: FlowAttachmentChange list)
+        : FlowBoundProjectCompilation =
+        compileBatchFlowProjectSourcesCore false context wordInventory wordChanges attachmentInventory attachmentChanges
+
+    /// Rebuilds and validates an unchanged Flow-authored project against one
+    /// exact compiler program. This is the load/Stack-only-change path: it has
+    /// no mutation intents and must never manufacture owner revisions.
+    let compileFlowProjectSnapshot
+        (context: Context)
+        (wordInventory: FlowSourceInventory)
+        (attachmentInventory: FlowAttachmentInventory)
+        : FlowBoundProjectCompilation =
+        compileBatchFlowProjectSourcesCore true context wordInventory [] attachmentInventory []
 
     let parameterCatalog (definitions: FlowWordDefinition list) =
         definitions

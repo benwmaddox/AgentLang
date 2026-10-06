@@ -1,0 +1,10 @@
+{
+  "command": "dotnet run --project tests/AgentLang.Flow.Runtime.Tests -c Release",
+  "exitCode": -532462766,
+  "output": [
+    "Unhandled exception. System.Exception: write virtual provider state before snapshot: expected success, got IR_SOURCE_ORIGIN_MISSING: Every private Flow source marker must have an authored source origin.",
+    "   at AgentLang.Flow.Runtime.Tests.Program.expectOk[a](a label, JsonObject response) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Runtime.Tests\\Program.fs:line 58",
+    "   at AgentLang.Flow.Runtime.Tests.Program.testNamedSnapshotRestoresFlowAndProviders(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Runtime.Tests\\Program.fs:line 634",
+    "   at AgentLang.Flow.Runtime.Tests.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Runtime.Tests\\Program.fs:line 832"
+  ]
+}

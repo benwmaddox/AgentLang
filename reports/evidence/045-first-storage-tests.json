@@ -1,0 +1,7 @@
+{
+  "command": "dotnet run --project tests/AgentLang.Storage.Tests -c Release",
+  "exitCode": 0,
+  "output": [
+    "Storage tests passed: 14 groups, 228 assertions."
+  ]
+}

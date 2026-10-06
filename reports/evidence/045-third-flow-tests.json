@@ -1,0 +1,11 @@
+{
+  "command": "dotnet run --project tests/AgentLang.Flow.Tests -c Release",
+  "exitCode": -532462766,
+  "output": [
+    "Unhandled exception. System.Exception: no-op snapshot rejects a retained attachment rebound to a different stable ID: expected diagnostic FLOW_ATTACHMENT_CALL_REBOUND",
+    "   at AgentLang.Flow.Tests.captureLanguageError[a,b](a name, String code, FSharpFunc`2 action) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs:line 26",
+    "   at AgentLang.Flow.Tests.expectLanguageError[a,b](a name, String code, FSharpFunc`2 action) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs:line 32",
+    "   at AgentLang.Flow.Tests.testFlowAttachmentCallBindings() in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs:line 3401",
+    "   at AgentLang.Flow.Tests.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs:line 3601"
+  ]
+}

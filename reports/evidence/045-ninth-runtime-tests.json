@@ -1,0 +1,20 @@
+{
+  "command": "dotnet run --project tests/AgentLang.Flow.Runtime.Tests -c Release",
+  "exitCode": -532462766,
+  "output": [
+    "Unhandled exception. AgentLang.LanguageException: LanguageException",
+    "  { Code = \"STORAGE_PROJECT_MISMATCH\"",
+    "    Message =",
+    "     \"The durable project export does not match its manifest-backed source objects.\"",
+    "    Word = None",
+    "    Span = None",
+    "    Expected = []",
+    "    Actual = [] }",
+    "   at AgentLang.Runtime.mismatch@1305[a](String message, FSharpOption`1 word) in D:\\code\\AgentLang\\src\\AgentLang.Core\\Runtime.fs:line 1305",
+    "   at AgentLang.Runtime.Engine.validateStoredProject(Store projectStore, FSharpOption`1 manifest, FSharpOption`1 manifestHash, FSharpOption`1 projectSource) in D:\\code\\AgentLang\\src\\AgentLang.Core\\Runtime.fs:line 1631",
+    "   at AgentLang.Runtime.Engine.loadProject() in D:\\code\\AgentLang\\src\\AgentLang.Core\\Runtime.fs:line 1642",
+    "   at AgentLang.Runtime.Engine..ctor(String projectDirectory, FSharpSet`1 capabilities, FSharpOption`1 clockValue) in D:\\code\\AgentLang\\src\\AgentLang.Core\\Runtime.fs:line 1651",
+    "   at AgentLang.Flow.Runtime.Tests.Program.testGeneratedRecordCasesPersistBesideFlow(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Runtime.Tests\\Program.fs:line 324",
+    "   at AgentLang.Flow.Runtime.Tests.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Runtime.Tests\\Program.fs:line 935"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "command": "dotnet run --project tests/AgentLang.Flow.Tests -c Release",
+  "exitCode": 1,
+  "durationMilliseconds": 18241,
+  "output": [
+    "D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\Program.fs(3272,46): error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved. [D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\AgentLang.Flow.Tests.fsproj]",
+    "",
+    "The build failed. Fix the build errors and run again."
+  ]
+}

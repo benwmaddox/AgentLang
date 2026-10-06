@@ -1,0 +1,15 @@
+{
+  "command": "dotnet run --project tests/AgentLang.Flow.Tests -c Release",
+  "exitCode": 1,
+  "output": [
+    "D:\\code\\AgentLang\\src\\AgentLang.Core\\Runtime.fs(466,30): error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved. [D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj]",
+    "D:\\code\\AgentLang\\src\\AgentLang.Core\\Runtime.fs(768,19): error FS0039: The record label 'SourceOrigins' is not defined. [D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj]",
+    "D:\\code\\AgentLang\\src\\AgentLang.Core\\Runtime.fs(766,17): error FS0656: This record contains fields from inconsistent types [D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj]",
+    "D:\\code\\AgentLang\\src\\AgentLang.Core\\Runtime.fs(783,29): error FS0656: This record contains fields from inconsistent types [D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj]",
+    "D:\\code\\AgentLang\\src\\AgentLang.Core\\Runtime.fs(919,20): error FS0001: Type mismatch. Expecting a\u001d    '(string * VerifiedIrBody) seq -> 'a'    \u001dbut given a\u001d    'Map<'b,'c> -> 'd'    \u001dThe type 'Map<'a,'b>' does not match the type '(string * VerifiedIrBody) seq' [D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj]",
+    "D:\\code\\AgentLang\\src\\AgentLang.Core\\Runtime.fs(919,20): error FS0001: Type mismatch. Expecting a\u001d    '(string * VerifiedIrBody) seq -> 'a'    \u001dbut given a\u001d    'Map<string,VerifiedIrBody> -> Map<string,VerifiedIrBody>'    \u001dThe type 'Map<string,VerifiedIrBody>' does not match the type '(string * VerifiedIrBody) seq' [D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj]",
+    "D:\\code\\AgentLang\\src\\AgentLang.Core\\Runtime.fs(931,60): error FS0001: This expression was expected to have type\u001d    'FlowLowering.FlowBoundProjectCompilation'    \u001dbut here has type\u001d    ''a * 'b * 'c * 'd'    \u001dA ';' is used to separate field values in records. Consider replacing ',' with ';'. [D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj]",
+    "",
+    "The build failed. Fix the build errors and run again."
+  ]
+}

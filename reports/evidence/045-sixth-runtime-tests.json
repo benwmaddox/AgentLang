@@ -1,0 +1,10 @@
+{
+  "command": "dotnet run --project tests/AgentLang.Flow.Runtime.Tests -c Release",
+  "exitCode": -532462766,
+  "output": [
+    "Unhandled exception. System.Exception: define a Stack wrapper and cases after committing Flow: expected success, got NAME_UNKNOWN_WORD: Word 'durable.increment' is not defined.",
+    "   at AgentLang.Flow.Runtime.Tests.Program.expectOk[a](a label, JsonObject response) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Runtime.Tests\\Program.fs:line 58",
+    "   at AgentLang.Flow.Runtime.Tests.Program.testExplicitFrontendAndDurableReload(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Runtime.Tests\\Program.fs:line 189",
+    "   at AgentLang.Flow.Runtime.Tests.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Runtime.Tests\\Program.fs:line 860"
+  ]
+}

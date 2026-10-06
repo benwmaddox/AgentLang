@@ -660,7 +660,7 @@ module Program =
         equal EmptyAuthority unchangedStackV2.Authority "Stack v2 refuses Flow bindings without changing authority"
         equal 0L unchangedStackV2.Generation "Stack v2 binding refusal leaves generation unchanged"
 
-    let private testRuntimePublishesV2AndRejectsFlowBeforeParsing root =
+    let private testRuntimePublishesV2AsStackByDefault root =
         let stackProject = Path.Combine(root, "runtime-stack-v2")
         let engine = Runtime.Engine(stackProject, Set.empty, "2030-01-02T03:04:05Z")
         let defineArgs = JsonObject()
@@ -688,51 +688,6 @@ module Program =
         let runtimeRevision = loaded.Manifest.Value.Revisions.Head
         equal { Frontend = SourceFrontend.Stack; Version = 1 } runtimeRevision.SourceFormat "Runtime defaults new definitions to Stack/1"
         equal [] runtimeRevision.CallBindings "Runtime Stack publication carries no authored call bindings"
-
-        let flowProject = Path.Combine(root, "runtime-flow-guard")
-        let store = Storage.create flowProject
-        let projectSource = source StorageObjectKind.ProjectSource "this is not a Stack project source\n"
-        let invalidDefinition = source StorageObjectKind.WordDefinition "this source cannot be parsed by the Stack frontend\n"
-        let validStackDefinitionSource =
-            String.concat "\n" [ "word runtime.sample : Int -> Int"; "    effects none"; "    1 add"; "end"; "" ]
-        let validStackDefinition = source StorageObjectKind.WordDefinition validStackDefinitionSource
-        let baseManifest, _, _ = fixture "runtime-flow"
-        let oldRevision =
-            { baseManifest.Revisions.Head with
-                WordId = "runtime-flow-word"
-                Name = "runtime.sample"
-                Revision = 1
-                Definition = invalidDefinition.Reference
-                Tests = []
-                Examples = []
-                SourceFormat = flowFormat
-                CallBindings = [] }
-        let currentRevision =
-            { oldRevision with
-                Revision = 2
-                Definition = validStackDefinition.Reference
-                SourceFormat = { Frontend = SourceFrontend.Stack; Version = 1 }
-                TimestampUtc = oldRevision.TimestampUtc.AddMinutes 1.0 }
-        let currentHead =
-            { baseManifest.Words.Head with
-                WordId = "runtime-flow-word"
-                CurrentName = "runtime.sample"
-                CurrentRevision = 2 }
-        let flowManifest =
-            { baseManifest with
-                FormatVersion = 2
-                ProjectSource = projectSource.Reference
-                Words = [ currentHead ]
-                Revisions = [ oldRevision; currentRevision ] }
-        Storage.commit store 0L flowManifest [ projectSource; invalidDefinition; validStackDefinition ] projectSource.Content
-        |> ok "write a storage-valid Flow revision with non-Stack source bytes"
-        |> ignore
-        let mutable runtimeError = None
-        try
-            Runtime.Engine(flowProject, Set.empty) |> ignore
-        with
-        | LanguageException diagnostic -> runtimeError <- Some diagnostic.Code
-        equal (Some "RUNTIME_UNSUPPORTED_FRONTEND") runtimeError "Runtime refuses Flow before parsing the source as Stack"
 
     let private testCommitReloadRevisionAndStableHistory root =
         let store = Storage.create (Path.Combine(root, "commit"))
@@ -1007,7 +962,7 @@ module Program =
             testManifestV2RoundTripAndCanonicalBindings root
             testV1HistoryMigrationAndSnapshotRestore root
             testManifestV2ValidationAndLimits root
-            testRuntimePublishesV2AndRejectsFlowBeforeParsing root
+            testRuntimePublishesV2AsStackByDefault root
             testCommitReloadRevisionAndStableHistory root
             testStaleGenerationWriterLockAndLimits root
             testFailureBoundaries root

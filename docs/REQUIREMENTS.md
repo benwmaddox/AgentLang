@@ -115,7 +115,7 @@ Still required or incomplete: recent-words, parse, ast, types, metrics, replace 
 
 Proposed memory follow-on: [scoped arena lifetime contract](MEMORY-REGIONS.md), including escape/promotion, generation/snapshot retention, cleanup, capacity and used/reserved/peak measurements. This is pending design/implementation and must not be confused with existing temporary words, managed GC or the value-size safety bounds. It follows the early authoring migration; native allocator integration remains conditional later work.
 
-User-directed early frontend migration now precedes further controlled agent experiments: [expression/dot source plan](FRONTEND-MIGRATION.md). Preserve words, strong types, effects, library gates and authoritative semantic IR; implement named inputs/locals, static first-input dot calls, explicit versioned source/persistence, complete legacy semantic coverage and default cutover. Close-to-first-use is lint. Do not introduce mutable language globals; retain explicit values/effects. The default Runtime/protocol frontend is still RPN. The opt-in Flow frontend now supports typed expressions, closed containers/cases, static callbacks, ordered output vectors, authored tests/examples and exact root calls. Word-batch signature/body compilation is verified in report 036. Source-backed call bindings/re-resolution, complete attachment assembly, durable authored metadata and default cutover remain required. Focused compiler checks do not establish the migration acceptance criteria.
+User-directed early frontend migration now precedes further controlled agent experiments: [expression/dot source plan](FRONTEND-MIGRATION.md). Preserve words, strong types, effects, library gates and authoritative semantic IR; implement named inputs/locals, static first-input dot calls, explicit versioned source/persistence, complete legacy semantic coverage and default cutover. Close-to-first-use is lint. Do not introduce mutable language globals; retain explicit values/effects. The default Runtime/protocol frontend is still Stack/RPN. The opt-in Flow frontend supports typed expressions, closed containers/cases, static callbacks, ordered output vectors, authored tests/examples and exact root calls; word-batch compilation and source-backed call bindings are covered by reports 036 and 038. The opt-in Runtime source vertical adds explicit Flow `define`/`eval`, manifest-selected load, durable source export/reload and stable-ID attachment metadata. Fresh Core/CLI builds passed, and focused Runtime acceptance passed all 11 groups and 203 assertions, including mixed frontend reload, lifecycle cases, and v1 generated-accessor compatibility. The final local 26-check Release gate passed with zero build warnings or errors; exact committed-source CI remains pending. The earlier gate failures were traced to stale `CURRENT` references after attached case source changed without advancing the case owner's revision, plus generated-accessor test cases absent from v2 word-revision attachment refs. Fixes now advance changed case owners and narrowly recover cases only for manifest-derived generated owners from the hash-verified project source; ordinary user and Flow cases stay revision-bound, and v2 still byte-compares the full canonical project source. See reports 045/046 and [focused Runtime](../reports/evidence/045-eleventh-runtime-tests.json) / [publication gate](../reports/evidence/045-publication-validation.json) evidence. Flow-aware rename/deprecate conformance and default frontend cutover remain required, as does controlled agent evaluation; focused checks do not establish full migration completion.
 
 User addition: the typed semantic IR must become the authoritative executable representation. Runtime now routes through the verified IR interpreter; report 010 records cutover validation. Further source-stage inspection remains pending; LLVM development JIT and release AOT remain conditional follow-ons after successful agent experiments. See [the backend plan](BACKENDS.md).
 
@@ -176,9 +176,27 @@ records 14 Storage groups / 229 assertions and a passing 25-check Release gate.
 Manifests read v1/v2, preserve frozen v1 bytes and historical references, and
 store explicit per-revision source format plus bounded canonical call bindings.
 CURRENT and snapshot envelopes remain v1, including snapshots referencing v2
-manifests. New Runtime publication writes v2 Stack metadata and rejects current
-or historical Flow before legacy parsing. Storage membership/schema validity
-does not prove Flow source semantics; authored-source Runtime dispatch, mixed
-export validation, edit/rename/library gates, rollback conformance, default Flow
-authoring and controlled agent evaluation remain required. Report 042 tracks
-committed CI and publication separately from local acceptance.
+manifests. At that milestone, new Runtime publication wrote Stack metadata and
+Runtime rejected current or historical Flow before legacy parsing. That status
+is historical and was superseded by the opt-in Runtime work in report 045.
+
+Current opt-in Flow Runtime evidence: [report 045](../reports/045-flow-runtime-integration.md)
+tracks the implementation and validation attempts; [report 046](../reports/046-flow-runtime-acceptance.md)
+tracks the dedicated Runtime suite. Fresh Core/CLI builds passed. The eleventh
+focused Runtime run passed all 11 groups and 203 assertions, including mixed
+frontend reload, lifecycle cases, and v1 generated-accessor compatibility; see
+[the run evidence](../reports/evidence/045-eleventh-runtime-tests.json). The
+final local 26-check Release gate passed with zero build warnings/errors; see
+[publication-gate evidence](../reports/evidence/045-publication-validation.json).
+The earlier gate failures were traced to a Stack rename changing attached case
+source without advancing that case owner's revision (leaving stale `CURRENT`
+case references), and to generated-accessor cases that have no word-revision
+attachment slot in v2. Runtime now advances an owner revision whenever its
+attached test/example source changes. It recovers cases from hash-verified
+project source only for manifest-derived generated owners; user and Flow cases
+remain revision-bound. V1 keeps its legacy aggregate semantic comparison and
+frozen golden, while v2 still byte-compares the complete canonical project
+source. Exact committed-source CI remains pending. Flow remains opt-in.
+Flow-aware rename/deprecate conformance, default frontend cutover, and controlled
+agent evaluation remain open. No research benefit is inferred from these
+implementation checks.

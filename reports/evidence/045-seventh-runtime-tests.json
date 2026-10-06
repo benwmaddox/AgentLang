@@ -1,0 +1,10 @@
+{
+  "command": "dotnet run --project tests/AgentLang.Flow.Runtime.Tests -c Release",
+  "exitCode": -532462766,
+  "output": [
+    "Unhandled exception. System.Exception: binding mismatch identifies its owner word: expected Some(durable.increment), got Some(durable.increment/basic)",
+    "   at AgentLang.Flow.Runtime.Tests.Program.equal[a,b](a expected, a actual, b message) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Runtime.Tests\\Program.fs:line 20",
+    "   at AgentLang.Flow.Runtime.Tests.Program.testPersistedBindingsAreVerified(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Runtime.Tests\\Program.fs:line 743",
+    "   at AgentLang.Flow.Runtime.Tests.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Runtime.Tests\\Program.fs:line 866"
+  ]
+}
