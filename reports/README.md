@@ -13,9 +13,9 @@ completed an inherited-history inspect/define/test/library-commit workflow,
 with 48 fresh-process acceptance checks and eight seed-preservation checks.
 Its earlier fresh-context attempt was blocked before definition. Replay passed
 45 checks and negative controls passed 70; both are required in the 31-check
-Release gate, which passed locally with zero build warnings/errors. Clean
-source CI and private publication remain pending; no comparative efficiency
-claim is made.
+Release gate, which passed locally with zero build warnings/errors and in clean
+source CI run 37455797730 on `4a09399`. The following evidence-only publication
+changes no executable source. No comparative efficiency claim is made.
 
 Latest local checkpoint: [053 — Flow renewal fixtures](053-flow-renewal-fixtures.md)
 passed the complete 29-check Release gate, including 129 Flow fixture checks and

@@ -1,6 +1,6 @@
 # Flow renewal external-agent control
 
-Status: control and complete local validation passed; clean source CI and publication pending. This report separates a blocked fresh-context
+Status: control and complete local/clean source validation passed. This report separates a blocked fresh-context
 attempt from an inherited-history workflow control; neither is comparative
 efficiency evidence.
 
@@ -117,7 +117,7 @@ receiver/dictionary-name distinction. This single toy String/Bool/Float task
 does not establish advantages over conventional code, growing-vocabulary
 efficiency, strong business-type parity or smaller-context operation.
 
-## Remaining validation
+## Validation and publication
 
 The negative gate's first executable run failed at a setup descriptor-shape
 assertion, before testing numerical rejection. The
@@ -154,6 +154,20 @@ passed all 31 checks with zero build warnings/errors. It records parent revision
 CI evidence. Sidecars include the 70-check negative gate and 45-check replay,
 both using this solution build. The 60-task bank still validates proposed task
 documents/vectors, not 60 completed executable agent trials.
-Exact source CI and private publication are pending. The full PRD remains incomplete, including controlled
+Exact clean source CI run
+[37455797730](https://github.com/benwmaddox/AgentLang/actions/runs/37455797730)
+passed all 31 required checks on `4a0939912cc8385e4132c4bff90c5e261139facc`
+with `dirty: false`; the job took 4m51s. Downloaded
+[run identity](evidence/054-committed-source-ci.json),
+[full validation](evidence/054-committed-source-validation.json),
+[70-check negative gate](evidence/054-committed-source-negative-gate.json), and
+[45-check replay with 48-check fresh acceptance](evidence/054-committed-source-replay.json)
+were audited. This also validates the byte-pinned accepted sources in a fresh
+checkout. The following report/evidence-only commit changes no executable source
+after that CI run. Repository privacy was freshly verified before source push;
+publication fast-forwards private `main` and `prototype` together after this
+evidence update. Postpublication main CI is separate evidence to audit afterward.
+
+The full PRD remains incomplete, including controlled
 Flat/Growing/Conventional sequences and the complete business benchmark domain.
 No allocator, mailbox execution or LLVM backend is introduced by this work.

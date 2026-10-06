@@ -13,8 +13,10 @@ approval review. These outcomes do not prove comparative efficiency or
 small-context operation. Deterministic replay passed 45 checks; negative controls
 passed 70 checks and reject incorrect behavior despite passing self-tests/full
 coverage. The complete local 31-check Release gate passed with zero build
-warnings/errors against dirty parent `44e20b5`. Clean source CI and private
-publication are pending; the full PRD remains incomplete.
+warnings/errors against dirty parent `44e20b5`. Exact clean source CI run
+37455797730 passed all 31 checks on `4a09399`, including the new negative and
+replay gates. Saved evidence is separate from local/trial results. The following
+report-only publication changes no executable source; the full PRD remains incomplete.
 
 Latest experimental preparation: [report 053](../reports/053-flow-renewal-fixtures.md)
 records a passing complete local **29-check Release gate**, 129 Flow renewal
