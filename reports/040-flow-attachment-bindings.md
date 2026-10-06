@@ -32,8 +32,8 @@ errors: 0
 elapsed: 16.33s
 ```
 
-The saved build and source hash are in [the fresh Core build evidence](evidence/039-attachment-diagnostics-fresh-build.json). The final focused run passed **705 Flow assertions** with `dotnet run --project tests/AgentLang.Flow.Tests -c Release`; the output is in [the focused Flow evidence](evidence/039-ninth-focused-flow.json). A separate source-backed attachment smoke passed **19 checks**, including the new owner/case/body-role/path diagnostic metadata; see [the smoke evidence](evidence/039-diagnostics-client-smoke.json).
+The saved build and source hash are in [the fresh Core build evidence](evidence/039-attachment-diagnostics-fresh-build.json). The final focused run passed **705 Flow assertions** with `dotnet run --project tests/AgentLang.Flow.Tests -c Release`; the output is in [the focused Flow evidence](evidence/039-ninth-focused-flow.json). A separate source-backed attachment smoke passed **19 checks**, covering retained test/example sources and stable-identity revision advancement; see [the smoke evidence](evidence/039-diagnostics-client-smoke.json).
 
 The complete local Release validation gate passed all **25 checks**, including the solution build, application acceptance suites, persistence projection, fixture and subagent-host checks, parser limits, and whitespace validation. Its full command outputs are preserved in [the gate evidence](evidence/039-flow-attachment-validation.json). The independent source review found no material issues.
 
-Commit and committed-CI publication remain outstanding. This report records local validation and does not claim a remote push or merge. The preceding word-only milestone is recorded in [report 038](038-flow-binding-integration.md).
+Source commit `d0782c1` also passed exact clean committed CI with all 25 checks. Saved remote evidence and the reports-only publication are recorded in [report 039](039-flow-attachment-integration.md). The preceding word-only milestone is recorded in [report 038](038-flow-binding-integration.md).

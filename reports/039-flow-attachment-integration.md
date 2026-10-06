@@ -1,6 +1,6 @@
 # Flow attachment source-binding integration
 
-Status: local integrated acceptance passed; publication in progress. The full PRD remains active.
+Status: local and exact committed CI acceptance passed. The full PRD remains active.
 
 ## Authoritative baseline
 
@@ -251,3 +251,26 @@ The later storage acceptance will preserve all six literal v1 hashes, migrate
 history under the same word ID, round-trip deterministic v2 metadata, reject
 unsupported/malformed versions before object dispatch and restore a v2 manifest
 through a v1 snapshot. No storage implementation is claimed in this slice.
+
+## Committed CI and publication
+
+Source milestone `d0782c1b48aad53e572a7ba0ec4c0bd763549546` passed
+[exact committed CI](https://github.com/benwmaddox/AgentLang/actions/runs/37399119063).
+The downloaded artifact identifies that revision, a clean checkout, 25 checks
+with zero exit codes, and 705 passing Flow assertions. Saved
+[run identity](evidence/039-source-ci-run.json),
+[gate](evidence/039-source-ci-validation.json) and four companion outputs.
+The repository privacy check returned true before source publication.
+
+This reports-only publication corrects stale local-gate status and distinguishes
+the smoke's source/revision checks from the focused suite's diagnostic checks.
+It changes no executable source, tests, scripts or workflow after committed CI.
+Integration into private main/prototype uses a fast-forward without a force push
+or worktree. Durable storage v2 and Runtime/default authoring remain next work;
+this milestone does not complete the full PRD or establish agent performance.
+
+The optional mailbox memory candidate is already recorded in the PRD and
+stack-only/region research plans: bounded typed retained state outside processing
+arenas, transient arena-backed data stack, checked copies and no escaping scratch
+references. Mutable retained data uses explicit access. No allocator restriction
+or measured memory benefit is implemented by this compiler milestone.
