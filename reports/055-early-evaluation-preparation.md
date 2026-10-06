@@ -121,3 +121,16 @@ as dirty on parent f55057b; it is not clean committed CI evidence. Sidecars
 include all five adversarial library controls and the corrected 17-check broker
 verification. Failed integration validation is retained separately. Publication
 will pin source with this report and then audit clean CI before merging.
+
+## Committed source CI and publication
+
+Clean source CI run [37466819793](https://github.com/benwmaddox/AgentLang/actions/runs/37466819793)
+passed all 32 required checks on `e87931a1ed22b05e60443c158cf9c2527c0ba6f6`,
+with `dirty: false`. Downloaded run identity, full validation, five wrong-library
+controls and corrected broker evidence were audited. This report/evidence update
+changes no executable source after that run. Publication fast-forwards private
+main and prototype together. The first fresh Flat language and Conventional
+subagent tasks are underway on that source with pinned copied binaries; their
+outcomes belong to the next report. Growing launch hit the subagent thread cap
+and was not substituted with an inherited-history agent. Exact usage remains
+unavailable, and concurrent apparatus runs cannot compare latency.
