@@ -42,6 +42,12 @@ separate behavioral acceptance. This is a partial sequence; first-task usability
 does not establish vocabulary reuse or overall efficiency. Completing the
 rotated five-task comparison remains the immediate priority.
 
+The next [checkpoint 061](../reports/061-repeat-discount-task.md) verifies all
+three task-2 outcomes and reuse by fresh Growing and Conventional agents. Six
+repeated trials are accepted; nine remain. Existing definitions/tests are
+preserved, and language own branch coverage is complete. No overall efficiency
+advantage or small-context success is established.
+
 Latest external-agent workflow evidence: [report 054](../reports/054-flow-renewal-agent-control.md)
 records a separate inherited-history Luna/max control that created one tested
 library word by composing a retained domain word. Fresh-process acceptance

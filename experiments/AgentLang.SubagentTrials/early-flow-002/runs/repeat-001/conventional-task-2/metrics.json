@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "trial": "repeat-001/conventional-task-2",
+  "accepted": true,
+  "independentChecks": 43,
+  "behavioralVectors": 20,
+  "exchanges": 9,
+  "requestPayloadUtf8Bytes": 1798,
+  "responsePayloadUtf8Bytes": 7681,
+  "runtimeErrors": 0,
+  "errors": [],
+  "modelTokens": null,
+  "modelTurns": null,
+  "controlledDuration": null,
+  "teardown": "Actor stopped existing session 77238 with Ctrl+C, exit 0; no additional JSONL requests.",
+  "promptAudit": "Intended prompt archived before launch; actual provider prompt bytes unavailable.",
+  "sourceAudit": {
+    "exactOnlyDiscountedBalanceEdit": true,
+    "projectUnchanged": true,
+    "previousSixTestsPreserved": true,
+    "newSelfTestCases": 6,
+    "reusesPremium": true
+  }
+}

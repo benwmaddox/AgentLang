@@ -1,0 +1,3 @@
+test customer.discounted-balance/zero-balance {
+    customer::discounted-balance(customer::new("premium", 0.0)) => 0.0
+}

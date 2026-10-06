@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "trial": "repeat-001/flat-task-2",
+  "accepted": true,
+  "independentChecks": 48,
+  "behavioralVectors": 20,
+  "exchanges": 17,
+  "requestPayloadUtf8Bytes": 2690,
+  "responsePayloadUtf8Bytes": 12483,
+  "runtimeErrors": 2,
+  "errors": [
+    {
+      "index": 9,
+      "operation": "define",
+      "code": "FLOW_UNKNOWN_LOCAL"
+    },
+    {
+      "index": 10,
+      "operation": "describe",
+      "code": "NAME_UNKNOWN_WORD"
+    }
+  ],
+  "modelTokens": null,
+  "modelTurns": null,
+  "controlledDuration": null,
+  "teardown": "Actor stopped existing session 93280 with Ctrl+C, exit 0; no additional JSONL requests.",
+  "promptAudit": "Intended prompt archived before launch; actual provider prompt bytes unavailable.",
+  "typesPreserved": true,
+  "manifestHash": "0b834ab70963db9c21e19cbda985bb747ef448486409cb1d8e96aab886506e51",
+  "persistentWords": 1,
+  "ownTestRuns": [
+    {
+      "results": [
+        {
+          "name": "exact-kind-match",
+          "word": "customer.discounted-balance",
+          "passed": true,
+          "expected": "100",
+          "actual": [
+            "100"
+          ]
+        },
+        {
+          "name": "negative-non-premium",
+          "word": "customer.discounted-balance",
+          "passed": true,
+          "expected": "-12.5",
+          "actual": [
+            "-12.5"
+          ]
+        },
+        {
+          "name": "non-premium",
+          "word": "customer.discounted-balance",
+          "passed": true,
+          "expected": "100",
+          "actual": [
+            "100"
+          ]
+        },
+        {
+          "name": "premium",
+          "word": "customer.discounted-balance",
+          "passed": true,
+          "expected": "90",
+          "actual": [
+            "90"
+          ]
+        },
+        {
+          "name": "zero-balance",
+          "word": "customer.discounted-balance",
+          "passed": true,
+          "expected": "0",
+          "actual": [
+            "0"
+          ]
+        }
+      ],
+      "coverage": {
+        "instructionsCovered": 11,
+        "instructionsTotal": 11,
+        "branchesCovered": 2,
+        "branchesTotal": 2,
+        "uncoveredInstructions": [],
+        "uncoveredBranchOutcomes": []
+      }
+    }
+  ]
+}

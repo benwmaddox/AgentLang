@@ -1,0 +1,3 @@
+test customer.discounted-balance/negative-non-premium {
+    customer::discounted-balance(customer::new("standard", -12.5)) => -12.5
+}

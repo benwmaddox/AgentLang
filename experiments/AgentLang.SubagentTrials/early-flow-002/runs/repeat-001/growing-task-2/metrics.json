@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "trial": "repeat-001/growing-task-2",
+  "accepted": true,
+  "independentChecks": 48,
+  "behavioralVectors": 20,
+  "exchanges": 14,
+  "requestPayloadUtf8Bytes": 1442,
+  "responsePayloadUtf8Bytes": 8837,
+  "runtimeErrors": 0,
+  "errors": [],
+  "modelTokens": null,
+  "modelTurns": null,
+  "controlledDuration": null,
+  "teardown": "Actor stopped existing host session 24183 with Ctrl+C, exit 0; no additional JSONL requests.",
+  "promptAudit": "Intended prompt archived before launch; actual provider prompt bytes unavailable.",
+  "typesPreserved": true,
+  "manifestHash": "eea54a49b5985b7ba3e88b04f15fdf72e6061aa7556453705693dc7c258f9f14",
+  "persistentWords": 2,
+  "previousWordsPreserved": 1,
+  "ownTestRuns": [
+    {
+      "results": [
+        {
+          "name": "case-sensitive-kind",
+          "word": "customer.discounted-balance",
+          "passed": true,
+          "expected": "25",
+          "actual": [
+            "25"
+          ]
+        },
+        {
+          "name": "other-kind-unchanged",
+          "word": "customer.discounted-balance",
+          "passed": true,
+          "expected": "100",
+          "actual": [
+            "100"
+          ]
+        },
+        {
+          "name": "premium-discount",
+          "word": "customer.discounted-balance",
+          "passed": true,
+          "expected": "90",
+          "actual": [
+            "90"
+          ]
+        },
+        {
+          "name": "premium-zero-balance",
+          "word": "customer.discounted-balance",
+          "passed": true,
+          "expected": "0",
+          "actual": [
+            "0"
+          ]
+        }
+      ],
+      "coverage": {
+        "instructionsCovered": 9,
+        "instructionsTotal": 9,
+        "branchesCovered": 2,
+        "branchesTotal": 2,
+        "uncoveredInstructions": [],
+        "uncoveredBranchOutcomes": []
+      }
+    }
+  ]
+}

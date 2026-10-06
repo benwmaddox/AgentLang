@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "trial": "repeat-001/conventional-task-2",
+  "actorCompletion": "Discount helper reused Customer.premium; six new tests plus existing six passed.",
+  "coordinatorAcceptance": "43 task-2 checks passed",
+  "coordinatorInfrastructure": {
+    "operation": "Read-only trace inspection",
+    "firstAttempt": "Automatic permission approval review timed out before deadline; command was not started.",
+    "retry": "One permitted retry succeeded.",
+    "agentRuntimeError": false
+  },
+  "teardown": "Existing session 77238 stopped by actor with Ctrl+C, exit 0; no additional JSONL request."
+}
