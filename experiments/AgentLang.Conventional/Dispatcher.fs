@@ -328,6 +328,39 @@ type ConventionalDispatcher
         data["bytes"] <- Json.int64 (int64 outputBytes.Length)
         Responses.success "replace" $"Replaced {relative}." (Some(data :> JsonNode))
 
+    let patch (relativePath: string) (expectedHash: string) (oldText: string) (newText: string) =
+        if expectedHash.Length <> 64 || (expectedHash |> Seq.exists (fun character -> not (Uri.IsHexDigit character))) then
+            fail "HASH_INVALID" "expectedSha256 must contain exactly 64 hexadecimal characters."
+
+        let full, relative = resolveSourceFile relativePath true
+        let currentBytes = readBytes full
+        let currentHash = hashBytes currentBytes
+        if not (String.Equals(currentHash, expectedHash, StringComparison.OrdinalIgnoreCase)) then
+            fail "STALE_CONTENT" "The file changed since it was read; inspect and read it again before patching."
+
+        if String.IsNullOrEmpty oldText then fail "PATCH_ANCHOR_EMPTY" "oldText must be a non-empty exact text anchor."
+        let currentContent = decodeUtf8 relative currentBytes
+        let firstMatch = currentContent.IndexOf(oldText, StringComparison.Ordinal)
+        if firstMatch < 0 then fail "PATCH_ANCHOR_NOT_FOUND" "oldText does not occur in the current file."
+        let nextMatch = currentContent.IndexOf(oldText, firstMatch + 1, StringComparison.Ordinal)
+        if nextMatch >= 0 then fail "PATCH_ANCHOR_AMBIGUOUS" "oldText occurs more than once in the current file."
+
+        let updatedContent =
+            currentContent.Substring(0, firstMatch)
+            + newText
+            + currentContent.Substring(firstMatch + oldText.Length)
+        let outputBytes =
+            try UTF8Encoding(false, true).GetBytes(updatedContent)
+            with :? EncoderFallbackException ->
+                fail "PATCH_OUTPUT_ENCODING_INVALID" "The patched output is not valid UTF-8 text."
+        if int64 outputBytes.Length > fileByteLimit then
+            fail "FILE_TOO_LARGE" $"Patch output exceeds the {fileByteLimit}-byte file limit."
+
+        let result = replace relativePath expectedHash updatedContent
+        result["kind"] <- Json.text "patch"
+        result["text"] <- Json.text $"Patched {relative}."
+        result
+
     let removeCredentialEnvironment (environment: System.Collections.Generic.IDictionary<string, string>) =
         let sensitiveMarkers = [ "KEY"; "TOKEN"; "PASSWORD"; "SECRET"; "CREDENTIAL"; "AUTH"; "PRIVATE" ]
         let keys = environment.Keys |> Seq.cast<obj> |> Seq.map string |> Seq.toArray
@@ -466,6 +499,13 @@ type ConventionalDispatcher
                     | "replace" ->
                         exactArguments arguments [ "path"; "expectedSha256"; "content" ]
                         replace (requiredString arguments "path") (requiredString arguments "expectedSha256") (requiredString arguments "content")
+                    | "patch" ->
+                        exactArguments arguments [ "path"; "expectedSha256"; "oldText"; "newText" ]
+                        patch
+                            (requiredString arguments "path")
+                            (requiredString arguments "expectedSha256")
+                            (requiredString arguments "oldText")
+                            (requiredString arguments "newText")
                     | "validate" ->
                         exactArguments arguments []
                         validate () |> fun pending -> pending.GetAwaiter().GetResult()
@@ -479,7 +519,7 @@ type ConventionalDispatcher
             let record = JsonObject()
             record["sequence"] <- Json.int64 nextSequence
             nextSequence <- nextSequence + 1L
-            record["operation"] <- Json.text (if Set.contains operation (Set.ofList [ "inspect"; "read"; "search"; "replace"; "validate" ]) then operation else "unsupported")
+            record["operation"] <- Json.text (if Set.contains operation (Set.ofList [ "inspect"; "read"; "search"; "replace"; "patch"; "validate" ]) then operation else "unsupported")
             record["status"] <- Json.text (if result["ok"].GetValue<bool>() then "ok" else Json.propertyString result["error"] "code" "failed")
             match Json.property result "data" with
             | Some (:? JsonObject as data) ->

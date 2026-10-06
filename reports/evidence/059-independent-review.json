@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "mode": "read-only independent review",
+  "reviewer": "gpt-6-luna",
+  "reasoning": "max",
+  "scope": ["conventional patch dispatcher", "direct and CLI test diffs", "approved patch contract"],
+  "findings": [],
+  "report": "No confirmed correctness or contract defect found. Hash-before-anchor, ordinal uniqueness including overlaps, BOM/CRLF/Unicode round-trip, strict output encoding/size check before the shared atomic writer, metadata-only patch response/logging, and CLI top-level/nested recovery plus cap behavior appear consistent.",
+  "limits": "Reviewer did not build or run tests. Reviewer left the malformed-surrogate fixture unresolved; root's pure FSI probe subsequently confirmed the literal became U+FFFD, and the worker repaired it with runtime U+D800 construction and code-unit assertions. Fresh root validation is authoritative."
+}

@@ -6,8 +6,9 @@ to give an external coding agent familiar repository-style tools while keeping
 the benchmark's acceptance oracle outside the agent-editable project root.
 It is separate from the language runtime and has no model-provider dependency.
 
-The dispatcher exposes five closed operations: `inspect(path)`, `read(path)`,
-`search(query)`, `replace(path, expectedSha256, content)`, and `validate()`.
+The dispatcher exposes six closed operations: `inspect(path)`, `read(path)`,
+`search(query)`, `replace(path, expectedSha256, content)`,
+`patch(path, expectedSha256, oldText, newText)`, and `validate()`.
 Each takes a JSON object with exactly the documented fields and returns a
 structured JSON result. Unsupported operations and extra or malformed fields
 return structured errors. Each call is appended to an ordered metadata-only
@@ -20,6 +21,18 @@ whole-file replacement: callers must provide the hash from a recent read. A
 stale hash leaves the file unchanged. The replacement is written to a bounded,
 temporary file, flushed, and moved over the target atomically. Use a fresh read
 after replacement to verify the saved text and hash.
+
+`patch` replaces one nonempty exact text anchor in the current UTF-8 file.
+It requires a fresh file hash and exactly one ordinal match, including
+overlapping matches. Use unique surrounding context to insert text; empty
+`newText` deletes an anchor. There is no fuzzy matching or newline normalization.
+Missing/ambiguous anchors return `PATCH_ANCHOR_NOT_FOUND` /
+`PATCH_ANCHOR_AMBIGUOUS`; empty anchors return `PATCH_ANCHOR_EMPTY`.
+Invalid output encoding and oversized output fail before writing. Surrounding
+content, BOM, newlines and Unicode are preserved. A successful patch reuses the
+atomic final hash check and returns normalized path, updated hash and bytes,
+without echoing source. This reduces the full-file request payload imposed on
+the original pilot; it does not establish agent efficiency by itself.
 
 `search` performs deterministic, case-insensitive literal matching across
 UTF-8 source, project, solution, JSON, and Markdown files. Paths and results
@@ -57,7 +70,7 @@ log environment values.
 
 The executable acceptance suite creates an isolated temporary F# console
 project and exercises path rejection, link rejection when the host supports
-symbolic links, bounded deterministic search, hash-checked replacement,
+symbolic links, bounded deterministic search, hash-checked replacement/patching,
 metadata-only operation logs, and successful, failing, and timed-out fixed
 validation commands:
 

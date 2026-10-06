@@ -8,3 +8,4 @@ experiments/AgentLang.SubagentTrials/matched-renewal-001/runs/** -text whitespac
 experiments/AgentLang.SubagentTrials/matched-renewal-001/flow-renewal-acceptance.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 experiments/AgentLang.SubagentTrials/early-flow-001/acceptance.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 experiments/AgentLang.SubagentTrials/early-flow-001/runs/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+experiments/AgentLang.SubagentTrials/early-flow-002/runs/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

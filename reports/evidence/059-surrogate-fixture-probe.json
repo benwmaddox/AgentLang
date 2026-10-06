@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "method": "dotnet fsi pure fixture probe",
+  "literalCodeUnit": "FFFD",
+  "constructedCodeUnit": "D800",
+  "literalStrictUtf8Encoding": "accepted",
+  "constructedStrictUtf8Encoding": "EncoderFallbackException",
+  "conclusion": "The F# Unicode escape literal emits a valid replacement character; construct the malformed UTF-16 code unit at runtime to test strict output rejection."
+}

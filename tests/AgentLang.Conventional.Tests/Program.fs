@@ -2,6 +2,8 @@ namespace AgentLang.Conventional.Tests
 
 open System
 open System.IO
+open System.Security.Cryptography
+open System.Text
 open System.Text.Json.Nodes
 open AgentLang.Conventional
 
@@ -79,6 +81,19 @@ module Program =
 
     let private defaultDispatcher root action timeoutMs outputLimit =
         makeDispatcher root action timeoutMs outputLimit 200 20_000 64
+
+    let private makeByteLimitedDispatcher root fileByteLimit =
+        let command =
+            { Action = ValidationAction.Build
+              ProjectFile = "Synthetic.fsproj"
+              TimeoutMilliseconds = 10_000
+              MaximumOutputCharactersPerStream = 2048 }
+        new ConventionalDispatcher(root, command, maximumFileBytes = fileByteLimit)
+
+    let private hashBytes (bytes: byte array) =
+        SHA256.HashData(bytes)
+        |> Convert.ToHexString
+        |> fun value -> value.ToLowerInvariant()
 
     let private testPathConfinementAndWindowsAliases root =
         let project = makeProject root "paths"
@@ -193,6 +208,141 @@ module Program =
         check (logs.ToJsonString().Contains("replace")) "operation log records the definition-level file replacement"
         check (not (logs.ToJsonString().Contains(replacement))) "operation logs omit source contents"
 
+    let private testExactCompareAndSwapPatch root =
+        let project = makeProject root "patch"
+        let sourcePath = Path.Combine(project, "answer.fs")
+        let original = "\uFEFFmodule Café\r\nlet value = \"こんにちは\" 41\r\nlet tail = \"keep\"\r\n"
+        let originalBytes = UTF8Encoding(false, true).GetBytes(original)
+        File.WriteAllBytes(sourcePath, originalBytes)
+        let dispatcher = defaultDispatcher project ValidationAction.Build 10_000 2048
+        let readBefore = call dispatcher "read" [ "path", text "answer.fs" ]
+        check (isOk readBefore) "patch source read succeeds"
+        equal original (propertyString readBefore.["data"] "content" "") "read preserves the UTF-8 BOM and exact line endings"
+        let expectedHash = propertyString readBefore.["data"] "sha256" ""
+
+        let oldText = "value = \"こんにちは\" 41"
+        let newText = "value = \"こんにちは\" 42"
+        let patchedContent = original.Replace(oldText, newText, StringComparison.Ordinal)
+        let patched =
+            call dispatcher "patch"
+                [ "path", text "answer.fs"
+                  "expectedSha256", text expectedHash
+                  "oldText", text oldText
+                  "newText", text newText ]
+        if not (isOk patched) then failwith $"patch response: {patched.ToJsonString()}"
+        equal "patch" (propertyString patched "kind" "") "successful patch has its own response kind"
+        equal "answer.fs" (propertyString patched.["data"] "path" "") "patch reports the normalized path"
+        let patchedBytes = UTF8Encoding(false, true).GetBytes(patchedContent)
+        equal (int64 patchedBytes.Length) ((patched.["data"]).["bytes"].GetValue<int64>()) "patch reports output file bytes"
+        equal (hashBytes patchedBytes) (propertyString patched.["data"] "sha256" "") "patch reports the output hash"
+        equal 3 ((patched.["data"]).AsObject().Count) "patch result returns only path, hash, and bytes"
+        check (not (patched.ToJsonString().Contains(patchedContent, StringComparison.Ordinal))) "patch response does not echo file contents"
+        let readAfter = call dispatcher "read" [ "path", text "answer.fs" ]
+        check (isOk readAfter) "patched file can be read again"
+        equal patchedContent (propertyString readAfter.["data"] "content" "") "patch changes only the exact anchored text"
+        equal (hashBytes patchedBytes) (propertyString readAfter.["data"] "sha256" "") "fresh read reports the patch hash"
+
+        let deletionHash = propertyString readAfter.["data"] "sha256" ""
+        let deleted =
+            call dispatcher "patch"
+                [ "path", text "answer.fs"
+                  "expectedSha256", text deletionHash
+                  "oldText", text "42"
+                  "newText", text "" ]
+        check (isOk deleted) "empty newText deletes the unique anchor"
+        let afterDeletion = call dispatcher "read" [ "path", text "answer.fs" ]
+        equal (patchedContent.Replace("42", "", StringComparison.Ordinal)) (propertyString afterDeletion.["data"] "content" "") "empty replacement deletes only its anchor"
+
+        let assertRejected expectedCode label fields =
+            let beforeBytes = File.ReadAllBytes(sourcePath)
+            let beforeHash = hashBytes beforeBytes
+            let rejected = call dispatcher "patch" fields
+            expectError expectedCode rejected label
+            equal beforeBytes (File.ReadAllBytes(sourcePath)) $"{label} leaves source bytes unchanged"
+            equal beforeHash (hashBytes (File.ReadAllBytes(sourcePath))) $"{label} leaves source hash unchanged"
+            equal 0 (Directory.GetFiles(project, ".agentlang-replace-*.tmp").Length) $"{label} leaves no temporary replacement file"
+
+        let currentHash = propertyString afterDeletion.["data"] "sha256" ""
+        let patchFieldsWithHash hash anchor replacement =
+            [ "path", text "answer.fs"
+              "expectedSha256", text hash
+              "oldText", anchor
+              "newText", replacement ]
+        let patchFields = patchFieldsWithHash currentHash
+        assertRejected "STALE_CONTENT" "stale hash is checked before the anchor" (patchFieldsWithHash (String('0', 64)) (text "absent anchor") (text "replacement"))
+        assertRejected "HASH_INVALID" "invalid patch hash" (patchFieldsWithHash "not-a-hash" (text "keep") (text "replacement"))
+        assertRejected "PATCH_ANCHOR_NOT_FOUND" "missing patch anchor" (patchFields (text "absent anchor") (text "replacement"))
+        assertRejected "PATCH_ANCHOR_EMPTY" "empty patch anchor" (patchFields (text "") (text "replacement"))
+        for argumentName in [ "path"; "expectedSha256"; "oldText"; "newText" ] do
+            let invalidType =
+                patchFields (text "keep") (text "replacement")
+                |> List.map (fun (name, value) ->
+                    name,
+                    if name = argumentName then JsonValue.Create(42) :> JsonNode else value)
+            assertRejected "ARGUMENT_INVALID" $"non-string patch {argumentName}" invalidType
+        assertRejected "ARGUMENTS_INVALID" "extra patch argument" (patchFields (text "keep") (text "replacement") @ [ "extra", text "field" ])
+        assertRejected "PATH_TRAVERSAL" "patch path confinement" (([ "path", text "../outside.fs" ] @ patchFields (text "keep") (text "replacement")) |> List.distinctBy fst)
+        let invalidSurrogate = String([| char 0xD800 |])
+        equal 0xD800 (int (invalidSurrogate.[0])) "invalid UTF-8 fixture contains an unpaired high surrogate"
+        let invalidSurrogateNode = text invalidSurrogate
+        let dispatchedSurrogate = invalidSurrogateNode.GetValue<string>()
+        equal 0xD800 (int (dispatchedSurrogate.[0])) "JSON argument preserves the unpaired high surrogate"
+        assertRejected "PATCH_OUTPUT_ENCODING_INVALID" "invalid UTF-8 patch output" (patchFields (text "keep") invalidSurrogateNode)
+
+        let overlappingPath = Path.Combine(project, "overlapping.fs")
+        File.WriteAllText(overlappingPath, "aaaaa", UTF8Encoding(false))
+        let overlappingHash = hashBytes (File.ReadAllBytes(overlappingPath))
+        let overlapping =
+            call dispatcher "patch"
+                [ "path", text "overlapping.fs"
+                  "expectedSha256", text overlappingHash
+                  "oldText", text "aaa"
+                  "newText", text "x" ]
+        expectError "PATCH_ANCHOR_AMBIGUOUS" overlapping "overlapping anchor occurrences are ambiguous"
+        equal "aaaaa" (File.ReadAllText(overlappingPath, UTF8Encoding(false))) "ambiguous overlapping patch leaves file unchanged"
+        equal 0 (Directory.GetFiles(project, ".agentlang-replace-*.tmp").Length) "ambiguous patch leaves no temporary replacement file"
+
+        let outsidePath = Path.Combine(root, "outside-patch.fs")
+        let outsideContent = "outside"
+        File.WriteAllText(outsidePath, outsideContent, UTF8Encoding(false))
+        let outsideHash = hashBytes (File.ReadAllBytes(outsidePath))
+        let outsidePatch =
+            call dispatcher "patch"
+                [ "path", text "../outside-patch.fs"
+                  "expectedSha256", text outsideHash
+                  "oldText", text "outside"
+                  "newText", text "changed" ]
+        expectError "PATH_TRAVERSAL" outsidePatch "patch cannot escape the project root"
+        equal outsideContent (File.ReadAllText(outsidePath, UTF8Encoding(false))) "confined patch leaves outside file unchanged"
+
+        let limitedProject = makeProject root "patch-size"
+        let limitedPath = Path.Combine(limitedProject, "small.fs")
+        File.WriteAllText(limitedPath, "anchor", UTF8Encoding(false))
+        let limitedDispatcher = makeByteLimitedDispatcher limitedProject 16L
+        let limitedHash = hashBytes (File.ReadAllBytes(limitedPath))
+        let tooLarge =
+            call limitedDispatcher "patch"
+                [ "path", text "small.fs"
+                  "expectedSha256", text limitedHash
+                  "oldText", text "anchor"
+                  "newText", text "this output is too large" ]
+        expectError "FILE_TOO_LARGE" tooLarge "patch output limit"
+        equal "anchor" (File.ReadAllText(limitedPath, UTF8Encoding(false))) "oversized patch leaves source unchanged"
+        equal 0 (Directory.GetFiles(limitedProject, ".agentlang-replace-*.tmp").Length) "oversized patch leaves no temporary file"
+
+        let logs = dispatcher.OperationLog
+        let sequence = logs |> Seq.map (fun item -> item["sequence"].GetValue<int64>()) |> Seq.toList
+        equal [ 1L .. int64 logs.Count ] sequence "patch events retain monotonic ordered operation metadata"
+        check (logs.ToJsonString().Contains("patch", StringComparison.Ordinal)) "operation log records patch operations"
+        check (logs.ToJsonString().Contains("answer.fs", StringComparison.Ordinal)) "successful patch metadata includes its normalized path"
+        let allowedLogKeys = Set.ofList [ "sequence"; "operation"; "status"; "path"; "durationMilliseconds"; "exitCode"; "timedOut" ]
+        for entry in logs do
+            let keys = entry.AsObject() |> Seq.map (fun pair -> pair.Key) |> Set.ofSeq
+            check (Set.isSubset keys allowedLogKeys) "operation log entries retain the metadata-only schema"
+        let logJson = logs.ToJsonString()
+        check (not (logJson.Contains("let tail = \"keep\"", StringComparison.Ordinal))) "operation logs omit source contents"
+        check (not (logJson.Contains("oldText", StringComparison.Ordinal))) "operation logs omit patch request fields"
+
     let private sourceForValidation body =
         $"""open System
 
@@ -262,6 +412,7 @@ let main _ =
             testPathConfinementAndWindowsAliases root
             testDeterministicBoundedSearch root
             testCompareAndSwapAtomicReplacement root
+            testExactCompareAndSwapPatch root
             testFixedDotnetValidation root
             printfn "PASS: %d conventional tool assertions" assertions
             0

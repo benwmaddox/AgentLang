@@ -27,6 +27,13 @@ bytes are 968 versus 12,913 full. This verifies a smaller interface, not cheaper
 agent tasks. Frozen pilot-001 evidence remains unchanged; rotated external-agent
 repetitions remain the next research priority.
 
+Repeat preparation: [report 059](../reports/059-repeat-comparison-preparation.md)
+verifies a conventional hash-guarded exact patch operation to remove the
+whole-file request-byte confound, with a passing fresh 32-check Release gate.
+The separately versioned early-flow-002 package prepares archived common/arm
+instructions, serial rotated order and prelaunch provenance. No repeated-agent
+outcome is claimed by this preparation milestone.
+
 Status: **verified** means the listed scoped behavior has observed acceptance evidence; **partial** means some behavior exists but the full section is not proven; **pending** means implementation or evidence is missing; **design** means a principle/advisory requirement; **excluded** means a V1 non-goal or explicitly optional follow-on. A green build is not evidence of research success.
 
 Latest external-agent workflow evidence: [report 054](../reports/054-flow-renewal-agent-control.md)

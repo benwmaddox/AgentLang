@@ -79,6 +79,23 @@ module Program =
                expectedSha256 = expectedSha256
                content = content |}
 
+    let private patchRequest expectedSha256 oldText newText =
+        JsonSerializer.Serialize
+            {| op = "patch"
+               path = "Target.fs"
+               expectedSha256 = expectedSha256
+               oldText = oldText
+               newText = newText |}
+
+    let private nestedPatchRequest expectedSha256 oldText newText =
+        JsonSerializer.Serialize
+            {| op = "patch"
+               args =
+                {| path = "Target.fs"
+                   expectedSha256 = expectedSha256
+                   oldText = oldText
+                   newText = newText |} |}
+
     let private baseArguments projectRoot =
         [| "--project"
            projectRoot
@@ -116,6 +133,12 @@ module Program =
         |> Convert.ToHexString
         |> fun value -> value.ToLowerInvariant()
 
+    let private textHash (value: string) =
+        UTF8Encoding(false).GetBytes(value)
+        |> SHA256.HashData
+        |> Convert.ToHexString
+        |> fun hash -> hash.ToLowerInvariant()
+
     let private assertSuccessfulResponses expectedCount (invocation: Invocation) =
         let lines = responseLines invocation
         equal expectedCount lines.Length "response count"
@@ -148,6 +171,41 @@ module Program =
             check (responseSucceeded lines[1]) "second in-limit request succeeds"
             equal "PROTOCOL_REQUEST_LIMIT" (responseErrorCode lines[2]) "the third line receives the limit error"
             equal originalText (File.ReadAllText(target)) "over-limit mutation is never dispatched")
+
+    let private testPatchTopLevelAndNestedJsonlRecovery () =
+        withScratchProject (fun projectRoot target originalText changedText ->
+            let originalHash = fileHash target
+            let changedHash = textHash changedText
+            let topLevel = patchRequest originalHash "marker = 7" "marker = 8"
+            let rejected = patchRequest changedHash "anchor is absent" "unused"
+            let nested = nestedPatchRequest changedHash "marker = 8" "marker = 7"
+            let invocation =
+                runCli
+                    (argumentsWithLimit projectRoot 3)
+                    [ topLevel; rejected; nested ]
+            let lines = responseLines invocation
+
+            equal 0 invocation.ExitCode $"valid requests after a rejected patch keep the JSONL session alive; stderr={invocation.StandardError}"
+            equal 3 lines.Length "each top-level, rejected, and nested patch gets a response"
+            check (responseSucceeded lines[0]) "flat top-level patch arguments are accepted"
+            equal "PATCH_ANCHOR_NOT_FOUND" (responseErrorCode lines[1]) "missing anchor returns a structured patch error"
+            check (responseSucceeded lines[2]) "nested args patch is accepted after an error"
+            equal originalText (File.ReadAllText(target)) "nested patch can restore the exact original contents after recovery")
+
+    let private testPatchRespectsRequestLimit () =
+        withScratchProject (fun projectRoot target originalText _ ->
+            let patch = patchRequest (fileHash target) "marker = 7" "marker = 8"
+            let invocation =
+                runCli
+                    (argumentsWithLimit projectRoot 1)
+                    [ searchRequest "marker"; patch ]
+            let lines = responseLines invocation
+
+            equal 2 invocation.ExitCode "patch after the request cap returns the established limit exit code"
+            equal 2 lines.Length "over-limit patch receives one limit response"
+            check (responseSucceeded lines[0]) "request before the cap is dispatched"
+            equal "PROTOCOL_REQUEST_LIMIT" (responseErrorCode lines[1]) "over-limit patch is rejected by the request limit"
+            equal originalText (File.ReadAllText(target)) "over-limit patch cannot mutate the project")
 
     let private testMalformedLineConsumesBudget () =
         withScratchProject (fun projectRoot target originalText changedText ->
@@ -201,6 +259,8 @@ module Program =
     let main _ =
         group "default and custom exact limits" testDefaultAndCustomExactLimits
         group "excess mutation rejected before dispatch" testExcessMutationIsRejected
+        group "top-level and nested patch JSONL recovery" testPatchTopLevelAndNestedJsonlRecovery
+        group "patch respects the request limit" testPatchRespectsRequestLimit
         group "malformed lines consume request budget" testMalformedLineConsumesBudget
         group "default 100 request boundary" testDefaultCapBoundaries
         group "invalid startup is rejected before dispatch" testInvalidStartupDoesNotDispatch

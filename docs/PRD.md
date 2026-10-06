@@ -310,6 +310,14 @@ unproven. Prioritize concise discovery/callable metadata and protocol recovery,
 then repeat matched tasks with rotated order and standardized prompts before
 expanding the domain or changing memory/backend architecture.
 
+The bounded interface follow-ups are verified in reports
+[058](../reports/058-compact-discovery.md) and
+[059](../reports/059-repeat-comparison-preparation.md): compact discovery, exact
+Flow references and conventional small patches. The versioned early-flow-002
+repeat protocol preserves prior artifacts and uses archived prompts, serial
+rotated trials and unchanged behavioral acceptance. These are preparation and
+interface results; the repeated agent outcomes remain the next priority.
+
 1. Ship and validate the first usable slice and demo.
 2. Run a fresh external subagent through the small protocol; record supplied context, interactions, independent results, and available usage.
 3. Complete the user-directed expression/dot frontend migration and validate source/persistence/IR conformance before further controlled agent trials. Close-to-first-use is lint; retain explicit values/effects and no mutable language globals.
