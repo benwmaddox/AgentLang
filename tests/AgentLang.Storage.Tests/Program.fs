@@ -104,6 +104,8 @@ module Program =
         equal (Some projectText) loaded.ProjectSource "frozen v1 project source bytes"
         check (loaded.Manifest.IsSome) "frozen v1 manifest is parsed"
         equal 1 loaded.Manifest.Value.FormatVersion "frozen v1 schema version"
+        equal { Frontend = SourceFrontend.Stack; Version = 1 } loaded.Manifest.Value.Revisions.Head.SourceFormat "frozen v1 defaults to Stack/1"
+        equal [] loaded.Manifest.Value.Revisions.Head.CallBindings "frozen v1 defaults to no call bindings"
         equal projectHash loaded.Manifest.Value.ProjectSource.Hash "frozen v1 project object hash"
         equal definitionHash loaded.Manifest.Value.Revisions.Head.Definition.Hash "frozen v1 definition object hash"
         equal testHash loaded.Manifest.Value.Revisions.Head.Tests.Head.Hash "frozen v1 test object hash"
@@ -183,6 +185,8 @@ module Program =
                     Definition = definition.Reference
                     Tests = [ test.Reference ]
                     Examples = [ example.Reference ]
+                    SourceFormat = { Frontend = SourceFrontend.Stack; Version = 1 }
+                    CallBindings = []
                     Maturity = ProjectWord
                     Actor = "storage-test"
                     TaskId = Some "fixture"
@@ -190,9 +194,545 @@ module Program =
                     Deprecated = false } ] }
         manifest, [ project; definition; test; example ], projectText
 
+    let private flowFormat : SourceFormat = { Frontend = SourceFrontend.Flow; Version = 1 }
+
+    let private callBinding
+        (sourceReference: SourceRef)
+        (caseName: string option)
+        (bodyRole: StoredCallBodyRole)
+        (path: FlowAstPathSegment list)
+        (form: StoredCallForm)
+        (requestedName: string)
+        (target: StoredCallTarget)
+        : StoredCallBinding =
+        { Source = sourceReference
+          CaseName = caseName
+          BodyRole = bodyRole
+          Path = FlowAstPath.FlowAstPath path
+          Form = form
+          RequestedName = requestedName
+          Target = target }
+
+    let private flowV2Fixture suffix =
+        let manifest, sources, projectText = fixture suffix
+        let definition = List.item 1 sources
+        let test = List.item 2 sources
+        let example = List.item 3 sources
+        let wordName = $"sample.{suffix}"
+        let callBindings =
+            [ callBinding definition.Reference None StoredCallBodyRole.Definition
+                  [ FlowAstPathSegment.BlockStatement 0
+                    FlowAstPathSegment.EvaluateExpression
+                    FlowAstPathSegment.CallArgument 0 ]
+                  StoredCallForm.Direct wordName (StoredCallTarget.UserWord "word-target-stable-1")
+              callBinding test.Reference (Some "returns-42") StoredCallBodyRole.Actual
+                  [ FlowAstPathSegment.BlockStatement 0
+                    FlowAstPathSegment.EvaluateExpression
+                    FlowAstPathSegment.RootCallArgument 0 ]
+                  StoredCallForm.AbsoluteRoot wordName (StoredCallTarget.Primitive "int.add")
+              callBinding test.Reference (Some "returns-42") StoredCallBodyRole.ExpectedExpression
+                  [ FlowAstPathSegment.BlockStatement 0
+                    FlowAstPathSegment.EvaluateExpression
+                    FlowAstPathSegment.CallArgument 0 ]
+                  (StoredCallForm.DotStage "option.some") wordName (StoredCallTarget.GeneratedWord "generated:option.some")
+              callBinding example.Reference (Some "basic") StoredCallBodyRole.Actual
+                  [ FlowAstPathSegment.BlockStatement 0
+                    FlowAstPathSegment.EvaluateExpression
+                    FlowAstPathSegment.DotArgument 0 ]
+                  (StoredCallForm.StaticCallback("map", FlowWordReferenceQualification.NamespaceQualified))
+                  wordName (StoredCallTarget.UserWord "word-target-stable-2") ]
+        let revision =
+            { manifest.Revisions.Head with
+                SourceFormat = flowFormat
+                CallBindings = callBindings }
+        { manifest with FormatVersion = 2; Revisions = [ revision ] }, sources, projectText
+
+    let private appendFlowRevision (baseManifest: ProjectManifest) suffix =
+        let flowManifest, sources, projectText = flowV2Fixture suffix
+        let maxRevision = baseManifest.Revisions |> List.map (fun item -> item.Revision) |> List.max
+        let newRevision = { flowManifest.Revisions.Head with Revision = maxRevision + 1 }
+        let nextManifest =
+            { baseManifest with
+                FormatVersion = 2
+                ProjectSource = flowManifest.ProjectSource
+                Words =
+                    baseManifest.Words
+                    |> List.map (fun head ->
+                        if head.WordId = newRevision.WordId then
+                            { head with CurrentName = newRevision.Name; CurrentRevision = newRevision.Revision }
+                        else head)
+                Revisions = baseManifest.Revisions @ [ newRevision ] }
+        nextManifest, sources, projectText, newRevision
+
+    let private storageRoot project = Path.Combine(project, ".agentlang", "store")
+
+    let private installedRawManifest project (rawText: string) =
+        let storeRoot = storageRoot project
+        let manifestHash = digest rawText
+        writeBytes
+            (Path.Combine(storeRoot, "manifests", manifestHash + ".json"))
+            (UTF8Encoding(false).GetBytes rawText)
+        let currentPath = Path.Combine(storeRoot, "CURRENT")
+        let current = JsonNode.Parse(File.ReadAllText currentPath).AsObject()
+        let generation = current["generation"].GetValue<int64>()
+        current["generation"] <- JsonValue.Create(generation + 1L)
+        current["kind"] <- JsonValue.Create("manifest")
+        current["manifestHash"] <- JsonValue.Create(manifestHash)
+        File.WriteAllText(currentPath, current.ToJsonString(), UTF8Encoding(false))
+        manifestHash
+
+    let private cloneValidFlowManifest project =
+        let store = Storage.create project
+        let manifest, sources, text = flowV2Fixture "raw"
+        Storage.commit store 0L manifest sources text |> ok "write raw-manifest v2 base" |> ignore
+        let loaded = Storage.load store |> ok "load raw-manifest v2 base"
+        let raw =
+            File.ReadAllText(
+                Path.Combine(storageRoot project, "manifests", loaded.ManifestHash.Value + ".json"))
+        store, JsonNode.Parse(raw).AsObject()
+
+    let private firstRevisionObject (manifest: JsonObject) =
+        let revisions = manifest["revisions"].AsArray()
+        (revisions.[0]).AsObject()
+
+    let private firstCallBindingObject (manifest: JsonObject) =
+        let revision = firstRevisionObject manifest
+        let bindings = revision["callBindings"].AsArray()
+        (bindings.[0]).AsObject()
+
     let private commitFixture store generation suffix =
         let manifest, sources, projectText = fixture suffix
         Storage.commit store generation manifest sources projectText |> ok "commit fixture"
+
+    let private testManifestV1WriterRefusesMeaningfulV2Fields root =
+        let manifest, sources, projectText = fixture "v1-writer"
+        let flowSourceFormat = { Frontend = SourceFrontend.Flow; Version = 1 }
+        let changedFormat =
+            { manifest with
+                Revisions = [ { manifest.Revisions.Head with SourceFormat = flowSourceFormat } ] }
+        let changedVersion =
+            { manifest with
+                Revisions = [ { manifest.Revisions.Head with SourceFormat = { Frontend = SourceFrontend.Stack; Version = 2 } } ] }
+        let definitionBinding =
+            callBinding manifest.Revisions.Head.Definition None StoredCallBodyRole.Definition
+                [ FlowAstPathSegment.BlockStatement 0; FlowAstPathSegment.EvaluateExpression ]
+                StoredCallForm.Direct manifest.Revisions.Head.Name (StoredCallTarget.UserWord "retained-word-id")
+        let changedBindings =
+            { manifest with
+                Revisions = [ { manifest.Revisions.Head with CallBindings = [ definitionBinding ] } ] }
+        for name, invalid, expectedCode in
+            [ "frontend", changedFormat, "STORAGE_INVALID_MANIFEST"
+              "source-version", changedVersion, "STORAGE_UNSUPPORTED_VERSION"
+              "bindings", changedBindings, "STORAGE_INVALID_MANIFEST" ] do
+            let project = Path.Combine(root, "v1-writer-" + name)
+            let store = Storage.create project
+            Storage.commit store 0L invalid sources projectText |> error expectedCode |> ignore
+            let after = Storage.load store |> ok "load after refused v1 metadata"
+            equal EmptyAuthority after.Authority $"v1 {name} refusal leaves authority empty"
+            equal 0L after.Generation $"v1 {name} refusal leaves generation unchanged"
+            check (not (File.Exists(Path.Combine(storageRoot project, "CURRENT")))) $"v1 {name} refusal does not create CURRENT"
+
+        let project = Path.Combine(root, "v1-parser-fields")
+        let store = Storage.create project
+        Storage.commit store 0L manifest sources projectText |> ok "write v1 parser-field base" |> ignore
+        let loaded = Storage.load store |> ok "load v1 parser-field base"
+        let rawPath = Path.Combine(storageRoot project, "manifests", loaded.ManifestHash.Value + ".json")
+        let raw = JsonNode.Parse(File.ReadAllText rawPath).AsObject()
+        let revision = firstRevisionObject raw
+        let flowNode = JsonObject()
+        flowNode["frontend"] <- JsonValue.Create("flow")
+        flowNode["version"] <- JsonValue.Create(1)
+        revision["sourceFormat"] <- flowNode
+        let rawText = raw.ToJsonString()
+        installedRawManifest project rawText |> ignore
+        Storage.load store |> error "STORAGE_INVALID_MANIFEST" |> ignore
+
+    let private testManifestV2RoundTripAndCanonicalBindings root =
+        let manifest, sources, projectText = flowV2Fixture "roundtrip"
+        let firstProject = Path.Combine(root, "v2-first")
+        let firstStore = Storage.create firstProject
+        let committed = Storage.commit firstStore 0L manifest sources projectText |> ok "commit v2 source-format manifest"
+        let loaded = Storage.load firstStore |> ok "load v2 source-format manifest"
+        equal committed.ManifestHash loaded.ManifestHash "v2 reload keeps manifest hash"
+        let loadedManifest = loaded.Manifest.Value
+        equal 2 loadedManifest.FormatVersion "manifest schema version 2 round trips"
+        let expectedRevision = manifest.Revisions.Head
+        let actualRevision = loadedManifest.Revisions.Head
+        equal flowFormat actualRevision.SourceFormat "v2 Flow/1 frontend metadata round trips"
+        equal (Set.ofList expectedRevision.CallBindings) (Set.ofList actualRevision.CallBindings) "v2 stored binding fields round trip"
+        equal 4 actualRevision.CallBindings.Length "definition, actual, expected, and example call sites persist"
+        check (actualRevision.CallBindings |> List.exists (fun item -> item.BodyRole = StoredCallBodyRole.ExpectedExpression)) "expected-expression call binding survives separately"
+        check (actualRevision.CallBindings |> List.exists (fun item -> item.CaseName = Some "basic" && item.BodyRole = StoredCallBodyRole.Actual)) "example call binding retains its case identity"
+        check (actualRevision.CallBindings |> List.exists (fun item -> item.Form = StoredCallForm.AbsoluteRoot)) "absolute-root call form round trips"
+        check (actualRevision.CallBindings |> List.exists (fun item -> item.Target = StoredCallTarget.Primitive "int.add")) "stable primitive target identity round trips"
+        let rawManifestText = File.ReadAllText(Path.Combine(storageRoot firstProject, "manifests", loaded.ManifestHash.Value + ".json"))
+        let rawManifest = JsonNode.Parse(rawManifestText).AsObject()
+        let rawRevision = firstRevisionObject rawManifest
+        let rawBindings = rawRevision["callBindings"].AsArray()
+        for bindingNode in rawBindings do
+            let bindingObject = bindingNode.AsObject()
+            let targetObject = bindingObject["target"].AsObject()
+            check (not (bindingObject.ContainsKey "targetRevision")) "stored call binding omits mutable target revision"
+            check (not (targetObject.ContainsKey "revision")) "stored target identity has no revision number"
+
+        let currentPath = Path.Combine(storageRoot firstProject, "CURRENT")
+        let current = JsonNode.Parse(File.ReadAllText currentPath).AsObject()
+        equal 1 (current["formatVersion"].GetValue<int>()) "CURRENT pointer envelope stays at version 1"
+        Storage.saveSnapshot firstStore loaded.Generation "manifest-v2" Map.empty None |> ok "snapshot v2 manifest under v1 snapshot envelope"
+        let snapshotPath = Path.Combine(storageRoot firstProject, "snapshots", "manifest-v2.json")
+        let snapshotJson = JsonNode.Parse(File.ReadAllText snapshotPath).AsObject()
+        equal 1 (snapshotJson["formatVersion"].GetValue<int>()) "named snapshot envelope stays at version 1"
+        let snapshot = Storage.readSnapshot firstStore "manifest-v2" |> ok "read v2 manifest snapshot"
+        equal 2 snapshot.Manifest.FormatVersion "v1 snapshot envelope can reference v2 manifest"
+        equal loaded.ManifestHash.Value snapshot.ManifestHash "snapshot retains exact v2 manifest identity"
+
+        let reversedManifest =
+            { manifest with
+                Revisions = [ { manifest.Revisions.Head with CallBindings = List.rev manifest.Revisions.Head.CallBindings } ] }
+        let reversedStore = Storage.create (Path.Combine(root, "v2-reversed"))
+        let reversed = Storage.commit reversedStore 0L reversedManifest sources projectText |> ok "commit reversed input call-binding order"
+        equal committed.ManifestHash reversed.ManifestHash "v2 canonical serialization ignores input binding order"
+
+    let private testV1HistoryMigrationAndSnapshotRestore root =
+        let project = Path.Combine(root, "history-migration")
+        let store = Storage.create project
+        let initial = commitFixture store 0L "before-flow"
+        let initialLoaded = Storage.load store |> ok "load v1 before Flow migration"
+        let oldManifest = initialLoaded.Manifest.Value
+        let oldRevision = oldManifest.Revisions.Head
+        equal 1 oldManifest.FormatVersion "history begins in manifest v1"
+        equal { Frontend = SourceFrontend.Stack; Version = 1 } oldRevision.SourceFormat "historical revision starts Stack/1"
+        equal [] oldRevision.CallBindings "historical v1 revision starts without call bindings"
+        let oldContent = Storage.readRevision store initial.ManifestHash.Value oldRevision.WordId oldRevision.Revision |> ok "read v1 revision before migration"
+        let oldReferenceContents =
+            [ oldRevision.Definition ] @ oldRevision.Tests @ oldRevision.Examples
+            |> List.map (fun reference -> reference, Storage.readSource store reference |> ok "read historical source before migration")
+
+        let migratedManifest, newSources, newProjectText, newRevision = appendFlowRevision oldManifest "after-flow"
+        let migrated =
+            Storage.commit store initialLoaded.Generation migratedManifest newSources newProjectText
+            |> ok "commit Flow revision 2 under the same stable word ID"
+        let loaded = Storage.load store |> ok "load v1-to-v2 history migration"
+        let manifest = loaded.Manifest.Value
+        equal 2 manifest.FormatVersion "migration publishes manifest v2"
+        equal oldManifest.Words.Head.WordId manifest.Words.Head.WordId "migration preserves stable word identity"
+        equal oldRevision manifest.Revisions.Head "migration preserves the complete v1 revision record"
+        equal flowFormat manifest.Revisions.Tail.Head.SourceFormat "new revision records Flow/1 source format"
+        let actualNewRevision = manifest.Revisions.Tail.Head
+        equal
+            { newRevision with CallBindings = [] }
+            { actualNewRevision with CallBindings = [] }
+            "new Flow revision metadata remains intact apart from canonical binding order"
+        equal newRevision.CallBindings.Length actualNewRevision.CallBindings.Length "new Flow revision preserves binding count"
+        equal (Set.ofList newRevision.CallBindings) (Set.ofList actualNewRevision.CallBindings) "new Flow revision retains every call-binding field"
+        equal 2 manifest.Revisions.Length "both immutable revisions remain in history"
+        equal oldRevision oldContent.Revision "pre-migration revision read has expected identity"
+        let migratedOldContent = Storage.readRevision store migrated.ManifestHash.Value oldRevision.WordId oldRevision.Revision |> ok "read v1 history after migration"
+        equal oldContent.DefinitionSource migratedOldContent.DefinitionSource "old definition bytes survive manifest upgrade"
+        equal oldContent.TestSources migratedOldContent.TestSources "old test bytes survive manifest upgrade"
+        equal oldContent.ExampleSources migratedOldContent.ExampleSources "old example bytes survive manifest upgrade"
+        for reference, expectedText in oldReferenceContents do
+            equal expectedText (Storage.readSource store reference |> ok "read retained v1 source after migration") $"historical object {reference.Hash} remains byte-exact"
+        equal oldRevision.Definition migratedOldContent.Revision.Definition "old definition reference remains unchanged"
+        equal oldRevision.Tests migratedOldContent.Revision.Tests "old test references remain unchanged"
+        equal oldRevision.Examples migratedOldContent.Revision.Examples "old example references remain unchanged"
+
+        let snapshotProject = Path.Combine(root, "snapshot-v1-to-v2")
+        let snapshotStore = Storage.create snapshotProject
+        let v1Commit = commitFixture snapshotStore 0L "snapshot-source"
+        let v1Loaded = Storage.load snapshotStore |> ok "load v1 before snapshot migration"
+        Storage.saveSnapshot snapshotStore v1Loaded.Generation "v1-history" (Map.ofList [ "state", "before" ]) None
+        |> ok "save v1 snapshot before v2 publication"
+        let v1Snapshot = Storage.readSnapshot snapshotStore "v1-history" |> ok "read v1 snapshot before migration"
+        let v1SnapshotPath = Path.Combine(storageRoot snapshotProject, "snapshots", "v1-history.json")
+        let v1SnapshotBytes = File.ReadAllBytes v1SnapshotPath
+        let nextManifest, nextSources, nextProjectText, _ = appendFlowRevision v1Loaded.Manifest.Value "snapshot-flow"
+        let v2Commit = Storage.commit snapshotStore v1Loaded.Generation nextManifest nextSources nextProjectText |> ok "publish v2 after v1 snapshot"
+        let currentV2 = Storage.load snapshotStore |> ok "load v2 before restoring v1 snapshot"
+        equal 2 currentV2.Manifest.Value.FormatVersion "snapshot store currently points to v2"
+        check (bytesEqual v1SnapshotBytes (File.ReadAllBytes v1SnapshotPath)) "v1 snapshot bytes remain unchanged after v2 publication"
+        let restored = Storage.restoreSnapshot snapshotStore v2Commit.Generation v1Snapshot |> ok "restore v1 snapshot while current manifest is v2"
+        equal v1Commit.ManifestHash restored.ManifestHash "restoring v1 snapshot selects its original v1 manifest"
+        let restoredLoad = Storage.load snapshotStore |> ok "load restored v1 manifest after v2 snapshot history"
+        equal 1 restoredLoad.Manifest.Value.FormatVersion "v1 snapshot restores a v1 manifest"
+        equal v1Commit.ManifestHash restoredLoad.ManifestHash "restored v1 manifest identity is exact"
+        let restoredPointer = JsonNode.Parse(File.ReadAllText(Path.Combine(storageRoot snapshotProject, "CURRENT"))).AsObject()
+        equal 1 (restoredPointer["formatVersion"].GetValue<int>()) "CURRENT remains a v1 envelope through v1-to-v2 restore"
+        let stillNamed = Storage.readSnapshot snapshotStore "v1-history" |> ok "read v1 snapshot after restore"
+        equal v1Snapshot.ManifestHash stillNamed.ManifestHash "named v1 snapshot continues to reference its v1 manifest"
+
+    let private testManifestV2ValidationAndLimits root =
+        let expectRawFailure name expectedCode mutate =
+            let project = Path.Combine(root, "invalid-v2-" + name)
+            let store, raw = cloneValidFlowManifest project
+            mutate raw
+            installedRawManifest project (raw.ToJsonString()) |> ignore
+            Storage.load store |> error expectedCode |> ignore
+
+        expectRawFailure "missing-source-format" "STORAGE_INVALID_JSON" (fun raw ->
+            let revision = firstRevisionObject raw
+            revision.Remove("sourceFormat") |> ignore)
+        expectRawFailure "missing-call-bindings" "STORAGE_INVALID_JSON" (fun raw ->
+            let revision = firstRevisionObject raw
+            revision.Remove("callBindings") |> ignore)
+        expectRawFailure "missing-frontend" "STORAGE_INVALID_JSON" (fun raw ->
+            let revision = firstRevisionObject raw
+            let sourceFormat = revision["sourceFormat"].AsObject()
+            sourceFormat.Remove("frontend") |> ignore)
+        expectRawFailure "unknown-frontend" "STORAGE_UNSUPPORTED_FRONTEND" (fun raw ->
+            let revision = firstRevisionObject raw
+            let sourceFormat = revision["sourceFormat"].AsObject()
+            sourceFormat["frontend"] <- JsonValue.Create("future"))
+        expectRawFailure "missing-source-version" "STORAGE_INVALID_JSON" (fun raw ->
+            let revision = firstRevisionObject raw
+            let sourceFormat = revision["sourceFormat"].AsObject()
+            sourceFormat.Remove("version") |> ignore)
+        expectRawFailure "unsupported-source-version" "STORAGE_UNSUPPORTED_VERSION" (fun raw ->
+            let revision = firstRevisionObject raw
+            let sourceFormat = revision["sourceFormat"].AsObject()
+            sourceFormat["version"] <- JsonValue.Create(77))
+        expectRawFailure "unknown-body-role" "STORAGE_INVALID_MANIFEST" (fun raw ->
+            let binding = firstCallBindingObject raw
+            binding["bodyRole"] <- JsonValue.Create("initialization"))
+        expectRawFailure "unknown-path-segment" "STORAGE_INVALID_MANIFEST" (fun raw ->
+            let binding = firstCallBindingObject raw
+            let path = binding["path"].AsArray()
+            let firstSegment = (path.[0]).AsObject()
+            firstSegment["segment"] <- JsonValue.Create("mystery"))
+        expectRawFailure "missing-path" "STORAGE_INVALID_JSON" (fun raw ->
+            let binding = firstCallBindingObject raw
+            binding.Remove("path") |> ignore)
+        expectRawFailure "unknown-call-form" "STORAGE_INVALID_MANIFEST" (fun raw ->
+            let binding = firstCallBindingObject raw
+            let form = binding["form"].AsObject()
+            form["kind"] <- JsonValue.Create("macro"))
+        expectRawFailure "missing-target" "STORAGE_INVALID_JSON" (fun raw ->
+            let binding = firstCallBindingObject raw
+            binding.Remove("target") |> ignore)
+        expectRawFailure "missing-binding-source" "STORAGE_INVALID_JSON" (fun raw ->
+            let binding = firstCallBindingObject raw
+            binding.Remove("source") |> ignore)
+        expectRawFailure "unknown-target-kind" "STORAGE_INVALID_MANIFEST" (fun raw ->
+            let binding = firstCallBindingObject raw
+            let target = binding["target"].AsObject()
+            target["kind"] <- JsonValue.Create("dynamic"))
+        expectRawFailure "foreign-source-reference" "STORAGE_INVALID_MANIFEST" (fun raw ->
+            let binding = firstCallBindingObject raw
+            let sourceReference = binding["source"].AsObject()
+            sourceReference["hash"] <- JsonValue.Create(String.replicate 64 "f"))
+        expectRawFailure "duplicate-site-key" "STORAGE_INVALID_MANIFEST" (fun raw ->
+            let revision = firstRevisionObject raw
+            let bindings = revision["callBindings"].AsArray()
+            bindings.Add((bindings.[0]).DeepClone()))
+        expectRawFailure "negative-path-index" "STORAGE_INVALID_MANIFEST" (fun raw ->
+            let binding = firstCallBindingObject raw
+            let path = binding["path"].AsArray()
+            let firstSegment = (path.[0]).AsObject()
+            firstSegment["index"] <- JsonValue.Create(-1))
+        expectRawFailure "oversized-path-index" "STORAGE_LIMIT_EXCEEDED" (fun raw ->
+            let binding = firstCallBindingObject raw
+            let path = binding["path"].AsArray()
+            let firstSegment = (path.[0]).AsObject()
+            firstSegment["index"] <- JsonValue.Create(100001))
+        expectRawFailure "excessive-path-depth" "STORAGE_LIMIT_EXCEEDED" (fun raw ->
+            let path = JsonArray()
+            for _ in 1 .. 129 do
+                let segment = JsonObject()
+                segment["segment"] <- JsonValue.Create("dotReceiver")
+                path.Add segment
+            let binding = firstCallBindingObject raw
+            binding["path"] <- path)
+
+        let invalidVersionProject = Path.Combine(root, "missing-v2-version-fields")
+        let unsupportedManifestNode = JsonObject()
+        unsupportedManifestNode["formatVersion"] <- JsonValue.Create(999)
+        let incompleteRevision = JsonObject()
+        incompleteRevision["wordId"] <- JsonValue.Create("word-incomplete-v999")
+        incompleteRevision["revision"] <- JsonValue.Create(1)
+        let unsupportedRevisions = JsonArray()
+        unsupportedRevisions.Add incompleteRevision
+        unsupportedManifestNode["revisions"] <- unsupportedRevisions
+        let rawUnsupported = unsupportedManifestNode.ToJsonString()
+        let hash = digest rawUnsupported
+        let unsupportedStoreRoot = storageRoot invalidVersionProject
+        Directory.CreateDirectory(Path.Combine(unsupportedStoreRoot, "manifests")) |> ignore
+        File.WriteAllText(Path.Combine(unsupportedStoreRoot, "manifests", hash + ".json"), rawUnsupported, UTF8Encoding(false))
+        let pointer = JsonObject()
+        pointer["formatVersion"] <- JsonValue.Create(1)
+        pointer["generation"] <- JsonValue.Create(1L)
+        pointer["kind"] <- JsonValue.Create("manifest")
+        pointer["manifestHash"] <- JsonValue.Create(hash)
+        File.WriteAllText(Path.Combine(unsupportedStoreRoot, "CURRENT"), pointer.ToJsonString(), UTF8Encoding(false))
+        Storage.load (Storage.create invalidVersionProject) |> error "STORAGE_UNSUPPORTED_VERSION" |> ignore
+
+        let tooManyBindings =
+            [ "count", 20001, 1
+              "aggregate-path-segments", 16667, 6 ]
+        for label, count, depth in tooManyBindings do
+            let project = Path.Combine(root, "binding-limit-" + label)
+            let store, raw = cloneValidFlowManifest project
+            let revision = firstRevisionObject raw
+            let template = firstCallBindingObject raw
+            let bindings = JsonArray()
+            for index in 0 .. count - 1 do
+                let binding = (template.DeepClone()).AsObject()
+                let path = JsonArray()
+                let block = JsonObject()
+                block["segment"] <- JsonValue.Create("blockStatement")
+                block["index"] <- JsonValue.Create(index)
+                path.Add block
+                for _ in 2 .. depth do
+                    let segment = JsonObject()
+                    segment["segment"] <- JsonValue.Create("dotReceiver")
+                    path.Add segment
+                binding["path"] <- path
+                bindings.Add binding
+            revision["callBindings"] <- bindings
+            installedRawManifest project (raw.ToJsonString()) |> ignore
+            Storage.load store |> error "STORAGE_LIMIT_EXCEEDED" |> ignore
+
+        let duplicateWriterProject = Path.Combine(root, "duplicate-writer-v2")
+        let duplicateWriterStore = Storage.create duplicateWriterProject
+        let validV2, validSources, validText = flowV2Fixture "duplicate-writer"
+        let firstBinding = validV2.Revisions.Head.CallBindings.Head
+        let testActualBinding =
+            validV2.Revisions.Head.CallBindings
+            |> List.find (fun binding -> binding.BodyRole = StoredCallBodyRole.Actual && binding.CaseName = Some "returns-42")
+        let exampleBinding =
+            validV2.Revisions.Head.CallBindings
+            |> List.find (fun binding -> binding.CaseName = Some "basic")
+        let rejectBinding (name: string) (binding: StoredCallBinding) =
+            let project = Path.Combine(root, "invalid-binding-writer-" + name)
+            let store = Storage.create project
+            let revision = { validV2.Revisions.Head with CallBindings = [ binding ] }
+            let manifest = { validV2 with Revisions = [ revision ] }
+            Storage.commit store 0L manifest validSources validText |> error "STORAGE_INVALID_MANIFEST" |> ignore
+            let unchanged = Storage.load store |> ok "load after invalid binding writer refusal"
+            equal EmptyAuthority unchanged.Authority $"invalid {name} binding leaves authority empty"
+            equal 0L unchanged.Generation $"invalid {name} binding leaves generation unchanged"
+
+        let exampleExpectedRole = { exampleBinding with BodyRole = StoredCallBodyRole.ExpectedExpression }
+        let actualWithoutCase = { testActualBinding with CaseName = None }
+        let definitionWithTestKind = { firstBinding with Source = { firstBinding.Source with Kind = StorageObjectKind.TestDefinition } }
+        let overlongCase = { testActualBinding with CaseName = Some(String.replicate 257 "c") }
+        let overlongRequestedName = { firstBinding with RequestedName = String.replicate 257 "n" }
+        let overlongTargetId = { firstBinding with Target = StoredCallTarget.UserWord(String.replicate 129 "t") }
+        let overlongDotStage = { firstBinding with Form = StoredCallForm.DotStage(String.replicate 129 "s") }
+        let unsupportedStaticCallbackStage =
+            { exampleBinding with
+                Form = StoredCallForm.StaticCallback(String.replicate 129 "m", FlowWordReferenceQualification.NamespaceQualified) }
+        rejectBinding "example-expected-role" exampleExpectedRole
+        rejectBinding "actual-case-omitted" actualWithoutCase
+        rejectBinding "wrong-source-kind" definitionWithTestKind
+        rejectBinding "long-case-name" overlongCase
+        rejectBinding "long-requested-name" overlongRequestedName
+        rejectBinding "long-target-id" overlongTargetId
+        rejectBinding "long-dot-stage" overlongDotStage
+        rejectBinding "unsupported-static-callback-stage" unsupportedStaticCallbackStage
+
+        let duplicateManifest =
+            { validV2 with
+                Revisions = [ { validV2.Revisions.Head with CallBindings = validV2.Revisions.Head.CallBindings @ [ firstBinding ] } ] }
+        Storage.commit duplicateWriterStore 0L duplicateManifest validSources validText |> error "STORAGE_INVALID_MANIFEST" |> ignore
+        let unchanged = Storage.load duplicateWriterStore |> ok "load after duplicate writer rejection"
+        equal EmptyAuthority unchanged.Authority "typed v2 rejection leaves authority unchanged"
+        equal 0L unchanged.Generation "typed v2 rejection leaves generation unchanged"
+
+        let invalidIndexProject = Path.Combine(root, "invalid-index-writer-v2")
+        let invalidIndexStore = Storage.create invalidIndexProject
+        let invalidBinding = { firstBinding with Path = FlowAstPath.FlowAstPath [ FlowAstPathSegment.BlockStatement -1 ] }
+        let invalidRevision = { validV2.Revisions.Head with CallBindings = [ invalidBinding ] }
+        let invalidIndexManifest = { validV2 with Revisions = [ invalidRevision ] }
+        Storage.commit invalidIndexStore 0L invalidIndexManifest validSources validText |> error "STORAGE_INVALID_MANIFEST" |> ignore
+        equal EmptyAuthority ((Storage.load invalidIndexStore |> ok "load after path limit rejection").Authority) "path limit rejection leaves authority unchanged"
+
+        let stackV2Project = Path.Combine(root, "stack-v2-bindings")
+        let stackV2Store = Storage.create stackV2Project
+        let stackManifest, stackSources, stackText = fixture "stack-v2-bindings"
+        let stackBinding =
+            callBinding stackManifest.Revisions.Head.Definition None StoredCallBodyRole.Definition
+                [ FlowAstPathSegment.BlockStatement 0; FlowAstPathSegment.EvaluateExpression ]
+                StoredCallForm.Direct stackManifest.Revisions.Head.Name (StoredCallTarget.UserWord "stack-word-id")
+        let stackRevision = { stackManifest.Revisions.Head with CallBindings = [ stackBinding ] }
+        let stackV2Manifest = { stackManifest with FormatVersion = 2; Revisions = [ stackRevision ] }
+        Storage.commit stackV2Store 0L stackV2Manifest stackSources stackText |> error "STORAGE_INVALID_MANIFEST" |> ignore
+        let unchangedStackV2 = Storage.load stackV2Store |> ok "load after Stack v2 binding refusal"
+        equal EmptyAuthority unchangedStackV2.Authority "Stack v2 refuses Flow bindings without changing authority"
+        equal 0L unchangedStackV2.Generation "Stack v2 binding refusal leaves generation unchanged"
+
+    let private testRuntimePublishesV2AndRejectsFlowBeforeParsing root =
+        let stackProject = Path.Combine(root, "runtime-stack-v2")
+        let engine = Runtime.Engine(stackProject, Set.empty, "2030-01-02T03:04:05Z")
+        let defineArgs = JsonObject()
+        let runtimeSource =
+            String.concat "\n"
+                [ "word runtime.sample : Int -> Int"
+                  "    effects none"
+                  "    1 add"
+                  "end"
+                  ""
+                  "test runtime.sample/basic"
+                  "    41 runtime.sample"
+                  "    expect 42"
+                  "end"
+                  "" ]
+        defineArgs["source"] <- JsonValue.Create(runtimeSource)
+        let defined = engine.Dispatch("define", defineArgs)
+        check (defined["ok"].GetValue<bool>()) $"Runtime accepts a typed Stack candidate and attached test: {defined.ToJsonString()}"
+        let commitArgs = JsonObject()
+        commitArgs["word"] <- JsonValue.Create("runtime.sample")
+        let committed = engine.Dispatch("commit", commitArgs)
+        check (committed["ok"].GetValue<bool>()) $"Runtime commits the Stack candidate with passing test: {committed.ToJsonString()}"
+        let loaded = Storage.load (Storage.create stackProject) |> ok "load Runtime's new Stack publication"
+        equal 2 loaded.Manifest.Value.FormatVersion "new Runtime writes use manifest v2"
+        let runtimeRevision = loaded.Manifest.Value.Revisions.Head
+        equal { Frontend = SourceFrontend.Stack; Version = 1 } runtimeRevision.SourceFormat "Runtime defaults new definitions to Stack/1"
+        equal [] runtimeRevision.CallBindings "Runtime Stack publication carries no authored call bindings"
+
+        let flowProject = Path.Combine(root, "runtime-flow-guard")
+        let store = Storage.create flowProject
+        let projectSource = source StorageObjectKind.ProjectSource "this is not a Stack project source\n"
+        let invalidDefinition = source StorageObjectKind.WordDefinition "this source cannot be parsed by the Stack frontend\n"
+        let validStackDefinitionSource =
+            String.concat "\n" [ "word runtime.sample : Int -> Int"; "    effects none"; "    1 add"; "end"; "" ]
+        let validStackDefinition = source StorageObjectKind.WordDefinition validStackDefinitionSource
+        let baseManifest, _, _ = fixture "runtime-flow"
+        let oldRevision =
+            { baseManifest.Revisions.Head with
+                WordId = "runtime-flow-word"
+                Name = "runtime.sample"
+                Revision = 1
+                Definition = invalidDefinition.Reference
+                Tests = []
+                Examples = []
+                SourceFormat = flowFormat
+                CallBindings = [] }
+        let currentRevision =
+            { oldRevision with
+                Revision = 2
+                Definition = validStackDefinition.Reference
+                SourceFormat = { Frontend = SourceFrontend.Stack; Version = 1 }
+                TimestampUtc = oldRevision.TimestampUtc.AddMinutes 1.0 }
+        let currentHead =
+            { baseManifest.Words.Head with
+                WordId = "runtime-flow-word"
+                CurrentName = "runtime.sample"
+                CurrentRevision = 2 }
+        let flowManifest =
+            { baseManifest with
+                FormatVersion = 2
+                ProjectSource = projectSource.Reference
+                Words = [ currentHead ]
+                Revisions = [ oldRevision; currentRevision ] }
+        Storage.commit store 0L flowManifest [ projectSource; invalidDefinition; validStackDefinition ] projectSource.Content
+        |> ok "write a storage-valid Flow revision with non-Stack source bytes"
+        |> ignore
+        let mutable runtimeError = None
+        try
+            Runtime.Engine(flowProject, Set.empty) |> ignore
+        with
+        | LanguageException diagnostic -> runtimeError <- Some diagnostic.Code
+        equal (Some "RUNTIME_UNSUPPORTED_FRONTEND") runtimeError "Runtime refuses Flow before parsing the source as Stack"
 
     let private testCommitReloadRevisionAndStableHistory root =
         let store = Storage.create (Path.Combine(root, "commit"))
@@ -463,6 +1003,11 @@ module Program =
         let root = newRoot "suite"
         try
             testFrozenV1Compatibility root
+            testManifestV1WriterRefusesMeaningfulV2Fields root
+            testManifestV2RoundTripAndCanonicalBindings root
+            testV1HistoryMigrationAndSnapshotRestore root
+            testManifestV2ValidationAndLimits root
+            testRuntimePublishesV2AndRejectsFlowBeforeParsing root
             testCommitReloadRevisionAndStableHistory root
             testStaleGenerationWriterLockAndLimits root
             testFailureBoundaries root
@@ -471,7 +1016,7 @@ module Program =
             testTamperingUnsupportedVersionAndNoFallback root
             testTaskLogValidation root
             testReparsePointRefusal root
-            printfn $"Storage tests passed: 9 groups, {assertions} assertions."
+            printfn $"Storage tests passed: 14 groups, {assertions} assertions."
             0
         finally
             if Directory.Exists root then Directory.Delete(root, true)

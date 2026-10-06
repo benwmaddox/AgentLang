@@ -1,0 +1,12 @@
+{
+  "command": "dotnet run --project tests/AgentLang.Storage.Tests/AgentLang.Storage.Tests.fsproj --configuration Release",
+  "revision": "3c52ee8d0f7f527f9f6c19548491fb79fad97aaa",
+  "dirty": true,
+  "exitCode": 1,
+  "output": [
+    "D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\Program.fs(465,57): error FS0597: Successive arguments should be separated by spaces or tupled, and arguments involving function or method applications should be parenthesized [D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\AgentLang.Storage.Tests.fsproj]",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\Program.fs(472,57): error FS0597: Successive arguments should be separated by spaces or tupled, and arguments involving function or method applications should be parenthesized [D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\AgentLang.Storage.Tests.fsproj]",
+    "",
+    "The build failed. Fix the build errors and run again."
+  ]
+}

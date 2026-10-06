@@ -1,0 +1,9 @@
+{
+  "command": "dotnet run --project tests/AgentLang.Storage.Tests/AgentLang.Storage.Tests.fsproj --configuration Release",
+  "revision": "3c52ee8d0f7f527f9f6c19548491fb79fad97aaa",
+  "dirty": true,
+  "exitCode": 0,
+  "output": [
+    "Storage tests passed: 14 groups, 229 assertions."
+  ]
+}

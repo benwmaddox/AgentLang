@@ -1,0 +1,15 @@
+{
+  "command": "dotnet run --project tests/AgentLang.Storage.Tests/AgentLang.Storage.Tests.fsproj --configuration Release",
+  "revision": "3c52ee8d0f7f527f9f6c19548491fb79fad97aaa",
+  "dirty": true,
+  "exitCode": 1,
+  "output": [
+    "D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\Program.fs(722,25): error FS0058: Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (721:25). Try indenting this further.\u001dTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7. [D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\AgentLang.Storage.Tests.fsproj]",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\Program.fs(721,54): error FS0010: Incomplete structured construct at or before this point in expression. Expected '}' or other token. [D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\AgentLang.Storage.Tests.fsproj]",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\Program.fs(721,23): error FS0604: Unmatched '{' [D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\AgentLang.Storage.Tests.fsproj]",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\Program.fs(724,45): error FS0010: Unexpected symbol '}' in expression. Expected ']' or other token. [D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\AgentLang.Storage.Tests.fsproj]",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\Program.fs(721,21): error FS0598: Unmatched '[' [D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\AgentLang.Storage.Tests.fsproj]",
+    "",
+    "The build failed. Fix the build errors and run again."
+  ]
+}

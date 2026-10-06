@@ -1,0 +1,15 @@
+{
+  "command": "dotnet run --project tests/AgentLang.Storage.Tests/AgentLang.Storage.Tests.fsproj --configuration Release",
+  "revision": "3c52ee8d0f7f527f9f6c19548491fb79fad97aaa",
+  "dirty": true,
+  "exitCode": 1,
+  "output": [
+    "D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\Program.fs(211,18): error FS0800: Invalid use of a type name [D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\AgentLang.Storage.Tests.fsproj]",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\Program.fs(287,9): warning FS0020: The result of this expression has type 'StorageCommitResult' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'. [D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\AgentLang.Storage.Tests.fsproj]",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\Program.fs(331,9): warning FS0020: The result of this expression has type 'StorageCommitResult' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'. [D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\AgentLang.Storage.Tests.fsproj]",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\Program.fs(579,57): error FS0800: Invalid use of a type name [D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\AgentLang.Storage.Tests.fsproj]",
+    "D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\Program.fs(619,9): warning FS0020: The result of this expression has type 'StorageCommitResult' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'. [D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\AgentLang.Storage.Tests.fsproj]",
+    "",
+    "The build failed. Fix the build errors and run again."
+  ]
+}

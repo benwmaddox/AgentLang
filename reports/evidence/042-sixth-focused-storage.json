@@ -1,0 +1,12 @@
+{
+  "command": "dotnet run --project tests/AgentLang.Storage.Tests/AgentLang.Storage.Tests.fsproj --configuration Release",
+  "revision": "3c52ee8d0f7f527f9f6c19548491fb79fad97aaa",
+  "dirty": true,
+  "exitCode": -532462766,
+  "output": [
+    "Unhandled exception. System.Exception: Runtime accepts a simple Stack candidate",
+    "   at AgentLang.Storage.Tests.Program.check(Boolean condition, String message) in D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\Program.fs:line 15",
+    "   at AgentLang.Storage.Tests.Program.testRuntimePublishesV2AndRejectsFlowBeforeParsing(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\Program.fs:line 606",
+    "   at AgentLang.Storage.Tests.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\Program.fs:line 917"
+  ]
+}

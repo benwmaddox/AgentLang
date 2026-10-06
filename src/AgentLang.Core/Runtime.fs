@@ -526,7 +526,7 @@ module Runtime =
                       sourceObjects.Add sourceObject
                       yield { Name = name; Definition = sourceObject.Reference } ]
 
-            let manifestBase = currentManifest |> Option.defaultValue { FormatVersion = 1; ProjectSource = projectObject.Reference; Types = []; Words = []; Revisions = [] }
+            let manifestBase = currentManifest |> Option.defaultValue { FormatVersion = 2; ProjectSource = projectObject.Reference; Types = []; Words = []; Revisions = [] }
             let revisions = ResizeArray<WordRevision>(manifestBase.Revisions)
             let mutable revisionKeys = revisions |> Seq.map (fun item -> item.WordId, item.Revision) |> Set.ofSeq
             let taskId = activeTask |> Option.filter (fun task -> task.Active) |> Option.map (fun task -> task.Id)
@@ -576,7 +576,9 @@ module Runtime =
                           Actor = revisionActor
                           TaskId = revisionTaskId
                           TimestampUtc = timestamp
-                          Deprecated = durable.Deprecated.Contains item.Definition.Name }
+                          Deprecated = durable.Deprecated.Contains item.Definition.Name
+                          SourceFormat = { Frontend = SourceFrontend.Stack; Version = 1 }
+                          CallBindings = [] }
                     revisions.Add revision
                     revisionKeys <- Set.add (wordId, item.Definition.Revision) revisionKeys
 
@@ -615,7 +617,7 @@ module Runtime =
                 |> Seq.toList
 
             let manifest =
-                { FormatVersion = 1
+                { FormatVersion = 2
                   ProjectSource = projectObject.Reference
                   Types = typeSources
                   Words = heads
@@ -824,6 +826,22 @@ module Runtime =
             activeSnapshot <- Some snapshot
 
         let validateStoredProject (projectStore: Store) (manifest: ProjectManifest option) (manifestHash: string option) (projectSource: string option) =
+            // Storage can preserve Flow source metadata, but this Runtime path
+            // still parses only the aggregate Stack export. Reject any Flow
+            // revision, including historical revisions, before touching it.
+            match manifest with
+            | Some value ->
+                value.Revisions
+                |> List.sortBy (fun revision -> revision.WordId, revision.Revision)
+                |> List.tryFind (fun revision -> revision.SourceFormat.Frontend = SourceFrontend.Flow)
+                |> Option.iter (fun revision ->
+                    error "RUNTIME_UNSUPPORTED_FRONTEND"
+                        $"Stored revision '{revision.WordId}/{revision.Revision}' uses Flow syntax version {revision.SourceFormat.Version}, which this Runtime cannot load yet."
+                        (Some revision.Name)
+                        None
+                        [ "Stack version 1" ]
+                        [ $"Flow version {revision.SourceFormat.Version}" ])
+            | None -> ()
             let parsed = projectSource |> Option.map (parseProjectSource "dictionary.agent")
             let identities =
                 manifest

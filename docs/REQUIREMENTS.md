@@ -170,3 +170,15 @@ identify owner, case, body role and structural path. Host-declared membership
 remains a trust boundary; this compiler proposal API does not implement durable
 manifest v2, Runtime dispatch, passing-test publication gates or default Flow
 authoring. Integrated validation and publication are tracked in report 039.
+
+Durable manifest schema evidence: [report 042](../reports/042-durable-manifest-integration.md)
+records 14 Storage groups / 229 assertions and a passing 25-check Release gate.
+Manifests read v1/v2, preserve frozen v1 bytes and historical references, and
+store explicit per-revision source format plus bounded canonical call bindings.
+CURRENT and snapshot envelopes remain v1, including snapshots referencing v2
+manifests. New Runtime publication writes v2 Stack metadata and rejects current
+or historical Flow before legacy parsing. Storage membership/schema validity
+does not prove Flow source semantics; authored-source Runtime dispatch, mixed
+export validation, edit/rename/library gates, rollback conformance, default Flow
+authoring and controlled agent evaluation remain required. Report 042 tracks
+committed CI and publication separately from local acceptance.

@@ -26,6 +26,45 @@ type SourceRef =
     { Kind: StorageObjectKind
       Hash: string }
 
+[<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
+type SourceFrontend =
+    | Stack
+    | Flow
+
+type SourceFormat =
+    { Frontend: SourceFrontend
+      Version: int }
+
+[<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
+type StoredCallBodyRole =
+    | Definition
+    | Actual
+    | ExpectedExpression
+
+[<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
+type StoredCallForm =
+    | Direct
+    | AbsoluteRoot
+    | DotStage of stage: string
+    | StaticCallback of stage: string * qualification: FlowWordReferenceQualification
+
+[<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
+type StoredCallTarget =
+    | UserWord of identity: string
+    | Primitive of identity: string
+    | GeneratedWord of identity: string
+
+/// A storage-neutral resolved call identity bound to one authored source site.
+/// Target revisions, source spans, and compiler traversal ordinals are omitted.
+type StoredCallBinding =
+    { Source: SourceRef
+      CaseName: string option
+      BodyRole: StoredCallBodyRole
+      Path: FlowAstPath
+      Form: StoredCallForm
+      RequestedName: string
+      Target: StoredCallTarget }
+
 type SourceObject =
     { Reference: SourceRef
       Content: string }
@@ -41,7 +80,9 @@ type WordRevision =
       Actor: string
       TaskId: string option
       TimestampUtc: DateTimeOffset
-      Deprecated: bool }
+      Deprecated: bool
+      SourceFormat: SourceFormat
+      CallBindings: StoredCallBinding list }
 
 type WordHead =
     { WordId: string
@@ -133,9 +174,20 @@ module StorageLimits =
     let MaxVirtualFiles = 10_000
     /// Maximum lower-case ASCII snapshot-name length.
     let MaxSnapshotNameLength = 64
+    /// Maximum total number of authored call bindings in one manifest.
+    let MaxCallBindings = 20_000
+    /// Maximum structural path depth for one call binding.
+    let MaxCallBindingPathDepth = 128
+    /// Maximum index value in an indexed structural path segment.
+    let MaxCallBindingPathIndex = 100_000
+    /// Maximum aggregate structural path segments in one manifest.
+    let MaxCallBindingPathSegments = 100_000
 
 module Storage =
-    let private formatVersion = 1
+    // CURRENT and named snapshots remain version 1 independently from manifests.
+    let private pointerSnapshotFormatVersion = 1
+    let private minimumManifestFormatVersion = 1
+    let private maximumManifestFormatVersion = 2
     let private storeDirectoryName = ".agentlang"
     let private storeDirectory = "store"
     let private objectDirectory = "objects"
@@ -295,7 +347,257 @@ module Storage =
         | "library" -> LibraryWord
         | value -> failure "STORAGE_INVALID_MANIFEST" $"Unknown word maturity '{value}'." None
 
-    let private wordRevisionNode (revision: WordRevision) =
+    let private defaultSourceFormat =
+        { Frontend = SourceFrontend.Stack
+          Version = 1 }
+
+    let private sourceFrontendName = function
+        | SourceFrontend.Stack -> "stack"
+        | SourceFrontend.Flow -> "flow"
+
+    let private parseSourceFrontend path = function
+        | "stack" -> SourceFrontend.Stack
+        | "flow" -> SourceFrontend.Flow
+        | value -> failure "STORAGE_UNSUPPORTED_FRONTEND" $"Source frontend '{value}' is not supported." path
+
+    let private sourceFormatNode (sourceFormat: SourceFormat) =
+        let node = JsonObject()
+        node["frontend"] <- jsonString (sourceFrontendName sourceFormat.Frontend)
+        node["version"] <- jsonInt sourceFormat.Version
+        node :> JsonNode
+
+    let private parseSourceFormat path node =
+        let value = requireObject "word revision source format" node
+        let frontend = requireString "word revision source frontend" value["frontend"] |> parseSourceFrontend path
+        let version = requireInt "word revision source format version" value["version"]
+        if version <> 1 then
+            failure "STORAGE_UNSUPPORTED_VERSION" $"Source syntax version {version} is not supported." path
+        { Frontend = frontend
+          Version = version }
+
+    let private storedCallBodyRoleName = function
+        | StoredCallBodyRole.Definition -> "definition"
+        | StoredCallBodyRole.Actual -> "actual"
+        | StoredCallBodyRole.ExpectedExpression -> "expectedExpression"
+
+    let private parseStoredCallBodyRole path = function
+        | "definition" -> StoredCallBodyRole.Definition
+        | "actual" -> StoredCallBodyRole.Actual
+        | "expectedExpression" -> StoredCallBodyRole.ExpectedExpression
+        | value -> failure "STORAGE_INVALID_MANIFEST" $"Unknown call binding body role '{value}'." path
+
+    let private callBindingPathSegmentNode segment =
+        let node = JsonObject()
+        let setIndexed name index =
+            node["segment"] <- jsonString name
+            node["index"] <- jsonInt index
+        let setNamed name = node["segment"] <- jsonString name
+        match segment with
+        | FlowAstPathSegment.BlockStatement index -> setIndexed "blockStatement" index
+        | FlowAstPathSegment.LetInitializer -> setNamed "letInitializer"
+        | FlowAstPathSegment.DestructureInitializer -> setNamed "destructureInitializer"
+        | FlowAstPathSegment.EvaluateExpression -> setNamed "evaluateExpression"
+        | FlowAstPathSegment.ReturnOutput index -> setIndexed "returnOutput" index
+        | FlowAstPathSegment.CallArgument index -> setIndexed "callArgument" index
+        | FlowAstPathSegment.RootCallArgument index -> setIndexed "rootCallArgument" index
+        | FlowAstPathSegment.DotReceiver -> setNamed "dotReceiver"
+        | FlowAstPathSegment.DotArgument index -> setIndexed "dotArgument" index
+        | FlowAstPathSegment.IfCondition -> setNamed "ifCondition"
+        | FlowAstPathSegment.IfThenStatement index -> setIndexed "ifThenStatement" index
+        | FlowAstPathSegment.IfElseStatement index -> setIndexed "ifElseStatement" index
+        | FlowAstPathSegment.ContainerPayload -> setNamed "containerPayload"
+        | FlowAstPathSegment.OptionScrutinee -> setNamed "optionScrutinee"
+        | FlowAstPathSegment.OptionSomeStatement index -> setIndexed "optionSomeStatement" index
+        | FlowAstPathSegment.OptionNoneStatement index -> setIndexed "optionNoneStatement" index
+        | FlowAstPathSegment.ResultScrutinee -> setNamed "resultScrutinee"
+        | FlowAstPathSegment.ResultOkStatement index -> setIndexed "resultOkStatement" index
+        | FlowAstPathSegment.ResultErrorStatement index -> setIndexed "resultErrorStatement" index
+        node :> JsonNode
+
+    let private parseCallBindingPathSegment path node =
+        let value = requireObject "call binding path segment" node
+        let segment = requireString "call binding path segment kind" value["segment"]
+        let indexed constructor =
+            let index = requireInt "call binding path index" value["index"]
+            if index < 0 then failure "STORAGE_INVALID_MANIFEST" "Call binding path indexes cannot be negative." path
+            if index > StorageLimits.MaxCallBindingPathIndex then
+                failure "STORAGE_LIMIT_EXCEEDED" $"Call binding path indexes cannot exceed {StorageLimits.MaxCallBindingPathIndex}." path
+            constructor index
+        match segment with
+        | "blockStatement" -> indexed FlowAstPathSegment.BlockStatement
+        | "letInitializer" -> FlowAstPathSegment.LetInitializer
+        | "destructureInitializer" -> FlowAstPathSegment.DestructureInitializer
+        | "evaluateExpression" -> FlowAstPathSegment.EvaluateExpression
+        | "returnOutput" -> indexed FlowAstPathSegment.ReturnOutput
+        | "callArgument" -> indexed FlowAstPathSegment.CallArgument
+        | "rootCallArgument" -> indexed FlowAstPathSegment.RootCallArgument
+        | "dotReceiver" -> FlowAstPathSegment.DotReceiver
+        | "dotArgument" -> indexed FlowAstPathSegment.DotArgument
+        | "ifCondition" -> FlowAstPathSegment.IfCondition
+        | "ifThenStatement" -> indexed FlowAstPathSegment.IfThenStatement
+        | "ifElseStatement" -> indexed FlowAstPathSegment.IfElseStatement
+        | "containerPayload" -> FlowAstPathSegment.ContainerPayload
+        | "optionScrutinee" -> FlowAstPathSegment.OptionScrutinee
+        | "optionSomeStatement" -> indexed FlowAstPathSegment.OptionSomeStatement
+        | "optionNoneStatement" -> indexed FlowAstPathSegment.OptionNoneStatement
+        | "resultScrutinee" -> FlowAstPathSegment.ResultScrutinee
+        | "resultOkStatement" -> indexed FlowAstPathSegment.ResultOkStatement
+        | "resultErrorStatement" -> indexed FlowAstPathSegment.ResultErrorStatement
+        | value -> failure "STORAGE_INVALID_MANIFEST" $"Unknown call binding path segment '{value}'." path
+
+    let private storedCallFormNode = function
+        | StoredCallForm.Direct ->
+            let node = JsonObject()
+            node["kind"] <- jsonString "direct"
+            node :> JsonNode
+        | StoredCallForm.AbsoluteRoot ->
+            let node = JsonObject()
+            node["kind"] <- jsonString "absoluteRoot"
+            node :> JsonNode
+        | StoredCallForm.DotStage stage ->
+            let node = JsonObject()
+            node["kind"] <- jsonString "dotStage"
+            node["stage"] <- jsonString stage
+            node :> JsonNode
+        | StoredCallForm.StaticCallback(stage, qualification) ->
+            let node = JsonObject()
+            node["kind"] <- jsonString "staticCallback"
+            node["stage"] <- jsonString stage
+            node["qualification"] <-
+                jsonString (
+                    match qualification with
+                    | FlowWordReferenceQualification.ExplicitShort -> "explicitShort"
+                    | FlowWordReferenceQualification.NamespaceQualified -> "namespaceQualified"
+                    | FlowWordReferenceQualification.AbsoluteRoot -> "absoluteRoot")
+            node :> JsonNode
+
+    let private parseStoredCallForm path node =
+        let value = requireObject "call binding form" node
+        match requireString "call binding form kind" value["kind"] with
+        | "direct" -> StoredCallForm.Direct
+        | "absoluteRoot" -> StoredCallForm.AbsoluteRoot
+        | "dotStage" -> StoredCallForm.DotStage(requireString "call binding dot stage" value["stage"])
+        | "staticCallback" ->
+            let qualification =
+                match requireString "call binding callback qualification" value["qualification"] with
+                | "explicitShort" -> FlowWordReferenceQualification.ExplicitShort
+                | "namespaceQualified" -> FlowWordReferenceQualification.NamespaceQualified
+                | "absoluteRoot" -> FlowWordReferenceQualification.AbsoluteRoot
+                | item -> failure "STORAGE_INVALID_MANIFEST" $"Unknown callback qualification '{item}'." path
+            StoredCallForm.StaticCallback(requireString "call binding callback stage" value["stage"], qualification)
+        | item -> failure "STORAGE_INVALID_MANIFEST" $"Unknown call binding form '{item}'." path
+
+    let private storedCallTargetNode = function
+        | (StoredCallTarget.UserWord identity
+          | StoredCallTarget.Primitive identity
+          | StoredCallTarget.GeneratedWord identity) as target ->
+            let node = JsonObject()
+            node["kind"] <-
+                jsonString (
+                    match target with
+                    | StoredCallTarget.UserWord _ -> "userWord"
+                    | StoredCallTarget.Primitive _ -> "primitive"
+                    | StoredCallTarget.GeneratedWord _ -> "generatedWord")
+            node["identity"] <- jsonString identity
+            node :> JsonNode
+
+    let private parseStoredCallTarget path node =
+        let value = requireObject "call binding target" node
+        let identity = requireString "call binding target identity" value["identity"]
+        match requireString "call binding target kind" value["kind"] with
+        | "userWord" -> StoredCallTarget.UserWord identity
+        | "primitive" -> StoredCallTarget.Primitive identity
+        | "generatedWord" -> StoredCallTarget.GeneratedWord identity
+        | item -> failure "STORAGE_INVALID_MANIFEST" $"Unknown call binding target kind '{item}'." path
+
+    let private storedCallBindingNode (binding: StoredCallBinding) =
+        let node = JsonObject()
+        node["source"] <- sourceRefNode binding.Source
+        node["caseName"] <- binding.CaseName |> Option.map jsonString |> Option.defaultValue null
+        node["bodyRole"] <- jsonString (storedCallBodyRoleName binding.BodyRole)
+        let path = JsonArray()
+        let (FlowAstPath.FlowAstPath segments) = binding.Path
+        segments |> List.iter (callBindingPathSegmentNode >> path.Add)
+        node["path"] <- path
+        node["form"] <- storedCallFormNode binding.Form
+        node["requestedName"] <- jsonString binding.RequestedName
+        node["target"] <- storedCallTargetNode binding.Target
+        node :> JsonNode
+
+    let private storedCallBindingSortKey (binding: StoredCallBinding) =
+        let (FlowAstPath.FlowAstPath segments) = binding.Path
+        kindName binding.Source.Kind,
+        binding.Source.Hash,
+        Option.defaultValue "" binding.CaseName,
+        storedCallBodyRoleName binding.BodyRole,
+        segments
+
+    let private parseStoredCallBinding path node =
+        let value = requireObject "call binding" node
+        if not (value.ContainsKey "caseName") then
+            failure "STORAGE_INVALID_JSON" "Call binding caseName is required (use null for the definition body)." path
+        let caseName = optionalString "call binding case name" value["caseName"]
+        let pathNode = requireArray "call binding path" value["path"]
+        if pathNode.Count > StorageLimits.MaxCallBindingPathDepth then
+            failure "STORAGE_LIMIT_EXCEEDED" $"Call binding path depth exceeds {StorageLimits.MaxCallBindingPathDepth}." path
+        let pathSegments = pathNode |> Seq.map (parseCallBindingPathSegment path) |> Seq.toList
+        { Source = parseSourceRef path value["source"]
+          CaseName = caseName
+          BodyRole = requireString "call binding body role" value["bodyRole"] |> parseStoredCallBodyRole path
+          Path = FlowAstPath.FlowAstPath pathSegments
+          Form = parseStoredCallForm path value["form"]
+          RequestedName = requireString "call binding requested name" value["requestedName"]
+          Target = parseStoredCallTarget path value["target"] }
+
+    let private indexedCallBindingPathValue = function
+        | FlowAstPathSegment.BlockStatement index
+        | FlowAstPathSegment.ReturnOutput index
+        | FlowAstPathSegment.CallArgument index
+        | FlowAstPathSegment.RootCallArgument index
+        | FlowAstPathSegment.DotArgument index
+        | FlowAstPathSegment.IfThenStatement index
+        | FlowAstPathSegment.IfElseStatement index
+        | FlowAstPathSegment.OptionSomeStatement index
+        | FlowAstPathSegment.OptionNoneStatement index
+        | FlowAstPathSegment.ResultOkStatement index
+        | FlowAstPathSegment.ResultErrorStatement index -> Some index
+        | FlowAstPathSegment.LetInitializer
+        | FlowAstPathSegment.DestructureInitializer
+        | FlowAstPathSegment.EvaluateExpression
+        | FlowAstPathSegment.DotReceiver
+        | FlowAstPathSegment.IfCondition
+        | FlowAstPathSegment.ContainerPayload
+        | FlowAstPathSegment.OptionScrutinee
+        | FlowAstPathSegment.ResultScrutinee -> None
+
+    let private validateCallBindingBounds path (revisions: WordRevision list) =
+        let mutable bindingCount = 0
+        let mutable pathSegmentCount = 0
+        for revision in revisions do
+            if revision.CallBindings.Length > StorageLimits.MaxCallBindings - bindingCount then
+                failure "STORAGE_LIMIT_EXCEEDED" $"A manifest may contain at most {StorageLimits.MaxCallBindings} call bindings." path
+            bindingCount <- bindingCount + revision.CallBindings.Length
+            for binding in revision.CallBindings do
+                let (FlowAstPath.FlowAstPath segments) = binding.Path
+                if segments.Length > StorageLimits.MaxCallBindingPathDepth then
+                    failure "STORAGE_LIMIT_EXCEEDED" $"Call binding path depth exceeds {StorageLimits.MaxCallBindingPathDepth}." path
+                if segments.Length > StorageLimits.MaxCallBindingPathSegments - pathSegmentCount then
+                    failure "STORAGE_LIMIT_EXCEEDED" $"A manifest may contain at most {StorageLimits.MaxCallBindingPathSegments} aggregate call binding path segments." path
+                pathSegmentCount <- pathSegmentCount + segments.Length
+                for segment in segments do
+                    match indexedCallBindingPathValue segment with
+                    | Some index when index < 0 ->
+                        failure "STORAGE_INVALID_MANIFEST" "Call binding path indexes cannot be negative." path
+                    | Some index when index > StorageLimits.MaxCallBindingPathIndex ->
+                        failure "STORAGE_LIMIT_EXCEEDED" $"Call binding path indexes cannot exceed {StorageLimits.MaxCallBindingPathIndex}." path
+                    | Some _ | None -> ()
+
+    let private wordRevisionNode manifestVersion (revision: WordRevision) =
+        let isDefaultSource = revision.SourceFormat = defaultSourceFormat && List.isEmpty revision.CallBindings
+        if manifestVersion = 1 && not isDefaultSource then
+            failure "STORAGE_INVALID_MANIFEST" "A version-1 manifest can only serialize Stack version 1 revisions with no call bindings." None
+        if manifestVersion <> 1 && manifestVersion <> 2 then
+            failure "STORAGE_UNSUPPORTED_VERSION" $"Manifest format {manifestVersion} is not supported." None
         let node = JsonObject()
         node["wordId"] <- jsonString revision.WordId
         node["name"] <- jsonString revision.Name
@@ -312,6 +614,11 @@ module Storage =
         node["taskId"] <- revision.TaskId |> Option.map jsonString |> Option.defaultValue null
         node["timestampUtc"] <- jsonString (revision.TimestampUtc.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture))
         node["deprecated"] <- jsonBool revision.Deprecated
+        if manifestVersion = 2 then
+            node["sourceFormat"] <- sourceFormatNode revision.SourceFormat
+            let bindings = JsonArray()
+            revision.CallBindings |> List.sortBy storedCallBindingSortKey |> List.iter (storedCallBindingNode >> bindings.Add)
+            node["callBindings"] <- bindings
         node :> JsonNode
 
     let private wordHeadNode (head: WordHead) =
@@ -329,6 +636,9 @@ module Storage =
         node :> JsonNode
 
     let private manifestNode (manifest: ProjectManifest) =
+        if manifest.FormatVersion < minimumManifestFormatVersion || manifest.FormatVersion > maximumManifestFormatVersion then
+            failure "STORAGE_UNSUPPORTED_VERSION" $"Manifest format {manifest.FormatVersion} is not supported." None
+        validateCallBindingBounds None manifest.Revisions
         let node = JsonObject()
         node["formatVersion"] <- jsonInt manifest.FormatVersion
         node["projectSource"] <- sourceRefNode manifest.ProjectSource
@@ -339,7 +649,9 @@ module Storage =
         manifest.Words |> List.sortBy (fun item -> item.WordId) |> List.iter (wordHeadNode >> words.Add)
         node["words"] <- words
         let revisions = JsonArray()
-        manifest.Revisions |> List.sortBy (fun item -> item.WordId, item.Revision) |> List.iter (wordRevisionNode >> revisions.Add)
+        manifest.Revisions
+        |> List.sortBy (fun item -> item.WordId, item.Revision)
+        |> List.iter (wordRevisionNode manifest.FormatVersion >> revisions.Add)
         node["revisions"] <- revisions
         node
 
@@ -348,10 +660,29 @@ module Storage =
         |> Seq.map parser
         |> Seq.toList
 
-    let private parseWordRevision path node =
+    let private parseWordRevision path manifestVersion node =
         let value = requireObject "word revision" node
         let tests = parseArray "word revision tests" (parseSourceRef path) value["tests"]
         let examples = parseArray "word revision examples" (parseSourceRef path) value["examples"]
+        let sourceFormat, callBindings =
+            match manifestVersion with
+            | 1 ->
+                let sourceFormat =
+                    if value.ContainsKey "sourceFormat" then parseSourceFormat path value["sourceFormat"]
+                    else defaultSourceFormat
+                let callBindings =
+                    if value.ContainsKey "callBindings" then parseArray "word revision call bindings" (parseStoredCallBinding path) value["callBindings"]
+                    else []
+                sourceFormat, callBindings
+            | 2 ->
+                if not (value.ContainsKey "sourceFormat") then
+                    failure "STORAGE_INVALID_JSON" "Version-2 word revisions require sourceFormat." path
+                if not (value.ContainsKey "callBindings") then
+                    failure "STORAGE_INVALID_JSON" "Version-2 word revisions require callBindings." path
+                parseSourceFormat path value["sourceFormat"],
+                parseArray "word revision call bindings" (parseStoredCallBinding path) value["callBindings"]
+            | version ->
+                failure "STORAGE_UNSUPPORTED_VERSION" $"Manifest format {version} is not supported." path
         let timestampText = requireString "word revision timestamp" value["timestampUtc"]
         let timestamp =
             match DateTimeOffset.TryParse(timestampText, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind) with
@@ -367,7 +698,9 @@ module Storage =
           Actor = requireString "word revision actor" value["actor"]
           TaskId = optionalString "word revision task ID" value["taskId"]
           TimestampUtc = timestamp
-          Deprecated = requireBool "word revision deprecated flag" value["deprecated"] }
+          Deprecated = requireBool "word revision deprecated flag" value["deprecated"]
+          SourceFormat = sourceFormat
+          CallBindings = callBindings }
 
     let private parseWordHead node =
         let value = requireObject "word head" node
@@ -381,18 +714,39 @@ module Storage =
         { Name = requireString "type source name" value["name"]
           Definition = parseSourceRef path value["definition"] }
 
+    let private preflightCallBindingWireBounds path (revisionNodes: JsonArray) =
+        let mutable bindingCount = 0
+        let mutable pathSegmentCount = 0
+        for revisionNode in revisionNodes do
+            let revision = requireObject "word revision" revisionNode
+            if revision.ContainsKey "callBindings" then
+                let bindings = requireArray "word revision call bindings" revision["callBindings"]
+                if bindings.Count > StorageLimits.MaxCallBindings - bindingCount then
+                    failure "STORAGE_LIMIT_EXCEEDED" $"A manifest may contain at most {StorageLimits.MaxCallBindings} call bindings." path
+                bindingCount <- bindingCount + bindings.Count
+                for bindingNode in bindings do
+                    let binding = requireObject "call binding" bindingNode
+                    let callPath = requireArray "call binding path" binding["path"]
+                    if callPath.Count > StorageLimits.MaxCallBindingPathDepth then
+                        failure "STORAGE_LIMIT_EXCEEDED" $"Call binding path depth exceeds {StorageLimits.MaxCallBindingPathDepth}." path
+                    if callPath.Count > StorageLimits.MaxCallBindingPathSegments - pathSegmentCount then
+                        failure "STORAGE_LIMIT_EXCEEDED" $"A manifest may contain at most {StorageLimits.MaxCallBindingPathSegments} aggregate call binding path segments." path
+                    pathSegmentCount <- pathSegmentCount + callPath.Count
+
     let private parseManifest path node =
         let value = requireObject "manifest" node
-        { FormatVersion = requireInt "manifest format version" value["formatVersion"]
+        // Reject an unsupported manifest before parsing project references or
+        // version-specific revision fields so errors are stable and structured.
+        let manifestVersion = requireInt "manifest format version" value["formatVersion"]
+        if manifestVersion < minimumManifestFormatVersion || manifestVersion > maximumManifestFormatVersion then
+            failure "STORAGE_UNSUPPORTED_VERSION" $"Manifest format {manifestVersion} is not supported (expected 1 or 2)." path
+        let revisionNodes = requireArray "manifest revisions" value["revisions"]
+        preflightCallBindingWireBounds path revisionNodes
+        { FormatVersion = manifestVersion
           ProjectSource = parseSourceRef path value["projectSource"]
           Types = parseArray "manifest types" (parseTypeSource path) value["types"]
           Words = parseArray "manifest words" parseWordHead value["words"]
-          Revisions = parseArray "manifest revisions" (parseWordRevision path) value["revisions"] }
-
-    let private manifestBytes manifest =
-        manifestNode manifest |> fun node -> node.ToJsonString(JsonSerializerOptions(WriteIndented = false)) |> utf8.GetBytes
-
-    let private manifestHash manifest = manifestBytes manifest |> SHA256.HashData |> Convert.ToHexString |> fun value -> value.ToLowerInvariant()
+          Revisions = parseArray "manifest revisions" (parseWordRevision path manifestVersion) (revisionNodes :> JsonNode) }
 
     let private sourceRefs (manifest: ProjectManifest) =
         seq {
@@ -418,8 +772,9 @@ module Storage =
             failure "STORAGE_INVALID_MANIFEST" $"{description} must be nonempty and at most {maximum} characters." path
 
     let private validateManifest (manifest: ProjectManifest) path =
-        if manifest.FormatVersion <> formatVersion then
-            failure "STORAGE_UNSUPPORTED_VERSION" $"Manifest format {manifest.FormatVersion} is not supported (expected {formatVersion})." path
+        if manifest.FormatVersion < minimumManifestFormatVersion || manifest.FormatVersion > maximumManifestFormatVersion then
+            failure "STORAGE_UNSUPPORTED_VERSION" $"Manifest format {manifest.FormatVersion} is not supported (expected 1 or 2)." path
+        validateCallBindingBounds path manifest.Revisions
         if manifest.ProjectSource.Kind <> StorageObjectKind.ProjectSource then
             failure "STORAGE_INVALID_MANIFEST" "Manifest projectSource must reference a project-source object." path
 
@@ -455,6 +810,16 @@ module Storage =
             validMetadataText "Revision word name" 256 path revision.Name
             validMetadataText "Revision actor" 128 path revision.Actor
             if revision.Revision < 1 then failure "STORAGE_INVALID_MANIFEST" "Word revision number must be positive." path
+            if revision.SourceFormat.Version <> 1 then
+                failure "STORAGE_UNSUPPORTED_VERSION" $"Source syntax version {revision.SourceFormat.Version} is not supported." path
+            if manifest.FormatVersion = 1 && revision.SourceFormat <> defaultSourceFormat then
+                failure "STORAGE_INVALID_MANIFEST" "Version-1 manifests only support Stack version 1 source metadata." path
+            match manifest.FormatVersion, revision.SourceFormat.Frontend with
+            | 1, SourceFrontend.Flow ->
+                failure "STORAGE_INVALID_MANIFEST" "Version-1 manifests cannot declare Flow-authored revisions." path
+            | _, SourceFrontend.Stack when not (List.isEmpty revision.CallBindings) ->
+                failure "STORAGE_INVALID_MANIFEST" "Stack revisions cannot contain Flow call bindings." path
+            | _ -> ()
             if revision.Definition.Kind <> StorageObjectKind.WordDefinition then
                 failure "STORAGE_INVALID_MANIFEST" $"Word revision '{revision.Name}' must reference a word-definition object." path
             if revision.Tests |> List.exists (fun reference -> reference.Kind <> StorageObjectKind.TestDefinition) then
@@ -463,8 +828,46 @@ module Storage =
                 failure "STORAGE_INVALID_MANIFEST" $"Word revision '{revision.Name}' has a non-example reference in examples." path
             if revision.TimestampUtc.Offset <> TimeSpan.Zero then
                 failure "STORAGE_INVALID_MANIFEST" "Word revision timestamps must be expressed in UTC." path
+            let duplicateBinding =
+                revision.CallBindings
+                |> List.groupBy (fun binding -> binding.Source, binding.CaseName, binding.BodyRole, binding.Path)
+                |> List.tryFind (fun (_, values) -> values.Length > 1)
+            match duplicateBinding with
+            | Some(key, _) -> failure "STORAGE_INVALID_MANIFEST" $"Word revision '{revision.Name}' has duplicate call binding key '{key}'." path
+            | None -> ()
+            for binding in revision.CallBindings do
+                validMetadataText "Call binding requested name" 256 path binding.RequestedName
+                validMetadataText "Call binding target identity" 128 path (match binding.Target with | StoredCallTarget.UserWord value | StoredCallTarget.Primitive value | StoredCallTarget.GeneratedWord value -> value)
+                match binding.Form with
+                | StoredCallForm.Direct | StoredCallForm.AbsoluteRoot -> ()
+                | StoredCallForm.DotStage stage -> validMetadataText "Call binding dot stage" 128 path stage
+                | StoredCallForm.StaticCallback(stage, _) ->
+                    if stage <> "map" && stage <> "filter" && stage <> "each" then
+                        failure "STORAGE_INVALID_MANIFEST" $"Static callback stage '{stage}' is not supported." path
+                let belongsToDefinition = binding.Source = revision.Definition
+                let belongsToTest = revision.Tests |> List.contains binding.Source
+                let belongsToExample = revision.Examples |> List.contains binding.Source
+                let roleMatchesSource =
+                    match binding.BodyRole, binding.CaseName, binding.Source.Kind with
+                    | StoredCallBodyRole.Definition, None, StorageObjectKind.WordDefinition -> belongsToDefinition
+                    | StoredCallBodyRole.Actual, Some caseName, StorageObjectKind.TestDefinition ->
+                        validMetadataText "Call binding case name" 256 path caseName
+                        belongsToTest
+                    | StoredCallBodyRole.Actual, Some caseName, StorageObjectKind.ExampleDefinition ->
+                        validMetadataText "Call binding case name" 256 path caseName
+                        belongsToExample
+                    | StoredCallBodyRole.ExpectedExpression, Some caseName, StorageObjectKind.TestDefinition ->
+                        validMetadataText "Call binding case name" 256 path caseName
+                        belongsToTest
+                    | _ -> false
+                if not roleMatchesSource then
+                    failure "STORAGE_INVALID_MANIFEST" $"Call binding source, body role, and case name are incompatible with word revision '{revision.Name}'." path
 
         allSourceRefs manifest |> ignore
+
+    let private manifestBytes manifest =
+        validateManifest manifest None
+        manifestNode manifest |> fun node -> node.ToJsonString(JsonSerializerOptions(WriteIndented = false)) |> utf8.GetBytes
 
     let private kindPathExtension kind = extension kind
 
@@ -636,7 +1039,7 @@ module Storage =
 
     let private pointerNode (pointer: Pointer) =
         let node = JsonObject()
-        node["formatVersion"] <- jsonInt formatVersion
+        node["formatVersion"] <- jsonInt pointerSnapshotFormatVersion
         node["generation"] <- jsonInt64 pointer.Generation
         match pointer.Authority with
         | EmptyAuthority -> node["kind"] <- jsonString "empty"
@@ -651,8 +1054,8 @@ module Storage =
     let private parsePointer (path: string) (node: JsonNode) =
         let value = requireObject "current pointer" node
         let version = requireInt "current pointer format version" value["formatVersion"]
-        if version <> formatVersion then
-            failure "STORAGE_UNSUPPORTED_VERSION" $"Current pointer format {version} is not supported (expected {formatVersion})." (Some path)
+        if version <> pointerSnapshotFormatVersion then
+            failure "STORAGE_UNSUPPORTED_VERSION" $"Current pointer format {version} is not supported (expected {pointerSnapshotFormatVersion})." (Some path)
         let generation = requireInt64 "current pointer generation" value["generation"]
         if generation < 1L then failure "STORAGE_INVALID_POINTER" "Current pointer generation must be positive." (Some path)
         let authority =
@@ -852,7 +1255,7 @@ module Storage =
 
     let private snapshotFileNode (snapshot: SnapshotFile) =
         let node = JsonObject()
-        node["formatVersion"] <- jsonInt formatVersion
+        node["formatVersion"] <- jsonInt pointerSnapshotFormatVersion
         node["manifestHash"] <- jsonString snapshot.ManifestHash
         node["virtualFiles"] <- snapshot.VirtualFiles |> Option.map sourceRefNode |> Option.defaultValue null
         node["clockValue"] <- snapshot.ClockValue |> Option.map jsonString |> Option.defaultValue null
@@ -861,8 +1264,8 @@ module Storage =
     let private parseSnapshotFile path node =
         let value = requireObject "named snapshot" node
         let version = requireInt "snapshot format version" value["formatVersion"]
-        if version <> formatVersion then
-            failure "STORAGE_UNSUPPORTED_VERSION" $"Snapshot format {version} is not supported (expected {formatVersion})." (Some path)
+        if version <> pointerSnapshotFormatVersion then
+            failure "STORAGE_UNSUPPORTED_VERSION" $"Snapshot format {version} is not supported (expected {pointerSnapshotFormatVersion})." (Some path)
         let manifestHash = requireString "snapshot manifest hash" value["manifestHash"]
         validateHash (Some path) manifestHash
         let virtualFiles = if isNull value["virtualFiles"] then None else Some(parseSourceRef (Some path) value["virtualFiles"])
