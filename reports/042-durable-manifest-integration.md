@@ -1,6 +1,6 @@
 # Durable manifest v2 integration
 
-Status: local integrated acceptance passed; publication in progress. The full 82-section PRD remains active.
+Status: local and exact committed CI acceptance passed. The full 82-section PRD remains active.
 
 ## Baseline and progress
 
@@ -194,3 +194,22 @@ refusal, role/kind/case and identity text checks, future-version precedence and
 the mixed-history guard before parsing malformed aggregate text. Source and test
 files remain frozen for publication; reports record the failed attempts as well
 as the actual successful evidence.
+
+## Committed CI and publication
+
+Source milestone `15534ce801bbf756b287e2e321afa6bc60ed2da8` passed
+[exact committed CI](https://github.com/benwmaddox/AgentLang/actions/runs/37404798239).
+The downloaded artifact identifies that exact revision, a clean checkout and all
+25 successful checks, including Storage's 14 groups / 229 assertions. Saved
+[run identity](evidence/042-source-ci-run.json),
+[gate](evidence/042-source-ci-validation.json) and four companion records.
+Repository privacy was checked before source publication and again before main
+integration. This reports-only publication changes no executable files after CI.
+Main/prototype integration uses a fast-forward without a force push or worktree.
+
+The next required work is authoritative authored-source state and manifest-selected
+Flow Runtime parsing/compilation, deterministic mixed export assembly, semantic
+binding validation, edit/rename/library gates, fresh-process rollback/snapshot
+conformance and eventual default authoring cutover. Providers, business vocabulary
+and controlled external-subagent experiments remain in the full PRD scope. This
+schema milestone does not establish productivity, context or memory benefits.
