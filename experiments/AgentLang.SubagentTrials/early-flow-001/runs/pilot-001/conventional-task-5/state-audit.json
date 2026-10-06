@@ -1,0 +1,12 @@
+{
+  "reusedFunctions": [
+    "Customer.renewalBalance"
+  ],
+  "selfTests": 41,
+  "existingTestsRetained": true,
+  "projectConfigurationUnchanged": true,
+  "task": 5,
+  "priorFunctionsBehaviorPreserved": true,
+  "passed": true,
+  "limits": "Domain/SelfTests diffs inspected: renewalBalance then-clause reformatted without semantic change; renewalSavings implemented; ten new tests. Prior self-tests retained and freshly passed; independent acceptance separately passes."
+}

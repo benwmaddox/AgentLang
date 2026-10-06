@@ -1,0 +1,13 @@
+{
+  "addedWord": "subscription.annual-renewable?",
+  "limits": "Target signature, purity, library maturity, own coverage and behavior independently checked by acceptance. State audit compares all prior type, head and revision entries.",
+  "passed": true,
+  "retainedHeadsUnchanged": true,
+  "manifestHash": "254e2f91e0ce4fac3f6960d845eaa29adf38c3363c5263a799838036cfa293d2",
+  "retainedRevisionsUnchanged": true,
+  "typesUnchanged": true,
+  "retainedWords": [
+    "customer.discounted-balance",
+    "customer.premium?"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "task": 5,
+  "reasoning": "max",
+  "history": "none",
+  "priorManifestHash": "8c25c47a842c87758ac2dafcf2575411ae1448e597137379936b313902a61317",
+  "sourceRevision": "e87931a1ed22b05e60443c158cf9c2527c0ba6f6",
+  "model": "gpt-6-luna",
+  "cliSha256": "31235b45cb3b7149abf096d579a14643157e29fe26839df3135f724c38362b00",
+  "exactTokens": null,
+  "mode": "growing"
+}

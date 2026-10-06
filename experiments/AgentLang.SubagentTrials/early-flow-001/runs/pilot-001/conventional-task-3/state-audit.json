@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "existingTestsRetained": true,
+  "unchangedOtherFunctions": 4,
+  "limits": "Domain/SelfTests diffs inspected separately; only annualRenewable body and seven new tests changed. Independent acceptance and fresh fixed self-test validation separately passed.",
+  "projectConfigurationUnchanged": true,
+  "task": 3,
+  "selfTests": 22
+}

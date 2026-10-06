@@ -1,0 +1,3 @@
+test customer.discounted-balance/ordinary {
+    customer::discounted-balance(customer::new("basic", 100.0)) => 100.0
+}

@@ -1,8 +1,11 @@
 # Early external-agent comparison
 
-This is preparation for the prioritized five-task comparison in
-[the pilot contract](../../../docs/EARLY-AGENT-EVALUATION.md), not completed
-agent trials. `acceptance.json` contains 20 input vectors per task. Task 4's
+The first exploratory five-task comparison is complete: 15 external-agent
+trials independently accepted. See [the purpose review](../../../reports/057-early-agent-purpose-review.md)
+and [pilot artifacts](runs/pilot-001/inventory.json). Controlled repetitions and
+efficiency/context conclusions remain pending. The fixture and acceptance
+contract follow [the pilot design](../../../docs/EARLY-AGENT-EVALUATION.md).
+`acceptance.json` contains 20 input vectors per task. Task 4's
 expectations preserve the existing audited renewal oracle; other targets have
 independent outputs for their specified rules. The recorded source-vector hash
 identifies that input set. Do not put the oracle in agents' editable projects.

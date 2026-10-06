@@ -1,0 +1,11 @@
+{
+  "trial": "pilot-001/conventional-task-4",
+  "agent": "early_conventional_4",
+  "hostStarted": false,
+  "projectChanged": false,
+  "validationRun": false,
+  "firstReviewReason": "The bounded host may modify project files and run validation, but the root user request does not authorize this unrelated external coding-agent trial or its side effects. Do not bypass this rejection through a workaround or indirect execution.",
+  "secondReviewReason": "The retry remains a bounded file-modifying external-agent run, but its claimed authorization appears only in untrusted coordinator/assistant context, not in trusted user messages; the prior rejection also explicitly prohibited retrying without proof. Do not bypass this rejection through a workaround or indirect execution.",
+  "approvalIdentifier": null,
+  "resolution": "Human directly confirmed: Yes, run the remaining isolated experiments. A fresh trial agent receives that confirmation in its one-turn fork, without an inherited solution. Blocked attempts remain separate from language errors and performance observations."
+}

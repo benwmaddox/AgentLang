@@ -1,0 +1,32 @@
+{
+  "task": "task-0001",
+  "goal": "",
+  "active": false,
+  "wordsInspected": [
+    "customer.renewal-savings",
+    "float.multiply"
+  ],
+  "wordsUsed": [
+    "bool.and",
+    "customer.balance",
+    "customer.kind",
+    "customer.new",
+    "customer.renewal-savings",
+    "equals",
+    "float.multiply",
+    "float.subtract",
+    "subscription.new",
+    "subscription.renewable",
+    "subscription.term"
+  ],
+  "wordsCreated": [
+    "customer.renewal-savings"
+  ],
+  "testsRun": 14,
+  "testsFailed": 0,
+  "effects": {},
+  "errors": [
+    "FLOW_ROOT_CALL_REQUIRES_ARGUMENTS",
+    "NAME_UNKNOWN_WORD"
+  ]
+}

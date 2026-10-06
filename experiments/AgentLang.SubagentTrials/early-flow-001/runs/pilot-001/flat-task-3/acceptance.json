@@ -1,0 +1,774 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "failure": null,
+  "task": 3,
+  "word": "subscription.annual-renewable?",
+  "cliSha256": "31235b45cb3b7149abf096d579a14643157e29fe26839df3135f724c38362b00",
+  "oracleSha256": "7ed0ba4d7925978424b98b7a17aae5276315cf1dff612a8f4688c178472c03eb",
+  "verifierSha256": "e8748381ab8d87e1baf8e8386205927951072909f250faa808473af6eb35cace",
+  "checks": [
+    {
+      "name": "fresh process exit",
+      "passed": true
+    },
+    {
+      "name": "one response per request",
+      "passed": true
+    },
+    {
+      "name": "all requests succeed",
+      "passed": true
+    },
+    {
+      "name": "all attached tests pass",
+      "passed": true
+    },
+    {
+      "name": "exact target signature",
+      "passed": true
+    },
+    {
+      "name": "pure persistent library target",
+      "passed": true
+    },
+    {
+      "name": "target has attached tests",
+      "passed": true
+    },
+    {
+      "name": "complete current own coverage",
+      "passed": true
+    },
+    {
+      "name": "premium-annual-true exact output shape",
+      "passed": true
+    },
+    {
+      "name": "premium-annual-true independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "premium-annual-false exact output shape",
+      "passed": true
+    },
+    {
+      "name": "premium-annual-false independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "premium-monthly-true exact output shape",
+      "passed": true
+    },
+    {
+      "name": "premium-monthly-true independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "premium-monthly-false exact output shape",
+      "passed": true
+    },
+    {
+      "name": "premium-monthly-false independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "standard-annual-true exact output shape",
+      "passed": true
+    },
+    {
+      "name": "standard-annual-true independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "standard-annual-false exact output shape",
+      "passed": true
+    },
+    {
+      "name": "standard-annual-false independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "standard-monthly-true exact output shape",
+      "passed": true
+    },
+    {
+      "name": "standard-monthly-true independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "standard-monthly-false exact output shape",
+      "passed": true
+    },
+    {
+      "name": "standard-monthly-false independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "case-sensitive-kind exact output shape",
+      "passed": true
+    },
+    {
+      "name": "case-sensitive-kind independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "case-sensitive-term exact output shape",
+      "passed": true
+    },
+    {
+      "name": "case-sensitive-term independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "term-trailing-space exact output shape",
+      "passed": true
+    },
+    {
+      "name": "term-trailing-space independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "empty-kind exact output shape",
+      "passed": true
+    },
+    {
+      "name": "empty-kind independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "zero-balance exact output shape",
+      "passed": true
+    },
+    {
+      "name": "zero-balance independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "negative-balance exact output shape",
+      "passed": true
+    },
+    {
+      "name": "negative-balance independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "larger-eligible exact output shape",
+      "passed": true
+    },
+    {
+      "name": "larger-eligible independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "larger-ineligible exact output shape",
+      "passed": true
+    },
+    {
+      "name": "larger-ineligible independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "accent-kind exact output shape",
+      "passed": true
+    },
+    {
+      "name": "accent-kind independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "fractional-balance exact output shape",
+      "passed": true
+    },
+    {
+      "name": "fractional-balance independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "tiny-balance exact output shape",
+      "passed": true
+    },
+    {
+      "name": "tiny-balance independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "large-finite-balance exact output shape",
+      "passed": true
+    },
+    {
+      "name": "large-finite-balance independent Bool result",
+      "passed": true
+    }
+  ],
+  "requests": [
+    {
+      "op": "test-all"
+    },
+    {
+      "op": "describe",
+      "word": "subscription.annual-renewable?"
+    },
+    {
+      "op": "dependencies",
+      "word": "subscription.annual-renewable?"
+    },
+    {
+      "op": "source",
+      "word": "subscription.annual-renewable?"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "subscription::annual-renewable?(subscription::new(term = \"annual\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "subscription::annual-renewable?(subscription::new(term = \"annual\", renewable = false))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "subscription::annual-renewable?(subscription::new(term = \"monthly\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "subscription::annual-renewable?(subscription::new(term = \"monthly\", renewable = false))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "subscription::annual-renewable?(subscription::new(term = \"annual\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "subscription::annual-renewable?(subscription::new(term = \"annual\", renewable = false))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "subscription::annual-renewable?(subscription::new(term = \"monthly\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "subscription::annual-renewable?(subscription::new(term = \"monthly\", renewable = false))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "subscription::annual-renewable?(subscription::new(term = \"annual\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "subscription::annual-renewable?(subscription::new(term = \"Annual\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "subscription::annual-renewable?(subscription::new(term = \"annual \", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "subscription::annual-renewable?(subscription::new(term = \"annual\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "subscription::annual-renewable?(subscription::new(term = \"annual\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "subscription::annual-renewable?(subscription::new(term = \"annual\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "subscription::annual-renewable?(subscription::new(term = \"annual\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "subscription::annual-renewable?(subscription::new(term = \"monthly\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "subscription::annual-renewable?(subscription::new(term = \"annual\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "subscription::annual-renewable?(subscription::new(term = \"annual\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "subscription::annual-renewable?(subscription::new(term = \"annual\", renewable = true))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "subscription::annual-renewable?(subscription::new(term = \"annual\", renewable = true))"
+    }
+  ],
+  "responses": [
+    {
+      "ok": true,
+      "kind": "test",
+      "text": "6/6 test(s) passed.",
+      "data": {
+        "results": [
+          {
+            "name": "annual-and-renewable",
+            "word": "subscription.annual-renewable?",
+            "passed": true,
+            "expected": "true",
+            "actual": [
+              "true"
+            ]
+          },
+          {
+            "name": "annual-but-not-renewable",
+            "word": "subscription.annual-renewable?",
+            "passed": true,
+            "expected": "false",
+            "actual": [
+              "false"
+            ]
+          },
+          {
+            "name": "case-sensitive-term",
+            "word": "subscription.annual-renewable?",
+            "passed": true,
+            "expected": "false",
+            "actual": [
+              "false"
+            ]
+          },
+          {
+            "name": "monthly-and-renewable",
+            "word": "subscription.annual-renewable?",
+            "passed": true,
+            "expected": "false",
+            "actual": [
+              "false"
+            ]
+          },
+          {
+            "name": "monthly-not-renewable",
+            "word": "subscription.annual-renewable?",
+            "passed": true,
+            "expected": "false",
+            "actual": [
+              "false"
+            ]
+          },
+          {
+            "name": "no-term-trimming",
+            "word": "subscription.annual-renewable?",
+            "passed": true,
+            "expected": "false",
+            "actual": [
+              "false"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "ok": true,
+      "kind": "describe",
+      "text": "Description for subscription.annual-renewable?.",
+      "data": {
+        "name": "subscription.annual-renewable?",
+        "inputs": [
+          "Subscription"
+        ],
+        "outputs": [
+          "Bool"
+        ],
+        "parameters": [
+          {
+            "name": "subscription",
+            "type": "Subscription"
+          }
+        ],
+        "effects": [],
+        "documentation": "",
+        "id": "word_5157ca72f6994f5ba4312323066734e4",
+        "dependencies": [
+          "bool.and",
+          "equals",
+          "subscription.renewable",
+          "subscription.term"
+        ],
+        "transitiveDependencies": [
+          "bool.and",
+          "equals",
+          "subscription.renewable",
+          "subscription.term"
+        ],
+        "callers": [],
+        "tests": [
+          "annual-and-renewable",
+          "annual-but-not-renewable",
+          "case-sensitive-term",
+          "monthly-and-renewable",
+          "monthly-not-renewable",
+          "no-term-trimming"
+        ],
+        "examples": [],
+        "source": "<revision:subscription.annual-renewable?/1>",
+        "line": 1,
+        "kind": "word",
+        "status": "persistent",
+        "maturity": "library",
+        "deprecated": false,
+        "revision": 1,
+        "testCount": 6,
+        "exampleCount": 0,
+        "coverage": {
+          "instructionsCovered": 9,
+          "instructionsTotal": 9,
+          "branchesCovered": 0,
+          "branchesTotal": 0,
+          "uncoveredInstructions": [],
+          "uncoveredBranchOutcomes": [],
+          "status": "current"
+        }
+      }
+    },
+    {
+      "ok": true,
+      "kind": "dependencies",
+      "text": "4 direct dependency/dependencies.",
+      "data": {
+        "dependencies": [
+          "bool.and",
+          "equals",
+          "subscription.renewable",
+          "subscription.term"
+        ],
+        "callers": []
+      }
+    },
+    {
+      "ok": true,
+      "kind": "source",
+      "text": "word subscription.annual-renewable?(subscription: Subscription) -> Bool {\n    effects none\n    let isAnnual = ::equals(subscription.term(), \"annual\")\n    bool::and(isAnnual, subscription.renewable())\n}",
+      "data": "word subscription.annual-renewable?(subscription: Subscription) -> Bool {\n    effects none\n    let isAnnual = ::equals(subscription.term(), \"annual\")\n    bool::and(isAnnual, subscription.renewable())\n}"
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "true",
+      "data": {
+        "stack": [
+          "true"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "false",
+      "data": {
+        "stack": [
+          "false"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "false",
+      "data": {
+        "stack": [
+          "false"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "false",
+      "data": {
+        "stack": [
+          "false"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "true",
+      "data": {
+        "stack": [
+          "true"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "false",
+      "data": {
+        "stack": [
+          "false"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "false",
+      "data": {
+        "stack": [
+          "false"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "false",
+      "data": {
+        "stack": [
+          "false"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "true",
+      "data": {
+        "stack": [
+          "true"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "false",
+      "data": {
+        "stack": [
+          "false"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "false",
+      "data": {
+        "stack": [
+          "false"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "true",
+      "data": {
+        "stack": [
+          "true"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "true",
+      "data": {
+        "stack": [
+          "true"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "true",
+      "data": {
+        "stack": [
+          "true"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "true",
+      "data": {
+        "stack": [
+          "true"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "false",
+      "data": {
+        "stack": [
+          "false"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "true",
+      "data": {
+        "stack": [
+          "true"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "true",
+      "data": {
+        "stack": [
+          "true"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "true",
+      "data": {
+        "stack": [
+          "true"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "true",
+      "data": {
+        "stack": [
+          "true"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    }
+  ],
+  "limits": [
+    "Behavioral acceptance only; no model-efficiency claim.",
+    "Float tolerance is not bitwise or signed-zero equivalence.",
+    "Whole-state preservation and retained-helper quality require a separate audit."
+  ]
+}

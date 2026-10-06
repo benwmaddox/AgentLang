@@ -1,6 +1,6 @@
 # AgentLang: Agent-Oriented Extensible Language Prototype
 
-- Status: prototype specification, refined 2026-10-05
+- Status: prototype specification, refined 2026-10-06
 - Implementation: F# on .NET
 - Primary user: an AI coding agent
 - Secondary user: a developer inspecting and controlling that agent
@@ -295,6 +295,13 @@ mailboxes, arenas or LLVM before the first comparative review. Finish bounded
 work already underway and add capabilities only when trial requirements or
 observed failures justify them. This changes delivery order, not the remaining
 full-PRD requirements or the standard of evidence.
+
+The first five-task sequence is now independently accepted in all three modes
+([purpose review](../reports/057-early-agent-purpose-review.md)). Vocabulary reuse
+and smaller new definitions are observed; an overall agent-cost benefit remains
+unproven. Prioritize concise discovery/callable metadata and protocol recovery,
+then repeat matched tasks with rotated order and standardized prompts before
+expanding the domain or changing memory/backend architecture.
 
 1. Ship and validate the first usable slice and demo.
 2. Run a fresh external subagent through the small protocol; record supplied context, interactions, independent results, and available usage.

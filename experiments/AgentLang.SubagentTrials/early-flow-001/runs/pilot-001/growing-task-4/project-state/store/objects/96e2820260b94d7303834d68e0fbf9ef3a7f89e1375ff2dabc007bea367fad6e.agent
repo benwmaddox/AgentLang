@@ -1,0 +1,80 @@
+// frontend: flow/1
+
+record Customer {
+    field kind: String;
+    field balance: Float;
+}
+
+// frontend: flow/1
+
+record Subscription {
+    field term: String;
+    field renewable: Bool;
+}
+
+// frontend: flow/1
+
+word customer.discounted-balance(customer: Customer) -> Float {
+    effects none
+    if customer::premium?(customer) {
+        float::multiply(customer::balance(customer), 0.9)
+    } else {
+        customer::balance(customer)
+    }
+}
+
+// frontend: flow/1
+
+word customer.premium?(customer: Customer) -> Bool {
+    effects none
+    ::equals(customer.kind(), "premium")
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/case-sensitive {
+    customer::discounted-balance(customer::new("Premium", 100))
+    => 100
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/ordinary {
+    customer::discounted-balance(customer::new("basic", 100))
+    => 100
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/premium {
+    customer::discounted-balance(customer::new("premium", 100))
+    => 90
+}
+
+// frontend: flow/1
+
+test customer.premium?/case-sensitive {
+    customer::premium?(customer::new("Premium", 0))
+    => false
+}
+
+// frontend: flow/1
+
+test customer.premium?/exact-match {
+    customer::premium?(customer::new("premium", 0))
+    => true
+}
+
+// frontend: flow/1
+
+test customer.premium?/no-trim {
+    customer::premium?(customer::new("premium ", 0))
+    => false
+}
+
+// frontend: flow/1
+
+test customer.premium?/other-kind {
+    customer::premium?(customer::new("standard", 0))
+    => false
+}

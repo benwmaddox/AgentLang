@@ -1,0 +1,41 @@
+{
+  "cliFiles": [
+    {
+      "name": "AgentLang.Conventional.Cli.deps.json",
+      "sha256": "286c223538b469e3a5a6364bebc0d68051682db3c80cd6bb043def2b7b33eace"
+    },
+    {
+      "name": "AgentLang.Conventional.Cli.dll",
+      "sha256": "8a7f88664291b3a0789368434d305a629b8a11e3fbd6fad42436d9931f4111f8"
+    },
+    {
+      "name": "AgentLang.Conventional.Cli.runtimeconfig.json",
+      "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+    },
+    {
+      "name": "AgentLang.Conventional.dll",
+      "sha256": "a901a292b4aa54a341937fc6f5f22d27ba434f57e0dc05f9311e358e40aaf585"
+    },
+    {
+      "name": "FSharp.Core.dll",
+      "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+    }
+  ],
+  "provenanceTiming": "reconstructed after run from retained session-start trace and coordinator preparation record; not a contemporaneous launch manifest",
+  "allowedOperations": [
+    "inspect",
+    "read",
+    "replace",
+    "search",
+    "validate"
+  ],
+  "model": "gpt-6-luna",
+  "exactTokens": null,
+  "priorTrial": "conventional-task-1",
+  "mode": "conventional",
+  "history": "none",
+  "priorManifestHash": null,
+  "reasoning": "max",
+  "task": 2,
+  "sourceRevision": "e87931a1ed22b05e60443c158cf9c2527c0ba6f6"
+}

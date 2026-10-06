@@ -1,0 +1,13 @@
+{
+  "limits": "Inspected Domain/SelfTests diffs: earlier function bodies unchanged; Subscription module moved before Customer for F# name resolution. Nine new tests. Independent acceptance/fixed validation separately pass.",
+  "passed": true,
+  "selfTests": 31,
+  "unchangedOtherFunctionBodies": 4,
+  "projectConfigurationUnchanged": true,
+  "reusedFunctions": [
+    "Customer.discountedBalance",
+    "Subscription.annualRenewable"
+  ],
+  "task": 4,
+  "existingTestsRetained": true
+}

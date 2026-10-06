@@ -1,0 +1,4 @@
+record Subscription {
+    field term: String;
+    field renewable: Bool;
+}

@@ -1,0 +1,2059 @@
+{
+  "passed": true,
+  "files": 342,
+  "inventorySha256": "3f9a65a30c64228afe6f9d7a54872d3e6210e9651bd3f7e4d84732b8ca596a3c",
+  "checks": [
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/accepted-trial-metrics.json",
+      "rawObject": "0f11aec3dcd914e5feef102793ed77a28d4c1668",
+      "stagedObject": "0f11aec3dcd914e5feef102793ed77a28d4c1668",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-1/acceptance.json",
+      "rawObject": "a566b859d675ace3f124c99eedf9a586049a3da8",
+      "stagedObject": "a566b859d675ace3f124c99eedf9a586049a3da8",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-1/Domain.fs",
+      "rawObject": "4c69c9e4de23bed92e49f925939c20ab3e124ca6",
+      "stagedObject": "4c69c9e4de23bed92e49f925939c20ab3e124ca6",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-1/EarlyPilot.fsproj",
+      "rawObject": "44664ef86135b4a063c1e150e17b9c3d145dd13b",
+      "stagedObject": "44664ef86135b4a063c1e150e17b9c3d145dd13b",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-1/pin.json",
+      "rawObject": "ce300dbfe6df69d4514f8b7f6139914d0c9711f6",
+      "stagedObject": "ce300dbfe6df69d4514f8b7f6139914d0c9711f6",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-1/SelfTests.fs",
+      "rawObject": "34b682fc6c70cfaf250f107f526d8a1298696348",
+      "stagedObject": "34b682fc6c70cfaf250f107f526d8a1298696348",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-1/state-audit.json",
+      "rawObject": "17366e16effead45abe59b77daf851457b1c987c",
+      "stagedObject": "17366e16effead45abe59b77daf851457b1c987c",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-1/trace.jsonl",
+      "rawObject": "5701b1bd6365b28d32c5a86b5a5f0c9a4a1c17a8",
+      "stagedObject": "5701b1bd6365b28d32c5a86b5a5f0c9a4a1c17a8",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-2/acceptance.json",
+      "rawObject": "b68ecf2e36c882286ec88dee5f57664dc7574c20",
+      "stagedObject": "b68ecf2e36c882286ec88dee5f57664dc7574c20",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-2/Domain.fs",
+      "rawObject": "7541380371c8aaa2ce8318b78fff4d8c321f0dd9",
+      "stagedObject": "7541380371c8aaa2ce8318b78fff4d8c321f0dd9",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-2/EarlyPilot.fsproj",
+      "rawObject": "44664ef86135b4a063c1e150e17b9c3d145dd13b",
+      "stagedObject": "44664ef86135b4a063c1e150e17b9c3d145dd13b",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-2/pin.json",
+      "rawObject": "57996e7f0a629eb5c02459049263f0ad7f400ef5",
+      "stagedObject": "57996e7f0a629eb5c02459049263f0ad7f400ef5",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-2/SelfTests.fs",
+      "rawObject": "122abfcc7e9a0697eacd5822fe51c6736a4ab1f3",
+      "stagedObject": "122abfcc7e9a0697eacd5822fe51c6736a4ab1f3",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-2/state-audit.json",
+      "rawObject": "b62ae25b9f99abe61337d82372f0fcf8112da617",
+      "stagedObject": "b62ae25b9f99abe61337d82372f0fcf8112da617",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-2/trace.jsonl",
+      "rawObject": "6b452e1695d8908684ee8f8fa45028a8615f8d6d",
+      "stagedObject": "6b452e1695d8908684ee8f8fa45028a8615f8d6d",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-3/acceptance.json",
+      "rawObject": "f9fecf83240047c0ab14b68cda51406452a5d086",
+      "stagedObject": "f9fecf83240047c0ab14b68cda51406452a5d086",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-3/Domain.fs",
+      "rawObject": "e9163e31fdb9ac8d90c7f909a8cba1773ae8b820",
+      "stagedObject": "e9163e31fdb9ac8d90c7f909a8cba1773ae8b820",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-3/EarlyPilot.fsproj",
+      "rawObject": "44664ef86135b4a063c1e150e17b9c3d145dd13b",
+      "stagedObject": "44664ef86135b4a063c1e150e17b9c3d145dd13b",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-3/pin.json",
+      "rawObject": "ccef73a83b1c0c7867b3d151634b30a0ada9b5ba",
+      "stagedObject": "ccef73a83b1c0c7867b3d151634b30a0ada9b5ba",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-3/SelfTests.fs",
+      "rawObject": "aba2c2f08c6c725a18a0d078698d2a3682613426",
+      "stagedObject": "aba2c2f08c6c725a18a0d078698d2a3682613426",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-3/state-audit.json",
+      "rawObject": "a4bbe410f63379b5450646bdb27fe4ca9095918b",
+      "stagedObject": "a4bbe410f63379b5450646bdb27fe4ca9095918b",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-3/trace.jsonl",
+      "rawObject": "13fab6d722d02d58baf65b7b6ea90e41600d7f6b",
+      "stagedObject": "13fab6d722d02d58baf65b7b6ea90e41600d7f6b",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-4/acceptance.json",
+      "rawObject": "119034ddc2b975d80238198c76afd4ae8608faa7",
+      "stagedObject": "119034ddc2b975d80238198c76afd4ae8608faa7",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-4/Domain.fs",
+      "rawObject": "2621f4a942adba391424a77dea1a67f519daad59",
+      "stagedObject": "2621f4a942adba391424a77dea1a67f519daad59",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-4/EarlyPilot.fsproj",
+      "rawObject": "44664ef86135b4a063c1e150e17b9c3d145dd13b",
+      "stagedObject": "44664ef86135b4a063c1e150e17b9c3d145dd13b",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-4/pin.json",
+      "rawObject": "129f9e97cd93bd9e962f4aefb0290608fc861a0d",
+      "stagedObject": "129f9e97cd93bd9e962f4aefb0290608fc861a0d",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-4/SelfTests.fs",
+      "rawObject": "66296e8736204823bb113938044b93d52b64c128",
+      "stagedObject": "66296e8736204823bb113938044b93d52b64c128",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-4/state-audit.json",
+      "rawObject": "d7ca410e932b3d740250d468abba9244c44a72d0",
+      "stagedObject": "d7ca410e932b3d740250d468abba9244c44a72d0",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-4/trace.jsonl",
+      "rawObject": "72b401b6796249f2e6bdeef759a65b26b41bee0e",
+      "stagedObject": "72b401b6796249f2e6bdeef759a65b26b41bee0e",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-5/acceptance.json",
+      "rawObject": "f5be64ed48e737fc5dc2ec778ccc8ea5cbba6ad8",
+      "stagedObject": "f5be64ed48e737fc5dc2ec778ccc8ea5cbba6ad8",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-5/Domain.fs",
+      "rawObject": "109a66fa0b8756c67725a2601b2bfd10e1aec693",
+      "stagedObject": "109a66fa0b8756c67725a2601b2bfd10e1aec693",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-5/EarlyPilot.fsproj",
+      "rawObject": "44664ef86135b4a063c1e150e17b9c3d145dd13b",
+      "stagedObject": "44664ef86135b4a063c1e150e17b9c3d145dd13b",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-5/pin.json",
+      "rawObject": "f2c4121f2aea861eb4f5a24e7bc614e615492267",
+      "stagedObject": "f2c4121f2aea861eb4f5a24e7bc614e615492267",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-5/SelfTests.fs",
+      "rawObject": "cb4737492c409427c298d0a36ff8e2c3c4b94476",
+      "stagedObject": "cb4737492c409427c298d0a36ff8e2c3c4b94476",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-5/state-audit.json",
+      "rawObject": "86b3ce743e47ea3af7d2898373255832d83d3f1e",
+      "stagedObject": "86b3ce743e47ea3af7d2898373255832d83d3f1e",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/conventional-task-5/trace.jsonl",
+      "rawObject": "ba3f2e144112b6c602c07ed857744eaf00e490e5",
+      "stagedObject": "ba3f2e144112b6c602c07ed857744eaf00e490e5",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/acceptance.json",
+      "rawObject": "a565bf0fa14fe1784fffe7664d050b7b7aaaa840",
+      "stagedObject": "a565bf0fa14fe1784fffe7664d050b7b7aaaa840",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/dictionary.agent",
+      "rawObject": "12235f14dfc1dad72b29fcbb2e1b233859b7b99d",
+      "stagedObject": "12235f14dfc1dad72b29fcbb2e1b233859b7b99d",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/history/task-0001.json",
+      "rawObject": "270bcfc366a42cab1a156c401760c2aedbecf620",
+      "stagedObject": "270bcfc366a42cab1a156c401760c2aedbecf620",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/pin.json",
+      "rawObject": "764e626a0f0a9d859878e186719bdeb3cba2e779",
+      "stagedObject": "764e626a0f0a9d859878e186719bdeb3cba2e779",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/project-state/store/CURRENT",
+      "rawObject": "e90e5fb584ee8f1801559c61e293288f3b05afbe",
+      "stagedObject": "e90e5fb584ee8f1801559c61e293288f3b05afbe",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/project-state/store/manifests/22525a84bdaff047135df179887e4064b8844025e44f6549ab792224389a4862.json",
+      "rawObject": "d7346110d7c292730582186ae9eca0213b49ce0a",
+      "stagedObject": "d7346110d7c292730582186ae9eca0213b49ce0a",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/project-state/store/manifests/272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e.json",
+      "rawObject": "9de68b6da7ed81b36ee0e560655cdcd36a1baa0c",
+      "stagedObject": "9de68b6da7ed81b36ee0e560655cdcd36a1baa0c",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/project-state/store/manifests/8ab71325aaabb58ff1c671d773c397bf61e74a1020bb39fc39425f47e950ded7.json",
+      "rawObject": "d1498dd6a36178f15434c3b077088b07987b28e9",
+      "stagedObject": "d1498dd6a36178f15434c3b077088b07987b28e9",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/project-state/store/objects/07d93dae53216b6a1010f784f3fab79d868f65d5a300e115853c1ee591c72424.agent",
+      "rawObject": "12235f14dfc1dad72b29fcbb2e1b233859b7b99d",
+      "stagedObject": "12235f14dfc1dad72b29fcbb2e1b233859b7b99d",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/project-state/store/objects/0a09ec29fa93e0951a01017f708dbdb0ae4d13cec9c30fb033fbe3de55d9c9e7.agent",
+      "rawObject": "6e6a4f6653e1d486f179ddb382997ff8071d8661",
+      "stagedObject": "6e6a4f6653e1d486f179ddb382997ff8071d8661",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/project-state/store/objects/2754e501440b8c7cec15f3434d0233fda4154b9d631355748f1f323df2be80f5.agent",
+      "rawObject": "c64996ad89c48f3f63ea5ec000c0659aa94b49d6",
+      "stagedObject": "c64996ad89c48f3f63ea5ec000c0659aa94b49d6",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/project-state/store/objects/3b4129d45c4a2e5f59e6e8149dcb47f228094288735844424e1ece103f129344.agent",
+      "rawObject": "117e1d38dd8f246c1014a267346e732336073beb",
+      "stagedObject": "117e1d38dd8f246c1014a267346e732336073beb",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/project-state/store/objects/4d1f76127f259ff47d25e8ad4bed7c2ae6c9bf18846ae243179235c28278d313.agent",
+      "rawObject": "ee2ca71bca29bb82f71962cac7bb5e1d27b9baec",
+      "stagedObject": "ee2ca71bca29bb82f71962cac7bb5e1d27b9baec",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/project-state/store/objects/6b964fd1a60a1c51e0900f74a69ee486c227aacf5bca2f24a06289cecc237bf7.agent",
+      "rawObject": "bc7ad8a9e14e2e1ab7353741534b82bcfcf5627a",
+      "stagedObject": "bc7ad8a9e14e2e1ab7353741534b82bcfcf5627a",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/project-state/store/objects/b362735401b95e899b7400eb487e97680a73a61a65d52c3ee8458cb4617c4dc7.agent",
+      "rawObject": "385f8d4c5acb714558097704a91556b579e4e390",
+      "stagedObject": "385f8d4c5acb714558097704a91556b579e4e390",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/project-state/store/objects/c701fc54256ab52139509aff9f40ca54c54dcc6f31f6577dc5836f7f0fdd7ad7.agent",
+      "rawObject": "01e65d03261c380374c72eacf73f46da6b7cc5db",
+      "stagedObject": "01e65d03261c380374c72eacf73f46da6b7cc5db",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/project-state/store/objects/cba51aed7789788bafdfed252595b21078bd2e16620690bd2ef0eff0179feeca.agent",
+      "rawObject": "340f374d31b139a68aedab93cc6d47bcf0f5f6d2",
+      "stagedObject": "340f374d31b139a68aedab93cc6d47bcf0f5f6d2",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/project-state/store/objects/ebfda0ad236c50a2a29cf677ba9465b108ef55c039f3edbf34db743107587893.agent",
+      "rawObject": "1f819f245db3e66bfbf8b97573b60e5875fb1581",
+      "stagedObject": "1f819f245db3e66bfbf8b97573b60e5875fb1581",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/project-state/store/snapshots/matched-renewal-start.json",
+      "rawObject": "adc9ef23658c2abdb250917bc68dae71074fe3ca",
+      "stagedObject": "adc9ef23658c2abdb250917bc68dae71074fe3ca",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/state-audit.json",
+      "rawObject": "aaaa866d4cbae16964d2be622a403205baec4dfc",
+      "stagedObject": "aaaa866d4cbae16964d2be622a403205baec4dfc",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-1/trace.jsonl",
+      "rawObject": "a9a950826d36edaba815f60279798a99d7f8233c",
+      "stagedObject": "a9a950826d36edaba815f60279798a99d7f8233c",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-2/acceptance.json",
+      "rawObject": "754704f60f4bc108af92749b8873465d9d1e8ca7",
+      "stagedObject": "754704f60f4bc108af92749b8873465d9d1e8ca7",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-2/dictionary.agent",
+      "rawObject": "8438a67713bbfd0077dc683cd6b2ab007f9100cc",
+      "stagedObject": "8438a67713bbfd0077dc683cd6b2ab007f9100cc",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-2/history/task-0001.json",
+      "rawObject": "1a40f3f02fca3ab8f7e18879fa831990fb250cb3",
+      "stagedObject": "1a40f3f02fca3ab8f7e18879fa831990fb250cb3",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-2/pin.json",
+      "rawObject": "2da8421489cc33bb29fc0e8e1fe6242835125ff9",
+      "stagedObject": "2da8421489cc33bb29fc0e8e1fe6242835125ff9",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-2/project-state/store/CURRENT",
+      "rawObject": "0e5cb443d8735021c8c2bfea9f39b653e7f43250",
+      "stagedObject": "0e5cb443d8735021c8c2bfea9f39b653e7f43250",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-2/project-state/store/manifests/272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e.json",
+      "rawObject": "9de68b6da7ed81b36ee0e560655cdcd36a1baa0c",
+      "stagedObject": "9de68b6da7ed81b36ee0e560655cdcd36a1baa0c",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-2/project-state/store/manifests/8ab71325aaabb58ff1c671d773c397bf61e74a1020bb39fc39425f47e950ded7.json",
+      "rawObject": "d1498dd6a36178f15434c3b077088b07987b28e9",
+      "stagedObject": "d1498dd6a36178f15434c3b077088b07987b28e9",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-2/project-state/store/manifests/e246c3709f81408c6ffc130020350c6746d2b1c198042357bec4e9e77e38ff9a.json",
+      "rawObject": "01b340798d2d1d4da2b306830ea5e2ef8576ef8d",
+      "stagedObject": "01b340798d2d1d4da2b306830ea5e2ef8576ef8d",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-2/project-state/store/objects/0a09ec29fa93e0951a01017f708dbdb0ae4d13cec9c30fb033fbe3de55d9c9e7.agent",
+      "rawObject": "6e6a4f6653e1d486f179ddb382997ff8071d8661",
+      "stagedObject": "6e6a4f6653e1d486f179ddb382997ff8071d8661",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-2/project-state/store/objects/0d91e088c94c0457ee69fd1d10c41da6b4100829977ba8858f151b507249ec17.agent",
+      "rawObject": "d72bc9435b92c64042c7a5de5be19f7fe6fa5ba1",
+      "stagedObject": "d72bc9435b92c64042c7a5de5be19f7fe6fa5ba1",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-2/project-state/store/objects/4d1f76127f259ff47d25e8ad4bed7c2ae6c9bf18846ae243179235c28278d313.agent",
+      "rawObject": "ee2ca71bca29bb82f71962cac7bb5e1d27b9baec",
+      "stagedObject": "ee2ca71bca29bb82f71962cac7bb5e1d27b9baec",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-2/project-state/store/objects/6b964fd1a60a1c51e0900f74a69ee486c227aacf5bca2f24a06289cecc237bf7.agent",
+      "rawObject": "bc7ad8a9e14e2e1ab7353741534b82bcfcf5627a",
+      "stagedObject": "bc7ad8a9e14e2e1ab7353741534b82bcfcf5627a",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-2/project-state/store/objects/97263ab6ea2c9503a27a7704b629e9be7d9f7c59a36bccc478b35e0c2c218429.agent",
+      "rawObject": "6e0e22f57353ebffccd363037896b1ea364f7467",
+      "stagedObject": "6e0e22f57353ebffccd363037896b1ea364f7467",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-2/project-state/store/objects/c435e141d9279f19735ca0e2a007a5b8a0437accaab16c957498367325a36c28.agent",
+      "rawObject": "27366887c9f637767ca5caa21893366fdd5c0ea2",
+      "stagedObject": "27366887c9f637767ca5caa21893366fdd5c0ea2",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-2/project-state/store/objects/c701fc54256ab52139509aff9f40ca54c54dcc6f31f6577dc5836f7f0fdd7ad7.agent",
+      "rawObject": "01e65d03261c380374c72eacf73f46da6b7cc5db",
+      "stagedObject": "01e65d03261c380374c72eacf73f46da6b7cc5db",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-2/project-state/store/objects/f5d8621bf917350ec7ff15d54cafe0ff3d83686d17ce253280853ad5e88065fb.agent",
+      "rawObject": "8438a67713bbfd0077dc683cd6b2ab007f9100cc",
+      "stagedObject": "8438a67713bbfd0077dc683cd6b2ab007f9100cc",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-2/project-state/store/objects/ffc07ade05cd4e650b3b41bd0d330d1d4bb4320b0728b4ef96173b3485231fe5.agent",
+      "rawObject": "5605aafe59886056d3913d1994487ea740f5921f",
+      "stagedObject": "5605aafe59886056d3913d1994487ea740f5921f",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-2/project-state/store/snapshots/matched-renewal-start.json",
+      "rawObject": "adc9ef23658c2abdb250917bc68dae71074fe3ca",
+      "stagedObject": "adc9ef23658c2abdb250917bc68dae71074fe3ca",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-2/state-audit.json",
+      "rawObject": "6655f19293cc46199cf5f2a66f639ffb5155536c",
+      "stagedObject": "6655f19293cc46199cf5f2a66f639ffb5155536c",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-2/trace.jsonl",
+      "rawObject": "190e133459272c8d9a493671af4cc6cedc3d495f",
+      "stagedObject": "190e133459272c8d9a493671af4cc6cedc3d495f",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-3/acceptance.json",
+      "rawObject": "d70bffe741d5cd326c11983e73e25236ef3c8800",
+      "stagedObject": "d70bffe741d5cd326c11983e73e25236ef3c8800",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-3/dictionary.agent",
+      "rawObject": "bf6af9facd8d42401b4aa8c0e0d2f5816cee4494",
+      "stagedObject": "bf6af9facd8d42401b4aa8c0e0d2f5816cee4494",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-3/history/task-0001.json",
+      "rawObject": "10628a0a5b212659b5b923b167ed12d02ab177f1",
+      "stagedObject": "10628a0a5b212659b5b923b167ed12d02ab177f1",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-3/pin.json",
+      "rawObject": "53eabf25bd305ac4bfec2f13a557acbd16cdc3dc",
+      "stagedObject": "53eabf25bd305ac4bfec2f13a557acbd16cdc3dc",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-3/project-state/store/CURRENT",
+      "rawObject": "4943409f7c4ae2fd0bf7ffea01471e2a9c402a50",
+      "stagedObject": "4943409f7c4ae2fd0bf7ffea01471e2a9c402a50",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-3/project-state/store/manifests/272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e.json",
+      "rawObject": "9de68b6da7ed81b36ee0e560655cdcd36a1baa0c",
+      "stagedObject": "9de68b6da7ed81b36ee0e560655cdcd36a1baa0c",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-3/project-state/store/manifests/2e0765ee1d63ca8e7c0f774bf316be92b5d3f05fbcf466cedf8327191c9f01d9.json",
+      "rawObject": "20d765ff965aed74658b9226981d9466d8ee3df4",
+      "stagedObject": "20d765ff965aed74658b9226981d9466d8ee3df4",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-3/project-state/store/manifests/8ab71325aaabb58ff1c671d773c397bf61e74a1020bb39fc39425f47e950ded7.json",
+      "rawObject": "d1498dd6a36178f15434c3b077088b07987b28e9",
+      "stagedObject": "d1498dd6a36178f15434c3b077088b07987b28e9",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-3/project-state/store/objects/0a09ec29fa93e0951a01017f708dbdb0ae4d13cec9c30fb033fbe3de55d9c9e7.agent",
+      "rawObject": "6e6a4f6653e1d486f179ddb382997ff8071d8661",
+      "stagedObject": "6e6a4f6653e1d486f179ddb382997ff8071d8661",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-3/project-state/store/objects/4d1f76127f259ff47d25e8ad4bed7c2ae6c9bf18846ae243179235c28278d313.agent",
+      "rawObject": "ee2ca71bca29bb82f71962cac7bb5e1d27b9baec",
+      "stagedObject": "ee2ca71bca29bb82f71962cac7bb5e1d27b9baec",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-3/project-state/store/objects/6b964fd1a60a1c51e0900f74a69ee486c227aacf5bca2f24a06289cecc237bf7.agent",
+      "rawObject": "bc7ad8a9e14e2e1ab7353741534b82bcfcf5627a",
+      "stagedObject": "bc7ad8a9e14e2e1ab7353741534b82bcfcf5627a",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-3/project-state/store/objects/84495d36556de99318e1e3b2c604a21bfb6175bd5260ab9c7653b1f5ea2b2640.agent",
+      "rawObject": "d31eeb41ff03e40f3750572874a1175fa0989bc5",
+      "stagedObject": "d31eeb41ff03e40f3750572874a1175fa0989bc5",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-3/project-state/store/objects/88b57a0626440a8d1aa09ab7d30e888503f24d82b36f6eda2727cee7f046919a.agent",
+      "rawObject": "bf6af9facd8d42401b4aa8c0e0d2f5816cee4494",
+      "stagedObject": "bf6af9facd8d42401b4aa8c0e0d2f5816cee4494",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-3/project-state/store/objects/a0f8d1fe83aefe366c2757b71038033cb31116dddea106d59c349c65a815ac4d.agent",
+      "rawObject": "1942f0c32aae9635bf9d515023c0ed75eac46f7e",
+      "stagedObject": "1942f0c32aae9635bf9d515023c0ed75eac46f7e",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-3/project-state/store/objects/bb3a8b4d07791cb2eb87c1a997c964045c4f2c50a98914a364248c93df4caf54.agent",
+      "rawObject": "1b11ed9b026f332f12ee49a700ebad1c9485df95",
+      "stagedObject": "1b11ed9b026f332f12ee49a700ebad1c9485df95",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-3/project-state/store/objects/c4c206c67fc7499729e77af0a7e51833b47e65a0fa1d9f9df0a9d801409a7050.agent",
+      "rawObject": "777387b944d220cc76af669eef592ecff73942a0",
+      "stagedObject": "777387b944d220cc76af669eef592ecff73942a0",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-3/project-state/store/objects/c701fc54256ab52139509aff9f40ca54c54dcc6f31f6577dc5836f7f0fdd7ad7.agent",
+      "rawObject": "01e65d03261c380374c72eacf73f46da6b7cc5db",
+      "stagedObject": "01e65d03261c380374c72eacf73f46da6b7cc5db",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-3/project-state/store/objects/e32f14dd77f029bfbc52c998e64e970ee352fa19c03b52cfcff562960b0cbe2a.agent",
+      "rawObject": "0f877b2410177c0ae85d2ea649412df81acfa1b7",
+      "stagedObject": "0f877b2410177c0ae85d2ea649412df81acfa1b7",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-3/project-state/store/objects/f36b44ed0299a50c0c2a146b129c8d3d207dbba58ed016d429757d2edea83675.agent",
+      "rawObject": "ecb7045a605c02d65c70f241a9140d88d3949aaa",
+      "stagedObject": "ecb7045a605c02d65c70f241a9140d88d3949aaa",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-3/project-state/store/objects/fdda8e1ce305dd11db42d30b8f3db1829bb703c1bbd4cc68de8216993441acc1.agent",
+      "rawObject": "3fc443c33b7ecbd44a179da5695759bf11bc3710",
+      "stagedObject": "3fc443c33b7ecbd44a179da5695759bf11bc3710",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-3/project-state/store/snapshots/matched-renewal-start.json",
+      "rawObject": "adc9ef23658c2abdb250917bc68dae71074fe3ca",
+      "stagedObject": "adc9ef23658c2abdb250917bc68dae71074fe3ca",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-3/state-audit.json",
+      "rawObject": "42f86fe2a975e0e71ddd339ee5cdbf39de9447e3",
+      "stagedObject": "42f86fe2a975e0e71ddd339ee5cdbf39de9447e3",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-3/trace.jsonl",
+      "rawObject": "2690d00d1b6bd758ce7e70b8cb75bb8da7ff8b56",
+      "stagedObject": "2690d00d1b6bd758ce7e70b8cb75bb8da7ff8b56",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-4/acceptance.json",
+      "rawObject": "09be83ec1ab5082117149e95854495dc7007dd6a",
+      "stagedObject": "09be83ec1ab5082117149e95854495dc7007dd6a",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-4/dictionary.agent",
+      "rawObject": "9f30b7431ff700f8add00e13b42af525bc4f40b6",
+      "stagedObject": "9f30b7431ff700f8add00e13b42af525bc4f40b6",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-4/history/task-0001.json",
+      "rawObject": "b888aefd2e2c23c995246877d289faee1b4af7a5",
+      "stagedObject": "b888aefd2e2c23c995246877d289faee1b4af7a5",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-4/pin.json",
+      "rawObject": "3a00885e1750b28ec6e7e06e9b39211ae0f93c54",
+      "stagedObject": "3a00885e1750b28ec6e7e06e9b39211ae0f93c54",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-4/project-state/store/CURRENT",
+      "rawObject": "da97910d144871f300521d66a20c658941acb64b",
+      "stagedObject": "da97910d144871f300521d66a20c658941acb64b",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-4/project-state/store/manifests/272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e.json",
+      "rawObject": "9de68b6da7ed81b36ee0e560655cdcd36a1baa0c",
+      "stagedObject": "9de68b6da7ed81b36ee0e560655cdcd36a1baa0c",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-4/project-state/store/manifests/8ab71325aaabb58ff1c671d773c397bf61e74a1020bb39fc39425f47e950ded7.json",
+      "rawObject": "d1498dd6a36178f15434c3b077088b07987b28e9",
+      "stagedObject": "d1498dd6a36178f15434c3b077088b07987b28e9",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-4/project-state/store/manifests/db732321fd583c5775f1c205c14ba918f6b3648deeec778d2a729ee54e391333.json",
+      "rawObject": "206b7777bd99185c1aea84cd5fde6f90cf81ef8f",
+      "stagedObject": "206b7777bd99185c1aea84cd5fde6f90cf81ef8f",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-4/project-state/store/objects/0636b385907c3fe4bf3f19685f53e93f4617f0003907fa67bd3f1bae2b6e602f.agent",
+      "rawObject": "07c7849011dcb7277a261510f66da4d51f848a85",
+      "stagedObject": "07c7849011dcb7277a261510f66da4d51f848a85",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-4/project-state/store/objects/0a09ec29fa93e0951a01017f708dbdb0ae4d13cec9c30fb033fbe3de55d9c9e7.agent",
+      "rawObject": "6e6a4f6653e1d486f179ddb382997ff8071d8661",
+      "stagedObject": "6e6a4f6653e1d486f179ddb382997ff8071d8661",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-4/project-state/store/objects/1ea8c6e289058f97ac6bd76247da261ca4d4b8b2d6b5e47fbc8021e388cd549b.agent",
+      "rawObject": "5c11c973ea60fe1faa9ac5c8244c94bd5a1a33cd",
+      "stagedObject": "5c11c973ea60fe1faa9ac5c8244c94bd5a1a33cd",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-4/project-state/store/objects/1ed58f69b101dbe498afc1c997e440f4321329f965da7cdc9a9cb09feed3f3e9.agent",
+      "rawObject": "95afb91ff06faa5c43fdfbd93ca9f87d071ee679",
+      "stagedObject": "95afb91ff06faa5c43fdfbd93ca9f87d071ee679",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-4/project-state/store/objects/3a701b7c79c7984cda288f0da86cfcbce6c301bc5f624e9c40a9c0cbe5a26bbe.agent",
+      "rawObject": "9abb6d9224abdb794fff32b5174b1399bb70b01a",
+      "stagedObject": "9abb6d9224abdb794fff32b5174b1399bb70b01a",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-4/project-state/store/objects/41cebdd576c0231076a2cc50350817f8eb9412bfa41e6a1b36aacd4e29752909.agent",
+      "rawObject": "cfa5ebd9474489ffb865e1abe105d7069a1769f3",
+      "stagedObject": "cfa5ebd9474489ffb865e1abe105d7069a1769f3",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-4/project-state/store/objects/4d1f76127f259ff47d25e8ad4bed7c2ae6c9bf18846ae243179235c28278d313.agent",
+      "rawObject": "ee2ca71bca29bb82f71962cac7bb5e1d27b9baec",
+      "stagedObject": "ee2ca71bca29bb82f71962cac7bb5e1d27b9baec",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-4/project-state/store/objects/58246be5a140b6a7cd59438356dbb884b16a84932a59b1c96881e93050fe2113.agent",
+      "rawObject": "e12ed1f8d44b07cffd3b79ad96bda92e3cb5c98e",
+      "stagedObject": "e12ed1f8d44b07cffd3b79ad96bda92e3cb5c98e",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-4/project-state/store/objects/666127f3504cecc1f39f3ad520b81bc2759cd5eacbc5847841d1d35ab1aaf3e6.agent",
+      "rawObject": "7727e27e6c26b061e10db35e5552e0c466f9ca2d",
+      "stagedObject": "7727e27e6c26b061e10db35e5552e0c466f9ca2d",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-4/project-state/store/objects/6b964fd1a60a1c51e0900f74a69ee486c227aacf5bca2f24a06289cecc237bf7.agent",
+      "rawObject": "bc7ad8a9e14e2e1ab7353741534b82bcfcf5627a",
+      "stagedObject": "bc7ad8a9e14e2e1ab7353741534b82bcfcf5627a",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-4/project-state/store/objects/7e9d33dba746f5ff848abc20c2d24e4d63328565b4484cceb7d7b4a3d046fcff.agent",
+      "rawObject": "69914a58bc7524d56d9ebcafaab3e4d250ed174a",
+      "stagedObject": "69914a58bc7524d56d9ebcafaab3e4d250ed174a",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-4/project-state/store/objects/a6c469bd70a3ecb07a41d6e846927d96c2c66666473bde066a0af8fc5f4b3de0.agent",
+      "rawObject": "23d969f6b672a70e953de53c27d76f7cef7a1f3b",
+      "stagedObject": "23d969f6b672a70e953de53c27d76f7cef7a1f3b",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-4/project-state/store/objects/ac515312300c53eacca83ff69103657e4a3ec03c45e25dea7ea2d17852ccf66b.agent",
+      "rawObject": "9f30b7431ff700f8add00e13b42af525bc4f40b6",
+      "stagedObject": "9f30b7431ff700f8add00e13b42af525bc4f40b6",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-4/project-state/store/objects/bec86f48789d5c109ec2a4355823fd402ceca07f01608bd606259872495fb0bb.agent",
+      "rawObject": "233098acffb65d8d057da911346c73f159946f56",
+      "stagedObject": "233098acffb65d8d057da911346c73f159946f56",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-4/project-state/store/objects/c701fc54256ab52139509aff9f40ca54c54dcc6f31f6577dc5836f7f0fdd7ad7.agent",
+      "rawObject": "01e65d03261c380374c72eacf73f46da6b7cc5db",
+      "stagedObject": "01e65d03261c380374c72eacf73f46da6b7cc5db",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-4/project-state/store/objects/ea30f96d7cbf7a15d5b791365a6ba5831f6029baa68897a144795b6271da2223.agent",
+      "rawObject": "d2fa1b403820264a509dbea4ce8e834261252073",
+      "stagedObject": "d2fa1b403820264a509dbea4ce8e834261252073",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-4/project-state/store/snapshots/matched-renewal-start.json",
+      "rawObject": "adc9ef23658c2abdb250917bc68dae71074fe3ca",
+      "stagedObject": "adc9ef23658c2abdb250917bc68dae71074fe3ca",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-4/state-audit.json",
+      "rawObject": "4017063c0d50d3ff955efc9980a33988f9b12f39",
+      "stagedObject": "4017063c0d50d3ff955efc9980a33988f9b12f39",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-4/trace.jsonl",
+      "rawObject": "e3a2a11ae8503c1f18804205e7f98931bc687c6a",
+      "stagedObject": "e3a2a11ae8503c1f18804205e7f98931bc687c6a",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-5/acceptance.json",
+      "rawObject": "2247356b1b34ff75e7f39cdb0676a9e7d5e5b39f",
+      "stagedObject": "2247356b1b34ff75e7f39cdb0676a9e7d5e5b39f",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-5/dictionary.agent",
+      "rawObject": "9398572192d1ffbb94bc59c3d2a5284b7f0c5bbf",
+      "stagedObject": "9398572192d1ffbb94bc59c3d2a5284b7f0c5bbf",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-5/history/task-0001.json",
+      "rawObject": "77ef03bfb4c8b0e22c9fc6d926e586ff9b6cd0ea",
+      "stagedObject": "77ef03bfb4c8b0e22c9fc6d926e586ff9b6cd0ea",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-5/pin.json",
+      "rawObject": "76f8ec33b717abdf873be77d539a9232a3c1c5fd",
+      "stagedObject": "76f8ec33b717abdf873be77d539a9232a3c1c5fd",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-5/project-state/store/CURRENT",
+      "rawObject": "d21e7ace4e2578d612148a4848856b869dad9f4f",
+      "stagedObject": "d21e7ace4e2578d612148a4848856b869dad9f4f",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-5/project-state/store/manifests/0fd8e5f84f5e4fca43e949e87da684f91d8b6fa064705225b220dc8945e0333d.json",
+      "rawObject": "1d1be270419e0b7dab1fa6c8195675318468ccc4",
+      "stagedObject": "1d1be270419e0b7dab1fa6c8195675318468ccc4",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-5/project-state/store/manifests/272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e.json",
+      "rawObject": "9de68b6da7ed81b36ee0e560655cdcd36a1baa0c",
+      "stagedObject": "9de68b6da7ed81b36ee0e560655cdcd36a1baa0c",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-5/project-state/store/manifests/8ab71325aaabb58ff1c671d773c397bf61e74a1020bb39fc39425f47e950ded7.json",
+      "rawObject": "d1498dd6a36178f15434c3b077088b07987b28e9",
+      "stagedObject": "d1498dd6a36178f15434c3b077088b07987b28e9",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-5/project-state/store/objects/05cba9d8b2cda573d0aa88ceb994a95b32c82a5a3a62d11f7e508eda75c432b3.agent",
+      "rawObject": "65360f495332e88c38e68232be496425df1aa93e",
+      "stagedObject": "65360f495332e88c38e68232be496425df1aa93e",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-5/project-state/store/objects/081ac6ecf4b5c6f26b2d2c2591b52e6c92f230afd6e2655a4a28b7d26453faed.agent",
+      "rawObject": "9398572192d1ffbb94bc59c3d2a5284b7f0c5bbf",
+      "stagedObject": "9398572192d1ffbb94bc59c3d2a5284b7f0c5bbf",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-5/project-state/store/objects/0a09ec29fa93e0951a01017f708dbdb0ae4d13cec9c30fb033fbe3de55d9c9e7.agent",
+      "rawObject": "6e6a4f6653e1d486f179ddb382997ff8071d8661",
+      "stagedObject": "6e6a4f6653e1d486f179ddb382997ff8071d8661",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-5/project-state/store/objects/11e960d588e9d24e946884fd14eb0f2eceecb29efe90717132e7a530ed507f90.agent",
+      "rawObject": "d520532b78ed26be4163c4da1688fdc01968f703",
+      "stagedObject": "d520532b78ed26be4163c4da1688fdc01968f703",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-5/project-state/store/objects/15d5aa69c5cf56ecf4c083ee1ad11171ffe83847cfa71a0faf33b5be60002daa.agent",
+      "rawObject": "6b44c3f1162e187ac13b018a25e85ac0a803b495",
+      "stagedObject": "6b44c3f1162e187ac13b018a25e85ac0a803b495",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-5/project-state/store/objects/24c9e88ce34bd7df9e278d1a8959bfb470dc96153f69b0e999ca702f5f36c7ac.agent",
+      "rawObject": "eed721445b3a485814813b24797f47855890531e",
+      "stagedObject": "eed721445b3a485814813b24797f47855890531e",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-5/project-state/store/objects/4d1f76127f259ff47d25e8ad4bed7c2ae6c9bf18846ae243179235c28278d313.agent",
+      "rawObject": "ee2ca71bca29bb82f71962cac7bb5e1d27b9baec",
+      "stagedObject": "ee2ca71bca29bb82f71962cac7bb5e1d27b9baec",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-5/project-state/store/objects/6b964fd1a60a1c51e0900f74a69ee486c227aacf5bca2f24a06289cecc237bf7.agent",
+      "rawObject": "bc7ad8a9e14e2e1ab7353741534b82bcfcf5627a",
+      "stagedObject": "bc7ad8a9e14e2e1ab7353741534b82bcfcf5627a",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-5/project-state/store/objects/8e4f1b2a865aedb0539fecc3eb95d38b03affeae937e4bf28ca6e0b29d5788a4.agent",
+      "rawObject": "9935619e228fff7de39ef7eabe813f098b423194",
+      "stagedObject": "9935619e228fff7de39ef7eabe813f098b423194",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-5/project-state/store/objects/a2b067cf7412cbd49f3fa4121466196843a062b63b5bc7c9d4bcf5f877411cdd.agent",
+      "rawObject": "28c9f73fcb5d85df709ba60c2039328c1777f8cc",
+      "stagedObject": "28c9f73fcb5d85df709ba60c2039328c1777f8cc",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-5/project-state/store/objects/a7e445ae5bcf7d562f9689240ff8601f54017900b3de529c7c8f614087c42e72.agent",
+      "rawObject": "a02b7947db36581f77a7c6f308c0061172541504",
+      "stagedObject": "a02b7947db36581f77a7c6f308c0061172541504",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-5/project-state/store/objects/c701fc54256ab52139509aff9f40ca54c54dcc6f31f6577dc5836f7f0fdd7ad7.agent",
+      "rawObject": "01e65d03261c380374c72eacf73f46da6b7cc5db",
+      "stagedObject": "01e65d03261c380374c72eacf73f46da6b7cc5db",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-5/project-state/store/objects/d29d77421fb03644cf95f71f1f3253faef73b0ec929e4329cb8c7761960dd68d.agent",
+      "rawObject": "a8cd6ac27bc2761ddc39ace9e10c52557454c9d7",
+      "stagedObject": "a8cd6ac27bc2761ddc39ace9e10c52557454c9d7",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-5/project-state/store/snapshots/matched-renewal-start.json",
+      "rawObject": "adc9ef23658c2abdb250917bc68dae71074fe3ca",
+      "stagedObject": "adc9ef23658c2abdb250917bc68dae71074fe3ca",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-5/state-audit.json",
+      "rawObject": "4bd487dc31bacf19095525e8d66be0dafe1b6317",
+      "stagedObject": "4bd487dc31bacf19095525e8d66be0dafe1b6317",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/flat-task-5/trace.jsonl",
+      "rawObject": "5ff09b6c77884e25e7a165e573c4da2f402f3829",
+      "stagedObject": "5ff09b6c77884e25e7a165e573c4da2f402f3829",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-1/acceptance.json",
+      "rawObject": "e4dd800daca6d3847f1f8f1c7dc6e0df806841dd",
+      "stagedObject": "e4dd800daca6d3847f1f8f1c7dc6e0df806841dd",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-1/dictionary.agent",
+      "rawObject": "f015caa8387e7c6cacd22fb3700c4beab4226c8e",
+      "stagedObject": "f015caa8387e7c6cacd22fb3700c4beab4226c8e",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-1/history/task-0001.json",
+      "rawObject": "2688c44832db86088f4f87c6721179cbfdf5c30d",
+      "stagedObject": "2688c44832db86088f4f87c6721179cbfdf5c30d",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-1/pin.json",
+      "rawObject": "f36adf5f061aa9af4732ec61064a9f9916f55f71",
+      "stagedObject": "f36adf5f061aa9af4732ec61064a9f9916f55f71",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-1/project-state/store/CURRENT",
+      "rawObject": "82d27af00c36f5ef77de09df036cfc0f52e86526",
+      "stagedObject": "82d27af00c36f5ef77de09df036cfc0f52e86526",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-1/project-state/store/manifests/272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e.json",
+      "rawObject": "9de68b6da7ed81b36ee0e560655cdcd36a1baa0c",
+      "stagedObject": "9de68b6da7ed81b36ee0e560655cdcd36a1baa0c",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-1/project-state/store/manifests/8ab71325aaabb58ff1c671d773c397bf61e74a1020bb39fc39425f47e950ded7.json",
+      "rawObject": "d1498dd6a36178f15434c3b077088b07987b28e9",
+      "stagedObject": "d1498dd6a36178f15434c3b077088b07987b28e9",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-1/project-state/store/manifests/f8b6375da44fac456576decab988669d8ffa3e9b7aa0383ae6091f0a76e76880.json",
+      "rawObject": "fe47f7ee30907742cbcc0b74e175711b66df9082",
+      "stagedObject": "fe47f7ee30907742cbcc0b74e175711b66df9082",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-1/project-state/store/objects/0a09ec29fa93e0951a01017f708dbdb0ae4d13cec9c30fb033fbe3de55d9c9e7.agent",
+      "rawObject": "6e6a4f6653e1d486f179ddb382997ff8071d8661",
+      "stagedObject": "6e6a4f6653e1d486f179ddb382997ff8071d8661",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-1/project-state/store/objects/2754e501440b8c7cec15f3434d0233fda4154b9d631355748f1f323df2be80f5.agent",
+      "rawObject": "c64996ad89c48f3f63ea5ec000c0659aa94b49d6",
+      "stagedObject": "c64996ad89c48f3f63ea5ec000c0659aa94b49d6",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-1/project-state/store/objects/3b4129d45c4a2e5f59e6e8149dcb47f228094288735844424e1ece103f129344.agent",
+      "rawObject": "117e1d38dd8f246c1014a267346e732336073beb",
+      "stagedObject": "117e1d38dd8f246c1014a267346e732336073beb",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-1/project-state/store/objects/4422c696188fa8ddaeed09b41c66b6e4ef4ec97e806f6e6b155cd7ef3467ef69.agent",
+      "rawObject": "8f5e31c4306d8b23aa000701e81660f5acb7b850",
+      "stagedObject": "8f5e31c4306d8b23aa000701e81660f5acb7b850",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-1/project-state/store/objects/4d1f76127f259ff47d25e8ad4bed7c2ae6c9bf18846ae243179235c28278d313.agent",
+      "rawObject": "ee2ca71bca29bb82f71962cac7bb5e1d27b9baec",
+      "stagedObject": "ee2ca71bca29bb82f71962cac7bb5e1d27b9baec",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-1/project-state/store/objects/4eef7c7566db8dd61a6fd3df26c960d381a7e92e06e3b28d12e656f3b564e85d.agent",
+      "rawObject": "f015caa8387e7c6cacd22fb3700c4beab4226c8e",
+      "stagedObject": "f015caa8387e7c6cacd22fb3700c4beab4226c8e",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-1/project-state/store/objects/6b964fd1a60a1c51e0900f74a69ee486c227aacf5bca2f24a06289cecc237bf7.agent",
+      "rawObject": "bc7ad8a9e14e2e1ab7353741534b82bcfcf5627a",
+      "stagedObject": "bc7ad8a9e14e2e1ab7353741534b82bcfcf5627a",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-1/project-state/store/objects/a210fa839950bc0469b4b44389b160dcdc35e20a3f452b03d010c5f6cbbd3696.agent",
+      "rawObject": "65d8bb30e84909d78c724704fba27cfc878f0fbb",
+      "stagedObject": "65d8bb30e84909d78c724704fba27cfc878f0fbb",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-1/project-state/store/objects/c701fc54256ab52139509aff9f40ca54c54dcc6f31f6577dc5836f7f0fdd7ad7.agent",
+      "rawObject": "01e65d03261c380374c72eacf73f46da6b7cc5db",
+      "stagedObject": "01e65d03261c380374c72eacf73f46da6b7cc5db",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-1/project-state/store/objects/ebfda0ad236c50a2a29cf677ba9465b108ef55c039f3edbf34db743107587893.agent",
+      "rawObject": "1f819f245db3e66bfbf8b97573b60e5875fb1581",
+      "stagedObject": "1f819f245db3e66bfbf8b97573b60e5875fb1581",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-1/project-state/store/snapshots/matched-renewal-start.json",
+      "rawObject": "adc9ef23658c2abdb250917bc68dae71074fe3ca",
+      "stagedObject": "adc9ef23658c2abdb250917bc68dae71074fe3ca",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-1/state-audit.json",
+      "rawObject": "96e211b9eeeb089e96c8e5713d919558673f5489",
+      "stagedObject": "96e211b9eeeb089e96c8e5713d919558673f5489",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-1/trace.jsonl",
+      "rawObject": "d109a18f1bf86936dc6f701948e653d1b21302fc",
+      "stagedObject": "d109a18f1bf86936dc6f701948e653d1b21302fc",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-2/acceptance.json",
+      "rawObject": "64425534c97be712e803b521a7c4dacab72454f1",
+      "stagedObject": "64425534c97be712e803b521a7c4dacab72454f1",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-2/dictionary.agent",
+      "rawObject": "572532f765610a5c34542d915c9ec6bf252eb134",
+      "stagedObject": "572532f765610a5c34542d915c9ec6bf252eb134",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-2/history/task-0001.json",
+      "rawObject": "2688c44832db86088f4f87c6721179cbfdf5c30d",
+      "stagedObject": "2688c44832db86088f4f87c6721179cbfdf5c30d",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-2/history/task-0002.json",
+      "rawObject": "55fd83705ae300f8851c1a57cfcd5a575c520faa",
+      "stagedObject": "55fd83705ae300f8851c1a57cfcd5a575c520faa",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-2/pin.json",
+      "rawObject": "5e95fe3b7281d4c58c6bdbe50dd9390fa6300797",
+      "stagedObject": "5e95fe3b7281d4c58c6bdbe50dd9390fa6300797",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-2/project-state/store/CURRENT",
+      "rawObject": "290f1a134157cbd404a1d6fb4a39ce9038d81f75",
+      "stagedObject": "290f1a134157cbd404a1d6fb4a39ce9038d81f75",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-2/project-state/store/manifests/142d4b51cc18680d7ddd3a7f9a76df6e1548c8374e7656e7411534f539f58757.json",
+      "rawObject": "3ccdcb5352a6d4480e0d6e55844d722370bf3b59",
+      "stagedObject": "3ccdcb5352a6d4480e0d6e55844d722370bf3b59",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-2/project-state/store/manifests/272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e.json",
+      "rawObject": "9de68b6da7ed81b36ee0e560655cdcd36a1baa0c",
+      "stagedObject": "9de68b6da7ed81b36ee0e560655cdcd36a1baa0c",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-2/project-state/store/manifests/8ab71325aaabb58ff1c671d773c397bf61e74a1020bb39fc39425f47e950ded7.json",
+      "rawObject": "d1498dd6a36178f15434c3b077088b07987b28e9",
+      "stagedObject": "d1498dd6a36178f15434c3b077088b07987b28e9",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-2/project-state/store/manifests/f8b6375da44fac456576decab988669d8ffa3e9b7aa0383ae6091f0a76e76880.json",
+      "rawObject": "fe47f7ee30907742cbcc0b74e175711b66df9082",
+      "stagedObject": "fe47f7ee30907742cbcc0b74e175711b66df9082",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-2/project-state/store/objects/0a09ec29fa93e0951a01017f708dbdb0ae4d13cec9c30fb033fbe3de55d9c9e7.agent",
+      "rawObject": "6e6a4f6653e1d486f179ddb382997ff8071d8661",
+      "stagedObject": "6e6a4f6653e1d486f179ddb382997ff8071d8661",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-2/project-state/store/objects/0d91e088c94c0457ee69fd1d10c41da6b4100829977ba8858f151b507249ec17.agent",
+      "rawObject": "d72bc9435b92c64042c7a5de5be19f7fe6fa5ba1",
+      "stagedObject": "d72bc9435b92c64042c7a5de5be19f7fe6fa5ba1",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-2/project-state/store/objects/2754e501440b8c7cec15f3434d0233fda4154b9d631355748f1f323df2be80f5.agent",
+      "rawObject": "c64996ad89c48f3f63ea5ec000c0659aa94b49d6",
+      "stagedObject": "c64996ad89c48f3f63ea5ec000c0659aa94b49d6",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-2/project-state/store/objects/3b4129d45c4a2e5f59e6e8149dcb47f228094288735844424e1ece103f129344.agent",
+      "rawObject": "117e1d38dd8f246c1014a267346e732336073beb",
+      "stagedObject": "117e1d38dd8f246c1014a267346e732336073beb",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-2/project-state/store/objects/4422c696188fa8ddaeed09b41c66b6e4ef4ec97e806f6e6b155cd7ef3467ef69.agent",
+      "rawObject": "8f5e31c4306d8b23aa000701e81660f5acb7b850",
+      "stagedObject": "8f5e31c4306d8b23aa000701e81660f5acb7b850",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-2/project-state/store/objects/4d1f76127f259ff47d25e8ad4bed7c2ae6c9bf18846ae243179235c28278d313.agent",
+      "rawObject": "ee2ca71bca29bb82f71962cac7bb5e1d27b9baec",
+      "stagedObject": "ee2ca71bca29bb82f71962cac7bb5e1d27b9baec",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-2/project-state/store/objects/4eef7c7566db8dd61a6fd3df26c960d381a7e92e06e3b28d12e656f3b564e85d.agent",
+      "rawObject": "f015caa8387e7c6cacd22fb3700c4beab4226c8e",
+      "stagedObject": "f015caa8387e7c6cacd22fb3700c4beab4226c8e",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-2/project-state/store/objects/6b964fd1a60a1c51e0900f74a69ee486c227aacf5bca2f24a06289cecc237bf7.agent",
+      "rawObject": "bc7ad8a9e14e2e1ab7353741534b82bcfcf5627a",
+      "stagedObject": "bc7ad8a9e14e2e1ab7353741534b82bcfcf5627a",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-2/project-state/store/objects/7cf1a8b1b15e29f2d289b3900e5adfd1d556b9bb8dae68b2084dd7fc7ddf3ded.agent",
+      "rawObject": "c070d427de3095e8a6f998b25961754f41bb4f03",
+      "stagedObject": "c070d427de3095e8a6f998b25961754f41bb4f03",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-2/project-state/store/objects/96e2820260b94d7303834d68e0fbf9ef3a7f89e1375ff2dabc007bea367fad6e.agent",
+      "rawObject": "572532f765610a5c34542d915c9ec6bf252eb134",
+      "stagedObject": "572532f765610a5c34542d915c9ec6bf252eb134",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-2/project-state/store/objects/97263ab6ea2c9503a27a7704b629e9be7d9f7c59a36bccc478b35e0c2c218429.agent",
+      "rawObject": "6e0e22f57353ebffccd363037896b1ea364f7467",
+      "stagedObject": "6e0e22f57353ebffccd363037896b1ea364f7467",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-2/project-state/store/objects/a210fa839950bc0469b4b44389b160dcdc35e20a3f452b03d010c5f6cbbd3696.agent",
+      "rawObject": "65d8bb30e84909d78c724704fba27cfc878f0fbb",
+      "stagedObject": "65d8bb30e84909d78c724704fba27cfc878f0fbb",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-2/project-state/store/objects/baa5d002af5287fdfd774b9c1cea0352e05e940fde2f0b1238e0331942e67671.agent",
+      "rawObject": "df22b15dd2e8efa09850f510dfb2f4a0a42a11c0",
+      "stagedObject": "df22b15dd2e8efa09850f510dfb2f4a0a42a11c0",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-2/project-state/store/objects/c701fc54256ab52139509aff9f40ca54c54dcc6f31f6577dc5836f7f0fdd7ad7.agent",
+      "rawObject": "01e65d03261c380374c72eacf73f46da6b7cc5db",
+      "stagedObject": "01e65d03261c380374c72eacf73f46da6b7cc5db",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-2/project-state/store/objects/ebfda0ad236c50a2a29cf677ba9465b108ef55c039f3edbf34db743107587893.agent",
+      "rawObject": "1f819f245db3e66bfbf8b97573b60e5875fb1581",
+      "stagedObject": "1f819f245db3e66bfbf8b97573b60e5875fb1581",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-2/project-state/store/snapshots/matched-renewal-start.json",
+      "rawObject": "adc9ef23658c2abdb250917bc68dae71074fe3ca",
+      "stagedObject": "adc9ef23658c2abdb250917bc68dae71074fe3ca",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-2/state-audit.json",
+      "rawObject": "c275e2a3b3eb66228814f1d6cad867f56d89f4e0",
+      "stagedObject": "c275e2a3b3eb66228814f1d6cad867f56d89f4e0",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-2/trace.jsonl",
+      "rawObject": "7734d7eb5cf72379f34310933c693fd22d61dde5",
+      "stagedObject": "7734d7eb5cf72379f34310933c693fd22d61dde5",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/acceptance.json",
+      "rawObject": "50395b68e59e4afdbf4a7b772d8039b0461f91ee",
+      "stagedObject": "50395b68e59e4afdbf4a7b772d8039b0461f91ee",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/dictionary.agent",
+      "rawObject": "28eb734b257175ce86ca8fc46c1c87d0efbcfc9d",
+      "stagedObject": "28eb734b257175ce86ca8fc46c1c87d0efbcfc9d",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/history/task-0001.json",
+      "rawObject": "2688c44832db86088f4f87c6721179cbfdf5c30d",
+      "stagedObject": "2688c44832db86088f4f87c6721179cbfdf5c30d",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/history/task-0002.json",
+      "rawObject": "55fd83705ae300f8851c1a57cfcd5a575c520faa",
+      "stagedObject": "55fd83705ae300f8851c1a57cfcd5a575c520faa",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/history/task-0003.json",
+      "rawObject": "15752e75aca9caf62d5db904ecd8e73c19f31185",
+      "stagedObject": "15752e75aca9caf62d5db904ecd8e73c19f31185",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/pin.json",
+      "rawObject": "efad4636462340fd1b3a05183e08833e5bb54f11",
+      "stagedObject": "efad4636462340fd1b3a05183e08833e5bb54f11",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/project-state/store/CURRENT",
+      "rawObject": "fce4c89165d2d0bcb525ee3a7904505214edb184",
+      "stagedObject": "fce4c89165d2d0bcb525ee3a7904505214edb184",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/project-state/store/manifests/142d4b51cc18680d7ddd3a7f9a76df6e1548c8374e7656e7411534f539f58757.json",
+      "rawObject": "3ccdcb5352a6d4480e0d6e55844d722370bf3b59",
+      "stagedObject": "3ccdcb5352a6d4480e0d6e55844d722370bf3b59",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/project-state/store/manifests/254e2f91e0ce4fac3f6960d845eaa29adf38c3363c5263a799838036cfa293d2.json",
+      "rawObject": "42e1c3d15e3581995a4abaeaad7274bbe02d7d83",
+      "stagedObject": "42e1c3d15e3581995a4abaeaad7274bbe02d7d83",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/project-state/store/manifests/272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e.json",
+      "rawObject": "9de68b6da7ed81b36ee0e560655cdcd36a1baa0c",
+      "stagedObject": "9de68b6da7ed81b36ee0e560655cdcd36a1baa0c",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/project-state/store/manifests/8ab71325aaabb58ff1c671d773c397bf61e74a1020bb39fc39425f47e950ded7.json",
+      "rawObject": "d1498dd6a36178f15434c3b077088b07987b28e9",
+      "stagedObject": "d1498dd6a36178f15434c3b077088b07987b28e9",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/project-state/store/manifests/f8b6375da44fac456576decab988669d8ffa3e9b7aa0383ae6091f0a76e76880.json",
+      "rawObject": "fe47f7ee30907742cbcc0b74e175711b66df9082",
+      "stagedObject": "fe47f7ee30907742cbcc0b74e175711b66df9082",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/project-state/store/objects/0a09ec29fa93e0951a01017f708dbdb0ae4d13cec9c30fb033fbe3de55d9c9e7.agent",
+      "rawObject": "6e6a4f6653e1d486f179ddb382997ff8071d8661",
+      "stagedObject": "6e6a4f6653e1d486f179ddb382997ff8071d8661",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/project-state/store/objects/0d91e088c94c0457ee69fd1d10c41da6b4100829977ba8858f151b507249ec17.agent",
+      "rawObject": "d72bc9435b92c64042c7a5de5be19f7fe6fa5ba1",
+      "stagedObject": "d72bc9435b92c64042c7a5de5be19f7fe6fa5ba1",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/project-state/store/objects/2754e501440b8c7cec15f3434d0233fda4154b9d631355748f1f323df2be80f5.agent",
+      "rawObject": "c64996ad89c48f3f63ea5ec000c0659aa94b49d6",
+      "stagedObject": "c64996ad89c48f3f63ea5ec000c0659aa94b49d6",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/project-state/store/objects/3b4129d45c4a2e5f59e6e8149dcb47f228094288735844424e1ece103f129344.agent",
+      "rawObject": "117e1d38dd8f246c1014a267346e732336073beb",
+      "stagedObject": "117e1d38dd8f246c1014a267346e732336073beb",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/project-state/store/objects/4422c696188fa8ddaeed09b41c66b6e4ef4ec97e806f6e6b155cd7ef3467ef69.agent",
+      "rawObject": "8f5e31c4306d8b23aa000701e81660f5acb7b850",
+      "stagedObject": "8f5e31c4306d8b23aa000701e81660f5acb7b850",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/project-state/store/objects/4d1f76127f259ff47d25e8ad4bed7c2ae6c9bf18846ae243179235c28278d313.agent",
+      "rawObject": "ee2ca71bca29bb82f71962cac7bb5e1d27b9baec",
+      "stagedObject": "ee2ca71bca29bb82f71962cac7bb5e1d27b9baec",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/project-state/store/objects/4eef7c7566db8dd61a6fd3df26c960d381a7e92e06e3b28d12e656f3b564e85d.agent",
+      "rawObject": "f015caa8387e7c6cacd22fb3700c4beab4226c8e",
+      "stagedObject": "f015caa8387e7c6cacd22fb3700c4beab4226c8e",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/project-state/store/objects/6b964fd1a60a1c51e0900f74a69ee486c227aacf5bca2f24a06289cecc237bf7.agent",
+      "rawObject": "bc7ad8a9e14e2e1ab7353741534b82bcfcf5627a",
+      "stagedObject": "bc7ad8a9e14e2e1ab7353741534b82bcfcf5627a",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/project-state/store/objects/7837ae7197f2140aa300c833ff326e0f3cc8399d47e1ea5531ed59ea25b9cd54.agent",
+      "rawObject": "55c40d30e27d3be30f4fca1c0c8b561a7b305e72",
+      "stagedObject": "55c40d30e27d3be30f4fca1c0c8b561a7b305e72",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/project-state/store/objects/7cf1a8b1b15e29f2d289b3900e5adfd1d556b9bb8dae68b2084dd7fc7ddf3ded.agent",
+      "rawObject": "c070d427de3095e8a6f998b25961754f41bb4f03",
+      "stagedObject": "c070d427de3095e8a6f998b25961754f41bb4f03",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/project-state/store/objects/84495d36556de99318e1e3b2c604a21bfb6175bd5260ab9c7653b1f5ea2b2640.agent",
+      "rawObject": "d31eeb41ff03e40f3750572874a1175fa0989bc5",
+      "stagedObject": "d31eeb41ff03e40f3750572874a1175fa0989bc5",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/project-state/store/objects/8760afd01d7d50570e46379d7765e7913258a5085a67bc1b84c5ac802be82246.agent",
+      "rawObject": "34402a5892ac482f63a68ba85090c30f3b25480a",
+      "stagedObject": "34402a5892ac482f63a68ba85090c30f3b25480a",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/project-state/store/objects/96e2820260b94d7303834d68e0fbf9ef3a7f89e1375ff2dabc007bea367fad6e.agent",
+      "rawObject": "572532f765610a5c34542d915c9ec6bf252eb134",
+      "stagedObject": "572532f765610a5c34542d915c9ec6bf252eb134",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/project-state/store/objects/97263ab6ea2c9503a27a7704b629e9be7d9f7c59a36bccc478b35e0c2c218429.agent",
+      "rawObject": "6e0e22f57353ebffccd363037896b1ea364f7467",
+      "stagedObject": "6e0e22f57353ebffccd363037896b1ea364f7467",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/project-state/store/objects/a210fa839950bc0469b4b44389b160dcdc35e20a3f452b03d010c5f6cbbd3696.agent",
+      "rawObject": "65d8bb30e84909d78c724704fba27cfc878f0fbb",
+      "stagedObject": "65d8bb30e84909d78c724704fba27cfc878f0fbb",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/project-state/store/objects/aeb27d5cdc2da2888b14fc6f3d9d9b7e667dd54d28188666c742b9ac661fd77e.agent",
+      "rawObject": "dc80b06863e659d1de6568382391557d189edd10",
+      "stagedObject": "dc80b06863e659d1de6568382391557d189edd10",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/project-state/store/objects/b4821e9452636719b211dca0f1ddda7782f540ffec69f9a46123a4e23994f52e.agent",
+      "rawObject": "28eb734b257175ce86ca8fc46c1c87d0efbcfc9d",
+      "stagedObject": "28eb734b257175ce86ca8fc46c1c87d0efbcfc9d",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/project-state/store/objects/baa5d002af5287fdfd774b9c1cea0352e05e940fde2f0b1238e0331942e67671.agent",
+      "rawObject": "df22b15dd2e8efa09850f510dfb2f4a0a42a11c0",
+      "stagedObject": "df22b15dd2e8efa09850f510dfb2f4a0a42a11c0",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/project-state/store/objects/c701fc54256ab52139509aff9f40ca54c54dcc6f31f6577dc5836f7f0fdd7ad7.agent",
+      "rawObject": "01e65d03261c380374c72eacf73f46da6b7cc5db",
+      "stagedObject": "01e65d03261c380374c72eacf73f46da6b7cc5db",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/project-state/store/objects/d1d291633b472a4dbe01b0c30ea6f4dae0719f24ed13f05907888f261d25519d.agent",
+      "rawObject": "3613186e0f207ac967563cb781f849b7d2797047",
+      "stagedObject": "3613186e0f207ac967563cb781f849b7d2797047",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/project-state/store/objects/ebfda0ad236c50a2a29cf677ba9465b108ef55c039f3edbf34db743107587893.agent",
+      "rawObject": "1f819f245db3e66bfbf8b97573b60e5875fb1581",
+      "stagedObject": "1f819f245db3e66bfbf8b97573b60e5875fb1581",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/project-state/store/objects/f36b44ed0299a50c0c2a146b129c8d3d207dbba58ed016d429757d2edea83675.agent",
+      "rawObject": "ecb7045a605c02d65c70f241a9140d88d3949aaa",
+      "stagedObject": "ecb7045a605c02d65c70f241a9140d88d3949aaa",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/project-state/store/snapshots/matched-renewal-start.json",
+      "rawObject": "adc9ef23658c2abdb250917bc68dae71074fe3ca",
+      "stagedObject": "adc9ef23658c2abdb250917bc68dae71074fe3ca",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/state-audit.json",
+      "rawObject": "0289244cf16ad0adb270e4056206da9ef3a2fbca",
+      "stagedObject": "0289244cf16ad0adb270e4056206da9ef3a2fbca",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-3/trace.jsonl",
+      "rawObject": "534ec31e7613c0b92f1ca78844fcd449f456fe1d",
+      "stagedObject": "534ec31e7613c0b92f1ca78844fcd449f456fe1d",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/acceptance.json",
+      "rawObject": "752dcf83a73fe2fa61152ad293ca3746ecdf0154",
+      "stagedObject": "752dcf83a73fe2fa61152ad293ca3746ecdf0154",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/dictionary.agent",
+      "rawObject": "449df73994391e10ddf2a49f3df6263dd1887087",
+      "stagedObject": "449df73994391e10ddf2a49f3df6263dd1887087",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/history/task-0001.json",
+      "rawObject": "2688c44832db86088f4f87c6721179cbfdf5c30d",
+      "stagedObject": "2688c44832db86088f4f87c6721179cbfdf5c30d",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/history/task-0002.json",
+      "rawObject": "55fd83705ae300f8851c1a57cfcd5a575c520faa",
+      "stagedObject": "55fd83705ae300f8851c1a57cfcd5a575c520faa",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/history/task-0003.json",
+      "rawObject": "15752e75aca9caf62d5db904ecd8e73c19f31185",
+      "stagedObject": "15752e75aca9caf62d5db904ecd8e73c19f31185",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/history/task-0004.json",
+      "rawObject": "c0bf837fc29682459d02b1ac4336f979efab7469",
+      "stagedObject": "c0bf837fc29682459d02b1ac4336f979efab7469",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/pin.json",
+      "rawObject": "919b76214fd811f47514e63ed7b0428fe0e26bd0",
+      "stagedObject": "919b76214fd811f47514e63ed7b0428fe0e26bd0",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/CURRENT",
+      "rawObject": "b2e8351e46f02b9815d51a182dc7d4a13225483f",
+      "stagedObject": "b2e8351e46f02b9815d51a182dc7d4a13225483f",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/manifests/142d4b51cc18680d7ddd3a7f9a76df6e1548c8374e7656e7411534f539f58757.json",
+      "rawObject": "3ccdcb5352a6d4480e0d6e55844d722370bf3b59",
+      "stagedObject": "3ccdcb5352a6d4480e0d6e55844d722370bf3b59",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/manifests/254e2f91e0ce4fac3f6960d845eaa29adf38c3363c5263a799838036cfa293d2.json",
+      "rawObject": "42e1c3d15e3581995a4abaeaad7274bbe02d7d83",
+      "stagedObject": "42e1c3d15e3581995a4abaeaad7274bbe02d7d83",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/manifests/272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e.json",
+      "rawObject": "9de68b6da7ed81b36ee0e560655cdcd36a1baa0c",
+      "stagedObject": "9de68b6da7ed81b36ee0e560655cdcd36a1baa0c",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/manifests/8ab71325aaabb58ff1c671d773c397bf61e74a1020bb39fc39425f47e950ded7.json",
+      "rawObject": "d1498dd6a36178f15434c3b077088b07987b28e9",
+      "stagedObject": "d1498dd6a36178f15434c3b077088b07987b28e9",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/manifests/8c25c47a842c87758ac2dafcf2575411ae1448e597137379936b313902a61317.json",
+      "rawObject": "1d2d9ed400961da2821b98ef732d4dcf515b6054",
+      "stagedObject": "1d2d9ed400961da2821b98ef732d4dcf515b6054",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/manifests/f8b6375da44fac456576decab988669d8ffa3e9b7aa0383ae6091f0a76e76880.json",
+      "rawObject": "fe47f7ee30907742cbcc0b74e175711b66df9082",
+      "stagedObject": "fe47f7ee30907742cbcc0b74e175711b66df9082",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/objects/0a09ec29fa93e0951a01017f708dbdb0ae4d13cec9c30fb033fbe3de55d9c9e7.agent",
+      "rawObject": "6e6a4f6653e1d486f179ddb382997ff8071d8661",
+      "stagedObject": "6e6a4f6653e1d486f179ddb382997ff8071d8661",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/objects/0d91e088c94c0457ee69fd1d10c41da6b4100829977ba8858f151b507249ec17.agent",
+      "rawObject": "d72bc9435b92c64042c7a5de5be19f7fe6fa5ba1",
+      "stagedObject": "d72bc9435b92c64042c7a5de5be19f7fe6fa5ba1",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/objects/2754e501440b8c7cec15f3434d0233fda4154b9d631355748f1f323df2be80f5.agent",
+      "rawObject": "c64996ad89c48f3f63ea5ec000c0659aa94b49d6",
+      "stagedObject": "c64996ad89c48f3f63ea5ec000c0659aa94b49d6",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/objects/3b4129d45c4a2e5f59e6e8149dcb47f228094288735844424e1ece103f129344.agent",
+      "rawObject": "117e1d38dd8f246c1014a267346e732336073beb",
+      "stagedObject": "117e1d38dd8f246c1014a267346e732336073beb",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/objects/4422c696188fa8ddaeed09b41c66b6e4ef4ec97e806f6e6b155cd7ef3467ef69.agent",
+      "rawObject": "8f5e31c4306d8b23aa000701e81660f5acb7b850",
+      "stagedObject": "8f5e31c4306d8b23aa000701e81660f5acb7b850",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/objects/4d1f76127f259ff47d25e8ad4bed7c2ae6c9bf18846ae243179235c28278d313.agent",
+      "rawObject": "ee2ca71bca29bb82f71962cac7bb5e1d27b9baec",
+      "stagedObject": "ee2ca71bca29bb82f71962cac7bb5e1d27b9baec",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/objects/4eef7c7566db8dd61a6fd3df26c960d381a7e92e06e3b28d12e656f3b564e85d.agent",
+      "rawObject": "f015caa8387e7c6cacd22fb3700c4beab4226c8e",
+      "stagedObject": "f015caa8387e7c6cacd22fb3700c4beab4226c8e",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/objects/6b964fd1a60a1c51e0900f74a69ee486c227aacf5bca2f24a06289cecc237bf7.agent",
+      "rawObject": "bc7ad8a9e14e2e1ab7353741534b82bcfcf5627a",
+      "stagedObject": "bc7ad8a9e14e2e1ab7353741534b82bcfcf5627a",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/objects/7837ae7197f2140aa300c833ff326e0f3cc8399d47e1ea5531ed59ea25b9cd54.agent",
+      "rawObject": "55c40d30e27d3be30f4fca1c0c8b561a7b305e72",
+      "stagedObject": "55c40d30e27d3be30f4fca1c0c8b561a7b305e72",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/objects/7cf1a8b1b15e29f2d289b3900e5adfd1d556b9bb8dae68b2084dd7fc7ddf3ded.agent",
+      "rawObject": "c070d427de3095e8a6f998b25961754f41bb4f03",
+      "stagedObject": "c070d427de3095e8a6f998b25961754f41bb4f03",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/objects/84495d36556de99318e1e3b2c604a21bfb6175bd5260ab9c7653b1f5ea2b2640.agent",
+      "rawObject": "d31eeb41ff03e40f3750572874a1175fa0989bc5",
+      "stagedObject": "d31eeb41ff03e40f3750572874a1175fa0989bc5",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/objects/8760afd01d7d50570e46379d7765e7913258a5085a67bc1b84c5ac802be82246.agent",
+      "rawObject": "34402a5892ac482f63a68ba85090c30f3b25480a",
+      "stagedObject": "34402a5892ac482f63a68ba85090c30f3b25480a",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/objects/87ae782de5e5ccc8c7323f04a9f58b1e58add7481d537be2d734290199d61156.agent",
+      "rawObject": "aed0311146525b99ea8b00a31e3e4560121f3e78",
+      "stagedObject": "aed0311146525b99ea8b00a31e3e4560121f3e78",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/objects/88aab41faab6706093b584b1a64b752801ed897e692dc5378fe28b13186ebb46.agent",
+      "rawObject": "52ede07a509866f9f7655b785a87294523d10445",
+      "stagedObject": "52ede07a509866f9f7655b785a87294523d10445",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/objects/925da768579b541edebe26a053d9b95fcbbf7d024d41c7119ef25eab6b32136d.agent",
+      "rawObject": "8fbab8cc52fdd6b725a45ffc16e77380d743b8a4",
+      "stagedObject": "8fbab8cc52fdd6b725a45ffc16e77380d743b8a4",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/objects/96e2820260b94d7303834d68e0fbf9ef3a7f89e1375ff2dabc007bea367fad6e.agent",
+      "rawObject": "572532f765610a5c34542d915c9ec6bf252eb134",
+      "stagedObject": "572532f765610a5c34542d915c9ec6bf252eb134",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/objects/97263ab6ea2c9503a27a7704b629e9be7d9f7c59a36bccc478b35e0c2c218429.agent",
+      "rawObject": "6e0e22f57353ebffccd363037896b1ea364f7467",
+      "stagedObject": "6e0e22f57353ebffccd363037896b1ea364f7467",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/objects/a210fa839950bc0469b4b44389b160dcdc35e20a3f452b03d010c5f6cbbd3696.agent",
+      "rawObject": "65d8bb30e84909d78c724704fba27cfc878f0fbb",
+      "stagedObject": "65d8bb30e84909d78c724704fba27cfc878f0fbb",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/objects/aeb27d5cdc2da2888b14fc6f3d9d9b7e667dd54d28188666c742b9ac661fd77e.agent",
+      "rawObject": "dc80b06863e659d1de6568382391557d189edd10",
+      "stagedObject": "dc80b06863e659d1de6568382391557d189edd10",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/objects/b4821e9452636719b211dca0f1ddda7782f540ffec69f9a46123a4e23994f52e.agent",
+      "rawObject": "28eb734b257175ce86ca8fc46c1c87d0efbcfc9d",
+      "stagedObject": "28eb734b257175ce86ca8fc46c1c87d0efbcfc9d",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/objects/baa5d002af5287fdfd774b9c1cea0352e05e940fde2f0b1238e0331942e67671.agent",
+      "rawObject": "df22b15dd2e8efa09850f510dfb2f4a0a42a11c0",
+      "stagedObject": "df22b15dd2e8efa09850f510dfb2f4a0a42a11c0",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/objects/c701fc54256ab52139509aff9f40ca54c54dcc6f31f6577dc5836f7f0fdd7ad7.agent",
+      "rawObject": "01e65d03261c380374c72eacf73f46da6b7cc5db",
+      "stagedObject": "01e65d03261c380374c72eacf73f46da6b7cc5db",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/objects/d1d291633b472a4dbe01b0c30ea6f4dae0719f24ed13f05907888f261d25519d.agent",
+      "rawObject": "3613186e0f207ac967563cb781f849b7d2797047",
+      "stagedObject": "3613186e0f207ac967563cb781f849b7d2797047",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/objects/d81eef477bffa0a868fa191eb64838e96ef2de05ffc322310f90b32443e17d7c.agent",
+      "rawObject": "f8b55eeed2a23c39996784960fd1ec217a189690",
+      "stagedObject": "f8b55eeed2a23c39996784960fd1ec217a189690",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/objects/dd9384824e8d4e77f764a3e907521a05e92239b514743fefa27c030d0e129da8.agent",
+      "rawObject": "6f802a220b91a130e01bcd71b6972623777ef8ba",
+      "stagedObject": "6f802a220b91a130e01bcd71b6972623777ef8ba",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/objects/e84f4a26267d08e8c8e0dbd81ad1b569779eb7d9f62045f1ff2764041c4d06b0.agent",
+      "rawObject": "1ae61469ed88d855d04eec2f42c69e18e9b44fca",
+      "stagedObject": "1ae61469ed88d855d04eec2f42c69e18e9b44fca",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/objects/ebfda0ad236c50a2a29cf677ba9465b108ef55c039f3edbf34db743107587893.agent",
+      "rawObject": "1f819f245db3e66bfbf8b97573b60e5875fb1581",
+      "stagedObject": "1f819f245db3e66bfbf8b97573b60e5875fb1581",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/objects/f36b44ed0299a50c0c2a146b129c8d3d207dbba58ed016d429757d2edea83675.agent",
+      "rawObject": "ecb7045a605c02d65c70f241a9140d88d3949aaa",
+      "stagedObject": "ecb7045a605c02d65c70f241a9140d88d3949aaa",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/objects/f97e48f3dd20a91c905c5618acfb9b0df9df69c81cbb7c05c7d78c7b8bdfc564.agent",
+      "rawObject": "9742c7c9fe9f370e976e1847f0b0859078a0bd85",
+      "stagedObject": "9742c7c9fe9f370e976e1847f0b0859078a0bd85",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/objects/fa619646f849827001fd5365e3b8eb8c089734c69738068d7b8c3dc56a20daff.agent",
+      "rawObject": "449df73994391e10ddf2a49f3df6263dd1887087",
+      "stagedObject": "449df73994391e10ddf2a49f3df6263dd1887087",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/project-state/store/snapshots/matched-renewal-start.json",
+      "rawObject": "adc9ef23658c2abdb250917bc68dae71074fe3ca",
+      "stagedObject": "adc9ef23658c2abdb250917bc68dae71074fe3ca",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/state-audit.json",
+      "rawObject": "1475c570cdb7db553eb9655f264e5b97231134e9",
+      "stagedObject": "1475c570cdb7db553eb9655f264e5b97231134e9",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-4/trace.jsonl",
+      "rawObject": "d8ba6e9c2370ed3c564c1a21a034b093bcd48ce6",
+      "stagedObject": "d8ba6e9c2370ed3c564c1a21a034b093bcd48ce6",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/acceptance.json",
+      "rawObject": "222e6d8aef49249db46d0f777d5684f8b818687e",
+      "stagedObject": "222e6d8aef49249db46d0f777d5684f8b818687e",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/dictionary.agent",
+      "rawObject": "361c3ae94d733891fb4f201640b4eb203982fb5a",
+      "stagedObject": "361c3ae94d733891fb4f201640b4eb203982fb5a",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/history/task-0001.json",
+      "rawObject": "2688c44832db86088f4f87c6721179cbfdf5c30d",
+      "stagedObject": "2688c44832db86088f4f87c6721179cbfdf5c30d",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/history/task-0002.json",
+      "rawObject": "55fd83705ae300f8851c1a57cfcd5a575c520faa",
+      "stagedObject": "55fd83705ae300f8851c1a57cfcd5a575c520faa",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/history/task-0003.json",
+      "rawObject": "15752e75aca9caf62d5db904ecd8e73c19f31185",
+      "stagedObject": "15752e75aca9caf62d5db904ecd8e73c19f31185",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/history/task-0004.json",
+      "rawObject": "c0bf837fc29682459d02b1ac4336f979efab7469",
+      "stagedObject": "c0bf837fc29682459d02b1ac4336f979efab7469",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/history/task-0005.json",
+      "rawObject": "87faa13cdd4ed5913df1972d70aae9bafc021787",
+      "stagedObject": "87faa13cdd4ed5913df1972d70aae9bafc021787",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/pin.json",
+      "rawObject": "636ef4abdd88e8d943711299071a579b48160fef",
+      "stagedObject": "636ef4abdd88e8d943711299071a579b48160fef",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/CURRENT",
+      "rawObject": "94f9f4d7818e9b5ea75c5c24cbd13e474635f11f",
+      "stagedObject": "94f9f4d7818e9b5ea75c5c24cbd13e474635f11f",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/manifests/142d4b51cc18680d7ddd3a7f9a76df6e1548c8374e7656e7411534f539f58757.json",
+      "rawObject": "3ccdcb5352a6d4480e0d6e55844d722370bf3b59",
+      "stagedObject": "3ccdcb5352a6d4480e0d6e55844d722370bf3b59",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/manifests/254e2f91e0ce4fac3f6960d845eaa29adf38c3363c5263a799838036cfa293d2.json",
+      "rawObject": "42e1c3d15e3581995a4abaeaad7274bbe02d7d83",
+      "stagedObject": "42e1c3d15e3581995a4abaeaad7274bbe02d7d83",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/manifests/272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e.json",
+      "rawObject": "9de68b6da7ed81b36ee0e560655cdcd36a1baa0c",
+      "stagedObject": "9de68b6da7ed81b36ee0e560655cdcd36a1baa0c",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/manifests/349e5764fe651c5c775342132b9b2d6f90cb000135d307c566fa1540aae46cd2.json",
+      "rawObject": "bb65611172e708748e1d0be0078a07feabe685cd",
+      "stagedObject": "bb65611172e708748e1d0be0078a07feabe685cd",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/manifests/8ab71325aaabb58ff1c671d773c397bf61e74a1020bb39fc39425f47e950ded7.json",
+      "rawObject": "d1498dd6a36178f15434c3b077088b07987b28e9",
+      "stagedObject": "d1498dd6a36178f15434c3b077088b07987b28e9",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/manifests/8c25c47a842c87758ac2dafcf2575411ae1448e597137379936b313902a61317.json",
+      "rawObject": "1d2d9ed400961da2821b98ef732d4dcf515b6054",
+      "stagedObject": "1d2d9ed400961da2821b98ef732d4dcf515b6054",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/manifests/f8b6375da44fac456576decab988669d8ffa3e9b7aa0383ae6091f0a76e76880.json",
+      "rawObject": "fe47f7ee30907742cbcc0b74e175711b66df9082",
+      "stagedObject": "fe47f7ee30907742cbcc0b74e175711b66df9082",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/0a09ec29fa93e0951a01017f708dbdb0ae4d13cec9c30fb033fbe3de55d9c9e7.agent",
+      "rawObject": "6e6a4f6653e1d486f179ddb382997ff8071d8661",
+      "stagedObject": "6e6a4f6653e1d486f179ddb382997ff8071d8661",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/0d91e088c94c0457ee69fd1d10c41da6b4100829977ba8858f151b507249ec17.agent",
+      "rawObject": "d72bc9435b92c64042c7a5de5be19f7fe6fa5ba1",
+      "stagedObject": "d72bc9435b92c64042c7a5de5be19f7fe6fa5ba1",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/22966d1de98fb3c0f5eb59e5c0f126aa97900b6626d73284843b30c91e6f453d.agent",
+      "rawObject": "2478f85b10dc33d8dfb3aad05b57f2256461c887",
+      "stagedObject": "2478f85b10dc33d8dfb3aad05b57f2256461c887",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/2754e501440b8c7cec15f3434d0233fda4154b9d631355748f1f323df2be80f5.agent",
+      "rawObject": "c64996ad89c48f3f63ea5ec000c0659aa94b49d6",
+      "stagedObject": "c64996ad89c48f3f63ea5ec000c0659aa94b49d6",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/3b4129d45c4a2e5f59e6e8149dcb47f228094288735844424e1ece103f129344.agent",
+      "rawObject": "117e1d38dd8f246c1014a267346e732336073beb",
+      "stagedObject": "117e1d38dd8f246c1014a267346e732336073beb",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/4422c696188fa8ddaeed09b41c66b6e4ef4ec97e806f6e6b155cd7ef3467ef69.agent",
+      "rawObject": "8f5e31c4306d8b23aa000701e81660f5acb7b850",
+      "stagedObject": "8f5e31c4306d8b23aa000701e81660f5acb7b850",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/4d1f76127f259ff47d25e8ad4bed7c2ae6c9bf18846ae243179235c28278d313.agent",
+      "rawObject": "ee2ca71bca29bb82f71962cac7bb5e1d27b9baec",
+      "stagedObject": "ee2ca71bca29bb82f71962cac7bb5e1d27b9baec",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/4eef7c7566db8dd61a6fd3df26c960d381a7e92e06e3b28d12e656f3b564e85d.agent",
+      "rawObject": "f015caa8387e7c6cacd22fb3700c4beab4226c8e",
+      "stagedObject": "f015caa8387e7c6cacd22fb3700c4beab4226c8e",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/69645d68d42a23509e89eeec0bd639c0ac8c0cf0b14a2f4dd2e973835be03716.agent",
+      "rawObject": "899295cad261b6d1096fc614a8f9a213050d1c88",
+      "stagedObject": "899295cad261b6d1096fc614a8f9a213050d1c88",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/6b964fd1a60a1c51e0900f74a69ee486c227aacf5bca2f24a06289cecc237bf7.agent",
+      "rawObject": "bc7ad8a9e14e2e1ab7353741534b82bcfcf5627a",
+      "stagedObject": "bc7ad8a9e14e2e1ab7353741534b82bcfcf5627a",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/6cc9b057113b6a396105131f93f2255b3185f9ab31a48ff2c70f8afdfd7e7a5c.agent",
+      "rawObject": "aad26eba5d3e5242818b86cf85c3fd39f521d59b",
+      "stagedObject": "aad26eba5d3e5242818b86cf85c3fd39f521d59b",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/7837ae7197f2140aa300c833ff326e0f3cc8399d47e1ea5531ed59ea25b9cd54.agent",
+      "rawObject": "55c40d30e27d3be30f4fca1c0c8b561a7b305e72",
+      "stagedObject": "55c40d30e27d3be30f4fca1c0c8b561a7b305e72",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/7cf1a8b1b15e29f2d289b3900e5adfd1d556b9bb8dae68b2084dd7fc7ddf3ded.agent",
+      "rawObject": "c070d427de3095e8a6f998b25961754f41bb4f03",
+      "stagedObject": "c070d427de3095e8a6f998b25961754f41bb4f03",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/84495d36556de99318e1e3b2c604a21bfb6175bd5260ab9c7653b1f5ea2b2640.agent",
+      "rawObject": "d31eeb41ff03e40f3750572874a1175fa0989bc5",
+      "stagedObject": "d31eeb41ff03e40f3750572874a1175fa0989bc5",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/8760afd01d7d50570e46379d7765e7913258a5085a67bc1b84c5ac802be82246.agent",
+      "rawObject": "34402a5892ac482f63a68ba85090c30f3b25480a",
+      "stagedObject": "34402a5892ac482f63a68ba85090c30f3b25480a",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/87ae782de5e5ccc8c7323f04a9f58b1e58add7481d537be2d734290199d61156.agent",
+      "rawObject": "aed0311146525b99ea8b00a31e3e4560121f3e78",
+      "stagedObject": "aed0311146525b99ea8b00a31e3e4560121f3e78",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/88aab41faab6706093b584b1a64b752801ed897e692dc5378fe28b13186ebb46.agent",
+      "rawObject": "52ede07a509866f9f7655b785a87294523d10445",
+      "stagedObject": "52ede07a509866f9f7655b785a87294523d10445",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/925da768579b541edebe26a053d9b95fcbbf7d024d41c7119ef25eab6b32136d.agent",
+      "rawObject": "8fbab8cc52fdd6b725a45ffc16e77380d743b8a4",
+      "stagedObject": "8fbab8cc52fdd6b725a45ffc16e77380d743b8a4",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/96e2820260b94d7303834d68e0fbf9ef3a7f89e1375ff2dabc007bea367fad6e.agent",
+      "rawObject": "572532f765610a5c34542d915c9ec6bf252eb134",
+      "stagedObject": "572532f765610a5c34542d915c9ec6bf252eb134",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/97263ab6ea2c9503a27a7704b629e9be7d9f7c59a36bccc478b35e0c2c218429.agent",
+      "rawObject": "6e0e22f57353ebffccd363037896b1ea364f7467",
+      "stagedObject": "6e0e22f57353ebffccd363037896b1ea364f7467",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/a210fa839950bc0469b4b44389b160dcdc35e20a3f452b03d010c5f6cbbd3696.agent",
+      "rawObject": "65d8bb30e84909d78c724704fba27cfc878f0fbb",
+      "stagedObject": "65d8bb30e84909d78c724704fba27cfc878f0fbb",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/aeb27d5cdc2da2888b14fc6f3d9d9b7e667dd54d28188666c742b9ac661fd77e.agent",
+      "rawObject": "dc80b06863e659d1de6568382391557d189edd10",
+      "stagedObject": "dc80b06863e659d1de6568382391557d189edd10",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/b349466664dd871b0120353a6743c2163abe907c55fab1bc0b868c26258e05b3.agent",
+      "rawObject": "cc5772be6984d0ef48f9967f7de348d586150701",
+      "stagedObject": "cc5772be6984d0ef48f9967f7de348d586150701",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/b4821e9452636719b211dca0f1ddda7782f540ffec69f9a46123a4e23994f52e.agent",
+      "rawObject": "28eb734b257175ce86ca8fc46c1c87d0efbcfc9d",
+      "stagedObject": "28eb734b257175ce86ca8fc46c1c87d0efbcfc9d",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/baa5d002af5287fdfd774b9c1cea0352e05e940fde2f0b1238e0331942e67671.agent",
+      "rawObject": "df22b15dd2e8efa09850f510dfb2f4a0a42a11c0",
+      "stagedObject": "df22b15dd2e8efa09850f510dfb2f4a0a42a11c0",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/c3e7c7eef53e833eb955258c83414a50372a535c2cdc5e67f89621a2ec7cdd7c.agent",
+      "rawObject": "c22584bf85bb09e2e65082415e80c1d1fb3d4953",
+      "stagedObject": "c22584bf85bb09e2e65082415e80c1d1fb3d4953",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/c6c7b6bb41e450d821afd10f73fe86d595f04819c36e560623425621e100c5a1.agent",
+      "rawObject": "361c3ae94d733891fb4f201640b4eb203982fb5a",
+      "stagedObject": "361c3ae94d733891fb4f201640b4eb203982fb5a",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/c701fc54256ab52139509aff9f40ca54c54dcc6f31f6577dc5836f7f0fdd7ad7.agent",
+      "rawObject": "01e65d03261c380374c72eacf73f46da6b7cc5db",
+      "stagedObject": "01e65d03261c380374c72eacf73f46da6b7cc5db",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/d1d291633b472a4dbe01b0c30ea6f4dae0719f24ed13f05907888f261d25519d.agent",
+      "rawObject": "3613186e0f207ac967563cb781f849b7d2797047",
+      "stagedObject": "3613186e0f207ac967563cb781f849b7d2797047",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/d81eef477bffa0a868fa191eb64838e96ef2de05ffc322310f90b32443e17d7c.agent",
+      "rawObject": "f8b55eeed2a23c39996784960fd1ec217a189690",
+      "stagedObject": "f8b55eeed2a23c39996784960fd1ec217a189690",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/dd9384824e8d4e77f764a3e907521a05e92239b514743fefa27c030d0e129da8.agent",
+      "rawObject": "6f802a220b91a130e01bcd71b6972623777ef8ba",
+      "stagedObject": "6f802a220b91a130e01bcd71b6972623777ef8ba",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/ddfd40bee8b368908d84f00343808bcad4ffd9c3b2a39259dab88865dcebf107.agent",
+      "rawObject": "333b6603a8fd997fa0a217c91792d6904d5b3619",
+      "stagedObject": "333b6603a8fd997fa0a217c91792d6904d5b3619",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/e84f4a26267d08e8c8e0dbd81ad1b569779eb7d9f62045f1ff2764041c4d06b0.agent",
+      "rawObject": "1ae61469ed88d855d04eec2f42c69e18e9b44fca",
+      "stagedObject": "1ae61469ed88d855d04eec2f42c69e18e9b44fca",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/ebfda0ad236c50a2a29cf677ba9465b108ef55c039f3edbf34db743107587893.agent",
+      "rawObject": "1f819f245db3e66bfbf8b97573b60e5875fb1581",
+      "stagedObject": "1f819f245db3e66bfbf8b97573b60e5875fb1581",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/f36b44ed0299a50c0c2a146b129c8d3d207dbba58ed016d429757d2edea83675.agent",
+      "rawObject": "ecb7045a605c02d65c70f241a9140d88d3949aaa",
+      "stagedObject": "ecb7045a605c02d65c70f241a9140d88d3949aaa",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/f97e48f3dd20a91c905c5618acfb9b0df9df69c81cbb7c05c7d78c7b8bdfc564.agent",
+      "rawObject": "9742c7c9fe9f370e976e1847f0b0859078a0bd85",
+      "stagedObject": "9742c7c9fe9f370e976e1847f0b0859078a0bd85",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/objects/fa619646f849827001fd5365e3b8eb8c089734c69738068d7b8c3dc56a20daff.agent",
+      "rawObject": "449df73994391e10ddf2a49f3df6263dd1887087",
+      "stagedObject": "449df73994391e10ddf2a49f3df6263dd1887087",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/project-state/store/snapshots/matched-renewal-start.json",
+      "rawObject": "adc9ef23658c2abdb250917bc68dae71074fe3ca",
+      "stagedObject": "adc9ef23658c2abdb250917bc68dae71074fe3ca",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/state-audit.json",
+      "rawObject": "a0a86780ea3f91ee2f4d82428854695e05d5c35c",
+      "stagedObject": "a0a86780ea3f91ee2f4d82428854695e05d5c35c",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/growing-task-5/trace.jsonl",
+      "rawObject": "9f7d41b8e96cd2d23a223aa7b95e32c2b44ecf6d",
+      "stagedObject": "9f7d41b8e96cd2d23a223aa7b95e32c2b44ecf6d",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/task-1-metrics.json",
+      "rawObject": "8b5ede8d9c977c6a1c119efb124ff556ac6ee187",
+      "stagedObject": "8b5ede8d9c977c6a1c119efb124ff556ac6ee187",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/runs/pilot-001/inventory.json",
+      "rawObject": "f8794a2f2df0fd4d5e7adc823e96af0acade92d1",
+      "stagedObject": "f8794a2f2df0fd4d5e7adc823e96af0acade92d1",
+      "passed": true
+    }
+  ]
+}

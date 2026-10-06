@@ -1,0 +1,3 @@
+test customer.renewal-savings/premium-annual-nonrenewable {
+    customer::renewal-savings(customer::new("premium", 100.0), subscription::new("annual", false)) => 10.0
+}

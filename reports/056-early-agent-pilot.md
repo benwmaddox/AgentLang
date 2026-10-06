@@ -1,6 +1,8 @@
 # 056 — Early external-agent pilot
 
-Status: in progress. Source runtime is milestone 055, `e87931a`; copied binaries
+Status: historical checkpoints; the complete 15-trial sequence and purpose
+review are in [report 057](057-early-agent-purpose-review.md).
+Source runtime is milestone 055, `e87931a`; copied binaries
 are pinned in run artifacts. This is an exploratory apparatus sequence, not a
 controlled efficiency result. Fresh external Luna/max agents receive no inherited
 history and use bounded JSONL tools. No AI components were added to the runtime.

@@ -1,0 +1,63 @@
+// frontend: flow/1
+
+record Customer {
+    field kind: String;
+    field balance: Float;
+}
+
+// frontend: flow/1
+
+record Subscription {
+    field term: String;
+    field renewable: Bool;
+}
+
+// frontend: flow/1
+
+word subscription.annual-renewable?(subscription: Subscription) -> Bool {
+    effects none
+    let isAnnual = ::equals(subscription.term(), "annual");
+    bool::and(isAnnual, subscription.renewable())
+}
+
+// frontend: flow/1
+
+test subscription.annual-renewable?/annual-and-renewable {
+    subscription::annual-renewable?(subscription::new("annual", true))
+    => true
+}
+
+// frontend: flow/1
+
+test subscription.annual-renewable?/annual-but-not-renewable {
+    subscription::annual-renewable?(subscription::new("annual", false))
+    => false
+}
+
+// frontend: flow/1
+
+test subscription.annual-renewable?/case-sensitive-term {
+    subscription::annual-renewable?(subscription::new("Annual", true))
+    => false
+}
+
+// frontend: flow/1
+
+test subscription.annual-renewable?/monthly-and-renewable {
+    subscription::annual-renewable?(subscription::new("monthly", true))
+    => false
+}
+
+// frontend: flow/1
+
+test subscription.annual-renewable?/monthly-not-renewable {
+    subscription::annual-renewable?(subscription::new("monthly", false))
+    => false
+}
+
+// frontend: flow/1
+
+test subscription.annual-renewable?/no-term-trimming {
+    subscription::annual-renewable?(subscription::new("annual ", true))
+    => false
+}

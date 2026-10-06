@@ -1,6 +1,10 @@
 # Early matched agent evaluation
 
-Status: prioritized pilot contract, 2026-10-06; no comparative results yet.
+Status: first exploratory five-task sequence complete, 2026-10-06; 15 matched
+trials accepted. [Purpose review](../reports/057-early-agent-purpose-review.md)
+records results and limits. Rotated repetitions and controlled efficiency/context
+evaluation remain pending. The protocol below records the intended pilot design;
+the report identifies execution deviations and provenance limits.
 User direction is to take the shortest remaining path to reviewing agent
 behavior, ahead of completing other prototype features.
 

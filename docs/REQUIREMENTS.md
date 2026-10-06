@@ -9,6 +9,17 @@ the existing small domain; it does not wait for the full business vocabulary,
 Remaining requirements stay in this ledger. Pilot preparation and verifier
 probes are not comparative agent results.
 
+Latest purpose checkpoint: [report 057](../reports/057-early-agent-purpose-review.md)
+records the completed exploratory sequence: 15 matched external-agent trials,
+300 independent behavioral evaluations, 695 passing acceptance checks, retained
+vocabulary reuse and state audits. Growing uses 84 protocol exchanges versus
+Flat's 92 and Conventional's 59; language response payloads remain larger.
+Prompt/approval-context differences and unavailable model usage prevent a
+controlled efficiency claim. Next priority is concise discovery/callable metadata
+and protocol recovery, followed by rotated repetitions. Full-domain expansion,
+allocator/mailbox work and LLVM stay deferred behind agent validation. The older
+milestone entries below are scoped historical evidence, not current trial status.
+
 Status: **verified** means the listed scoped behavior has observed acceptance evidence; **partial** means some behavior exists but the full section is not proven; **pending** means implementation or evidence is missing; **design** means a principle/advisory requirement; **excluded** means a V1 non-goal or explicitly optional follow-on. A green build is not evidence of research success.
 
 Latest external-agent workflow evidence: [report 054](../reports/054-flow-renewal-agent-control.md)
@@ -59,8 +70,8 @@ Standalone backend and baseline-audit evidence: [milestone 008](../reports/008-s
 | Original section | Requirement / disposition | Current evidence and outstanding work |
 | --- | --- | --- |
 | 1 | Partial: small extensible typed environment | Runtime and words exist; complete values/providers/evaluation remain |
-| 2 | Partial: cross-agent vocabulary accumulation | Fresh-process Customer reuse verified; later-agent benefits unmeasured |
-| 3 | Pending: ten primary agent outcomes | Requires real agent trials and comparable baseline |
+| 2 | Partial: cross-agent vocabulary accumulation | Fresh-agent reuse and retained identities verified in report 057; controlled benefit unproven |
+| 3 | Partial: ten primary agent outcomes | 15-trial exploratory workflow comparison; complete controlled outcome/token/context studies pending |
 | 4 | Excluded: listed V1 non-goals | No native/LLVM/WASM/JIT, generic user definitions, OO, arbitrary reflection, or frameworks |
 | 5 | Design: explicit inspectable deterministic behavior | Apply to every feature and review; discovery still incomplete |
 | 6 | Partial: complete word metadata | Stable IDs, durable revision provenance/history now verified; full examples/test metadata query remains incomplete |
@@ -102,19 +113,19 @@ Standalone backend and baseline-audit evidence: [milestone 008](../reports/008-s
 | 42 | Partial: context/token accounting | Harness records complete prepared/sent request bytes and returned provider usage; exact token budget/retrieval breakdown pending |
 | 43 | Partial: complete small-business fixture | Customer language demo, conventional reference and standalone typed fixture contract; full language domain, matched adapters, 40–60 words and 50–100 tests pending |
 | 44 | Excluded from first domain: optional later simulation | Preserve for later generalization, not a V1 blocker |
-| 45 | Partial: equivalent conventional environment | F# business foundation passes 7 groups/113 assertions; language parity and matching task oracles missing |
-| 46 | Pending: fresh/growing/debugging/discovery/refactoring experiments | Categories require tasks and runner |
-| 47 | Pending: all task metrics | Runtime aggregates are a subset; harness and event sources required |
+| 45 | Partial: equivalent conventional environment | Small Flow/F# fixtures and shared task vectors audited in report 057; full business fixture parity pending |
+| 46 | Partial: fresh/growing/debugging/discovery/refactoring experiments | Small fresh/growing/discovery sequence complete; controlled categories and repetitions pending |
+| 47 | Partial: all task metrics | Pilot success, exchanges, payload bytes and errors recorded; exact model usage/turns and full ordered events unavailable |
 | 48 | Pending: Vocabulary Reuse Ratio | Define start-of-task words and distinguish domain/test/primitive executions |
 | 49 | Partial: static primitive distance analysis | Arbitrary-precision multiplicity and cycle errors verified; runtime/task integration and actual invocation metrics pending |
 | 50 | Pending: 2k/4k/8k/16k/32k context trials | Enforced harness budgets and recorded outcomes required |
-| 51 | Pending: error recovery metrics | Link attempts/errors/resolutions and provider usage, include unresolved errors |
-| 52 | Pending: vocabulary quality metrics | Reuse/callers/lifetime/downstream acceptance evidence required |
+| 51 | Partial: error recovery metrics | Pilot rejection codes and corrected attempts retained in traces; complete resolution/turn/token accounting pending |
+| 52 | Partial: vocabulary quality metrics | Five-task retained reuse/downstream acceptance observed; larger lifetime/quality study pending |
 | 53 | Pending: pollution metrics | Unused/duplicate/short-lived words and growth traces required |
 | 54 | Partial: structural duplicate analysis | Stable-ID structural fingerprints and sorted candidates verified; commit warnings pending |
 | 55 | Partial: deprecate/rename/replace | Stable-ID semantic rename/deprecation and caller-gated implementation replacement verified; replace OLD NEW pending; frozen validator rename refused |
 | 56 | Verified: committed snapshot save/load | Hash integrity, project/provider restoration and retention of current host capabilities verified |
-| 57 | Partial: model-provider harness | Scripted/canned HTTP adapter, traces/usage/state/oracles and audited starting profiles with Growing lineage; snapshot selection, conventional runner and live trials pending |
+| 57 | Partial: model-provider harness | Scripted HTTP adapter and external-subagent JSONL pilot with conventional runner; controlled provider usage, budgets and full task automation pending |
 | 58 | Partial: compact system prompt | Mandatory compact primer and per-run prompt artifact verified; live usage pending |
 | 59 | Partial: small initial context strategy | Prompt avoids dictionary dump; full requests include retrieval history and byte caps, exact token accounting pending |
 | 60 | Partial: conventional tool baseline | Path-confined read/search/CAS edit/fixed validation tools verified; actual same-model comparison pending; validation is not an OS sandbox |
@@ -127,11 +138,11 @@ Standalone backend and baseline-audit evidence: [milestone 008](../reports/008-s
 | 67 | Verified: stable word IDs | Preserve across temporary promotion, replacement, semantic rename, history and reload; milestone-003 identity checks |
 | 68 | Partial: structured failure reporting | Code/word/span/expected/actual; related definitions and complete current-stack context pending |
 | 69 | Pending: deterministic conversion hints | Search type graph for suggested conversion words |
-| 70 | Partial: all eight milestones | First usable slice only; full types/effects, domain, harness and evaluation remain |
+| 70 | Partial: all eight milestones | Typed Flow/IR, closed values, library gates, persistence, sessions and small pilot verified; complete providers/domain/controlled evaluation remain |
 | 71 | Pending: success evidence | Compare correctness and uncertainty alongside >=20% token/turn signal; no claimed gains |
 | 72 | Pending: failure evidence | Report bypasses/duplicates/discovery/error/raw-source/conventional outcomes |
 | 73 | Pending: answers to RQ1–RQ10 | Controlled results required; missing-primitive events must be recorded |
-| 74 | Pending: Flat/Growing/Conventional comparison | Equivalent fixture, model, task, oracle, retention policy and repetitions |
+| 74 | Partial: Flat/Growing/Conventional comparison | 15-trial exploratory sequence accepted; standardized prompts, rotated repetitions and controlled metrics pending |
 | 75 | Excluded: follow-on curator | Explicitly not initial implementation |
 | 76 | Excluded: optional classifier-driven context | Deterministic context in section 41 remains required |
 | 77 | Excluded: optional extra maturity levels | Required user addition project/library rigor already implemented |

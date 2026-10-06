@@ -1,0 +1,12 @@
+{
+  "retainedRevisionsUnchanged": true,
+  "passed": true,
+  "manifestHash": "db732321fd583c5775f1c205c14ba918f6b3648deeec778d2a729ee54e391333",
+  "limits": "Target signature, purity, library maturity, own coverage and behavior independently checked by acceptance. State audit compares all prior type, head and revision entries.",
+  "typesUnchanged": true,
+  "addedWord": "customer.renewal-balance",
+  "retainedWords": [
+    null
+  ],
+  "retainedHeadsUnchanged": true
+}

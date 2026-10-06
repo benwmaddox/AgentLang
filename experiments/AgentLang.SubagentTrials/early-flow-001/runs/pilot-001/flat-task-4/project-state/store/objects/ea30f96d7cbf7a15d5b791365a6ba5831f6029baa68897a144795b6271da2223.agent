@@ -1,0 +1,3 @@
+test customer.renewal-balance/term_case_mismatch {
+    customer::renewal-balance(customer::new("standard", 100.0), subscription::new("Annual", true)) => 100.0
+}

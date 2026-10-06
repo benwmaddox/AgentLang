@@ -1,0 +1,3 @@
+test customer.renewal-savings/premium_whitespace_mismatched_term {
+    customer::renewal-savings(customer::new("premium", 100.0), subscription::new("annual ", true)) => 10.0
+}

@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "sequence": "early-flow-001/pilot-001",
+  "events": [
+    {
+      "trial": "growing-task-3",
+      "kind": "model-capacity",
+      "when": "after host startup, before first protocol request",
+      "resolution": "same Luna/max agent and existing host resumed without a private solution or model substitution"
+    },
+    {
+      "trial": "conventional-task-4",
+      "kind": "automatic-approval-rejection",
+      "when": "two launches rejected before process start",
+      "evidence": "056-conventional-task4-approval-block.json",
+      "resolution": "direct human confirmation, then a new agent with one-turn approval context; isolated project unchanged by rejected attempts"
+    },
+    {
+      "trial": "flat-task-4",
+      "kind": "model-capacity",
+      "when": "after nine discovery requests",
+      "resolution": "same Luna/max agent and host resumed; no private implementation guidance"
+    },
+    {
+      "trial": "conventional-task-5",
+      "kind": "sandbox-startup-failure",
+      "when": "before the explicitly escalated host launch",
+      "resolution": "authorized host-side invocation succeeded; denied sandbox attempts did not execute commands or modify files"
+    }
+  ],
+  "limits": "Events summarized from coordinator and agent messages, not model-provider usage telemetry. Protocol traces retain actual started sessions and exchanges. Earlier thread-cap/startup-banner/shutdown events remain documented in report 056."
+}

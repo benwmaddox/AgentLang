@@ -1,0 +1,3 @@
+test customer.renewal-savings/premium_exact_annual_renewable {
+    customer::renewal-savings(customer::new("premium", 100.0), subscription::new("annual", true)) => 14.5
+}

@@ -1,0 +1,61 @@
+{
+  "cliFiles": [
+    {
+      "name": "AgentLang.Cli.deps.json",
+      "sha256": "6382f6dc29bb8f827824839010e313b266e51a3f87a4fdb8c382931d2549e97e"
+    },
+    {
+      "name": "AgentLang.Cli.dll",
+      "sha256": "31235b45cb3b7149abf096d579a14643157e29fe26839df3135f724c38362b00"
+    },
+    {
+      "name": "AgentLang.Cli.runtimeconfig.json",
+      "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+    },
+    {
+      "name": "AgentLang.Core.dll",
+      "sha256": "0b04feea4a54951138a9d07ea6e40e36c73eda3504e6ab021c0a9e6b1d2f0e1f"
+    },
+    {
+      "name": "FSharp.Core.dll",
+      "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+    }
+  ],
+  "provenanceTiming": "reconstructed after run from retained session-start trace and coordinator preparation record; not a contemporaneous launch manifest",
+  "allowedOperations": [
+    "callers",
+    "commit",
+    "context",
+    "define",
+    "dependencies",
+    "describe",
+    "effects",
+    "eval",
+    "examples",
+    "failed-tests",
+    "ir",
+    "replace-word",
+    "search",
+    "search-output",
+    "search-type",
+    "source",
+    "task.abort",
+    "task.begin",
+    "task.commit",
+    "task.log",
+    "task.status",
+    "test",
+    "test-all",
+    "tests",
+    "words"
+  ],
+  "model": "gpt-6-luna",
+  "exactTokens": null,
+  "priorTrial": null,
+  "mode": "flat",
+  "history": "none",
+  "priorManifestHash": "272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e",
+  "reasoning": "max",
+  "task": 2,
+  "sourceRevision": "e87931a1ed22b05e60443c158cf9c2527c0ba6f6"
+}

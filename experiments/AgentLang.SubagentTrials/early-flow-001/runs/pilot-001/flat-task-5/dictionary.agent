@@ -1,0 +1,80 @@
+// frontend: flow/1
+
+record Customer {
+    field kind: String;
+    field balance: Float;
+}
+
+// frontend: flow/1
+
+record Subscription {
+    field term: String;
+    field renewable: Bool;
+}
+
+// frontend: flow/1
+
+word customer.renewal-savings(customer: Customer, subscription: Subscription) -> Float {
+    effects none
+    let balance = customer.balance();
+    let premium_balance = if ::equals(customer.kind(), "premium") {
+    float::multiply(balance, 0.9)
+} else {
+    balance
+};
+    let renewal_balance = if bool::and(::equals(subscription.term(), "annual"), subscription.renewable()) {
+    float::multiply(premium_balance, 0.95)
+} else {
+    premium_balance
+};
+    float::subtract(balance, renewal_balance)
+}
+
+// frontend: flow/1
+
+test customer.renewal-savings/premium_case_mismatched_annual {
+    customer::renewal-savings(customer::new("Premium", 100), subscription::new("annual", true))
+    => 5
+}
+
+// frontend: flow/1
+
+test customer.renewal-savings/premium_case_mismatched_term {
+    customer::renewal-savings(customer::new("premium", 100), subscription::new("Annual", true))
+    => 10
+}
+
+// frontend: flow/1
+
+test customer.renewal-savings/premium_exact_annual_renewable {
+    customer::renewal-savings(customer::new("premium", 100), subscription::new("annual", true))
+    => 14.5
+}
+
+// frontend: flow/1
+
+test customer.renewal-savings/premium_nonrenewable_annual {
+    customer::renewal-savings(customer::new("premium", 100), subscription::new("annual", false))
+    => 10
+}
+
+// frontend: flow/1
+
+test customer.renewal-savings/premium_whitespace_mismatched_term {
+    customer::renewal-savings(customer::new("premium", 100), subscription::new("annual ", true))
+    => 10
+}
+
+// frontend: flow/1
+
+test customer.renewal-savings/standard_exact_annual_renewable {
+    customer::renewal-savings(customer::new("standard", 100), subscription::new("annual", true))
+    => 5
+}
+
+// frontend: flow/1
+
+test customer.renewal-savings/standard_nonannual {
+    customer::renewal-savings(customer::new("standard", 100), subscription::new("monthly", true))
+    => 0
+}

@@ -1,0 +1,10 @@
+{
+  "priorTask": 3,
+  "history": "one-turn human-approval fork; coordinator observations inherited, no raw implementation source",
+  "sourceRevision": "e87931a1ed22b05e60443c158cf9c2527c0ba6f6",
+  "model": "gpt-6-luna",
+  "approvalBlockEvidence": "reports/evidence/056-conventional-task4-approval-block.json",
+  "exactTokens": null,
+  "reasoning": "max",
+  "task": 4
+}

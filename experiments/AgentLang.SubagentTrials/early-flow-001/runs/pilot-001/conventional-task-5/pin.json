@@ -1,0 +1,9 @@
+{
+  "priorTask": 4,
+  "task": 5,
+  "reasoning": "max",
+  "model": "gpt-6-luna",
+  "history": "none",
+  "exactTokens": null,
+  "sourceRevision": "e87931a1ed22b05e60443c158cf9c2527c0ba6f6"
+}
