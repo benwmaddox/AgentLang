@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "passed": false,
+  "failure": "Acceptance check failed: committed target exists exactly once (count=0)",
+  "sourceRevision": "cb1ebf6e3b5c4da48b1a2eedfae369bcc6261fcb",
+  "cliPath": "D:\\code\\AgentLang\\.agentlang\\stateful-flow-001\\language-bin\\AgentLang.Cli.dll",
+  "cliSha256": "86c5a021a8371f0bb40219e177eed537ffc577582c3f4a522f784e2e68ee7590",
+  "seedProject": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\stateful-flow-001\\runs\\stateful-001\\starting-project",
+  "finalProject": "D:\\code\\AgentLang\\.agentlang\\stateful-flow-001\\actor-01-reminder",
+  "helperWord": "invoice.reminder-path",
+  "targetWord": "invoice.queue-reminder-once",
+  "checks": [
+    {
+      "name": "pinned CLI assembly exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\stateful-flow-001\\language-bin\\AgentLang.Cli.dll"
+    },
+    {
+      "name": "frozen starting project exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\stateful-flow-001\\runs\\stateful-001\\starting-project"
+    },
+    {
+      "name": "final project is separate from frozen seed",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\stateful-flow-001\\actor-01-reminder"
+    },
+    {
+      "name": "manifest hash validates for D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\stateful-flow-001\\runs\\stateful-001\\starting-project",
+      "passed": true,
+      "details": "18be761d37d08ce6fa3ea0d18dff0a11a6d8c632d11e3a2c8a3055d788629804"
+    },
+    {
+      "name": "manifest hash validates for D:\\code\\AgentLang\\.agentlang\\stateful-flow-001\\actor-01-reminder",
+      "passed": true,
+      "details": "18be761d37d08ce6fa3ea0d18dff0a11a6d8c632d11e3a2c8a3055d788629804"
+    },
+    {
+      "name": "committed target exists exactly once",
+      "passed": false,
+      "details": "count=0"
+    }
+  ],
+  "protocolSessions": [],
+  "scope": "Independent final-word/history/type/test coverage audit; fresh-process first-write, idempotent repeat and snapshot restoration; exact preservation of an existing custom marker; separate id, three non-open statuses, capability denial, nominal-parameter rejection, and seed/final immutability. All runtime probes execute on disposable copies."
+}

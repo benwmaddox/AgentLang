@@ -1,0 +1,570 @@
+{
+  "scope": "All staged run artifacts and the frozen independent oracle match their original working bytes.",
+  "passed": true,
+  "checks": [
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/preflight-absolute-01/acceptance-preflight-setup.json",
+      "stagedBlob": "254d58157a3652286e5477a9115377e819d444db",
+      "workingBytesBlob": "254d58157a3652286e5477a9115377e819d444db",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/preflight-absolute-01/acceptance-preflight.json",
+      "stagedBlob": "3cc6fa3450ea33f98c326d8ba2200ea135e693eb",
+      "workingBytesBlob": "3cc6fa3450ea33f98c326d8ba2200ea135e693eb",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/preflight-absolute-01/artifact-inventory.json",
+      "stagedBlob": "88436b92e8e88fc1636fa24b44f1e598e7c6d541",
+      "workingBytesBlob": "88436b92e8e88fc1636fa24b44f1e598e7c6d541",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/preflight-absolute-01/coordinator-note.json",
+      "stagedBlob": "4d464a14c1847a69a4c459e1617663639ccd6ba1",
+      "workingBytesBlob": "4d464a14c1847a69a4c459e1617663639ccd6ba1",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/preflight-absolute-01/fixture-setup.json",
+      "stagedBlob": "c336dae141ef8e8a941a0c307bfb6047bbbdb875",
+      "workingBytesBlob": "c336dae141ef8e8a941a0c307bfb6047bbbdb875",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/preflight-absolute-01/raw-responses.json",
+      "stagedBlob": "fed309b64e8392a89360ca26b8ca4db8db0a7406",
+      "workingBytesBlob": "fed309b64e8392a89360ca26b8ca4db8db0a7406",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/preflight-absolute-01/requests.json",
+      "stagedBlob": "51b1636c4e6f524b2975e4611de9f843a14ec739",
+      "workingBytesBlob": "51b1636c4e6f524b2975e4611de9f843a14ec739",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/preflight-absolute-01/responses.json",
+      "stagedBlob": "6ed62d944d495437dfb2f6f294ffd779ffbb57bd",
+      "workingBytesBlob": "6ed62d944d495437dfb2f6f294ffd779ffbb57bd",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/preflight-absolute-01/starting-project/.agentlang/store/CURRENT",
+      "stagedBlob": "7012a04a7449bb8d0f0cec265efcc4dd17d50ec0",
+      "workingBytesBlob": "7012a04a7449bb8d0f0cec265efcc4dd17d50ec0",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/preflight-absolute-01/starting-project/.agentlang/store/WRITE.lock",
+      "stagedBlob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "workingBytesBlob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/preflight-absolute-01/starting-project/.agentlang/store/manifests/2c7c90763f061da10e1d6b84fee9122dee16d8518d5d66d060aeb10818523a99.json",
+      "stagedBlob": "3915a32fd54c7192435d97d16c96b3bb2d7c1a0b",
+      "workingBytesBlob": "3915a32fd54c7192435d97d16c96b3bb2d7c1a0b",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/preflight-absolute-01/starting-project/.agentlang/store/manifests/c74c84babaae42d6abc69d931a2fabf439770f2fdb61672fa7a1164a4b50ee10.json",
+      "stagedBlob": "83078a1fa3229d279cd1846b5460c5df7dd17c9c",
+      "workingBytesBlob": "83078a1fa3229d279cd1846b5460c5df7dd17c9c",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/preflight-absolute-01/starting-project/.agentlang/store/manifests/dd1103a22280d244609a97798020c3af7565a866c8295066e16272575c8e2615.json",
+      "stagedBlob": "d1e7453d4e1f4432aed526104766c4590fdd88a2",
+      "workingBytesBlob": "d1e7453d4e1f4432aed526104766c4590fdd88a2",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/preflight-absolute-01/starting-project/.agentlang/store/manifests/f0505907157aa0404a50c65d58908ee516bc6dd8b8c9c1491bd5f32a3e950b85.json",
+      "stagedBlob": "d5a0c71ebcf7ead7585d18bf8e3eb0130dc12948",
+      "workingBytesBlob": "d5a0c71ebcf7ead7585d18bf8e3eb0130dc12948",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/preflight-absolute-01/starting-project/.agentlang/store/objects/1a1912755c054f712e508cd594ec35cb2e9cd5337b931e26bcc1fe68b0db6567.agent",
+      "stagedBlob": "d2c83787d170a909c49583168b51c264acc42085",
+      "workingBytesBlob": "d2c83787d170a909c49583168b51c264acc42085",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/preflight-absolute-01/starting-project/.agentlang/store/objects/2af71d40531489d896fab520e352513e7d2225c97ad9234fc616c381919c85bb.agent",
+      "stagedBlob": "a3938bf4d96c39bbcb79be2dfc1dd1d9d6eb4333",
+      "workingBytesBlob": "a3938bf4d96c39bbcb79be2dfc1dd1d9d6eb4333",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/preflight-absolute-01/starting-project/.agentlang/store/objects/2cda38473924693c02606465fb35778ad3504eba055db036f995ee6e57f9a6d3.agent",
+      "stagedBlob": "bfbef675a533da9c42b6dc41b6af326171fc3d7a",
+      "workingBytesBlob": "bfbef675a533da9c42b6dc41b6af326171fc3d7a",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/preflight-absolute-01/starting-project/.agentlang/store/objects/366c2c2a3818b8d1233be71d46cd2d998ea417c0b12bf2e748fb01bb43a89792.agent",
+      "stagedBlob": "1e5dd1bf8b152e1c84f6ddb36baadd4dd3f3e89d",
+      "workingBytesBlob": "1e5dd1bf8b152e1c84f6ddb36baadd4dd3f3e89d",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/preflight-absolute-01/starting-project/.agentlang/store/objects/3858a8e83d631f36803d4c3837a17ee6912bd2d170a65be5e60649f824c45373.agent",
+      "stagedBlob": "903c3da55d2583e16558f026f8c56f5e7dcfa0ec",
+      "workingBytesBlob": "903c3da55d2583e16558f026f8c56f5e7dcfa0ec",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/preflight-absolute-01/starting-project/.agentlang/store/objects/5286f8acecc161d3ec1167b305a12710563b9efb08ff861ba4a40fb328bf9d9d.agent",
+      "stagedBlob": "beafcba444dc9fd0f19c98e6fd153fe8972b72c5",
+      "workingBytesBlob": "beafcba444dc9fd0f19c98e6fd153fe8972b72c5",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/preflight-absolute-01/starting-project/.agentlang/store/objects/65c046007d4f4b7d48b75a1df50d78d5a35d1ba88a53dce2be2d61f2d3dcbd6d.agent",
+      "stagedBlob": "ecfe40905ed56a4fa2dc572f88b243bb83542968",
+      "workingBytesBlob": "ecfe40905ed56a4fa2dc572f88b243bb83542968",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/preflight-absolute-01/starting-project/.agentlang/store/objects/6af51409069f1231c4eb35864932d29bb686a6f88d99f8f8a62e2303a277f570.agent",
+      "stagedBlob": "87d16ab6cf7d88b07a919e24943a561205bb0a39",
+      "workingBytesBlob": "87d16ab6cf7d88b07a919e24943a561205bb0a39",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/preflight-absolute-01/starting-project/.agentlang/store/objects/8ab7c93d6c3f1a5716d856e0d8d92475ab6e8cd50ec0490b991286606a543626.agent",
+      "stagedBlob": "6dbbf2ad5c126edab46bc222c531a9764a6759e1",
+      "workingBytesBlob": "6dbbf2ad5c126edab46bc222c531a9764a6759e1",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/preflight-absolute-01/starting-project/.agentlang/store/objects/8e606ad519f1cd0d47fe413a2bfa4fc91d01cd53d1b2bec47817f790ddc7d594.agent",
+      "stagedBlob": "238371dff5205ac8d5ab233db491cf9050e41484",
+      "workingBytesBlob": "238371dff5205ac8d5ab233db491cf9050e41484",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/preflight-absolute-01/starting-project/.agentlang/store/objects/a588ef7d356f5a9d0e41c53976e9fd39f536165c0fa252b4a176720b88651ae5.agent",
+      "stagedBlob": "88962c16a41d8e26fd19d2670a5307bfaee5dda0",
+      "workingBytesBlob": "88962c16a41d8e26fd19d2670a5307bfaee5dda0",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/preflight-absolute-01/starting-project/dictionary.agent",
+      "stagedBlob": "a3938bf4d96c39bbcb79be2dfc1dd1d9d6eb4333",
+      "workingBytesBlob": "a3938bf4d96c39bbcb79be2dfc1dd1d9d6eb4333",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/preflight-absolute-01/starting-project/history/task-0001.json",
+      "stagedBlob": "8a063a074cff2471ab8ccbb5978e87622f39cf21",
+      "workingBytesBlob": "8a063a074cff2471ab8ccbb5978e87622f39cf21",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/preflight-absolute-01/starting-state.json",
+      "stagedBlob": "3d834d69024ca6fbf02900ec3dcc653aed0313d7",
+      "workingBytesBlob": "3d834d69024ca6fbf02900ec3dcc653aed0313d7",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/acceptance-preflight-01.json",
+      "stagedBlob": "6a299e4c89ac52c31a5a8a9f0373ead9301b04cb",
+      "workingBytesBlob": "6a299e4c89ac52c31a5a8a9f0373ead9301b04cb",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/acceptance-preflight-setup.json",
+      "stagedBlob": "b550421e1cbbb3b6e6c4d3c463c3bf3e5013e7af",
+      "workingBytesBlob": "b550421e1cbbb3b6e6c4d3c463c3bf3e5013e7af",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/acceptance-preflight.json",
+      "stagedBlob": "6fbfb81779f1e938aba66cdf891a21d944a3757e",
+      "workingBytesBlob": "6fbfb81779f1e938aba66cdf891a21d944a3757e",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/acceptance.json",
+      "stagedBlob": "08372729a918d7988b606efd5700d65b66cfa702",
+      "workingBytesBlob": "08372729a918d7988b606efd5700d65b66cfa702",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/actor-report.md",
+      "stagedBlob": "ef69d6deea6772eb957f69a9aa1c67a16819569e",
+      "workingBytesBlob": "ef69d6deea6772eb957f69a9aa1c67a16819569e",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/artifact-inventory.json",
+      "stagedBlob": "17a7512a14655f2d363951a5524048e564ad9709",
+      "workingBytesBlob": "17a7512a14655f2d363951a5524048e564ad9709",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/coordinator-events.json",
+      "stagedBlob": "e81c6c1c993f5a8310955fa6fa7edc35df793523",
+      "workingBytesBlob": "e81c6c1c993f5a8310955fa6fa7edc35df793523",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/example-verification.json",
+      "stagedBlob": "71b5694b52738ed0d255279e613d852065eed4ca",
+      "workingBytesBlob": "71b5694b52738ed0d255279e613d852065eed4ca",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/final-project/.agentlang/store/CURRENT",
+      "stagedBlob": "42fbf8aba647fe3cab54a19dbd8ad94d24a37925",
+      "workingBytesBlob": "42fbf8aba647fe3cab54a19dbd8ad94d24a37925",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/final-project/.agentlang/store/WRITE.lock",
+      "stagedBlob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "workingBytesBlob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/final-project/.agentlang/store/manifests/18be761d37d08ce6fa3ea0d18dff0a11a6d8c632d11e3a2c8a3055d788629804.json",
+      "stagedBlob": "cf8a48a3eb099469ab7526edfc9ea6125bc18b4b",
+      "workingBytesBlob": "cf8a48a3eb099469ab7526edfc9ea6125bc18b4b",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/final-project/.agentlang/store/manifests/2c7c90763f061da10e1d6b84fee9122dee16d8518d5d66d060aeb10818523a99.json",
+      "stagedBlob": "3915a32fd54c7192435d97d16c96b3bb2d7c1a0b",
+      "workingBytesBlob": "3915a32fd54c7192435d97d16c96b3bb2d7c1a0b",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/final-project/.agentlang/store/manifests/c74c84babaae42d6abc69d931a2fabf439770f2fdb61672fa7a1164a4b50ee10.json",
+      "stagedBlob": "83078a1fa3229d279cd1846b5460c5df7dd17c9c",
+      "workingBytesBlob": "83078a1fa3229d279cd1846b5460c5df7dd17c9c",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/final-project/.agentlang/store/manifests/dd1103a22280d244609a97798020c3af7565a866c8295066e16272575c8e2615.json",
+      "stagedBlob": "d1e7453d4e1f4432aed526104766c4590fdd88a2",
+      "workingBytesBlob": "d1e7453d4e1f4432aed526104766c4590fdd88a2",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/final-project/.agentlang/store/manifests/fb56db24358c059d97a3ad6c7cbdf06b9246f3971c03c7ba46ebdf9ae5771629.json",
+      "stagedBlob": "32e5f8f38b919720a3b8450033f4d5f2c24c2517",
+      "workingBytesBlob": "32e5f8f38b919720a3b8450033f4d5f2c24c2517",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/final-project/.agentlang/store/objects/2cda38473924693c02606465fb35778ad3504eba055db036f995ee6e57f9a6d3.agent",
+      "stagedBlob": "bfbef675a533da9c42b6dc41b6af326171fc3d7a",
+      "workingBytesBlob": "bfbef675a533da9c42b6dc41b6af326171fc3d7a",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/final-project/.agentlang/store/objects/3adf98ad36f792fef1f9b5487f52215e712222ba10e3c5721ae1fbac22ae2aa3.agent",
+      "stagedBlob": "285fc062047aafd17e652706332b959dc0988879",
+      "workingBytesBlob": "285fc062047aafd17e652706332b959dc0988879",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/final-project/.agentlang/store/objects/427594f421fd495853de470b3c7e96ab78bf7a451e346a34ec73eec650a629c3.agent",
+      "stagedBlob": "7716f04b06dc5f32bbdf7866b5548e11ed2f48ba",
+      "workingBytesBlob": "7716f04b06dc5f32bbdf7866b5548e11ed2f48ba",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/final-project/.agentlang/store/objects/43c229edb237793d0ac0f055966abc4893bd918ea2b527ed47d9ac08ce477ab2.agent",
+      "stagedBlob": "bbecce7adba1925f456f65202162e8b25bcc2ad9",
+      "workingBytesBlob": "bbecce7adba1925f456f65202162e8b25bcc2ad9",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/final-project/.agentlang/store/objects/5286f8acecc161d3ec1167b305a12710563b9efb08ff861ba4a40fb328bf9d9d.agent",
+      "stagedBlob": "beafcba444dc9fd0f19c98e6fd153fe8972b72c5",
+      "workingBytesBlob": "beafcba444dc9fd0f19c98e6fd153fe8972b72c5",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/final-project/.agentlang/store/objects/594e81a59157f822d924ce5b99f784d1c371262d6f2eee460a62e5243c867613.agent",
+      "stagedBlob": "104fce326927f97397d216860998b7b2e0dbc683",
+      "workingBytesBlob": "104fce326927f97397d216860998b7b2e0dbc683",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/final-project/.agentlang/store/objects/65c046007d4f4b7d48b75a1df50d78d5a35d1ba88a53dce2be2d61f2d3dcbd6d.agent",
+      "stagedBlob": "ecfe40905ed56a4fa2dc572f88b243bb83542968",
+      "workingBytesBlob": "ecfe40905ed56a4fa2dc572f88b243bb83542968",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/final-project/.agentlang/store/objects/65e8afc9b5bb1bfca243faef92c9b31d75f9f8b5d3e492244085f4fb86a4d351.agent",
+      "stagedBlob": "ed7b6c588f37b21c9d45346c3a49ce836d7f45b7",
+      "workingBytesBlob": "ed7b6c588f37b21c9d45346c3a49ce836d7f45b7",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/final-project/.agentlang/store/objects/69444fe07f21c2a35356bce8b8ea53bd6b6db5ff3985e6d472d72f99e70b40f9.agent",
+      "stagedBlob": "90af3365f4dd5c2bab115658e620afb31d35fe54",
+      "workingBytesBlob": "90af3365f4dd5c2bab115658e620afb31d35fe54",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/final-project/.agentlang/store/objects/6af51409069f1231c4eb35864932d29bb686a6f88d99f8f8a62e2303a277f570.agent",
+      "stagedBlob": "87d16ab6cf7d88b07a919e24943a561205bb0a39",
+      "workingBytesBlob": "87d16ab6cf7d88b07a919e24943a561205bb0a39",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/final-project/.agentlang/store/objects/8e606ad519f1cd0d47fe413a2bfa4fc91d01cd53d1b2bec47817f790ddc7d594.agent",
+      "stagedBlob": "238371dff5205ac8d5ab233db491cf9050e41484",
+      "workingBytesBlob": "238371dff5205ac8d5ab233db491cf9050e41484",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/final-project/.agentlang/store/objects/a588ef7d356f5a9d0e41c53976e9fd39f536165c0fa252b4a176720b88651ae5.agent",
+      "stagedBlob": "88962c16a41d8e26fd19d2670a5307bfaee5dda0",
+      "workingBytesBlob": "88962c16a41d8e26fd19d2670a5307bfaee5dda0",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/final-project/.agentlang/store/objects/aafc37da41b1d77fb3276f7520bbd1c4216fb49d0af76067d7b90d768c54c1cf.agent",
+      "stagedBlob": "01d29e03c6b59c81caf2b66d57ed312dc896b189",
+      "workingBytesBlob": "01d29e03c6b59c81caf2b66d57ed312dc896b189",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/final-project/.agentlang/store/objects/b656d29e11b2c6a71d0ad02999e3b7b6690bcea9a501ebe71ebe3186789d6e9c.agent",
+      "stagedBlob": "515991ce7e6db022d74471f22a9442dbcc826d0f",
+      "workingBytesBlob": "515991ce7e6db022d74471f22a9442dbcc826d0f",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/final-project/.agentlang/store/objects/c47a14b5cb86b9b370029edc05281850a463e876881f34caab5531ac6865f154.agent",
+      "stagedBlob": "ce6b5204fe219135f9e80baee3c7a5018f92a383",
+      "workingBytesBlob": "ce6b5204fe219135f9e80baee3c7a5018f92a383",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/final-project/.agentlang/store/objects/c8be4e828baf76085c19dd2b562a5ca6451a7bfce349aa5e8f8df2247d84f6b7.agent",
+      "stagedBlob": "8ee5f685956eb5611b2ea07aff9eec6888a1f32a",
+      "workingBytesBlob": "8ee5f685956eb5611b2ea07aff9eec6888a1f32a",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/final-project/.agentlang/store/objects/cd55eb427895411cc1f82314f7ae98123206e8529bae20fcc296c9b512e44e8f.agent",
+      "stagedBlob": "a6c69f0a04120b9ad602c15f8b75a74043a319e9",
+      "workingBytesBlob": "a6c69f0a04120b9ad602c15f8b75a74043a319e9",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/final-project/.agentlang/store/objects/d4cb75aa49606abef7da0f5e55a05ea87daaf893fd3fd2d8cf7ba7f703983766.agent",
+      "stagedBlob": "8533d09fe99bf9e9f36a0af9cc041a05a776cf3d",
+      "workingBytesBlob": "8533d09fe99bf9e9f36a0af9cc041a05a776cf3d",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/final-project/dictionary.agent",
+      "stagedBlob": "104fce326927f97397d216860998b7b2e0dbc683",
+      "workingBytesBlob": "104fce326927f97397d216860998b7b2e0dbc683",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/final-project/history/task-0001.json",
+      "stagedBlob": "8a063a074cff2471ab8ccbb5978e87622f39cf21",
+      "workingBytesBlob": "8a063a074cff2471ab8ccbb5978e87622f39cf21",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/final-project/history/task-0002.json",
+      "stagedBlob": "0fef2ab6351403e994462fe190107bd3344dc659",
+      "workingBytesBlob": "0fef2ab6351403e994462fe190107bd3344dc659",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/fixture-setup.json",
+      "stagedBlob": "bc73b820b8ffced8eb3baf209a7bdbe984322833",
+      "workingBytesBlob": "bc73b820b8ffced8eb3baf209a7bdbe984322833",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/no-op-acceptance.json",
+      "stagedBlob": "5266950f2a301a68b3e9c3eab2d1d9442d376aca",
+      "workingBytesBlob": "5266950f2a301a68b3e9c3eab2d1d9442d376aca",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/prelaunch.json",
+      "stagedBlob": "9e3859dd75c1b829bff05d2029da727200711bf5",
+      "workingBytesBlob": "9e3859dd75c1b829bff05d2029da727200711bf5",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/prompt.txt",
+      "stagedBlob": "932091842853da5df4bca22d9a6353393b682049",
+      "workingBytesBlob": "932091842853da5df4bca22d9a6353393b682049",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/raw-responses.json",
+      "stagedBlob": "11f7e1f80f0c3871aa565192daab39b52cba4861",
+      "workingBytesBlob": "11f7e1f80f0c3871aa565192daab39b52cba4861",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/requests.json",
+      "stagedBlob": "7399844a5791594f4d843cef58878fe6b47d05cb",
+      "workingBytesBlob": "7399844a5791594f4d843cef58878fe6b47d05cb",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/responses.json",
+      "stagedBlob": "3d47025204abe1ed051f12a89d0dfed53caf9171",
+      "workingBytesBlob": "3d47025204abe1ed051f12a89d0dfed53caf9171",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/starting-project/.agentlang/store/CURRENT",
+      "stagedBlob": "1a1a52671bdcd70a3b347875fb3b520f64e2c2d0",
+      "workingBytesBlob": "1a1a52671bdcd70a3b347875fb3b520f64e2c2d0",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/starting-project/.agentlang/store/WRITE.lock",
+      "stagedBlob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "workingBytesBlob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/starting-project/.agentlang/store/manifests/18be761d37d08ce6fa3ea0d18dff0a11a6d8c632d11e3a2c8a3055d788629804.json",
+      "stagedBlob": "cf8a48a3eb099469ab7526edfc9ea6125bc18b4b",
+      "workingBytesBlob": "cf8a48a3eb099469ab7526edfc9ea6125bc18b4b",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/starting-project/.agentlang/store/manifests/2c7c90763f061da10e1d6b84fee9122dee16d8518d5d66d060aeb10818523a99.json",
+      "stagedBlob": "3915a32fd54c7192435d97d16c96b3bb2d7c1a0b",
+      "workingBytesBlob": "3915a32fd54c7192435d97d16c96b3bb2d7c1a0b",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/starting-project/.agentlang/store/manifests/c74c84babaae42d6abc69d931a2fabf439770f2fdb61672fa7a1164a4b50ee10.json",
+      "stagedBlob": "83078a1fa3229d279cd1846b5460c5df7dd17c9c",
+      "workingBytesBlob": "83078a1fa3229d279cd1846b5460c5df7dd17c9c",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/starting-project/.agentlang/store/manifests/dd1103a22280d244609a97798020c3af7565a866c8295066e16272575c8e2615.json",
+      "stagedBlob": "d1e7453d4e1f4432aed526104766c4590fdd88a2",
+      "workingBytesBlob": "d1e7453d4e1f4432aed526104766c4590fdd88a2",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/starting-project/.agentlang/store/objects/2cda38473924693c02606465fb35778ad3504eba055db036f995ee6e57f9a6d3.agent",
+      "stagedBlob": "bfbef675a533da9c42b6dc41b6af326171fc3d7a",
+      "workingBytesBlob": "bfbef675a533da9c42b6dc41b6af326171fc3d7a",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/starting-project/.agentlang/store/objects/43c229edb237793d0ac0f055966abc4893bd918ea2b527ed47d9ac08ce477ab2.agent",
+      "stagedBlob": "bbecce7adba1925f456f65202162e8b25bcc2ad9",
+      "workingBytesBlob": "bbecce7adba1925f456f65202162e8b25bcc2ad9",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/starting-project/.agentlang/store/objects/5286f8acecc161d3ec1167b305a12710563b9efb08ff861ba4a40fb328bf9d9d.agent",
+      "stagedBlob": "beafcba444dc9fd0f19c98e6fd153fe8972b72c5",
+      "workingBytesBlob": "beafcba444dc9fd0f19c98e6fd153fe8972b72c5",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/starting-project/.agentlang/store/objects/65c046007d4f4b7d48b75a1df50d78d5a35d1ba88a53dce2be2d61f2d3dcbd6d.agent",
+      "stagedBlob": "ecfe40905ed56a4fa2dc572f88b243bb83542968",
+      "workingBytesBlob": "ecfe40905ed56a4fa2dc572f88b243bb83542968",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/starting-project/.agentlang/store/objects/65e8afc9b5bb1bfca243faef92c9b31d75f9f8b5d3e492244085f4fb86a4d351.agent",
+      "stagedBlob": "ed7b6c588f37b21c9d45346c3a49ce836d7f45b7",
+      "workingBytesBlob": "ed7b6c588f37b21c9d45346c3a49ce836d7f45b7",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/starting-project/.agentlang/store/objects/6af51409069f1231c4eb35864932d29bb686a6f88d99f8f8a62e2303a277f570.agent",
+      "stagedBlob": "87d16ab6cf7d88b07a919e24943a561205bb0a39",
+      "workingBytesBlob": "87d16ab6cf7d88b07a919e24943a561205bb0a39",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/starting-project/.agentlang/store/objects/8e606ad519f1cd0d47fe413a2bfa4fc91d01cd53d1b2bec47817f790ddc7d594.agent",
+      "stagedBlob": "238371dff5205ac8d5ab233db491cf9050e41484",
+      "workingBytesBlob": "238371dff5205ac8d5ab233db491cf9050e41484",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/starting-project/.agentlang/store/objects/a588ef7d356f5a9d0e41c53976e9fd39f536165c0fa252b4a176720b88651ae5.agent",
+      "stagedBlob": "88962c16a41d8e26fd19d2670a5307bfaee5dda0",
+      "workingBytesBlob": "88962c16a41d8e26fd19d2670a5307bfaee5dda0",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/starting-project/.agentlang/store/objects/b656d29e11b2c6a71d0ad02999e3b7b6690bcea9a501ebe71ebe3186789d6e9c.agent",
+      "stagedBlob": "515991ce7e6db022d74471f22a9442dbcc826d0f",
+      "workingBytesBlob": "515991ce7e6db022d74471f22a9442dbcc826d0f",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/starting-project/.agentlang/store/objects/c47a14b5cb86b9b370029edc05281850a463e876881f34caab5531ac6865f154.agent",
+      "stagedBlob": "ce6b5204fe219135f9e80baee3c7a5018f92a383",
+      "workingBytesBlob": "ce6b5204fe219135f9e80baee3c7a5018f92a383",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/starting-project/.agentlang/store/objects/c8be4e828baf76085c19dd2b562a5ca6451a7bfce349aa5e8f8df2247d84f6b7.agent",
+      "stagedBlob": "8ee5f685956eb5611b2ea07aff9eec6888a1f32a",
+      "workingBytesBlob": "8ee5f685956eb5611b2ea07aff9eec6888a1f32a",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/starting-project/dictionary.agent",
+      "stagedBlob": "515991ce7e6db022d74471f22a9442dbcc826d0f",
+      "workingBytesBlob": "515991ce7e6db022d74471f22a9442dbcc826d0f",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/starting-project/history/task-0001.json",
+      "stagedBlob": "8a063a074cff2471ab8ccbb5978e87622f39cf21",
+      "workingBytesBlob": "8a063a074cff2471ab8ccbb5978e87622f39cf21",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/starting-state.json",
+      "stagedBlob": "2669d9b8d5dae54fb0f8f9c5d94ec4ae7c7a9bbe",
+      "workingBytesBlob": "2669d9b8d5dae54fb0f8f9c5d94ec4ae7c7a9bbe",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/trace-audit.json",
+      "stagedBlob": "717a2b84d94e24071b7b7f12194d14480e578863",
+      "workingBytesBlob": "717a2b84d94e24071b7b7f12194d14480e578863",
+      "passed": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/stateful-001/trace.jsonl",
+      "stagedBlob": "1786f549475b71acbf25b03500a344f30f52fc09",
+      "workingBytesBlob": "1786f549475b71acbf25b03500a344f30f52fc09",
+      "passed": true
+    },
+    {
+      "path": "reports/evidence/071-verify-stateful-trial.ps1",
+      "stagedBlob": "580863ecfadbf09c376ca5ae4c542e20df1a3544",
+      "workingBytesBlob": "580863ecfadbf09c376ca5ae4c542e20df1a3544",
+      "passed": true
+    }
+  ]
+}

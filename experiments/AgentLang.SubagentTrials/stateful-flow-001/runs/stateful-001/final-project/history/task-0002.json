@@ -1,0 +1,52 @@
+{
+  "task": "task-0002",
+  "goal": "Add and test durable library word invoice.queue-reminder-once : Invoice -\u003E String with exact open-status handling and invoice.reminder-path virtual file behavior.",
+  "active": false,
+  "wordsInspected": [
+    "Invoice",
+    "InvoiceId",
+    "InvoiceId.value",
+    "InvoiceStatus",
+    "InvoiceStatus.value",
+    "context:equals",
+    "context:file.exists?",
+    "context:file.read",
+    "context:file.write",
+    "context:invoice.new",
+    "context:invoice.reminder-path",
+    "equals",
+    "file.exists?",
+    "file.read",
+    "file.write",
+    "invoice.new",
+    "invoice.reminder-path",
+    "invoice.status",
+    "match-option",
+    "string.concat"
+  ],
+  "wordsUsed": [
+    "InvoiceId.new",
+    "InvoiceId.value",
+    "InvoiceStatus.new",
+    "InvoiceStatus.value",
+    "equals",
+    "file.exists?",
+    "file.read",
+    "file.write",
+    "invoice.id",
+    "invoice.new",
+    "invoice.queue-reminder-once",
+    "invoice.reminder-path",
+    "invoice.status",
+    "string.concat"
+  ],
+  "wordsCreated": [
+    "invoice.queue-reminder-once"
+  ],
+  "testsRun": 8,
+  "testsFailed": 0,
+  "effects": {},
+  "errors": [
+    "DISCOVERY_INVALID_ARGUMENT"
+  ]
+}

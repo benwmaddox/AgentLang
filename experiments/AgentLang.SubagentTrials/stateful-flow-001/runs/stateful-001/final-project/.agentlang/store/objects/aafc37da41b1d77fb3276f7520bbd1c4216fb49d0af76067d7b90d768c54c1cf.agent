@@ -1,0 +1,3 @@
+test invoice.queue-reminder-once/non-open-is-case-sensitive {
+    invoice::queue-reminder-once(invoice::new(InvoiceId::new("inv-closed"), InvoiceStatus::new("Open"))) => "not-open"
+}

@@ -1,0 +1,188 @@
+{
+  "responses": [
+    {
+      "ok": true,
+      "kind": "task.begin",
+      "text": "Started task-0002.",
+      "data": {
+        "task": "task-0002",
+        "goal": "Coordinator acceptance preflight; not an agent outcome",
+        "active": true,
+        "wordsInspected": [],
+        "wordsUsed": [],
+        "wordsCreated": [],
+        "testsRun": 0,
+        "testsFailed": 0,
+        "effects": {},
+        "errors": []
+      }
+    },
+    {
+      "ok": true,
+      "kind": "defined",
+      "text": "Flow definition, tests, examples, and retained source bindings validated and staged.",
+      "data": {
+        "frontend": "flow",
+        "name": "invoice.queue-reminder-once",
+        "id": "word_468a8c06f8ff4e559e1d7404130c170d",
+        "revision": 1,
+        "tests": [
+          "existing-custom",
+          "existing-queued",
+          "new-open",
+          "not-open"
+        ],
+        "examples": [
+          "first-reminder"
+        ]
+      }
+    },
+    {
+      "ok": true,
+      "kind": "test",
+      "text": "4/4 test(s) passed.",
+      "data": {
+        "results": [
+          {
+            "name": "existing-custom",
+            "word": "invoice.queue-reminder-once",
+            "passed": true,
+            "expected": "\"sent\"",
+            "actual": [
+              "\"sent\""
+            ]
+          },
+          {
+            "name": "existing-queued",
+            "word": "invoice.queue-reminder-once",
+            "passed": true,
+            "expected": "\"queued\"",
+            "actual": [
+              "\"queued\""
+            ]
+          },
+          {
+            "name": "new-open",
+            "word": "invoice.queue-reminder-once",
+            "passed": true,
+            "expected": "\"queued\"",
+            "actual": [
+              "\"queued\""
+            ]
+          },
+          {
+            "name": "not-open",
+            "word": "invoice.queue-reminder-once",
+            "passed": true,
+            "expected": "\"not-open\"",
+            "actual": [
+              "\"not-open\""
+            ]
+          }
+        ],
+        "coverage": {
+          "instructionsCovered": 20,
+          "instructionsTotal": 20,
+          "branchesCovered": 4,
+          "branchesTotal": 4,
+          "uncoveredInstructions": [],
+          "uncoveredBranchOutcomes": []
+        }
+      }
+    },
+    {
+      "ok": true,
+      "kind": "example",
+      "text": "1/1 example(s) passed.",
+      "data": {
+        "results": [
+          {
+            "word": "invoice.queue-reminder-once",
+            "name": "first-reminder",
+            "source": "example invoice.queue-reminder-once/first-reminder {\n    invoice::queue-reminder-once(invoice::new(id = InvoiceId::new(\"control-example\"), status = InvoiceStatus::new(\"open\")))\n    => \"queued\"\n}",
+            "expected": "\"queued\"",
+            "passed": true,
+            "actual": [
+              "\"queued\""
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "ok": true,
+      "kind": "commit",
+      "text": "4 attached test(s) passed; selected candidates committed.",
+      "data": [
+        "invoice.queue-reminder-once/existing-custom",
+        "invoice.queue-reminder-once/existing-queued",
+        "invoice.queue-reminder-once/new-open",
+        "invoice.queue-reminder-once/not-open"
+      ]
+    },
+    {
+      "ok": true,
+      "kind": "task.commit",
+      "text": "Task committed and temporary words were cleared. The task log was saved.",
+      "data": {
+        "task": "task-0002",
+        "goal": "Coordinator acceptance preflight; not an agent outcome",
+        "active": false,
+        "wordsInspected": [],
+        "wordsUsed": [
+          "InvoiceId.new",
+          "InvoiceId.value",
+          "InvoiceStatus.new",
+          "InvoiceStatus.value",
+          "equals",
+          "file.exists?",
+          "file.read",
+          "file.write",
+          "invoice.id",
+          "invoice.new",
+          "invoice.queue-reminder-once",
+          "invoice.reminder-path",
+          "invoice.status",
+          "string.concat"
+        ],
+        "wordsCreated": [
+          "invoice.queue-reminder-once"
+        ],
+        "testsRun": 8,
+        "testsFailed": 0,
+        "effects": {},
+        "errors": []
+      }
+    }
+  ],
+  "requests": [
+    {
+      "goal": "Coordinator acceptance preflight; not an agent outcome",
+      "op": "task.begin"
+    },
+    {
+      "op": "define",
+      "source": "word invoice.queue-reminder-once(invoice: Invoice) -> String {\n    effects fs.read fs.write\n    doc \"Queue a reminder for an open invoice, preserving an existing marker.\"\n    if ::equals(InvoiceStatus::value(invoice::status(invoice)), \"open\") {\n        let path = invoice::reminder-path(invoice::id(invoice));\n        if file::exists?(path) {\n            file::read(path)\n        } else {\n            file::write(path, \"queued\");\n            \"queued\"\n        }\n    } else {\n        \"not-open\"\n    }\n}\ntest invoice.queue-reminder-once/new-open {\n    invoice::queue-reminder-once(invoice::new(id = InvoiceId::new(\"control-new\"), status = InvoiceStatus::new(\"open\")))\n    => \"queued\"\n}\ntest invoice.queue-reminder-once/existing-queued {\n    file::write(\"outbox/invoice-reminders/control-existing\", \"queued\");\n    invoice::queue-reminder-once(invoice::new(id = InvoiceId::new(\"control-existing\"), status = InvoiceStatus::new(\"open\")))\n    => \"queued\"\n}\ntest invoice.queue-reminder-once/existing-custom {\n    file::write(\"outbox/invoice-reminders/control-custom\", \"sent\");\n    invoice::queue-reminder-once(invoice::new(id = InvoiceId::new(\"control-custom\"), status = InvoiceStatus::new(\"open\")))\n    => \"sent\"\n}\ntest invoice.queue-reminder-once/not-open {\n    invoice::queue-reminder-once(invoice::new(id = InvoiceId::new(\"control-paid\"), status = InvoiceStatus::new(\"paid\")))\n    => \"not-open\"\n}\nexample invoice.queue-reminder-once/first-reminder {\n    invoice::queue-reminder-once(invoice::new(id = InvoiceId::new(\"control-example\"), status = InvoiceStatus::new(\"open\")))\n    => \"queued\"\n}",
+      "frontend": "flow"
+    },
+    {
+      "word": "invoice.queue-reminder-once",
+      "op": "test"
+    },
+    {
+      "word": "invoice.queue-reminder-once",
+      "op": "example"
+    },
+    {
+      "actor": "host",
+      "op": "commit",
+      "library": true,
+      "word": "invoice.queue-reminder-once"
+    },
+    {
+      "actor": "host",
+      "op": "task.commit"
+    }
+  ],
+  "scope": "Coordinator-created disposable control only; never supplied to the actor."
+}

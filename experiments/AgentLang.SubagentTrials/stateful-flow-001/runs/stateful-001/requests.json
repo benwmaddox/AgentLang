@@ -1,0 +1,60 @@
+[
+  {
+    "op": "task.begin",
+    "goal": "Prepare immutable stateful reminder agent study seed"
+  },
+  {
+    "op": "define",
+    "frontend": "flow",
+    "source": "type InvoiceId : String { }\n\ntype InvoiceStatus : String { }\n\nrecord Invoice {\n    field id: InvoiceId;\n    field status: InvoiceStatus;\n}\n\nword invoice.reminder-path(id: InvoiceId) -> String {\n    effects none\n    doc \"Builds the fixed virtual reminder path for an invoice ID.\"\n    string::concat(\"outbox/invoice-reminders/\", InvoiceId::value(id))\n}\n\ntest invoice.reminder-path/basic {\n    invoice::reminder-path(InvoiceId::new(\"INV-001\"))\n    => \"outbox/invoice-reminders/INV-001\"\n}\n\ntest invoice.reminder-path/preserves-id-text {\n    invoice::reminder-path(InvoiceId::new(\"inv.alpha_2\"))\n    => \"outbox/invoice-reminders/inv.alpha_2\"\n}\n\nexample invoice.reminder-path/standard-id {\n    invoice::reminder-path(InvoiceId::new(\"INV-001\"))\n    => \"outbox/invoice-reminders/INV-001\"\n}"
+  },
+  {
+    "op": "test",
+    "word": "invoice.reminder-path"
+  },
+  {
+    "op": "commit",
+    "word": "InvoiceId"
+  },
+  {
+    "op": "commit",
+    "word": "InvoiceStatus"
+  },
+  {
+    "op": "commit",
+    "word": "Invoice"
+  },
+  {
+    "op": "commit",
+    "word": "invoice.reminder-path",
+    "library": true
+  },
+  {
+    "op": "test-all"
+  },
+  {
+    "op": "describe",
+    "word": "invoice.reminder-path"
+  },
+  {
+    "op": "source",
+    "type": "InvoiceId"
+  },
+  {
+    "op": "source",
+    "type": "InvoiceStatus"
+  },
+  {
+    "op": "source",
+    "type": "Invoice"
+  },
+  {
+    "op": "example",
+    "word": "invoice.reminder-path",
+    "caseName": "standard-id"
+  },
+  {
+    "op": "task.commit",
+    "actor": "host"
+  }
+]

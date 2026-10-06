@@ -18,3 +18,4 @@ experiments/AgentLang.SubagentTrials/selective-flow-001/runs/** -text whitespace
 experiments/AgentLang.SubagentTrials/debug-flow-001/runs/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 experiments/AgentLang.SubagentTrials/refactor-flow-001/runs/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

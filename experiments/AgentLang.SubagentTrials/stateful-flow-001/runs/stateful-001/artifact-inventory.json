@@ -1,0 +1,322 @@
+[
+  {
+    "path": "acceptance-preflight-01.json",
+    "bytes": 39271,
+    "sha256": "fdb62222404146afa1cec049fec6be3d22adc4e7f7d2730db04b32a885bf91d8"
+  },
+  {
+    "path": "acceptance-preflight-setup.json",
+    "bytes": 6740,
+    "sha256": "a806128bd78a332ee70fad4ae0719e27aaf5a6b55f1dfd0c8c113906bb4ef965"
+  },
+  {
+    "path": "acceptance-preflight.json",
+    "bytes": 44482,
+    "sha256": "61822522221fbbd4b25d1b2f832f4f6c830e0a6c9261f801b6aa188e20dbfcea"
+  },
+  {
+    "path": "acceptance.json",
+    "bytes": 44614,
+    "sha256": "5a638b8724864f216e535e8e70b83ae60eb88e3b54538ee22f1e17842deb30ae"
+  },
+  {
+    "path": "actor-report.md",
+    "bytes": 913,
+    "sha256": "c0975c0c921b6fcb7fba7e8b208fa292c22117292853d6950564adb6462eb10a"
+  },
+  {
+    "path": "coordinator-events.json",
+    "bytes": 907,
+    "sha256": "a7180e58d8c67b20539c572ae3b213971323b01621b8661462f38608766790fb"
+  },
+  {
+    "path": "example-verification.json",
+    "bytes": 1638,
+    "sha256": "869220f3b0870be78c0cc91c0887d0453c869e0fc1e4fc4ee3103881664fd21c"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\CURRENT",
+    "bytes": 134,
+    "sha256": "4a2e5c0f7d22dcb29e2ab0e7debc353cc95efb710cff7f368868341fbee22e86"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\manifests\\18be761d37d08ce6fa3ea0d18dff0a11a6d8c632d11e3a2c8a3055d788629804.json",
+    "bytes": 4763,
+    "sha256": "18be761d37d08ce6fa3ea0d18dff0a11a6d8c632d11e3a2c8a3055d788629804"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\manifests\\2c7c90763f061da10e1d6b84fee9122dee16d8518d5d66d060aeb10818523a99.json",
+    "bytes": 376,
+    "sha256": "2c7c90763f061da10e1d6b84fee9122dee16d8518d5d66d060aeb10818523a99"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\manifests\\c74c84babaae42d6abc69d931a2fabf439770f2fdb61672fa7a1164a4b50ee10.json",
+    "bytes": 788,
+    "sha256": "c74c84babaae42d6abc69d931a2fabf439770f2fdb61672fa7a1164a4b50ee10"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\manifests\\dd1103a22280d244609a97798020c3af7565a866c8295066e16272575c8e2615.json",
+    "bytes": 585,
+    "sha256": "dd1103a22280d244609a97798020c3af7565a866c8295066e16272575c8e2615"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\manifests\\fb56db24358c059d97a3ad6c7cbdf06b9246f3971c03c7ba46ebdf9ae5771629.json",
+    "bytes": 18917,
+    "sha256": "fb56db24358c059d97a3ad6c7cbdf06b9246f3971c03c7ba46ebdf9ae5771629"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\2cda38473924693c02606465fb35778ad3504eba055db036f995ee6e57f9a6d3.agent",
+    "bytes": 76,
+    "sha256": "2cda38473924693c02606465fb35778ad3504eba055db036f995ee6e57f9a6d3"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\3adf98ad36f792fef1f9b5487f52215e712222ba10e3c5721ae1fbac22ae2aa3.agent",
+    "bytes": 243,
+    "sha256": "3adf98ad36f792fef1f9b5487f52215e712222ba10e3c5721ae1fbac22ae2aa3"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\427594f421fd495853de470b3c7e96ab78bf7a451e346a34ec73eec650a629c3.agent",
+    "bytes": 179,
+    "sha256": "427594f421fd495853de470b3c7e96ab78bf7a451e346a34ec73eec650a629c3"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\43c229edb237793d0ac0f055966abc4893bd918ea2b527ed47d9ac08ce477ab2.agent",
+    "bytes": 210,
+    "sha256": "43c229edb237793d0ac0f055966abc4893bd918ea2b527ed47d9ac08ce477ab2"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\5286f8acecc161d3ec1167b305a12710563b9efb08ff861ba4a40fb328bf9d9d.agent",
+    "bytes": 31,
+    "sha256": "5286f8acecc161d3ec1167b305a12710563b9efb08ff861ba4a40fb328bf9d9d"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\594e81a59157f822d924ce5b99f784d1c371262d6f2eee460a62e5243c867613.agent",
+    "bytes": 2611,
+    "sha256": "594e81a59157f822d924ce5b99f784d1c371262d6f2eee460a62e5243c867613"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\65c046007d4f4b7d48b75a1df50d78d5a35d1ba88a53dce2be2d61f2d3dcbd6d.agent",
+    "bytes": 49,
+    "sha256": "65c046007d4f4b7d48b75a1df50d78d5a35d1ba88a53dce2be2d61f2d3dcbd6d"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\65e8afc9b5bb1bfca243faef92c9b31d75f9f8b5d3e492244085f4fb86a4d351.agent",
+    "bytes": 152,
+    "sha256": "65e8afc9b5bb1bfca243faef92c9b31d75f9f8b5d3e492244085f4fb86a4d351"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\69444fe07f21c2a35356bce8b8ea53bd6b6db5ff3985e6d472d72f99e70b40f9.agent",
+    "bytes": 254,
+    "sha256": "69444fe07f21c2a35356bce8b8ea53bd6b6db5ff3985e6d472d72f99e70b40f9"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\6af51409069f1231c4eb35864932d29bb686a6f88d99f8f8a62e2303a277f570.agent",
+    "bytes": 103,
+    "sha256": "6af51409069f1231c4eb35864932d29bb686a6f88d99f8f8a62e2303a277f570"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\8e606ad519f1cd0d47fe413a2bfa4fc91d01cd53d1b2bec47817f790ddc7d594.agent",
+    "bytes": 27,
+    "sha256": "8e606ad519f1cd0d47fe413a2bfa4fc91d01cd53d1b2bec47817f790ddc7d594"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\a588ef7d356f5a9d0e41c53976e9fd39f536165c0fa252b4a176720b88651ae5.agent",
+    "bytes": 202,
+    "sha256": "a588ef7d356f5a9d0e41c53976e9fd39f536165c0fa252b4a176720b88651ae5"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\aafc37da41b1d77fb3276f7520bbd1c4216fb49d0af76067d7b90d768c54c1cf.agent",
+    "bytes": 182,
+    "sha256": "aafc37da41b1d77fb3276f7520bbd1c4216fb49d0af76067d7b90d768c54c1cf"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\b656d29e11b2c6a71d0ad02999e3b7b6690bcea9a501ebe71ebe3186789d6e9c.agent",
+    "bytes": 929,
+    "sha256": "b656d29e11b2c6a71d0ad02999e3b7b6690bcea9a501ebe71ebe3186789d6e9c"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\c47a14b5cb86b9b370029edc05281850a463e876881f34caab5531ac6865f154.agent",
+    "bytes": 141,
+    "sha256": "c47a14b5cb86b9b370029edc05281850a463e876881f34caab5531ac6865f154"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\c8be4e828baf76085c19dd2b562a5ca6451a7bfce349aa5e8f8df2247d84f6b7.agent",
+    "bytes": 132,
+    "sha256": "c8be4e828baf76085c19dd2b562a5ca6451a7bfce349aa5e8f8df2247d84f6b7"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\cd55eb427895411cc1f82314f7ae98123206e8529bae20fcc296c9b512e44e8f.agent",
+    "bytes": 498,
+    "sha256": "cd55eb427895411cc1f82314f7ae98123206e8529bae20fcc296c9b512e44e8f"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\objects\\d4cb75aa49606abef7da0f5e55a05ea87daaf893fd3fd2d8cf7ba7f703983766.agent",
+    "bytes": 166,
+    "sha256": "d4cb75aa49606abef7da0f5e55a05ea87daaf893fd3fd2d8cf7ba7f703983766"
+  },
+  {
+    "path": "final-project\\.agentlang\\store\\WRITE.lock",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "final-project\\dictionary.agent",
+    "bytes": 2611,
+    "sha256": "594e81a59157f822d924ce5b99f784d1c371262d6f2eee460a62e5243c867613"
+  },
+  {
+    "path": "final-project\\history\\task-0001.json",
+    "bytes": 535,
+    "sha256": "9af463a08e5f18956abe8ade3e33e1f9bf22cf5ee41de2e9e407cdbd9447b6cf"
+  },
+  {
+    "path": "final-project\\history\\task-0002.json",
+    "bytes": 1245,
+    "sha256": "24a1ddd335711ec1c9385c3d85ff583c3e7258de2acefa82e364994a13a6f9e6"
+  },
+  {
+    "path": "fixture-setup.json",
+    "bytes": 22039,
+    "sha256": "6282cb0c5eb4c41a5b0715d1f2143106192603428a1ef2c2a32e43dc230fff4f"
+  },
+  {
+    "path": "no-op-acceptance.json",
+    "bytes": 2352,
+    "sha256": "a3adfc884dc4f05b6f7456a9b2a18b9540104aebe5b03b058f49be7d0b6744ce"
+  },
+  {
+    "path": "prelaunch.json",
+    "bytes": 6349,
+    "sha256": "a4f6291ce57f317f92a1efa58a5b6b68b7898d9af402fbb90ff3f7898fa9e427"
+  },
+  {
+    "path": "prompt.txt",
+    "bytes": 8499,
+    "sha256": "80f2ad762c13151bd1d9107d47c496eeeef9b2f1f4eb8bab44deafa2cf67c521"
+  },
+  {
+    "path": "raw-responses.json",
+    "bytes": 5234,
+    "sha256": "60bdf6b9e311fb4b98cb2dc66743633d152a037a5753852939d693d6ade59179"
+  },
+  {
+    "path": "requests.json",
+    "bytes": 1775,
+    "sha256": "06d68d5f1b151397a5865cf525ddffce98df8c01e64029c2e6680daa2579a04c"
+  },
+  {
+    "path": "responses.json",
+    "bytes": 6663,
+    "sha256": "572b68878d8e6d7aa447589cacca8f7748a14cbd64ade2533c1c7d5d407e71b2"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\CURRENT",
+    "bytes": 134,
+    "sha256": "4482d3fcdcabb081fff91244a0d0ae61465c11b096a3ec62ca9a5f4a30c8ba88"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\manifests\\18be761d37d08ce6fa3ea0d18dff0a11a6d8c632d11e3a2c8a3055d788629804.json",
+    "bytes": 4763,
+    "sha256": "18be761d37d08ce6fa3ea0d18dff0a11a6d8c632d11e3a2c8a3055d788629804"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\manifests\\2c7c90763f061da10e1d6b84fee9122dee16d8518d5d66d060aeb10818523a99.json",
+    "bytes": 376,
+    "sha256": "2c7c90763f061da10e1d6b84fee9122dee16d8518d5d66d060aeb10818523a99"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\manifests\\c74c84babaae42d6abc69d931a2fabf439770f2fdb61672fa7a1164a4b50ee10.json",
+    "bytes": 788,
+    "sha256": "c74c84babaae42d6abc69d931a2fabf439770f2fdb61672fa7a1164a4b50ee10"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\manifests\\dd1103a22280d244609a97798020c3af7565a866c8295066e16272575c8e2615.json",
+    "bytes": 585,
+    "sha256": "dd1103a22280d244609a97798020c3af7565a866c8295066e16272575c8e2615"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\2cda38473924693c02606465fb35778ad3504eba055db036f995ee6e57f9a6d3.agent",
+    "bytes": 76,
+    "sha256": "2cda38473924693c02606465fb35778ad3504eba055db036f995ee6e57f9a6d3"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\43c229edb237793d0ac0f055966abc4893bd918ea2b527ed47d9ac08ce477ab2.agent",
+    "bytes": 210,
+    "sha256": "43c229edb237793d0ac0f055966abc4893bd918ea2b527ed47d9ac08ce477ab2"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\5286f8acecc161d3ec1167b305a12710563b9efb08ff861ba4a40fb328bf9d9d.agent",
+    "bytes": 31,
+    "sha256": "5286f8acecc161d3ec1167b305a12710563b9efb08ff861ba4a40fb328bf9d9d"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\65c046007d4f4b7d48b75a1df50d78d5a35d1ba88a53dce2be2d61f2d3dcbd6d.agent",
+    "bytes": 49,
+    "sha256": "65c046007d4f4b7d48b75a1df50d78d5a35d1ba88a53dce2be2d61f2d3dcbd6d"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\65e8afc9b5bb1bfca243faef92c9b31d75f9f8b5d3e492244085f4fb86a4d351.agent",
+    "bytes": 152,
+    "sha256": "65e8afc9b5bb1bfca243faef92c9b31d75f9f8b5d3e492244085f4fb86a4d351"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\6af51409069f1231c4eb35864932d29bb686a6f88d99f8f8a62e2303a277f570.agent",
+    "bytes": 103,
+    "sha256": "6af51409069f1231c4eb35864932d29bb686a6f88d99f8f8a62e2303a277f570"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\8e606ad519f1cd0d47fe413a2bfa4fc91d01cd53d1b2bec47817f790ddc7d594.agent",
+    "bytes": 27,
+    "sha256": "8e606ad519f1cd0d47fe413a2bfa4fc91d01cd53d1b2bec47817f790ddc7d594"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\a588ef7d356f5a9d0e41c53976e9fd39f536165c0fa252b4a176720b88651ae5.agent",
+    "bytes": 202,
+    "sha256": "a588ef7d356f5a9d0e41c53976e9fd39f536165c0fa252b4a176720b88651ae5"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\b656d29e11b2c6a71d0ad02999e3b7b6690bcea9a501ebe71ebe3186789d6e9c.agent",
+    "bytes": 929,
+    "sha256": "b656d29e11b2c6a71d0ad02999e3b7b6690bcea9a501ebe71ebe3186789d6e9c"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\c47a14b5cb86b9b370029edc05281850a463e876881f34caab5531ac6865f154.agent",
+    "bytes": 141,
+    "sha256": "c47a14b5cb86b9b370029edc05281850a463e876881f34caab5531ac6865f154"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\c8be4e828baf76085c19dd2b562a5ca6451a7bfce349aa5e8f8df2247d84f6b7.agent",
+    "bytes": 132,
+    "sha256": "c8be4e828baf76085c19dd2b562a5ca6451a7bfce349aa5e8f8df2247d84f6b7"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\WRITE.lock",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "starting-project\\dictionary.agent",
+    "bytes": 929,
+    "sha256": "b656d29e11b2c6a71d0ad02999e3b7b6690bcea9a501ebe71ebe3186789d6e9c"
+  },
+  {
+    "path": "starting-project\\history\\task-0001.json",
+    "bytes": 535,
+    "sha256": "9af463a08e5f18956abe8ade3e33e1f9bf22cf5ee41de2e9e407cdbd9447b6cf"
+  },
+  {
+    "path": "starting-state.json",
+    "bytes": 4017,
+    "sha256": "f606b34d0bc56019450d9a8ceb0496e54a980be9abbebbed53d718416ff32a75"
+  },
+  {
+    "path": "trace-audit.json",
+    "bytes": 4707,
+    "sha256": "4fbce67369bb450b198fcb3b4054c508ff086b8508a333f671caa9f80508104b"
+  },
+  {
+    "path": "trace.jsonl",
+    "bytes": 106115,
+    "sha256": "196cffecc3ec89c1d4b17c9571ebf8d4a8aec49fc5af2091fa63654253f83c80"
+  }
+]

@@ -30,7 +30,7 @@ Vectors tagged `proposed-pending-host-review` are design examples, not evidence.
 
 ## Known implementation gates
 
-Before any task can be promoted, the suite needs a fixed shared business schema and deterministic initial data; static typed `list.fold` with empty/nonempty order, callback type/effect checking, and persistence coverage; aligned GUID/Email/Instant/Money/quantity semantics; and a bounded structured-value observation path for records, lists, results, and canonical state. The current Core still has no `list.fold`, date arithmetic/comparison vocabulary, or checked Money Result primitives. The language benchmark's structured-value expected-result support is pending. Do not mark those tasks complete or equivalent until the missing surface and both adapters are tested.
+Before any task can be promoted, the suite needs a fixed shared business schema and deterministic initial data; aligned GUID/Email/Instant/Money/quantity semantics; and tested structured observation and acceptance adapters. Typed `list.fold` is now implemented and validated in [milestone 055](../reports/055-early-evaluation-preparation.md), and Runtime offers structured value inspection. Those facilities do not establish full-bank adapter correctness. Date arithmetic/comparison vocabulary, checked Money Result primitives, and complete language/Conventional acceptance adapters remain pending. Do not mark those tasks complete or equivalent until the missing surface and both adapters are tested.
 
 ## Verifiable statuses and completion gate
 

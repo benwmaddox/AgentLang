@@ -1,0 +1,54 @@
+{
+  "passed": true,
+  "scope": "Supplementary fresh-process execution of both retained examples on a disposable copy; separate from the frozen 125-check oracle.",
+  "responses": [
+    {
+      "ok": true,
+      "kind": "example",
+      "text": "1/1 example(s) passed.",
+      "data": {
+        "results": [
+          {
+            "word": "invoice.queue-reminder-once",
+            "name": "queues-basic-reminder",
+            "source": "example invoice.queue-reminder-once/queues-basic-reminder {\n    invoice::queue-reminder-once(invoice::new(InvoiceId::new(\"inv-example\"), InvoiceStatus::new(\"open\"))) => \"queued\"\n}",
+            "expected": "\"queued\"",
+            "passed": true,
+            "actual": [
+              "\"queued\""
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "ok": true,
+      "kind": "example",
+      "text": "1/1 example(s) passed.",
+      "data": {
+        "results": [
+          {
+            "word": "invoice.reminder-path",
+            "name": "standard-id",
+            "source": "example invoice.reminder-path/standard-id {\n    invoice::reminder-path(InvoiceId::new(\"INV-001\"))\n    => \"outbox/invoice-reminders/INV-001\"\n}",
+            "expected": "\"outbox/invoice-reminders/INV-001\"",
+            "passed": true,
+            "actual": [
+              "\"outbox/invoice-reminders/INV-001\""
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "requests": [
+    {
+      "op": "example",
+      "word": "invoice.queue-reminder-once"
+    },
+    {
+      "op": "example",
+      "word": "invoice.reminder-path"
+    }
+  ]
+}

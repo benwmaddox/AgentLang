@@ -1,0 +1,137 @@
+[
+  {
+    "path": "acceptance-preflight-setup.json",
+    "bytes": 6742,
+    "sha256": "9a7a68030050f2783c142d1fcf07c76e6fab50ab4a1635a233633c8899e43d61"
+  },
+  {
+    "path": "acceptance-preflight.json",
+    "bytes": 28340,
+    "sha256": "8abab774951fb9a5ba5e2d9e7c20d5128afdae0520b23693ac9a0cc793916268"
+  },
+  {
+    "path": "coordinator-note.json",
+    "bytes": 372,
+    "sha256": "3ae61079bf791b49e01d5f586f8c8fefadc865ad06b398d8faa571efc08ab712"
+  },
+  {
+    "path": "fixture-setup.json",
+    "bytes": 22054,
+    "sha256": "6fd7caea11b6dc35f52fbb75b6c0b3a226ea87e6af1190e15b0aaf2b2cb937a8"
+  },
+  {
+    "path": "raw-responses.json",
+    "bytes": 5245,
+    "sha256": "062ec87e8f328e3c040e26daeb76cda57330901953218f17eb4ad5971cbcf45d"
+  },
+  {
+    "path": "requests.json",
+    "bytes": 1779,
+    "sha256": "1af8ef43768620d3e12c9e4acd8956cb315f40c280b292965b7d34f4339b2344"
+  },
+  {
+    "path": "responses.json",
+    "bytes": 6674,
+    "sha256": "430811376778b78b8e9755deb72cc15cb33474e71c9ba7fa750126c537a1683a"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\CURRENT",
+    "bytes": 134,
+    "sha256": "dc852d39929d74dec3b86bb117a364e08b98c61f51b46936f8b34af48926b37d"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\manifests\\2c7c90763f061da10e1d6b84fee9122dee16d8518d5d66d060aeb10818523a99.json",
+    "bytes": 376,
+    "sha256": "2c7c90763f061da10e1d6b84fee9122dee16d8518d5d66d060aeb10818523a99"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\manifests\\c74c84babaae42d6abc69d931a2fabf439770f2fdb61672fa7a1164a4b50ee10.json",
+    "bytes": 788,
+    "sha256": "c74c84babaae42d6abc69d931a2fabf439770f2fdb61672fa7a1164a4b50ee10"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\manifests\\dd1103a22280d244609a97798020c3af7565a866c8295066e16272575c8e2615.json",
+    "bytes": 585,
+    "sha256": "dd1103a22280d244609a97798020c3af7565a866c8295066e16272575c8e2615"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\manifests\\f0505907157aa0404a50c65d58908ee516bc6dd8b8c9c1491bd5f32a3e950b85.json",
+    "bytes": 4763,
+    "sha256": "f0505907157aa0404a50c65d58908ee516bc6dd8b8c9c1491bd5f32a3e950b85"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\1a1912755c054f712e508cd594ec35cb2e9cd5337b931e26bcc1fe68b0db6567.agent",
+    "bytes": 133,
+    "sha256": "1a1912755c054f712e508cd594ec35cb2e9cd5337b931e26bcc1fe68b0db6567"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\2af71d40531489d896fab520e352513e7d2225c97ad9234fc616c381919c85bb.agent",
+    "bytes": 933,
+    "sha256": "2af71d40531489d896fab520e352513e7d2225c97ad9234fc616c381919c85bb"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\2cda38473924693c02606465fb35778ad3504eba055db036f995ee6e57f9a6d3.agent",
+    "bytes": 76,
+    "sha256": "2cda38473924693c02606465fb35778ad3504eba055db036f995ee6e57f9a6d3"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\366c2c2a3818b8d1233be71d46cd2d998ea417c0b12bf2e748fb01bb43a89792.agent",
+    "bytes": 142,
+    "sha256": "366c2c2a3818b8d1233be71d46cd2d998ea417c0b12bf2e748fb01bb43a89792"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\3858a8e83d631f36803d4c3837a17ee6912bd2d170a65be5e60649f824c45373.agent",
+    "bytes": 153,
+    "sha256": "3858a8e83d631f36803d4c3837a17ee6912bd2d170a65be5e60649f824c45373"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\5286f8acecc161d3ec1167b305a12710563b9efb08ff861ba4a40fb328bf9d9d.agent",
+    "bytes": 31,
+    "sha256": "5286f8acecc161d3ec1167b305a12710563b9efb08ff861ba4a40fb328bf9d9d"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\65c046007d4f4b7d48b75a1df50d78d5a35d1ba88a53dce2be2d61f2d3dcbd6d.agent",
+    "bytes": 49,
+    "sha256": "65c046007d4f4b7d48b75a1df50d78d5a35d1ba88a53dce2be2d61f2d3dcbd6d"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\6af51409069f1231c4eb35864932d29bb686a6f88d99f8f8a62e2303a277f570.agent",
+    "bytes": 103,
+    "sha256": "6af51409069f1231c4eb35864932d29bb686a6f88d99f8f8a62e2303a277f570"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\8ab7c93d6c3f1a5716d856e0d8d92475ab6e8cd50ec0490b991286606a543626.agent",
+    "bytes": 211,
+    "sha256": "8ab7c93d6c3f1a5716d856e0d8d92475ab6e8cd50ec0490b991286606a543626"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\8e606ad519f1cd0d47fe413a2bfa4fc91d01cd53d1b2bec47817f790ddc7d594.agent",
+    "bytes": 27,
+    "sha256": "8e606ad519f1cd0d47fe413a2bfa4fc91d01cd53d1b2bec47817f790ddc7d594"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\objects\\a588ef7d356f5a9d0e41c53976e9fd39f536165c0fa252b4a176720b88651ae5.agent",
+    "bytes": 202,
+    "sha256": "a588ef7d356f5a9d0e41c53976e9fd39f536165c0fa252b4a176720b88651ae5"
+  },
+  {
+    "path": "starting-project\\.agentlang\\store\\WRITE.lock",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "starting-project\\dictionary.agent",
+    "bytes": 933,
+    "sha256": "2af71d40531489d896fab520e352513e7d2225c97ad9234fc616c381919c85bb"
+  },
+  {
+    "path": "starting-project\\history\\task-0001.json",
+    "bytes": 535,
+    "sha256": "9af463a08e5f18956abe8ade3e33e1f9bf22cf5ee41de2e9e407cdbd9447b6cf"
+  },
+  {
+    "path": "starting-state.json",
+    "bytes": 4017,
+    "sha256": "92256cd61ffad8f1bc934816582a2a0de60ba76bc349bff2287d7e89db414203"
+  }
+]

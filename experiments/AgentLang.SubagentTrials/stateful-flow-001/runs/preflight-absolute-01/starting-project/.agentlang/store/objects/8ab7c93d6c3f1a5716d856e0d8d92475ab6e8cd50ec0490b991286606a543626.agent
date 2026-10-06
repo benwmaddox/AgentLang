@@ -1,0 +1,5 @@
+word invoice.reminder-path(id: InvoiceId) -> String {
+    effects none
+    doc "Builds the fixed virtual reminder path for an invoice ID."
+    string::concat("/outbox/invoice-reminders/", InvoiceId::value(id))
+}

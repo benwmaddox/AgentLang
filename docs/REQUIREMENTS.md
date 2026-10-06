@@ -121,7 +121,16 @@ type-rejection probes. Seeded types/validator/history remain unchanged. This is
 one strong-type usability outcome, without a conventional cost comparison;
 stateful evaluation and strong business-domain expansion are the next priority.
 
-Latest external-agent workflow evidence: [report 054](../reports/054-flow-renewal-agent-control.md)
+[Checkpoint 071](../reports/071-stateful-agent-reminder.md) verifies a fresh
+agent composing a retained typed helper and virtual file effects into an
+idempotent reminder word, with four own tests, documentation, an example and
+full instruction/branch coverage. Independent acceptance passes 125 checks,
+including snapshot persistence and capability denial. A prelaunch absolute-path
+snapshot mismatch is retained and the fixture uses a relative path. Complete
+providers/domain parity, matched stateful controls and controlled costs remain
+open; this smoke is not a completed full-bank task adapter.
+
+Historical external-agent workflow evidence: [report 054](../reports/054-flow-renewal-agent-control.md)
 records a separate inherited-history Luna/max control that created one tested
 library word by composing a retained domain word. Fresh-process acceptance
 passed 48 checks, and eight durable-state checks confirm the seed was preserved.

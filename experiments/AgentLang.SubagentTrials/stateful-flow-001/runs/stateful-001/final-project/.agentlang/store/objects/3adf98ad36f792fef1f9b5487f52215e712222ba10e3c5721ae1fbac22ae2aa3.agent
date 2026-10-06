@@ -1,0 +1,4 @@
+test invoice.queue-reminder-once/returns-existing-queued {
+    file::write("outbox/invoice-reminders/inv-queued", "queued");
+    invoice::queue-reminder-once(invoice::new(InvoiceId::new("inv-queued"), InvoiceStatus::new("open"))) => "queued"
+}

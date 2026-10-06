@@ -1,0 +1,646 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "cb1ebf6e3b5c4da48b1a2eedfae369bcc6261fcb",
+  "cliPath": ".agentlang\\stateful-flow-001\\language-bin\\AgentLang.Cli.dll",
+  "cliSha256": "86c5a021a8371f0bb40219e177eed537ffc577582c3f4a522f784e2e68ee7590",
+  "runtimeFiles": [
+    {
+      "path": "AgentLang.Cli.deps.json",
+      "bytes": 2903,
+      "sha256": "6382f6dc29bb8f827824839010e313b266e51a3f87a4fdb8c382931d2549e97e"
+    },
+    {
+      "path": "AgentLang.Cli.dll",
+      "bytes": 37888,
+      "sha256": "86c5a021a8371f0bb40219e177eed537ffc577582c3f4a522f784e2e68ee7590"
+    },
+    {
+      "path": "AgentLang.Cli.exe",
+      "bytes": 156160,
+      "sha256": "56fd493de2eec754b21e7ffbe4b3ace5d9f61000eedc483ccb37a201b335ba5b"
+    },
+    {
+      "path": "AgentLang.Cli.pdb",
+      "bytes": 10136,
+      "sha256": "2ac1e29a0ed5918e5b6a5468820dabf2d978baa62b5e73811d4e5f928eb80ef3"
+    },
+    {
+      "path": "AgentLang.Cli.runtimeconfig.json",
+      "bytes": 340,
+      "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+    },
+    {
+      "path": "AgentLang.Core.deps.json",
+      "bytes": 2474,
+      "sha256": "fdb608cd25481963ace0ddb4a8312aac36030e6f63deb069865ef2e610c99558"
+    },
+    {
+      "path": "AgentLang.Core.dll",
+      "bytes": 2062848,
+      "sha256": "ee50ac05a8ddd338b34e3a44106aa6861870918ff99da1c7fa2dc8c2e97f54cc"
+    },
+    {
+      "path": "AgentLang.Core.pdb",
+      "bytes": 547504,
+      "sha256": "c56fbab82a3ff4460c4c5e28875abfdfea128e463ab816601f44323b7caa8f17"
+    },
+    {
+      "path": "AgentLang.Core.xml",
+      "bytes": 31418,
+      "sha256": "89d78ea4564d459ee03ba96628df479b1d4ade875bebcff99a48ae49ff4f8dec"
+    },
+    {
+      "path": "cs\\FSharp.Core.resources.dll",
+      "bytes": 34600,
+      "sha256": "eb8bd755cfe0d39ce27615027fe22556e8b9dcb470f2b47a36f4bfbf3c31be64"
+    },
+    {
+      "path": "de\\FSharp.Core.resources.dll",
+      "bytes": 35592,
+      "sha256": "7419e4f5ceed9e03821686e865fed7d29c6217fdf5d3a46a2919a369c98c38ce"
+    },
+    {
+      "path": "es\\FSharp.Core.resources.dll",
+      "bytes": 34600,
+      "sha256": "636866649564c72eb763eb3942e021b52b1f9b3869d037aca48f73d4474353c5"
+    },
+    {
+      "path": "fr\\FSharp.Core.resources.dll",
+      "bytes": 35128,
+      "sha256": "f38f2fd6bc4c4e233dd098a36b315a2bc87673cf2f07c6ba3daf71a3264f4a64"
+    },
+    {
+      "path": "FSharp.Core.dll",
+      "bytes": 2314000,
+      "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+    },
+    {
+      "path": "it\\FSharp.Core.resources.dll",
+      "bytes": 34576,
+      "sha256": "61a0be9c6a2ed95f8e98493b17c54a55c68cef84e23a0d82114319e2c5f3c2cd"
+    },
+    {
+      "path": "ja\\FSharp.Core.resources.dll",
+      "bytes": 37160,
+      "sha256": "dd7f36036d906e991da5505b074ef889a603f449d3324750fda5f5445ba2854f"
+    },
+    {
+      "path": "ko\\FSharp.Core.resources.dll",
+      "bytes": 36104,
+      "sha256": "0f3ef625e379577e3b60c15d8cc3759d3dc8840f99894282df1e702b4a166462"
+    },
+    {
+      "path": "pl\\FSharp.Core.resources.dll",
+      "bytes": 35632,
+      "sha256": "755bab9fbd85e5e4b4771870c9c4d655e91e3ce39cc1c2735fe0bc7cec6b84c3"
+    },
+    {
+      "path": "pt-BR\\FSharp.Core.resources.dll",
+      "bytes": 34096,
+      "sha256": "a4bbbdaabf2003a5fdff5f5bc4143c3fd4a064f2681fc481f449d4558074dc61"
+    },
+    {
+      "path": "ru\\FSharp.Core.resources.dll",
+      "bytes": 41232,
+      "sha256": "a1133f9ab7e661803d1af0c2489626bd53ac33a11dfe891f5a02f3186f2f5d78"
+    },
+    {
+      "path": "tr\\FSharp.Core.resources.dll",
+      "bytes": 34072,
+      "sha256": "6b0cba5139a86ee681909fdfcebac07c99afba3bfcff4fb8ab12b9c2112a0b31"
+    },
+    {
+      "path": "zh-Hans\\FSharp.Core.resources.dll",
+      "bytes": 32552,
+      "sha256": "25f82f35a9234bcaab272921b0d50054ddb4a669d96c111907c9d31f5b18c121"
+    },
+    {
+      "path": "zh-Hant\\FSharp.Core.resources.dll",
+      "bytes": 32032,
+      "sha256": "ac03ee7c4112c755705776c700033794586f980fe9476e6a13811a7153beabb8"
+    }
+  ],
+  "seedProjectFiles": [
+    {
+      "path": ".agentlang\\store\\CURRENT",
+      "bytes": 134,
+      "sha256": "dc852d39929d74dec3b86bb117a364e08b98c61f51b46936f8b34af48926b37d"
+    },
+    {
+      "path": ".agentlang\\store\\manifests\\2c7c90763f061da10e1d6b84fee9122dee16d8518d5d66d060aeb10818523a99.json",
+      "bytes": 376,
+      "sha256": "2c7c90763f061da10e1d6b84fee9122dee16d8518d5d66d060aeb10818523a99"
+    },
+    {
+      "path": ".agentlang\\store\\manifests\\c74c84babaae42d6abc69d931a2fabf439770f2fdb61672fa7a1164a4b50ee10.json",
+      "bytes": 788,
+      "sha256": "c74c84babaae42d6abc69d931a2fabf439770f2fdb61672fa7a1164a4b50ee10"
+    },
+    {
+      "path": ".agentlang\\store\\manifests\\dd1103a22280d244609a97798020c3af7565a866c8295066e16272575c8e2615.json",
+      "bytes": 585,
+      "sha256": "dd1103a22280d244609a97798020c3af7565a866c8295066e16272575c8e2615"
+    },
+    {
+      "path": ".agentlang\\store\\manifests\\f0505907157aa0404a50c65d58908ee516bc6dd8b8c9c1491bd5f32a3e950b85.json",
+      "bytes": 4763,
+      "sha256": "f0505907157aa0404a50c65d58908ee516bc6dd8b8c9c1491bd5f32a3e950b85"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\1a1912755c054f712e508cd594ec35cb2e9cd5337b931e26bcc1fe68b0db6567.agent",
+      "bytes": 133,
+      "sha256": "1a1912755c054f712e508cd594ec35cb2e9cd5337b931e26bcc1fe68b0db6567"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\2af71d40531489d896fab520e352513e7d2225c97ad9234fc616c381919c85bb.agent",
+      "bytes": 933,
+      "sha256": "2af71d40531489d896fab520e352513e7d2225c97ad9234fc616c381919c85bb"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\2cda38473924693c02606465fb35778ad3504eba055db036f995ee6e57f9a6d3.agent",
+      "bytes": 76,
+      "sha256": "2cda38473924693c02606465fb35778ad3504eba055db036f995ee6e57f9a6d3"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\366c2c2a3818b8d1233be71d46cd2d998ea417c0b12bf2e748fb01bb43a89792.agent",
+      "bytes": 142,
+      "sha256": "366c2c2a3818b8d1233be71d46cd2d998ea417c0b12bf2e748fb01bb43a89792"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\3858a8e83d631f36803d4c3837a17ee6912bd2d170a65be5e60649f824c45373.agent",
+      "bytes": 153,
+      "sha256": "3858a8e83d631f36803d4c3837a17ee6912bd2d170a65be5e60649f824c45373"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\5286f8acecc161d3ec1167b305a12710563b9efb08ff861ba4a40fb328bf9d9d.agent",
+      "bytes": 31,
+      "sha256": "5286f8acecc161d3ec1167b305a12710563b9efb08ff861ba4a40fb328bf9d9d"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\65c046007d4f4b7d48b75a1df50d78d5a35d1ba88a53dce2be2d61f2d3dcbd6d.agent",
+      "bytes": 49,
+      "sha256": "65c046007d4f4b7d48b75a1df50d78d5a35d1ba88a53dce2be2d61f2d3dcbd6d"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\6af51409069f1231c4eb35864932d29bb686a6f88d99f8f8a62e2303a277f570.agent",
+      "bytes": 103,
+      "sha256": "6af51409069f1231c4eb35864932d29bb686a6f88d99f8f8a62e2303a277f570"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\8ab7c93d6c3f1a5716d856e0d8d92475ab6e8cd50ec0490b991286606a543626.agent",
+      "bytes": 211,
+      "sha256": "8ab7c93d6c3f1a5716d856e0d8d92475ab6e8cd50ec0490b991286606a543626"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\8e606ad519f1cd0d47fe413a2bfa4fc91d01cd53d1b2bec47817f790ddc7d594.agent",
+      "bytes": 27,
+      "sha256": "8e606ad519f1cd0d47fe413a2bfa4fc91d01cd53d1b2bec47817f790ddc7d594"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\a588ef7d356f5a9d0e41c53976e9fd39f536165c0fa252b4a176720b88651ae5.agent",
+      "bytes": 202,
+      "sha256": "a588ef7d356f5a9d0e41c53976e9fd39f536165c0fa252b4a176720b88651ae5"
+    },
+    {
+      "path": ".agentlang\\store\\WRITE.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "dictionary.agent",
+      "bytes": 933,
+      "sha256": "2af71d40531489d896fab520e352513e7d2225c97ad9234fc616c381919c85bb"
+    },
+    {
+      "path": "history\\task-0001.json",
+      "bytes": 535,
+      "sha256": "9af463a08e5f18956abe8ade3e33e1f9bf22cf5ee41de2e9e407cdbd9447b6cf"
+    }
+  ],
+  "startingProjectFiles": [
+    {
+      "path": ".agentlang\\store\\CURRENT",
+      "bytes": 134,
+      "sha256": "dc852d39929d74dec3b86bb117a364e08b98c61f51b46936f8b34af48926b37d"
+    },
+    {
+      "path": ".agentlang\\store\\manifests\\2c7c90763f061da10e1d6b84fee9122dee16d8518d5d66d060aeb10818523a99.json",
+      "bytes": 376,
+      "sha256": "2c7c90763f061da10e1d6b84fee9122dee16d8518d5d66d060aeb10818523a99"
+    },
+    {
+      "path": ".agentlang\\store\\manifests\\c74c84babaae42d6abc69d931a2fabf439770f2fdb61672fa7a1164a4b50ee10.json",
+      "bytes": 788,
+      "sha256": "c74c84babaae42d6abc69d931a2fabf439770f2fdb61672fa7a1164a4b50ee10"
+    },
+    {
+      "path": ".agentlang\\store\\manifests\\dd1103a22280d244609a97798020c3af7565a866c8295066e16272575c8e2615.json",
+      "bytes": 585,
+      "sha256": "dd1103a22280d244609a97798020c3af7565a866c8295066e16272575c8e2615"
+    },
+    {
+      "path": ".agentlang\\store\\manifests\\f0505907157aa0404a50c65d58908ee516bc6dd8b8c9c1491bd5f32a3e950b85.json",
+      "bytes": 4763,
+      "sha256": "f0505907157aa0404a50c65d58908ee516bc6dd8b8c9c1491bd5f32a3e950b85"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\1a1912755c054f712e508cd594ec35cb2e9cd5337b931e26bcc1fe68b0db6567.agent",
+      "bytes": 133,
+      "sha256": "1a1912755c054f712e508cd594ec35cb2e9cd5337b931e26bcc1fe68b0db6567"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\2af71d40531489d896fab520e352513e7d2225c97ad9234fc616c381919c85bb.agent",
+      "bytes": 933,
+      "sha256": "2af71d40531489d896fab520e352513e7d2225c97ad9234fc616c381919c85bb"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\2cda38473924693c02606465fb35778ad3504eba055db036f995ee6e57f9a6d3.agent",
+      "bytes": 76,
+      "sha256": "2cda38473924693c02606465fb35778ad3504eba055db036f995ee6e57f9a6d3"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\366c2c2a3818b8d1233be71d46cd2d998ea417c0b12bf2e748fb01bb43a89792.agent",
+      "bytes": 142,
+      "sha256": "366c2c2a3818b8d1233be71d46cd2d998ea417c0b12bf2e748fb01bb43a89792"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\3858a8e83d631f36803d4c3837a17ee6912bd2d170a65be5e60649f824c45373.agent",
+      "bytes": 153,
+      "sha256": "3858a8e83d631f36803d4c3837a17ee6912bd2d170a65be5e60649f824c45373"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\5286f8acecc161d3ec1167b305a12710563b9efb08ff861ba4a40fb328bf9d9d.agent",
+      "bytes": 31,
+      "sha256": "5286f8acecc161d3ec1167b305a12710563b9efb08ff861ba4a40fb328bf9d9d"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\65c046007d4f4b7d48b75a1df50d78d5a35d1ba88a53dce2be2d61f2d3dcbd6d.agent",
+      "bytes": 49,
+      "sha256": "65c046007d4f4b7d48b75a1df50d78d5a35d1ba88a53dce2be2d61f2d3dcbd6d"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\6af51409069f1231c4eb35864932d29bb686a6f88d99f8f8a62e2303a277f570.agent",
+      "bytes": 103,
+      "sha256": "6af51409069f1231c4eb35864932d29bb686a6f88d99f8f8a62e2303a277f570"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\8ab7c93d6c3f1a5716d856e0d8d92475ab6e8cd50ec0490b991286606a543626.agent",
+      "bytes": 211,
+      "sha256": "8ab7c93d6c3f1a5716d856e0d8d92475ab6e8cd50ec0490b991286606a543626"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\8e606ad519f1cd0d47fe413a2bfa4fc91d01cd53d1b2bec47817f790ddc7d594.agent",
+      "bytes": 27,
+      "sha256": "8e606ad519f1cd0d47fe413a2bfa4fc91d01cd53d1b2bec47817f790ddc7d594"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\a588ef7d356f5a9d0e41c53976e9fd39f536165c0fa252b4a176720b88651ae5.agent",
+      "bytes": 202,
+      "sha256": "a588ef7d356f5a9d0e41c53976e9fd39f536165c0fa252b4a176720b88651ae5"
+    },
+    {
+      "path": ".agentlang\\store\\WRITE.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "dictionary.agent",
+      "bytes": 933,
+      "sha256": "2af71d40531489d896fab520e352513e7d2225c97ad9234fc616c381919c85bb"
+    },
+    {
+      "path": "history\\task-0001.json",
+      "bytes": 535,
+      "sha256": "9af463a08e5f18956abe8ade3e33e1f9bf22cf5ee41de2e9e407cdbd9447b6cf"
+    }
+  ],
+  "actorProjectPath": ".agentlang\\stateful-flow-001\\actor-01-reminder",
+  "capabilities": [
+    "fs.read",
+    "fs.write"
+  ],
+  "requests": [
+    {
+      "op": "task.begin",
+      "goal": "Prepare immutable stateful reminder agent study seed"
+    },
+    {
+      "op": "define",
+      "frontend": "flow",
+      "source": "type InvoiceId : String { }\n\ntype InvoiceStatus : String { }\n\nrecord Invoice {\n    field id: InvoiceId;\n    field status: InvoiceStatus;\n}\n\nword invoice.reminder-path(id: InvoiceId) -> String {\n    effects none\n    doc \"Builds the fixed virtual reminder path for an invoice ID.\"\n    string::concat(\"/outbox/invoice-reminders/\", InvoiceId::value(id))\n}\n\ntest invoice.reminder-path/basic {\n    invoice::reminder-path(InvoiceId::new(\"INV-001\"))\n    => \"/outbox/invoice-reminders/INV-001\"\n}\n\ntest invoice.reminder-path/preserves-id-text {\n    invoice::reminder-path(InvoiceId::new(\"inv.alpha_2\"))\n    => \"/outbox/invoice-reminders/inv.alpha_2\"\n}\n\nexample invoice.reminder-path/standard-id {\n    invoice::reminder-path(InvoiceId::new(\"INV-001\"))\n    => \"/outbox/invoice-reminders/INV-001\"\n}"
+    },
+    {
+      "op": "test",
+      "word": "invoice.reminder-path"
+    },
+    {
+      "op": "commit",
+      "word": "InvoiceId"
+    },
+    {
+      "op": "commit",
+      "word": "InvoiceStatus"
+    },
+    {
+      "op": "commit",
+      "word": "Invoice"
+    },
+    {
+      "op": "commit",
+      "word": "invoice.reminder-path",
+      "library": true
+    },
+    {
+      "op": "test-all"
+    },
+    {
+      "op": "describe",
+      "word": "invoice.reminder-path"
+    },
+    {
+      "op": "source",
+      "type": "InvoiceId"
+    },
+    {
+      "op": "source",
+      "type": "InvoiceStatus"
+    },
+    {
+      "op": "source",
+      "type": "Invoice"
+    },
+    {
+      "op": "example",
+      "word": "invoice.reminder-path",
+      "caseName": "standard-id"
+    },
+    {
+      "op": "task.commit",
+      "actor": "host"
+    }
+  ],
+  "responses": [
+    {
+      "ok": true,
+      "kind": "task.begin",
+      "text": "Started task-0001.",
+      "data": {
+        "task": "task-0001",
+        "goal": "Prepare immutable stateful reminder agent study seed",
+        "active": true,
+        "wordsInspected": [],
+        "wordsUsed": [],
+        "wordsCreated": [],
+        "testsRun": 0,
+        "testsFailed": 0,
+        "effects": {},
+        "errors": []
+      }
+    },
+    {
+      "ok": true,
+      "kind": "defined",
+      "text": "Flow project declarations, attached cases, refined type metadata, and bindings validated atomically.",
+      "data": {
+        "frontend": "flow",
+        "words": [
+          {
+            "name": "invoice.reminder-path",
+            "id": "word_151d2f52d6274ff39ac90285e88c23ce",
+            "revision": 1
+          }
+        ],
+        "types": [
+          "Invoice",
+          "InvoiceId",
+          "InvoiceStatus"
+        ]
+      }
+    },
+    {
+      "ok": true,
+      "kind": "test",
+      "text": "2/2 test(s) passed.",
+      "data": {
+        "results": [
+          {
+            "name": "basic",
+            "word": "invoice.reminder-path",
+            "passed": true,
+            "expected": "\"/outbox/invoice-reminders/INV-001\"",
+            "actual": [
+              "\"/outbox/invoice-reminders/INV-001\""
+            ]
+          },
+          {
+            "name": "preserves-id-text",
+            "word": "invoice.reminder-path",
+            "passed": true,
+            "expected": "\"/outbox/invoice-reminders/inv.alpha_2\"",
+            "actual": [
+              "\"/outbox/invoice-reminders/inv.alpha_2\""
+            ]
+          }
+        ],
+        "coverage": {
+          "instructionsCovered": 4,
+          "instructionsTotal": 4,
+          "branchesCovered": 0,
+          "branchesTotal": 0,
+          "uncoveredInstructions": [],
+          "uncoveredBranchOutcomes": []
+        }
+      }
+    },
+    {
+      "ok": true,
+      "kind": "commit",
+      "text": "0 attached test(s) passed; selected candidates committed.",
+      "data": []
+    },
+    {
+      "ok": true,
+      "kind": "commit",
+      "text": "0 attached test(s) passed; selected candidates committed.",
+      "data": []
+    },
+    {
+      "ok": true,
+      "kind": "commit",
+      "text": "0 attached test(s) passed; selected candidates committed.",
+      "data": []
+    },
+    {
+      "ok": true,
+      "kind": "commit",
+      "text": "2 attached test(s) passed; selected candidates committed.",
+      "data": [
+        "invoice.reminder-path/basic",
+        "invoice.reminder-path/preserves-id-text"
+      ]
+    },
+    {
+      "ok": true,
+      "kind": "test",
+      "text": "2/2 test(s) passed.",
+      "data": {
+        "results": [
+          {
+            "name": "basic",
+            "word": "invoice.reminder-path",
+            "passed": true,
+            "expected": "\"/outbox/invoice-reminders/INV-001\"",
+            "actual": [
+              "\"/outbox/invoice-reminders/INV-001\""
+            ]
+          },
+          {
+            "name": "preserves-id-text",
+            "word": "invoice.reminder-path",
+            "passed": true,
+            "expected": "\"/outbox/invoice-reminders/inv.alpha_2\"",
+            "actual": [
+              "\"/outbox/invoice-reminders/inv.alpha_2\""
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "ok": true,
+      "kind": "describe",
+      "text": "Description for invoice.reminder-path.",
+      "data": {
+        "name": "invoice.reminder-path",
+        "flowReference": "invoice::reminder-path",
+        "flowReferenceUnavailableReason": null,
+        "inputs": [
+          "InvoiceId"
+        ],
+        "outputs": [
+          "String"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "type": "InvoiceId"
+          }
+        ],
+        "effects": [],
+        "documentation": "Builds the fixed virtual reminder path for an invoice ID.",
+        "id": "word_151d2f52d6274ff39ac90285e88c23ce",
+        "dependencies": [
+          "InvoiceId.value",
+          "string.concat"
+        ],
+        "transitiveDependencies": [
+          "InvoiceId.value",
+          "string.concat"
+        ],
+        "callers": [],
+        "tests": [
+          "basic",
+          "preserves-id-text"
+        ],
+        "examples": [
+          "standard-id"
+        ],
+        "source": "<flow:invoice.reminder-path/1:8ab7c93d6c3f1a5716d856e0d8d92475ab6e8cd50ec0490b991286606a543626>",
+        "line": 1,
+        "kind": "word",
+        "status": "persistent",
+        "maturity": "library",
+        "deprecated": false,
+        "revision": 1,
+        "testCount": 2,
+        "exampleCount": 1,
+        "coverage": {
+          "instructionsCovered": 4,
+          "instructionsTotal": 4,
+          "branchesCovered": 0,
+          "branchesTotal": 0,
+          "uncoveredInstructions": [],
+          "uncoveredBranchOutcomes": [],
+          "status": "current"
+        }
+      }
+    },
+    {
+      "ok": true,
+      "kind": "source",
+      "text": "type InvoiceId : String { }",
+      "data": "type InvoiceId : String { }"
+    },
+    {
+      "ok": true,
+      "kind": "source",
+      "text": "type InvoiceStatus : String { }",
+      "data": "type InvoiceStatus : String { }"
+    },
+    {
+      "ok": true,
+      "kind": "source",
+      "text": "record Invoice {\n    field id: InvoiceId;\n    field status: InvoiceStatus;\n}",
+      "data": "record Invoice {\n    field id: InvoiceId;\n    field status: InvoiceStatus;\n}"
+    },
+    {
+      "ok": true,
+      "kind": "example",
+      "text": "1/1 example(s) passed.",
+      "data": {
+        "results": [
+          {
+            "word": "invoice.reminder-path",
+            "name": "standard-id",
+            "source": "example invoice.reminder-path/standard-id {\n    invoice::reminder-path(InvoiceId::new(\"INV-001\"))\n    => \"/outbox/invoice-reminders/INV-001\"\n}",
+            "expected": "\"/outbox/invoice-reminders/INV-001\"",
+            "passed": true,
+            "actual": [
+              "\"/outbox/invoice-reminders/INV-001\""
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "ok": true,
+      "kind": "task.commit",
+      "text": "Task committed and temporary words were cleared. The task log was saved.",
+      "data": {
+        "task": "task-0001",
+        "goal": "Prepare immutable stateful reminder agent study seed",
+        "active": false,
+        "wordsInspected": [
+          "Invoice",
+          "InvoiceId",
+          "InvoiceStatus",
+          "invoice.reminder-path"
+        ],
+        "wordsUsed": [
+          "InvoiceId.new",
+          "InvoiceId.value",
+          "invoice.reminder-path",
+          "string.concat"
+        ],
+        "wordsCreated": [
+          "Invoice",
+          "InvoiceId",
+          "InvoiceStatus",
+          "invoice.reminder-path"
+        ],
+        "testsRun": 6,
+        "testsFailed": 0,
+        "effects": {},
+        "errors": []
+      }
+    }
+  ],
+  "reminderPathOwnCoverage": {
+    "instructionsCovered": 4,
+    "instructionsTotal": 4,
+    "branchesCovered": 0,
+    "branchesTotal": 0,
+    "uncoveredInstructions": [],
+    "uncoveredBranchOutcomes": []
+  }
+}

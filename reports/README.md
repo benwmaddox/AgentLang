@@ -8,7 +8,19 @@ Run `./scripts/Validate.ps1` from PowerShell to build the solution and run every
 
 CI runs the same command and uploads its JSON report. Human feedback and milestone conclusions belong in numbered Markdown reports here. Credentials must never appear in reports. Live provider traces can contain project information and should remain in the experiment's local output directory unless deliberately reviewed for publication.
 
-Latest external-agent control: [054 — Flow renewal agent control](054-flow-renewal-agent-control.md)
+Current checkpoint: [071 — Stateful agent reminder](071-stateful-agent-reminder.md)
+records a fresh external agent composing typed vocabulary and virtual effects,
+with 125 independent checks, complete own branch coverage, persisted examples,
+and snapshot restoration. The prelaunch path mismatch is retained. This is
+scoped feasibility evidence, without a general cost advantage.
+
+Recent research reports include [064 — Repeated comparison](064-repeat-agent-purpose-review.md),
+[067 — Selective retrieval](067-selective-retrieval-study.md),
+[068 — Shared-defect debugging](068-shared-defect-agent-debugging.md),
+[069 — Vocabulary refactoring](069-existing-vocabulary-agent-refactoring.md), and
+[070 — Strong-type conversion](070-strong-type-agent-conversion.md).
+
+Historical external-agent control: [054 — Flow renewal agent control](054-flow-renewal-agent-control.md)
 completed an inherited-history inspect/define/test/library-commit workflow,
 with 48 fresh-process acceptance checks and eight seed-preservation checks.
 Its earlier fresh-context attempt was blocked before definition. Replay passed
@@ -17,7 +29,7 @@ Release gate, which passed locally with zero build warnings/errors and in clean
 source CI run 37455797730 on `4a09399`. The following evidence-only publication
 changes no executable source. No comparative efficiency claim is made.
 
-Latest local checkpoint: [053 — Flow renewal fixtures](053-flow-renewal-fixtures.md)
+Historical local checkpoint: [053 — Flow renewal fixtures](053-flow-renewal-fixtures.md)
 passed the complete 29-check Release gate, including 129 Flow fixture checks and
 26 frozen snapshot checks. It corrects a task/oracle mismatch and prepares
 reproducible starting identities. Exact source CI and private publication are

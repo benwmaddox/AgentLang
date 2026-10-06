@@ -1,0 +1,4 @@
+test invoice.reminder-path/basic {
+    invoice::reminder-path(InvoiceId::new("INV-001"))
+    => "/outbox/invoice-reminders/INV-001"
+}

@@ -1,0 +1,127 @@
+Run stateful-flow-001 stateful-001 as a fresh GPT-6 Luna/max coding agent with no inherited turns.
+Your ownership is only D:\code\AgentLang\.agentlang\stateful-flow-001\actor-01-reminder through its supplied protocol. You are not alone in the checkout; preserve other agents' files. Do not touch repository source or sibling projects.
+
+You are an external AI coding agent implementing the selected public task in a
+small synthetic project. Inspect available capabilities before editing. Prefer
+existing useful abstractions and add a reusable abstraction for the required
+entry point. Preserve existing types, helpers and tests unless the task requires
+a change. Text comparisons are exact and case-sensitive. Float arithmetic is
+the specified demo behavior, not a decimal billing implementation.
+
+Use only the supplied trial protocol and pinned host configuration. Do not read
+coordinator files, independent acceptance oracles, sibling runs, previous trial
+solutions, or raw repository source outside your editable trial project. Add
+meaningful self-tests covering branches and relevant boundary cases, run them,
+and repair failures through the protocol. Do not alter the policy to fit tests.
+Work as the single assigned agent; do not spawn or delegate to other agents.
+
+Human authorization is already given for isolated trial-project edits and local
+test execution: "Yes, run the remaining isolated experiments". If approval
+review rejects an operation, report the rejection and stop dependent work;
+do not bypass it. A timeout observing a live exchange is not evidence it failed.
+Resume the same host session and inspect state before retrying an uncertain edit.
+
+Report what you changed, tests run, errors encountered and missing capabilities.
+Do not invent model-token or turn counts. Leave the interactive host session
+open when finished; the coordinator handles teardown separately. Do not send
+quit commands or control characters to the JSONL protocol.
+
+
+# Queue an invoice reminder exactly once
+
+Inspect the existing invoice types and words, then add a durable library word
+with this signature:
+
+    invoice.queue-reminder-once : Invoice -> String
+
+Use the existing `invoice.reminder-path` word to derive the fixed virtual path
+for the invoice ID. If the nominal invoice status's underlying text is exactly
+`open` (case-sensitive), check whether that path already exists. If it exists,
+read and return its exact contents without changing it. If it does not exist,
+write `queued` there and return `queued`. For every other status, return
+`not-open` without reading or writing any virtual file.
+
+`InvoiceId` and `InvoiceStatus` are nominal wrappers without validation; don't
+add status normalization or other validation. The path is
+`outbox/invoice-reminders/<invoice-id>`. Files belong to the runtime's
+project-scoped virtual provider; this task does not access host files or deliver
+email.
+
+Add concise documentation and at least one first-class example for the new
+word. Attach meaningful tests for a newly queued open invoice, an existing
+`queued` entry, an existing entry containing different marker text, and a
+non-open invoice. Cover every instruction and both outcomes of each branch in
+the new word's own tests, then commit it durably as a library word. Preserve the
+seeded types, helper, and their tests.
+
+
+You work through a JSONL protocol in a deterministic typed language. Start the
+exact supplied trial host once and send one JSON request per line through that
+same returned session. AI agents are external users; the runtime contains none.
+
+Use compact inventory or structural search to discover names:
+
+```json
+{"op":"words","compact":true}
+{"op":"search","query":"customer"}
+```
+
+`describe` returns detailed word metadata and source. `context` returns bounded
+signature/effect/dependency/documentation/type metadata for a word and its
+closure, omitting whole entries when necessary. Check omission counts. It has
+`maxDepth`, `maxWords` and `maxUtf8Bytes` fields; the latter bounds its complete
+data JSON, not the response wrapper. Both return parser-verified `flowReference`
+call spellings. Use dictionary names for protocol queries, declarations and
+test owners; use call references for expression targets. Root `add` is `::add`;
+`numbers.increment` is `numbers::increment`. Dot chaining passes a receiver as
+the first input. A null reference has an explanation.
+
+Flow uses named typed inputs, immutable `let` bindings, ordinary calls and no
+implicit nominal conversions. Both branches must produce the declared result:
+
+```text
+word increment(value: Int) -> Int {
+    effects none
+    ::add(value, 1)
+}
+test increment/basic {
+    ::increment(1) => 2
+}
+```
+
+```json
+{"op":"task.begin","goal":"<public task>"}
+{"op":"define","frontend":"flow","source":"<word and attached tests>"}
+{"op":"test","word":"increment"}
+{"op":"commit","word":"increment","library":true}
+{"op":"task.commit"}
+```
+
+Tests belong to words through the slash separator. This task requires
+retained library words with declared effects with passing own tests and complete own instruction and
+branch coverage. Caller tests cannot replace helper coverage. Add tests using
+an attachment-only Flow document when useful. Preserve prior types, helpers and
+tests. Use only the supplied protocol; do not read language project files.
+
+`describe.coverage` currently reflects the most recent test batch. Testing one
+word replaces that batch; another word can then display `not-run` even when its
+earlier own suite passed. Use the returned `test` coverage for that run, or
+`test-all` before inspecting several words' current own coverage together.
+
+No cumulative inspection-response cap is enabled. Never automatically repeat an uncertain request; observe the same live session and inspect state first. The configured exchange count and deadline still apply. No model tokens or context windows are measured.
+
+Report completion after public tests and durable task commit, with actual
+outcomes, errors, missing capabilities and the host session ID. Leave that
+session open; the coordinator handles teardown separately. Do not send quit
+commands or control characters through JSONL. Do not spawn other agents.
+
+
+Effects are declared on their own line, for example 'effects fs.read fs.write'. Each test/example starts with its own empty virtual filesystem. You can seed a marker using file::write(path, text); as a statement before the tested call. Those fixtures do not alter live eval state. Dictionary reload preserves definitions; use named snapshot.save/snapshot.load to preserve live virtual provider state across processes. Snapshot commands take name:<snapshot name>.
+
+Documentation is a line inside the word header: doc "A concise description.". An example uses the same owner/case and expectation grammar as a test, with 'example' instead of 'test'. Test or example effects require the granted capabilities. This host grants only fs.read and fs.write, using the virtual provider.
+
+Execute exactly this PowerShell command using exec_command, workdir D:\code\AgentLang, sandbox_permissions require_escalated, tty true, short initial yield. The known sandbox ACL helper requires host execution. Human authorization covers these isolated edits and local tests. Do not use shell/file tools for any other command or source access.
+
+& 'D:\code\AgentLang\scripts\Start-SubagentTrialHost.ps1' -CliDll 'D:\code\AgentLang\.agentlang\stateful-flow-001\language-bin\AgentLang.Cli.dll' -ProjectPath 'D:\code\AgentLang\.agentlang\stateful-flow-001\actor-01-reminder' -TracePath 'D:\code\AgentLang\experiments\AgentLang.SubagentTrials\stateful-flow-001\runs\stateful-001\trace.jsonl' -AllowedOperations @('words','describe','search','source','dependencies','callers','eval','define','test','test-all','tests','commit','replace-word','task.begin','task.commit','task.status','task.log','ir','context','failed-tests','examples','example','effects','type-of','search-type','search-output','history','diff','graph','transitive-dependencies','transitive-callers','search-dependency','snapshot.save','snapshot.load') -Capabilities @('fs.read','fs.write') -Profile agentlang -ExchangeTimeoutMilliseconds 120000 -MaxExchanges 100
+
+Send one JSONL request per line on that same write_stdin session. Do not spawn other agents. Leave the host open at completion and report its session ID for coordinator teardown. No quit commands or control characters. Report tests, errors and missing capabilities; do not invent model-token or turn counts.

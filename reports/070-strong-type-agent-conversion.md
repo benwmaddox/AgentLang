@@ -112,3 +112,7 @@ business vocabulary using existing providers. The full domain, remaining
 60-task categories, controlled costs and small-context comparisons remain open.
 LLVM, allocator and mailbox research stay deferred. The full PRD goal remains
 active; this task does not establish the overall hypothesis.
+
+Publication follow-up: clean [main CI](evidence/070-main-ci.json) for `cb1ebf6`
+passed all 32 checks. The [validation artifact](evidence/070-main-validation.json)
+records that exact source revision with `dirty: false`.

@@ -1,0 +1,5 @@
+{
+  "action": "Retained complete starting tree and failed control; recreated final fixture with relative outbox path before freezing actor inputs.",
+  "finding": "Virtual writes accepted absolute-looking paths, but snapshot persistence rejected them with relative slash-separated path validation.",
+  "scope": "Prelaunch coordinator control only; no actor launched."
+}

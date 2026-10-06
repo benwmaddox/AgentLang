@@ -1,0 +1,199 @@
+{
+  "independentAcceptanceScriptSha256": "c3fe0e33d1ac1f04248c1952082191a8d564085015cafe8781f0824a1b8091a8",
+  "selectedResponsePayloadBytes": 16257,
+  "requests": [
+    {
+      "op": "words",
+      "responseBytes": 1113,
+      "requestBytes": 30,
+      "word": null,
+      "ok": true
+    },
+    {
+      "op": "task.begin",
+      "responseBytes": 386,
+      "requestBytes": 192,
+      "word": null,
+      "ok": true
+    },
+    {
+      "op": "context",
+      "responseBytes": 1308,
+      "requestBytes": 96,
+      "word": "invoice.reminder-path",
+      "ok": true
+    },
+    {
+      "op": "describe",
+      "responseBytes": 797,
+      "requestBytes": 39,
+      "word": "invoice.new",
+      "ok": true
+    },
+    {
+      "op": "search-type",
+      "responseBytes": 276,
+      "requestBytes": 39,
+      "word": null,
+      "ok": false
+    },
+    {
+      "op": "describe",
+      "responseBytes": 766,
+      "requestBytes": 42,
+      "word": "invoice.status",
+      "ok": true
+    },
+    {
+      "op": "describe",
+      "responseBytes": 807,
+      "requestBytes": 47,
+      "word": "InvoiceStatus.value",
+      "ok": true
+    },
+    {
+      "op": "context",
+      "responseBytes": 597,
+      "requestBytes": 87,
+      "word": "file.exists?",
+      "ok": true
+    },
+    {
+      "op": "context",
+      "responseBytes": 587,
+      "requestBytes": 84,
+      "word": "file.read",
+      "ok": true
+    },
+    {
+      "op": "context",
+      "responseBytes": 599,
+      "requestBytes": 85,
+      "word": "file.write",
+      "ok": true
+    },
+    {
+      "op": "describe",
+      "responseBytes": 532,
+      "requestBytes": 40,
+      "word": "match-option",
+      "ok": true
+    },
+    {
+      "op": "search",
+      "responseBytes": 60,
+      "requestBytes": 33,
+      "word": null,
+      "ok": true
+    },
+    {
+      "op": "search",
+      "responseBytes": 60,
+      "requestBytes": 38,
+      "word": null,
+      "ok": true
+    },
+    {
+      "op": "describe",
+      "responseBytes": 1176,
+      "requestBytes": 49,
+      "word": "invoice.reminder-path",
+      "ok": true
+    },
+    {
+      "op": "context",
+      "responseBytes": 869,
+      "requestBytes": 86,
+      "word": "invoice.new",
+      "ok": true
+    },
+    {
+      "op": "context",
+      "responseBytes": 525,
+      "requestBytes": 81,
+      "word": "equals",
+      "ok": true
+    },
+    {
+      "op": "define",
+      "responseBytes": 390,
+      "requestBytes": 1664,
+      "word": null,
+      "ok": true
+    },
+    {
+      "op": "test",
+      "responseBytes": 841,
+      "requestBytes": 51,
+      "word": "invoice.queue-reminder-once",
+      "ok": true
+    },
+    {
+      "op": "example",
+      "responseBytes": 458,
+      "requestBytes": 54,
+      "word": "invoice.queue-reminder-once",
+      "ok": true
+    },
+    {
+      "op": "commit",
+      "responseBytes": 314,
+      "requestBytes": 68,
+      "word": "invoice.queue-reminder-once",
+      "ok": true
+    },
+    {
+      "op": "task.commit",
+      "responseBytes": 1084,
+      "requestBytes": 21,
+      "word": null,
+      "ok": true
+    },
+    {
+      "op": "describe",
+      "responseBytes": 2712,
+      "requestBytes": 55,
+      "word": "invoice.queue-reminder-once",
+      "ok": true
+    }
+  ],
+  "traceSha256": "196cffecc3ec89c1d4b17c9571ebf8d4a8aec49fc5af2091fa63654253f83c80",
+  "requestPayloadBytes": 2981,
+  "schemaVersion": 1,
+  "sessionEnd": {
+    "event": "session-end",
+    "finishedUtc": "2026-10-06T17:54:22.1048598-04:00",
+    "exchangeCount": 22,
+    "hostExitCode": 0,
+    "runtimeExitCode": 0,
+    "runtimeStderrPrefixBytes": 0,
+    "runtimeStderrTotalBytes": 0,
+    "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runtimeStderrCaptureTruncated": false
+  },
+  "startingStateSha256": "f606b34d0bc56019450d9a8ceb0496e54a980be9abbebbed53d718416ff32a75",
+  "passed": true,
+  "limits": [
+    "Schema 1 records selected responses before stdout flush; no delivery/model-consumption claim.",
+    "Payload counts exclude LF but include CR.",
+    "No exact model tokens, turns, controlled latency or window measurement.",
+    "One virtual-provider stateful smoke; no matched conventional comparison."
+  ],
+  "exchanges": 22,
+  "errors": [
+    {
+      "op": "search-type",
+      "index": 5,
+      "error": {
+        "code": "DISCOVERY_INVALID_ARGUMENT",
+        "message": "Discovery argument 'type' must be a string.",
+        "expected": [
+          "a string"
+        ],
+        "actual": [
+          "missing"
+        ]
+      }
+    }
+  ]
+}

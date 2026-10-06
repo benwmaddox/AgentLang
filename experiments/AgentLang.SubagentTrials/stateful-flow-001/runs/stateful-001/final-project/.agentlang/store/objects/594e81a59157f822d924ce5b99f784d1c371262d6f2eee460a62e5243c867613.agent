@@ -1,0 +1,101 @@
+// frontend: flow/1
+
+record Invoice {
+    field id: InvoiceId;
+    field status: InvoiceStatus;
+}
+
+// frontend: flow/1
+
+type InvoiceId : String {
+}
+
+// frontend: flow/1
+
+type InvoiceStatus : String {
+}
+
+// frontend: flow/1
+
+word invoice.queue-reminder-once(invoice: Invoice) -> String {
+    effects fs.read, fs.write
+    doc "Queue a reminder once for an open invoice."
+    let status = invoice::status(invoice);
+    if ::equals(InvoiceStatus::value(status), "open") {
+        let path = invoice::reminder-path(invoice::id(invoice));
+        if file::exists?(path) {
+            file::read(path)
+        } else {
+            file::write(path, "queued");
+            "queued"
+        }
+    } else {
+        "not-open"
+    }
+}
+
+// frontend: flow/1
+
+word invoice.reminder-path(id: InvoiceId) -> String {
+    effects none
+    doc "Builds the fixed virtual reminder path for an invoice ID."
+    string::concat("outbox/invoice-reminders/", InvoiceId::value(id))
+}
+
+// frontend: flow/1
+
+test invoice.queue-reminder-once/non-open-is-case-sensitive {
+    invoice::queue-reminder-once(invoice::new(InvoiceId::new("inv-closed"), InvoiceStatus::new("Open")))
+    => "not-open"
+}
+
+// frontend: flow/1
+
+test invoice.queue-reminder-once/preserves-other-marker {
+    file::write("outbox/invoice-reminders/inv-marker", "sent-earlier");
+    invoice::queue-reminder-once(invoice::new(InvoiceId::new("inv-marker"), InvoiceStatus::new("open")))
+    => "sent-earlier"
+}
+
+// frontend: flow/1
+
+test invoice.queue-reminder-once/queues-new-open {
+    invoice::queue-reminder-once(invoice::new(InvoiceId::new("inv-new"), InvoiceStatus::new("open")))
+    => "queued"
+}
+
+// frontend: flow/1
+
+test invoice.queue-reminder-once/returns-existing-queued {
+    file::write("outbox/invoice-reminders/inv-queued", "queued");
+    invoice::queue-reminder-once(invoice::new(InvoiceId::new("inv-queued"), InvoiceStatus::new("open")))
+    => "queued"
+}
+
+// frontend: flow/1
+
+test invoice.reminder-path/basic {
+    invoice::reminder-path(InvoiceId::new("INV-001"))
+    => "outbox/invoice-reminders/INV-001"
+}
+
+// frontend: flow/1
+
+test invoice.reminder-path/preserves-id-text {
+    invoice::reminder-path(InvoiceId::new("inv.alpha_2"))
+    => "outbox/invoice-reminders/inv.alpha_2"
+}
+
+// frontend: flow/1
+
+example invoice.queue-reminder-once/queues-basic-reminder {
+    invoice::queue-reminder-once(invoice::new(InvoiceId::new("inv-example"), InvoiceStatus::new("open")))
+    => "queued"
+}
+
+// frontend: flow/1
+
+example invoice.reminder-path/standard-id {
+    invoice::reminder-path(InvoiceId::new("INV-001"))
+    => "outbox/invoice-reminders/INV-001"
+}
