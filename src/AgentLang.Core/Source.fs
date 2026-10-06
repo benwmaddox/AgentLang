@@ -43,6 +43,7 @@ module Source =
         | MapList(name, _) -> prefix + "list.map " + name
         | FilterList(name, _) -> prefix + "list.filter " + name
         | EachList(name, _) -> prefix + "list.each " + name
+        | FoldList(name, _) -> prefix + "list.fold " + name
         | Let(name, _) -> prefix + "let " + name
         | Load(name, _) -> prefix + "$" + name
         | If(thenBranch, elseBranch, _) ->
@@ -140,6 +141,7 @@ module Source =
             | MapList(name, span) when name = oldName -> MapList(newName, span)
             | FilterList(name, span) when name = oldName -> FilterList(newName, span)
             | EachList(name, span) when name = oldName -> EachList(newName, span)
+            | FoldList(name, span) when name = oldName -> FoldList(newName, span)
             | If(thenBranch, elseBranch, span) -> If(rewrite thenBranch, rewrite elseBranch, span)
             | Scope(body, span) -> Scope(rewrite body, span)
             | MatchOption(name, someBranch, noneBranch, span) -> MatchOption(name, rewrite someBranch, rewrite noneBranch, span)

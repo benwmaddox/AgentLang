@@ -12,7 +12,7 @@ module Parser =
         set [ "if"; "else"; "end"; "let"; "true"; "false"; "unit"
               "match-option"; "match-result"; "some"; "none"; "ok"; "error"
               "list.empty"; "list.singleton"; "option.none"; "option.some"; "result.ok"; "result.error"
-              "list.map"; "list.filter"; "list.each" ]
+              "list.map"; "list.filter"; "list.each"; "list.fold" ]
     let private reservedTypeNames = set [ "Int"; "Float"; "Bool"; "String"; "Unit"; "List"; "Option"; "Result"; "a"; "b"; "c" ]
 
     let private validWordName (name: string) =
@@ -275,11 +275,16 @@ module Parser =
                         expressions.Add(Let(name.Text, span file line.Number token.Column (name.Column + name.Text.Length - token.Column)))
                         remaining <- next
                     | [] -> fail file line.Number token.Column "PARSE_EXPECTED_LOCAL_NAME" "'let' must be followed by a local name."
-                | None when token.Text = "list.map" || token.Text = "list.filter" || token.Text = "list.each" ->
+                | None when token.Text = "list.map" || token.Text = "list.filter" || token.Text = "list.each" || token.Text = "list.fold" ->
                     match rest with
                     | target :: next when validWordName target.Text ->
                         let expressionSpan = span file line.Number token.Column (target.Column + target.Text.Length - token.Column)
-                        let operation = if token.Text = "list.map" then MapList(target.Text, expressionSpan) elif token.Text = "list.filter" then FilterList(target.Text, expressionSpan) else EachList(target.Text, expressionSpan)
+                        let operation =
+                            match token.Text with
+                            | "list.map" -> MapList(target.Text, expressionSpan)
+                            | "list.filter" -> FilterList(target.Text, expressionSpan)
+                            | "list.each" -> EachList(target.Text, expressionSpan)
+                            | _ -> FoldList(target.Text, expressionSpan)
                         expressions.Add(operation)
                         remaining <- next
                     | target :: _ -> fail file line.Number target.Column "PARSE_INVALID_WORD_NAME" "List higher-order operations require a static word name argument."

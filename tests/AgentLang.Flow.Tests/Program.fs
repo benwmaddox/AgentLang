@@ -291,6 +291,7 @@ let private resolvedCallsInBlock (block: IrBlock) =
             | IrOperation.ListMap(call, _, _)
             | IrOperation.ListFilter(call, _)
             | IrOperation.ListEach(call, _)
+            | IrOperation.ListFold(call, _, _)
             | IrOperation.MakeRecord(call, _)
             | IrOperation.GetRecordField(call, _, _)
             | IrOperation.UnwrapScalar(call, _) -> [ call ]
@@ -478,6 +479,7 @@ let private testSparseFlowSourceMarkerAllocation () =
         | MapList(name, source) -> MapList(name, shiftMarker source)
         | FilterList(name, source) -> FilterList(name, shiftMarker source)
         | EachList(name, source) -> EachList(name, shiftMarker source)
+        | FoldList(name, source) -> FoldList(name, shiftMarker source)
         | Let(name, source) -> Let(name, shiftMarker source)
         | Load(name, source) -> Load(name, shiftMarker source)
         | If(thenBody, elseBody, source) -> If(List.map shiftExpression thenBody, List.map shiftExpression elseBody, shiftMarker source)
@@ -934,6 +936,111 @@ let private testStaticListCallbacks () =
     let malformedRootCallSpan = FlowExpression.RootCall(shortRootSpan, [], sourceSpan)
     expectLanguageError "host AST root call spans must cover the :: prefix" "FLOW_ROOT_TARGET_SPAN_INVALID" (fun () ->
         FlowSource.renderExpression malformedRootCallSpan |> ignore)
+
+let private testStaticListFold () =
+    let step =
+        wordEntry "math.fold-step" [ TInt; TInt ] [ TInt ] Set.empty
+            [ Call("swap", sourceSpan)
+              Push(LInt 10L, sourceSpan)
+              Call("multiply", sourceSpan)
+              Call("add", sourceSpan) ]
+    let emailStep =
+        wordEntry "scalar.email-step" [ TNamed "Email"; TInt ] [ TNamed "Email" ] Set.empty
+            [ Call("drop", sourceSpan)
+              Call("drop", sourceSpan)
+              Push(LString "folded@example.com", sourceSpan)
+              Call("Email.new", sourceSpan) ]
+    let customerStep =
+        wordEntry "customer.fold-step" [ TNamed "Customer"; TInt ] [ TNamed "Customer" ] Set.empty
+            [ Call("drop", sourceSpan)
+              Call("drop", sourceSpan)
+              Push(LString "folded@example.com", sourceSpan)
+              Call("Email.new", sourceSpan)
+              Call("customer.new", sourceSpan) ]
+    let badArity = wordEntry "bad.fold-arity" [ TInt ] [ TInt ] Set.empty []
+    let badOrder = wordEntry "bad.fold-order" [ TInt; TNamed "Email" ] [ TInt ] Set.empty [ Call("drop", sourceSpan) ]
+    let badOutput = wordEntry "bad.fold-output" [ TInt; TInt ] [ TNamed "Email" ] Set.empty [ Call("drop", sourceSpan); Call("drop", sourceSpan); Push(LString "wrong", sourceSpan); Call("Email.new", sourceSpan) ]
+    let stringStep = wordEntry "bad.string-step" [ TString; TInt ] [ TString ] Set.empty [ Call("drop", sourceSpan) ]
+    let ordinaryDot = wordEntry "number.fold" [ TInt; TInt ] [ TInt ] Set.empty [ Call("add", sourceSpan) ]
+    let context = richTypeContext [ step; emailStep; customerStep; badArity; badOrder; badOutput; stringStep; ordinaryDot ]
+    let compile source = FlowLowering.compileExpression context (parseExpression source)
+    let evaluate source = IrInterpreter.executeBody (host (ResizeArray())) source (compile source).Body
+
+    let source = "list::singleton<Int>(1).fold(0, math::fold-step)"
+    match parseExpression source with
+    | FlowExpression.DotCall(_, "fold", [ FlowArgument.Positional seed; FlowArgument.WordReference reference ], _) ->
+        match seed with
+        | FlowExpression.Literal(LInt 0L, _) -> check "fold keeps the seed as an ordinary value expression" true
+        | other -> failwithf "Expected ordinary fold seed expression, got %A" other
+        equal "fold callback preserves namespace qualification" FlowWordReferenceQualification.NamespaceQualified reference.Qualification
+        equal "fold callback preserves its stable dictionary key" "math.fold-step" reference.Name
+        let canonical = FlowSource.renderExpression (parseExpression source)
+        equal "qualified fold source round-trips" canonical (canonical |> parseExpression |> FlowSource.renderExpression)
+    | other -> failwithf "Expected a static fold dot call, got %A" other
+
+    let empty = compile "list::empty<Int>().fold(7, math::fold-step)"
+    let emptyVerified = VerifiedIrBody.inspect empty.Body
+    let emptyCoverage = emptyVerified.BodyCoverage.BranchOutcomes |> Map.toList |> List.collect snd |> Set.ofList
+    equal "fold declares empty and nonempty branch obligations" (Set.ofList [ "empty"; "nonempty" ]) emptyCoverage
+    equal "empty fold returns the seed unchanged" [ IntValue 7L ] (IrInterpreter.executeBody (host (ResizeArray())) "fold-empty" empty.Body)
+    let populated = compile "list::append(list::append(list::singleton<Int>(1), 2), 3).fold(0, math::fold-step)"
+    let populatedVerified = VerifiedIrBody.inspect populated.Body
+    equal "fold visits values left-to-right and preserves noncommutative order" [ IntValue 123L ]
+        (IrInterpreter.executeBody (host (ResizeArray())) "fold-order" populated.Body)
+    match populatedVerified.BodyBlock.Code |> List.tryPick (function | { Operation = IrOperation.ListFold(call, itemType, accumulatorType) } -> Some(call, itemType, accumulatorType) | _ -> None) with
+    | Some(call, itemType, accumulatorType) ->
+        equal "fold is an explicit typed IR operation" IrInt itemType
+        equal "fold IR retains its accumulator type" IrInt accumulatorType
+        equal "fold callback IR target is the resolved stable identity" (UserWordTarget(WordId "user-math.fold-step", 1)) call.ResolvedTarget
+    | None -> failwith "Expected a verified ListFold operation."
+    let callbackSpan =
+        match parseExpression "list::append(list::append(list::singleton<Int>(1), 2), 3).fold(0, math::fold-step)" with
+        | FlowExpression.DotCall(_, "fold", [ _; FlowArgument.WordReference reference ], _) -> reference.Span
+        | _ -> failwith "Expected static fold callback syntax."
+    let foldSites = populatedVerified.BodySourceMap |> Map.toList |> List.choose (fun (_, site) -> if site.SourceKind = "list-fold" then Some site else None)
+    equal "fold source map contains one fold operation" 1 foldSites.Length
+    equal "fold source map points to the authored callback reference" callbackSpan foldSites.Head.SiteSpan
+
+    let emailResult = compile "list::singleton<Int>(1).fold(Email::new(\"seed@example.com\"), scalar::email-step)"
+    equal "fold preserves nominal scalar accumulator identity" [ TNamed "Email" ] (FlowLowering.checkExpression context (parseExpression "list::empty<Int>().fold(Email::new(\"seed@example.com\"), scalar::email-step)") |> snd |> fun checkResult -> checkResult.Stack)
+    match FlowLowering.checkExpression context (parseExpression "list::empty<Int>().fold(customer::new(Email::new(\"seed@example.com\")), customer::fold-step)") |> snd with
+    | { Stack = [ TNamed "Customer" ] } -> check "fold preserves nominal record accumulator identity" true
+    | checkResult -> failwithf "Expected a Customer accumulator result, got %A" checkResult.Stack
+    equal "fold executes with a nominal Email accumulator" [ NamedValue("Email", StringValue "folded@example.com") ]
+        (IrInterpreter.executeBody (host (ResizeArray())) "fold-email" emailResult.Body)
+    expectLanguageError "String does not substitute for nominal Email accumulator" "FLOW_CALLBACK_INPUT_TYPE" (fun () ->
+        FlowLowering.checkExpression context (parseExpression "list::empty<Int>().fold(Email::new(\"seed@example.com\"), bad::string-step)") |> ignore)
+    expectLanguageError "callback inputs must be accumulator then item" "FLOW_CALLBACK_INPUT_TYPE" (fun () ->
+        FlowLowering.checkExpression context (parseExpression "list::empty<Int>().fold(Email::new(\"seed@example.com\"), bad::fold-order)") |> ignore)
+    expectLanguageError "fold callback must accept exactly two inputs" "FLOW_CALLBACK_INPUT_ARITY" (fun () ->
+        FlowLowering.checkExpression context (parseExpression "list::empty<Int>().fold(0, bad::fold-arity)") |> ignore)
+    expectLanguageError "fold callback must return the exact accumulator type" "FLOW_CALLBACK_RESULT_TYPE" (fun () ->
+        FlowLowering.checkExpression context (parseExpression "list::empty<Int>().fold(0, bad::fold-output)") |> ignore)
+
+    match parseExpression "1.fold(2)" with
+    | FlowExpression.DotCall(_, "fold", [ FlowArgument.Positional(FlowExpression.Literal(LInt 2L, _)) ], _) ->
+        equal "ordinary fold(value) remains an ordinary dot-stage call" [ IntValue 3L ] (evaluate "1.fold(2)")
+    | other -> failwithf "Expected ordinary dot-call arguments to remain values, got %A" other
+    match FlowParser.parseExpression "<fold-unrelated-stage>" "1.abs(math::fold-step)" with
+    | Error diagnostic -> equal "unrelated stages reject bare qualified callbacks" "FLOW_QUALIFIED_CALL_REQUIRES_ARGUMENTS" diagnostic.Code
+    | Ok _ -> failwith "An unrelated dot stage cannot accept a static callback."
+    match FlowParser.parseExpression "<fold-closure>" "list::empty<Int>().fold(0, item => item)" with
+    | Error diagnostic -> check "fold rejects inline capturing callback expressions" (not (String.IsNullOrWhiteSpace diagnostic.Code))
+    | Ok _ -> failwith "Fold does not accept callback closures."
+    match FlowParser.parseExpression "<fold-named-seed>" "list::empty<Int>().fold(seed = 0, math::fold-step)" with
+    | Error diagnostic -> equal "fold seed must remain positional" "FLOW_CALLBACK_ARGUMENT_ARITY" diagnostic.Code
+    | Ok _ -> failwith "Fold does not accept a named seed with a static callback."
+    let shortReference = { Name = "math.fold-step"; Qualification = FlowWordReferenceQualification.NamespaceQualified; Span = sourceSpan }
+    let malformed =
+        FlowExpression.DotCall(
+            FlowExpression.Container(FlowContainerConstructor.ListEmpty, [ { Type = TInt; Span = sourceSpan } ], None, sourceSpan),
+            "fold",
+            [ FlowArgument.WordReference shortReference ],
+            sourceSpan)
+    expectLanguageError "host AST rejects malformed fold callback arity" "FLOW_CALLBACK_ARGUMENT_ARITY" (fun () ->
+        FlowLowering.checkExpression context malformed |> ignore)
+    expectLanguageError "local variable names cannot resolve as fold callback captures" "FLOW_UNKNOWN_CALLBACK" (fun () ->
+        FlowLowering.checkExpression context (parseExpression "list::empty<Int>().fold(0, word local-step)") |> ignore)
 
 let private testAbsoluteRootAddressing () =
     let rootIdentity = wordEntry "identity" [ TInt ] [ TInt ] Set.empty []
@@ -1771,6 +1878,7 @@ let private testFlowAuthoredCases () =
         | MapList(name, source) -> MapList(name, shiftMarker source)
         | FilterList(name, source) -> FilterList(name, shiftMarker source)
         | EachList(name, source) -> EachList(name, shiftMarker source)
+        | FoldList(name, source) -> FoldList(name, shiftMarker source)
         | Let(name, source) -> Let(name, shiftMarker source)
         | Load(name, source) -> Load(name, shiftMarker source)
         | If(thenBody, elseBody, source) -> If(List.map shiftExpression thenBody, List.map shiftExpression elseBody, shiftMarker source)
@@ -3414,6 +3522,7 @@ let private testFlowAttachmentCallBindings () =
         | MapList(name, sourceSpan) -> MapList(name, resolveOrigin origins sourceSpan)
         | FilterList(name, sourceSpan) -> FilterList(name, resolveOrigin origins sourceSpan)
         | EachList(name, sourceSpan) -> EachList(name, resolveOrigin origins sourceSpan)
+        | FoldList(name, sourceSpan) -> FoldList(name, resolveOrigin origins sourceSpan)
         | Let(name, sourceSpan) -> Let(name, resolveOrigin origins sourceSpan)
         | Load(name, sourceSpan) -> Load(name, resolveOrigin origins sourceSpan)
         | If(thenBranch, elseBranch, sourceSpan) ->
@@ -4345,6 +4454,7 @@ let main _ =
     testContainerAndMatchSyntaxRoundTrip ()
     testContainerAndMatchDiagnostics ()
     testStaticListCallbacks ()
+    testStaticListFold ()
     testAbsoluteRootAddressing ()
     testLoweringAndExecution ()
     testContainerAndMatchLowering ()

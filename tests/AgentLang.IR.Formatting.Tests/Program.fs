@@ -98,7 +98,13 @@ let private contextAndProgram () =
               [ FilterList("customer.active?", span 18) ] 4 Candidate
           "customer.copy",
           wordEntry "customer.copy" [ TNamed "Customer" ] [ TNamed "Customer" ] noEffects
-              [ Let("copy", span 19); Load("copy", span 20) ] 5 Candidate ]
+              [ Let("copy", span 19); Load("copy", span 20) ] 5 Candidate
+          "customer.fold-step",
+          wordEntry "customer.fold-step" [ TNamed "Email"; TNamed "Customer" ] [ TNamed "Email" ] noEffects
+              [ Call("drop", span 21) ] 6 Candidate
+          "customers.fold-email",
+          wordEntry "customers.fold-email" [ TList(TNamed "Customer"); TNamed "Email" ] [ TNamed "Email" ] noEffects
+              [ FoldList("customer.fold-step", span 22) ] 7 Candidate ]
         |> Map.ofList
     let allWords =
         Map.fold (fun acc name entry -> Map.add name entry acc) Compiler.primitives generated
@@ -132,7 +138,7 @@ let private testUserFunctionJson () =
     let context, verified = contextAndProgram ()
     let document = IrFormatting.toData verified (IrFormatTarget.UserWordName "customer.active?")
     check "user target serializes as function DTO" (stringField "kind" document = "function")
-    check "scope-capable formatter uses schema version 2 even for a scope-free function" (intField "formatVersion" document = 2)
+    check "typed ListFold extends the formatter under schema version 3" (intField "formatVersion" document = 3)
     let (WordId activeId) = context.WordIds["customer.active?"]
     check "function retains stable ID and revision" (stringField "wordId" document = activeId && intField "revision" document = 2)
     check "function signature uses nominal display name" (document |> prop "inputs" |> at 0 |> stringField "display" = "Customer")
@@ -169,9 +175,26 @@ let private testUserFunctionJson () =
             WordIds = Map.add "customer.scoped" (WordId "user-customer.scoped") context.WordIds }
     let scopedProgram = Compiler.compileIrProgram scopedContext
     let scopedDocument = IrFormatting.toData scopedProgram (IrFormatTarget.UserWordName "customer.scoped")
-    check "Scope operation is emitted under the explicit version 2 schema"
-        (intField "formatVersion" scopedDocument = 2
+    check "Scope operation is emitted under the explicit version 3 schema"
+        (intField "formatVersion" scopedDocument = 3
          && (scopedDocument |> prop "body" |> prop "instructions" |> at 0 |> prop "operation" |> stringField "kind") = "scope")
+
+    let fold = IrFormatting.toData scopedProgram (IrFormatTarget.UserWordName "customers.fold-email")
+    let foldOperation = fold |> prop "body" |> prop "instructions" |> at 0 |> prop "operation"
+    check "ListFold has a stable operation kind and closed item/accumulator/result types"
+        (stringField "kind" foldOperation = "list-fold"
+         && foldOperation |> prop "elementType" |> stringField "display" = "Customer"
+         && foldOperation |> prop "accumulatorType" |> stringField "display" = "Email"
+         && foldOperation |> prop "resultType" |> stringField "display" = "Email")
+    let foldCallback = foldOperation |> prop "callback"
+    check "ListFold formatter retains the exact accumulator-item callback order"
+        (foldCallback |> prop "inputs" |> at 0 |> stringField "display" = "Email"
+         && foldCallback |> prop "inputs" |> at 1 |> stringField "display" = "Customer"
+         && foldCallback |> prop "outputs" |> at 0 |> stringField "display" = "Email")
+    let foldCoverage = fold |> prop "coverageObligations" |> prop "branchOutcomes" |> at 0 |> prop "outcomes" |> fun node -> node.AsArray() |> Seq.cast<JsonNode> |> Seq.map stringValue |> Set.ofSeq
+    check "ListFold document includes empty and nonempty coverage obligations" (foldCoverage = Set.ofList [ "empty"; "nonempty" ])
+    check "human IR text names the new list.fold operation and callback signature" (
+        (IrFormatting.toText scopedProgram (IrFormatTarget.UserWordName "customers.fold-email")).Contains("list.fold callback=customer.fold-step", StringComparison.Ordinal))
 
 let private testCallbacksLocalsAndNominalClosure () =
     let context, verified = contextAndProgram ()
@@ -209,7 +232,7 @@ let private testGeneratedAndPrimitiveDocuments () =
     check "generated target includes source declaration location" (stringField "file" sourceSpanNode = "formatting.agent" && intField "line" sourceSpanNode = 2)
 
     let primitive = IrFormatting.toData verified (IrFormatTarget.PrimitiveContract(PrimitiveId "equals"))
-    check "primitive contracts use the same current top-level schema version" (intField "formatVersion" primitive = 2)
+    check "primitive contracts use the same current top-level schema version" (intField "formatVersion" primitive = 3)
     check "primitive output is explicitly a contract, not executable code" (stringField "kind" primitive = "primitive-contract" && prop "body" primitive = null)
     let inputPatterns = primitive |> prop "inputs" |> fun node -> node.AsArray()
     check "primitive contract retains generic type variable pattern" (stringField "kind" inputPatterns[0] = "variable" && intField "variableIndex" inputPatterns[0] = 0 && intField "variableIndex" inputPatterns[1] = 0)

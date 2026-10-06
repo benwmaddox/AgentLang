@@ -2,6 +2,13 @@
 
 The active goal is completion of the prototype and evaluation requirements in the supplied 82-section PRD, including the refined strong-type and library-test requirements. The first usable slice is a milestone, not a substitute for that goal. This ledger preserves later deliverables until authoritative evidence establishes completion.
 
+User delivery priority, 2026-10-06: take the shortest path to validating external
+agent behavior. The [early five-task comparison](EARLY-AGENT-EVALUATION.md) uses
+the existing small domain; it does not wait for the full business vocabulary,
+60-task execution suite, memory research or optional feature completeness.
+Remaining requirements stay in this ledger. Pilot preparation and verifier
+probes are not comparative agent results.
+
 Status: **verified** means the listed scoped behavior has observed acceptance evidence; **partial** means some behavior exists but the full section is not proven; **pending** means implementation or evidence is missing; **design** means a principle/advisory requirement; **excluded** means a V1 non-goal or explicitly optional follow-on. A green build is not evidence of research success.
 
 Latest external-agent workflow evidence: [report 054](../reports/054-flow-renewal-agent-control.md)

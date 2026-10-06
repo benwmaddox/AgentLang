@@ -397,6 +397,7 @@ end
             | If(thenBranch, elseBranch, _) :: rest -> collect thenBranch @ collect elseBranch @ collect rest
             | MatchOption(_, someBranch, noneBranch, _) :: rest -> collect someBranch @ collect noneBranch @ collect rest
             | MatchResult(_, _, okBranch, errorBranch, _) :: rest -> collect okBranch @ collect errorBranch @ collect rest
+            | FoldList(name, _) :: rest -> name :: collect rest
             | _ :: rest -> collect rest
         collect expressions
 
@@ -409,6 +410,7 @@ end
               MapList(oldName, span)
               FilterList(oldName, span)
               EachList(oldName, span)
+              FoldList(oldName, span)
               Push(LString oldName, span)
               Let(oldName, span)
               Load(oldName, span)
@@ -420,17 +422,19 @@ end
         check (recursiveWordCalls renamed |> List.forall ((<>) oldName)) "call references are rewritten recursively"
         check (recursiveWordCalls renamed |> List.contains newName) "renamed call target is present"
         match renamed with
-        | Call(name, newSpan) :: MapList(mapName, _) :: FilterList(filterName, _) :: EachList(eachName, _) :: Push(LString literal, _) :: Let(localName, _) :: Load(loadName, _) :: _ ->
+        | Call(name, newSpan) :: MapList(mapName, _) :: FilterList(filterName, _) :: EachList(eachName, _) :: FoldList(foldName, foldSpan) :: Push(LString literal, _) :: Let(localName, _) :: Load(loadName, _) :: _ ->
             equal newName name "direct call is renamed"
             equal span newSpan "source span remains attached to rewritten call"
             equal newName mapName "map callback is renamed"
             equal newName filterName "filter callback is renamed"
             equal newName eachName "each callback is renamed"
+            equal newName foldName "fold callback is renamed"
+            equal span foldSpan "fold callback rename preserves its exact source span"
             equal oldName literal "string literal is unchanged"
             equal oldName localName "local binding is not a word reference"
             equal oldName loadName "local load is not a word reference"
         | _ -> failwith "rewrite changed expression structure or failed to cover all references"
-        match renamed |> List.item 8 with
+        match renamed |> List.item 9 with
         | MatchOption(caseLocal, _, _, _) -> equal oldName caseLocal "match payload binder is not renamed"
         | _ -> failwith "option match structure was lost"
         match renamed |> List.tryPick (function ConstructContainer(_, types, _) -> Some types | _ -> None) with
@@ -486,6 +490,19 @@ end
         let renamedTestSource = Source.renderTest renamedTest
         let reparsedRenamedTest = parse renamedTestSource |> fun document -> document.Tests.Head
         equal renamedTestSource (Source.renderTest reparsedRenamedTest) "renamed expected AST remains canonically reloadable"
+
+        let foldSource = """word old.fold-all : List<Int> Int -> Int
+    effects none
+    list.fold old.compute
+end
+"""
+        let foldDefinition = parse foldSource |> fun document -> document.Words.Head
+        let renamedFold = Source.renameWordDefinition oldName newName foldDefinition
+        equal [ newName ] (recursiveWordCalls renamedFold.Body) "fold callback identity is rewritten with a semantic rename"
+        let renderedFold = Source.renderWord false renamedFold
+        check (renderedFold.Contains("list.fold new.compute", StringComparison.Ordinal)) "rendered fold source uses the renamed callback"
+        let reparsedFold = parse renderedFold |> fun document -> document.Words.Head
+        equal renderedFold (Source.renderWord false reparsedFold) "renamed fold source remains canonically reloadable"
 
         let exampleSource = """example old.compute/sample
     old.compute

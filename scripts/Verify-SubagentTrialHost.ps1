@@ -442,11 +442,19 @@ function Get-BoundedEvidenceItems {
         if ($json.Length -le $MaximumJsonCharacters) {
             $bounded.Add($item)
         } else {
-            $bounded.Add([ordered]@{
+            $summary = [ordered]@{
                 truncated = $true
                 originalJsonCharacters = $json.Length
                 jsonPrefix = $json.Substring(0, $MaximumJsonCharacters)
-            })
+            }
+            # Keep deadline/delivery evidence even when the request payload consumes
+            # the bounded prefix. These fields come from the full observed trace.
+            if ($item.event -eq 'exchange') {
+                foreach ($field in @('event', 'index', 'operation', 'outcome', 'errorCode', 'elapsedMilliseconds', 'requestDelivery', 'executionState', 'automaticRetry')) {
+                    $summary[$field] = $item.$field
+                }
+            }
+            $bounded.Add($summary)
         }
         $count++
     }
@@ -579,8 +587,11 @@ end
         $noRead.process.exitCode -eq 124 -and $noRead.responses[0].error.code -eq 'TRIAL_EXCHANGE_TIMEOUT' -and
         $noReadExchange.requestDelivery.state -eq 'uncertain' -and $noReadExchange.requestDelivery.confirmedUtf8Bytes -eq $null -and
         $noReadExchange.requestDelivery.attemptedUtf8Bytes -gt 65536 -and $noReadExchange.executionState -eq 'uncertain' -and
-        $noReadExchange.automaticRetry -like 'never*' -and $noRead.process.durationMilliseconds -lt 6000
-    ) -Detail "exit=$($noRead.process.exitCode); elapsed=$($noRead.process.durationMilliseconds)ms; attempted=$($noReadExchange.requestDelivery.attemptedUtf8Bytes)"
+        $noReadExchange.automaticRetry -like 'never*' -and
+        $noReadExchange.outcome -eq 'timeout' -and $noReadExchange.errorCode -eq 'TRIAL_EXCHANGE_TIMEOUT' -and
+        $noReadExchange.elapsedMilliseconds -ge 400 -and $noReadExchange.elapsedMilliseconds -lt 2500 -and
+        -not $noRead.process.timedOut -and $noRead.process.durationMilliseconds -lt 10000
+    ) -Detail "exit=$($noRead.process.exitCode); exchangeTraceElapsed=$($noReadExchange.elapsedMilliseconds)ms; subprocessTotal=$($noRead.process.durationMilliseconds)ms; configuredDeadline=500ms; attempted=$($noReadExchange.requestDelivery.attemptedUtf8Bytes)"
 
     $tooLargeResponse = Invoke-TrialHost -Name 'oversized-response' -RuntimeDll $fakeDll -Requests @($fakeRequest) `
         -AllowedOperations @('fake.echo') -AdditionalCliArguments @('--fake-mode=oversize') -MaxResponseBytes 64

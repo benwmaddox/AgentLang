@@ -628,6 +628,35 @@ module IrInterpreter =
                         | [ RuntimeUnit ] -> ()
                         | result -> fail "RUNTIME_INTERNAL_TYPE" $"List callback '{callback.ResolvedName}' returned values outside its checked signature." (Some currentWord) instructionSpan [] (runtimeTypeNames program result)
                     stack <- prefix @ [ RuntimeUnit ]
+                | IrOperation.ListFold(callback, itemType, accumulatorType) ->
+                    let prefix, inputs = popArguments "list.fold" [ IrList itemType; accumulatorType ]
+                    let input, initialAccumulator =
+                        match inputs with
+                        | [ listValue; accumulatorValue ] -> listValue, accumulatorValue
+                        | _ -> fail "RUNTIME_INTERNAL_TYPE" "List fold received values outside its verified stack shape." (Some currentWord) instructionSpan
+                                   [ formatType program (IrList itemType); formatType program accumulatorType ] (runtimeTypeNames program inputs)
+                    let values =
+                        match input with
+                        | RuntimeList(actualType, values) when actualType = itemType -> values
+                        | actual -> fail "RUNTIME_INTERNAL_TYPE" "List fold received a non-list after type checking." (Some currentWord) instructionSpan
+                                        [ formatType program (IrList itemType) ] [ formatType program (runtimeValueType actual) ]
+                    if runtimeValueType initialAccumulator <> accumulatorType then
+                        fail "RUNTIME_INTERNAL_TYPE" "List fold seed does not match its verified accumulator type." (Some currentWord) instructionSpan
+                            [ formatType program accumulatorType ] [ formatType program (runtimeValueType initialAccumulator) ]
+                    // Effect declarations apply to the whole fold, including an
+                    // empty list. Actual callback use is recorded only when the
+                    // callback is invoked below.
+                    host.PreflightEffects callback.ResolvedEffects (Some callback.ResolvedName) (Some instruction.Site)
+                    host.RecordUse "list.fold"
+                    host.RecordBranchOutcome currentWord instruction.Site (if List.isEmpty values then "empty" else "nonempty")
+                    let mutable accumulator = initialAccumulator
+                    for value in values do
+                        chargeInstruction currentWord instruction.Site
+                        match invokeResolved (depth + 1) callback [ accumulator; value ] (Some instruction.Site) with
+                        | [ next ] when runtimeValueType next = accumulatorType -> accumulator <- next
+                        | result -> fail "RUNTIME_INTERNAL_TYPE" $"List fold callback '{callback.ResolvedName}' returned values outside its checked accumulator signature." (Some currentWord) instructionSpan
+                                        [ formatType program accumulatorType ] (runtimeTypeNames program result)
+                    stack <- prefix @ [ accumulator ]
                 | IrOperation.If(thenBlock, elseBlock) ->
                     match stack with
                     | [] -> fail "RUNTIME_IF_REQUIRES_BOOL" "'if' requires a Bool at the top of the stack." (Some currentWord) instructionSpan [ "Bool" ] []

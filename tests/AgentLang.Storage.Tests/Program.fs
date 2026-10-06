@@ -463,6 +463,53 @@ module Program =
         let reversed = Storage.commit reversedStore 0L reversedManifest sources projectText |> ok "commit reversed input call-binding order"
         equal committed.ManifestHash reversed.ManifestHash "v2 canonical serialization ignores input binding order"
 
+    let private testFoldStaticCallbackBindingRoundTrip root =
+        let baseManifest, sources, projectText = flowV2Fixture "fold-binding"
+        let definition = baseManifest.Revisions.Head.Definition
+        let foldBinding =
+            callBinding definition None StoredCallBodyRole.Definition
+                [ FlowAstPathSegment.BlockStatement 0
+                  FlowAstPathSegment.EvaluateExpression
+                  FlowAstPathSegment.DotArgument 1 ]
+                (StoredCallForm.StaticCallback("fold", FlowWordReferenceQualification.NamespaceQualified))
+                "domain.step" (StoredCallTarget.UserWord "word-stable-1")
+        let revision = { baseManifest.Revisions.Head with CallBindings = baseManifest.Revisions.Head.CallBindings @ [ foldBinding ] }
+        let manifest = { baseManifest with Revisions = [ revision ] }
+        let project = Path.Combine(root, "fold-static-callback-binding")
+        let store = Storage.create project
+        let written = Storage.commit store 0L manifest sources projectText |> ok "write Flow fold callback binding"
+        let reloaded = Storage.load store |> ok "reload Flow fold callback binding"
+        equal written.ManifestHash reloaded.ManifestHash "fold callback reload keeps exact manifest identity"
+        let persisted = reloaded.Manifest.Value.Revisions.Head.CallBindings |> List.find (fun binding -> binding.Form = foldBinding.Form)
+        equal foldBinding persisted "fold stage, namespace qualification, stable target, source, and DotArgument 1 path persist"
+        match persisted.Path with
+        | FlowAstPath.FlowAstPath segments ->
+            check (segments |> List.contains (FlowAstPathSegment.DotArgument 1)) "fold callback binds to its second authored dot argument"
+            check (not (segments |> List.contains (FlowAstPathSegment.DotArgument 0))) "fold seed is not mistaken for the callback argument"
+        let rawPath = Path.Combine(storageRoot project, "manifests", reloaded.ManifestHash.Value + ".json")
+        let raw = JsonNode.Parse(File.ReadAllText rawPath).AsObject()
+        let rawRevision = firstRevisionObject raw
+        let rawBinding =
+            rawRevision["callBindings"].AsArray()
+            |> Seq.cast<JsonNode>
+            |> Seq.map _.AsObject()
+            |> Seq.find (fun binding -> not (isNull binding["form"].["stage"]) && binding["form"].["stage"].GetValue<string>() = "fold")
+        equal "fold" (rawBinding["form"].["stage"].GetValue<string>()) "fold stage has an explicit wire value"
+        let rawLastPathSegment = rawBinding["path"].AsArray() |> Seq.cast<JsonNode> |> Seq.last
+        equal "dotArgument" (rawLastPathSegment["segment"].GetValue<string>()) "fold callback structural binding is encoded as a dot argument"
+        equal 1 (rawLastPathSegment["index"].GetValue<int>()) "fold callback argument index is encoded as one"
+
+        let unknownProject = Path.Combine(root, "fold-unknown-callback-stage")
+        let unknownStore = Storage.create unknownProject
+        let unknownBinding =
+            { foldBinding with Form = StoredCallForm.StaticCallback("collect", FlowWordReferenceQualification.NamespaceQualified) }
+        let unknownManifest =
+            { baseManifest with
+                Revisions = [ { baseManifest.Revisions.Head with CallBindings = baseManifest.Revisions.Head.CallBindings @ [ unknownBinding ] } ] }
+        Storage.commit unknownStore 0L unknownManifest sources projectText |> error "STORAGE_INVALID_MANIFEST" |> ignore
+        let refused = Storage.load unknownStore |> ok "load after unknown callback stage refusal"
+        equal EmptyAuthority refused.Authority "unknown callback stage leaves durable storage empty"
+
     let private testManifestV3TypeSourceRoundTripAndValidation root =
         let manifest, sources, projectText = flowV3Fixture "v3-roundtrip"
         let firstProject = Path.Combine(root, "v3-first")
@@ -1184,6 +1231,7 @@ module Program =
             testFrozenV1Compatibility root
             testManifestV1WriterRefusesMeaningfulV2Fields root
             testManifestV2RoundTripAndCanonicalBindings root
+            testFoldStaticCallbackBindingRoundTrip root
             testManifestV3TypeSourceRoundTripAndValidation root
             testV1HistoryMigrationAndSnapshotRestore root
             testManifestV2ValidationAndLimits root
@@ -1196,7 +1244,7 @@ module Program =
             testTamperingUnsupportedVersionAndNoFallback root
             testTaskLogValidation root
             testReparsePointRefusal root
-            printfn $"Storage tests passed: 15 groups, {assertions} assertions."
+            printfn $"Storage tests passed: 16 groups, {assertions} assertions."
             0
         finally
             if Directory.Exists root then Directory.Delete(root, true)

@@ -42,7 +42,7 @@ module FlowRewrite =
           Span = span }
 
     let private isStaticCallbackStage = function
-        | "map" | "filter" | "each" -> true
+        | "map" | "filter" | "each" | "fold" -> true
         | _ -> false
 
     let private collectSites (roots: (StoredCallBodyRole * FlowExpression list * FlowStatement list) list) =
@@ -64,14 +64,18 @@ module FlowRewrite =
             | FlowExpression.DotCall(receiver, stage, arguments, span) ->
                 visitExpression role (pathChild path FlowAstPathSegment.DotReceiver) receiver
                 match stage, arguments with
+                | "fold", [ FlowArgument.Positional seed; FlowArgument.WordReference reference ] ->
+                    visitExpression role (pathChild path (FlowAstPathSegment.DotArgument 0)) seed
+                    add role (pathChild path (FlowAstPathSegment.DotArgument 1))
+                        (StoredCallForm.StaticCallback(stage, reference.Qualification)) reference.Name reference.Span
                 | stage, [ FlowArgument.WordReference reference ] when isStaticCallbackStage stage ->
                     add role (pathChild path (FlowAstPathSegment.DotArgument 0))
                         (StoredCallForm.StaticCallback(stage, reference.Qualification)) reference.Name reference.Span
                 | _ ->
                     if arguments |> List.exists (function FlowArgument.WordReference _ -> true | _ -> false) then
                         Diagnostics.raiseError "FLOW_REWRITE_CALLBACK_SHAPE"
-                            "A Flow word reference must be the sole argument of a static list callback stage."
-                            None (Some span) [ "map/filter/each with one word reference" ] []
+                            "A Flow word reference must use the static callback shape for its list stage."
+                            None (Some span) [ "map/filter/each with one word reference; fold with one seed and one final word reference" ] []
                     add role path (StoredCallForm.DotStage stage) stage span
                     visitArguments role path (StoredCallForm.DotStage stage) arguments
             | FlowExpression.If(condition, thenStatements, elseStatements, _) ->
@@ -289,6 +293,31 @@ module FlowRewrite =
                     else FlowExpression.RootCall(rootTarget, newArguments, span)
                 | FlowExpression.DotCall(receiver, stage, arguments, span) ->
                     match stage, arguments with
+                    | "fold", [ FlowArgument.Positional seed; FlowArgument.WordReference reference ] ->
+                        let newReceiver =
+                            rewriteExpression role
+                                (pathChild oldPath FlowAstPathSegment.DotReceiver)
+                                (pathChild newPath FlowAstPathSegment.DotReceiver)
+                                receiver
+                        let newSeed =
+                            rewriteExpression role
+                                (pathChild oldPath (FlowAstPathSegment.DotArgument 0))
+                                (pathChild newPath (FlowAstPathSegment.DotArgument 0))
+                                seed
+                        let callbackPath = pathChild oldPath (FlowAstPathSegment.DotArgument 1)
+                        let callbackBinding = bindingMap[(role, callbackPath)]
+                        let qualification, requestedName =
+                            if callbackBinding.Target = target then callbackQualification newName, newName
+                            else reference.Qualification, reference.Name
+                        let newReference =
+                            if callbackBinding.Target = target then
+                                { reference with Name = newName; Qualification = qualification }
+                            else reference
+                        let callbackForm = StoredCallForm.StaticCallback(stage, qualification)
+                        recordSite role callbackPath (pathChild newPath (FlowAstPathSegment.DotArgument 1))
+                            (StoredCallForm.StaticCallback(stage, reference.Qualification)) reference.Name
+                            callbackForm requestedName reference.Span |> ignore
+                        FlowExpression.DotCall(newReceiver, stage, [ FlowArgument.Positional newSeed; FlowArgument.WordReference newReference ], span)
                     | callbackStage, [ FlowArgument.WordReference reference ] when isStaticCallbackStage callbackStage ->
                         let newReceiver =
                             rewriteExpression role
@@ -312,8 +341,8 @@ module FlowRewrite =
                     | _ ->
                         if arguments |> List.exists (function FlowArgument.WordReference _ -> true | _ -> false) then
                             Diagnostics.raiseError "FLOW_REWRITE_CALLBACK_SHAPE"
-                                "A Flow word reference must be the sole argument of a static list callback stage."
-                                (Some owner) (Some span) [ "map/filter/each with one word reference" ] []
+                                "A Flow word reference must use the static callback shape for its list stage."
+                                (Some owner) (Some span) [ "map/filter/each with one word reference; fold with one seed and one final word reference" ] []
                         let binding = bindingMap[(role, oldPath)]
                         let isTarget = binding.Target = target
                         let newForm, newRequestedName =
@@ -401,7 +430,7 @@ module FlowRewrite =
                     FlowArgument.Named(name, rewriteExpression role oldPath newPath expression, nameSpan)
                 | FlowArgument.WordReference reference ->
                     Diagnostics.raiseError "FLOW_REWRITE_CALLBACK_SHAPE"
-                        "A Flow word reference must be the sole argument of a static list callback stage."
+                        "A Flow word reference must use the static callback shape for its list stage."
                         (Some owner) (Some reference.Span) [ "static callback reference" ] [ reference.Name ]
 
             and rewriteStatements role oldPath newPath statements =

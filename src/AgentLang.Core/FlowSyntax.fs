@@ -553,7 +553,7 @@ module FlowSource =
             set [ "if"; "else"; "end"; "let"; "true"; "false"; "unit"
                   "match-option"; "match-result"; "some"; "none"; "ok"; "error"
                   "list.empty"; "list.singleton"; "option.none"; "option.some"; "result.ok"; "result.error"
-                  "list.map"; "list.filter"; "list.each" ]
+                  "list.map"; "list.filter"; "list.each"; "list.fold" ]
         not (System.String.IsNullOrWhiteSpace name)
         && System.Char.IsLetter name[0]
         && (name |> Seq.forall (fun value -> System.Char.IsLetterOrDigit value || value = '.' || value = '-' || value = '_' || value = '?' || value = '!'))

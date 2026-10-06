@@ -166,9 +166,9 @@ module IrFormatting =
         | GeneratedDocument of GeneratedDocumentDto
         | PrimitiveContractDocument of PrimitiveContractDocumentDto
 
-    // Version 2 adds the verified lexical Scope operation. Emit one global
-    // version so consumers never misread an extended document as v1.
-    let private formatVersion = 2
+    // Version 3 adds the typed ListFold operation. Emit one global
+    // version so consumers never misread an extended document as version 2.
+    let private formatVersion = 3
     // The formatter rejects deep documents before JsonSerializer or the outer
     // Protocol response can throw. This conservative estimate reserves ten
     // JSON levels for the response envelope and fixed DTO nesting.
@@ -368,6 +368,12 @@ module IrFormatting =
             addCall "callback" call
             addType "elementType" item
             addType "resultType" IrUnit
+        | IrOperation.ListFold(call, item, accumulator) ->
+            addString node "kind" "list-fold"
+            addCall "callback" call
+            addType "elementType" item
+            addType "accumulatorType" accumulator
+            addType "resultType" accumulator
         | IrOperation.StoreLocal slot ->
             addString node "kind" "store-local"
             addLocal "local" slot
@@ -471,6 +477,7 @@ module IrFormatting =
         | IrOperation.Call call -> call.InputTypes @ call.OutputTypes
         | IrOperation.ListMap(call, item, output) -> call.InputTypes @ call.OutputTypes @ [ item; output ]
         | IrOperation.ListFilter(call, item) | IrOperation.ListEach(call, item) -> call.InputTypes @ call.OutputTypes @ [ item ]
+        | IrOperation.ListFold(call, item, accumulator) -> call.InputTypes @ call.OutputTypes @ [ item; accumulator ]
         | IrOperation.MakeRecord(call, _) | IrOperation.GetRecordField(call, _, _) | IrOperation.UnwrapScalar(call, _) -> call.InputTypes @ call.OutputTypes
         | IrOperation.WrapScalar(call, _, validator) ->
             call.InputTypes @ call.OutputTypes @ (validator |> Option.map (fun item -> item.InputTypes @ item.OutputTypes) |> Option.defaultValue [])
@@ -543,6 +550,7 @@ module IrFormatting =
                 | IrOperation.Call call -> collectCallTypeKeys found call
                 | IrOperation.ListMap(call, item, output) -> collectTypeKeys (collectTypeKeys (collectCallTypeKeys found call) item) output
                 | IrOperation.ListFilter(call, item) | IrOperation.ListEach(call, item) -> collectTypeKeys (collectCallTypeKeys found call) item
+                | IrOperation.ListFold(call, item, accumulator) -> collectTypeKeys (collectTypeKeys (collectCallTypeKeys found call) item) accumulator
                 | IrOperation.MakeRecord(call, key) -> collectCallTypeKeys (Set.add key found) call
                 | IrOperation.GetRecordField(call, key, _) -> collectCallTypeKeys (Set.add key found) call
                 | IrOperation.WrapScalar(call, key, validator) ->
@@ -816,6 +824,7 @@ module IrFormatting =
         | "list-map" -> "list.map callback=" + callText "callback" + " : " + getType "elementType" + " -> " + getType "outputType"
         | "list-filter" -> "list.filter callback=" + callText "callback" + " : " + getType "elementType" + " -> Bool"
         | "list-each" -> "list.each callback=" + callText "callback" + " : " + getType "elementType" + " -> Unit"
+        | "list-fold" -> "list.fold callback=" + callText "callback" + " : " + getType "accumulatorType" + " " + getType "elementType" + " -> " + getType "accumulatorType"
         | "store-local" -> "store local " + getLocal "local"
         | "load-local" -> "load local " + getLocal "local"
         | "if" -> "if"

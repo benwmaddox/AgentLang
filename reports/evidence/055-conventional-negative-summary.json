@@ -1,0 +1,32 @@
+[
+  {
+    "task": 1,
+    "passed": true,
+    "rejectedAt": "standard-annual-true independent Bool result",
+    "passingPriorChecks": 12
+  },
+  {
+    "task": 2,
+    "passed": true,
+    "rejectedAt": "standard-annual-true independent Float result",
+    "passingPriorChecks": 12
+  },
+  {
+    "task": 3,
+    "passed": true,
+    "rejectedAt": "premium-annual-false independent Bool result",
+    "passingPriorChecks": 6
+  },
+  {
+    "task": 4,
+    "passed": true,
+    "rejectedAt": "premium-annual-false independent Float result",
+    "passingPriorChecks": 6
+  },
+  {
+    "task": 5,
+    "passed": true,
+    "rejectedAt": "premium-annual-false independent Float result",
+    "passingPriorChecks": 6
+  }
+]

@@ -900,7 +900,7 @@ module Storage =
                 | StoredCallForm.Direct | StoredCallForm.AbsoluteRoot -> ()
                 | StoredCallForm.DotStage stage -> validMetadataText "Call binding dot stage" 128 path stage
                 | StoredCallForm.StaticCallback(stage, _) ->
-                    if stage <> "map" && stage <> "filter" && stage <> "each" then
+                    if stage <> "map" && stage <> "filter" && stage <> "each" && stage <> "fold" then
                         failure "STORAGE_INVALID_MANIFEST" $"Static callback stage '{stage}' is not supported." path
                 let belongsToDefinition = binding.Source = revision.Definition
                 let belongsToTest = revision.Tests |> List.contains binding.Source

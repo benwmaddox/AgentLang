@@ -145,6 +145,9 @@ type IrOperation =
     | ListMap of IrResolvedCall * IrType * IrType
     | ListFilter of IrResolvedCall * IrType
     | ListEach of IrResolvedCall * IrType
+    /// Strict left fold. The input stack suffix is List<Item> then Accumulator;
+    /// the callback receives Accumulator then Item and returns Accumulator.
+    | ListFold of IrResolvedCall * ItemType: IrType * AccumulatorType: IrType
     | StoreLocal of LocalSlot
     | LoadLocal of LocalSlot
     | Scope of IrBlock
@@ -573,6 +576,19 @@ module IrVerifier =
                         let prefix, actual = pop 1
                         if actual <> [ IrList item ] then operationError "IR_LIST_STACK_MISMATCH" "Each input stack must end in List<T>." [ IrTypes.format (IrList item) ] (actual |> List.map IrTypes.format)
                         { shape with StackTypes = prefix @ [ IrUnit ] }, callback.ResolvedEffects
+                    | IrOperation.ListFold(callback, item, accumulator) ->
+                        verifyIrType program sourceOwner (Some instruction.Site) item
+                        verifyIrType program sourceOwner (Some instruction.Site) accumulator
+                        verifyCall program catalog owner.FunctionName instruction.Site callback
+                        if callback.InputTypes <> [ accumulator; item ] || callback.OutputTypes <> [ accumulator ] then
+                            operationError "IR_CALLBACK_SIGNATURE_MISMATCH" "Fold callback must have concrete signature Accumulator Item -> Accumulator."
+                                [ $"{IrTypes.format accumulator} {IrTypes.format item} -> {IrTypes.format accumulator}" ]
+                                [ String.concat " " (callback.InputTypes |> List.map IrTypes.format) + " -> " + String.concat " " (callback.OutputTypes |> List.map IrTypes.format) ]
+                        let prefix, actual = pop 2
+                        if actual <> [ IrList item; accumulator ] then
+                            operationError "IR_LIST_STACK_MISMATCH" "Fold input stack must end in List<T> followed by its initial accumulator."
+                                [ IrTypes.format (IrList item); IrTypes.format accumulator ] (actual |> List.map IrTypes.format)
+                        { shape with StackTypes = prefix @ [ accumulator ] }, callback.ResolvedEffects
                     | IrOperation.StoreLocal slot ->
                         if not (owner.LocalNames.ContainsKey slot) then operationError "IR_UNKNOWN_LOCAL_SLOT" "IR local store references a slot absent from the function layout." [] [ sprintf "%A" slot ]
                         let prefix, actual = pop 1
@@ -711,6 +727,7 @@ module IrVerifier =
                     collectBlock errorBlock.Code leftSites leftBranches
                 | IrOperation.ListMap _ | IrOperation.ListEach _ -> Map.add instruction.Site [ "empty"; "nonempty" ] branches |> fun branches -> sites, branches
                 | IrOperation.ListFilter _ -> Map.add instruction.Site [ "empty"; "nonempty"; "keep"; "drop" ] branches |> fun branches -> sites, branches
+                | IrOperation.ListFold _ -> Map.add instruction.Site [ "empty"; "nonempty" ] branches |> fun branches -> sites, branches
                 | _ -> sites, branches) (sites, branches)
         collectBlock block.Code Set.empty Map.empty
 
@@ -735,7 +752,7 @@ module IrVerifier =
                 let direct =
                     match instruction.Operation with
                     | IrOperation.Call call -> [ call.ResolvedTarget ]
-                    | IrOperation.ListMap(call, _, _) | IrOperation.ListFilter(call, _) | IrOperation.ListEach(call, _) -> [ call.ResolvedTarget ]
+                    | IrOperation.ListMap(call, _, _) | IrOperation.ListFilter(call, _) | IrOperation.ListEach(call, _) | IrOperation.ListFold(call, _, _) -> [ call.ResolvedTarget ]
                     | IrOperation.MakeRecord(call, _) | IrOperation.GetRecordField(call, _, _) | IrOperation.UnwrapScalar(call, _) -> [ call.ResolvedTarget ]
                     | IrOperation.WrapScalar(call, _, validator) -> call.ResolvedTarget :: (validator |> Option.map (fun value -> value.ResolvedTarget) |> Option.toList)
                     | _ -> []

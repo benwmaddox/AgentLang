@@ -1966,6 +1966,28 @@ end
 
         let listOps = evaluate runtime "2 list.singleton<Int> 3 list.append 4 list.singleton<Int> list.concat list.count" |> expectOk "append, concatenate, and count lists"
         equal "3" (stackValue listOps 0) "list operations preserve values"
+        let foldStep =
+            "word container.fold-step : Int Int -> Int\n"
+            + "    effects none\n"
+            + "    swap\n"
+            + "    10\n"
+            + "    multiply\n"
+            + "    add\n"
+            + "end"
+        define runtime foldStep |> expectOk "define a static two-input fold step" |> ignore
+        let folded = evaluate runtime "1 list.singleton<Int> 2 list.append 3 list.append 0 list.fold container.fold-step" |> expectOk "fold Stack list left-to-right"
+        equal "123" (stackValue folded 0) "Stack list.fold applies callback items in source order"
+        let emptyFold = evaluate runtime "list.empty<Int> 7 list.fold container.fold-step" |> expectOk "fold an empty Stack list"
+        equal "7" (stackValue emptyFold 0) "Stack list.fold returns its seed for empty input"
+        let prefixFold = evaluate runtime "99 1 list.singleton<Int> 2 list.append 0 list.fold container.fold-step" |> expectOk "fold while preserving the earlier Stack prefix"
+        equal "99" (stackValue prefixFold 0) "Stack list.fold preserves preexisting stack values"
+        equal "12" (stackValue prefixFold 1) "Stack fold result is appended above the preserved prefix"
+        let flowFold =
+            dispatch runtime "eval"
+                [ "frontend", jsonString "flow"
+                  "code", jsonString "list::append(list::append(list::singleton<Int>(1), 2), 3).fold(0, container::fold-step)" ]
+            |> expectOk "use the same statically named fold step from Flow"
+        equal "123" (stackValue flowFold 0) "Flow fold composes with a Stack-authored callback"
         let mapped = evaluate runtime "2 list.singleton<Int> 3 list.append list.map container.increment" |> expectOk "map callback over values"
         equal "[3, 4]" (stackValue mapped 0) "map executes its statically named callback"
         equal "List<Int>" (stackType mapped 0) "map reports callback result type"

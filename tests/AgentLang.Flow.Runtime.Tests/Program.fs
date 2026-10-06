@@ -1983,6 +1983,136 @@ module Program =
         |> ignore
         equal beforeLibraryDeprecate.ManifestHash (Storage.load libraryStore |> Result.defaultWith (fun problem -> failwith problem.Message)).ManifestHash "library deprecation also requires current actual branch coverage"
 
+    let private testFlowStaticListFold root =
+        let project = Path.Combine(root, "flow-static-list-fold")
+        let capabilities = Set.ofList [ "fs.read"; "fs.write" ]
+        let engine = Runtime.Engine(project, capabilities, "2034-05-06T07:08:09Z")
+        let foldOwnerSource =
+            "word domain.fold-number(items: List<Int>) -> Int {\n"
+            + "    effects none\n"
+            + "    items.fold(0, domain::fold-step)\n"
+            + "}"
+        let source =
+            "type Email : String { }\n\n"
+            + "record Customer { field email: Email; }\n\n"
+            + "word domain.fold-step(acc: Int, item: Int) -> Int {\n"
+            + "    effects none\n"
+            + "    if int::greater-than(item, 0) { add(multiply(acc, 10), item) } else { multiply(acc, 10) }\n"
+            + "}\n\n"
+            + foldOwnerSource + "\n\n"
+            + "word domain.keep-email(acc: Email, item: Int) -> Email {\n"
+            + "    effects none\n"
+            + "    acc\n"
+            + "}\n\n"
+            + "word domain.fold-email(items: List<Int>) -> Email {\n"
+            + "    effects none\n"
+            + "    items.fold(Email::new(\"seed@example.com\"), domain::keep-email)\n"
+            + "}\n\n"
+            + "word domain.keep-customer(acc: Customer, item: Int) -> Customer {\n"
+            + "    effects none\n"
+            + "    acc\n"
+            + "}\n\n"
+            + "word domain.fold-customer(items: List<Int>) -> Customer {\n"
+            + "    effects none\n"
+            + "    items.fold(customer::new(email = Email::new(\"seed@example.com\")), domain::keep-customer)\n"
+            + "}\n\n"
+            + "word io.read-step(acc: String, item: Int) -> String {\n"
+            + "    effects fs.read\n"
+            + "    file::read(acc)\n"
+            + "}\n\n"
+            + "word io.fold-path(items: List<Int>) -> String {\n"
+            + "    effects fs.read\n"
+            + "    items.fold(\"/fold-seed\", io::read-step)\n"
+            + "}\n\n"
+            + "test domain.fold-step/positive { domain::fold-step(0, 1) => 1 }\n\n"
+            + "test domain.fold-number/empty { domain::fold-number(list::empty<Int>()) => 0 }\n\n"
+            + "test domain.fold-number/nonempty { domain::fold-number(list::append(list::append(list::singleton<Int>(1), 2), 3)) => 123 }\n\n"
+            + "test domain.keep-email/identity { equals(domain::keep-email(Email::new(\"seed@example.com\"), 1), Email::new(\"seed@example.com\")) => true }\n\n"
+            + "test domain.fold-email/empty { equals(domain::fold-email(list::empty<Int>()), Email::new(\"seed@example.com\")) => true }\n\n"
+            + "test domain.keep-customer/identity { equals(domain::keep-customer(customer::new(email = Email::new(\"seed@example.com\")), 1), customer::new(email = Email::new(\"seed@example.com\"))) => true }\n\n"
+            + "test domain.fold-customer/empty { equals(domain::fold-customer(list::empty<Int>()), customer::new(email = Email::new(\"seed@example.com\"))) => true }\n\n"
+            + "test io.fold-path/empty { io::fold-path(list::empty<Int>()) => \"/fold-seed\" }"
+        defineFlowProject engine source [] |> expectOk "define Flow fold words with an integer branch, nominal accumulators, and an effectful callback" |> ignore
+        evalFlow engine "file::write(\"/fold-seed\", \"callback-ran\")" |> expectOk "seed the virtual file used to observe accidental empty-fold callback execution" |> ignore
+        equal "\"/fold-seed\"" (stringValue (evalFlow engine "io::fold-path(list::empty<Int>())" |> expectOk "evaluate an empty effectful fold" |> fun response -> response["data"].["stack"].[0])) "empty fold returns its seed without invoking the read callback"
+        expectError "FLOW_CALLBACK_INPUT_TYPE"
+            (defineFlowProject engine
+                "word domain.invalid-email-fold(items: List<Int>) -> Email {\n effects none\n items.fold(Email::new(\"seed@example.com\"), domain::string-step)\n }\n\nword domain.string-step(acc: String, item: Int) -> String {\n effects none\n acc\n }"
+                [])
+        |> ignore
+        equal "Email" (stringValue (evalFlow engine "domain::fold-email(list::empty<Int>())" |> expectOk "fold with a nominal scalar seed" |> fun response -> response["data"].["stackTypes"].[0])) "Flow fold keeps a nominal scalar accumulator type"
+        equal "Customer" (stringValue (evalFlow engine "domain::fold-customer(list::empty<Int>())" |> expectOk "fold with a nominal record seed" |> fun response -> response["data"].["stackTypes"].[0])) "Flow fold keeps a nominal record accumulator type"
+        let dependencies = dispatch engine "dependencies" [ "word", jstr "domain.fold-number" ] |> expectOk "inspect fold callback dependency"
+        check (jsonArrayStrings (dependencies["data"].["dependencies"]) |> List.contains "domain.fold-step") "fold callback is a direct dependency"
+        let callers = dispatch engine "callers" [ "word", jstr "domain.fold-step" ] |> expectOk "inspect fold callback callers"
+        check (jsonArrayStrings callers["data"] |> List.contains "domain.fold-number") "fold owner appears as a callback caller"
+        let effects = dispatch engine "effects" [ "word", jstr "io.fold-path" ] |> expectOk "inspect fold effect closure"
+        equal [ "fs.read" ] (jsonArrayStrings effects["data"]) "fold inherits its static callback's declared effect"
+        assertAllPassed 2 (dispatch engine "test" [ "word", jstr "domain.fold-number" ] |> expectOk "run owner tests covering both fold branches")
+
+        let missingCallbackBranch = commit engine "commit" "domain.fold-step" [ "library", jbool true ] |> expectError "LIBRARY_COVERAGE_INCOMPLETE"
+        check (missingCallbackBranch["error"].["actual"].ToJsonString().Length > 0) "library gate reports the callback's own uncovered branch"
+        let negativeCallbackTest = "test domain.fold-step/nonpositive { domain::fold-step(12, -1) => 120 }"
+        defineFlowProject engine negativeCallbackTest [] |> expectOk "attach the fold callback's own negative branch test" |> ignore
+        assertAllPassed 2 (dispatch engine "test" [ "word", jstr "domain.fold-step" ] |> expectOk "run the callback's independent branch tests")
+        commit engine "commit" "domain.fold-step" [ "library", jbool true ] |> expectOk "publish callback after its own branches are covered" |> ignore
+        commit engine "commit" "domain.fold-number" [ "library", jbool true ] |> expectOk "publish fold owner after empty/nonempty branch coverage" |> ignore
+
+        let store = Storage.create project
+        let snapshot = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let manifest = snapshot.Manifest |> Option.defaultWith (fun () -> failwith "Fold commit did not persist a manifest.")
+        let ownerId = getWordId engine "domain.fold-number"
+        let callbackId = getWordId engine "domain.fold-step"
+        let ownerRevision = manifest.Revisions |> List.find (fun item -> item.WordId = ownerId && item.Revision = (manifest.Words |> List.find (fun head -> head.WordId = ownerId)).CurrentRevision)
+        let exactOwnerSource = Storage.readSource store ownerRevision.Definition |> Result.defaultWith (fun problem -> failwith problem.Message)
+        equal foldOwnerSource exactOwnerSource "persisted definition retains the exact authored fold source"
+        let callbackBinding = ownerRevision.CallBindings |> List.find (fun binding -> binding.Form = StoredCallForm.StaticCallback("fold", FlowWordReferenceQualification.NamespaceQualified))
+        equal (StoredCallTarget.UserWord callbackId) callbackBinding.Target "persisted fold binding targets the callback's stable identity"
+        match callbackBinding.Path with
+        | FlowAstPath.FlowAstPath segments ->
+            check (segments |> List.contains (FlowAstPathSegment.DotArgument 1)) "persisted callback binding points to DotArgument 1"
+            check (not (segments |> List.contains (FlowAstPathSegment.DotArgument 0))) "persisted seed expression remains distinct from the callback"
+        let reloaded = Runtime.Engine(project, capabilities, "2034-05-06T07:08:09Z")
+        equal ownerId (getWordId reloaded "domain.fold-number") "fresh Engine reload preserves the fold owner identity"
+        equal callbackId (getWordId reloaded "domain.fold-step") "fresh Engine reload preserves the callback identity"
+        assertAllPassed 2 (dispatch reloaded "test" [ "word", jstr "domain.fold-number" ] |> expectOk "run persisted empty/nonempty fold tests")
+        equal "123" (stringValue (evalFlow reloaded "domain::fold-number(list::append(list::append(list::singleton<Int>(1), 2), 3))" |> expectOk "execute reloaded ordered fold" |> fun response -> response["data"].["stack"].[0])) "reloaded fold still visits items in order"
+
+        dispatch reloaded "rename" [ "word", jstr "domain.fold-step"; "to", jstr "domain.append-number"; "actor", jstr "client" ]
+        |> expectOk "semantically rename a fold callback and rewrite its caller"
+        |> ignore
+        equal callbackId (getWordId reloaded "domain.append-number") "callback rename preserves its stable identity"
+        let renamedSource = stringValue (dispatch reloaded "source" [ "word", jstr "domain.fold-number" ] |> expectOk "read rewritten fold source" |> fun response -> response["data"])
+        check (renamedSource.Contains("items.fold(0, domain::append-number)", StringComparison.Ordinal)) "rename rewrites only the callback reference while retaining fold source form"
+        let renamedOwner = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun value -> value.Manifest.Value.Revisions |> List.find (fun item -> item.WordId = ownerId && item.Revision = 2)
+        let renamedBinding = renamedOwner.CallBindings |> List.find (fun binding -> binding.Form = StoredCallForm.StaticCallback("fold", FlowWordReferenceQualification.NamespaceQualified))
+        equal (StoredCallTarget.UserWord callbackId) renamedBinding.Target "renamed fold binding remains attached to the same callback identity"
+        match renamedBinding.Path with
+        | FlowAstPath.FlowAstPath segments -> check (segments |> List.contains (FlowAstPathSegment.DotArgument 1)) "renamed callback remains at DotArgument 1"
+
+        let replacement =
+            "word domain.append-number(acc: Int, item: Int) -> Int {\n"
+            + "    effects none\n"
+            + "    if int::greater-than(item, 0) { add(multiply(acc, 10), item) } else { multiply(acc, 10) }\n"
+            + "}"
+        let currentCallbackRevision = (Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)).Manifest.Value.Words |> List.find (fun head -> head.WordId = callbackId) |> fun head -> head.CurrentRevision
+        defineFlow reloaded replacement [] [] [ "replace", jbool true; "expectedRevision", jint currentCallbackRevision ]
+        |> expectOk "stage a compatible fold callback replacement"
+        |> ignore
+        commit reloaded "replace-word" "domain.append-number" [] |> expectOk "publish the replacement behind the stable callback identity" |> ignore
+        equal callbackId (getWordId reloaded "domain.append-number") "fold callback replacement preserves its stable identity"
+        assertAllPassed 2 (dispatch reloaded "test" [ "word", jstr "domain.fold-number" ] |> expectOk "run the retained fold caller tests after callback replacement")
+        equal "123" (stringValue (evalFlow reloaded "domain::fold-number(list::append(list::append(list::singleton<Int>(1), 2), 3))" |> expectOk "execute fold after callback replacement" |> fun response -> response["data"].["stack"].[0])) "replacement preserves fold behavior"
+
+        let deniedProject = Path.Combine(root, "flow-fold-effect-denial")
+        let denied = Runtime.Engine(deniedProject, Set.empty, "2034-05-06T07:08:09Z")
+        let effectSource =
+            "word io.read-step(acc: String, item: Int) -> String {\n effects fs.read\n file::read(acc)\n }\n\n"
+            + "word io.fold-path(items: List<Int>) -> String {\n effects fs.read\n items.fold(\"/missing\", io::read-step)\n }"
+        defineFlowProject denied effectSource [] |> expectOk "define denied effectful fold without granting filesystem access" |> ignore
+        expectError "CAPABILITY_DENIED" (evalFlow denied "io::fold-path(list::empty<Int>())")
+        |> ignore
+
     let private testFlowValidatorCannotBeRenamedAfterTypeCommit root =
         let project = Path.Combine(root, "flow-validator-frozen")
         let engine = Runtime.Engine(project, Set.empty, "2034-05-06T07:08:09Z")
@@ -2369,9 +2499,10 @@ module Program =
             testFlowMaintenanceRenameDeprecateAndRestore root
             testFlowMaintenanceRejectsUntouchedRebind root
             testFlowMaintenanceFailureAndLibraryCoverage root
+            testFlowStaticListFold root
             testFlowValidatorCannotBeRenamedAfterTypeCommit root
             testFlowProjectDocumentTypesCommitAndReload root
-            printfn $"Flow Runtime tests passed: 18 groups, {assertions} assertions."
+            printfn $"Flow Runtime tests passed: 19 groups, {assertions} assertions."
             0
         finally
             if Directory.Exists root then Directory.Delete(root, true)

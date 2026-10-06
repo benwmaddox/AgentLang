@@ -673,6 +673,88 @@ let private testStaticCallbacksAndEffects () =
     let wrongCallback = { executable with FunctionsById = Map.add mapWord wrongMap executable.FunctionsById }
     expectDiagnostic "map rejects a callback whose input differs from its element type" "IR_CALLBACK_SIGNATURE_MISMATCH" (fun () -> verify catalog wrongCallback)
 
+let private testListFoldVerification () =
+    let accumulatorKey = ProgramTypeKey 21
+    let itemKey = ProgramTypeKey 22
+    let accumulatorType = IrNominal accumulatorKey
+    let itemType = IrNominal itemKey
+    let accumulatorDefinition =
+        accumulatorKey,
+        IrScalarDefinition
+            { TypeKey = accumulatorKey
+              TypeName = "Accumulator"
+              BaseType = IrInt
+              ValidatorCall = None }
+    let itemDefinition =
+        itemKey,
+        IrRecordDefinition
+            { TypeKey = itemKey
+              TypeName = "Item"
+              RecordFields = [ { FieldIndex = 0; FieldName = "marker"; FieldType = IrInt } ] }
+    let stepId, stepContract = primitiveContract "fold.step" [ PatternVariable 0; PatternVariable 1 ] [ PatternVariable 0 ] noEffects
+    let tripleId, tripleContract = primitiveContract "fold.triple" [ PatternVariable 0; PatternVariable 1; PatternVariable 2 ] [ PatternVariable 0 ] noEffects
+    let boolResultId, boolResultContract = primitiveContract "fold.bool-result" [ PatternVariable 0; PatternVariable 1 ] [ PatternBool ] noEffects
+    let effectId, effectContract = primitiveContract "fold.effect" [ PatternVariable 0; PatternVariable 1 ] [ PatternVariable 0 ] (Set.singleton IrEffect.ConsoleWrite)
+    let catalog = Map.ofList [ stepId, stepContract; tripleId, tripleContract; boolResultId, boolResultContract; effectId, effectContract ]
+    let callback target name inputs outputs effects = resolved (PrimitiveTarget target) name inputs outputs effects
+    let foldWord = WordId "fold-nominal-owner"
+    let foldSite, foldSource = source foldWord 0 "list-fold"
+    let step = callback stepId "fold.step" [ accumulatorType; itemType ] [ accumulatorType ] noEffects
+    let ownerFunction =
+        functionWithCode foldWord 1 [ IrBool; IrList itemType; accumulatorType ] [ IrBool; accumulatorType ] noEffects noEffects Map.empty
+            [ { Site = foldSite; Operation = IrOperation.ListFold(step, itemType, accumulatorType) } ]
+    let executable =
+        program [ foldWord, ownerFunction ] [] [ accumulatorDefinition; itemDefinition ]
+            [ foldSite, foldSource ] [ foldWord, coverage foldWord [ 0 ] [ 0, [ "empty"; "nonempty" ] ] ]
+    verify catalog executable
+    check "ListFold verifies distinct nominal item and accumulator types and preserves its stack prefix" true
+
+    let replaceFold operation functionEffects =
+        let updatedFunction =
+            { ownerFunction with
+                FunctionDeclaredEffects = functionEffects
+                FunctionInferredEffects = functionEffects
+                FunctionBody = block [ IrBool; IrList itemType; accumulatorType ] Map.empty
+                    [ { Site = foldSite; Operation = operation } ] [ IrBool; accumulatorType ] Map.empty }
+        { executable with FunctionsById = Map.add foldWord updatedFunction executable.FunctionsById }
+    let reversed = callback stepId "fold.step" [ itemType; accumulatorType ] [ itemType ] noEffects
+    expectDiagnostic "fold rejects callback arguments in the wrong order" "IR_CALLBACK_SIGNATURE_MISMATCH"
+        (fun () -> verify catalog (replaceFold (IrOperation.ListFold(reversed, itemType, accumulatorType)) noEffects))
+
+    let wrongArity = callback tripleId "fold.triple" [ accumulatorType; itemType; IrBool ] [ accumulatorType ] noEffects
+    expectDiagnostic "fold rejects a callback with the wrong arity" "IR_CALLBACK_SIGNATURE_MISMATCH"
+        (fun () -> verify catalog (replaceFold (IrOperation.ListFold(wrongArity, itemType, accumulatorType)) noEffects))
+
+    let wrongOutput = callback boolResultId "fold.bool-result" [ accumulatorType; itemType ] [ IrBool ] noEffects
+    expectDiagnostic "fold rejects a callback whose output differs from its accumulator" "IR_CALLBACK_SIGNATURE_MISMATCH"
+        (fun () -> verify catalog (replaceFold (IrOperation.ListFold(wrongOutput, itemType, accumulatorType)) noEffects))
+
+    let wrongItem = callback stepId "fold.step" [ accumulatorType; IrBool ] [ accumulatorType ] noEffects
+    expectDiagnostic "fold rejects a callback input that disagrees with its closed list element type" "IR_CALLBACK_SIGNATURE_MISMATCH"
+        (fun () -> verify catalog (replaceFold (IrOperation.ListFold(wrongItem, itemType, accumulatorType)) noEffects))
+    expectDiagnostic "fold rejects a forged item annotation that disagrees with the actual list element type" "IR_LIST_STACK_MISMATCH"
+        (fun () -> verify catalog (replaceFold (IrOperation.ListFold(wrongItem, IrBool, accumulatorType)) noEffects))
+
+    let effectful = callback effectId "fold.effect" [ accumulatorType; itemType ] [ accumulatorType ] (Set.singleton IrEffect.ConsoleWrite)
+    let effectWord = WordId "fold-effect-owner"
+    let effectSite, effectSource = source effectWord 0 "list-fold"
+    let effectFunction =
+        functionWithCode effectWord 1 [ IrList itemType; accumulatorType ] [ accumulatorType ]
+            (Set.singleton IrEffect.ConsoleWrite) (Set.singleton IrEffect.ConsoleWrite) Map.empty
+            [ { Site = effectSite; Operation = IrOperation.ListFold(effectful, itemType, accumulatorType) } ]
+    let effectProgram =
+        program [ effectWord, effectFunction ] [] [ accumulatorDefinition; itemDefinition ]
+            [ effectSite, effectSource ] [ effectWord, coverage effectWord [ 0 ] [ 0, [ "empty"; "nonempty" ] ] ]
+    verify catalog effectProgram
+    let undercounted = { effectFunction with FunctionInferredEffects = noEffects }
+    let undercountedProgram = { effectProgram with FunctionsById = Map.add effectWord undercounted effectProgram.FunctionsById }
+    expectDiagnostic "fold callback effects remain mandatory when the list may be empty" "IR_FUNCTION_EFFECT_MISMATCH"
+        (fun () -> verify catalog undercountedProgram)
+    let underdeclared = { effectFunction with FunctionDeclaredEffects = noEffects }
+    let underdeclaredProgram = { effectProgram with FunctionsById = Map.add effectWord underdeclared effectProgram.FunctionsById }
+    expectDiagnostic "fold rejects a forged declaration that omits callback effects" "IR_UNDECLARED_EFFECT"
+        (fun () -> verify catalog underdeclaredProgram)
+
 let private testIdentityAndCallGraphGuards () =
     let left = WordId "cycle-left"
     let right = WordId "cycle-right"
@@ -686,6 +768,36 @@ let private testIdentityAndCallGraphGuards () =
         program [ left, leftFunction; right, rightFunction ] [] [] [ leftSite, leftSource; rightSite, rightSource ]
             [ left, coverage left [ 0 ] []; right, coverage right [ 0 ] [] ]
     expectDiagnostic "raw IR call graph cannot bypass recursion checks" "IR_RECURSIVE_CALL_GRAPH" (fun () -> verify Map.empty recursive)
+
+    let foldOwner = WordId "fold-cycle-owner"
+    let foldStep = WordId "fold-cycle-step"
+    let ownerSite, ownerSource = source foldOwner 0 "list-fold"
+    let dropSite, dropSource = source foldStep 0 "call"
+    let emptySite, emptySource = source foldStep 1 "list-empty"
+    let swapSite, swapSource = source foldStep 2 "call"
+    let backEdgeSite, backEdgeSource = source foldStep 3 "call"
+    let dropId, dropContract = primitiveContract "drop" [ PatternVariable 0 ] [] noEffects
+    let swapId, swapContract = primitiveContract "swap" [ PatternVariable 0; PatternVariable 1 ] [ PatternVariable 1; PatternVariable 0 ] noEffects
+    let foldCatalog = Map.ofList [ dropId, dropContract; swapId, swapContract ]
+    let dropCall = resolved (PrimitiveTarget dropId) "drop" [ IrInt ] [] noEffects
+    let swapCall = resolved (PrimitiveTarget swapId) "swap" [ IrInt; IrList IrInt ] [ IrList IrInt; IrInt ] noEffects
+    let backEdge = resolved (UserWordTarget(foldOwner, 1)) "fold-cycle-owner" [ IrList IrInt; IrInt ] [ IrInt ] noEffects
+    let foldCallback = resolved (UserWordTarget(foldStep, 1)) "fold-cycle-step" [ IrInt; IrInt ] [ IrInt ] noEffects
+    let ownerFunction =
+        functionWithCode foldOwner 1 [ IrList IrInt; IrInt ] [ IrInt ] noEffects noEffects Map.empty
+            [ { Site = ownerSite; Operation = IrOperation.ListFold(foldCallback, IrInt, IrInt) } ]
+    let stepFunction =
+        functionWithCode foldStep 1 [ IrInt; IrInt ] [ IrInt ] noEffects noEffects Map.empty
+            [ { Site = dropSite; Operation = IrOperation.Call dropCall }
+              { Site = emptySite; Operation = IrOperation.ListEmpty IrInt }
+              { Site = swapSite; Operation = IrOperation.Call swapCall }
+              { Site = backEdgeSite; Operation = IrOperation.Call backEdge } ]
+    let foldCycle =
+        program [ foldOwner, ownerFunction; foldStep, stepFunction ] [] []
+            [ ownerSite, ownerSource; dropSite, dropSource; emptySite, emptySource; swapSite, swapSource; backEdgeSite, backEdgeSource ]
+            [ foldOwner, coverage foldOwner [ 0 ] [ 0, [ "empty"; "nonempty" ] ]
+              foldStep, coverage foldStep [ 0; 1; 2; 3 ] [] ]
+    expectDiagnostic "static fold callbacks participate in IR recursion detection" "IR_RECURSIVE_CALL_GRAPH" (fun () -> verify foldCatalog foldCycle)
 
     let unknownWord = WordId "unknown-call"
     let unknownSite, unknownSource = source unknownWord 0 "call"
@@ -782,6 +894,8 @@ let private testCompilerLowering () =
           "list-to-text", wordEntry "list-to-text" [ TList TInt ] [ TList TString ] pureEffects [ MapList("int.to-string", line 50) ] 1 Candidate
           "list-positive", wordEntry "list-positive" [ TList TInt ] [ TList TInt ] pureEffects [ FilterList("int-positive?", line 60) ] 1 Candidate
           "list-print", wordEntry "list-print" [ TList TInt ] [ TUnit ] console [ EachList("int-print", line 70) ] 1 Candidate
+          "customer.fold-email-step", wordEntry "customer.fold-email-step" [ TNamed "Email"; TNamed "Customer" ] [ TNamed "Email" ] pureEffects [ Call("drop", line 71) ] 1 Candidate
+          "customers.fold-email", wordEntry "customers.fold-email" [ TList(TNamed "Customer"); TNamed "Email" ] [ TNamed "Email" ] pureEffects [ FoldList("customer.fold-email-step", line 72) ] 1 Candidate
           "local-join", wordEntry "local-join" [ TInt ] [ TInt ] pureEffects
               [ Let("amount", line 80)
                 Push(LBool true, line 81)
@@ -842,6 +956,18 @@ let private testCompilerLowering () =
     check "map has a concrete Int-to-String callback and List<String> result" (operations "list-to-text" |> List.exists (function | IrOperation.ListMap(call, IrInt, IrString) when call.ResolvedTarget = PrimitiveTarget(PrimitiveId "int.to-string") -> true | _ -> false))
     check "filter has a concrete Bool callback and List<Int> result" (operations "list-positive" |> List.exists (function | IrOperation.ListFilter(call, IrInt) when call.InputTypes = [ IrInt ] && call.OutputTypes = [ IrBool ] -> true | _ -> false))
     check "each retains callback effects even for an empty list" (functionByName "list-print" |> fun fn -> fn.FunctionInferredEffects = Set.singleton IrEffect.ConsoleWrite)
+    check "compiler lowers the fold callback to a stable static identity and preserves closed nominal stack types"
+        (operations "customers.fold-email"
+         |> List.exists (function
+             | IrOperation.ListFold(call, IrNominal itemKey, IrNominal accumulatorKey) ->
+                 call.ResolvedTarget = UserWordTarget(wordId "customer.fold-email-step", 1)
+                 && call.InputTypes = [ IrNominal accumulatorKey; IrNominal itemKey ]
+                 && call.OutputTypes = [ IrNominal accumulatorKey ]
+                 && itemKey <> accumulatorKey
+             | _ -> false))
+    check "compiler exposes both fold coverage branch outcomes"
+        (executable.CoverageByWord[wordId "customers.fold-email"].BranchOutcomes
+         |> Map.exists (fun _ outcomes -> outcomes = [ "empty"; "nonempty" ]))
     check "if join lowers both branches and preserves source coverage" (functionByName "customer.active?" |> fun fn -> fn.FunctionBody.Code |> List.exists (fun instruction -> match instruction.Operation with | IrOperation.If _ -> true | _ -> false) && executable.CoverageByWord[wordId "customer.active?"].BranchOutcomes.Count = 1)
     check "same local name across both if arms resolves to one slot" (operations "local-join" |> List.choose (function | IrOperation.StoreLocal slot | IrOperation.LoadLocal slot -> Some slot | _ -> None) |> List.distinct |> List.length = 1)
     let optionMatch = operations "option-value" |> List.choose (function | IrOperation.MatchOption(slot, _, _) -> Some slot | _ -> None) |> List.exactlyOne
@@ -1132,6 +1258,16 @@ let private testCompilerSnapshotIdentity () =
     let changedDeepContext = loweringContext (Map.ofList [ "deep", changedDeepEntry ]) Map.empty Map.empty
     expectDiagnostic "deep nested signatures are fully fingerprinted" "IR_STALE_COMPILER_SNAPSHOT" (fun () -> Compiler.compileIrBodyAgainstProgram changedDeepContext deepSnapshot "eval" [] [] |> ignore)
 
+    let foldStep name = wordEntry name [ TInt; TInt ] [ TInt ] Set.empty [ Call("add", span) ] 1 Candidate
+    let foldOwner callback = wordEntry "fold-owner" [ TList TInt; TInt ] [ TInt ] Set.empty [ FoldList(callback, span) ] 1 Candidate
+    let foldContext callback =
+        loweringContext (Map.ofList [ callback, foldStep callback; "fold-owner", foldOwner callback ]) Map.empty Map.empty
+    let oldFoldContext = foldContext "fold-step-old"
+    let newFoldContext = foldContext "fold-step-renamed"
+    let foldSnapshot = Compiler.compileIrProgram oldFoldContext
+    expectDiagnostic "changing a static fold callback target invalidates the bound compiler snapshot" "IR_STALE_COMPILER_SNAPSHOT"
+        (fun () -> Compiler.compileIrBodyAgainstProgram newFoldContext foldSnapshot "fold-owner" [] [] |> ignore)
+
 let private tests =
     [ "closed effect vocabulary", testClosedEffects
       "concrete primitive specializations", testPrimitiveSpecializations
@@ -1141,6 +1277,7 @@ let private tests =
       "Option and Result payload scope", testOptionAndResultCaseLocals
       "generated record and scalar operations", testGeneratedRecordAndScalarOperations
       "static callbacks and effects", testStaticCallbacksAndEffects
+      "typed list fold verification", testListFoldVerification
       "identity and call-graph guards", testIdentityAndCallGraphGuards
       "flat verifier stack safety", testFlatVerifierStackSafety
       "compiler lowering and detached bodies", testCompilerLowering

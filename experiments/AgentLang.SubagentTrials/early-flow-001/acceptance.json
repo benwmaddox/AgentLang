@@ -1,0 +1,863 @@
+{
+  "schemaVersion": 1,
+  "taskSequence": "early-flow-001",
+  "sourceVectorsSha256": "937633354809f58c8f318525ec8dd87cc3c0d28db5fd227838e2b5bbef8f5ccc",
+  "tolerance": {
+    "relative": 1E-12,
+    "minimumAbsolute": 1E-300
+  },
+  "tasks": [
+    {
+      "number": 1,
+      "word": "customer.premium?",
+      "inputs": [
+        "Customer"
+      ],
+      "output": "Bool",
+      "cases": [
+        {
+          "name": "premium-annual-true",
+          "kind": "premium",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": true
+        },
+        {
+          "name": "premium-annual-false",
+          "kind": "premium",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": false,
+          "expected": true
+        },
+        {
+          "name": "premium-monthly-true",
+          "kind": "premium",
+          "balance": 100.0,
+          "term": "monthly",
+          "renewable": true,
+          "expected": true
+        },
+        {
+          "name": "premium-monthly-false",
+          "kind": "premium",
+          "balance": 100.0,
+          "term": "monthly",
+          "renewable": false,
+          "expected": true
+        },
+        {
+          "name": "standard-annual-true",
+          "kind": "standard",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": false
+        },
+        {
+          "name": "standard-annual-false",
+          "kind": "standard",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": false,
+          "expected": false
+        },
+        {
+          "name": "standard-monthly-true",
+          "kind": "standard",
+          "balance": 100.0,
+          "term": "monthly",
+          "renewable": true,
+          "expected": false
+        },
+        {
+          "name": "standard-monthly-false",
+          "kind": "standard",
+          "balance": 100.0,
+          "term": "monthly",
+          "renewable": false,
+          "expected": false
+        },
+        {
+          "name": "case-sensitive-kind",
+          "kind": "Premium",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": false
+        },
+        {
+          "name": "case-sensitive-term",
+          "kind": "premium",
+          "balance": 100.0,
+          "term": "Annual",
+          "renewable": true,
+          "expected": true
+        },
+        {
+          "name": "term-trailing-space",
+          "kind": "premium",
+          "balance": 100.0,
+          "term": "annual ",
+          "renewable": true,
+          "expected": true
+        },
+        {
+          "name": "empty-kind",
+          "kind": "",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": false
+        },
+        {
+          "name": "zero-balance",
+          "kind": "premium",
+          "balance": 0.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": true
+        },
+        {
+          "name": "negative-balance",
+          "kind": "premium",
+          "balance": -100.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": true
+        },
+        {
+          "name": "larger-eligible",
+          "kind": "premium",
+          "balance": 250.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": true
+        },
+        {
+          "name": "larger-ineligible",
+          "kind": "premium",
+          "balance": 250.0,
+          "term": "monthly",
+          "renewable": true,
+          "expected": true
+        },
+        {
+          "name": "accent-kind",
+          "kind": "prémium",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": false
+        },
+        {
+          "name": "fractional-balance",
+          "kind": "premium",
+          "balance": 3.141592653589793,
+          "term": "annual",
+          "renewable": true,
+          "expected": true
+        },
+        {
+          "name": "tiny-balance",
+          "kind": "premium",
+          "balance": 1E-100,
+          "term": "annual",
+          "renewable": true,
+          "expected": true
+        },
+        {
+          "name": "large-finite-balance",
+          "kind": "standard",
+          "balance": 1E+100,
+          "term": "annual",
+          "renewable": true,
+          "expected": false
+        }
+      ]
+    },
+    {
+      "number": 2,
+      "word": "customer.discounted-balance",
+      "inputs": [
+        "Customer"
+      ],
+      "output": "Float",
+      "cases": [
+        {
+          "name": "premium-annual-true",
+          "kind": "premium",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": 90.0
+        },
+        {
+          "name": "premium-annual-false",
+          "kind": "premium",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": false,
+          "expected": 90.0
+        },
+        {
+          "name": "premium-monthly-true",
+          "kind": "premium",
+          "balance": 100.0,
+          "term": "monthly",
+          "renewable": true,
+          "expected": 90.0
+        },
+        {
+          "name": "premium-monthly-false",
+          "kind": "premium",
+          "balance": 100.0,
+          "term": "monthly",
+          "renewable": false,
+          "expected": 90.0
+        },
+        {
+          "name": "standard-annual-true",
+          "kind": "standard",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": 100.0
+        },
+        {
+          "name": "standard-annual-false",
+          "kind": "standard",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": false,
+          "expected": 100.0
+        },
+        {
+          "name": "standard-monthly-true",
+          "kind": "standard",
+          "balance": 100.0,
+          "term": "monthly",
+          "renewable": true,
+          "expected": 100.0
+        },
+        {
+          "name": "standard-monthly-false",
+          "kind": "standard",
+          "balance": 100.0,
+          "term": "monthly",
+          "renewable": false,
+          "expected": 100.0
+        },
+        {
+          "name": "case-sensitive-kind",
+          "kind": "Premium",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": 100.0
+        },
+        {
+          "name": "case-sensitive-term",
+          "kind": "premium",
+          "balance": 100.0,
+          "term": "Annual",
+          "renewable": true,
+          "expected": 90.0
+        },
+        {
+          "name": "term-trailing-space",
+          "kind": "premium",
+          "balance": 100.0,
+          "term": "annual ",
+          "renewable": true,
+          "expected": 90.0
+        },
+        {
+          "name": "empty-kind",
+          "kind": "",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": 100.0
+        },
+        {
+          "name": "zero-balance",
+          "kind": "premium",
+          "balance": 0.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": 0.0
+        },
+        {
+          "name": "negative-balance",
+          "kind": "premium",
+          "balance": -100.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": -90.0
+        },
+        {
+          "name": "larger-eligible",
+          "kind": "premium",
+          "balance": 250.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": 225.0
+        },
+        {
+          "name": "larger-ineligible",
+          "kind": "premium",
+          "balance": 250.0,
+          "term": "monthly",
+          "renewable": true,
+          "expected": 225.0
+        },
+        {
+          "name": "accent-kind",
+          "kind": "prémium",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": 100.0
+        },
+        {
+          "name": "fractional-balance",
+          "kind": "premium",
+          "balance": 3.141592653589793,
+          "term": "annual",
+          "renewable": true,
+          "expected": 2.827433388230814
+        },
+        {
+          "name": "tiny-balance",
+          "kind": "premium",
+          "balance": 1E-100,
+          "term": "annual",
+          "renewable": true,
+          "expected": 9.000000000000001E-101
+        },
+        {
+          "name": "large-finite-balance",
+          "kind": "standard",
+          "balance": 1E+100,
+          "term": "annual",
+          "renewable": true,
+          "expected": 1E+100
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "word": "subscription.annual-renewable?",
+      "inputs": [
+        "Subscription"
+      ],
+      "output": "Bool",
+      "cases": [
+        {
+          "name": "premium-annual-true",
+          "kind": "premium",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": true
+        },
+        {
+          "name": "premium-annual-false",
+          "kind": "premium",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": false,
+          "expected": false
+        },
+        {
+          "name": "premium-monthly-true",
+          "kind": "premium",
+          "balance": 100.0,
+          "term": "monthly",
+          "renewable": true,
+          "expected": false
+        },
+        {
+          "name": "premium-monthly-false",
+          "kind": "premium",
+          "balance": 100.0,
+          "term": "monthly",
+          "renewable": false,
+          "expected": false
+        },
+        {
+          "name": "standard-annual-true",
+          "kind": "standard",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": true
+        },
+        {
+          "name": "standard-annual-false",
+          "kind": "standard",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": false,
+          "expected": false
+        },
+        {
+          "name": "standard-monthly-true",
+          "kind": "standard",
+          "balance": 100.0,
+          "term": "monthly",
+          "renewable": true,
+          "expected": false
+        },
+        {
+          "name": "standard-monthly-false",
+          "kind": "standard",
+          "balance": 100.0,
+          "term": "monthly",
+          "renewable": false,
+          "expected": false
+        },
+        {
+          "name": "case-sensitive-kind",
+          "kind": "Premium",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": true
+        },
+        {
+          "name": "case-sensitive-term",
+          "kind": "premium",
+          "balance": 100.0,
+          "term": "Annual",
+          "renewable": true,
+          "expected": false
+        },
+        {
+          "name": "term-trailing-space",
+          "kind": "premium",
+          "balance": 100.0,
+          "term": "annual ",
+          "renewable": true,
+          "expected": false
+        },
+        {
+          "name": "empty-kind",
+          "kind": "",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": true
+        },
+        {
+          "name": "zero-balance",
+          "kind": "premium",
+          "balance": 0.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": true
+        },
+        {
+          "name": "negative-balance",
+          "kind": "premium",
+          "balance": -100.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": true
+        },
+        {
+          "name": "larger-eligible",
+          "kind": "premium",
+          "balance": 250.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": true
+        },
+        {
+          "name": "larger-ineligible",
+          "kind": "premium",
+          "balance": 250.0,
+          "term": "monthly",
+          "renewable": true,
+          "expected": false
+        },
+        {
+          "name": "accent-kind",
+          "kind": "prémium",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": true
+        },
+        {
+          "name": "fractional-balance",
+          "kind": "premium",
+          "balance": 3.141592653589793,
+          "term": "annual",
+          "renewable": true,
+          "expected": true
+        },
+        {
+          "name": "tiny-balance",
+          "kind": "premium",
+          "balance": 1E-100,
+          "term": "annual",
+          "renewable": true,
+          "expected": true
+        },
+        {
+          "name": "large-finite-balance",
+          "kind": "standard",
+          "balance": 1E+100,
+          "term": "annual",
+          "renewable": true,
+          "expected": true
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "word": "customer.renewal-balance",
+      "inputs": [
+        "Customer",
+        "Subscription"
+      ],
+      "output": "Float",
+      "cases": [
+        {
+          "name": "premium-annual-true",
+          "kind": "premium",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": 85.5
+        },
+        {
+          "name": "premium-annual-false",
+          "kind": "premium",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": false,
+          "expected": 90.0
+        },
+        {
+          "name": "premium-monthly-true",
+          "kind": "premium",
+          "balance": 100.0,
+          "term": "monthly",
+          "renewable": true,
+          "expected": 90.0
+        },
+        {
+          "name": "premium-monthly-false",
+          "kind": "premium",
+          "balance": 100.0,
+          "term": "monthly",
+          "renewable": false,
+          "expected": 90.0
+        },
+        {
+          "name": "standard-annual-true",
+          "kind": "standard",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": 95.0
+        },
+        {
+          "name": "standard-annual-false",
+          "kind": "standard",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": false,
+          "expected": 100.0
+        },
+        {
+          "name": "standard-monthly-true",
+          "kind": "standard",
+          "balance": 100.0,
+          "term": "monthly",
+          "renewable": true,
+          "expected": 100.0
+        },
+        {
+          "name": "standard-monthly-false",
+          "kind": "standard",
+          "balance": 100.0,
+          "term": "monthly",
+          "renewable": false,
+          "expected": 100.0
+        },
+        {
+          "name": "case-sensitive-kind",
+          "kind": "Premium",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": 95.0
+        },
+        {
+          "name": "case-sensitive-term",
+          "kind": "premium",
+          "balance": 100.0,
+          "term": "Annual",
+          "renewable": true,
+          "expected": 90.0
+        },
+        {
+          "name": "term-trailing-space",
+          "kind": "premium",
+          "balance": 100.0,
+          "term": "annual ",
+          "renewable": true,
+          "expected": 90.0
+        },
+        {
+          "name": "empty-kind",
+          "kind": "",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": 95.0
+        },
+        {
+          "name": "zero-balance",
+          "kind": "premium",
+          "balance": 0.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": 0.0
+        },
+        {
+          "name": "negative-balance",
+          "kind": "premium",
+          "balance": -100.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": -85.5
+        },
+        {
+          "name": "larger-eligible",
+          "kind": "premium",
+          "balance": 250.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": 213.75
+        },
+        {
+          "name": "larger-ineligible",
+          "kind": "premium",
+          "balance": 250.0,
+          "term": "monthly",
+          "renewable": true,
+          "expected": 225.0
+        },
+        {
+          "name": "accent-kind",
+          "kind": "prémium",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": 95.0
+        },
+        {
+          "name": "fractional-balance",
+          "kind": "premium",
+          "balance": 3.141592653589793,
+          "term": "annual",
+          "renewable": true,
+          "expected": 2.686061718819273
+        },
+        {
+          "name": "tiny-balance",
+          "kind": "premium",
+          "balance": 1E-100,
+          "term": "annual",
+          "renewable": true,
+          "expected": 8.55E-101
+        },
+        {
+          "name": "large-finite-balance",
+          "kind": "standard",
+          "balance": 1E+100,
+          "term": "annual",
+          "renewable": true,
+          "expected": 9.5E+99
+        }
+      ]
+    },
+    {
+      "number": 5,
+      "word": "customer.renewal-savings",
+      "inputs": [
+        "Customer",
+        "Subscription"
+      ],
+      "output": "Float",
+      "cases": [
+        {
+          "name": "premium-annual-true",
+          "kind": "premium",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": 14.5
+        },
+        {
+          "name": "premium-annual-false",
+          "kind": "premium",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": false,
+          "expected": 10.0
+        },
+        {
+          "name": "premium-monthly-true",
+          "kind": "premium",
+          "balance": 100.0,
+          "term": "monthly",
+          "renewable": true,
+          "expected": 10.0
+        },
+        {
+          "name": "premium-monthly-false",
+          "kind": "premium",
+          "balance": 100.0,
+          "term": "monthly",
+          "renewable": false,
+          "expected": 10.0
+        },
+        {
+          "name": "standard-annual-true",
+          "kind": "standard",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": 5.0
+        },
+        {
+          "name": "standard-annual-false",
+          "kind": "standard",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": false,
+          "expected": 0.0
+        },
+        {
+          "name": "standard-monthly-true",
+          "kind": "standard",
+          "balance": 100.0,
+          "term": "monthly",
+          "renewable": true,
+          "expected": 0.0
+        },
+        {
+          "name": "standard-monthly-false",
+          "kind": "standard",
+          "balance": 100.0,
+          "term": "monthly",
+          "renewable": false,
+          "expected": 0.0
+        },
+        {
+          "name": "case-sensitive-kind",
+          "kind": "Premium",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": 5.0
+        },
+        {
+          "name": "case-sensitive-term",
+          "kind": "premium",
+          "balance": 100.0,
+          "term": "Annual",
+          "renewable": true,
+          "expected": 10.0
+        },
+        {
+          "name": "term-trailing-space",
+          "kind": "premium",
+          "balance": 100.0,
+          "term": "annual ",
+          "renewable": true,
+          "expected": 10.0
+        },
+        {
+          "name": "empty-kind",
+          "kind": "",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": 5.0
+        },
+        {
+          "name": "zero-balance",
+          "kind": "premium",
+          "balance": 0.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": 0.0
+        },
+        {
+          "name": "negative-balance",
+          "kind": "premium",
+          "balance": -100.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": -14.5
+        },
+        {
+          "name": "larger-eligible",
+          "kind": "premium",
+          "balance": 250.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": 36.25
+        },
+        {
+          "name": "larger-ineligible",
+          "kind": "premium",
+          "balance": 250.0,
+          "term": "monthly",
+          "renewable": true,
+          "expected": 25.0
+        },
+        {
+          "name": "accent-kind",
+          "kind": "prémium",
+          "balance": 100.0,
+          "term": "annual",
+          "renewable": true,
+          "expected": 5.0
+        },
+        {
+          "name": "fractional-balance",
+          "kind": "premium",
+          "balance": 3.141592653589793,
+          "term": "annual",
+          "renewable": true,
+          "expected": 0.4555309347705201
+        },
+        {
+          "name": "tiny-balance",
+          "kind": "premium",
+          "balance": 1E-100,
+          "term": "annual",
+          "renewable": true,
+          "expected": 1.45E-101
+        },
+        {
+          "name": "large-finite-balance",
+          "kind": "standard",
+          "balance": 1E+100,
+          "term": "annual",
+          "renewable": true,
+          "expected": 5.000000000000011E+98
+        }
+      ]
+    }
+  ]
+}

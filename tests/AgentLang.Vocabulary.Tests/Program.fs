@@ -47,6 +47,7 @@ module Program =
 
     let private call name = Call(name, span "body" 1)
     let private namedCall callback = MapList(callback, span "body" 2)
+    let private foldCall callback = FoldList(callback, span "body" 3)
 
     let private record name fields : RecordEntry =
         { Definition =
@@ -89,6 +90,8 @@ module Program =
     let private testExactStructuralDuplicates () =
         let primitiveAdd = builtin "primitive.add" [ TInt; TInt ] [ TInt ] "host.add"
         let primitiveSubtract = builtin "primitive.subtract" [ TInt; TInt ] [ TInt ] "host.subtract"
+        let primitiveDrop = builtin "primitive.drop" [ TInt ] [] "host.drop"
+        let primitiveBoolNot = builtin "primitive.bool-not" [ TBool ] [ TBool ] "host.bool-not"
         let alpha = authored "customer.total-a" [ TInt ] [ TInt ] Set.empty [ call "primitive.add" ] "alpha documentation"
         let beta =
             word "billing.total-b" [ TInt ] [ TInt ] Set.empty [ Call("primitive.add", span "other-source" 48) ] "different docs" LibraryWord 99 (span "other-source" 48) None
@@ -106,10 +109,14 @@ module Program =
         let callbackTwo = authored "callback.two" [ TInt ] [ TBool ] Set.empty [ Push(LBool false, span "c2" 1) ] ""
         let callbackA = authored "callback.owner-a" [ TList TInt ] [ TList TBool ] Set.empty [ namedCall "callback.one" ] ""
         let callbackB = authored "callback.owner-b" [ TList TInt ] [ TList TBool ] Set.empty [ namedCall "callback.two" ] ""
+        let foldStepA = authored "fold.step-a" [ TBool; TInt ] [ TBool ] Set.empty [ call "primitive.drop" ] ""
+        let foldStepB = authored "fold.step-b" [ TBool; TInt ] [ TBool ] Set.empty [ call "primitive.drop"; call "primitive.bool-not" ] ""
+        let foldOwnerA = authored "fold.owner-a" [ TList TInt; TBool ] [ TBool ] Set.empty [ foldCall "fold.step-a" ] ""
+        let foldOwnerB = authored "fold.owner-b" [ TList TInt; TBool ] [ TBool ] Set.empty [ foldCall "fold.step-b" ] ""
         let entries =
-            [ primitiveAdd; primitiveSubtract; alpha; beta; localA; localB; literalA; literalB
+            [ primitiveAdd; primitiveSubtract; primitiveDrop; primitiveBoolNot; alpha; beta; localA; localB; literalA; literalB
               nominal; primitiveString; effectA; effectB; branchA; branchB
-              callbackOne; callbackTwo; callbackA; callbackB ]
+              callbackOne; callbackTwo; callbackA; callbackB; foldStepA; foldStepB; foldOwnerA; foldOwnerB ]
         let email = scalar "Email" TString None
         let wordIds = idsFor entries
         let index = makeIndex entries [] [ email ] wordIds
@@ -125,7 +132,8 @@ module Program =
               "type.email", "type.string", "nominal and primitive types remain distinct"
               "effect.a", "effect.b", "declared effects remain distinct"
               "branch.a", "branch.b", "branch structure remains distinct"
-              "callback.owner-a", "callback.owner-b", "callback target identity remains distinct" ] do
+              "callback.owner-a", "callback.owner-b", "callback target identity remains distinct"
+              "fold.owner-a", "fold.owner-b", "fold callback target identity remains distinct" ] do
             check
                 (VocabularyAnalysis.fingerprint index leftName <> VocabularyAnalysis.fingerprint index rightName)
                 reason
@@ -154,6 +162,21 @@ module Program =
             (VocabularyAnalysis.fingerprint newIndex "caller.renamed")
             "stable target ID preserves call identity through target and owner rename"
 
+        let oldFoldTarget = authored "fold-target.old" [ TBool; TInt ] [ TBool ] Set.empty [] ""
+        let oldFoldCaller = authored "fold-caller.old" [ TList TInt; TBool ] [ TBool ] Set.empty [ foldCall "fold-target.old" ] ""
+        let oldFoldIndex =
+            makeIndex [ oldFoldTarget; oldFoldCaller ] [] []
+                (Map.ofList [ "fold-target.old", "stable-fold-target"; "fold-caller.old", "stable-fold-caller-old" ])
+        let newFoldTarget = authored "fold-target.renamed" [ TBool; TInt ] [ TBool ] Set.empty [] "renamed target"
+        let newFoldCaller = authored "fold-caller.renamed" [ TList TInt; TBool ] [ TBool ] Set.empty [ foldCall "fold-target.renamed" ] "renamed caller"
+        let newFoldIndex =
+            makeIndex [ newFoldTarget; newFoldCaller ] [] []
+                (Map.ofList [ "fold-target.renamed", "stable-fold-target"; "fold-caller.renamed", "stable-fold-caller-new" ])
+        equal
+            (VocabularyAnalysis.fingerprint oldFoldIndex "fold-caller.old")
+            (VocabularyAnalysis.fingerprint newFoldIndex "fold-caller.renamed")
+            "stable callback ID preserves fold semantics across target and owner rename"
+
     let private testStaticDistanceAndCallbacks () =
         let primitive = builtin "primitive.step" [ TInt ] [ TInt ] "host.step"
         let stringPredicate = builtin "string.valid?" [ TString ] [ TBool ] "host.string-valid"
@@ -166,6 +189,8 @@ module Program =
         let left = authored "left" [] [ TInt ] Set.empty [ call "leaf" ] ""
         let right = authored "right" [] [ TInt ] Set.empty [ call "leaf" ] ""
         let callback = authored "callback" [ TInt ] [ TBool ] Set.empty [ call "primitive.step" ] ""
+        let foldStep = authored "fold.step" [ TBool; TInt ] [ TBool ] Set.empty [ call "primitive.step" ] ""
+        let foldRoot = authored "fold.root" [ TList TInt; TBool ] [ TBool ] Set.empty [ foldCall "fold.step" ] ""
         let body =
             [ call "left"
               call "right"
@@ -178,7 +203,7 @@ module Program =
               MatchOption("item", [ call "primitive.step" ], [ call "primitive.step" ], span "body" 4)
               MatchResult("ok", "error", [ call "primitive.step" ], [ call "primitive.step" ], span "body" 5) ]
         let root = authored "root" [] [ TUnit ] Set.empty body ""
-        let entries = [ primitive; stringPredicate; boolNot; generated; leaf; left; right; callback; emailValid; emailConstructor; boolConstructor; root ]
+        let entries = [ primitive; stringPredicate; boolNot; generated; leaf; left; right; callback; foldStep; foldRoot; emailValid; emailConstructor; boolConstructor; root ]
         let records = [ record "Customer" [ { Name = "email"; Type = TNamed "Email" } ] ]
         let scalars = [ scalar "Email" TString (Some "email.validate"); scalar "ValidatedBool" TBool (Some "bool.not") ]
         let index = makeIndex entries records scalars (idsFor entries)
@@ -189,6 +214,10 @@ module Program =
         equal [ "callback" ] estimate.DynamicCallbackTargets "callback target names are distinct and sorted"
         equal (Map.ofList [ "callback", 2I ]) estimate.DynamicCallbackOccurrences "each callback site retains its occurrence count"
         check estimate.DynamicCallbackRepetitionsUnknown "callback runtime repetition remains explicitly unknown"
+
+        let foldEstimate = VocabularyAnalysis.staticCallEstimate index "fold.root"
+        equal [ "fold.step" ] foldEstimate.DynamicCallbackTargets "fold step is a discoverable static callback dependency"
+        equal (Map.ofList [ "fold.step", 1I ]) foldEstimate.DynamicCallbackOccurrences "fold contributes one structural callback occurrence"
 
         let repeated = authored "repeated" [] [ TUnit ] Set.empty [ call "primitive.step"; call "primitive.step" ] ""
         let repeatedIndex = makeIndex [ primitive; repeated ] [] [] (idsFor [ repeated ])

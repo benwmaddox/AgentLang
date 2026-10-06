@@ -290,6 +290,37 @@
                   }
                 }
               }
+            },
+            {
+              "request": { "op": "test", "word": "parity.fold-decimal" },
+              "expect": {
+                "subset": {
+                  "ok": true,
+                  "data": {
+                    "results": [
+                      { "name": "empty-seed", "word": "parity.fold-decimal", "passed": true, "actual": ["7"] },
+                      { "name": "left-to-right", "word": "parity.fold-decimal", "passed": true, "actual": ["123"] }
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "request": { "op": "test", "word": "parity.fold-prefix" },
+              "expect": {
+                "subset": {
+                  "ok": true,
+                  "data": {
+                    "results": [
+                      { "name": "preserve", "word": "parity.fold-prefix", "passed": true, "actual": ["123"] }
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "request": { "op": "eval", "frontend": "stack", "code": "true 1 list.singleton<Int> 2 list.append 3 list.append 0 parity.fold-prefix" },
+              "expect": { "subset": { "ok": true, "data": { "stack": ["true", "123"], "stackTypes": ["Bool", "Int"] } } }
             }
           ]
         },

@@ -93,6 +93,8 @@ try {
         $null = Invoke-ValidationCheck 'flow-renewal-acceptance-gate' 'pwsh' @('-NoProfile', '-File', 'scripts/Verify-FlowRenewalAcceptanceGate.ps1', '-CliDll', $cliBinaryPath, '-EvidencePath', $renewalAcceptanceReportPath)
         $renewalReplayReportPath = [System.IO.Path]::ChangeExtension($ReportPath, 'renewal-replay.json')
         $null = Invoke-ValidationCheck 'flow-renewal-replay' 'pwsh' @('-NoProfile', '-File', 'scripts/Verify-FlowRenewalReplay.ps1', '-CliDll', $cliBinaryPath, '-EvidencePath', $renewalReplayReportPath)
+        $earlyNegativeReportPath = [System.IO.Path]::ChangeExtension($ReportPath, 'early-agent-negative.json')
+        $null = Invoke-ValidationCheck 'early-agent-negative-controls' 'pwsh' @('-NoProfile', '-File', 'scripts/Verify-EarlyAgentNegativeControls.ps1', '-CliDll', $cliBinaryPath, '-EvidencePath', $earlyNegativeReportPath)
         $hostReportPath = [System.IO.Path]::ChangeExtension($ReportPath, 'subagent-host.json')
         $cliBinaryPath = "src/AgentLang.Cli/bin/$Configuration/net9.0/AgentLang.Cli.dll"
         $null = Invoke-ValidationCheck 'subagent-trial-host' 'pwsh' @('-NoProfile', '-File', 'scripts/Verify-SubagentTrialHost.ps1', '-CliDll', $cliBinaryPath, '-EvidencePath', $hostReportPath)

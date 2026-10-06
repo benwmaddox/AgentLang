@@ -266,9 +266,9 @@ module FlowParser =
         | FlowContainerConstructor.ListSingleton | FlowContainerConstructor.OptionSome
         | FlowContainerConstructor.ResultOk | FlowContainerConstructor.ResultError -> true
 
-    let private callbackStage = function
-        | "map" | "filter" | "each" -> true
-        | _ -> false
+    let private staticCallbackStage = function
+        | "map" | "filter" | "each" | "fold" as stage -> Some stage
+        | _ -> None
 
     let private currentIs state index text =
         index >= 0 && index < state.Tokens.Length && state.Tokens[index].Text = text
@@ -330,7 +330,7 @@ module FlowParser =
           Qualification = qualification
           Span = referenceSpan }
 
-    let rec private parseArguments state allowStaticWordReferences =
+    let rec private parseArguments state staticCallbackStage =
         withDepth state (fun () ->
             expect state "(" |> ignore
             let values = ResizeArray<FlowArgument>()
@@ -341,22 +341,33 @@ module FlowParser =
                     | Some name, true when name.Kind = Identifier ->
                         consume state |> ignore
                         expect state "=" |> ignore
-                        if allowStaticWordReferences && (explicitShortReferenceAhead state || qualifiedReferenceAhead state || absoluteRootReferenceAhead state) then
-                            fail state.File name.Line name.Column name.Text.Length "FLOW_CALLBACK_NAMED_REFERENCE" "A static list callback must be one positional word reference."
+                        if Option.isSome staticCallbackStage && (explicitShortReferenceAhead state || qualifiedReferenceAhead state || absoluteRootReferenceAhead state) then
+                            fail state.File name.Line name.Column name.Text.Length "FLOW_CALLBACK_NAMED_REFERENCE" "A static list callback reference must be positional and final; fold seeds must also be positional."
                         let expression = parseExpressionState state
                         values.Add(FlowArgument.Named(name.Text, expression, sourceSpan state.File name (previous state)))
-                    | _ when allowStaticWordReferences && explicitShortReferenceAhead state ->
+                    | _ when Option.isSome staticCallbackStage && explicitShortReferenceAhead state ->
                         values.Add(FlowArgument.WordReference(parseStaticWordReference state FlowWordReferenceQualification.ExplicitShort))
-                    | _ when allowStaticWordReferences && qualifiedReferenceAhead state ->
+                    | _ when Option.isSome staticCallbackStage && qualifiedReferenceAhead state ->
                         values.Add(FlowArgument.WordReference(parseStaticWordReference state FlowWordReferenceQualification.NamespaceQualified))
-                    | _ when allowStaticWordReferences && absoluteRootReferenceAhead state ->
+                    | _ when Option.isSome staticCallbackStage && absoluteRootReferenceAhead state ->
                         values.Add(FlowArgument.WordReference(parseStaticWordReference state FlowWordReferenceQualification.AbsoluteRoot))
                     | _ -> values.Add(FlowArgument.Positional(parseExpressionState state))
                     if accept state "," then () else more <- false
                 let hasReference = values |> Seq.exists (function FlowArgument.WordReference _ -> true | _ -> false)
-                if hasReference && values.Count <> 1 then
+                let validCallbackShape =
+                    match staticCallbackStage, List.ofSeq values with
+                    | Some "fold", [ FlowArgument.Positional _; FlowArgument.WordReference _ ] -> true
+                    | Some "map", [ FlowArgument.WordReference _ ]
+                    | Some "filter", [ FlowArgument.WordReference _ ]
+                    | Some "each", [ FlowArgument.WordReference _ ] -> true
+                    | _ -> false
+                if hasReference && not validCallbackShape then
                     let referenceSpan = values |> Seq.pick (function FlowArgument.WordReference reference -> Some reference.Span | _ -> None)
-                    fail state.File referenceSpan.Line referenceSpan.Column referenceSpan.Length "FLOW_CALLBACK_ARGUMENT_ARITY" "A static list callback must be the only positional argument."
+                    let description =
+                        match staticCallbackStage with
+                        | Some "fold" -> "A static fold requires one positional seed followed by one positional word reference."
+                        | _ -> "A static list callback must be the only positional argument."
+                    fail state.File referenceSpan.Line referenceSpan.Column referenceSpan.Length "FLOW_CALLBACK_ARGUMENT_ARITY" description
                 expect state ")" |> ignore
             List.ofSeq values)
 
@@ -462,7 +473,7 @@ module FlowParser =
                 "FLOW_CONSTRUCTOR_TYPE_ARITY" "Container constructor has the wrong number of explicit type arguments."
         if peek state <> Some "(" then
             tokenError state "FLOW_CONSTRUCTOR_CALL_REQUIRED" "Container constructors must be followed by a parenthesized payload list."
-        let arguments = parseArguments state false
+        let arguments = parseArguments state None
         let payload =
             match constructorHasPayload kind, arguments with
             | false, [] -> None
@@ -559,7 +570,7 @@ module FlowParser =
                 | Identifier, "unit" -> consume state |> ignore; FlowExpression.Literal(LUnit, sourceSpan state.File first (Some first))
                 | Identifier, "match" -> consume state |> ignore; parseMatch state first
                 | Identifier, "word" when explicitShortReferenceAhead state ->
-                    fail state.File first.Line first.Column first.Text.Length "FLOW_CALLBACK_REFERENCE_CONTEXT" "Short word references are allowed only as static list callback arguments; use `word name` inside `.map`, `.filter`, or `.each`."
+                    fail state.File first.Line first.Column first.Text.Length "FLOW_CALLBACK_REFERENCE_CONTEXT" "Short word references are allowed only as static list callback arguments; use `word name` inside `.map`, `.filter`, `.each`, or `.fold`."
                 | Identifier, "if" ->
                     consume state |> ignore
                     let condition = parseExpressionState state
@@ -572,14 +583,14 @@ module FlowParser =
                     if peek state <> Some "(" then
                         fail state.File first.Line first.Column (previous state |> Option.map (fun token -> token.Offset + token.Text.Length - first.Offset) |> Option.defaultValue first.Text.Length)
                             "FLOW_ROOT_CALL_REQUIRES_ARGUMENTS" "An absolute-root dictionary name must be called with parentheses."
-                    let arguments = parseArguments state false
+                    let arguments = parseArguments state None
                     FlowExpression.RootCall(target, arguments, sourceSpan state.File first (previous state))
                 | Identifier, _ ->
                     let name = parseNamespaceName state
                     match constructorKind name with
                     | Some kind -> parseConstructor state first kind
                     | None when peek state = Some "(" ->
-                        let args = parseArguments state false
+                        let args = parseArguments state None
                         FlowExpression.Call(name, args, sourceSpan state.File first (previous state))
                     | None when name.Contains('.') ->
                         fail state.File first.Line first.Column first.Text.Length "FLOW_QUALIFIED_CALL_REQUIRES_ARGUMENTS" "A qualified word reference must be called with parentheses."
@@ -591,7 +602,7 @@ module FlowParser =
                 let stage = expectIdentifier state
                 if peek state <> Some "(" then
                     tokenError state "FLOW_DOT_CALL_REQUIRES_ARGUMENTS" "A dot stage must be a statically named call with parentheses."
-                let arguments = parseArguments state (callbackStage stage.Text)
+                let arguments = parseArguments state (staticCallbackStage stage.Text)
                 result <- FlowExpression.DotCall(result, stage.Text, arguments, sourceSpan state.File first (previous state))
             result)
 
@@ -827,7 +838,7 @@ module FlowParser =
             set [ "if"; "else"; "end"; "let"; "true"; "false"; "unit"
                   "match-option"; "match-result"; "some"; "none"; "ok"; "error"
                   "list.empty"; "list.singleton"; "option.none"; "option.some"; "result.ok"; "result.error"
-                  "list.map"; "list.filter"; "list.each" ]
+                  "list.map"; "list.filter"; "list.each"; "list.fold" ]
         not (String.IsNullOrWhiteSpace name)
         && Char.IsLetter name[0]
         && (name |> Seq.forall (fun value -> Char.IsLetterOrDigit value || value = '.' || value = '-' || value = '_' || value = '?' || value = '!'))

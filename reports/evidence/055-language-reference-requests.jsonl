@@ -1,0 +1,4 @@
+{"op":"define","frontend":"flow","source":"word subscription.annual-renewable?(subscription: Subscription) -> Bool {\n effects none\n if equals(subscription.term(), \"annual\") { subscription.renewable() } else { false }\n}\ntest subscription.annual-renewable?/yes {\n subscription::annual-renewable?(subscription::new(\"annual\", true)) => true\n}\ntest subscription.annual-renewable?/no {\n subscription::annual-renewable?(subscription::new(\"monthly\", true)) => false\n}\nword customer.renewal-savings(customer: Customer, subscription: Subscription) -> Float {\n effects none\n float::subtract(customer.balance(), customer::renewal-balance(customer, subscription))\n}\ntest customer.renewal-savings/basic {\n customer::renewal-savings(customer::new(\"premium\", 100.0), subscription::new(\"annual\", true)) => 14.5\n}"}
+{"op":"test-all"}
+{"op":"commit","word":"subscription.annual-renewable?","library":true}
+{"op":"commit","word":"customer.renewal-savings","library":true}

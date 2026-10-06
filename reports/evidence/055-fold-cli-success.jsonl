@@ -1,0 +1,3 @@
+{"ok":true,"kind":"eval","text":"6","data":{"stack":["6"],"stackTypes":["Int"],"console":[],"effects":{}}}
+{"ok":true,"kind":"eval","text":"7","data":{"stack":["7"],"stackTypes":["Int"],"console":[],"effects":{}}}
+{"ok":true,"kind":"eval","text":"99 1","data":{"stack":["99","1"],"stackTypes":["Int","Int"],"console":[],"effects":{}}}

@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "status": "working-tree-preparation-not-trial-pin",
+  "files": [
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/acceptance.json",
+      "sha256": "7ed0ba4d7925978424b98b7a17aae5276315cf1dff612a8f4688c178472c03eb",
+      "bytes": 22390
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/agent-primer.md",
+      "sha256": "49e8ee0586167169958252418aeae51c2947ad4bc1c5960335a07e6b2ff5ef6a",
+      "bytes": 3421
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/tasks.md",
+      "sha256": "639a55a7f1d7be0ae4f6de0de7999293259e13253acfe7d71b17f621ccb3a253",
+      "bytes": 2206
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/conventional/Domain.fs",
+      "sha256": "a8d6302227e4f543363091d4a20923fc8211eb169db0da045d753aec8a9bb37a",
+      "bytes": 729
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/conventional/SelfTests.fs",
+      "sha256": "937b8044b65af3d686869550fae87834a9574a89f848f9ec45593d4add2a6d4f",
+      "bytes": 312
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/early-flow-001/conventional/EarlyPilot.fsproj",
+      "sha256": "90c90151c9142926d936e94721336ea709c3b3093557aa4d5133d143d6075257",
+      "bytes": 321
+    }
+  ]
+}

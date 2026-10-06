@@ -32,6 +32,7 @@ jobs:
             .agentlang/reports/validation.matched-snapshots.json
             .agentlang/reports/validation.renewal-acceptance-gate.json
             .agentlang/reports/validation.renewal-replay.json
+            .agentlang/reports/validation.early-agent-negative.json
             .agentlang/reports/validation.subagent-host*.json
             .agentlang/reports/trial-host-*.jsonl
             .agentlang/reports/validation.parser-limits*.json

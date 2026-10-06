@@ -1,0 +1,3335 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "failure": null,
+  "results": [
+    {
+      "task": 1,
+      "passed": true,
+      "rejectedAt": "standard-annual-true independent Bool result",
+      "passingPriorChecks": 17,
+      "setupRequests": [
+        {
+          "frontend": "flow",
+          "op": "define",
+          "source": "record Customer {\n    field kind: String;\n    field balance: Float;\n}\n\nrecord Subscription {\n    field term: String;\n    field renewable: Bool;\n}\r\n\nword customer.premium?(customer: Customer) -> Bool {\n    effects none\n    true\n}\ntest customer.premium?/constant {\n    customer::premium?(customer::new(\"premium\", 100.0)) => true\n}"
+        },
+        {
+          "op": "commit",
+          "word": "Customer"
+        },
+        {
+          "op": "commit",
+          "word": "Subscription"
+        },
+        {
+          "op": "test-all"
+        },
+        {
+          "word": "customer.premium?",
+          "op": "commit",
+          "library": true
+        }
+      ],
+      "setupResponses": [
+        {
+          "ok": true,
+          "kind": "defined",
+          "text": "Flow project declarations, attached cases, refined type metadata, and bindings validated atomically.",
+          "data": {
+            "frontend": "flow",
+            "words": [
+              {
+                "name": "customer.premium?",
+                "id": "word_5285a9443b6f42c0b918a157147d18a5",
+                "revision": 1
+              }
+            ],
+            "types": [
+              "Customer",
+              "Subscription"
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "commit",
+          "text": "0 attached test(s) passed; selected candidates committed.",
+          "data": []
+        },
+        {
+          "ok": true,
+          "kind": "commit",
+          "text": "0 attached test(s) passed; selected candidates committed.",
+          "data": []
+        },
+        {
+          "ok": true,
+          "kind": "test",
+          "text": "1/1 test(s) passed.",
+          "data": {
+            "results": [
+              {
+                "name": "constant",
+                "word": "customer.premium?",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "commit",
+          "text": "1 attached test(s) passed; selected candidates committed.",
+          "data": [
+            "customer.premium?/constant"
+          ]
+        }
+      ],
+      "acceptance": {
+        "schemaVersion": 1,
+        "passed": false,
+        "failure": "Pilot acceptance failed: standard-annual-true independent Bool result",
+        "task": 1,
+        "word": "customer.premium?",
+        "cliSha256": "31235b45cb3b7149abf096d579a14643157e29fe26839df3135f724c38362b00",
+        "oracleSha256": "7ed0ba4d7925978424b98b7a17aae5276315cf1dff612a8f4688c178472c03eb",
+        "verifierSha256": "e8748381ab8d87e1baf8e8386205927951072909f250faa808473af6eb35cace",
+        "checks": [
+          {
+            "name": "fresh process exit",
+            "passed": true
+          },
+          {
+            "name": "one response per request",
+            "passed": true
+          },
+          {
+            "name": "all requests succeed",
+            "passed": true
+          },
+          {
+            "name": "all attached tests pass",
+            "passed": true
+          },
+          {
+            "name": "exact target signature",
+            "passed": true
+          },
+          {
+            "name": "pure persistent library target",
+            "passed": true
+          },
+          {
+            "name": "target has attached tests",
+            "passed": true
+          },
+          {
+            "name": "complete current own coverage",
+            "passed": true
+          },
+          {
+            "name": "premium-annual-true exact output shape",
+            "passed": true
+          },
+          {
+            "name": "premium-annual-true independent Bool result",
+            "passed": true
+          },
+          {
+            "name": "premium-annual-false exact output shape",
+            "passed": true
+          },
+          {
+            "name": "premium-annual-false independent Bool result",
+            "passed": true
+          },
+          {
+            "name": "premium-monthly-true exact output shape",
+            "passed": true
+          },
+          {
+            "name": "premium-monthly-true independent Bool result",
+            "passed": true
+          },
+          {
+            "name": "premium-monthly-false exact output shape",
+            "passed": true
+          },
+          {
+            "name": "premium-monthly-false independent Bool result",
+            "passed": true
+          },
+          {
+            "name": "standard-annual-true exact output shape",
+            "passed": true
+          },
+          {
+            "name": "standard-annual-true independent Bool result",
+            "passed": false
+          }
+        ],
+        "requests": [
+          {
+            "op": "test-all"
+          },
+          {
+            "op": "describe",
+            "word": "customer.premium?"
+          },
+          {
+            "op": "dependencies",
+            "word": "customer.premium?"
+          },
+          {
+            "op": "source",
+            "word": "customer.premium?"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::premium?(customer::new(kind = \"premium\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::premium?(customer::new(kind = \"premium\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::premium?(customer::new(kind = \"premium\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::premium?(customer::new(kind = \"premium\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::premium?(customer::new(kind = \"standard\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::premium?(customer::new(kind = \"standard\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::premium?(customer::new(kind = \"standard\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::premium?(customer::new(kind = \"standard\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::premium?(customer::new(kind = \"Premium\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::premium?(customer::new(kind = \"premium\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::premium?(customer::new(kind = \"premium\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::premium?(customer::new(kind = \"\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::premium?(customer::new(kind = \"premium\", balance = 0.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::premium?(customer::new(kind = \"premium\", balance = -100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::premium?(customer::new(kind = \"premium\", balance = 250.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::premium?(customer::new(kind = \"premium\", balance = 250.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::premium?(customer::new(kind = \"prémium\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::premium?(customer::new(kind = \"premium\", balance = 3.141592653589793))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::premium?(customer::new(kind = \"premium\", balance = 1E-100))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::premium?(customer::new(kind = \"standard\", balance = 1E+100))"
+          }
+        ],
+        "responses": [
+          {
+            "ok": true,
+            "kind": "test",
+            "text": "1/1 test(s) passed.",
+            "data": {
+              "results": [
+                {
+                  "name": "constant",
+                  "word": "customer.premium?",
+                  "passed": true,
+                  "expected": "true",
+                  "actual": [
+                    "true"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "ok": true,
+            "kind": "describe",
+            "text": "Description for customer.premium?.",
+            "data": {
+              "name": "customer.premium?",
+              "inputs": [
+                "Customer"
+              ],
+              "outputs": [
+                "Bool"
+              ],
+              "parameters": [
+                {
+                  "name": "customer",
+                  "type": "Customer"
+                }
+              ],
+              "effects": [],
+              "documentation": "",
+              "id": "word_5285a9443b6f42c0b918a157147d18a5",
+              "dependencies": [],
+              "transitiveDependencies": [],
+              "callers": [],
+              "tests": [
+                "constant"
+              ],
+              "examples": [],
+              "source": "<revision:customer.premium?/1>",
+              "line": 1,
+              "kind": "word",
+              "status": "persistent",
+              "maturity": "library",
+              "deprecated": false,
+              "revision": 1,
+              "testCount": 1,
+              "exampleCount": 0,
+              "coverage": {
+                "instructionsCovered": 1,
+                "instructionsTotal": 1,
+                "branchesCovered": 0,
+                "branchesTotal": 0,
+                "uncoveredInstructions": [],
+                "uncoveredBranchOutcomes": [],
+                "status": "current"
+              }
+            }
+          },
+          {
+            "ok": true,
+            "kind": "dependencies",
+            "text": "0 direct dependency/dependencies.",
+            "data": {
+              "dependencies": [],
+              "callers": []
+            }
+          },
+          {
+            "ok": true,
+            "kind": "source",
+            "text": "word customer.premium?(customer: Customer) -> Bool {\n    effects none\n    true\n}",
+            "data": "word customer.premium?(customer: Customer) -> Bool {\n    effects none\n    true\n}"
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          }
+        ],
+        "limits": [
+          "Behavioral acceptance only; no model-efficiency claim.",
+          "Float tolerance is not bitwise or signed-zero equivalence.",
+          "Whole-state preservation and retained-helper quality require a separate audit."
+        ]
+      }
+    },
+    {
+      "task": 2,
+      "passed": true,
+      "rejectedAt": "standard-annual-true independent Float result",
+      "passingPriorChecks": 17,
+      "setupRequests": [
+        {
+          "frontend": "flow",
+          "op": "define",
+          "source": "record Customer {\n    field kind: String;\n    field balance: Float;\n}\n\nrecord Subscription {\n    field term: String;\n    field renewable: Bool;\n}\r\n\nword customer.discounted-balance(customer: Customer) -> Float {\n    effects none\n    90.0\n}\ntest customer.discounted-balance/constant {\n    customer::discounted-balance(customer::new(\"premium\", 100.0)) => 90.0\n}"
+        },
+        {
+          "op": "commit",
+          "word": "Customer"
+        },
+        {
+          "op": "commit",
+          "word": "Subscription"
+        },
+        {
+          "op": "test-all"
+        },
+        {
+          "word": "customer.discounted-balance",
+          "op": "commit",
+          "library": true
+        }
+      ],
+      "setupResponses": [
+        {
+          "ok": true,
+          "kind": "defined",
+          "text": "Flow project declarations, attached cases, refined type metadata, and bindings validated atomically.",
+          "data": {
+            "frontend": "flow",
+            "words": [
+              {
+                "name": "customer.discounted-balance",
+                "id": "word_78a1d16b401f47118fc12961215da70c",
+                "revision": 1
+              }
+            ],
+            "types": [
+              "Customer",
+              "Subscription"
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "commit",
+          "text": "0 attached test(s) passed; selected candidates committed.",
+          "data": []
+        },
+        {
+          "ok": true,
+          "kind": "commit",
+          "text": "0 attached test(s) passed; selected candidates committed.",
+          "data": []
+        },
+        {
+          "ok": true,
+          "kind": "test",
+          "text": "1/1 test(s) passed.",
+          "data": {
+            "results": [
+              {
+                "name": "constant",
+                "word": "customer.discounted-balance",
+                "passed": true,
+                "expected": "90",
+                "actual": [
+                  "90"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "commit",
+          "text": "1 attached test(s) passed; selected candidates committed.",
+          "data": [
+            "customer.discounted-balance/constant"
+          ]
+        }
+      ],
+      "acceptance": {
+        "schemaVersion": 1,
+        "passed": false,
+        "failure": "Pilot acceptance failed: standard-annual-true independent Float result",
+        "task": 2,
+        "word": "customer.discounted-balance",
+        "cliSha256": "31235b45cb3b7149abf096d579a14643157e29fe26839df3135f724c38362b00",
+        "oracleSha256": "7ed0ba4d7925978424b98b7a17aae5276315cf1dff612a8f4688c178472c03eb",
+        "verifierSha256": "e8748381ab8d87e1baf8e8386205927951072909f250faa808473af6eb35cace",
+        "checks": [
+          {
+            "name": "fresh process exit",
+            "passed": true
+          },
+          {
+            "name": "one response per request",
+            "passed": true
+          },
+          {
+            "name": "all requests succeed",
+            "passed": true
+          },
+          {
+            "name": "all attached tests pass",
+            "passed": true
+          },
+          {
+            "name": "exact target signature",
+            "passed": true
+          },
+          {
+            "name": "pure persistent library target",
+            "passed": true
+          },
+          {
+            "name": "target has attached tests",
+            "passed": true
+          },
+          {
+            "name": "complete current own coverage",
+            "passed": true
+          },
+          {
+            "name": "premium-annual-true exact output shape",
+            "passed": true
+          },
+          {
+            "name": "premium-annual-true independent Float result",
+            "passed": true
+          },
+          {
+            "name": "premium-annual-false exact output shape",
+            "passed": true
+          },
+          {
+            "name": "premium-annual-false independent Float result",
+            "passed": true
+          },
+          {
+            "name": "premium-monthly-true exact output shape",
+            "passed": true
+          },
+          {
+            "name": "premium-monthly-true independent Float result",
+            "passed": true
+          },
+          {
+            "name": "premium-monthly-false exact output shape",
+            "passed": true
+          },
+          {
+            "name": "premium-monthly-false independent Float result",
+            "passed": true
+          },
+          {
+            "name": "standard-annual-true exact output shape",
+            "passed": true
+          },
+          {
+            "name": "standard-annual-true independent Float result",
+            "passed": false
+          }
+        ],
+        "requests": [
+          {
+            "op": "test-all"
+          },
+          {
+            "op": "describe",
+            "word": "customer.discounted-balance"
+          },
+          {
+            "op": "dependencies",
+            "word": "customer.discounted-balance"
+          },
+          {
+            "op": "source",
+            "word": "customer.discounted-balance"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"standard\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"standard\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"standard\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"standard\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"Premium\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = 0.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = -100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = 250.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = 250.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"prémium\", balance = 100.0))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = 3.141592653589793))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"premium\", balance = 1E-100))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::discounted-balance(customer::new(kind = \"standard\", balance = 1E+100))"
+          }
+        ],
+        "responses": [
+          {
+            "ok": true,
+            "kind": "test",
+            "text": "1/1 test(s) passed.",
+            "data": {
+              "results": [
+                {
+                  "name": "constant",
+                  "word": "customer.discounted-balance",
+                  "passed": true,
+                  "expected": "90",
+                  "actual": [
+                    "90"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "ok": true,
+            "kind": "describe",
+            "text": "Description for customer.discounted-balance.",
+            "data": {
+              "name": "customer.discounted-balance",
+              "inputs": [
+                "Customer"
+              ],
+              "outputs": [
+                "Float"
+              ],
+              "parameters": [
+                {
+                  "name": "customer",
+                  "type": "Customer"
+                }
+              ],
+              "effects": [],
+              "documentation": "",
+              "id": "word_78a1d16b401f47118fc12961215da70c",
+              "dependencies": [],
+              "transitiveDependencies": [],
+              "callers": [],
+              "tests": [
+                "constant"
+              ],
+              "examples": [],
+              "source": "<revision:customer.discounted-balance/1>",
+              "line": 1,
+              "kind": "word",
+              "status": "persistent",
+              "maturity": "library",
+              "deprecated": false,
+              "revision": 1,
+              "testCount": 1,
+              "exampleCount": 0,
+              "coverage": {
+                "instructionsCovered": 1,
+                "instructionsTotal": 1,
+                "branchesCovered": 0,
+                "branchesTotal": 0,
+                "uncoveredInstructions": [],
+                "uncoveredBranchOutcomes": [],
+                "status": "current"
+              }
+            }
+          },
+          {
+            "ok": true,
+            "kind": "dependencies",
+            "text": "0 direct dependency/dependencies.",
+            "data": {
+              "dependencies": [],
+              "callers": []
+            }
+          },
+          {
+            "ok": true,
+            "kind": "source",
+            "text": "word customer.discounted-balance(customer: Customer) -> Float {\n    effects none\n    90.0\n}",
+            "data": "word customer.discounted-balance(customer: Customer) -> Float {\n    effects none\n    90.0\n}"
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "90",
+            "data": {
+              "stack": [
+                "90"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          }
+        ],
+        "limits": [
+          "Behavioral acceptance only; no model-efficiency claim.",
+          "Float tolerance is not bitwise or signed-zero equivalence.",
+          "Whole-state preservation and retained-helper quality require a separate audit."
+        ]
+      }
+    },
+    {
+      "task": 3,
+      "passed": true,
+      "rejectedAt": "premium-annual-false independent Bool result",
+      "passingPriorChecks": 11,
+      "setupRequests": [
+        {
+          "frontend": "flow",
+          "op": "define",
+          "source": "record Customer {\n    field kind: String;\n    field balance: Float;\n}\n\nrecord Subscription {\n    field term: String;\n    field renewable: Bool;\n}\r\n\nword subscription.annual-renewable?(subscription: Subscription) -> Bool {\n    effects none\n    true\n}\ntest subscription.annual-renewable?/constant {\n    subscription::annual-renewable?(subscription::new(\"annual\", true)) => true\n}"
+        },
+        {
+          "op": "commit",
+          "word": "Customer"
+        },
+        {
+          "op": "commit",
+          "word": "Subscription"
+        },
+        {
+          "op": "test-all"
+        },
+        {
+          "word": "subscription.annual-renewable?",
+          "op": "commit",
+          "library": true
+        }
+      ],
+      "setupResponses": [
+        {
+          "ok": true,
+          "kind": "defined",
+          "text": "Flow project declarations, attached cases, refined type metadata, and bindings validated atomically.",
+          "data": {
+            "frontend": "flow",
+            "words": [
+              {
+                "name": "subscription.annual-renewable?",
+                "id": "word_97616c6a74cd4664bd6f7194aa7d224d",
+                "revision": 1
+              }
+            ],
+            "types": [
+              "Customer",
+              "Subscription"
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "commit",
+          "text": "0 attached test(s) passed; selected candidates committed.",
+          "data": []
+        },
+        {
+          "ok": true,
+          "kind": "commit",
+          "text": "0 attached test(s) passed; selected candidates committed.",
+          "data": []
+        },
+        {
+          "ok": true,
+          "kind": "test",
+          "text": "1/1 test(s) passed.",
+          "data": {
+            "results": [
+              {
+                "name": "constant",
+                "word": "subscription.annual-renewable?",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "commit",
+          "text": "1 attached test(s) passed; selected candidates committed.",
+          "data": [
+            "subscription.annual-renewable?/constant"
+          ]
+        }
+      ],
+      "acceptance": {
+        "schemaVersion": 1,
+        "passed": false,
+        "failure": "Pilot acceptance failed: premium-annual-false independent Bool result",
+        "task": 3,
+        "word": "subscription.annual-renewable?",
+        "cliSha256": "31235b45cb3b7149abf096d579a14643157e29fe26839df3135f724c38362b00",
+        "oracleSha256": "7ed0ba4d7925978424b98b7a17aae5276315cf1dff612a8f4688c178472c03eb",
+        "verifierSha256": "e8748381ab8d87e1baf8e8386205927951072909f250faa808473af6eb35cace",
+        "checks": [
+          {
+            "name": "fresh process exit",
+            "passed": true
+          },
+          {
+            "name": "one response per request",
+            "passed": true
+          },
+          {
+            "name": "all requests succeed",
+            "passed": true
+          },
+          {
+            "name": "all attached tests pass",
+            "passed": true
+          },
+          {
+            "name": "exact target signature",
+            "passed": true
+          },
+          {
+            "name": "pure persistent library target",
+            "passed": true
+          },
+          {
+            "name": "target has attached tests",
+            "passed": true
+          },
+          {
+            "name": "complete current own coverage",
+            "passed": true
+          },
+          {
+            "name": "premium-annual-true exact output shape",
+            "passed": true
+          },
+          {
+            "name": "premium-annual-true independent Bool result",
+            "passed": true
+          },
+          {
+            "name": "premium-annual-false exact output shape",
+            "passed": true
+          },
+          {
+            "name": "premium-annual-false independent Bool result",
+            "passed": false
+          }
+        ],
+        "requests": [
+          {
+            "op": "test-all"
+          },
+          {
+            "op": "describe",
+            "word": "subscription.annual-renewable?"
+          },
+          {
+            "op": "dependencies",
+            "word": "subscription.annual-renewable?"
+          },
+          {
+            "op": "source",
+            "word": "subscription.annual-renewable?"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "subscription::annual-renewable?(subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "subscription::annual-renewable?(subscription::new(term = \"annual\", renewable = false))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "subscription::annual-renewable?(subscription::new(term = \"monthly\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "subscription::annual-renewable?(subscription::new(term = \"monthly\", renewable = false))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "subscription::annual-renewable?(subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "subscription::annual-renewable?(subscription::new(term = \"annual\", renewable = false))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "subscription::annual-renewable?(subscription::new(term = \"monthly\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "subscription::annual-renewable?(subscription::new(term = \"monthly\", renewable = false))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "subscription::annual-renewable?(subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "subscription::annual-renewable?(subscription::new(term = \"Annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "subscription::annual-renewable?(subscription::new(term = \"annual \", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "subscription::annual-renewable?(subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "subscription::annual-renewable?(subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "subscription::annual-renewable?(subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "subscription::annual-renewable?(subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "subscription::annual-renewable?(subscription::new(term = \"monthly\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "subscription::annual-renewable?(subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "subscription::annual-renewable?(subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "subscription::annual-renewable?(subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "subscription::annual-renewable?(subscription::new(term = \"annual\", renewable = true))"
+          }
+        ],
+        "responses": [
+          {
+            "ok": true,
+            "kind": "test",
+            "text": "1/1 test(s) passed.",
+            "data": {
+              "results": [
+                {
+                  "name": "constant",
+                  "word": "subscription.annual-renewable?",
+                  "passed": true,
+                  "expected": "true",
+                  "actual": [
+                    "true"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "ok": true,
+            "kind": "describe",
+            "text": "Description for subscription.annual-renewable?.",
+            "data": {
+              "name": "subscription.annual-renewable?",
+              "inputs": [
+                "Subscription"
+              ],
+              "outputs": [
+                "Bool"
+              ],
+              "parameters": [
+                {
+                  "name": "subscription",
+                  "type": "Subscription"
+                }
+              ],
+              "effects": [],
+              "documentation": "",
+              "id": "word_97616c6a74cd4664bd6f7194aa7d224d",
+              "dependencies": [],
+              "transitiveDependencies": [],
+              "callers": [],
+              "tests": [
+                "constant"
+              ],
+              "examples": [],
+              "source": "<revision:subscription.annual-renewable?/1>",
+              "line": 1,
+              "kind": "word",
+              "status": "persistent",
+              "maturity": "library",
+              "deprecated": false,
+              "revision": 1,
+              "testCount": 1,
+              "exampleCount": 0,
+              "coverage": {
+                "instructionsCovered": 1,
+                "instructionsTotal": 1,
+                "branchesCovered": 0,
+                "branchesTotal": 0,
+                "uncoveredInstructions": [],
+                "uncoveredBranchOutcomes": [],
+                "status": "current"
+              }
+            }
+          },
+          {
+            "ok": true,
+            "kind": "dependencies",
+            "text": "0 direct dependency/dependencies.",
+            "data": {
+              "dependencies": [],
+              "callers": []
+            }
+          },
+          {
+            "ok": true,
+            "kind": "source",
+            "text": "word subscription.annual-renewable?(subscription: Subscription) -> Bool {\n    effects none\n    true\n}",
+            "data": "word subscription.annual-renewable?(subscription: Subscription) -> Bool {\n    effects none\n    true\n}"
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "true",
+            "data": {
+              "stack": [
+                "true"
+              ],
+              "stackTypes": [
+                "Bool"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          }
+        ],
+        "limits": [
+          "Behavioral acceptance only; no model-efficiency claim.",
+          "Float tolerance is not bitwise or signed-zero equivalence.",
+          "Whole-state preservation and retained-helper quality require a separate audit."
+        ]
+      }
+    },
+    {
+      "task": 4,
+      "passed": true,
+      "rejectedAt": "premium-annual-false independent Float result",
+      "passingPriorChecks": 11,
+      "setupRequests": [
+        {
+          "frontend": "flow",
+          "op": "define",
+          "source": "record Customer {\n    field kind: String;\n    field balance: Float;\n}\n\nrecord Subscription {\n    field term: String;\n    field renewable: Bool;\n}\r\n\nword customer.renewal-balance(customer: Customer, subscription: Subscription) -> Float {\n    effects none\n    85.5\n}\ntest customer.renewal-balance/constant {\n    customer::renewal-balance(customer::new(\"premium\", 100.0), subscription::new(\"annual\", true)) => 85.5\n}"
+        },
+        {
+          "op": "commit",
+          "word": "Customer"
+        },
+        {
+          "op": "commit",
+          "word": "Subscription"
+        },
+        {
+          "op": "test-all"
+        },
+        {
+          "word": "customer.renewal-balance",
+          "op": "commit",
+          "library": true
+        }
+      ],
+      "setupResponses": [
+        {
+          "ok": true,
+          "kind": "defined",
+          "text": "Flow project declarations, attached cases, refined type metadata, and bindings validated atomically.",
+          "data": {
+            "frontend": "flow",
+            "words": [
+              {
+                "name": "customer.renewal-balance",
+                "id": "word_fecdeb1020cd4b678cbfa77966f37728",
+                "revision": 1
+              }
+            ],
+            "types": [
+              "Customer",
+              "Subscription"
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "commit",
+          "text": "0 attached test(s) passed; selected candidates committed.",
+          "data": []
+        },
+        {
+          "ok": true,
+          "kind": "commit",
+          "text": "0 attached test(s) passed; selected candidates committed.",
+          "data": []
+        },
+        {
+          "ok": true,
+          "kind": "test",
+          "text": "1/1 test(s) passed.",
+          "data": {
+            "results": [
+              {
+                "name": "constant",
+                "word": "customer.renewal-balance",
+                "passed": true,
+                "expected": "85.5",
+                "actual": [
+                  "85.5"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "commit",
+          "text": "1 attached test(s) passed; selected candidates committed.",
+          "data": [
+            "customer.renewal-balance/constant"
+          ]
+        }
+      ],
+      "acceptance": {
+        "schemaVersion": 1,
+        "passed": false,
+        "failure": "Pilot acceptance failed: premium-annual-false independent Float result",
+        "task": 4,
+        "word": "customer.renewal-balance",
+        "cliSha256": "31235b45cb3b7149abf096d579a14643157e29fe26839df3135f724c38362b00",
+        "oracleSha256": "7ed0ba4d7925978424b98b7a17aae5276315cf1dff612a8f4688c178472c03eb",
+        "verifierSha256": "e8748381ab8d87e1baf8e8386205927951072909f250faa808473af6eb35cace",
+        "checks": [
+          {
+            "name": "fresh process exit",
+            "passed": true
+          },
+          {
+            "name": "one response per request",
+            "passed": true
+          },
+          {
+            "name": "all requests succeed",
+            "passed": true
+          },
+          {
+            "name": "all attached tests pass",
+            "passed": true
+          },
+          {
+            "name": "exact target signature",
+            "passed": true
+          },
+          {
+            "name": "pure persistent library target",
+            "passed": true
+          },
+          {
+            "name": "target has attached tests",
+            "passed": true
+          },
+          {
+            "name": "complete current own coverage",
+            "passed": true
+          },
+          {
+            "name": "premium-annual-true exact output shape",
+            "passed": true
+          },
+          {
+            "name": "premium-annual-true independent Float result",
+            "passed": true
+          },
+          {
+            "name": "premium-annual-false exact output shape",
+            "passed": true
+          },
+          {
+            "name": "premium-annual-false independent Float result",
+            "passed": false
+          }
+        ],
+        "requests": [
+          {
+            "op": "test-all"
+          },
+          {
+            "op": "describe",
+            "word": "customer.renewal-balance"
+          },
+          {
+            "op": "dependencies",
+            "word": "customer.renewal-balance"
+          },
+          {
+            "op": "source",
+            "word": "customer.renewal-balance"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"annual\", renewable = false))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"monthly\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"monthly\", renewable = false))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"standard\", balance = 100.0), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"standard\", balance = 100.0), subscription::new(term = \"annual\", renewable = false))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"standard\", balance = 100.0), subscription::new(term = \"monthly\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"standard\", balance = 100.0), subscription::new(term = \"monthly\", renewable = false))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"Premium\", balance = 100.0), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"Annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"annual \", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"\", balance = 100.0), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = 0.0), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = -100.0), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = 250.0), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = 250.0), subscription::new(term = \"monthly\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"prémium\", balance = 100.0), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = 3.141592653589793), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"premium\", balance = 1E-100), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-balance(customer::new(kind = \"standard\", balance = 1E+100), subscription::new(term = \"annual\", renewable = true))"
+          }
+        ],
+        "responses": [
+          {
+            "ok": true,
+            "kind": "test",
+            "text": "1/1 test(s) passed.",
+            "data": {
+              "results": [
+                {
+                  "name": "constant",
+                  "word": "customer.renewal-balance",
+                  "passed": true,
+                  "expected": "85.5",
+                  "actual": [
+                    "85.5"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "ok": true,
+            "kind": "describe",
+            "text": "Description for customer.renewal-balance.",
+            "data": {
+              "name": "customer.renewal-balance",
+              "inputs": [
+                "Customer",
+                "Subscription"
+              ],
+              "outputs": [
+                "Float"
+              ],
+              "parameters": [
+                {
+                  "name": "customer",
+                  "type": "Customer"
+                },
+                {
+                  "name": "subscription",
+                  "type": "Subscription"
+                }
+              ],
+              "effects": [],
+              "documentation": "",
+              "id": "word_fecdeb1020cd4b678cbfa77966f37728",
+              "dependencies": [],
+              "transitiveDependencies": [],
+              "callers": [],
+              "tests": [
+                "constant"
+              ],
+              "examples": [],
+              "source": "<revision:customer.renewal-balance/1>",
+              "line": 1,
+              "kind": "word",
+              "status": "persistent",
+              "maturity": "library",
+              "deprecated": false,
+              "revision": 1,
+              "testCount": 1,
+              "exampleCount": 0,
+              "coverage": {
+                "instructionsCovered": 1,
+                "instructionsTotal": 1,
+                "branchesCovered": 0,
+                "branchesTotal": 0,
+                "uncoveredInstructions": [],
+                "uncoveredBranchOutcomes": [],
+                "status": "current"
+              }
+            }
+          },
+          {
+            "ok": true,
+            "kind": "dependencies",
+            "text": "0 direct dependency/dependencies.",
+            "data": {
+              "dependencies": [],
+              "callers": []
+            }
+          },
+          {
+            "ok": true,
+            "kind": "source",
+            "text": "word customer.renewal-balance(customer: Customer, subscription: Subscription) -> Float {\n    effects none\n    85.5\n}",
+            "data": "word customer.renewal-balance(customer: Customer, subscription: Subscription) -> Float {\n    effects none\n    85.5\n}"
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "85.5",
+            "data": {
+              "stack": [
+                "85.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          }
+        ],
+        "limits": [
+          "Behavioral acceptance only; no model-efficiency claim.",
+          "Float tolerance is not bitwise or signed-zero equivalence.",
+          "Whole-state preservation and retained-helper quality require a separate audit."
+        ]
+      }
+    },
+    {
+      "task": 5,
+      "passed": true,
+      "rejectedAt": "premium-annual-false independent Float result",
+      "passingPriorChecks": 11,
+      "setupRequests": [
+        {
+          "frontend": "flow",
+          "op": "define",
+          "source": "record Customer {\n    field kind: String;\n    field balance: Float;\n}\n\nrecord Subscription {\n    field term: String;\n    field renewable: Bool;\n}\r\n\nword customer.renewal-savings(customer: Customer, subscription: Subscription) -> Float {\n    effects none\n    14.5\n}\ntest customer.renewal-savings/constant {\n    customer::renewal-savings(customer::new(\"premium\", 100.0), subscription::new(\"annual\", true)) => 14.5\n}"
+        },
+        {
+          "op": "commit",
+          "word": "Customer"
+        },
+        {
+          "op": "commit",
+          "word": "Subscription"
+        },
+        {
+          "op": "test-all"
+        },
+        {
+          "word": "customer.renewal-savings",
+          "op": "commit",
+          "library": true
+        }
+      ],
+      "setupResponses": [
+        {
+          "ok": true,
+          "kind": "defined",
+          "text": "Flow project declarations, attached cases, refined type metadata, and bindings validated atomically.",
+          "data": {
+            "frontend": "flow",
+            "words": [
+              {
+                "name": "customer.renewal-savings",
+                "id": "word_8767707affbf4fbfaac3daedd84b7186",
+                "revision": 1
+              }
+            ],
+            "types": [
+              "Customer",
+              "Subscription"
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "commit",
+          "text": "0 attached test(s) passed; selected candidates committed.",
+          "data": []
+        },
+        {
+          "ok": true,
+          "kind": "commit",
+          "text": "0 attached test(s) passed; selected candidates committed.",
+          "data": []
+        },
+        {
+          "ok": true,
+          "kind": "test",
+          "text": "1/1 test(s) passed.",
+          "data": {
+            "results": [
+              {
+                "name": "constant",
+                "word": "customer.renewal-savings",
+                "passed": true,
+                "expected": "14.5",
+                "actual": [
+                  "14.5"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "commit",
+          "text": "1 attached test(s) passed; selected candidates committed.",
+          "data": [
+            "customer.renewal-savings/constant"
+          ]
+        }
+      ],
+      "acceptance": {
+        "schemaVersion": 1,
+        "passed": false,
+        "failure": "Pilot acceptance failed: premium-annual-false independent Float result",
+        "task": 5,
+        "word": "customer.renewal-savings",
+        "cliSha256": "31235b45cb3b7149abf096d579a14643157e29fe26839df3135f724c38362b00",
+        "oracleSha256": "7ed0ba4d7925978424b98b7a17aae5276315cf1dff612a8f4688c178472c03eb",
+        "verifierSha256": "e8748381ab8d87e1baf8e8386205927951072909f250faa808473af6eb35cace",
+        "checks": [
+          {
+            "name": "fresh process exit",
+            "passed": true
+          },
+          {
+            "name": "one response per request",
+            "passed": true
+          },
+          {
+            "name": "all requests succeed",
+            "passed": true
+          },
+          {
+            "name": "all attached tests pass",
+            "passed": true
+          },
+          {
+            "name": "exact target signature",
+            "passed": true
+          },
+          {
+            "name": "pure persistent library target",
+            "passed": true
+          },
+          {
+            "name": "target has attached tests",
+            "passed": true
+          },
+          {
+            "name": "complete current own coverage",
+            "passed": true
+          },
+          {
+            "name": "premium-annual-true exact output shape",
+            "passed": true
+          },
+          {
+            "name": "premium-annual-true independent Float result",
+            "passed": true
+          },
+          {
+            "name": "premium-annual-false exact output shape",
+            "passed": true
+          },
+          {
+            "name": "premium-annual-false independent Float result",
+            "passed": false
+          }
+        ],
+        "requests": [
+          {
+            "op": "test-all"
+          },
+          {
+            "op": "describe",
+            "word": "customer.renewal-savings"
+          },
+          {
+            "op": "dependencies",
+            "word": "customer.renewal-savings"
+          },
+          {
+            "op": "source",
+            "word": "customer.renewal-savings"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"annual\", renewable = false))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"monthly\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"monthly\", renewable = false))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"standard\", balance = 100.0), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"standard\", balance = 100.0), subscription::new(term = \"annual\", renewable = false))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"standard\", balance = 100.0), subscription::new(term = \"monthly\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"standard\", balance = 100.0), subscription::new(term = \"monthly\", renewable = false))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"Premium\", balance = 100.0), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"Annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = 100.0), subscription::new(term = \"annual \", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"\", balance = 100.0), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = 0.0), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = -100.0), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = 250.0), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = 250.0), subscription::new(term = \"monthly\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"prémium\", balance = 100.0), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = 3.141592653589793), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"premium\", balance = 1E-100), subscription::new(term = \"annual\", renewable = true))"
+          },
+          {
+            "op": "eval",
+            "frontend": "flow",
+            "code": "customer::renewal-savings(customer::new(kind = \"standard\", balance = 1E+100), subscription::new(term = \"annual\", renewable = true))"
+          }
+        ],
+        "responses": [
+          {
+            "ok": true,
+            "kind": "test",
+            "text": "1/1 test(s) passed.",
+            "data": {
+              "results": [
+                {
+                  "name": "constant",
+                  "word": "customer.renewal-savings",
+                  "passed": true,
+                  "expected": "14.5",
+                  "actual": [
+                    "14.5"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "ok": true,
+            "kind": "describe",
+            "text": "Description for customer.renewal-savings.",
+            "data": {
+              "name": "customer.renewal-savings",
+              "inputs": [
+                "Customer",
+                "Subscription"
+              ],
+              "outputs": [
+                "Float"
+              ],
+              "parameters": [
+                {
+                  "name": "customer",
+                  "type": "Customer"
+                },
+                {
+                  "name": "subscription",
+                  "type": "Subscription"
+                }
+              ],
+              "effects": [],
+              "documentation": "",
+              "id": "word_8767707affbf4fbfaac3daedd84b7186",
+              "dependencies": [],
+              "transitiveDependencies": [],
+              "callers": [],
+              "tests": [
+                "constant"
+              ],
+              "examples": [],
+              "source": "<revision:customer.renewal-savings/1>",
+              "line": 1,
+              "kind": "word",
+              "status": "persistent",
+              "maturity": "library",
+              "deprecated": false,
+              "revision": 1,
+              "testCount": 1,
+              "exampleCount": 0,
+              "coverage": {
+                "instructionsCovered": 1,
+                "instructionsTotal": 1,
+                "branchesCovered": 0,
+                "branchesTotal": 0,
+                "uncoveredInstructions": [],
+                "uncoveredBranchOutcomes": [],
+                "status": "current"
+              }
+            }
+          },
+          {
+            "ok": true,
+            "kind": "dependencies",
+            "text": "0 direct dependency/dependencies.",
+            "data": {
+              "dependencies": [],
+              "callers": []
+            }
+          },
+          {
+            "ok": true,
+            "kind": "source",
+            "text": "word customer.renewal-savings(customer: Customer, subscription: Subscription) -> Float {\n    effects none\n    14.5\n}",
+            "data": "word customer.renewal-savings(customer: Customer, subscription: Subscription) -> Float {\n    effects none\n    14.5\n}"
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          },
+          {
+            "ok": true,
+            "kind": "eval",
+            "text": "14.5",
+            "data": {
+              "stack": [
+                "14.5"
+              ],
+              "stackTypes": [
+                "Float"
+              ],
+              "console": [],
+              "effects": {}
+            }
+          }
+        ],
+        "limits": [
+          "Behavioral acceptance only; no model-efficiency claim.",
+          "Float tolerance is not bitwise or signed-zero equivalence.",
+          "Whole-state preservation and retained-helper quality require a separate audit."
+        ]
+      }
+    }
+  ],
+  "limits": [
+    "Root-authored adversarial fixtures, not external-agent trials.",
+    "Positive solutions require separate acceptance verification.",
+    "Full coverage alone is not business correctness."
+  ]
+}

@@ -182,6 +182,32 @@ module Compiler =
                 Diagnostics.raiseError "TYPE_LIST_CALLBACK" $"List operation target '{wordName}' must return {Types.format expected}." (Some wordName) (Some span) [ Types.format expected ] [ Types.format actualOutput ]
             | _ -> actualOutput, entry
 
+    let private higherOrderFoldCall (knownTypes: Set<string>) (words: Map<string, WordEntry>) (wordName: string) (span: SourceSpan) (itemType: LangType) (accumulatorType: LangType) =
+        match words.TryFind wordName with
+        | None -> Diagnostics.raiseError "NAME_UNKNOWN_WORD" $"List fold target '{wordName}' is not defined." (Some wordName) (Some span) [] []
+        | Some entry ->
+            let definition = entry.Definition
+            for typeValue in definition.Inputs @ definition.Outputs do
+                validateType entry.Builtin.IsSome knownTypes (Some span) definition.Name typeValue
+            if definition.Inputs.Length <> 2 || definition.Outputs.Length <> 1 then
+                let inputs = definition.Inputs |> List.map Types.format |> String.concat " "
+                let outputs = definition.Outputs |> List.map Types.format |> String.concat " "
+                Diagnostics.raiseError "TYPE_LIST_FOLD_CALLBACK" $"List fold target '{wordName}' must have exactly two inputs and one output." (Some wordName) (Some span)
+                    [ $"{Types.format accumulatorType} {Types.format itemType} -> {Types.format accumulatorType}" ] [ inputs + " -> " + outputs ]
+            let substitutions =
+                try
+                    let accumulatorSubstitutions = unify Map.empty definition.Inputs[0] accumulatorType
+                    unify accumulatorSubstitutions definition.Inputs[1] itemType
+                with _ ->
+                    Diagnostics.raiseError "TYPE_LIST_FOLD_CALLBACK" $"List fold target '{wordName}' must accept accumulator {Types.format accumulatorType} followed by item {Types.format itemType}." (Some wordName) (Some span)
+                        [ $"{Types.format accumulatorType} {Types.format itemType} -> {Types.format accumulatorType}" ]
+                        (definition.Inputs |> List.map Types.format)
+            let actualOutput = substitute substitutions definition.Outputs.Head
+            if actualOutput <> accumulatorType then
+                Diagnostics.raiseError "TYPE_LIST_FOLD_CALLBACK" $"List fold target '{wordName}' must return the exact accumulator type {Types.format accumulatorType}." (Some wordName) (Some span)
+                    [ Types.format accumulatorType ] [ Types.format actualOutput ]
+            entry
+
     let listCallbackOutputType knownTypes words wordName span itemType =
         let outputType, _ = higherOrderCall knownTypes words wordName span itemType None
         outputType
@@ -296,6 +322,24 @@ module Compiler =
                             | EachList _ -> TUnit
                             | _ -> failwith "unreachable"
                         prefix @ [ output ], locals
+                    | FoldList(target, expressionSpan) ->
+                        if stack.Length < 2 then
+                            Diagnostics.raiseError "TYPE_STACK_UNDERFLOW" "List fold requires a List<T> followed by an initial accumulator." (Some wordName) (Some expressionSpan)
+                                [ "List<T> Accumulator" ] (stack |> List.map Types.format)
+                        let prefix = stack |> List.take (stack.Length - 2)
+                        let actualInputs = stack |> List.skip (stack.Length - 2)
+                        let itemType, accumulatorType =
+                            match actualInputs with
+                            | [ TList item; accumulator ] -> item, accumulator
+                            | [ actualList; accumulator ] ->
+                                Diagnostics.raiseError "TYPE_LIST_REQUIRED" "List fold requires List<T> below its initial accumulator." (Some wordName) (Some expressionSpan)
+                                    [ "List<T> Accumulator" ] [ Types.format actualList; Types.format accumulator ]
+                            | _ -> failwith "unreachable"
+                        let entry = higherOrderFoldCall knownTypes words target expressionSpan itemType accumulatorType
+                        callSignature <- Some { CallInputs = [ accumulatorType; itemType ]; CallOutputs = [ accumulatorType ] }
+                        dependencies <- Set.add target dependencies
+                        effects <- Set.union effects entry.Definition.Effects
+                        prefix @ [ accumulatorType ], locals
                     | If(thenBranch, elseBranch, expressionSpan) ->
                         if List.isEmpty stack || List.last stack <> TBool then
                             let actual = stack |> List.tryLast |> Option.map Types.format |> Option.defaultValue "<empty>"
@@ -444,7 +488,7 @@ module Compiler =
             |> List.fold (fun found expression ->
                 match expression with
                 | Call(name, _) -> Set.add name found
-                | MapList(name, _) | FilterList(name, _) | EachList(name, _) -> Set.add name found
+                | MapList(name, _) | FilterList(name, _) | EachList(name, _) | FoldList(name, _) -> Set.add name found
                 | If(thenBranch, elseBranch, _) | MatchOption(_, thenBranch, elseBranch, _) ->
                     Set.union found (Set.union (collect thenBranch) (collect elseBranch))
                 | Scope(innerBody, _) -> Set.union found (collect innerBody)
@@ -492,6 +536,7 @@ module Compiler =
                 | MapList(name, _) -> "list.map " + name
                 | FilterList(name, _) -> "list.filter " + name
                 | EachList(name, _) -> "list.each " + name
+                | FoldList(name, _) -> "list.fold " + name
                 | Let(name, _) -> "let " + name
                 | Load(name, _) -> $"${name}"
                 | If(thenBranch, elseBranch, _) ->
@@ -723,6 +768,7 @@ module Compiler =
                 | MapList(name, span) -> appendText "map-list"; appendText name; appendSpan span
                 | FilterList(name, span) -> appendText "filter-list"; appendText name; appendSpan span
                 | EachList(name, span) -> appendText "each-list"; appendText name; appendSpan span
+                | FoldList(name, span) -> appendText "fold-list"; appendText name; appendSpan span
                 | Let(name, span) -> appendText "let"; appendText name; appendSpan span
                 | Load(name, span) -> appendText "load"; appendText name; appendSpan span
                 | If(thenBranch, elseBranch, span) -> appendText "if"; appendExpressions thenBranch; appendExpressions elseBranch; appendSpan span
@@ -919,7 +965,7 @@ module Compiler =
 
     let private expressionSpan = function
         | Push(_, span) | Call(_, span) | ConstructContainer(_, _, span)
-        | MapList(_, span) | FilterList(_, span) | EachList(_, span)
+        | MapList(_, span) | FilterList(_, span) | EachList(_, span) | FoldList(_, span)
         | Let(_, span) | Load(_, span) | If(_, _, span) | Scope(_, span)
         | MatchOption(_, _, _, span) | MatchResult(_, _, _, _, span) -> span
 
@@ -935,6 +981,7 @@ module Compiler =
         | MapList _ -> "list-map"
         | FilterList _ -> "list-filter"
         | EachList _ -> "list-each"
+        | FoldList _ -> "list-fold"
         | Let _ -> "store-local"
         | Load _ -> "load-local"
         | If _ -> "if"
@@ -1108,6 +1155,19 @@ module Compiler =
                             let itemType = match List.last node.InputStack with | TList item -> item | _ -> irFailure "IR_LIST_ANNOTATION_INVALID" "Each lowering lost its input List<T> annotation." (Some ownerName) (Some span) [ "List<T>" ] []
                             let callback = resolvedForNode name span node.CallSignature
                             IrOperation.ListEach(callback, irType ownerName (Some span) itemType)
+                        | FoldList(name, _) ->
+                            let itemType, accumulatorType =
+                                match node.InputStack |> List.rev |> List.take 2 with
+                                | [ accumulator; TList item ] -> item, accumulator
+                                | actual -> irFailure "IR_LIST_ANNOTATION_INVALID" "Fold lowering lost its List<T> and accumulator input annotations." (Some ownerName) (Some span) [ "List<T> Accumulator" ] (actual |> List.rev |> List.map Types.format)
+                            let itemType = irType ownerName (Some span) itemType
+                            let accumulatorType = irType ownerName (Some span) accumulatorType
+                            let callback = resolvedForNode name span node.CallSignature
+                            if callback.InputTypes <> [ accumulatorType; itemType ] || callback.OutputTypes <> [ accumulatorType ] then
+                                irFailure "IR_CALLBACK_ANNOTATION_INVALID" "Fold lowering requires one concrete callback with signature Accumulator Item -> Accumulator." (Some name) (Some span)
+                                    [ $"{IrTypes.format accumulatorType} {IrTypes.format itemType} -> {IrTypes.format accumulatorType}" ]
+                                    [ (callback.InputTypes |> List.map IrTypes.format |> String.concat " ") + " -> " + (callback.OutputTypes |> List.map IrTypes.format |> String.concat " ") ]
+                            IrOperation.ListFold(callback, itemType, accumulatorType)
                         | Let(name, _) ->
                             match env.TryFind name with
                             | Some slot -> IrOperation.StoreLocal slot

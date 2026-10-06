@@ -228,6 +228,91 @@ let private testEmptyEffectfulCallbackPreflight () =
         IrInterpreter.executeBody host "empty-callback" body |> ignore)
     check "effect denial precedes body instructions and provider effects" (preflightCount = 1 && instructionCount = 0 && effectCount = 0)
 
+let private testListFoldExecutionAndPreflight () =
+    let source = span "fold-runtime.agent"
+    let step =
+        wordEntry "fold.decimal-step" [ TInt; TInt ] [ TInt ] Set.empty
+            [ Call("swap", source)
+              Push(LInt 10L, source)
+              Call("multiply", source)
+              Call("add", source) ] None
+    let context = contextWith Map.empty [ step ]
+    let buildList values =
+        match values with
+        | [] -> [ ConstructContainer(ListEmpty, [ TInt ], source) ]
+        | first :: rest ->
+            [ Push(LInt first, source); ConstructContainer(ListSingleton, [ TInt ], source) ]
+            @ (rest |> List.collect (fun value ->
+                [ Push(LInt value, source)
+                  ConstructContainer(ListSingleton, [ TInt ], source)
+                  Call("list.concat", source) ]))
+    let _, ordered = compileBody context "fold-ordered" [] (buildList [ 1L; 2L; 3L ] @ [ Push(LInt 0L, source); FoldList("fold.decimal-step", source) ])
+    check "noncommutative fold executes items from left to right with [accumulator; item]" (
+        IrInterpreter.executeBody (noOpHost ()) "fold-ordered" ordered = [ IntValue 123L ])
+    let _, empty = compileBody context "fold-empty" [] (buildList [] @ [ Push(LInt 7L, source); FoldList("fold.decimal-step", source) ])
+    check "empty fold returns its seed unchanged" (IrInterpreter.executeBody (noOpHost ()) "fold-empty" empty = [ IntValue 7L ])
+    let _, prefix =
+        compileBody context "fold-prefix" []
+            ([ Push(LInt 99L, source) ] @ buildList [ 1L; 2L; 3L ] @ [ Push(LInt 0L, source); FoldList("fold.decimal-step", source) ])
+    check "fold replaces only list and seed while preserving an earlier stack prefix" (
+        IrInterpreter.executeBody (noOpHost ()) "fold-prefix" prefix = [ IntValue 99L; IntValue 123L ])
+
+    let mutable branches = []
+    let branchHost =
+        { noOpHost () with
+            RecordBranchOutcome = fun word _ outcome -> branches <- (word, outcome) :: branches }
+    IrInterpreter.executeBody branchHost "fold-empty" empty |> ignore
+    IrInterpreter.executeBody branchHost "fold-ordered" ordered |> ignore
+    check "empty and nonempty fold executions report their own branch outcomes"
+        (Set.ofList branches = Set.ofList [ "fold-empty", "empty"; "fold-ordered", "nonempty" ])
+
+    let mutable used = []
+    let trackingHost = host (fun _ _ _ -> ()) (fun _ _ -> ()) (fun _ -> EffectUnit) (fun name -> used <- name :: used)
+    IrInterpreter.executeBody trackingHost "fold-empty" empty |> ignore
+    check "empty fold does not record an uninvoked callback as used" (not (used |> List.contains "fold.decimal-step"))
+    used <- []
+    IrInterpreter.executeBody trackingHost "fold-ordered" ordered |> ignore
+    check "nonempty fold records the callback when it actually runs" (used |> List.contains "fold.decimal-step")
+
+    let effectfulStep =
+        wordEntry "fold.effect-step" [ TInt; TInt ] [ TInt ] (Set.singleton "console.write")
+            [ Call("int.to-string", source); Call("console.write", source); Call("drop", source) ] None
+    let effectContext = contextWith Map.empty [ effectfulStep ]
+    let _, deniedEmpty =
+        compileBody effectContext "fold-denied-empty" []
+            [ ConstructContainer(ListEmpty, [ TInt ], source); Push(LInt 0L, source); FoldList("fold.effect-step", source) ]
+    let mutable preflightCount = 0
+    let mutable instructionCount = 0
+    let mutable effectCount = 0
+    let denyingHost =
+        host (fun effects word site ->
+                preflightCount <- preflightCount + 1
+                if not (Set.isEmpty effects) then
+                    Diagnostics.raiseError "CAPABILITY_DENIED" "Test host denies all effects." word None [] (IrEffects.names effects))
+            (fun _ _ -> instructionCount <- instructionCount + 1)
+            (fun _ -> effectCount <- effectCount + 1; EffectUnit)
+            ignore
+    expectDiagnostic "empty fold preflights callback effects before execution" "CAPABILITY_DENIED" (fun () ->
+        IrInterpreter.executeBody denyingHost "fold-denied-empty" deniedEmpty |> ignore)
+    check "empty fold denial occurs before instructions or provider calls" (preflightCount = 1 && instructionCount = 0 && effectCount = 0)
+
+let private testListFoldFuelLimit () =
+    let source = span "fold-fuel.agent"
+    let step = wordEntry "fold.fuel-step" [ TInt; TInt ] [ TInt ] Set.empty [ Call("add", source) ] None
+    let context = contextWith Map.empty [ step ]
+    let expressions = ResizeArray<Expr>()
+    expressions.Add(Push(LInt 0L, source))
+    expressions.Add(ConstructContainer(ListSingleton, [ TInt ], source))
+    for value in 1L .. 2_500L do
+        expressions.Add(Push(LInt value, source))
+        expressions.Add(ConstructContainer(ListSingleton, [ TInt ], source))
+        expressions.Add(Call("list.concat", source))
+    expressions.Add(Push(LInt 0L, source))
+    expressions.Add(FoldList("fold.fuel-step", source))
+    let _, body = compileBody context "fold-fuel" [] (List.ofSeq expressions)
+    expectDiagnostic "fold callback iterations and list construction share the interpreter instruction budget" "RUNTIME_STEP_LIMIT" (fun () ->
+        IrInterpreter.executeBody (noOpHost ()) "fold-fuel" body |> ignore)
+
 let private testBoundedRuntimeValues () =
     let site = span "bounded-values.agent"
     let chainRecord =
@@ -314,6 +399,8 @@ let main _ =
     testScopeRestoresOverwrittenOuterLocal ()
     testInterpreterOwnsFuel ()
     testEmptyEffectfulCallbackPreflight ()
+    testListFoldExecutionAndPreflight ()
+    testListFoldFuelLimit ()
     testBoundedRuntimeValues ()
     printfn "IR Interpreter tests passed (%d assertions)." assertions
     0

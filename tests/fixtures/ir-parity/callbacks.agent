@@ -49,6 +49,24 @@ word parity.visit : List<Int> -> Unit
     list.each parity.effectful
 end
 
+word parity.fold-step : Int Int -> Int
+    effects none
+    swap
+    10
+    multiply
+    add
+end
+
+word parity.fold-decimal : List<Int> Int -> Int
+    effects none
+    list.fold parity.fold-step
+end
+
+word parity.fold-prefix : Bool List<Int> Int -> Bool Int
+    effects none
+    list.fold parity.fold-step
+end
+
 test parity.map-first-doubled/empty
     list.empty<Int> parity.map-first-doubled
     => 0
@@ -77,4 +95,20 @@ end
 test parity.visit-ignored/nonempty
     3 list.singleton<Int> parity.visit-ignored
     => unit
+end
+
+test parity.fold-decimal/empty-seed
+    list.empty<Int> 7 parity.fold-decimal
+    => 7
+end
+
+test parity.fold-decimal/left-to-right
+    1 list.singleton<Int> 2 list.append 3 list.append 0 parity.fold-decimal
+    => 123
+end
+
+test parity.fold-prefix/preserve
+    true 1 list.singleton<Int> 2 list.append 3 list.append 0 parity.fold-prefix
+    swap drop
+    => 123
 end

@@ -287,6 +287,15 @@ Also investigate memory behavior under the later LLVM development/release backen
 
 ## Delivery sequence
 
+Priority clarification, 2026-10-06: validating external AI-agent behavior is the
+next major milestone. Take the shortest path using the existing small domain
+and a matched Flat/Growing/Conventional sequence. Do not wait for the full
+40–60-word domain, 60-task execution suite, optional command completeness,
+mailboxes, arenas or LLVM before the first comparative review. Finish bounded
+work already underway and add capabilities only when trial requirements or
+observed failures justify them. This changes delivery order, not the remaining
+full-PRD requirements or the standard of evidence.
+
 1. Ship and validate the first usable slice and demo.
 2. Run a fresh external subagent through the small protocol; record supplied context, interactions, independent results, and available usage.
 3. Complete the user-directed expression/dot frontend migration and validate source/persistence/IR conformance before further controlled agent trials. Close-to-first-use is lint; retain explicit values/effects and no mutable language globals.
