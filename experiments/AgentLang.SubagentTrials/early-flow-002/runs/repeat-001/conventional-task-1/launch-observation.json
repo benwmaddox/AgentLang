@@ -1,0 +1,8 @@
+{
+  "trial": "repeat-001/conventional-task-1",
+  "spawnReturnedObservedAt": "2026-10-06T16:31:44.6014196+00:00",
+  "model": "gpt-6-luna",
+  "reasoning": "max",
+  "forkTurns": "none",
+  "exactModelUsageAvailable": false
+}

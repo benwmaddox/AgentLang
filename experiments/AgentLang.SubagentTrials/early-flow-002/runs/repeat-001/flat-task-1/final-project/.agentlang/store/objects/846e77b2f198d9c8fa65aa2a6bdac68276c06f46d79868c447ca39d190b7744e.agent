@@ -1,0 +1,3 @@
+test customer.premium?/empty-kind {
+    customer::premium?(customer::new("", 25.0)) => false
+}

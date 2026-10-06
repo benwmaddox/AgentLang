@@ -1,0 +1,80 @@
+Run repeat-001 Conventional task 1 as a fresh GPT-6 Luna/max coding agent.
+Ownership is only the isolated trial project D:\code\AgentLang\.agentlang\early-repeat-002\conventional through its broker.
+Other agents work elsewhere; preserve their files and do not touch repository source.
+
+You are an external AI coding agent implementing the selected public task in a
+small synthetic project. Inspect available capabilities before editing. Prefer
+existing useful abstractions and add a reusable abstraction for the required
+entry point. Preserve existing types, helpers and tests unless the task requires
+a change. Text comparisons are exact and case-sensitive. Float arithmetic is
+the specified demo behavior, not a decimal billing implementation.
+
+Use only the supplied trial protocol and pinned host configuration. Do not read
+coordinator files, independent acceptance oracles, sibling runs, previous trial
+solutions, or raw repository source outside your editable trial project. Add
+meaningful self-tests covering branches and relevant boundary cases, run them,
+and repair failures through the protocol. Do not alter the policy to fit tests.
+Work as the single assigned agent; do not spawn or delegate to other agents.
+
+Human authorization is already given for isolated trial-project edits and local
+test execution: "Yes, run the remaining isolated experiments". If approval
+review rejects an operation, report the rejection and stop dependent work;
+do not bypass it. A timeout observing a live exchange is not evidence it failed.
+Resume the same host session and inspect state before retrying an uncertain edit.
+
+Report what you changed, tests run, errors encountered and missing capabilities.
+Do not invent model-token or turn counts. Leave the interactive host session
+open when finished; the coordinator handles teardown separately. Do not send
+quit commands or control characters to the JSONL protocol.
+
+
+Schema: Customer(kind:String,balance:Float) and Subscription(term:String,renewable:Bool), represented as the equivalent F# records. Existing prior accepted helpers/tests, if any, must be preserved. No future tasks or oracles are supplied.
+
+Selected public task:
+Add a reusable premium-customer predicate. A customer is premium exactly when
+kind equals "premium". Required entry point: AgentLang `customer.premium? :
+Customer -> Bool`; F# `Customer.premium : Customer -> bool`. Add relevant tests.
+
+You work in a conventional F# console project through a small repository JSONL
+broker. Start the exact supplied trial host once and send one request per line
+through its returned session. The coordinator fixes the project and validation
+target; you cannot choose arbitrary commands.
+
+```json
+{"op":"search","query":"Customer"}
+{"op":"read","path":"Domain.fs"}
+{"op":"inspect","path":"Domain.fs"}
+```
+
+Read returns exact UTF-8 content and a SHA-256 hash. Paths must be relative to
+the editable project. A small edit uses a unique exact context anchor:
+
+```json
+{"op":"patch","path":"Domain.fs","expectedSha256":"<hash from read>","oldText":"<unique current text>","newText":"<replacement text>"}
+```
+
+All fields are required strings. Empty newText deletes the matched text.
+OldText must be nonempty and occur exactly once, including overlapping matches.
+Matching is ordinal; no newline normalization or fuzzy matching occurs. Stale
+hashes, missing/ambiguous anchors, invalid paths and oversized results fail
+without editing. Success returns the new hash. Re-read after uncertainty.
+Full-file `replace` remains available with path, expectedSha256 and content.
+
+```json
+{"op":"validate"}
+```
+
+Validate runs the host-selected F# project including your self-tests. Add
+meaningful branch and boundary assertions, and preserve earlier behavior/tests.
+The independent coordinator oracle is separate from these self-tests. Requests
+can use top-level fields or nested args, with exactly the documented fields.
+The host permits inspect, read, search, patch, replace and validate. F# module
+order follows ordinary lexical name resolution. Do not invoke raw file tools,
+shell edits, other executables or arbitrary build commands during the trial.
+
+
+Execute exactly this PowerShell host launch using exec_command with workdir D:\code\AgentLang, sandbox_permissions require_escalated (the known ACL helper requires host execution), tty true, and an initial short yield. This is the human-authorized local isolated experiment. Do not use shell/file tools for any other command or source access.
+
+& 'D:\code\AgentLang\scripts\Start-SubagentTrialHost.ps1' -CliDll 'D:\code\AgentLang\.agentlang\early-repeat-002\conventional-bin\AgentLang.Conventional.Cli.dll' -ProjectPath 'D:\code\AgentLang\.agentlang\early-repeat-002\conventional' -TracePath 'D:\code\AgentLang\experiments\AgentLang.SubagentTrials\early-flow-002\runs\repeat-001\conventional-task-1\trace.jsonl' -AllowedOperations @('inspect','read','search','patch','replace','validate') -Profile conventional -AdditionalCliArguments @('--validation-project','EarlyPilot.fsproj') -ExchangeTimeoutMilliseconds 120000 -MaxExchanges 100
+
+There is no startup banner. The returned session is ready for JSONL input. Use write_stdin on that same session for all protocol interactions; after an observation timeout resume that session instead of starting another host or repeating an uncertain request. Keep the host open at completion and report its session ID for coordinator teardown. Use only collaboration.send_message to /root for a progress/blocker update if necessary, never Codex app thread messaging. Finish with your change, actual validation outcomes and errors. Do not spawn other agents.

@@ -1,0 +1,316 @@
+{
+  "schemaVersion": 1,
+  "status": "three-accepted-first-task-trials; remaining-tasks-pending",
+  "sourceRevision": "dc18d6efc0d002d1a752024301d42f54cdd49c07",
+  "acceptedTrials": 3,
+  "behavioralVectors": 60,
+  "independentChecks": 139,
+  "wireAndProvenanceChecks": 76,
+  "files": [
+    {
+      "path": "conventional-task-1/acceptance.json",
+      "bytes": 9212,
+      "sha256": "1e4ef13336fc2a46dfcc5a591a2d00898a4232afc4abc8f924ada9791c5b1b82"
+    },
+    {
+      "path": "conventional-task-1/binary-pins.json",
+      "bytes": 3463,
+      "sha256": "26e06f012daa958c3ca8fd8b4c7d45e34d9fc5bd9fccb8df0e1ff27f8a229861"
+    },
+    {
+      "path": "conventional-task-1/coordinator-summary.json",
+      "bytes": 589,
+      "sha256": "656e84c64575fc71509844ed0fcf8536abd99fb07ee3f6b90d82bafda4252470"
+    },
+    {
+      "path": "conventional-task-1/launch-observation.json",
+      "bytes": 229,
+      "sha256": "9ffca02bbce22995a56b74d38827f321f2a42040f373e73c0a50a4679c9a9e79"
+    },
+    {
+      "path": "conventional-task-1/metrics.json",
+      "bytes": 2186,
+      "sha256": "c434536358f5d59b9934c0205db60fa023f516199ee70882d34c248988a9406a"
+    },
+    {
+      "path": "conventional-task-1/prelaunch.json",
+      "bytes": 2584,
+      "sha256": "628f2ee952aa0f93d6fe5756f853703d3c08142d33115d74c0d357a8ba6f20e1"
+    },
+    {
+      "path": "conventional-task-1/prompt.txt",
+      "bytes": 5638,
+      "sha256": "fa0866a4eaaabe1b16c288bdbe8e2968e4024e02db2fc888898e909f2bf068f1"
+    },
+    {
+      "path": "conventional-task-1/trace.jsonl",
+      "bytes": 64264,
+      "sha256": "6eff6cf011e64aa1945e04bc227d991938895bca3677f72101856eeef6c72d4c"
+    },
+    {
+      "path": "conventional-task-1/final-project/Domain.fs",
+      "bytes": 727,
+      "sha256": "9ab970154193b8321adb1870c3f2f40724162df28a052166485072f656c410f9"
+    },
+    {
+      "path": "conventional-task-1/final-project/EarlyPilot.fsproj",
+      "bytes": 321,
+      "sha256": "90c90151c9142926d936e94721336ea709c3b3093557aa4d5133d143d6075257"
+    },
+    {
+      "path": "conventional-task-1/final-project/SelfTests.fs",
+      "bytes": 925,
+      "sha256": "1ba2d9a1d18f5f3c01d2cad9e06db388b590dc980a5d7c6a38b37c3a7d263cb6"
+    },
+    {
+      "path": "flat-task-1/acceptance.json",
+      "bytes": 17132,
+      "sha256": "e86596d71177daa02d9feb59dbf94acae19c465df3a0a1db41c0481663e4f906"
+    },
+    {
+      "path": "flat-task-1/binary-pins.json",
+      "bytes": 3463,
+      "sha256": "26e06f012daa958c3ca8fd8b4c7d45e34d9fc5bd9fccb8df0e1ff27f8a229861"
+    },
+    {
+      "path": "flat-task-1/metrics.json",
+      "bytes": 864,
+      "sha256": "2354f31c7740b6d625b543fcd11000f3b0f19ae47935cd40db459e5d8644a3d6"
+    },
+    {
+      "path": "flat-task-1/prelaunch.json",
+      "bytes": 4271,
+      "sha256": "573829e7bb6bec5d27c0dbe31ef19d2024d3395ba733631116953ac715e3d837"
+    },
+    {
+      "path": "flat-task-1/prompt.txt",
+      "bytes": 6219,
+      "sha256": "2b00cc79847d1572efc90dff89edc2779f47aaa0ec6931baa87e59e538679200"
+    },
+    {
+      "path": "flat-task-1/starting-state.json",
+      "bytes": 1704,
+      "sha256": "d08e1e707ed4a8385574ee0b20006943d40c038c141c890200ad639c074ec72b"
+    },
+    {
+      "path": "flat-task-1/trace.jsonl",
+      "bytes": 40167,
+      "sha256": "ee4d8a2ea916b667ab3b1c20ce8a3066853e7621584ee5becd50d9934a0191e2"
+    },
+    {
+      "path": "flat-task-1/final-project/dictionary.agent",
+      "bytes": 998,
+      "sha256": "ae2a0c2f131fed53bdeed73b89bc762dd5d2eb7158b579f2a42b7ba05052eb34"
+    },
+    {
+      "path": "flat-task-1/final-project/.agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "5c40d77aef8f058c60644967b3f84d3628c11607f1eec54efa9061491dbbd656"
+    },
+    {
+      "path": "flat-task-1/final-project/.agentlang/store/WRITE.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "flat-task-1/final-project/.agentlang/store/manifests/272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e.json",
+      "bytes": 583,
+      "sha256": "272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e"
+    },
+    {
+      "path": "flat-task-1/final-project/.agentlang/store/manifests/79fe235b80594a280d1e9ed570d7e0c83b57c6fbaabfc35c2afa5dff05eb52eb.json",
+      "bytes": 6261,
+      "sha256": "79fe235b80594a280d1e9ed570d7e0c83b57c6fbaabfc35c2afa5dff05eb52eb"
+    },
+    {
+      "path": "flat-task-1/final-project/.agentlang/store/manifests/8ab71325aaabb58ff1c671d773c397bf61e74a1020bb39fc39425f47e950ded7.json",
+      "bytes": 375,
+      "sha256": "8ab71325aaabb58ff1c671d773c397bf61e74a1020bb39fc39425f47e950ded7"
+    },
+    {
+      "path": "flat-task-1/final-project/.agentlang/store/objects/0a09ec29fa93e0951a01017f708dbdb0ae4d13cec9c30fb033fbe3de55d9c9e7.agent",
+      "bytes": 188,
+      "sha256": "0a09ec29fa93e0951a01017f708dbdb0ae4d13cec9c30fb033fbe3de55d9c9e7"
+    },
+    {
+      "path": "flat-task-1/final-project/.agentlang/store/objects/4d1f76127f259ff47d25e8ad4bed7c2ae6c9bf18846ae243179235c28278d313.agent",
+      "bytes": 74,
+      "sha256": "4d1f76127f259ff47d25e8ad4bed7c2ae6c9bf18846ae243179235c28278d313"
+    },
+    {
+      "path": "flat-task-1/final-project/.agentlang/store/objects/4fa919782192ebd157e8887251ffea5366ad1ea2a639adcbb9247e1ceb59eee3.agent",
+      "bytes": 106,
+      "sha256": "4fa919782192ebd157e8887251ffea5366ad1ea2a639adcbb9247e1ceb59eee3"
+    },
+    {
+      "path": "flat-task-1/final-project/.agentlang/store/objects/6b964fd1a60a1c51e0900f74a69ee486c227aacf5bca2f24a06289cecc237bf7.agent",
+      "bytes": 69,
+      "sha256": "6b964fd1a60a1c51e0900f74a69ee486c227aacf5bca2f24a06289cecc237bf7"
+    },
+    {
+      "path": "flat-task-1/final-project/.agentlang/store/objects/846e77b2f198d9c8fa65aa2a6bdac68276c06f46d79868c447ca39d190b7744e.agent",
+      "bytes": 94,
+      "sha256": "846e77b2f198d9c8fa65aa2a6bdac68276c06f46d79868c447ca39d190b7744e"
+    },
+    {
+      "path": "flat-task-1/final-project/.agentlang/store/objects/ae2a0c2f131fed53bdeed73b89bc762dd5d2eb7158b579f2a42b7ba05052eb34.agent",
+      "bytes": 998,
+      "sha256": "ae2a0c2f131fed53bdeed73b89bc762dd5d2eb7158b579f2a42b7ba05052eb34"
+    },
+    {
+      "path": "flat-task-1/final-project/.agentlang/store/objects/aef0989b24710f09ece0578a1e0388bcc11d41b3016a2385fc1669999bfb225e.agent",
+      "bytes": 101,
+      "sha256": "aef0989b24710f09ece0578a1e0388bcc11d41b3016a2385fc1669999bfb225e"
+    },
+    {
+      "path": "flat-task-1/final-project/.agentlang/store/objects/b629786a2a9143d3520310a6eb0dfd98df221b95e0e623595299d10b4b3eea35.agent",
+      "bytes": 141,
+      "sha256": "b629786a2a9143d3520310a6eb0dfd98df221b95e0e623595299d10b4b3eea35"
+    },
+    {
+      "path": "flat-task-1/final-project/.agentlang/store/objects/c701fc54256ab52139509aff9f40ca54c54dcc6f31f6577dc5836f7f0fdd7ad7.agent",
+      "bytes": 91,
+      "sha256": "c701fc54256ab52139509aff9f40ca54c54dcc6f31f6577dc5836f7f0fdd7ad7"
+    },
+    {
+      "path": "flat-task-1/final-project/.agentlang/store/objects/d522482b935567a11fc519bad8a93416193a1778eac57cb91df406031e531ea8.agent",
+      "bytes": 106,
+      "sha256": "d522482b935567a11fc519bad8a93416193a1778eac57cb91df406031e531ea8"
+    },
+    {
+      "path": "flat-task-1/final-project/.agentlang/store/objects/ea9cef76de475cc2ab170b31304b0cccdaad5bfeb8504defe7c38dbf22ac10a8.agent",
+      "bytes": 111,
+      "sha256": "ea9cef76de475cc2ab170b31304b0cccdaad5bfeb8504defe7c38dbf22ac10a8"
+    },
+    {
+      "path": "flat-task-1/final-project/.agentlang/store/snapshots/matched-renewal-start.json",
+      "bytes": 157,
+      "sha256": "b936be633953f177b3cf303dfbbccd3fc1b48e6c346789670bbf546227f85998"
+    },
+    {
+      "path": "flat-task-1/final-project/history/task-0001.json",
+      "bytes": 481,
+      "sha256": "e2beba35fb179ae3f2f3b859f0758c83b0348d2be73e6e4102eac1968d972b26"
+    },
+    {
+      "path": "growing-task-1/acceptance.json",
+      "bytes": 16556,
+      "sha256": "a1b0cfb4b3740db33fce47446e504d178b1df6482645102ad43d979c4482c562"
+    },
+    {
+      "path": "growing-task-1/binary-pins.json",
+      "bytes": 3463,
+      "sha256": "26e06f012daa958c3ca8fd8b4c7d45e34d9fc5bd9fccb8df0e1ff27f8a229861"
+    },
+    {
+      "path": "growing-task-1/metrics.json",
+      "bytes": 868,
+      "sha256": "ed8a9efb0d492abc1666b7df2bd9952136e706df29713e79534698b9f2298f7c"
+    },
+    {
+      "path": "growing-task-1/prelaunch.json",
+      "bytes": 4275,
+      "sha256": "6e42c5373b4b7197ef7b45c22b23b02f687e4e23fb6c189f97543789c68fbc9a"
+    },
+    {
+      "path": "growing-task-1/prompt.txt",
+      "bytes": 6217,
+      "sha256": "8c03db4e1cc7b82a17f1d21d66a453b4d2975679066e6d9ff4d781dc31dfb575"
+    },
+    {
+      "path": "growing-task-1/starting-state.json",
+      "bytes": 1704,
+      "sha256": "d08e1e707ed4a8385574ee0b20006943d40c038c141c890200ad639c074ec72b"
+    },
+    {
+      "path": "growing-task-1/trace.jsonl",
+      "bytes": 44411,
+      "sha256": "35641c4cf68532d2cc1c49e971522a533254e592e10bcfb27107520f8e62b5fd"
+    },
+    {
+      "path": "growing-task-1/final-project/dictionary.agent",
+      "bytes": 713,
+      "sha256": "afc265dc6f94452468e30b9c48ba66600f45f00a586fdd3a624a0cfcbb40fa22"
+    },
+    {
+      "path": "growing-task-1/final-project/.agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "0c3e8478f6cfe5e88e46df0e471ad38851c40eeb0c8b6a4511c92f335d91fd8a"
+    },
+    {
+      "path": "growing-task-1/final-project/.agentlang/store/WRITE.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "growing-task-1/final-project/.agentlang/store/manifests/272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e.json",
+      "bytes": 583,
+      "sha256": "272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e"
+    },
+    {
+      "path": "growing-task-1/final-project/.agentlang/store/manifests/3b219e8faf1f23a352f89797984f5144c44658376978393878739aa80b6d59fc.json",
+      "bytes": 4522,
+      "sha256": "3b219e8faf1f23a352f89797984f5144c44658376978393878739aa80b6d59fc"
+    },
+    {
+      "path": "growing-task-1/final-project/.agentlang/store/manifests/8ab71325aaabb58ff1c671d773c397bf61e74a1020bb39fc39425f47e950ded7.json",
+      "bytes": 375,
+      "sha256": "8ab71325aaabb58ff1c671d773c397bf61e74a1020bb39fc39425f47e950ded7"
+    },
+    {
+      "path": "growing-task-1/final-project/.agentlang/store/objects/0a09ec29fa93e0951a01017f708dbdb0ae4d13cec9c30fb033fbe3de55d9c9e7.agent",
+      "bytes": 188,
+      "sha256": "0a09ec29fa93e0951a01017f708dbdb0ae4d13cec9c30fb033fbe3de55d9c9e7"
+    },
+    {
+      "path": "growing-task-1/final-project/.agentlang/store/objects/2754e501440b8c7cec15f3434d0233fda4154b9d631355748f1f323df2be80f5.agent",
+      "bytes": 101,
+      "sha256": "2754e501440b8c7cec15f3434d0233fda4154b9d631355748f1f323df2be80f5"
+    },
+    {
+      "path": "growing-task-1/final-project/.agentlang/store/objects/4d1f76127f259ff47d25e8ad4bed7c2ae6c9bf18846ae243179235c28278d313.agent",
+      "bytes": 74,
+      "sha256": "4d1f76127f259ff47d25e8ad4bed7c2ae6c9bf18846ae243179235c28278d313"
+    },
+    {
+      "path": "growing-task-1/final-project/.agentlang/store/objects/6b964fd1a60a1c51e0900f74a69ee486c227aacf5bca2f24a06289cecc237bf7.agent",
+      "bytes": 69,
+      "sha256": "6b964fd1a60a1c51e0900f74a69ee486c227aacf5bca2f24a06289cecc237bf7"
+    },
+    {
+      "path": "growing-task-1/final-project/.agentlang/store/objects/aef0989b24710f09ece0578a1e0388bcc11d41b3016a2385fc1669999bfb225e.agent",
+      "bytes": 101,
+      "sha256": "aef0989b24710f09ece0578a1e0388bcc11d41b3016a2385fc1669999bfb225e"
+    },
+    {
+      "path": "growing-task-1/final-project/.agentlang/store/objects/afc265dc6f94452468e30b9c48ba66600f45f00a586fdd3a624a0cfcbb40fa22.agent",
+      "bytes": 713,
+      "sha256": "afc265dc6f94452468e30b9c48ba66600f45f00a586fdd3a624a0cfcbb40fa22"
+    },
+    {
+      "path": "growing-task-1/final-project/.agentlang/store/objects/c701fc54256ab52139509aff9f40ca54c54dcc6f31f6577dc5836f7f0fdd7ad7.agent",
+      "bytes": 91,
+      "sha256": "c701fc54256ab52139509aff9f40ca54c54dcc6f31f6577dc5836f7f0fdd7ad7"
+    },
+    {
+      "path": "growing-task-1/final-project/.agentlang/store/objects/cba51aed7789788bafdfed252595b21078bd2e16620690bd2ef0eff0179feeca.agent",
+      "bytes": 121,
+      "sha256": "cba51aed7789788bafdfed252595b21078bd2e16620690bd2ef0eff0179feeca"
+    },
+    {
+      "path": "growing-task-1/final-project/.agentlang/store/objects/ebfda0ad236c50a2a29cf677ba9465b108ef55c039f3edbf34db743107587893.agent",
+      "bytes": 104,
+      "sha256": "ebfda0ad236c50a2a29cf677ba9465b108ef55c039f3edbf34db743107587893"
+    },
+    {
+      "path": "growing-task-1/final-project/.agentlang/store/snapshots/matched-renewal-start.json",
+      "bytes": 157,
+      "sha256": "b936be633953f177b3cf303dfbbccd3fc1b48e6c346789670bbf546227f85998"
+    },
+    {
+      "path": "growing-task-1/final-project/history/task-0001.json",
+      "bytes": 549,
+      "sha256": "9e7bcb7d58bd3ee79c2349f84ab0f1cc7b9876921bd0b6b463e1abc43f650fb2"
+    }
+  ]
+}

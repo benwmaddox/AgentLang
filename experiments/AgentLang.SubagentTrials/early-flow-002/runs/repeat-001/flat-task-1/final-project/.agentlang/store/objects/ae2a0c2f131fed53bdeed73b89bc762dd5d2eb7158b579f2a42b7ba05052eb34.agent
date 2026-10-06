@@ -1,0 +1,56 @@
+// frontend: flow/1
+
+record Customer {
+    field kind: String;
+    field balance: Float;
+}
+
+// frontend: flow/1
+
+record Subscription {
+    field term: String;
+    field renewable: Bool;
+}
+
+// frontend: flow/1
+
+word customer.premium?(customer: Customer) -> Bool {
+    effects none
+    let kind = customer::kind(customer);
+    ::equals(kind, "premium")
+}
+
+// frontend: flow/1
+
+test customer.premium?/case-sensitive-kind {
+    customer::premium?(customer::new("Premium", -10))
+    => false
+}
+
+// frontend: flow/1
+
+test customer.premium?/empty-kind {
+    customer::premium?(customer::new("", 25))
+    => false
+}
+
+// frontend: flow/1
+
+test customer.premium?/ignores-balance {
+    customer::premium?(customer::new("premium", -10))
+    => true
+}
+
+// frontend: flow/1
+
+test customer.premium?/premium-kind {
+    customer::premium?(customer::new("premium", 0))
+    => true
+}
+
+// frontend: flow/1
+
+test customer.premium?/standard-kind {
+    customer::premium?(customer::new("standard", 125.5))
+    => false
+}

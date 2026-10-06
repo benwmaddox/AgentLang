@@ -1,0 +1,760 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "failure": null,
+  "task": 1,
+  "word": "customer.premium?",
+  "cliSha256": "71d1e5ccefa3e7e499b70b168ff65666434428b33025429c8f64d0a9d716ea44",
+  "oracleSha256": "7ed0ba4d7925978424b98b7a17aae5276315cf1dff612a8f4688c178472c03eb",
+  "verifierSha256": "e8748381ab8d87e1baf8e8386205927951072909f250faa808473af6eb35cace",
+  "checks": [
+    {
+      "name": "fresh process exit",
+      "passed": true
+    },
+    {
+      "name": "one response per request",
+      "passed": true
+    },
+    {
+      "name": "all requests succeed",
+      "passed": true
+    },
+    {
+      "name": "all attached tests pass",
+      "passed": true
+    },
+    {
+      "name": "exact target signature",
+      "passed": true
+    },
+    {
+      "name": "pure persistent library target",
+      "passed": true
+    },
+    {
+      "name": "target has attached tests",
+      "passed": true
+    },
+    {
+      "name": "complete current own coverage",
+      "passed": true
+    },
+    {
+      "name": "premium-annual-true exact output shape",
+      "passed": true
+    },
+    {
+      "name": "premium-annual-true independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "premium-annual-false exact output shape",
+      "passed": true
+    },
+    {
+      "name": "premium-annual-false independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "premium-monthly-true exact output shape",
+      "passed": true
+    },
+    {
+      "name": "premium-monthly-true independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "premium-monthly-false exact output shape",
+      "passed": true
+    },
+    {
+      "name": "premium-monthly-false independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "standard-annual-true exact output shape",
+      "passed": true
+    },
+    {
+      "name": "standard-annual-true independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "standard-annual-false exact output shape",
+      "passed": true
+    },
+    {
+      "name": "standard-annual-false independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "standard-monthly-true exact output shape",
+      "passed": true
+    },
+    {
+      "name": "standard-monthly-true independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "standard-monthly-false exact output shape",
+      "passed": true
+    },
+    {
+      "name": "standard-monthly-false independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "case-sensitive-kind exact output shape",
+      "passed": true
+    },
+    {
+      "name": "case-sensitive-kind independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "case-sensitive-term exact output shape",
+      "passed": true
+    },
+    {
+      "name": "case-sensitive-term independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "term-trailing-space exact output shape",
+      "passed": true
+    },
+    {
+      "name": "term-trailing-space independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "empty-kind exact output shape",
+      "passed": true
+    },
+    {
+      "name": "empty-kind independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "zero-balance exact output shape",
+      "passed": true
+    },
+    {
+      "name": "zero-balance independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "negative-balance exact output shape",
+      "passed": true
+    },
+    {
+      "name": "negative-balance independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "larger-eligible exact output shape",
+      "passed": true
+    },
+    {
+      "name": "larger-eligible independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "larger-ineligible exact output shape",
+      "passed": true
+    },
+    {
+      "name": "larger-ineligible independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "accent-kind exact output shape",
+      "passed": true
+    },
+    {
+      "name": "accent-kind independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "fractional-balance exact output shape",
+      "passed": true
+    },
+    {
+      "name": "fractional-balance independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "tiny-balance exact output shape",
+      "passed": true
+    },
+    {
+      "name": "tiny-balance independent Bool result",
+      "passed": true
+    },
+    {
+      "name": "large-finite-balance exact output shape",
+      "passed": true
+    },
+    {
+      "name": "large-finite-balance independent Bool result",
+      "passed": true
+    }
+  ],
+  "requests": [
+    {
+      "op": "test-all"
+    },
+    {
+      "op": "describe",
+      "word": "customer.premium?"
+    },
+    {
+      "op": "dependencies",
+      "word": "customer.premium?"
+    },
+    {
+      "op": "source",
+      "word": "customer.premium?"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::premium?(customer::new(kind = \"premium\", balance = 100.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::premium?(customer::new(kind = \"premium\", balance = 100.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::premium?(customer::new(kind = \"premium\", balance = 100.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::premium?(customer::new(kind = \"premium\", balance = 100.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::premium?(customer::new(kind = \"standard\", balance = 100.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::premium?(customer::new(kind = \"standard\", balance = 100.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::premium?(customer::new(kind = \"standard\", balance = 100.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::premium?(customer::new(kind = \"standard\", balance = 100.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::premium?(customer::new(kind = \"Premium\", balance = 100.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::premium?(customer::new(kind = \"premium\", balance = 100.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::premium?(customer::new(kind = \"premium\", balance = 100.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::premium?(customer::new(kind = \"\", balance = 100.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::premium?(customer::new(kind = \"premium\", balance = 0.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::premium?(customer::new(kind = \"premium\", balance = -100.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::premium?(customer::new(kind = \"premium\", balance = 250.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::premium?(customer::new(kind = \"premium\", balance = 250.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::premium?(customer::new(kind = \"prémium\", balance = 100.0))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::premium?(customer::new(kind = \"premium\", balance = 3.141592653589793))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::premium?(customer::new(kind = \"premium\", balance = 1E-100))"
+    },
+    {
+      "op": "eval",
+      "frontend": "flow",
+      "code": "customer::premium?(customer::new(kind = \"standard\", balance = 1E+100))"
+    }
+  ],
+  "responses": [
+    {
+      "ok": true,
+      "kind": "test",
+      "text": "5/5 test(s) passed.",
+      "data": {
+        "results": [
+          {
+            "name": "case-sensitive-kind",
+            "word": "customer.premium?",
+            "passed": true,
+            "expected": "false",
+            "actual": [
+              "false"
+            ]
+          },
+          {
+            "name": "empty-kind",
+            "word": "customer.premium?",
+            "passed": true,
+            "expected": "false",
+            "actual": [
+              "false"
+            ]
+          },
+          {
+            "name": "ignores-balance",
+            "word": "customer.premium?",
+            "passed": true,
+            "expected": "true",
+            "actual": [
+              "true"
+            ]
+          },
+          {
+            "name": "premium-kind",
+            "word": "customer.premium?",
+            "passed": true,
+            "expected": "true",
+            "actual": [
+              "true"
+            ]
+          },
+          {
+            "name": "standard-kind",
+            "word": "customer.premium?",
+            "passed": true,
+            "expected": "false",
+            "actual": [
+              "false"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "ok": true,
+      "kind": "describe",
+      "text": "Description for customer.premium?.",
+      "data": {
+        "name": "customer.premium?",
+        "flowReference": "customer::premium?",
+        "flowReferenceUnavailableReason": null,
+        "inputs": [
+          "Customer"
+        ],
+        "outputs": [
+          "Bool"
+        ],
+        "parameters": [
+          {
+            "name": "customer",
+            "type": "Customer"
+          }
+        ],
+        "effects": [],
+        "documentation": "",
+        "id": "word_a6001c7db2a84f0993acbb02ca3cc17e",
+        "dependencies": [
+          "customer.kind",
+          "equals"
+        ],
+        "transitiveDependencies": [
+          "customer.kind",
+          "equals"
+        ],
+        "callers": [],
+        "tests": [
+          "case-sensitive-kind",
+          "empty-kind",
+          "ignores-balance",
+          "premium-kind",
+          "standard-kind"
+        ],
+        "examples": [],
+        "source": "<revision:customer.premium?/1>",
+        "line": 1,
+        "kind": "word",
+        "status": "persistent",
+        "maturity": "library",
+        "deprecated": false,
+        "revision": 1,
+        "testCount": 5,
+        "exampleCount": 0,
+        "coverage": {
+          "instructionsCovered": 6,
+          "instructionsTotal": 6,
+          "branchesCovered": 0,
+          "branchesTotal": 0,
+          "uncoveredInstructions": [],
+          "uncoveredBranchOutcomes": [],
+          "status": "current"
+        }
+      }
+    },
+    {
+      "ok": true,
+      "kind": "dependencies",
+      "text": "2 direct dependency/dependencies.",
+      "data": {
+        "dependencies": [
+          "customer.kind",
+          "equals"
+        ],
+        "callers": []
+      }
+    },
+    {
+      "ok": true,
+      "kind": "source",
+      "text": "word customer.premium?(customer: Customer) -> Bool {\n    effects none\n    let kind = customer::kind(customer)\n    ::equals(kind, \"premium\")\n}",
+      "data": "word customer.premium?(customer: Customer) -> Bool {\n    effects none\n    let kind = customer::kind(customer)\n    ::equals(kind, \"premium\")\n}"
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "true",
+      "data": {
+        "stack": [
+          "true"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "true",
+      "data": {
+        "stack": [
+          "true"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "true",
+      "data": {
+        "stack": [
+          "true"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "true",
+      "data": {
+        "stack": [
+          "true"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "false",
+      "data": {
+        "stack": [
+          "false"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "false",
+      "data": {
+        "stack": [
+          "false"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "false",
+      "data": {
+        "stack": [
+          "false"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "false",
+      "data": {
+        "stack": [
+          "false"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "false",
+      "data": {
+        "stack": [
+          "false"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "true",
+      "data": {
+        "stack": [
+          "true"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "true",
+      "data": {
+        "stack": [
+          "true"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "false",
+      "data": {
+        "stack": [
+          "false"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "true",
+      "data": {
+        "stack": [
+          "true"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "true",
+      "data": {
+        "stack": [
+          "true"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "true",
+      "data": {
+        "stack": [
+          "true"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "true",
+      "data": {
+        "stack": [
+          "true"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "false",
+      "data": {
+        "stack": [
+          "false"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "true",
+      "data": {
+        "stack": [
+          "true"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "true",
+      "data": {
+        "stack": [
+          "true"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    },
+    {
+      "ok": true,
+      "kind": "eval",
+      "text": "false",
+      "data": {
+        "stack": [
+          "false"
+        ],
+        "stackTypes": [
+          "Bool"
+        ],
+        "console": [],
+        "effects": {}
+      }
+    }
+  ],
+  "limits": [
+    "Behavioral acceptance only; no model-efficiency claim.",
+    "Float tolerance is not bitwise or signed-zero equivalence.",
+    "Whole-state preservation and retained-helper quality require a separate audit."
+  ]
+}

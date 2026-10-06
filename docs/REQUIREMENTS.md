@@ -36,6 +36,12 @@ outcome is claimed by this preparation milestone.
 
 Status: **verified** means the listed scoped behavior has observed acceptance evidence; **partial** means some behavior exists but the full section is not proven; **pending** means implementation or evidence is missing; **design** means a principle/advisory requirement; **excluded** means a V1 non-goal or explicitly optional follow-on. A green build is not evidence of research success.
 
+Repeat execution checkpoint: [report 060](../reports/060-repeat-first-task.md)
+records fresh serial trials on pinned `dc18d6e`, with prelaunch provenance and
+separate behavioral acceptance. This is a partial sequence; first-task usability
+does not establish vocabulary reuse or overall efficiency. Completing the
+rotated five-task comparison remains the immediate priority.
+
 Latest external-agent workflow evidence: [report 054](../reports/054-flow-renewal-agent-control.md)
 records a separate inherited-history Luna/max control that created one tested
 library word by composing a retained domain word. Fresh-process acceptance

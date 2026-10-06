@@ -1,0 +1,23 @@
+{
+  "task": "task-0001",
+  "goal": "Add reusable Customer premium predicate and relevant tests in the isolated AgentLang trial project.",
+  "active": false,
+  "wordsInspected": [
+    "customer.kind",
+    "customer.new",
+    "equals"
+  ],
+  "wordsUsed": [
+    "customer.kind",
+    "customer.new",
+    "customer.premium?",
+    "equals"
+  ],
+  "wordsCreated": [
+    "customer.premium?"
+  ],
+  "testsRun": 10,
+  "testsFailed": 0,
+  "effects": {},
+  "errors": []
+}

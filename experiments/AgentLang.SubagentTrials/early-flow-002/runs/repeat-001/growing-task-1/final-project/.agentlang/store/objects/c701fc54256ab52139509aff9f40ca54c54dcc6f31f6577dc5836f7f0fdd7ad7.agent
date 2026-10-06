@@ -1,0 +1,6 @@
+// frontend: flow/1
+
+record Customer {
+    field kind: String;
+    field balance: Float;
+}

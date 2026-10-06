@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "recordedBeforeLaunch": true,
+  "trial": "repeat-001/growing-task-1",
+  "arm": "Growing",
+  "task": 1,
+  "sourceRevision": "dc18d6efc0d002d1a752024301d42f54cdd49c07",
+  "model": "gpt-6-luna",
+  "reasoning": "max",
+  "forkTurns": "none",
+  "preparedAt": "2026-10-06T16:49:05.7300565+00:00",
+  "promptUtf8Bytes": 6217,
+  "promptSha256": "8c03db4e1cc7b82a17f1d21d66a453b4d2975679066e6d9ff4d781dc31dfb575",
+  "commonSha256": "4ef0dc782cdf16edffd9a93da5c0c84a98ecb4ba0b07b8723e1b08238be4b7f2",
+  "primerSha256": "e11183ced17e133e3751d768fd6f9b4820c41cbc0d9d2714803cd1ccc006b36e",
+  "publicTasksSha256": "639a55a7f1d7be0ae4f6de0de7999293259e13253acfe7d71b17f621ccb3a253",
+  "startingFiles": [
+    {
+      "path": ".agentlang\\store\\CURRENT",
+      "bytes": 134,
+      "sha256": "ef0959d6bf68cc5f9fff168fd5f6a36fa5f73b2246eb1cc7b94d48dd246c1853"
+    },
+    {
+      "path": ".agentlang\\store\\manifests\\272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e.json",
+      "bytes": 583,
+      "sha256": "272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e"
+    },
+    {
+      "path": ".agentlang\\store\\manifests\\8ab71325aaabb58ff1c671d773c397bf61e74a1020bb39fc39425f47e950ded7.json",
+      "bytes": 375,
+      "sha256": "8ab71325aaabb58ff1c671d773c397bf61e74a1020bb39fc39425f47e950ded7"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\0a09ec29fa93e0951a01017f708dbdb0ae4d13cec9c30fb033fbe3de55d9c9e7.agent",
+      "bytes": 188,
+      "sha256": "0a09ec29fa93e0951a01017f708dbdb0ae4d13cec9c30fb033fbe3de55d9c9e7"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\4d1f76127f259ff47d25e8ad4bed7c2ae6c9bf18846ae243179235c28278d313.agent",
+      "bytes": 74,
+      "sha256": "4d1f76127f259ff47d25e8ad4bed7c2ae6c9bf18846ae243179235c28278d313"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\6b964fd1a60a1c51e0900f74a69ee486c227aacf5bca2f24a06289cecc237bf7.agent",
+      "bytes": 69,
+      "sha256": "6b964fd1a60a1c51e0900f74a69ee486c227aacf5bca2f24a06289cecc237bf7"
+    },
+    {
+      "path": ".agentlang\\store\\objects\\c701fc54256ab52139509aff9f40ca54c54dcc6f31f6577dc5836f7f0fdd7ad7.agent",
+      "bytes": 91,
+      "sha256": "c701fc54256ab52139509aff9f40ca54c54dcc6f31f6577dc5836f7f0fdd7ad7"
+    },
+    {
+      "path": ".agentlang\\store\\snapshots\\matched-renewal-start.json",
+      "bytes": 157,
+      "sha256": "b936be633953f177b3cf303dfbbccd3fc1b48e6c346789670bbf546227f85998"
+    }
+  ],
+  "cliSha256": "71d1e5ccefa3e7e499b70b168ff65666434428b33025429c8f64d0a9d716ea44",
+  "allowedOperations": [
+    "words",
+    "describe",
+    "search",
+    "source",
+    "dependencies",
+    "callers",
+    "eval",
+    "define",
+    "test",
+    "test-all",
+    "tests",
+    "commit",
+    "task.begin",
+    "task.commit",
+    "task.status",
+    "task.log",
+    "ir",
+    "context",
+    "failed-tests",
+    "examples",
+    "effects",
+    "type-of",
+    "search-type",
+    "search-output",
+    "recent-words"
+  ],
+  "additionalCliArguments": [],
+  "hostCommand": "& 'D:\\code\\AgentLang\\scripts\\Start-SubagentTrialHost.ps1' -CliDll 'D:\\code\\AgentLang\\.agentlang\\early-repeat-002\\language-bin\\AgentLang.Cli.dll' -ProjectPath 'D:\\code\\AgentLang\\.agentlang\\early-repeat-002\\growing' -TracePath 'D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\early-flow-002\\runs\\repeat-001\\growing-task-1\\trace.jsonl' -AllowedOperations @('words','describe','search','source','dependencies','callers','eval','define','test','test-all','tests','commit','task.begin','task.commit','task.status','task.log','ir','context','failed-tests','examples','effects','type-of','search-type','search-output','recent-words') -Profile agentlang -ExchangeTimeoutMilliseconds 120000 -MaxExchanges 100",
+  "projectPath": "D:\\code\\AgentLang\\.agentlang\\early-repeat-002\\growing",
+  "tracePath": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\early-flow-002\\runs\\repeat-001\\growing-task-1\\trace.jsonl",
+  "maxExchanges": 100,
+  "exchangeTimeoutMilliseconds": 120000,
+  "maxRequestBytes": 262144,
+  "maxResponseBytes": 524288,
+  "profile": "agentlang",
+  "capabilities": [],
+  "clockValue": "2000-01-01T00:00:00Z"
+}

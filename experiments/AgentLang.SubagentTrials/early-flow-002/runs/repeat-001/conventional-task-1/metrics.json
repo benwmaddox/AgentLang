@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "trial": "repeat-001/conventional-task-1",
+  "accepted": true,
+  "independentChecks": 43,
+  "behavioralVectors": 20,
+  "selfTestCases": 6,
+  "exchanges": 15,
+  "requestPayloadUtf8Bytes": 5908,
+  "responsePayloadUtf8Bytes": 6251,
+  "runtimeErrors": 3,
+  "errors": [
+    {
+      "index": 9,
+      "operation": "patch",
+      "code": "HASH_INVALID",
+      "response": {
+        "ok": false,
+        "kind": "error",
+        "text": "expectedSha256 must contain exactly 64 hexadecimal characters.",
+        "data": null,
+        "error": {
+          "code": "HASH_INVALID",
+          "message": "expectedSha256 must contain exactly 64 hexadecimal characters."
+        }
+      }
+    },
+    {
+      "index": 10,
+      "operation": "patch",
+      "code": "HASH_INVALID",
+      "response": {
+        "ok": false,
+        "kind": "error",
+        "text": "expectedSha256 must contain exactly 64 hexadecimal characters.",
+        "data": null,
+        "error": {
+          "code": "HASH_INVALID",
+          "message": "expectedSha256 must contain exactly 64 hexadecimal characters."
+        }
+      }
+    },
+    {
+      "index": 13,
+      "operation": "patch",
+      "code": "HASH_INVALID",
+      "response": {
+        "ok": false,
+        "kind": "error",
+        "text": "expectedSha256 must contain exactly 64 hexadecimal characters.",
+        "data": null,
+        "error": {
+          "code": "HASH_INVALID",
+          "message": "expectedSha256 must contain exactly 64 hexadecimal characters."
+        }
+      }
+    }
+  ],
+  "modelTokens": null,
+  "modelTurns": null,
+  "controlledDuration": null,
+  "teardown": {
+    "parentSessionAccess": "unknown process id",
+    "actorStoppedExistingSession": true,
+    "hostExitCode": 0,
+    "runtimeExitCode": 0,
+    "extraProtocolRequests": 0
+  },
+  "sourceAudit": {
+    "projectFileUnchanged": true,
+    "recordsUnchanged": true,
+    "futureEntryPointsUnchanged": true,
+    "changes": [
+      "Customer.premium",
+      "SelfTests"
+    ]
+  },
+  "promptAudit": "Archived intended prompt before launch; actual provider prompt bytes unavailable."
+}

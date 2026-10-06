@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "actor": "repeat_c1",
+  "model": "gpt-6-luna",
+  "reasoning": "max",
+  "forkTurns": "none",
+  "actorCompletion": "Implemented exact premium predicate and six self-tests; validation passed; host left open.",
+  "actorSelfReportedErrorCount": 2,
+  "authoritativeTraceErrorCount": 3,
+  "coordinatorAcceptance": "43 checks passed",
+  "teardown": "Actor follow-up stopped existing session 12119 with Ctrl+C; exit 0; no additional JSONL request.",
+  "intervalNotes": "Launch observation was recorded after spawn. No controlled wall-clock duration claimed."
+}
