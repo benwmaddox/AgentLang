@@ -15,7 +15,9 @@
   <ItemGroup>
     <Content Include="..\fixtures\native-conformance\abi-v1.json" Link="abi-v1.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\fixtures\native-conformance\abi-v2.json" Link="abi-v2.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\fixtures\native-conformance\abi-v3.json" Link="abi-v3.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\fixtures\native-conformance\scalar-cases.json" Link="scalar-cases.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\fixtures\native-conformance\record-cases.json" Link="record-cases.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\fixtures\native-conformance\state-reentry-cases.json" Link="state-reentry-cases.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

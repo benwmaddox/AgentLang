@@ -1,0 +1,45 @@
+{
+  "abiVersion": 3,
+  "nativeLayoutOracle": "Expected context layout copied from the frozen ABI v3 contract and to be checked against src/AgentLang.Llvm/native/runtime_test.c --layout-json; values are independent of the managed ABI declarations.",
+  "context": {
+    "size": 96,
+    "alignment": 8,
+    "layoutExport": [96, 8, 0, 4, 8, 12, 16, 24, 32, 40, 48, 56, 60, 64, 72, 80, 88, 92],
+    "fields": [
+      { "name": "abiVersion", "type": "uint32_t", "offset": 0, "size": 4 },
+      { "name": "stepsConsumed", "type": "uint32_t", "offset": 4, "size": 4 },
+      { "name": "errorMetadataId", "type": "int32_t", "offset": 8, "size": 4 },
+      { "name": "reservedPrefix", "type": "int32_t", "offset": 12, "size": 4 },
+      { "name": "errorArgument0", "type": "int64_t", "offset": 16, "size": 8 },
+      { "name": "errorArgument1", "type": "int64_t", "offset": 24, "size": 8 },
+      { "name": "scratch", "type": "ArenaDescriptor*", "offset": 32, "size": 8 },
+      { "name": "retained", "type": "ArenaDescriptor*", "offset": 40, "size": 8 },
+      { "name": "workspace", "type": "int64_t*", "offset": 48, "size": 8 },
+      { "name": "workspaceCapacity", "type": "uint32_t", "offset": 56, "size": 4 },
+      { "name": "reservedTail", "type": "uint32_t", "offset": 60, "size": 4 },
+      { "name": "inputOwner", "type": "const ArenaDescriptor*", "offset": 64, "size": 8 },
+      { "name": "inputRoots", "type": "const int64_t*", "offset": 72, "size": 8 },
+      { "name": "inputRootTypeIds", "type": "const uint32_t*", "offset": 80, "size": 8 },
+      { "name": "inputRootCount", "type": "uint32_t", "offset": 88, "size": 4 },
+      { "name": "reservedV3", "type": "uint32_t", "offset": 92, "size": 4 }
+    ]
+  },
+  "inputContract": {
+    "inputOwner": "read-only retained arena descriptor; may be null when no RetainedRoot argument is selected",
+    "inputRoots": "ordered invocation values resolved from RetainedRoot selections and primitive message arguments; not the owner's full root table",
+    "inputRootTypeIds": "zero-based program type IDs for the ordered invocation values",
+    "inputRootCount": "number of ordered invocation slots and type IDs",
+    "import": "copy and validate the entire input owner's immutable graph before executing the entry body; preserve source owner bytes and metadata"
+  },
+  "preconditions": [
+    "context is at least 96 bytes aligned to 8 bytes",
+    "status is initialized by the raw caller before invocation",
+    "the ABI version is validated before reading the ABI v3 tail at offsets 64 through 92",
+    "input owner spans are read-only and do not overlap writable scratch, retained, workspace, outputs, context, or status spans",
+    "input root slots and type IDs contain exactly inputRootCount ordered invocation values"
+  ],
+  "historicalFixtures": {
+    "abi-v1.json": "preserved unchanged",
+    "abi-v2.json": "preserved unchanged; its context remains the 64-byte ABI v2 layout"
+  }
+}

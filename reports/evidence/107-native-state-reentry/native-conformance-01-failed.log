@@ -1,0 +1,45 @@
+  Determining projects to restore...
+  Restored D:\code\AgentLang\src\AgentLang.Llvm\AgentLang.Llvm.fsproj (in 229 ms).
+  Restored D:\code\AgentLang\tests\AgentLang.Llvm.Tests\AgentLang.Llvm.Tests.fsproj (in 229 ms).
+  Restored D:\code\AgentLang\src\AgentLang.Core\AgentLang.Core.fsproj (in 229 ms).
+  AgentLang.Core -> D:\code\AgentLang\.agentlang\native-validation\run-c4e9cba880874afe823ae4c682e81b97\bin\AgentLang.Core\debug\AgentLang.Core.dll
+  AgentLang.Llvm -> D:\code\AgentLang\.agentlang\native-validation\run-c4e9cba880874afe823ae4c682e81b97\bin\AgentLang.Llvm\debug\AgentLang.Llvm.dll
+  AgentLang.Llvm.Tests -> D:\code\AgentLang\.agentlang\native-validation\run-c4e9cba880874afe823ae4c682e81b97\bin\AgentLang.Llvm.Tests\debug\AgentLang.Llvm.Tests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:19.83
+[native-conformance] scalar operators and arithmetic
+[native-conformance] ABI layout and raw request guards
+[native-conformance] branches, locals, and user-word calls
+[native-conformance] nominal scalar support and limits
+[native-conformance] record construction, accessors, aliases, and equality
+[native-conformance] record value depth and aggregate limits
+[native-conformance] record preflight diagnostics
+[native-conformance] record capacity atomicity and retained ownership
+[native-conformance] ABI v3 typed state re-entry, import budgets, and provenance
+AgentLang.LanguageException: LanguageException { Code = "NAME_UNKNOWN_WORD"
+                    Message = "Word 'int.add' is not defined."
+                    Word = Some "int.add"
+                    Span = Some { File = "state-turn.agent"
+                                  Line = 1
+                                  Column = 14
+                                  Length = 1 }
+                    Expected = []
+                    Actual = [] }
+   at AgentLang.Diagnostics.raiseError[a](String code, String message, FSharpOption`1 word, FSharpOption`1 span, FSharpList`1 expected, FSharpList`1 actual) in D:\code\AgentLang\src\AgentLang.Core\Core.fs:line 226
+   at AgentLang.Compiler.inferCall(FSharpSet`1 knownTypes, FSharpMap`2 words, String wordName, SourceSpan span, FSharpList`1 stack) in D:\code\AgentLang\src\AgentLang.Core\Compiler.fs:line 168
+   at AgentLang.Compiler.visit@262-2.Invoke(FSharpList`1 entryStack, FSharpMap`2 entryLocals, FSharpList`1 expressions) in D:\code\AgentLang\src\AgentLang.Core\Compiler.fs:line 281
+   at AgentLang.Compiler.visit@262-2.Invoke(FSharpList`1 entryStack, FSharpMap`2 entryLocals, FSharpList`1 expressions) in D:\code\AgentLang\src\AgentLang.Core\Compiler.fs:line 366
+   at AgentLang.Compiler.inferBody(FSharpSet`1 knownTypes, FSharpMap`2 words, String wordName, FSharpOption`1 wordSpan, FSharpList`1 initialStack, FSharpMap`2 initialLocals, FSharpList`1 body) in D:\code\AgentLang\src\AgentLang.Core\Compiler.fs:line 428
+   at AgentLang.Compiler.compileIrBodyAgainstProgramWithSourceOrigins(IrLoweringContext context, VerifiedIrProgram verifiedProgram, String name, FSharpList`1 initialStack, FSharpList`1 expressions, FSharpMap`2 sourceOrigins) in D:\code\AgentLang\src\AgentLang.Core\Compiler.fs:line 1357
+   at AgentLang.Compiler.compileIrBodyAgainstProgram(IrLoweringContext context, VerifiedIrProgram verifiedProgram, String name, FSharpList`1 initialStack, FSharpList`1 expressions) in D:\code\AgentLang\src\AgentLang.Core\Compiler.fs:line 1361
+   at AgentLang.Llvm.Tests.testTypedStateReentry() in D:\code\AgentLang\tests\AgentLang.Llvm.Tests\Program.fs:line 1490
+   at AgentLang.Llvm.Tests.main(String[] _arg1) in D:\code\AgentLang\tests\AgentLang.Llvm.Tests\Program.fs:line 2285
+Exception: D:\code\AgentLang\scripts\Verify-NativeConformance.ps1:24
+Line |
+  24 |          throw "Native conformance tests failed with exit code $LASTEX …
+     |          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Native conformance tests failed with exit code 1.

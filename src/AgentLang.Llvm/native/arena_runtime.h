@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 enum {
-  AL_RUNTIME_ABI_VERSION = 2u,
+  AL_RUNTIME_ABI_VERSION = 3u,
   AL_RUNTIME_TYPE_INT = 1u,
   AL_RUNTIME_TYPE_BOOL = 2u,
   AL_RUNTIME_TYPE_UNIT = 3u,
@@ -32,7 +32,8 @@ typedef enum al_runtime_result {
 
 typedef struct al_arena al_arena;
 
-/* ABI v2 context. The first 32 bytes preserve the published ABI v1 prefix. */
+/* ABI v3 context. The first 64 bytes preserve the v2 layout and the first 32
+ * bytes preserve the published ABI v1 prefix. */
 typedef struct al_runtime_context {
   uint32_t abi_version;
   uint32_t steps_consumed;
@@ -45,6 +46,12 @@ typedef struct al_runtime_context {
   int64_t *workspace;
   uint32_t workspace_capacity;
   uint32_t reserved_tail;
+  /* Immutable prior owner and ordered invocation argument bits/type IDs. */
+  const al_arena *input_owner;
+  const int64_t *input_roots;
+  const uint32_t *input_root_type_ids;
+  uint32_t input_root_count;
+  uint32_t reserved_v3;
 } al_runtime_context;
 
 /* Callers assign distinct nonzero generations and must not reuse/wrap a live
@@ -83,13 +90,22 @@ typedef struct al_program_desc {
   uint32_t reserved;
 } al_program_desc;
 
-/* Validate the full entry contract before generated code reads ABI v2 fields.
+/* Validate the full entry contract before generated code reads ABI v3 fields.
  */
 al_runtime_result
 al_runtime_validate_request(al_runtime_context *ctx, int64_t *public_outputs,
                             uint32_t output_count, uint32_t output_capacity,
                             int32_t *status,
                             uint32_t expected_workspace_capacity);
+
+/* ABI v3 invocation inputs are ordered value/type-ID arrays. Import validates
+ * them against the compiled body types, copies the immutable input owner graph
+ * into empty scratch when one is supplied, and stages rewritten values in
+ * workspace[0..input_count). */
+al_runtime_result
+al_runtime_import_state(al_runtime_context *ctx, const al_program_desc *program,
+                        const uint32_t *expected_input_type_ids,
+                        uint32_t input_count);
 
 /* Runtime helper outputs and record-construction inputs live in ctx->workspace.
  */
@@ -130,10 +146,10 @@ al_runtime_result al_runtime_promote(al_runtime_context *ctx,
 #define AL_RUNTIME_ALIGNOF(type) _Alignof(type)
 #endif
 
-AL_RUNTIME_STATIC_ASSERT(sizeof(al_runtime_context) == 64,
-                         "ABI v2 context size");
+AL_RUNTIME_STATIC_ASSERT(sizeof(al_runtime_context) == 96,
+                         "ABI v3 context size");
 AL_RUNTIME_STATIC_ASSERT(AL_RUNTIME_ALIGNOF(al_runtime_context) == 8,
-                         "ABI v2 context alignment");
+                         "ABI v3 context alignment");
 AL_RUNTIME_STATIC_ASSERT(offsetof(al_runtime_context, abi_version) == 0,
                          "context abi_version offset");
 AL_RUNTIME_STATIC_ASSERT(offsetof(al_runtime_context, steps_consumed) == 4,
@@ -156,6 +172,17 @@ AL_RUNTIME_STATIC_ASSERT(offsetof(al_runtime_context, workspace_capacity) == 56,
                          "context workspace_capacity offset");
 AL_RUNTIME_STATIC_ASSERT(offsetof(al_runtime_context, reserved_tail) == 60,
                          "context tail reserved offset");
+AL_RUNTIME_STATIC_ASSERT(offsetof(al_runtime_context, input_owner) == 64,
+                         "context input owner offset");
+AL_RUNTIME_STATIC_ASSERT(offsetof(al_runtime_context, input_roots) == 72,
+                         "context input roots offset");
+AL_RUNTIME_STATIC_ASSERT(offsetof(al_runtime_context, input_root_type_ids) ==
+                             80,
+                         "context input root type IDs offset");
+AL_RUNTIME_STATIC_ASSERT(offsetof(al_runtime_context, input_root_count) == 88,
+                         "context input root count offset");
+AL_RUNTIME_STATIC_ASSERT(offsetof(al_runtime_context, reserved_v3) == 92,
+                         "context v3 reserved offset");
 
 AL_RUNTIME_STATIC_ASSERT(sizeof(al_arena) == 48, "arena size");
 AL_RUNTIME_STATIC_ASSERT(AL_RUNTIME_ALIGNOF(al_arena) == 8, "arena alignment");

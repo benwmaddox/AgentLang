@@ -1,0 +1,6 @@
+
+C:\Users\Ben\AppData\Local\Temp\agentlang_arena_v3_O0.obj:
+
+C:\Users\Ben\AppData\Local\Temp\agentlang_arena_v3_O2.obj:
+
+C:\Users\Ben\AppData\Local\Temp\agentlang_arena_v3_ubsan_O1.obj:

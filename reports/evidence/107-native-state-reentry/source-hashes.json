@@ -1,0 +1,82 @@
+[
+  {
+    "path": "scripts/Verify-NativeConformance.ps1",
+    "sha256": "50c37ccec2520c7ca69017f660be3a1d5693571ba2976d45e89926e50712d394"
+  },
+  {
+    "path": "src/AgentLang.Core/IrInterpreter.fs",
+    "sha256": "d6198e2b5b49ecffd42cad0528ac9370865218ec0c3bc704834b5170420f8a9f"
+  },
+  {
+    "path": "src/AgentLang.Llvm/AgentLang.Llvm.fsproj",
+    "sha256": "75764f87c0b29eb69949a7f2b2244ea59f120c32a364f574ee35d6e3d99af11e"
+  },
+  {
+    "path": "src/AgentLang.Llvm/LlvmAot.fs",
+    "sha256": "56b8d0e2dc2702d878b51be80a6f0d2233a841e2be27455711122319f2e3aff1"
+  },
+  {
+    "path": "src/AgentLang.Llvm/LlvmToolchain.fs",
+    "sha256": "932d65398ffc6c6d7942c4722a43f9176c6c0fa839e2433505a668ec1523dcc4"
+  },
+  {
+    "path": "src/AgentLang.Llvm/native/arena_runtime.c",
+    "sha256": "e93330d1675c66d70d1befe76ef8ca6fb3f9d4ac0f247bfb55063c5838f4e3a7"
+  },
+  {
+    "path": "src/AgentLang.Llvm/native/arena_runtime.h",
+    "sha256": "d557baba7713f91f525f9ec4f5a15c49fe972dec798d1c1ac9a770e806b714b0"
+  },
+  {
+    "path": "src/AgentLang.Llvm/native/runtime_test.c",
+    "sha256": "9cc2600b4ace7fcb92f9bcca1ac7c743f2be246657410bdb09f1171b78cccb2a"
+  },
+  {
+    "path": "src/AgentLang.Llvm/NativeAbi.fs",
+    "sha256": "4c2504edcff2bf4d52ccfb0ec920c92ff9298f347278e996a2de46828199791a"
+  },
+  {
+    "path": "src/AgentLang.Llvm/NativeValueMetrics.fs",
+    "sha256": "d47f2a2a94b61d796f90787e06f97d763dfa21b787776efa7bd5380b025bf8c8"
+  },
+  {
+    "path": "src/AgentLang.Llvm/NativeValues.fs",
+    "sha256": "a5a2898a23d98c6f52b48cc471f111f757d4560dc9e30aed8fe40bb54dd93957"
+  },
+  {
+    "path": "tests/AgentLang.IR.Interpreter.Tests/Program.fs",
+    "sha256": "bf0d769416f0d8aa434ca83c56a383ecc1e286c469c089c8855caf7255099c49"
+  },
+  {
+    "path": "tests/AgentLang.Llvm.Tests/AgentLang.Llvm.Tests.fsproj",
+    "sha256": "679b63effc32b75008e79a45b2fbb79d81612c339f5635af0ef8bb7855e0a885"
+  },
+  {
+    "path": "tests/AgentLang.Llvm.Tests/Program.fs",
+    "sha256": "be063ff7dba71487725fb583cf941c3731b17314e87d84743253fffea25a61b6"
+  },
+  {
+    "path": "tests/fixtures/native-conformance/abi-v1.json",
+    "sha256": "ff6324bb46d6cd3fc101ae074a59806cb17be04452e64eeb9c6fe35bb22d4615"
+  },
+  {
+    "path": "tests/fixtures/native-conformance/abi-v2.json",
+    "sha256": "b738f4e1b540ba00bd161eaa9d08c41aadac4f18da5fff997157a7a86ca64a33"
+  },
+  {
+    "path": "tests/fixtures/native-conformance/abi-v3.json",
+    "sha256": "4c9f138ac623217636c44f4a95248c0d1557e7f3edb0c626ca46b7c2d7cd726f"
+  },
+  {
+    "path": "tests/fixtures/native-conformance/record-cases.json",
+    "sha256": "380ba2aad9c15e565930f85207f73128373bf21c449659bca21ba8bb33ab0fcd"
+  },
+  {
+    "path": "tests/fixtures/native-conformance/scalar-cases.json",
+    "sha256": "a7927551aad4bd8071fdebe9a19f757ec6054f271a56d1e5c698d0a027606f63"
+  },
+  {
+    "path": "tests/fixtures/native-conformance/state-reentry-cases.json",
+    "sha256": "57b69e23006075aaffd7354756371d621ec9f314f65df770436052727635780f"
+  }
+]

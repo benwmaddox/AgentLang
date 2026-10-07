@@ -3,7 +3,10 @@
 Status: real-I/O throughput evaluation remains planned, 2026-10-07. A standalone
 native ownership/memory comparison is complete in [report 104](../reports/104-native-arena-mailbox-feasibility.md):
 72 runs passed, with lower per-turn backing for disposable working data and a
-retained-only counterexample. AgentLang-integrated lifetimes, actual async I/O,
+retained-only counterexample. [Report 106](../reports/106-native-record-ownership.md)
+validates the native invocation-scratch/retained-output boundary.
+[Report 107](../reports/107-native-state-reentry.md) adds typed retained state
+re-entry across native invocations. Mailbox suspension, actual async I/O,
 saturation and tail latency remain untested. See [the roadmap](ROADMAP.md).
 
 ## Candidates

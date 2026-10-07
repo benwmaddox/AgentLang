@@ -56,7 +56,7 @@ ABI conformance. No full host rewrite is required by the native target.
 
 ## Native value API boundary
 
-`AgentLang.Llvm` compiles an empty-input `VerifiedIrBody` and its reachable
+`AgentLang.Llvm` compiles a typed `VerifiedIrBody` and its reachable
 verified dictionary snapshot. The initial target is Windows x64 with Int, Bool
 and Unit values, Int/Bool-backed nominal scalar values, and acyclic records of
 these values. Unsupported types, operations and effects fail before tool
@@ -70,15 +70,15 @@ metadata identifier; it does not unwind a managed exception across the ABI.
 The diagnostic metadata currently lives in the compiler-side artifact handle,
 so this API is not yet a standalone release packaging format.
 
-ABI v2 uses a 64-byte context, 8-byte value slots and a 4-byte status, with
+ABI v3 uses a 96-byte context, 8-byte value slots and a 4-byte status, with
 explicit scratch/retained arena descriptors and separate call workspace.
 Public output capacity is the logical root count. The historical export name
 `agentlang_output_capacity()` reports required workspace slots, including record
 constructor fields and helper storage. Raw callers initialize status to
 InvalidRequest; early unsafe/unsupported request rejection leaves it untouched.
 The managed wrapper handles initialization. The contract and independent layout
-oracle are in [`abi-v2.json`](../tests/fixtures/native-conformance/abi-v2.json);
-the historical v1 fixture remains for rejection tests.
+oracle are in [`abi-v3.json`](../tests/fixtures/native-conformance/abi-v3.json);
+the historical v1 and v2 fixtures remain unchanged for rejection tests.
 Run the optional local native gate documented in the README; compiling the
 ordinary solution does not invoke LLVM tools.
 
@@ -96,6 +96,22 @@ scratch reuse and compiled-library disposal. `Execute` decodes and disposes it.
 Physical backing includes payload bytes, node directories, descriptors and call
 workspace. Shared records count once for retained storage but once per occurrence
 for language value limits. Capacity errors are separate native resource outcomes.
+
+Typed entry uses `ExecuteRetainedWithInputs` and ordered `IrEntryArgument`
+values: selected retained roots and Int/Bool/Unit messages. The interpreter has
+an equivalent opaque-owner API. Input and target must share the exact verified
+program instance; separately constructed snapshots, even with identical schemas,
+are rejected. Primitive messages cannot impersonate nominal types. Retained
+values do not rerun refinement validators on entry.
+
+The native call borrows its input owner through execution, copies its complete
+immutable graph into fresh scratch, and promotes only reachable output nodes
+into a new retained owner. It never decodes that graph through managed values.
+Failed calls leave the old state intact. This currently copies input and output
+graphs; it is not zero-copy persistent state. ABI v3 adds explicit readonly input
+owner, root and type-ID fields. Cross-snapshot state migration, including hot
+replacement of a dictionary holding live state, remains a separate requirement.
+See [report 107](../reports/107-native-state-reentry.md) for the validation scope.
 
 A small freestanding C runtime is embedded as source and compiled fresh with each
 artifact. The F# host allocates backing buffers; generated code has no managed

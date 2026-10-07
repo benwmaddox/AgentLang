@@ -1,11 +1,14 @@
 # Proposed scoped arenas and retained memory
 
-Status: proposed language memory design, 2026-10-07. Flow/2 and the first scalar
-LLVM slice are implemented. The standalone C arena/mailbox feasibility probe
-in [report 104](../reports/104-native-arena-mailbox-feasibility.md) passed its
-bounded ownership and comparison checks; AgentLang itself still has no arena
-allocator or region lifetime checking. Settle the verified-IR lifetime contract
-before integrating these mechanisms into language execution.
+Status: partially implemented native ownership boundary, 2026-10-07.
+[Report 106](../reports/106-native-record-ownership.md) validates native fixed-layout
+records in invocation scratch arenas with independent retained outputs, including
+first decoding after scratch reuse and compiled-DLL disposal. The managed
+interpreter still uses managed storage. [Report 107](../reports/107-native-state-reentry.md)
+adds typed retained-input re-entry without a managed graph round trip. Source-level
+regions and mailbox suspension lifetimes remain unimplemented. The separate
+[report 104](../reports/104-native-arena-mailbox-feasibility.md) probe compares
+bounded native memory policies but does not execute AgentLang handlers.
 
 ## Objective
 

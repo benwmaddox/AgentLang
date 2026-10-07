@@ -208,7 +208,8 @@ module NativeExecutionOptions =
 
 [<Sealed>]
 type NativeRetainedResult internal
-    (stepsConsumed: int,
+    (programIdentity: VerifiedIrProgram,
+     stepsConsumed: int,
      rootValues: int64 array,
      rootTypeIds: uint32 array,
      retainedOwner: NativeArenaOwner,
@@ -290,6 +291,16 @@ type NativeRetainedResult internal
                     |> Array.toList
                 decodedValues <- Some values
                 values)
+
+    member internal _.WithBorrow(expectedProgram: VerifiedIrProgram, executionName: string, action: NativeArenaOwner -> int64 array -> uint32 array -> 'T) =
+        lock gate (fun () ->
+            if disposed then
+                Diagnostics.raiseError "IR_BACKEND_ENTRY_OWNER_DISPOSED" "The retained input owner has been disposed." (Some executionName) None
+                    [ "live retained input owner" ] [ "disposed" ]
+            if not (Object.ReferenceEquals(programIdentity, expectedProgram)) then
+                Diagnostics.raiseError "IR_BACKEND_ENTRY_PROGRAM_MISMATCH" "The retained input belongs to a different verified-program instance." (Some executionName) None
+                    [ "same VerifiedIrProgram instance" ] [ "different program instance" ]
+            action retainedOwner rootValues frozenRootTypeIds)
 
     member _.StepsConsumed = stepsConsumed
     member _.Values = decode ()

@@ -20,4 +20,8 @@
   <ItemGroup>
     <ProjectReference Include="..\AgentLang.Core\AgentLang.Core.fsproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="AgentLang.Llvm.Tests" />
+  </ItemGroup>
 </Project>

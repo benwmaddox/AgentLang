@@ -57,7 +57,7 @@ executes generated code at both `-O0` and `-O2`. Override tool discovery with
 `AGENTLANG_COMPILER_RUNTIME_LIB` when needed. It is a local optional gate;
 ordinary interpreter tests do not require LLVM. See
 [the native architecture report](reports/103-llvm-architecture-and-native-slice.md)
-and [native record ownership](reports/106-native-record-ownership.md) for supported
+and [typed native state re-entry](reports/107-native-state-reentry.md) for supported
 semantics, evidence and limits. Native records use invocation scratch arenas and
 independent retained outputs. A general release packager, JIT backend and mailbox
 scheduler remain future work.

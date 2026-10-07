@@ -14,8 +14,10 @@ reliability superiority remains unproven. [102 — Guided defect repair](102-gui
 records successful repairs in retained, reset and conventional F# conditions;
 it does not establish blind defect discovery or a correctness advantage.
 
-The native checkpoint is [106 — Record ownership](106-native-record-ownership.md),
-with 342 conformance assertions and separate native safety/ABI evidence. It extends
+The native checkpoint is [107 — Typed state re-entry](107-native-state-reentry.md),
+with 441 conformance assertions, 37 passing full-regression checks and separate
+native safety/ABI evidence. It builds on
+[106 — Record ownership](106-native-record-ownership.md) and
 [105 — Refined scalars](105-native-refined-scalars.md) with scratch and retained
 record storage. [104 — Arena/mailbox feasibility](104-native-arena-mailbox-feasibility.md)
 remains a separate bounded memory experiment. These runtime checks establish no

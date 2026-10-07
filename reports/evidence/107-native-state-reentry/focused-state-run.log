@@ -1,0 +1,10 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  StateReentryRunner -> D:\code\AgentLang\.agentlang\state-reentry-tests\focused-runner\bin\Debug\net9.0\StateReentryRunner.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.75
+testTypedStateReentry completed.

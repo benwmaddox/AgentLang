@@ -1,0 +1,2 @@
+Run from PowerShell: & 'C:\Users\Ben\AppData\Local\Temp\agentlang-native-reentry-evidence\run-native-v3.ps1'
+The script compiles the freestanding runtime at O0/O2/UBSan-trap O1, runs the standalone harness, checks clang-format, emits C --layout-json, and audits undefined symbols.

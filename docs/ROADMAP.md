@@ -83,8 +83,13 @@ Native Int/Bool refinement conformance is now validated (252 native assertions);
 see [report 105](../reports/105-native-refined-scalars.md). Native record execution
 now passes 342 conformance assertions with invocation scratch, atomic retained
 outputs and decoding after scratch/DLL disposal; see [report 106](../reports/106-native-record-ownership.md).
-Next integrate explicit retained mailbox state and suspension boundaries on top
-of this ownership contract. The current record slice has no scheduler or async I/O.
+[Report 107](../reports/107-native-state-reentry.md) now validates typed state
+re-entry with 441 native assertions: retained results feed later invocations
+without managed graph decoding, preserving old state on failure. This currently
+copies the input graph and live outputs, and requires one verified program
+instance. Next demonstrate a single mailbox retaining opaque state across a
+deterministic suspend/resume boundary while returning scratch to a pool. Real
+async I/O, bounded pending work, cancellation, and throughput comparison follow.
 
 Keep the semantic IR authoritative. Development backends add LLVM
 JIT while release builds use LLVM AOT plus a minimal runtime. Research arenas,

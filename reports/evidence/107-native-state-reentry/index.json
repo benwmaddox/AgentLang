@@ -1,0 +1,172 @@
+{
+  "status": "passed bounded typed native state re-entry",
+  "baseCommit": "ba336e3b0ae22b4e7d927a67b16bff9bcb2464cc",
+  "testedWorkingTree": true,
+  "nativeAssertions": 441,
+  "fullRegressionChecks": 37,
+  "businessPreflightChecks": 98,
+  "businessPreflightOutcomes": 30,
+  "irAssertions": 114,
+  "interpreterAssertions": 49,
+  "cHarnessAssertionsPerConfiguration": 178,
+  "cHarnessConfigurations": [
+    "O0",
+    "O2",
+    "O1-UBSan-trap"
+  ],
+  "cContextLayoutChecks": 18,
+  "generatedDlls": 109,
+  "peImports": false,
+  "clrHeaders": false,
+  "frozenFilesUnchanged": 10,
+  "finalCommand": "pwsh -NoProfile -File scripts/Verify-NativeConformance.ps1",
+  "finalLog": "native-conformance.log",
+  "researchConclusion": "No new agent efficacy comparison or superiority claim",
+  "files": [
+    {
+      "path": "audit-artifacts.ps1",
+      "bytes": 2646,
+      "sha256": "938388a2f863a58f99c0c1600ae1e2d6c15ce1cd04cc37c0ef1c1ab96973d9ac"
+    },
+    {
+      "path": "backend-build.log",
+      "bytes": 306,
+      "sha256": "cc86adb7cefcff6523a111864348f966a5c0413fab3a3d7788b65c7e77b47c20"
+    },
+    {
+      "path": "emitted-ir.zip",
+      "bytes": 5832167,
+      "sha256": "aa62f973200f61637b5dfa33e1da5d5daafcc68a6a13722be96ec687b56caf22"
+    },
+    {
+      "path": "focused-runner/Program.cs",
+      "bytes": 1048,
+      "sha256": "3dd2b76d924d5184e488dd0e562d221156906211eb720c071c98c22d0618deb7"
+    },
+    {
+      "path": "focused-runner/StateReentryRunner.csproj",
+      "bytes": 761,
+      "sha256": "ea487f4ffa4778a515d1f5ce8f63885c9533ddaea9ee3a81e914cef69d5286d4"
+    },
+    {
+      "path": "focused-state-run.log",
+      "bytes": 317,
+      "sha256": "39e3c9a1b5c76ce5b5f8efc4b1f26899541c89ac32fafb7e5ba7a331af5b6f90"
+    },
+    {
+      "path": "frozen-runtime.json",
+      "bytes": 2758,
+      "sha256": "bf9841c2a26dc2c40b892adb132375ed98f68c65ff863cfbc24ea8ea139f05fc"
+    },
+    {
+      "path": "full-debug-validation.json",
+      "bytes": 27690,
+      "sha256": "7096c2e84805948b63eb1613fa2958461578eea2b3e41cc510bb51cbeb3707d5"
+    },
+    {
+      "path": "full-debug-validation.log",
+      "bytes": 15513,
+      "sha256": "5b727d3352e0ddc84b59408246337ccf5eae19a6d55156b960f8b4e4d26a542d"
+    },
+    {
+      "path": "full-regression-details.zip",
+      "bytes": 1404764,
+      "sha256": "6464fa58d60fc6e7d9cfe8e67f3e654700ffb5758104c458420fe1e660e534cb"
+    },
+    {
+      "path": "native-artifacts.json",
+      "bytes": 26718,
+      "sha256": "08a6a88de75689eee0f95ad27b474a4698eb1942f6baebc2ee79a68b9ef7c90c"
+    },
+    {
+      "path": "native-conformance-01-failed.log",
+      "bytes": 3925,
+      "sha256": "bc14934bded356d0d2f516a7a672995fceecdf90d6a50ece520db03f0d897a8c"
+    },
+    {
+      "path": "native-conformance.log",
+      "bytes": 1539,
+      "sha256": "2bf8cd7a7a51d74705376ac3d73039736496723af864fb853bff2fc0186a81ee"
+    },
+    {
+      "path": "native-objects.json",
+      "bytes": 55874,
+      "sha256": "8eba260d3241a23e0d25607a2390f6c427acd82c7b8126251b1df404685b7e33"
+    },
+    {
+      "path": "README.md",
+      "bytes": 1589,
+      "sha256": "312be33a831224fa1ddf1bb9dbf453a63c86037f7c7de30210ca7e033f19a360"
+    },
+    {
+      "path": "run-state-test.ps1",
+      "bytes": 311,
+      "sha256": "bc5dc50aa726e45563e81d6ec568b1d388771dbd391edc23e3f02514681ad163"
+    },
+    {
+      "path": "runtime/direct/artifact-sha256.txt",
+      "bytes": 920,
+      "sha256": "bc8bca6166c345ff33fa0db4e588aa96830a1a0d20aad1ed2ceb47d8f202a484"
+    },
+    {
+      "path": "runtime/direct/c-layout.json",
+      "bytes": 840,
+      "sha256": "447ca75bbf9681dd29466bac09067cdd7875e397f5df749b0ddf9edf7f315e47"
+    },
+    {
+      "path": "runtime/direct/c-layout.txt",
+      "bytes": 952,
+      "sha256": "fb4939c0e40e01611b48306c8166d753c4dac73b23362f0b1ca816831b3b7e6c"
+    },
+    {
+      "path": "runtime/direct/commands.txt",
+      "bytes": 281,
+      "sha256": "2c5265e80f341c11767ea2d4d9bb1348382aa26bf48a1e4db17983211e23ba0b"
+    },
+    {
+      "path": "runtime/direct/run-native-v3.ps1",
+      "bytes": 1957,
+      "sha256": "d22a76d2ac58610e6e6f3862efa38f906add5a62ae377460be434c69fe353064"
+    },
+    {
+      "path": "runtime/direct/runtime-test-O0.log",
+      "bytes": 53,
+      "sha256": "3c4e18f18c1b7d5285db21a4d17e858702ed5f62c0b6450d9f13698f3e46c193"
+    },
+    {
+      "path": "runtime/direct/runtime-test-O2.log",
+      "bytes": 53,
+      "sha256": "3c4e18f18c1b7d5285db21a4d17e858702ed5f62c0b6450d9f13698f3e46c193"
+    },
+    {
+      "path": "runtime/direct/runtime-test-UBSan-trap.log",
+      "bytes": 53,
+      "sha256": "3c4e18f18c1b7d5285db21a4d17e858702ed5f62c0b6450d9f13698f3e46c193"
+    },
+    {
+      "path": "runtime/direct/source-sha256.txt",
+      "bytes": 413,
+      "sha256": "9e91072829b1db9f0fd2918d878c95be700c4edd4237cf9c0e773cd3286846eb"
+    },
+    {
+      "path": "runtime/direct/undefined-symbols.txt",
+      "bytes": 186,
+      "sha256": "53291efd7b6cbb1a1ef975eca230e498fdded32828169fb453f8b8b25255a359"
+    },
+    {
+      "path": "runtime/layout-comparison.json",
+      "bytes": 394,
+      "sha256": "84939f816bd98051ed3286439e5ace025fb0d2f4fff239feb4f4f4c9bf4a1eaa"
+    },
+    {
+      "path": "source-hashes.json",
+      "bytes": 2958,
+      "sha256": "3f2d9045be2e9dd38f9c8d2c72409e42de032dc3ee2a56ea650f99aa21e95ce3"
+    },
+    {
+      "path": "source.zip",
+      "bytes": 102322,
+      "sha256": "98664c2f6f6258286601d2748f50a53c0a360e7bcc9deb9fe08803a4cf2756e7"
+    }
+  ]
+}

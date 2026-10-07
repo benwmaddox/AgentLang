@@ -2,8 +2,9 @@ namespace AgentLang.Llvm
 
 open System.Runtime.InteropServices
 
-/// ABI-v2 execution context. The first 32 bytes preserve the published v1
-/// diagnostic prefix; native code validates the version before reading the tail.
+/// ABI-v3 execution context. The ABI-v1 diagnostic prefix and ABI-v2 arena
+/// fields remain in place; native code validates the version before reading
+/// either tail.
 [<Struct; StructLayout(LayoutKind.Sequential, Pack = 8)>]
 type NativeExecutionContext =
     val mutable AbiVersion: uint32
@@ -17,6 +18,11 @@ type NativeExecutionContext =
     val mutable Workspace: nativeint
     val mutable WorkspaceCapacity: uint32
     val mutable ReservedTail: uint32
+    val mutable InputOwner: nativeint
+    val mutable InputRoots: nativeint
+    val mutable InputRootTypeIds: nativeint
+    val mutable InputRootCount: uint32
+    val mutable ReservedV3: uint32
     new(abiVersion) =
         { AbiVersion = abiVersion
           StepsConsumed = 0u
@@ -28,7 +34,12 @@ type NativeExecutionContext =
           Retained = nativeint 0
           Workspace = nativeint 0
           WorkspaceCapacity = 0u
-          ReservedTail = 0u }
+          ReservedTail = 0u
+          InputOwner = nativeint 0
+          InputRoots = nativeint 0
+          InputRootTypeIds = nativeint 0
+          InputRootCount = 0u
+          ReservedV3 = 0u }
 
 [<Struct; StructLayout(LayoutKind.Sequential, Pack = 8)>]
 type NativeArenaDescriptor =
@@ -67,10 +78,10 @@ type NativeProgramDescriptor =
 [<RequireQualifiedAccess>]
 module NativeAbi =
     [<Literal>]
-    let Version = 2u
+    let Version = 3u
 
     [<Literal>]
-    let ContextSize = 64
+    let ContextSize = 96
 
     [<Literal>]
     let ContextAlignment = 8
@@ -119,6 +130,21 @@ module NativeAbi =
 
     [<Literal>]
     let ContextReservedTailOffset = 60
+
+    [<Literal>]
+    let ContextInputOwnerOffset = 64
+
+    [<Literal>]
+    let ContextInputRootsOffset = 72
+
+    [<Literal>]
+    let ContextInputRootTypeIdsOffset = 80
+
+    [<Literal>]
+    let ContextInputRootCountOffset = 88
+
+    [<Literal>]
+    let ContextReservedV3Offset = 92
 
     [<Literal>]
     let ArenaSize = 48

@@ -32,20 +32,69 @@ type IrInterpreterHost =
       WordDefinitionSpan: string -> SourceSpan option
       PrimitiveDefinitionSpan: string -> SourceSpan option }
 
+[<RequireQualifiedAccess>]
+type IrEntryArgument =
+    /// Select an existing root from the one retained input owner.
+    | RetainedRoot of int
+    /// Supply a primitive message value. These cannot stand in for nominal types.
+    | IntArgument of int64
+    | BoolArgument of bool
+    | UnitArgument
+
+/// Internal semantic values shared by the interpreter and its opaque retained
+/// result. They are never exposed through the public entry API.
+type internal IrInterpreterRuntimeValue =
+    | RuntimeInt of int64
+    | RuntimeFloat of double
+    | RuntimeBool of bool
+    | RuntimeString of string
+    | RuntimeUnit
+    | RuntimeList of IrType * IrInterpreterRuntimeValue list
+    | RuntimeOption of IrType * IrInterpreterRuntimeValue option
+    | RuntimeResult of IrType * IrType * Result<IrInterpreterRuntimeValue, IrInterpreterRuntimeValue>
+    | RuntimeRecord of ProgramTypeKey * IrInterpreterRuntimeValue list
+    | RuntimeScalar of ProgramTypeKey * IrInterpreterRuntimeValue
+
+/// Opaque interpreter-owned state that can be passed to a later body compiled
+/// against the same verified-program object. Runtime values remain private; the
+/// public conversion is only for final observation.
+[<Sealed>]
+type IrInterpreterResult internal
+    (programIdentity: VerifiedIrProgram, roots: IrInterpreterRuntimeValue array, decodeRoot: IrInterpreterRuntimeValue -> Value) =
+    let gate = obj ()
+    let mutable disposed = false
+    let mutable currentRoots = Array.copy roots
+
+    member _.Decode() =
+        lock gate (fun () ->
+            if disposed then raise (ObjectDisposedException("IrInterpreterResult"))
+            currentRoots |> Array.map decodeRoot |> Array.toList)
+
+    /// A shallow root snapshot is safe because RuntimeValue graphs are immutable.
+    /// It keeps active execution valid if the input owner is disposed meanwhile.
+    member internal _.AcquireRootsFor(expectedProgram: VerifiedIrProgram, executionName: string) =
+        lock gate (fun () ->
+            if disposed then
+                Diagnostics.raiseError "IR_BACKEND_ENTRY_OWNER_DISPOSED" "The retained input owner has been disposed." (Some executionName) None
+                    [ "live retained input owner" ] [ "disposed" ]
+            if not (Object.ReferenceEquals(programIdentity, expectedProgram)) then
+                Diagnostics.raiseError "IR_BACKEND_ENTRY_PROGRAM_MISMATCH" "The retained input belongs to a different verified-program instance." (Some executionName) None
+                    [ "same VerifiedIrProgram instance" ] [ "different program instance" ]
+            Array.copy currentRoots)
+
+    member _.Dispose() =
+        lock gate (fun () ->
+            if not disposed then
+                Array.Clear(currentRoots, 0, currentRoots.Length)
+                currentRoots <- [||]
+                disposed <- true)
+
+    interface IDisposable with
+        member this.Dispose() = this.Dispose()
+
 module IrInterpreter =
     type private TypeFormatTask = FormatType of IrType | FormatText of string
-
-    type private RuntimeValue =
-        | RuntimeInt of int64
-        | RuntimeFloat of double
-        | RuntimeBool of bool
-        | RuntimeString of string
-        | RuntimeUnit
-        | RuntimeList of IrType * RuntimeValue list
-        | RuntimeOption of IrType * RuntimeValue option
-        | RuntimeResult of IrType * IrType * Result<RuntimeValue, RuntimeValue>
-        | RuntimeRecord of ProgramTypeKey * RuntimeValue list
-        | RuntimeScalar of ProgramTypeKey * RuntimeValue
+    type private RuntimeValue = IrInterpreterRuntimeValue
 
     type private RuntimeValueMetrics =
         { ExpandedNodes: int64
@@ -167,13 +216,44 @@ module IrInterpreter =
         with :? OverflowException ->
             fail "RUNTIME_OVERFLOW" $"'{operation}' overflowed its Int64 result." (Some operation) span [] [ string left; string right ]
 
-    let executeBody (host: IrInterpreterHost) (executionName: string) (verifiedBody: VerifiedIrBody) : Value list =
+    let executeBodyWithInputs
+        (host: IrInterpreterHost)
+        (executionName: string)
+        (verifiedBody: VerifiedIrBody)
+        (inputOwner: IrInterpreterResult option)
+        (arguments: IrEntryArgument list) : IrInterpreterResult =
         let verifiedProgram = VerifiedIrBody.program verifiedBody
         requireBackendRegistry verifiedProgram
         let program = VerifiedIrProgram.inspect verifiedProgram
         let body = VerifiedIrBody.inspect verifiedBody
-        if not (List.isEmpty body.BodyInputTypes) then
-            fail "IR_BACKEND_BODY_INPUT_UNSUPPORTED" "The interpreter entry point accepts only bodies with an empty initial stack." (Some executionName) None [] (body.BodyInputTypes |> List.map (formatType program))
+
+        // Check owner provenance and liveness before argument shape, matching the
+        // native entry contract. Root values are immutable so this shallow copy
+        // remains valid even if the caller disposes the input owner concurrently.
+        let retainedRoots =
+            match inputOwner with
+            | Some owner -> owner.AcquireRootsFor(verifiedProgram, executionName)
+            | None -> [||]
+        if arguments.Length <> body.BodyInputTypes.Length then
+            fail "IR_BACKEND_ENTRY_ARGUMENT_COUNT" "Entry argument count does not match the verified body input signature." (Some executionName) None
+                [ string body.BodyInputTypes.Length ] [ string arguments.Length ]
+
+        let initialStack =
+            arguments
+            |> List.map (function
+                | IrEntryArgument.RetainedRoot index ->
+                    if index < 0 || index >= retainedRoots.Length then
+                        fail "IR_BACKEND_ENTRY_ROOT_INDEX" "Entry argument selects a root outside the retained input owner." (Some executionName) None
+                            [ $"root index in [0, {retainedRoots.Length})" ] [ string index ]
+                    retainedRoots[index]
+                | IrEntryArgument.IntArgument value -> RuntimeInt value
+                | IrEntryArgument.BoolArgument value -> RuntimeBool value
+                | IrEntryArgument.UnitArgument -> RuntimeUnit)
+        let actualInputTypes = initialStack |> List.map runtimeValueType
+        if actualInputTypes <> body.BodyInputTypes then
+            fail "IR_BACKEND_ENTRY_ARGUMENT_TYPE" "Entry argument types do not match the verified body input signature." (Some executionName) None
+                (body.BodyInputTypes |> List.map (formatType program)) (runtimeTypeNames program initialStack)
+
         let sourceMap = Map.fold (fun found site source -> Map.add site source found) program.SourceMap body.BodySourceMap
 
         let sourceSpan site = sourceAt sourceMap site
@@ -731,7 +811,7 @@ module IrInterpreter =
             stack, locals
 
         host.PreflightEffects body.BodyInferredEffects None None
-        let result, _ = executeBlock 0 executionName body.BodyLocalNames body.BodyBlock [] Map.empty
+        let result, _ = executeBlock 0 executionName body.BodyLocalNames body.BodyBlock initialStack Map.empty
         checkRuntimeValueRoots executionName None result
 
         let rec fromRuntimeValue = function
@@ -766,4 +846,19 @@ module IrInterpreter =
             | IrOption item -> TOption(toLangType item)
             | IrResult(okType, errorType) -> TResult(toLangType okType, toLangType errorType)
             | IrNominal key -> TNamed(typeName program key)
-        result |> List.map fromRuntimeValue
+        new IrInterpreterResult(
+            verifiedProgram,
+            result |> List.toArray,
+            fromRuntimeValue)
+
+    /// Compatibility entry point for callers that only execute zero-input
+    /// bodies and immediately observe public Values.
+    let executeBody (host: IrInterpreterHost) (executionName: string) (verifiedBody: VerifiedIrBody) : Value list =
+        let verifiedProgram = VerifiedIrBody.program verifiedBody
+        requireBackendRegistry verifiedProgram
+        let program = VerifiedIrProgram.inspect verifiedProgram
+        let body = VerifiedIrBody.inspect verifiedBody
+        if not (List.isEmpty body.BodyInputTypes) then
+            fail "IR_BACKEND_BODY_INPUT_UNSUPPORTED" "The interpreter entry point accepts only bodies with an empty initial stack." (Some executionName) None [] (body.BodyInputTypes |> List.map (formatType program))
+        use result = executeBodyWithInputs host executionName verifiedBody None []
+        result.Decode()

@@ -133,6 +133,175 @@ let private testPublicBoundaryAndEmptyEntryOnly () =
         IrInterpreter.executeBody host "requires-input" nonemptyInputBody |> ignore)
     check "unsupported public input is rejected before any host hook" (preflightCount = 0 && chargeCount = 0)
 
+let private testOpaqueTypedInterpreterReentry () =
+    let source = span "typed-reentry.agent"
+    let metersValidator =
+        wordEntry "meters.valid?" [ TInt ] [ TBool ] Set.empty
+            [ Push(LInt 0L, source); Call("int.greater-or-equal", source) ] None
+    let meters =
+        { Name = "Meters"
+          BaseType = TInt
+          Validator = Some "meters.valid?"
+          SourceText = "scalar Meters = Int"
+          Span = source }
+    let reading =
+        { Name = "Reading"
+          Fields = [ { Name = "current"; Type = TNamed "Meters" }; { Name = "count"; Type = TInt } ]
+          SourceText = "record Reading"
+          Span = source }
+    let envelope =
+        { Name = "Envelope"
+          Fields = [ { Name = "reading"; Type = TNamed "Reading" }; { Name = "active"; Type = TBool } ]
+          SourceText = "record Envelope"
+          Span = source }
+    let generated =
+        [ wordEntry "meters.new" [ TInt ] [ TNamed "Meters" ] Set.empty [] (Some(ScalarConstructor "Meters"))
+          wordEntry "reading.new" [ TNamed "Meters"; TInt ] [ TNamed "Reading" ] Set.empty [] (Some(RecordConstructor "Reading"))
+          wordEntry "reading.current" [ TNamed "Reading" ] [ TNamed "Meters" ] Set.empty [] (Some(RecordAccessor("Reading", "current")))
+          wordEntry "envelope.new" [ TNamed "Reading"; TBool ] [ TNamed "Envelope" ] Set.empty [] (Some(RecordConstructor "Envelope"))
+          wordEntry "envelope.reading" [ TNamed "Envelope" ] [ TNamed "Reading" ] Set.empty [] (Some(RecordAccessor("Envelope", "reading")))
+          wordEntry "envelope.active" [ TNamed "Envelope" ] [ TBool ] Set.empty [] (Some(RecordAccessor("Envelope", "active"))) ]
+    let baseContext = contextWith (Map.ofList [ "Reading", reading; "Envelope", envelope ]) (metersValidator :: generated)
+    let context = { baseContext with Scalars = Map.ofList [ "Meters", meters ] }
+    let program = Compiler.compileIrProgram context
+    let compile name inputs expressions = Compiler.compileIrBodyAgainstProgram context program name inputs expressions
+
+    let initialization = compile "initialize-state" [] [
+        Push(LInt 12L, source)
+        Call("meters.new", source)
+        Push(LInt 4L, source)
+        Call("reading.new", source)
+        Push(LBool true, source)
+        Call("envelope.new", source)
+    ]
+    let updateCount = compile "update-count" [ TNamed "Envelope"; TInt ] [
+        Let("delta", source)
+        Let("state", source)
+        Load("state", source)
+        Call("envelope.reading", source)
+        Call("reading.current", source)
+        Load("delta", source)
+        Call("reading.new", source)
+        Load("state", source)
+        Call("envelope.active", source)
+        Call("envelope.new", source)
+    ]
+    let updateActive = compile "update-active" [ TNamed "Envelope"; TUnit; TBool ] [
+        Let("active", source)
+        Call("drop", source)
+        Let("state", source)
+        Load("state", source)
+        Call("envelope.reading", source)
+        Load("active", source)
+        Call("envelope.new", source)
+    ]
+    let retainTwice = compile "retain-twice" [ TNamed "Envelope"; TNamed "Envelope" ] []
+    let nominalInput = compile "nominal-input" [ TNamed "Meters" ] []
+
+    let mutable validatorCalls = 0
+    let trackedHost =
+        host
+            (fun _ _ _ -> ())
+            (fun _ _ -> ())
+            (fun _ -> EffectUnit)
+            (fun name -> if name = "meters.valid?" then validatorCalls <- validatorCalls + 1)
+    let initialize = IrInterpreter.executeBodyWithInputs trackedHost "initialize-state" initialization None []
+    check "initialization uses the exact verified program handle" (Object.ReferenceEquals(VerifiedIrBody.program initialization, program))
+    check "initialization validates the refined scalar once" (validatorCalls = 1)
+
+    let mutable preflightCount = 0
+    let mutable chargeCount = 0
+    let guardedHost =
+        host
+            (fun _ _ _ -> preflightCount <- preflightCount + 1)
+            (fun _ _ -> chargeCount <- chargeCount + 1)
+            (fun _ -> EffectUnit)
+            ignore
+    expectDiagnostic "typed entry rejects an incorrect argument count" "IR_BACKEND_ENTRY_ARGUMENT_COUNT" (fun () ->
+        IrInterpreter.executeBodyWithInputs guardedHost "update-count" updateCount (Some initialize) [ IrEntryArgument.RetainedRoot 0 ] |> ignore)
+    expectDiagnostic "typed entry rejects an out-of-range retained root" "IR_BACKEND_ENTRY_ROOT_INDEX" (fun () ->
+        IrInterpreter.executeBodyWithInputs guardedHost "update-count" updateCount (Some initialize) [ IrEntryArgument.RetainedRoot 1; IrEntryArgument.IntArgument 3L ] |> ignore)
+    let wrongTypeDiagnostic =
+        try
+            IrInterpreter.executeBodyWithInputs guardedHost "update-count" updateCount (Some initialize)
+                [ IrEntryArgument.RetainedRoot 0; IrEntryArgument.BoolArgument true ] |> ignore
+            failwith "typed entry should reject the mismatched primitive argument"
+        with LanguageException diagnostic -> diagnostic
+    check "typed entry reports the expected argument types in order" (wrongTypeDiagnostic.Expected = [ "Envelope"; "Int" ])
+    check "typed entry reports the actual argument types in order" (wrongTypeDiagnostic.Actual = [ "Envelope"; "Bool" ])
+    check "typed entry assigns the diagnostic to the attempted execution" (wrongTypeDiagnostic.Word = Some "update-count" && wrongTypeDiagnostic.Span.IsNone)
+    expectDiagnostic "primitive Int cannot impersonate a nominal scalar input" "IR_BACKEND_ENTRY_ARGUMENT_TYPE" (fun () ->
+        IrInterpreter.executeBodyWithInputs guardedHost "nominal-input" nominalInput None [ IrEntryArgument.IntArgument 12L ] |> ignore)
+    let otherProgram = Compiler.compileIrProgram context
+    let otherBody = Compiler.compileIrBodyAgainstProgram context otherProgram "other-program" [ TNamed "Envelope" ] []
+    let mismatchDiagnostic =
+        try
+            IrInterpreter.executeBodyWithInputs guardedHost "other-program" otherBody (Some initialize) [ IrEntryArgument.RetainedRoot 0 ] |> ignore
+            failwith "typed entry should reject a different program identity"
+        with LanguageException diagnostic -> diagnostic
+    check "typed entry rejects an equivalent but different verified-program instance" (mismatchDiagnostic.Code = "IR_BACKEND_ENTRY_PROGRAM_MISMATCH")
+    check "program mismatch diagnostics are attributed to the attempted execution" (mismatchDiagnostic.Word = Some "other-program" && mismatchDiagnostic.Span.IsNone)
+    check "invalid entry arguments are rejected before host hooks or fuel charges" (preflightCount = 0 && chargeCount = 0)
+
+    let afterCount =
+        IrInterpreter.executeBodyWithInputs
+            trackedHost "update-count" updateCount (Some initialize)
+            [ IrEntryArgument.RetainedRoot 0; IrEntryArgument.IntArgument 3L ]
+    initialize.Dispose()
+    check "disposing an input owner does not invalidate roots retained by a successful next turn" (validatorCalls = 1)
+    expectDiagnostic "typed entry rejects a disposed retained owner" "IR_BACKEND_ENTRY_OWNER_DISPOSED" (fun () ->
+        IrInterpreter.executeBodyWithInputs guardedHost "update-count" updateCount (Some initialize)
+            [ IrEntryArgument.RetainedRoot 0; IrEntryArgument.IntArgument 1L ] |> ignore)
+
+    let finalState =
+        IrInterpreter.executeBodyWithInputs
+            trackedHost "update-active" updateActive (Some afterCount)
+            [ IrEntryArgument.RetainedRoot 0; IrEntryArgument.UnitArgument; IrEntryArgument.BoolArgument false ]
+    afterCount.Dispose()
+    check "cross-turn retained roots do not rerun scalar refinement validators" (validatorCalls = 1)
+
+    use borrowStarted = new System.Threading.ManualResetEventSlim(false)
+    use finishBorrow = new System.Threading.ManualResetEventSlim(false)
+    let blockingHost =
+        host
+            (fun _ _ _ ->
+                borrowStarted.Set()
+                finishBorrow.Wait())
+            (fun _ _ -> ())
+            (fun _ -> EffectUnit)
+            ignore
+    let pendingBorrow =
+        System.Threading.Tasks.Task.Run(fun () ->
+            IrInterpreter.executeBodyWithInputs
+                blockingHost "retain-twice" retainTwice (Some finalState)
+                [ IrEntryArgument.RetainedRoot 0; IrEntryArgument.RetainedRoot 0 ])
+    if not (borrowStarted.Wait(TimeSpan.FromSeconds 10.0)) then
+        finishBorrow.Set()
+        failwith "typed re-entry did not reach the host preflight while borrowing input roots"
+    finalState.Dispose()
+    finishBorrow.Set()
+    let repeatedRoots = pendingBorrow.GetAwaiter().GetResult()
+    check "disposing input during an in-flight turn preserves its borrowed immutable roots" (pendingBorrow.IsCompleted)
+    let expected =
+        RecordValue("Envelope", Map.ofList [
+            "active", BoolValue false
+            "reading", RecordValue("Reading", Map.ofList [
+                "count", IntValue 3L
+                "current", NamedValue("Meters", IntValue 12L)
+            ])
+        ])
+    check "multiple typed turns preserve nested records and refined scalar values without intermediate decoding" (
+        repeatedRoots.Decode() = [ expected; expected ])
+    repeatedRoots.Dispose()
+    try
+        repeatedRoots.Decode() |> ignore
+        failwith "decoding a disposed interpreter result should fail"
+    with :? ObjectDisposedException -> assertions <- assertions + 1
+
+    // Keep the old public method's historical diagnostic for nonempty bodies.
+    expectDiagnostic "legacy executeBody keeps its empty-entry-only diagnostic" "IR_BACKEND_BODY_INPUT_UNSUPPORTED" (fun () ->
+        IrInterpreter.executeBody (noOpHost ()) "update-count" updateCount |> ignore)
+
 let private testScopeRestoresOverwrittenOuterLocal () =
     let context = defaultContext ()
     let source = span "scope-restore.agent"
@@ -396,6 +565,7 @@ let private testBoundedRuntimeValues () =
 let main _ =
     testProgramTrustAndSnapshotBinding ()
     testPublicBoundaryAndEmptyEntryOnly ()
+    testOpaqueTypedInterpreterReentry ()
     testScopeRestoresOverwrittenOuterLocal ()
     testInterpreterOwnsFuel ()
     testEmptyEffectfulCallbackPreflight ()

@@ -4,6 +4,7 @@ open System
 open System.IO
 open System.Runtime.InteropServices
 open System.Text.Json
+open System.Threading
 open AgentLang
 open AgentLang.Llvm
 
@@ -168,6 +169,7 @@ let private formatValues values =
 
 let private fixtureRoot = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "scalar-cases.json")))
 let private recordFixtureRoot = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "record-cases.json")))
+let private stateReentryFixtureRoot = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "state-reentry-cases.json")))
 
 let private fixtureValues (name: string) =
     fixtureRoot.RootElement.GetProperty(name).EnumerateArray()
@@ -184,6 +186,9 @@ let private recordFixtureValues (name: string) =
 
 let private recordFixtureError (name: string) : JsonElement =
     recordFixtureRoot.RootElement.GetProperty(name)
+
+let private stateReentryDiagnosticFixture (name: string) : JsonElement =
+    stateReentryFixtureRoot.RootElement.GetProperty("diagnostics").GetProperty(name)
 
 let private artifactRoot =
     let run = Guid.NewGuid().ToString("N")
@@ -331,10 +336,10 @@ let private testLayoutAndRequestGuards multiOutputBody scratchBody =
         check "logical result count and public capacity stay distinct from workspace capacity" (
             native.OutputCount = 4 && native.OutputCapacity = 4 && native.WorkspaceCapacity >= native.OutputCapacity)
         let layout = Marshal.GetDelegateForFunctionPointer<LayoutDelegate>(NativeLibrary.GetExport(layoutHandle, "agentlang_abi_layout"))
-        let layoutBuffer = Marshal.AllocHGlobal(13 * sizeof<int64>)
+        let layoutBuffer = Marshal.AllocHGlobal(18 * sizeof<int64>)
         try
             layout.Invoke(nativeint layoutBuffer)
-            let actualLayout = [ for index in 0 .. 12 -> Marshal.ReadInt64(layoutBuffer, index * sizeof<int64>) ]
+            let actualLayout = [ for index in 0 .. 17 -> Marshal.ReadInt64(layoutBuffer, index * sizeof<int64>) ]
             let expectedOffsets =
                 [ NativeAbi.ContextAbiVersionOffset
                   NativeAbi.ContextStepsConsumedOffset
@@ -346,7 +351,12 @@ let private testLayoutAndRequestGuards multiOutputBody scratchBody =
                   NativeAbi.ContextRetainedOffset
                   NativeAbi.ContextWorkspaceOffset
                   NativeAbi.ContextWorkspaceCapacityOffset
-                  NativeAbi.ContextReservedTailOffset ]
+                  NativeAbi.ContextReservedTailOffset
+                  NativeAbi.ContextInputOwnerOffset
+                  NativeAbi.ContextInputRootsOffset
+                  NativeAbi.ContextInputRootTypeIdsOffset
+                  NativeAbi.ContextInputRootCountOffset
+                  NativeAbi.ContextReservedV3Offset ]
             let expectedLayout =
                 [ int64 NativeAbi.ContextSize
                   int64 NativeAbi.ContextAlignment ]
@@ -354,14 +364,34 @@ let private testLayoutAndRequestGuards multiOutputBody scratchBody =
             check "LLVM-reported context size/alignment/field offsets" (actualLayout = expectedLayout)
             use v2Json = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "abi-v2.json")))
             let v2 = v2Json.RootElement
-            let contextFixture = v2.GetProperty("context")
-            check "ABI v2 fixture independently fixes context size and alignment" (
+            use v3Json = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "abi-v3.json")))
+            let v3 = v3Json.RootElement
+            let v2ContextFixture = v2.GetProperty("context")
+            let v3ContextFixture = v3.GetProperty("context")
+            check "historical ABI v2 fixture preserves its independent context size and alignment" (
                 v2.GetProperty("abiVersion").GetInt32() = 2
                 && v2.GetProperty("nativeLayoutOracle").GetString().Contains("runtime_test.c --layout-json")
-                && contextFixture.GetProperty("size").GetInt32() = 64
-                && contextFixture.GetProperty("alignment").GetInt32() = 8
-                && int actualLayout[0] = 64
-                && int actualLayout[1] = 8)
+                && v2ContextFixture.GetProperty("size").GetInt32() = 64
+                && v2ContextFixture.GetProperty("alignment").GetInt32() = 8
+                && (v2ContextFixture.GetProperty("fields").EnumerateArray() |> Seq.map (fun field -> field.GetProperty("offset").GetInt32()) |> Seq.toList)
+                    = [ 0; 4; 8; 12; 16; 24; 32; 40; 48; 56; 60 ])
+            let v3Fields = v3ContextFixture.GetProperty("fields").EnumerateArray() |> Seq.toList
+            check "ABI v3 fixture independently fixes all context offsets and layout export values" (
+                v3.GetProperty("abiVersion").GetInt32() = 3
+                && v3.GetProperty("nativeLayoutOracle").GetString().Contains("runtime_test.c --layout-json")
+                && v3ContextFixture.GetProperty("size").GetInt32() = 96
+                && v3ContextFixture.GetProperty("alignment").GetInt32() = 8
+                && (v3Fields |> List.map (fun field -> field.GetProperty("offset").GetInt32()))
+                    = [ 0; 4; 8; 12; 16; 24; 32; 40; 48; 56; 60; 64; 72; 80; 88; 92 ]
+                && (v3ContextFixture.GetProperty("layoutExport").EnumerateArray() |> Seq.map (fun value -> value.GetInt64()) |> Seq.toList)
+                    = [ 96L; 8L; 0L; 4L; 8L; 12L; 16L; 24L; 32L; 40L; 48L; 56L; 60L; 64L; 72L; 80L; 88L; 92L ]
+                && actualLayout = [ 96L; 8L; 0L; 4L; 8L; 12L; 16L; 24L; 32L; 40L; 48L; 56L; 60L; 64L; 72L; 80L; 88L; 92L ])
+            let v3InputContract = v3.GetProperty("inputContract")
+            check "ABI v3 fixture describes readonly owner and ordered resolved input slots" (
+                v3InputContract.GetProperty("inputOwner").GetString().Contains("read-only")
+                && v3InputContract.GetProperty("inputRoots").GetString().Contains("ordered invocation values")
+                && v3InputContract.GetProperty("inputRootTypeIds").GetString().Contains("zero-based program type IDs")
+                && v3InputContract.GetProperty("import").GetString().Contains("entire input owner's immutable graph"))
             let entryParameters = v2.GetProperty("publicEntry").GetProperty("parameters").EnumerateArray() |> Seq.toList
             let outputCapacityParameter = entryParameters |> List.find (fun parameter -> parameter.GetProperty("name").GetString() = "outputCapacity")
             check "ABI v2 documents signed 32-bit public and workspace capacity signatures" (
@@ -371,16 +401,19 @@ let private testLayoutAndRequestGuards multiOutputBody scratchBody =
                 v2.GetProperty("preconditions").EnumerateArray()
                 |> Seq.exists (fun condition -> condition.GetString().Contains("raw callers initialize status to INVALID_REQUEST"))
             check "ABI v2 documents caller status initialization and no-write early rejection" statusPrecondition
-            let contextFields = contextFixture.GetProperty("fields").EnumerateArray() |> Seq.toList
-            let contextFixtureOffsets = contextFields |> List.map (fun field -> field.GetProperty("offset").GetInt32())
             let contextFieldNames = [ "AbiVersion"; "StepsConsumed"; "ErrorMetadataId"; "ReservedPrefix"; "ErrorArgument0"; "ErrorArgument1"; "Scratch"; "Retained"; "Workspace"; "WorkspaceCapacity"; "ReservedTail" ]
-            let managedContextOffsets = contextFieldNames |> List.map (fun name -> Marshal.OffsetOf<NativeExecutionContext>(name).ToInt32())
-            check "managed context size and every field offset match the independent fixture" (
-                Marshal.SizeOf<NativeExecutionContext>() = 64
-                && contextFixtureOffsets = [ 0; 4; 8; 12; 16; 24; 32; 40; 48; 56; 60 ]
-                && managedContextOffsets = contextFixtureOffsets)
-            check "native context layout export matches the independent fixture" (
-                actualLayout = [ 64L; 8L; 0L; 4L; 8L; 12L; 16L; 24L; 32L; 40L; 48L; 56L; 60L ])
+            let managedV2PrefixOffsets = contextFieldNames |> List.map (fun name -> Marshal.OffsetOf<NativeExecutionContext>(name).ToInt32())
+            check "managed ABI v2 prefix offsets remain fixed under v3" (
+                managedV2PrefixOffsets = [ 0; 4; 8; 12; 16; 24; 32; 40; 48; 56; 60 ])
+            let v3ContextFieldNames = [ "AbiVersion"; "StepsConsumed"; "ErrorMetadataId"; "ReservedPrefix"; "ErrorArgument0"; "ErrorArgument1"; "Scratch"; "Retained"; "Workspace"; "WorkspaceCapacity"; "ReservedTail"; "InputOwner"; "InputRoots"; "InputRootTypeIds"; "InputRootCount"; "ReservedV3" ]
+            let managedV3ContextOffsets = v3ContextFieldNames |> List.map (fun name -> Marshal.OffsetOf<NativeExecutionContext>(name).ToInt32())
+            let v3ContextOffsets = v3Fields |> List.map (fun field -> field.GetProperty("offset").GetInt32())
+            check "managed context size and every ABI v3 field offset match the independent fixture" (
+                Marshal.SizeOf<NativeExecutionContext>() = 96
+                && v3ContextOffsets = [ 0; 4; 8; 12; 16; 24; 32; 40; 48; 56; 60; 64; 72; 80; 88; 92 ]
+                && managedV3ContextOffsets = v3ContextOffsets)
+            check "native ABI v3 context layout export matches the independent numeric oracle" (
+                actualLayout = (v3ContextFixture.GetProperty("layoutExport").EnumerateArray() |> Seq.map (fun value -> value.GetInt64()) |> Seq.toList))
 
             let fieldsOf (parent: JsonElement) (name: string) =
                 parent.GetProperty(name).GetProperty("fields").EnumerateArray() |> Seq.toList
@@ -492,6 +525,26 @@ let private testLayoutAndRequestGuards multiOutputBody scratchBody =
                         && Marshal.ReadInt32(context, NativeAbi.ContextErrorMetadataIdOffset) = 77))
             let statusSentinel = 0x13572468
             callGuard "wrong ABI version" (int NativeAbi.Version + 1) guarded.OutputCount statusSentinel statusSentinel
+            withRawExecutionBuffers guarded 1024 16 1024 16 (fun context outputs status _scratch _retained ->
+                let sentinel = 0x5A6B7C8D9EAF1021L
+                Marshal.WriteInt32(context, NativeAbi.ContextAbiVersionOffset, 2)
+                Marshal.WriteIntPtr(context, NativeAbi.ContextInputOwnerOffset, nativeint 1)
+                Marshal.WriteIntPtr(context, NativeAbi.ContextInputRootsOffset, nativeint 2)
+                Marshal.WriteIntPtr(context, NativeAbi.ContextInputRootTypeIdsOffset, nativeint 3)
+                Marshal.WriteInt32(context, NativeAbi.ContextInputRootCountOffset, 4)
+                Marshal.WriteInt32(context, NativeAbi.ContextReservedV3Offset, 5)
+                for index in 0 .. canaryCount - 1 do
+                    Marshal.WriteInt64(outputs, index * NativeAbi.SlotSize, sentinel + int64 index)
+                Marshal.WriteInt32(status, statusSentinel)
+                execute.Invoke(context, outputs, guarded.OutputCount, status)
+                let outputsUnchanged =
+                    [ 0 .. canaryCount - 1 ]
+                    |> List.forall (fun index -> Marshal.ReadInt64(outputs, index * NativeAbi.SlotSize) = sentinel + int64 index)
+                check (name + " ABI v2 prefix is rejected before reading poisoned ABI v3 tail") (
+                    Marshal.ReadInt32(status) = statusSentinel
+                    && outputsUnchanged
+                    && Marshal.ReadInt32(context, NativeAbi.ContextInputRootCountOffset) = 4
+                    && Marshal.ReadInt32(context, NativeAbi.ContextReservedV3Offset) = 5))
             callGuard "insufficient public output capacity" (int NativeAbi.Version) (guarded.OutputCount - 1) NativeAbi.StatusInvalidRequest NativeAbi.StatusInvalidRequest
         finally
             NativeLibrary.Free executeHandle
@@ -1365,6 +1418,467 @@ let private testRetainedOwnershipAndCapacity sharingBody expectedValues =
         if not firstDisposed then (firstResult :> IDisposable).Dispose()
         (secondResult :> IDisposable).Dispose()
 
+let private testTypedStateReentry () =
+    let fixture = stateReentryFixtureRoot.RootElement
+    let programFixture = fixture.GetProperty("program")
+    let valuesInFixture (element: JsonElement) =
+        element.EnumerateArray() |> Seq.map (fun value -> value.GetString()) |> Seq.toList
+    let records = [
+        recordDefinition "Leaf" [ recordField "value" TInt ]
+        recordDefinition "Ticket" [ recordField "owner" (TNamed "PositiveId"); recordField "leaf" (TNamed "Leaf") ]
+        recordDefinition "Envelope" [ recordField "ticket" (TNamed "Ticket"); recordField "count" TInt; recordField "active" TBool ]
+        recordDefinition "Orphan" [ recordField "mark" TInt ]
+    ]
+    let positiveValidator = wordEntry "is-positive?" [ TInt ] [ TBool ] Set.empty [
+        Push(LInt 0L, span "state-positive.agent" 1)
+        Call("int.greater-than", span "state-positive.agent" 2)
+    ]
+    let context =
+        contextWithRecordDefinitions [ positiveValidator ] records [
+            scalarDefinition "PositiveId" TInt (Some "is-positive?"), "PositiveId.new", "PositiveId.value"
+        ]
+    let verifiedProgram = Compiler.compileIrProgram context
+    let stateInputTypes = [ TNamed "Envelope"; TNamed "Envelope"; TInt; TBool; TUnit ]
+    let initializationBody =
+        Compiler.compileIrBodyAgainstProgram context verifiedProgram "state-init" [] [
+            Push(LInt 7L, span "state-init.agent" 1)
+            Call("PositiveId.new", span "state-init.agent" 2)
+            Let("owner", span "state-init.agent" 3)
+            Push(LInt 5L, span "state-init.agent" 4)
+            Call("leaf.new", span "state-init.agent" 5)
+            Let("leaf", span "state-init.agent" 6)
+            Load("owner", span "state-init.agent" 7)
+            Load("leaf", span "state-init.agent" 8)
+            Call("ticket.new", span "state-init.agent" 9)
+            Let("ticket", span "state-init.agent" 10)
+            Load("ticket", span "state-init.agent" 11)
+            Push(LInt 0L, span "state-init.agent" 12)
+            Push(LBool false, span "state-init.agent" 13)
+            Call("envelope.new", span "state-init.agent" 14)
+            Let("state", span "state-init.agent" 15)
+            Push(LInt 9L, span "state-init.agent" 16)
+            Call("orphan.new", span "state-init.agent" 17)
+            Let("orphan", span "state-init.agent" 18)
+            Load("state", span "state-init.agent" 19)
+            Load("ticket", span "state-init.agent" 20)
+            Load("leaf", span "state-init.agent" 21)
+            Load("orphan", span "state-init.agent" 22)
+        ]
+    let turnExpressions = [
+        Call("drop", span "state-turn.agent" 1)
+        Let("enabled", span "state-turn.agent" 2)
+        Let("delta", span "state-turn.agent" 3)
+        Let("other", span "state-turn.agent" 4)
+        Let("state", span "state-turn.agent" 5)
+        Load("state", span "state-turn.agent" 6)
+        Call("envelope.ticket", span "state-turn.agent" 7)
+        Let("ticket", span "state-turn.agent" 8)
+        Load("ticket", span "state-turn.agent" 9)
+        Load("state", span "state-turn.agent" 10)
+        Call("envelope.count", span "state-turn.agent" 11)
+        Load("delta", span "state-turn.agent" 12)
+        Load("enabled", span "state-turn.agent" 13)
+        If(
+            [ Call("add", span "state-turn.agent" 14) ],
+            [ Call("drop", span "state-turn.agent" 15) ],
+            span "state-turn.agent" 16)
+        Load("enabled", span "state-turn.agent" 17)
+        Call("envelope.new", span "state-turn.agent" 18)
+        Call("dup", span "state-turn.agent" 19)
+        Load("ticket", span "state-turn.agent" 20)
+    ]
+    let turnBody = Compiler.compileIrBodyAgainstProgram context verifiedProgram "state-turn" stateInputTypes turnExpressions
+    let roundTripBody = Compiler.compileIrBodyAgainstProgram context verifiedProgram "state-round-trip" stateInputTypes [
+        Call("drop", span "state-round-trip.agent" 1)
+        Call("drop", span "state-round-trip.agent" 2)
+        Call("drop", span "state-round-trip.agent" 3)
+    ]
+    let postImportFailureBody = Compiler.compileIrBodyAgainstProgram context verifiedProgram "state-fail-after-import" stateInputTypes [
+        Call("drop", span "state-fail-after-import.agent" 1)
+        Call("drop", span "state-fail-after-import.agent" 2)
+        Call("drop", span "state-fail-after-import.agent" 3)
+        Call("drop", span "state-fail-after-import.agent" 4)
+        Call("drop", span "state-fail-after-import.agent" 5)
+        Push(LInt 1L, span "state-fail-after-import.agent" 6)
+        Push(LInt 0L, span "state-fail-after-import.agent" 7)
+        Call("divide", span "state-fail-after-import.agent" 8)
+    ]
+    let differentProgram = Compiler.compileIrProgram context
+    let differentProgramTurn = Compiler.compileIrBodyAgainstProgram context differentProgram "state-turn-other-program" stateInputTypes turnExpressions
+    check "initialization and all turns share one VerifiedIrProgram instance" (
+        [ initializationBody; turnBody; roundTripBody; postImportFailureBody ]
+        |> List.forall (fun body -> Object.ReferenceEquals(VerifiedIrBody.program body, verifiedProgram)))
+    check "equivalent compiler snapshot still receives distinct program identity" (
+        not (Object.ReferenceEquals(VerifiedIrBody.program turnBody, VerifiedIrBody.program differentProgramTurn)))
+
+    let leaf = RecordValue("Leaf", Map.ofList [ "value", IntValue 5L ])
+    let ticket = RecordValue("Ticket", Map.ofList [ "owner", NamedValue("PositiveId", IntValue 7L); "leaf", leaf ])
+    let envelope active count = RecordValue("Envelope", Map.ofList [ "ticket", ticket; "count", IntValue count; "active", BoolValue active ])
+    let orphan = RecordValue("Orphan", Map.ofList [ "mark", IntValue 9L ])
+    let expectedInitialValues = [ envelope false 0; ticket; leaf; orphan ]
+    let expectedRecoveryValues = [ envelope false 0; envelope false 0 ]
+    let expectedTurnOneValues = [ envelope true 3; envelope true 3; ticket ]
+    let expectedTurnTwoValues = [ envelope false 3; envelope false 3; ticket ]
+    check "independent initialized and turned values match the state fixture" (
+        formatValues expectedInitialValues = valuesInFixture (programFixture.GetProperty("initializationRoots"))
+        && formatValues expectedTurnOneValues = valuesInFixture (fixture.GetProperty("turnOne").GetProperty("values"))
+        && formatValues expectedTurnTwoValues = valuesInFixture (fixture.GetProperty("turnTwo").GetProperty("values")))
+    check "independent post-failure recovery values match the round-trip fixture" (
+        formatValues expectedRecoveryValues = valuesInFixture (fixture.GetProperty("roundTripCapacities").GetProperty("values")))
+
+    let turnOneArguments = [
+        IrEntryArgument.RetainedRoot 0
+        IrEntryArgument.RetainedRoot 0
+        IrEntryArgument.IntArgument 3L
+        IrEntryArgument.BoolArgument true
+        IrEntryArgument.UnitArgument
+    ]
+    let turnTwoArguments = [
+        IrEntryArgument.RetainedRoot 0
+        IrEntryArgument.RetainedRoot 1
+        IrEntryArgument.IntArgument 5L
+        IrEntryArgument.BoolArgument false
+        IrEntryArgument.UnitArgument
+    ]
+    let wrongCountArguments = turnOneArguments |> List.take 4
+    let wrongTypeArguments = [
+        IrEntryArgument.RetainedRoot 0
+        IrEntryArgument.RetainedRoot 0
+        IrEntryArgument.BoolArgument true
+        IrEntryArgument.BoolArgument false
+        IrEntryArgument.UnitArgument
+    ]
+    let primitiveForNominalArguments = [
+        IrEntryArgument.IntArgument 7L
+        IrEntryArgument.RetainedRoot 0
+        IrEntryArgument.IntArgument 3L
+        IrEntryArgument.BoolArgument true
+        IrEntryArgument.UnitArgument
+    ]
+    let wrongRootArguments = [
+        IrEntryArgument.RetainedRoot 0
+        IrEntryArgument.RetainedRoot 99
+        IrEntryArgument.IntArgument 3L
+        IrEntryArgument.BoolArgument true
+        IrEntryArgument.UnitArgument
+    ]
+    let noOwnerArguments = turnOneArguments
+
+    let runInterpreterInput (executionName: string) (body: VerifiedIrBody) (inputOwner: IrInterpreterResult option) (arguments: IrEntryArgument list) =
+        let mutable steps = 0
+        let host = { noOpHost () with ChargeInstruction = fun _ _ -> steps <- steps + 1 }
+        let result = IrInterpreter.executeBodyWithInputs host executionName body inputOwner arguments
+        result, steps
+    let captureInterpreterError (executionName: string) (body: VerifiedIrBody) (inputOwner: IrInterpreterResult option) (arguments: IrEntryArgument list) =
+        let mutable steps = 0
+        let host = { noOpHost () with ChargeInstruction = fun _ _ -> steps <- steps + 1 }
+        let diagnostic = errorOf (fun () -> IrInterpreter.executeBodyWithInputs host executionName body inputOwner arguments |> ignore)
+        diagnostic, steps
+    let captureNativeError (native: NativeCompiledProgram) (executionName: string) (inputOwner: NativeRetainedResult option) (arguments: IrEntryArgument list) =
+        errorOf (fun () -> native.ExecuteRetainedWithInputs(executionName, inputOwner, arguments) |> ignore)
+    let assertDiagnosticFixture fixtureName (diagnostic: Diagnostic) =
+        let expected = stateReentryDiagnosticFixture fixtureName
+        let strings (property: string) = expected.GetProperty(property).EnumerateArray() |> Seq.map (fun value -> value.GetString()) |> Seq.toList
+        let expectedSpan =
+            let spanValue = expected.GetProperty("span")
+            if spanValue.ValueKind = JsonValueKind.Null then None
+            else
+                Some {
+                    File = spanValue.GetProperty("file").GetString()
+                    Line = spanValue.GetProperty("line").GetInt32()
+                    Column = spanValue.GetProperty("column").GetInt32()
+                    Length = spanValue.GetProperty("length").GetInt32()
+                }
+        check (fixtureName + " independent full diagnostic") (
+            diagnostic.Code = expected.GetProperty("code").GetString()
+            && diagnostic.Word = Some(expected.GetProperty("word").GetString())
+            && diagnostic.Message = expected.GetProperty("message").GetString()
+            && diagnostic.Expected = strings "expected"
+            && diagnostic.Actual = strings "actual"
+            && diagnostic.Span = expectedSpan)
+
+    let coreInitial, _ = runInterpreterInput "state-init" initializationBody None []
+    let coreInvalidCases = [
+        "wrong-count", Some coreInitial, wrongCountArguments
+        "wrong-type", Some coreInitial, wrongTypeArguments
+        "primitive-cannot-satisfy-nominal", Some coreInitial, primitiveForNominalArguments
+        "wrong-root", Some coreInitial, wrongRootArguments
+        "root-without-owner", None, noOwnerArguments
+    ]
+    let coreDiagnostics =
+        coreInvalidCases
+        |> List.map (fun (fixtureName, inputOwner, arguments) ->
+            let diagnostic, steps = captureInterpreterError "state-turn" turnBody inputOwner arguments
+            assertDiagnosticFixture fixtureName diagnostic
+            check (fixtureName + " interpreter rejects before charging instructions") (steps = 0)
+            fixtureName, diagnostic)
+        |> Map.ofList
+    let coreMismatchDiagnostic, coreMismatchSteps =
+        captureInterpreterError "state-turn-other-program" differentProgramTurn (Some coreInitial) turnOneArguments
+    assertDiagnosticFixture "program-mismatch" coreMismatchDiagnostic
+    check "program provenance mismatch rejects before interpreter instructions" (coreMismatchSteps = 0)
+
+    let postImportFailureFixture = fixture.GetProperty("postImportFailure")
+    let postImportFailureDiagnosticName = postImportFailureFixture.GetProperty("diagnostic").GetString()
+    let corePostImportFailureDiagnostic, corePostImportFailureSteps =
+        captureInterpreterError "state-fail-after-import" postImportFailureBody (Some coreInitial) turnOneArguments
+    assertDiagnosticFixture postImportFailureDiagnosticName corePostImportFailureDiagnostic
+    check "interpreter executes the failing operation after consuming all imported arguments" (
+        corePostImportFailureSteps = postImportFailureFixture.GetProperty("expectedSteps").GetInt32())
+    let coreRecovery, coreRecoverySteps = runInterpreterInput "state-round-trip" roundTripBody (Some coreInitial) turnOneArguments
+    check "interpreter reuses the same opaque input after a post-import language failure" (
+        coreRecoverySteps = fixture.GetProperty("roundTripCapacities").GetProperty("expectedSteps").GetInt32())
+
+    let coreTurnOne, coreTurnOneSteps = runInterpreterInput "state-turn" turnBody (Some coreInitial) turnOneArguments
+    coreInitial.Dispose()
+    let coreTurnTwo, coreTurnTwoSteps = runInterpreterInput "state-turn" turnBody (Some coreTurnOne) turnTwoArguments
+    coreTurnOne.Dispose()
+    let coreDisposedDiagnostic, coreDisposedSteps = captureInterpreterError "state-turn" turnBody (Some coreTurnOne) turnTwoArguments
+    assertDiagnosticFixture "disposed-owner" coreDisposedDiagnostic
+    check "disposed owner rejects before interpreter instructions" (coreDisposedSteps = 0)
+    let coreFinalValues = coreTurnTwo.Decode()
+    check "interpreter retains opaque state over two turns and final decoding matches independent fixture" (
+        coreFinalValues = expectedTurnTwoValues
+        && formatValues coreFinalValues = valuesInFixture (fixture.GetProperty("turnTwo").GetProperty("values")))
+    let coreRecoveryValues = coreRecovery.Decode()
+    check "interpreter recovery result remains valid after its imported owner is disposed" (
+        coreRecoveryValues = expectedRecoveryValues
+        && formatValues coreRecoveryValues = valuesInFixture (fixture.GetProperty("roundTripCapacities").GetProperty("values")))
+    let expectedTurnSteps = fixture.GetProperty("turnOne").GetProperty("expectedSteps").GetInt32()
+    check "interpreter turn fuel matches the independent instruction count" (coreTurnOneSteps = expectedTurnSteps && coreTurnTwoSteps = expectedTurnSteps)
+    coreTurnTwo.Dispose()
+    coreRecovery.Dispose()
+
+    let inputArena = programFixture.GetProperty("independentArenaTotals")
+    let outputArena = programFixture.GetProperty("outputReachableTotals")
+    let roundTripCapacity = fixture.GetProperty("roundTripCapacities")
+    let inputBytes = inputArena.GetProperty("bytes").GetInt32()
+    let inputNodes = inputArena.GetProperty("nodes").GetInt32()
+    let outputBytes = outputArena.GetProperty("bytes").GetInt32()
+    let outputNodes = outputArena.GetProperty("nodes").GetInt32()
+    let turnOneFixture = fixture.GetProperty("turnOne")
+    let turnTwoFixture = fixture.GetProperty("turnTwo")
+    let expectedFinalSteps = turnTwoFixture.GetProperty("expectedSteps").GetInt32()
+    let turnOneOptions = {
+        NativeExecutionOptions.defaults with
+            ScratchByteCapacity = Some(turnOneFixture.GetProperty("scratchBytes").GetInt32())
+            ScratchNodeCapacity = Some(turnOneFixture.GetProperty("scratchNodes").GetInt32())
+            RetainedByteCapacity = Some outputBytes
+            RetainedNodeCapacity = Some outputNodes
+    }
+    let turnTwoOptions = {
+        NativeExecutionOptions.defaults with
+            ScratchByteCapacity = Some(turnTwoFixture.GetProperty("scratchBytes").GetInt32())
+            ScratchNodeCapacity = Some(turnTwoFixture.GetProperty("scratchNodes").GetInt32())
+            RetainedByteCapacity = Some outputBytes
+            RetainedNodeCapacity = Some outputNodes
+    }
+    let roundTripArguments = turnOneArguments
+    let roundTripOptions = {
+        NativeExecutionOptions.defaults with
+            ScratchByteCapacity = Some(roundTripCapacity.GetProperty("scratchBytes").GetInt32())
+            ScratchNodeCapacity = Some(roundTripCapacity.GetProperty("scratchNodes").GetInt32())
+            RetainedByteCapacity = Some(roundTripCapacity.GetProperty("retainedBytes").GetInt32())
+            RetainedNodeCapacity = Some(roundTripCapacity.GetProperty("retainedNodes").GetInt32())
+    }
+
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use nativeInit = compileNative "state-init" optimization initializationBody
+        use nativeInitial = nativeInit.ExecuteRetainedWithInputs("state-init", None, [])
+        (nativeInit :> IDisposable).Dispose()
+        check ($"{optimization} initial retained graph matches independent full-owner bytes and nodes") (
+            nativeInitial.RetainedByteCount = inputBytes
+            && nativeInitial.RetainedNodeCount = inputNodes
+            && inputArena.GetProperty("unselectedRootIndex").GetInt32() = 3)
+
+        use validationNative = compileNative "state-turn-validation" optimization turnBody
+        let nativeInvalidCases = [
+            "wrong-count", Some nativeInitial, wrongCountArguments
+            "wrong-type", Some nativeInitial, wrongTypeArguments
+            "primitive-cannot-satisfy-nominal", Some nativeInitial, primitiveForNominalArguments
+            "wrong-root", Some nativeInitial, wrongRootArguments
+            "root-without-owner", None, noOwnerArguments
+        ]
+        for fixtureName, inputOwner, arguments in nativeInvalidCases do
+            let nativeDiagnostic = captureNativeError validationNative "state-turn" inputOwner arguments
+            check ($"{optimization} {fixtureName} native diagnostic matches interpreter") (
+                nativeDiagnostic = Map.find fixtureName coreDiagnostics)
+            assertDiagnosticFixture fixtureName nativeDiagnostic
+        use mismatchNative = compileNative "state-turn-other-program" optimization differentProgramTurn
+        let nativeMismatchDiagnostic = captureNativeError mismatchNative "state-turn-other-program" (Some nativeInitial) turnOneArguments
+        check ($"{optimization} different-program native diagnostic matches interpreter") (nativeMismatchDiagnostic = coreMismatchDiagnostic)
+        assertDiagnosticFixture "program-mismatch" nativeMismatchDiagnostic
+
+        use roundTripNative = compileNative "state-round-trip" optimization roundTripBody
+        let postImportScratchOptions = {
+            NativeExecutionOptions.defaults with
+                ScratchByteCapacity = Some(postImportFailureFixture.GetProperty("scratchBytes").GetInt32())
+                ScratchNodeCapacity = Some(postImportFailureFixture.GetProperty("scratchNodes").GetInt32())
+        }
+        use postImportFailureNative = compileNativeWithSources "state-fail-after-import" optimization (NativeDiagnosticSources.fromLoweringContext context) postImportFailureBody
+        let nativePostImportFailureDiagnostic =
+            errorOf (fun () ->
+                postImportFailureNative.ExecuteRetainedWithInputs(
+                    "state-fail-after-import",
+                    Some nativeInitial,
+                    turnOneArguments,
+                    options = postImportScratchOptions)
+                |> ignore)
+        check ($"{optimization} post-import language failure matches interpreter") (nativePostImportFailureDiagnostic = corePostImportFailureDiagnostic)
+        assertDiagnosticFixture postImportFailureDiagnosticName nativePostImportFailureDiagnostic
+        let exactRoundTrip = roundTripNative.ExecuteRetainedWithInputs("state-round-trip", Some nativeInitial, roundTripArguments, options = roundTripOptions)
+        check ($"{optimization} exact input-copy and output-promotion capacities succeed") (
+            exactRoundTrip.RetainedByteCount = outputBytes
+            && exactRoundTrip.RetainedNodeCount = outputNodes
+            && roundTripCapacity.GetProperty("scratchBytes").GetInt32() = inputBytes
+            && roundTripCapacity.GetProperty("scratchNodes").GetInt32() = inputNodes
+            && exactRoundTrip.StepsConsumed = roundTripCapacity.GetProperty("expectedSteps").GetInt32())
+        check ($"{optimization} successful exact-capacity call reuses the same owner after language failure without decoding it") (
+            exactRoundTrip.RetainedByteCount = roundTripCapacity.GetProperty("retainedBytes").GetInt32()
+            && exactRoundTrip.RetainedNodeCount = roundTripCapacity.GetProperty("retainedNodes").GetInt32())
+
+        let capacityFailure options =
+            try
+                let unexpected = roundTripNative.ExecuteRetainedWithInputs("state-round-trip", Some nativeInitial, roundTripArguments, options = options)
+                (unexpected :> IDisposable).Dispose()
+                failwith "Expected NativeResourceLimitException."
+            with
+            | :? NativeResourceLimitException as failure -> failure
+        let shortScratchBytes = capacityFailure { roundTripOptions with ScratchByteCapacity = Some(inputBytes - 1) }
+        check ($"{optimization} one-byte-short state import reports independent full-input totals") (
+            shortScratchBytes.Code = "NATIVE_SCRATCH_CAPACITY"
+            && shortScratchBytes.Arena = "scratch"
+            && shortScratchBytes.RequiredBytes = int64 inputBytes
+            && shortScratchBytes.RequiredNodes = int64 inputNodes
+            && shortScratchBytes.AvailableBytes = inputBytes - 1
+            && shortScratchBytes.AvailableNodes = inputNodes)
+        let shortScratchNodes = capacityFailure { roundTripOptions with ScratchNodeCapacity = Some(inputNodes - 1) }
+        check ($"{optimization} one-node-short state import reports independent full-input totals") (
+            shortScratchNodes.Code = "NATIVE_SCRATCH_CAPACITY"
+            && shortScratchNodes.Arena = "scratch"
+            && shortScratchNodes.RequiredBytes = int64 inputBytes
+            && shortScratchNodes.RequiredNodes = int64 inputNodes
+            && shortScratchNodes.AvailableBytes = inputBytes
+            && shortScratchNodes.AvailableNodes = inputNodes - 1)
+        let shortRetainedBytes = capacityFailure { roundTripOptions with RetainedByteCapacity = Some(outputBytes - 1) }
+        check ($"{optimization} one-byte-short reentry promotion preserves import inputs") (
+            shortRetainedBytes.Code = "NATIVE_RETAINED_CAPACITY"
+            && shortRetainedBytes.Arena = "retained"
+            && shortRetainedBytes.RequiredBytes = int64 outputBytes
+            && shortRetainedBytes.RequiredNodes = int64 outputNodes
+            && shortRetainedBytes.AvailableBytes = outputBytes - 1
+            && shortRetainedBytes.AvailableNodes = outputNodes)
+        let shortRetainedNodes = capacityFailure { roundTripOptions with RetainedNodeCapacity = Some(outputNodes - 1) }
+        check ($"{optimization} one-node-short reentry promotion reports independent live-output totals") (
+            shortRetainedNodes.Code = "NATIVE_RETAINED_CAPACITY"
+            && shortRetainedNodes.Arena = "retained"
+            && shortRetainedNodes.RequiredBytes = int64 outputBytes
+            && shortRetainedNodes.RequiredNodes = int64 outputNodes
+            && shortRetainedNodes.AvailableBytes = outputBytes
+            && shortRetainedNodes.AvailableNodes = outputNodes - 1)
+        check ($"{optimization} failed calls leave the opaque input owner metadata unchanged") (
+            nativeInitial.RetainedByteCount = inputBytes && nativeInitial.RetainedNodeCount = inputNodes)
+        (validationNative :> IDisposable).Dispose()
+        (mismatchNative :> IDisposable).Dispose()
+        (roundTripNative :> IDisposable).Dispose()
+
+        use nativeTurnOne = compileNative "state-turn-one" optimization turnBody
+        use nativeTurnOneResult = nativeTurnOne.ExecuteRetainedWithInputs("state-turn", Some nativeInitial, turnOneArguments, options = turnOneOptions)
+        check ($"{optimization} first native turn fuel and promotion totals match independent values") (
+            nativeTurnOneResult.StepsConsumed = expectedTurnSteps
+            && nativeTurnOneResult.StepsConsumed = coreTurnOneSteps
+            && nativeTurnOneResult.RetainedByteCount = outputBytes
+            && nativeTurnOneResult.RetainedNodeCount = outputNodes
+            && nativeTurnOneResult.RetainedByteCount = int (turnOneFixture.GetProperty("retainedBytes").GetInt32())
+            && nativeTurnOneResult.RetainedNodeCount = int (turnOneFixture.GetProperty("retainedNodes").GetInt32()))
+        (nativeInitial :> IDisposable).Dispose()
+        (nativeTurnOne :> IDisposable).Dispose()
+
+        let recoveredValues = exactRoundTrip.Decode()
+        check ($"{optimization} post-failure recovery bytes decode after the original owner and producer DLL are disposed") (
+            recoveredValues = expectedRecoveryValues
+            && formatValues recoveredValues = valuesInFixture (roundTripCapacity.GetProperty("values")))
+        (exactRoundTrip :> IDisposable).Dispose()
+
+        use nativeTurnTwo = compileNative "state-turn-two" optimization turnBody
+        use nativeTurnTwoResult = nativeTurnTwo.ExecuteRetainedWithInputs("state-turn", Some nativeTurnOneResult, turnTwoArguments, options = turnTwoOptions)
+        (nativeTurnOneResult :> IDisposable).Dispose()
+        let nativeDisposedDiagnostic = captureNativeError nativeTurnTwo "state-turn" (Some nativeTurnOneResult) turnTwoArguments
+        let disposedFixtureDiagnostic, _ = captureInterpreterError "state-turn" turnBody (Some coreTurnOne) turnTwoArguments
+        check ($"{optimization} disposed native owner diagnostic matches interpreter") (nativeDisposedDiagnostic = disposedFixtureDiagnostic)
+        assertDiagnosticFixture "disposed-owner" nativeDisposedDiagnostic
+        check ($"{optimization} second native turn fuel and promotion totals match independent values") (
+            nativeTurnTwoResult.StepsConsumed = expectedFinalSteps
+            && nativeTurnTwoResult.StepsConsumed = coreTurnTwoSteps
+            && nativeTurnTwoResult.RetainedByteCount = outputBytes
+            && nativeTurnTwoResult.RetainedNodeCount = outputNodes
+            && nativeTurnTwoResult.RetainedByteCount = int (turnTwoFixture.GetProperty("retainedBytes").GetInt32())
+            && nativeTurnTwoResult.RetainedNodeCount = int (turnTwoFixture.GetProperty("retainedNodes").GetInt32()))
+        (nativeTurnTwo :> IDisposable).Dispose()
+        let finalNativeValues = nativeTurnTwoResult.Decode()
+        check ($"{optimization} final native state decodes after prior owners and producer DLLs are disposed") (
+            finalNativeValues = expectedTurnTwoValues
+            && finalNativeValues = coreFinalValues
+            && formatValues finalNativeValues = valuesInFixture (turnTwoFixture.GetProperty("values")))
+        (nativeTurnTwoResult :> IDisposable).Dispose()
+
+    use lockNative = compileNative "state-retained-lock" LlvmOptimization.O0 initializationBody
+    use decodeOwner = lockNative.ExecuteRetained "state-init"
+    use disposeOwner = lockNative.ExecuteRetained "state-init"
+    (lockNative :> IDisposable).Dispose()
+
+    let assertBorrowBlocksOperation (scenario: string) (owner: NativeRetainedResult) (operation: unit -> unit) =
+        use borrowEntered = new ManualResetEventSlim(false)
+        use releaseBorrow = new ManualResetEventSlim(false)
+        use operationAttempted = new ManualResetEventSlim(false)
+        let mutable borrowError: exn option = None
+        let mutable operationError: exn option = None
+        let borrower =
+            Thread(ThreadStart(fun () ->
+                try
+                    owner.WithBorrow(verifiedProgram, "state-lock-test", fun _ _ _ ->
+                        borrowEntered.Set()
+                        if not (releaseBorrow.Wait(TimeSpan.FromSeconds 5.0)) then
+                            raise (TimeoutException("The test did not release the retained-owner borrow.")))
+                with error -> borrowError <- Some error))
+        let contender =
+            Thread(ThreadStart(fun () ->
+                operationAttempted.Set()
+                try operation ()
+                with error -> operationError <- Some error))
+        borrower.IsBackground <- true
+        contender.IsBackground <- true
+        borrower.Start()
+        let entered = borrowEntered.Wait(TimeSpan.FromSeconds 5.0)
+        contender.Start()
+        let attempted = operationAttempted.Wait(TimeSpan.FromSeconds 5.0)
+        let mutable observedLockWait = false
+        if entered && attempted then
+            let observationTimeout = Diagnostics.Stopwatch.StartNew()
+            while not observedLockWait && observationTimeout.Elapsed < TimeSpan.FromSeconds 5.0 do
+                observedLockWait <- contender.ThreadState.HasFlag(ThreadState.WaitSleepJoin)
+        releaseBorrow.Set()
+        let borrowerJoined = borrower.Join(TimeSpan.FromSeconds 5.0)
+        let contenderJoined = contender.Join(TimeSpan.FromSeconds 5.0)
+        check (scenario + " borrower enters WithBorrow") entered
+        check (scenario + " contender starts while borrower owns the result lock") attempted
+        check (scenario + " contender is observed waiting while the borrow is held") observedLockWait
+        check (scenario + " borrower and contender finish after release") (borrowerJoined && contenderJoined)
+        check (scenario + " borrow callback completes without error") borrowError.IsNone
+        check (scenario + " contending operation completes without error") operationError.IsNone
+
+    let mutable decodedDuringLockScenario: Value list option = None
+    assertBorrowBlocksOperation "Decode" decodeOwner (fun () -> decodedDuringLockScenario <- Some(decodeOwner.Decode()))
+    check "Decode completes with the retained values after the borrow releases" (decodedDuringLockScenario = Some expectedInitialValues)
+    (decodeOwner :> IDisposable).Dispose()
+
+    assertBorrowBlocksOperation "Dispose" disposeOwner (fun () -> (disposeOwner :> IDisposable).Dispose())
+    let disposedAfterBorrow =
+        errorOf (fun () ->
+            disposeOwner.WithBorrow(verifiedProgram, "state-lock-test", fun _ _ _ -> ())
+            |> ignore)
+    check "Dispose completes after the borrow releases and closes the owner" (disposedAfterBorrow.Code = "IR_BACKEND_ENTRY_OWNER_DISPOSED")
+
 let private testNominalValidatorFuelLimit () =
     let validatorInstructions =
         [ 1 .. 5000 ]
@@ -1767,6 +2281,8 @@ let main _ =
         testRecordPreflightRejections ()
         printStage "record capacity atomicity and retained ownership"
         testRetainedOwnershipAndCapacity sharingBody sharingExpected
+        printStage "ABI v3 typed state re-entry, import budgets, and provenance"
+        testTypedStateReentry ()
         testNominalValidatorFuelLimit ()
         testRejectsEffectsAndUnsupportedUntakenBranches ()
         testCatalogTrustBoundary ()

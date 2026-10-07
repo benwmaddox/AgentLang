@@ -75,9 +75,12 @@ type private CodeBuilder() =
 type NativeCompiledProgram internal
     (libraryPath: string,
      outputTypeIds: uint32 array,
+     inputTypes: IrType array,
+     inputTypeIds: uint32 array,
      outputCapacity: int,
      workspaceCapacity: int,
      requiresRecordArenas: bool,
+     programIdentity: VerifiedIrProgram,
      valueMetadata: NativeProgramMetadata,
      metadata: ErrorMetadata array) as this =
     let mutable libraryHandle = IntPtr.Zero
@@ -105,18 +108,26 @@ type NativeCompiledProgram internal
     member _.LibraryPath = libraryPath
     /// Number of values returned by the verified entry body.
     member _.OutputCount = outputTypeIds.Length
+    /// Number of verified entry arguments accepted by this artifact.
+    member _.InputCount = inputTypes.Length
     /// Required public i64 slots for the returned roots.
     member _.OutputCapacity = outputCapacity
     /// Required i64 slots in the per-execution workspace shared by calls and
     /// native record helpers.
     member _.WorkspaceCapacity = workspaceCapacity
 
-    /// Execute and return an owned native retained arena. The result remains
-    /// decodable after this compiled program is disposed.
-    member _.ExecuteRetained(executionName: string, ?options: NativeExecutionOptions) : NativeRetainedResult =
+    member private _.ExecuteRetainedCore
+        (executionName: string,
+         selectedOptions: NativeExecutionOptions,
+         inputOwnerPointer: IntPtr,
+         inputRoots: int64 array,
+         actualInputTypeIds: uint32 array) : NativeRetainedResult =
         if String.IsNullOrWhiteSpace executionName then invalidArg (nameof executionName) "Execution name must be nonempty."
         if libraryHandle = IntPtr.Zero then raise (ObjectDisposedException(nameof NativeCompiledProgram))
-        let selectedOptions = defaultArg options NativeExecutionOptions.defaults
+        if inputRoots.Length <> inputTypes.Length || actualInputTypeIds.Length <> inputTypes.Length then
+            invalidOp "Validated native entry argument buffers do not match the verified body signature."
+        if not (Array.forall2 (=) inputTypeIds actualInputTypeIds) then
+            invalidOp "Validated native entry argument type IDs differ from the compiled body signature."
         let defaultArenaBytes, defaultArenaNodes =
             if requiresRecordArenas then 1024 * 1024, 10000
             else 0, 0
@@ -137,7 +148,7 @@ type NativeCompiledProgram internal
             let scratchBytes = capacityValue "ScratchByteCapacity" selectedOptions.ScratchByteCapacity scratchOwner.ByteCapacity
             let scratchNodes = capacityValue "ScratchNodeCapacity" selectedOptions.ScratchNodeCapacity scratchOwner.NodeCapacity
             if scratchBytes <> scratchOwner.ByteCapacity || scratchNodes <> scratchOwner.NodeCapacity then
-                invalidArg (nameof options) "Explicit scratch capacities must match the supplied NativeScratchArena."
+                invalidArg (nameof selectedOptions) "Explicit scratch capacities must match the supplied NativeScratchArena."
             let retainedByteCapacity = capacityValue "RetainedByteCapacity" selectedOptions.RetainedByteCapacity defaultArenaBytes
             let retainedNodeCapacity = capacityValue "RetainedNodeCapacity" selectedOptions.RetainedNodeCapacity defaultArenaNodes
             let scratchGeneration = NativeGeneration.next ()
@@ -152,6 +163,8 @@ type NativeCompiledProgram internal
                     let mutable contextPointer = IntPtr.Zero
                     let mutable outputPointer = IntPtr.Zero
                     let mutable workspacePointer = IntPtr.Zero
+                    let mutable inputRootsPointer = IntPtr.Zero
+                    let mutable inputTypeIdsPointer = IntPtr.Zero
                     let mutable statusPointer = IntPtr.Zero
                     try
                         contextPointer <- Marshal.AllocHGlobal NativeAbi.ContextSize
@@ -161,6 +174,12 @@ type NativeCompiledProgram internal
                         workspacePointer <-
                             if workspaceCapacity = 0 then IntPtr.Zero
                             else Marshal.AllocHGlobal(workspaceCapacity * NativeAbi.SlotSize)
+                        if inputRoots.Length > 0 then
+                            inputRootsPointer <- Marshal.AllocHGlobal(inputRoots.Length * NativeAbi.SlotSize)
+                            inputTypeIdsPointer <- Marshal.AllocHGlobal(inputRoots.Length * sizeof<uint32>)
+                            for index in 0 .. inputRoots.Length - 1 do
+                                Marshal.WriteInt64(inputRootsPointer, index * NativeAbi.SlotSize, inputRoots[index])
+                                Marshal.WriteInt32(inputTypeIdsPointer, index * sizeof<uint32>, int actualInputTypeIds[index])
                         statusPointer <- Marshal.AllocHGlobal sizeof<int32>
                         Marshal.WriteInt32(contextPointer, NativeAbi.ContextAbiVersionOffset, int NativeAbi.Version)
                         Marshal.WriteInt32(contextPointer, NativeAbi.ContextStepsConsumedOffset, 0)
@@ -173,6 +192,11 @@ type NativeCompiledProgram internal
                         Marshal.WriteIntPtr(contextPointer, NativeAbi.ContextWorkspaceOffset, workspacePointer)
                         Marshal.WriteInt32(contextPointer, NativeAbi.ContextWorkspaceCapacityOffset, workspaceCapacity)
                         Marshal.WriteInt32(contextPointer, NativeAbi.ContextReservedTailOffset, 0)
+                        Marshal.WriteIntPtr(contextPointer, NativeAbi.ContextInputOwnerOffset, inputOwnerPointer)
+                        Marshal.WriteIntPtr(contextPointer, NativeAbi.ContextInputRootsOffset, inputRootsPointer)
+                        Marshal.WriteIntPtr(contextPointer, NativeAbi.ContextInputRootTypeIdsOffset, inputTypeIdsPointer)
+                        Marshal.WriteInt32(contextPointer, NativeAbi.ContextInputRootCountOffset, inputRoots.Length)
+                        Marshal.WriteInt32(contextPointer, NativeAbi.ContextReservedV3Offset, 0)
                         Marshal.WriteInt32(statusPointer, NativeAbi.StatusInvalidRequest)
                         invokeNative (nativeint contextPointer) (nativeint outputPointer) outputCapacity (nativeint statusPointer)
                         let status = Marshal.ReadInt32 statusPointer
@@ -181,7 +205,7 @@ type NativeCompiledProgram internal
                         | NativeAbi.StatusSuccess ->
                             let rootValues =
                                 Array.init outputTypeIds.Length (fun index -> Marshal.ReadInt64(outputPointer, index * NativeAbi.SlotSize))
-                            let result = new NativeRetainedResult(steps, rootValues, outputTypeIds, retainedOwner, valueMetadata.Types)
+                            let result = new NativeRetainedResult(programIdentity, steps, rootValues, outputTypeIds, retainedOwner, valueMetadata.Types)
                             transferRetainedOwner <- true
                             result
                         | NativeAbi.StatusDiagnostic ->
@@ -217,6 +241,8 @@ type NativeCompiledProgram internal
                         | other -> raise (InvalidDataException($"Native LLVM entry returned unknown status {other}."))
                     finally
                         if statusPointer <> IntPtr.Zero then Marshal.FreeHGlobal statusPointer
+                        if inputTypeIdsPointer <> IntPtr.Zero then Marshal.FreeHGlobal inputTypeIdsPointer
+                        if inputRootsPointer <> IntPtr.Zero then Marshal.FreeHGlobal inputRootsPointer
                         if workspacePointer <> IntPtr.Zero then Marshal.FreeHGlobal workspacePointer
                         if outputPointer <> IntPtr.Zero then Marshal.FreeHGlobal outputPointer
                         if contextPointer <> IntPtr.Zero then Marshal.FreeHGlobal contextPointer)
@@ -229,6 +255,91 @@ type NativeCompiledProgram internal
                 lock scratchOwner.SyncRoot (fun () -> scratchOwner.Reset(false))
             with :? ObjectDisposedException -> ()
             if ownsScratch then (selectedScratch :> IDisposable).Dispose()
+
+    /// Execute with one retained input owner and ordered typed entry arguments.
+    /// The input result remains locked and its arena remains borrowed for the
+    /// complete native call. Primitive messages cannot satisfy nominal inputs.
+    member _.ExecuteRetainedWithInputs
+        (executionName: string,
+         inputOwner: NativeRetainedResult option,
+         arguments: IrEntryArgument list,
+         ?options: NativeExecutionOptions) : NativeRetainedResult =
+        if String.IsNullOrWhiteSpace executionName then invalidArg (nameof executionName) "Execution name must be nonempty."
+        let selectedOptions = defaultArg options NativeExecutionOptions.defaults
+        let executeWithInputData (inputOwnerPointer: IntPtr) (inputRootValues: int64 array) (inputOwnerRootTypeIds: uint32 array) =
+            if arguments.Length <> inputTypes.Length then
+                Diagnostics.raiseError "IR_BACKEND_ENTRY_ARGUMENT_COUNT" "Entry argument count does not match the verified body input signature." (Some executionName) None
+                    [ string inputTypes.Length ] [ string arguments.Length ]
+
+            let rootSelections =
+                arguments
+                |> List.choose (function
+                    | IrEntryArgument.RetainedRoot index -> Some index
+                    | IrEntryArgument.IntArgument _
+                    | IrEntryArgument.BoolArgument _
+                    | IrEntryArgument.UnitArgument -> None)
+            for index in rootSelections do
+                if index < 0 || index >= inputOwnerRootTypeIds.Length then
+                    Diagnostics.raiseError "IR_BACKEND_ENTRY_ROOT_INDEX" "Entry argument selects a root outside the retained input owner." (Some executionName) None
+                        [ $"root index in [0, {inputOwnerRootTypeIds.Length})" ] [ string index ]
+
+            let typeForId typeId =
+                if uint64 typeId >= uint64 valueMetadata.Types.Length then
+                    raise (InvalidDataException($"Native retained input references unknown type id {typeId}."))
+                valueMetadata.Types[int typeId].ValueType
+
+            let argumentTypes =
+                arguments
+                |> List.map (function
+                    | IrEntryArgument.RetainedRoot index -> typeForId inputOwnerRootTypeIds[index]
+                    | IrEntryArgument.IntArgument _ -> IrInt
+                    | IrEntryArgument.BoolArgument _ -> IrBool
+                    | IrEntryArgument.UnitArgument -> IrUnit)
+
+            if argumentTypes <> Array.toList inputTypes then
+                let formatType = function
+                    | IrNominal key ->
+                        let typeId = valueMetadata.TypeIdsByIrType[IrNominal key]
+                        match valueMetadata.Types[int typeId].Definition with
+                        | Some(NativeScalarMetadata(name, _))
+                        | Some(NativeRecordMetadata(name, _)) -> name
+                        | None -> IrTypes.format (IrNominal key)
+                    | other -> IrTypes.format other
+                Diagnostics.raiseError "IR_BACKEND_ENTRY_ARGUMENT_TYPE" "Entry argument types do not match the verified body input signature." (Some executionName) None
+                    (inputTypes |> Array.map formatType |> Array.toList)
+                    (argumentTypes |> List.map formatType)
+
+            let actualRootTypeIds =
+                arguments
+                |> List.map (function
+                    | IrEntryArgument.RetainedRoot index -> inputOwnerRootTypeIds[index]
+                    | IrEntryArgument.IntArgument _ -> NativeAbi.TypeIdInt
+                    | IrEntryArgument.BoolArgument _ -> NativeAbi.TypeIdBool
+                    | IrEntryArgument.UnitArgument -> NativeAbi.TypeIdUnit)
+                |> List.toArray
+            let actualRootValues =
+                arguments
+                |> List.map (function
+                    | IrEntryArgument.RetainedRoot index -> inputRootValues[index]
+                    | IrEntryArgument.IntArgument value -> value
+                    | IrEntryArgument.BoolArgument value -> if value then 1L else 0L
+                    | IrEntryArgument.UnitArgument -> 0L)
+                |> List.toArray
+            this.ExecuteRetainedCore(executionName, selectedOptions, inputOwnerPointer, actualRootValues, actualRootTypeIds)
+
+        match inputOwner with
+        | Some owner ->
+            owner.WithBorrow(
+                programIdentity,
+                executionName,
+                fun nativeOwner rootValues rootTypeIds ->
+                    executeWithInputData (nativeOwner.DescriptorPointer) rootValues rootTypeIds)
+        | None -> executeWithInputData IntPtr.Zero [||] [||]
+
+    /// Execute a zero-input body and return an owned native retained arena.
+    /// The result remains decodable after this compiled program is disposed.
+    member this.ExecuteRetained(executionName: string, ?options: NativeExecutionOptions) : NativeRetainedResult =
+        this.ExecuteRetainedWithInputs(executionName, None, [], ?options = options)
 
 
     /// Execute without retaining the native result after it has been decoded.
@@ -676,10 +787,6 @@ module LlvmAot =
         validateProgram verifiedProgram
         let program = VerifiedIrProgram.inspect verifiedProgram
         let body = VerifiedIrBody.inspect verifiedBody
-        if not (List.isEmpty body.BodyInputTypes) then
-            callDiagnostic "IR_LLVM_BODY_INPUT_UNSUPPORTED"
-                "The LLVM ABI-v2 entry accepts only verified bodies with an empty initial stack."
-                body.BodyName None [] (body.BodyInputTypes |> List.map IrTypes.format)
         let sourceMap = sourceMapFor verifiedBody
         validateRecordTypeGraph program
         for KeyValue(key, definition) in program.NominalTypesByKey do
@@ -702,11 +809,12 @@ module LlvmAot =
         let metadata = ResizeArray<ErrorMetadata>()
         let output = StringBuilder()
         output.AppendLine("target triple = " + "\"" + "x86_64-pc-windows-msvc" + "\"") |> ignore
-        output.AppendLine("%NativeExecutionContext = type { i32, i32, i32, i32, i64, i64, ptr, ptr, ptr, i32, i32 }") |> ignore
+        output.AppendLine("%NativeExecutionContext = type { i32, i32, i32, i32, i64, i64, ptr, ptr, ptr, i32, i32, ptr, ptr, ptr, i32, i32 }") |> ignore
         output.AppendLine("%NativeExecutionContextAlignmentProbe = type { i8, %NativeExecutionContext }") |> ignore
         output.AppendLine("%NativeTypeDescriptor = type { i32, i32, ptr }") |> ignore
         output.AppendLine("%NativeProgramDescriptor = type { ptr, i32, i32 }") |> ignore
         output.AppendLine("declare i32 @al_runtime_validate_request(ptr, ptr, i32, i32, ptr, i32)") |> ignore
+        output.AppendLine("declare i32 @al_runtime_import_state(ptr, ptr, ptr, i32)") |> ignore
         output.AppendLine("declare i32 @al_runtime_make_record(ptr, ptr, i32, ptr, i32, ptr)") |> ignore
         output.AppendLine("declare i32 @al_runtime_get_field(ptr, ptr, i32, i64, i32, ptr)") |> ignore
         output.AppendLine("declare i32 @al_runtime_equal(ptr, ptr, i32, i64, i64, ptr)") |> ignore
@@ -740,6 +848,9 @@ module LlvmAot =
             |> List.toArray
         let rootTypeValues = rootTypeIds |> Array.map (fun typeId -> $"i32 {typeId}") |> String.concat ", "
         output.AppendLine($"@agentlang_root_type_ids = private constant [{rootTypeIds.Length} x i32] [{rootTypeValues}]") |> ignore
+        let inputTypeIds = body.BodyInputTypes |> List.map (fun ty -> nativeValueMetadata.TypeIdsByIrType[ty]) |> List.toArray
+        let inputTypeValues = inputTypeIds |> Array.map (fun typeId -> $"i32 {typeId}") |> String.concat ", "
+        output.AppendLine($"@agentlang_input_type_ids = private constant [{inputTypeIds.Length} x i32] [{inputTypeValues}]") |> ignore
         output.AppendLine() |> ignore
         let valueMetrics = NativeProgramMetadata.valueMetrics nativeValueMetadata
         let outputCapacity = body.BodyOutputTypes.Length
@@ -753,7 +864,7 @@ module LlvmAot =
         let helperWorkspaceCapacity =
             if recordDefinitions.Length = 0 then 0
             else (recordDefinitions |> Array.max) + 1
-        let workspaceCapacity = max outputCapacity (max functionOutputMax helperWorkspaceCapacity)
+        let workspaceCapacity = max body.BodyInputTypes.Length (max outputCapacity (max functionOutputMax helperWorkspaceCapacity))
         let requiresRecordArenas = recordDefinitions.Length > 0
 
         let emitFieldPointer (builder: CodeBuilder) (field: int) =
@@ -1195,7 +1306,7 @@ module LlvmAot =
             output.AppendLine("}") |> ignore
             output.AppendLine() |> ignore
 
-        emitFunction body.BodyName "@agentlang_body" [] body.BodyOutputTypes body.BodyLocalNames body.BodyBlock true
+        emitFunction body.BodyName "@agentlang_body" body.BodyInputTypes body.BodyOutputTypes body.BodyLocalNames body.BodyBlock true
         for _, functionValue in functions do
             emitFunction functionValue.FunctionName (functionSymbol functionValue.FunctionId functionValue.FunctionRevision)
                 functionValue.InputTypes functionValue.OutputTypes functionValue.LocalNames functionValue.FunctionBody false
@@ -1208,16 +1319,16 @@ module LlvmAot =
         output.AppendLine("  %size = ptrtoint ptr %size.ptr to i64") |> ignore
         output.AppendLine("  %align.ptr = getelementptr %NativeExecutionContextAlignmentProbe, ptr null, i32 0, i32 1") |> ignore
         output.AppendLine("  %alignment = ptrtoint ptr %align.ptr to i64") |> ignore
-        for index in 0 .. 10 do
+        for index in 0 .. 15 do
             output.AppendLine($"  %%field{index}.ptr = getelementptr %%NativeExecutionContext, ptr null, i32 0, i32 {index}") |> ignore
             output.AppendLine($"  %%field{index} = ptrtoint ptr %%field{index}.ptr to i64") |> ignore
-        output.AppendLine("  %items = alloca [13 x i64], align 8") |> ignore
-        for index in 0 .. 12 do
+        output.AppendLine("  %items = alloca [18 x i64], align 8") |> ignore
+        for index in 0 .. 17 do
             let valueName = if index = 0 then "%size" elif index = 1 then "%alignment" else $"%%field{index - 2}"
-            output.AppendLine($"  %%out{index} = getelementptr inbounds [13 x i64], ptr %%items, i64 0, i64 {index}") |> ignore
+            output.AppendLine($"  %%out{index} = getelementptr inbounds [18 x i64], ptr %%items, i64 0, i64 {index}") |> ignore
             output.AppendLine($"  store i64 {valueName}, ptr %%out{index}, align 8") |> ignore
-        for index in 0 .. 12 do
-            output.AppendLine($"  %%item{index} = getelementptr inbounds [13 x i64], ptr %%items, i64 0, i64 {index}") |> ignore
+        for index in 0 .. 17 do
+            output.AppendLine($"  %%item{index} = getelementptr inbounds [18 x i64], ptr %%items, i64 0, i64 {index}") |> ignore
             output.AppendLine($"  %%value{index} = load i64, ptr %%item{index}, align 8") |> ignore
             output.AppendLine($"  %%dest{index} = getelementptr inbounds i64, ptr %%output, i64 {index}") |> ignore
             output.AppendLine($"  store i64 %%value{index}, ptr %%dest{index}, align 8") |> ignore
@@ -1245,7 +1356,33 @@ module LlvmAot =
         output.AppendLine("  store i64 0, ptr %arg1.ptr, align 8") |> ignore
         output.AppendLine("  %workspace.ptr = getelementptr %NativeExecutionContext, ptr %ctx, i32 0, i32 8") |> ignore
         output.AppendLine("  %workspace = load ptr, ptr %workspace.ptr, align 8") |> ignore
-        output.AppendLine("  call void @agentlang_body(ptr %ctx, ptr %workspace, ptr %status, i32 0)") |> ignore
+        let inputTypePointer = if inputTypeIds.Length = 0 then "ptr null" else "ptr @agentlang_input_type_ids"
+        output.AppendLine($"  %%import.result = call i32 @al_runtime_import_state(ptr %%ctx, ptr @agentlang_program, {inputTypePointer}, i32 {inputTypeIds.Length})") |> ignore
+        output.AppendLine("  switch i32 %import.result, label %import.invalid [ i32 0, label %import.succeeded i32 1, label %import.invalid.request i32 2, label %import.invalid.reference i32 3, label %import.scratch.capacity i32 4, label %import.retained.capacity ]") |> ignore
+        output.AppendLine("import.invalid:") |> ignore
+        output.AppendLine($"  store i32 {NativeAbi.StatusInvalidRequest}, ptr %%status, align 4") |> ignore
+        output.AppendLine("  ret void") |> ignore
+        output.AppendLine("import.invalid.request:") |> ignore
+        output.AppendLine($"  store i32 {NativeAbi.StatusInvalidRequest}, ptr %%status, align 4") |> ignore
+        output.AppendLine("  ret void") |> ignore
+        output.AppendLine("import.invalid.reference:") |> ignore
+        output.AppendLine($"  store i32 {NativeAbi.StatusInvalidReference}, ptr %%status, align 4") |> ignore
+        output.AppendLine("  ret void") |> ignore
+        output.AppendLine("import.scratch.capacity:") |> ignore
+        output.AppendLine($"  store i32 {NativeAbi.StatusScratchCapacity}, ptr %%status, align 4") |> ignore
+        output.AppendLine("  ret void") |> ignore
+        output.AppendLine("import.retained.capacity:") |> ignore
+        output.AppendLine($"  store i32 {NativeAbi.StatusRetainedCapacity}, ptr %%status, align 4") |> ignore
+        output.AppendLine("  ret void") |> ignore
+        output.AppendLine("import.succeeded:") |> ignore
+        let entryArgumentOperands =
+            body.BodyInputTypes
+            |> List.mapi (fun index _ ->
+                output.AppendLine($"  %%entry.arg{index}.ptr = getelementptr inbounds i64, ptr %%workspace, i64 {index}") |> ignore
+                output.AppendLine($"  %%entry.arg{index} = load i64, ptr %%entry.arg{index}.ptr, align 8") |> ignore
+                $"i64 %%entry.arg{index}")
+        let entryArgumentSuffix = if List.isEmpty entryArgumentOperands then "" else ", " + String.concat ", " entryArgumentOperands
+        output.AppendLine($"  call void @agentlang_body(ptr %%ctx, ptr %%workspace, ptr %%status, i32 0{entryArgumentSuffix})") |> ignore
         output.AppendLine("  %body.status = load i32, ptr %status, align 4") |> ignore
         output.AppendLine("  %body.succeeded = icmp eq i32 %body.status, 0") |> ignore
         output.AppendLine("  br i1 %body.succeeded, label %promote, label %body.failed") |> ignore
@@ -1273,12 +1410,12 @@ module LlvmAot =
         output.AppendLine("  ret void") |> ignore
         output.AppendLine("}") |> ignore
 
-        output.ToString(), metadata.ToArray(), body.BodyOutputTypes, outputCapacity, workspaceCapacity, requiresRecordArenas, nativeValueMetadata
+        output.ToString(), metadata.ToArray(), body.BodyInputTypes, body.BodyOutputTypes, outputCapacity, workspaceCapacity, requiresRecordArenas, nativeValueMetadata
 
     /// Emit deterministic LLVM IR from the exact compiler-verified body and its
     /// reachable verified user-word closure. No source is reparsed or relowered.
     let emit (verifiedBody: VerifiedIrBody) =
-        emitModule NativeDiagnosticSources.empty verifiedBody |> fun (llvmIr, _, _, _, _, _, _) -> llvmIr
+        emitModule NativeDiagnosticSources.empty verifiedBody |> fun (llvmIr, _, _, _, _, _, _, _) -> llvmIr
 
     let private writeEmbeddedResource (assembly: Reflection.Assembly) resourceName outputPath =
         use source = assembly.GetManifestResourceStream resourceName
@@ -1290,7 +1427,7 @@ module LlvmAot =
     /// DLL. The output directory retains the LLVM IR/object/DLL for inspection.
     let compile (toolchain: LlvmToolchain) optimization outputDirectory (diagnosticSources: NativeDiagnosticSources) (verifiedBody: VerifiedIrBody) =
         if String.IsNullOrWhiteSpace outputDirectory then invalidArg (nameof outputDirectory) "Output directory must be nonempty."
-        let llvmIr, metadata, outputTypes, outputCapacity, workspaceCapacity, requiresRecordArenas, valueMetadata =
+        let llvmIr, metadata, inputTypes, outputTypes, outputCapacity, workspaceCapacity, requiresRecordArenas, valueMetadata =
             emitModule diagnosticSources verifiedBody
         let fullDirectory = Path.GetFullPath outputDirectory
         Directory.CreateDirectory fullDirectory |> ignore
@@ -1308,5 +1445,10 @@ module LlvmAot =
             LlvmToolchain.compileLibraryWithRuntime toolchain optimization llvmIrPath runtimeSourcePath runtimeDirectory libraryPath
         let outputTypeIds = outputTypes |> List.map (fun ty -> valueMetadata.TypeIdsByIrType[ty]) |> List.toArray
         new NativeCompiledProgram(
-            compiledPath, outputTypeIds, outputCapacity, workspaceCapacity,
-            requiresRecordArenas, valueMetadata, metadata)
+            compiledPath, outputTypeIds,
+            inputTypes |> List.toArray,
+            inputTypes |> List.map (fun ty -> valueMetadata.TypeIdsByIrType[ty]) |> List.toArray,
+            outputCapacity, workspaceCapacity,
+            requiresRecordArenas,
+            VerifiedIrBody.program verifiedBody,
+            valueMetadata, metadata)

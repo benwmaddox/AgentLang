@@ -4,6 +4,8 @@
 
 #define AL_RUNTIME_MAX_EQUAL_DEPTH 256u
 #define AL_RUNTIME_MAX_EQUAL_NODES 100000u
+#define AL_RUNTIME_CONTEXT_SPAN_COUNT 13u
+#define AL_RUNTIME_CONTROL_SPAN_COUNT 7u
 
 typedef struct al_span {
   uintptr_t begin;
@@ -12,7 +14,7 @@ typedef struct al_span {
 } al_span;
 
 typedef struct al_internal_spans {
-  al_span values[8];
+  al_span values[AL_RUNTIME_CONTEXT_SPAN_COUNT];
 } al_internal_spans;
 
 typedef struct al_equal_frame {
@@ -85,6 +87,29 @@ static uint32_t al_make_array_span(const void *pointer, uint32_t count,
   return al_make_span(pointer, (uint64_t)count * (uint64_t)element_size, span);
 }
 
+/* Build spans for pointers stored in the context without dereferencing the
+ * pointed-to input owner. This lets us reject aliases with writable control
+ * storage before interpreting an input descriptor. */
+static uint32_t
+al_context_control_spans(const al_runtime_context *ctx,
+                         al_span spans[AL_RUNTIME_CONTROL_SPAN_COUNT]) {
+  return al_make_span(ctx, sizeof(*ctx), &spans[0]) &&
+         al_make_span(ctx->scratch, sizeof(*ctx->scratch), &spans[1]) &&
+         al_make_span(ctx->retained, sizeof(*ctx->retained), &spans[2]) &&
+         al_make_array_span(ctx->workspace, ctx->workspace_capacity,
+                            (uint32_t)sizeof(int64_t), &spans[3]) &&
+         al_make_span(ctx->input_owner,
+                      ctx->input_owner == NULL
+                          ? 0u
+                          : (uint64_t)sizeof(*ctx->input_owner),
+                      &spans[4]) &&
+         al_make_array_span(ctx->input_roots, ctx->input_root_count,
+                            (uint32_t)sizeof(int64_t), &spans[5]) &&
+         al_make_array_span(ctx->input_root_type_ids, ctx->input_root_count,
+                            (uint32_t)sizeof(uint32_t), &spans[6]) &&
+         al_spans_disjoint(spans, AL_RUNTIME_CONTROL_SPAN_COUNT);
+}
+
 static uint32_t al_context_spans(al_runtime_context *ctx,
                                  al_internal_spans *spans) {
   if (ctx == NULL || spans == NULL || !al_pointer_aligned(ctx, 8u)) {
@@ -103,38 +128,69 @@ static uint32_t al_context_spans(al_runtime_context *ctx,
       !al_make_span(ctx->retained->data, ctx->retained->byte_capacity,
                     &spans->values[6]) ||
       !al_make_array_span(ctx->retained->nodes, ctx->retained->node_capacity,
-                          (uint32_t)sizeof(al_node), &spans->values[7])) {
+                          (uint32_t)sizeof(al_node), &spans->values[7]) ||
+      !al_make_span(
+          ctx->input_owner,
+          ctx->input_owner == NULL ? 0u : (uint64_t)sizeof(*ctx->input_owner),
+          &spans->values[8]) ||
+      !al_make_array_span(ctx->input_roots, ctx->input_root_count,
+                          (uint32_t)sizeof(int64_t), &spans->values[9]) ||
+      !al_make_array_span(ctx->input_root_type_ids, ctx->input_root_count,
+                          (uint32_t)sizeof(uint32_t), &spans->values[10]) ||
+      !al_make_span(ctx->input_owner == NULL ? NULL : ctx->input_owner->data,
+                    ctx->input_owner == NULL
+                        ? 0u
+                        : (uint64_t)ctx->input_owner->byte_capacity,
+                    &spans->values[11]) ||
+      !al_make_array_span(
+          ctx->input_owner == NULL ? NULL : ctx->input_owner->nodes,
+          ctx->input_owner == NULL ? 0u : ctx->input_owner->node_capacity,
+          (uint32_t)sizeof(al_node), &spans->values[12])) {
     return 0u;
   }
 
-  return al_spans_disjoint(spans->values, 8u);
+  return al_spans_disjoint(spans->values, AL_RUNTIME_CONTEXT_SPAN_COUNT);
 }
 
 static uint32_t al_context_valid(al_runtime_context *ctx,
                                  al_internal_spans *spans) {
   const al_arena *scratch;
   const al_arena *retained;
+  const al_arena *input_owner;
+  al_span control_spans[AL_RUNTIME_CONTROL_SPAN_COUNT];
+  al_span known_spans[11];
+  uint32_t span_index;
 
   if (ctx == NULL || !al_pointer_aligned(ctx, 8u)) {
     return 0u;
   }
 
-  /* Keep the ABI prefix check ahead of every access to the ABI v2 tail. */
+  /* Keep the ABI prefix check ahead of every access to the ABI v3 tail. */
   if (ctx->abi_version != AL_RUNTIME_ABI_VERSION) {
     return 0u;
   }
 
   if (ctx->reserved_prefix != 0 || ctx->reserved_tail != 0u ||
-      !al_pointer_aligned(ctx->workspace, 8u) ||
+      ctx->reserved_v3 != 0u || !al_pointer_aligned(ctx->workspace, 8u) ||
       (ctx->workspace_capacity != 0u && ctx->workspace == NULL) ||
+      ctx->input_root_count > ctx->workspace_capacity ||
+      !al_pointer_aligned(ctx->input_roots, 8u) ||
+      !al_pointer_aligned(ctx->input_root_type_ids, 4u) ||
+      (ctx->input_root_count != 0u &&
+       (ctx->input_roots == NULL || ctx->input_root_type_ids == NULL)) ||
       ctx->scratch == NULL || ctx->retained == NULL ||
       !al_pointer_aligned(ctx->scratch, 8u) ||
       !al_pointer_aligned(ctx->retained, 8u) || ctx->scratch == ctx->retained) {
     return 0u;
   }
 
+  if (!al_context_control_spans(ctx, control_spans)) {
+    return 0u;
+  }
+
   scratch = ctx->scratch;
   retained = ctx->retained;
+  input_owner = ctx->input_owner;
   if (scratch->generation == 0u || retained->generation == 0u ||
       scratch->generation == retained->generation || scratch->flags != 0u ||
       retained->flags != 0u || scratch->reserved != 0u ||
@@ -152,6 +208,39 @@ static uint32_t al_context_valid(al_runtime_context *ctx,
       (retained->byte_capacity != 0u && retained->data == NULL) ||
       (scratch->node_capacity != 0u && scratch->nodes == NULL) ||
       (retained->node_capacity != 0u && retained->nodes == NULL)) {
+    return 0u;
+  }
+
+  for (span_index = 0u; span_index < AL_RUNTIME_CONTROL_SPAN_COUNT;
+       ++span_index) {
+    known_spans[span_index] = control_spans[span_index];
+  }
+  if (!al_make_span(scratch->data, scratch->byte_capacity, &known_spans[7]) ||
+      !al_make_array_span(scratch->nodes, scratch->node_capacity,
+                          (uint32_t)sizeof(al_node), &known_spans[8]) ||
+      !al_make_span(retained->data, retained->byte_capacity, &known_spans[9]) ||
+      !al_make_array_span(retained->nodes, retained->node_capacity,
+                          (uint32_t)sizeof(al_node), &known_spans[10]) ||
+      !al_spans_disjoint(known_spans, 11u)) {
+    return 0u;
+  }
+
+  /* Only dereference the input descriptor after it is proven disjoint from
+   * context/control storage and all writable arena backing. */
+  input_owner = ctx->input_owner;
+  if (input_owner != NULL &&
+      (input_owner == scratch || input_owner == retained ||
+       !al_pointer_aligned(input_owner, 8u) || input_owner->generation == 0u ||
+       input_owner->generation == scratch->generation ||
+       input_owner->generation == retained->generation ||
+       input_owner->flags != 0u || input_owner->reserved != 0u ||
+       input_owner->used > input_owner->byte_capacity ||
+       input_owner->node_count > input_owner->node_capacity ||
+       (input_owner->used & 7u) != 0u ||
+       !al_pointer_aligned(input_owner->data, 8u) ||
+       !al_pointer_aligned(input_owner->nodes, 8u) ||
+       (input_owner->byte_capacity != 0u && input_owner->data == NULL) ||
+       (input_owner->node_capacity != 0u && input_owner->nodes == NULL))) {
     return 0u;
   }
 
@@ -183,7 +272,7 @@ static uint32_t al_span_disjoint_from_context(const al_runtime_context *ctx,
     return 0u;
   }
 
-  for (index = 0u; index < 8u; ++index) {
+  for (index = 0u; index < AL_RUNTIME_CONTEXT_SPAN_COUNT; ++index) {
     if (al_spans_overlap(&spans.values[index], candidate)) {
       return 0u;
     }
@@ -296,6 +385,14 @@ static void al_write_u32(uint8_t *data, uint32_t value) {
   uint32_t byte_index;
   for (byte_index = 0u; byte_index < 4u; ++byte_index) {
     data[byte_index] = (uint8_t)(value >> (byte_index * 8u));
+  }
+}
+
+static void al_copy_bytes(uint8_t *destination, const uint8_t *source,
+                          uint32_t length) {
+  uint32_t index;
+  for (index = 0u; index < length; ++index) {
+    destination[index] = source[index];
   }
 }
 
@@ -414,9 +511,25 @@ static uint32_t al_value_valid(const al_runtime_context *ctx,
   }
 }
 
-static uint32_t al_scratch_graph_valid(al_runtime_context *ctx,
-                                       const al_program_desc *program) {
-  const al_arena *arena = ctx->scratch;
+static uint32_t al_scalar_value_valid(const al_type_desc *type,
+                                      uint64_t value_bits) {
+  if (type == NULL) {
+    return 0u;
+  }
+  switch (type->kind) {
+  case AL_RUNTIME_TYPE_INT:
+    return 1u;
+  case AL_RUNTIME_TYPE_BOOL:
+    return value_bits <= 1u;
+  case AL_RUNTIME_TYPE_UNIT:
+    return value_bits == 0u;
+  default:
+    return 0u;
+  }
+}
+
+static uint32_t al_arena_graph_valid(const al_program_desc *program,
+                                     const al_arena *arena) {
   uint64_t payload_cursor = 0u;
   uint32_t node_offset;
 
@@ -444,12 +557,21 @@ static uint32_t al_scratch_graph_valid(al_runtime_context *ctx,
                                   field_index * (uint32_t)sizeof(int64_t));
       const al_type_desc *field_type = al_type_at(program, field_type_id);
 
-      if (field_type == NULL ||
-          !al_value_valid(ctx, program, field_type_id, bits, 1u)) {
+      if (field_type == NULL) {
         return 0u;
       }
-      if (field_type->kind == AL_RUNTIME_TYPE_RECORD &&
-          (uint32_t)bits >= node_index) {
+      if (field_type->kind == AL_RUNTIME_TYPE_RECORD) {
+        uint32_t child_owner = (uint32_t)(bits >> 32u);
+        uint32_t child_index = (uint32_t)bits;
+        const al_node *child;
+
+        if (child_owner != arena->generation || child_index == 0u ||
+            child_index >= node_index ||
+            !al_node_basic_valid(program, arena, child_index, &child) ||
+            child->type_id != field_type_id) {
+          return 0u;
+        }
+      } else if (!al_scalar_value_valid(field_type, bits)) {
         return 0u;
       }
     }
@@ -461,6 +583,35 @@ static uint32_t al_scratch_graph_valid(al_runtime_context *ctx,
   }
 
   return payload_cursor == arena->used;
+}
+
+static uint32_t al_scratch_graph_valid(al_runtime_context *ctx,
+                                       const al_program_desc *program) {
+  return al_arena_graph_valid(program, ctx->scratch);
+}
+
+static uint32_t al_input_value_valid(const al_program_desc *program,
+                                     const al_arena *input_owner,
+                                     uint32_t type_id, uint64_t value_bits) {
+  const al_type_desc *type = al_type_at(program, type_id);
+
+  if (type == NULL) {
+    return 0u;
+  }
+  if (type->kind != AL_RUNTIME_TYPE_RECORD) {
+    return al_scalar_value_valid(type, value_bits);
+  }
+  if (input_owner == NULL ||
+      (uint32_t)(value_bits >> 32u) != input_owner->generation) {
+    return 0u;
+  }
+
+  {
+    uint32_t node_index = (uint32_t)value_bits;
+    const al_node *node;
+    return al_node_basic_valid(program, input_owner, node_index, &node) &&
+           node->type_id == type_id;
+  }
 }
 
 static uint32_t al_value_equal_scalar(uint32_t kind, uint64_t left,
@@ -493,6 +644,9 @@ al_runtime_validate_request(al_runtime_context *ctx, int64_t *public_outputs,
   al_span context_span;
   al_span output_span;
   al_span status_span;
+  al_span input_owner_span;
+  al_span input_roots_span;
+  al_span input_types_span;
   al_internal_spans internal;
   uint32_t index;
 
@@ -512,11 +666,41 @@ al_runtime_validate_request(al_runtime_context *ctx, int64_t *public_outputs,
     return AL_RUNTIME_INVALID_REQUEST;
   }
 
+  /* Reject v3 input descriptors/arrays that alias entry outputs before
+   * context validation reads any input-owner descriptor fields. */
+  if (!al_pointer_aligned(ctx->input_owner, 8u) ||
+      !al_pointer_aligned(ctx->input_roots, 8u) ||
+      !al_pointer_aligned(ctx->input_root_type_ids, 4u) ||
+      !al_make_span(
+          ctx->input_owner,
+          ctx->input_owner == NULL ? 0u : (uint64_t)sizeof(*ctx->input_owner),
+          &input_owner_span) ||
+      !al_make_array_span(ctx->input_roots, ctx->input_root_count,
+                          (uint32_t)sizeof(int64_t), &input_roots_span) ||
+      !al_make_array_span(ctx->input_root_type_ids, ctx->input_root_count,
+                          (uint32_t)sizeof(uint32_t), &input_types_span) ||
+      (ctx->input_root_count != 0u &&
+       (ctx->input_roots == NULL || ctx->input_root_type_ids == NULL)) ||
+      al_spans_overlap(&context_span, &input_owner_span) ||
+      al_spans_overlap(&context_span, &input_roots_span) ||
+      al_spans_overlap(&context_span, &input_types_span) ||
+      al_spans_overlap(&output_span, &input_owner_span) ||
+      al_spans_overlap(&output_span, &input_roots_span) ||
+      al_spans_overlap(&output_span, &input_types_span) ||
+      al_spans_overlap(&status_span, &input_owner_span) ||
+      al_spans_overlap(&status_span, &input_roots_span) ||
+      al_spans_overlap(&status_span, &input_types_span) ||
+      al_spans_overlap(&input_owner_span, &input_roots_span) ||
+      al_spans_overlap(&input_owner_span, &input_types_span) ||
+      al_spans_overlap(&input_roots_span, &input_types_span)) {
+    return AL_RUNTIME_INVALID_REQUEST;
+  }
+
   if (!al_context_valid(ctx, &internal)) {
     return AL_RUNTIME_INVALID_REQUEST;
   }
 
-  for (index = 0u; index < 8u; ++index) {
+  for (index = 0u; index < AL_RUNTIME_CONTEXT_SPAN_COUNT; ++index) {
     if (al_spans_overlap(&output_span, &internal.values[index]) ||
         al_spans_overlap(&status_span, &internal.values[index])) {
       return AL_RUNTIME_INVALID_REQUEST;
@@ -530,6 +714,114 @@ al_runtime_validate_request(al_runtime_context *ctx, int64_t *public_outputs,
   }
 
   *status = AL_RUNTIME_STATUS_SUCCESS;
+  return AL_RUNTIME_OK;
+}
+
+al_runtime_result
+al_runtime_import_state(al_runtime_context *ctx, const al_program_desc *program,
+                        const uint32_t *expected_input_type_ids,
+                        uint32_t input_count) {
+  al_internal_spans internal;
+  al_span expected_types_span;
+  const al_arena *input_owner;
+  al_arena *scratch;
+  uint64_t required_bytes = 0u;
+  uint32_t required_nodes = 0u;
+  uint32_t input_index;
+  uint32_t node_index;
+
+  if (!al_context_valid(ctx, &internal) || !al_program_valid(ctx, program) ||
+      input_count != ctx->input_root_count ||
+      input_count > ctx->workspace_capacity ||
+      !al_pointer_aligned(expected_input_type_ids, 4u) ||
+      !al_make_array_span(expected_input_type_ids, input_count,
+                          (uint32_t)sizeof(uint32_t), &expected_types_span) ||
+      (input_count != 0u && expected_input_type_ids == NULL) ||
+      !al_span_disjoint_from_context(ctx, &expected_types_span) ||
+      !al_program_disjoint_from_span(program, &expected_types_span)) {
+    return AL_RUNTIME_INVALID_REQUEST;
+  }
+
+  scratch = ctx->scratch;
+  input_owner = ctx->input_owner;
+  if (scratch->used != 0u || scratch->node_count != 0u) {
+    return AL_RUNTIME_INVALID_REQUEST;
+  }
+  if (input_owner != NULL && !al_arena_graph_valid(program, input_owner)) {
+    return AL_RUNTIME_INVALID_REFERENCE;
+  }
+
+  for (input_index = 0u; input_index < input_count; ++input_index) {
+    uint32_t expected_type_id = expected_input_type_ids[input_index];
+    const al_type_desc *expected_type = al_type_at(program, expected_type_id);
+    uint32_t actual_type_id = ctx->input_root_type_ids[input_index];
+    uint64_t value_bits = al_read_u64((const uint8_t *)ctx->input_roots +
+                                      (size_t)input_index * sizeof(int64_t));
+
+    if (expected_type == NULL || actual_type_id != expected_type_id) {
+      return AL_RUNTIME_INVALID_REQUEST;
+    }
+    if (!al_input_value_valid(program, input_owner, expected_type_id,
+                              value_bits)) {
+      return expected_type->kind == AL_RUNTIME_TYPE_RECORD
+                 ? AL_RUNTIME_INVALID_REFERENCE
+                 : AL_RUNTIME_INVALID_REQUEST;
+    }
+  }
+
+  if (input_owner != NULL) {
+    required_bytes = input_owner->used;
+    required_nodes = input_owner->node_count;
+  }
+  if (required_bytes > scratch->byte_capacity ||
+      required_nodes > scratch->node_capacity) {
+    ctx->error_argument0 = (int64_t)required_bytes;
+    ctx->error_argument1 = (int64_t)required_nodes;
+    return AL_RUNTIME_SCRATCH_CAPACITY;
+  }
+
+  if (input_owner != NULL) {
+    al_copy_bytes(scratch->data, input_owner->data, input_owner->used);
+    for (node_index = 0u; node_index < input_owner->node_count; ++node_index) {
+      const al_node *source_node = &input_owner->nodes[node_index];
+      al_node *destination_node = &scratch->nodes[node_index];
+      *destination_node = *source_node;
+      destination_node->mark = 0u;
+      destination_node->forward_handle = 0u;
+    }
+
+    for (node_index = 0u; node_index < input_owner->node_count; ++node_index) {
+      al_node *node = &scratch->nodes[node_index];
+      const al_type_desc *type = al_type_at(program, node->type_id);
+      uint32_t field_index;
+      for (field_index = 0u; field_index < type->field_count; ++field_index) {
+        uint32_t field_type_id = type->field_types[field_index];
+        const al_type_desc *field_type = al_type_at(program, field_type_id);
+        if (field_type->kind == AL_RUNTIME_TYPE_RECORD) {
+          uint8_t *slot = scratch->data + node->payload_offset +
+                          field_index * (uint32_t)sizeof(int64_t);
+          uint32_t child_index = (uint32_t)al_read_u64(slot);
+          al_write_u64(slot, al_make_handle(scratch->generation, child_index));
+        }
+      }
+    }
+    scratch->used = input_owner->used;
+    scratch->node_count = input_owner->node_count;
+  }
+
+  for (input_index = 0u; input_index < input_count; ++input_index) {
+    uint32_t type_id = expected_input_type_ids[input_index];
+    const al_type_desc *type = al_type_at(program, type_id);
+    uint64_t value_bits = al_read_u64((const uint8_t *)ctx->input_roots +
+                                      (size_t)input_index * sizeof(int64_t));
+    if (type->kind == AL_RUNTIME_TYPE_RECORD) {
+      value_bits = al_make_handle(scratch->generation, (uint32_t)value_bits);
+    }
+    al_write_u64((uint8_t *)ctx->workspace +
+                     (size_t)input_index * sizeof(int64_t),
+                 value_bits);
+  }
+
   return AL_RUNTIME_OK;
 }
 

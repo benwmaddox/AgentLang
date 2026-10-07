@@ -1,0 +1,140 @@
+{
+  "program": {
+    "records": {
+      "Leaf": ["value:Int"],
+      "Ticket": ["owner:PositiveId", "leaf:Leaf"],
+      "Envelope": ["ticket:Ticket", "count:Int", "active:Bool"],
+      "Orphan": ["mark:Int"]
+    },
+    "refinedScalar": "PositiveId:Int where is-positive?",
+    "initializationRoots": [
+      "Envelope { active = false, count = 0, ticket = Ticket { leaf = Leaf { value = 5 }, owner = PositiveId(7) } }",
+      "Ticket { leaf = Leaf { value = 5 }, owner = PositiveId(7) }",
+      "Leaf { value = 5 }",
+      "Orphan { mark = 9 }"
+    ],
+    "independentArenaTotals": {
+      "bytes": 56,
+      "nodes": 4,
+      "unselectedRootIndex": 3,
+      "derivation": "Envelope has three 8-byte slots (24 bytes), Ticket has two (16), Leaf has one (8), and the separate Orphan has one (8). The first three record nodes share nested Ticket and Leaf roots; PositiveId is stored in a scalar slot."
+    },
+    "outputReachableTotals": { "bytes": 48, "nodes": 3 }
+  },
+  "turnArguments": ["RetainedRoot(0)", "RetainedRoot(0)", "IntArgument", "BoolArgument", "UnitArgument"],
+  "turnOne": {
+    "message": { "int": 3, "bool": true, "unit": true },
+    "values": [
+      "Envelope { active = true, count = 3, ticket = Ticket { leaf = Leaf { value = 5 }, owner = PositiveId(7) } }",
+      "Envelope { active = true, count = 3, ticket = Ticket { leaf = Leaf { value = 5 }, owner = PositiveId(7) } }",
+      "Ticket { leaf = Leaf { value = 5 }, owner = PositiveId(7) }"
+    ],
+    "expectedSteps": 19,
+    "scratchBytes": 80,
+    "scratchNodes": 5,
+    "retainedBytes": 48,
+    "retainedNodes": 3,
+    "fuelDerivation": "18 unconditional body instructions plus one instruction from the selected true branch = 19; the two-instruction PositiveId validator is not rerun during reentry.",
+    "derivation": "Import the complete 56-byte, 4-node owner including the unselected Orphan, then allocate one 24-byte Envelope node. Promotion follows the updated Envelope to its existing Ticket and Leaf and deduplicates the two repeated Envelope roots, excluding Orphan."
+  },
+  "turnTwo": {
+    "message": { "int": 5, "bool": false, "unit": true },
+    "values": [
+      "Envelope { active = false, count = 3, ticket = Ticket { leaf = Leaf { value = 5 }, owner = PositiveId(7) } }",
+      "Envelope { active = false, count = 3, ticket = Ticket { leaf = Leaf { value = 5 }, owner = PositiveId(7) } }",
+      "Ticket { leaf = Leaf { value = 5 }, owner = PositiveId(7) }"
+    ],
+    "expectedSteps": 19,
+    "scratchBytes": 72,
+    "scratchNodes": 4,
+    "retainedBytes": 48,
+    "retainedNodes": 3,
+    "fuelDerivation": "18 unconditional body instructions plus one instruction from the selected false branch = 19; the two-instruction PositiveId validator is not rerun during reentry.",
+    "derivation": "The false Bool branch drops the Int message without changing count; it still constructs one Envelope with active=false. This turn imports the prior turn's 48-byte, 3-node live Envelope/Ticket/Leaf graph, which no longer contains Orphan, then promotes that same live graph."
+  },
+  "roundTripCapacities": {
+    "scratchBytes": 56,
+    "scratchNodes": 4,
+    "retainedBytes": 48,
+    "retainedNodes": 3,
+    "expectedSteps": 3,
+    "values": [
+      "Envelope { active = false, count = 0, ticket = Ticket { leaf = Leaf { value = 5 }, owner = PositiveId(7) } }",
+      "Envelope { active = false, count = 0, ticket = Ticket { leaf = Leaf { value = 5 }, owner = PositiveId(7) } }"
+    ],
+    "derivation": "The round-trip body drops only the Unit, Bool, and Int messages and returns the two selected aliased Envelope roots. Import copies the full 56-byte, 4-node owner including Orphan; promotion returns only the 48-byte, 3-node Envelope/Ticket/Leaf graph."
+  },
+  "postImportFailure": {
+    "scratchBytes": 56,
+    "scratchNodes": 4,
+    "expectedSteps": 8,
+    "diagnostic": "post-import-divide-by-zero",
+    "derivation": "The failure body drops all five typed arguments and then executes 1 divided by 0. Exact 56-byte/4-node scratch capacities admit the complete initial owner import; the divide diagnostic must be raised only after that import and body execution. The same owner is then passed to the exact-capacity round-trip case, which returns the two selected Envelope roots."
+  },
+  "diagnostics": {
+    "wrong-count": {
+      "code": "IR_BACKEND_ENTRY_ARGUMENT_COUNT",
+      "word": "state-turn",
+      "message": "Entry argument count does not match the verified body input signature.",
+      "expected": ["5"],
+      "actual": ["4"],
+      "span": null
+    },
+    "wrong-type": {
+      "code": "IR_BACKEND_ENTRY_ARGUMENT_TYPE",
+      "word": "state-turn",
+      "message": "Entry argument types do not match the verified body input signature.",
+      "expected": ["Envelope", "Envelope", "Int", "Bool", "Unit"],
+      "actual": ["Envelope", "Envelope", "Bool", "Bool", "Unit"],
+      "span": null
+    },
+    "primitive-cannot-satisfy-nominal": {
+      "code": "IR_BACKEND_ENTRY_ARGUMENT_TYPE",
+      "word": "state-turn",
+      "message": "Entry argument types do not match the verified body input signature.",
+      "expected": ["Envelope", "Envelope", "Int", "Bool", "Unit"],
+      "actual": ["Int", "Envelope", "Int", "Bool", "Unit"],
+      "span": null
+    },
+    "wrong-root": {
+      "code": "IR_BACKEND_ENTRY_ROOT_INDEX",
+      "word": "state-turn",
+      "message": "Entry argument selects a root outside the retained input owner.",
+      "expected": ["root index in [0, 4)"],
+      "actual": ["99"],
+      "span": null
+    },
+    "root-without-owner": {
+      "code": "IR_BACKEND_ENTRY_ROOT_INDEX",
+      "word": "state-turn",
+      "message": "Entry argument selects a root outside the retained input owner.",
+      "expected": ["root index in [0, 0)"],
+      "actual": ["0"],
+      "span": null
+    },
+    "disposed-owner": {
+      "code": "IR_BACKEND_ENTRY_OWNER_DISPOSED",
+      "word": "state-turn",
+      "message": "The retained input owner has been disposed.",
+      "expected": ["live retained input owner"],
+      "actual": ["disposed"],
+      "span": null
+    },
+    "program-mismatch": {
+      "code": "IR_BACKEND_ENTRY_PROGRAM_MISMATCH",
+      "word": "state-turn-other-program",
+      "message": "The retained input belongs to a different verified-program instance.",
+      "expected": ["same VerifiedIrProgram instance"],
+      "actual": ["different program instance"],
+      "span": null
+    },
+    "post-import-divide-by-zero": {
+      "code": "RUNTIME_DIVIDE_BY_ZERO",
+      "word": "divide",
+      "message": "Integer division by zero.",
+      "expected": [],
+      "actual": [],
+      "span": null
+    }
+  }
+}
