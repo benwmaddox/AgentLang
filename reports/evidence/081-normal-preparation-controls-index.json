@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "preparerSha256": "42c63fb12de3ecd37b4827944f00a59613a1a66908d8c23c7c926e2d9d216aa9",
+  "flatChecks": 26,
+  "richChecks": 26,
+  "collisionRejections": 2,
+  "explicitEvidencePathHonored": true,
+  "controlsSourceDirty": true,
+  "canonicalBaselinesRegenerated": false,
+  "modelActorLaunched": false,
+  "files": [
+    {
+      "path": "reports/evidence/081-clean-controls/normal-preparation/final-summary.json",
+      "bytes": 4267,
+      "sha256": "c81b6e00a00a5a64f368783bde0d11c43d49f83a04bde6d011aaa74396b496ac"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/normal-preparation/flat/flat.preparation.json",
+      "bytes": 6073,
+      "sha256": "f4880ce330ed3020a7e7ae53df5991fd46cfccee7cc2b548e4b6a7a826a36ac8"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/normal-preparation/flat/flat.stdout.json",
+      "bytes": 1614,
+      "sha256": "3418f1df4d57e0c03ba00954261574e3cd6048b5e714d1c42b1af6897aba55ff"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/normal-preparation/flat/flat.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/normal-preparation/flat/starting-state.json",
+      "bytes": 11588,
+      "sha256": "de098899926240d482d143dd4f3add9f6fb789f2b4b0a668fc3a889164825110"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/normal-preparation/flat/flat.collision.json",
+      "bytes": 4583,
+      "sha256": "fabbc18686f062ff630478220088e31b0cc45f0b689676cf6dba8a1885e98c0e"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/normal-preparation/flat/flat.collision.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/normal-preparation/flat/flat.collision.stderr.txt",
+      "bytes": 402,
+      "sha256": "f94e30b796c3f881b9c67c197dd032a9ead50b38bbbf2cb115204f9c651b3f36"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/normal-preparation/retained/retained.preparation.json",
+      "bytes": 6109,
+      "sha256": "5857599d0e1524e0c4a23315f8d0b908bfa68079217137a63f15822280d69ce2"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/normal-preparation/retained/retained.stdout.json",
+      "bytes": 1634,
+      "sha256": "f7c3db5c0ed989e6a4f4b79d20f7d60525e3ff755867205143078e426877d6a0"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/normal-preparation/retained/retained.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/normal-preparation/retained/starting-state.json",
+      "bytes": 215726,
+      "sha256": "3fcf0788b3fedf0645bf3a066429625f8c64dc75ce738faf84d3f647e5e00b9d"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/normal-preparation/retained/retained.collision.json",
+      "bytes": 4607,
+      "sha256": "f8035452f3e7409ee3ac21896457342dc459446820585a47788cca9f17aebc74"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/normal-preparation/retained/retained.collision.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/normal-preparation/retained/retained.collision.stderr.txt",
+      "bytes": 406,
+      "sha256": "ae552f6c5078fbd813bbd9809b1c2aad23e2d4ec25083b6e8b5dd9b139a6ef86"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/normal-preparation/first-attempt/coordinator-attempt.json",
+      "bytes": 737,
+      "sha256": "20a938fb78c7d20f535d916264d9d00d1edcaedb73a95b451a176b737b247f6e"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/normal-preparation/first-attempt/flat.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/normal-preparation/first-attempt/flat.stdout.json",
+      "bytes": 1595,
+      "sha256": "bff30d06b3e9932731a6dc57250bf1a4f3a46ea92d36348823b14c80d879a118"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/normal-preparation/first-attempt/actual-flat-preparation.json",
+      "bytes": 5898,
+      "sha256": "d4e79039c3b079969ce0f438d185578ad684b4b03ddea853b44f180c9631da17"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/normal-preparation/second-attempt/flat.collision.json",
+      "bytes": 4577,
+      "sha256": "c5aba2807a0f440646b54bf0480a247c0dc34e5b5cc61e777f3c44d18cf45345"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/normal-preparation/second-attempt/flat.collision.stderr.txt",
+      "bytes": 400,
+      "sha256": "7e4dc58328faa924f4b54c5c0fc678d10d4184a19d4363093dee820493968193"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/normal-preparation/second-attempt/flat.collision.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/normal-preparation/second-attempt/flat.preparation.json",
+      "bytes": 6063,
+      "sha256": "96dd9b9dd80f03113da007804e8218cc818b3ca0d14538ac450bdbed024a638b"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/normal-preparation/second-attempt/flat.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/normal-preparation/second-attempt/flat.stdout.json",
+      "bytes": 1606,
+      "sha256": "a0284a6e3e043b0f69fb4a274836b0f6c717b31b0e7513de89eefb717ead67f9"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/normal-preparation/second-attempt/retained.preparation.json",
+      "bytes": 2670,
+      "sha256": "a67a4702413b71c4c5bb03137082a2efc0b2f95cb530a6fe285003096aa24e88"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/normal-preparation/second-attempt/retained.stderr.txt",
+      "bytes": 277,
+      "sha256": "41ead2bdebb4418e21d37a3e872360a8d1404352f577ebfb8464f4bff58e20d5"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/normal-preparation/second-attempt/retained.stdout.json",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

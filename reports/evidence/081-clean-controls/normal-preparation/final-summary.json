@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "controlKind": "disposable-normal-preparation",
+  "passed": true,
+  "sourceDirty": true,
+  "sourceRevision": "58380952b1b4814bf9685e8e2543e44a939d93a3",
+  "controlRoot": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\normal-preparation-controls\\ordinal-f21c751b208a4bf4b274ae785c7a3b60",
+  "results": [
+    {
+      "arm": "flat",
+      "passed": true,
+      "checks": 26,
+      "preparationPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\normal-preparation-controls\\ordinal-f21c751b208a4bf4b274ae785c7a3b60\\flat.preparation.json",
+      "stdoutPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\normal-preparation-controls\\ordinal-f21c751b208a4bf4b274ae785c7a3b60\\flat.stdout.json",
+      "stderrPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\normal-preparation-controls\\ordinal-f21c751b208a4bf4b274ae785c7a3b60\\flat.stderr.txt",
+      "startingStatePath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\normal-preparation-controls\\ordinal-f21c751b208a4bf4b274ae785c7a3b60\\flat\\runs\\R01\\starting-state.json",
+      "collisionExitCode": 1,
+      "collisionFailure": "Fresh run destination already exists; refusing to replace it: D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\normal-preparation-controls\\ordinal-f21c751b208a4bf4b274ae785c7a3b60\\flat\\actors\\R01",
+      "collisionEvidence": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\normal-preparation-controls\\ordinal-f21c751b208a4bf4b274ae785c7a3b60\\flat.collision.json",
+      "collisionStdoutPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\normal-preparation-controls\\ordinal-f21c751b208a4bf4b274ae785c7a3b60\\flat.collision.stdout.txt",
+      "collisionStderrPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\normal-preparation-controls\\ordinal-f21c751b208a4bf4b274ae785c7a3b60\\flat.collision.stderr.txt",
+      "explicitEvidencePathHonored": true,
+      "canonicalSlotsTouched": false,
+      "launchable": false,
+      "sourceDirty": true,
+      "preparerSha256": "42c63fb12de3ecd37b4827944f00a59613a1a66908d8c23c7c926e2d9d216aa9"
+    },
+    {
+      "arm": "retained",
+      "passed": true,
+      "checks": 26,
+      "preparationPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\normal-preparation-controls\\ordinal-f21c751b208a4bf4b274ae785c7a3b60\\retained.preparation.json",
+      "stdoutPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\normal-preparation-controls\\ordinal-f21c751b208a4bf4b274ae785c7a3b60\\retained.stdout.json",
+      "stderrPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\normal-preparation-controls\\ordinal-f21c751b208a4bf4b274ae785c7a3b60\\retained.stderr.txt",
+      "startingStatePath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\normal-preparation-controls\\ordinal-f21c751b208a4bf4b274ae785c7a3b60\\retained\\runs\\R03\\starting-state.json",
+      "collisionExitCode": 1,
+      "collisionFailure": "Fresh run destination already exists; refusing to replace it: D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\normal-preparation-controls\\ordinal-f21c751b208a4bf4b274ae785c7a3b60\\retained\\actors\\R03",
+      "collisionEvidence": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\normal-preparation-controls\\ordinal-f21c751b208a4bf4b274ae785c7a3b60\\retained.collision.json",
+      "collisionStdoutPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\normal-preparation-controls\\ordinal-f21c751b208a4bf4b274ae785c7a3b60\\retained.collision.stdout.txt",
+      "collisionStderrPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\normal-preparation-controls\\ordinal-f21c751b208a4bf4b274ae785c7a3b60\\retained.collision.stderr.txt",
+      "explicitEvidencePathHonored": true,
+      "canonicalSlotsTouched": false,
+      "launchable": false,
+      "sourceDirty": true,
+      "preparerSha256": "42c63fb12de3ecd37b4827944f00a59613a1a66908d8c23c7c926e2d9d216aa9"
+    }
+  ],
+  "modelActorLaunched": false,
+  "runtimeHostLaunched": false
+}

@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-retention-003",
+  "passed": false,
+  "failure": "Preparation check failed: rich frozen baseline source inputs match current source hashes",
+  "startedUtc": "2026-10-07T09:46:03.8971058Z",
+  "finishedUtc": "2026-10-07T09:46:05.1024397Z",
+  "sourceRevision": "58380952b1b4814bf9685e8e2543e44a939d93a3",
+  "dirty": true,
+  "arm": "retained",
+  "block": "B1",
+  "taskId": "S01",
+  "runId": "R03",
+  "bootstrapOnly": false,
+  "result": null,
+  "checks": [
+    {
+      "name": "design schema and study id",
+      "passed": true
+    },
+    {
+      "name": "design sequence and arm order",
+      "passed": true
+    },
+    {
+      "name": "design conceals arm hypotheses from public prompts",
+      "passed": true
+    },
+    {
+      "name": "design declares exactly twelve ordered run cells",
+      "passed": true
+    },
+    {
+      "name": "design source paths are fixed and study-local",
+      "passed": true
+    },
+    {
+      "name": "acceptance identity, sequence, and predecessor SHA",
+      "passed": true
+    },
+    {
+      "name": "acceptance oracle and defaults equal the parsed predecessor corpus",
+      "passed": true
+    },
+    {
+      "name": "acceptance cases and task contracts equal predecessor S01/S07",
+      "passed": true
+    },
+    {
+      "name": "acceptance includes no S06 arm or case corpus",
+      "passed": true
+    },
+    {
+      "name": "S01 public contract matches independent oracle",
+      "passed": true
+    },
+    {
+      "name": "S07 public contract matches independent oracle",
+      "passed": true
+    },
+    {
+      "name": "shared primer is the exact preserved 002 help file",
+      "passed": true
+    },
+    {
+      "name": "Flat source seed is the exact preserved schema-only seed",
+      "passed": true
+    },
+    {
+      "name": "requested run maps to fixed public run id and task index",
+      "passed": true
+    },
+    {
+      "name": "rich frozen baseline manifest identity and counts",
+      "passed": true
+    },
+    {
+      "name": "rich frozen baseline source inputs match current source hashes",
+      "passed": false
+    }
+  ],
+  "preparerSha256": "e85bcb8a47943e4550cd0e80176f9578a2d60d304592a148ea14b91e822b7e91",
+  "requestedEvidencePath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\normal-preparation-controls\\final-9b0cf83b696741c69e16201778bb56d2\\retained.preparation.json",
+  "evidencePath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\normal-preparation-controls\\final-9b0cf83b696741c69e16201778bb56d2\\retained.preparation.json"
+}

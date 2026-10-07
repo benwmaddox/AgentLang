@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "failedPreparationSourceRevision": "58380952b1b4814bf9685e8e2543e44a939d93a3",
+  "modelActorLaunched": false,
+  "runtimeHostLaunched": false,
+  "canonicalBaselinesRegenerated": false,
+  "reason": "Normal preparation created an empty actor directory without copying the source tree",
+  "preserved": [
+    {
+      "original": "experiments/AgentLang.SubagentTrials/business-policy-retention-003/artifacts/global-freeze.json",
+      "preserved": "reports/evidence/081-superseded-freeze/global-freeze-5838095.json",
+      "files": [
+        {
+          "path": "",
+          "sha256": "6bb7d846d4453428e78f606d78d95331771df76f652961ec2febe399a26fcb74",
+          "bytes": 101715
+        }
+      ]
+    },
+    {
+      "original": "experiments/AgentLang.SubagentTrials/business-policy-retention-003/artifacts/source-snapshot",
+      "preserved": "reports/evidence/081-superseded-freeze/source-snapshot-34d04db",
+      "files": [
+        {
+          "path": "acceptance-business-policy-001.json",
+          "sha256": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+          "bytes": 17436
+        },
+        {
+          "path": "acceptance-business-policy-help-002.json",
+          "sha256": "d58fceeec3b659aebc58daa1d708d5f16cb43d12996f291c1c78a377fcfb89ef",
+          "bytes": 15931
+        },
+        {
+          "path": "acceptance.json",
+          "sha256": "8ca4f975161541b8c60397267fe7bb4ecb4345e00674d91467ac151a0bb7d3f2",
+          "bytes": 15951
+        },
+        {
+          "path": "design.json",
+          "sha256": "c5b9d8a09cc671895f6ebd6bfd4023b8744cb8c8277cf6e2e7e6a4602d80b3ae",
+          "bytes": 4001
+        },
+        {
+          "path": "flat-customer.agent",
+          "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d",
+          "bytes": 506
+        },
+        {
+          "path": "language-primer-business-policy-help-002.md",
+          "sha256": "7ca98f0c8c9a20a84076d2a6b62da7a36ac12959e17ec1890ec74f9cbf9b578e",
+          "bytes": 3931
+        },
+        {
+          "path": "language-primer.md",
+          "sha256": "7ca98f0c8c9a20a84076d2a6b62da7a36ac12959e17ec1890ec74f9cbf9b578e",
+          "bytes": 3931
+        },
+        {
+          "path": "public-task-S01.json",
+          "sha256": "97befde7d0e3231529ad681e785ace116210d8d99228eb2e9f76183738b7fada",
+          "bytes": 784
+        },
+        {
+          "path": "public-task-S07.json",
+          "sha256": "f2a3b584fbec86f0395228fde31d561c240b9bc5d5a9a4a927042ea8a6111a04",
+          "bytes": 779
+        },
+        {
+          "path": "examples\\business-invoices.agent",
+          "sha256": "a08b3e87e69c5983d35ec35059c3881067294b65b4e79e992e81dbf101ab338c",
+          "bytes": 30002
+        },
+        {
+          "path": "examples\\business-payments-email.agent",
+          "sha256": "455bb038269fc499c69e0cd0338e76c9f4c5ed064f6a7c2ba125bdc9bb8503e4",
+          "bytes": 36869
+        },
+        {
+          "path": "examples\\business-state.agent",
+          "sha256": "d301d24143c31e84269aceaec7f85e4b6aeeb44e1156e6e03a53febc1ed41cc9",
+          "bytes": 15078
+        },
+        {
+          "path": "examples\\business-store.agent",
+          "sha256": "f7dfe3d6cafa66fd888e76c5e925fc424aa05465b40e896467c2e1f064b767f3",
+          "bytes": 37409
+        },
+        {
+          "path": "examples\\business-subscriptions.agent",
+          "sha256": "2c9a61e7f20e5b80996f0308cc360e23bc408185744ba2ef57e5c217214d14d5",
+          "bytes": 30486
+        },
+        {
+          "path": "examples\\business-values.agent",
+          "sha256": "fe8227ce0c38ff6e193a74292a5b1d0ed0ac3e3869f0fe8feaf56eca62f30cbd",
+          "bytes": 26707
+        },
+        {
+          "path": "scripts\\Audit-RetentionTrace.ps1",
+          "sha256": "896da2e0b471117c8946c34b7395e598c6950a0f90a152ee4a3350d1e2200479",
+          "bytes": 70502
+        },
+        {
+          "path": "scripts\\Audit-SubagentTrialTerminationV2.ps1",
+          "sha256": "870ff9b9a1843c0a104d2185688486c7ed1e85399df6c554f9ee890c4dcf4a10",
+          "bytes": 15874
+        },
+        {
+          "path": "scripts\\Freeze-RetentionTrial.ps1",
+          "sha256": "357bdef9e9a9b28f12ad0efc85dfed7580da13294a591b895b8dc61604010f3b",
+          "bytes": 76308
+        },
+        {
+          "path": "scripts\\Prepare-BusinessPolicyTrial.ps1",
+          "sha256": "23af4c9536e72730d44a5cfbdcf70b05b17a1e35c83f841511f9e8bbc637c08a",
+          "bytes": 29618
+        },
+        {
+          "path": "scripts\\Prepare-RetentionTrial.ps1",
+          "sha256": "6673e5b73e7d8b93455926817c12d355d5934fd86af64271b6ff9fbb83f27a4a",
+          "bytes": 57795
+        },
+        {
+          "path": "scripts\\Start-SubagentTrialHostV2.ps1",
+          "sha256": "6573321e8c0fc92926e43221ae10836fd5c62139e5fdb51cc34ff482fbc81f2b",
+          "bytes": 81288
+        },
+        {
+          "path": "scripts\\Verify-RetentionPreflight.ps1",
+          "sha256": "d1c40e9df0a4907fe17e20c188bccda6f283cf5ea0c7b21bf50a2359477cf05c",
+          "bytes": 89579
+        },
+        {
+          "path": "scripts\\Verify-RetentionTrial.ps1",
+          "sha256": "f58c14afad7fb4d774a47861ae3b975dc5f5a3bb48b0386329fdc10320576181",
+          "bytes": 124366
+        }
+      ]
+    }
+  ],
+  "failedPreparationSha256": "42d4caacbcd4e2aaae446b4ef96b8f792df964a978798731bee1e2bd39148bb0",
+  "runSlotRemoved": true,
+  "actorSlotRemoved": true
+}

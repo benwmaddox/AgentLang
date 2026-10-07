@@ -38,8 +38,8 @@ $failure = $null
 $result = $null
 $createdPaths = [Collections.Generic.List[string]]::new()
 $scratchPaths = [Collections.Generic.List[string]]::new()
-$evidencePath = $null
 $requestedEvidencePath = $EvidencePath
+$evidencePath = $null
 $runId = if ([string]::IsNullOrWhiteSpace($TaskId)) { 'bootstrap' } else { $null }
 
 if ([string]::IsNullOrWhiteSpace($LocalRoot)) {
@@ -618,8 +618,8 @@ function Get-FrozenBaseline([string]$Kind, [string]$CliPath, [string]$BusinessPa
         [int]$manifest.counts.tests -eq [int]$expectedCounts.tests)
     $sourceInputs = Get-SourceInputs $Kind
     Add-Check "$Kind frozen baseline source inputs match current source hashes" (
-        (ConvertTo-CanonicalJson @($manifest.sourceInputs | Sort-Object -CaseSensitive path)) -ceq
-        (ConvertTo-CanonicalJson @($sourceInputs | Sort-Object -CaseSensitive path)))
+        (ConvertTo-CanonicalJson @(Get-OrdinalPathRows @($manifest.sourceInputs))) -ceq
+        (ConvertTo-CanonicalJson @(Get-OrdinalPathRows @($sourceInputs))))
     Add-Check "$Kind frozen baseline runtime hashes match supplied runtime" (
         [string]$manifest.runtime.cliSha256 -ceq (Get-Sha256 $CliPath) -and
         [string]$manifest.runtime.businessSha256 -ceq (Get-Sha256 $BusinessPath) -and
@@ -892,10 +892,9 @@ try {
         [IO.Directory]::CreateDirectory($runPath) | Out-Null
         $createdPaths.Add($runPath)
         [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($actorPath)) | Out-Null
-        [IO.Directory]::CreateDirectory($actorPath) | Out-Null
         $createdPaths.Add($actorPath)
         $startingInventory = Copy-ProjectTree $sourceProject $startingPath
-        $actorInventory = @(Get-ProjectInventory $actorPath)
+        $actorInventory = Copy-ProjectTree $sourceProject $actorPath
         Add-Check 'actor and immutable start are byte-identical fresh project copies' (
             (ConvertTo-CanonicalJson @($startingInventory)) -ceq (ConvertTo-CanonicalJson @($actorInventory)))
 

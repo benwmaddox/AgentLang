@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "controlKind": "disposable-normal-preparation-first-attempt",
+  "preparationPassed": true,
+  "preparationEvidencePath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\preparation-evidence\\081-preparation-R01-6edf0aa690184f82b2d02443010cdb36.json",
+  "preparationChecks": 26,
+  "preparerSha256": "4a308b2e306a5a65501163171a4be045c1288fb951d7bcc1d85445c9793dddd3",
+  "rootCoordinatorFinished": false,
+  "coordinatorDiagnostic": "Expected explicit EvidencePath was absent; actual returned evidencePath identifies a passing normal preparation",
+  "explicitEvidencePathHonored": false,
+  "modelActorLaunched": false,
+  "runtimeHostLaunched": false,
+  "canonicalSlotsTouched": false
+}

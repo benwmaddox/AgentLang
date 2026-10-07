@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-retention-003",
+  "passed": false,
+  "failure": "Fresh run destination already exists; refusing to replace it: D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\normal-preparation-controls\\ordinal-f21c751b208a4bf4b274ae785c7a3b60\\flat\\actors\\R01",
+  "startedUtc": "2026-10-07T09:49:48.1940722Z",
+  "finishedUtc": "2026-10-07T09:49:53.5138016Z",
+  "sourceRevision": "58380952b1b4814bf9685e8e2543e44a939d93a3",
+  "dirty": true,
+  "arm": "flat",
+  "block": "B1",
+  "taskId": "S01",
+  "runId": "R01",
+  "bootstrapOnly": false,
+  "result": null,
+  "checks": [
+    {
+      "name": "design schema and study id",
+      "passed": true
+    },
+    {
+      "name": "design sequence and arm order",
+      "passed": true
+    },
+    {
+      "name": "design conceals arm hypotheses from public prompts",
+      "passed": true
+    },
+    {
+      "name": "design declares exactly twelve ordered run cells",
+      "passed": true
+    },
+    {
+      "name": "design source paths are fixed and study-local",
+      "passed": true
+    },
+    {
+      "name": "acceptance identity, sequence, and predecessor SHA",
+      "passed": true
+    },
+    {
+      "name": "acceptance oracle and defaults equal the parsed predecessor corpus",
+      "passed": true
+    },
+    {
+      "name": "acceptance cases and task contracts equal predecessor S01/S07",
+      "passed": true
+    },
+    {
+      "name": "acceptance includes no S06 arm or case corpus",
+      "passed": true
+    },
+    {
+      "name": "S01 public contract matches independent oracle",
+      "passed": true
+    },
+    {
+      "name": "S07 public contract matches independent oracle",
+      "passed": true
+    },
+    {
+      "name": "shared primer is the exact preserved 002 help file",
+      "passed": true
+    },
+    {
+      "name": "Flat source seed is the exact preserved schema-only seed",
+      "passed": true
+    },
+    {
+      "name": "requested run maps to fixed public run id and task index",
+      "passed": true
+    },
+    {
+      "name": "flat frozen baseline manifest identity and counts",
+      "passed": true
+    },
+    {
+      "name": "flat frozen baseline source inputs match current source hashes",
+      "passed": true
+    },
+    {
+      "name": "flat frozen baseline runtime hashes match supplied runtime",
+      "passed": true
+    },
+    {
+      "name": "flat frozen baseline pins seed builder provenance",
+      "passed": true
+    },
+    {
+      "name": "flat frozen baseline file rows and hash match complete archived tree",
+      "passed": true
+    },
+    {
+      "name": "flat archived baseline copy live dictionary has expected authored word count",
+      "passed": true,
+      "details": {
+        "actual": 0,
+        "expected": 0
+      }
+    },
+    {
+      "name": "flat archived baseline copy live dictionary contains no S01/S06/S07 policy symbols",
+      "passed": true,
+      "details": {
+        "forbidden": [
+          "customer.premium?",
+          "customer.discount-basis-points",
+          "customer.discounted-balance"
+        ],
+        "present": []
+      }
+    },
+    {
+      "name": "flat archived baseline copy source inventory has expected nominal type count",
+      "passed": true,
+      "details": {
+        "actual": 6,
+        "expected": 6
+      }
+    },
+    {
+      "name": "flat archived baseline copy attached tests report expected count and pass",
+      "passed": true,
+      "details": {
+        "expected": 0,
+        "failed": [],
+        "actual": 0
+      }
+    },
+    {
+      "name": "flat archived baseline copy live inspection and tests leave project bytes unchanged",
+      "passed": true,
+      "details": {
+        "afterHash": "e780f23d85487cb4b8d5bf8365104c98f32ed19575f80e0437489f7b35f32391",
+        "beforeHash": "e780f23d85487cb4b8d5bf8365104c98f32ed19575f80e0437489f7b35f32391"
+      }
+    },
+    {
+      "name": "flat archived baseline live validation preserves archived seed IDs",
+      "passed": true
+    }
+  ],
+  "preparerSha256": "42c63fb12de3ecd37b4827944f00a59613a1a66908d8c23c7c926e2d9d216aa9",
+  "requestedEvidencePath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\normal-preparation-controls\\ordinal-f21c751b208a4bf4b274ae785c7a3b60\\flat.collision.json",
+  "evidencePath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\normal-preparation-controls\\ordinal-f21c751b208a4bf4b274ae785c7a3b60\\flat.collision.json"
+}

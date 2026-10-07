@@ -1,0 +1,5 @@
+Exception: D:\code\AgentLang\scripts\Prepare-RetentionTrial.ps1:1029
+Line |
+1029 |  if ($null -ne $failure) { throw $failure }
+     |                            ~~~~~~~~~~~~~~
+     | Preparation check failed: rich frozen baseline source inputs match current source hashes
