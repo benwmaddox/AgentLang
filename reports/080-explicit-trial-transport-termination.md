@@ -55,8 +55,7 @@ array could cause unrelated rejection; its partial negative checks are not proof
 that the intended controls worked. The final retry explicitly validates baseline
 shape and acceptance before asserting specific rejection diagnostics.
 
-[The raw trace archive](evidence/080-transport-trace-archive.json) maps 78 retained
-traces to portable checked-in copies with byte lengths and SHA-256 hashes. Copies
+[The raw trace archive](evidence/080-transport-trace-archive.json) maps 78 trace references (51 unique retained files) to portable checked-in copies with byte lengths and SHA-256 hashes. Copies
 were checked against their source bytes, including failed attempts and mutation
 fixtures. These are implementation controls, not fresh model experiments.
 
