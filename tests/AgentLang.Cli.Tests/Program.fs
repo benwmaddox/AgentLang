@@ -314,6 +314,32 @@ module Program =
             contains "FLOW_" malformed.StandardOutput "malformed Flow syntax reports a structured parser diagnostic"
             check (not (malformed.StandardOutput.Contains("....>", StringComparison.Ordinal))) "malformed non-incomplete source does not request continuation")
 
+    let private testRuntimeHelpCommandParityAndRecovery () =
+        withProject (fun project ->
+            let usage = runCli project [] [ ":help"; ":quit" ] 5000
+            expectExit 0 usage "plain :help continues to show CLI usage"
+            contains "Human REPL commands:" usage.StandardOutput "plain :help shows the CLI command list"
+            contains ":help [TOPIC]" usage.StandardOutput "CLI usage advertises topic help"
+            contains "Runtime topics: authoring, define, replacement, examples (default: authoring)" usage.StandardOutput "CLI usage distinguishes runtime topic help from bare CLI help"
+
+            let repl = runCli project [] [ ":help \"define\""; ":quit" ] 5000
+            expectExit 0 repl "quoted runtime help topic in the REPL"
+            let request = runCli project [ "--request"; "{\"op\":\"help\",\"topic\":\"define\"}" ] [] 5000
+            expectExit 0 request "equivalent JSON protocol help request"
+            let replData = humanDataObject repl.StandardOutput
+            let requestData = humanDataObject request.StandardOutput
+            equal (requestData.ToJsonString()) (replData.ToJsonString()) "REPL topic help returns the same structured data as the JSON protocol"
+            equal "define" (replData["topic"].GetValue<string>()) "the quote-aware parser forwards the selected topic"
+            contains (requestData["topic"].GetValue<string>()) repl.StandardOutput "REPL output includes the same selected topic as the protocol request"
+
+            let recovered = runCli project [] [ ":help \"unterminated"; ":help missing-topic"; ":help examples"; ":quit" ] 5000
+            expectExit 0 recovered "malformed help input leaves the REPL usable"
+            contains "A quoted command argument is missing its closing quote." recovered.StandardOutput "an unmatched topic quote reports a command error"
+            contains "[CLI_INVALID_COMMAND]" recovered.StandardOutput "malformed topic errors use the CLI command error code"
+            contains "[HELP_UNKNOWN_TOPIC]" recovered.StandardOutput "unknown help topics return a structured runtime error"
+            let recoveredData = humanDataObject recovered.StandardOutput
+            equal "examples" (recoveredData["topic"].GetValue<string>()) "a valid topic works after malformed help input")
+
     let private testFlowFileDefineCasAndSourceIdentity () =
         withProject (fun project ->
             let files = Path.Combine(project, "source files")
@@ -482,6 +508,7 @@ module Program =
             group "compact and full words CLI requests" testWordsCommands
             group "Flow parser-driven interactive buffering" testFlowInteractiveBuffering
             group "Flow incomplete EOF and malformed recovery" testIncompleteEofAndMalformedInput
+            group "runtime help topics match protocol and recover from malformed input" testRuntimeHelpCommandParityAndRecovery
             group "Flow file definition, CAS, and stable source identity" testFlowFileDefineCasAndSourceIdentity
             group "Flow type source inspection and durable reload" testTypeSourceInspectionAndReload
             group "migrated Flow examples and fresh-process durability" testMigratedFlowExamples

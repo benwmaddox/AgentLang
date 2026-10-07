@@ -24,6 +24,7 @@
     <Compile Include="Source.fs" />
     <Compile Include="Discovery.fs" />
     <Compile Include="VocabularyAnalysis.fs" />
+    <Compile Include="AuthoringHelp.fs" />
     <Compile Include="Runtime.fs" />
     <Compile Include="Protocol.fs" />
   </ItemGroup>

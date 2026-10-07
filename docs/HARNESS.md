@@ -4,6 +4,13 @@ The project owner's selected experiment path is fresh Codex subagents using a co
 
 The harness runs a task against the AgentLang JSON dispatch API, one provider turn at a time. It supports a deterministic scripted provider for offline tests and an OpenAI Responses API provider for live experiments. Conventional repository editing and multi-task benchmark orchestration are not implemented yet.
 
+The existing inspect tool also exposes runtime `help`: use operation `help` and
+name `define`, `replacement`, or `examples`, or an empty name for the authoring
+overview. The total remains six tools. Documentation, tests and examples belong
+in definition source. Help describes the wider JSONL protocol; the model harness
+currently does not expose its full replacement mutation adapter. The supplied
+tool schema remains authoritative for what a particular agent can invoke.
+
 Retention mode (`flat` or `growing`) and the starting-vocabulary profile are independent settings. The backward-compatible default is `domain-seeded-control`, which permits existing authored seeds such as `examples/customer.agent` and labels the run accordingly. Use `--baseline primitive-only` for the original PRD Flat/Growing condition: a fresh audited origin may contain trusted primitives and supplied type/schema declarations, but no authored algorithms. A verified Growing continuation may retain and reuse authored words created by earlier tasks. A user-supplied type-only schema is recorded as such; that label does not establish equivalence with the Small Business reference fixture or prove refined ID, Email, or time contracts.
 
 ## Run the offline customer example

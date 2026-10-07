@@ -1,0 +1,22 @@
+{
+  "baselineRevision": "866e00b0d80297383c05ed193022913e21e2a6e5",
+  "method": "Decode F# ordinary string literals and concatenate syntax + single space + shared rules; bytes are not tokens",
+  "versions": [
+    {
+      "version": "before",
+      "scope": "Complete Flow TaskFile system primer, no task-specific guidance",
+      "words": 140,
+      "utf8Bytes": 922,
+      "syntaxUtf8Bytes": 432,
+      "sharedRulesUtf8Bytes": 489
+    },
+    {
+      "version": "after",
+      "scope": "Complete Flow TaskFile system primer, no task-specific guidance",
+      "words": 233,
+      "utf8Bytes": 1606,
+      "syntaxUtf8Bytes": 1116,
+      "sharedRulesUtf8Bytes": 489
+    }
+  ]
+}

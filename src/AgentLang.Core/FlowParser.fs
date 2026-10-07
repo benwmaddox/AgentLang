@@ -740,7 +740,12 @@ module FlowParser =
         | FlowExpression.Literal(literal, literalSpan) -> literal, literalSpan
         | _ ->
             let source = expressionSpan expression
-            fail state.File source.Line source.Column source.Length "FLOW_EXPECTATION_LITERAL_REQUIRED" $"A Flow {kind} requires a literal expectation."
+            let message =
+                match kind with
+                | "test" -> "A Flow test requires a supported literal after '=>'; use '=> value <expression>' for a value-expression expectation or '=> error CODE' for a runtime-error expectation."
+                | "example" -> "A Flow example requires a supported literal after '=>'; examples accept literal expectations only."
+                | _ -> $"A Flow {kind} requires a supported literal expectation."
+            fail state.File source.Line source.Column source.Length "FLOW_EXPECTATION_LITERAL_REQUIRED" message
 
     and private closeCase state kind =
         match current state with

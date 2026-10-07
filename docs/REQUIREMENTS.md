@@ -444,3 +444,10 @@ their independent behavior cases were not reached. Sections 45–52, 57–62, 74
 80–82 remain partial/pending: this is not the full task bank, a controlled
 model-cost result or proof of marginal-cost improvement. Metadata/replacement
 usability and fresh follow-up trials precede backend/memory research.
+
+Report 077 adds bounded authoring-help topics through JSONL, CLI and the existing
+six-tool agent interface, with executed source examples and strict Flow define
+field validation before staging. Candidate/persistent replacement, library
+metadata reload and rejected-request state preservation have focused checks.
+Fresh Flat S06/S07 trials remain required to assess the interface improvement;
+this implementation does not establish a cost reduction or complete evaluation.

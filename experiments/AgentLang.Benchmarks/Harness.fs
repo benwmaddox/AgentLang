@@ -140,9 +140,9 @@ module AgentTools =
     let definitions () =
         let tools = JsonArray()
         tools.Add(functionTool "agentlang_eval" "Evaluate checked AgentLang code or a short expression." [ "code", "Expression or code to evaluate", None ])
-        tools.Add(functionTool "agentlang_define" "Add a typed candidate or task-scoped temporary definition with attached tests." [ "source", "Complete AgentLang definition source", None; "lifetime", "Definition lifetime", Some [ "candidate"; "temporary" ] ])
+        tools.Add(functionTool "agentlang_define" "Add a typed candidate or task-scoped temporary definition. Include documentation, tests, and examples in the source." [ "source", "Complete AgentLang definition source", None; "lifetime", "Definition lifetime", Some [ "candidate"; "temporary" ] ])
         tools.Add(functionTool "agentlang_search" "Search word names, documentation, and types." [ "query", "Text or type name", None ])
-        tools.Add(functionTool "agentlang_inspect" "Inspect words, signatures, source, dependencies, callers, effects, IR, examples, or tests." [ "operation", "Introspection command", Some [ "words"; "describe"; "source"; "dependencies"; "callers"; "effects"; "ir"; "tests"; "examples"; "task.status"; "task.log" ]; "name", "Word name, or empty for words", None ])
+        tools.Add(functionTool "agentlang_inspect" "Inspect words, signatures, source, dependencies, callers, effects, IR, examples, tests, task status/log, or authoring help. For help, use name empty for the authoring index or a topic: define, replacement, or examples." [ "operation", "Introspection command", Some [ "words"; "describe"; "source"; "dependencies"; "callers"; "effects"; "ir"; "tests"; "examples"; "help"; "task.status"; "task.log" ]; "name", "Word name, help topic, or empty when the operation needs no name", None ])
         tools.Add(functionTool "agentlang_test" "Run tests for one word or the current project." [ "operation", "Test command", Some [ "test"; "test-all"; "failed-tests" ]; "word", "Word name, or empty for all tests", None ])
         tools.Add(functionTool "agentlang_task" "Inspect task status, commit a tested word to project or library maturity, promote a temporary word, or discard a staged word. Set quality to project except when committing a library word." [ "action", "Task action", Some [ "status"; "commit-word"; "promote"; "discard" ]; "word", "Word name; empty for status", None; "quality", "Commit maturity; use project for other actions", Some [ "project"; "library" ] ])
         tools
@@ -193,7 +193,7 @@ module AgentTools =
                         ensureProperties args [ "operation"; "name" ]
                         |> Result.bind (fun () ->
                             match requiredString args "operation", requiredString args "name" with
-                            | Ok operation, Ok target when Set.contains operation (Set.ofList [ "words"; "describe"; "source"; "dependencies"; "callers"; "effects"; "ir"; "tests"; "examples"; "task.status"; "task.log" ]) -> Ok(Inspect(operation, target))
+                            | Ok operation, Ok target when Set.contains operation (Set.ofList [ "words"; "describe"; "source"; "dependencies"; "callers"; "effects"; "ir"; "tests"; "examples"; "help"; "task.status"; "task.log" ]) -> Ok(Inspect(operation, target))
                             | Ok operation, Ok _ -> Error $"introspection operation '{operation}' is not available"
                             | Error message, _ | _, Error message -> Error message)
                     | "agentlang_test" ->
@@ -225,6 +225,9 @@ module AgentTools =
                 args["temporary"] <- Json.bool (lifetime = "temporary")
                 "define"
             | Search query -> args["query"] <- Json.text query; "search"
+            | Inspect("help", target) ->
+                if not (String.IsNullOrEmpty target) then args["topic"] <- Json.text target
+                "help"
             | Inspect(name, target) ->
                 if name <> "words" && name <> "task.status" && name <> "task.log" then args["word"] <- Json.text target
                 name

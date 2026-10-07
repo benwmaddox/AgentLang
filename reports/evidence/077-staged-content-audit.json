@@ -1,0 +1,218 @@
+{
+  "schemaVersion": 1,
+  "method": "Git blob hashes after repository text filters, not raw byte equality",
+  "baselineRevision": "866e00b0d80297383c05ed193022913e21e2a6e5",
+  "passed": true,
+  "files": [
+    {
+      "path": "README.md",
+      "indexBlob": "b415497a975dc40d029921127eed21a5ac82ccf4",
+      "workingBlob": "b415497a975dc40d029921127eed21a5ac82ccf4",
+      "matched": true
+    },
+    {
+      "path": "docs/AUTHORING-HELP-TRIAL-PLAN.md",
+      "indexBlob": "839eb03ac94b987eebea190a365d141fc0285e0c",
+      "workingBlob": "839eb03ac94b987eebea190a365d141fc0285e0c",
+      "matched": true
+    },
+    {
+      "path": "docs/AUTHORING.md",
+      "indexBlob": "06b98f3838c9cd1b6e1ddb410f023a0e9d9682fe",
+      "workingBlob": "06b98f3838c9cd1b6e1ddb410f023a0e9d9682fe",
+      "matched": true
+    },
+    {
+      "path": "docs/HARNESS.md",
+      "indexBlob": "76f4cea60632cf2b2060994555c811b14260213e",
+      "workingBlob": "76f4cea60632cf2b2060994555c811b14260213e",
+      "matched": true
+    },
+    {
+      "path": "docs/PRD.md",
+      "indexBlob": "a1460c9f324253ed23de4836390b5fc6c9b411d2",
+      "workingBlob": "a1460c9f324253ed23de4836390b5fc6c9b411d2",
+      "matched": true
+    },
+    {
+      "path": "docs/REQUIREMENTS.md",
+      "indexBlob": "de35b9484ec012e1c01d0378b29d9ff861555a98",
+      "workingBlob": "de35b9484ec012e1c01d0378b29d9ff861555a98",
+      "matched": true
+    },
+    {
+      "path": "experiments/AgentLang.Benchmarks/Harness.fs",
+      "indexBlob": "5d36b4fe776ec499f9397e3806c279d70531ab21",
+      "workingBlob": "5d36b4fe776ec499f9397e3806c279d70531ab21",
+      "matched": true
+    },
+    {
+      "path": "experiments/AgentLang.Benchmarks/Runner.fs",
+      "indexBlob": "970f10f42817d0760eb016bb0f18eae5cf054add",
+      "workingBlob": "970f10f42817d0760eb016bb0f18eae5cf054add",
+      "matched": true
+    },
+    {
+      "path": "reports/076-exact-money-agent-policy-study.md",
+      "indexBlob": "e4705b9e284d4d38b2a5e56a75469fa91530f083",
+      "workingBlob": "e4705b9e284d4d38b2a5e56a75469fa91530f083",
+      "matched": true
+    },
+    {
+      "path": "reports/077-inspectable-authoring-help.md",
+      "indexBlob": "a2d95cb6849f612309b585beedcb42fa77e84c1e",
+      "workingBlob": "a2d95cb6849f612309b585beedcb42fa77e84c1e",
+      "matched": true
+    },
+    {
+      "path": "reports/evidence/076-main-ci.json",
+      "indexBlob": "65b4a7ed9e3a21d8098566a3dc14128fab20aaec",
+      "workingBlob": "65b4a7ed9e3a21d8098566a3dc14128fab20aaec",
+      "matched": true
+    },
+    {
+      "path": "reports/evidence/076-main-validation.json",
+      "indexBlob": "1a5e51d0699203d4b1e8c2e37e2535722265f488",
+      "workingBlob": "1a5e51d0699203d4b1e8c2e37e2535722265f488",
+      "matched": true
+    },
+    {
+      "path": "reports/evidence/077-core-flow-focused.json",
+      "indexBlob": "a35e97e9e95da2c56eaeced6f0771028c7413e78",
+      "workingBlob": "a35e97e9e95da2c56eaeced6f0771028c7413e78",
+      "matched": true
+    },
+    {
+      "path": "reports/evidence/077-harness-cli-focused.json",
+      "indexBlob": "543294dfe0450dda0ccbfd99fdb4b1c1f09efab2",
+      "workingBlob": "543294dfe0450dda0ccbfd99fdb4b1c1f09efab2",
+      "matched": true
+    },
+    {
+      "path": "reports/evidence/077-independent-review.md",
+      "indexBlob": "77364ae2393fe0fc69e38b894ba72893d7a31466",
+      "workingBlob": "77364ae2393fe0fc69e38b894ba72893d7a31466",
+      "matched": true
+    },
+    {
+      "path": "reports/evidence/077-local-validation.business-policy-preflight.json",
+      "indexBlob": "bc7c427569509968af7982f1255898f55b5847fd",
+      "workingBlob": "bc7c427569509968af7982f1255898f55b5847fd",
+      "matched": true
+    },
+    {
+      "path": "reports/evidence/077-local-validation.early-agent-negative.json",
+      "indexBlob": "7a4e66a68e18842fe2739d5b68585f1fd57b20c3",
+      "workingBlob": "7a4e66a68e18842fe2739d5b68585f1fd57b20c3",
+      "matched": true
+    },
+    {
+      "path": "reports/evidence/077-local-validation.flow-matched-fixtures.json",
+      "indexBlob": "315c367231d38b11301d8777149c0a57147cd468",
+      "workingBlob": "315c367231d38b11301d8777149c0a57147cd468",
+      "matched": true
+    },
+    {
+      "path": "reports/evidence/077-local-validation.json",
+      "indexBlob": "e78c88b2af7c643dd46bf6ab923b4410ec4977c8",
+      "workingBlob": "e78c88b2af7c643dd46bf6ab923b4410ec4977c8",
+      "matched": true
+    },
+    {
+      "path": "reports/evidence/077-local-validation.matched-fixtures.json",
+      "indexBlob": "12e8a0740e534ae577195f8c70c5642685ea4679",
+      "workingBlob": "12e8a0740e534ae577195f8c70c5642685ea4679",
+      "matched": true
+    },
+    {
+      "path": "reports/evidence/077-local-validation.matched-snapshots.json",
+      "indexBlob": "894730858c07634300fd4fc6439adf832ebb3049",
+      "workingBlob": "894730858c07634300fd4fc6439adf832ebb3049",
+      "matched": true
+    },
+    {
+      "path": "reports/evidence/077-local-validation.parser-limits.json",
+      "indexBlob": "7a38e758fff78f3ae053c46825e811013628d006",
+      "workingBlob": "7a38e758fff78f3ae053c46825e811013628d006",
+      "matched": true
+    },
+    {
+      "path": "reports/evidence/077-local-validation.projection.json",
+      "indexBlob": "28d5e119b5835a6b7b225455653faa7dae5aa02c",
+      "workingBlob": "28d5e119b5835a6b7b225455653faa7dae5aa02c",
+      "matched": true
+    },
+    {
+      "path": "reports/evidence/077-local-validation.renewal-acceptance-gate.json",
+      "indexBlob": "eaf6bf8afd385cb5c55794d77bce477ad9dd7546",
+      "workingBlob": "eaf6bf8afd385cb5c55794d77bce477ad9dd7546",
+      "matched": true
+    },
+    {
+      "path": "reports/evidence/077-local-validation.renewal-replay.json",
+      "indexBlob": "8b1352eece89191a4671619d8474ebb00f4a04af",
+      "workingBlob": "8b1352eece89191a4671619d8474ebb00f4a04af",
+      "matched": true
+    },
+    {
+      "path": "reports/evidence/077-local-validation.subagent-host.json",
+      "indexBlob": "7e66c10d9cadeaec0adc4c46d405ca10dc36f8d6",
+      "workingBlob": "7e66c10d9cadeaec0adc4c46d405ca10dc36f8d6",
+      "matched": true
+    },
+    {
+      "path": "reports/evidence/077-primer-size.json",
+      "indexBlob": "3457a7a065cabee460b6e87b3b406898f9e3559c",
+      "workingBlob": "3457a7a065cabee460b6e87b3b406898f9e3559c",
+      "matched": true
+    },
+    {
+      "path": "src/AgentLang.Cli/Program.fs",
+      "indexBlob": "1276f0828c887de2a8727d2bae2a2c31319a2355",
+      "workingBlob": "1276f0828c887de2a8727d2bae2a2c31319a2355",
+      "matched": true
+    },
+    {
+      "path": "src/AgentLang.Core/AgentLang.Core.fsproj",
+      "indexBlob": "e6524cafa03155035751e49dbd135b9e6849f877",
+      "workingBlob": "e6524cafa03155035751e49dbd135b9e6849f877",
+      "matched": true
+    },
+    {
+      "path": "src/AgentLang.Core/AuthoringHelp.fs",
+      "indexBlob": "4b6421c13a160e088bd9ba9fad4d7174b6b30c15",
+      "workingBlob": "4b6421c13a160e088bd9ba9fad4d7174b6b30c15",
+      "matched": true
+    },
+    {
+      "path": "src/AgentLang.Core/FlowParser.fs",
+      "indexBlob": "5b2678a0aaf0c1067cda8e1e238bd265d5208424",
+      "workingBlob": "5b2678a0aaf0c1067cda8e1e238bd265d5208424",
+      "matched": true
+    },
+    {
+      "path": "src/AgentLang.Core/Runtime.fs",
+      "indexBlob": "3d76388a1ffc79afd75859c330ec1c29339f2263",
+      "workingBlob": "3d76388a1ffc79afd75859c330ec1c29339f2263",
+      "matched": true
+    },
+    {
+      "path": "tests/AgentLang.Cli.Tests/Program.fs",
+      "indexBlob": "d3a9356ef276f3cb106118442615058670d8a181",
+      "workingBlob": "d3a9356ef276f3cb106118442615058670d8a181",
+      "matched": true
+    },
+    {
+      "path": "tests/AgentLang.Flow.Runtime.Tests/Program.fs",
+      "indexBlob": "da92ac652eb525641036a0f3ab6dedeb38460c85",
+      "workingBlob": "da92ac652eb525641036a0f3ab6dedeb38460c85",
+      "matched": true
+    },
+    {
+      "path": "tests/AgentLang.Harness.Tests/Program.fs",
+      "indexBlob": "38d9f0c91094b2f81126af6e0edc5ad7e79ebda5",
+      "workingBlob": "38d9f0c91094b2f81126af6e0edc5ad7e79ebda5",
+      "matched": true
+    }
+  ]
+}

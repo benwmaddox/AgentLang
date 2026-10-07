@@ -1,0 +1,311 @@
+namespace AgentLang
+
+open System
+open System.Text.Json.Nodes
+
+/// Versioned, engine-independent contracts and authored examples for runtime help.
+module AuthoringHelp =
+    [<RequireQualifiedAccess>]
+    type Topic =
+        | Authoring
+        | Define
+        | Replacement
+        | Examples
+
+    type HelpRequest =
+        { Topic: Topic }
+
+    type TopicInstruction =
+        { Topic: string
+          Title: string
+          Description: string }
+
+    type FlowDefineField =
+        { Name: string
+          Type: string
+          Required: bool
+          Documentation: string }
+
+    type SourceExample =
+        { Name: string
+          Description: string
+          Source: string }
+
+    type RequestValue =
+        | Text of string
+        | Boolean of bool
+        | Integer of int
+
+    type RequestExample =
+        { Name: string
+          Description: string
+          Operation: string
+          Fields: (string * RequestValue) list }
+
+    type TopicContent =
+        { Title: string
+          Documentation: string
+          AllowedFlowDefineFields: FlowDefineField list
+          SourceExamples: SourceExample list
+          RequestExamples: RequestExample list }
+
+    let schemaVersion = 1
+
+    let topicNames = [ "authoring"; "define"; "replacement"; "examples" ]
+
+    let private topicName = function
+        | Topic.Authoring -> "authoring"
+        | Topic.Define -> "define"
+        | Topic.Replacement -> "replacement"
+        | Topic.Examples -> "examples"
+
+    let private tryTopic = function
+        | "authoring" -> Some Topic.Authoring
+        | "define" -> Some Topic.Define
+        | "replacement" -> Some Topic.Replacement
+        | "examples" -> Some Topic.Examples
+        | _ -> None
+
+    let private diagnostic code message expected actual : Diagnostic =
+        { Code = code
+          Message = message
+          Word = None
+          Span = None
+          Expected = expected
+          Actual = actual }
+
+    let private jsonKind (value: JsonNode) =
+        match value with
+        | null -> "null"
+        | :? JsonObject -> "object"
+        | :? JsonArray -> "array"
+        | :? JsonValue as scalar ->
+            let mutable text = ""
+            let mutable boolean = false
+            if scalar.TryGetValue<string>(&text) then "string"
+            elif scalar.TryGetValue<bool>(&boolean) then "boolean"
+            else "number"
+        | _ -> "value"
+
+    /// Parse the optional topic selector. Unknown names and non-string values are errors.
+    let parseRequest (arguments: JsonObject) : Result<HelpRequest, Diagnostic> =
+        let unknownFields =
+            arguments
+            |> Seq.map (fun (KeyValue(key, _)) -> key)
+            |> Seq.filter (fun key -> key <> "topic")
+            |> Seq.sortWith (fun left right -> StringComparer.Ordinal.Compare(left, right))
+            |> Seq.toList
+        if not (List.isEmpty unknownFields) then
+            Error(diagnostic "HELP_INVALID_ARGUMENT" "Help accepts only the optional 'topic' field." [ "topic" ] unknownFields)
+        elif not (arguments.ContainsKey "topic") then
+            Ok { Topic = Topic.Authoring }
+        else
+            match arguments["topic"] with
+            | :? JsonValue as scalar ->
+                let mutable name = ""
+                if not (scalar.TryGetValue<string>(&name)) then
+                    Error(diagnostic "HELP_INVALID_ARGUMENT" "Help argument 'topic' must be a string." [ "string" ] [ jsonKind (scalar :> JsonNode) ])
+                else
+                    match tryTopic name with
+                    | Some topic -> Ok { Topic = topic }
+                    | None -> Error(diagnostic "HELP_UNKNOWN_TOPIC" $"Unknown help topic '{name}'." topicNames [ name ])
+            | value -> Error(diagnostic "HELP_INVALID_ARGUMENT" "Help argument 'topic' must be a string." [ "string" ] [ jsonKind value ])
+
+    let requestTopic (request: HelpRequest) = topicName request.Topic
+
+    let topicInstructions =
+        [ { Topic = "authoring"
+            Title = "Start here"
+            Description = "Runtime JSONL authoring basics and the available help topics." }
+          { Topic = "define"
+            Title = "Define Flow source"
+            Description = "Flow source syntax, documentation, request fields, tests, and a complete example." }
+          { Topic = "replacement"
+            Title = "Replace a word"
+            Description = "Revision compare-and-swap, staged publication, and caller test gates." }
+          { Topic = "examples"
+            Title = "Run tests and examples"
+            Description = "Attached cases, literal expectations, effects, and coverage inspection." } ]
+
+    let flowDefineFields =
+        [ { Name = "frontend"
+            Type = "string"
+            Required = false
+            Documentation = "Selects a frontend. Omit it to use Flow; the Flow allowlist applies only when Flow is selected." }
+          { Name = "source"
+            Type = "string"
+            Required = true
+            Documentation = "Complete Flow source for one declaration/document. Flow does not accept a code alias." }
+          { Name = "temporary"
+            Type = "boolean"
+            Required = false
+            Documentation = "New words default to candidate; true creates a task-scoped temporary word. Types cannot be temporary." }
+          { Name = "replace"
+            Type = "boolean"
+            Required = false
+            Documentation = "Set true to stage a replacement or a compare-and-swap edit to an attached case." }
+          { Name = "expectedRevision"
+            Type = "nonnegative integer"
+            Required = false
+            Documentation = "Required with replace=true for an existing owner; use the current describe.revision value." }
+          { Name = "tests"
+            Type = "array of source strings"
+            Required = false
+            Documentation = "Optional complete Flow test source strings for a single-word declaration. Multi-declaration and attachment-only documents must put cases inline; attachment-only documents must name one owner." }
+          { Name = "examples"
+            Type = "array of source strings"
+            Required = false
+            Documentation = "Optional complete Flow example source strings for a single-word declaration. Multi-declaration and attachment-only documents must put cases inline; attachment-only documents must name one owner." }
+          { Name = "removeAttachments"
+            Type = "array of objects"
+            Required = false
+            Documentation = "For one existing Flow owner, each object has exactly kind, caseName, and expectedSourceHash; removal is revision-bound." } ]
+
+    let private tutorialSource =
+        """word tutorial.sign(value: Int) -> Int {
+    effects none
+    doc "Returns -1 for negative integers and 1 for zero or positive integers."
+    if int::less-than(value, 0) { -1 } else { 1 }
+}
+
+test tutorial.sign/negative { tutorial::sign(-2) => -1 }
+test tutorial.sign/zero { tutorial::sign(0) => 1 }
+test tutorial.sign/positive { tutorial::sign(2) => 1 }
+
+example tutorial.sign/negative { tutorial::sign(-2) => -1 }"""
+
+    let private tutorialWordSource =
+        """word tutorial.sign(value: Int) -> Int {
+    effects none
+    doc "Returns -1 for negative integers and 1 for zero or positive integers."
+    if int::less-than(value, 0) { -1 } else { 1 }
+}"""
+
+    let private text value = Text value
+    let private textField name value = name, text value
+
+    let private helpRequestExample topic =
+        { Name = "help-" + topic
+          Description = "Request the named authoring help topic."
+          Operation = "help"
+          Fields = [ textField "topic" topic ] }
+
+    let private tutorialSourceExample =
+        { Name = "tutorial-sign"
+          Description = "Complete Flow source with inline documentation, three tests, and one example."
+          Source = tutorialSource }
+
+    let private topicContent =
+        [ Topic.Authoring,
+            { Title = "Authoring through the runtime"
+              Documentation =
+                "Use one JSON object per JSONL request. Flow is the default frontend for define and eval. Inspect a word with describe, then ask for help on define, replacement, or examples. Help returns instructions only; the active host still controls which operations it allows."
+              AllowedFlowDefineFields = []
+              SourceExamples = []
+              RequestExamples =
+                [ { Name = "help-index"
+                    Description = "Return the concise authoring index."
+                    Operation = "help"
+                    Fields = [] }
+                  helpRequestExample "define"
+                  helpRequestExample "replacement"
+                  helpRequestExample "examples" ] }
+          Topic.Define,
+            { Title = "Define Flow source"
+              Documentation =
+                "A Flow define request takes source and the optional fields listed below. Omit frontend to select Flow. Put documentation in the word body as `doc \"...\"`; doc and documentation are not request fields. A local binding stays inside one invocation. Declare effects in the word source, using `effects none` when there are no effects. For one-word declarations, attach tests and examples inline or through their source arrays. Multi-declaration project documents are add-only and must keep cases inline. An attachment-only document must keep cases inline and name exactly one existing Flow owner. Adding a new attachment-only case captures the current owner revision; replacing a case or removing one requires replace=true with the current expectedRevision, and removals also require its current expected source hash. Each case owner is the dictionary name before the slash. Define stages a candidate or temporary word and does not persist it."
+              AllowedFlowDefineFields = flowDefineFields
+              SourceExamples = [ tutorialSourceExample ]
+              RequestExamples =
+                [ { Name = "define-tutorial-sign"
+                    Description = "Define the complete source example using Flow's default frontend."
+                    Operation = "define"
+                    Fields = [ textField "source" tutorialSource ] }
+                  { Name = "test-tutorial-sign"
+                    Description = "Run the attached tests for this word."
+                    Operation = "test"
+                    Fields = [ textField "word" "tutorial.sign" ] }
+                  { Name = "describe-tutorial-sign"
+                    Description = "Inspect documentation, cases, effects, status, and revision."
+                    Operation = "describe"
+                    Fields = [ textField "word" "tutorial.sign" ] }
+                  { Name = "commit-tutorial-sign"
+                    Description = "Commit the tested candidate as a project word."
+                    Operation = "commit"
+                    Fields = [ textField "word" "tutorial.sign" ] }
+                  { Name = "commit-tutorial-sign-as-library"
+                    Description = "Alternative to project commit: the source example's tests exercise both supported branch outcomes, and the library gate also checks every own instruction and supported iteration outcome."
+                    Operation = "commit"
+                    Fields = [ textField "word" "tutorial.sign"; "library", Boolean true ] } ] }
+          Topic.Replacement,
+            { Title = "Replace a word"
+              Documentation =
+                "Read describe.revision immediately before replacing a definition. Set replace=true and expectedRevision to that exact current revision; a stale compare-and-swap leaves the word unchanged. Existing attached cases remain unless you replace a case with the same kind/name or remove it through removeAttachments with its current source hash. A candidate replacement is tested and published with normal commit. A temporary word must be promoted to a candidate before normal commit, or task.commit will end the task and clear temporary words. For a committed word, define stages the replacement; replace-word then requires the replacement's own tests and every affected persistent caller's tests to pass. replace-word accepts a word name, not replacement source. Library publication also checks the word's own instruction and supported branch/iteration coverage."
+              AllowedFlowDefineFields = []
+              SourceExamples = []
+              RequestExamples =
+                [ { Name = "inspect-revision"
+                    Description = "Read the current revision before preparing a replacement."
+                    Operation = "describe"
+                    Fields = [ textField "word" "tutorial.sign" ] }
+                  { Name = "stage-replacement"
+                    Description = "Replace the definition at revision 1; substitute the current describe.revision."
+                    Operation = "define"
+                    Fields =
+                        [ textField "source" tutorialWordSource
+                          "replace", Boolean true
+                          "expectedRevision", Integer 1 ] }
+                  { Name = "commit-candidate-replacement"
+                    Description = "Publish a candidate replacement after its own attached tests pass."
+                    Operation = "commit"
+                    Fields = [ textField "word" "tutorial.sign" ] }
+                  { Name = "promote-temporary"
+                    Description = "Move a temporary word to candidate status before normal commit."
+                    Operation = "promote"
+                    Fields = [ textField "word" "tutorial.sign" ] }
+                  { Name = "publish-persistent-replacement"
+                    Description = "Publish a staged persistent replacement after own and affected caller tests pass."
+                    Operation = "replace-word"
+                    Fields = [ textField "word" "tutorial.sign" ] } ] }
+          Topic.Examples,
+            { Title = "Run tests and examples"
+              Documentation =
+                "Use test with word to run one owner's attached tests; use test-all to run every attached test in the current dictionary. Test expectations support `=> <literal>`, `=> value <expression>`, and `=> error CODE`. A value-expression expectation runs in an isolated trace and does not count as coverage of the tested word. For a nominal result compared with an underlying literal, explicitly unwrap it with its accessor in the actual test body; a constructor call cannot follow a bare `=>`. Flow examples accept literal expectations only. Use example with word to run all of that owner's examples, or add caseName to select one. Examples are inspectable documentation metadata and are not a runtime commit gate by themselves. Effects are the declared effect names; inspect them with describe or effects. The latest test or test-all batch replaces the displayed coverage observations. After testing individual words, run test-all before inspecting coverage for several words together. Passing a test batch is not a proof of domain correctness; library maturity additionally requires complete supported own instruction, branch, and iteration outcome coverage."
+              AllowedFlowDefineFields = []
+              SourceExamples =
+                [ { Name = "tutorial-sign-test"
+                    Description = "A Flow test with a literal expectation."
+                    Source = "test tutorial.sign/negative { tutorial::sign(-2) => -1 }" }
+                  { Name = "value-expression-test-expectation"
+                    Description = "A test may compare against an expression by writing the explicit value form."
+                    Source = "test tutorial.sign/value-expression { tutorial::sign(2) => value ::add(0, 1) }" }
+                  { Name = "runtime-error-test-expectation"
+                    Description = "A test may assert the divide-by-zero runtime error with the explicit error form."
+                    Source = "test tutorial.sign/divide-by-zero { ::divide(tutorial::sign(2), 0) => error RUNTIME_DIVIDE_BY_ZERO }" }
+                  { Name = "tutorial-sign-example"
+                    Description = "A Flow example with a literal expected result."
+                    Source = "example tutorial.sign/negative { tutorial::sign(-2) => -1 }" } ]
+              RequestExamples =
+                [ { Name = "test-one-word"
+                    Description = "Run tests for one word."
+                    Operation = "test"
+                    Fields = [ textField "word" "tutorial.sign" ] }
+                  { Name = "test-all"
+                    Description = "Run attached tests across the current dictionary."
+                    Operation = "test-all"
+                    Fields = [] }
+                  { Name = "list-examples"
+                    Description = "List an owner's attached example case names."
+                    Operation = "examples"
+                    Fields = [ textField "word" "tutorial.sign" ] }
+                  { Name = "run-examples"
+                    Description = "Run every example for an owner."
+                    Operation = "example"
+                    Fields = [ textField "word" "tutorial.sign" ] }
+                  { Name = "inspect-effects"
+                    Description = "Read an owner's declared effects."
+                    Operation = "effects"
+                    Fields = [ textField "word" "tutorial.sign" ] } ] } ]
+        |> Map.ofList
+
+    let content (topic: Topic) = topicContent[topic]

@@ -59,7 +59,8 @@ Human REPL commands:
   :snapshot.save NAME  Save committed project and provider state
   :snapshot.load NAME  Restore a named committed snapshot
   :storage.status    Show durable authority and export status
-  :help              Show this help
+  :help [TOPIC]      Show CLI usage, or runtime authoring help for a topic
+                     Runtime topics: authoring, define, replacement, examples (default: authoring)
   :quit              Exit
 """
 
@@ -208,6 +209,14 @@ Human REPL commands:
             | "search-effect" ->
                 args["effect"] <- jsonString rest
                 engine.Dispatch(command, args)
+            | "help" ->
+                match commandWords rest with
+                | Error message -> commandError "CLI_INVALID_COMMAND" message
+                | Ok [] -> engine.Dispatch("help", args)
+                | Ok [ topic ] ->
+                    args["topic"] <- jsonString topic
+                    engine.Dispatch("help", args)
+                | Ok _ -> commandError "CLI_INVALID_COMMAND" ":help accepts one authoring help topic."
             | "graph" | "context" ->
                 let parts = rest.Split([| ' '; '\t' |], StringSplitOptions.RemoveEmptyEntries)
                 let mutable position = 0

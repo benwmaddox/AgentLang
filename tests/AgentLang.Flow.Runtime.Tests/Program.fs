@@ -167,6 +167,309 @@ module Program =
             let name = stringValue (item.["name"])
             check (boolValue (item.["passed"])) $"test {name} passed"
 
+    let private testAuthoringHelpAndCanonicalLibrarySource root =
+        let project = Path.Combine(root, "authoring-help-canonical")
+        let engine = Runtime.Engine(project, Set.empty, "2041-02-03T04:05:06Z")
+        let index = dispatch engine "help" [] |> expectOk "read the default authoring-help index"
+        equal "help" (stringValue index.["kind"]) "help is a JSONL operation"
+        let indexData = index.["data"]
+        equal 1 (indexData.["schemaVersion"].GetValue<int>()) "help schema version"
+        equal [ "authoring"; "define"; "replacement"; "examples" ] (jsonArrayStrings indexData.["topics"]) "help topic order is stable"
+        equal "authoring" (stringValue indexData.["topic"]) "omitted help topic selects authoring index"
+        let originalIndexJson = index.ToJsonString()
+        let repeatedIndex = dispatch engine "help" [] |> expectOk "repeat default authoring help"
+        equal originalIndexJson (repeatedIndex.ToJsonString()) "help payload is deterministic across requests"
+        (indexData.AsObject()).["documentation"] <- jstr "caller mutation"
+        let freshIndex = dispatch engine "help" [] |> expectOk "read fresh default help after caller mutation"
+        check (stringValue freshIndex.["data"].["documentation"] <> "caller mutation") "one response cannot mutate later help payloads"
+        equal [ "authoring"; "define"; "replacement"; "examples" ]
+            (freshIndex.["data"].["topicInstructions"].AsArray() |> Seq.map (fun item -> stringValue item.["topic"]) |> Seq.toList)
+            "index includes one instruction per help topic"
+
+        let defineHelp = dispatch engine "help" [ "topic", jstr "define" ] |> expectOk "read Flow define help"
+        let defineData = defineHelp.["data"]
+        equal "define" (stringValue defineData.["topic"]) "define help selects its requested topic"
+        let fieldNames =
+            defineData.["allowedFlowDefineFields"].AsArray()
+            |> Seq.map (fun field -> stringValue field.["name"])
+            |> Seq.toList
+        equal (AuthoringHelp.flowDefineFields |> List.map (fun field -> field.Name)) fieldNames "Flow define help and runtime allowlist share one contract"
+        check (not (fieldNames |> List.contains "code")) "Flow define help does not advertise a code alias"
+        check ((stringValue defineData.["documentation"]).Contains("doc", StringComparison.Ordinal)) "define help explains inline word documentation"
+        check ((stringValue defineData.["documentation"]).Contains("effects", StringComparison.Ordinal)) "define help explains effect declarations"
+
+        let sourceExample = defineData.["sourceExamples"].AsArray() |> Seq.head
+        let canonicalSource = stringValue sourceExample.["source"]
+        let defineRequestExample =
+            defineData.["requestExamples"].AsArray()
+            |> Seq.find (fun item -> stringValue item.["name"] = "define-tutorial-sign")
+        let defineRequest = defineRequestExample.["request"]
+        equal canonicalSource (stringValue defineRequest.["source"]) "define request example uses the canonical documented source"
+        let defined = Protocol.dispatchLine engine (defineRequest.ToJsonString()) |> expectOk "execute the Flow source returned by help"
+        equal "flow" (stringValue defined.["data"].["frontend"]) "help's source request uses the default Flow frontend"
+        assertAllPassed 3 (dispatch engine "test" [ "word", jstr "tutorial.sign" ] |> expectOk "run all canonical tutorial tests")
+        let examples = dispatch engine "example" [ "word", jstr "tutorial.sign" ] |> expectOk "run the canonical tutorial example"
+        check (boolValue examples.["data"].["results"].[0].["passed"]) "canonical tutorial example passes"
+
+        let examplesHelp = dispatch engine "help" [ "topic", jstr "examples" ] |> expectOk "read test and example help"
+        let examplesDocumentation = stringValue examplesHelp.["data"].["documentation"]
+        for guidance in [ "=> <literal>"; "=> value <expression>"; "=> error CODE"; "test-all"; "nominal"; "literal expectations only" ] do
+            check (examplesDocumentation.Contains(guidance, StringComparison.Ordinal)) $"examples help explains {guidance}"
+        let valueExpectation =
+            examplesHelp.["data"].["sourceExamples"].AsArray()
+            |> Seq.find (fun item -> stringValue item.["name"] = "value-expression-test-expectation")
+        let valueExpectationSource = stringValue valueExpectation.["source"]
+        let runtimeErrorExpectation =
+            examplesHelp.["data"].["sourceExamples"].AsArray()
+            |> Seq.find (fun item -> stringValue item.["name"] = "runtime-error-test-expectation")
+        let runtimeErrorExpectationSource = stringValue runtimeErrorExpectation.["source"]
+        let attachHelpCase source =
+            let request = JsonObject()
+            request["op"] <- jstr "define"
+            request["source"] <- jstr source
+            Protocol.dispatchLine engine (request.ToJsonString())
+            |> expectOk "execute a test source returned by help"
+        attachHelpCase valueExpectationSource |> ignore
+        attachHelpCase runtimeErrorExpectationSource |> ignore
+        let canonicalTests = dispatch engine "test" [ "word", jstr "tutorial.sign" ] |> expectOk "run canonical and help-provided tests"
+        assertAllPassed 5 canonicalTests
+        let testResults = canonicalTests.["data"].["results"].AsArray()
+        let valueResult = testResults |> Seq.find (fun item -> stringValue item.["word"] = "tutorial.sign" && stringValue item.["name"] = "value-expression")
+        equal "value-expression" (stringValue valueResult.["expectedKind"]) "help value expectation is compiled and executed"
+        equal "1" (stringValue valueResult.["actual"].[0]) "help value expectation runs its actual word body"
+        let runtimeErrorResult = testResults |> Seq.find (fun item -> stringValue item.["word"] = "tutorial.sign" && stringValue item.["name"] = "divide-by-zero")
+        equal "RUNTIME_DIVIDE_BY_ZERO" (stringValue runtimeErrorResult.["expectedErrorCode"]) "help runtime-error expectation executes the real division error"
+        check (boolValue runtimeErrorResult.["passed"]) "help runtime-error expectation passes only when the runtime error matches"
+        let afterHelpCases = dispatch engine "describe" [ "word", jstr "tutorial.sign" ] |> expectOk "inspect help-provided test attachments"
+        equal [ "divide-by-zero"; "negative"; "positive"; "value-expression"; "zero" ] (jsonArrayStrings afterHelpCases.["data"].["tests"]) "help examples attach to their existing tutorial word"
+
+        let libraryCommitExample =
+            defineData.["requestExamples"].AsArray()
+            |> Seq.find (fun item -> stringValue item.["name"] = "commit-tutorial-sign-as-library")
+        let committed = Protocol.dispatchLine engine (libraryCommitExample.["request"].ToJsonString()) |> expectOk "execute the help's alternative library commit request"
+        check (not (isNull committed.["data"])) "library commit request example completes"
+        let beforeReload = dispatch engine "describe" [ "word", jstr "tutorial.sign" ] |> expectOk "inspect committed authoring metadata"
+        equal "library" (stringValue beforeReload.["data"].["maturity"]) "library commit records library maturity"
+        equal "Returns -1 for negative integers and 1 for zero or positive integers." (stringValue beforeReload.["data"].["documentation"]) "inline Flow doc is available as describe metadata"
+        equal [ "divide-by-zero"; "negative"; "positive"; "value-expression"; "zero" ] (jsonArrayStrings beforeReload.["data"].["tests"]) "inline and help-provided Flow tests remain inspectable"
+        equal [ "negative" ] (jsonArrayStrings beforeReload.["data"].["examples"]) "inline Flow examples remain inspectable"
+
+        let reloaded = Runtime.Engine(project, Set.empty, "2041-02-03T04:05:06Z")
+        let reloadedBeforeTests = dispatch reloaded "describe" [ "word", jstr "tutorial.sign" ] |> expectOk "describe word after fresh Engine reload"
+        equal "library" (stringValue reloadedBeforeTests.["data"].["maturity"]) "library maturity survives reload"
+        equal "not-run" (stringValue reloadedBeforeTests.["data"].["coverage"].["status"]) "fresh reload has no current coverage observations"
+        equal "Returns -1 for negative integers and 1 for zero or positive integers." (stringValue reloadedBeforeTests.["data"].["documentation"]) "documentation survives reload"
+        equal [ "divide-by-zero"; "negative"; "positive"; "value-expression"; "zero" ] (jsonArrayStrings reloadedBeforeTests.["data"].["tests"]) "tests survive reload"
+        equal [ "negative" ] (jsonArrayStrings reloadedBeforeTests.["data"].["examples"]) "examples survive reload"
+        assertAllPassed 5 (dispatch reloaded "test-all" [] |> expectOk "run test-all after reload")
+        let afterTests = dispatch reloaded "describe" [ "word", jstr "tutorial.sign" ] |> expectOk "inspect latest coverage after test-all"
+        equal "current" (stringValue afterTests.["data"].["coverage"].["status"]) "describe shows the most recent test batch"
+        equal
+            (afterTests.["data"].["coverage"].["instructionsTotal"].GetValue<int>())
+            (afterTests.["data"].["coverage"].["instructionsCovered"].GetValue<int>())
+            "canonical tests cover each own instruction for library publication"
+
+        let unknownTopic = dispatch engine "help" [ "topic", jstr "invented" ] |> expectError "HELP_UNKNOWN_TOPIC"
+        equal [ "authoring"; "define"; "replacement"; "examples" ] (jsonArrayStrings unknownTopic.["error"].["expected"]) "unknown help topic reports known topics"
+        equal [ "invented" ] (jsonArrayStrings unknownTopic.["error"].["actual"]) "unknown help topic reports requested name"
+        let invalidType = dispatch engine "help" [ "topic", jbool true ] |> expectError "HELP_INVALID_ARGUMENT"
+        equal [ "string" ] (jsonArrayStrings invalidType.["error"].["expected"]) "invalid help topic type expects a string"
+        equal [ "boolean" ] (jsonArrayStrings invalidType.["error"].["actual"]) "invalid help topic type reports actual JSON kind"
+        let invalidField = dispatch engine "help" [ "extra", jstr "ignored" ] |> expectError "HELP_INVALID_ARGUMENT"
+        equal [ "topic" ] (jsonArrayStrings invalidField.["error"].["expected"]) "help rejects fields other than the topic selector"
+        equal [ "extra" ] (jsonArrayStrings invalidField.["error"].["actual"]) "help invalid field error identifies unknown key"
+        let recoveredHelp = dispatch engine "help" [] |> expectOk "valid help follows invalid topic requests"
+        equal [ "authoring"; "define"; "replacement"; "examples" ] (jsonArrayStrings recoveredHelp.["data"].["topics"]) "help recovers after invalid requests"
+
+    let private testCandidateCasThenNormalCommit root =
+        let engine = Runtime.Engine(Path.Combine(root, "authoring-help-candidate-cas"), Set.empty)
+        let firstSource =
+            "word draft.bump(value: Int) -> Int {\n"
+            + "    effects none\n"
+            + "    add(value, 1)\n"
+            + "}"
+        let firstTest = "test draft.bump/basic { draft::bump(1) => 2 }"
+        defineFlow engine firstSource [ firstTest ] [] [] |> expectOk "stage the original candidate" |> ignore
+        let originalDescription = dispatch engine "describe" [ "word", jstr "draft.bump" ] |> expectOk "inspect original candidate revision"
+        equal 1 (originalDescription.["data"].["revision"].GetValue<int>()) "candidate begins at revision one"
+
+        let replacementSource =
+            "word draft.bump(value: Int) -> Int {\n"
+            + "    effects none\n"
+            + "    add(value, 2)\n"
+            + "}"
+        let replacementTest = "test draft.bump/basic { draft::bump(1) => 3 }"
+        let stale =
+            defineFlow engine replacementSource [ replacementTest ] []
+                [ "replace", jbool true; "expectedRevision", jint 0 ]
+        expectError "FLOW_BATCH_STALE_REVISION" stale |> ignore
+        let afterStale = dispatch engine "describe" [ "word", jstr "draft.bump" ] |> expectOk "inspect candidate after stale CAS"
+        equal 1 (afterStale.["data"].["revision"].GetValue<int>()) "stale CAS does not advance candidate revision"
+        defineFlow engine replacementSource [ replacementTest ] []
+            [ "replace", jbool true; "expectedRevision", jint 1 ]
+        |> expectOk "stage the current-revision candidate replacement"
+        |> ignore
+        equal 2 ((dispatch engine "describe" [ "word", jstr "draft.bump" ] |> expectOk "inspect staged candidate revision").["data"].["revision"].GetValue<int>()) "candidate replacement advances its local revision"
+        assertAllPassed 1 (dispatch engine "test" [ "word", jstr "draft.bump" ] |> expectOk "test staged candidate replacement")
+        let notStaged = commit engine "replace-word" "draft.bump" [] |> expectError "REPLACE_NOT_STAGED"
+        check ((stringValue notStaged.["error"].["message"]).Contains("expectedRevision", StringComparison.Ordinal)) "replace-word guidance points to the define CAS request"
+        commit engine "commit" "draft.bump" [] |> expectOk "publish candidate replacement with ordinary commit" |> ignore
+        let committed = dispatch engine "describe" [ "word", jstr "draft.bump" ] |> expectOk "inspect committed candidate replacement"
+        equal "persistent" (stringValue committed.["data"].["status"]) "ordinary commit publishes a candidate replacement"
+        equal 2 (committed.["data"].["revision"].GetValue<int>()) "commit preserves the staged replacement revision"
+
+    let private testCommittedReplacementCallerGate root =
+        let project = Path.Combine(root, "authoring-help-caller-gate")
+        let engine = Runtime.Engine(project, Set.empty)
+        let bumpSource =
+            "word durable.bump(value: Int) -> Int {\n"
+            + "    effects none\n"
+            + "    add(value, 1)\n"
+            + "}"
+        let bumpTest = "test durable.bump/basic { durable::bump(1) => 2 }"
+        defineFlow engine bumpSource [ bumpTest ] [] [] |> expectOk "define durable replacement owner" |> ignore
+        commit engine "commit" "durable.bump" [] |> expectOk "commit durable replacement owner" |> ignore
+
+        let callerSource =
+            "word durable.forward(value: Int) -> Int {\n"
+            + "    effects none\n"
+            + "    durable::bump(value)\n"
+            + "}"
+        let callerTest = "test durable.forward/basic { durable::forward(5) => 6 }"
+        defineFlow engine callerSource [ callerTest ] [] [] |> expectOk "define persistent caller" |> ignore
+        commit engine "commit" "durable.forward" [] |> expectOk "commit persistent caller" |> ignore
+        let ownerId = getWordId engine "durable.bump"
+        let store = Storage.create project
+        let before = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        expectError "REPLACE_NOT_STAGED" (commit engine "replace-word" "durable.bump" []) |> ignore
+
+        let incompatibleSource =
+            "word durable.bump(value: Int) -> Int {\n"
+            + "    effects none\n"
+            + "    if int::less-than(value, 5) { add(value, 1) } else { add(value, 2) }\n"
+            + "}"
+        defineFlow engine incompatibleSource [ bumpTest ] [] [ "replace", jbool true; "expectedRevision", jint 1 ]
+        |> expectOk "stage a replacement that preserves owner tests but changes the persistent caller result"
+        |> ignore
+        let rejected = commit engine "replace-word" "durable.bump" [] |> expectError "COMMIT_TESTS_FAILED"
+        let failedCases = jsonArrayStrings rejected.["error"].["actual"]
+        check (failedCases |> List.contains "durable.forward/basic") "persistent replacement gate reports the failing caller case"
+        let afterRejected = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        equal before.ManifestHash afterRejected.ManifestHash "failing caller gate leaves durable authority unchanged"
+        let freshAfterRejected = Runtime.Engine(project, Set.empty)
+        equal "6" (evalFlow freshAfterRejected "durable::bump(5)" |> expectOk "evaluate durable owner after caller gate rejection" |> fun response -> stringValue response.["data"].["stack"].[0]) "rejected persistent replacement leaves the committed body executable"
+        equal ownerId (getWordId engine "durable.bump") "staged replacement preserves the owner's stable identity"
+        dispatch engine "discard" [ "word", jstr "durable.bump" ] |> expectOk "discard rejected replacement candidate" |> ignore
+
+        let compatibleReplacement =
+            "word durable.bump(value: Int) -> Int {\n"
+            + "    effects none\n"
+            + "    doc \"Increment an integer by one.\"\n"
+            + "    add(value, 1)\n"
+            + "}"
+        defineFlow engine compatibleReplacement [] [] [ "replace", jbool true; "expectedRevision", jint 1 ]
+        |> expectOk "stage a compatible committed replacement"
+        |> ignore
+        let published = commit engine "replace-word" "durable.bump" [] |> expectOk "publish persistent replacement after caller regression tests pass"
+        check (jsonArrayStrings published.["data"] |> List.contains "durable.forward/basic") "successful replacement result includes persistent caller tests"
+        equal "Increment an integer by one." (stringValue (dispatch engine "describe" [ "word", jstr "durable.bump" ] |> expectOk "inspect published replacement documentation").["data"].["documentation"]) "compatible replacement publishes new inline documentation"
+
+    let private testFlowUnknownArgumentsAndExpectationGuidance root =
+        let project = Path.Combine(root, "authoring-help-unknown-fields")
+        let engine = Runtime.Engine(project, Set.ofList [ "fs.read"; "fs.write" ])
+        let canonicalSource =
+            "word tutorial.sign(value: Int) -> Int {\n"
+            + "    effects none\n"
+            + "    doc \"Returns -1 for negative integers and 1 for zero or positive integers.\"\n"
+            + "    if int::less-than(value, 0) { -1 } else { 1 }\n"
+            + "}\n\n"
+            + "test tutorial.sign/negative { tutorial::sign(-2) => -1 }\n"
+            + "test tutorial.sign/zero { tutorial::sign(0) => 1 }\n"
+            + "test tutorial.sign/positive { tutorial::sign(2) => 1 }\n\n"
+            + "example tutorial.sign/negative { tutorial::sign(-2) => -1 }"
+        defineFlowProject engine canonicalSource [] |> expectOk "stage tutorial word before unknown-field checks" |> ignore
+        commit engine "commit" "tutorial.sign" [ "library", jbool true ] |> expectOk "commit tutorial word before unknown-field checks" |> ignore
+        let baselineDescription = dispatch engine "describe" [ "word", jstr "tutorial.sign" ] |> expectOk "capture the current word before unknown Flow fields"
+        let baselineSource = dispatch engine "source" [ "word", jstr "tutorial.sign" ] |> expectOk "capture authored source before unknown Flow fields"
+        evalStack engine "\"authoring-help-sentinel\" \"stable\" file.write" |> expectOk "seed virtual file provider before unknown Flow fields" |> ignore
+        let providerBefore = evalStack engine "\"authoring-help-sentinel\" file.read" |> expectOk "read virtual file provider sentinel before task"
+        equal "\"stable\"" (stringValue providerBefore.["data"].["stack"].[0]) "virtual file provider sentinel is seeded"
+        dispatch engine "task.begin" [ "goal", jstr "verify unknown Flow fields are rejected atomically" ] |> expectOk "begin unknown-field atomicity task" |> ignore
+
+        let beforeWords = dispatch engine "words" [ "compact", jbool true ] |> expectOk "capture dictionary before unknown Flow fields"
+        let beforeStorage = dispatch engine "storage.status" [] |> expectOk "capture provider status before unknown Flow fields"
+        let beforeTask = dispatch engine "task.status" [] |> expectOk "capture task state before unknown Flow fields"
+        let unknownTopLevel =
+            dispatch engine "define"
+                [ "frontend", jstr "flow"
+                  "source", jstr "word malformed"
+                  "code", jstr "not a Flow code alias"
+                  "documentation", jstr "metadata is inline"
+                  "extra", jbool true ]
+            |> expectError "FLOW_RUNTIME_UNKNOWN_ARGUMENT"
+        equal [ "examples"; "expectedRevision"; "frontend"; "removeAttachments"; "replace"; "source"; "temporary"; "tests" ]
+            (jsonArrayStrings unknownTopLevel.["error"].["expected"]) "unknown Flow field error returns the allowed field set"
+        equal [ "code"; "documentation"; "extra" ] (jsonArrayStrings unknownTopLevel.["error"].["actual"]) "unknown Flow fields are reported in sorted order"
+        let unknownMessage = stringValue unknownTopLevel.["error"].["message"]
+        check (unknownMessage.Contains("doc", StringComparison.Ordinal)) "unknown metadata field guidance points to inline doc source"
+        check (unknownMessage.Contains("help topic `define`", StringComparison.Ordinal)) "unknown Flow field guidance points to define help"
+
+        let testSource = "test tutorial.sign/negative { tutorial::sign(-2) => -1 }"
+        let removal = JsonObject()
+        removal["kind"] <- jstr "test"
+        removal["caseName"] <- jstr "negative"
+        removal["expectedSourceHash"] <- jstr (digest testSource)
+        removal["extra"] <- jstr "ignored by the old permissive reader"
+        let removals = JsonArray()
+        removals.Add removal
+        let replacementWordSource =
+            "word tutorial.sign(value: Int) -> Int {\n"
+            + "    effects none\n"
+            + "    doc \"Returns -1 for negative integers and 1 for zero or positive integers.\"\n"
+            + "    if int::less-than(value, 0) { -1 } else { 1 }\n"
+            + "}"
+        let unknownNested =
+            dispatch engine "define"
+                [ "frontend", jstr "flow"
+                  "source", jstr replacementWordSource
+                  "replace", jbool true
+                  "expectedRevision", jint 1
+                  "removeAttachments", removals ]
+            |> expectError "FLOW_RUNTIME_UNKNOWN_ARGUMENT"
+        equal [ "caseName"; "expectedSourceHash"; "kind" ] (jsonArrayStrings unknownNested.["error"].["expected"]) "unknown removal row error returns the nested allowed fields"
+        equal [ "extra" ] (jsonArrayStrings unknownNested.["error"].["actual"]) "unknown removal row error identifies the extra key"
+        equal (beforeWords.["data"].ToJsonString()) (dispatch engine "words" [ "compact", jbool true ] |> expectOk "read dictionary after unknown Flow fields" |> fun response -> response.["data"].ToJsonString()) "unknown Flow fields do not stage a definition"
+        equal (beforeStorage.["data"].ToJsonString()) (dispatch engine "storage.status" [] |> expectOk "read durable status after unknown Flow fields" |> fun response -> response.["data"].ToJsonString()) "unknown Flow fields do not change durable project authority"
+        let afterTask = dispatch engine "task.status" [] |> expectOk "inspect task after unknown Flow field diagnostics"
+        for property in [ "active"; "wordsInspected"; "wordsUsed"; "wordsCreated"; "testsRun"; "testsFailed"; "effects" ] do
+            equal (beforeTask.["data"].[property].ToJsonString()) (afterTask.["data"].[property].ToJsonString()) $"unknown Flow fields leave task {property} unchanged"
+        equal [ "FLOW_RUNTIME_UNKNOWN_ARGUMENT"; "FLOW_RUNTIME_UNKNOWN_ARGUMENT" ]
+            (jsonArrayStrings afterTask.["data"].["errors"]) "only logged diagnostics change task state"
+        let afterDescription = dispatch engine "describe" [ "word", jstr "tutorial.sign" ] |> expectOk "inspect owner after rejected attachment row"
+        equal (baselineDescription.["data"].["id"].ToJsonString()) (afterDescription.["data"].["id"].ToJsonString()) "unknown Flow fields leave the existing word identity unchanged"
+        equal (baselineDescription.["data"].["revision"].ToJsonString()) (afterDescription.["data"].["revision"].ToJsonString()) "unknown Flow fields leave the existing word revision unchanged"
+        equal (baselineDescription.["data"].["documentation"].ToJsonString()) (afterDescription.["data"].["documentation"].ToJsonString()) "unknown Flow fields leave the existing word metadata unchanged"
+        let afterSource = dispatch engine "source" [ "word", jstr "tutorial.sign" ] |> expectOk "read owner source after rejected attachment row"
+        equal (baselineSource.["data"].ToJsonString()) (afterSource.["data"].ToJsonString()) "unknown Flow fields leave existing authored source unchanged"
+        equal 1 (afterDescription.["data"].["revision"].GetValue<int>()) "unknown nested removal does not stage an owner revision"
+        equal [ "negative"; "positive"; "zero" ] (jsonArrayStrings afterDescription.["data"].["tests"]) "unknown nested removal does not remove attached tests"
+        let providerAfter = evalStack engine "\"authoring-help-sentinel\" file.read" |> expectOk "read virtual file provider sentinel after unknown Flow fields"
+        equal "\"stable\"" (stringValue providerAfter.["data"].["stack"].[0]) "unknown Flow fields leave virtual file provider state unchanged"
+
+        let invalidExpectationEngine = Runtime.Engine("", Set.empty)
+        let invalidExpectationSource =
+            "word tutorial.echo(value: Int) -> Int {\n    effects none\n    value\n}\n"
+            + "test tutorial.echo/nominal { tutorial::echo(1) => Money::new(1) }"
+        let invalidExpectation = defineFlow invalidExpectationEngine invalidExpectationSource [] [] [] |> expectError "FLOW_EXPECTATION_LITERAL_REQUIRED"
+        let guidance = stringValue invalidExpectation.["error"].["message"]
+        check (guidance.Contains("=> value <expression>", StringComparison.Ordinal)) "bare constructor expectation points to explicit value-expression syntax"
+        check (guidance.Contains("=> error CODE", StringComparison.Ordinal)) "test expectation diagnostic lists runtime-error syntax"
+        let invalidExample =
+            dispatch invalidExpectationEngine "define"
+                [ "source", jstr "word tutorial.echo(value: Int) -> Int {\n    effects none\n    value\n}\nexample tutorial.echo/nominal { tutorial::echo(1) => value Money::new(1) }" ]
+            |> expectError "FLOW_EXAMPLE_EXPECTATION_KIND"
+        check ((stringValue invalidExample.["error"].["message"]).Contains("literal expectations only", StringComparison.Ordinal)) "example diagnostics keep examples literal-only"
+
     let private testExplicitFrontendAndDurableReload root =
         let project = Path.Combine(root, "durable-reload")
         let engine = Runtime.Engine(project, Set.empty, "2030-01-02T03:04:05Z")
@@ -2557,6 +2860,10 @@ module Program =
     let main _ =
         let root = newRoot ()
         try
+            testAuthoringHelpAndCanonicalLibrarySource root
+            testCandidateCasThenNormalCommit root
+            testCommittedReplacementCallerGate root
+            testFlowUnknownArgumentsAndExpectationGuidance root
             testExplicitFrontendAndDurableReload root
             testExplicitFrontendCannotFallBack root
             testDescribeFlowReferences root
@@ -2577,7 +2884,7 @@ module Program =
             testFlowStaticListFold root
             testFlowValidatorCannotBeRenamedAfterTypeCommit root
             testFlowProjectDocumentTypesCommitAndReload root
-            printfn $"Flow Runtime tests passed: 20 groups, {assertions} assertions."
+            printfn $"Flow Runtime tests passed: 24 groups, {assertions} assertions."
             0
         finally
             if Directory.Exists root then Directory.Delete(root, true)

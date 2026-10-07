@@ -191,6 +191,14 @@ Search initially matches names and documentation deterministically. Type/output/
 
 Every operation supports a stable JSON representation through the agent protocol. Responses identify success or failure and carry typed payloads or diagnostics. Diagnostics include code, message, word/operation where applicable, source span, and expected/actual type or stack state. Human presentation is an adapter over these same results.
 
+Authoring conventions must themselves be discoverable through the runtime:
+documentation syntax, attached tests/examples, accepted request fields, and the
+separate staging and persistence steps for replacements. Reject unsupported
+Flow definition fields before editing state; do not silently ignore attempted
+metadata. Keep help bounded and deterministic, and expose it through the small
+agent interface. Evaluate whether it resolves observed authoring failures with
+fresh agents; executable help examples alone are not evidence of an agent benefit.
+
 The REPL accepts multiline declarations and shows one result per completed submission. The JSON-lines mode accepts one JSON request per line, with multiline source encoded as a JSON string. Standard output contains only response JSON in that mode; prompts and debugging output belong elsewhere.
 
 ## Tasks and rollback

@@ -16,6 +16,10 @@ Close-to-first-use is advisory lint, and unrestricted mutable globals are exclud
 
 The decisions and scope live in [docs/PRD.md](docs/PRD.md) and [docs/DECISIONS.md](docs/DECISIONS.md).
 
+[Authoring through the runtime](docs/AUTHORING.md) explains inline documentation,
+attached tests/examples, library coverage and revision-checked replacements.
+Use JSONL `help` or REPL `:help TOPIC` for the corresponding inspectable contracts.
+
 The implementation targets .NET 9 and uses no external test framework or model API key.
 
 ## Build and acceptance checks

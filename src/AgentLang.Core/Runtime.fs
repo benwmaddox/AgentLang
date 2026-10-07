@@ -259,6 +259,64 @@ module Runtime =
             node["documentation"] <- jstr descriptor.Documentation
             node["coverageOutcomes"] <- jsonNode descriptor.Coverage
             node
+
+        let helpRequestValueJson (value: AuthoringHelp.RequestValue) : JsonNode =
+            match value with
+            | AuthoringHelp.RequestValue.Text text -> jstr text
+            | AuthoringHelp.RequestValue.Boolean flag -> jbool flag
+            | AuthoringHelp.RequestValue.Integer number -> jint number
+
+        let helpPayload (request: AuthoringHelp.HelpRequest) =
+            let topic = AuthoringHelp.requestTopic request
+            let content = AuthoringHelp.content request.Topic
+            let payload = JsonObject()
+            payload["schemaVersion"] <- jint AuthoringHelp.schemaVersion
+            payload["topics"] <- jsonNode AuthoringHelp.topicNames
+            payload["topic"] <- jstr topic
+            payload["title"] <- jstr content.Title
+            payload["documentation"] <- jstr content.Documentation
+
+            let instructions = JsonArray()
+            for instruction in AuthoringHelp.topicInstructions do
+                let row = JsonObject()
+                row["topic"] <- jstr instruction.Topic
+                row["title"] <- jstr instruction.Title
+                row["description"] <- jstr instruction.Description
+                instructions.Add row
+            payload["topicInstructions"] <- instructions
+
+            let fields = JsonArray()
+            for field in content.AllowedFlowDefineFields do
+                let row = JsonObject()
+                row["name"] <- jstr field.Name
+                row["type"] <- jstr field.Type
+                row["required"] <- jbool field.Required
+                row["documentation"] <- jstr field.Documentation
+                fields.Add row
+            payload["allowedFlowDefineFields"] <- fields
+
+            let sourceExamples = JsonArray()
+            for example in content.SourceExamples do
+                let row = JsonObject()
+                row["name"] <- jstr example.Name
+                row["description"] <- jstr example.Description
+                row["source"] <- jstr example.Source
+                sourceExamples.Add row
+            payload["sourceExamples"] <- sourceExamples
+
+            let requestExamples = JsonArray()
+            for example in content.RequestExamples do
+                let row = JsonObject()
+                row["name"] <- jstr example.Name
+                row["description"] <- jstr example.Description
+                let requestNode = JsonObject()
+                requestNode["op"] <- jstr example.Operation
+                for name, value in example.Fields do requestNode[name] <- helpRequestValueJson value
+                row["request"] <- requestNode
+                requestExamples.Add row
+            payload["requestExamples"] <- requestExamples
+            payload
+
         let mutable data =
             { Words = Compiler.primitives
               WordIds = Map.empty
@@ -2807,6 +2865,49 @@ module Runtime =
                     |> Seq.toList
                 | value -> flowArgumentError "removeAttachments" "an array of attachment removal objects" (flowJsonKind value)
 
+        let ordinalSort values =
+            values |> List.sortWith (fun left right -> StringComparer.Ordinal.Compare(left, right))
+
+        let flowDefineAllowedKeys = AuthoringHelp.flowDefineFields |> List.map (fun field -> field.Name)
+
+        let rejectUnknownFields path allowed (actual: string list) =
+            let unknown = actual |> ordinalSort
+            if not (List.isEmpty unknown) then
+                let location = if path = "" then "Flow define request" else $"Flow define attachment row '{path}'"
+                let docHint =
+                    if unknown |> List.exists (fun name -> name = "doc" || name = "documentation") then
+                        " Documentation belongs inside Flow word source as `doc \"...\"`; use help topic `define` for the request schema."
+                    else " See help topic `define` for the request schema."
+                let unknownText = String.concat ", " unknown
+                error "FLOW_RUNTIME_UNKNOWN_ARGUMENT" $"{location} has unsupported field(s): {unknownText}.{docHint}" None None
+                    (allowed |> ordinalSort) unknown
+
+        let validateFlowDefineArguments (arguments: JsonObject) =
+            let allowed = Set.ofList flowDefineAllowedKeys
+            let topLevelUnknown =
+                arguments
+                |> Seq.map (fun (KeyValue(key, _)) -> key)
+                |> Seq.filter (allowed.Contains >> not)
+                |> Seq.toList
+            rejectUnknownFields "" flowDefineAllowedKeys topLevelUnknown
+
+            match arguments["removeAttachments"] with
+            | :? JsonArray as rows ->
+                rows
+                |> Seq.iteri (fun index row ->
+                    match row with
+                    | :? JsonObject as item ->
+                        let nestedAllowed = [ "kind"; "caseName"; "expectedSourceHash" ]
+                        let nestedSet = Set.ofList nestedAllowed
+                        let nestedUnknown =
+                            item
+                            |> Seq.map (fun (KeyValue(key, _)) -> key)
+                            |> Seq.filter (nestedSet.Contains >> not)
+                            |> Seq.toList
+                        rejectUnknownFields ($"removeAttachments[{index}]") nestedAllowed nestedUnknown
+                    | _ -> ())
+            | _ -> ()
+
         let registerFlowProjectParsed (arguments: JsonObject) (document: FlowProjectDocument) =
             let old = data
             let temporary = readOptionalStrictBool arguments "temporary" false
@@ -3064,7 +3165,7 @@ module Runtime =
             if replace && previous.IsNone then
                 error "FLOW_BATCH_REPLACE_MISSING" "A Flow replacement requires an existing user word." (Some parsedWord.Name) (Some parsedWord.Span) [ "existing word" ] []
             if not replace && previous.IsSome then
-                error "FLOW_WORD_ALREADY_EXISTS" $"Flow word '{parsedWord.Name}' already exists; use replace with its expectedRevision to update it." (Some parsedWord.Name) (Some parsedWord.Span) [ "unused word name or replace=true" ] [ parsedWord.Name ]
+                error "FLOW_WORD_ALREADY_EXISTS" $"Flow word '{parsedWord.Name}' already exists; use define with replace=true and its current expectedRevision (see help topic 'replacement')." (Some parsedWord.Name) (Some parsedWord.Span) [ "unused word name or replace=true with current expectedRevision" ] [ parsedWord.Name ]
             match previous with
             | Some item when item.Builtin.IsSome || item.Status = Primitive ->
                 error "FLOW_BATCH_REPLACE_PROTECTED" "Built-in and generated words cannot be replaced by Flow." (Some parsedWord.Name) (Some parsedWord.Span) [ "user-authored word" ] [ parsedWord.Name ]
@@ -3530,7 +3631,9 @@ module Runtime =
                                 success "eval" (result |> List.map Types.formatValue |> String.concat " ") (Some dataNode)
                 | "define" ->
                     match selectedFrontend args with
-                    | "flow" -> registerFlowParsed args
+                    | "flow" ->
+                        validateFlowDefineArguments args
+                        registerFlowParsed args
                     | _ ->
                         let source = readString args "source" (readString args "code" "")
                         match Parser.parse "<definition>" source with
@@ -3538,6 +3641,12 @@ module Runtime =
                         | Ok parsed ->
                             registerParsed parsed (readBool args "temporary" false)
                             success "defined" "Definitions parsed, type checked, and staged." (Some(jsonNode (parsed.Words |> List.map (fun word -> word.Name))))
+                | "help" ->
+                    match AuthoringHelp.parseRequest args with
+                    | Ok request ->
+                        let payload = helpPayload request
+                        success "help" (payload["title"].GetValue<string>()) (Some(payload :> JsonNode))
+                    | Error diagnostic -> raise (LanguageException diagnostic)
                 | "words" ->
                     let compact = readOptionalStrictBool args "compact" false
                     let words = effectiveWords data
@@ -3793,7 +3902,7 @@ module Runtime =
                     elif actor <> "client" && actor <> "host" then
                         error "PROVENANCE_INVALID_ACTOR" "Commit actor must be 'client' or 'host'." None None [ "client"; "host" ] [ actor ]
                     elif operation = "replace-word" && (name = "" || not (data.Replacements.ContainsKey name)) then
-                        error "REPLACE_NOT_STAGED" "replace-word requires the name of a staged replacement for an existing persistent word." (if name = "" then None else Some name) None [] []
+                        error "REPLACE_NOT_STAGED" "No staged persistent replacement exists for this word; use define with replace=true and the current expectedRevision, then call replace-word after testing (see help topic 'replacement')." (if name = "" then None else Some name) None [] []
                     else
                         let results =
                             if operation = "task.commit" && not hasCandidates then []

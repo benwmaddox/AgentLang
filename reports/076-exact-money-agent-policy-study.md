@@ -81,3 +81,8 @@ memory, arena, LLVM or native-performance claim.
 Validation: fresh Release validation passed all 36 checks, with zero build warnings/errors, including 98 checks across the new isolated 30-control
 business-policy preflight. See [saved local validation](evidence/076-local-validation.json).
 Publication follows its passing gate; exact-source main CI is observed separately.
+
+Publication follow-up: [main CI run 37559674182](https://github.com/benwmaddox/AgentLang/actions/runs/37559674182)
+passed all 36 checks on clean revision `866e00b0d80297383c05ed193022913e21e2a6e5`.
+The [downloaded validation report](evidence/076-main-validation.json) and
+[run status](evidence/076-main-ci.json) retain that exact-source evidence.

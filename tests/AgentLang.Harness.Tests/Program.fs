@@ -162,7 +162,7 @@ module Program =
         check (inputs |> Seq.exists (fun item -> Json.propertyString item "type" "" = "function_call" && item["call_id"].GetValue<string>() = "call-1")) "function call output item is preserved"
         check (inputs |> Seq.exists (fun item -> Json.propertyString item "type" "" = "function_call_output" && item["call_id"].GetValue<string>() = "call-1")) "function output points to the matching call_id"
         equal "false" (secondRequest["store"].GetValue<bool>().ToString().ToLowerInvariant()) "Responses request uses store=false"
-        check (secondRequest["tools"].AsArray().Count <= 6) "provider receives a small runtime tool set"
+        equal 6 (secondRequest["tools"].AsArray().Count) "provider receives exactly the closed six-tool runtime surface"
 
         let report = JsonNode.Parse(File.ReadAllText(reportPath settings)).AsObject()
         equal "stack" (report["frontend"].GetValue<string>()) "run metadata records the explicitly selected historical frontend"
@@ -187,11 +187,65 @@ module Program =
         check (trace.Contains("invalid function arguments")) "malformed JSON arguments become structured tool errors"
         check (Directory.Exists settings.ProjectDirectory) "rejected task mutation does not change the project"
 
+    let private testHelpThroughInspectTool root =
+        let expected = JsonObject()
+        expected["topic"] <- JsonValue.Create("authoring")
+        let settings =
+            config root Flat "help-inspect-tool"
+                [ step "help" (JsonObject()) None (Some(expected :> JsonNode)) None ]
+        let defaultHelp = functionCall "help-authoring" "agentlang_inspect" "{\"operation\":\"help\",\"name\":\"\"}"
+        let defineHelp = functionCall "help-define" "agentlang_inspect" "{\"operation\":\"help\",\"name\":\"define\"}"
+        let responses = JsonArray()
+        responses.Add(scriptedResponse "completed" [ defaultHelp; defineHelp ] "" None)
+        responses.Add(scriptedResponse "completed" [ outputMessage "The authoring help explains the source form and define fields." ] "The authoring help explains the source form and define fields." None)
+        let result = runWith settings (provider responses)
+        check result.Success "the inspect help tool and default authoring oracle both succeed"
+        equal 2 result.ToolCalls "both the default authoring index and define topic are dispatched"
+
+        let trace =
+            File.ReadAllLines(Path.Combine(settings.RunDirectory, "trace.jsonl"))
+            |> Array.choose (fun line ->
+                let node = JsonNode.Parse(line)
+                if Json.propertyString node "event" "" = "runtime-tool" then Json.tryProperty node "result" else None)
+        equal 2 trace.Length "both help calls are present in the runtime trace"
+        let authoringData = trace[0]["data"]
+        let defineData = trace[1]["data"]
+        equal "authoring" (Json.propertyString authoringData "topic" "") "an empty inspect name omits the topic and selects default authoring help"
+        equal "define" (Json.propertyString defineData "topic" "") "a nonempty inspect name is routed as the help topic"
+        check (Json.tryProperty authoringData "word" |> Option.isNone) "help dispatch does not pass its name as a word"
+        equal 1 (authoringData["schemaVersion"].GetValue<int>()) "help data declares its stable schema version"
+        let topics = authoringData["topics"].AsArray() |> Seq.map (fun item -> item.GetValue<string>()) |> Seq.toList
+        equal [ "authoring"; "define"; "replacement"; "examples" ] topics "help data lists the canonical topics in order"
+        for field in [ "title"; "documentation"; "topicInstructions"; "allowedFlowDefineFields"; "sourceExamples"; "requestExamples" ] do
+            check (Json.tryProperty authoringData field |> Option.isSome) $"authoring help data includes {field}"
+        check (defineData["allowedFlowDefineFields"].AsArray().Count > 0) "define help describes supported Flow define fields"
+        check (defineData["sourceExamples"].AsArray().Count > 0) "define help includes complete source examples"
+        check (defineData["requestExamples"].AsArray().Count > 0) "define help includes request examples"
+
+        let tools = AgentTools.definitions ()
+        equal 6 tools.Count "adding help does not add a model tool"
+        let inspect = tools |> Seq.find (fun item -> Json.propertyString item "name" "" = "agentlang_inspect")
+        let inspectParameters = inspect["parameters"].AsObject()
+        let inspectProperties = inspectParameters["properties"].AsObject()
+        let inspectOperation = inspectProperties["operation"].AsObject()
+        let inspectOperationChoices = inspectOperation["enum"].AsArray()
+        let inspectOperations = inspectOperationChoices |> Seq.map (fun item -> item.GetValue<string>()) |> Set.ofSeq
+        check (inspectOperations.Contains("help")) "help is part of the existing inspect operation enum"
+        let define = tools |> Seq.find (fun item -> Json.propertyString item "name" "" = "agentlang_define")
+        check ((Json.propertyString define "description" "").Contains("documentation, tests, and examples in the source", StringComparison.Ordinal)) "the define description points authors to source documentation and attachments"
+
     let private testInitialPromptIncludesLanguagePrimer () =
         let task =
             TaskFile.parse """{"id":"prompt-primer","goal":"Create a tested word.","systemPrompt":"Prefer existing vocabulary.","oracle":[{"operation":"test-all"}]}"""
         check (task.SystemPrompt.Contains("word name(input: Type) -> Output", StringComparison.Ordinal)) "the default task primer explains Flow definitions"
         check (task.SystemPrompt.Contains("test word/case", StringComparison.Ordinal)) "the default task primer includes the Flow test grammar"
+        check (task.SystemPrompt.Contains("example word/case", StringComparison.Ordinal)) "the default task primer includes the Flow example grammar"
+        check (task.SystemPrompt.Contains("doc \"...\"", StringComparison.Ordinal)) "the default task primer explains inline documentation syntax"
+        check (task.SystemPrompt.Contains("Bare `=>` expectations use supported literals", StringComparison.Ordinal) && task.SystemPrompt.Contains("=> value expression", StringComparison.Ordinal) && task.SystemPrompt.Contains("=> error CODE", StringComparison.Ordinal)) "the default task primer distinguishes literal, value, and error test expectations"
+        check (task.SystemPrompt.Contains("Examples use literal expectations", StringComparison.Ordinal) && task.SystemPrompt.Contains("Money::value(...)", StringComparison.Ordinal) && task.SystemPrompt.Contains("Int literal", StringComparison.Ordinal)) "the default task primer explains literal example expectations and nominal result unwrapping"
+        check (task.SystemPrompt.Contains("agentlang_inspect", StringComparison.Ordinal) && task.SystemPrompt.Contains("authoring index", StringComparison.Ordinal)) "the default task primer makes live inspect help discoverable"
+        check (task.SystemPrompt.Contains("External JSONL replacement", StringComparison.Ordinal) && task.SystemPrompt.Contains("replace=true", StringComparison.Ordinal) && task.SystemPrompt.Contains("expectedRevision", StringComparison.Ordinal) && task.SystemPrompt.Contains("from `describe`", StringComparison.Ordinal)) "the default task primer points to the external revision-checked replacement contract"
+        check (task.SystemPrompt.Contains("no replacement adapter", StringComparison.Ordinal) && task.SystemPrompt.Contains("Use only supplied host operations", StringComparison.Ordinal)) "the default task primer limits mutations to the active harness tools"
         check (task.SystemPrompt.Contains("Task-specific guidance: Prefer existing vocabulary.", StringComparison.Ordinal)) "task-specific system guidance is preserved after the language primer"
         let stackTask =
             TaskFile.parseWithFrontend SourceFrontend.Stack """{"id":"stack-primer","goal":"Check a historical fixture.","oracle":[{"operation":"test-all"}]}"""
@@ -1035,10 +1089,15 @@ end
         let wire = JsonNode.Parse(observedBody).AsObject()
         check (isNull wire["previous_response_id"]) "OpenAI requests do not use hidden remote response history"
         let inspectTool = wire["tools"].AsArray() |> Seq.find (fun item -> item["name"].GetValue<string>() = "agentlang_inspect")
+        equal 6 (wire["tools"].AsArray().Count) "the serialized function surface remains exactly six tools"
         check (inspectTool["strict"].GetValue<bool>()) "function tool schema uses strict mode"
         let parameters = inspectTool["parameters"].AsObject()
         check (parameters["additionalProperties"].GetValue<bool>() = false) "function schema rejects unspecified arguments"
         check (parameters["required"].AsArray().Count = 2) "strict tool schema requires all properties"
+        let properties = parameters["properties"].AsObject()
+        let operation = properties["operation"].AsObject()
+        let operationChoices = operation["enum"].AsArray()
+        check (operationChoices |> Seq.exists (fun item -> item.GetValue<string>() = "help")) "the existing inspect enum exposes help without another tool"
         equal "completed" response.Status "OpenAI adapter parses response status"
         equal "done" response.OutputText "OpenAI adapter extracts final text"
         equal (Some 23) (response.Usage |> Option.bind (fun usage -> usage.InputTokens)) "known usage input count is preserved"
@@ -1071,6 +1130,7 @@ end
         try
             testStatelessToolLoopAndLogs root
             testStrictRuntimeToolWhitelist root
+            testHelpThroughInspectTool root
             testInitialPromptIncludesLanguagePrimer ()
             testFlowFrontendSeedAndToolDispatch root
             testManifestInventoryUsesCurrentMixedFrontendHeads root
