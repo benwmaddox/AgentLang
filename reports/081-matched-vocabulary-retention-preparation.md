@@ -152,3 +152,10 @@ Focused saved-input controls passed; they are not a replacement for the genuine
 frozen phase. That phase cannot accept the previous candidate and source pins
 after this source change. A clean commit, new source freeze and fresh candidate
 reference will precede its rerun. No fresh model actor has launched for study 003.
+
+The closed f52ef29 deterministic reference and obsolete source/global freeze were
+moved to the ignored superseded-f52ef29 directory only after all source bytes
+matched their preserved archive. R01 run/actor slots are absent; canonical
+baselines were not moved or regenerated. The compact extensible core and reliable
+edit hypotheses are explicit in the revised PRD. Existing frozen study criteria
+remain unchanged.

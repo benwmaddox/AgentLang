@@ -30,6 +30,8 @@ The first usable release is a vertical slice of the original milestones. It must
 | Candidates, temporary words, promotion | Vocabulary maintenance and snapshots | Curator agent and proof contracts |
 | Task rollback, logs, file persistence | Model harness and conventional baseline | Production deployment guarantees |
 
+A solid, compact core that can be built upon is a product requirement. Keep trusted host mechanisms separate from authored domain vocabulary: values, strong types, semantic IR, execution, explicit effects and deterministic inspection form the foundation; ordinary business behavior should be composed above it. Measure missing host capabilities, primitive growth, core dependency surface and whether useful abstractions can be built without adding escape hatches. A small primitive count alone does not prove a small implementation or low memory use.
+
 The initial primitive count is a target, not a success criterion. Every primitive needs a typed signature, declared effects, discoverable metadata, and focused validation. Add capabilities in response to observed task requirements, and log missing-capability requests.
 
 The full research domain remains a small-business backend: Customer, Subscription, Invoice, Payment, Email, and Product. The first demo only needs customers and discount calculations. It is not a substitute for the full evaluation suite.
