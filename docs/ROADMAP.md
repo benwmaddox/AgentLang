@@ -85,6 +85,11 @@ sustained successful requests per second at the same enforced memory ceiling
 and acceptable tail latency, including slow clients, cancellation and bounded
 pending I/O. Record copying, backpressure and whole-process memory as well as
 arena accounting before adopting either design.
+Also evaluate bounded backing-storage reuse with high/low watermarks and delayed
+trimming: reset safe turn-local state promptly, retain reusable capacity within
+the budget, and measure burst/idle/outlier behavior separately from the arena
+lifetime comparison. Long-lived state and outstanding I/O retain their own
+cleanup boundaries.
 
 No current interpreter result proves native footprint, throughput or arena
 safety. Require semantic conformance and measured memory, throughput and tail

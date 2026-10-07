@@ -55,6 +55,41 @@ overload by delaying the next request until a previous one finishes.
 
 ## Measurements and decision
 
+### Candidate: bounded reuse and high/low watermarks
+
+Separate logical lifetime end, backing-storage reuse, and returning capacity to
+the allocator/OS. At a safe turn boundary, finish required resource cleanup,
+invalidate old references and reset scratch allocation cursors and the
+arena-backed program-data stack. Retain a bounded cache of reusable chunks.
+Long-lived declared application state and pending I/O buffers are separate
+owners; ending scratch does not reset them.
+
+Literal byte zeroing is distinct from logical reset. New values must be fully
+initialized before reads; stale bytes must not become observable. Specify any
+required sanitization on reuse/export or isolation boundaries and measure its
+cost. Do not assume clearing allocation cursors securely erases data.
+
+Use high/low watermarks with hysteresis for cached free capacity: crossing the
+high watermark initiates trimming toward the low watermark, with a bounded
+idle/decay policy. Retain a small working reserve, cap aggregate cached bytes,
+and handle unusually large chunks so one outlier does not permanently inflate
+every mailbox's reserve. Memory pressure or the process ceiling overrides a
+normal idle delay. Cached chunks count against the memory budget; returning
+them to a host allocator need not immediately reduce resident memory.
+
+Mailbox queue and pending-I/O watermarks govern admission/backpressure separately
+from free-chunk cache watermarks. Limits include payload bytes as well as item
+counts. Single-thread execution does not remove outstanding I/O references.
+Do not reuse storage until all valid users have relinquished it; quarantine
+awaiting buffers under a separately bounded owner if necessary.
+
+After the first lifetime-policy comparison, test backing-storage policies as a
+separate axis: immediate release, bounded reset-and-reuse, and bounded reuse
+with delayed trimming. Record thresholds/decay before execution. Include burst,
+idle, large-outlier and sustained-overload phases; measure allocator calls,
+reset/sanitization/trim costs, cached bytes, whole-process memory and tail latency.
+Keep the language's visible lifetime semantics identical across these policies.
+
 Primary measurement: **maximum sustained successful completions per second at
 the same enforced memory limit and acceptable tail latency**. Failed, rejected
 and timed-out requests do not count as successful completions. A run outside
