@@ -137,7 +137,7 @@ function Get-RuntimeInventory([string]$Root, [string]$Runtime) {
     $resolved = [IO.Path]::GetFullPath($Root)
     $rows = [Collections.Generic.List[object]]::new()
     foreach ($file in Get-ChildItem -LiteralPath $resolved -Recurse -Force -File | Sort-Object FullName) {
-        $rows.Add([ordered]@{
+        $rows.Add([pscustomobject][ordered]@{
             runtime=$Runtime
             path=[IO.Path]::GetRelativePath($resolved,$file.FullName).Replace('\','/')
             bytes=$file.Length

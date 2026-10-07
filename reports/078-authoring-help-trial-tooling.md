@@ -74,3 +74,9 @@ PowerShell ISO timestamp coercion, and checks the launch command after resolving
 the CLI runtime path. A no-runtime diagnostic confirmed both predicates against
 the preserved pin. AST/LF checks and exact verifier/source-snapshot hashing pass;
 the full positive pin test still requires the repaired clean-source freeze.
+
+A second positive-control attempt at 1cce62c exposed an inventory comparison
+defect: dictionary rows were sorted as objects without named properties. The
+verifier must materialize named runtime/path/bytes/hash properties before sorting,
+as the freezer does. Both controls stopped before execution, their evidence is
+preserved, and no actor launched. The complete valid-pin path remains a gate.
