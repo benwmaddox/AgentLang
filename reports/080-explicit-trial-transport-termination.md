@@ -1,6 +1,6 @@
 # Explicit trial transport termination
 
-Status: focused validation passes; the clean-source full release gate is pending. This milestone adds
+Status: the clean-source full release gate passes all 37 checks; publication follows. This milestone adds
 reliable terminal evidence for future trials; it does not reclassify report 079's
 failed frozen trace audits or establish a new agent outcome.
 
@@ -55,14 +55,14 @@ array could cause unrelated rejection; its partial negative checks are not proof
 that the intended controls worked. The final retry explicitly validates baseline
 shape and acceptance before asserting specific rejection diagnostics.
 
-[The raw trace archive](evidence/080-transport-trace-archive.json) maps 78 trace references (51 unique retained files) to portable checked-in copies with byte lengths and SHA-256 hashes. Copies
+[The raw trace archive](evidence/080-transport-trace-archive.json) maps 103 trace references (69 unique retained files) to portable checked-in copies with byte lengths and SHA-256 hashes. Copies
 were checked against their source bytes, including failed attempts and mutation
 fixtures. These are implementation controls, not fresh model experiments.
 
 Exact milestone 079 main CI passed all **36 checks** on clean source `93b9e19`
 (run 37573276020). The failed 078 main CI, successful local exact-command
 reproduction (33 v1 checks), and verifier-only deadline change remain separately
-recorded. The new complete gate has 37 checks and must pass before publication.
+recorded. The new complete gate passed all 37 checks before publication.
 
 ## Evaluation implication
 
@@ -76,4 +76,26 @@ An independent static review confirmed flat mutation fixtures and diagnostic-spe
 negative audits. It also identified two broad host-failure assertions. The final
 verifier now checks the reserved-allowlist startup message and exact unterminated
 frame diagnostic, retaining those messages in check details. This final strengthening
-postdates retry 08; the clean-source full gate must execute the updated assertions.
+postdates retry 08; the clean-source full gate subsequently passed the updated assertions.
+
+## Clean-source release result
+
+The exact CI command, ./scripts/Validate.ps1, passed all **37 checks** at
+source revision 3c34b51bf482a3b6f15b9ef5db45e7649ab55db4, with dirty=false.
+The fresh Release build has zero warnings/errors. The v1 host passes 33 controls;
+v2 passes all 29, including final diagnostic strengthening. The policy preflight
+passes 98 checks across 30 expected outcomes in Growing, Flat and Conventional.
+Its own legacy dirty=true field describes its generated scratch fixtures; the
+outer gate records the canonical checkout as clean at start.
+
+[Full gate](evidence/080-clean-source-validation.json),
+[v1 controls](evidence/080-clean-source-v1-host.json),
+[v2 controls](evidence/080-clean-source-v2-host.json), and
+[policy preflight](evidence/080-clean-source-policy-preflight.json) retain results.
+The raw archive also contains the clean-source v2 traces and mutation controls.
+Git attributes preserve these byte-addressed files; staged blob hashes are
+checked against the archived bytes before publication. Remote CI for this
+publication has not been observed as passing; prior 079 CI is a separate result.
+
+[The next-study recommendation](evidence/080-next-study-review.md) is a saved
+read-only review, not a launched experiment or adopted benchmark result.

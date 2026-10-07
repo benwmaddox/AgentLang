@@ -1,0 +1,459 @@
+{
+  "kind": "git-index-byte-check",
+  "testedSource": "3c34b51bf482a3b6f15b9ef5db45e7649ab55db4",
+  "count": 90,
+  "passed": true,
+  "entries": [
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-01/trial-host-v2-7da02fbc721147ac9554b0457d88616c-real-cli-write-close.jsonl",
+      "bytes": 13545,
+      "sha256": "432e3571cf90db69b386e3d7025a0571aa2663892298b4cfbfc563d247bea59b"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-02/trial-host-v2-0cebb141608c4938bbe01aac3067637c-real-cli-write-close.jsonl",
+      "bytes": 13542,
+      "sha256": "5d0863b181ee1b6a9fa1ab5378d6794db0fd822bec6655dc5e5743ee94e88161"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-03/trial-host-v2-f7dba05d28234af8bdcc7f5cfd7bdc14-real-cli-write-close.jsonl",
+      "bytes": 13545,
+      "sha256": "821e44b8d4196d9d7e15e8554422be95c472c195f55178ec00298d541e256922"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-04/trial-host-v2-5cb4a16f4cb74afcaaa3eec22fd5e5c3-close-at-exchange-limit.jsonl",
+      "bytes": 5538,
+      "sha256": "4a65b500f63c9a270c1de810b41dd62f8f6361d5be4f86736c2a1b1f91ad382c"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-04/trial-host-v2-5cb4a16f4cb74afcaaa3eec22fd5e5c3-close-only-one-byte-response-cap.jsonl",
+      "bytes": 2389,
+      "sha256": "9b95e82ab6cd68c8cef460c880b6cffc70ed2fa01342956a6193367b1e187d2c"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-04/trial-host-v2-5cb4a16f4cb74afcaaa3eec22fd5e5c3-malformed-close-frames.jsonl",
+      "bytes": 7587,
+      "sha256": "c37e409a6846fbcde273e1a74e43e7ced114b13c3c8e192fc009172b091b97c7"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-04/trial-host-v2-5cb4a16f4cb74afcaaa3eec22fd5e5c3-real-cli-reload-close.jsonl",
+      "bytes": 10991,
+      "sha256": "4a17a115dd93335228716b31eb62c8a57157203602bc203658261378cf57ffdb"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-04/trial-host-v2-5cb4a16f4cb74afcaaa3eec22fd5e5c3-real-cli-write-close.jsonl",
+      "bytes": 13545,
+      "sha256": "3187f40a085a73089af70653a2e9489353bd9cbe1e5e329ebe1dd34c4fef0b67"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-05/trial-host-v2-38f2a289c8694de5a3a611e57dd503d1-close-at-exchange-limit.jsonl",
+      "bytes": 5538,
+      "sha256": "4a0133c71d8a6fd7b9f8f226eb6140ceb59d2b8951feb37d8c25f8b94ed8d119"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-05/trial-host-v2-38f2a289c8694de5a3a611e57dd503d1-close-only-one-byte-response-cap.jsonl",
+      "bytes": 2389,
+      "sha256": "ed22004a4a6fa824f00d0a1c3f831c7806b0eb050899e4bfbf62ed9fdcf6d420"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-05/trial-host-v2-38f2a289c8694de5a3a611e57dd503d1-malformed-close-frames.jsonl",
+      "bytes": 7587,
+      "sha256": "6d9f5009b380abbc866a8f6943ce63b1516ee4f49d3b75d84134fc60720f0650"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-05/trial-host-v2-38f2a289c8694de5a3a611e57dd503d1-real-cli-reload-close.jsonl",
+      "bytes": 10991,
+      "sha256": "5b61640698d26f283e9c44f1c081605ade507f6291689ee2e36468e2ebb32ce7"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-05/trial-host-v2-38f2a289c8694de5a3a611e57dd503d1-real-cli-write-close.jsonl",
+      "bytes": 13544,
+      "sha256": "1e87f507525f8ca9afc2b71ff45985b00c450a42a44bc66f061291e3ed5f3336"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-06/trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-child-hang-on-close.jsonl",
+      "bytes": 2498,
+      "sha256": "dfe30551282f0be756bc9bbf234be30832bd8fa0d3540b2c3776f592c2617e0e"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-06/trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-close-at-exchange-limit.jsonl",
+      "bytes": 5538,
+      "sha256": "e1f49439c5bb21ca62719157d2a03013ee4d6eb38cc9b052078451ecd34b082b"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-06/trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-close-only-one-byte-response-cap.jsonl",
+      "bytes": 2389,
+      "sha256": "d102cf841ef77f336b6379264a928f3f849c1f2e299f3cf14f32354090848844"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-06/trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-malformed-close-frames.jsonl",
+      "bytes": 7587,
+      "sha256": "ebb9fbb7ed84703f2334008b6914252b4f16cf4dd295b10b3abe75945e492315"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-06/trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-ordinary-input-eof.jsonl",
+      "bytes": 3120,
+      "sha256": "10624bd8b835dabc6cbb390c160c315d9e20072a816e234c5de1164129a632dd"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-06/trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-partial-lf-close.jsonl",
+      "bytes": 2259,
+      "sha256": "c937ff03b8c303c8c91ee61c7b28371c54d452bdba68d2690418007f6e99e7e4"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-06/trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-real-cli-reload-close.jsonl",
+      "bytes": 10990,
+      "sha256": "18354d3ae8168292b2b55b19df1e7698230de0337f90cf48678ea3e54d650667"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-06/trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-real-cli-write-close.jsonl",
+      "bytes": 13543,
+      "sha256": "cf7b74f56b2e159f7f210cbbf48e97b377e8292b9ef82302f3fb4b0680fbc3d7"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-07/trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-child-hang-on-close.jsonl",
+      "bytes": 2498,
+      "sha256": "b52cd0240b840f103858a2fa968e8a4aedef245f26a04678bd63b750bb9df5d5"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-07/trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-close-at-exchange-limit.jsonl",
+      "bytes": 5538,
+      "sha256": "f0b3a972258e2a885e7b54d4ad0e8a6a63a589e6eef209b0f80329d11bd1ff7f"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-07/trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-close-only-one-byte-response-cap.jsonl",
+      "bytes": 2388,
+      "sha256": "cbcc28a1f26f40d3f8793dcc80abc4083b40f90df145f5a85f44491f7f809e45"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-07/trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-malformed-close-frames.jsonl",
+      "bytes": 7587,
+      "sha256": "2999b93aae3ee958630225d83f148c6042ceeb77513e0120e18ebb2dd86fe710"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-07/trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-ordinary-input-eof.jsonl",
+      "bytes": 3120,
+      "sha256": "20a64395c7c6effd4063bb0a2e2b652a213c5f9d1244ef63eabd144a21271de7"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-07/trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-partial-lf-close.jsonl",
+      "bytes": 2258,
+      "sha256": "e03c5a86a67dea98eb6e6185468c66c8dc80d8a66dae3f772ffceb8f440a273b"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-07/trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-real-cli-reload-close.jsonl",
+      "bytes": 10992,
+      "sha256": "4b2f41c8685d313cfbde7f7e2f4c11e80bd0641a31e27154656c5b2a4ed2bb25"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-07/trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-real-cli-write-close.jsonl",
+      "bytes": 13544,
+      "sha256": "6dbd25736125ca17e92dbb9c3270f5767f94a23fab3250c1ec99b1de14e22b42"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-07/duplicate-host-close-event.jsonl",
+      "bytes": 10568,
+      "sha256": "2507493c07cb181bf85bf818433c3bdb9fb828f71e225b2effbd1c6ab150d3a7"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-07/missing-host-close-event.jsonl",
+      "bytes": 5284,
+      "sha256": "9c671e484f7903c0bcc27af2242e1c4a6a6ceea832a4fb7a26e0c42cca8447cb"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-07/missing-session-end-event.jsonl",
+      "bytes": 5284,
+      "sha256": "9c671e484f7903c0bcc27af2242e1c4a6a6ceea832a4fb7a26e0c42cca8447cb"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-07/mutated-wire-hash.jsonl",
+      "bytes": 5719,
+      "sha256": "54a07ebb66faa3b374f8afbdf3ff0fda76a7f8bf4fe486eccfaa3202462124dd"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-child-hang-on-close.jsonl",
+      "bytes": 2495,
+      "sha256": "3b2e7711e0579f2a4291f946f3e821be5f302fd314c74e5d0e3c5583cdaba6bd"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-close-at-exchange-limit.jsonl",
+      "bytes": 5538,
+      "sha256": "60e7f62f84dfe13cc139e107dea6806b23b72913fb54d266366632e2e8291dcc"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-close-only-one-byte-response-cap.jsonl",
+      "bytes": 2389,
+      "sha256": "825257f70d733cd09b2b50d6aee0eae6f06827616c23b85f6c5d3357ca79e5bd"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-malformed-close-frames.jsonl",
+      "bytes": 7587,
+      "sha256": "92916bb82d30fa512d8eab44940123c4c69d400c246737a9cdbc538cf505a377"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-ordinary-input-eof.jsonl",
+      "bytes": 3120,
+      "sha256": "01fc3eb982d19de35bdbc05589e0b01e32bdd8665a3f46de369f14260779e5c2"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-partial-lf-close.jsonl",
+      "bytes": 2259,
+      "sha256": "bc15ca7aecbcab720e412aa732045d153923d56492cb58c723d1a744569f638b"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-real-cli-reload-close.jsonl",
+      "bytes": 10991,
+      "sha256": "d0e121966666687500806a87270cfee569b84eba2f467c5eecdd6d22b415ecd6"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-real-cli-write-close.jsonl",
+      "bytes": 13545,
+      "sha256": "b2493a097ad922952794e00056b8d8f2f55481e4d7e40794c615d8eb86f47e75"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/cancelled-prior-history.jsonl",
+      "bytes": 5360,
+      "sha256": "07d9fd1c161029188081fa4418125b5a54c9fc512b1051d34083e3f2887863b7"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/close-payload-over-configured-limit.jsonl",
+      "bytes": 5280,
+      "sha256": "1a4f83dc22983c82a5e0e52716f1599ff122177b46fddc9c6d4aca27de05a8ed"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/duplicate-host-close-event.jsonl",
+      "bytes": 5617,
+      "sha256": "39c8579e8b3977504f51c924b03b61cfcd5e1e800bf482e910095e2e41fe3ab1"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/max-exchanges-over-host-cap.jsonl",
+      "bytes": 5286,
+      "sha256": "34bc5e200ccd51a6c2fb4f8b0fdc76f55f4d5bd20960920a46b40ef58404ea45"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/missing-host-close-event.jsonl",
+      "bytes": 4951,
+      "sha256": "756eab99dc8419cb83e44e07b0a206b25e813a9d2308941f501abda67827b34c"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/missing-session-end-event.jsonl",
+      "bytes": 4934,
+      "sha256": "95bcbe560ba7914ae474e102f9d0760ee66da653b155cf8036aa3b1430260b8e"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/mutated-close-exchange-count.jsonl",
+      "bytes": 5284,
+      "sha256": "dbf094f6b6cf70e61ede8b6b5b2d15137f0249833795fba0dc0fb7de7bff40bf"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/mutated-wire-hash.jsonl",
+      "bytes": 5284,
+      "sha256": "888efdc0a05e59546699c7375788c9f8126558d96362e69046f3244738bdb96b"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/partial-observed-runtime-response.jsonl",
+      "bytes": 5722,
+      "sha256": "f40ff5a04fc675e7cdac5c3c4477dc42d79ebe4a54860050b624a88b749aa314"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/uncertain-prior-exchange.jsonl",
+      "bytes": 5257,
+      "sha256": "2ccd8f1870a98349ddbef954be4429f8617f64c185bc8e070032b4092d233cae"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/clean-source-validation/trial-host-v2-ea4ee2ca9eb449c3a3488d52fd52e940-child-hang-on-close.jsonl",
+      "bytes": 2495,
+      "sha256": "d2bacb8b5fee7297a545b2f2bd0531ca42960d20bdf021ca4047cd1812cee7f6"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/clean-source-validation/trial-host-v2-ea4ee2ca9eb449c3a3488d52fd52e940-close-at-exchange-limit.jsonl",
+      "bytes": 5538,
+      "sha256": "a08033d64c8fe79aee72d8e287522bfa67606289fc9bd3348fd1d50e1e8a0103"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/clean-source-validation/trial-host-v2-ea4ee2ca9eb449c3a3488d52fd52e940-close-only-one-byte-response-cap.jsonl",
+      "bytes": 2389,
+      "sha256": "1c5c0e4e54f3f25fabe6833cffda4061554524915fb7f5fa40850d30eaf5cc1a"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/clean-source-validation/trial-host-v2-ea4ee2ca9eb449c3a3488d52fd52e940-malformed-close-frames.jsonl",
+      "bytes": 7586,
+      "sha256": "f852593c92b1ccdb28b1ed7d957231713bf257c2dca74a0bcb690818d10d08e6"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/clean-source-validation/trial-host-v2-ea4ee2ca9eb449c3a3488d52fd52e940-ordinary-input-eof.jsonl",
+      "bytes": 3120,
+      "sha256": "eb643c227fc7d26c7809d71f4ee151650d797879cd5aef8e326f9001b8960e87"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/clean-source-validation/trial-host-v2-ea4ee2ca9eb449c3a3488d52fd52e940-partial-lf-close.jsonl",
+      "bytes": 2259,
+      "sha256": "725b6c7dd8dcfcc2dd5e559138358e12b058f61f5bc627fbb0abd04e66975e4b"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/clean-source-validation/trial-host-v2-ea4ee2ca9eb449c3a3488d52fd52e940-real-cli-reload-close.jsonl",
+      "bytes": 10991,
+      "sha256": "2c43eb7ba1ab4909e8aed168c44dd9f96fb714bef28c845f15b861ab8c0086e3"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/clean-source-validation/trial-host-v2-ea4ee2ca9eb449c3a3488d52fd52e940-real-cli-write-close.jsonl",
+      "bytes": 13543,
+      "sha256": "c0ed8ec51939483b77d11a0ee0f93feaae2b5e378a0cd3a3e986a1e3c6602c59"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/clean-source-validation/cancelled-prior-history.jsonl",
+      "bytes": 5360,
+      "sha256": "71bd17b3c9a38f4beb9270672628988624986afee1035e7fcf9e45875cd74d71"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/clean-source-validation/close-payload-over-configured-limit.jsonl",
+      "bytes": 5280,
+      "sha256": "85574fe979360b127c8030720ae03059b56a3072f08a150a2949fc7690d8fb73"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/clean-source-validation/duplicate-host-close-event.jsonl",
+      "bytes": 5617,
+      "sha256": "8b3ca0d2c4eb01439c05a427cca78b4c0ec7b0878ed57000389dd6c045ce96fe"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/clean-source-validation/max-exchanges-over-host-cap.jsonl",
+      "bytes": 5286,
+      "sha256": "e5b635afbd782a34f949c6a4f05eff293418691ded0218fe82be502c9226817c"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/clean-source-validation/missing-host-close-event.jsonl",
+      "bytes": 4951,
+      "sha256": "9829f81b61c6ac2953ae5e21259e71046aea3ebbb2a8be17d11d9dff279bdef6"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/clean-source-validation/missing-session-end-event.jsonl",
+      "bytes": 4934,
+      "sha256": "3c699fc1ddec68bb166933cf585934a707da9b8c1be73cd26e70a84344a4de01"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/clean-source-validation/mutated-close-exchange-count.jsonl",
+      "bytes": 5284,
+      "sha256": "d33aa0cd4debdf61fff6e8ece59101754ad2256748f911190dfd8a233f98bc0b"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/clean-source-validation/mutated-wire-hash.jsonl",
+      "bytes": 5284,
+      "sha256": "8fc9e601a3865097e30064b9ec0f4b5a95b0780e56e2cb9b6e25828010d27554"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/clean-source-validation/partial-observed-runtime-response.jsonl",
+      "bytes": 5722,
+      "sha256": "5235fdd219683e6da9674cce0512a531ba9ff0bd7ef564372c3915c5b7f4de75"
+    },
+    {
+      "path": "reports/evidence/080-transport-traces/clean-source-validation/uncertain-prior-exchange.jsonl",
+      "bytes": 5257,
+      "sha256": "d3f97762b911a494abe51f51474ba147946a770f9160d7a00adc48a0b0ad81b3"
+    },
+    {
+      "path": "reports/evidence/080-078-main-ci.json",
+      "bytes": 198,
+      "sha256": "0cbcc07cf379e18f1722f69e2ddbc715f42c9e51a63461fa9a0f114881f64e4d"
+    },
+    {
+      "path": "reports/evidence/080-078-main-failed-validation.json",
+      "bytes": 31643,
+      "sha256": "6e9853509d3e505cc107fdf05f6230b075ba46ad248d687aaf690e1741c8a9db"
+    },
+    {
+      "path": "reports/evidence/080-078-main-v1-host-failure.json",
+      "bytes": 244074,
+      "sha256": "1d305f7eba2eb481abf44c47581a858314c1f41f6e056536a7fe77b00db800d5"
+    },
+    {
+      "path": "reports/evidence/080-clean-source-policy-preflight.json",
+      "bytes": 14248034,
+      "sha256": "7a0d2f35864c5a67c600a28a3829b5156d8b237f8b962d84064918bc6eecb57c"
+    },
+    {
+      "path": "reports/evidence/080-clean-source-v1-host.json",
+      "bytes": 334658,
+      "sha256": "f80297b737e4684b46e175260e44a62a17936133dce53214a0018e3c2a119b7d"
+    },
+    {
+      "path": "reports/evidence/080-clean-source-v2-host.json",
+      "bytes": 20882,
+      "sha256": "9a7b89180f9921bb5b3b4ee6e72d16b798b44aba11d7e2a6ccaf5da7eb14b2e4"
+    },
+    {
+      "path": "reports/evidence/080-clean-source-validation.json",
+      "bytes": 27608,
+      "sha256": "a9dfd686210c96263b0909baf590da368486ae7f2ee1e0cf891dd4a0e907b46c"
+    },
+    {
+      "path": "reports/evidence/080-control-attempt-index.json",
+      "bytes": 3413,
+      "sha256": "beda6945df768a5d16b4b78bed9704d6d369362f6d3895b5493a0e35cbbcdb4a"
+    },
+    {
+      "path": "reports/evidence/080-host-v2-focused-retry-01.json",
+      "bytes": 3097,
+      "sha256": "c1094191753286ec341119ebc399525683f78bd35d36a90bf02d33f46d682c62"
+    },
+    {
+      "path": "reports/evidence/080-host-v2-focused-retry-02.json",
+      "bytes": 3530,
+      "sha256": "a3cf262a0bf60e281d189b8e9f4d544b1c1ef54fddd3caf49d597eac8124171d"
+    },
+    {
+      "path": "reports/evidence/080-host-v2-focused-retry-03.json",
+      "bytes": 3159,
+      "sha256": "569781e33da714446038ee8599a094a052fcbcfc3e3d47f8c9d65e353540747e"
+    },
+    {
+      "path": "reports/evidence/080-host-v2-focused-retry-04.json",
+      "bytes": 7923,
+      "sha256": "4b7079f92b40b5125f78769cc2d6226f8a6ff1aebbb5fee7d3ffab5541d3a15a"
+    },
+    {
+      "path": "reports/evidence/080-host-v2-focused-retry-05.json",
+      "bytes": 7924,
+      "sha256": "d16ba86cdab96a398c0e9c179d49a67394c932ae5c74fc9a1497fc49cfacf1bf"
+    },
+    {
+      "path": "reports/evidence/080-host-v2-focused-retry-06.json",
+      "bytes": 12323,
+      "sha256": "09b32fe1d467080469bc24fac2a168d3cf1b720a2226d8d1c0f660536272061d"
+    },
+    {
+      "path": "reports/evidence/080-host-v2-focused-retry-07.json",
+      "bytes": 14817,
+      "sha256": "32f56aed64d9cecc3d00e8a38719dc9b037c9ab179aa7d8ab9563cb26527f37f"
+    },
+    {
+      "path": "reports/evidence/080-host-v2-focused-retry-08.json",
+      "bytes": 20171,
+      "sha256": "3b299f3fa6335c67a46c021b9ca137974014996b4926e18bdb1a8c26dc0f40e3"
+    },
+    {
+      "path": "reports/evidence/080-host-v2-focused.json",
+      "bytes": 1653,
+      "sha256": "3a6ea60336214c9ef056fb32a705ae902dbaf367de03666da9e3672f2daf647f"
+    },
+    {
+      "path": "reports/evidence/080-independent-review.json",
+      "bytes": 1229,
+      "sha256": "b7cfb25a2c4b8930f553948070d2bd1526b7111be39d1d4c88251650b615dde0"
+    },
+    {
+      "path": "reports/evidence/080-transport-trace-archive.json",
+      "bytes": 46949,
+      "sha256": "cbfa93141e6636130f7cf332a1176b15849280b8eb6a4b1f952e641dc15b1479"
+    },
+    {
+      "path": "reports/evidence/080-v1-exact-ci-command.json",
+      "bytes": 334647,
+      "sha256": "e00aa05267b86ca4c9bf1dbe8c396afabca7c235601d881e60856787a6af118b"
+    },
+    {
+      "path": "reports/evidence/080-v1-fixture-timing-review.json",
+      "bytes": 5343,
+      "sha256": "326fbc5af53162b937a9fd37d4b95d9939db44e3f7b40d57584edd6abd4c3bd1"
+    }
+  ],
+  "scope": "All archived raw trace files and milestone080 JSON evidence checked against exact staged blob bytes; this derived check does not hash itself."
+}

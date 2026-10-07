@@ -15,9 +15,10 @@
     {
       "finding": "Reserved allowlist and partial-LF host checks accept overly broad failure",
       "resolution": "Require expected host diagnostics in existing assertions",
-      "status": "Statically addressed after review; exact diagnostic assertions and captured diagnostics added. Clean-source full gate still required."
+      "status": "Addressed; exact diagnostic assertions executed successfully in the 29-check verifier within the clean-source 37-check full gate at 3c34b51."
     }
   ],
   "limitation": "Static review is not executed conformance, whole-study provenance audit or model outcome evidence.",
-  "finalVerifierSha256": "5b1c351b4e1917db0d6c0f2f7342e9e05cd3ff73f5237accda32359af9665041"
+  "finalVerifierSha256": "5b1c351b4e1917db0d6c0f2f7342e9e05cd3ff73f5237accda32359af9665041",
+  "executedGateEvidence": "reports/evidence/080-clean-source-validation.json"
 }

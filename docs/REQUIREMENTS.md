@@ -469,6 +469,5 @@ remain the shortest evaluation work before backend/memory research.
 Report 080 adds a versioned external trial host with explicit transport close
 and a scoped termination auditor. The focused 29-check matrix passes, including
 real durable commit/reload and diagnostic-specific tamper rejection; failed
-coordinator attempts and raw traces remain preserved. Its new 37-check full gate
-is pending. No completed frozen actor audit is reclassified, and no model-cost
+coordinator attempts and raw traces remain preserved. Its new 37-check full gate passes on clean source 3c34b51. No completed frozen actor audit is reclassified, and no model-cost
 or vocabulary-growth benefit is inferred from transport validation.
