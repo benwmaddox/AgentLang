@@ -69,6 +69,7 @@ reports/evidence/089-R04-index.json -text whitespace=blank-at-eol,blank-at-eof,s
 # New hash-bound research runners and study archives preserve executed bytes.
 scripts/Score-RetentionOutputSupplement.ps1 -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 scripts/Test-RetentionOutputSupplement.ps1 -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+scripts/Test-RetentionInventoryHelpers.ps1 -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 scripts/Prepare-RetentionTrialV4.ps1 -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 scripts/Freeze-RetentionTrialV4.ps1 -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 scripts/Verify-RetentionTrialV4.ps1 -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

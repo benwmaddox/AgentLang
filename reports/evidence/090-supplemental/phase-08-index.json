@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Successful supplemental scratch behavior result and independent root regression/output reviews",
+  "resultKind": "supplemental-post-hoc-behavior",
+  "canonicalOutcome": "blocked-unchanged",
+  "runtimeCalls": 11,
+  "behaviorCasesPassed": 54,
+  "files": [
+    {
+      "source": ".agentlang/business-policy-retention-003/supplemental/evidence/R04-retention-output-supplement-20261007T182001Z-1803ec9ed6534d419e7cdf2641ddcf93.json",
+      "path": "reports/evidence/090-supplemental/phase-08/R04-retention-output-supplement-20261007T182001Z-1803ec9ed6534d419e7cdf2641ddcf93.json",
+      "bytes": 332527,
+      "sha256": "9374c7c10cf360dd57e0dfd8feb92f694cab89c6ccacbd8ee496523f671a70c2"
+    },
+    {
+      "source": ".agentlang/business-policy-retention-003/evidence/090-root-final-regressions.json",
+      "path": "reports/evidence/090-supplemental/phase-08/090-root-final-regressions.json",
+      "bytes": 2084,
+      "sha256": "5d9d9110746399b1dd25eefa2c3c68b82697a1dde7ce1d42836bf7376a653bf3"
+    },
+    {
+      "source": ".agentlang/business-policy-retention-003/evidence/090-root-final-output-review.json",
+      "path": "reports/evidence/090-supplemental/phase-08/090-root-final-output-review.json",
+      "bytes": 414,
+      "sha256": "104b304c58f683afd4fc688f89fab5f0906a47fab80fe493c58d19aeb61a8e38"
+    }
+  ]
+}

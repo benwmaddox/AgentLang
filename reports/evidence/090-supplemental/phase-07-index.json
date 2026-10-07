@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Runtime ordering failure, subsequent dictionary-count failure and independent filesystem canonicalization regression",
+  "files": [
+    {
+      "source": ".agentlang/business-policy-retention-003/supplemental/evidence/R04-retention-output-supplement-20261007T181135Z-18f6c77af63a4f22afd47a3412909713.json",
+      "path": "reports/evidence/090-supplemental/phase-07/R04-retention-output-supplement-20261007T181135Z-18f6c77af63a4f22afd47a3412909713.json",
+      "bytes": 185004,
+      "sha256": "24afdc2a7dc15f073ec735beedcf7f4f17ee6e174de1bd6e3f7a134d80efa808"
+    },
+    {
+      "source": ".agentlang/business-policy-retention-003/supplemental/evidence/R04-retention-output-supplement-20261007T181719Z-8eeba969070748e3886504a409a72d6a.json",
+      "path": "reports/evidence/090-supplemental/phase-07/R04-retention-output-supplement-20261007T181719Z-8eeba969070748e3886504a409a72d6a.json",
+      "bytes": 204205,
+      "sha256": "bae1955c0fdb4c07e853176fa1e6c3bb8d5aa4dee0bb470382b65ed14e04d87c"
+    },
+    {
+      "source": ".agentlang/business-policy-retention-003/evidence/090-root-filesystem-row-control.json",
+      "path": "reports/evidence/090-supplemental/phase-07/090-root-filesystem-row-control.json",
+      "bytes": 776,
+      "sha256": "215b7fe0a16445b1c13e84d5165e55afb2216309d397c1a314e5bccd5535ae30"
+    }
+  ]
+}

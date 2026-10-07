@@ -1,0 +1,19 @@
+{
+  "command": "pwsh -NoLogo -NoProfile -File scripts/Test-RetentionInventoryHelpers.ps1",
+  "exitCode": 0,
+  "scorerSha256": "121b535888fe408c5837ccbca5118ec822c09ddc90dcaf0c1e5c845e48a7a27b",
+  "output": [
+    "{",
+    "  \"passed\": true,",
+    "  \"scorerSha256\": \"121b535888fe408c5837ccbca5118ec822c09ddc90dcaf0c1e5c845e48a7a27b\",",
+    "  \"pinSha256\": \"16fa34e42b018adea8b2c1321e52887d760726c5c8a06daa088c9f45892fe5a3\",",
+    "  \"globalFreezeSha256\": \"142c026f9775ca7207fac3197f256ecc1469cb1dfa1979b5f6824f49b6cb1499\",",
+    "  \"sourceRows\": 23,",
+    "  \"runtimeRows\": 26,",
+    "  \"filesystemRuntimeMatched\": true,",
+    "  \"orderingControls\": 2,",
+    "  \"hashMutationControls\": 2,",
+    "  \"runtimeCalls\": 0",
+    "}"
+  ]
+}

@@ -18,21 +18,22 @@ R04 was blocked before independent behavior by a verifier bug. See
 [the trial plan](VOCABULARY-RETENTION-TRIAL-PLAN.md) and
 [the original R04 report](../reports/089-retained-discount-harness-blocked.md).
 
+Separate scratch scoring now passed all 54 independent R04/S07 cases and
+confirmed retained-helper reuse and preservation of prior definitions. See
+[the supplemental result](../reports/090-retained-discount-supplemental-scoring.md).
+This does not repair the original blocked trial or establish a retention benefit.
+
 Next actions:
 
-1. Review and locally test the separate R04 supplemental scorer. Bind the
-   original records before execution, score all 54 pinned cases on scratch
-   copies, and preserve the failed canonical outcome. Its result cannot repair
-   the original controlled trial or establish a retention advantage.
-2. Preserve 003 on hold after its audit failure. Prepare a separately versioned
+1. Preserve 003 on hold after its audit failure. Prepare a separately versioned
    004 study with all twelve fresh cells under one repaired harness version,
    keeping the tasks, baseline bytes and runtime fixed. Do not combine old
    outcomes into its result table; see [the repair plan](../reports/097-uniform-retention-study-repair.md).
-3. Validate accepted-predecessor, explicit-fallback and reject-before-execution
+2. Validate accepted-predecessor, explicit-fallback and reject-before-execution
    controls before freezing 004. Launch only after clean-source/global/run pins
    and frozen controls pass. Preserve original artifacts and failed controls;
    never silently replace 003 source or acceptance records.
-4. Publish a comparative review with independent outcomes, actual reuse,
+3. Publish a comparative review with independent outcomes, actual reuse,
    incorrect edits and recovery observations. Separate missing harness results
    from program failures. Report unavailable model usage as unavailable.
 

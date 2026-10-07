@@ -23,3 +23,10 @@ After the blocked review, the coordinator overrode the explicit success-only tea
 The archive contains 625 exact files (10,802,889 bytes): the complete canonical run, final actor project, and six launch/preparation/freeze/verifier/audit evidence files. The index at evidence/089-R04-index.json lists every file by repository-relative path, byte length, and lowercase SHA-256, verified against its source.
 
 The trace records 35 exchanges. The independent 54-case corpus ran zero cases. Native model usage is unavailable; no token, turn, latency, or memory measurement is claimed. R04 provides no retention-effect result.
+
+## Later supplemental evidence
+
+A separate scratch-only scorer subsequently passed all 54 independent S07
+cases and verified retained-helper reuse. See [report 090](090-retained-discount-supplemental-scoring.md).
+The canonical failure and missing original trace audit described above remain
+unchanged; the supplemental result does not reclassify this trial as accepted.

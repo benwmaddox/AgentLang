@@ -1,8 +1,41 @@
 # R04 supplemental scoring boundary
 
-Status: scoring criteria recorded before supplemental execution. Implementation
-is under review and focused validation; production results remain pending.
-This document does not claim independent acceptance.
+Status: supplemental scratch scoring completed successfully on 2026-10-07.
+The original canonical R04 outcome remains blocked; this does not claim original
+trial acceptance or a vocabulary-retention advantage.
+
+## Completed supplemental result
+
+`pwsh -NoLogo -NoProfile -File scripts/Score-RetentionOutputSupplement.ps1`
+exited 0. The saved result is `supplemental-post-hoc-behavior`: binding, metadata
+and behavior checks passed; all 11 pinned CLI sessions succeeded; all 54 S07
+cases were recorded, executed and passed. Root separately recomputed all 54
+outputs with BigInteger arithmetic and ordinal exact `premium` comparison and
+checked their nominal Money result representation.
+
+The scratch replay verified persistent library status, pure effects, complete
+own-function instruction/branch coverage, passing attached tests and examples,
+unchanged source and contracts for 54 prior user words, unchanged source for 31
+nominal types, and reuse of the retained `customer.premium?` dependency.
+
+Final scorer SHA-256:
+`3cbb5f3bed7d264546b9a343a3b9bbb8916ab1f2c9833431b3e2e7fe0d07fe08`.
+Final focused runner SHA-256:
+`5be4513ee03470a4a91e470daaa0e8c37ad879a4368d1ea9e72447ac2a96fa06`.
+Root independently ran both regression runners on stable source: 25 focused
+controls passed, including 18 pre-runtime rejection cases, and the actual
+filesystem inventory regression passed. These checks made zero CLI calls.
+
+The result and root's regression/output-review evidence are archived in
+`evidence/090-supplemental/phase-08/`, with raw-file hashes in its index. Earlier
+failed attempts remain in phases 01–07. The original R04 actor tree stayed
+`56548f6c326262176c16761802a2f41f2850e6c0eef14ee85696316b449f65db`;
+canonical acceptance stayed byte-identical and failed; no R04 trace audit was
+created. No model token, efficiency, latency or native-memory claim follows.
+
+This establishes correct behavior for one saved agent-authored task and observed
+reuse of its predecessor abstraction. The separately repaired 004 study must
+still run fresh actors before a controlled retention comparison is available.
 
 ## Why a separate score is needed
 
@@ -180,3 +213,18 @@ scorer SHA-256 `04d0ad451f4338085ebee63167e90014c37630d158968282a127af7a8c2cc3e8
 Both source inventories contain 23 flat rows and both runtime inventories 26;
 the canonical rows match exactly, with zero runtime calls. This narrow actual-
 input check is archived alongside the failure. It is not behavior acceptance.
+
+The next attempt stopped at full runtime equality with 26 rows on each side.
+Root reproduced different ordering for filesystem-generated OrderedDictionary
+rows versus JSON object rows. The fix normalizes their ordering without weakening
+hash/size equality. The new read-only `Test-RetentionInventoryHelpers.ps1`
+checks saved pin/global hashes, flat 23/26 inventories, actual filesystem rows,
+ordering and visible hash mutations. It passed at scorer SHA-256
+`121b535888fe408c5837ccbca5118ec822c09ddc90dcaf0c1e5c845e48a7a27b`.
+
+The following replay passed the original source/runtime/provenance checks and
+made four CLI calls, all exit 0, but stopped before oracle cases because
+`Get-UserWordRows` returned a nested array (count 1 rather than the start's full
+user dictionary). Both failed attempts and root's filesystem regression evidence
+are retained in phase-07. Fixing that return contract and testing a multi-row
+fixture is still necessary; zero independent behavior cases are established.

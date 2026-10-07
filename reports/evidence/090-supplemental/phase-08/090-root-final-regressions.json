@@ -1,0 +1,59 @@
+{
+  "before": [
+    {
+      "path": "scripts/Score-RetentionOutputSupplement.ps1",
+      "sha256": "3cbb5f3bed7d264546b9a343a3b9bbb8916ab1f2c9833431b3e2e7fe0d07fe08"
+    },
+    {
+      "path": "scripts/Test-RetentionOutputSupplement.ps1",
+      "sha256": "5be4513ee03470a4a91e470daaa0e8c37ad879a4368d1ea9e72447ac2a96fa06"
+    },
+    {
+      "path": "scripts/Test-RetentionInventoryHelpers.ps1",
+      "sha256": "571f886a03312fdf46e994d55a3c140983ce3849782077649be9de133de374b9"
+    }
+  ],
+  "after": [
+    {
+      "path": "scripts/Score-RetentionOutputSupplement.ps1",
+      "sha256": "3cbb5f3bed7d264546b9a343a3b9bbb8916ab1f2c9833431b3e2e7fe0d07fe08"
+    },
+    {
+      "path": "scripts/Test-RetentionOutputSupplement.ps1",
+      "sha256": "5be4513ee03470a4a91e470daaa0e8c37ad879a4368d1ea9e72447ac2a96fa06"
+    },
+    {
+      "path": "scripts/Test-RetentionInventoryHelpers.ps1",
+      "sha256": "571f886a03312fdf46e994d55a3c140983ce3849782077649be9de133de374b9"
+    }
+  ],
+  "stableSource": true,
+  "runs": [
+    {
+      "command": "pwsh -NoLogo -NoProfile -File scripts/Test-RetentionOutputSupplement.ps1",
+      "exitCode": 0,
+      "output": [
+        "PASS: 25 focused supplemental controls; 18 rejected before runtime; 0 CLI calls."
+      ]
+    },
+    {
+      "command": "pwsh -NoLogo -NoProfile -File scripts/Test-RetentionInventoryHelpers.ps1",
+      "exitCode": 0,
+      "output": [
+        "{",
+        "  \"passed\": true,",
+        "  \"scorerSha256\": \"3cbb5f3bed7d264546b9a343a3b9bbb8916ab1f2c9833431b3e2e7fe0d07fe08\",",
+        "  \"pinSha256\": \"16fa34e42b018adea8b2c1321e52887d760726c5c8a06daa088c9f45892fe5a3\",",
+        "  \"globalFreezeSha256\": \"142c026f9775ca7207fac3197f256ecc1469cb1dfa1979b5f6824f49b6cb1499\",",
+        "  \"sourceRows\": 23,",
+        "  \"runtimeRows\": 26,",
+        "  \"filesystemRuntimeMatched\": true,",
+        "  \"orderingControls\": 2,",
+        "  \"hashMutationControls\": 2,",
+        "  \"runtimeCalls\": 0",
+        "}"
+      ]
+    }
+  ],
+  "runtimeCalls": 0
+}
