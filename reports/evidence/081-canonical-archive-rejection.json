@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-retention-003",
+  "sourceRevision": "8bff657bc4a4a0c2406a1ed3b5448f4b2ae4902c",
+  "stage": "canonical baseline archive",
+  "passed": false,
+  "diagnostic": "flat seed-state source inputs differ from BootstrapOnly evidence",
+  "canonicalBootstrapPassed": true,
+  "canonicalBootstrapEvidence": ".agentlang/business-policy-retention-003/preparation-evidence/081-preparation-bootstrap-653eb155bed242b482b1d1f9ac47088d.json",
+  "logicalFlatSource": "experiments/AgentLang.SubagentTrials/business-policy-retention-003/artifacts/flat-customer.agent",
+  "physicalFlatSource": ".agentlang/business-policy-retention-003/bootstrap/flat/flat-customer.agent",
+  "flatSourceSha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d",
+  "canonicalTreesRegenerated": false,
+  "preservedSourceSnapshotPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\failed-freeze\\source-snapshot-8bff657-attempt01",
+  "preservedFiles": [
+    {
+      "path": "acceptance-business-policy-001.json",
+      "bytes": 17436,
+      "sha256": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf"
+    },
+    {
+      "path": "acceptance-business-policy-help-002.json",
+      "bytes": 15931,
+      "sha256": "d58fceeec3b659aebc58daa1d708d5f16cb43d12996f291c1c78a377fcfb89ef"
+    },
+    {
+      "path": "acceptance.json",
+      "bytes": 15951,
+      "sha256": "8ca4f975161541b8c60397267fe7bb4ecb4345e00674d91467ac151a0bb7d3f2"
+    },
+    {
+      "path": "design.json",
+      "bytes": 4001,
+      "sha256": "c5b9d8a09cc671895f6ebd6bfd4023b8744cb8c8277cf6e2e7e6a4602d80b3ae"
+    },
+    {
+      "path": "flat-customer.agent",
+      "bytes": 506,
+      "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+    },
+    {
+      "path": "language-primer-business-policy-help-002.md",
+      "bytes": 3931,
+      "sha256": "7ca98f0c8c9a20a84076d2a6b62da7a36ac12959e17ec1890ec74f9cbf9b578e"
+    },
+    {
+      "path": "language-primer.md",
+      "bytes": 3931,
+      "sha256": "7ca98f0c8c9a20a84076d2a6b62da7a36ac12959e17ec1890ec74f9cbf9b578e"
+    },
+    {
+      "path": "public-task-S01.json",
+      "bytes": 784,
+      "sha256": "97befde7d0e3231529ad681e785ace116210d8d99228eb2e9f76183738b7fada"
+    },
+    {
+      "path": "public-task-S07.json",
+      "bytes": 779,
+      "sha256": "f2a3b584fbec86f0395228fde31d561c240b9bc5d5a9a4a927042ea8a6111a04"
+    },
+    {
+      "path": "examples/business-invoices.agent",
+      "bytes": 30002,
+      "sha256": "a08b3e87e69c5983d35ec35059c3881067294b65b4e79e992e81dbf101ab338c"
+    },
+    {
+      "path": "examples/business-payments-email.agent",
+      "bytes": 36869,
+      "sha256": "455bb038269fc499c69e0cd0338e76c9f4c5ed064f6a7c2ba125bdc9bb8503e4"
+    },
+    {
+      "path": "examples/business-state.agent",
+      "bytes": 15078,
+      "sha256": "d301d24143c31e84269aceaec7f85e4b6aeeb44e1156e6e03a53febc1ed41cc9"
+    },
+    {
+      "path": "examples/business-store.agent",
+      "bytes": 37409,
+      "sha256": "f7dfe3d6cafa66fd888e76c5e925fc424aa05465b40e896467c2e1f064b767f3"
+    },
+    {
+      "path": "examples/business-subscriptions.agent",
+      "bytes": 30486,
+      "sha256": "2c9a61e7f20e5b80996f0308cc360e23bc408185744ba2ef57e5c217214d14d5"
+    },
+    {
+      "path": "examples/business-values.agent",
+      "bytes": 26707,
+      "sha256": "fe8227ce0c38ff6e193a74292a5b1d0ed0ac3e3869f0fe8feaf56eca62f30cbd"
+    },
+    {
+      "path": "scripts/Audit-RetentionTrace.ps1",
+      "bytes": 70502,
+      "sha256": "896da2e0b471117c8946c34b7395e598c6950a0f90a152ee4a3350d1e2200479"
+    },
+    {
+      "path": "scripts/Audit-SubagentTrialTerminationV2.ps1",
+      "bytes": 15874,
+      "sha256": "870ff9b9a1843c0a104d2185688486c7ed1e85399df6c554f9ee890c4dcf4a10"
+    },
+    {
+      "path": "scripts/Freeze-RetentionTrial.ps1",
+      "bytes": 74271,
+      "sha256": "fd1e4b73b1b6a0368ba9b436ebdfd3814cbb0902100eaf81adda03a78683f043"
+    },
+    {
+      "path": "scripts/Prepare-BusinessPolicyTrial.ps1",
+      "bytes": 29618,
+      "sha256": "23af4c9536e72730d44a5cfbdcf70b05b17a1e35c83f841511f9e8bbc637c08a"
+    },
+    {
+      "path": "scripts/Prepare-RetentionTrial.ps1",
+      "bytes": 57795,
+      "sha256": "6673e5b73e7d8b93455926817c12d355d5934fd86af64271b6ff9fbb83f27a4a"
+    },
+    {
+      "path": "scripts/Start-SubagentTrialHostV2.ps1",
+      "bytes": 81288,
+      "sha256": "6573321e8c0fc92926e43221ae10836fd5c62139e5fdb51cc34ff482fbc81f2b"
+    },
+    {
+      "path": "scripts/Verify-RetentionPreflight.ps1",
+      "bytes": 89579,
+      "sha256": "d1c40e9df0a4907fe17e20c188bccda6f283cf5ea0c7b21bf50a2359477cf05c"
+    },
+    {
+      "path": "scripts/Verify-RetentionTrial.ps1",
+      "bytes": 124366,
+      "sha256": "f58c14afad7fb4d774a47861ae3b975dc5f5a3bb48b0386329fdc10320576181"
+    }
+  ]
+}

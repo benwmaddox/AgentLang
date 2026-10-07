@@ -475,7 +475,6 @@ function New-BaselineArchives {
         flat=@('experiments/AgentLang.SubagentTrials/business-policy-retention-003/artifacts/flat-customer.agent')
         rich=@('examples/business-values.agent','examples/business-store.agent','examples/business-state.agent','examples/business-subscriptions.agent','examples/business-invoices.agent','examples/business-payments-email.agent')
     }
-    $flatStagingSourcePath = '.agentlang/business-policy-retention-003/bootstrap/flat/flat-customer.agent'
     $prepared = [Collections.Generic.List[object]]::new()
     foreach ($kind in @('flat','rich')) {
         $baseline = Get-Property $baselines $kind
@@ -503,29 +502,7 @@ function New-BaselineArchives {
         $sourceInputs = Sort-OrdinalRows @($baseline.sourceInputs | ForEach-Object { [pscustomobject][ordered]@{path=$_.path;sha256=([string]$_.sha256).ToLowerInvariant()} })
         if (($sourceInputs.path -join '|') -cne ((Sort-OrdinalStrings $expectedInputsByKind[$kind]) -join '|')) { throw "$kind baseline source input set is invalid." }
         $seedInputs = Sort-OrdinalRows @($seedState.sourceInputs | ForEach-Object { [pscustomobject][ordered]@{path=$_.path;sha256=([string]$_.sha256).ToLowerInvariant()} })
-        if ($kind -ceq 'flat') {
-            $canonicalFlatInput = @($sourceInputs | Where-Object { $_.path -ceq 'experiments/AgentLang.SubagentTrials/business-policy-retention-003/artifacts/flat-customer.agent' })
-            $stagedFlatInput = @($seedInputs | Where-Object { $_.path -ceq $flatStagingSourcePath })
-            $stagingPath = Get-FullPath $flatStagingSourcePath
-            $canonicalPath = Get-FullPath 'experiments/AgentLang.SubagentTrials/business-policy-retention-003/artifacts/flat-customer.agent'
-            if ($sourceInputs.Count -ne 1 -or $canonicalFlatInput.Count -ne 1 -or $seedInputs.Count -ne 1 -or $stagedFlatInput.Count -ne 1) {
-                throw 'Flat seed-state source input must be the one exact bootstrap staging file bound to the one canonical flat artifact.'
-            }
-            if ($seedInputs[0].path -cne $flatStagingSourcePath -or
-                -not (Test-Path -LiteralPath $stagingPath -PathType Leaf) -or
-                -not (Test-Path -LiteralPath $canonicalPath -PathType Leaf)) {
-                throw 'Flat seed-state source input path is not the exact whitelisted bootstrap staging path or its canonical source is missing.'
-            }
-            $stagingHash = Get-Sha256 $stagingPath
-            $canonicalCurrentHash = Get-Sha256 $canonicalPath
-            $canonicalGitHash = Get-Sha256Bytes (Get-GitSnapshotBytes $revision 'experiments/AgentLang.SubagentTrials/business-policy-retention-003/artifacts/flat-customer.agent')
-            if ($seedInputs[0].sha256 -cne $stagingHash -or
-                $stagingHash -cne $canonicalFlatInput[0].sha256 -or
-                $canonicalCurrentHash -cne $canonicalFlatInput[0].sha256 -or
-                $canonicalGitHash -cne $canonicalFlatInput[0].sha256) {
-                throw 'Flat bootstrap staging bytes, seed-state hash, canonical artifact bytes, and committed source blob must all match.'
-            }
-        } elseif ((ConvertTo-Json -InputObject $seedInputs -Depth 100 -Compress) -cne (ConvertTo-Json -InputObject $sourceInputs -Depth 100 -Compress)) {
+        if ((ConvertTo-Json -InputObject $seedInputs -Depth 100 -Compress) -cne (ConvertTo-Json -InputObject $sourceInputs -Depth 100 -Compress)) {
             throw "$kind seed-state source inputs differ from BootstrapOnly evidence."
         }
         foreach ($sourceInput in $sourceInputs) {

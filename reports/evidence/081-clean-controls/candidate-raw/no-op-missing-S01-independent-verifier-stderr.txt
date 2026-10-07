@@ -1,0 +1,1 @@
+Retention B1/flat/S01 (R01) failed. Evidence: D:\code\AgentLang\.agentlang\business-policy-retention-003\evidence\081-preflight-candidate-6c60051237da4c55b59fdbc312bb9482\no-op-missing-S01.acceptance.json. Target 'customer.premium?' is missing; oracle execution is a safety stop.

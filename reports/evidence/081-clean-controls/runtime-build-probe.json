@@ -1,0 +1,22 @@
+{
+  "buildSourceRevision": "8bff657bc4a4a0c2406a1ed3b5448f4b2ae4902c",
+  "passed": true,
+  "runtimes": [
+    {
+      "informationalVersion": "1.0.0\u002B8bff657bc4a4a0c2406a1ed3b5448f4b2ae4902c",
+      "path": "src/AgentLang.Core/bin/Release/net9.0/AgentLang.Core.dll",
+      "sha256": "d35c689026e650a344a01bb4ba70c9be8c7e6d3a010de982abef8224b24a7f1b"
+    },
+    {
+      "informationalVersion": "1.0.0\u002B8bff657bc4a4a0c2406a1ed3b5448f4b2ae4902c",
+      "path": "src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll",
+      "sha256": "bbfe7d079f568a431148298de86a3aa26304a160781c2756591be070735f274a"
+    },
+    {
+      "informationalVersion": "1.0.0\u002B8bff657bc4a4a0c2406a1ed3b5448f4b2ae4902c",
+      "path": "experiments/AgentLang.Business/bin/Release/net9.0/AgentLang.Business.dll",
+      "sha256": "41f0b6f0f44ac73f0b899090dc7dcd3f3d56129176b172ceca96cba9e638a13d"
+    }
+  ],
+  "schemaVersion": 1
+}

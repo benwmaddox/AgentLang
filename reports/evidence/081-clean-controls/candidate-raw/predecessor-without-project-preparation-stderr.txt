@@ -1,0 +1,6 @@
+Exception: D:\code\AgentLang\scripts\Prepare-RetentionTrial.ps1:1030
+Line |
+1030 |  if ($null -ne $failure) { throw $failure }
+     |                            ~~~~~~~~~~~~~~
+     | Retained S07 requires both accepted same-block S01 -PreviousProject and -PreviousAcceptance; fallback is
+     | explicit.
