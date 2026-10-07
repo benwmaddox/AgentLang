@@ -55,7 +55,7 @@ overload by delaying the next request until a previous one finishes.
 
 ## Measurements and decision
 
-### Candidate: bounded reuse and high/low watermarks
+### Current candidate: persistent mailbox state and idle stack release
 
 Separate logical lifetime end, backing-storage reuse, and returning capacity to
 the allocator/OS. At a safe turn boundary, finish required resource cleanup,
@@ -69,19 +69,21 @@ initialized before reads; stale bytes must not become observable. Specify any
 required sanitization on reuse/export or isolation boundaries and measure its
 cost. Do not assume clearing allocation cursors securely erases data.
 
-The user's clarified watermarks describe two retained-capacity levels, separate
-from the live stack depth, which can grow and shrink repeatedly during a turn:
+The latest user revision replaces the two-level retention proposal:
 
-- **High retention level:** keep capacity needed by a recent burst/peak for a
-  bounded period after usage falls, so subsequent work can reuse it immediately.
-- **Low retention level:** after the peak-hold period, trim safely unused excess
-  toward a smaller warm reserve kept while the mailbox remains active.
-- **Inactive mailbox:** release its unused reserve or return it to a bounded
-  shared pool. Long-lived state and live I/O still follow their own lifetimes.
+- **Mailbox static state persists** for the mailbox's lifetime, independently
+  of its turn-local stack. Access remains explicit typed state, not unrestricted
+  mutable language globals.
+- **Turn-local values end** at their safe lifetime boundary, while backing
+  capacity can be reused for subsequent turns.
+- **After stack inactivity**, release unused stack/scratch backing capacity or
+  return it to a bounded shared pool. The next turn acquires capacity as needed;
+  this does not clear the mailbox's persistent state.
 
 Do not trim backing storage on each stack pop or trigger reclamation merely
-because live usage crosses a level. Define how the recent peak, hold period,
-warm reserve and mailbox inactivity are determined before benchmarking. Values
+because live usage crosses a level. Define the stack inactivity timeout and
+which uses refresh it before benchmarking. An idle mailbox can still have live
+pending operations; those buffers remain owned until safely relinquished. Values
 and retained capacity are separately accounted. A resettable bump arena may
 accumulate allocations until reset even if the operand stack has already shrunk;
 strict LIFO allocation and bump scratch remain distinct candidates.
@@ -94,14 +96,14 @@ reduce resident memory. Trimming never releases storage still needed by live
 values or outstanding I/O.
 
 Mailbox queue and pending-I/O watermarks govern admission/backpressure separately
-from these retained-capacity levels. Limits include payload bytes as well as item
+from idle stack-capacity release. Limits include payload bytes as well as item
 counts. Single-thread execution does not remove outstanding I/O references.
 Do not reuse storage until all valid users have relinquished it; quarantine
 awaiting buffers under a separately bounded owner if necessary.
 
 After the first lifetime-policy comparison, test backing-storage policies as a
 separate axis: immediate release, bounded reset-and-reuse, and bounded reuse
-with two-level timed retention. Record levels/hold periods before execution. Include burst,
+with idle-time release. Record inactivity rules before execution. Include burst,
 idle, large-outlier and sustained-overload phases; measure allocator calls,
 reset/sanitization/trim costs, cached bytes, whole-process memory and tail latency.
 Keep the language's visible lifetime semantics identical across these policies.

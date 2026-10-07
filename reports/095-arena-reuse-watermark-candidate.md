@@ -39,3 +39,13 @@ This differs from the earlier Pipelines backpressure analogy: admission threshol
 and arena capacity retention are separate policies. It does not assume every
 stack pop reclaims bump-allocated payloads. The clarification changes the research
 candidate, not the current managed interpreter's allocation behavior.
+
+## Latest revision: keep mailbox state, release idle stack capacity
+
+The user subsequently simplified the candidate: keep mailbox static state and
+clear stack storage after it has not been used for a while. The current roadmap
+and async experiment now use persistent mailbox state plus idle stack-capacity
+release, superseding the two-level retention policy above. Turn-local values
+still end at safe turn boundaries; the timeout controls unused backing capacity.
+Pending I/O buffers remain separately owned. Timeout duration and the events
+that refresh it are benchmark parameters to define, not implemented behavior.
