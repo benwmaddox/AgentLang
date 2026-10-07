@@ -128,3 +128,12 @@ behavior cases. Its reported scorer SHA-256 is
 Exact evidence is retained in `phase-03` and its index. A separate read-only
 review now checks all scorer schema reads against the actual saved artifacts.
 Passing synthetic controls have not yet established production integration.
+
+Root repeated `pwsh -NoLogo -NoProfile -File
+scripts/Test-RetentionOutputSupplement.ps1` after the schema correction: exit 0,
+20 focused controls, 17 rejects before runtime and zero CLI calls. Before/after
+source SHA-256 was identical at
+`8e5c3f6debb9f2cc34dabfef7e51a6fac517f4a11371df822ef167793f88a313`;
+runner before/after remained `b5d1594f...e7deb`. Exact command, full hashes and
+console result are archived in phase-04. This check establishes focused-control
+behavior only; production integration and independent schema review remain open.

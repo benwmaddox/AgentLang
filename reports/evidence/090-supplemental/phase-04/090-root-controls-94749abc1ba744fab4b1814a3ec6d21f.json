@@ -1,0 +1,12 @@
+{
+  "command": "pwsh -NoLogo -NoProfile -File scripts/Test-RetentionOutputSupplement.ps1",
+  "exitCode": 0,
+  "scorerBefore": "8e5c3f6debb9f2cc34dabfef7e51a6fac517f4a11371df822ef167793f88a313",
+  "scorerAfter": "8e5c3f6debb9f2cc34dabfef7e51a6fac517f4a11371df822ef167793f88a313",
+  "runnerBefore": "b5d1594f1675d6121a3dd3d07eb9f41ec8089b5cd483bbac2ff1f6b39aee7deb",
+  "runnerAfter": "b5d1594f1675d6121a3dd3d07eb9f41ec8089b5cd483bbac2ff1f6b39aee7deb",
+  "stableSource": true,
+  "output": [
+    "PASS: 20 focused supplemental controls; 17 rejected before runtime; 0 CLI calls."
+  ]
+}

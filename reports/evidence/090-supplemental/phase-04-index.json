@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Independent focused controls after schema corrections; not production acceptance",
+  "files": [
+    {
+      "source": ".agentlang/business-policy-retention-003/evidence/090-root-controls-94749abc1ba744fab4b1814a3ec6d21f.json",
+      "path": "reports/evidence/090-supplemental/phase-04/090-root-controls-94749abc1ba744fab4b1814a3ec6d21f.json",
+      "bytes": 593,
+      "sha256": "80d60bb9e6da7a380c5004926f9b8082eaa19d8320a0c17b2faa55f8d683f033"
+    }
+  ]
+}
