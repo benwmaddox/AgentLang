@@ -47,9 +47,23 @@ let private wordEntry (name: string) (inputs: LangType list) (outputs: LangType 
       Maturity = LibraryWord
       Revision = 1 }
 
-let private contextWith (extraWords: WordEntry list) : Compiler.IrLoweringContext =
+let private generatedScalarEntry (name: string) (builtin: Builtin) (inputs: LangType list) (outputs: LangType list) =
+    let entry = wordEntry name inputs outputs Set.empty []
+    { entry with Builtin = Some builtin }
+
+let private contextWithDefinitions
+    (extraWords: WordEntry list)
+    (records: Map<string, RecordDefinition>)
+    (scalarDefinitions: (ScalarTypeDefinition * string * string) list)
+    : Compiler.IrLoweringContext =
+    let generatedWords =
+        scalarDefinitions
+        |> List.collect (fun (scalar, constructorName, accessorName) ->
+            [ generatedScalarEntry constructorName (ScalarConstructor scalar.Name) [ scalar.BaseType ] [ TNamed scalar.Name ]
+              generatedScalarEntry accessorName (ScalarAccessor scalar.Name) [ TNamed scalar.Name ] [ scalar.BaseType ] ])
+    let scalarMap = scalarDefinitions |> List.map (fun (scalar, _, _) -> scalar.Name, scalar) |> Map.ofList
     let words =
-        extraWords
+        extraWords @ generatedWords
         |> List.fold (fun found entry -> Map.add entry.Definition.Name entry found) Compiler.primitives
     let wordIds =
         words
@@ -63,9 +77,32 @@ let private contextWith (extraWords: WordEntry list) : Compiler.IrLoweringContex
             name, WordId(prefix + name))
         |> Map.ofList
     { Words = words
-      Records = Map.empty
-      Scalars = Map.empty
+      Records = records
+      Scalars = scalarMap
       WordIds = wordIds }
+
+let private contextWithScalarDefinitions extraWords scalarDefinitions =
+    contextWithDefinitions extraWords Map.empty scalarDefinitions
+
+let private scalarDefinition name baseType validator =
+    { Name = name
+      BaseType = baseType
+      Validator = validator
+      SourceText = "scalar " + name
+      Span = span (name + ".agent") 1 }
+
+let private contextWithScalars (extraWords: WordEntry list) (scalars: ScalarTypeDefinition list) =
+    let definitions =
+        scalars
+        |> List.map (fun scalar -> scalar, scalar.Name + ".make", scalar.Name + ".value")
+    contextWithScalarDefinitions extraWords definitions
+
+let private contextWithRecords (extraWords: WordEntry list) (records: RecordDefinition list) =
+    let recordMap = records |> List.map (fun record -> record.Name, record) |> Map.ofList
+    contextWithDefinitions extraWords recordMap []
+
+let private contextWith (extraWords: WordEntry list) : Compiler.IrLoweringContext =
+    contextWithScalarDefinitions extraWords []
 
 let private compileBody context name expressions =
     let verifiedProgram = Compiler.compileIrProgram context
@@ -147,6 +184,13 @@ let private compareErrorCase (fixtureName: string) (executionName: string) (sour
         |> Seq.map (fun value -> value.GetString())
         |> Seq.toList
     check (fixtureName + " interpreter actual fixture") (interpreted.Actual = expectedActual)
+    let mutable expectedMessage = Unchecked.defaultof<JsonElement>
+    if expectedFixture.TryGetProperty("message", &expectedMessage) then
+        check (fixtureName + " interpreter message fixture") (interpreted.Message = expectedMessage.GetString())
+    let mutable expectedList = Unchecked.defaultof<JsonElement>
+    if expectedFixture.TryGetProperty("expected", &expectedList) then
+        let values = expectedList.EnumerateArray() |> Seq.map (fun value -> value.GetString()) |> Seq.toList
+        check (fixtureName + " interpreter expected fixture") (interpreted.Expected = values)
     let expectedSpan =
         let spanFixture = expectedFixture.GetProperty("span")
         if spanFixture.ValueKind = JsonValueKind.Null then None
@@ -166,6 +210,29 @@ let private rawExecute (libraryPath: string) =
     let handle = NativeLibrary.Load libraryPath
     let pointer = NativeLibrary.GetExport(handle, "agentlang_execute")
     Marshal.GetDelegateForFunctionPointer<RawExecuteDelegate>(pointer), handle
+
+let private rawExecutionStatusAndSteps (native: NativeCompiledProgram) =
+    let execute, library = rawExecute native.LibraryPath
+    let context = Marshal.AllocHGlobal NativeAbi.ContextSize
+    let outputs =
+        if native.OutputCapacity = 0 then IntPtr.Zero
+        else Marshal.AllocHGlobal(native.OutputCapacity * NativeAbi.SlotSize)
+    let status = Marshal.AllocHGlobal sizeof<int32>
+    try
+        Marshal.WriteInt32(context, NativeAbi.ContextAbiVersionOffset, int NativeAbi.Version)
+        Marshal.WriteInt32(context, NativeAbi.ContextStepsConsumedOffset, 0)
+        Marshal.WriteInt32(context, NativeAbi.ContextErrorMetadataIdOffset, -1)
+        Marshal.WriteInt32(context, NativeAbi.ContextReservedOffset, 0)
+        Marshal.WriteInt64(context, NativeAbi.ContextErrorArgument0Offset, 0L)
+        Marshal.WriteInt64(context, NativeAbi.ContextErrorArgument1Offset, 0L)
+        Marshal.WriteInt32(status, NativeAbi.StatusInvalidRequest)
+        execute.Invoke(nativeint context, nativeint outputs, native.OutputCapacity, nativeint status)
+        Marshal.ReadInt32 status, Marshal.ReadInt32(context, NativeAbi.ContextStepsConsumedOffset)
+    finally
+        Marshal.FreeHGlobal status
+        if outputs <> IntPtr.Zero then Marshal.FreeHGlobal outputs
+        Marshal.FreeHGlobal context
+        NativeLibrary.Free library
 
 let private testLayoutAndRequestGuards multiOutputBody scratchBody =
     use native = compileNative "abi-guard" LlvmOptimization.O0 multiOutputBody
@@ -208,6 +275,11 @@ let private testLayoutAndRequestGuards multiOutputBody scratchBody =
             check "ABI fixture separates logical output count and scratch capacity" (
                 resultBuffer.GetProperty("example").GetProperty("logicalOutputCount").GetInt32() = 1
                 && resultBuffer.GetProperty("example").GetProperty("requiredScratchCapacity").GetInt32() = 2)
+            let nominalSupport = root.GetProperty("nativeSemanticSupport").GetProperty("nominalScalars")
+            let nominalBases = nominalSupport.GetProperty("supportedBaseTypes").EnumerateArray() |> Seq.map (fun value -> value.GetString()) |> Seq.toList
+            check "ABI fixture documents unchanged i64 encoding for supported nominal scalars" (
+                nominalBases = [ "Int"; "Bool" ]
+                && nominalSupport.GetProperty("slotEncoding").GetString().Contains("existing i64 encoding"))
             json.Dispose()
         finally
             Marshal.FreeHGlobal layoutBuffer
@@ -320,6 +392,375 @@ let private testLargeStackFrame () =
         let actual = native.Execute "large-frame"
         check ($"large-frame {optimization} values match interpreter") (actual.Values = interpreted)
         check ($"large-frame {optimization} preserves fuel accounting") (actual.StepsConsumed = expectedSteps)
+
+let private testNominalScalarSupport () =
+    let support = fixtureRoot.RootElement.GetProperty("native-support")
+    let supportedBases = support.GetProperty("nominalScalarBases").EnumerateArray() |> Seq.map (fun value -> value.GetString()) |> Seq.toList
+    let excluded = support.GetProperty("excluded").EnumerateArray() |> Seq.map (fun value -> value.GetString()) |> Seq.toList
+    check "scalar fixture records the native nominal support boundary" (
+        supportedBases = [ "Int"; "Bool" ]
+        && excluded = [ "records"; "Float"; "String"; "containers"; "effects" ])
+
+    let positiveValidator =
+        wordEntry "is-positive?" [ TInt ] [ TBool ] Set.empty [
+            Push(LInt 0L, span "is-positive.agent" 1)
+            Call("int.greater-than", span "is-positive.agent" 2)
+        ]
+    let identityBoolValidator =
+        wordEntry "identity-bool?" [ TBool ] [ TBool ] Set.empty [
+            Call("bool.not", span "identity-bool.agent" 1)
+            Call("bool.not", span "identity-bool.agent" 2)
+        ]
+    let intContext =
+        contextWithScalarDefinitions [ positiveValidator ] [
+            scalarDefinition "OrderId" TInt None, "OrderId.create", "OrderId.raw"
+            scalarDefinition "PositiveId" TInt (Some "is-positive?"), "PositiveId.construct", "PositiveId.unwrap"
+        ]
+    let intBody = compileBody intContext "nominal-int-cases" [
+        Push(LInt 17L, span "nominal-int.agent" 1)
+        Call("OrderId.create", span "nominal-int.agent" 2)
+        Call("dup", span "nominal-int.agent" 3)
+        Call("OrderId.raw", span "nominal-int.agent" 4)
+        Push(LInt 5L, span "nominal-int.agent" 5)
+        Call("PositiveId.construct", span "nominal-int.agent" 6)
+        Call("dup", span "nominal-int.agent" 7)
+        Call("PositiveId.unwrap", span "nominal-int.agent" 8)
+    ]
+    compareSuccessfulCase "nominal-int-cases" "nominal-int-cases" intBody [
+        NamedValue("OrderId", IntValue 17L); IntValue 17L
+        NamedValue("PositiveId", IntValue 5L); IntValue 5L
+    ]
+
+    let boolContext =
+        contextWithScalarDefinitions [ identityBoolValidator ] [
+            scalarDefinition "Permission" TBool None, "Permission.create", "Permission.raw"
+            scalarDefinition "CheckedFlag" TBool (Some "identity-bool?"), "CheckedFlag.construct", "CheckedFlag.unwrap"
+        ]
+    let boolBody = compileBody boolContext "nominal-bool-cases" [
+        Push(LBool true, span "nominal-bool.agent" 1)
+        Call("Permission.create", span "nominal-bool.agent" 2)
+        Call("dup", span "nominal-bool.agent" 3)
+        Call("Permission.raw", span "nominal-bool.agent" 4)
+        Push(LBool true, span "nominal-bool.agent" 5)
+        Call("CheckedFlag.construct", span "nominal-bool.agent" 6)
+        Call("dup", span "nominal-bool.agent" 7)
+        Call("CheckedFlag.unwrap", span "nominal-bool.agent" 8)
+    ]
+    compareSuccessfulCase "nominal-bool-cases" "nominal-bool-cases" boolBody [
+        NamedValue("Permission", BoolValue true); BoolValue true
+        NamedValue("CheckedFlag", BoolValue true); BoolValue true
+    ]
+
+    let roundTrip =
+        wordEntry "route-roundtrip" [ TNamed "RouteId" ] [ TNamed "RouteId" ] Set.empty [
+            Call("route-id.raw", span "route-roundtrip.agent" 1)
+            Call("route-id.create", span "route-roundtrip.agent" 2)
+        ]
+    let routeContext =
+        contextWithScalarDefinitions [ roundTrip ] [
+            scalarDefinition "RouteId" TInt None, "route-id.create", "route-id.raw"
+        ]
+    let routeBody = compileBody routeContext "nominal-branch-call" [
+        Push(LInt 10L, span "nominal-route.agent" 1)
+        Call("route-id.create", span "nominal-route.agent" 2)
+        Let("saved", span "nominal-route.agent" 3)
+        Push(LBool false, span "nominal-route.agent" 4)
+        If(
+            [ Push(LInt 20L, span "nominal-route.agent" 5); Call("route-id.create", span "nominal-route.agent" 6) ],
+            [ Load("saved", span "nominal-route.agent" 7) ],
+            span "nominal-route.agent" 4)
+        Call("route-roundtrip", span "nominal-route.agent" 8)
+        Call("dup", span "nominal-route.agent" 9)
+        Push(LBool true, span "nominal-route.agent" 10)
+        Call("swap", span "nominal-route.agent" 11)
+        Call("route-id.raw", span "nominal-route.agent" 12)
+        Push(LInt 77L, span "nominal-route.agent" 13)
+        Call("route-id.create", span "nominal-route.agent" 14)
+        Call("dup", span "nominal-route.agent" 15)
+        Call("drop", span "nominal-route.agent" 16)
+        Call("drop", span "nominal-route.agent" 17)
+        Push(LInt 1L, span "nominal-route.agent" 18)
+        Call("route-id.create", span "nominal-route.agent" 19)
+        Push(LInt 1L, span "nominal-route.agent" 20)
+        Call("route-id.create", span "nominal-route.agent" 21)
+        Call("equals", span "nominal-route.agent" 22)
+        Push(LInt 1L, span "nominal-route.agent" 23)
+        Call("route-id.create", span "nominal-route.agent" 24)
+        Push(LInt 2L, span "nominal-route.agent" 25)
+        Call("route-id.create", span "nominal-route.agent" 26)
+        Call("equals", span "nominal-route.agent" 27)
+    ]
+    compareSuccessfulCase "nominal-branch-call" "nominal-branch-call" routeBody [
+        NamedValue("RouteId", IntValue 10L); BoolValue true; IntValue 10L
+        BoolValue true; BoolValue false
+    ]
+
+    let wrongNominal =
+        errorOf (fun () ->
+            compileBody intContext "wrong-nominal" [
+                Push(LInt 5L, span "wrong-nominal.agent" 1)
+                Call("OrderId.create", span "wrong-nominal.agent" 2)
+                Call("PositiveId.unwrap", span "wrong-nominal.agent" 3)
+            ]
+            |> ignore)
+    check "a scalar accessor rejects a different nominal key" (wrongNominal.Code.StartsWith("TYPE_", StringComparison.Ordinal))
+
+    let rejectAllValidatorBase =
+        wordEntry "is-positive?" [ TInt ] [ TBool ] Set.empty [
+            Call("drop", span "reject-positive.agent" 1)
+            Push(LBool false, span "reject-positive.agent" 2)
+        ]
+    let replacedValidator =
+        { rejectAllValidatorBase with
+            Definition = { rejectAllValidatorBase.Definition with Revision = 2 }
+            Revision = 2 }
+    let originalSnapshotBody = compileBody intContext "frozen-validator" [
+        Push(LInt 3L, span "snapshot-validator.agent" 1)
+        Call("PositiveId.construct", span "snapshot-validator.agent" 2)
+    ]
+    let replacementContext =
+        contextWithScalarDefinitions [ replacedValidator ] [
+            scalarDefinition "PositiveId" TInt (Some "is-positive?"), "PositiveId.construct", "PositiveId.unwrap"
+        ]
+    let replacementBody = compileBody replacementContext "replacement-validator" [
+        Push(LInt 3L, span "replacement-validator.agent" 1)
+        Call("PositiveId.construct", span "replacement-validator.agent" 2)
+    ]
+    compareErrorCase "refinement-failed" "replacement-validator" (NativeDiagnosticSources.fromLoweringContext replacementContext) replacementBody
+    let frozenExpected = [ NamedValue("PositiveId", IntValue 3L) ]
+    check "the interpreter uses the validator frozen in the verified program" (interpreterResult "frozen-validator" originalSnapshotBody = frozenExpected)
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use native =
+            compileNativeWithSources "frozen-validator" optimization (NativeDiagnosticSources.fromLoweringContext intContext) originalSnapshotBody
+        check ($"{optimization} old native body retains its validator after replacement") (native.Execute "frozen-validator" |> fun result -> result.Values = frozenExpected)
+
+    let zeroOutputBody = compileBody intContext "zero-output-validator" [
+        Push(LInt 1L, span "zero-output-validator.agent" 1)
+        Call("PositiveId.construct", span "zero-output-validator.agent" 2)
+        Call("drop", span "zero-output-validator.agent" 3)
+    ]
+    check "zero-output validator independent fixture" (fixtureValues "zero-output-validator" = [])
+    let interpretedZeroOutput, expectedZeroOutputSteps = interpreterResultAndSteps "zero-output-validator" zeroOutputBody
+    check "zero-output validator interpreter result" (interpretedZeroOutput = [])
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use native =
+            compileNativeWithSources "zero-output-validator" optimization (NativeDiagnosticSources.fromLoweringContext intContext) zeroOutputBody
+        let actual = native.Execute "zero-output-validator"
+        check ($"{optimization} zero-output body keeps its logical output count") (native.OutputCount = 0)
+        check ($"{optimization} validator Bool result has scratch capacity") (native.OutputCapacity = 1)
+        check ($"{optimization} zero-output validator preserves fuel accounting") (actual.Values = interpretedZeroOutput && actual.StepsConsumed = expectedZeroOutputSteps)
+
+let private testNominalScalarDiagnosticsAndRejections () =
+    let positiveValidator =
+        wordEntry "is-positive?" [ TInt ] [ TBool ] Set.empty [
+            Push(LInt 0L, span "is-positive.agent" 1)
+            Call("int.greater-than", span "is-positive.agent" 2)
+        ]
+    let positiveContext =
+        contextWithScalarDefinitions [ positiveValidator ] [
+            scalarDefinition "PositiveId" TInt (Some "is-positive?"), "PositiveId.construct", "PositiveId.unwrap"
+        ]
+    let falseRefinement = compileBody positiveContext "false-refinement" [
+        Push(LInt -1L, span "false-refinement.agent" 1)
+        Call("PositiveId.construct", span "false-refinement.agent" 2)
+    ]
+    compareErrorCase "refinement-failed" "false-refinement" (NativeDiagnosticSources.fromLoweringContext positiveContext) falseRefinement
+
+    let boolContext =
+        contextWithScalarDefinitions [] [
+            scalarDefinition "RejectTrue" TBool (Some "bool.not"), "RejectTrue.wrap", "RejectTrue.value"
+        ]
+    let boolFalseRefinement = compileBody boolContext "bool-false-refinement" [
+        Push(LBool true, span "bool-false-refinement.agent" 1)
+        Call("RejectTrue.wrap", span "bool-false-refinement.agent" 2)
+    ]
+    compareErrorCase "bool-refinement-failed" "bool-false-refinement" (NativeDiagnosticSources.fromLoweringContext boolContext) boolFalseRefinement
+
+    let overflowValidator =
+        wordEntry "checked-positive?" [ TInt ] [ TBool ] Set.empty [
+            Push(LInt Int64.MaxValue, span "checked-positive.agent" 1)
+            Call("add", span "checked-positive.agent" 2)
+            Push(LInt 0L, span "checked-positive.agent" 3)
+            Call("int.greater-than", span "checked-positive.agent" 4)
+        ]
+    let overflowContext =
+        contextWithScalarDefinitions [ overflowValidator ] [
+            scalarDefinition "CheckedId" TInt (Some "checked-positive?"), "CheckedId.construct", "CheckedId.unwrap"
+        ]
+    let validatorFailure = compileBody overflowContext "validator-arithmetic-failure" [
+        Push(LInt 1L, span "validator-arithmetic.agent" 1)
+        Call("CheckedId.construct", span "validator-arithmetic.agent" 2)
+    ]
+    compareErrorCase "validator-arithmetic-failure" "validator-arithmetic-failure" (NativeDiagnosticSources.fromLoweringContext overflowContext) validatorFailure
+
+    let unsupportedValidator =
+        wordEntry "has-unsupported-branch?" [ TInt ] [ TBool ] Set.empty [
+            Push(LBool false, span "unsupported-validator.agent" 1)
+            If(
+                [ ConstructContainer(OptionNone, [ TInt ], span "unsupported-validator.agent" 2)
+                  Call("drop", span "unsupported-validator.agent" 3)
+                  Call("drop", span "unsupported-validator.agent" 4)
+                  Push(LBool true, span "unsupported-validator.agent" 5) ],
+                [ Call("drop", span "unsupported-validator.agent" 6)
+                  Push(LBool false, span "unsupported-validator.agent" 7) ],
+                span "unsupported-validator.agent" 1)
+        ]
+    let unsupportedValidatorContext =
+        contextWithScalarDefinitions [ unsupportedValidator ] [
+            scalarDefinition "UntakenValidator" TInt (Some "has-unsupported-branch?"), "UntakenValidator.make", "UntakenValidator.value"
+        ]
+    let unsupportedValidatorBody = compileBody unsupportedValidatorContext "unsupported-validator-closure" [
+        Push(LInt 1L, span "unsupported-validator-main.agent" 1)
+        Call("UntakenValidator.make", span "unsupported-validator-main.agent" 2)
+    ]
+    let unsupportedValidatorError = errorOf (fun () -> LlvmAot.emit unsupportedValidatorBody |> ignore)
+    check "unsupported IR in an untaken validator branch is rejected" (
+        unsupportedValidatorError.Code = "IR_LLVM_UNSUPPORTED_OPERATION"
+        && unsupportedValidatorError.Span = Some(span "unsupported-validator.agent" 2))
+
+    for name, baseType, literal in [
+        "FloatTag", TFloat, LFloat 1.5
+        "StringTag", TString, LString "value"
+    ] do
+        let context = contextWithScalars [] [ scalarDefinition name baseType None ]
+        let source = span "unsupported-nominal-base.agent" 1
+        let body = compileBody context ("unsupported-" + name) [ Push(literal, source); Call(name + ".make", source) ]
+        let unsupportedError = errorOf (fun () -> LlvmAot.emit body |> ignore)
+        check (name + " nominal base stays outside the native slice") (
+            unsupportedError.Code = "IR_LLVM_UNSUPPORTED_TYPE"
+            && unsupportedError.Actual |> List.exists (fun actual -> actual.Contains(IrTypes.format (if baseType = TFloat then IrFloat else IrString))))
+
+    let unitContext = contextWithScalars [] [ scalarDefinition "UnitTag" TUnit None ]
+    let unitBaseError = errorOf (fun () -> Compiler.compileIrProgram unitContext |> ignore)
+    check "Unit scalar declaration remains rejected by the compiler's current type rule" (unitBaseError.Code = "TYPE_UNSUPPORTED_SCALAR_BASE")
+
+    let record =
+        { Name = "NativeRecord"
+          Fields = [ { Name = "value"; Type = TInt } ]
+          SourceText = "record NativeRecord"
+          Span = span "NativeRecord.agent" 1 }
+    let recordConstructor = wordEntry "NativeRecord.create" [ TInt ] [ TNamed "NativeRecord" ] Set.empty []
+    let recordConstructor = { recordConstructor with Builtin = Some(RecordConstructor "NativeRecord") }
+    let recordContext = contextWithRecords [ recordConstructor ] [ record ]
+    let recordBody = compileBody recordContext "unsupported-record" [
+        Push(LInt 1L, span "unsupported-record.agent" 1)
+        Call("NativeRecord.create", span "unsupported-record.agent" 2)
+    ]
+    let recordError = errorOf (fun () -> LlvmAot.emit recordBody |> ignore)
+    check "record generated targets remain rejected" (recordError.Code = "IR_LLVM_UNSUPPORTED_TARGET")
+
+let private testNominalScalarDepth () =
+    let positiveValidator =
+        wordEntry "is-positive?" [ TInt ] [ TBool ] Set.empty [
+            Push(LInt 0L, span "depth-validator.agent" 1)
+            Call("int.greater-than", span "depth-validator.agent" 2)
+        ]
+
+    let runCase typeName baseType validator finalIndex (literal: Literal) shouldFail =
+        let scalar = scalarDefinition typeName baseType validator
+        let deepWords =
+            [ 0 .. finalIndex ]
+            |> List.map (fun index ->
+                let name = $"deep.scalar.{index}"
+                let body =
+                    if index < finalIndex then [ Call($"deep.scalar.{index + 1}", span (name + ".agent") 2) ]
+                    else
+                        [ Push(literal, span (name + ".agent") 2)
+                          Call(typeName + ".make", span (name + ".agent") 3)
+                          Call("drop", span (name + ".agent") 4) ]
+                wordEntry name [] [] Set.empty body)
+        let context =
+            let validatorWords = if validator = Some "is-positive?" then [ positiveValidator ] else []
+            let extraWords = validatorWords @ deepWords
+            contextWithScalars extraWords [ scalar ]
+        let body = compileBody context ("deep-scalar-" + typeName) [ Call("deep.scalar.0", span "deep-scalar-entry.agent" 1) ]
+        let sources = NativeDiagnosticSources.fromLoweringContext context
+        if shouldFail then
+            let mutable interpretedSteps = 0
+            let interpreterHost =
+                { noOpHost () with
+                    ChargeInstruction = fun _ _ -> interpretedSteps <- interpretedSteps + 1
+                    WordDefinitionSpan = fun word -> sources.WordDefinitionSpans.TryFind word
+                    PrimitiveDefinitionSpan = fun word -> sources.PrimitiveDefinitionSpans.TryFind word }
+            let interpretedError = errorOf (fun () -> IrInterpreter.executeBody interpreterHost "deep-scalar-entry" body |> ignore)
+            let expectedFixture = fixtureError "validator-depth-limit"
+            let expectedWord = validator |> Option.defaultValue ""
+            let expectedSpan =
+                if expectedWord = "bool.not" then sources.PrimitiveDefinitionSpans.TryFind expectedWord
+                else sources.WordDefinitionSpans.TryFind expectedWord
+            check (typeName + " interpreter rejects validator transition at depth 65") (
+                interpretedError.Code = expectedFixture.GetProperty("code").GetString()
+                && interpretedError.Word = Some expectedWord
+                && interpretedError.Span = expectedSpan
+                && interpretedError.Actual.IsEmpty)
+            check (typeName + " interpreter charges no extra generated/validator instruction") (interpretedSteps = 66)
+            for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+                use native = compileNativeWithSources ("deep-scalar-" + typeName) optimization sources body
+                let actualError = errorOf (fun () -> native.Execute "deep-scalar-entry" |> ignore)
+                check ($"{optimization} {typeName} depth error matches interpreter") (actualError = interpretedError)
+                let nativeStatus, nativeSteps = rawExecutionStatusAndSteps native
+                check ($"{optimization} {typeName} failed depth guard retains diagnostic status") (nativeStatus = NativeAbi.StatusDiagnostic)
+                check ($"{optimization} {typeName} generated/validator depth charges match interpreter") (nativeSteps = interpretedSteps)
+        else
+            let interpreted, expectedSteps = interpreterResultAndSteps "deep-scalar-entry" body
+            let expectedDepthSteps = if validator = Some "bool.not" then 66 else 67
+            check (typeName + " interpreter permits the validator at depth 64") (interpreted = [] && expectedSteps = expectedDepthSteps)
+            for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+                use native = compileNativeWithSources ("deep-scalar-" + typeName) optimization sources body
+                let actual = native.Execute "deep-scalar-entry"
+                check ($"{optimization} {typeName} generated constructor depth boundary") (actual.Values = interpreted)
+                check ($"{optimization} {typeName} generated constructor step count") (actual.StepsConsumed = expectedSteps)
+
+    runCase "DepthTag" TInt None 63 (LInt 1L) false
+    runCase "RefinedDepthTag" TInt (Some "is-positive?") 63 (LInt 1L) true
+    runCase "BoundaryDepthTag" TInt (Some "is-positive?") 61 (LInt 1L) false
+    runCase "PrimitiveDepthFlag" TBool (Some "bool.not") 63 (LBool true) true
+    runCase "PrimitiveBoundaryFlag" TBool (Some "bool.not") 62 (LBool false) false
+
+let private testNominalValidatorFuelLimit () =
+    let validatorInstructions =
+        [ 1 .. 5000 ]
+        |> List.collect (fun _ ->
+            [ Push(LInt 1L, span "fuel-validator.agent" 3)
+              Call("drop", span "fuel-validator.agent" 4) ])
+    let validator =
+        wordEntry "valid-after-many-drops?" [ TInt ] [ TBool ] Set.empty (
+            validatorInstructions @ [
+                Call("drop", span "fuel-validator.agent" 5)
+                Push(LBool true, span "fuel-validator.agent" 6)
+            ])
+    let context =
+        contextWithScalarDefinitions [ validator ] [
+            scalarDefinition "FuelTag" TInt (Some "valid-after-many-drops?"), "FuelTag.make", "FuelTag.value"
+        ]
+    let body = compileBody context "validator-fuel-limit" [
+        Push(LInt 1L, span "fuel-validator-main.agent" 1)
+        Call("FuelTag.make", span "fuel-validator-main.agent" 2)
+    ]
+    let sources = NativeDiagnosticSources.fromLoweringContext context
+    let mutable interpretedSteps = 0
+    let host =
+        { noOpHost () with
+            ChargeInstruction = fun _ _ -> interpretedSteps <- interpretedSteps + 1
+            WordDefinitionSpan = fun word -> sources.WordDefinitionSpans.TryFind word
+            PrimitiveDefinitionSpan = fun word -> sources.PrimitiveDefinitionSpans.TryFind word }
+    let interpretedError = errorOf (fun () -> IrInterpreter.executeBody host "validator-fuel-limit" body |> ignore)
+    let expectedFixture = fixtureError "validator-fuel-limit"
+    let expectedSpan = span "fuel-validator.agent" 3
+    let expectedActual = expectedFixture.GetProperty("actual").EnumerateArray() |> Seq.map (fun value -> value.GetString()) |> Seq.toList
+    check "validator fuel fixture independently specifies the first over-limit instruction" (
+        interpretedError.Code = expectedFixture.GetProperty("code").GetString()
+        && interpretedError.Word = Some(expectedFixture.GetProperty("word").GetString())
+        && interpretedError.Actual = expectedActual
+        && interpretedError.Span = Some expectedSpan
+        && interpretedSteps = 10001)
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use native = compileNativeWithSources "validator-fuel-limit" optimization sources body
+        let actualError = errorOf (fun () -> native.Execute "validator-fuel-limit" |> ignore)
+        check ($"{optimization} validator fuel diagnostic matches interpreter") (actualError = interpretedError)
+        let nativeStatus, nativeSteps = rawExecutionStatusAndSteps native
+        check ($"{optimization} validator fuel guard reports a language diagnostic") (nativeStatus = NativeAbi.StatusDiagnostic)
+        check ($"{optimization} validator fuel guard includes one Wrap and no generated-call charge") (nativeSteps = interpretedSteps)
 
 let private testRejectsEffectsAndUnsupportedUntakenBranches () =
     let effectful =
@@ -663,6 +1104,10 @@ let main _ =
         testFuelAndSourceMetadata ()
         testCallDepth ()
         testLargeStackFrame ()
+        testNominalScalarSupport ()
+        testNominalScalarDiagnosticsAndRejections ()
+        testNominalScalarDepth ()
+        testNominalValidatorFuelLimit ()
         testRejectsEffectsAndUnsupportedUntakenBranches ()
         testCatalogTrustBoundary ()
         testCompilerRuntimeDiscovery ()

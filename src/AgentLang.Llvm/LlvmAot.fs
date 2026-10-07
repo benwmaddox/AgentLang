@@ -47,6 +47,10 @@ type private EmittedValue =
     { Type: IrType
       Operand: string }
 
+type internal NativeScalarType =
+    { TypeName: string
+      BaseType: IrType }
+
 [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
 type private ExecuteDelegate = delegate of nativeint * nativeint * int32 * nativeint -> unit
 
@@ -77,7 +81,7 @@ type private CodeBuilder() =
 
 [<Sealed>]
 type NativeCompiledProgram internal
-    (libraryPath: string, outputTypes: IrType list, outputCapacity: int, metadata: ErrorMetadata array) =
+    (libraryPath: string, outputTypes: IrType list, outputCapacity: int, scalarTypes: Map<ProgramTypeKey, NativeScalarType>, metadata: ErrorMetadata array) =
     let mutable libraryHandle = IntPtr.Zero
     let mutable executeDelegate: ExecuteDelegate option = None
 
@@ -132,15 +136,21 @@ type NativeCompiledProgram internal
                     outputTypes
                     |> List.mapi (fun index ty ->
                         let raw = Marshal.ReadInt64(outputPointer, index * NativeAbi.SlotSize)
-                        match ty with
-                        | IrInt -> IntValue raw
-                        | IrBool when raw = 0L -> BoolValue false
-                        | IrBool when raw = 1L -> BoolValue true
-                        | IrBool -> raise (InvalidDataException($"Native Bool output slot {index} was not encoded as 0 or 1: {raw}."))
-                        | IrUnit when raw = 0L -> UnitValue
-                        | IrUnit -> raise (InvalidDataException($"Native Unit output slot {index} was not encoded as 0: {raw}."))
-                        | unsupported ->
-                            raise (InvalidDataException($"Native artifact returned unsupported ABI output type {IrTypes.format unsupported}.")))
+                        let rec decode valueType value =
+                            match valueType with
+                            | IrInt -> IntValue value
+                            | IrBool when value = 0L -> BoolValue false
+                            | IrBool when value = 1L -> BoolValue true
+                            | IrBool -> raise (InvalidDataException($"Native Bool output slot {index} was not encoded as 0 or 1: {value}."))
+                            | IrUnit when value = 0L -> UnitValue
+                            | IrUnit -> raise (InvalidDataException($"Native Unit output slot {index} was not encoded as 0: {value}."))
+                            | IrNominal key ->
+                                match scalarTypes.TryFind key with
+                                | Some scalar -> NamedValue(scalar.TypeName, decode scalar.BaseType value)
+                                | None -> raise (InvalidDataException($"Native artifact returned unsupported ABI output type {IrTypes.format valueType}."))
+                            | unsupported ->
+                                raise (InvalidDataException($"Native artifact returned unsupported ABI output type {IrTypes.format unsupported}."))
+                        decode ty raw)
                 { Values = values; StepsConsumed = steps }
             | NativeAbi.StatusDiagnostic ->
                 let metadataId = Marshal.ReadInt32(contextPointer, NativeAbi.ContextErrorMetadataIdOffset)
@@ -196,28 +206,55 @@ module LlvmAot =
     let private callDiagnostic (code: string) (message: string) (owner: string) (span: SourceSpan option) (expected: string list) (actual: string list) =
         raiseDiagnostic code message (Some owner) span expected actual
 
-    let private ensureScalarType (owner: string) (span: SourceSpan option) (ty: IrType) =
+    let private ensureScalarType (program: IrProgram) (owner: string) (span: SourceSpan option) (ty: IrType) =
         match ty with
         | IrInt | IrBool | IrUnit -> ()
+        | IrNominal key ->
+            match program.NominalTypesByKey.TryFind key with
+            | Some(IrScalarDefinition scalar) ->
+                match scalar.BaseType with
+                | IrInt | IrBool -> ()
+                | unsupported ->
+                    callDiagnostic "IR_LLVM_UNSUPPORTED_TYPE" "The LLVM scalar backend supports nominal scalars only when their base is Int or Bool."
+                        owner span [ "nominal scalar based on Int or Bool" ] [ $"{scalar.TypeName}: {IrTypes.format unsupported}" ]
+            | Some(IrRecordDefinition record) ->
+                callDiagnostic "IR_LLVM_UNSUPPORTED_TYPE" "The LLVM scalar backend does not support nominal records."
+                    owner span [ "Int, Bool, Unit, or supported nominal scalar" ] [ record.TypeName ]
+            | None ->
+                callDiagnostic "IR_LLVM_UNSUPPORTED_TYPE" "The LLVM scalar backend cannot resolve an unknown nominal type."
+                    owner span [ "known nominal scalar" ] [ IrTypes.format ty ]
         | unsupported ->
-            callDiagnostic "IR_LLVM_UNSUPPORTED_TYPE" "The LLVM scalar backend supports only Int, Bool, and Unit values."
+            callDiagnostic "IR_LLVM_UNSUPPORTED_TYPE" "The LLVM scalar backend supports only Int, Bool, Unit, and nominal Int/Bool scalar values."
                 owner span [ "Int"; "Bool"; "Unit" ] [ IrTypes.format unsupported ]
 
-    let private callsInBlock (block: IrBlock) =
+    let private callsInBlock (program: IrProgram) (block: IrBlock) =
         let found = ResizeArray<IrResolvedCall * SourceSiteId>()
         let rec visitBlock (block: IrBlock) =
             for instruction in block.Code do
                 let add call = found.Add(call, instruction.Site)
+                let addConstructorValidator key =
+                    match program.NominalTypesByKey.TryFind key with
+                    | Some(IrScalarDefinition scalar) -> scalar.ValidatorCall |> Option.iter add
+                    | _ -> ()
                 match instruction.Operation with
-                | IrOperation.Call call -> add call
+                | IrOperation.Call call ->
+                    add call
+                    match call.ResolvedTarget with
+                    | GeneratedWordTarget(id, _) ->
+                        match program.GeneratedTargetsById.TryFind id with
+                        | Some { Operation = WrapScalarOperation key } -> addConstructorValidator key
+                        | _ -> ()
+                    | _ -> ()
                 | IrOperation.ListMap(call, _, _)
                 | IrOperation.ListFilter(call, _)
                 | IrOperation.ListEach(call, _)
                 | IrOperation.ListFold(call, _, _)
                 | IrOperation.MakeRecord(call, _)
                 | IrOperation.GetRecordField(call, _, _)
-                | IrOperation.WrapScalar(call, _, _)
                 | IrOperation.UnwrapScalar(call, _) -> add call
+                | IrOperation.WrapScalar(call, key, _) ->
+                    add call
+                    addConstructorValidator key
                 | IrOperation.Scope inner -> visitBlock inner
                 | IrOperation.If(thenBlock, elseBlock) ->
                     visitBlock thenBlock
@@ -285,26 +322,69 @@ module LlvmAot =
                 if not (Compiler.primitiveIrCatalog.ContainsKey id) then
                     callDiagnostic "IR_LLVM_CATALOG_MISMATCH" "A primitive call is absent from the canonical compiler catalog."
                         owner span [ "Compiler.primitiveIrCatalog entry" ] [ sprintf "%A" id ]
-            | GeneratedWordTarget _ ->
-                callDiagnostic "IR_LLVM_UNSUPPORTED_TARGET" "Generated record and scalar calls are outside the LLVM scalar slice."
-                    owner span [ "user word or supported primitive" ] [ call.ResolvedName ]
+            | GeneratedWordTarget(id, revision) ->
+                match program.GeneratedTargetsById.TryFind id with
+                | None ->
+                    callDiagnostic "IR_LLVM_TARGET_MISSING" "A verified generated call is absent from its bound program."
+                        owner span [ "reachable scalar constructor or accessor" ] [ sprintf "%A" id ]
+                | Some target when target.TargetRevision <> revision ->
+                    callDiagnostic "IR_LLVM_TARGET_REVISION" "A verified generated call revision differs from its bound target."
+                        owner span [ string target.TargetRevision ] [ string revision ]
+                | Some target ->
+                    rejectEffects owner span target.TargetDeclaredEffects
+                    rejectEffects owner span target.TargetEffects
+                    match target.Operation with
+                    | WrapScalarOperation key
+                    | UnwrapScalarOperation key -> ensureScalarType program owner span (IrNominal key)
+                    | _ ->
+                        callDiagnostic "IR_LLVM_UNSUPPORTED_TARGET" "Generated record calls are outside the LLVM scalar slice."
+                            owner span [ "scalar constructor or accessor" ] [ call.ResolvedName ]
 
-        for call, site in callsInBlock body.BodyBlock do inspectCall body.BodyName site call
+        for call, site in callsInBlock program body.BodyBlock do inspectCall body.BodyName site call
         while pending.Count > 0 do
             let functionValue = pending.Dequeue()
             rejectEffects functionValue.FunctionName None functionValue.FunctionDeclaredEffects
             rejectEffects functionValue.FunctionName None functionValue.FunctionInferredEffects
-            for call, site in callsInBlock functionValue.FunctionBody do
+            for call, site in callsInBlock program functionValue.FunctionBody do
                 inspectCall functionValue.FunctionName site call
         reachable
 
-    let private validateCall (owner: string) (span: SourceSpan option) (call: IrResolvedCall) =
-        for ty in call.InputTypes @ call.OutputTypes do ensureScalarType owner span ty
+    let rec private validateCall (program: IrProgram) (owner: string) (span: SourceSpan option) (call: IrResolvedCall) =
+        for ty in call.InputTypes @ call.OutputTypes do ensureScalarType program owner span ty
         match call.ResolvedTarget with
         | UserWordTarget _ -> ()
-        | GeneratedWordTarget _ ->
-            callDiagnostic "IR_LLVM_UNSUPPORTED_TARGET" "Generated record and scalar calls are outside the LLVM scalar slice."
-                owner span [ "user word or supported primitive" ] [ call.ResolvedName ]
+        | GeneratedWordTarget(id, revision) ->
+            let target =
+                match program.GeneratedTargetsById.TryFind id with
+                | None ->
+                    callDiagnostic "IR_LLVM_TARGET_MISSING" "A verified generated call is absent from its bound program."
+                        owner span [ "reachable scalar constructor or accessor" ] [ sprintf "%A" id ]
+                | Some target when target.TargetRevision <> revision ->
+                    callDiagnostic "IR_LLVM_TARGET_REVISION" "A verified generated call revision differs from its bound target."
+                        owner span [ string target.TargetRevision ] [ string revision ]
+                | Some target -> target
+            if target.InputTypes <> call.InputTypes || target.OutputTypes <> call.OutputTypes then
+                callDiagnostic "IR_LLVM_TARGET_SIGNATURE" "Generated scalar call signature differs from its checked target."
+                    owner span
+                    [ String.concat " " (target.InputTypes |> List.map IrTypes.format) + " -> " + String.concat " " (target.OutputTypes |> List.map IrTypes.format) ]
+                    [ String.concat " " (call.InputTypes |> List.map IrTypes.format) + " -> " + String.concat " " (call.OutputTypes |> List.map IrTypes.format) ]
+            match target.Operation with
+            | WrapScalarOperation key ->
+                match program.NominalTypesByKey.TryFind key with
+                | Some(IrScalarDefinition scalar) when target.InputTypes = [ scalar.BaseType ] && target.OutputTypes = [ IrNominal key ] ->
+                    scalar.ValidatorCall |> Option.iter (validateCall program owner span)
+                | _ ->
+                    callDiagnostic "IR_LLVM_TARGET_SIGNATURE" "Generated scalar constructor does not match its frozen nominal type."
+                        owner span [ "base type -> nominal scalar" ] (call.OutputTypes |> List.map IrTypes.format)
+            | UnwrapScalarOperation key ->
+                match program.NominalTypesByKey.TryFind key with
+                | Some(IrScalarDefinition scalar) when target.InputTypes = [ IrNominal key ] && target.OutputTypes = [ scalar.BaseType ] -> ()
+                | _ ->
+                    callDiagnostic "IR_LLVM_TARGET_SIGNATURE" "Generated scalar accessor does not match its frozen nominal type."
+                        owner span [ "nominal scalar -> base type" ] (call.OutputTypes |> List.map IrTypes.format)
+            | _ ->
+                callDiagnostic "IR_LLVM_UNSUPPORTED_TARGET" "Generated record calls are outside the LLVM scalar slice."
+                    owner span [ "scalar constructor or accessor" ] [ call.ResolvedName ]
         | PrimitiveTarget(PrimitiveId operation) ->
             if not (supportedPrimitiveOperations.Contains operation) then
                 callDiagnostic "IR_LLVM_UNSUPPORTED_PRIMITIVE"
@@ -316,7 +396,7 @@ module LlvmAot =
                 match operation, inputs, outputs with
                 | ("add" | "subtract" | "multiply" | "divide"), [ IrInt; IrInt ], [ IrInt ] -> true
                 | ("int.less-than" | "int.greater-than" | "int.less-or-equal" | "int.greater-or-equal"), [ IrInt; IrInt ], [ IrBool ] -> true
-                | "equals", [ left; right ], [ IrBool ] -> left = right && (left = IrInt || left = IrBool || left = IrUnit)
+                | "equals", [ left; right ], [ IrBool ] -> left = right
                 | "bool.and", [ IrBool; IrBool ], [ IrBool ] -> true
                 | "bool.or", [ IrBool; IrBool ], [ IrBool ] -> true
                 | "bool.not", [ IrBool ], [ IrBool ] -> true
@@ -330,17 +410,17 @@ module LlvmAot =
                     owner span [ $"supported {operation} signature" ]
                     [ String.concat " " (inputs |> List.map IrTypes.format) + " -> " + String.concat " " (outputs |> List.map IrTypes.format) ]
 
-    let rec private validateBlock (owner: string) (sourceMap: Map<SourceSiteId, IrSourceSite>) (block: IrBlock) =
+    let rec private validateBlock (program: IrProgram) (owner: string) (sourceMap: Map<SourceSiteId, IrSourceSite>) (block: IrBlock) =
         let validateShape shape =
-            shape.StackTypes |> List.iter (ensureScalarType owner None)
-            shape.LocalTypes |> Map.iter (fun _ ty -> ensureScalarType owner None ty)
+            shape.StackTypes |> List.iter (ensureScalarType program owner None)
+            shape.LocalTypes |> Map.iter (fun _ ty -> ensureScalarType program owner None ty)
         validateShape block.EntryShape
         validateShape block.ExitShape
         for instruction in block.Code do
             let span = sourceSpan sourceMap instruction.Site
             match instruction.Operation with
             | IrOperation.Constant(literal, ty) ->
-                ensureScalarType owner span ty
+                ensureScalarType program owner span ty
                 match literal with
                 | LInt _ when ty = IrInt -> ()
                 | LBool _ when ty = IrBool -> ()
@@ -349,13 +429,45 @@ module LlvmAot =
                     callDiagnostic "IR_LLVM_UNSUPPORTED_CONSTANT"
                         "The LLVM scalar backend supports Int, Bool, and Unit constants only."
                         owner span [ "Int"; "Bool"; "Unit" ] [ sprintf "%A : %s" literal (IrTypes.format ty) ]
-            | IrOperation.Call call -> validateCall owner span call
+            | IrOperation.Call call -> validateCall program owner span call
+            | IrOperation.WrapScalar(call, key, validator) ->
+                validateCall program owner span call
+                match call.ResolvedTarget with
+                | GeneratedWordTarget(id, _) ->
+                    match program.GeneratedTargetsById.TryFind id with
+                    | Some { Operation = WrapScalarOperation targetKey } when targetKey = key -> ()
+                    | _ ->
+                        callDiagnostic "IR_LLVM_TARGET_OPERATION" "Scalar wrap instruction does not target the matching generated constructor."
+                            owner span [ sprintf "%A" (WrapScalarOperation key) ] [ call.ResolvedName ]
+                | _ ->
+                    callDiagnostic "IR_LLVM_TARGET_OPERATION" "Scalar wrap instruction requires a generated constructor target."
+                        owner span [ "generated scalar constructor" ] [ call.ResolvedName ]
+                match program.NominalTypesByKey.TryFind key with
+                | Some(IrScalarDefinition scalar) when scalar.ValidatorCall = validator -> ()
+                | Some(IrScalarDefinition _) ->
+                    callDiagnostic "IR_SCALAR_VALIDATOR_MISMATCH" "Scalar wrapping validator differs from the immutable type table."
+                        owner span [] []
+                | _ ->
+                    callDiagnostic "IR_LLVM_TARGET_SIGNATURE" "Scalar wrap instruction refers to a non-scalar nominal type."
+                        owner span [ "verified nominal scalar" ] [ IrTypes.format (IrNominal key) ]
+            | IrOperation.UnwrapScalar(call, key) ->
+                validateCall program owner span call
+                match call.ResolvedTarget with
+                | GeneratedWordTarget(id, _) ->
+                    match program.GeneratedTargetsById.TryFind id with
+                    | Some { Operation = UnwrapScalarOperation targetKey } when targetKey = key -> ()
+                    | _ ->
+                        callDiagnostic "IR_LLVM_TARGET_OPERATION" "Scalar unwrap instruction does not target the matching generated accessor."
+                            owner span [ sprintf "%A" (UnwrapScalarOperation key) ] [ call.ResolvedName ]
+                | _ ->
+                    callDiagnostic "IR_LLVM_TARGET_OPERATION" "Scalar unwrap instruction requires a generated accessor target."
+                        owner span [ "generated scalar accessor" ] [ call.ResolvedName ]
             | IrOperation.StoreLocal _
             | IrOperation.LoadLocal _ -> ()
-            | IrOperation.Scope inner -> validateBlock owner sourceMap inner
+            | IrOperation.Scope inner -> validateBlock program owner sourceMap inner
             | IrOperation.If(thenBlock, elseBlock) ->
-                validateBlock owner sourceMap thenBlock
-                validateBlock owner sourceMap elseBlock
+                validateBlock program owner sourceMap thenBlock
+                validateBlock program owner sourceMap elseBlock
             | operation ->
                 callDiagnostic "IR_LLVM_UNSUPPORTED_OPERATION"
                     "The LLVM scalar backend supports constants, calls, locals, Scope, and If."
@@ -395,15 +507,25 @@ module LlvmAot =
                 body.BodyName None [] (body.BodyInputTypes |> List.map IrTypes.format)
         let sourceMap = sourceMapFor verifiedBody
         let reachable = reachableFunctions verifiedBody sourceMap
-        body.BodyInputTypes @ body.BodyOutputTypes |> List.iter (ensureScalarType body.BodyName None)
-        validateBlock body.BodyName sourceMap body.BodyBlock
+        body.BodyInputTypes @ body.BodyOutputTypes |> List.iter (ensureScalarType program body.BodyName None)
+        validateBlock program body.BodyName sourceMap body.BodyBlock
         let functions =
             program.FunctionsById
             |> Map.toList
             |> List.choose (fun (id, functionValue) -> if reachable.Contains id then Some(id, functionValue) else None)
         for _, functionValue in functions do
-            functionValue.InputTypes @ functionValue.OutputTypes |> List.iter (ensureScalarType functionValue.FunctionName None)
-            validateBlock functionValue.FunctionName program.SourceMap functionValue.FunctionBody
+            functionValue.InputTypes @ functionValue.OutputTypes |> List.iter (ensureScalarType program functionValue.FunctionName None)
+            validateBlock program functionValue.FunctionName program.SourceMap functionValue.FunctionBody
+
+        let nativeScalarTypes =
+            program.NominalTypesByKey
+            |> Map.toList
+            |> List.choose (fun (key, definition) ->
+                match definition with
+                | IrScalarDefinition scalar ->
+                    Some(key, { TypeName = scalar.TypeName; BaseType = scalar.BaseType })
+                | IrRecordDefinition _ -> None)
+            |> Map.ofList
 
         let metadata = ResizeArray<ErrorMetadata>()
         let output = StringBuilder()
@@ -452,9 +574,9 @@ module LlvmAot =
             builder.Emit($"{over} = icmp ugt i32 {next}, 10000")
             emitErrorWhen builder over diagnostic wordSource
 
-        let emitDepthGuard (builder: CodeBuilder) (call: IrResolvedCall) =
+        let emitDepthGuardAt (builder: CodeBuilder) (depthValue: string) (call: IrResolvedCall) =
             let tooDeep = builder.Fresh "depth.exceeded"
-            builder.Emit($"{tooDeep} = icmp ugt i32 %%depth, 64")
+            builder.Emit($"{tooDeep} = icmp ugt i32 {depthValue}, 64")
             let diagnostic =
                 operationDiagnostic "RUNTIME_CALL_DEPTH" "Execution exceeded the 64 word call-depth limit."
                     call.ResolvedName (diagnosticSources.WordDefinitionSpans.TryFind call.ResolvedName) [] []
@@ -578,7 +700,7 @@ module LlvmAot =
             let entryValues =
                 functionInputs
                 |> List.mapi (fun index ty ->
-                    ensureScalarType functionName None ty
+                    ensureScalarType program functionName None ty
                     { Type = ty; Operand = $"%%arg{index}" })
             let rec emitBlock (currentWord: string) (wordSource: ErrorWord) (block: IrBlock) (startStack: EmittedValue list) (startLocals: Map<LocalSlot, EmittedValue>) =
                 let mutable stack = startStack
@@ -595,6 +717,76 @@ module LlvmAot =
                     let arguments = stack |> List.skip (stack.Length - count)
                     stack <- prefix
                     arguments
+                let rec emitResolvedCall (call: IrResolvedCall) (arguments: EmittedValue list) (depthValue: string) =
+                    emitDepthGuardAt builder depthValue call
+                    match call.ResolvedTarget with
+                    | PrimitiveTarget(PrimitiveId operation) -> emitPrimitive builder call operation arguments
+                    | UserWordTarget(id, revision) -> emitUserCall call id revision arguments depthValue
+                    | GeneratedWordTarget(id, revision) ->
+                        match program.GeneratedTargetsById.TryFind id with
+                        | Some target when target.TargetRevision = revision -> emitGeneratedScalarCall call target arguments depthValue
+                        | Some target -> invalidOp $"Validated generated target '{call.ResolvedName}' changed revision to {target.TargetRevision}."
+                        | None -> invalidOp $"Validated generated target '{call.ResolvedName}' was absent from the bound program."
+                and emitUserCall (call: IrResolvedCall) (id: WordId) (revision: int) (arguments: EmittedValue list) (callerDepth: string) =
+                    let target = functionSymbol id revision
+                    let nextDepth = builder.Fresh "call.depth"
+                    builder.Emit($"{nextDepth} = add i32 {callerDepth}, 1")
+                    let inputArguments =
+                        arguments
+                        |> List.map (fun argument -> "i64 " + argument.Operand)
+                        |> String.concat ", "
+                    let inputSuffix = if inputArguments.Length = 0 then "" else ", " + inputArguments
+                    builder.Emit($"call void {target}(ptr %%ctx, ptr %%outputs, ptr %%status, i32 {nextDepth}{inputSuffix})")
+                    let returnedStatus = builder.Fresh "callee.status"
+                    let succeeded = builder.Fresh "callee.succeeded"
+                    let failureLabel = builder.FreshLabel "callee.failure"
+                    let continueLabel = builder.FreshLabel "callee.continue"
+                    builder.Emit($"{returnedStatus} = load i32, ptr %%status, align 4")
+                    builder.Emit($"{succeeded} = icmp eq i32 {returnedStatus}, 0")
+                    builder.Emit($"br i1 {succeeded}, label %%{continueLabel}, label %%{failureLabel}")
+                    builder.Switch failureLabel
+                    builder.Emit("ret void")
+                    builder.Switch continueLabel
+                    call.OutputTypes
+                    |> List.mapi (fun index ty ->
+                        let pointer = builder.Fresh "call.output.ptr"
+                        let value = builder.Fresh "call.output"
+                        builder.Emit($"{pointer} = getelementptr inbounds i64, ptr %%outputs, i64 {index}")
+                        builder.Emit($"{value} = load i64, ptr {pointer}, align 8")
+                        { Type = ty; Operand = value })
+                and emitGeneratedScalarCall (call: IrResolvedCall) (target: IrGeneratedTarget) (arguments: EmittedValue list) (depthValue: string) =
+                    match target.Operation, arguments with
+                    | WrapScalarOperation key, [ value ] ->
+                        match program.NominalTypesByKey.TryFind key with
+                        | Some(IrScalarDefinition scalar) ->
+                            let nominalValue = { Type = IrNominal key; Operand = value.Operand }
+                            match scalar.ValidatorCall with
+                            | None -> [ nominalValue ]
+                            | Some validator ->
+                                // Generated construction itself consumes the caller's current depth.
+                                // The validator call is one level deeper, with a user body one beyond that.
+                                let validatorDepth = builder.Fresh "validator.depth"
+                                builder.Emit($"{validatorDepth} = add i32 {depthValue}, 1")
+                                match emitResolvedCall validator [ value ] validatorDepth with
+                                | [ checkedValue ] ->
+                                    let accepted = builder.Fresh "validator.accepted"
+                                    builder.Emit($"{accepted} = icmp ne i64 {checkedValue.Operand}, 0")
+                                    let diagnostic =
+                                        operationDiagnostic "REFINEMENT_FAILED"
+                                            $"Value does not satisfy {scalar.TypeName}'s refinement validator."
+                                            call.ResolvedName (diagnosticSources.WordDefinitionSpans.TryFind call.ResolvedName)
+                                            [ "validator returns true" ] [ "false" ]
+                                    let failed = builder.Fresh "validator.failed"
+                                    builder.Emit($"{failed} = xor i1 {accepted}, true")
+                                    emitErrorWhen builder failed diagnostic (FixedWord call.ResolvedName)
+                                    [ nominalValue ]
+                                | _ -> invalidOp "Validated scalar validator did not return exactly one Bool."
+                        | _ -> invalidOp "Validated scalar constructor referred to a non-scalar nominal type."
+                    | UnwrapScalarOperation key, [ value ] ->
+                        match program.NominalTypesByKey.TryFind key with
+                        | Some(IrScalarDefinition scalar) -> [ { Type = scalar.BaseType; Operand = value.Operand } ]
+                        | _ -> invalidOp "Validated scalar accessor referred to a non-scalar nominal type."
+                    | _ -> invalidOp "Validated generated target is not a supported scalar constructor or accessor."
                 for instruction in block.Code do
                     emitCharge builder currentWord wordSource instruction.Site
                     let span = sourceSpan sourceMap instruction.Site
@@ -662,43 +854,11 @@ module LlvmAot =
                                 builder.Emit($"{phi} = phi i64 [ {left.Operand}, %%{thenEnd} ], [ {right.Operand}, %%{elseEnd} ]")
                                 { Type = left.Type; Operand = phi })
                                 thenLocals
-                    | IrOperation.Call call ->
+                    | IrOperation.Call call
+                    | IrOperation.WrapScalar(call, _, _)
+                    | IrOperation.UnwrapScalar(call, _) ->
                         let arguments = popArguments call.InputTypes.Length
-                        emitDepthGuard builder call
-                        match call.ResolvedTarget with
-                        | PrimitiveTarget(PrimitiveId operation) ->
-                            let result = emitPrimitive builder call operation arguments
-                            stack <- stack @ result
-                        | UserWordTarget(id, revision) ->
-                            let target = functionSymbol id revision
-                            let nextDepth = builder.Fresh "call.depth"
-                            builder.Emit($"{nextDepth} = add i32 %%depth, 1")
-                            let inputArguments =
-                                arguments
-                                |> List.map (fun argument -> "i64 " + argument.Operand)
-                                |> String.concat ", "
-                            let inputSuffix = if inputArguments.Length = 0 then "" else ", " + inputArguments
-                            builder.Emit($"call void {target}(ptr %%ctx, ptr %%outputs, ptr %%status, i32 {nextDepth}{inputSuffix})")
-                            let returnedStatus = builder.Fresh "callee.status"
-                            let succeeded = builder.Fresh "callee.succeeded"
-                            let failureLabel = builder.FreshLabel "callee.failure"
-                            let continueLabel = builder.FreshLabel "callee.continue"
-                            builder.Emit($"{returnedStatus} = load i32, ptr %%status, align 4")
-                            builder.Emit($"{succeeded} = icmp eq i32 {returnedStatus}, 0")
-                            builder.Emit($"br i1 {succeeded}, label %%{continueLabel}, label %%{failureLabel}")
-                            builder.Switch failureLabel
-                            builder.Emit("ret void")
-                            builder.Switch continueLabel
-                            let results =
-                                call.OutputTypes
-                                |> List.mapi (fun index ty ->
-                                    let pointer = builder.Fresh "call.output.ptr"
-                                    let value = builder.Fresh "call.output"
-                                    builder.Emit($"{pointer} = getelementptr inbounds i64, ptr %%outputs, i64 {index}")
-                                    builder.Emit($"{value} = load i64, ptr {pointer}, align 8")
-                                    { Type = ty; Operand = value })
-                            stack <- stack @ results
-                        | GeneratedWordTarget _ -> invalidOp "LLVM validation missed a generated target."
+                        stack <- stack @ emitResolvedCall call arguments "%depth"
                     | _ -> invalidOp "LLVM validation missed an unsupported operation."
                 stack, localValues
             let resultStack =
@@ -786,22 +946,22 @@ module LlvmAot =
         output.AppendLine("  ret void") |> ignore
         output.AppendLine("}") |> ignore
 
-        output.ToString(), metadata.ToArray(), body.BodyOutputTypes, outputCapacity
+        output.ToString(), metadata.ToArray(), body.BodyOutputTypes, outputCapacity, nativeScalarTypes
 
     /// Emit deterministic LLVM IR from the exact compiler-verified body and its
     /// reachable verified user-word closure. No source is reparsed or relowered.
     let emit (verifiedBody: VerifiedIrBody) =
-        emitModule NativeDiagnosticSources.empty verifiedBody |> fun (llvmIr, _, _, _) -> llvmIr
+        emitModule NativeDiagnosticSources.empty verifiedBody |> fun (llvmIr, _, _, _, _) -> llvmIr
 
     /// Compile one effect-free scalar body to a dependency-free Windows x64
     /// DLL. The output directory retains the LLVM IR/object/DLL for inspection.
     let compile (toolchain: LlvmToolchain) optimization outputDirectory (diagnosticSources: NativeDiagnosticSources) (verifiedBody: VerifiedIrBody) =
         if String.IsNullOrWhiteSpace outputDirectory then invalidArg (nameof outputDirectory) "Output directory must be nonempty."
-        let llvmIr, metadata, outputTypes, outputCapacity = emitModule diagnosticSources verifiedBody
+        let llvmIr, metadata, outputTypes, outputCapacity, scalarTypes = emitModule diagnosticSources verifiedBody
         let fullDirectory = Path.GetFullPath outputDirectory
         Directory.CreateDirectory fullDirectory |> ignore
         let llvmIrPath = Path.Combine(fullDirectory, "agentlang-native.ll")
         let libraryPath = Path.Combine(fullDirectory, "agentlang-native.dll")
         File.WriteAllText(llvmIrPath, llvmIr, UTF8Encoding(false))
         let compiledPath = LlvmToolchain.compileLibrary toolchain optimization llvmIrPath libraryPath
-        new NativeCompiledProgram(compiledPath, outputTypes, outputCapacity, metadata)
+        new NativeCompiledProgram(compiledPath, outputTypes, outputCapacity, scalarTypes, metadata)

@@ -55,6 +55,13 @@
     "boolEncoding": { "false": 0, "true": 1 },
     "unitEncoding": 0
   },
+  "nativeSemanticSupport": {
+    "nominalScalars": {
+      "supportedBaseTypes": ["Int", "Bool"],
+      "slotEncoding": "the base scalar's existing i64 encoding; nominal identity is retained in frozen managed output metadata"
+    },
+    "excludedKinds": ["records", "Float", "String", "containers", "effects"]
+  },
   "status": {
     "size": 4,
     "alignment": 4,

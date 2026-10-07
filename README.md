@@ -42,7 +42,8 @@ dotnet run --project tests/AgentLang.Acceptance
 ## Optional native conformance
 
 `AgentLang.Llvm` consumes the same verified semantic IR and emits a Windows x64
-DLL for a bounded pure Int/Bool/Unit subset. Building the solution compiles the
+DLL for a bounded pure Int/Bool/Unit subset, including Int/Bool-backed nominal
+scalars and their refinement validators. Building the solution compiles the
 backend; executing native conformance additionally requires LLVM Clang,
 `lld-link`, and an MSVC static runtime archive for stack-probe support:
 
@@ -56,7 +57,8 @@ executes generated code at both `-O0` and `-O2`. Override tool discovery with
 `AGENTLANG_COMPILER_RUNTIME_LIB` when needed. It is a local optional gate;
 ordinary interpreter tests do not require LLVM. See
 [the native architecture report](reports/103-llvm-architecture-and-native-slice.md)
-for supported semantics, evidence and limits. This is not yet a general release
+and [native refined scalars](reports/105-native-refined-scalars.md) for supported
+semantics, evidence and limits. This is not yet a general release
 packager, JIT backend or arena/mailbox runtime.
 
 A separate Windows C11 arena/mailbox experiment compares per-turn and

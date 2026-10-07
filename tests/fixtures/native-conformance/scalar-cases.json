@@ -1,4 +1,9 @@
 {
+  "native-support": {
+    "nominalScalarBases": ["Int", "Bool"],
+    "excluded": ["records", "Float", "String", "containers", "effects"],
+    "unit": "plain Unit values are supported; Unit nominal scalar bases remain disallowed by Core validation"
+  },
   "signed-boundaries": ["true", "true"],
   "signed-truncating-divide": ["-3", "-3", "3"],
   "arithmetic-and-bool": ["7", "42", "3", "true", "true", "true", "true", "false", "true", "true", "true", "true", "false", "5"],
@@ -51,5 +56,43 @@
     "word": "add",
     "actual": ["9223372036854775807", "1"],
     "span": { "file": "add-alias.agent", "line": 1, "column": 1, "length": 1 }
+  },
+  "nominal-int-cases": ["OrderId(17)", "17", "PositiveId(5)", "5"],
+  "nominal-bool-cases": ["Permission(true)", "true", "CheckedFlag(true)", "true"],
+  "nominal-branch-call": ["RouteId(10)", "true", "10", "true", "false"],
+  "zero-output-validator": [],
+  "refinement-failed": {
+    "code": "REFINEMENT_FAILED",
+    "word": "PositiveId.construct",
+    "message": "Value does not satisfy PositiveId's refinement validator.",
+    "expected": ["validator returns true"],
+    "actual": ["false"],
+    "span": { "file": "PositiveId.construct.agent", "line": 1, "column": 1, "length": 1 }
+  },
+  "bool-refinement-failed": {
+    "code": "REFINEMENT_FAILED",
+    "word": "RejectTrue.wrap",
+    "message": "Value does not satisfy RejectTrue's refinement validator.",
+    "expected": ["validator returns true"],
+    "actual": ["false"],
+    "span": { "file": "RejectTrue.wrap.agent", "line": 1, "column": 1, "length": 1 }
+  },
+  "validator-arithmetic-failure": {
+    "code": "RUNTIME_OVERFLOW",
+    "word": "add",
+    "actual": ["1", "9223372036854775807"],
+    "span": { "file": "<standard>", "line": 1, "column": 1, "length": 3 }
+  },
+  "validator-depth-limit": {
+    "code": "RUNTIME_CALL_DEPTH",
+    "word": "is-positive?",
+    "actual": [],
+    "span": { "file": "is-positive?.agent", "line": 1, "column": 1, "length": 1 }
+  },
+  "validator-fuel-limit": {
+    "code": "RUNTIME_STEP_LIMIT",
+    "word": "valid-after-many-drops?",
+    "actual": [],
+    "span": { "file": "fuel-validator.agent", "line": 1, "column": 3, "length": 1 }
   }
 }

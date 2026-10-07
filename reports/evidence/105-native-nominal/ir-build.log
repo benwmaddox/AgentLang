@@ -1,0 +1,11 @@
+  Determining projects to restore...
+  Restored D:\code\AgentLang\src\AgentLang.Core\AgentLang.Core.fsproj (in 175 ms).
+  Restored D:\code\AgentLang\tests\AgentLang.IR.Tests\AgentLang.IR.Tests.fsproj (in 175 ms).
+  AgentLang.Core -> D:\code\AgentLang\.agentlang\native-nominal-regression\ir-artifacts\bin\AgentLang.Core\release\AgentLang.Core.dll
+  AgentLang.IR.Tests -> D:\code\AgentLang\.agentlang\native-nominal-regression\ir-artifacts\bin\AgentLang.IR.Tests\release\AgentLang.IR.Tests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:16.42

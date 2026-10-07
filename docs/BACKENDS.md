@@ -42,7 +42,7 @@ experiment. Per-turn scratch with explicit retained mailbox state is the main
 candidate; compare whole-request arenas before adopting it. General native
 release support still requires complete semantics and checked lifetime/ABI rules.
 
-The proposed allocation direction includes [scoped arenas](MEMORY-REGIONS.md) for phase-oriented values and a distinct retained-data strategy. Define escape/promotion and old-generation retention before resetting a region. Bulk reclamation must not invalidate returned values, snapshots or active code, and does not replace resource cleanup. The managed interpreter and eventual native backends share value/lifetime semantics without a promise of identical physical allocation. No arena implementation or memory gain is claimed yet.
+The proposed allocation direction includes [scoped arenas](MEMORY-REGIONS.md) for phase-oriented values and a distinct retained-data strategy. Define escape/promotion and old-generation retention before resetting a region. Bulk reclamation must not invalidate returned values, snapshots or active code, and does not replace resource cleanup. The managed interpreter and eventual native backends share value/lifetime semantics without a promise of identical physical allocation. A standalone native arena/mailbox experiment measured bounded memory behavior in [report 104](../reports/104-native-arena-mailbox-feasibility.md); AgentLang execution still has no integrated arena lifetime enforcement.
 
 Later syntax research may introduce a frontend with named inputs, expression notation, or pipelines while retaining local flow through recently produced values. All frontends must lower to this same typed semantic IR and preserve evaluation order, diagnostics, effects, and source-level coverage obligations. Source notation and backend memory behavior are separate experiments. LLVM is an execution/code-generation backend, not necessarily a replacement for the F# host/compiler implementation; lower memory usage requires measured allocation and value-layout choices. See [the late syntax research item](PRD.md#late-research-syntax-and-stack-locality).
 
@@ -58,7 +58,7 @@ ABI conformance. No full host rewrite is required by the native target.
 
 `AgentLang.Llvm` compiles an empty-input `VerifiedIrBody` and its reachable
 verified dictionary snapshot. The initial target is Windows x64 with Int, Bool
-and Unit values. Unsupported types, operations and effects fail before tool
+and Unit values, plus Int/Bool-backed nominal scalar values. Unsupported types, operations and effects fail before tool
 invocation; there is no interpreter fallback within a compiled program.
 
 The host supplies frozen `NativeDiagnosticSources` from the same lowering
@@ -76,3 +76,13 @@ The exact contract and independent layout oracle are in
 [`abi-v1.json`](../tests/fixtures/native-conformance/abi-v1.json).
 Run the optional local native gate documented in the README; compiling the
 ordinary solution does not invoke LLVM tools.
+
+Native nominal scalars retain their type key in verified/emitted values and
+use the same i64 payload encoding as their base type. Frozen type metadata
+reconstructs named outputs; decoding and equality do not rerun validators.
+Constructors invoke the validator from the bound immutable program, including
+its reachable dependencies, with interpreter-equivalent depth, fuel and failure
+semantics. Unsupported validator code is rejected even in an untaken branch.
+See [report 105](../reports/105-native-refined-scalars.md) for validation status.
+The physical ABI remains version 1; record references and region ownership still
+require their own layout and lifetime contract.

@@ -1,0 +1,732 @@
+[
+  {
+    "path": "abi-guard/O0/agentlang-native.dll",
+    "bytes": 4608,
+    "sha256": "e1522958d7bd586477ce3c32e5d4f69ce34af86d4b903f7686cbbf4b5b5db436"
+  },
+  {
+    "path": "abi-guard/O0/agentlang-native.ll",
+    "bytes": 9319,
+    "sha256": "278062d7dd5befb5849ba8d3f5ef331002a710591e84ed5c2d780ac203465811"
+  },
+  {
+    "path": "abi-multi-output-guard/O0/agentlang-native.dll",
+    "bytes": 4608,
+    "sha256": "e1522958d7bd586477ce3c32e5d4f69ce34af86d4b903f7686cbbf4b5b5db436"
+  },
+  {
+    "path": "abi-multi-output-guard/O0/agentlang-native.ll",
+    "bytes": 9319,
+    "sha256": "278062d7dd5befb5849ba8d3f5ef331002a710591e84ed5c2d780ac203465811"
+  },
+  {
+    "path": "abi-scratch-guard/O0/agentlang-native.dll",
+    "bytes": 4608,
+    "sha256": "292c56030dc4018aee066268074590d5a6734d9fa62153bcb459625901692dd2"
+  },
+  {
+    "path": "abi-scratch-guard/O0/agentlang-native.ll",
+    "bytes": 10494,
+    "sha256": "4554fec61ee73aa7962c7ccad57deeba5d6204161639628efa0174f563004b4e"
+  },
+  {
+    "path": "alias-overflow/O0/agentlang-native.dll",
+    "bytes": 4608,
+    "sha256": "29660f2cd5adfbab77debb4e492fd74b64ec3d233843299458caff0ac352577e"
+  },
+  {
+    "path": "alias-overflow/O0/agentlang-native.ll",
+    "bytes": 9206,
+    "sha256": "09cc11190d7aa8d9452a55efadac347897408df094139e55bb33c2b013476af8"
+  },
+  {
+    "path": "alias-overflow/O2/agentlang-native.dll",
+    "bytes": 4096,
+    "sha256": "185816919b02251afefaedc1b9fab7a2e0db1f9d634e258007efaf090dd14028"
+  },
+  {
+    "path": "alias-overflow/O2/agentlang-native.ll",
+    "bytes": 9206,
+    "sha256": "09cc11190d7aa8d9452a55efadac347897408df094139e55bb33c2b013476af8"
+  },
+  {
+    "path": "arithmetic-and-bool/O0/agentlang-native.dll",
+    "bytes": 7680,
+    "sha256": "7125ab61dd82f43c4c06eac5f867ceb8c0c11c7f167e186ba0500316b57f336c"
+  },
+  {
+    "path": "arithmetic-and-bool/O0/agentlang-native.ll",
+    "bytes": 42024,
+    "sha256": "053aacf66519b1f691b52414d12b5b75e300d36d47fd8c69987a624dde6c44a1"
+  },
+  {
+    "path": "arithmetic-and-bool/O2/agentlang-native.dll",
+    "bytes": 4096,
+    "sha256": "d545f60f54124b8d432735fe2a50f384ae6450622234000bf9c5b8da08ea58fd"
+  },
+  {
+    "path": "arithmetic-and-bool/O2/agentlang-native.ll",
+    "bytes": 42024,
+    "sha256": "053aacf66519b1f691b52414d12b5b75e300d36d47fd8c69987a624dde6c44a1"
+  },
+  {
+    "path": "bool-refinement-failed/O0/agentlang-native.dll",
+    "bytes": 4608,
+    "sha256": "fc3345051d9a21bdce20784d395dd7d7be14aa9f0e94442c95f408079d84fa43"
+  },
+  {
+    "path": "bool-refinement-failed/O0/agentlang-native.ll",
+    "bytes": 8742,
+    "sha256": "cec018220c640f2498b76456fb54d42fd961c77155a37408484a3130657dc524"
+  },
+  {
+    "path": "bool-refinement-failed/O2/agentlang-native.dll",
+    "bytes": 4096,
+    "sha256": "5797a3b20750906fa74c7f8118e26748d435796a6b4442f3df0914304dd2c7b3"
+  },
+  {
+    "path": "bool-refinement-failed/O2/agentlang-native.ll",
+    "bytes": 8742,
+    "sha256": "cec018220c640f2498b76456fb54d42fd961c77155a37408484a3130657dc524"
+  },
+  {
+    "path": "boolean-truth-table/O0/agentlang-native.dll",
+    "bytes": 6656,
+    "sha256": "92587328e453c45a9e19d50c3d57675f4881355f44c227362873a53cc404f4c8"
+  },
+  {
+    "path": "boolean-truth-table/O0/agentlang-native.ll",
+    "bytes": 31599,
+    "sha256": "ef4c32e35b2eb55703dabeeba635e6fa34923ecae54745b73c16f4b6ced8930d"
+  },
+  {
+    "path": "boolean-truth-table/O2/agentlang-native.dll",
+    "bytes": 4096,
+    "sha256": "5102c86399a94d9cc610ac9506e5a4af114daa3e874c076d4fb2b061448b840f"
+  },
+  {
+    "path": "boolean-truth-table/O2/agentlang-native.ll",
+    "bytes": 31599,
+    "sha256": "ef4c32e35b2eb55703dabeeba635e6fa34923ecae54745b73c16f4b6ced8930d"
+  },
+  {
+    "path": "branch-else-join/O0/agentlang-native.dll",
+    "bytes": 5120,
+    "sha256": "40ba6f18656d2102da2903f8609fb9ea4be1355ce65ef572e28e64d3d8d85707"
+  },
+  {
+    "path": "branch-else-join/O0/agentlang-native.ll",
+    "bytes": 13612,
+    "sha256": "e2879f4d69ffd4f95d876d766085b82c6c0ce7e830f73b503aac55dcce87f334"
+  },
+  {
+    "path": "branch-else-join/O2/agentlang-native.dll",
+    "bytes": 4096,
+    "sha256": "8403ca6a3da815ef9553708f749b4f1d8c1d9142904be099378399c4ab8aac99"
+  },
+  {
+    "path": "branch-else-join/O2/agentlang-native.ll",
+    "bytes": 13612,
+    "sha256": "e2879f4d69ffd4f95d876d766085b82c6c0ce7e830f73b503aac55dcce87f334"
+  },
+  {
+    "path": "branch-then-join/O0/agentlang-native.dll",
+    "bytes": 5120,
+    "sha256": "e7969d6e25cf9f5503bb137524a8238f0092aaa24f88c1e6cfec3e975ee2420d"
+  },
+  {
+    "path": "branch-then-join/O0/agentlang-native.ll",
+    "bytes": 13612,
+    "sha256": "03ac2f1f0160fb01954857bcc8970a9c4aeea8bc84ba6580c2b9c85c6e3e7848"
+  },
+  {
+    "path": "branch-then-join/O2/agentlang-native.dll",
+    "bytes": 4096,
+    "sha256": "4c095de05f95289b2cd9f4337aa4886f8c5801c5f3777188ec76107c648e114c"
+  },
+  {
+    "path": "branch-then-join/O2/agentlang-native.ll",
+    "bytes": 13612,
+    "sha256": "03ac2f1f0160fb01954857bcc8970a9c4aeea8bc84ba6580c2b9c85c6e3e7848"
+  },
+  {
+    "path": "call-depth/O0/agentlang-native.dll",
+    "bytes": 15872,
+    "sha256": "d5883bee58c4e18a4aa6b9e91e7fee97bf3451b45ee1542ddbc389186de59699"
+  },
+  {
+    "path": "call-depth/O0/agentlang-native.ll",
+    "bytes": 115067,
+    "sha256": "3bdc0892534b4a7f0768bfc8fc5fe84d2e02b07553cb368e61d3447547f05ed4"
+  },
+  {
+    "path": "call-depth/O2/agentlang-native.dll",
+    "bytes": 4096,
+    "sha256": "b9714e6f960007bd2b88737e0f34017b6bcab6363eddd4b1ef020fd5e8237533"
+  },
+  {
+    "path": "call-depth/O2/agentlang-native.ll",
+    "bytes": 115067,
+    "sha256": "3bdc0892534b4a7f0768bfc8fc5fe84d2e02b07553cb368e61d3447547f05ed4"
+  },
+  {
+    "path": "call-output-scratch/O0/agentlang-native.dll",
+    "bytes": 4608,
+    "sha256": "292c56030dc4018aee066268074590d5a6734d9fa62153bcb459625901692dd2"
+  },
+  {
+    "path": "call-output-scratch/O0/agentlang-native.ll",
+    "bytes": 10494,
+    "sha256": "4554fec61ee73aa7962c7ccad57deeba5d6204161639628efa0174f563004b4e"
+  },
+  {
+    "path": "call-output-scratch/O2/agentlang-native.dll",
+    "bytes": 4096,
+    "sha256": "d741fab993b1783a4cdb4bbc1a540a615876c46df85f80b1cefa36927a0ff4ea"
+  },
+  {
+    "path": "call-output-scratch/O2/agentlang-native.ll",
+    "bytes": 10494,
+    "sha256": "4554fec61ee73aa7962c7ccad57deeba5d6204161639628efa0174f563004b4e"
+  },
+  {
+    "path": "checked-overflow/O0/agentlang-native.dll",
+    "bytes": 4608,
+    "sha256": "08bdc581eaf0d71b573b71e75040ff8cf3982edbb5bcb70d1c99bb80a139ece5"
+  },
+  {
+    "path": "checked-overflow/O0/agentlang-native.ll",
+    "bytes": 9206,
+    "sha256": "09cc11190d7aa8d9452a55efadac347897408df094139e55bb33c2b013476af8"
+  },
+  {
+    "path": "checked-overflow/O2/agentlang-native.dll",
+    "bytes": 4096,
+    "sha256": "8c8ddf8b9e7ebb9271221c038cdb85646b50abaeb3975ba22c323e165edad2e8"
+  },
+  {
+    "path": "checked-overflow/O2/agentlang-native.ll",
+    "bytes": 9206,
+    "sha256": "09cc11190d7aa8d9452a55efadac347897408df094139e55bb33c2b013476af8"
+  },
+  {
+    "path": "comparison-outcomes/O0/agentlang-native.dll",
+    "bytes": 6144,
+    "sha256": "ca405ab4bc54fdf82e95821ee68252c7cfbf3b2b7eaebb96f3305285e46ac85a"
+  },
+  {
+    "path": "comparison-outcomes/O0/agentlang-native.ll",
+    "bytes": 26796,
+    "sha256": "4e802dbd2b9246914be14cfef231101eee7c03716077b094daf6318bc9d3a51d"
+  },
+  {
+    "path": "comparison-outcomes/O2/agentlang-native.dll",
+    "bytes": 4096,
+    "sha256": "3b8ea6edb725af6f73fa233982fd6850ba60d3a64d6918c74c1938d9faa57330"
+  },
+  {
+    "path": "comparison-outcomes/O2/agentlang-native.ll",
+    "bytes": 26796,
+    "sha256": "4e802dbd2b9246914be14cfef231101eee7c03716077b094daf6318bc9d3a51d"
+  },
+  {
+    "path": "deep-scalar-BoundaryDepthTag/O0/agentlang-native.dll",
+    "bytes": 15872,
+    "sha256": "1fa6eb5a9012b438d44ba77f3c69cf116a20fcc1bc2c6e0eaa99f2b8c22902c9"
+  },
+  {
+    "path": "deep-scalar-BoundaryDepthTag/O0/agentlang-native.ll",
+    "bytes": 114827,
+    "sha256": "896407c736fb9bdd0cc6c3be8655feb5fc2b75b3b2b88b0d9d45878d94d077e3"
+  },
+  {
+    "path": "deep-scalar-BoundaryDepthTag/O2/agentlang-native.dll",
+    "bytes": 4096,
+    "sha256": "c399bf84f32d84872815abd787a9a490984ebf3fbdb08a8e00c195a8eab91ee7"
+  },
+  {
+    "path": "deep-scalar-BoundaryDepthTag/O2/agentlang-native.ll",
+    "bytes": 114827,
+    "sha256": "896407c736fb9bdd0cc6c3be8655feb5fc2b75b3b2b88b0d9d45878d94d077e3"
+  },
+  {
+    "path": "deep-scalar-DepthTag/O0/agentlang-native.dll",
+    "bytes": 15872,
+    "sha256": "bf70f6c2f482ffdbc750f9025f1561b6b0040371bd09abf465da9469dfad7c54"
+  },
+  {
+    "path": "deep-scalar-DepthTag/O0/agentlang-native.ll",
+    "bytes": 114504,
+    "sha256": "ff5350bd6b57b81757f579dc2b5744592cda347393038173e773d3179055f759"
+  },
+  {
+    "path": "deep-scalar-DepthTag/O2/agentlang-native.dll",
+    "bytes": 4096,
+    "sha256": "3787ef3b3db60aec959b4ff4d9964b5d828c52826684818409606c91a984264d"
+  },
+  {
+    "path": "deep-scalar-DepthTag/O2/agentlang-native.ll",
+    "bytes": 114504,
+    "sha256": "ff5350bd6b57b81757f579dc2b5744592cda347393038173e773d3179055f759"
+  },
+  {
+    "path": "deep-scalar-PrimitiveBoundaryFlag/O0/agentlang-native.dll",
+    "bytes": 15872,
+    "sha256": "0da1c2eb3055047ab9d12b885606f39cefba9457e30cb6c28e787309d9003446"
+  },
+  {
+    "path": "deep-scalar-PrimitiveBoundaryFlag/O0/agentlang-native.ll",
+    "bytes": 113917,
+    "sha256": "3708a4a5b813569775d8c9212baa9b250ca7c15959d99edbfa9d38bd0b5e8795"
+  },
+  {
+    "path": "deep-scalar-PrimitiveBoundaryFlag/O2/agentlang-native.dll",
+    "bytes": 4096,
+    "sha256": "970a0cc014c5f855a3ccdde5700fd7a7efb7c7fd0be2e3389cf5a18d034c836b"
+  },
+  {
+    "path": "deep-scalar-PrimitiveBoundaryFlag/O2/agentlang-native.ll",
+    "bytes": 113917,
+    "sha256": "3708a4a5b813569775d8c9212baa9b250ca7c15959d99edbfa9d38bd0b5e8795"
+  },
+  {
+    "path": "deep-scalar-PrimitiveDepthFlag/O0/agentlang-native.dll",
+    "bytes": 15872,
+    "sha256": "349fe85fba0c34afc19d95eb757945db5554c7d91ad8a4130ad16efd1411af78"
+  },
+  {
+    "path": "deep-scalar-PrimitiveDepthFlag/O0/agentlang-native.ll",
+    "bytes": 115573,
+    "sha256": "591dd2af925936ea5652e9dccc792cd608cb502f35be7795788b3587d95bc495"
+  },
+  {
+    "path": "deep-scalar-PrimitiveDepthFlag/O2/agentlang-native.dll",
+    "bytes": 4096,
+    "sha256": "60dc6d45cb6532981e5f64388c37bc1aba7f418e137851f57c3ec462f8499e1f"
+  },
+  {
+    "path": "deep-scalar-PrimitiveDepthFlag/O2/agentlang-native.ll",
+    "bytes": 115573,
+    "sha256": "591dd2af925936ea5652e9dccc792cd608cb502f35be7795788b3587d95bc495"
+  },
+  {
+    "path": "deep-scalar-RefinedDepthTag/O0/agentlang-native.dll",
+    "bytes": 16384,
+    "sha256": "3e1ae24368c4460ef93fb89cbaf619ffe0cbf47953a60bffc864a6d86acd7a5e"
+  },
+  {
+    "path": "deep-scalar-RefinedDepthTag/O0/agentlang-native.ll",
+    "bytes": 118139,
+    "sha256": "2f80783a84037791e08f7f8bbee57535f263f587f859855a6fc22e598e9f3752"
+  },
+  {
+    "path": "deep-scalar-RefinedDepthTag/O2/agentlang-native.dll",
+    "bytes": 4096,
+    "sha256": "d3c08b68d3eda952b08fc7042dd4f99eb46a97ef1247b9eb655c21ebddb37655"
+  },
+  {
+    "path": "deep-scalar-RefinedDepthTag/O2/agentlang-native.ll",
+    "bytes": 118139,
+    "sha256": "2f80783a84037791e08f7f8bbee57535f263f587f859855a6fc22e598e9f3752"
+  },
+  {
+    "path": "divide-by-zero/O0/agentlang-native.dll",
+    "bytes": 4608,
+    "sha256": "39ba0c4049d402adc284ccfed9868a270cbfb9764afb5de46b72ce8675fdc06c"
+  },
+  {
+    "path": "divide-by-zero/O0/agentlang-native.ll",
+    "bytes": 9303,
+    "sha256": "0b593bc1ca1c5922c8724dec56c5d2e3ae284a58930e1789def89b55fcce9414"
+  },
+  {
+    "path": "divide-by-zero/O2/agentlang-native.dll",
+    "bytes": 4096,
+    "sha256": "62b26d0bf2f3aeed1b8d90981735e265f295bb0f3a1159bd2f054c423cf31b5d"
+  },
+  {
+    "path": "divide-by-zero/O2/agentlang-native.ll",
+    "bytes": 9303,
+    "sha256": "0b593bc1ca1c5922c8724dec56c5d2e3ae284a58930e1789def89b55fcce9414"
+  },
+  {
+    "path": "divide-overflow/O0/agentlang-native.dll",
+    "bytes": 4608,
+    "sha256": "b729247bda5d64f8ca00f8bf4b3a76873f92571335d3cad50d63a6a11ff49bfc"
+  },
+  {
+    "path": "divide-overflow/O0/agentlang-native.ll",
+    "bytes": 9344,
+    "sha256": "3076e707ec806530f630c12a60abe4e41c3b401b7e9252aa9c1a84a136077cfb"
+  },
+  {
+    "path": "divide-overflow/O2/agentlang-native.dll",
+    "bytes": 4096,
+    "sha256": "8b8131a5a4b4c79fdb09b034b2801e5a186327639f2ab990ed116d35d5592f91"
+  },
+  {
+    "path": "divide-overflow/O2/agentlang-native.ll",
+    "bytes": 9344,
+    "sha256": "3076e707ec806530f630c12a60abe4e41c3b401b7e9252aa9c1a84a136077cfb"
+  },
+  {
+    "path": "first-failure/O0/agentlang-native.dll",
+    "bytes": 5120,
+    "sha256": "11e09e0fa2247e62cbc7a52b4a7c9c51ba6aefe05a37f23a29c16c0c5d6f840a"
+  },
+  {
+    "path": "first-failure/O0/agentlang-native.ll",
+    "bytes": 12652,
+    "sha256": "5aa5c80637d2f15e965001f6e75e19cafd64e0a230c1fc5751753f7b303ecbe3"
+  },
+  {
+    "path": "first-failure/O2/agentlang-native.dll",
+    "bytes": 4096,
+    "sha256": "82e91371208a2812fc03d883db9b7cc63b53421feb4c4882be3018c8195d3f02"
+  },
+  {
+    "path": "first-failure/O2/agentlang-native.ll",
+    "bytes": 12652,
+    "sha256": "5aa5c80637d2f15e965001f6e75e19cafd64e0a230c1fc5751753f7b303ecbe3"
+  },
+  {
+    "path": "frozen-validator/O0/agentlang-native.dll",
+    "bytes": 4608,
+    "sha256": "d0471a64df0f1e4b84b7a6105ce9b198033c0f474d3526781bc8c890f8e4d311"
+  },
+  {
+    "path": "frozen-validator/O0/agentlang-native.ll",
+    "bytes": 11302,
+    "sha256": "b6b45cb7c85ab1a916996962651b9e8cf7071c1e19032570ff1dfd18efd5c3e4"
+  },
+  {
+    "path": "frozen-validator/O2/agentlang-native.dll",
+    "bytes": 4096,
+    "sha256": "4d848482c9a428a27700923154132c1b15bfe930782266f3b583ed38fed0e1eb"
+  },
+  {
+    "path": "frozen-validator/O2/agentlang-native.ll",
+    "bytes": 11302,
+    "sha256": "b6b45cb7c85ab1a916996962651b9e8cf7071c1e19032570ff1dfd18efd5c3e4"
+  },
+  {
+    "path": "fuel-source/O0/agentlang-native.dll",
+    "bytes": 679424,
+    "sha256": "d0d32946044f2ff1193274c9b0400325b27bc51685aa57346809a1b3fb065f9c"
+  },
+  {
+    "path": "fuel-source/O0/agentlang-native.ll",
+    "bytes": 9268285,
+    "sha256": "bcbf7bffd57d2cbf34cb7b1b5c62119f4ece8a6ed4e547b18453d341afd1d234"
+  },
+  {
+    "path": "fuel-source/O2/agentlang-native.dll",
+    "bytes": 293888,
+    "sha256": "af859d4d3517dedbd89bc5a33b1b0292c2104333b001a84cb90fc9f45b8d6afa"
+  },
+  {
+    "path": "fuel-source/O2/agentlang-native.ll",
+    "bytes": 9268285,
+    "sha256": "bcbf7bffd57d2cbf34cb7b1b5c62119f4ece8a6ed4e547b18453d341afd1d234"
+  },
+  {
+    "path": "large-frame/O0/agentlang-native.dll",
+    "bytes": 463872,
+    "sha256": "d24a3969769831894f399fcb20d579747caf64462736c90820abbb5703420eb2"
+  },
+  {
+    "path": "large-frame/O0/agentlang-native.ll",
+    "bytes": 4286381,
+    "sha256": "f5253703257940ea1189925816c67a4503eedcc8e1284b02bff1b070702eb78d"
+  },
+  {
+    "path": "large-frame/O2/agentlang-native.dll",
+    "bytes": 139264,
+    "sha256": "662d1d3e1ef1b2ec0183a7d4c051b490e8abfecea53a13cb55ea9fe756eb98e1"
+  },
+  {
+    "path": "large-frame/O2/agentlang-native.ll",
+    "bytes": 4286381,
+    "sha256": "f5253703257940ea1189925816c67a4503eedcc8e1284b02bff1b070702eb78d"
+  },
+  {
+    "path": "multi-output/O0/agentlang-native.dll",
+    "bytes": 4608,
+    "sha256": "e1522958d7bd586477ce3c32e5d4f69ce34af86d4b903f7686cbbf4b5b5db436"
+  },
+  {
+    "path": "multi-output/O0/agentlang-native.ll",
+    "bytes": 9319,
+    "sha256": "278062d7dd5befb5849ba8d3f5ef331002a710591e84ed5c2d780ac203465811"
+  },
+  {
+    "path": "multi-output/O2/agentlang-native.dll",
+    "bytes": 4096,
+    "sha256": "2b8c2fa224def6131c4797f40f29cd241f910e5acb352bfa75441255d837b50b"
+  },
+  {
+    "path": "multi-output/O2/agentlang-native.ll",
+    "bytes": 9319,
+    "sha256": "278062d7dd5befb5849ba8d3f5ef331002a710591e84ed5c2d780ac203465811"
+  },
+  {
+    "path": "multiply-overflow/O0/agentlang-native.dll",
+    "bytes": 4608,
+    "sha256": "aef88fef254f991944c82bb54860c139ec258ec193b4258ca4c68a18255b6efa"
+  },
+  {
+    "path": "multiply-overflow/O0/agentlang-native.ll",
+    "bytes": 9206,
+    "sha256": "33fcc6520d95d28461640cb22f201983075c30312195e65a271a6eb70ec99d09"
+  },
+  {
+    "path": "multiply-overflow/O2/agentlang-native.dll",
+    "bytes": 4096,
+    "sha256": "4cd35b568afa351061ff4f11a7c6b11443a49efc57bb2f254fdd4bfd614a0666"
+  },
+  {
+    "path": "multiply-overflow/O2/agentlang-native.ll",
+    "bytes": 9206,
+    "sha256": "33fcc6520d95d28461640cb22f201983075c30312195e65a271a6eb70ec99d09"
+  },
+  {
+    "path": "nominal-bool-cases/O0/agentlang-native.dll",
+    "bytes": 5632,
+    "sha256": "3ce03a6a8cb0c48ed4f4d893752cdf85829daf0f43f6707c1222160d640ecabe"
+  },
+  {
+    "path": "nominal-bool-cases/O0/agentlang-native.ll",
+    "bytes": 18198,
+    "sha256": "a087262170a262af6495894def719235b4d9c04012dee353dbd714bf32671f1b"
+  },
+  {
+    "path": "nominal-bool-cases/O2/agentlang-native.dll",
+    "bytes": 4096,
+    "sha256": "5edab6755c1c910b73c8492f4c27c932936b64e53c4595b697c774b130d2d70a"
+  },
+  {
+    "path": "nominal-bool-cases/O2/agentlang-native.ll",
+    "bytes": 18198,
+    "sha256": "a087262170a262af6495894def719235b4d9c04012dee353dbd714bf32671f1b"
+  },
+  {
+    "path": "nominal-branch-call/O0/agentlang-native.dll",
+    "bytes": 6656,
+    "sha256": "9f59e281214e1d4b012345588aa5e6ea5c0981567407c8e464810b4d50e3f28d"
+  },
+  {
+    "path": "nominal-branch-call/O0/agentlang-native.ll",
+    "bytes": 35209,
+    "sha256": "dfc7ce0acf2ee248baba09b5ddd9cd645d3352412bd7d14b866d086149c1547e"
+  },
+  {
+    "path": "nominal-branch-call/O2/agentlang-native.dll",
+    "bytes": 4608,
+    "sha256": "e7ee49581ccf64f3be468ffe8531a5d3b6de46ea2e3abd1da5cacfa7438f5e18"
+  },
+  {
+    "path": "nominal-branch-call/O2/agentlang-native.ll",
+    "bytes": 35209,
+    "sha256": "dfc7ce0acf2ee248baba09b5ddd9cd645d3352412bd7d14b866d086149c1547e"
+  },
+  {
+    "path": "nominal-int-cases/O0/agentlang-native.dll",
+    "bytes": 5120,
+    "sha256": "b79d68b1291224a1b2b4736c616b429215bc1c7cef295c2f2073aa48dafb4652"
+  },
+  {
+    "path": "nominal-int-cases/O0/agentlang-native.ll",
+    "bytes": 17612,
+    "sha256": "1f41d03c77176b511066cc77907fb61399e709cdf3494806c302a126a39d0db2"
+  },
+  {
+    "path": "nominal-int-cases/O2/agentlang-native.dll",
+    "bytes": 4096,
+    "sha256": "da90eae93fc6fa0ff04c73c6b970297442ff0be3f972762a3784f7401294c350"
+  },
+  {
+    "path": "nominal-int-cases/O2/agentlang-native.ll",
+    "bytes": 17612,
+    "sha256": "1f41d03c77176b511066cc77907fb61399e709cdf3494806c302a126a39d0db2"
+  },
+  {
+    "path": "reachable-user-calls/O0/agentlang-native.dll",
+    "bytes": 5120,
+    "sha256": "5cd62ca988486536cc70eee27b16769523dac1ec2c09cede2520ed51f8345132"
+  },
+  {
+    "path": "reachable-user-calls/O0/agentlang-native.ll",
+    "bytes": 14701,
+    "sha256": "36175c90338f3b043a4a16a744812ece767d70ab34b64adc1808372fdd88bddb"
+  },
+  {
+    "path": "reachable-user-calls/O2/agentlang-native.dll",
+    "bytes": 4096,
+    "sha256": "d58f7b01e5b2f93559b4c0d397b30e36cc188798e0a11da8cc1e58cb4f4e4940"
+  },
+  {
+    "path": "reachable-user-calls/O2/agentlang-native.ll",
+    "bytes": 14701,
+    "sha256": "36175c90338f3b043a4a16a744812ece767d70ab34b64adc1808372fdd88bddb"
+  },
+  {
+    "path": "refinement-failed/O0/agentlang-native.dll",
+    "bytes": 4608,
+    "sha256": "060d5c5c13d43019c5c5130e8a670bc8ad052e255c2629023d4c21ac7fe5a923"
+  },
+  {
+    "path": "refinement-failed/O0/agentlang-native.ll",
+    "bytes": 11304,
+    "sha256": "17cfabdb01714e5b6ac908d390ba170b83d35eb2c8549a2100e6a0968827212a"
+  },
+  {
+    "path": "refinement-failed/O2/agentlang-native.dll",
+    "bytes": 4096,
+    "sha256": "dca02c8e8a5abaf3d5c452d566cb9bde2d427978a930b241117c6ddeb680753f"
+  },
+  {
+    "path": "refinement-failed/O2/agentlang-native.ll",
+    "bytes": 11304,
+    "sha256": "17cfabdb01714e5b6ac908d390ba170b83d35eb2c8549a2100e6a0968827212a"
+  },
+  {
+    "path": "scope-restores-local/O0/agentlang-native.dll",
+    "bytes": 4608,
+    "sha256": "4bc82048adebf79789bf8f4f477e37e7db5838212a1f435ac7254a53d5da7eb4"
+  },
+  {
+    "path": "scope-restores-local/O0/agentlang-native.ll",
+    "bytes": 10648,
+    "sha256": "d063dd94ce24a22975b28bc3009955bde795211cdca4edec83f32b1c12959f3a"
+  },
+  {
+    "path": "scope-restores-local/O2/agentlang-native.dll",
+    "bytes": 4096,
+    "sha256": "3fe2ab5b9abc68bb6a55fb06ece07cfada67ba0d759ab16697de632aaf7bc061"
+  },
+  {
+    "path": "scope-restores-local/O2/agentlang-native.ll",
+    "bytes": 10648,
+    "sha256": "d063dd94ce24a22975b28bc3009955bde795211cdca4edec83f32b1c12959f3a"
+  },
+  {
+    "path": "signed-boundaries/O0/agentlang-native.dll",
+    "bytes": 4608,
+    "sha256": "15a9f4453d9ab5c2623ffc3eba659969cfb7a23e50676db9db52a662eec2a60d"
+  },
+  {
+    "path": "signed-boundaries/O0/agentlang-native.ll",
+    "bytes": 11040,
+    "sha256": "bb0ad567dc434a778617f484b61b723ae0567684e3e2bb32be56adb90f37dbe2"
+  },
+  {
+    "path": "signed-boundaries/O2/agentlang-native.dll",
+    "bytes": 4096,
+    "sha256": "09d4dc91b80d5f5e4a53ed8ba95379077ed6cd44df016c3907447ff443404aa2"
+  },
+  {
+    "path": "signed-boundaries/O2/agentlang-native.ll",
+    "bytes": 11040,
+    "sha256": "bb0ad567dc434a778617f484b61b723ae0567684e3e2bb32be56adb90f37dbe2"
+  },
+  {
+    "path": "signed-truncating-divide/O0/agentlang-native.dll",
+    "bytes": 5120,
+    "sha256": "2749298c4f236ec26a5ba8549e6c10b2c38f4106f610a4bed9e175ea3b4ea10b"
+  },
+  {
+    "path": "signed-truncating-divide/O0/agentlang-native.ll",
+    "bytes": 16271,
+    "sha256": "595b4b1112c15c2861820c21a9df96a15d58a4d90614e8c7af8d553c6b80201c"
+  },
+  {
+    "path": "signed-truncating-divide/O2/agentlang-native.dll",
+    "bytes": 4096,
+    "sha256": "4cf613dda6754cdd0c0a059a37f0cbfaade354bbcb09a5f6bca8a0b93e43f505"
+  },
+  {
+    "path": "signed-truncating-divide/O2/agentlang-native.ll",
+    "bytes": 16271,
+    "sha256": "595b4b1112c15c2861820c21a9df96a15d58a4d90614e8c7af8d553c6b80201c"
+  },
+  {
+    "path": "subtract-overflow/O0/agentlang-native.dll",
+    "bytes": 4608,
+    "sha256": "ff585792664ab3f2bbd13bcf3dd1d6f6ea9dc123969fd8cae25b442eca46e650"
+  },
+  {
+    "path": "subtract-overflow/O0/agentlang-native.ll",
+    "bytes": 9208,
+    "sha256": "d63ee0395ada61226a905a8a2bcebff5bc9aad021354cb37754c71643e3f5c91"
+  },
+  {
+    "path": "subtract-overflow/O2/agentlang-native.dll",
+    "bytes": 4096,
+    "sha256": "74ed67ab6bdaa81fa6f34d0101f2a8fd6503410231727427a6319d33c4b3ca0a"
+  },
+  {
+    "path": "subtract-overflow/O2/agentlang-native.ll",
+    "bytes": 9208,
+    "sha256": "d63ee0395ada61226a905a8a2bcebff5bc9aad021354cb37754c71643e3f5c91"
+  },
+  {
+    "path": "validator-arithmetic-failure/O0/agentlang-native.dll",
+    "bytes": 5120,
+    "sha256": "ad8d5b4bae8f801465b4cd565cf27008a6d97e5a265ec29d445bc97ee5738f20"
+  },
+  {
+    "path": "validator-arithmetic-failure/O0/agentlang-native.ll",
+    "bytes": 13892,
+    "sha256": "0933844c2964e4b3230b08dd44d1966d19697d83d90cd2d9fd3223c0f4d1cdb8"
+  },
+  {
+    "path": "validator-arithmetic-failure/O2/agentlang-native.dll",
+    "bytes": 4096,
+    "sha256": "16a14304acef9f4c2eddb1f55b62b361e6af63ba1d662c9dcae2241cd7336de3"
+  },
+  {
+    "path": "validator-arithmetic-failure/O2/agentlang-native.ll",
+    "bytes": 13892,
+    "sha256": "0933844c2964e4b3230b08dd44d1966d19697d83d90cd2d9fd3223c0f4d1cdb8"
+  },
+  {
+    "path": "validator-fuel-limit/O0/agentlang-native.dll",
+    "bytes": 679936,
+    "sha256": "5b7273a9bf696163c823793b324941882804bceb04bec2677593f5ca54f23ce6"
+  },
+  {
+    "path": "validator-fuel-limit/O0/agentlang-native.ll",
+    "bytes": 9271945,
+    "sha256": "5450be956bdfa2ff2a5ff0a2f43fb52c2f4474fbad69eb92640237122473c025"
+  },
+  {
+    "path": "validator-fuel-limit/O2/agentlang-native.dll",
+    "bytes": 293888,
+    "sha256": "dfa4b6c7ad709dbec6a59fcc58dc3a1ee2bab29281a5193402f7ea712ddec89d"
+  },
+  {
+    "path": "validator-fuel-limit/O2/agentlang-native.ll",
+    "bytes": 9271945,
+    "sha256": "5450be956bdfa2ff2a5ff0a2f43fb52c2f4474fbad69eb92640237122473c025"
+  },
+  {
+    "path": "zero-output-validator/O0/agentlang-native.dll",
+    "bytes": 5120,
+    "sha256": "b7a3f9fb0823d55662006185e80f45981965ad5ce9966708af5c5d366186c131"
+  },
+  {
+    "path": "zero-output-validator/O0/agentlang-native.ll",
+    "bytes": 12245,
+    "sha256": "ebbad0f6207a88988893b06a09012067ff7f1da54ee5c558454047b33186f0e2"
+  },
+  {
+    "path": "zero-output-validator/O2/agentlang-native.dll",
+    "bytes": 4096,
+    "sha256": "2825b58690b557142d3f8f562b15de7133d3c30ef077aaf0879c6f557b2a0c41"
+  },
+  {
+    "path": "zero-output-validator/O2/agentlang-native.ll",
+    "bytes": 12245,
+    "sha256": "ebbad0f6207a88988893b06a09012067ff7f1da54ee5c558454047b33186f0e2"
+  }
+]

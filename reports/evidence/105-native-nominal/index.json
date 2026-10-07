@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "nativeAssertions": 252,
+  "files": [
+    {
+      "name": "emitted-ir.zip",
+      "bytes": 5042118,
+      "sha256": "5cda20e512f355b010aaca69a63d2854411c2e0e498bd56ff7f2388770000899"
+    },
+    {
+      "name": "frozen-runtime.json",
+      "bytes": 2758,
+      "sha256": "bf9841c2a26dc2c40b892adb132375ed98f68c65ff863cfbc24ea8ea139f05fc"
+    },
+    {
+      "name": "interpreter-build.log",
+      "bytes": 627,
+      "sha256": "8655166fca791589930c5f9da7019a0c6e7cd777c77deaf8c4e72b4965cc2000"
+    },
+    {
+      "name": "interpreter-tests.log",
+      "bytes": 45,
+      "sha256": "47da3f59135b07f41a9ac01b1c5640e6224d82bf890a8660bbb50c3e5c26e9aa"
+    },
+    {
+      "name": "ir-build.log",
+      "bytes": 569,
+      "sha256": "0178dca0d697e01ba7fced37db7f818f6a22bd89a75a9c5657966c4f9a7e9e5c"
+    },
+    {
+      "name": "ir-tests.log",
+      "bytes": 557,
+      "sha256": "32c311616aaa46a2676513e050ea48d879ef98bcdc0d4006e6758408bd9b1f27"
+    },
+    {
+      "name": "native-artifacts.json",
+      "bytes": 24497,
+      "sha256": "772ef12ec2ec70267437559d99cf00c542a1db96615c9dfb9a378f103021efce"
+    },
+    {
+      "name": "native-conformance.log",
+      "bytes": 1171,
+      "sha256": "c2da96e3be726248759b58db5b30b735eb610ff5a2a07ffdcb55d5f4dbecd642"
+    },
+    {
+      "name": "source.zip",
+      "bytes": 31026,
+      "sha256": "78254392787d715eda70087a25f64a40ce8a7452ea60d99c817e95f97cff2280"
+    },
+    {
+      "name": "summary.json",
+      "bytes": 2321,
+      "sha256": "2010257e2b6dc43aff6a0068329881ac68759555e4bc95fb7bc7ffc8482c6fb7"
+    }
+  ]
+}

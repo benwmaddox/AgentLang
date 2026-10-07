@@ -79,6 +79,10 @@ continuing the candidate, not a production throughput claim or language-wide
 lifetime guarantee. Next, specify a narrow retained-value/lifetime contract in
 the verified IR and add native conformance before broad runtime integration.
 The standalone probe does not implement AgentLang mailboxes or idle trimming.
+Native Int/Bool refinement conformance is now validated (252 native assertions);
+see [report 105](../reports/105-native-refined-scalars.md). Next are reference-bearing
+record outputs and their retained-output boundary. Scalar-only lifetime
+tests would not exercise references into released storage.
 
 Keep the semantic IR authoritative. Development backends add LLVM
 JIT while release builds use LLVM AOT plus a minimal runtime. Research arenas,
