@@ -92,3 +92,21 @@ Console: `.agentlang/business-policy-retention-003/evidence/090-root-focused-con
 These are synthetic focused controls, not the 54-case R04 behavior evaluation.
 Final source review and an immutable scratch replay remain required before a
 production supplemental result can be recorded.
+
+The first production scratch replay exited 1 before any CLI calls or behavior
+cases. Its saved failure is the starting-state path comparison (relative pin
+path versus absolute saved path). Development also identified that the scorer's
+local tree-hash encoding did not match the frozen verifier's encoding; correct
+compatibility is required rather than bypassing that check. The failure evidence
+reports scorer SHA-256 `9df5db29aa7e3c4610ad8d446ec80259c629f448de86551d61d3c3ff4cc274bc`;
+an external before/after source hash was not captured for that invocation.
+
+Root independently compared all 312 actor files against the committed original
+R04 final-project archive, including count, length and SHA-256: all still match.
+The failed evidence also reports unchanged canonical acceptance bytes. Archived
+the first failure, control consoles, original criteria pin and exact original
+criteria from commit b902027 under
+`reports/evidence/090-supplemental/phase-01/`, with six file hashes in
+`reports/evidence/090-supplemental/phase-01-index.json`. The criteria bytes match
+the pre-execution pin. This archive preserves a failed attempt, not behavior
+acceptance; corrected replay and final source review remain pending.

@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Original criteria, focused controls and first failed supplemental replay",
+  "behaviorCasesExecuted": 0,
+  "originalCanonicalAcceptanceUnchanged": true,
+  "actorComparedToOriginalArchiveFiles": 312,
+  "files": [
+    {
+      "path": "reports/evidence/090-supplemental/phase-01/090-supplemental-plan-pin.json",
+      "source": ".agentlang/business-policy-retention-003/evidence/090-supplemental-plan-pin.json",
+      "bytes": 408,
+      "sha256": "611be3b7de6e92d296e93f83f4820c0a71125ec26caf459cabd776d379aa720a"
+    },
+    {
+      "path": "reports/evidence/090-supplemental/phase-01/090-root-focused-controls-710ccd4f21a8.console.txt",
+      "source": ".agentlang/business-policy-retention-003/evidence/090-root-focused-controls-710ccd4f21a8.console.txt",
+      "bytes": 82,
+      "sha256": "59ad45d255bd7ffb1b0fab41a5ddfbfda3149a07df28571c8371e8479014527a"
+    },
+    {
+      "path": "reports/evidence/090-supplemental/phase-01/090-root-selftest-f063e9e0d97d.console.txt",
+      "source": ".agentlang/business-policy-retention-003/evidence/090-root-selftest-f063e9e0d97d.console.txt",
+      "bytes": 109,
+      "sha256": "6377fa5edf18b425e2306655cbd35054e03b5eff9bbb711f073253b322306f75"
+    },
+    {
+      "path": "reports/evidence/090-supplemental/phase-01/090-root-selftest-99174f38fded.console.txt",
+      "source": ".agentlang/business-policy-retention-003/evidence/090-root-selftest-99174f38fded.console.txt",
+      "bytes": 2889,
+      "sha256": "4640eb7e08b09baf16608ccb22cd72475ca9818a65758b36baadeb99907eb2d7"
+    },
+    {
+      "path": "reports/evidence/090-supplemental/phase-01/R04-retention-output-supplement-20261007T173020Z-201e56d3a638449d83cab717b196c124.json",
+      "source": ".agentlang/business-policy-retention-003/supplemental/evidence/R04-retention-output-supplement-20261007T173020Z-201e56d3a638449d83cab717b196c124.json",
+      "bytes": 167336,
+      "sha256": "3a06ae5d06340cafb5dbfe7e7ae45daf9275034cdab2c1f229e0c52b4e4fce91"
+    },
+    {
+      "path": "reports/evidence/090-supplemental/phase-01/criteria-before-execution.md",
+      "source": "git:b902027:reports/090-retained-discount-supplemental-scoring.md",
+      "bytes": 3232,
+      "sha256": "3d8ebad919502f444bcd209e6de8c0406fa260244f056b45baad51b649f85e99"
+    }
+  ]
+}
