@@ -1,0 +1,1 @@
+Termination audit passed: 6 broker exchanges, close wire 21 bytes, host/runtime exits 0/0.

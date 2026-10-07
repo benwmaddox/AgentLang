@@ -1,17 +1,17 @@
 # Matched vocabulary-retention preparation
 
-Status: corrected verifier awaiting genuine frozen acceptance. Canonical Flat
-and rich baselines are archived; the rejected reference and superseded source
-freeze are preserved. R01 slots are clear. No model actors have been launched
-and no efficiency result is claimed.
+Status: corrected frozen acceptance passed; trace-audit repair pending.
+Canonical Flat and rich baselines are archived. The corrected R01 reference
+passed 157 checks and 10 independent cases, then closed successfully. Its study
+trace audit failed on argument conversion; its marked slots remain occupied.
+No model actors have been launched and no efficiency result is claimed.
 
-The latest published revision, f3f4391, passed 37/37 CI checks on both branches
-and 63/63 candidate controls. Its genuine reference failed a verifier schema
-contract before independent behavior execution. The reviewed repair is not
-covered by those earlier results. Fresh committed source snapshots, a global
-freeze, candidate controls and a passing frozen reference are required before
-the 12 isolated agent cells. The execution notes below preserve earlier states
-and failures; they are not the current launch status.
+The latest published revision, f3f4391, passed 37/37 CI checks on both branches.
+Corrected clean revision 32226ef passed 63/63 candidate controls and genuine
+frozen reference acceptance. The remaining auditor repair will require its own
+committed source pins and controls before the 12 isolated agent cells. The
+execution notes below preserve earlier states and failures; they are not the
+current launch status.
 
 The prior goal turn made concrete progress: milestone 080 added explicit external
 trial termination, passed the clean-source 37-check release gate, saved reports
@@ -116,3 +116,5 @@ The closed rejected reference has now been superseded. All 76 archived evidence 
 The bounded runnable schema harness passed the saved starting-state control (14 checks, 12 starting and 12 actor rows), then failed while assembling another control because a result lacked a details property. The preceding missing-fixture failure and this non-result are preserved in evidence/081-verifier-schema-controls-initial-failed.json and evidence/081-verifier-schema-controls.json; exact harness bytes are archived under evidence/081-clean-controls/verifier-schema. Git/blob reads were stubbed and no runtime process ran. This does not validate genuine frozen acceptance; no further fixture harness expansion is planned before that operational run.
 
 The reviewed verifier repair is committed at 96a538a7. All 23 source snapshots were regenerated from that committed source, then a clean global manifest was created with the unchanged 8bff657 runtime and canonical baseline identities. Genuine candidate/reference results for this corrected inventory remain pending.
+
+On clean 32226ef, the corrected candidate passed 63/63 checks with all owned cleanup checks true. Genuine frozen R01 reference acceptance then passed 157/157 checks and all 10 independent S01 cases, using 12 fresh JSONL sessions. Coordinator evidence records acceptance before exact host.close; generic termination passed six exchanges and host/runtime exits 0/0. The study trace auditor failed before writing its report because its Passed parameter received an Object array. This remaining harness failure prevents frozen reference-control completion and model launch. Exact candidate/reference/source evidence (116 files) is preserved under evidence/081-clean-controls/corrected-verifier-reference with index evidence/081-corrected-verifier-reference-index.json. No fresh model outcome is claimed.
