@@ -1,7 +1,9 @@
 # Matched vocabulary retention trial
 
-Status: frozen preparation passed; R01 fresh actor accepted and integrity-audited.
-One of twelve cells completed (report 083); no comparative result claimed.
+Status: frozen preparation passed. R01 (B1/Flat/S01) passed independent
+acceptance and integrity audit. R02 (B1/Flat/S07) passed integrity audit but
+failed independent behavior acceptance (report 084). Two of twelve cells are
+complete; no comparative retention advantage is established.
 
 The next priority is external-agent behavior, before backend or memory research.
 The new package is `business-policy-retention-003`; completed 001/002 studies and

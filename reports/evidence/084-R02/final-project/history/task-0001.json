@@ -1,0 +1,40 @@
+{
+  "task": "task-0001",
+  "goal": "Implement customer.discounted-balance (Customer -\u003E Money), applying a 10% discount only when Customer.kind is exactly premium; use Int64 minor units and truncate fractional discount units toward zero, with tests, examples, and concise documentation.",
+  "active": false,
+  "wordsInspected": [
+    "CustomerId.new",
+    "Email.new",
+    "Instant.new",
+    "Money.new",
+    "customer.discounted-balance",
+    "divide",
+    "equals",
+    "instant.is-canonical-utc?",
+    "instant.parse-utc"
+  ],
+  "wordsUsed": [
+    "CustomerId.new",
+    "Email.new",
+    "Instant.new",
+    "Money.new",
+    "Money.value",
+    "customer.balance",
+    "customer.discounted-balance",
+    "customer.kind",
+    "customer.new",
+    "divide",
+    "equals",
+    "instant.is-canonical-utc?",
+    "string.email-address-valid?",
+    "string.guid-canonical?",
+    "subtract"
+  ],
+  "wordsCreated": [
+    "customer.discounted-balance"
+  ],
+  "testsRun": 32,
+  "testsFailed": 10,
+  "effects": {},
+  "errors": []
+}

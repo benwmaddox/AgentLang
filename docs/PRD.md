@@ -79,6 +79,44 @@ An email validation example is illustrative, not a claim of complete Internet em
 
 Freeze the validator's complete transitive word dependency closure when its type becomes persistent. Reject replacements affecting that closure, even when the replacement keeps the same signature and effects. This includes indirect helper words. Validate the same closure when loading the project; a type cannot silently rebind to newer validator semantics. Changes to these validators require a new type name in this release.
 
+### Next Flow syntax revision
+
+The requested next frontend revision uses `fn` for function declarations while
+retaining the inspectable dictionary and stable definition identities. Plain
+record fields use property syntax (`customer.kind`); ordinary function calls
+retain parentheses. Property access is restricted to declared record fields and
+lowers to the existing pure, statically typed accessor semantics, without hidden
+computation or effects. Add typed infix equality (`==`) with the same equality
+rules and nominal-type checks as the existing equality operation; it introduces
+no implicit conversions. Define precedence and reject incompatible operands
+before execution. Function-local `doc` metadata and compiler-checked effect
+contracts remain parts of the design. An omitted `effects` declaration means
+`effects none`; calling effectful operations then fails validation. Nonempty
+effects require an explicit declaration. Introspection reports the effective
+contract, including `none` when omitted, without silently granting inferred
+effects.
+
+```text
+fn customer.premium?(customer: Customer) -> Bool {
+    doc "Whether this customer has premium status."
+
+    customer.kind == "premium"
+}
+```
+
+The formatter groups any effect declaration and documentation at the beginning
+of the function (effects before documentation when both exist), with exactly
+one blank line between that metadata and executable body code. It need not emit
+`effects none` for an omitted pure contract. This layout does not alter semantic
+meaning or source provenance; formatting is an explicit source edit.
+
+This is an approved frontend direction, not currently implemented syntax. Keep
+the authoritative semantic IR unchanged where these forms can lower to existing
+operations. Preserve existing authored sources and frontend versions across
+reload, introspection and history; define compatibility and update executable
+examples, diagnostics and validation together. Frozen agent comparisons retain
+their pinned source syntax and runtime rather than mixing frontend revisions.
+
 ### Source representation
 
 The current legacy syntax is line-oriented RPN. The example below records executable legacy syntax, not the new target. Expression/dot source now supports typed declarations, words, tests and examples with explicit syntax versions. Default Flow authoring, interactive input and harness selection passed the complete 27-check Release gate (report 052); exact committed-source CI is recorded separately from local dirty-tree evidence. Strings use quoted literals with documented escaping. Source locations contain file/source identifier, line, and column. The parser distinguishes incomplete interactive input from invalid complete input. Source/history/editing and coverage preserve the authored frontend.

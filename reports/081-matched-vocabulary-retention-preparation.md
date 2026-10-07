@@ -5,8 +5,10 @@ Candidate controls passed 63/63, reference acceptance passed 157 checks and
 10 cases, production trace audit passed 662/662, and frozen controls passed
 21/21. The actual written prompt contains the required public name/signature.
 All 123 exact reference/control files are archived; closed reference slots are
-free and canonical baselines unchanged. The first fresh actor has now completed R01 with passing independent acceptance
-and integrity audit (report 083); the comparative study remains incomplete.
+free and canonical baselines unchanged. R01 (B1/Flat/S01) passed independent
+acceptance and integrity audit (report 083). R02 (B1/Flat/S07) passed integrity
+audit but failed independent behavior acceptance (report 084). Two of twelve
+cells are complete; no comparative result is established.
 
 Published revisions f3f4391 and 5b0a367 passed 37/37 CI checks on both branches;
 their downloaded evidence is archived separately.

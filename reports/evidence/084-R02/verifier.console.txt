@@ -1,0 +1,1 @@
+Retention B1/flat/S07 (R02) failed. Evidence: D:\code\AgentLang\.agentlang\business-policy-retention-003\runs\R02\acceptance.json. metadataPassed=True; behaviorPassed=False; metadataFailures=; failedCases=premium-2, premium-3, premium-5, premium-6, premium-9, premium-10, premium-12, premium-13, premium-15, premium-16, premium-17, premium-18

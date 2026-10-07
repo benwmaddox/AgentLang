@@ -1,0 +1,116 @@
+// frontend: flow/1
+
+record Customer {
+    field id: CustomerId;
+    field email: Email;
+    field kind: String;
+    field balance: Money;
+    field created-at: Instant;
+}
+
+// frontend: flow/1
+
+type CustomerId : String {
+    validate string::guid-canonical?;
+}
+
+// frontend: flow/1
+
+type Email : String {
+    validate string::email-address-valid?;
+}
+
+// frontend: flow/1
+
+type Instant : String {
+    validate instant::is-canonical-utc?;
+}
+
+// frontend: flow/1
+
+type Money : Int {
+}
+
+// frontend: flow/1
+
+type ProductId : String {
+    validate string::guid-canonical?;
+}
+
+// frontend: flow/1
+
+word customer.discounted-balance(customer: Customer) -> Money {
+    effects none
+    doc "Applies a 10% discount to premium balances. The fractional discount is truncated toward zero in minor units; all other kinds keep their balance."
+    let balance = customer::balance(customer);
+    if ::equals(customer::kind(customer), "premium") {
+        let minorUnits = Money::value(balance);
+        let discount = ::divide(minorUnits, 10);
+        Money::new(::subtract(minorUnits, discount))
+    } else {
+        balance
+    }
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/case-sensitive {
+    Money::value(customer::discounted-balance(customer::new(CustomerId::new("00000000-0000-0000-0000-000000000001"), Email::new("buyer@example.com"), "Premium", Money::new(109), Instant::new("2000-01-01T00:00:00.0000000\u002B00:00"))))
+    => 109
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/no-trim {
+    Money::value(customer::discounted-balance(customer::new(CustomerId::new("00000000-0000-0000-0000-000000000001"), Email::new("buyer@example.com"), "premium ", Money::new(109), Instant::new("2000-01-01T00:00:00.0000000\u002B00:00"))))
+    => 109
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/other-kind {
+    Money::value(customer::discounted-balance(customer::new(CustomerId::new("00000000-0000-0000-0000-000000000001"), Email::new("buyer@example.com"), "standard", Money::new(109), Instant::new("2000-01-01T00:00:00.0000000\u002B00:00"))))
+    => 109
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/premium-int64-maximum {
+    Money::value(customer::discounted-balance(customer::new(CustomerId::new("00000000-0000-0000-0000-000000000001"), Email::new("buyer@example.com"), "premium", Money::new(9223372036854775807), Instant::new("2000-01-01T00:00:00.0000000\u002B00:00"))))
+    => 8301034833169298227
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/premium-int64-minimum {
+    Money::value(customer::discounted-balance(customer::new(CustomerId::new("00000000-0000-0000-0000-000000000001"), Email::new("buyer@example.com"), "premium", Money::new(-9223372036854775808), Instant::new("2000-01-01T00:00:00.0000000\u002B00:00"))))
+    => -8301034833169298228
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/premium-negative-fraction {
+    Money::value(customer::discounted-balance(customer::new(CustomerId::new("00000000-0000-0000-0000-000000000001"), Email::new("buyer@example.com"), "premium", Money::new(-109), Instant::new("2000-01-01T00:00:00.0000000\u002B00:00"))))
+    => -99
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/premium-positive-fraction {
+    Money::value(customer::discounted-balance(customer::new(CustomerId::new("00000000-0000-0000-0000-000000000001"), Email::new("buyer@example.com"), "premium", Money::new(109), Instant::new("2000-01-01T00:00:00.0000000\u002B00:00"))))
+    => 99
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/premium-small-positive {
+    Money::value(customer::discounted-balance(customer::new(CustomerId::new("00000000-0000-0000-0000-000000000001"), Email::new("buyer@example.com"), "premium", Money::new(1), Instant::new("2000-01-01T00:00:00.0000000\u002B00:00"))))
+    => 1
+}
+
+// frontend: flow/1
+
+example customer.discounted-balance/premium {
+    Money::value(customer::discounted-balance(customer::new(CustomerId::new("00000000-0000-0000-0000-000000000001"), Email::new("buyer@example.com"), "premium", Money::new(100), Instant::new("2000-01-01T00:00:00.0000000\u002B00:00"))))
+    => 90
+}

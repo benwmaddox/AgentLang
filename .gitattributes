@@ -51,3 +51,6 @@ reports/evidence/083-R01/** -text -whitespace
 reports/evidence/083-R01-index.json -text
 reports/evidence/081-clean-controls/ci-7532a90/** -text -whitespace
 reports/evidence/083-R01-index.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+reports/evidence/084-R02/** -text -whitespace
+reports/evidence/084-R02-index.json -text
+reports/evidence/084-R02-index.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

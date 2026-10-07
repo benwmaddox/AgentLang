@@ -13,3 +13,6 @@ history/
 
 # Frozen fresh-agent evidence includes synthetic durable stores and history.
 !reports/evidence/083-R01/**
+
+# The second fresh-agent cell retains its synthetic durable stores and history.
+!reports/evidence/084-R02/**

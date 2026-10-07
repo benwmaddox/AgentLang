@@ -1,0 +1,12 @@
+word customer.discounted-balance(customer: Customer) -> Money {
+    effects none
+    doc "Applies a 10% discount to premium balances. The fractional discount is truncated toward zero in minor units; all other kinds keep their balance."
+    let balance = customer::balance(customer)
+    if ::equals(customer::kind(customer), "premium") {
+        let minorUnits = Money::value(balance)
+        let discount = ::divide(minorUnits, 10)
+        Money::new(::subtract(minorUnits, discount))
+    } else {
+        balance
+    }
+}
