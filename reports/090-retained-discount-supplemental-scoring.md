@@ -152,3 +152,12 @@ all 23 source/snapshot pairs matched their saved SHA-256 and byte lengths, and
 all 26 pinned runtime files matched. The original canonical acceptance SHA-256
 remains `0e6638878f89fe58c0859787f051652a6a6227e804192628cce75d80c71a5888`.
 This is an unchanged-input check, not behavior acceptance.
+
+The bounded independent schema review is complete at scorer SHA-256
+`4dd2de3279fefdcb28b64e7f269518bbadf6b3ed9e203ba40128e2e8e338a7e8`.
+It confirmed both schema blockers above still exist in that exact source, so
+that hash must not be replayed. Other reviewed predecessor, normalized-path,
+runtime-field, flat-inventory and early-failure initialization checks align with
+the saved records. Root's focused runner again passed 20 controls on that hash,
+with matching before/after source hashes; this reinforces the controls' limited
+scope. Fix both blockers and rerun controls before production execution.
