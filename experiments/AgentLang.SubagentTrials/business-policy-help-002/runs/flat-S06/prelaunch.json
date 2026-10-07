@@ -1,0 +1,394 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-help-002",
+  "mode": "flat",
+  "taskId": "S06",
+  "sequenceIndex": 2,
+  "preparedAtUtc": "2026-10-07T04:26:02.7891446+00:00",
+  "sourceRevision": "c380703fe18393d811ecb18a33a1bc59745d8b9b",
+  "dirty": false,
+  "model": "gpt-6-luna",
+  "reasoningEffort": "max",
+  "forkTurns": "none",
+  "projectPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\actors\\flat-S06",
+  "launchCommand": "& 'D:\\code\\AgentLang\\scripts\\Start-SubagentTrialHost.ps1' -CliDll 'D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll' -ProjectPath 'D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\actors\\flat-S06' -TracePath 'D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\runs\\flat-S06\\trace.jsonl' -AllowedOperations @('callers','commit','context','define','dependencies','describe','diff','effects','eval','example','examples','failed-tests','graph','help','history','ir','replace-word','search','search-dependency','search-output','search-type','source','task.begin','task.commit','task.log','task.status','test','test-all','tests','transitive-callers','transitive-dependencies','type-of','words') -Profile agentlang -Capabilities @() -ClockValue '2000-01-01T00:00:00Z' -MaxRequestBytes 262144 -MaxResponseBytes 524288 -ExchangeTimeoutMilliseconds 120000 -MaxExchanges 100",
+  "allowedOperations": [
+    "callers",
+    "commit",
+    "context",
+    "define",
+    "dependencies",
+    "describe",
+    "diff",
+    "effects",
+    "eval",
+    "example",
+    "examples",
+    "failed-tests",
+    "graph",
+    "help",
+    "history",
+    "ir",
+    "replace-word",
+    "search",
+    "search-dependency",
+    "search-output",
+    "search-type",
+    "source",
+    "task.begin",
+    "task.commit",
+    "task.log",
+    "task.status",
+    "test",
+    "test-all",
+    "tests",
+    "transitive-callers",
+    "transitive-dependencies",
+    "type-of",
+    "words"
+  ],
+  "maxExchanges": 100,
+  "maxRequestBytes": 262144,
+  "maxResponseBytes": 524288,
+  "exchangeTimeoutMilliseconds": 120000,
+  "profile": "agentlang",
+  "additionalCliArguments": [],
+  "capabilities": [],
+  "clockValue": "2000-01-01T00:00:00Z",
+  "inspectionBudgetEnabled": false,
+  "inspectionClassifierVersion": "trial-host-inspection-v1",
+  "promptPath": "prompt.txt",
+  "promptSha256": "937fb3ecfecb5713a077190d895cbe2d79b9c43002dd49b3dff372f8ee7faed5",
+  "promptUtf8Bytes": 7845,
+  "oraclePath": "experiments/AgentLang.SubagentTrials/business-policy-help-002/acceptance.json",
+  "oracleSha256": "d58fceeec3b659aebc58daa1d708d5f16cb43d12996f291c1c78a377fcfb89ef",
+  "independentVerifierPath": "scripts/Verify-AuthoringHelpTrial.ps1",
+  "independentVerifierSha256": "8e9fd793757def4624bb59f14918cd4f5a257dd95192cb04c99fdfaa56db77f0",
+  "preflightPath": "scripts/Verify-AuthoringHelpPreflight.ps1",
+  "preflightSha256": "42139234cc8499200aeaa7cb883fbafeaa8848e2897f789435731f4d665e1320",
+  "preparerPath": "scripts/Prepare-AuthoringHelpTrial.ps1",
+  "preparerSha256": "5de6e4a4616c673e6c80c560b5b4e33cf3df6f80391bb6e390d9e0b46d22d1a6",
+  "freezerPath": "scripts/Freeze-AuthoringHelpTrial.ps1",
+  "freezerSha256": "19c2ac2b3e8e8d38a1ef1ef9c2b994024ce5ec364f46f3b7a0a4641c271c3336",
+  "auditorPath": "scripts/Audit-AuthoringHelpTrace.ps1",
+  "auditorSha256": "5c91e5b47fd3877c53b7c2e624defd5c94446e555f9b30d06d32c5bb98ecd7fd",
+  "originalPreparerPath": "scripts/Prepare-BusinessPolicyTrial.ps1",
+  "originalPreparerSha256": "23af4c9536e72730d44a5cfbdcf70b05b17a1e35c83f841511f9e8bbc637c08a",
+  "hostPath": "scripts/Start-SubagentTrialHost.ps1",
+  "hostSha256": "d3b60698ef29cc6e7d9b42f37d9a298a311f409cb3f85112ca2a5dccf6148c4d",
+  "primerPath": "experiments/AgentLang.SubagentTrials/business-policy-help-002/language-primer.md",
+  "primerSha256": "7ca98f0c8c9a20a84076d2a6b62da7a36ac12959e17ec1890ec74f9cbf9b578e",
+  "taskPath": "experiments/AgentLang.Benchmarks/task-bank/public/S06.json",
+  "taskSha256": "11ce4abd6f37035862dd802e8e201260c9f78457dc510d6d150c99725ffcc180",
+  "seedSourcePath": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/flat-customer.agent",
+  "seedSourceSha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d",
+  "runtimeRoots": {
+    "cliDllPath": "src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll",
+    "cliDirectoryPath": "src/AgentLang.Cli/bin/Release/net9.0",
+    "businessDllPath": "experiments/AgentLang.Business/bin/Release/net9.0/AgentLang.Business.dll",
+    "businessDirectoryPath": "experiments/AgentLang.Business/bin/Release/net9.0"
+  },
+  "runtimeFiles": [
+    {
+      "runtime": "business",
+      "path": "AgentLang.Business.deps.json",
+      "bytes": 2486,
+      "sha256": "1dcce1cd3d0cb7b52152c9a5588419f0f876d75bc4218be09f56dd45a872ba46"
+    },
+    {
+      "runtime": "business",
+      "path": "AgentLang.Business.dll",
+      "bytes": 107008,
+      "sha256": "48837c07853194f2d8c5fa75b5f278e5fcef2db270ce42faa3a9251dff0007a4"
+    },
+    {
+      "runtime": "business",
+      "path": "AgentLang.Business.pdb",
+      "bytes": 21704,
+      "sha256": "6113c911717a2073a51e7af38af3365e248edc03caec40edc9a71724acb4d6e8"
+    },
+    {
+      "runtime": "business",
+      "path": "AgentLang.Business.xml",
+      "bytes": 355,
+      "sha256": "060ff74283ad20f2411b922e8c2f3d3d6282a2d752a3415afc5827350f1e0b54"
+    },
+    {
+      "runtime": "cli",
+      "path": "AgentLang.Cli.deps.json",
+      "bytes": 2903,
+      "sha256": "6382f6dc29bb8f827824839010e313b266e51a3f87a4fdb8c382931d2549e97e"
+    },
+    {
+      "runtime": "cli",
+      "path": "AgentLang.Cli.dll",
+      "bytes": 38400,
+      "sha256": "e9098ca964e19fb4e34f47ff4cd04f9a389dcb01a990455f77301afb613f9002"
+    },
+    {
+      "runtime": "cli",
+      "path": "AgentLang.Cli.exe",
+      "bytes": 156160,
+      "sha256": "28d1cdbe3633ae9cbc1bba40cd651604e57f67eb4d41a1676e0b1e49a21ed9e6"
+    },
+    {
+      "runtime": "cli",
+      "path": "AgentLang.Cli.pdb",
+      "bytes": 10240,
+      "sha256": "3330b8d29e092c250763c79514f1571626270da079580daa0d82f4247364e718"
+    },
+    {
+      "runtime": "cli",
+      "path": "AgentLang.Cli.runtimeconfig.json",
+      "bytes": 340,
+      "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+    },
+    {
+      "runtime": "cli",
+      "path": "AgentLang.Core.dll",
+      "bytes": 2125312,
+      "sha256": "f08538fd22b04c2e5518adeacb63502b1e467331a59f7a89bc965bcfc9e6501b"
+    },
+    {
+      "runtime": "cli",
+      "path": "AgentLang.Core.pdb",
+      "bytes": 558892,
+      "sha256": "c8f871daa133887c06a69f3b3ea629440584f96b4524286b88de83d1665bc35b"
+    },
+    {
+      "runtime": "cli",
+      "path": "AgentLang.Core.xml",
+      "bytes": 32515,
+      "sha256": "27b998f11066707f4fdc98519298cc8637ae1fb926d5fc2d1e2c40a7ce620fb5"
+    },
+    {
+      "runtime": "cli",
+      "path": "cs/FSharp.Core.resources.dll",
+      "bytes": 34600,
+      "sha256": "eb8bd755cfe0d39ce27615027fe22556e8b9dcb470f2b47a36f4bfbf3c31be64"
+    },
+    {
+      "runtime": "cli",
+      "path": "de/FSharp.Core.resources.dll",
+      "bytes": 35592,
+      "sha256": "7419e4f5ceed9e03821686e865fed7d29c6217fdf5d3a46a2919a369c98c38ce"
+    },
+    {
+      "runtime": "cli",
+      "path": "es/FSharp.Core.resources.dll",
+      "bytes": 34600,
+      "sha256": "636866649564c72eb763eb3942e021b52b1f9b3869d037aca48f73d4474353c5"
+    },
+    {
+      "runtime": "cli",
+      "path": "fr/FSharp.Core.resources.dll",
+      "bytes": 35128,
+      "sha256": "f38f2fd6bc4c4e233dd098a36b315a2bc87673cf2f07c6ba3daf71a3264f4a64"
+    },
+    {
+      "runtime": "cli",
+      "path": "FSharp.Core.dll",
+      "bytes": 2314000,
+      "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+    },
+    {
+      "runtime": "cli",
+      "path": "it/FSharp.Core.resources.dll",
+      "bytes": 34576,
+      "sha256": "61a0be9c6a2ed95f8e98493b17c54a55c68cef84e23a0d82114319e2c5f3c2cd"
+    },
+    {
+      "runtime": "cli",
+      "path": "ja/FSharp.Core.resources.dll",
+      "bytes": 37160,
+      "sha256": "dd7f36036d906e991da5505b074ef889a603f449d3324750fda5f5445ba2854f"
+    },
+    {
+      "runtime": "cli",
+      "path": "ko/FSharp.Core.resources.dll",
+      "bytes": 36104,
+      "sha256": "0f3ef625e379577e3b60c15d8cc3759d3dc8840f99894282df1e702b4a166462"
+    },
+    {
+      "runtime": "cli",
+      "path": "pl/FSharp.Core.resources.dll",
+      "bytes": 35632,
+      "sha256": "755bab9fbd85e5e4b4771870c9c4d655e91e3ce39cc1c2735fe0bc7cec6b84c3"
+    },
+    {
+      "runtime": "cli",
+      "path": "pt-BR/FSharp.Core.resources.dll",
+      "bytes": 34096,
+      "sha256": "a4bbbdaabf2003a5fdff5f5bc4143c3fd4a064f2681fc481f449d4558074dc61"
+    },
+    {
+      "runtime": "cli",
+      "path": "ru/FSharp.Core.resources.dll",
+      "bytes": 41232,
+      "sha256": "a1133f9ab7e661803d1af0c2489626bd53ac33a11dfe891f5a02f3186f2f5d78"
+    },
+    {
+      "runtime": "cli",
+      "path": "tr/FSharp.Core.resources.dll",
+      "bytes": 34072,
+      "sha256": "6b0cba5139a86ee681909fdfcebac07c99afba3bfcff4fb8ab12b9c2112a0b31"
+    },
+    {
+      "runtime": "cli",
+      "path": "zh-Hans/FSharp.Core.resources.dll",
+      "bytes": 32552,
+      "sha256": "25f82f35a9234bcaab272921b0d50054ddb4a669d96c111907c9d31f5b18c121"
+    },
+    {
+      "runtime": "cli",
+      "path": "zh-Hant/FSharp.Core.resources.dll",
+      "bytes": 32032,
+      "sha256": "ac03ee7c4112c755705776c700033794586f980fe9476e6a13811a7153beabb8"
+    }
+  ],
+  "startingProjectFiles": [
+    {
+      "path": ".agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "552b35c609db456bbe64f8edb7025de60a15bf342e9e3cc67919f52485b98bcc"
+    },
+    {
+      "path": ".agentlang/store/manifests/f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7.json",
+      "bytes": 1647,
+      "sha256": "f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7"
+    },
+    {
+      "path": ".agentlang/store/objects/2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0.agent",
+      "bytes": 66,
+      "sha256": "2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0"
+    },
+    {
+      "path": ".agentlang/store/objects/737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e.agent",
+      "bytes": 570,
+      "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+    },
+    {
+      "path": ".agentlang/store/objects/8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416.agent",
+      "bytes": 65,
+      "sha256": "8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416"
+    },
+    {
+      "path": ".agentlang/store/objects/9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14.agent",
+      "bytes": 150,
+      "sha256": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14"
+    },
+    {
+      "path": ".agentlang/store/objects/cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7.agent",
+      "bytes": 66,
+      "sha256": "cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7"
+    },
+    {
+      "path": ".agentlang/store/objects/e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17.agent",
+      "bytes": 20,
+      "sha256": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17"
+    },
+    {
+      "path": ".agentlang/store/objects/ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb.agent",
+      "bytes": 66,
+      "sha256": "ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb"
+    },
+    {
+      "path": ".agentlang/store/WRITE.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "dictionary.agent",
+      "bytes": 570,
+      "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+    },
+    {
+      "path": "fixtures/flat-customer.agent",
+      "bytes": 506,
+      "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+    }
+  ],
+  "startingProjectInventorySha256": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424",
+  "startingStatePath": ".agentlang/business-policy-help-002/runs/flat-S06/starting-state.json",
+  "startingStateSha256": "607cc6eb7f836ba18548e8a31bff7021254917d8bfff83ca7452c1e71de9e9a0",
+  "sourceArtifacts": [
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Prepare-AuthoringHelpTrial.ps1",
+      "sourcePath": "scripts/Prepare-AuthoringHelpTrial.ps1",
+      "bytes": 6840,
+      "sha256": "5de6e4a4616c673e6c80c560b5b4e33cf3df6f80391bb6e390d9e0b46d22d1a6"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Freeze-AuthoringHelpTrial.ps1",
+      "sourcePath": "scripts/Freeze-AuthoringHelpTrial.ps1",
+      "bytes": 24921,
+      "sha256": "19c2ac2b3e8e8d38a1ef1ef9c2b994024ce5ec364f46f3b7a0a4641c271c3336"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Verify-AuthoringHelpTrial.ps1",
+      "sourcePath": "scripts/Verify-AuthoringHelpTrial.ps1",
+      "bytes": 88832,
+      "sha256": "8e9fd793757def4624bb59f14918cd4f5a257dd95192cb04c99fdfaa56db77f0"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Verify-AuthoringHelpPreflight.ps1",
+      "sourcePath": "scripts/Verify-AuthoringHelpPreflight.ps1",
+      "bytes": 39669,
+      "sha256": "42139234cc8499200aeaa7cb883fbafeaa8848e2897f789435731f4d665e1320"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Audit-AuthoringHelpTrace.ps1",
+      "sourcePath": "scripts/Audit-AuthoringHelpTrace.ps1",
+      "bytes": 33397,
+      "sha256": "5c91e5b47fd3877c53b7c2e624defd5c94446e555f9b30d06d32c5bb98ecd7fd"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Prepare-BusinessPolicyTrial.ps1",
+      "sourcePath": "scripts/Prepare-BusinessPolicyTrial.ps1",
+      "bytes": 29618,
+      "sha256": "23af4c9536e72730d44a5cfbdcf70b05b17a1e35c83f841511f9e8bbc637c08a"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Start-SubagentTrialHost.ps1",
+      "sourcePath": "scripts/Start-SubagentTrialHost.ps1",
+      "bytes": 77884,
+      "sha256": "d3b60698ef29cc6e7d9b42f37d9a298a311f409cb3f85112ca2a5dccf6148c4d"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/acceptance.json",
+      "sourcePath": "experiments/AgentLang.SubagentTrials/business-policy-help-002/acceptance.json",
+      "bytes": 15931,
+      "sha256": "d58fceeec3b659aebc58daa1d708d5f16cb43d12996f291c1c78a377fcfb89ef"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/acceptance-business-policy-001.json",
+      "sourcePath": "experiments/AgentLang.SubagentTrials/business-policy-001/acceptance.json",
+      "bytes": 17436,
+      "sha256": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/public-task-S06.json",
+      "sourcePath": "experiments/AgentLang.Benchmarks/task-bank/public/S06.json",
+      "bytes": 760,
+      "sha256": "11ce4abd6f37035862dd802e8e201260c9f78457dc510d6d150c99725ffcc180"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/public-task-S07.json",
+      "sourcePath": "experiments/AgentLang.Benchmarks/task-bank/public/S07.json",
+      "bytes": 779,
+      "sha256": "f2a3b584fbec86f0395228fde31d561c240b9bc5d5a9a4a927042ea8a6111a04"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/language-primer.md",
+      "sourcePath": "experiments/AgentLang.SubagentTrials/business-policy-help-002/language-primer.md",
+      "bytes": 3931,
+      "sha256": "7ca98f0c8c9a20a84076d2a6b62da7a36ac12959e17ec1890ec74f9cbf9b578e"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/flat-customer.agent",
+      "sourcePath": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/flat-customer.agent",
+      "bytes": 506,
+      "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+    }
+  ]
+}

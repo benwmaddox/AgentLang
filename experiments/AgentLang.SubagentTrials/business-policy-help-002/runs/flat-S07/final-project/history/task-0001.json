@@ -1,0 +1,40 @@
+{
+  "task": "task-0001",
+  "goal": "Implement customer.discounted-balance for raw premium kinds with exact 90% truncation toward zero across all Int64 Money values, with pure library tests, concise documentation, and a runnable example.",
+  "active": false,
+  "wordsInspected": [
+    "Instant.new",
+    "customer.discounted-balance",
+    "instant.parse-utc",
+    "int.max"
+  ],
+  "wordsUsed": [
+    "CustomerId.new",
+    "Email.new",
+    "Instant.new",
+    "Money.new",
+    "Money.value",
+    "add",
+    "customer.balance",
+    "customer.discounted-balance",
+    "customer.kind",
+    "customer.new",
+    "divide",
+    "equals",
+    "instant.is-canonical-utc?",
+    "multiply",
+    "string.email-address-valid?",
+    "string.guid-canonical?",
+    "subtract"
+  ],
+  "wordsCreated": [
+    "customer.discounted-balance"
+  ],
+  "testsRun": 28,
+  "testsFailed": 4,
+  "effects": {},
+  "errors": [
+    "NAME_UNKNOWN_WORD",
+    "FLOW_EXPECTED_SEPARATOR"
+  ]
+}

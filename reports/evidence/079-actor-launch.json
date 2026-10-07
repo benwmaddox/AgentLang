@@ -1,0 +1,42 @@
+{
+  "studyId": "business-policy-help-002",
+  "kind": "external-actor-launch",
+  "sourceRevision": "a50ae7a4c78a9bcd2499ba7618ea7ea85a8f341b",
+  "frozenRevision": "c380703fe18393d811ecb18a33a1bc59745d8b9b",
+  "actors": [
+    {
+      "task": "S06",
+      "agent": "/root/help002_flat_s06",
+      "model": "gpt-6-luna",
+      "reasoningEffort": "max",
+      "forkTurns": "none",
+      "promptSha256": "937fb3ecfecb5713a077190d895cbe2d79b9c43002dd49b3dff372f8ee7faed5",
+      "promptBytes": 7845,
+      "lastBytes": [
+        101,
+        115,
+        46
+      ],
+      "launchStatus": "spawned",
+      "modelEvidence": "Coordinator spawn arguments; not inferred from host trace"
+    },
+    {
+      "task": "S07",
+      "agent": "/root/help002_flat_s07",
+      "model": "gpt-6-luna",
+      "reasoningEffort": "max",
+      "forkTurns": "none",
+      "promptSha256": "ce244f5aeda9cf33522a383a23d631a38dde26036aee4f0017d48524a1370e4d",
+      "promptBytes": 8029,
+      "lastBytes": [
+        101,
+        115,
+        46
+      ],
+      "launchStatus": "spawned",
+      "modelEvidence": "Coordinator spawn arguments; not inferred from host trace"
+    }
+  ],
+  "acceptancePending": true,
+  "promptDeliveryNote": "Coordinator supplied frozen public prompt text in spawn_agent.message with one additional final LF. The pinned prompt file has no final newline; its byte hash is not a hash of the tool message."
+}

@@ -1,0 +1,9 @@
+{
+  "task": "S06",
+  "acceptancePassed": true,
+  "filesMatchAcceptance": true,
+  "files": 23,
+  "finalTreeSha256": "87a3fb3091b2b2656e8e5adea8a877d2fede60a58ca28eeb3ab58e345157bc46",
+  "traceAuditPassed": false,
+  "teardownRecorded": "unrecorded Ctrl+C / clean exit; does not satisfy frozen audit"
+}

@@ -1,0 +1,111 @@
+// frontend: flow/1
+
+record Customer {
+    field id: CustomerId;
+    field email: Email;
+    field kind: String;
+    field balance: Money;
+    field created-at: Instant;
+}
+
+// frontend: flow/1
+
+type CustomerId : String {
+    validate string::guid-canonical?;
+}
+
+// frontend: flow/1
+
+type Email : String {
+    validate string::email-address-valid?;
+}
+
+// frontend: flow/1
+
+type Instant : String {
+    validate instant::is-canonical-utc?;
+}
+
+// frontend: flow/1
+
+type Money : Int {
+}
+
+// frontend: flow/1
+
+type ProductId : String {
+    validate string::guid-canonical?;
+}
+
+// frontend: flow/1
+
+word customer.discounted-balance(customer: Customer) -> Money {
+    effects none
+    doc "Returns the balance unchanged unless Kind is exactly premium; premium balances are multiplied by 90% and truncated toward zero to a minor unit."
+    if ::equals(customer::kind(customer), "premium") {
+        let balance = Money::value(customer::balance(customer));
+        let quotient = ::divide(balance, 10);
+        let remainder = ::subtract(balance, ::multiply(quotient, 10));
+        let scaled-whole = ::multiply(quotient, 9);
+        let scaled-remainder = ::divide(::multiply(remainder, 9), 10);
+        Money::new(::add(scaled-whole, scaled-remainder))
+    } else {
+        customer::balance(customer)
+    }
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/kind-is-not-trimmed {
+    Money::value(customer::discounted-balance(customer::new(CustomerId::new("00000000-0000-0000-0000-000000000000"), Email::new("a@example.com"), " premium", Money::new(19), Instant::new("2000-01-01T00:00:00.0000000\u002B00:00"))))
+    => 19
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/kind-match-is-case-sensitive {
+    Money::value(customer::discounted-balance(customer::new(CustomerId::new("00000000-0000-0000-0000-000000000000"), Email::new("a@example.com"), "Premium", Money::new(19), Instant::new("2000-01-01T00:00:00.0000000\u002B00:00"))))
+    => 19
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/nonpremium-preserves-balance {
+    Money::value(customer::discounted-balance(customer::new(CustomerId::new("00000000-0000-0000-0000-000000000000"), Email::new("a@example.com"), "standard", Money::new(19), Instant::new("2000-01-01T00:00:00.0000000\u002B00:00"))))
+    => 19
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/premium-int64-max {
+    Money::value(customer::discounted-balance(customer::new(CustomerId::new("00000000-0000-0000-0000-000000000000"), Email::new("a@example.com"), "premium", Money::new(9223372036854775807), Instant::new("2000-01-01T00:00:00.0000000\u002B00:00"))))
+    => 8301034833169298226
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/premium-int64-min {
+    Money::value(customer::discounted-balance(customer::new(CustomerId::new("00000000-0000-0000-0000-000000000000"), Email::new("a@example.com"), "premium", Money::new(::subtract(::subtract(0, 9223372036854775807), 1)), Instant::new("2000-01-01T00:00:00.0000000\u002B00:00"))))
+    => -8301034833169298227
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/premium-negative-truncates-toward-zero {
+    Money::value(customer::discounted-balance(customer::new(CustomerId::new("00000000-0000-0000-0000-000000000000"), Email::new("a@example.com"), "premium", Money::new(-19), Instant::new("2000-01-01T00:00:00.0000000\u002B00:00"))))
+    => -17
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/premium-positive-truncates {
+    Money::value(customer::discounted-balance(customer::new(CustomerId::new("00000000-0000-0000-0000-000000000000"), Email::new("a@example.com"), "premium", Money::new(19), Instant::new("2000-01-01T00:00:00.0000000\u002B00:00"))))
+    => 17
+}
+
+// frontend: flow/1
+
+example customer.discounted-balance/premium-example {
+    Money::value(customer::discounted-balance(customer::new(CustomerId::new("00000000-0000-0000-0000-000000000000"), Email::new("a@example.com"), "premium", Money::new(199), Instant::new("2000-01-01T00:00:00.0000000\u002B00:00"))))
+    => 179
+}

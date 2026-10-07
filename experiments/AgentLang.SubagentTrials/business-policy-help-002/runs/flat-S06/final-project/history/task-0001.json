@@ -1,0 +1,32 @@
+{
+  "task": "task-0001",
+  "goal": "Implement customer.discount-basis-points : Customer -\u003E Int, returning 1000 basis points only when the raw Kind is exactly \u0022premium\u0022 and zero for every other raw Kind. Preserve raw ordinal, case-sensitive comparison; add complete own tests and a runnable example.",
+  "active": false,
+  "wordsInspected": [
+    "customer.discount-basis-points",
+    "instant.parse-utc",
+    "int.min"
+  ],
+  "wordsUsed": [
+    "CustomerId.new",
+    "Email.new",
+    "Instant.new",
+    "Money.new",
+    "customer.discount-basis-points",
+    "customer.kind",
+    "customer.new",
+    "equals",
+    "instant.is-canonical-utc?",
+    "string.email-address-valid?",
+    "string.guid-canonical?"
+  ],
+  "wordsCreated": [
+    "customer.discount-basis-points"
+  ],
+  "testsRun": 18,
+  "testsFailed": 6,
+  "effects": {},
+  "errors": [
+    "FLOW_UNKNOWN_LOCAL"
+  ]
+}

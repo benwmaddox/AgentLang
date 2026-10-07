@@ -1,0 +1,47 @@
+{
+  "studyId": "business-policy-help-002",
+  "actors": [
+    {
+      "task": "S06",
+      "agent": "/root/help002_flat_s06",
+      "reportedOwnTestsPassed": 6,
+      "reportedExamplesPassed": 1,
+      "taskCommitReported": true,
+      "hostSession": 75511,
+      "teardown": {
+        "chars": "\\u0003",
+        "toolExitCode": 0,
+        "yield_time_ms": 1000,
+        "session_id": 75511,
+        "max_output_tokens": 2000
+      },
+      "authoringIssuesReported": [
+        "Dictionary name instead of Flow call reference",
+        "Noncanonical Instant fixture"
+      ],
+      "coordinatorRepairedImplementation": false
+    },
+    {
+      "task": "S07",
+      "agent": "/root/help002_flat_s07",
+      "reportedOwnTestsPassed": 7,
+      "reportedExamplesPassed": 1,
+      "taskCommitReported": true,
+      "hostSession": 59007,
+      "teardown": {
+        "chars": "\\u0003",
+        "toolExitCode": 0,
+        "yield_time_ms": 1000,
+        "session_id": 59007,
+        "max_output_tokens": 1000
+      },
+      "authoringIssuesReported": [
+        "Syntax typo",
+        "Two incorrect expected boundary values",
+        "Uppercase lookup"
+      ],
+      "coordinatorRepairedImplementation": false
+    }
+  ],
+  "recordKind": "Actor reports plus exact teardown arguments supplied in follow-up; independent results in run archives"
+}

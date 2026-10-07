@@ -458,3 +458,10 @@ results, immutable source/runtime/prompt inventories and preserved control failu
 The 59-check control matrix and repaired clean-freeze/tamper gates pass. Fresh
 external-agent outcomes remain pending; full evaluation and measured costs remain
 open. No backend or memory research is promoted ahead of this evaluation.
+
+Report 079's two fresh Flat subagents pass all 64 independent cases and the
+library metadata contract after querying runtime help. Both frozen trace audits
+fail on unrecorded Ctrl+C cancellation events; implementation acceptance and
+audit status stay separate. This supports task usability, not controlled cost
+improvement. Versioned terminal observability and rotated matched repetitions
+remain the shortest evaluation work before backend/memory research.

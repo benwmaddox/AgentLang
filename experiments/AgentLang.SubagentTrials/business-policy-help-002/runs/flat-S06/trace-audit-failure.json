@@ -1,0 +1,27 @@
+{
+  "studyId": "business-policy-help-002",
+  "task": "S06",
+  "auditPassed": false,
+  "auditorSha256": "5c91e5b47fd3877c53b7c2e624defd5c94446e555f9b30d06d32c5bb98ecd7fd",
+  "traceSha256": "d26b44dcaf7780d8190a7d000b04997a1755df662a0f6e0d5b90ae34e937cd74",
+  "failure": "session ends by idle Ctrl+C or explicit exchange-limit rejection; normal EOF is invalid",
+  "observedSessionEnd": {
+    "event": "session-end",
+    "finishedUtc": "2026-10-07T00:34:43.4728542-04:00",
+    "exchangeCount": 25,
+    "hostExitCode": 0,
+    "runtimeExitCode": 0,
+    "runtimeStderrPrefixBytes": 0,
+    "runtimeStderrTotalBytes": 0,
+    "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runtimeStderrCaptureTruncated": false
+  },
+  "hostCancelledEvents": 0,
+  "actorReported": {
+    "toolExitCode": 0,
+    "sent": "Ctrl+C",
+    "hostSession": 75511
+  },
+  "independentAcceptancePassed": true,
+  "interpretation": "Behavior/metadata acceptance passed, but the frozen trace audit cannot validate the documented teardown from this trace. Do not reclassify the unrecorded end as idle Ctrl+C."
+}

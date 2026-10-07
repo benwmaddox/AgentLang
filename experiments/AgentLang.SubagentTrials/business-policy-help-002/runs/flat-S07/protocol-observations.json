@@ -1,0 +1,259 @@
+{
+  "task": "S07",
+  "metadataPassed": true,
+  "behaviorPassed": true,
+  "acceptancePassed": true,
+  "casesExecuted": 54,
+  "checks": 299,
+  "exchanges": 30,
+  "requestPayloadUtf8Bytes": 11515.0,
+  "responsePayloadUtf8Bytes": 29618.0,
+  "diagnostics": [
+    {
+      "index": 15,
+      "op": "describe",
+      "code": "NAME_UNKNOWN_WORD",
+      "message": "Word 'Instant.parse-utc' is not defined.",
+      "text": "NAME_UNKNOWN_WORD in Instant.parse-utc: Word 'Instant.parse-utc' is not defined."
+    },
+    {
+      "index": 18,
+      "op": "define",
+      "code": "FLOW_EXPECTED_SEPARATOR",
+      "message": "Statements on one line must be separated by ';'.",
+      "text": "FLOW_EXPECTED_SEPARATOR at <flow-project>:26:273: Statements on one line must be separated by ';'."
+    },
+    {
+      "index": 23,
+      "op": "eval",
+      "code": "FLOW_INCOMPLETE_INPUT",
+      "message": "Expected a Flow expression.",
+      "text": "FLOW_INCOMPLETE_INPUT at <flow-eval>:1:1: Expected a Flow expression."
+    },
+    {
+      "index": 24,
+      "op": "eval",
+      "code": "FLOW_INCOMPLETE_INPUT",
+      "message": "Expected a Flow expression.",
+      "text": "FLOW_INCOMPLETE_INPUT at <flow-eval>:1:1: Expected a Flow expression."
+    }
+  ],
+  "helpQueries": [
+    {
+      "index": 1,
+      "topic": "authoring",
+      "ok": true
+    },
+    {
+      "index": 2,
+      "topic": "define",
+      "ok": true
+    },
+    {
+      "index": 22,
+      "topic": "examples",
+      "ok": true
+    }
+  ],
+  "testBatches": [
+    {
+      "index": 20,
+      "op": "test",
+      "count": 7,
+      "passed": 5,
+      "failed": 2,
+      "responseOk": true
+    },
+    {
+      "index": 27,
+      "op": "test",
+      "count": 7,
+      "passed": 7,
+      "failed": 0,
+      "responseOk": true
+    }
+  ],
+  "explicitTestResultExecutions": 14.0,
+  "exampleBatches": [
+    {
+      "index": 28,
+      "op": "example",
+      "count": 1,
+      "passed": 1,
+      "failed": 0,
+      "responseOk": true
+    }
+  ],
+  "successfulMutationRequests": 5,
+  "requests": [
+    {
+      "index": 1,
+      "operation": "help",
+      "ok": true
+    },
+    {
+      "index": 2,
+      "operation": "help",
+      "ok": true
+    },
+    {
+      "index": 3,
+      "operation": "words",
+      "ok": true
+    },
+    {
+      "index": 4,
+      "operation": "search",
+      "ok": true
+    },
+    {
+      "index": 5,
+      "operation": "describe",
+      "ok": true
+    },
+    {
+      "index": 6,
+      "operation": "describe",
+      "ok": true
+    },
+    {
+      "index": 7,
+      "operation": "describe",
+      "ok": true
+    },
+    {
+      "index": 8,
+      "operation": "context",
+      "ok": true
+    },
+    {
+      "index": 9,
+      "operation": "context",
+      "ok": true
+    },
+    {
+      "index": 10,
+      "operation": "context",
+      "ok": true
+    },
+    {
+      "index": 11,
+      "operation": "describe",
+      "ok": true
+    },
+    {
+      "index": 12,
+      "operation": "context",
+      "ok": true
+    },
+    {
+      "index": 13,
+      "operation": "task.begin",
+      "ok": true
+    },
+    {
+      "index": 14,
+      "operation": "describe",
+      "ok": true
+    },
+    {
+      "index": 15,
+      "operation": "describe",
+      "ok": false
+    },
+    {
+      "index": 16,
+      "operation": "describe",
+      "ok": true
+    },
+    {
+      "index": 17,
+      "operation": "describe",
+      "ok": true
+    },
+    {
+      "index": 18,
+      "operation": "define",
+      "ok": false
+    },
+    {
+      "index": 19,
+      "operation": "define",
+      "ok": true
+    },
+    {
+      "index": 20,
+      "operation": "test",
+      "ok": true
+    },
+    {
+      "index": 21,
+      "operation": "failed-tests",
+      "ok": true
+    },
+    {
+      "index": 22,
+      "operation": "help",
+      "ok": true
+    },
+    {
+      "index": 23,
+      "operation": "eval",
+      "ok": false
+    },
+    {
+      "index": 24,
+      "operation": "eval",
+      "ok": false
+    },
+    {
+      "index": 25,
+      "operation": "describe",
+      "ok": true
+    },
+    {
+      "index": 26,
+      "operation": "define",
+      "ok": true
+    },
+    {
+      "index": 27,
+      "operation": "test",
+      "ok": true
+    },
+    {
+      "index": 28,
+      "operation": "example",
+      "ok": true
+    },
+    {
+      "index": 29,
+      "operation": "commit",
+      "ok": true
+    },
+    {
+      "index": 30,
+      "operation": "task.commit",
+      "ok": true
+    }
+  ],
+  "traceSha256": "358b3bb1fa633e0f5a90cf86bb8b571518b1b5721ae0f8c144ad5b336a95941d",
+  "traceAuditPassed": false,
+  "observedSessionEnd": {
+    "event": "session-end",
+    "finishedUtc": "2026-10-07T00:41:51.2937337-04:00",
+    "exchangeCount": 30,
+    "hostExitCode": 0,
+    "runtimeExitCode": 0,
+    "runtimeStderrPrefixBytes": 0,
+    "runtimeStderrTotalBytes": 0,
+    "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runtimeStderrCaptureTruncated": false
+  },
+  "limitations": [
+    "Coordinator parsing of recorded exchanges, not a passing frozen integrity audit",
+    "Repeated explicit test/test-all result entries counted again; commit reruns not included in this count",
+    "Protocol bytes are not model tokens/turns/context limits",
+    "Concurrent exploratory trials do not provide controlled latency or causal efficiency evidence"
+  ]
+}

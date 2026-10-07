@@ -1,0 +1,9 @@
+{
+  "kind": "staged-raw-byte-audit",
+  "studyId": "business-policy-help-002",
+  "checkedFiles": 110,
+  "passed": true,
+  "method": "git hash-object --no-filters compared with index object IDs",
+  "old001Changed": false,
+  "frozenSourceInputsChanged": false
+}

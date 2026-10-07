@@ -1,0 +1,1 @@
+test customer.discount-basis-points/exact-premium { customer::discount-basis-points(customer::new(CustomerId::new("00000000-0000-4000-8000-000000000001"), Email::new("a@example.com"), "premium", Money::new(-9223372036854775808), Instant::new("2000-01-01T00:00:00.0000000+00:00"))) => 1000 }

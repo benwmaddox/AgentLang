@@ -1,0 +1,5 @@
+word customer.discount-basis-points(customer: Customer) -> Int {
+    effects none
+    doc "Returns 1000 basis points only for the raw Kind value premium; all other values return zero."
+    if ::equals(customer::kind(customer), "premium") { 1000 } else { 0 }
+}

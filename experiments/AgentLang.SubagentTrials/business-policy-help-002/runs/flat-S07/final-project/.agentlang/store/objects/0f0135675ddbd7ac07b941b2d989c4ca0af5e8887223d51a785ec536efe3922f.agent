@@ -1,0 +1,14 @@
+word customer.discounted-balance(customer: Customer) -> Money {
+    effects none
+    doc "Returns the balance unchanged unless Kind is exactly premium; premium balances are multiplied by 90% and truncated toward zero to a minor unit."
+    if ::equals(customer::kind(customer), "premium") {
+        let balance = Money::value(customer::balance(customer))
+        let quotient = ::divide(balance, 10)
+        let remainder = ::subtract(balance, ::multiply(quotient, 10))
+        let scaled-whole = ::multiply(quotient, 9)
+        let scaled-remainder = ::divide(::multiply(remainder, 9), 10)
+        Money::new(::add(scaled-whole, scaled-remainder))
+    } else {
+        customer::balance(customer)
+    }
+}

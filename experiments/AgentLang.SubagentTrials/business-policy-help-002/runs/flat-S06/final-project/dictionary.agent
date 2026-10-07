@@ -1,0 +1,99 @@
+// frontend: flow/1
+
+record Customer {
+    field id: CustomerId;
+    field email: Email;
+    field kind: String;
+    field balance: Money;
+    field created-at: Instant;
+}
+
+// frontend: flow/1
+
+type CustomerId : String {
+    validate string::guid-canonical?;
+}
+
+// frontend: flow/1
+
+type Email : String {
+    validate string::email-address-valid?;
+}
+
+// frontend: flow/1
+
+type Instant : String {
+    validate instant::is-canonical-utc?;
+}
+
+// frontend: flow/1
+
+type Money : Int {
+}
+
+// frontend: flow/1
+
+type ProductId : String {
+    validate string::guid-canonical?;
+}
+
+// frontend: flow/1
+
+word customer.discount-basis-points(customer: Customer) -> Int {
+    effects none
+    doc "Returns 1000 basis points only for the raw Kind value premium; all other values return zero."
+    if ::equals(customer::kind(customer), "premium") {
+        1000
+    } else {
+        0
+    }
+}
+
+// frontend: flow/1
+
+test customer.discount-basis-points/empty-kind {
+    customer::discount-basis-points(customer::new(CustomerId::new("00000000-0000-4000-8000-000000000001"), Email::new("a@example.com"), "", Money::new(0), Instant::new("2000-01-01T00:00:00.0000000\u002B00:00")))
+    => 0
+}
+
+// frontend: flow/1
+
+test customer.discount-basis-points/exact-premium {
+    customer::discount-basis-points(customer::new(CustomerId::new("00000000-0000-4000-8000-000000000001"), Email::new("a@example.com"), "premium", Money::new(-9223372036854775808), Instant::new("2000-01-01T00:00:00.0000000\u002B00:00")))
+    => 1000
+}
+
+// frontend: flow/1
+
+test customer.discount-basis-points/leading-space-kind {
+    customer::discount-basis-points(customer::new(CustomerId::new("00000000-0000-4000-8000-000000000001"), Email::new("a@example.com"), " premium", Money::new(0), Instant::new("2000-01-01T00:00:00.0000000\u002B00:00")))
+    => 0
+}
+
+// frontend: flow/1
+
+test customer.discount-basis-points/other-kind {
+    customer::discount-basis-points(customer::new(CustomerId::new("00000000-0000-4000-8000-000000000001"), Email::new("a@example.com"), "standard", Money::new(9223372036854775807), Instant::new("2000-01-01T00:00:00.0000000\u002B00:00")))
+    => 0
+}
+
+// frontend: flow/1
+
+test customer.discount-basis-points/trailing-space-kind {
+    customer::discount-basis-points(customer::new(CustomerId::new("00000000-0000-4000-8000-000000000001"), Email::new("a@example.com"), "premium ", Money::new(0), Instant::new("2000-01-01T00:00:00.0000000\u002B00:00")))
+    => 0
+}
+
+// frontend: flow/1
+
+test customer.discount-basis-points/uppercase-kind {
+    customer::discount-basis-points(customer::new(CustomerId::new("00000000-0000-4000-8000-000000000001"), Email::new("a@example.com"), "Premium", Money::new(0), Instant::new("2000-01-01T00:00:00.0000000\u002B00:00")))
+    => 0
+}
+
+// frontend: flow/1
+
+example customer.discount-basis-points/premium {
+    customer::discount-basis-points(customer::new(CustomerId::new("00000000-0000-4000-8000-000000000001"), Email::new("a@example.com"), "premium", Money::new(2500), Instant::new("2000-01-01T00:00:00.0000000\u002B00:00")))
+    => 1000
+}

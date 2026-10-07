@@ -1,0 +1,213 @@
+{
+  "task": "S06",
+  "metadataPassed": true,
+  "behaviorPassed": true,
+  "acceptancePassed": true,
+  "casesExecuted": 10,
+  "checks": 123,
+  "exchanges": 25,
+  "requestPayloadUtf8Bytes": 8271.0,
+  "responsePayloadUtf8Bytes": 29877.0,
+  "diagnostics": [
+    {
+      "index": 15,
+      "op": "define",
+      "code": "FLOW_UNKNOWN_LOCAL",
+      "message": "Local 'customer' is not available before its immutable binding. Flow attachment context: owner='customer.discount-basis-points' (WordId \"word_08d9df46e25f4229a301722b4f8c2b4a\"), kind='test', case='empty-kind'.",
+      "text": "FLOW_UNKNOWN_LOCAL in customer.discount-basis-points at <flow:customer.discount-basis-points/1>/test:6c0d46df427b32b9d90a78a46dfe2bacac7f62f590ebde6c11a5c806ac4d39da:1:50: Local 'customer' is not available before its immutable binding. Flow attachment context: owner='customer.discount-basis-points' (WordId \"word_08d9df46e25f4229a301722b4f8c2b4a\"), kind='test', case='empty-kind'."
+    }
+  ],
+  "helpQueries": [
+    {
+      "index": 1,
+      "topic": "authoring",
+      "ok": true
+    },
+    {
+      "index": 2,
+      "topic": "define",
+      "ok": true
+    },
+    {
+      "index": 22,
+      "topic": "examples",
+      "ok": true
+    }
+  ],
+  "testBatches": [
+    {
+      "index": 17,
+      "op": "test",
+      "count": 6,
+      "passed": 0,
+      "failed": 6,
+      "responseOk": true
+    },
+    {
+      "index": 21,
+      "op": "test",
+      "count": 6,
+      "passed": 6,
+      "failed": 0,
+      "responseOk": true
+    }
+  ],
+  "explicitTestResultExecutions": 12.0,
+  "exampleBatches": [
+    {
+      "index": 23,
+      "op": "example",
+      "count": 1,
+      "passed": 1,
+      "failed": 0,
+      "responseOk": true
+    }
+  ],
+  "successfulMutationRequests": 5,
+  "requests": [
+    {
+      "index": 1,
+      "operation": "help",
+      "ok": true
+    },
+    {
+      "index": 2,
+      "operation": "help",
+      "ok": true
+    },
+    {
+      "index": 3,
+      "operation": "words",
+      "ok": true
+    },
+    {
+      "index": 4,
+      "operation": "search",
+      "ok": true
+    },
+    {
+      "index": 5,
+      "operation": "describe",
+      "ok": true
+    },
+    {
+      "index": 6,
+      "operation": "describe",
+      "ok": true
+    },
+    {
+      "index": 7,
+      "operation": "describe",
+      "ok": true
+    },
+    {
+      "index": 8,
+      "operation": "context",
+      "ok": true
+    },
+    {
+      "index": 9,
+      "operation": "context",
+      "ok": true
+    },
+    {
+      "index": 10,
+      "operation": "context",
+      "ok": true
+    },
+    {
+      "index": 11,
+      "operation": "context",
+      "ok": true
+    },
+    {
+      "index": 12,
+      "operation": "context",
+      "ok": true
+    },
+    {
+      "index": 13,
+      "operation": "task.begin",
+      "ok": true
+    },
+    {
+      "index": 14,
+      "operation": "describe",
+      "ok": true
+    },
+    {
+      "index": 15,
+      "operation": "define",
+      "ok": false
+    },
+    {
+      "index": 16,
+      "operation": "define",
+      "ok": true
+    },
+    {
+      "index": 17,
+      "operation": "test",
+      "ok": true
+    },
+    {
+      "index": 18,
+      "operation": "describe",
+      "ok": true
+    },
+    {
+      "index": 19,
+      "operation": "describe",
+      "ok": true
+    },
+    {
+      "index": 20,
+      "operation": "define",
+      "ok": true
+    },
+    {
+      "index": 21,
+      "operation": "test",
+      "ok": true
+    },
+    {
+      "index": 22,
+      "operation": "help",
+      "ok": true
+    },
+    {
+      "index": 23,
+      "operation": "example",
+      "ok": true
+    },
+    {
+      "index": 24,
+      "operation": "commit",
+      "ok": true
+    },
+    {
+      "index": 25,
+      "operation": "task.commit",
+      "ok": true
+    }
+  ],
+  "traceSha256": "d26b44dcaf7780d8190a7d000b04997a1755df662a0f6e0d5b90ae34e937cd74",
+  "traceAuditPassed": false,
+  "observedSessionEnd": {
+    "event": "session-end",
+    "finishedUtc": "2026-10-07T00:34:43.4728542-04:00",
+    "exchangeCount": 25,
+    "hostExitCode": 0,
+    "runtimeExitCode": 0,
+    "runtimeStderrPrefixBytes": 0,
+    "runtimeStderrTotalBytes": 0,
+    "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runtimeStderrCaptureTruncated": false
+  },
+  "limitations": [
+    "Coordinator parsing of recorded exchanges, not a passing frozen integrity audit",
+    "Repeated explicit test/test-all result entries counted again; commit reruns not included in this count",
+    "Protocol bytes are not model tokens/turns/context limits",
+    "Concurrent exploratory trials do not provide controlled latency or causal efficiency evidence"
+  ]
+}

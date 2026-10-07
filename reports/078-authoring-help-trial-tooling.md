@@ -96,3 +96,8 @@ The finalized primer grew from 3,091 to 3,931 UTF-8 bytes and from 418 to 528
 whitespace words. Those measurements are not LLM tokens or effective context.
 Only the two new Flat tasks are being rerun; this is neither a new conventional
 comparison nor a controlled causal test of help alone.
+
+Publication: merged by fast-forward and pushed to private main/prototype at
+a50ae7a, with report/evidence updates. Fresh external results are recorded in
+[report 079](079-fresh-authoring-help-agent-follow-up.md); report 078 itself
+contains coordinator controls and source preparation, not agent outcomes.

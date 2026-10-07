@@ -1,0 +1,3 @@
+test customer.discounted-balance/premium-int64-min {
+    Money::value(customer::discounted-balance(customer::new(CustomerId::new("00000000-0000-0000-0000-000000000000"), Email::new("a@example.com"), "premium", Money::new(::subtract(::subtract(0, 9223372036854775807), 1)), Instant::new("2000-01-01T00:00:00.0000000+00:00")))) => -8301034833169298227
+}
