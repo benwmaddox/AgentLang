@@ -1,0 +1,7 @@
+word store.payment(id: PaymentId, store: Store) -> Option<Payment> {
+    effects none
+    doc "Find the first payment with this ID, preserving list order."
+    store.payments().fold(
+        paymentLookup::new(target = id, found = option::none<Payment>()),
+        store::payment-fold-step).found()
+}

@@ -1,0 +1,32 @@
+test invoice.create/rejects-summed-overflow {
+    let base = business::seed(unit);
+    let max-id = ProductId::new("92000000-0000-0000-0000-000000000001");
+    let one-id = ProductId::new("92000000-0000-0000-0000-000000000002");
+    let max-product = product::new(
+        id = max-id,
+        name = "maximum",
+        unit-price = Money::new(9223372036854775807));
+    let one-product = product::new(id = one-id, name = "one", unit-price = Money::new(1));
+    let products = list::append(list::singleton<Product>(max-product), one-product);
+    let initial = store::new(
+        customers = base.customers(),
+        products = products,
+        subscriptions = base.subscriptions(),
+        invoices = base.invoices(),
+        payments = base.payments(),
+        email-outbox = base.email-outbox(),
+        sent-emails = base.sent-emails());
+    let first = cartLine::new(product-id = max-id, quantity = 1);
+    let second = cartLine::new(product-id = one-id, quantity = 1);
+    let cart = list::append(list::singleton<CartLine>(first), second);
+    match invoice::create(
+        initial,
+        InvoiceId::new("91000000-0000-0000-0000-000000000001"),
+        CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        cart,
+        Instant::new("2026-01-04T00:00:00.0000000+00:00")) {
+        ok updated => { false }
+        error problem => { equals(problem.code(), "MONEY_OVERFLOW") }
+    }
+    => true
+}

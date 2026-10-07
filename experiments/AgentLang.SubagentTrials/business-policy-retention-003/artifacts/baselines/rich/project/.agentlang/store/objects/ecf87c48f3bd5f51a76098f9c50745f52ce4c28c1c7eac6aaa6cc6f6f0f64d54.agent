@@ -1,0 +1,21 @@
+word invoice.build-lines-step(accumulator: InvoiceLinesAccumulator, cart: CartLine) -> InvoiceLinesAccumulator {
+    effects none
+    doc "Build cart lines in order while preserving the first line error."
+    match accumulator.outcome() {
+        error problem => { accumulator }
+        ok lines => {
+            match invoice::line(accumulator.store(), cart) {
+                error problem => {
+                    invoiceLinesAccumulator::new(
+                        store = accumulator.store(),
+                        outcome = result::error<List<InvoiceLine>, BusinessError>(problem))
+                }
+                ok line => {
+                    invoiceLinesAccumulator::new(
+                        store = accumulator.store(),
+                        outcome = result::ok<List<InvoiceLine>, BusinessError>(list::append(lines, line)))
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,7 @@
+record InvoiceLine {
+    field product-id: ProductId;
+    field description: String;
+    field quantity: Int;
+    field unit-price: Money;
+    field line-total: Money;
+}

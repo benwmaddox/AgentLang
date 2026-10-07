@@ -1,0 +1,35 @@
+test store.subscription/first-match-in-list-order {
+    let key = SubscriptionId::new("00000000-0000-0000-0000-000000000001");
+    let first = subscription::new(
+        id = key,
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"),
+        product-id = ProductId::new("00000000-0000-0000-0000-000000000004"),
+        term = "first",
+        started-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"),
+        expires-at = Instant::new("2024-02-01T00:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("active"),
+        cancelled-at = option::none<Instant>());
+    let later = subscription::new(
+        id = key,
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"),
+        product-id = ProductId::new("00000000-0000-0000-0000-000000000004"),
+        term = "later",
+        started-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"),
+        expires-at = Instant::new("2024-02-01T00:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("active"),
+        cancelled-at = option::none<Instant>());
+    let blank = store::empty(unit);
+    let input = store::new(
+        customers = blank.customers(),
+        products = blank.products(),
+        subscriptions = list::append(list::singleton<Subscription>(first), later),
+        invoices = blank.invoices(),
+        payments = blank.payments(),
+        email-outbox = blank.email-outbox(),
+        sent-emails = blank.sent-emails());
+    match store::subscription(key, input) {
+        some selected => { equals(selected.term(), "first") }
+        none => { false }
+    }
+    => true
+}

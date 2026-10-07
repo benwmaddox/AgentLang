@@ -1,0 +1,7 @@
+example invoice.build-lines/empty-cart {
+    match invoice::build-lines(business::seed(unit), list::empty<CartLine>()) {
+        ok lines => { lines.count() }
+        error problem => { -1 }
+    }
+    => 0
+}

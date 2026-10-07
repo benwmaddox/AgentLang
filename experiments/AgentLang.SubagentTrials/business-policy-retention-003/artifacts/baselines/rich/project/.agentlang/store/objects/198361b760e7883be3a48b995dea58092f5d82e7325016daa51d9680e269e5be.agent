@@ -1,0 +1,3 @@
+type InvoiceStatus : String {
+    validate invoice::status-valid?;
+}

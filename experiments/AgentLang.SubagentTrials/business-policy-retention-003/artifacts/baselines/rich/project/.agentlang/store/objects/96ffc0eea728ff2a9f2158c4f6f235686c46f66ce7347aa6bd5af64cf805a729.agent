@@ -1,0 +1,4 @@
+record PaymentReceipt {
+    field reference: String;
+    field amount: Money;
+}

@@ -1,0 +1,12 @@
+word store.empty(value: Unit) -> Store {
+    effects none
+    doc "Create a Store with all seven collections empty."
+    store::new(
+        customers = list::empty<Customer>(),
+        products = list::empty<Product>(),
+        subscriptions = list::empty<Subscription>(),
+        invoices = list::empty<Invoice>(),
+        payments = list::empty<Payment>(),
+        email-outbox = list::empty<EmailMessage>(),
+        sent-emails = list::empty<EmailMessage>())
+}

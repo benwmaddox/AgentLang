@@ -1,0 +1,4 @@
+test business.email-valid?/accepted {
+    business::email-valid?("dev.team+alerts@example-domain.com")
+    => true
+}

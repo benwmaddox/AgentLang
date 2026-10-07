@@ -1,0 +1,8 @@
+test store.invoice/empty-fold {
+    let key = InvoiceId::new("00000000-0000-0000-0000-000000000001");
+    match store::invoice(key, store::empty(unit)) {
+        some selected => { false }
+        none => { true }
+    }
+    => true
+}

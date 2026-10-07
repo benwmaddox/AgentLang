@@ -1,0 +1,4 @@
+test money.nonnegative?/negative {
+    money::nonnegative?(Money::new(-1))
+    => false
+}

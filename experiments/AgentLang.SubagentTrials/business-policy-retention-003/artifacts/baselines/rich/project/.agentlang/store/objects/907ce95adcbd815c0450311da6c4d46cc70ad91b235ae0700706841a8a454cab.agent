@@ -1,0 +1,7 @@
+test email-message.create/blank-body {
+    match email-message::create(Email::new("dev@example.com"), "Subject", " \t ") {
+        ok value => { value.body() }
+        error problem => { problem.code() }
+    }
+    => "INVALID_EMAIL_MESSAGE"
+}

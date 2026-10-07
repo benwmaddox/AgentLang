@@ -1,0 +1,7 @@
+word store.product(id: ProductId, store: Store) -> Option<Product> {
+    effects none
+    doc "Find the first product with this ID, preserving list order."
+    store.products().fold(
+        productLookup::new(target = id, found = option::none<Product>()),
+        store::product-fold-step).found()
+}

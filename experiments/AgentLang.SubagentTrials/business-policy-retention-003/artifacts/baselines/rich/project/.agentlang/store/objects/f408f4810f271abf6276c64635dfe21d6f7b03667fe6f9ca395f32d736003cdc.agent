@@ -1,0 +1,29 @@
+test invoice.line/int32-maximum-zero-price {
+    let blank = store::empty(unit);
+    let product-id = ProductId::new("90000000-0000-0000-0000-000000000001");
+    let item = product::new(id = product-id, name = "free", unit-price = Money::new(0));
+    let initial = store::new(
+        customers = blank.customers(),
+        products = list::singleton<Product>(item),
+        subscriptions = blank.subscriptions(),
+        invoices = blank.invoices(),
+        payments = blank.payments(),
+        email-outbox = blank.email-outbox(),
+        sent-emails = blank.sent-emails());
+    let cart = cartLine::new(product-id = product-id, quantity = 2147483647);
+    match invoice::line(initial, cart) {
+        ok line => {
+            bool::and(
+                equals(line.product-id(), product-id),
+                bool::and(
+                    equals(line.description(), "free"),
+                    bool::and(
+                        equals(line.quantity(), 2147483647),
+                        bool::and(
+                            equals(line.unit-price(), Money::new(0)),
+                            equals(line.line-total(), Money::new(0))))))
+        }
+        error problem => { false }
+    }
+    => true
+}

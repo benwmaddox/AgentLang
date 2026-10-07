@@ -1,0 +1,781 @@
+# Pure payment and email transitions for the small-business fixture.
+# Provider outcomes are explicit values; this vocabulary never calls a provider.
+
+record InvoiceReplacement {
+    field target: InvoiceId;
+    field replacement: Invoice;
+    field replaced: Bool;
+    field values: List<Invoice>;
+}
+
+record EmailDeliveryPlan {
+    field first: Option<EmailMessage>;
+    field remaining: List<EmailMessage>;
+}
+
+word store.replace-invoice-step(accumulator: InvoiceReplacement, candidate: Invoice) -> InvoiceReplacement {
+    effects none
+    doc "Replace only the first invoice with the target ID while preserving list order."
+    if accumulator.replaced() {
+        invoiceReplacement::new(
+            target = accumulator.target(),
+            replacement = accumulator.replacement(),
+            replaced = true,
+            values = list::append(accumulator.values(), candidate))
+    } else {
+        if equals(candidate.id(), accumulator.target()) {
+            invoiceReplacement::new(
+                target = accumulator.target(),
+                replacement = accumulator.replacement(),
+                replaced = true,
+                values = list::append(accumulator.values(), accumulator.replacement()))
+        } else {
+            invoiceReplacement::new(
+                target = accumulator.target(),
+                replacement = accumulator.replacement(),
+                replaced = false,
+                values = list::append(accumulator.values(), candidate))
+        }
+    }
+}
+
+word store.replace-invoice(store: Store, invoice: Invoice) -> Store {
+    effects none
+    doc "Replace the first invoice with the same ID, keeping all other Store fields and invoice order."
+    let replacement = invoiceReplacement::new(
+        target = invoice.id(),
+        replacement = invoice,
+        replaced = false,
+        values = list::empty<Invoice>());
+    let completed = store.invoices().fold(replacement, store::replace-invoice-step);
+    store::with-invoices(store, completed.values())
+}
+
+word email.delivery-fold-step(accumulator: EmailDeliveryPlan, candidate: EmailMessage) -> EmailDeliveryPlan {
+    effects none
+    doc "Separate the first outbox message from the FIFO remainder."
+    match accumulator.first() {
+        some first => {
+            emailDeliveryPlan::new(
+                first = accumulator.first(),
+                remaining = list::append(accumulator.remaining(), candidate))
+        }
+        none => {
+            emailDeliveryPlan::new(
+                first = option::some<EmailMessage>(candidate),
+                remaining = accumulator.remaining())
+        }
+    }
+}
+
+word payment.apply-result(store: Store, id: PaymentId, invoice-id: InvoiceId, amount: Money, requested-at: Instant, outcome: Result<PaymentReceipt, BusinessError>) -> Result<Store, BusinessError> {
+    effects none
+    doc "Apply an explicit payment-provider outcome after validating the request and open invoice."
+    match store::payment(id, store) {
+        some existing => {
+            result::error<Store, BusinessError>(businessError::new(
+                code = "DUPLICATE_PAYMENT",
+                message = "A payment with this identifier already exists."))
+        }
+        none => {
+            if int::greater-than(Money::value(amount), 0) {
+                match store::invoice(invoice-id, store) {
+                    none => {
+                        result::error<Store, BusinessError>(businessError::new(
+                            code = "INVOICE_NOT_FOUND",
+                            message = "The invoice does not exist."))
+                    }
+                    some invoice => {
+                        if equals(invoice.status(), InvoiceStatus::new("paid")) {
+                            result::error<Store, BusinessError>(businessError::new(
+                                code = "INVOICE_ALREADY_PAID",
+                                message = "The invoice is already paid."))
+                        } else {
+                            if equals(invoice.total(), amount) {
+                                match outcome {
+                                    error provider-error => {
+                                        result::error<Store, BusinessError>(businessError::new(
+                                            code = "PAYMENT_PROVIDER_FAILURE",
+                                            message = provider-error.message()))
+                                    }
+                                    ok receipt => {
+                                        match payment-receipt::create(receipt.reference(), receipt.amount()) {
+                                            error invalid-receipt => {
+                                                result::error<Store, BusinessError>(invalid-receipt)
+                                            }
+                                            ok valid-receipt => {
+                                                if equals(valid-receipt.amount(), amount) {
+                                                    let paid-invoice = invoice::new(
+                                                        id = invoice.id(),
+                                                        customer-id = invoice.customer-id(),
+                                                        lines = invoice.lines(),
+                                                        total = invoice.total(),
+                                                        created-at = invoice.created-at(),
+                                                        status = InvoiceStatus::new("paid"));
+                                                    let payment = payment::new(
+                                                        id = id,
+                                                        invoice-id = invoice-id,
+                                                        amount = amount,
+                                                        provider-reference = valid-receipt.reference(),
+                                                        paid-at = requested-at);
+                                                    let replaced = store::replace-invoice(store, paid-invoice);
+                                                    let updated = store::with-payments(
+                                                        replaced,
+                                                        list::append(replaced.payments(), payment));
+                                                    result::ok<Store, BusinessError>(updated)
+                                                } else {
+                                                    result::error<Store, BusinessError>(businessError::new(
+                                                        code = "INVALID_PROVIDER_RECEIPT",
+                                                        message = "Payment provider returned an invalid receipt: receipt amount does not match the requested amount"))
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            } else {
+                                result::error<Store, BusinessError>(businessError::new(
+                                    code = "PAYMENT_AMOUNT_MISMATCH",
+                                    message = "A payment must equal the full open invoice balance."))
+                            }
+                        }
+                    }
+                }
+            } else {
+                result::error<Store, BusinessError>(businessError::new(
+                    code = "PAYMENT_AMOUNT_MUST_BE_POSITIVE",
+                    message = "A payment amount must be positive."))
+            }
+        }
+    }
+}
+
+word email.queue(store: Store, customer-id: CustomerId, subject: String, body: String) -> Result<Store, BusinessError> {
+    effects none
+    doc "Queue a trimmed, validated email for an existing customer, preserving FIFO order."
+    match store::customer(customer-id, store) {
+        none => {
+            result::error<Store, BusinessError>(businessError::new(
+                code = "CUSTOMER_NOT_FOUND",
+                message = "The customer does not exist."))
+        }
+        some customer => {
+            match email-message::create(customer.email(), subject, body) {
+                error invalid-message => { result::error<Store, BusinessError>(invalid-message) }
+                ok message => {
+                    let updated = store::with-email-state(
+                        store,
+                        list::append(store.email-outbox(), message),
+                        store.sent-emails());
+                    result::ok<Store, BusinessError>(updated)
+                }
+            }
+        }
+    }
+}
+
+word email.apply-delivery-result(store: Store, outcome: Result<Unit, BusinessError>) -> Result<Store, BusinessError> {
+    effects none
+    doc "Apply one explicit delivery outcome to the first queued email; failures leave Store unchanged."
+    let plan = store.email-outbox().fold(
+        emailDeliveryPlan::new(first = option::none<EmailMessage>(), remaining = list::empty<EmailMessage>()),
+        email::delivery-fold-step);
+    match plan.first() {
+        none => {
+            result::error<Store, BusinessError>(businessError::new(
+                code = "NO_PENDING_EMAIL",
+                message = "There is no queued email to deliver."))
+        }
+        some message => {
+            match outcome {
+                error provider-error => {
+                    result::error<Store, BusinessError>(businessError::new(
+                        code = "EMAIL_PROVIDER_FAILURE",
+                        message = provider-error.message()))
+                }
+                ok delivered => {
+                    let sent = list::append(store.sent-emails(), message);
+                    let updated = store::with-email-state(store, plan.remaining(), sent);
+                    result::ok<Store, BusinessError>(updated)
+                }
+            }
+        }
+    }
+}
+
+test store.replace-invoice-step/nonmatching-invoice {
+    let target = InvoiceId::new("00000000-0000-0000-0000-000000000001");
+    let candidate = invoice::new(
+        id = InvoiceId::new("00000000-0000-0000-0000-000000000002"),
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"),
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(20),
+        created-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"),
+        status = InvoiceStatus::new("open"));
+    let state = invoiceReplacement::new(
+        target = target,
+        replacement = candidate,
+        replaced = false,
+        values = list::empty<Invoice>());
+    let next = store::replace-invoice-step(state, candidate);
+    bool::and(equals(next.replaced(), false), equals(next.values(), list::singleton<Invoice>(candidate)))
+    => true
+}
+
+test store.replace-invoice-step/first-match-replaced {
+    let candidate = invoice::new(
+        id = InvoiceId::new("00000000-0000-0000-0000-000000000001"),
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"),
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(20),
+        created-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"),
+        status = InvoiceStatus::new("open"));
+    let replacement = invoice::new(
+        id = candidate.id(),
+        customer-id = candidate.customer-id(),
+        lines = candidate.lines(),
+        total = Money::new(30),
+        created-at = candidate.created-at(),
+        status = InvoiceStatus::new("paid"));
+    let state = invoiceReplacement::new(
+        target = candidate.id(),
+        replacement = replacement,
+        replaced = false,
+        values = list::empty<Invoice>());
+    let next = store::replace-invoice-step(state, candidate);
+    bool::and(equals(next.replaced(), true), equals(next.values(), list::singleton<Invoice>(replacement)))
+    => true
+}
+
+test store.replace-invoice-step/preserves-items-after-first-match {
+    let first = invoice::new(
+        id = InvoiceId::new("00000000-0000-0000-0000-000000000001"),
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"),
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(20),
+        created-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"),
+        status = InvoiceStatus::new("open"));
+    let later = invoice::new(
+        id = InvoiceId::new("00000000-0000-0000-0000-000000000002"),
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"),
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(40),
+        created-at = Instant::new("2024-01-02T00:00:00.0000000+00:00"),
+        status = InvoiceStatus::new("open"));
+    let state = invoiceReplacement::new(
+        target = first.id(),
+        replacement = first,
+        replaced = true,
+        values = list::singleton<Invoice>(first));
+    let next = store::replace-invoice-step(state, later);
+    equals(next.values(), list::append(list::singleton<Invoice>(first), later))
+    => true
+}
+
+test store.replace-invoice/empty-fold-identity {
+    let replacement = invoice::new(
+        id = InvoiceId::new("00000000-0000-0000-0000-000000000001"),
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"),
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(20),
+        created-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"),
+        status = InvoiceStatus::new("paid"));
+    store::replace-invoice(store::empty(unit), replacement).invoices().count()
+    => 0
+}
+
+test store.replace-invoice/nonempty-fold-preserves-order-and-records {
+    let first = invoice::new(
+        id = InvoiceId::new("00000000-0000-0000-0000-000000000001"),
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"),
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(20),
+        created-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"),
+        status = InvoiceStatus::new("open"));
+    let second = invoice::new(
+        id = InvoiceId::new("00000000-0000-0000-0000-000000000002"),
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"),
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(40),
+        created-at = Instant::new("2024-01-02T00:00:00.0000000+00:00"),
+        status = InvoiceStatus::new("open"));
+    let replacement = invoice::new(
+        id = second.id(),
+        customer-id = second.customer-id(),
+        lines = second.lines(),
+        total = Money::new(40),
+        created-at = second.created-at(),
+        status = InvoiceStatus::new("paid"));
+    let base = store::empty(unit);
+    let initial = store::with-invoices(base, list::append(list::singleton<Invoice>(first), second));
+    let updated = store::replace-invoice(initial, replacement);
+    bool::and(
+        equals(updated.invoices().get(0), option::some<Invoice>(first)),
+        bool::and(
+            equals(updated.invoices().get(1), option::some<Invoice>(replacement)),
+            bool::and(
+                equals(updated.customers(), initial.customers()),
+                bool::and(
+                    equals(updated.products(), initial.products()),
+                    bool::and(
+                        equals(updated.subscriptions(), initial.subscriptions()),
+                        bool::and(
+                            equals(updated.payments(), initial.payments()),
+                            bool::and(
+                                equals(updated.email-outbox(), initial.email-outbox()),
+                                equals(updated.sent-emails(), initial.sent-emails()))))))))
+    => true
+}
+
+test email.delivery-fold-step/first-message {
+    let message = emailMessage::new(
+        to = Email::new("first@example.test"),
+        subject = "First",
+        body = "Body");
+    let state = emailDeliveryPlan::new(
+        first = option::none<EmailMessage>(),
+        remaining = list::empty<EmailMessage>());
+    let next = email::delivery-fold-step(state, message);
+    match next.first() {
+        some found => { bool::and(equals(found, message), equals(next.remaining().count(), 0)) }
+        none => { false }
+    }
+    => true
+}
+
+test email.delivery-fold-step/later-message-appended {
+    let first = emailMessage::new(
+        to = Email::new("first@example.test"),
+        subject = "First",
+        body = "Body");
+    let later = emailMessage::new(
+        to = Email::new("later@example.test"),
+        subject = "Later",
+        body = "Body");
+    let state = emailDeliveryPlan::new(
+        first = option::some<EmailMessage>(first),
+        remaining = list::empty<EmailMessage>());
+    let next = email::delivery-fold-step(state, later);
+    bool::and(
+        equals(next.first(), option::some<EmailMessage>(first)),
+        equals(next.remaining(), list::singleton<EmailMessage>(later)))
+    => true
+}
+
+test payment.apply-result/duplicate-precedes-invalid-amount {
+    let id = PaymentId::new("00000000-0000-0000-0000-000000000001");
+    let payment = payment::new(
+        id = id,
+        invoice-id = InvoiceId::new("00000000-0000-0000-0000-000000000002"),
+        amount = Money::new(10),
+        provider-reference = "existing-ref",
+        paid-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"));
+    let base = store::empty(unit);
+    let initial = store::with-payments(base, list::singleton<Payment>(payment));
+    match payment::apply-result(
+        initial,
+        id,
+        InvoiceId::new("00000000-0000-0000-0000-000000000003"),
+        Money::new(0),
+        Instant::new("2024-01-02T00:00:00.0000000+00:00"),
+        result::error<PaymentReceipt, BusinessError>(businessError::new(code = "IGNORED", message = "ignored"))) {
+        error problem => { equals(problem.code(), "DUPLICATE_PAYMENT") }
+        ok updated => { false }
+    }
+    => true
+}
+
+test payment.apply-result/nonpositive-amount-precedes-invoice-lookup {
+    match payment::apply-result(
+        store::empty(unit),
+        PaymentId::new("00000000-0000-0000-0000-000000000001"),
+        InvoiceId::new("00000000-0000-0000-0000-000000000002"),
+        Money::new(-1),
+        Instant::new("2024-01-02T00:00:00.0000000+00:00"),
+        result::error<PaymentReceipt, BusinessError>(businessError::new(code = "IGNORED", message = "ignored"))) {
+        error problem => { equals(problem.code(), "PAYMENT_AMOUNT_MUST_BE_POSITIVE") }
+        ok updated => { false }
+    }
+    => true
+}
+
+test payment.apply-result/invoice-not-found {
+    match payment::apply-result(
+        store::empty(unit),
+        PaymentId::new("00000000-0000-0000-0000-000000000001"),
+        InvoiceId::new("00000000-0000-0000-0000-000000000002"),
+        Money::new(1),
+        Instant::new("2024-01-02T00:00:00.0000000+00:00"),
+        result::error<PaymentReceipt, BusinessError>(businessError::new(code = "IGNORED", message = "ignored"))) {
+        error problem => { equals(problem.code(), "INVOICE_NOT_FOUND") }
+        ok updated => { false }
+    }
+    => true
+}
+
+test payment.apply-result/already-paid-precedes-amount-mismatch {
+    let invoice = invoice::new(
+        id = InvoiceId::new("00000000-0000-0000-0000-000000000002"),
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"),
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(100),
+        created-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"),
+        status = InvoiceStatus::new("paid"));
+    let initial = store::with-invoices(store::empty(unit), list::singleton<Invoice>(invoice));
+    match payment::apply-result(
+        initial,
+        PaymentId::new("00000000-0000-0000-0000-000000000001"),
+        invoice.id(),
+        Money::new(99),
+        Instant::new("2024-01-02T00:00:00.0000000+00:00"),
+        result::error<PaymentReceipt, BusinessError>(businessError::new(code = "IGNORED", message = "ignored"))) {
+        error problem => { equals(problem.code(), "INVOICE_ALREADY_PAID") }
+        ok updated => { false }
+    }
+    => true
+}
+
+test payment.apply-result/full-invoice-amount-required {
+    let invoice = invoice::new(
+        id = InvoiceId::new("00000000-0000-0000-0000-000000000002"),
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"),
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(100),
+        created-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"),
+        status = InvoiceStatus::new("open"));
+    let initial = store::with-invoices(store::empty(unit), list::singleton<Invoice>(invoice));
+    match payment::apply-result(
+        initial,
+        PaymentId::new("00000000-0000-0000-0000-000000000001"),
+        invoice.id(),
+        Money::new(99),
+        Instant::new("2024-01-02T00:00:00.0000000+00:00"),
+        result::error<PaymentReceipt, BusinessError>(businessError::new(code = "IGNORED", message = "ignored"))) {
+        error problem => { equals(problem.code(), "PAYMENT_AMOUNT_MISMATCH") }
+        ok updated => { false }
+    }
+    => true
+}
+
+test payment.apply-result/provider-error-is-data {
+    let invoice = invoice::new(
+        id = InvoiceId::new("00000000-0000-0000-0000-000000000002"),
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"),
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(100),
+        created-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"),
+        status = InvoiceStatus::new("open"));
+    let initial = store::with-invoices(store::empty(unit), list::singleton<Invoice>(invoice));
+    match payment::apply-result(
+        initial,
+        PaymentId::new("00000000-0000-0000-0000-000000000001"),
+        invoice.id(),
+        Money::new(100),
+        Instant::new("2024-01-02T00:00:00.0000000+00:00"),
+        result::error<PaymentReceipt, BusinessError>(businessError::new(code = "DECLINED", message = "declined by deterministic fake"))) {
+        error problem => {
+            bool::and(
+                equals(problem.code(), "PAYMENT_PROVIDER_FAILURE"),
+                bool::and(
+                    equals(problem.message(), "declined by deterministic fake"),
+                    bool::and(equals(initial.invoices(), list::singleton<Invoice>(invoice)), equals(initial.payments().count(), 0))))
+        }
+        ok updated => { false }
+    }
+    => true
+}
+
+test payment.apply-result/blank-public-receipt-rejected {
+    let invoice = invoice::new(
+        id = InvoiceId::new("00000000-0000-0000-0000-000000000002"),
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"),
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(100),
+        created-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"),
+        status = InvoiceStatus::new("open"));
+    let initial = store::with-invoices(store::empty(unit), list::singleton<Invoice>(invoice));
+    let invalid = paymentReceipt::new(reference = "  ", amount = Money::new(100));
+    match payment::apply-result(
+        initial,
+        PaymentId::new("00000000-0000-0000-0000-000000000001"),
+        invoice.id(),
+        Money::new(100),
+        Instant::new("2024-01-02T00:00:00.0000000+00:00"),
+        result::ok<PaymentReceipt, BusinessError>(invalid)) {
+        error problem => { bool::and(equals(problem.code(), "INVALID_PROVIDER_RECEIPT"), equals(initial.payments().count(), 0)) }
+        ok updated => { false }
+    }
+    => true
+}
+
+test payment.apply-result/receipt-amount-must-match {
+    let invoice = invoice::new(
+        id = InvoiceId::new("00000000-0000-0000-0000-000000000002"),
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"),
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(100),
+        created-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"),
+        status = InvoiceStatus::new("open"));
+    let initial = store::with-invoices(store::empty(unit), list::singleton<Invoice>(invoice));
+    let receipt = paymentReceipt::new(reference = "provider-ref", amount = Money::new(99));
+    match payment::apply-result(
+        initial,
+        PaymentId::new("00000000-0000-0000-0000-000000000001"),
+        invoice.id(),
+        Money::new(100),
+        Instant::new("2024-01-02T00:00:00.0000000+00:00"),
+        result::ok<PaymentReceipt, BusinessError>(receipt)) {
+        error problem => {
+            bool::and(
+                equals(problem.code(), "INVALID_PROVIDER_RECEIPT"),
+                bool::and(equals(initial.invoices(), list::singleton<Invoice>(invoice)), equals(initial.payments().count(), 0)))
+        }
+        ok updated => { false }
+    }
+    => true
+}
+
+test payment.apply-result/success-updates-only-payment-and-invoice-state {
+    let invoice = invoice::new(
+        id = InvoiceId::new("00000000-0000-0000-0000-000000000002"),
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"),
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(100),
+        created-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"),
+        status = InvoiceStatus::new("open"));
+    let old-payment = payment::new(
+        id = PaymentId::new("00000000-0000-0000-0000-000000000004"),
+        invoice-id = invoice.id(),
+        amount = Money::new(5),
+        provider-reference = "older-ref",
+        paid-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"));
+    let queued = emailMessage::new(to = Email::new("queued@example.test"), subject = "Queued", body = "Queued body");
+    let sent = emailMessage::new(to = Email::new("sent@example.test"), subject = "Sent", body = "Sent body");
+    let base = store::empty(unit);
+    let with-invoice = store::with-invoices(base, list::singleton<Invoice>(invoice));
+    let with-payment = store::with-payments(with-invoice, list::singleton<Payment>(old-payment));
+    let initial = store::with-email-state(with-payment, list::singleton<EmailMessage>(queued), list::singleton<EmailMessage>(sent));
+    let receipt = paymentReceipt::new(reference = "  new-provider-ref  ", amount = Money::new(100));
+    match payment::apply-result(
+        initial,
+        PaymentId::new("00000000-0000-0000-0000-000000000001"),
+        invoice.id(),
+        Money::new(100),
+        Instant::new("2024-01-02T00:00:00.0000000+00:00"),
+        result::ok<PaymentReceipt, BusinessError>(receipt)) {
+        error problem => { false }
+        ok updated => {
+            let new-invoice = updated.invoices().get(0);
+            let new-payment = updated.payments().get(1);
+            let expected-invoice = invoice::new(
+                id = invoice.id(),
+                customer-id = invoice.customer-id(),
+                lines = invoice.lines(),
+                total = invoice.total(),
+                created-at = invoice.created-at(),
+                status = InvoiceStatus::new("paid"));
+            let expected-payment = payment::new(
+                id = PaymentId::new("00000000-0000-0000-0000-000000000001"),
+                invoice-id = invoice.id(),
+                amount = Money::new(100),
+                provider-reference = "new-provider-ref",
+                paid-at = Instant::new("2024-01-02T00:00:00.0000000+00:00"));
+            let invoice-updated = equals(new-invoice, option::some<Invoice>(expected-invoice));
+            let payment-appended = equals(new-payment, option::some<Payment>(expected-payment));
+            let preserved-customers = equals(updated.customers(), initial.customers());
+            let preserved-products = equals(updated.products(), initial.products());
+            let preserved-subscriptions = equals(updated.subscriptions(), initial.subscriptions());
+            let old-payment-preserved = equals(updated.payments().get(0), option::some<Payment>(old-payment));
+            let outbox-preserved = equals(updated.email-outbox(), initial.email-outbox());
+            let sent-preserved = equals(updated.sent-emails(), initial.sent-emails());
+            bool::and(
+                invoice-updated,
+                bool::and(
+                    payment-appended,
+                    bool::and(
+                        preserved-customers,
+                        bool::and(
+                            preserved-products,
+                            bool::and(
+                                preserved-subscriptions,
+                                bool::and(old-payment-preserved, bool::and(outbox-preserved, sent-preserved)))))))
+        }
+    }
+    => true
+}
+
+test email.queue/missing-customer-precedes-message-validation {
+    match email::queue(store::empty(unit), CustomerId::new("00000000-0000-0000-0000-000000000001"), " ", " ") {
+        error problem => { equals(problem.code(), "CUSTOMER_NOT_FOUND") }
+        ok updated => { false }
+    }
+    => true
+}
+
+test email.queue/rejects-blank-message-without-mutating-store {
+    let customer = customer::new(
+        id = CustomerId::new("00000000-0000-0000-0000-000000000001"),
+        email = Email::new("customer@example.test"),
+        kind = "test",
+        balance = Money::new(0),
+        created-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"));
+    let base = store::empty(unit);
+    let initial = store::new(
+        customers = list::singleton<Customer>(customer),
+        products = base.products(),
+        subscriptions = base.subscriptions(),
+        invoices = base.invoices(),
+        payments = base.payments(),
+        email-outbox = base.email-outbox(),
+        sent-emails = base.sent-emails());
+    match email::queue(initial, customer.id(), "   ", "Body") {
+        error problem => { bool::and(equals(problem.code(), "INVALID_EMAIL_MESSAGE"), equals(initial.email-outbox().count(), 0)) }
+        ok updated => { false }
+    }
+    => true
+}
+
+test email.queue/appends-trimmed-message-and-preserves-other-state {
+    let customer = customer::new(
+        id = CustomerId::new("00000000-0000-0000-0000-000000000001"),
+        email = Email::new("customer@example.test"),
+        kind = "test",
+        balance = Money::new(0),
+        created-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"));
+    let older = emailMessage::new(to = customer.email(), subject = "Older", body = "Older body");
+    let prior-sent = emailMessage::new(to = customer.email(), subject = "Sent", body = "Sent body");
+    let base = store::empty(unit);
+    let with-customer = store::new(
+        customers = list::singleton<Customer>(customer),
+        products = base.products(),
+        subscriptions = base.subscriptions(),
+        invoices = base.invoices(),
+        payments = base.payments(),
+        email-outbox = list::singleton<EmailMessage>(older),
+        sent-emails = list::singleton<EmailMessage>(prior-sent));
+    match email::queue(with-customer, customer.id(), "  New subject  ", "  New body  ") {
+        error problem => { false }
+        ok updated => {
+            let appended = emailMessage::new(to = customer.email(), subject = "New subject", body = "New body");
+            bool::and(
+                equals(updated.email-outbox(), list::append(list::singleton<EmailMessage>(older), appended)),
+                bool::and(
+                    equals(updated.sent-emails(), with-customer.sent-emails()),
+                    bool::and(
+                        equals(updated.customers(), with-customer.customers()),
+                        bool::and(
+                            equals(updated.products(), with-customer.products()),
+                            bool::and(
+                                equals(updated.subscriptions(), with-customer.subscriptions()),
+                                bool::and(equals(updated.invoices(), with-customer.invoices()), equals(updated.payments(), with-customer.payments())))))))
+        }
+    }
+    => true
+}
+
+test email.apply-delivery-result/empty-outbox-precedes-provider-error {
+    let failure = businessError::new(code = "DECLINED", message = "mail rejected");
+    match email::apply-delivery-result(store::empty(unit), result::error<Unit, BusinessError>(failure)) {
+        error problem => { equals(problem.code(), "NO_PENDING_EMAIL") }
+        ok updated => { false }
+    }
+    => true
+}
+
+test email.apply-delivery-result/provider-failure-retains-fifo-state {
+    let first = emailMessage::new(to = Email::new("first@example.test"), subject = "First", body = "First body");
+    let later = emailMessage::new(to = Email::new("later@example.test"), subject = "Later", body = "Later body");
+    let initial = store::with-email-state(
+        store::empty(unit),
+        list::append(list::singleton<EmailMessage>(first), later),
+        list::empty<EmailMessage>());
+    match email::apply-delivery-result(
+        initial,
+        result::error<Unit, BusinessError>(businessError::new(code = "TEMPORARY", message = "mail gateway unavailable"))) {
+        error problem => {
+            bool::and(
+                equals(problem.code(), "EMAIL_PROVIDER_FAILURE"),
+                bool::and(
+                    equals(problem.message(), "mail gateway unavailable"),
+                    bool::and(equals(initial.email-outbox(), list::append(list::singleton<EmailMessage>(first), later)), equals(initial.sent-emails().count(), 0))))
+        }
+        ok updated => { false }
+    }
+    => true
+}
+
+test email.apply-delivery-result/success-moves-only-first-message {
+    let first = emailMessage::new(to = Email::new("first@example.test"), subject = "First", body = "First body");
+    let later = emailMessage::new(to = Email::new("later@example.test"), subject = "Later", body = "Later body");
+    let prior-sent = emailMessage::new(to = Email::new("sent@example.test"), subject = "Sent", body = "Sent body");
+    let initial = store::with-email-state(
+        store::empty(unit),
+        list::append(list::singleton<EmailMessage>(first), later),
+        list::singleton<EmailMessage>(prior-sent));
+    match email::apply-delivery-result(initial, result::ok<Unit, BusinessError>(unit)) {
+        error problem => { false }
+        ok updated => {
+            bool::and(
+                equals(updated.email-outbox(), list::singleton<EmailMessage>(later)),
+                bool::and(
+                    equals(updated.sent-emails(), list::append(list::singleton<EmailMessage>(prior-sent), first)),
+                    bool::and(
+                        equals(updated.customers(), initial.customers()),
+                        bool::and(
+                            equals(updated.products(), initial.products()),
+                            bool::and(
+                                equals(updated.subscriptions(), initial.subscriptions()),
+                                bool::and(equals(updated.invoices(), initial.invoices()), equals(updated.payments(), initial.payments())))))))
+        }
+    }
+    => true
+}
+
+example store.replace-invoice/empty-store {
+    let invoice = invoice::new(
+        id = InvoiceId::new("00000000-0000-0000-0000-000000000001"),
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"),
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(20),
+        created-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"),
+        status = InvoiceStatus::new("paid"));
+    store::replace-invoice(store::empty(unit), invoice).invoices().count()
+    => 0
+}
+
+example payment.apply-result/provider-decline {
+    let invoice = invoice::new(
+        id = InvoiceId::new("00000000-0000-0000-0000-000000000002"),
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"),
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(100),
+        created-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"),
+        status = InvoiceStatus::new("open"));
+    let initial = store::with-invoices(store::empty(unit), list::singleton<Invoice>(invoice));
+    match payment::apply-result(
+        initial,
+        PaymentId::new("00000000-0000-0000-0000-000000000001"),
+        invoice.id(),
+        Money::new(100),
+        Instant::new("2024-01-02T00:00:00.0000000+00:00"),
+        result::error<PaymentReceipt, BusinessError>(businessError::new(code = "DECLINED", message = "declined"))) {
+        error problem => { equals(problem.code(), "PAYMENT_PROVIDER_FAILURE") }
+        ok updated => { false }
+    }
+    => true
+}
+
+example email.queue/missing-customer {
+    match email::queue(store::empty(unit), CustomerId::new("00000000-0000-0000-0000-000000000001"), "Notice", "Body") {
+        error problem => { problem.code() }
+        ok updated => { "unexpected" }
+    }
+    => "CUSTOMER_NOT_FOUND"
+}
+
+example email.apply-delivery-result/empty-outbox {
+    match email::apply-delivery-result(store::empty(unit), result::ok<Unit, BusinessError>(unit)) {
+        error problem => { problem.code() }
+        ok updated => { "unexpected" }
+    }
+    => "NO_PENDING_EMAIL"
+}

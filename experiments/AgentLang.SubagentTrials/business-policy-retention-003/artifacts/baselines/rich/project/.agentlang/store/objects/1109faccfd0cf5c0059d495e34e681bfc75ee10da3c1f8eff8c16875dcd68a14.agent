@@ -1,0 +1,7 @@
+word store.subscription(id: SubscriptionId, store: Store) -> Option<Subscription> {
+    effects none
+    doc "Find the first subscription with this ID, preserving list order."
+    store.subscriptions().fold(
+        subscriptionLookup::new(target = id, found = option::none<Subscription>()),
+        store::subscription-fold-step).found()
+}

@@ -1,0 +1,7 @@
+test money.multiply-by-quantity/negative-quantity {
+    match money::multiply-by-quantity(Money::new(125), -2) {
+        ok total => { int::to-string(Money::value(total)) }
+        error problem => { problem.code() }
+    }
+    => "-250"
+}

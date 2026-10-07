@@ -1,0 +1,638 @@
+# Subscription transitions are pure Store transformations. No renewal policy
+# or external provider behavior is included in this fixture.
+
+record SubscriptionReplacementState {
+    field target-id: SubscriptionId;
+    field replacement: Subscription;
+    field output: List<Subscription>;
+    field replaced: Bool;
+}
+
+word subscription.replace-step(state: SubscriptionReplacementState, candidate: Subscription) -> SubscriptionReplacementState {
+    effects none
+    doc "Copy subscriptions in order, replacing only the first item with the target ID."
+    let matches-target = equals(candidate.id(), state.target-id());
+    let replace-now = bool::and(bool::not(state.replaced()), matches-target);
+    if replace-now {
+        subscriptionReplacementState::new(
+            target-id = state.target-id(),
+            replacement = state.replacement(),
+            output = list::append(state.output(), state.replacement()),
+            replaced = true)
+    } else {
+        subscriptionReplacementState::new(
+            target-id = state.target-id(),
+            replacement = state.replacement(),
+            output = list::append(state.output(), candidate),
+            replaced = state.replaced())
+    }
+}
+
+word subscription.replace-list(values: List<Subscription>, target-id: SubscriptionId, replacement: Subscription) -> List<Subscription> {
+    effects none
+    doc "Replace the first subscription with the target ID while preserving list order."
+    let initial = subscriptionReplacementState::new(
+        target-id = target-id,
+        replacement = replacement,
+        output = list::empty<Subscription>(),
+        replaced = false);
+    values.fold(initial, subscription::replace-step).output()
+}
+
+word subscription.start(store: Store, id: SubscriptionId, customer-id: CustomerId, product-id: ProductId, term: String, started-at: Instant, expires-at: Instant) -> Result<Store, BusinessError> {
+    effects none
+    doc "Append a new active subscription after checking ID, term, dates, customer, and product in reference order."
+    match store::subscription(id, store) {
+        some existing => {
+            result::error<Store, BusinessError>(businessError::new(
+                code = "DUPLICATE_SUBSCRIPTION",
+                message = "A subscription with this identifier already exists."))
+        }
+        none => {
+            let normalized-term = string::trim(term);
+            if equals(string::length(normalized-term), 0) {
+                result::error<Store, BusinessError>(businessError::new(
+                    code = "INVALID_SUBSCRIPTION_TERM",
+                    message = "Subscription term must contain non-whitespace text."))
+            } else {
+                let expires-before-start = instant::before?(Instant::value(expires-at), Instant::value(started-at));
+                let expires-equal-start = equals(Instant::value(expires-at), Instant::value(started-at));
+                if bool::or(expires-before-start, expires-equal-start) {
+                    result::error<Store, BusinessError>(businessError::new(
+                        code = "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START",
+                        message = "Subscription expiry must be later than its start."))
+                } else {
+                    match store::customer(customer-id, store) {
+                        none => {
+                            result::error<Store, BusinessError>(businessError::new(
+                                code = "CUSTOMER_NOT_FOUND",
+                                message = "The customer does not exist."))
+                        }
+                        some customer => {
+                            match store::product(product-id, store) {
+                                none => {
+                                    result::error<Store, BusinessError>(businessError::new(
+                                        code = "PRODUCT_NOT_FOUND",
+                                        message = "The product does not exist."))
+                                }
+                                some product => {
+                                    let subscription = subscription::new(
+                                        id = id,
+                                        customer-id = customer-id,
+                                        product-id = product-id,
+                                        term = normalized-term,
+                                        started-at = started-at,
+                                        expires-at = expires-at,
+                                        status = SubscriptionStatus::new("active"),
+                                        cancelled-at = option::none<Instant>());
+                                    let updated = store::with-subscriptions(
+                                        store,
+                                        list::append(store.subscriptions(), subscription));
+                                    result::ok<Store, BusinessError>(updated)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+word subscription.cancel(store: Store, id: SubscriptionId, cancelled-at: Instant) -> Result<Store, BusinessError> {
+    effects none
+    doc "Cancel an active subscription at or after its start while preserving Store and list order."
+    match store::subscription(id, store) {
+        none => {
+            result::error<Store, BusinessError>(businessError::new(
+                code = "SUBSCRIPTION_NOT_FOUND",
+                message = "The subscription does not exist."))
+        }
+        some existing => {
+            if equals(SubscriptionStatus::value(existing.status()), "cancelled") {
+                result::error<Store, BusinessError>(businessError::new(
+                    code = "SUBSCRIPTION_ALREADY_CANCELLED",
+                    message = "The subscription is already cancelled."))
+            } else {
+                if instant::before?(Instant::value(cancelled-at), Instant::value(existing.started-at())) {
+                    result::error<Store, BusinessError>(businessError::new(
+                        code = "CANCEL_BEFORE_START",
+                        message = "A subscription cannot be cancelled before it starts."))
+                } else {
+                    let cancelled = subscription::new(
+                        id = existing.id(),
+                        customer-id = existing.customer-id(),
+                        product-id = existing.product-id(),
+                        term = existing.term(),
+                        started-at = existing.started-at(),
+                        expires-at = existing.expires-at(),
+                        status = SubscriptionStatus::new("cancelled"),
+                        cancelled-at = option::some<Instant>(cancelled-at));
+                    let updated-subscriptions = subscription::replace-list(
+                        store.subscriptions(), id, cancelled);
+                    let updated-store = store::with-subscriptions(store, updated-subscriptions);
+                    result::ok<Store, BusinessError>(updated-store)
+                }
+            }
+        }
+    }
+}
+
+test subscription.replace-step/replaces-first-match {
+    let candidate = subscription::new(
+        id = SubscriptionId::new("50000000-0000-0000-0000-000000000001"),
+        customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        product-id = ProductId::new("20000000-0000-0000-0000-000000000001"),
+        term = "original",
+        started-at = Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        expires-at = Instant::new("2026-02-01T12:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("active"),
+        cancelled-at = option::none<Instant>());
+    let replacement = subscription::new(
+        id = SubscriptionId::new("50000000-0000-0000-0000-000000000001"),
+        customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        product-id = ProductId::new("20000000-0000-0000-0000-000000000001"),
+        term = "replacement",
+        started-at = Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        expires-at = Instant::new("2026-02-01T12:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("active"),
+        cancelled-at = option::none<Instant>());
+    let initial = subscriptionReplacementState::new(
+        target-id = candidate.id(),
+        replacement = replacement,
+        output = list::empty<Subscription>(),
+        replaced = false);
+    let updated = subscription::replace-step(initial, candidate);
+    bool::and(
+        updated.replaced(),
+        equals(updated.output(), list::singleton<Subscription>(replacement)))
+    => true
+}
+
+test subscription.replace-step/keeps-nontarget {
+    let candidate = subscription::new(
+        id = SubscriptionId::new("50000000-0000-0000-0000-000000000002"),
+        customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        product-id = ProductId::new("20000000-0000-0000-0000-000000000001"),
+        term = "kept",
+        started-at = Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        expires-at = Instant::new("2026-02-01T12:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("active"),
+        cancelled-at = option::none<Instant>());
+    let replacement = subscription::new(
+        id = SubscriptionId::new("50000000-0000-0000-0000-000000000001"),
+        customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        product-id = ProductId::new("20000000-0000-0000-0000-000000000001"),
+        term = "replacement",
+        started-at = Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        expires-at = Instant::new("2026-02-01T12:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("active"),
+        cancelled-at = option::none<Instant>());
+    let initial = subscriptionReplacementState::new(
+        target-id = SubscriptionId::new("50000000-0000-0000-0000-000000000001"),
+        replacement = replacement,
+        output = list::empty<Subscription>(),
+        replaced = false);
+    let updated = subscription::replace-step(initial, candidate);
+    bool::and(
+        bool::not(updated.replaced()),
+        equals(updated.output(), list::singleton<Subscription>(candidate)))
+    => true
+}
+
+test subscription.replace-step/keeps-later-duplicate {
+    let earlier = subscription::new(
+        id = SubscriptionId::new("50000000-0000-0000-0000-000000000001"),
+        customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        product-id = ProductId::new("20000000-0000-0000-0000-000000000001"),
+        term = "earlier",
+        started-at = Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        expires-at = Instant::new("2026-02-01T12:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("active"),
+        cancelled-at = option::none<Instant>());
+    let candidate = subscription::new(
+        id = SubscriptionId::new("50000000-0000-0000-0000-000000000001"),
+        customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        product-id = ProductId::new("20000000-0000-0000-0000-000000000001"),
+        term = "later duplicate",
+        started-at = Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        expires-at = Instant::new("2026-02-01T12:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("active"),
+        cancelled-at = option::none<Instant>());
+    let replacement = subscription::new(
+        id = SubscriptionId::new("50000000-0000-0000-0000-000000000001"),
+        customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        product-id = ProductId::new("20000000-0000-0000-0000-000000000001"),
+        term = "replacement",
+        started-at = Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        expires-at = Instant::new("2026-02-01T12:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("active"),
+        cancelled-at = option::none<Instant>());
+    let initial = subscriptionReplacementState::new(
+        target-id = candidate.id(),
+        replacement = replacement,
+        output = list::singleton<Subscription>(earlier),
+        replaced = true);
+    let updated = subscription::replace-step(initial, candidate);
+    bool::and(
+        updated.replaced(),
+        equals(updated.output(), list::append(list::singleton<Subscription>(earlier), candidate)))
+    => true
+}
+
+test subscription.replace-list/empty-fold {
+    let replacement = subscription::new(
+        id = SubscriptionId::new("50000000-0000-0000-0000-000000000001"),
+        customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        product-id = ProductId::new("20000000-0000-0000-0000-000000000001"),
+        term = "replacement",
+        started-at = Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        expires-at = Instant::new("2026-02-01T12:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("cancelled"),
+        cancelled-at = option::some<Instant>(Instant::new("2026-01-02T12:00:00.0000000+00:00")));
+    equals(
+        subscription::replace-list(list::empty<Subscription>(), replacement.id(), replacement),
+        list::empty<Subscription>())
+    => true
+}
+
+test subscription.replace-list/nonempty-fold-replaces-first-in-order {
+    let first = subscription::new(
+        id = SubscriptionId::new("50000000-0000-0000-0000-000000000002"),
+        customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        product-id = ProductId::new("20000000-0000-0000-0000-000000000001"),
+        term = "first",
+        started-at = Instant::new("2026-01-01T12:00:00.0000000+00:00"),
+        expires-at = Instant::new("2026-02-01T12:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("active"),
+        cancelled-at = option::none<Instant>());
+    let target = subscription::new(
+        id = SubscriptionId::new("50000000-0000-0000-0000-000000000003"),
+        customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        product-id = ProductId::new("20000000-0000-0000-0000-000000000001"),
+        term = "target",
+        started-at = Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        expires-at = Instant::new("2026-02-01T12:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("active"),
+        cancelled-at = option::none<Instant>());
+    let replacement = subscription::new(
+        id = target.id(),
+        customer-id = target.customer-id(),
+        product-id = target.product-id(),
+        term = "replacement",
+        started-at = target.started-at(),
+        expires-at = target.expires-at(),
+        status = SubscriptionStatus::new("cancelled"),
+        cancelled-at = option::some<Instant>(Instant::new("2026-01-02T12:00:00.0000000+00:00")));
+    equals(
+        subscription::replace-list(
+            list::append(list::singleton<Subscription>(first), target),
+            target.id(),
+            replacement),
+        list::append(list::singleton<Subscription>(first), replacement))
+    => true
+}
+
+test subscription.start/appends-active-subscription {
+    let initial = business::seed(unit);
+    let id = SubscriptionId::new("50000000-0000-0000-0000-000000000001");
+    let customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001");
+    let product-id = ProductId::new("20000000-0000-0000-0000-000000000001");
+    match subscription::start(
+        initial,
+        id,
+        customer-id,
+        product-id,
+        "  monthly  ",
+        Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        Instant::new("2026-03-02T12:00:00.0000000+00:00")) {
+        ok updated => {
+            match store::subscription(id, updated) {
+                some created => {
+                    bool::and(
+                        equals(created.term(), "monthly"),
+                        bool::and(
+                            equals(created.status(), SubscriptionStatus::new("active")),
+                            bool::and(
+                                equals(created.cancelled-at(), option::none<Instant>()),
+                                bool::and(
+                                    equals(updated.subscriptions().count(), 2),
+                                    bool::and(
+                                        equals(updated.customers(), initial.customers()),
+                                        bool::and(
+                                            equals(updated.products(), initial.products()),
+                                            bool::and(
+                                                equals(updated.invoices(), initial.invoices()),
+                                                bool::and(
+                                                    equals(updated.payments(), initial.payments()),
+                                                    bool::and(
+                                                        equals(updated.email-outbox(), initial.email-outbox()),
+                                                        equals(updated.sent-emails(), initial.sent-emails()))))))))))
+                }
+                none => { false }
+            }
+        }
+        error problem => { false }
+    }
+    => true
+}
+
+test subscription.start/duplicate-precedes-other-errors {
+    let initial = business::seed(unit);
+    match subscription::start(
+        initial,
+        SubscriptionId::new("30000000-0000-0000-0000-000000000001"),
+        CustomerId::new("90000000-0000-0000-0000-000000000001"),
+        ProductId::new("90000000-0000-0000-0000-000000000002"),
+        " \t ",
+        Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        Instant::new("2026-01-02T12:00:00.0000000+00:00")) {
+        ok updated => { "UNEXPECTED_SUCCESS" }
+        error problem => { problem.code() }
+    }
+    => "DUPLICATE_SUBSCRIPTION"
+}
+
+test subscription.start/rejects-blank-term {
+    let initial = business::seed(unit);
+    match subscription::start(
+        initial,
+        SubscriptionId::new("50000000-0000-0000-0000-000000000002"),
+        CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        ProductId::new("20000000-0000-0000-0000-000000000001"),
+        " \t ",
+        Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        Instant::new("2026-03-02T12:00:00.0000000+00:00")) {
+        ok updated => { "UNEXPECTED_SUCCESS" }
+        error problem => { problem.code() }
+    }
+    => "INVALID_SUBSCRIPTION_TERM"
+}
+
+test subscription.start/rejects-expiry-before-start {
+    let initial = business::seed(unit);
+    match subscription::start(
+        initial,
+        SubscriptionId::new("50000000-0000-0000-0000-000000000003"),
+        CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        ProductId::new("20000000-0000-0000-0000-000000000001"),
+        "monthly",
+        Instant::new("2026-01-03T12:00:00.0000000+00:00"),
+        Instant::new("2026-01-02T12:00:00.0000000+00:00")) {
+        ok updated => { "UNEXPECTED_SUCCESS" }
+        error problem => { problem.code() }
+    }
+    => "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START"
+}
+
+test subscription.start/rejects-expiry-equal-to-start {
+    let initial = business::seed(unit);
+    match subscription::start(
+        initial,
+        SubscriptionId::new("50000000-0000-0000-0000-000000000004"),
+        CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        ProductId::new("20000000-0000-0000-0000-000000000001"),
+        "monthly",
+        Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        Instant::new("2026-01-02T12:00:00.0000000+00:00")) {
+        ok updated => { "UNEXPECTED_SUCCESS" }
+        error problem => { problem.code() }
+    }
+    => "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START"
+}
+
+test subscription.start/rejects-missing-customer-first {
+    let initial = business::seed(unit);
+    match subscription::start(
+        initial,
+        SubscriptionId::new("50000000-0000-0000-0000-000000000005"),
+        CustomerId::new("90000000-0000-0000-0000-000000000001"),
+        ProductId::new("90000000-0000-0000-0000-000000000002"),
+        "monthly",
+        Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        Instant::new("2026-03-02T12:00:00.0000000+00:00")) {
+        ok updated => { "UNEXPECTED_SUCCESS" }
+        error problem => { problem.code() }
+    }
+    => "CUSTOMER_NOT_FOUND"
+}
+
+test subscription.start/rejects-missing-product {
+    let initial = business::seed(unit);
+    match subscription::start(
+        initial,
+        SubscriptionId::new("50000000-0000-0000-0000-000000000006"),
+        CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        ProductId::new("90000000-0000-0000-0000-000000000002"),
+        "monthly",
+        Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        Instant::new("2026-03-02T12:00:00.0000000+00:00")) {
+        ok updated => { "UNEXPECTED_SUCCESS" }
+        error problem => { problem.code() }
+    }
+    => "PRODUCT_NOT_FOUND"
+}
+
+test subscription.cancel/missing {
+    match subscription::cancel(
+        store::empty(unit),
+        SubscriptionId::new("90000000-0000-0000-0000-000000000001"),
+        Instant::new("2026-01-02T12:00:00.0000000+00:00")) {
+        ok updated => { "UNEXPECTED_SUCCESS" }
+        error problem => { problem.code() }
+    }
+    => "SUBSCRIPTION_NOT_FOUND"
+}
+
+test subscription.cancel/already-cancelled {
+    let baseline = business::seed(unit);
+    let cancelled = subscription::new(
+        id = SubscriptionId::new("50000000-0000-0000-0000-000000000007"),
+        customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        product-id = ProductId::new("20000000-0000-0000-0000-000000000001"),
+        term = "monthly",
+        started-at = Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        expires-at = Instant::new("2026-02-01T12:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("cancelled"),
+        cancelled-at = option::some<Instant>(Instant::new("2026-01-03T12:00:00.0000000+00:00")));
+    let initial = store::with-subscriptions(baseline, list::singleton<Subscription>(cancelled));
+    match subscription::cancel(
+        initial,
+        SubscriptionId::new("50000000-0000-0000-0000-000000000007"),
+        Instant::new("2026-01-04T12:00:00.0000000+00:00")) {
+        ok updated => { "UNEXPECTED_SUCCESS" }
+        error problem => { problem.code() }
+    }
+    => "SUBSCRIPTION_ALREADY_CANCELLED"
+}
+
+test subscription.cancel/rejects-before-start {
+    let baseline = business::seed(unit);
+    let initial = store::with-subscriptions(
+        baseline,
+        list::singleton<Subscription>(subscription::new(
+            id = SubscriptionId::new("50000000-0000-0000-0000-000000000008"),
+            customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+            product-id = ProductId::new("20000000-0000-0000-0000-000000000001"),
+            term = "monthly",
+            started-at = Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+            expires-at = Instant::new("2026-02-01T12:00:00.0000000+00:00"),
+            status = SubscriptionStatus::new("active"),
+            cancelled-at = option::none<Instant>())));
+    match subscription::cancel(
+        initial,
+        SubscriptionId::new("50000000-0000-0000-0000-000000000008"),
+        Instant::new("2026-01-01T12:00:00.0000000+00:00")) {
+        ok updated => { "UNEXPECTED_SUCCESS" }
+        error problem => { problem.code() }
+    }
+    => "CANCEL_BEFORE_START"
+}
+
+test subscription.cancel/equal-start-preserves-order-and-other-fields {
+    let baseline = business::seed(unit);
+    let first = subscription::new(
+        id = SubscriptionId::new("50000000-0000-0000-0000-000000000009"),
+        customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        product-id = ProductId::new("20000000-0000-0000-0000-000000000001"),
+        term = "first",
+        started-at = Instant::new("2026-01-01T12:00:00.0000000+00:00"),
+        expires-at = Instant::new("2026-02-01T12:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("active"),
+        cancelled-at = option::none<Instant>());
+    let target-id = SubscriptionId::new("50000000-0000-0000-0000-000000000010");
+    let target = subscription::new(
+        id = target-id,
+        customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        product-id = ProductId::new("20000000-0000-0000-0000-000000000001"),
+        term = "target",
+        started-at = Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        expires-at = Instant::new("2026-02-01T12:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("active"),
+        cancelled-at = option::none<Instant>());
+    let last = subscription::new(
+        id = SubscriptionId::new("50000000-0000-0000-0000-000000000011"),
+        customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        product-id = ProductId::new("20000000-0000-0000-0000-000000000001"),
+        term = "last",
+        started-at = Instant::new("2026-01-03T12:00:00.0000000+00:00"),
+        expires-at = Instant::new("2026-02-01T12:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("active"),
+        cancelled-at = option::none<Instant>());
+    let original-subscriptions = list::append(
+        list::append(list::singleton<Subscription>(first), target),
+        last);
+    let initial = store::with-subscriptions(baseline, original-subscriptions);
+    let expected-target = subscription::new(
+        id = target-id,
+        customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        product-id = ProductId::new("20000000-0000-0000-0000-000000000001"),
+        term = "target",
+        started-at = Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        expires-at = Instant::new("2026-02-01T12:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("cancelled"),
+        cancelled-at = option::some<Instant>(Instant::new("2026-01-02T12:00:00.0000000+00:00")));
+    match subscription::cancel(
+        initial,
+        target-id,
+        Instant::new("2026-01-02T12:00:00.0000000+00:00")) {
+        ok updated => {
+            bool::and(
+                equals(
+                    updated.subscriptions(),
+                    list::append(
+                        list::append(list::singleton<Subscription>(first), expected-target),
+                        last)),
+                bool::and(
+                    equals(updated.customers(), initial.customers()),
+                    bool::and(
+                        equals(updated.products(), initial.products()),
+                        bool::and(
+                            equals(updated.invoices(), initial.invoices()),
+                            bool::and(
+                                equals(updated.payments(), initial.payments()),
+                                bool::and(
+                                    equals(updated.email-outbox(), initial.email-outbox()),
+                                    equals(updated.sent-emails(), initial.sent-emails())))))))
+        }
+        error problem => { false }
+    }
+    => true
+}
+
+example subscription.replace-step/replaces-target-in-order {
+    let candidate = subscription::new(
+        id = SubscriptionId::new("50000000-0000-0000-0000-000000000001"),
+        customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        product-id = ProductId::new("20000000-0000-0000-0000-000000000001"),
+        term = "original",
+        started-at = Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        expires-at = Instant::new("2026-02-01T12:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("active"),
+        cancelled-at = option::none<Instant>());
+    let replacement = subscription::new(
+        id = SubscriptionId::new("50000000-0000-0000-0000-000000000001"),
+        customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        product-id = ProductId::new("20000000-0000-0000-0000-000000000001"),
+        term = "replacement",
+        started-at = Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        expires-at = Instant::new("2026-02-01T12:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("active"),
+        cancelled-at = option::none<Instant>());
+    let initial = subscriptionReplacementState::new(
+        target-id = candidate.id(),
+        replacement = replacement,
+        output = list::empty<Subscription>(),
+        replaced = false);
+    subscription::replace-step(initial, candidate).replaced()
+    => true
+}
+
+example subscription.replace-list/replaces-target {
+    let target = subscription::new(
+        id = SubscriptionId::new("50000000-0000-0000-0000-000000000003"),
+        customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        product-id = ProductId::new("20000000-0000-0000-0000-000000000001"),
+        term = "target",
+        started-at = Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        expires-at = Instant::new("2026-02-01T12:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("active"),
+        cancelled-at = option::none<Instant>());
+    let replacement = subscription::new(
+        id = target.id(),
+        customer-id = target.customer-id(),
+        product-id = target.product-id(),
+        term = "replacement",
+        started-at = target.started-at(),
+        expires-at = target.expires-at(),
+        status = SubscriptionStatus::new("cancelled"),
+        cancelled-at = option::some<Instant>(Instant::new("2026-01-02T12:00:00.0000000+00:00")));
+    subscription::replace-list(list::singleton<Subscription>(target), target.id(), replacement).count()
+    => 1
+}
+
+example subscription.start/appends-active {
+    match subscription::start(
+        business::seed(unit),
+        SubscriptionId::new("50000000-0000-0000-0000-000000000001"),
+        CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        ProductId::new("20000000-0000-0000-0000-000000000001"),
+        "monthly",
+        Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        Instant::new("2026-03-02T12:00:00.0000000+00:00")) {
+        ok updated => { updated.subscriptions().count() }
+        error problem => { -1 }
+    }
+    => 2
+}
+
+example subscription.cancel/cancels-existing {
+    match subscription::cancel(
+        business::seed(unit),
+        SubscriptionId::new("30000000-0000-0000-0000-000000000001"),
+        Instant::new("2026-01-02T12:00:00.0000000+00:00")) {
+        ok updated => { updated.subscriptions().count() }
+        error problem => { -1 }
+    }
+    => 1
+}

@@ -1,0 +1,14 @@
+test invoice.build-lines-step/captures-line-error {
+    let initial = invoiceLinesAccumulator::new(
+        store = store::empty(unit),
+        outcome = result::ok<List<InvoiceLine>, BusinessError>(list::empty<InvoiceLine>()));
+    let cart = cartLine::new(
+        product-id = ProductId::new("90000000-0000-0000-0000-000000000001"),
+        quantity = 1);
+    let updated = invoice::build-lines-step(initial, cart);
+    match updated.outcome() {
+        error problem => { equals(problem.code(), "PRODUCT_NOT_FOUND") }
+        ok lines => { false }
+    }
+    => true
+}

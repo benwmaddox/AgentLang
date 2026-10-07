@@ -1,0 +1,9 @@
+word invoice-id.parse(value: String) -> Result<InvoiceId, BusinessError> {
+    effects none
+    doc "Parse any Guid.TryParse-compatible form and store canonical InvoiceId text."
+    let parsed = string::guid-normalize(value);
+    match parsed {
+        ok canonical => { result::ok<InvoiceId, BusinessError>(InvoiceId::new(canonical)) }
+        error detail => { result::error<InvoiceId, BusinessError>(businessError::new(code = "INVALID_IDENTIFIER", message = "InvoiceId must be a GUID.")) }
+    }
+}

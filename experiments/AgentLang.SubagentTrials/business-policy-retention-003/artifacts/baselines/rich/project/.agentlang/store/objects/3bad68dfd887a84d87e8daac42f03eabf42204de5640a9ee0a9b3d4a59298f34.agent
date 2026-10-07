@@ -1,0 +1,7 @@
+test money.multiply-by-quantity/below-int32 {
+    match money::multiply-by-quantity(Money::new(1), -2147483649) {
+        ok total => { int::to-string(Money::value(total)) }
+        error problem => { problem.code() }
+    }
+    => "INVALID_QUANTITY"
+}

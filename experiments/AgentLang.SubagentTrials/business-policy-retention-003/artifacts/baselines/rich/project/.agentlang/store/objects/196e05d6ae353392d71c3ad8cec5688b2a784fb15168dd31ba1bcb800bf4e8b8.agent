@@ -1,0 +1,49 @@
+word invoice.create(store: Store, id: InvoiceId, customer-id: CustomerId, cart: List<CartLine>, created-at: Instant) -> Result<Store, BusinessError> {
+    effects none
+    doc "Create an open invoice after duplicate, customer, cart-line, and checked-total validation."
+    match store::invoice(id, store) {
+        some existing => {
+            result::error<Store, BusinessError>(businessError::new(
+                code = "DUPLICATE_INVOICE",
+                message = "An invoice with this identifier already exists."))
+        }
+        none => {
+            match store::customer(customer-id, store) {
+                none => {
+                    result::error<Store, BusinessError>(businessError::new(
+                        code = "CUSTOMER_NOT_FOUND",
+                        message = "The customer does not exist."))
+                }
+                some customer => {
+                    if equals(cart.count(), 0) {
+                        result::error<Store, BusinessError>(businessError::new(
+                            code = "EMPTY_INVOICE",
+                            message = "An invoice must contain at least one line."))
+                    } else {
+                        match invoice::build-lines(store, cart) {
+                            error problem => { result::error<Store, BusinessError>(problem) }
+                            ok lines => {
+                                match invoice::sum-lines(lines) {
+                                    error problem => { result::error<Store, BusinessError>(problem) }
+                                    ok total => {
+                                        let created = invoice::new(
+                                            id = id,
+                                            customer-id = customer-id,
+                                            lines = lines,
+                                            total = total,
+                                            created-at = created-at,
+                                            status = InvoiceStatus::new("open"));
+                                        let updated = store::with-invoices(
+                                            store,
+                                            list::append(store.invoices(), created));
+                                        result::ok<Store, BusinessError>(updated)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

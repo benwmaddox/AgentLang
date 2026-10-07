@@ -1,0 +1,37 @@
+test store.with-subscriptions/replaces-in-order {
+    let initial = business::seed(unit);
+    let first = subscription::new(
+        id = SubscriptionId::new("40000000-0000-0000-0000-000000000001"),
+        customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        product-id = ProductId::new("20000000-0000-0000-0000-000000000001"),
+        term = "first",
+        started-at = Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        expires-at = Instant::new("2026-02-01T12:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("active"),
+        cancelled-at = option::none<Instant>());
+    let second = subscription::new(
+        id = SubscriptionId::new("40000000-0000-0000-0000-000000000002"),
+        customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        product-id = ProductId::new("20000000-0000-0000-0000-000000000001"),
+        term = "second",
+        started-at = Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        expires-at = Instant::new("2026-02-01T12:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("active"),
+        cancelled-at = option::none<Instant>());
+    let values = list::append(list::singleton<Subscription>(first), second);
+    let updated = store::with-subscriptions(initial, values);
+    bool::and(
+        equals(updated.subscriptions(), values),
+        bool::and(
+            equals(updated.customers(), initial.customers()),
+            bool::and(
+                equals(updated.products(), initial.products()),
+                bool::and(
+                    equals(updated.invoices(), initial.invoices()),
+                    bool::and(
+                        equals(updated.payments(), initial.payments()),
+                        bool::and(
+                            equals(updated.email-outbox(), initial.email-outbox()),
+                            equals(updated.sent-emails(), initial.sent-emails())))))))
+    => true
+}

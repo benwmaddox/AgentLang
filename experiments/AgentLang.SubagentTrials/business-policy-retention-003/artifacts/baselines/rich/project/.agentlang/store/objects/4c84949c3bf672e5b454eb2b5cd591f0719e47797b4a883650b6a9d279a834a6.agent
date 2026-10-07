@@ -1,0 +1,7 @@
+example invoice.sum-lines/empty-total {
+    match invoice::sum-lines(list::empty<InvoiceLine>()) {
+        ok total => { Money::value(total) }
+        error problem => { -1 }
+    }
+    => 0
+}

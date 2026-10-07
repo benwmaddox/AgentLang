@@ -33,3 +33,5 @@ experiments/AgentLang.SubagentTrials/stateful-conventional-001/runs/** -text whi
 reports/evidence/072-verify-conventional-stateful.ps1 -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 
 reports/evidence/081-preflight-raw/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+
+reports/evidence/081-clean-controls/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

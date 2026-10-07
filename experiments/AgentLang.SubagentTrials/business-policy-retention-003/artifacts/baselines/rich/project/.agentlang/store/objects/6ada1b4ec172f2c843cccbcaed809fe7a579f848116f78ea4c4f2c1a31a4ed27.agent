@@ -1,0 +1,5 @@
+word business.id-valid?(value: String) -> Bool {
+    effects none
+    doc "Whether an identifier is in canonical lower-case GUID D form."
+    string::guid-canonical?(value)
+}

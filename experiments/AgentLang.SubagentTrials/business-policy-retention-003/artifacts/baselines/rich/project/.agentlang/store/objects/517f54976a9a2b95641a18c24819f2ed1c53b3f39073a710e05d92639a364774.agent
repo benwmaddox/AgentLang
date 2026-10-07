@@ -1,0 +1,38 @@
+word subscription.cancel(store: Store, id: SubscriptionId, cancelled-at: Instant) -> Result<Store, BusinessError> {
+    effects none
+    doc "Cancel an active subscription at or after its start while preserving Store and list order."
+    match store::subscription(id, store) {
+        none => {
+            result::error<Store, BusinessError>(businessError::new(
+                code = "SUBSCRIPTION_NOT_FOUND",
+                message = "The subscription does not exist."))
+        }
+        some existing => {
+            if equals(SubscriptionStatus::value(existing.status()), "cancelled") {
+                result::error<Store, BusinessError>(businessError::new(
+                    code = "SUBSCRIPTION_ALREADY_CANCELLED",
+                    message = "The subscription is already cancelled."))
+            } else {
+                if instant::before?(Instant::value(cancelled-at), Instant::value(existing.started-at())) {
+                    result::error<Store, BusinessError>(businessError::new(
+                        code = "CANCEL_BEFORE_START",
+                        message = "A subscription cannot be cancelled before it starts."))
+                } else {
+                    let cancelled = subscription::new(
+                        id = existing.id(),
+                        customer-id = existing.customer-id(),
+                        product-id = existing.product-id(),
+                        term = existing.term(),
+                        started-at = existing.started-at(),
+                        expires-at = existing.expires-at(),
+                        status = SubscriptionStatus::new("cancelled"),
+                        cancelled-at = option::some<Instant>(cancelled-at));
+                    let updated-subscriptions = subscription::replace-list(
+                        store.subscriptions(), id, cancelled);
+                    let updated-store = store::with-subscriptions(store, updated-subscriptions);
+                    result::ok<Store, BusinessError>(updated-store)
+                }
+            }
+        }
+    }
+}

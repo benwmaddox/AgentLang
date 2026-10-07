@@ -1,0 +1,4 @@
+record PaymentLookup {
+    field target: PaymentId;
+    field found: Option<Payment>;
+}

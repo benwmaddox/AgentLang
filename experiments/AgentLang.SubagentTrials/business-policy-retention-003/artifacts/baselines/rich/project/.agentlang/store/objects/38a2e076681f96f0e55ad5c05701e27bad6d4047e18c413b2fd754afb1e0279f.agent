@@ -1,0 +1,10 @@
+test store.product-fold-step/match {
+    let key = ProductId::new("00000000-0000-0000-0000-000000000001");
+    let item = product::new(id = key, name = "first", unit-price = Money::new(10));
+    let initial = productLookup::new(target = key, found = option::none<Product>());
+    match store::product-fold-step(initial, item).found() {
+        some selected => { equals(selected.name(), "first") }
+        none => { false }
+    }
+    => true
+}

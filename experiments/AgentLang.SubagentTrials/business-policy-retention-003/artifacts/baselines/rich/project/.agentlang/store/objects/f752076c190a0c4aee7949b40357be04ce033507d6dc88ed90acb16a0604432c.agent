@@ -1,0 +1,22 @@
+test subscription.cancel/rejects-before-start {
+    let baseline = business::seed(unit);
+    let initial = store::with-subscriptions(
+        baseline,
+        list::singleton<Subscription>(subscription::new(
+            id = SubscriptionId::new("50000000-0000-0000-0000-000000000008"),
+            customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+            product-id = ProductId::new("20000000-0000-0000-0000-000000000001"),
+            term = "monthly",
+            started-at = Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+            expires-at = Instant::new("2026-02-01T12:00:00.0000000+00:00"),
+            status = SubscriptionStatus::new("active"),
+            cancelled-at = option::none<Instant>())));
+    match subscription::cancel(
+        initial,
+        SubscriptionId::new("50000000-0000-0000-0000-000000000008"),
+        Instant::new("2026-01-01T12:00:00.0000000+00:00")) {
+        ok updated => { "UNEXPECTED_SUCCESS" }
+        error problem => { problem.code() }
+    }
+    => "CANCEL_BEFORE_START"
+}

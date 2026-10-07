@@ -1,0 +1,7 @@
+word invoice.sum-lines(lines: List<InvoiceLine>) -> Result<Money, BusinessError> {
+    effects none
+    doc "Sum invoice line totals from zero using checked left-to-right Money addition."
+    let initial = invoiceTotalAccumulator::new(
+        outcome = result::ok<Money, BusinessError>(Money::new(0)));
+    lines.fold(initial, invoice::sum-lines-step).outcome()
+}

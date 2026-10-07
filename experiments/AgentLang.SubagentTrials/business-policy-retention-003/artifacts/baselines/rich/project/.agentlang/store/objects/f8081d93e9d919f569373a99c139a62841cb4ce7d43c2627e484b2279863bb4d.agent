@@ -1,0 +1,26 @@
+test invoice.build-lines/nonempty-fold-preserves-order {
+    let store = business::seed(unit);
+    let product-id = ProductId::new("20000000-0000-0000-0000-000000000001");
+    let first = cartLine::new(product-id = product-id, quantity = 2);
+    let second = cartLine::new(product-id = product-id, quantity = 1);
+    let cart = list::append(list::singleton<CartLine>(first), second);
+    match invoice::build-lines(store, cart) {
+        error problem => { false }
+        ok lines => {
+            let expected-first = invoiceLine::new(
+                product-id = product-id,
+                description = "Monthly plan",
+                quantity = 2,
+                unit-price = Money::new(199),
+                line-total = Money::new(398));
+            let expected-second = invoiceLine::new(
+                product-id = product-id,
+                description = "Monthly plan",
+                quantity = 1,
+                unit-price = Money::new(199),
+                line-total = Money::new(199));
+            equals(lines, list::append(list::singleton<InvoiceLine>(expected-first), expected-second))
+        }
+    }
+    => true
+}

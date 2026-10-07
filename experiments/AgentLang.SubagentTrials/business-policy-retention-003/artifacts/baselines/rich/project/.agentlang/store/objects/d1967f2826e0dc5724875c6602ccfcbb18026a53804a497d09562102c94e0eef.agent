@@ -1,0 +1,9 @@
+record Store {
+    field customers: List<Customer>;
+    field products: List<Product>;
+    field subscriptions: List<Subscription>;
+    field invoices: List<Invoice>;
+    field payments: List<Payment>;
+    field email-outbox: List<EmailMessage>;
+    field sent-emails: List<EmailMessage>;
+}

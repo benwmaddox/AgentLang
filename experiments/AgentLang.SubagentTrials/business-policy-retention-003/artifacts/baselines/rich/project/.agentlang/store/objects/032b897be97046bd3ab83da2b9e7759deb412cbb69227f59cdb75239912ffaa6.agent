@@ -1,0 +1,5 @@
+word business.email-valid?(value: String) -> Bool {
+    effects none
+    doc "Whether an address satisfies the fixture's bounded ASCII email policy."
+    string::email-address-valid?(value)
+}
