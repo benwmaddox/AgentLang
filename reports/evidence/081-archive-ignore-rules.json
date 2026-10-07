@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-retention-003",
+  "sourceRevision": "78cd7578d163e386e0e17a5cf4c0c51f02025a0b",
+  "dirty": true,
+  "scope": "Ignore-rule checks on candidate paths before canonical archives exist",
+  "archiveChecks": [
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-retention-003/artifacts/baselines/flat/project/.agentlang/store/CURRENT",
+      "rule": ".gitignore:9:!experiments/AgentLang.SubagentTrials/business-policy-retention-003/artifacts/baselines/**\texperiments/AgentLang.SubagentTrials/business-policy-retention-003/artifacts/baselines/flat/project/.agentlang/store/CURRENT",
+      "archiveExceptionMatched": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-retention-003/artifacts/baselines/flat/project/dictionary.agent",
+      "rule": ".gitignore:9:!experiments/AgentLang.SubagentTrials/business-policy-retention-003/artifacts/baselines/**\texperiments/AgentLang.SubagentTrials/business-policy-retention-003/artifacts/baselines/flat/project/dictionary.agent",
+      "archiveExceptionMatched": true
+    }
+  ],
+  "liveCheck": {
+    "path": ".agentlang/business-policy-retention-003/runs/R01/acceptance.json",
+    "rule": ".gitignore:3:.agentlang/\t.agentlang/business-policy-retention-003/runs/R01/acceptance.json",
+    "ignored": true
+  },
+  "passed": true
+}

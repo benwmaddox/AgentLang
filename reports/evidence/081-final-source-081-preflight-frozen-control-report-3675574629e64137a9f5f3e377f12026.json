@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-retention-003",
+  "phase": "frozen-control-preflight",
+  "startedUtc": "2026-10-07T08:31:27.9333461Z",
+  "finishedUtc": "2026-10-07T08:31:27.9457480Z",
+  "passed": false,
+  "candidatePassed": false,
+  "launchReady": false,
+  "failure": "Frozen control validation is pending until -CandidateEvidencePath names a successful final-source candidate report.",
+  "status": "pending",
+  "sourceRevision": null,
+  "dirty": true,
+  "preflightSha256": null,
+  "sourceArtifacts": [],
+  "runtime": {
+    "cliPath": null,
+    "cliSha256": null,
+    "businessPath": null,
+    "businessSha256": null
+  },
+  "candidateEvidencePath": null,
+  "candidateEvidenceSha256": null,
+  "control": {
+    "markerPath": null,
+    "coordinatorPath": null,
+    "runId": "R01",
+    "controlKind": "deterministic-reference",
+    "modelActorLaunched": false,
+    "acceptancePath": null,
+    "acceptanceSha256": null,
+    "traceAuditPath": null,
+    "traceAuditSha256": null,
+    "freshTraceAuditPath": null,
+    "freshTraceAuditSha256": null,
+    "finalProjectTreeSha256": null,
+    "coordinatorOrderPassed": false,
+    "tamperControls": []
+  },
+  "missingInputs": [],
+  "checks": [],
+  "claimLimits": [
+    "R01 is an ownership-marked deterministic reference control; it is never counted as a model actor outcome.",
+    "The frozen phase validates exact global/per-cell provenance and a real V2 trace, then runs only pin-model, source-pin, and explicit-close tamper controls on the marker-owned reference slot.",
+    "The audit does not infer model identity from this deterministic control or add coordination events to the host trace.",
+    "Model tokens, turns, latency, and effective context size are not measured."
+  ]
+}

@@ -471,3 +471,9 @@ and a scoped termination auditor. The focused 29-check matrix passes, including
 real durable commit/reload and diagnostic-specific tamper rejection; failed
 coordinator attempts and raw traces remain preserved. Its new 37-check full gate passes on clean source 3c34b51. No completed frozen actor audit is reclassified, and no model-cost
 or vocabulary-growth benefit is inferred from transport validation.
+
+Report 081 prepares a new matched S01→S07 retention study with Flat, Retained
+and Reset-rich arms, shared help and nominal Money oracles, rotated fresh agents,
+and explicit v2 termination. Implementation and focused controls are in progress;
+no study freeze, actor result, token reduction or general benefit is claimed.
+The full executed evaluation and remaining PRD requirements stay open.

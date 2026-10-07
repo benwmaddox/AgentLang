@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-retention-003",
+  "scope": "Dirty-source candidate preparation attempts only. Expected rejections are not successful launches.",
+  "attempts": [
+    {
+      "path": "reports/evidence/081-preparation-bootstrap-69a4f6e8ca464309b5c7126e4eed7f38.json",
+      "sha256": "40576c8f76a453d02789f6d43e03de83275faaa17e6c8cb69c72985c354d60dc",
+      "passed": false,
+      "checks": 7,
+      "failure": "Preparation check failed: acceptance oracle and defaults equal the parsed predecessor corpus"
+    },
+    {
+      "path": "reports/evidence/081-preparation-bootstrap-6f437030da164be78aa0c0a73208161d.json",
+      "sha256": "c49ae55fc55b7738cf6f6affb2c2b02c9d86e3d11c76a2d81533d9fe53512e36",
+      "passed": false,
+      "checks": 7,
+      "failure": "Preparation check failed: acceptance oracle and defaults equal the parsed predecessor corpus"
+    },
+    {
+      "path": "reports/evidence/081-preparation-bootstrap-719cadd852b74c5182f6ec4918b529f7.json",
+      "sha256": "283165ff6c9104e9f24acb2091ab0a87c017b45f3ef9bd10e0d9e7f26607f75e",
+      "passed": false,
+      "checks": 18,
+      "failure": "Preparation check failed: flat bootstrap tree matches its historical complete inventory"
+    },
+    {
+      "path": "reports/evidence/081-preparation-bootstrap-8a4e9637e7dc4b66b8c2ebaf6621fabd.json",
+      "sha256": "dc75cd1fbe61d6f302150a568fe8a226f5b0f8072455139a53799b6145564a48",
+      "passed": true,
+      "checks": 33,
+      "failure": null
+    },
+    {
+      "path": "reports/evidence/081-preparation-bootstrap-d70c35ae0ca44ab591247df71792647a.json",
+      "sha256": "df63b0ed452a88e9df520924c973ab6fcb54be64f001dc899850ed5c7c6c976f",
+      "passed": false,
+      "checks": 18,
+      "failure": "Preparation check failed: flat bootstrap tree matches its historical complete inventory"
+    },
+    {
+      "path": "reports/evidence/081-preparation-bootstrap-f1ccf5f437b445b6a01b8cce0b02b9b7.json",
+      "sha256": "1663c93a0214d8197bdfa4aeba0b6080b4558e15c720fe36e3f61b890b25bd10",
+      "passed": true,
+      "checks": 31,
+      "failure": null
+    },
+    {
+      "path": "reports/evidence/081-preparation-R01-612f7dbff6e74a8bacb507a72dc6fbb1.json",
+      "sha256": "fe7bf16ac3c7f34f37c33354280155ae5e7455bc0c40e042ed11eec536e9716f",
+      "passed": false,
+      "checks": 14,
+      "failure": "Previous-stage inputs and -BaselineFallback are allowed only for Retained S07."
+    },
+    {
+      "path": "reports/evidence/081-preparation-R01-c6394529ad8f4fb1bd000375af1d568a.json",
+      "sha256": "f3bce34b88cfa4a56348162d85afc1e99ff9fe2c8cb7767473696aa7110d5813",
+      "passed": false,
+      "checks": 14,
+      "failure": "Previous-stage inputs and -BaselineFallback are allowed only for Retained S07."
+    },
+    {
+      "path": "reports/evidence/081-preparation-R04-47d34416d31840fa9e03d9842ca952b2.json",
+      "sha256": "01bf034c96a1d4e9379e40a8831ba2b8114348e68c4da5e6e40043d519d58767",
+      "passed": false,
+      "checks": 14,
+      "failure": "Retained S07 requires both accepted same-block S01 -PreviousProject and -PreviousAcceptance; fallback is explicit."
+    },
+    {
+      "path": "reports/evidence/081-preparation-R04-7bcfe679625245078c9231becff11ca7.json",
+      "sha256": "6ab56547f921a6d0009852e53b7054d3628f6f700d55dfae25bce603695323db",
+      "passed": false,
+      "checks": 14,
+      "failure": "-BaselineFallback requires failed same-block S01 -PreviousAcceptance evidence."
+    },
+    {
+      "path": "reports/evidence/081-preparation-R04-ba6f6203a78f487292f1320e17db8ae5.json",
+      "sha256": "32ef54a75d794531e568a3f5be1cc268524471cc15ff7db8ad984b47743ea81f",
+      "passed": false,
+      "checks": 14,
+      "failure": "Retained S07 requires both accepted same-block S01 -PreviousProject and -PreviousAcceptance; fallback is explicit."
+    },
+    {
+      "path": "reports/evidence/081-preparation-R04-fc7d15ce0dbf4f628888c6b3fc8111f7.json",
+      "sha256": "399f3d90085240338111c57613a491a023e3ce4ad3d75589bbe0ebc12e10a6fa",
+      "passed": false,
+      "checks": 14,
+      "failure": "-BaselineFallback requires failed same-block S01 -PreviousAcceptance evidence."
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "sourcePath": "scripts/Verify-RetentionPreflight.ps1",
+  "sourceSha256": "d1c40e9df0a4907fe17e20c188bccda6f283cf5ea0c7b21bf50a2359477cf05c",
+  "parserErrors": 0,
+  "smokeExitCode": 1,
+  "smokeReportPath": "reports/evidence/081-final-source-081-preflight-frozen-control-report-16dfe93ae79346ebaffc6ce3ce68b391.json",
+  "smokeReportSha256": "ad74c94cbd786f51a0c5acbdc1fbb86d589eb565609f76824d638cf49f52550d",
+  "status": "pending",
+  "referenceControlsPassed": false,
+  "launchReady": false,
+  "scope": "Final-source frozen entry without candidate evidence; no positive frozen or model outcome"
+}

@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-retention-003",
+  "classification": "unfrozen candidate reference and negative behavior controls",
+  "sourceReport": "reports/evidence/081-preflight-raw/081-preflight-candidate-report-7dc3016eac7b42d19097bc6f12712ef1.json",
+  "sourceReportSha256": "0c58cd7f3e58b55c4ae42700e22beb855034f68dedcc926bee5728694713b5a1",
+  "sourceRevision": "78cd7578d163e386e0e17a5cf4c0c51f02025a0b",
+  "dirty": true,
+  "candidatePassed": false,
+  "launchReady": false,
+  "failure": "Preflight gate failed before mutation: S01 predecessor acceptance without project is rejected before copy",
+  "controls": [
+    {
+      "name": "correct-S01-reference",
+      "behaviorPassed": true,
+      "casesExpected": 10,
+      "casesExecuted": 10,
+      "failingCaseIds": [],
+      "fullAcceptance": false,
+      "metadataPassed": false,
+      "evidenceSha256": "dc8e9cd8f2f3846bc6ccb998291d9dd0795f43420dae97177d3b1dad08b9dae1"
+    },
+    {
+      "name": "correct-S07-reference",
+      "behaviorPassed": true,
+      "casesExpected": 54,
+      "casesExecuted": 54,
+      "failingCaseIds": [],
+      "fullAcceptance": false,
+      "metadataPassed": false,
+      "evidenceSha256": "84766a6912a5a963e803aa6ebf691985aecd6850340b1f706fc2408eefe9431d"
+    },
+    {
+      "name": "no-op-missing-S01",
+      "behaviorPassed": false,
+      "casesExpected": 10,
+      "casesExecuted": 0,
+      "failingCaseIds": [],
+      "fullAcceptance": false,
+      "metadataPassed": false,
+      "evidenceSha256": "69a45ead857a3473167fb2ad0517a196b5f8d2f98be0d921c1e9fc03f86e7204"
+    },
+    {
+      "name": "wrong-formula-S07",
+      "behaviorPassed": false,
+      "casesExpected": 54,
+      "casesExecuted": 54,
+      "failingCaseIds": [
+        "premium-2",
+        "premium-3",
+        "premium-5",
+        "premium-6",
+        "premium-9",
+        "premium-10",
+        "premium-12",
+        "premium-13",
+        "premium-15",
+        "premium-16",
+        "premium-17",
+        "premium-18"
+      ],
+      "fullAcceptance": false,
+      "metadataPassed": false,
+      "evidenceSha256": "91a1a9630817904924800176af8ffd9f6b3e3a6003b1865ebce24455dc6e48d6"
+    }
+  ],
+  "modelActorOutcomes": 0,
+  "claimLimits": [
+    "Behavior controls are not frozen metadata acceptance or model outcomes.",
+    "The full candidate driver stopped at its predecessor diagnostic assertion.",
+    "Own library tests alone did not catch the deliberately wrong Money formula."
+  ]
+}

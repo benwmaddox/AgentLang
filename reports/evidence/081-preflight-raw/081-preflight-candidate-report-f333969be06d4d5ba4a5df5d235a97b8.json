@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-retention-003",
+  "phase": "candidate-preflight",
+  "startedUtc": "2026-10-07T07:45:51.4989616Z",
+  "finishedUtc": "2026-10-07T07:45:51.8976111Z",
+  "passed": false,
+  "candidatePassed": false,
+  "launchReady": false,
+  "failure": "Cannot convert value \"\\\\\" to type \"System.Char\". Error: \"String must be exactly one character long.\"",
+  "frozenPhase": {
+    "status": "pending",
+    "required": false,
+    "passed": false,
+    "failure": null,
+    "globalFreezePresent": false,
+    "baselineArchivesPresent": false,
+    "flatArchivePresent": false,
+    "richArchivePresent": false,
+    "controls": [
+      {
+        "name": "clean global freeze and baseline live audits",
+        "status": "pending",
+        "missing": [
+          "experiments\\AgentLang.SubagentTrials\\business-policy-retention-003\\artifacts\\global-freeze.json",
+          "experiments\\AgentLang.SubagentTrials\\business-policy-retention-003\\artifacts\\baselines\\flat\\manifest.json",
+          "experiments\\AgentLang.SubagentTrials\\business-policy-retention-003\\artifacts\\baselines\\rich\\manifest.json"
+        ]
+      }
+    ]
+  },
+  "sourceRevision": "78cd7578d163e386e0e17a5cf4c0c51f02025a0b",
+  "dirty": true,
+  "runtime": {
+    "cliPath": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+    "cliSha256": null,
+    "businessPath": "D:\\code\\AgentLang\\experiments\\AgentLang.Business\\bin\\Release\\net9.0\\AgentLang.Business.dll",
+    "businessSha256": null
+  },
+  "oracle": {
+    "path": "experiments\\AgentLang.SubagentTrials\\business-policy-retention-003\\acceptance.json",
+    "sha256": "8ca4f975161541b8c60397267fe7bb4ecb4345e00674d91467ac151a0bb7d3f2",
+    "predecessorPath": "experiments/AgentLang.SubagentTrials/business-policy-001/acceptance.json",
+    "predecessorSha256": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+    "tasks": []
+  },
+  "design": {
+    "path": "experiments/AgentLang.SubagentTrials/business-policy-retention-003/design.json",
+    "sha256": "c5b9d8a09cc671895f6ebd6bfd4023b8744cb8c8277cf6e2e7e6a4602d80b3ae",
+    "cells": []
+  },
+  "primer": {
+    "path": "experiments/AgentLang.SubagentTrials/business-policy-retention-003/language-primer.md",
+    "sha256": "7ca98f0c8c9a20a84076d2a6b62da7a36ac12959e17ec1890ec74f9cbf9b578e",
+    "matches002": false
+  },
+  "baselineCandidates": [],
+  "controls": [],
+  "processRuns": [],
+  "checks": [
+    {
+      "name": "preflight control slot is initially absent",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\control-fixtures\\retention-preflight-control-slot"
+    },
+    {
+      "name": "release CLI DLL exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll"
+    },
+    {
+      "name": "release Business DLL exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\experiments\\AgentLang.Business\\bin\\Release\\net9.0\\AgentLang.Business.dll"
+    }
+  ],
+  "cleanup": {
+    "controlSlotRemoved": null,
+    "pinRejectionOutputRemoved": null,
+    "rawControlEvidence": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\evidence\\081-preflight-candidate-363e6f02edf841a1a0a4433c7d98d45c",
+    "rawEvidenceRetained": true
+  },
+  "requestedEvidencePath": "",
+  "evidencePath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\evidence\\081-preflight-candidate-report-f333969be06d4d5ba4a5df5d235a97b8.json",
+  "claimLimits": [
+    "Candidate behavior controls use the independent verifier against fresh scratch projects but are not frozen actor acceptances.",
+    "A candidate run does not authorize a model actor, prove a V2 host trace, or establish launch readiness.",
+    "Model tokens, turns, latency, and effective context size are not measured."
+  ]
+}

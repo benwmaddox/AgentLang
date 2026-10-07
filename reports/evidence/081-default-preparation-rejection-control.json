@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-retention-003",
+  "scope": "Rejected argument diagnostic and ignored default output; no runtime or frozen acceptance claim",
+  "passed": true,
+  "exitCode": 1,
+  "diagnostic": "Previous-stage inputs and -BaselineFallback are allowed only for Retained S07.",
+  "gitStatusUnchanged": true,
+  "actorPresenceUnchanged": true,
+  "runPresenceUnchanged": true,
+  "operationalEvidencePath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\preparation-evidence\\081-preparation-R01-04012559dcbc44409c8cd536254fa545.json",
+  "rawEvidencePath": "reports/evidence/081-default-preparation-rejection-raw.json",
+  "rawEvidenceSha256": "4cd5a8cdacecf1cdd866038630a48565e8820f87aae731bf90cfed2edf729610",
+  "preparerSha256": "6673e5b73e7d8b93455926817c12d355d5934fd86af64271b6ff9fbb83f27a4a"
+}

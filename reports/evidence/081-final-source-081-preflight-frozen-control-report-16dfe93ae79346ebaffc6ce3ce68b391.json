@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-retention-003",
+  "phase": "frozen-control-preflight",
+  "startedUtc": "2026-10-07T08:37:05.0324727Z",
+  "finishedUtc": "2026-10-07T08:37:05.0463827Z",
+  "passed": false,
+  "candidatePassed": false,
+  "referenceControlsPassed": false,
+  "launchReady": false,
+  "failure": "Frozen control validation is pending until -CandidateEvidencePath names a successful final-source candidate report.",
+  "status": "pending",
+  "sourceRevision": null,
+  "dirty": true,
+  "preflightSha256": null,
+  "sourceArtifacts": [],
+  "runtime": {
+    "cliPath": null,
+    "cliSha256": null,
+    "businessPath": null,
+    "businessSha256": null
+  },
+  "candidateEvidencePath": null,
+  "candidateEvidenceSha256": null,
+  "control": {
+    "markerPath": null,
+    "coordinatorPath": null,
+    "runId": "R01",
+    "controlKind": "deterministic-reference",
+    "modelActorLaunched": false,
+    "acceptancePath": null,
+    "acceptanceSha256": null,
+    "traceAuditPath": null,
+    "traceAuditSha256": null,
+    "freshTraceAuditPath": null,
+    "freshTraceAuditSha256": null,
+    "finalProjectTreeSha256": null,
+    "coordinatorOrderPassed": false,
+    "tamperControls": []
+  },
+  "missingInputs": [],
+  "checks": [],
+  "actorLaunchGate": {
+    "status": "not reached",
+    "requiredBeforeModelActorLaunch": true,
+    "runId": "R01",
+    "instruction": "The deterministic reference control occupies R01. Root must archive it or record verified owned cleanup before launching model actors."
+  },
+  "claimLimits": [
+    "R01 is an ownership-marked deterministic reference control; it is never counted as a model actor outcome.",
+    "A passed reference-control phase validates frozen inputs and a real V2 trace, but does not make R01 available for a model actor.",
+    "Root must archive the reference or record verified owned cleanup before any model actor launch.",
+    "The audit does not infer model identity from this deterministic control or add coordination events to the host trace.",
+    "Model tokens, turns, latency, and effective context size are not measured."
+  ]
+}

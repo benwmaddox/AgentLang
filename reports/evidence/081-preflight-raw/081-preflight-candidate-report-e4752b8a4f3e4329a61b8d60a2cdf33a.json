@@ -1,0 +1,621 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-retention-003",
+  "phase": "candidate-preflight",
+  "startedUtc": "2026-10-07T07:52:33.5736640Z",
+  "finishedUtc": "2026-10-07T07:53:45.1132525Z",
+  "passed": false,
+  "candidatePassed": false,
+  "launchReady": false,
+  "failure": "The property 'Count' cannot be found on this object. Verify that the property exists.",
+  "frozenPhase": {
+    "status": "pending",
+    "required": false,
+    "passed": false,
+    "failure": null,
+    "globalFreezePresent": false,
+    "baselineArchivesPresent": false,
+    "flatArchivePresent": false,
+    "richArchivePresent": false,
+    "controls": [
+      {
+        "name": "clean global freeze and baseline live audits",
+        "status": "pending",
+        "missing": [
+          "experiments\\AgentLang.SubagentTrials\\business-policy-retention-003\\artifacts\\global-freeze.json",
+          "experiments\\AgentLang.SubagentTrials\\business-policy-retention-003\\artifacts\\baselines\\flat\\manifest.json",
+          "experiments\\AgentLang.SubagentTrials\\business-policy-retention-003\\artifacts\\baselines\\rich\\manifest.json"
+        ]
+      }
+    ]
+  },
+  "sourceRevision": "78cd7578d163e386e0e17a5cf4c0c51f02025a0b",
+  "dirty": true,
+  "runtime": {
+    "cliPath": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+    "cliSha256": "6dbf1b08751ba24526fc45ebd60da43de58d41bda85fa8718075529c50d1b4bc",
+    "businessPath": "D:\\code\\AgentLang\\experiments\\AgentLang.Business\\bin\\Release\\net9.0\\AgentLang.Business.dll",
+    "businessSha256": "3c2e8910c4b80a904f48128e9e463042405f29ca1cc01c9512c95014c26ee04e"
+  },
+  "oracle": {
+    "path": "experiments\\AgentLang.SubagentTrials\\business-policy-retention-003\\acceptance.json",
+    "sha256": "8ca4f975161541b8c60397267fe7bb4ecb4345e00674d91467ac151a0bb7d3f2",
+    "predecessorPath": "experiments/AgentLang.SubagentTrials/business-policy-001/acceptance.json",
+    "predecessorSha256": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+    "tasks": [
+      {
+        "taskId": "S01",
+        "cases": 10,
+        "sourcePath": "experiments\\AgentLang.SubagentTrials\\business-policy-retention-003\\acceptance.json",
+        "sourceSha256": "8ca4f975161541b8c60397267fe7bb4ecb4345e00674d91467ac151a0bb7d3f2",
+        "predecessorSha256": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+        "caseCorpusMatch": true
+      },
+      {
+        "taskId": "S07",
+        "cases": 54,
+        "sourcePath": "experiments\\AgentLang.SubagentTrials\\business-policy-retention-003\\acceptance.json",
+        "sourceSha256": "8ca4f975161541b8c60397267fe7bb4ecb4345e00674d91467ac151a0bb7d3f2",
+        "predecessorSha256": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+        "caseCorpusMatch": true
+      }
+    ]
+  },
+  "design": {
+    "path": "experiments/AgentLang.SubagentTrials/business-policy-retention-003/design.json",
+    "sha256": "c5b9d8a09cc671895f6ebd6bfd4023b8744cb8c8277cf6e2e7e6a4602d80b3ae",
+    "cells": [
+      {
+        "runId": "R01",
+        "block": "B1",
+        "arm": "flat",
+        "taskId": "S01",
+        "sequenceIndex": 1,
+        "baselineKind": "flat",
+        "startingRule": "flat-seed"
+      },
+      {
+        "runId": "R02",
+        "block": "B1",
+        "arm": "flat",
+        "taskId": "S07",
+        "sequenceIndex": 2,
+        "baselineKind": "flat",
+        "startingRule": "flat-seed"
+      },
+      {
+        "runId": "R03",
+        "block": "B1",
+        "arm": "retained",
+        "taskId": "S01",
+        "sequenceIndex": 1,
+        "baselineKind": "rich",
+        "startingRule": "rich-seed"
+      },
+      {
+        "runId": "R04",
+        "block": "B1",
+        "arm": "retained",
+        "taskId": "S07",
+        "sequenceIndex": 2,
+        "baselineKind": "rich",
+        "startingRule": "accepted-same-block-retained-S01-only"
+      },
+      {
+        "runId": "R05",
+        "block": "B1",
+        "arm": "reset-rich",
+        "taskId": "S01",
+        "sequenceIndex": 1,
+        "baselineKind": "rich",
+        "startingRule": "rich-seed"
+      },
+      {
+        "runId": "R06",
+        "block": "B1",
+        "arm": "reset-rich",
+        "taskId": "S07",
+        "sequenceIndex": 2,
+        "baselineKind": "rich",
+        "startingRule": "rich-seed"
+      },
+      {
+        "runId": "R07",
+        "block": "B2",
+        "arm": "reset-rich",
+        "taskId": "S01",
+        "sequenceIndex": 1,
+        "baselineKind": "rich",
+        "startingRule": "rich-seed"
+      },
+      {
+        "runId": "R08",
+        "block": "B2",
+        "arm": "reset-rich",
+        "taskId": "S07",
+        "sequenceIndex": 2,
+        "baselineKind": "rich",
+        "startingRule": "rich-seed"
+      },
+      {
+        "runId": "R09",
+        "block": "B2",
+        "arm": "flat",
+        "taskId": "S01",
+        "sequenceIndex": 1,
+        "baselineKind": "flat",
+        "startingRule": "flat-seed"
+      },
+      {
+        "runId": "R10",
+        "block": "B2",
+        "arm": "flat",
+        "taskId": "S07",
+        "sequenceIndex": 2,
+        "baselineKind": "flat",
+        "startingRule": "flat-seed"
+      },
+      {
+        "runId": "R11",
+        "block": "B2",
+        "arm": "retained",
+        "taskId": "S01",
+        "sequenceIndex": 1,
+        "baselineKind": "rich",
+        "startingRule": "rich-seed"
+      },
+      {
+        "runId": "R12",
+        "block": "B2",
+        "arm": "retained",
+        "taskId": "S07",
+        "sequenceIndex": 2,
+        "baselineKind": "rich",
+        "startingRule": "accepted-same-block-retained-S01-only"
+      }
+    ]
+  },
+  "primer": {
+    "path": "experiments/AgentLang.SubagentTrials/business-policy-retention-003/language-primer.md",
+    "sha256": "7ca98f0c8c9a20a84076d2a6b62da7a36ac12959e17ec1890ec74f9cbf9b578e",
+    "matches002": true
+  },
+  "baselineCandidates": [],
+  "controls": [],
+  "processRuns": [
+    {
+      "name": "bootstrap-only-fresh-seeds",
+      "fileName": "C:\\Users\\Ben\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe",
+      "arguments": [
+        "-NoProfile",
+        "-File",
+        "D:\\code\\AgentLang\\scripts\\Prepare-RetentionTrial.ps1",
+        "-BootstrapOnly",
+        "-CliDll",
+        "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+        "-BusinessDll",
+        "D:\\code\\AgentLang\\experiments\\AgentLang.Business\\bin\\Release\\net9.0\\AgentLang.Business.dll",
+        "-LocalRoot",
+        "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\control-fixtures\\retention-preflight-control-slot\\bootstrap\\local",
+        "-RunRoot",
+        "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\control-fixtures\\retention-preflight-control-slot\\bootstrap\\runs"
+      ],
+      "inputLineCount": 0,
+      "startedUtc": "2026-10-07T07:52:34.1697327+00:00",
+      "finishedUtc": "2026-10-07T07:53:43.8993902+00:00",
+      "elapsedMilliseconds": 69730,
+      "timedOut": false,
+      "exitCode": 0,
+      "stdout": {
+        "path": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\evidence\\081-preflight-candidate-bdeb08db881c4aa1b82fe72154f68006\\bootstrap-only-fresh-seeds-stdout.txt",
+        "sha256": "20eeb48274b1ce747551ddb0fdd5f6e86241a42112ffe7c99d61bc3aee896bf7",
+        "bytes": 62441
+      },
+      "stderr": {
+        "path": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\evidence\\081-preflight-candidate-bdeb08db881c4aa1b82fe72154f68006\\bootstrap-only-fresh-seeds-stderr.txt",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      }
+    },
+    {
+      "name": "flat-fresh-seed-live-check",
+      "fileName": "dotnet",
+      "arguments": [
+        "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+        "--project",
+        "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\control-fixtures\\retention-preflight-control-slot\\bootstrap\\local\\bootstrap\\flat\\seeds\\flat\\project",
+        "--jsonl"
+      ],
+      "inputLineCount": 2,
+      "startedUtc": "2026-10-07T07:53:44.1668662+00:00",
+      "finishedUtc": "2026-10-07T07:53:44.6615545+00:00",
+      "elapsedMilliseconds": 495,
+      "timedOut": false,
+      "exitCode": 0,
+      "stdout": {
+        "path": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\evidence\\081-preflight-candidate-bdeb08db881c4aa1b82fe72154f68006\\flat-fresh-seed-live-check-stdout.txt",
+        "sha256": "a37e646deb3ef34abfbba52f5654ad60c7e435b5f7d12e9514b54aa39f396842",
+        "bytes": 17601
+      },
+      "stderr": {
+        "path": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\evidence\\081-preflight-candidate-bdeb08db881c4aa1b82fe72154f68006\\flat-fresh-seed-live-check-stderr.txt",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      }
+    }
+  ],
+  "checks": [
+    {
+      "name": "preflight control slot is initially absent",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\control-fixtures\\retention-preflight-control-slot"
+    },
+    {
+      "name": "release CLI DLL exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll"
+    },
+    {
+      "name": "release Business DLL exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\experiments\\AgentLang.Business\\bin\\Release\\net9.0\\AgentLang.Business.dll"
+    },
+    {
+      "name": "runtime DLL inputs are repository-contained",
+      "passed": true,
+      "details": {
+        "business": "D:\\code\\AgentLang\\experiments\\AgentLang.Business\\bin\\Release\\net9.0\\AgentLang.Business.dll",
+        "cli": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll"
+      }
+    },
+    {
+      "name": "003 and predecessor oracle sources exist",
+      "passed": true
+    },
+    {
+      "name": "003 oracle predecessor hash binds exact 001 bytes",
+      "passed": true,
+      "details": {
+        "expected": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+        "actual": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf"
+      }
+    },
+    {
+      "name": "003 task sequence is S01 then S07",
+      "passed": true,
+      "details": {
+        "design": [
+          "S01",
+          "S07"
+        ],
+        "oracle": [
+          "S01",
+          "S07"
+        ]
+      }
+    },
+    {
+      "name": "S01 oracle exists exactly once in both studies",
+      "passed": true
+    },
+    {
+      "name": "S01 independent case corpus exactly matches business-policy-001",
+      "passed": true,
+      "details": {
+        "caseCount": 10,
+        "expectedCases": 10
+      }
+    },
+    {
+      "name": "S07 oracle exists exactly once in both studies",
+      "passed": true
+    },
+    {
+      "name": "S07 independent case corpus exactly matches business-policy-001",
+      "passed": true,
+      "details": {
+        "caseCount": 54,
+        "expectedCases": 54
+      }
+    },
+    {
+      "name": "S01 public task contract matches oracle",
+      "passed": true,
+      "details": {
+        "sha256": "97befde7d0e3231529ad681e785ace116210d8d99228eb2e9f76183738b7fada",
+        "path": "experiments\\AgentLang.Benchmarks\\task-bank\\public\\S01.json"
+      }
+    },
+    {
+      "name": "S07 public task contract matches oracle",
+      "passed": true,
+      "details": {
+        "sha256": "f2a3b584fbec86f0395228fde31d561c240b9bc5d5a9a4a927042ea8a6111a04",
+        "path": "experiments\\AgentLang.Benchmarks\\task-bank\\public\\S07.json"
+      }
+    },
+    {
+      "name": "003 primer bytes equal the archived 002 common-help primer",
+      "passed": true,
+      "details": {
+        "primerSha256": "7ca98f0c8c9a20a84076d2a6b62da7a36ac12959e17ec1890ec74f9cbf9b578e",
+        "predecessorPrimerSha256": "7ca98f0c8c9a20a84076d2a6b62da7a36ac12959e17ec1890ec74f9cbf9b578e"
+      }
+    },
+    {
+      "name": "design preregisters the exact twelve rotated cells",
+      "passed": true,
+      "details": {
+        "expected": [
+          {
+            "runId": "R01",
+            "block": "B1",
+            "arm": "flat",
+            "taskId": "S01",
+            "sequenceIndex": 1,
+            "baselineKind": "flat",
+            "startingRule": "flat-seed"
+          },
+          {
+            "runId": "R02",
+            "block": "B1",
+            "arm": "flat",
+            "taskId": "S07",
+            "sequenceIndex": 2,
+            "baselineKind": "flat",
+            "startingRule": "flat-seed"
+          },
+          {
+            "runId": "R03",
+            "block": "B1",
+            "arm": "retained",
+            "taskId": "S01",
+            "sequenceIndex": 1,
+            "baselineKind": "rich",
+            "startingRule": "rich-seed"
+          },
+          {
+            "runId": "R04",
+            "block": "B1",
+            "arm": "retained",
+            "taskId": "S07",
+            "sequenceIndex": 2,
+            "baselineKind": "rich",
+            "startingRule": "accepted-same-block-retained-S01-only"
+          },
+          {
+            "runId": "R05",
+            "block": "B1",
+            "arm": "reset-rich",
+            "taskId": "S01",
+            "sequenceIndex": 1,
+            "baselineKind": "rich",
+            "startingRule": "rich-seed"
+          },
+          {
+            "runId": "R06",
+            "block": "B1",
+            "arm": "reset-rich",
+            "taskId": "S07",
+            "sequenceIndex": 2,
+            "baselineKind": "rich",
+            "startingRule": "rich-seed"
+          },
+          {
+            "runId": "R07",
+            "block": "B2",
+            "arm": "reset-rich",
+            "taskId": "S01",
+            "sequenceIndex": 1,
+            "baselineKind": "rich",
+            "startingRule": "rich-seed"
+          },
+          {
+            "runId": "R08",
+            "block": "B2",
+            "arm": "reset-rich",
+            "taskId": "S07",
+            "sequenceIndex": 2,
+            "baselineKind": "rich",
+            "startingRule": "rich-seed"
+          },
+          {
+            "runId": "R09",
+            "block": "B2",
+            "arm": "flat",
+            "taskId": "S01",
+            "sequenceIndex": 1,
+            "baselineKind": "flat",
+            "startingRule": "flat-seed"
+          },
+          {
+            "runId": "R10",
+            "block": "B2",
+            "arm": "flat",
+            "taskId": "S07",
+            "sequenceIndex": 2,
+            "baselineKind": "flat",
+            "startingRule": "flat-seed"
+          },
+          {
+            "runId": "R11",
+            "block": "B2",
+            "arm": "retained",
+            "taskId": "S01",
+            "sequenceIndex": 1,
+            "baselineKind": "rich",
+            "startingRule": "rich-seed"
+          },
+          {
+            "runId": "R12",
+            "block": "B2",
+            "arm": "retained",
+            "taskId": "S07",
+            "sequenceIndex": 2,
+            "baselineKind": "rich",
+            "startingRule": "accepted-same-block-retained-S01-only"
+          }
+        ],
+        "actual": [
+          {
+            "runId": "R01",
+            "block": "B1",
+            "arm": "flat",
+            "taskId": "S01",
+            "sequenceIndex": 1,
+            "baselineKind": "flat",
+            "startingRule": "flat-seed"
+          },
+          {
+            "runId": "R02",
+            "block": "B1",
+            "arm": "flat",
+            "taskId": "S07",
+            "sequenceIndex": 2,
+            "baselineKind": "flat",
+            "startingRule": "flat-seed"
+          },
+          {
+            "runId": "R03",
+            "block": "B1",
+            "arm": "retained",
+            "taskId": "S01",
+            "sequenceIndex": 1,
+            "baselineKind": "rich",
+            "startingRule": "rich-seed"
+          },
+          {
+            "runId": "R04",
+            "block": "B1",
+            "arm": "retained",
+            "taskId": "S07",
+            "sequenceIndex": 2,
+            "baselineKind": "rich",
+            "startingRule": "accepted-same-block-retained-S01-only"
+          },
+          {
+            "runId": "R05",
+            "block": "B1",
+            "arm": "reset-rich",
+            "taskId": "S01",
+            "sequenceIndex": 1,
+            "baselineKind": "rich",
+            "startingRule": "rich-seed"
+          },
+          {
+            "runId": "R06",
+            "block": "B1",
+            "arm": "reset-rich",
+            "taskId": "S07",
+            "sequenceIndex": 2,
+            "baselineKind": "rich",
+            "startingRule": "rich-seed"
+          },
+          {
+            "runId": "R07",
+            "block": "B2",
+            "arm": "reset-rich",
+            "taskId": "S01",
+            "sequenceIndex": 1,
+            "baselineKind": "rich",
+            "startingRule": "rich-seed"
+          },
+          {
+            "runId": "R08",
+            "block": "B2",
+            "arm": "reset-rich",
+            "taskId": "S07",
+            "sequenceIndex": 2,
+            "baselineKind": "rich",
+            "startingRule": "rich-seed"
+          },
+          {
+            "runId": "R09",
+            "block": "B2",
+            "arm": "flat",
+            "taskId": "S01",
+            "sequenceIndex": 1,
+            "baselineKind": "flat",
+            "startingRule": "flat-seed"
+          },
+          {
+            "runId": "R10",
+            "block": "B2",
+            "arm": "flat",
+            "taskId": "S07",
+            "sequenceIndex": 2,
+            "baselineKind": "flat",
+            "startingRule": "flat-seed"
+          },
+          {
+            "runId": "R11",
+            "block": "B2",
+            "arm": "retained",
+            "taskId": "S01",
+            "sequenceIndex": 1,
+            "baselineKind": "rich",
+            "startingRule": "rich-seed"
+          },
+          {
+            "runId": "R12",
+            "block": "B2",
+            "arm": "retained",
+            "taskId": "S07",
+            "sequenceIndex": 2,
+            "baselineKind": "rich",
+            "startingRule": "accepted-same-block-retained-S01-only"
+          }
+        ]
+      }
+    },
+    {
+      "name": "fresh BootstrapOnly preparation succeeds",
+      "passed": true,
+      "details": {
+        "failure": null,
+        "exitCode": 0,
+        "rawEvidencePath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\evidence\\081-preflight-candidate-bdeb08db881c4aa1b82fe72154f68006\\bootstrap-preparation.json",
+        "requestedOutput": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\preparation-evidence\\081-preparation-bootstrap-1d704e1ffc98473f8385de4f433e5c51.json"
+      }
+    },
+    {
+      "name": "flat fresh seed has candidate counts",
+      "passed": true,
+      "details": {
+        "actual": {
+          "words": 0,
+          "types": 6,
+          "tests": 0
+        },
+        "seed": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\control-fixtures\\retention-preflight-control-slot\\bootstrap\\local\\bootstrap\\flat\\seeds\\flat\\project",
+        "expected": {
+          "words": 0,
+          "types": 6,
+          "tests": 0
+        }
+      }
+    },
+    {
+      "name": "flat fresh seed project exists inside preflight control slot",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\control-fixtures\\retention-preflight-control-slot\\bootstrap\\local\\bootstrap\\flat\\seeds\\flat\\project"
+    },
+    {
+      "name": "flat fresh seed live CLI inspection succeeds",
+      "passed": true
+    }
+  ],
+  "cleanup": {
+    "controlSlotRemoved": true,
+    "pinRejectionOutputRemoved": null,
+    "rawControlEvidence": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\evidence\\081-preflight-candidate-bdeb08db881c4aa1b82fe72154f68006",
+    "rawEvidenceRetained": true
+  },
+  "requestedEvidencePath": "",
+  "evidencePath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\evidence\\081-preflight-candidate-report-e4752b8a4f3e4329a61b8d60a2cdf33a.json",
+  "claimLimits": [
+    "Candidate behavior controls use the independent verifier against fresh scratch projects but are not frozen actor acceptances.",
+    "A candidate run does not authorize a model actor, prove a V2 host trace, or establish launch readiness.",
+    "Model tokens, turns, latency, and effective context size are not measured."
+  ]
+}

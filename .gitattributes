@@ -3,6 +3,9 @@
 reports/evidence/080-* -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 reports/evidence/080-transport-traces/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 reports/evidence/079-main*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+# Matched retention study inputs, pins and observations are byte-addressed.
+experiments/AgentLang.SubagentTrials/business-policy-retention-003/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+reports/evidence/081-*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 # Exact-Money trial inputs, outputs and transcripts are byte-addressed.
 experiments/AgentLang.SubagentTrials/business-policy-001/runs/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 experiments/AgentLang.SubagentTrials/business-policy-help-002/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
@@ -28,3 +31,5 @@ experiments/AgentLang.SubagentTrials/strong-type-flow-001/runs/** -text whitespa
 experiments/AgentLang.SubagentTrials/stateful-flow-001/runs/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 experiments/AgentLang.SubagentTrials/stateful-conventional-001/runs/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 reports/evidence/072-verify-conventional-stateful.ps1 -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+
+reports/evidence/081-preflight-raw/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

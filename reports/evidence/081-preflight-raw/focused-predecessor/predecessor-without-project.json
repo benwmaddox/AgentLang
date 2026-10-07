@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "control": "missing previous project",
+  "studyId": "business-policy-retention-003",
+  "arm": "retained",
+  "block": "B1",
+  "taskId": "S07",
+  "expectedDiagnostic": "Retained S07 requires both accepted same-block S01 -PreviousProject and -PreviousAcceptance; fallback is explicit.",
+  "actualDiagnostic": "Exception: D:\\code\\AgentLang\\scripts\\Prepare-RetentionTrial.ps1:1030 Line | 1030 | if ($null -ne $failure) { throw $failure } | ~~~~~~~~~~~~~~ | Retained S07 requires both accepted same-block S01 -PreviousProject and -PreviousAcceptance; fallback is | explicit.",
+  "exitCode": 1,
+  "diagnosticMatched": true,
+  "runCopyCreated": false,
+  "actorCopyCreated": false,
+  "passed": true,
+  "evidenceFile": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\evidence\\081-preflight-focused-predecessor-6b9e5e9789b84df5ab529901305db94d\\predecessor-without-project.json"
+}

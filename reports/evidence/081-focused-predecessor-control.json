@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "scope": "Executed missing-PreviousProject guard; no R04 run or actor created",
+  "passed": true,
+  "sourceHashAtExecution": "4f5c73fdd8946dac93c12870834720ab43a67a5f2d7e55a1427dce6a13496d11",
+  "sourceChangesAfterExecution": "Frozen-mode initial/final binding, collision field and equivalent completion-time field fixes; full final-source candidate rerun remains pending",
+  "files": [
+    {
+      "path": "reports/evidence/081-preflight-raw/focused-predecessor/predecessor-without-project-stdout-stderr.txt",
+      "bytes": 311,
+      "sha256": "fadcf17735fe2131491e3dcfa69ecdf1f255c5f4395bc8c6335eef47f83f7b92"
+    },
+    {
+      "path": "reports/evidence/081-preflight-raw/focused-predecessor/predecessor-without-project.json",
+      "bytes": 933,
+      "sha256": "063d2ea5adbf54a0c9e7d769492fd48b180669064431cd1e1adafe79f073cab5"
+    }
+  ]
+}

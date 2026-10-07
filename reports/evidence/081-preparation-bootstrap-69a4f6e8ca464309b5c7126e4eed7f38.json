@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-retention-003",
+  "passed": false,
+  "failure": "Preparation check failed: acceptance oracle and defaults equal the parsed predecessor corpus",
+  "startedUtc": "2026-10-07T06:40:03.5653655Z",
+  "finishedUtc": "2026-10-07T06:40:04.0041516Z",
+  "sourceRevision": null,
+  "dirty": true,
+  "arm": "",
+  "block": "",
+  "taskId": "",
+  "runId": "bootstrap",
+  "bootstrapOnly": true,
+  "result": null,
+  "checks": [
+    {
+      "name": "design schema and study id",
+      "passed": true
+    },
+    {
+      "name": "design sequence and arm order",
+      "passed": true
+    },
+    {
+      "name": "design conceals arm hypotheses from public prompts",
+      "passed": true
+    },
+    {
+      "name": "design declares exactly twelve ordered run cells",
+      "passed": true
+    },
+    {
+      "name": "design source paths are fixed and study-local",
+      "passed": true
+    },
+    {
+      "name": "acceptance identity, sequence, and predecessor SHA",
+      "passed": true
+    },
+    {
+      "name": "acceptance oracle and defaults equal the parsed predecessor corpus",
+      "passed": false
+    }
+  ],
+  "preparerSha256": "d2438f73c9017317063ded68b18681e7b87820fa2f5d7a7b9343a62584c29e0e",
+  "evidencePath": "D:\\code\\AgentLang\\reports\\evidence\\081-preparation-bootstrap-69a4f6e8ca464309b5c7126e4eed7f38.json"
+}

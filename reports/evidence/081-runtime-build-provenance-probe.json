@@ -1,0 +1,22 @@
+{
+  "kind": "runtime-build-provenance-probe",
+  "currentHead": "997019d115d653395a4b9b1f91dcc1fba3c32728",
+  "runtimeBuildRevision": "3c34b51bf482a3b6f15b9ef5db45e7649ab55db4",
+  "dirty": true,
+  "method": "AssemblyInformationalVersionAttribute read by local dotnet fsi from host-built trusted DLLs; no language reflection primitive",
+  "observedInformationalVersion": "1.0.0+3c34b51bf482a3b6f15b9ef5db45e7649ab55db4",
+  "files": [
+    {
+      "path": "src/AgentLang.Core/bin/Release/net9.0/AgentLang.Core.dll",
+      "sha256": "20f3bb41b5faef1749a9647547a92a52a8a6042c23cadf1546b4bb58103c495b"
+    },
+    {
+      "path": "src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll",
+      "sha256": "6dbf1b08751ba24526fc45ebd60da43de58d41bda85fa8718075529c50d1b4bc"
+    },
+    {
+      "path": "experiments/AgentLang.Business/bin/Release/net9.0/AgentLang.Business.dll",
+      "sha256": "3c2e8910c4b80a904f48128e9e463042405f29ca1cc01c9512c95014c26ee04e"
+    }
+  ]
+}

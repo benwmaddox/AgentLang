@@ -4,3 +4,6 @@
 dictionary.agent
 history/
 *.user
+
+# Frozen study baselines include the runtime's otherwise ignored store and history.
+!experiments/AgentLang.SubagentTrials/business-policy-retention-003/artifacts/baselines/**

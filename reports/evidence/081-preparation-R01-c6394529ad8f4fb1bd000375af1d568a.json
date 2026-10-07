@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-retention-003",
+  "passed": false,
+  "failure": "Previous-stage inputs and -BaselineFallback are allowed only for Retained S07.",
+  "startedUtc": "2026-10-07T06:47:44.6116784Z",
+  "finishedUtc": "2026-10-07T06:47:45.0735222Z",
+  "sourceRevision": "997019d115d653395a4b9b1f91dcc1fba3c32728",
+  "dirty": true,
+  "arm": "flat",
+  "block": "B1",
+  "taskId": "S01",
+  "runId": "R01",
+  "bootstrapOnly": false,
+  "result": null,
+  "checks": [
+    {
+      "name": "design schema and study id",
+      "passed": true
+    },
+    {
+      "name": "design sequence and arm order",
+      "passed": true
+    },
+    {
+      "name": "design conceals arm hypotheses from public prompts",
+      "passed": true
+    },
+    {
+      "name": "design declares exactly twelve ordered run cells",
+      "passed": true
+    },
+    {
+      "name": "design source paths are fixed and study-local",
+      "passed": true
+    },
+    {
+      "name": "acceptance identity, sequence, and predecessor SHA",
+      "passed": true
+    },
+    {
+      "name": "acceptance oracle and defaults equal the parsed predecessor corpus",
+      "passed": true
+    },
+    {
+      "name": "acceptance cases and task contracts equal predecessor S01/S07",
+      "passed": true
+    },
+    {
+      "name": "acceptance includes no S06 arm or case corpus",
+      "passed": true
+    },
+    {
+      "name": "S01 public contract matches independent oracle",
+      "passed": true
+    },
+    {
+      "name": "S07 public contract matches independent oracle",
+      "passed": true
+    },
+    {
+      "name": "shared primer is the exact preserved 002 help file",
+      "passed": true
+    },
+    {
+      "name": "Flat source seed is the exact preserved schema-only seed",
+      "passed": true
+    },
+    {
+      "name": "requested run maps to fixed public run id and task index",
+      "passed": true
+    }
+  ],
+  "preparerSha256": "978ab91b964e4bea4a51a706380a5ff0bc70b546af2b0216e0ecc80d613ea2fc",
+  "evidencePath": "D:\\code\\AgentLang\\reports\\evidence\\081-preparation-R01-c6394529ad8f4fb1bd000375af1d568a.json"
+}
