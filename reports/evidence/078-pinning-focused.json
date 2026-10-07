@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-help-002",
+  "status": "source snapshots and corpus fidelity validated; real preparation/freezing pending clean tooling commit",
+  "checkedAtUtc": "2026-10-07T04:07:28.5624595+00:00",
+  "sourceRevisionAtCheck": "7f02a82135de68364df58517ef5eb439df2eb9ab",
+  "dirtyAtCheck": true,
+  "corpus": {
+    "predecessorAcceptancePath": "experiments/AgentLang.SubagentTrials/business-policy-001/acceptance.json",
+    "predecessorSha256": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+    "predecessorHashMatches": true,
+    "defaultsExact": true,
+    "defaultsJsonSha256": "a04d04b48f822f3f484b6e013dad0e4a707be55a26feda9ff0809d5a27e89715",
+    "createdAtPreserved": "2026-01-01T12:00:00.0000000+00:00",
+    "tasks": [
+      {
+        "id": "S06",
+        "sequenceIndex": 2,
+        "cases": 10,
+        "casesUnchanged": true
+      },
+      {
+        "id": "S07",
+        "sequenceIndex": 3,
+        "cases": 54,
+        "casesUnchanged": true
+      }
+    ],
+    "totalCases": 64,
+    "onlyFreshTasks": [
+      "S06",
+      "S07"
+    ]
+  },
+  "seed": {
+    "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/flat-customer.agent",
+    "bytes": 506,
+    "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d",
+    "matchesOriginalPreparerLiteral": true,
+    "originalLiteralComparison": "exact after CRLF/LF normalization",
+    "typeOrRecordDeclarations": 6,
+    "customerFieldDeclarations": 5,
+    "policyWordDeclarations": 0,
+    "noPremiumOrDiscountSource": true
+  },
+  "primer": {
+    "basePath": "experiments/AgentLang.SubagentTrials/selective-flow-001/language-primer.md",
+    "baseUtf8Bytes": 3091,
+    "baseWhitespaceDelimitedWords": 418,
+    "newPath": "experiments/AgentLang.SubagentTrials/business-policy-help-002/language-primer.md",
+    "newUtf8Bytes": 3931,
+    "newWhitespaceDelimitedWords": 528,
+    "byteDelta": 840,
+    "wordDelta": 110,
+    "wordCountMethod": "trim then split on Unicode whitespace",
+    "newSha256": "7ca98f0c8c9a20a84076d2a6b62da7a36ac12959e17ec1890ec74f9cbf9b578e",
+    "scope": "Retains compact discovery/context/flowReference/current-test-batch/JSONL lifecycle guidance; adds doc, expectations, help topics, optional-help and corrected candidate-vs-persistent replacement guidance."
+  },
+  "sourceArtifacts": [
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Prepare-AuthoringHelpTrial.ps1",
+      "sourcePath": "scripts/Prepare-AuthoringHelpTrial.ps1",
+      "bytes": 6736,
+      "sha256": "69f9cfea46b93e650bc8e05f338255a5317cdd16702ef5f5363c81a96c51de74"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Freeze-AuthoringHelpTrial.ps1",
+      "sourcePath": "scripts/Freeze-AuthoringHelpTrial.ps1",
+      "bytes": 24921,
+      "sha256": "19c2ac2b3e8e8d38a1ef1ef9c2b994024ce5ec364f46f3b7a0a4641c271c3336"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Verify-AuthoringHelpTrial.ps1",
+      "sourcePath": "scripts/Verify-AuthoringHelpTrial.ps1",
+      "bytes": 88202,
+      "sha256": "727aef26c22345886e95fa4b0be2c46bb0fb2d2f1a502f7ef9059f33e6dbb1e8"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Verify-AuthoringHelpPreflight.ps1",
+      "sourcePath": "scripts/Verify-AuthoringHelpPreflight.ps1",
+      "bytes": 39669,
+      "sha256": "42139234cc8499200aeaa7cb883fbafeaa8848e2897f789435731f4d665e1320"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Audit-AuthoringHelpTrace.ps1",
+      "sourcePath": "scripts/Audit-AuthoringHelpTrace.ps1",
+      "bytes": 33397,
+      "sha256": "5c91e5b47fd3877c53b7c2e624defd5c94446e555f9b30d06d32c5bb98ecd7fd"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Prepare-BusinessPolicyTrial.ps1",
+      "sourcePath": "scripts/Prepare-BusinessPolicyTrial.ps1",
+      "bytes": 29618,
+      "sha256": "23af4c9536e72730d44a5cfbdcf70b05b17a1e35c83f841511f9e8bbc637c08a"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Start-SubagentTrialHost.ps1",
+      "sourcePath": "scripts/Start-SubagentTrialHost.ps1",
+      "bytes": 77884,
+      "sha256": "d3b60698ef29cc6e7d9b42f37d9a298a311f409cb3f85112ca2a5dccf6148c4d"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/acceptance.json",
+      "sourcePath": "experiments/AgentLang.SubagentTrials/business-policy-help-002/acceptance.json",
+      "bytes": 15931,
+      "sha256": "d58fceeec3b659aebc58daa1d708d5f16cb43d12996f291c1c78a377fcfb89ef"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/acceptance-business-policy-001.json",
+      "sourcePath": "experiments/AgentLang.SubagentTrials/business-policy-001/acceptance.json",
+      "bytes": 17436,
+      "sha256": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/public-task-S06.json",
+      "sourcePath": "experiments/AgentLang.Benchmarks/task-bank/public/S06.json",
+      "bytes": 760,
+      "sha256": "11ce4abd6f37035862dd802e8e201260c9f78457dc510d6d150c99725ffcc180"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/public-task-S07.json",
+      "sourcePath": "experiments/AgentLang.Benchmarks/task-bank/public/S07.json",
+      "bytes": 779,
+      "sha256": "f2a3b584fbec86f0395228fde31d561c240b9bc5d5a9a4a927042ea8a6111a04"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/language-primer.md",
+      "sourcePath": "experiments/AgentLang.SubagentTrials/business-policy-help-002/language-primer.md",
+      "bytes": 3931,
+      "sha256": "7ca98f0c8c9a20a84076d2a6b62da7a36ac12959e17ec1890ec74f9cbf9b578e"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/flat-customer.agent",
+      "sourcePath": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/flat-customer.agent",
+      "bytes": 506,
+      "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+    }
+  ],
+  "sourceArtifactCount": 13,
+  "allSourceArtifactsHashAndLengthMatched": true,
+  "tooling": {
+    "astParsed": [
+      "scripts/Prepare-AuthoringHelpTrial.ps1",
+      "scripts/Freeze-AuthoringHelpTrial.ps1",
+      "scripts/Audit-AuthoringHelpTrace.ps1"
+    ],
+    "sourceArtifactMapRows": 13,
+    "gitDiffCheck": "passed",
+    "focusedVerifierEvidence": {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/evidence/078-verifier-focused-run-20261007T040056224Z-39cbf996ca2a466f993a592a76eedafa.json",
+      "sha256": "226d84601f17a864ac90eebe5cafece43041be46523d0b9a46fae36b6662a9eb",
+      "passed": true,
+      "checks": 59,
+      "outcomes": 14
+    }
+  },
+  "prelaunch": {
+    "preparationRun": false,
+    "frozenPins": 0,
+    "actorsLaunched": 0,
+    "traceAudits": 0,
+    "status": "pending clean source commit; no actual prompts or pins created"
+  },
+  "limitations": [
+    "Static/source-fidelity evidence only. No real prepare/freeze or frozen-pin validation has run yet.",
+    "No external actors were launched and no actual session trace is claimed.",
+    "Model fields are declared in the future pin; external runtime usage cannot be independently inferred from protocol data.",
+    "No efficiency claim is made."
+  ]
+}

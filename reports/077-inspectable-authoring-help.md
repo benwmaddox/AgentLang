@@ -56,3 +56,8 @@ GitHub CI is observed separately after publication.
 Fresh external-agent follow-up is required to assess whether these interface
 changes resolve the observed failure; executable examples alone do not establish
 agent usefulness. The full PRD and broader controlled evaluation remain active.
+
+Publication follow-up: [main CI run 37565992570](https://github.com/benwmaddox/AgentLang/actions/runs/37565992570)
+passed all 36 checks on clean revision `7f02a82135de68364df58517ef5eb439df2eb9ab`.
+See the [downloaded validation report](evidence/077-main-validation.json) and
+[run status](evidence/077-main-ci.json).

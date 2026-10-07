@@ -1,6 +1,7 @@
 * text=auto eol=lf
 # Exact-Money trial inputs, outputs and transcripts are byte-addressed.
 experiments/AgentLang.SubagentTrials/business-policy-001/runs/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+experiments/AgentLang.SubagentTrials/business-policy-help-002/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 # Frozen trial inputs are byte-addressed; checkout must preserve their hashes.
 experiments/AgentLang.SubagentTrials/matched-renewal-001/snapshots/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 experiments/AgentLang.SubagentTrials/matched-renewal-001/fixtures/flow/flat.agent -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

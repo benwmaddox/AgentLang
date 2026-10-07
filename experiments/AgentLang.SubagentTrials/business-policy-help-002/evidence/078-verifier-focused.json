@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-help-002",
+  "passed": false,
+  "failure": "Oracle must contain exactly one 'S01' task.",
+  "requestedEvidencePath": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-help-002\\evidence\\078-verifier-focused.json",
+  "evidencePath": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-help-002\\evidence\\078-verifier-focused.json",
+  "evidencePathCollision": false,
+  "preexistingEvidenceUnchanged": true,
+  "preexistingEvidenceSha256": null,
+  "checks": [
+    {
+      "name": "preflight report uses a fresh destination without replacing prior evidence",
+      "passed": true,
+      "details": {
+        "requested": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-help-002\\evidence\\078-verifier-focused.json",
+        "selected": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-help-002\\evidence\\078-verifier-focused.json",
+        "priorExists": false,
+        "priorSha256": null
+      }
+    },
+    {
+      "name": "fresh CLI assembly exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll"
+    },
+    {
+      "name": "fresh Business assembly exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\experiments\\AgentLang.Business\\bin\\Release\\net9.0\\AgentLang.Business.dll"
+    },
+    {
+      "name": "original seed preparation dependency exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\scripts\\Prepare-BusinessPolicyTrial.ps1"
+    },
+    {
+      "name": "versioned verifier exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\scripts\\Verify-AuthoringHelpTrial.ps1"
+    },
+    {
+      "name": "both acceptance corpora exist",
+      "passed": true
+    }
+  ],
+  "oracleComparison": null,
+  "runs": [],
+  "sourceRevision": "7f02a82135de68364df58517ef5eb439df2eb9ab",
+  "dirty": true,
+  "cli": {
+    "path": "src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll",
+    "sha256": "e9098ca964e19fb4e34f47ff4cd04f9a389dcb01a990455f77301afb613f9002"
+  },
+  "business": {
+    "path": "experiments/AgentLang.Business/bin/Release/net9.0/AgentLang.Business.dll",
+    "sha256": "48837c07853194f2d8c5fa75b5f278e5fcef2db270ce42faa3a9251dff0007a4"
+  },
+  "seed": {
+    "path": null,
+    "sha256": null,
+    "preparationStartingState": null
+  },
+  "verifierSha256": "81d3f855ace5edeb7bed6fbef72ff19dee80ec04b6acc0007b160bbb4e587ff2",
+  "preflightSha256": "c0fc475f73083d325c81ac40a8c970625679b50c34c2a81e9dcce68ca9da2c75",
+  "processRuns": []
+}

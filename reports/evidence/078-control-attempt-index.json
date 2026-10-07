@@ -1,0 +1,55 @@
+{
+  "studyId": "business-policy-help-002",
+  "kind": "coordinator-control-attempt-index",
+  "agentOutcomes": false,
+  "attempts": [
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/evidence/078-verifier-focused-run-20261007T035235816Z-4358169330f643d6b3f4332ad0ea4d7b.json",
+      "sha256": "1cd0214f38af1c158649cb9bfd41a0b89f5c8337bdd31cab336878261e6013e4",
+      "passed": false,
+      "failure": "The variable '$LASTEXITCODE' cannot be retrieved because it has not been set.",
+      "checks": 10,
+      "outcomes": 0
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/evidence/078-verifier-focused-run-20261007T035257774Z-b03ba192cc39495486eacbbe1a61a5a5.json",
+      "sha256": "7647b21b633d474b7c1cf4d052ec48f77d4e76a145454b58f2ea199d9869c80e",
+      "passed": false,
+      "failure": "CLI control 'correct/S06 author and validate' exited with code 1: Could not execute because the specified command or file was not found.\r\n",
+      "checks": 11,
+      "outcomes": 0
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/evidence/078-verifier-focused-run-20261007T035357420Z-bb90565cead34469b55b6f832e5e3747.json",
+      "sha256": "992ed249698c02ec5adf80a04a7b7ec752396b4e913b846bdef93785081d5292",
+      "passed": false,
+      "failure": null,
+      "checks": 59,
+      "outcomes": 14
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/evidence/078-verifier-focused-run-20261007T035730820Z-2cdb01f85e034f05a2571e3a90a1860e.json",
+      "sha256": "1941121c2b29d9c45637a7934b4044e4823f6c9d0dd39cccda4ab42192c7699b",
+      "passed": false,
+      "failure": null,
+      "checks": 59,
+      "outcomes": 14
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/evidence/078-verifier-focused-run-20261007T040056224Z-39cbf996ca2a466f993a592a76eedafa.json",
+      "sha256": "226d84601f17a864ac90eebe5cafece43041be46523d0b9a46fae36b6662a9eb",
+      "passed": true,
+      "failure": null,
+      "checks": 59,
+      "outcomes": 14
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/evidence/078-verifier-focused.json",
+      "sha256": "1fc9266ae53286b236f7f6c6abb8004371e34b76f15650872d11d040e7ddbf2f",
+      "passed": false,
+      "failure": "Oracle must contain exactly one 'S01' task.",
+      "checks": 6,
+      "outcomes": 0
+    }
+  ]
+}

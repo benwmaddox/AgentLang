@@ -1,0 +1,770 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-help-002",
+  "passed": false,
+  "failure": "CLI control 'correct/S06 author and validate' exited with code 1: Could not execute because the specified command or file was not found.\r\n",
+  "requestedEvidencePath": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-help-002\\evidence\\078-verifier-focused.json",
+  "evidencePath": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-help-002\\evidence\\078-verifier-focused-run-20261007T035257774Z-b03ba192cc39495486eacbbe1a61a5a5.json",
+  "evidencePathCollision": true,
+  "preexistingEvidenceUnchanged": true,
+  "preexistingEvidenceSha256": "1fc9266ae53286b236f7f6c6abb8004371e34b76f15650872d11d040e7ddbf2f",
+  "checks": [
+    {
+      "name": "preflight report uses a fresh destination without replacing prior evidence",
+      "passed": true,
+      "details": {
+        "priorSha256": "1fc9266ae53286b236f7f6c6abb8004371e34b76f15650872d11d040e7ddbf2f",
+        "priorExists": true,
+        "selected": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-help-002\\evidence\\078-verifier-focused-run-20261007T035257774Z-b03ba192cc39495486eacbbe1a61a5a5.json",
+        "requested": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-help-002\\evidence\\078-verifier-focused.json"
+      }
+    },
+    {
+      "name": "fresh CLI assembly exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll"
+    },
+    {
+      "name": "fresh Business assembly exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\experiments\\AgentLang.Business\\bin\\Release\\net9.0\\AgentLang.Business.dll"
+    },
+    {
+      "name": "original seed preparation dependency exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\scripts\\Prepare-BusinessPolicyTrial.ps1"
+    },
+    {
+      "name": "versioned verifier exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\scripts\\Verify-AuthoringHelpTrial.ps1"
+    },
+    {
+      "name": "both acceptance corpora exist",
+      "passed": true
+    },
+    {
+      "name": "study identity is versioned and predecessor hash matches untouched 001 bytes",
+      "passed": true,
+      "details": {
+        "declared": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+        "actual": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+        "passed": true
+      }
+    },
+    {
+      "name": "createdAt remains the exact canonical JSON string",
+      "passed": true,
+      "details": {
+        "oldCreatedAt": "2026-01-01T12:00:00.0000000+00:00",
+        "newCreatedAt": "2026-01-01T12:00:00.0000000+00:00",
+        "passed": true
+      }
+    },
+    {
+      "name": "all Flat S06/S07 case payloads match the old corpus after identity removal",
+      "passed": true,
+      "details": {
+        "newSha256": "419d77046be9a765d277f81c185598a3a166b02103fadc00c38a6891e3fafc3a",
+        "oldSha256": "419d77046be9a765d277f81c185598a3a166b02103fadc00c38a6891e3fafc3a",
+        "caseCount": 64.0,
+        "taskCount": 2
+      }
+    },
+    {
+      "name": "fresh isolated schema-only Flat seed is prepared by the original preparation script",
+      "passed": true,
+      "details": {
+        "localRoot": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\control-fixtures\\authoring-help-preflight-deb0966f6fde40d6817705449402f0eb\\prepared-local",
+        "runRoot": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\control-fixtures\\authoring-help-preflight-deb0966f6fde40d6817705449402f0eb\\prepared-runs",
+        "preparerOutput": [
+          "{\r\n  \"mode\": \"flat\",\r\n  \"taskId\": \"S06\",\r\n  \"actorProject\": \"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\business-policy-help-002\\\\control-fixtures\\\\authoring-help-preflight-deb0966f6fde40d6817705449402f0eb\\\\prepared-local\\\\actors\\\\flat-S06\",\r\n  \"startingProject\": \"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\business-policy-help-002\\\\control-fixtures\\\\authoring-help-preflight-deb0966f6fde40d6817705449402f0eb\\\\prepared-runs\\\\flat-S06\\\\starting-project\",\r\n  \"startingState\": \"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\business-policy-help-002\\\\control-fixtures\\\\authoring-help-preflight-deb0966f6fde40d6817705449402f0eb\\\\prepared-runs\\\\flat-S06\\\\starting-state.json\",\r\n  \"seedProject\": \"D:\\\\code\\\\AgentLang\\\\.agentlang\\\\business-policy-help-002\\\\control-fixtures\\\\authoring-help-preflight-deb0966f6fde40d6817705449402f0eb\\\\prepared-local\\\\seeds\\\\flat\\\\project\",\r\n  \"authoredWordCount\": 0,\r\n  \"typeCount\": 6,\r\n  \"testCount\": 0\r\n}"
+        ],
+        "startingState": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\control-fixtures\\authoring-help-preflight-deb0966f6fde40d6817705449402f0eb\\prepared-runs\\flat-S06\\starting-state.json",
+        "seedProject": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\control-fixtures\\authoring-help-preflight-deb0966f6fde40d6817705449402f0eb\\prepared-local\\seeds\\flat\\project"
+      }
+    },
+    {
+      "name": "pre-existing preflight evidence remains unchanged",
+      "passed": true,
+      "details": {
+        "path": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-help-002\\evidence\\078-verifier-focused.json",
+        "actualSha256": "1fc9266ae53286b236f7f6c6abb8004371e34b76f15650872d11d040e7ddbf2f",
+        "expectedSha256": "1fc9266ae53286b236f7f6c6abb8004371e34b76f15650872d11d040e7ddbf2f"
+      }
+    }
+  ],
+  "oracleComparison": {
+    "passed": true,
+    "identity": {
+      "old": "business-policy-001",
+      "new": "business-policy-help-002"
+    },
+    "predecessor": {
+      "declared": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+      "actual": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+      "passed": true
+    },
+    "defaults": {
+      "oldCreatedAt": "2026-01-01T12:00:00.0000000+00:00",
+      "newCreatedAt": "2026-01-01T12:00:00.0000000+00:00",
+      "passed": true
+    },
+    "casePayloads": {
+      "taskCount": 2,
+      "caseCount": 64.0,
+      "oldSha256": "419d77046be9a765d277f81c185598a3a166b02103fadc00c38a6891e3fafc3a",
+      "newSha256": "419d77046be9a765d277f81c185598a3a166b02103fadc00c38a6891e3fafc3a",
+      "equal": true,
+      "tasks": [
+        {
+          "id": "S06",
+          "symbol": "customer.discount-basis-points",
+          "inputs": [
+            "Customer"
+          ],
+          "outputs": [
+            "Int"
+          ],
+          "cases": [
+            {
+              "id": "kind-1",
+              "kind": "premium",
+              "balanceMinor": "1250",
+              "expected": {
+                "type": "Int",
+                "value": "1000"
+              }
+            },
+            {
+              "id": "kind-2",
+              "kind": "regular",
+              "balanceMinor": "1250",
+              "expected": {
+                "type": "Int",
+                "value": "0"
+              }
+            },
+            {
+              "id": "kind-3",
+              "kind": "Premium",
+              "balanceMinor": "1250",
+              "expected": {
+                "type": "Int",
+                "value": "0"
+              }
+            },
+            {
+              "id": "kind-4",
+              "kind": "PREMIUM",
+              "balanceMinor": "1250",
+              "expected": {
+                "type": "Int",
+                "value": "0"
+              }
+            },
+            {
+              "id": "kind-5",
+              "kind": "premium ",
+              "balanceMinor": "1250",
+              "expected": {
+                "type": "Int",
+                "value": "0"
+              }
+            },
+            {
+              "id": "kind-6",
+              "kind": " premium",
+              "balanceMinor": "1250",
+              "expected": {
+                "type": "Int",
+                "value": "0"
+              }
+            },
+            {
+              "id": "kind-7",
+              "kind": "\tpremium",
+              "balanceMinor": "1250",
+              "expected": {
+                "type": "Int",
+                "value": "0"
+              }
+            },
+            {
+              "id": "kind-8",
+              "kind": "premium\n",
+              "balanceMinor": "1250",
+              "expected": {
+                "type": "Int",
+                "value": "0"
+              }
+            },
+            {
+              "id": "kind-9",
+              "kind": "",
+              "balanceMinor": "1250",
+              "expected": {
+                "type": "Int",
+                "value": "0"
+              }
+            },
+            {
+              "id": "kind-10",
+              "kind": "prémi um",
+              "balanceMinor": "1250",
+              "expected": {
+                "type": "Int",
+                "value": "0"
+              }
+            }
+          ]
+        },
+        {
+          "id": "S07",
+          "symbol": "customer.discounted-balance",
+          "inputs": [
+            "Customer"
+          ],
+          "outputs": [
+            "Money"
+          ],
+          "cases": [
+            {
+              "id": "premium-1",
+              "kind": "premium",
+              "balanceMinor": "0",
+              "expected": {
+                "type": "Money",
+                "value": "0"
+              }
+            },
+            {
+              "id": "premium-2",
+              "kind": "premium",
+              "balanceMinor": "1",
+              "expected": {
+                "type": "Money",
+                "value": "0"
+              }
+            },
+            {
+              "id": "premium-3",
+              "kind": "premium",
+              "balanceMinor": "9",
+              "expected": {
+                "type": "Money",
+                "value": "8"
+              }
+            },
+            {
+              "id": "premium-4",
+              "kind": "premium",
+              "balanceMinor": "10",
+              "expected": {
+                "type": "Money",
+                "value": "9"
+              }
+            },
+            {
+              "id": "premium-5",
+              "kind": "premium",
+              "balanceMinor": "11",
+              "expected": {
+                "type": "Money",
+                "value": "9"
+              }
+            },
+            {
+              "id": "premium-6",
+              "kind": "premium",
+              "balanceMinor": "19",
+              "expected": {
+                "type": "Money",
+                "value": "17"
+              }
+            },
+            {
+              "id": "premium-7",
+              "kind": "premium",
+              "balanceMinor": "20",
+              "expected": {
+                "type": "Money",
+                "value": "18"
+              }
+            },
+            {
+              "id": "premium-8",
+              "kind": "premium",
+              "balanceMinor": "1050",
+              "expected": {
+                "type": "Money",
+                "value": "945"
+              }
+            },
+            {
+              "id": "premium-9",
+              "kind": "premium",
+              "balanceMinor": "-1",
+              "expected": {
+                "type": "Money",
+                "value": "0"
+              }
+            },
+            {
+              "id": "premium-10",
+              "kind": "premium",
+              "balanceMinor": "-9",
+              "expected": {
+                "type": "Money",
+                "value": "-8"
+              }
+            },
+            {
+              "id": "premium-11",
+              "kind": "premium",
+              "balanceMinor": "-10",
+              "expected": {
+                "type": "Money",
+                "value": "-9"
+              }
+            },
+            {
+              "id": "premium-12",
+              "kind": "premium",
+              "balanceMinor": "-11",
+              "expected": {
+                "type": "Money",
+                "value": "-9"
+              }
+            },
+            {
+              "id": "premium-13",
+              "kind": "premium",
+              "balanceMinor": "-19",
+              "expected": {
+                "type": "Money",
+                "value": "-17"
+              }
+            },
+            {
+              "id": "premium-14",
+              "kind": "premium",
+              "balanceMinor": "-1050",
+              "expected": {
+                "type": "Money",
+                "value": "-945"
+              }
+            },
+            {
+              "id": "premium-15",
+              "kind": "premium",
+              "balanceMinor": "9007199254740993",
+              "expected": {
+                "type": "Money",
+                "value": "8106479329266893"
+              }
+            },
+            {
+              "id": "premium-16",
+              "kind": "premium",
+              "balanceMinor": "-9007199254740993",
+              "expected": {
+                "type": "Money",
+                "value": "-8106479329266893"
+              }
+            },
+            {
+              "id": "premium-17",
+              "kind": "premium",
+              "balanceMinor": "9223372036854775807",
+              "expected": {
+                "type": "Money",
+                "value": "8301034833169298226"
+              }
+            },
+            {
+              "id": "premium-18",
+              "kind": "premium",
+              "balanceMinor": "-9223372036854775808",
+              "expected": {
+                "type": "Money",
+                "value": "-8301034833169298227"
+              }
+            },
+            {
+              "id": "nonpremium-1-1",
+              "kind": "regular",
+              "balanceMinor": "1",
+              "expected": {
+                "type": "Money",
+                "value": "1"
+              }
+            },
+            {
+              "id": "nonpremium-1-2",
+              "kind": "regular",
+              "balanceMinor": "-1050",
+              "expected": {
+                "type": "Money",
+                "value": "-1050"
+              }
+            },
+            {
+              "id": "nonpremium-1-3",
+              "kind": "regular",
+              "balanceMinor": "9223372036854775807",
+              "expected": {
+                "type": "Money",
+                "value": "9223372036854775807"
+              }
+            },
+            {
+              "id": "nonpremium-1-4",
+              "kind": "regular",
+              "balanceMinor": "-9223372036854775808",
+              "expected": {
+                "type": "Money",
+                "value": "-9223372036854775808"
+              }
+            },
+            {
+              "id": "nonpremium-2-1",
+              "kind": "Premium",
+              "balanceMinor": "1",
+              "expected": {
+                "type": "Money",
+                "value": "1"
+              }
+            },
+            {
+              "id": "nonpremium-2-2",
+              "kind": "Premium",
+              "balanceMinor": "-1050",
+              "expected": {
+                "type": "Money",
+                "value": "-1050"
+              }
+            },
+            {
+              "id": "nonpremium-2-3",
+              "kind": "Premium",
+              "balanceMinor": "9223372036854775807",
+              "expected": {
+                "type": "Money",
+                "value": "9223372036854775807"
+              }
+            },
+            {
+              "id": "nonpremium-2-4",
+              "kind": "Premium",
+              "balanceMinor": "-9223372036854775808",
+              "expected": {
+                "type": "Money",
+                "value": "-9223372036854775808"
+              }
+            },
+            {
+              "id": "nonpremium-3-1",
+              "kind": "PREMIUM",
+              "balanceMinor": "1",
+              "expected": {
+                "type": "Money",
+                "value": "1"
+              }
+            },
+            {
+              "id": "nonpremium-3-2",
+              "kind": "PREMIUM",
+              "balanceMinor": "-1050",
+              "expected": {
+                "type": "Money",
+                "value": "-1050"
+              }
+            },
+            {
+              "id": "nonpremium-3-3",
+              "kind": "PREMIUM",
+              "balanceMinor": "9223372036854775807",
+              "expected": {
+                "type": "Money",
+                "value": "9223372036854775807"
+              }
+            },
+            {
+              "id": "nonpremium-3-4",
+              "kind": "PREMIUM",
+              "balanceMinor": "-9223372036854775808",
+              "expected": {
+                "type": "Money",
+                "value": "-9223372036854775808"
+              }
+            },
+            {
+              "id": "nonpremium-4-1",
+              "kind": "premium ",
+              "balanceMinor": "1",
+              "expected": {
+                "type": "Money",
+                "value": "1"
+              }
+            },
+            {
+              "id": "nonpremium-4-2",
+              "kind": "premium ",
+              "balanceMinor": "-1050",
+              "expected": {
+                "type": "Money",
+                "value": "-1050"
+              }
+            },
+            {
+              "id": "nonpremium-4-3",
+              "kind": "premium ",
+              "balanceMinor": "9223372036854775807",
+              "expected": {
+                "type": "Money",
+                "value": "9223372036854775807"
+              }
+            },
+            {
+              "id": "nonpremium-4-4",
+              "kind": "premium ",
+              "balanceMinor": "-9223372036854775808",
+              "expected": {
+                "type": "Money",
+                "value": "-9223372036854775808"
+              }
+            },
+            {
+              "id": "nonpremium-5-1",
+              "kind": " premium",
+              "balanceMinor": "1",
+              "expected": {
+                "type": "Money",
+                "value": "1"
+              }
+            },
+            {
+              "id": "nonpremium-5-2",
+              "kind": " premium",
+              "balanceMinor": "-1050",
+              "expected": {
+                "type": "Money",
+                "value": "-1050"
+              }
+            },
+            {
+              "id": "nonpremium-5-3",
+              "kind": " premium",
+              "balanceMinor": "9223372036854775807",
+              "expected": {
+                "type": "Money",
+                "value": "9223372036854775807"
+              }
+            },
+            {
+              "id": "nonpremium-5-4",
+              "kind": " premium",
+              "balanceMinor": "-9223372036854775808",
+              "expected": {
+                "type": "Money",
+                "value": "-9223372036854775808"
+              }
+            },
+            {
+              "id": "nonpremium-6-1",
+              "kind": "\tpremium",
+              "balanceMinor": "1",
+              "expected": {
+                "type": "Money",
+                "value": "1"
+              }
+            },
+            {
+              "id": "nonpremium-6-2",
+              "kind": "\tpremium",
+              "balanceMinor": "-1050",
+              "expected": {
+                "type": "Money",
+                "value": "-1050"
+              }
+            },
+            {
+              "id": "nonpremium-6-3",
+              "kind": "\tpremium",
+              "balanceMinor": "9223372036854775807",
+              "expected": {
+                "type": "Money",
+                "value": "9223372036854775807"
+              }
+            },
+            {
+              "id": "nonpremium-6-4",
+              "kind": "\tpremium",
+              "balanceMinor": "-9223372036854775808",
+              "expected": {
+                "type": "Money",
+                "value": "-9223372036854775808"
+              }
+            },
+            {
+              "id": "nonpremium-7-1",
+              "kind": "premium\n",
+              "balanceMinor": "1",
+              "expected": {
+                "type": "Money",
+                "value": "1"
+              }
+            },
+            {
+              "id": "nonpremium-7-2",
+              "kind": "premium\n",
+              "balanceMinor": "-1050",
+              "expected": {
+                "type": "Money",
+                "value": "-1050"
+              }
+            },
+            {
+              "id": "nonpremium-7-3",
+              "kind": "premium\n",
+              "balanceMinor": "9223372036854775807",
+              "expected": {
+                "type": "Money",
+                "value": "9223372036854775807"
+              }
+            },
+            {
+              "id": "nonpremium-7-4",
+              "kind": "premium\n",
+              "balanceMinor": "-9223372036854775808",
+              "expected": {
+                "type": "Money",
+                "value": "-9223372036854775808"
+              }
+            },
+            {
+              "id": "nonpremium-8-1",
+              "kind": "",
+              "balanceMinor": "1",
+              "expected": {
+                "type": "Money",
+                "value": "1"
+              }
+            },
+            {
+              "id": "nonpremium-8-2",
+              "kind": "",
+              "balanceMinor": "-1050",
+              "expected": {
+                "type": "Money",
+                "value": "-1050"
+              }
+            },
+            {
+              "id": "nonpremium-8-3",
+              "kind": "",
+              "balanceMinor": "9223372036854775807",
+              "expected": {
+                "type": "Money",
+                "value": "9223372036854775807"
+              }
+            },
+            {
+              "id": "nonpremium-8-4",
+              "kind": "",
+              "balanceMinor": "-9223372036854775808",
+              "expected": {
+                "type": "Money",
+                "value": "-9223372036854775808"
+              }
+            },
+            {
+              "id": "nonpremium-9-1",
+              "kind": "prémi um",
+              "balanceMinor": "1",
+              "expected": {
+                "type": "Money",
+                "value": "1"
+              }
+            },
+            {
+              "id": "nonpremium-9-2",
+              "kind": "prémi um",
+              "balanceMinor": "-1050",
+              "expected": {
+                "type": "Money",
+                "value": "-1050"
+              }
+            },
+            {
+              "id": "nonpremium-9-3",
+              "kind": "prémi um",
+              "balanceMinor": "9223372036854775807",
+              "expected": {
+                "type": "Money",
+                "value": "9223372036854775807"
+              }
+            },
+            {
+              "id": "nonpremium-9-4",
+              "kind": "prémi um",
+              "balanceMinor": "-9223372036854775808",
+              "expected": {
+                "type": "Money",
+                "value": "-9223372036854775808"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "runs": [],
+  "sourceRevision": "7f02a82135de68364df58517ef5eb439df2eb9ab",
+  "dirty": true,
+  "cli": {
+    "path": "src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll",
+    "sha256": "e9098ca964e19fb4e34f47ff4cd04f9a389dcb01a990455f77301afb613f9002"
+  },
+  "business": {
+    "path": "experiments/AgentLang.Business/bin/Release/net9.0/AgentLang.Business.dll",
+    "sha256": "48837c07853194f2d8c5fa75b5f278e5fcef2db270ce42faa3a9251dff0007a4"
+  },
+  "seed": {
+    "path": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\control-fixtures\\authoring-help-preflight-deb0966f6fde40d6817705449402f0eb\\prepared-local\\seeds\\flat\\project",
+    "sha256": "302cc5b374801295b321ddc28303bc8f4ccb2a65ca439194a579dd7e69a691a6",
+    "preparationStartingState": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\control-fixtures\\authoring-help-preflight-deb0966f6fde40d6817705449402f0eb\\prepared-runs\\flat-S06\\starting-state.json"
+  },
+  "verifierSha256": "81d3f855ace5edeb7bed6fbef72ff19dee80ec04b6acc0007b160bbb4e587ff2",
+  "preflightSha256": "0f2f57477ad4aea6976818147394c76f67407ae275251d4cc76d23fae589a9d5",
+  "processRuns": [
+    {
+      "label": "correct/S06 author and validate",
+      "arguments": [
+        "src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll",
+        "--project",
+        "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\control-fixtures\\authoring-help-preflight-deb0966f6fde40d6817705449402f0eb\\correct-S06",
+        "--jsonl"
+      ],
+      "requestCount": 3,
+      "requests": [
+        "{\"op\":\"define\",\"frontend\":\"flow\",\"source\":\"word customer.premium?(customer: Customer) -> Bool {\\n    effects none\\n    doc \\\"Classifies the raw premium customer kind.\\\"\\n    equals(customer::kind(customer), \\\"premium\\\")\\n}\\ntest customer.premium?/premium { customer::premium?(customer::new(id = CustomerId::new(\\\"10000000-0000-0000-0000-000000000001\\\"), email = Email::new(\\\"ada@example.test\\\"), kind = \\\"premium\\\", balance = Money::new(1050), created-at = Instant::new(\\\"2026-01-01T12:00:00.0000000+00:00\\\"))) => true }\\ntest customer.premium?/regular { customer::premium?(customer::new(id = CustomerId::new(\\\"10000000-0000-0000-0000-000000000001\\\"), email = Email::new(\\\"ada@example.test\\\"), kind = \\\"regular\\\", balance = Money::new(1050), created-at = Instant::new(\\\"2026-01-01T12:00:00.0000000+00:00\\\"))) => false }\\ntest customer.premium?/spaced { customer::premium?(customer::new(id = CustomerId::new(\\\"10000000-0000-0000-0000-000000000001\\\"), email = Email::new(\\\"ada@example.test\\\"), kind = \\\" premium \\\", balance = Money::new(1050), created-at = Instant::new(\\\"2026-01-01T12:00:00.0000000+00:00\\\"))) => false }\\nexample customer.premium?/premium { customer::premium?(customer::new(id = CustomerId::new(\\\"10000000-0000-0000-0000-000000000001\\\"), email = Email::new(\\\"ada@example.test\\\"), kind = \\\"premium\\\", balance = Money::new(1050), created-at = Instant::new(\\\"2026-01-01T12:00:00.0000000+00:00\\\"))) => true }\\nword customer.discount-basis-points(customer: Customer) -> Int {\\n    effects none\\n    doc \\\"Returns the policy result for this customer.\\\"\\n    if customer::premium?(customer) { 1000 } else { 0 }\\n}\\ntest customer.discount-basis-points/premium { customer::discount-basis-points(customer::new(id = CustomerId::new(\\\"10000000-0000-0000-0000-000000000001\\\"), email = Email::new(\\\"ada@example.test\\\"), kind = \\\"premium\\\", balance = Money::new(1050), created-at = Instant::new(\\\"2026-01-01T12:00:00.0000000+00:00\\\"))) => 1000 }\\ntest customer.discount-basis-points/regular { customer::discount-basis-points(customer::new(id = CustomerId::new(\\\"10000000-0000-0000-0000-000000000001\\\"), email = Email::new(\\\"ada@example.test\\\"), kind = \\\"regular\\\", balance = Money::new(1050), created-at = Instant::new(\\\"2026-01-01T12:00:00.0000000+00:00\\\"))) => 0 }\\ntest customer.discount-basis-points/spaced { customer::discount-basis-points(customer::new(id = CustomerId::new(\\\"10000000-0000-0000-0000-000000000001\\\"), email = Email::new(\\\"ada@example.test\\\"), kind = \\\" premium \\\", balance = Money::new(1050), created-at = Instant::new(\\\"2026-01-01T12:00:00.0000000+00:00\\\"))) => 0 }\\nexample customer.discount-basis-points/premium { customer::discount-basis-points(customer::new(id = CustomerId::new(\\\"10000000-0000-0000-0000-000000000001\\\"), email = Email::new(\\\"ada@example.test\\\"), kind = \\\"premium\\\", balance = Money::new(1050), created-at = Instant::new(\\\"2026-01-01T12:00:00.0000000+00:00\\\"))) => 1000 }\"}",
+        "{\"op\":\"test-all\"}",
+        "{\"op\":\"commit\",\"library\":true}"
+      ],
+      "responseCount": 4,
+      "responses": [],
+      "parseErrors": [
+        "Conversion from JSON failed with error: Unexpected character encountered while parsing value: P. Path '', line 0, position 0.",
+        "Conversion from JSON failed with error: Unexpected character encountered while parsing value: *. Path '', line 1, position 2.",
+        "Conversion from JSON failed with error: Unexpected character encountered while parsing value: *. Path '', line 1, position 2.",
+        "Conversion from JSON failed with error: Unexpected character encountered while parsing value: *. Path '', line 1, position 2."
+      ],
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 287,
+      "stderr": "Could not execute because the specified command or file was not found.\r\n"
+    }
+  ]
+}

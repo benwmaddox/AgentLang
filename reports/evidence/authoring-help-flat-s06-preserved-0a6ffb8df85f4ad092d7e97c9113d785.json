@@ -1,0 +1,525 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-help-002",
+  "mode": "flat",
+  "taskId": "S06",
+  "passed": false,
+  "metadataPassed": false,
+  "behaviorPassed": false,
+  "safetyStop": "The requested evidence destination already exists; verifier stopped before CLI execution to preserve it.",
+  "failure": "The requested evidence destination already exists; verifier stopped before CLI execution to preserve it.",
+  "evidencePath": "D:\\code\\AgentLang\\reports\\evidence\\authoring-help-flat-s06-preserved-0a6ffb8df85f4ad092d7e97c9113d785.json",
+  "requestedEvidencePath": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\control-fixtures\\authoring-help-preflight-6278823969524fcf8d095c7b52257768\\existing-evidence-S06.json",
+  "evidencePathCollision": true,
+  "sequenceIndex": 2,
+  "resultKind": "unfrozen-preflight-or-control",
+  "checkFrozenPin": false,
+  "frozenPin": {
+    "required": false,
+    "checked": false,
+    "status": "unfrozen-preflight-or-control-without-starting-project",
+    "path": null,
+    "sha256": null
+  },
+  "prelaunch": null,
+  "startedUtc": "2026-10-07T03:54:36.2489939Z",
+  "finishedUtc": "2026-10-07T03:54:36.6522339Z",
+  "verifierSha256": "53991065a040ace69e4014551d3fc69c5e36c6d84dabb195b242718f1933a92d",
+  "oracle": {
+    "path": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-help-002\\acceptance.json",
+    "sha256": "d58fceeec3b659aebc58daa1d708d5f16cb43d12996f291c1c78a377fcfb89ef",
+    "symbol": "customer.discount-basis-points",
+    "cases": 10,
+    "independentResults": [
+      {
+        "id": "kind-1",
+        "kind": "premium",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Int",
+          "value": "1000"
+        }
+      },
+      {
+        "id": "kind-2",
+        "kind": "regular",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Int",
+          "value": "0"
+        }
+      },
+      {
+        "id": "kind-3",
+        "kind": "Premium",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Int",
+          "value": "0"
+        }
+      },
+      {
+        "id": "kind-4",
+        "kind": "PREMIUM",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Int",
+          "value": "0"
+        }
+      },
+      {
+        "id": "kind-5",
+        "kind": "premium ",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Int",
+          "value": "0"
+        }
+      },
+      {
+        "id": "kind-6",
+        "kind": " premium",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Int",
+          "value": "0"
+        }
+      },
+      {
+        "id": "kind-7",
+        "kind": "\tpremium",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Int",
+          "value": "0"
+        }
+      },
+      {
+        "id": "kind-8",
+        "kind": "premium\n",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Int",
+          "value": "0"
+        }
+      },
+      {
+        "id": "kind-9",
+        "kind": "",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Int",
+          "value": "0"
+        }
+      },
+      {
+        "id": "kind-10",
+        "kind": "prémi um",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Int",
+          "value": "0"
+        }
+      }
+    ]
+  },
+  "behavior": {
+    "targetUsable": false,
+    "casesExpected": 10,
+    "casesExecuted": 0,
+    "casesRecorded": 0,
+    "cases": []
+  },
+  "project": {
+    "argumentPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\control-fixtures\\authoring-help-preflight-6278823969524fcf8d095c7b52257768\\existing-evidence-S06",
+    "path": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\control-fixtures\\authoring-help-preflight-6278823969524fcf8d095c7b52257768\\existing-evidence-S06",
+    "treeSha256": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424",
+    "filesBefore": [
+      {
+        "path": ".agentlang/store/CURRENT",
+        "sha256": "552b35c609db456bbe64f8edb7025de60a15bf342e9e3cc67919f52485b98bcc"
+      },
+      {
+        "path": ".agentlang/store/manifests/f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7.json",
+        "sha256": "f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7"
+      },
+      {
+        "path": ".agentlang/store/objects/2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0.agent",
+        "sha256": "2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0"
+      },
+      {
+        "path": ".agentlang/store/objects/737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e.agent",
+        "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+      },
+      {
+        "path": ".agentlang/store/objects/8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416.agent",
+        "sha256": "8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416"
+      },
+      {
+        "path": ".agentlang/store/objects/9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14.agent",
+        "sha256": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14"
+      },
+      {
+        "path": ".agentlang/store/objects/cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7.agent",
+        "sha256": "cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7"
+      },
+      {
+        "path": ".agentlang/store/objects/e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17.agent",
+        "sha256": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17"
+      },
+      {
+        "path": ".agentlang/store/objects/ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb.agent",
+        "sha256": "ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb"
+      },
+      {
+        "path": ".agentlang/store/WRITE.lock",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "dictionary.agent",
+        "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+      },
+      {
+        "path": "fixtures/flat-customer.agent",
+        "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+      }
+    ],
+    "filesAfter": [
+      {
+        "path": ".agentlang/store/CURRENT",
+        "sha256": "552b35c609db456bbe64f8edb7025de60a15bf342e9e3cc67919f52485b98bcc"
+      },
+      {
+        "path": ".agentlang/store/manifests/f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7.json",
+        "sha256": "f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7"
+      },
+      {
+        "path": ".agentlang/store/objects/2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0.agent",
+        "sha256": "2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0"
+      },
+      {
+        "path": ".agentlang/store/objects/737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e.agent",
+        "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+      },
+      {
+        "path": ".agentlang/store/objects/8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416.agent",
+        "sha256": "8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416"
+      },
+      {
+        "path": ".agentlang/store/objects/9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14.agent",
+        "sha256": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14"
+      },
+      {
+        "path": ".agentlang/store/objects/cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7.agent",
+        "sha256": "cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7"
+      },
+      {
+        "path": ".agentlang/store/objects/e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17.agent",
+        "sha256": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17"
+      },
+      {
+        "path": ".agentlang/store/objects/ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb.agent",
+        "sha256": "ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb"
+      },
+      {
+        "path": ".agentlang/store/WRITE.lock",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "dictionary.agent",
+        "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+      },
+      {
+        "path": "fixtures/flat-customer.agent",
+        "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+      }
+    ]
+  },
+  "outputTreeSha256": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424",
+  "startingProject": {
+    "argumentPath": null,
+    "path": null,
+    "state": null,
+    "preservation": {
+      "mode": "flat",
+      "checked": false,
+      "sourceWords": 0,
+      "nominalTypes": 0,
+      "unchanged": null
+    }
+  },
+  "runtime": {
+    "cliDll": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+    "cliSha256": "e9098ca964e19fb4e34f47ff4cd04f9a389dcb01a990455f77301afb613f9002"
+  },
+  "reuse": {
+    "candidatePriorTaskSymbols": [],
+    "priorTaskSymbols": null,
+    "startingDictionaryTaskSymbols": null,
+    "directDependencies": [],
+    "transitiveDependencies": [],
+    "reusedPriorTaskSymbols": null,
+    "status": "independent flat task; no predecessor dictionary reuse is claimed"
+  },
+  "checks": [
+    {
+      "name": "mode is flat",
+      "passed": true,
+      "details": "flat"
+    },
+    {
+      "name": "task id is supported by the fresh study",
+      "passed": true,
+      "details": "S06"
+    },
+    {
+      "name": "versioned acceptance corpus exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-help-002\\acceptance.json"
+    },
+    {
+      "name": "acceptance default Instant is a JSON string",
+      "passed": true
+    },
+    {
+      "name": "acceptance corpus study and canonical sequence match",
+      "passed": true,
+      "details": {
+        "sequence": [
+          "S01",
+          "S06",
+          "S07"
+        ],
+        "studyId": "business-policy-help-002"
+      }
+    },
+    {
+      "name": "acceptance records the unchanged 001 predecessor hash",
+      "passed": true,
+      "details": {
+        "actual": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+        "expected": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf"
+      }
+    },
+    {
+      "name": "acceptance task has the required strong signature",
+      "passed": true,
+      "details": {
+        "symbol": "customer.discount-basis-points",
+        "inputs": [
+          "Customer"
+        ],
+        "outputs": [
+          "Int"
+        ]
+      }
+    },
+    {
+      "name": "acceptance case count matches the unchanged corpus",
+      "passed": true,
+      "details": {
+        "actual": 10,
+        "expected": 10
+      }
+    },
+    {
+      "name": "acceptance case ids are nonempty and unique",
+      "passed": true
+    },
+    {
+      "name": "default Instant is canonical UTC round-trip text",
+      "passed": true,
+      "details": "2026-01-01T12:00:00.0000000+00:00"
+    },
+    {
+      "name": "all acceptance values match independent BigInteger oracle",
+      "passed": true
+    },
+    {
+      "name": "actor project directory exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\control-fixtures\\authoring-help-preflight-6278823969524fcf8d095c7b52257768\\existing-evidence-S06"
+    },
+    {
+      "name": "starting project supplied for preservation and freeze validation",
+      "passed": false
+    },
+    {
+      "name": "evidence file is outside actor and starting projects",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\control-fixtures\\authoring-help-preflight-6278823969524fcf8d095c7b52257768\\existing-evidence-S06.json"
+    },
+    {
+      "name": "evidence output destination is unused and will not overwrite a prior report",
+      "passed": false,
+      "details": {
+        "selected": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\control-fixtures\\authoring-help-preflight-6278823969524fcf8d095c7b52257768\\existing-evidence-S06.json",
+        "requested": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\control-fixtures\\authoring-help-preflight-6278823969524fcf8d095c7b52257768\\existing-evidence-S06.json",
+        "collision": true
+      }
+    },
+    {
+      "name": "fresh pinned AgentLang CLI exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll"
+    },
+    {
+      "name": "unfrozen verifier run classified as preflight/control",
+      "passed": true,
+      "details": "No StartingProjectPath was supplied."
+    },
+    {
+      "name": "safe executable target and independent oracle are available for behavior",
+      "passed": false,
+      "details": {
+        "safetyStop": "The requested evidence destination already exists; verifier stopped before CLI execution to preserve it.",
+        "targetUsable": false,
+        "oracleUsable": true
+      }
+    },
+    {
+      "name": "actor project remains unchanged by verification",
+      "passed": true,
+      "details": {
+        "after": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424",
+        "before": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424"
+      }
+    }
+  ],
+  "metadataChecks": [
+    {
+      "name": "mode is flat",
+      "passed": true,
+      "details": "flat"
+    },
+    {
+      "name": "task id is supported by the fresh study",
+      "passed": true,
+      "details": "S06"
+    },
+    {
+      "name": "versioned acceptance corpus exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-help-002\\acceptance.json"
+    },
+    {
+      "name": "acceptance default Instant is a JSON string",
+      "passed": true
+    },
+    {
+      "name": "acceptance corpus study and canonical sequence match",
+      "passed": true,
+      "details": {
+        "sequence": [
+          "S01",
+          "S06",
+          "S07"
+        ],
+        "studyId": "business-policy-help-002"
+      }
+    },
+    {
+      "name": "acceptance records the unchanged 001 predecessor hash",
+      "passed": true,
+      "details": {
+        "actual": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+        "expected": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf"
+      }
+    },
+    {
+      "name": "acceptance task has the required strong signature",
+      "passed": true,
+      "details": {
+        "symbol": "customer.discount-basis-points",
+        "inputs": [
+          "Customer"
+        ],
+        "outputs": [
+          "Int"
+        ]
+      }
+    },
+    {
+      "name": "acceptance case count matches the unchanged corpus",
+      "passed": true,
+      "details": {
+        "actual": 10,
+        "expected": 10
+      }
+    },
+    {
+      "name": "acceptance case ids are nonempty and unique",
+      "passed": true
+    },
+    {
+      "name": "default Instant is canonical UTC round-trip text",
+      "passed": true,
+      "details": "2026-01-01T12:00:00.0000000+00:00"
+    },
+    {
+      "name": "all acceptance values match independent BigInteger oracle",
+      "passed": true
+    },
+    {
+      "name": "actor project directory exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\control-fixtures\\authoring-help-preflight-6278823969524fcf8d095c7b52257768\\existing-evidence-S06"
+    },
+    {
+      "name": "starting project supplied for preservation and freeze validation",
+      "passed": false
+    },
+    {
+      "name": "evidence file is outside actor and starting projects",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\control-fixtures\\authoring-help-preflight-6278823969524fcf8d095c7b52257768\\existing-evidence-S06.json"
+    },
+    {
+      "name": "evidence output destination is unused and will not overwrite a prior report",
+      "passed": false,
+      "details": {
+        "selected": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\control-fixtures\\authoring-help-preflight-6278823969524fcf8d095c7b52257768\\existing-evidence-S06.json",
+        "requested": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\control-fixtures\\authoring-help-preflight-6278823969524fcf8d095c7b52257768\\existing-evidence-S06.json",
+        "collision": true
+      }
+    },
+    {
+      "name": "fresh pinned AgentLang CLI exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll"
+    },
+    {
+      "name": "unfrozen verifier run classified as preflight/control",
+      "passed": true,
+      "details": "No StartingProjectPath was supplied."
+    }
+  ],
+  "behaviorChecks": [
+    {
+      "name": "safe executable target and independent oracle are available for behavior",
+      "passed": false,
+      "details": {
+        "safetyStop": "The requested evidence destination already exists; verifier stopped before CLI execution to preserve it.",
+        "targetUsable": false,
+        "oracleUsable": true
+      }
+    },
+    {
+      "name": "actor project remains unchanged by verification",
+      "passed": true,
+      "details": {
+        "after": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424",
+        "before": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424"
+      }
+    }
+  ],
+  "testExecutionCount": 0,
+  "jsonlSessions": [],
+  "processRuns": [],
+  "oracleProtocol": "Independent BigInteger arithmetic; raw Kind uses ordinal exact comparison; Money and Int payloads are canonical signed Int64 decimal strings.",
+  "limits": [
+    "Metadata failures remain distinct from behavior outcomes.",
+    "A missing, untyped, impure, or unreloadable target prevents oracle execution.",
+    "No efficiency or token-use claim is made."
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "command": "dotnet build AgentLang.sln --configuration Release --no-incremental",
+  "runtimeSourceRevision": "7f02a82135de68364df58517ef5eb439df2eb9ab",
+  "exitCode": 0,
+  "warnings": 0,
+  "errors": 0,
+  "elapsed": "00:00:51.36",
+  "note": "Fresh build of all solution dependencies before preparation; terminal build summary captured. This is a build result, not a new full validation gate."
+}

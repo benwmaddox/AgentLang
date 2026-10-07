@@ -6,8 +6,16 @@ identity and isolated projects. Start each from the same schema-only six-type
 Customer seed; retain no earlier task solution. Keep all business-policy-001
 prompts, sources, scripts, traces, audits and outcomes unchanged.
 
+The versioned package is `business-policy-help-002`. Its entry points are
+`Prepare-AuthoringHelpTrial.ps1`, `Freeze-AuthoringHelpTrial.ps1`,
+`Verify-AuthoringHelpTrial.ps1`, `Verify-AuthoringHelpPreflight.ps1` and
+`Audit-AuthoringHelpTrace.ps1`. Ignored run roots permit a clean implementation
+commit before freeze; completed run evidence is archived separately afterward.
+
 This answers whether the interface fixes the observed metadata failures. It
 does not isolate a vocabulary-retention effect or establish an efficiency gain.
+Both guidance and runtime help availability change, so a passing follow-up
+cannot isolate the causal contribution of runtime help alone.
 Defer the separate external replacement-discovery probe until these outcomes
 are known; replacement execution remains covered by runtime acceptance tests.
 

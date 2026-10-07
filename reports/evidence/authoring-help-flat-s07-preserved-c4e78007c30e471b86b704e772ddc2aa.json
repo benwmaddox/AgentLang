@@ -1,0 +1,921 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-help-002",
+  "mode": "flat",
+  "taskId": "S07",
+  "passed": false,
+  "metadataPassed": false,
+  "behaviorPassed": false,
+  "safetyStop": "The requested evidence destination already exists; verifier stopped before CLI execution to preserve it.",
+  "failure": "The requested evidence destination already exists; verifier stopped before CLI execution to preserve it.",
+  "evidencePath": "D:\\code\\AgentLang\\reports\\evidence\\authoring-help-flat-s07-preserved-c4e78007c30e471b86b704e772ddc2aa.json",
+  "requestedEvidencePath": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\control-fixtures\\authoring-help-preflight-6278823969524fcf8d095c7b52257768\\existing-evidence-S07.json",
+  "evidencePathCollision": true,
+  "sequenceIndex": 3,
+  "resultKind": "unfrozen-preflight-or-control",
+  "checkFrozenPin": false,
+  "frozenPin": {
+    "required": false,
+    "checked": false,
+    "status": "unfrozen-preflight-or-control-without-starting-project",
+    "path": null,
+    "sha256": null
+  },
+  "prelaunch": null,
+  "startedUtc": "2026-10-07T03:55:13.6010269Z",
+  "finishedUtc": "2026-10-07T03:55:13.7904895Z",
+  "verifierSha256": "53991065a040ace69e4014551d3fc69c5e36c6d84dabb195b242718f1933a92d",
+  "oracle": {
+    "path": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-help-002\\acceptance.json",
+    "sha256": "d58fceeec3b659aebc58daa1d708d5f16cb43d12996f291c1c78a377fcfb89ef",
+    "symbol": "customer.discounted-balance",
+    "cases": 54,
+    "independentResults": [
+      {
+        "id": "premium-1",
+        "kind": "premium",
+        "balanceMinor": "0",
+        "expected": {
+          "type": "Money",
+          "value": "0"
+        }
+      },
+      {
+        "id": "premium-2",
+        "kind": "premium",
+        "balanceMinor": "1",
+        "expected": {
+          "type": "Money",
+          "value": "0"
+        }
+      },
+      {
+        "id": "premium-3",
+        "kind": "premium",
+        "balanceMinor": "9",
+        "expected": {
+          "type": "Money",
+          "value": "8"
+        }
+      },
+      {
+        "id": "premium-4",
+        "kind": "premium",
+        "balanceMinor": "10",
+        "expected": {
+          "type": "Money",
+          "value": "9"
+        }
+      },
+      {
+        "id": "premium-5",
+        "kind": "premium",
+        "balanceMinor": "11",
+        "expected": {
+          "type": "Money",
+          "value": "9"
+        }
+      },
+      {
+        "id": "premium-6",
+        "kind": "premium",
+        "balanceMinor": "19",
+        "expected": {
+          "type": "Money",
+          "value": "17"
+        }
+      },
+      {
+        "id": "premium-7",
+        "kind": "premium",
+        "balanceMinor": "20",
+        "expected": {
+          "type": "Money",
+          "value": "18"
+        }
+      },
+      {
+        "id": "premium-8",
+        "kind": "premium",
+        "balanceMinor": "1050",
+        "expected": {
+          "type": "Money",
+          "value": "945"
+        }
+      },
+      {
+        "id": "premium-9",
+        "kind": "premium",
+        "balanceMinor": "-1",
+        "expected": {
+          "type": "Money",
+          "value": "0"
+        }
+      },
+      {
+        "id": "premium-10",
+        "kind": "premium",
+        "balanceMinor": "-9",
+        "expected": {
+          "type": "Money",
+          "value": "-8"
+        }
+      },
+      {
+        "id": "premium-11",
+        "kind": "premium",
+        "balanceMinor": "-10",
+        "expected": {
+          "type": "Money",
+          "value": "-9"
+        }
+      },
+      {
+        "id": "premium-12",
+        "kind": "premium",
+        "balanceMinor": "-11",
+        "expected": {
+          "type": "Money",
+          "value": "-9"
+        }
+      },
+      {
+        "id": "premium-13",
+        "kind": "premium",
+        "balanceMinor": "-19",
+        "expected": {
+          "type": "Money",
+          "value": "-17"
+        }
+      },
+      {
+        "id": "premium-14",
+        "kind": "premium",
+        "balanceMinor": "-1050",
+        "expected": {
+          "type": "Money",
+          "value": "-945"
+        }
+      },
+      {
+        "id": "premium-15",
+        "kind": "premium",
+        "balanceMinor": "9007199254740993",
+        "expected": {
+          "type": "Money",
+          "value": "8106479329266893"
+        }
+      },
+      {
+        "id": "premium-16",
+        "kind": "premium",
+        "balanceMinor": "-9007199254740993",
+        "expected": {
+          "type": "Money",
+          "value": "-8106479329266893"
+        }
+      },
+      {
+        "id": "premium-17",
+        "kind": "premium",
+        "balanceMinor": "9223372036854775807",
+        "expected": {
+          "type": "Money",
+          "value": "8301034833169298226"
+        }
+      },
+      {
+        "id": "premium-18",
+        "kind": "premium",
+        "balanceMinor": "-9223372036854775808",
+        "expected": {
+          "type": "Money",
+          "value": "-8301034833169298227"
+        }
+      },
+      {
+        "id": "nonpremium-1-1",
+        "kind": "regular",
+        "balanceMinor": "1",
+        "expected": {
+          "type": "Money",
+          "value": "1"
+        }
+      },
+      {
+        "id": "nonpremium-1-2",
+        "kind": "regular",
+        "balanceMinor": "-1050",
+        "expected": {
+          "type": "Money",
+          "value": "-1050"
+        }
+      },
+      {
+        "id": "nonpremium-1-3",
+        "kind": "regular",
+        "balanceMinor": "9223372036854775807",
+        "expected": {
+          "type": "Money",
+          "value": "9223372036854775807"
+        }
+      },
+      {
+        "id": "nonpremium-1-4",
+        "kind": "regular",
+        "balanceMinor": "-9223372036854775808",
+        "expected": {
+          "type": "Money",
+          "value": "-9223372036854775808"
+        }
+      },
+      {
+        "id": "nonpremium-2-1",
+        "kind": "Premium",
+        "balanceMinor": "1",
+        "expected": {
+          "type": "Money",
+          "value": "1"
+        }
+      },
+      {
+        "id": "nonpremium-2-2",
+        "kind": "Premium",
+        "balanceMinor": "-1050",
+        "expected": {
+          "type": "Money",
+          "value": "-1050"
+        }
+      },
+      {
+        "id": "nonpremium-2-3",
+        "kind": "Premium",
+        "balanceMinor": "9223372036854775807",
+        "expected": {
+          "type": "Money",
+          "value": "9223372036854775807"
+        }
+      },
+      {
+        "id": "nonpremium-2-4",
+        "kind": "Premium",
+        "balanceMinor": "-9223372036854775808",
+        "expected": {
+          "type": "Money",
+          "value": "-9223372036854775808"
+        }
+      },
+      {
+        "id": "nonpremium-3-1",
+        "kind": "PREMIUM",
+        "balanceMinor": "1",
+        "expected": {
+          "type": "Money",
+          "value": "1"
+        }
+      },
+      {
+        "id": "nonpremium-3-2",
+        "kind": "PREMIUM",
+        "balanceMinor": "-1050",
+        "expected": {
+          "type": "Money",
+          "value": "-1050"
+        }
+      },
+      {
+        "id": "nonpremium-3-3",
+        "kind": "PREMIUM",
+        "balanceMinor": "9223372036854775807",
+        "expected": {
+          "type": "Money",
+          "value": "9223372036854775807"
+        }
+      },
+      {
+        "id": "nonpremium-3-4",
+        "kind": "PREMIUM",
+        "balanceMinor": "-9223372036854775808",
+        "expected": {
+          "type": "Money",
+          "value": "-9223372036854775808"
+        }
+      },
+      {
+        "id": "nonpremium-4-1",
+        "kind": "premium ",
+        "balanceMinor": "1",
+        "expected": {
+          "type": "Money",
+          "value": "1"
+        }
+      },
+      {
+        "id": "nonpremium-4-2",
+        "kind": "premium ",
+        "balanceMinor": "-1050",
+        "expected": {
+          "type": "Money",
+          "value": "-1050"
+        }
+      },
+      {
+        "id": "nonpremium-4-3",
+        "kind": "premium ",
+        "balanceMinor": "9223372036854775807",
+        "expected": {
+          "type": "Money",
+          "value": "9223372036854775807"
+        }
+      },
+      {
+        "id": "nonpremium-4-4",
+        "kind": "premium ",
+        "balanceMinor": "-9223372036854775808",
+        "expected": {
+          "type": "Money",
+          "value": "-9223372036854775808"
+        }
+      },
+      {
+        "id": "nonpremium-5-1",
+        "kind": " premium",
+        "balanceMinor": "1",
+        "expected": {
+          "type": "Money",
+          "value": "1"
+        }
+      },
+      {
+        "id": "nonpremium-5-2",
+        "kind": " premium",
+        "balanceMinor": "-1050",
+        "expected": {
+          "type": "Money",
+          "value": "-1050"
+        }
+      },
+      {
+        "id": "nonpremium-5-3",
+        "kind": " premium",
+        "balanceMinor": "9223372036854775807",
+        "expected": {
+          "type": "Money",
+          "value": "9223372036854775807"
+        }
+      },
+      {
+        "id": "nonpremium-5-4",
+        "kind": " premium",
+        "balanceMinor": "-9223372036854775808",
+        "expected": {
+          "type": "Money",
+          "value": "-9223372036854775808"
+        }
+      },
+      {
+        "id": "nonpremium-6-1",
+        "kind": "\tpremium",
+        "balanceMinor": "1",
+        "expected": {
+          "type": "Money",
+          "value": "1"
+        }
+      },
+      {
+        "id": "nonpremium-6-2",
+        "kind": "\tpremium",
+        "balanceMinor": "-1050",
+        "expected": {
+          "type": "Money",
+          "value": "-1050"
+        }
+      },
+      {
+        "id": "nonpremium-6-3",
+        "kind": "\tpremium",
+        "balanceMinor": "9223372036854775807",
+        "expected": {
+          "type": "Money",
+          "value": "9223372036854775807"
+        }
+      },
+      {
+        "id": "nonpremium-6-4",
+        "kind": "\tpremium",
+        "balanceMinor": "-9223372036854775808",
+        "expected": {
+          "type": "Money",
+          "value": "-9223372036854775808"
+        }
+      },
+      {
+        "id": "nonpremium-7-1",
+        "kind": "premium\n",
+        "balanceMinor": "1",
+        "expected": {
+          "type": "Money",
+          "value": "1"
+        }
+      },
+      {
+        "id": "nonpremium-7-2",
+        "kind": "premium\n",
+        "balanceMinor": "-1050",
+        "expected": {
+          "type": "Money",
+          "value": "-1050"
+        }
+      },
+      {
+        "id": "nonpremium-7-3",
+        "kind": "premium\n",
+        "balanceMinor": "9223372036854775807",
+        "expected": {
+          "type": "Money",
+          "value": "9223372036854775807"
+        }
+      },
+      {
+        "id": "nonpremium-7-4",
+        "kind": "premium\n",
+        "balanceMinor": "-9223372036854775808",
+        "expected": {
+          "type": "Money",
+          "value": "-9223372036854775808"
+        }
+      },
+      {
+        "id": "nonpremium-8-1",
+        "kind": "",
+        "balanceMinor": "1",
+        "expected": {
+          "type": "Money",
+          "value": "1"
+        }
+      },
+      {
+        "id": "nonpremium-8-2",
+        "kind": "",
+        "balanceMinor": "-1050",
+        "expected": {
+          "type": "Money",
+          "value": "-1050"
+        }
+      },
+      {
+        "id": "nonpremium-8-3",
+        "kind": "",
+        "balanceMinor": "9223372036854775807",
+        "expected": {
+          "type": "Money",
+          "value": "9223372036854775807"
+        }
+      },
+      {
+        "id": "nonpremium-8-4",
+        "kind": "",
+        "balanceMinor": "-9223372036854775808",
+        "expected": {
+          "type": "Money",
+          "value": "-9223372036854775808"
+        }
+      },
+      {
+        "id": "nonpremium-9-1",
+        "kind": "prémi um",
+        "balanceMinor": "1",
+        "expected": {
+          "type": "Money",
+          "value": "1"
+        }
+      },
+      {
+        "id": "nonpremium-9-2",
+        "kind": "prémi um",
+        "balanceMinor": "-1050",
+        "expected": {
+          "type": "Money",
+          "value": "-1050"
+        }
+      },
+      {
+        "id": "nonpremium-9-3",
+        "kind": "prémi um",
+        "balanceMinor": "9223372036854775807",
+        "expected": {
+          "type": "Money",
+          "value": "9223372036854775807"
+        }
+      },
+      {
+        "id": "nonpremium-9-4",
+        "kind": "prémi um",
+        "balanceMinor": "-9223372036854775808",
+        "expected": {
+          "type": "Money",
+          "value": "-9223372036854775808"
+        }
+      }
+    ]
+  },
+  "behavior": {
+    "targetUsable": false,
+    "casesExpected": 54,
+    "casesExecuted": 0,
+    "casesRecorded": 0,
+    "cases": []
+  },
+  "project": {
+    "argumentPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\control-fixtures\\authoring-help-preflight-6278823969524fcf8d095c7b52257768\\existing-evidence-S07",
+    "path": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\control-fixtures\\authoring-help-preflight-6278823969524fcf8d095c7b52257768\\existing-evidence-S07",
+    "treeSha256": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424",
+    "filesBefore": [
+      {
+        "path": ".agentlang/store/CURRENT",
+        "sha256": "552b35c609db456bbe64f8edb7025de60a15bf342e9e3cc67919f52485b98bcc"
+      },
+      {
+        "path": ".agentlang/store/manifests/f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7.json",
+        "sha256": "f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7"
+      },
+      {
+        "path": ".agentlang/store/objects/2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0.agent",
+        "sha256": "2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0"
+      },
+      {
+        "path": ".agentlang/store/objects/737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e.agent",
+        "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+      },
+      {
+        "path": ".agentlang/store/objects/8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416.agent",
+        "sha256": "8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416"
+      },
+      {
+        "path": ".agentlang/store/objects/9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14.agent",
+        "sha256": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14"
+      },
+      {
+        "path": ".agentlang/store/objects/cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7.agent",
+        "sha256": "cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7"
+      },
+      {
+        "path": ".agentlang/store/objects/e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17.agent",
+        "sha256": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17"
+      },
+      {
+        "path": ".agentlang/store/objects/ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb.agent",
+        "sha256": "ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb"
+      },
+      {
+        "path": ".agentlang/store/WRITE.lock",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "dictionary.agent",
+        "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+      },
+      {
+        "path": "fixtures/flat-customer.agent",
+        "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+      }
+    ],
+    "filesAfter": [
+      {
+        "path": ".agentlang/store/CURRENT",
+        "sha256": "552b35c609db456bbe64f8edb7025de60a15bf342e9e3cc67919f52485b98bcc"
+      },
+      {
+        "path": ".agentlang/store/manifests/f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7.json",
+        "sha256": "f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7"
+      },
+      {
+        "path": ".agentlang/store/objects/2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0.agent",
+        "sha256": "2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0"
+      },
+      {
+        "path": ".agentlang/store/objects/737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e.agent",
+        "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+      },
+      {
+        "path": ".agentlang/store/objects/8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416.agent",
+        "sha256": "8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416"
+      },
+      {
+        "path": ".agentlang/store/objects/9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14.agent",
+        "sha256": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14"
+      },
+      {
+        "path": ".agentlang/store/objects/cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7.agent",
+        "sha256": "cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7"
+      },
+      {
+        "path": ".agentlang/store/objects/e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17.agent",
+        "sha256": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17"
+      },
+      {
+        "path": ".agentlang/store/objects/ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb.agent",
+        "sha256": "ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb"
+      },
+      {
+        "path": ".agentlang/store/WRITE.lock",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "dictionary.agent",
+        "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+      },
+      {
+        "path": "fixtures/flat-customer.agent",
+        "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+      }
+    ]
+  },
+  "outputTreeSha256": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424",
+  "startingProject": {
+    "argumentPath": null,
+    "path": null,
+    "state": null,
+    "preservation": {
+      "mode": "flat",
+      "checked": false,
+      "sourceWords": 0,
+      "nominalTypes": 0,
+      "unchanged": null
+    }
+  },
+  "runtime": {
+    "cliDll": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+    "cliSha256": "e9098ca964e19fb4e34f47ff4cd04f9a389dcb01a990455f77301afb613f9002"
+  },
+  "reuse": {
+    "candidatePriorTaskSymbols": [],
+    "priorTaskSymbols": null,
+    "startingDictionaryTaskSymbols": null,
+    "directDependencies": [],
+    "transitiveDependencies": [],
+    "reusedPriorTaskSymbols": null,
+    "status": "independent flat task; no predecessor dictionary reuse is claimed"
+  },
+  "checks": [
+    {
+      "name": "mode is flat",
+      "passed": true,
+      "details": "flat"
+    },
+    {
+      "name": "task id is supported by the fresh study",
+      "passed": true,
+      "details": "S07"
+    },
+    {
+      "name": "versioned acceptance corpus exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-help-002\\acceptance.json"
+    },
+    {
+      "name": "acceptance default Instant is a JSON string",
+      "passed": true
+    },
+    {
+      "name": "acceptance corpus study and canonical sequence match",
+      "passed": true,
+      "details": {
+        "sequence": [
+          "S01",
+          "S06",
+          "S07"
+        ],
+        "studyId": "business-policy-help-002"
+      }
+    },
+    {
+      "name": "acceptance records the unchanged 001 predecessor hash",
+      "passed": true,
+      "details": {
+        "actual": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+        "expected": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf"
+      }
+    },
+    {
+      "name": "acceptance task has the required strong signature",
+      "passed": true,
+      "details": {
+        "inputs": [
+          "Customer"
+        ],
+        "outputs": [
+          "Money"
+        ],
+        "symbol": "customer.discounted-balance"
+      }
+    },
+    {
+      "name": "acceptance case count matches the unchanged corpus",
+      "passed": true,
+      "details": {
+        "actual": 54,
+        "expected": 54
+      }
+    },
+    {
+      "name": "acceptance case ids are nonempty and unique",
+      "passed": true
+    },
+    {
+      "name": "default Instant is canonical UTC round-trip text",
+      "passed": true,
+      "details": "2026-01-01T12:00:00.0000000+00:00"
+    },
+    {
+      "name": "all acceptance values match independent BigInteger oracle",
+      "passed": true
+    },
+    {
+      "name": "actor project directory exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\control-fixtures\\authoring-help-preflight-6278823969524fcf8d095c7b52257768\\existing-evidence-S07"
+    },
+    {
+      "name": "starting project supplied for preservation and freeze validation",
+      "passed": false
+    },
+    {
+      "name": "evidence file is outside actor and starting projects",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\control-fixtures\\authoring-help-preflight-6278823969524fcf8d095c7b52257768\\existing-evidence-S07.json"
+    },
+    {
+      "name": "evidence output destination is unused and will not overwrite a prior report",
+      "passed": false,
+      "details": {
+        "selected": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\control-fixtures\\authoring-help-preflight-6278823969524fcf8d095c7b52257768\\existing-evidence-S07.json",
+        "requested": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\control-fixtures\\authoring-help-preflight-6278823969524fcf8d095c7b52257768\\existing-evidence-S07.json",
+        "collision": true
+      }
+    },
+    {
+      "name": "fresh pinned AgentLang CLI exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll"
+    },
+    {
+      "name": "unfrozen verifier run classified as preflight/control",
+      "passed": true,
+      "details": "No StartingProjectPath was supplied."
+    },
+    {
+      "name": "safe executable target and independent oracle are available for behavior",
+      "passed": false,
+      "details": {
+        "targetUsable": false,
+        "oracleUsable": true,
+        "safetyStop": "The requested evidence destination already exists; verifier stopped before CLI execution to preserve it."
+      }
+    },
+    {
+      "name": "actor project remains unchanged by verification",
+      "passed": true,
+      "details": {
+        "after": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424",
+        "before": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424"
+      }
+    }
+  ],
+  "metadataChecks": [
+    {
+      "name": "mode is flat",
+      "passed": true,
+      "details": "flat"
+    },
+    {
+      "name": "task id is supported by the fresh study",
+      "passed": true,
+      "details": "S07"
+    },
+    {
+      "name": "versioned acceptance corpus exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-help-002\\acceptance.json"
+    },
+    {
+      "name": "acceptance default Instant is a JSON string",
+      "passed": true
+    },
+    {
+      "name": "acceptance corpus study and canonical sequence match",
+      "passed": true,
+      "details": {
+        "sequence": [
+          "S01",
+          "S06",
+          "S07"
+        ],
+        "studyId": "business-policy-help-002"
+      }
+    },
+    {
+      "name": "acceptance records the unchanged 001 predecessor hash",
+      "passed": true,
+      "details": {
+        "actual": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+        "expected": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf"
+      }
+    },
+    {
+      "name": "acceptance task has the required strong signature",
+      "passed": true,
+      "details": {
+        "inputs": [
+          "Customer"
+        ],
+        "outputs": [
+          "Money"
+        ],
+        "symbol": "customer.discounted-balance"
+      }
+    },
+    {
+      "name": "acceptance case count matches the unchanged corpus",
+      "passed": true,
+      "details": {
+        "actual": 54,
+        "expected": 54
+      }
+    },
+    {
+      "name": "acceptance case ids are nonempty and unique",
+      "passed": true
+    },
+    {
+      "name": "default Instant is canonical UTC round-trip text",
+      "passed": true,
+      "details": "2026-01-01T12:00:00.0000000+00:00"
+    },
+    {
+      "name": "all acceptance values match independent BigInteger oracle",
+      "passed": true
+    },
+    {
+      "name": "actor project directory exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\control-fixtures\\authoring-help-preflight-6278823969524fcf8d095c7b52257768\\existing-evidence-S07"
+    },
+    {
+      "name": "starting project supplied for preservation and freeze validation",
+      "passed": false
+    },
+    {
+      "name": "evidence file is outside actor and starting projects",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\control-fixtures\\authoring-help-preflight-6278823969524fcf8d095c7b52257768\\existing-evidence-S07.json"
+    },
+    {
+      "name": "evidence output destination is unused and will not overwrite a prior report",
+      "passed": false,
+      "details": {
+        "selected": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\control-fixtures\\authoring-help-preflight-6278823969524fcf8d095c7b52257768\\existing-evidence-S07.json",
+        "requested": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\control-fixtures\\authoring-help-preflight-6278823969524fcf8d095c7b52257768\\existing-evidence-S07.json",
+        "collision": true
+      }
+    },
+    {
+      "name": "fresh pinned AgentLang CLI exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll"
+    },
+    {
+      "name": "unfrozen verifier run classified as preflight/control",
+      "passed": true,
+      "details": "No StartingProjectPath was supplied."
+    }
+  ],
+  "behaviorChecks": [
+    {
+      "name": "safe executable target and independent oracle are available for behavior",
+      "passed": false,
+      "details": {
+        "targetUsable": false,
+        "oracleUsable": true,
+        "safetyStop": "The requested evidence destination already exists; verifier stopped before CLI execution to preserve it."
+      }
+    },
+    {
+      "name": "actor project remains unchanged by verification",
+      "passed": true,
+      "details": {
+        "after": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424",
+        "before": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424"
+      }
+    }
+  ],
+  "testExecutionCount": 0,
+  "jsonlSessions": [],
+  "processRuns": [],
+  "oracleProtocol": "Independent BigInteger arithmetic; raw Kind uses ordinal exact comparison; Money and Int payloads are canonical signed Int64 decimal strings.",
+  "limits": [
+    "Metadata failures remain distinct from behavior outcomes.",
+    "A missing, untyped, impure, or unreloadable target prevents oracle execution.",
+    "No efficiency or token-use claim is made."
+  ]
+}
