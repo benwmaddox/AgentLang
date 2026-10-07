@@ -94,6 +94,8 @@ cleanup boundaries.
 An optional alternative is per-type min/max mailbox pools with fast growth and
 slow retirement. Research state identity/routing and safe draining separately;
 counts alone do not bound memory or add CPU parallelism to a single thread.
+For mailboxes with distinct state, the preferred candidate is `min = max` with
+stable identities; stack capacity can still be released independently on idle.
 
 No current interpreter result proves native footprint, throughput or arena
 safety. Require semantic conformance and measured memory, throughput and tail

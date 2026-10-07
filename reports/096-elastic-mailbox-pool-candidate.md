@@ -22,3 +22,10 @@ boundaries and do not define AgentLang's state-retention semantics.
 
 Validation: local documentation link and diff checks. No runtime or performance
 tests were run for this proposal.
+
+User refinement: for mailboxes with distinct state, prefer equal minimum and
+maximum counts, preserving fixed instances and stable routing identities.
+Elasticity remains a candidate for interchangeable workers. Fixed mailbox
+counts do not prevent independent idle release of unused stack capacity.
+Recorded this preference in the roadmap and experiment contract; no runtime
+implementation is implied.

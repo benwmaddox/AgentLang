@@ -122,8 +122,13 @@ Compare fixed capacity and elastic pools as a separate scheduling/capacity axis
 after the arena lifetime and idle-release policies are understood.
 
 Specify whether instances are interchangeable workers or distinct stateful
-identities. Stateless workers can share a pool; stateful mailboxes require a
-defined retained-state owner and routing identity when an activation retires.
+identities. The user's preferred candidate for distinct state sets `min = max`:
+fixed mailbox instances with stable routing identities and retained static state.
+Their unused stack backing capacity may still be released after inactivity;
+fixed instance counts do not require permanently allocated scratch capacity.
+Interchangeable workers remain the elastic-pool candidate. If future research
+permits retirement of a distinct stateful activation, it requires an explicit
+retained-state owner and identity-preserving routing contract first.
 Scaling down must not discard mailbox static state, duplicate it into independent
 writers, or lose queued/in-flight work. Admission stops before safe draining and
 retirement. Pending operations and late completions retain defined destinations.
