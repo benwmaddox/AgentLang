@@ -1,0 +1,41 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  AgentLang.Business -> D:\code\AgentLang\.agentlang\native-integration-validation\artifacts\bin\AgentLang.Business\release\AgentLang.Business.dll
+  MatchedRenewal -> D:\code\AgentLang\.agentlang\native-integration-validation\artifacts\bin\MatchedRenewal\release\MatchedRenewal.dll
+  AgentLang.Conventional -> D:\code\AgentLang\.agentlang\native-integration-validation\artifacts\bin\AgentLang.Conventional\release\AgentLang.Conventional.dll
+  AgentLang.TaskBank.Tests -> D:\code\AgentLang\.agentlang\native-integration-validation\artifacts\bin\AgentLang.TaskBank.Tests\release\AgentLang.TaskBank.Tests.dll
+  MatchedRenewal.Flow -> D:\code\AgentLang\.agentlang\native-integration-validation\artifacts\bin\MatchedRenewal.Flow\release\MatchedRenewal.Flow.dll
+  AgentLang.Business.Tests -> D:\code\AgentLang\.agentlang\native-integration-validation\artifacts\bin\AgentLang.Business.Tests\release\AgentLang.Business.Tests.dll
+  AgentLang.Business.Contracts -> D:\code\AgentLang\.agentlang\native-integration-validation\artifacts\bin\AgentLang.Business.Contracts\release\AgentLang.Business.Contracts.dll
+  AgentLang.Conventional.Cli -> D:\code\AgentLang\.agentlang\native-integration-validation\artifacts\bin\AgentLang.Conventional.Cli\release\AgentLang.Conventional.Cli.dll
+  AgentLang.Conventional.Tests -> D:\code\AgentLang\.agentlang\native-integration-validation\artifacts\bin\AgentLang.Conventional.Tests\release\AgentLang.Conventional.Tests.dll
+  AgentLang.Business.Contracts.Tests -> D:\code\AgentLang\.agentlang\native-integration-validation\artifacts\bin\AgentLang.Business.Contracts.Tests\release\AgentLang.Business.Contracts.Tests.dll
+  AgentLang.Conventional.Cli.Tests -> D:\code\AgentLang\.agentlang\native-integration-validation\artifacts\bin\AgentLang.Conventional.Cli.Tests\release\AgentLang.Conventional.Cli.Tests.dll
+  AgentLang.Core -> D:\code\AgentLang\.agentlang\native-integration-validation\artifacts\bin\AgentLang.Core\release\AgentLang.Core.dll
+  AgentLang.Flow.Tests -> D:\code\AgentLang\.agentlang\native-integration-validation\artifacts\bin\AgentLang.Flow.Tests\release\AgentLang.Flow.Tests.dll
+  AgentLang.IR.Interpreter.Tests -> D:\code\AgentLang\.agentlang\native-integration-validation\artifacts\bin\AgentLang.IR.Interpreter.Tests\release\AgentLang.IR.Interpreter.Tests.dll
+  AgentLang.Llvm -> D:\code\AgentLang\.agentlang\native-integration-validation\artifacts\bin\AgentLang.Llvm\release\AgentLang.Llvm.dll
+  AgentLang.Business.Language.Tests -> D:\code\AgentLang\.agentlang\native-integration-validation\artifacts\bin\AgentLang.Business.Language.Tests\release\AgentLang.Business.Language.Tests.dll
+  AgentLang.Source.Tests -> D:\code\AgentLang\.agentlang\native-integration-validation\artifacts\bin\AgentLang.Source.Tests\release\AgentLang.Source.Tests.dll
+  AgentLang.Business.Transitions.Tests -> D:\code\AgentLang\.agentlang\native-integration-validation\artifacts\bin\AgentLang.Business.Transitions.Tests\release\AgentLang.Business.Transitions.Tests.dll
+  AgentLang.Vocabulary.Tests -> D:\code\AgentLang\.agentlang\native-integration-validation\artifacts\bin\AgentLang.Vocabulary.Tests\release\AgentLang.Vocabulary.Tests.dll
+  AgentLang.IR.Tests -> D:\code\AgentLang\.agentlang\native-integration-validation\artifacts\bin\AgentLang.IR.Tests\release\AgentLang.IR.Tests.dll
+  AgentLang.Storage.Tests -> D:\code\AgentLang\.agentlang\native-integration-validation\artifacts\bin\AgentLang.Storage.Tests\release\AgentLang.Storage.Tests.dll
+  AgentLang.ValueInspection.Tests -> D:\code\AgentLang\.agentlang\native-integration-validation\artifacts\bin\AgentLang.ValueInspection.Tests\release\AgentLang.ValueInspection.Tests.dll
+  AgentLang.Flow.Lint.Tests -> D:\code\AgentLang\.agentlang\native-integration-validation\artifacts\bin\AgentLang.Flow.Lint.Tests\release\AgentLang.Flow.Lint.Tests.dll
+  AgentLang.TrustedValues.Tests -> D:\code\AgentLang\.agentlang\native-integration-validation\artifacts\bin\AgentLang.TrustedValues.Tests\release\AgentLang.TrustedValues.Tests.dll
+  AgentLang.Cli -> D:\code\AgentLang\.agentlang\native-integration-validation\artifacts\bin\AgentLang.Cli\release\AgentLang.Cli.dll
+  AgentLang.Acceptance -> D:\code\AgentLang\.agentlang\native-integration-validation\artifacts\bin\AgentLang.Acceptance\release\AgentLang.Acceptance.dll
+  AgentLang.Discovery.Tests -> D:\code\AgentLang\.agentlang\native-integration-validation\artifacts\bin\AgentLang.Discovery.Tests\release\AgentLang.Discovery.Tests.dll
+  AgentLang.IR.Formatting.Tests -> D:\code\AgentLang\.agentlang\native-integration-validation\artifacts\bin\AgentLang.IR.Formatting.Tests\release\AgentLang.IR.Formatting.Tests.dll
+  AgentLang.Benchmarks -> D:\code\AgentLang\.agentlang\native-integration-validation\artifacts\bin\AgentLang.Benchmarks\release\AgentLang.Benchmarks.dll
+  AgentLang.Flow.Runtime.Tests -> D:\code\AgentLang\.agentlang\native-integration-validation\artifacts\bin\AgentLang.Flow.Runtime.Tests\release\AgentLang.Flow.Runtime.Tests.dll
+  AgentLang.Cli.Tests -> D:\code\AgentLang\.agentlang\native-integration-validation\artifacts\bin\AgentLang.Cli.Tests\release\AgentLang.Cli.Tests.dll
+  AgentLang.Harness.Tests -> D:\code\AgentLang\.agentlang\native-integration-validation\artifacts\bin\AgentLang.Harness.Tests\release\AgentLang.Harness.Tests.dll
+  AgentLang.Llvm.Tests -> D:\code\AgentLang\.agentlang\native-integration-validation\artifacts\bin\AgentLang.Llvm.Tests\release\AgentLang.Llvm.Tests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:02.96

@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\AgentLang.Llvm\AgentLang.Llvm.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\fixtures\native-conformance\abi-v1.json" Link="abi-v1.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\fixtures\native-conformance\scalar-cases.json" Link="scalar-cases.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

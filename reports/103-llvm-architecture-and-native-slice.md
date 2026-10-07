@@ -1,7 +1,7 @@
 # LLVM architecture and first native implementation
 
-Status: architecture accepted; scalar AOT implementation in progress, 2026-10-07.
-No native execution or memory performance result is claimed yet.
+Status: scalar AOT implementation locally validated, 2026-10-07.
+Native execution is demonstrated for the bounded subset below. No memory or performance advantage is claimed.
 
 The user authorized proceeding when the existing capabilities justify it. The
 interpreter has demonstrated typed discovery, composition, tests, persistence
@@ -41,7 +41,7 @@ This prototype ABI does not settle container or arena layout.
 
 ## Implementation and acceptance
 
-New backend files belong under `src/AgentLang.Llvm`, tests under
+The backend is implemented under `src/AgentLang.Llvm`, tests under
 `tests/AgentLang.Llvm.Tests` and `tests/fixtures/native-conformance`, with an
 explicit optional `scripts/Verify-NativeConformance.ps1` gate. Existing ordinary
 interpreter builds do not acquire a mandatory LLVM tool dependency.
@@ -57,10 +57,43 @@ exception cannot count as an expected language error.
 
 The local Visual Studio Build Tools include Clang 19.1.5 and lld-link at
 `C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\Llvm\x64\bin`.
-MSVC 14.44.35207 and Windows SDK 10.0.26100.0 libraries are present. The initial
-pure DLL can link with `/dll /noentry /nodefaultlib`; verify actual compilation
-and linking rather than treating tool discovery as an execution result.
-Use fresh ignored build directories and retain the frozen experiment binaries.
+MSVC 14.44.35207 and Windows SDK 10.0.26100.0 libraries are present. The pure DLL links with `/dll /noentry /nodefaultlib`, with `libcmt.lib` supplying
+the required Windows stack-probe helper for large generated frames.
+Validation uses fresh ignored build directories and retains the frozen experiment binaries.
+
+## Results and limits
+
+The integrated solution builds with zero warnings and zero errors. All 22
+existing local acceptance executables passed against a fresh isolated Release
+build. The optional native gate compiles actual DLLs at both `-O0` and `-O2`
+and compares results with the verified-IR interpreter and independent expected
+fixtures. All 147 assertions pass. All 45 generated DLLs have no imports and no CLR
+header. The assertion output and artifact inventory are recorded in
+[the evidence directory](evidence/103-native-scalar).
+
+The checked cases cover scalar arithmetic and comparisons, overflow for all
+checked arithmetic operations, division by zero and MinValue/-1, Boolean
+operations, typed scalar equality, output ordering, locals/scopes, both branch
+arms, nested calls, first failure, source metadata, fuel and depth limits.
+A 1,200-output case verifies large-frame stack probing and scratch output
+storage. ABI layout probes and invalid-version/capacity canaries pass.
+Unsupported untaken operations/effects and untrusted program snapshots reject
+before native compilation.
+
+Independent review found and corrected lost definition spans, alias-specific
+primitive spans, MSVC path discovery, an incorrectly positioned untaken-effect
+fixture and missing test cases. Managed allocation and DLL-binding failures
+also clean up resources. `NativeDiagnosticSources` is an explicit frozen map
+from the same lowering snapshot; the host must supply matching metadata.
+
+This is a host API for empty-input verified bodies, not an automatic CLI
+execution-mode switch. Generated code has no managed execution dependency, but
+the development wrapper currently retains the diagnostic metadata table.
+Standalone release packaging must persist that table and certify publication
+eligibility. This milestone introduces no arena allocator, mailbox scheduler,
+JIT, production performance result or comparative agent-reliability claim.
+The frozen nine-file CLI runtime and Business assembly remain byte-identical.
+CI remains manual-only.
 
 ## Later execution and memory work
 

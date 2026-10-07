@@ -1,0 +1,55 @@
+{
+  "signed-boundaries": ["true", "true"],
+  "signed-truncating-divide": ["-3", "-3", "3"],
+  "arithmetic-and-bool": ["7", "42", "3", "true", "true", "true", "true", "false", "true", "true", "true", "true", "false", "5"],
+  "comparison-outcomes": ["true", "false", "true", "false", "true", "false", "true", "false"],
+  "boolean-truth-table": ["false", "false", "false", "true", "false", "true", "true", "true", "true", "false"],
+  "multi-output": ["42", "42", "true", "unit"],
+  "branch-else-join": ["88", "88"],
+  "branch-then-join": ["99", "99"],
+  "scope-restores-local": ["99", "10"],
+  "reachable-user-calls": ["19"],
+  "call-output-scratch": ["11"],
+  "checked-overflow": {
+    "code": "RUNTIME_OVERFLOW",
+    "word": "add",
+    "actual": ["9223372036854775807", "1"],
+    "span": { "file": "<standard>", "line": 1, "column": 1, "length": 3 }
+  },
+  "subtract-overflow": {
+    "code": "RUNTIME_OVERFLOW",
+    "word": "subtract",
+    "actual": ["-9223372036854775808", "1"],
+    "span": { "file": "<standard>", "line": 1, "column": 1, "length": 8 }
+  },
+  "multiply-overflow": {
+    "code": "RUNTIME_OVERFLOW",
+    "word": "multiply",
+    "actual": ["9223372036854775807", "2"],
+    "span": { "file": "<standard>", "line": 1, "column": 1, "length": 8 }
+  },
+  "divide-by-zero": {
+    "code": "RUNTIME_DIVIDE_BY_ZERO",
+    "word": "divide",
+    "actual": [],
+    "span": null
+  },
+  "divide-overflow": {
+    "code": "RUNTIME_OVERFLOW",
+    "word": "divide",
+    "actual": [],
+    "span": null
+  },
+  "first-failure": {
+    "code": "RUNTIME_OVERFLOW",
+    "word": "add",
+    "actual": ["9223372036854775807", "1"],
+    "span": { "file": "<standard>", "line": 1, "column": 1, "length": 3 }
+  },
+  "alias-overflow": {
+    "code": "RUNTIME_OVERFLOW",
+    "word": "add",
+    "actual": ["9223372036854775807", "1"],
+    "span": { "file": "add-alias.agent", "line": 1, "column": 1, "length": 1 }
+  }
+}

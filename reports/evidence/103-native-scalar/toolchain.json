@@ -1,0 +1,21 @@
+{
+  "clang": {
+    "path": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\Llvm\\x64\\bin\\clang.exe",
+    "version": "clang version 19.1.5\nTarget: x86_64-pc-windows-msvc\nThread model: posix\nInstalledDir: C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\Llvm\\x64\\bin",
+    "sha256": "c5d3d309c036d1666d50500e87be514dc9916adc427e7aec267c95178bec14ff"
+  },
+  "lld-link": {
+    "path": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\Llvm\\x64\\bin\\lld-link.exe",
+    "version": "LLD 19.1.5",
+    "sha256": "b24601b51e04b2ef371c2809ad33e3b35dff5cb7e166e26a1d2ddb74148c212c"
+  },
+  "llvm-readobj": {
+    "path": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\Llvm\\x64\\bin\\llvm-readobj.exe",
+    "version": "LLVM (http://llvm.org/):\n  LLVM version 19.1.5\n  Optimized build.",
+    "sha256": "6fc5e20ec6b23fbb98f757b6e61224f96bcebd0f544efae423def6e27ecfc426"
+  },
+  "compilerRuntime": {
+    "sha256": "687ba6e4e421eb303cdc9f0f4f07862bdd1b28e92633404f5de4ebad7b4d5cdd",
+    "path": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC\\14.44.35207\\lib\\x64\\libcmt.lib"
+  }
+}

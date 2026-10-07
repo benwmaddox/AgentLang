@@ -1,0 +1,14 @@
+  Determining projects to restore...
+  Restored D:\code\AgentLang\src\AgentLang.Core\AgentLang.Core.fsproj (in 177 ms).
+  Restored D:\code\AgentLang\tests\AgentLang.Llvm.Tests\AgentLang.Llvm.Tests.fsproj (in 177 ms).
+  Restored D:\code\AgentLang\src\AgentLang.Llvm\AgentLang.Llvm.fsproj (in 177 ms).
+  AgentLang.Core -> D:\code\AgentLang\.agentlang\native-validation\run-911c137b8cb74e578f50856dbf3df495\bin\AgentLang.Core\debug\AgentLang.Core.dll
+  AgentLang.Llvm -> D:\code\AgentLang\.agentlang\native-validation\run-911c137b8cb74e578f50856dbf3df495\bin\AgentLang.Llvm\debug\AgentLang.Llvm.dll
+  AgentLang.Llvm.Tests -> D:\code\AgentLang\.agentlang\native-validation\run-911c137b8cb74e578f50856dbf3df495\bin\AgentLang.Llvm.Tests\debug\AgentLang.Llvm.Tests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:13.86
+AgentLang.Llvm.Tests: 147 assertions passed; artifacts: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb

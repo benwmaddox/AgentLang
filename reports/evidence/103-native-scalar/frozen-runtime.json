@@ -1,0 +1,60 @@
+{
+  "businessPassed": true,
+  "businessSha256": "41f0b6f0f44ac73f0b899090dc7dcd3f3d56129176b172ceca96cba9e638a13d",
+  "cliFiles": [
+    {
+      "expected": "6382f6dc29bb8f827824839010e313b266e51a3f87a4fdb8c382931d2549e97e",
+      "name": "AgentLang.Cli.deps.json",
+      "actual": "6382f6dc29bb8f827824839010e313b266e51a3f87a4fdb8c382931d2549e97e",
+      "passed": true
+    },
+    {
+      "expected": "bbfe7d079f568a431148298de86a3aa26304a160781c2756591be070735f274a",
+      "name": "AgentLang.Cli.dll",
+      "actual": "bbfe7d079f568a431148298de86a3aa26304a160781c2756591be070735f274a",
+      "passed": true
+    },
+    {
+      "expected": "a0bdb478641129d2a94c35ccaa94c964ef1b02d729f3efeb35df22ba67d64ff6",
+      "name": "AgentLang.Cli.exe",
+      "actual": "a0bdb478641129d2a94c35ccaa94c964ef1b02d729f3efeb35df22ba67d64ff6",
+      "passed": true
+    },
+    {
+      "expected": "05a6c0eb5e13571da80c999f0efecd1a21714ffa135250720f0263054c6d1bae",
+      "name": "AgentLang.Cli.pdb",
+      "actual": "05a6c0eb5e13571da80c999f0efecd1a21714ffa135250720f0263054c6d1bae",
+      "passed": true
+    },
+    {
+      "expected": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0",
+      "name": "AgentLang.Cli.runtimeconfig.json",
+      "actual": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0",
+      "passed": true
+    },
+    {
+      "expected": "d35c689026e650a344a01bb4ba70c9be8c7e6d3a010de982abef8224b24a7f1b",
+      "name": "AgentLang.Core.dll",
+      "actual": "d35c689026e650a344a01bb4ba70c9be8c7e6d3a010de982abef8224b24a7f1b",
+      "passed": true
+    },
+    {
+      "expected": "ba03609cd6600a81413ca3d3e4184a88dcc1650713414f44d01bffe25b1529cd",
+      "name": "AgentLang.Core.pdb",
+      "actual": "ba03609cd6600a81413ca3d3e4184a88dcc1650713414f44d01bffe25b1529cd",
+      "passed": true
+    },
+    {
+      "expected": "27b998f11066707f4fdc98519298cc8637ae1fb926d5fc2d1e2c40a7ce620fb5",
+      "name": "AgentLang.Core.xml",
+      "actual": "27b998f11066707f4fdc98519298cc8637ae1fb926d5fc2d1e2c40a7ce620fb5",
+      "passed": true
+    },
+    {
+      "expected": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f",
+      "name": "FSharp.Core.dll",
+      "actual": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f",
+      "passed": true
+    }
+  ]
+}

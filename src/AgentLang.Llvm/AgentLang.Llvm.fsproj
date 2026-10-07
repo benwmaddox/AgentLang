@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="NativeAbi.fs" />
+    <Compile Include="LlvmToolchain.fs" />
+    <Compile Include="LlvmAot.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AgentLang.Core\AgentLang.Core.fsproj" />
+  </ItemGroup>
+</Project>

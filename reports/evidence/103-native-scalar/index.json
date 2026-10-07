@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "nativeAssertions": 147,
+  "files": [
+    {
+      "sha256": "af30f66658dba57e35e119bfc40e0fc2038637232e7a6bc9af87da8130e8d2c5",
+      "bytes": 2988466,
+      "name": "emitted-ir.zip"
+    },
+    {
+      "sha256": "65ba2c33490399578c439b2f09b238a2509ec696f8451d9a8c57b8edc717515b",
+      "bytes": 1178,
+      "name": "existing-acceptance-command.ps1"
+    },
+    {
+      "sha256": "c815c8961c7a1c13a778b4f12be7c8b016164719bb22b3b25b6b0ff9637db5b6",
+      "bytes": 18973,
+      "name": "existing-acceptance.json"
+    },
+    {
+      "sha256": "f0c35fa4af6a367fb27862179ccb324bd31efbcdcdbb87d6b76249ebf348df24",
+      "bytes": 2310,
+      "name": "frozen-runtime.json"
+    },
+    {
+      "sha256": "196491dfde5187cbcf429a2236b4f37faaf67097ff497d76cd3edd66562d0527",
+      "bytes": 5586,
+      "name": "integrated-solution-build.log"
+    },
+    {
+      "sha256": "10970989234a3f65f1c125a1be9b9ab9b9e5bb7aae5411931127398190037f0b",
+      "bytes": 31880,
+      "name": "native-artifacts.json"
+    },
+    {
+      "sha256": "222d63b775f4cd174ccecaa2fcf8dc05c796130e740a67773ee1e4000307683f",
+      "bytes": 980,
+      "name": "native-conformance.log"
+    },
+    {
+      "sha256": "e11bc216dac8766179ff32232df9b5622a4109bd55bae3f5d51cab3d8dee6961",
+      "bytes": 119942,
+      "name": "pe-inspection.log"
+    },
+    {
+      "sha256": "577f4adef734b1c72bd86f73b02e35f9e3540bcfa161d99471a27b174b5126a1",
+      "bytes": 1807,
+      "name": "README.md"
+    },
+    {
+      "sha256": "aeac50ad097947fb0df4c58a343fa6f53e639afc5563310161dd9d6e2356535d",
+      "bytes": 1315,
+      "name": "source-inventory.json"
+    },
+    {
+      "sha256": "a1d65f0e38fb3b3554dd5709ccacd9db47f596cb282adf421114d8710132b44b",
+      "bytes": 1239,
+      "name": "toolchain.json"
+    },
+    {
+      "sha256": "3f963999127397f201b5af2f22675a3f4721afa5fe9cba8524491ad0e0f70cd6",
+      "bytes": 24471,
+      "name": "validated-sources.zip"
+    }
+  ],
+  "nativeDllCount": 45,
+  "validatedBaseRevision": "ec2a4e51eb978eca1cd918ffb53255789a0a5009",
+  "workingTreeDirty": true,
+  "existingAcceptanceExecutables": 22
+}

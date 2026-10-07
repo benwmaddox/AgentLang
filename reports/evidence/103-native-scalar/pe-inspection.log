@@ -1,0 +1,4725 @@
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\abi-guard\O0\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:32 (0x6AC6AFE4)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 1024
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x3C
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\abi-multi-output-guard\O0\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:32 (0x6AC6AFE4)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 1024
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x3C
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\abi-scratch-guard\O0\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:32 (0x6AC6AFE4)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 1024
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x48
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\alias-overflow\O0\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:35 (0x6AC6AFE7)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 1024
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x3C
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\alias-overflow\O2\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:35 (0x6AC6AFE7)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 512
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x18
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\arithmetic-and-bool\O0\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:31 (0x6AC6AFE3)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 4096
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x3C
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\arithmetic-and-bool\O2\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:31 (0x6AC6AFE3)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 512
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x18
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\boolean-truth-table\O0\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:30 (0x6AC6AFE2)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 3072
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x3C
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\boolean-truth-table\O2\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:30 (0x6AC6AFE2)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 512
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x18
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\branch-else-join\O0\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:32 (0x6AC6AFE4)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 1536
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x3C
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\branch-else-join\O2\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:32 (0x6AC6AFE4)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 512
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x18
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\branch-then-join\O0\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:32 (0x6AC6AFE4)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 1536
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x3C
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\branch-then-join\O2\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:33 (0x6AC6AFE5)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 512
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x18
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\call-depth\O0\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:48:46 (0x6AC6B02E)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 11264
+  SizeOfInitializedData: 3584
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 32768
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x4170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x6000
+    ExceptionTableSize: 0x348
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x7000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x4000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\call-depth\O2\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:48:47 (0x6AC6B02F)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 512
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x18
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\call-output-scratch\O0\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:31 (0x6AC6AFE3)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 1024
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x48
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\call-output-scratch\O2\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:31 (0x6AC6AFE3)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 512
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x18
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\checked-overflow\O0\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:33 (0x6AC6AFE5)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 1024
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x3C
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\checked-overflow\O2\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:33 (0x6AC6AFE5)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 512
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x18
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\comparison-outcomes\O0\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:30 (0x6AC6AFE2)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 2560
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x3C
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\comparison-outcomes\O2\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:30 (0x6AC6AFE2)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 512
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x18
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\divide-by-zero\O0\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:34 (0x6AC6AFE6)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 1024
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x3C
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\divide-by-zero\O2\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:34 (0x6AC6AFE6)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 512
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x18
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\divide-overflow\O0\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:34 (0x6AC6AFE6)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 1024
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x3C
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\divide-overflow\O2\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:35 (0x6AC6AFE7)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 512
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x18
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\first-failure\O0\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:35 (0x6AC6AFE7)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 1536
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x3C
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\first-failure\O2\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:35 (0x6AC6AFE7)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 512
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x18
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\fuel-source\O0\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:36 (0x6AC6AFE8)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 675840
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 696320
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0xA6170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0xA8000
+    ExceptionTableSize: 0x3C
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0xA9000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0xA6000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\fuel-source\O2\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:48:46 (0x6AC6B02E)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 290304
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 311296
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x48170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4A000
+    ExceptionTableSize: 0x18
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x4B000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x48000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\large-frame\O0\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:48:47 (0x6AC6B02F)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 460288
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 483328
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x72170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x74000
+    ExceptionTableSize: 0x48
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x75000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x72000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\large-frame\O2\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:48:54 (0x6AC6B036)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 135680
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 159744
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x23170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x25000
+    ExceptionTableSize: 0x18
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x26000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x23000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\multi-output\O0\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:31 (0x6AC6AFE3)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 1024
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x3C
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\multi-output\O2\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:31 (0x6AC6AFE3)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 512
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x18
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\multiply-overflow\O0\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:34 (0x6AC6AFE6)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 1024
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x3C
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\multiply-overflow\O2\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:34 (0x6AC6AFE6)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 512
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x18
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\reachable-user-calls\O0\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:33 (0x6AC6AFE5)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 1536
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x54
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\reachable-user-calls\O2\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:33 (0x6AC6AFE5)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 512
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x18
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\scope-restores-local\O0\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:33 (0x6AC6AFE5)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 1024
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x3C
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\scope-restores-local\O2\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:33 (0x6AC6AFE5)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 512
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x18
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\signed-boundaries\O0\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:29 (0x6AC6AFE1)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 1024
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x3C
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\signed-boundaries\O2\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:30 (0x6AC6AFE2)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 512
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x18
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\signed-truncating-divide\O0\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:30 (0x6AC6AFE2)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 1536
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x3C
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\signed-truncating-divide\O2\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:30 (0x6AC6AFE2)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 512
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x18
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\subtract-overflow\O0\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:34 (0x6AC6AFE6)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 1024
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x3C
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}
+
+File: D:\code\AgentLang\.agentlang\native-validation\tests-7afffd70f0954e049c7b105978fb33cb\subtract-overflow\O2\agentlang-native.dll
+Format: COFF-x86-64
+Arch: x86_64
+AddressSize: 64bit
+ImageFileHeader {
+  Machine: IMAGE_FILE_MACHINE_AMD64 (0x8664)
+  SectionCount: 5
+  TimeDateStamp: 2026-10-07 20:47:34 (0x6AC6AFE6)
+  PointerToSymbolTable: 0x0
+  SymbolCount: 0
+  StringTableSize: 0
+  OptionalHeaderSize: 240
+  Characteristics [ (0x2022)
+    IMAGE_FILE_DLL (0x2000)
+    IMAGE_FILE_EXECUTABLE_IMAGE (0x2)
+    IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20)
+  ]
+}
+ImageOptionalHeader {
+  Magic: 0x20B
+  MajorLinkerVersion: 14
+  MinorLinkerVersion: 0
+  SizeOfCode: 512
+  SizeOfInitializedData: 2560
+  SizeOfUninitializedData: 0
+  AddressOfEntryPoint: 0x0
+  BaseOfCode: 0x1000
+  ImageBase: 0x180000000
+  SectionAlignment: 4096
+  FileAlignment: 512
+  MajorOperatingSystemVersion: 6
+  MinorOperatingSystemVersion: 0
+  MajorImageVersion: 0
+  MinorImageVersion: 0
+  MajorSubsystemVersion: 6
+  MinorSubsystemVersion: 0
+  SizeOfImage: 24576
+  SizeOfHeaders: 1024
+  CheckSum: 0x0
+  Subsystem: IMAGE_SUBSYSTEM_WINDOWS_GUI (0x2)
+  Characteristics [ (0x160)
+    IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE (0x40)
+    IMAGE_DLL_CHARACTERISTICS_HIGH_ENTROPY_VA (0x20)
+    IMAGE_DLL_CHARACTERISTICS_NX_COMPAT (0x100)
+  ]
+  SizeOfStackReserve: 1048576
+  SizeOfStackCommit: 4096
+  SizeOfHeapReserve: 1048576
+  SizeOfHeapCommit: 4096
+  NumberOfRvaAndSize: 16
+  DataDirectory {
+    ExportTableRVA: 0x2170
+    ExportTableSize: 0x9C
+    ImportTableRVA: 0x0
+    ImportTableSize: 0x0
+    ResourceTableRVA: 0x0
+    ResourceTableSize: 0x0
+    ExceptionTableRVA: 0x4000
+    ExceptionTableSize: 0x18
+    CertificateTableRVA: 0x0
+    CertificateTableSize: 0x0
+    BaseRelocationTableRVA: 0x5000
+    BaseRelocationTableSize: 0x20
+    DebugRVA: 0x0
+    DebugSize: 0x0
+    ArchitectureRVA: 0x0
+    ArchitectureSize: 0x0
+    GlobalPtrRVA: 0x0
+    GlobalPtrSize: 0x0
+    TLSTableRVA: 0x0
+    TLSTableSize: 0x0
+    LoadConfigTableRVA: 0x2000
+    LoadConfigTableSize: 0x140
+    BoundImportRVA: 0x0
+    BoundImportSize: 0x0
+    IATRVA: 0x0
+    IATSize: 0x0
+    DelayImportDescriptorRVA: 0x0
+    DelayImportDescriptorSize: 0x0
+    CLRRuntimeHeaderRVA: 0x0
+    CLRRuntimeHeaderSize: 0x0
+    ReservedRVA: 0x0
+    ReservedSize: 0x0
+  }
+}
+DOSHeader {
+  Magic: MZ
+  UsedBytesInTheLastPage: 120
+  FileSizeInPages: 1
+  NumberOfRelocationItems: 0
+  HeaderSizeInParagraphs: 4
+  MinimumExtraParagraphs: 0
+  MaximumExtraParagraphs: 0
+  InitialRelativeSS: 0
+  InitialSP: 0
+  Checksum: 0
+  InitialIP: 0
+  InitialRelativeCS: 0
+  AddressOfRelocationTable: 64
+  OverlayNumber: 0
+  OEMid: 0
+  OEMinfo: 0
+  AddressOfNewExeHeader: 120
+}

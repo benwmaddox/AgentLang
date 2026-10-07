@@ -66,7 +66,7 @@ not overwrite the frozen experiment binaries. See
 
 ## 3. Build a lean native execution target and choose memory semantics
 
-Architecture accepted and scalar LLVM AOT implementation in progress; see
+The first scalar LLVM AOT implementation is locally validated; see
 [report 103](../reports/103-llvm-architecture-and-native-slice.md). The user
 authorized this step based on demonstrated capability; comparative reliability
 research continues. Implementation language remains open to maintenance needs.
@@ -76,7 +76,7 @@ JIT while release builds use LLVM AOT plus a minimal runtime. Research arenas,
 an arena-backed program-data stack, bounded mailboxes and suspended-I/O state
 with explicit lifetime and buffer rules. Compare whole-request arenas against
 per-turn scratch arenas with retained continuations under equal resource limits.
-The first native slice should establish interpreter/native agreement for
+The first native slice establishes bounded interpreter/native agreement for
 checked arithmetic, typed values, calls, branches and structured failures, with
 versioned layout/ABI fixtures. Use an actual arena/pool prototype to measure
 used/reserved/process memory, escaping outputs and cancellation cleanup.

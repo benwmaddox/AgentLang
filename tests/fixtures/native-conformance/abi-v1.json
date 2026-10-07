@@ -1,0 +1,67 @@
+{
+  "abiVersion": 1,
+  "target": "x86_64-pc-windows-msvc",
+  "callingConvention": "C",
+  "littleEndian": true,
+  "publicEntry": {
+    "name": "agentlang_execute",
+    "parameters": [
+      { "name": "context", "type": "NativeExecutionContext*" },
+      { "name": "outputSlots", "type": "int64_t*" },
+      { "name": "outputCapacity", "type": "int32_t", "meaning": "number of writable i64 scratch slots; must be at least agentlang_output_capacity()" },
+      { "name": "status", "type": "int32_t*" }
+    ],
+    "return": "void"
+  },
+  "outputCapacityQuery": {
+    "name": "agentlang_output_capacity",
+    "return": "int32_t",
+    "meaning": "minimum caller-provided scratch-slot capacity for the body and its reachable user-word closure"
+  },
+  "resultBuffer": {
+    "logicalOutputCount": "number of values the entry body returns",
+    "requiredScratchCapacity": "maximum output arity of the entry body or any reachable user word",
+    "sharing": "the entry body and nested user-word calls share the caller-provided scratch buffer; callers reserve outputCapacity slots, while wrappers return only logicalOutputCount values",
+    "example": {
+      "bodyOutputCount": 1,
+      "reachableUserWordOutputCounts": [2],
+      "logicalOutputCount": 1,
+      "requiredScratchCapacity": 2
+    }
+  },
+  "preconditions": [
+    "context is non-null and points to at least 32 bytes aligned to 8 bytes",
+    "status is non-null and points to an aligned 4-byte int32_t",
+    "outputCapacity is nonnegative and at least agentlang_output_capacity()",
+    "outputSlots is non-null and points to outputCapacity aligned 8-byte int64_t slots when capacity is nonzero; this is caller-owned per-invocation scratch storage shared by nested calls",
+    "agentlang_execute checks ABI version and capacity before initializing context or writing output slots"
+  ],
+  "context": {
+    "size": 32,
+    "alignment": 8,
+    "fields": [
+      { "name": "abiVersion", "type": "uint32_t", "offset": 0, "size": 4 },
+      { "name": "stepsConsumed", "type": "uint32_t", "offset": 4, "size": 4 },
+      { "name": "errorMetadataId", "type": "int32_t", "offset": 8, "size": 4 },
+      { "name": "reserved", "type": "int32_t", "offset": 12, "size": 4 },
+      { "name": "errorArgument0", "type": "int64_t", "offset": 16, "size": 8 },
+      { "name": "errorArgument1", "type": "int64_t", "offset": 24, "size": 8 }
+    ]
+  },
+  "slot": {
+    "size": 8,
+    "alignment": 8,
+    "intEncoding": "signed int64",
+    "boolEncoding": { "false": 0, "true": 1 },
+    "unitEncoding": 0
+  },
+  "status": {
+    "size": 4,
+    "alignment": 4,
+    "success": 0,
+    "languageDiagnostic": 1,
+    "invalidRequest": 2
+  },
+  "firstFailureOnly": true,
+  "unmanagedUnwind": false
+}

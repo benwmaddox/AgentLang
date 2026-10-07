@@ -1,0 +1,38 @@
+[
+  {
+    "path": "src/AgentLang.Llvm/AgentLang.Llvm.fsproj",
+    "sha256": "2d8ec6528b19128b207868cd93370833c7e02dfdc21c467bc643bbfb46fe2e16"
+  },
+  {
+    "path": "src/AgentLang.Llvm/NativeAbi.fs",
+    "sha256": "cb04f15f3e3030acf93e8cf647b99b9091c3f7621788bc010932847482b622d2"
+  },
+  {
+    "path": "src/AgentLang.Llvm/LlvmToolchain.fs",
+    "sha256": "6ee6909b709331a984670ac2c1bc25c92b925c1ee4e9334d3124226693836ba1"
+  },
+  {
+    "path": "src/AgentLang.Llvm/LlvmAot.fs",
+    "sha256": "3cd19ac3ce20566a5aec03b6185b9c0e7e83410328c8b5b20576b4b87f78324d"
+  },
+  {
+    "path": "tests/AgentLang.Llvm.Tests/AgentLang.Llvm.Tests.fsproj",
+    "sha256": "5ac121b8eac1a499e1005ad561d264d413d7e8bd14acc0550923e7445a3f8474"
+  },
+  {
+    "path": "tests/AgentLang.Llvm.Tests/Program.fs",
+    "sha256": "b2d18280fdbf80dec3408f28efbb024908df32caa9b4043f64375fd2a881f90c"
+  },
+  {
+    "path": "tests/fixtures/native-conformance/abi-v1.json",
+    "sha256": "af0448268447dd4854b1a81f33d54e7a21b76ad88932832b8382a12208b360a3"
+  },
+  {
+    "path": "tests/fixtures/native-conformance/scalar-cases.json",
+    "sha256": "63bf35f57c063701351e433b6b13cce498fd116148873e83faec31200b0a33cf"
+  },
+  {
+    "path": "scripts/Verify-NativeConformance.ps1",
+    "sha256": "50c37ccec2520c7ca69017f660be3a1d5693571ba2976d45e89926e50712d394"
+  }
+]
