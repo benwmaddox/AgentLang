@@ -137,3 +137,18 @@ source SHA-256 was identical at
 runner before/after remained `b5d1594f...e7deb`. Exact command, full hashes and
 console result are archived in phase-04. This check establishes focused-control
 behavior only; production integration and independent schema review remain open.
+
+The independent saved-schema review of scorer `8e5c3f6d...a313` found two more
+pre-execution blockers despite the passing focused controls. R04's starting
+state has no `retentionFallback` property (the prelaunch pin does), and the
+global freeze's `tasks` value is an array of path/hash rows, not an object with
+an `S07` member. The correction must use the actual pin plus explicit starting
+outcome and select exactly one task row by its pinned path. Neither mismatch
+is evidence about the agent's authored solution. This review demonstrates why
+actual immutable-input integration is required in addition to synthetic controls.
+
+Root also rechecked the original R04 prelaunch inventory during this review:
+all 23 source/snapshot pairs matched their saved SHA-256 and byte lengths, and
+all 26 pinned runtime files matched. The original canonical acceptance SHA-256
+remains `0e6638878f89fe58c0859787f051652a6a6227e804192628cce75d80c71a5888`.
+This is an unchanged-input check, not behavior acceptance.
