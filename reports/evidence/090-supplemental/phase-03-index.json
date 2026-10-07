@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Preserve third failed supplemental attempt; not behavior acceptance",
+  "runtimeCalls": 0,
+  "behaviorCasesExecuted": 0,
+  "files": [
+    {
+      "source": ".agentlang/business-policy-retention-003/supplemental/evidence/R04-retention-output-supplement-20261007T174753Z-eb99acf9c52e4faf92dae6ab1c78592e.json",
+      "path": "reports/evidence/090-supplemental/phase-03/R04-retention-output-supplement-20261007T174753Z-eb99acf9c52e4faf92dae6ab1c78592e.json",
+      "bytes": 162702,
+      "sha256": "0aac8cb3bd1dae212f2d1f69b765fa94e712d2698a49f2130975e8b84f64da87"
+    }
+  ]
+}

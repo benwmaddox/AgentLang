@@ -119,3 +119,12 @@ and zero of 54 behavior cases, with scorer SHA-256
 The failure is archived byte-for-byte under `phase-02`, with its size and SHA-256
 in `phase-02-index.json`. This is another harness failure, not an agent behavior
 result. The corrected replay and final source review remain pending.
+
+The third attempt confirmed the frozen actor tree hash and carried-forward R03
+starting tree hash, but stopped on a nonexistent `previousAcceptance` property
+in the global-freeze schema. It also recorded zero runtime calls and zero
+behavior cases. Its reported scorer SHA-256 is
+`a0c0f007918e9e85bfec7a3e97995ee388ff03dc0ce058de6f5a2c0830489058`.
+Exact evidence is retained in `phase-03` and its index. A separate read-only
+review now checks all scorer schema reads against the actual saved artifacts.
+Passing synthetic controls have not yet established production integration.
