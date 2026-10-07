@@ -49,3 +49,25 @@ release, superseding the two-level retention policy above. Turn-local values
 still end at safe turn boundaries; the timeout controls unused backing capacity.
 Pending I/O buffers remain separately owned. Timeout duration and the events
 that refresh it are benchmark parameters to define, not implemented behavior.
+
+## Existing delayed-release mechanisms
+
+Checked primary sources on 2026-10-07 for the follow-up question. These are
+related policies rather than exact implementations of persistent mailbox state
+plus disposable turn stacks:
+
+- [mimalloc](https://github.com/microsoft/mimalloc) exposes `MIMALLOC_PURGE_DELAY`
+  for unused OS pages, allowing reuse before purging. Its documented immediate
+  purge option trades lower retained memory for performance; virtual address
+  ranges can remain reserved after physical backing is purged.
+- [jemalloc](https://jemalloc.net/jemalloc.3.html) exposes time-based decay of
+  unused pages, including per-arena controls. Decay applies to unused capacity,
+  not live application state.
+- [Netty's pooled allocator](https://netty.io/4.2/xref/io/netty/buffer/PooledByteBufAllocator.html)
+  supports scheduled thread-cache trimming when a positive trim interval and
+  executor are available. This returns unused cache entries to the pool and
+  does not imply immediate OS release or a per-mailbox inactivity timeout.
+
+These support the general reuse-now, reclaim-later approach. AgentLang's explicit
+mailbox-state/turn-stack lifetime separation remains its own proposed contract;
+the references do not establish performance for our workloads.
