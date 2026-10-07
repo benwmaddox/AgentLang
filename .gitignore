@@ -27,3 +27,7 @@ history/
 
 # Preserve the original R04 run and actor, including ignored synthetic store and history.
 !reports/evidence/089-R04/**
+
+# The repaired study retains its exact synthetic baseline and source inventories.
+!experiments/AgentLang.SubagentTrials/business-policy-retention-004/artifacts/baselines/**
+!experiments/AgentLang.SubagentTrials/business-policy-retention-004/artifacts/source-snapshot/**
