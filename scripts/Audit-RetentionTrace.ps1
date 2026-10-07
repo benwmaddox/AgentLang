@@ -500,7 +500,8 @@ try {
             (ConvertTo-Json -InputObject $oldTask[0].cases -Depth 100 -Compress) -ceq (ConvertTo-Json -InputObject $newTask[0].cases -Depth 100 -Compress)) "$taskId oracle keeps all $expectedCount exact 001 money cases"
         $caseCounts[$taskId] = $newTask[0].cases.Count
     }
-    Check ((Sort-OrdinalStrings @($oracle.tasks | ForEach-Object { [string]$_.id }) -join '|') -ceq 'S01|S07') 'oracle contains exactly S01 and S07'
+    $oracleTaskIds = Sort-OrdinalStrings @($oracle.tasks | ForEach-Object { [string]$_.id })
+    Check (($oracleTaskIds -join '|') -ceq 'S01|S07') 'oracle contains exactly S01 and S07'
 
     Check ($pin.profile -ceq 'agentlang' -and $pin.hostProtocolVersion -ceq 'subagent-trial-host-v2' -and
         $pin.hostPath -ceq 'scripts/Start-SubagentTrialHostV2.ps1' -and (Get-Sha256 (Get-FullPath $pin.hostPath)) -ceq $pin.hostSha256) 'current V2 host identity and source hash'

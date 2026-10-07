@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "revision": "5b0a367862363bdee081de9678e529edeecdcf17",
+  "publication": "atomic main/prototype push succeeded",
+  "repository": "benwmaddox/AgentLang",
+  "visibilityAtInitialPostPushCheck": "PUBLIC",
+  "visibilityAction": "gh repo edit --visibility private --accept-visibility-change-consequences",
+  "visibilityVerified": "PRIVATE",
+  "causeOfUnexpectedPublicVisibility": "unknown",
+  "verifiedAtUtc": "2026-10-07T11:07:41.6568862Z"
+}

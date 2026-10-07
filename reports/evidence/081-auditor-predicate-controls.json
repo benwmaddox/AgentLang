@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "controlKind": "auditor-exact-task-id-predicate",
+  "sourceSha256": "f1d48bc5331c41ae5813bddd830ddce87f013fa7bd16d3afacb13714e1b0f476",
+  "parserPassed": true,
+  "positiveScalarBoolean": true,
+  "wrongIdsRejected": true,
+  "fullFrozenAuditExecuted": false,
+  "limitation": "Focused production sort helper and exact predicate only; old frozen pin binds preceding auditor source."
+}
