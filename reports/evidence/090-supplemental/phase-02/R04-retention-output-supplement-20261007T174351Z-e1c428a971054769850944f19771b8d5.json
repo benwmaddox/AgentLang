@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-retention-003",
+  "arm": "retained",
+  "block": "B1",
+  "taskId": "S07",
+  "runId": "R04",
+  "sequenceIndex": 2,
+  "resultKind": "supplemental-post-hoc-behavior",
+  "passed": false,
+  "metadataPassed": false,
+  "behaviorPassed": false,
+  "bindingPassed": false,
+  "failure": "The term 'Get-CanonicalInventoryRows' is not recognized as a name of a cmdlet, function, script file, or executable program.\r\nCheck the spelling of the name, or if a path was included, verify that the path is correct and try again.",
+  "startedUtc": "2026-10-07T17:43:51.7491654Z",
+  "completedUtc": "2026-10-07T17:43:52.7307645Z",
+  "scorerPath": "scripts/Score-RetentionOutputSupplement.ps1",
+  "scorerSha256": "13c4174cb31a74be881fe67d419117eafc37828713637dede738e6e84b07e39c",
+  "originalCanonical": {
+    "path": ".agentlang/business-policy-retention-003/runs/R04/acceptance.json",
+    "sha256Before": "0e6638878f89fe58c0859787f051652a6a6227e804192628cce75d80c71a5888",
+    "sha256After": null,
+    "passed": false,
+    "resultKind": "unfrozen-preflight-or-control",
+    "traceAuditPath": ".agentlang/business-policy-retention-003/runs/R04/trace-audit.json",
+    "traceAuditExists": false
+  },
+  "prelaunch": {
+    "path": ".agentlang/business-policy-retention-003/runs/R04/prelaunch.json",
+    "sha256": null,
+    "globalFreezeSha256": null,
+    "startingStateSha256": null,
+    "previousAcceptanceSha256": null,
+    "previousTraceAuditSha256": null,
+    "promptPath": ".agentlang/business-policy-retention-003/runs/R04/prompt.txt",
+    "promptSha256": null,
+    "frozenSourceRevision": null,
+    "checkoutHeadAtScoring": null,
+    "priorActorTreeAfter": null,
+    "startingTreeAfter": null
+  },
+  "project": {
+    "actorPath": ".agentlang/business-policy-retention-003/actors/R04",
+    "inventorySha256Before": null,
+    "inventorySha256After": null,
+    "filesBefore": [],
+    "filesAfter": [],
+    "startingTreeSha256": null
+  },
+  "scratch": {
+    "root": null,
+    "actorProject": null,
+    "startingProject": null,
+    "actorFilesAfterCli": [],
+    "retainedForReview": true
+  },
+  "oracle": {
+    "path": "experiments/AgentLang.SubagentTrials/business-policy-retention-003/acceptance.json",
+    "sha256": null,
+    "symbol": null,
+    "casesExpected": 54,
+    "casesExecuted": 0,
+    "independentResults": [],
+    "caseResults": [],
+    "protocol": "Independent BigInteger arithmetic; raw Kind uses ordinal exact comparison; Money is a nominal scalar with Int payload; discount uses integer division truncating toward zero."
+  },
+  "runtime": {
+    "calls": [],
+    "callCount": 0,
+    "cliDll": null,
+    "cliSha256": null,
+    "metadata": []
+  },
+  "checks": [
+    {
+      "name": "supplemental scorer completed without binding or execution errors",
+      "passed": false,
+      "details": {
+        "stack": "at Get-TreeSha256, D:\\code\\AgentLang\\scripts\\Score-RetentionOutputSupplement.ps1: line 162\r\nat Invoke-Scoring, D:\\code\\AgentLang\\scripts\\Score-RetentionOutputSupplement.ps1: line 875\r\nat <ScriptBlock>, D:\\code\\AgentLang\\scripts\\Score-RetentionOutputSupplement.ps1: line 974",
+        "message": "The term 'Get-CanonicalInventoryRows' is not recognized as a name of a cmdlet, function, script file, or executable program.\r\nCheck the spelling of the name, or if a path was included, verify that the path is correct and try again."
+      }
+    },
+    {
+      "name": "all saved acceptance, source, oracle, global, and runtime inputs stayed byte-identical",
+      "passed": true,
+      "details": []
+    }
+  ],
+  "limits": [
+    "This result is supplemental post-hoc behavior evidence. It does not change or replace canonical R04 acceptance.json and cannot classify R04 as canonically accepted.",
+    "The original verifier stopped before behavior at the undefined $prior reference; this scorer records its own runtime calls and oracle outcomes.",
+    "No actor PTY, prompt correction, termination event, or teardown was observed or altered; any prompt correction or teardown deviations remain as recorded by the original study evidence.",
+    "No trace audit was created for R04. No efficiency, token-use, or model-quality claim is made."
+  ]
+}

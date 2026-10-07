@@ -110,3 +110,12 @@ criteria from commit b902027 under
 `reports/evidence/090-supplemental/phase-01-index.json`. The criteria bytes match
 the pre-execution pin. This archive preserves a failed attempt, not behavior
 acceptance; corrected replay and final source review remain pending.
+
+The second production attempt also failed before execution: the corrected tree
+serializer called `Get-CanonicalInventoryRows`, while the owned helper is named
+`ConvertTo-CanonicalInventoryRows`. Saved evidence records zero runtime calls
+and zero of 54 behavior cases, with scorer SHA-256
+`13c4174cb31a74be881fe67d419117eafc37828713637dede738e6e84b07e39c`.
+The failure is archived byte-for-byte under `phase-02`, with its size and SHA-256
+in `phase-02-index.json`. This is another harness failure, not an agent behavior
+result. The corrected replay and final source review remain pending.
