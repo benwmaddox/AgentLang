@@ -1,0 +1,3928 @@
+// frontend: flow/1
+
+record BusinessError {
+    field code: String;
+    field message: String;
+}
+
+// frontend: flow/1
+
+record CartLine {
+    field product-id: ProductId;
+    field quantity: Int;
+}
+
+// frontend: flow/1
+
+record Customer {
+    field id: CustomerId;
+    field email: Email;
+    field kind: String;
+    field balance: Money;
+    field created-at: Instant;
+}
+
+// frontend: flow/1
+
+record CustomerLookup {
+    field target: CustomerId;
+    field found: Option<Customer>;
+}
+
+// frontend: flow/1
+
+record EmailDeliveryPlan {
+    field first: Option<EmailMessage>;
+    field remaining: List<EmailMessage>;
+}
+
+// frontend: flow/1
+
+record EmailMessage {
+    field to: Email;
+    field subject: String;
+    field body: String;
+}
+
+// frontend: flow/1
+
+record Invoice {
+    field id: InvoiceId;
+    field customer-id: CustomerId;
+    field lines: List<InvoiceLine>;
+    field total: Money;
+    field created-at: Instant;
+    field status: InvoiceStatus;
+}
+
+// frontend: flow/1
+
+record InvoiceLine {
+    field product-id: ProductId;
+    field description: String;
+    field quantity: Int;
+    field unit-price: Money;
+    field line-total: Money;
+}
+
+// frontend: flow/1
+
+record InvoiceLinesAccumulator {
+    field store: Store;
+    field outcome: Result<List<InvoiceLine>, BusinessError>;
+}
+
+// frontend: flow/1
+
+record InvoiceLookup {
+    field target: InvoiceId;
+    field found: Option<Invoice>;
+}
+
+// frontend: flow/1
+
+record InvoiceReplacement {
+    field target: InvoiceId;
+    field replacement: Invoice;
+    field replaced: Bool;
+    field values: List<Invoice>;
+}
+
+// frontend: flow/1
+
+record InvoiceTotalAccumulator {
+    field outcome: Result<Money, BusinessError>;
+}
+
+// frontend: flow/1
+
+record Payment {
+    field id: PaymentId;
+    field invoice-id: InvoiceId;
+    field amount: Money;
+    field provider-reference: String;
+    field paid-at: Instant;
+}
+
+// frontend: flow/1
+
+record PaymentLookup {
+    field target: PaymentId;
+    field found: Option<Payment>;
+}
+
+// frontend: flow/1
+
+record PaymentReceipt {
+    field reference: String;
+    field amount: Money;
+}
+
+// frontend: flow/1
+
+record Product {
+    field id: ProductId;
+    field name: String;
+    field unit-price: Money;
+}
+
+// frontend: flow/1
+
+record ProductLookup {
+    field target: ProductId;
+    field found: Option<Product>;
+}
+
+// frontend: flow/1
+
+record Store {
+    field customers: List<Customer>;
+    field products: List<Product>;
+    field subscriptions: List<Subscription>;
+    field invoices: List<Invoice>;
+    field payments: List<Payment>;
+    field email-outbox: List<EmailMessage>;
+    field sent-emails: List<EmailMessage>;
+}
+
+// frontend: flow/1
+
+record Subscription {
+    field id: SubscriptionId;
+    field customer-id: CustomerId;
+    field product-id: ProductId;
+    field term: String;
+    field started-at: Instant;
+    field expires-at: Instant;
+    field status: SubscriptionStatus;
+    field cancelled-at: Option<Instant>;
+}
+
+// frontend: flow/1
+
+record SubscriptionLookup {
+    field target: SubscriptionId;
+    field found: Option<Subscription>;
+}
+
+// frontend: flow/1
+
+record SubscriptionReplacementState {
+    field target-id: SubscriptionId;
+    field replacement: Subscription;
+    field output: List<Subscription>;
+    field replaced: Bool;
+}
+
+// frontend: flow/1
+
+type CustomerId : String {
+    validate business::id-valid?;
+}
+
+// frontend: flow/1
+
+type Email : String {
+    validate business::email-valid?;
+}
+
+// frontend: flow/1
+
+type Instant : String {
+    validate business::instant-valid?;
+}
+
+// frontend: flow/1
+
+type InvoiceId : String {
+    validate business::id-valid?;
+}
+
+// frontend: flow/1
+
+type InvoiceStatus : String {
+    validate invoice::status-valid?;
+}
+
+// frontend: flow/1
+
+type Money : Int {
+}
+
+// frontend: flow/1
+
+type PaymentId : String {
+    validate business::id-valid?;
+}
+
+// frontend: flow/1
+
+type ProductId : String {
+    validate business::id-valid?;
+}
+
+// frontend: flow/1
+
+type SubscriptionId : String {
+    validate business::id-valid?;
+}
+
+// frontend: flow/1
+
+type SubscriptionStatus : String {
+    validate subscription::status-valid?;
+}
+
+// frontend: flow/1
+
+word business.email-valid?(value: String) -> Bool {
+    effects none
+    doc "Whether an address satisfies the fixture\u0027s bounded ASCII email policy."
+    string::email-address-valid?(value)
+}
+
+// frontend: flow/1
+
+word business.id-valid?(value: String) -> Bool {
+    effects none
+    doc "Whether an identifier is in canonical lower-case GUID D form."
+    string::guid-canonical?(value)
+}
+
+// frontend: flow/1
+
+word business.instant-valid?(value: String) -> Bool {
+    effects none
+    doc "Whether an instant is canonical UTC round-trip text."
+    instant::is-canonical-utc?(value)
+}
+
+// frontend: flow/1
+
+word business.seed(value: Unit) -> Store {
+    effects none
+    doc "Create the deterministic baseline customer, product, and subscription."
+    let customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001");
+    let product-id = ProductId::new("20000000-0000-0000-0000-000000000001");
+    let customer = customer::new(id = customer-id, email = Email::new("ada@example.test"), kind = "regular", balance = Money::new(1250), created-at = Instant::new("2026-01-01T12:00:00.0000000\u002B00:00"));
+    let product = product::new(id = product-id, name = "Monthly plan", unit-price = Money::new(199));
+    let subscription = subscription::new(id = SubscriptionId::new("30000000-0000-0000-0000-000000000001"), customer-id = customer-id, product-id = product-id, term = "monthly", started-at = Instant::new("2026-01-02T12:00:00.0000000\u002B00:00"), expires-at = Instant::new("2026-02-01T12:00:00.0000000\u002B00:00"), status = SubscriptionStatus::new("active"), cancelled-at = option::none<Instant>());
+    store::new(customers = list::singleton<Customer>(customer), products = list::singleton<Product>(product), subscriptions = list::singleton<Subscription>(subscription), invoices = list::empty<Invoice>(), payments = list::empty<Payment>(), email-outbox = list::empty<EmailMessage>(), sent-emails = list::empty<EmailMessage>())
+}
+
+// frontend: flow/1
+
+word customer-id.parse(value: String) -> Result<CustomerId, BusinessError> {
+    effects none
+    doc "Parse any Guid.TryParse-compatible form and store canonical CustomerId text."
+    let parsed = string::guid-normalize(value);
+    match parsed {
+        ok canonical => {
+            result::ok<CustomerId, BusinessError>(CustomerId::new(canonical))
+        }
+        error detail => {
+            result::error<CustomerId, BusinessError>(businessError::new(code = "INVALID_IDENTIFIER", message = "CustomerId must be a GUID."))
+        }
+    }
+}
+
+// frontend: flow/1
+
+word customer.create(id: CustomerId, email: Email, kind: String, balance: Money, created-at: Instant) -> Result<Customer, BusinessError> {
+    effects none
+    doc "Create a customer with a trimmed, nonblank kind."
+    let normalized-kind = string::trim(kind);
+    if equals(string::length(normalized-kind), 0) {
+        result::error<Customer, BusinessError>(businessError::new(code = "INVALID_NAME", message = "Customer kind must contain non-whitespace text."))
+    } else {
+        result::ok<Customer, BusinessError>(customer::new(id = id, email = email, kind = normalized-kind, balance = balance, created-at = created-at))
+    }
+}
+
+// frontend: flow/1
+
+word customer.discounted-balance(customer: Customer) -> Money {
+    effects none
+    doc "For raw kind exactly premium, subtracts one tenth of the balance truncated toward zero; other kinds keep their balance."
+    let balance = customer::balance(customer);
+    if ::equals(customer::kind(customer), "premium") {
+        let minor-units = Money::value(balance);
+        let discount = ::divide(minor-units, 10);
+        Money::new(::subtract(minor-units, discount))
+    } else {
+        balance
+    }
+}
+
+// frontend: flow/1
+
+word email-message.create(to: Email, subject: String, body: String) -> Result<EmailMessage, BusinessError> {
+    effects none
+    doc "Create an email message after trimming its nonblank subject and body."
+    let normalized-subject = string::trim(subject);
+    let normalized-body = string::trim(body);
+    let subject-is-blank = equals(string::length(normalized-subject), 0);
+    let body-is-blank = equals(string::length(normalized-body), 0);
+    if bool::or(subject-is-blank, body-is-blank) {
+        result::error<EmailMessage, BusinessError>(businessError::new(code = "INVALID_EMAIL_MESSAGE", message = "Email subject and body must contain non-whitespace text."))
+    } else {
+        result::ok<EmailMessage, BusinessError>(emailMessage::new(to = to, subject = normalized-subject, body = normalized-body))
+    }
+}
+
+// frontend: flow/1
+
+word email.apply-delivery-result(store: Store, outcome: Result<Unit, BusinessError>) -> Result<Store, BusinessError> {
+    effects none
+    doc "Apply one explicit delivery outcome to the first queued email; failures leave Store unchanged."
+    let plan = store.email-outbox().fold(emailDeliveryPlan::new(first = option::none<EmailMessage>(), remaining = list::empty<EmailMessage>()), email::delivery-fold-step);
+    match plan.first() {
+        some message => {
+            match outcome {
+                ok delivered => {
+                    let sent = list::append(store.sent-emails(), message);
+                    let updated = store::with-email-state(store, plan.remaining(), sent);
+                    result::ok<Store, BusinessError>(updated)
+                }
+                error provider-error => {
+                    result::error<Store, BusinessError>(businessError::new(code = "EMAIL_PROVIDER_FAILURE", message = provider-error.message()))
+                }
+            }
+        }
+        none => {
+            result::error<Store, BusinessError>(businessError::new(code = "NO_PENDING_EMAIL", message = "There is no queued email to deliver."))
+        }
+    }
+}
+
+// frontend: flow/1
+
+word email.delivery-fold-step(accumulator: EmailDeliveryPlan, candidate: EmailMessage) -> EmailDeliveryPlan {
+    effects none
+    doc "Separate the first outbox message from the FIFO remainder."
+    match accumulator.first() {
+        some first => {
+            emailDeliveryPlan::new(first = accumulator.first(), remaining = list::append(accumulator.remaining(), candidate))
+        }
+        none => {
+            emailDeliveryPlan::new(first = option::some<EmailMessage>(candidate), remaining = accumulator.remaining())
+        }
+    }
+}
+
+// frontend: flow/1
+
+word email.parse(value: String) -> Result<Email, BusinessError> {
+    effects none
+    doc "Validate and wrap an address without changing its spelling."
+    if business::email-valid?(value) {
+        result::ok<Email, BusinessError>(Email::new(value))
+    } else {
+        result::error<Email, BusinessError>(businessError::new(code = "INVALID_EMAIL", message = "Email does not match the documented address policy."))
+    }
+}
+
+// frontend: flow/1
+
+word email.queue(store: Store, customer-id: CustomerId, subject: String, body: String) -> Result<Store, BusinessError> {
+    effects none
+    doc "Queue a trimmed, validated email for an existing customer, preserving FIFO order."
+    match store::customer(customer-id, store) {
+        some customer => {
+            match email-message::create(customer.email(), subject, body) {
+                ok message => {
+                    let updated = store::with-email-state(store, list::append(store.email-outbox(), message), store.sent-emails());
+                    result::ok<Store, BusinessError>(updated)
+                }
+                error invalid-message => {
+                    result::error<Store, BusinessError>(invalid-message)
+                }
+            }
+        }
+        none => {
+            result::error<Store, BusinessError>(businessError::new(code = "CUSTOMER_NOT_FOUND", message = "The customer does not exist."))
+        }
+    }
+}
+
+// frontend: flow/1
+
+word instant.normalize(value: String) -> Result<Instant, BusinessError> {
+    effects none
+    doc "Parse an explicitly zoned ISO instant and store canonical UTC text."
+    let parsed = instant::parse-utc(value);
+    match parsed {
+        ok canonical => {
+            result::ok<Instant, BusinessError>(Instant::new(canonical))
+        }
+        error detail => {
+            result::error<Instant, BusinessError>(businessError::new(code = "INVALID_INSTANT", message = "Instant must be an explicitly zoned ISO timestamp."))
+        }
+    }
+}
+
+// frontend: flow/1
+
+word invoice-id.parse(value: String) -> Result<InvoiceId, BusinessError> {
+    effects none
+    doc "Parse any Guid.TryParse-compatible form and store canonical InvoiceId text."
+    let parsed = string::guid-normalize(value);
+    match parsed {
+        ok canonical => {
+            result::ok<InvoiceId, BusinessError>(InvoiceId::new(canonical))
+        }
+        error detail => {
+            result::error<InvoiceId, BusinessError>(businessError::new(code = "INVALID_IDENTIFIER", message = "InvoiceId must be a GUID."))
+        }
+    }
+}
+
+// frontend: flow/1
+
+word invoice.build-lines(store: Store, cart: List<CartLine>) -> Result<List<InvoiceLine>, BusinessError> {
+    effects none
+    doc "Build cart lines in input order, returning the first line error or an empty list for an empty cart."
+    let initial = invoiceLinesAccumulator::new(store = store, outcome = result::ok<List<InvoiceLine>, BusinessError>(list::empty<InvoiceLine>()));
+    cart.fold(initial, invoice::build-lines-step).outcome()
+}
+
+// frontend: flow/1
+
+word invoice.build-lines-step(accumulator: InvoiceLinesAccumulator, cart: CartLine) -> InvoiceLinesAccumulator {
+    effects none
+    doc "Build cart lines in order while preserving the first line error."
+    match accumulator.outcome() {
+        ok lines => {
+            match invoice::line(accumulator.store(), cart) {
+                ok line => {
+                    invoiceLinesAccumulator::new(store = accumulator.store(), outcome = result::ok<List<InvoiceLine>, BusinessError>(list::append(lines, line)))
+                }
+                error problem => {
+                    invoiceLinesAccumulator::new(store = accumulator.store(), outcome = result::error<List<InvoiceLine>, BusinessError>(problem))
+                }
+            }
+        }
+        error problem => {
+            accumulator
+        }
+    }
+}
+
+// frontend: flow/1
+
+word invoice.create(store: Store, id: InvoiceId, customer-id: CustomerId, cart: List<CartLine>, created-at: Instant) -> Result<Store, BusinessError> {
+    effects none
+    doc "Create an open invoice after duplicate, customer, cart-line, and checked-total validation."
+    match store::invoice(id, store) {
+        some existing => {
+            result::error<Store, BusinessError>(businessError::new(code = "DUPLICATE_INVOICE", message = "An invoice with this identifier already exists."))
+        }
+        none => {
+            match store::customer(customer-id, store) {
+                some customer => {
+                    if equals(cart.count(), 0) {
+                        result::error<Store, BusinessError>(businessError::new(code = "EMPTY_INVOICE", message = "An invoice must contain at least one line."))
+                    } else {
+                        match invoice::build-lines(store, cart) {
+                            ok lines => {
+                                match invoice::sum-lines(lines) {
+                                    ok total => {
+                                        let created = invoice::new(id = id, customer-id = customer-id, lines = lines, total = total, created-at = created-at, status = InvoiceStatus::new("open"));
+                                        let updated = store::with-invoices(store, list::append(store.invoices(), created));
+                                        result::ok<Store, BusinessError>(updated)
+                                    }
+                                    error problem => {
+                                        result::error<Store, BusinessError>(problem)
+                                    }
+                                }
+                            }
+                            error problem => {
+                                result::error<Store, BusinessError>(problem)
+                            }
+                        }
+                    }
+                }
+                none => {
+                    result::error<Store, BusinessError>(businessError::new(code = "CUSTOMER_NOT_FOUND", message = "The customer does not exist."))
+                }
+            }
+        }
+    }
+}
+
+// frontend: flow/1
+
+word invoice.line(store: Store, cart: CartLine) -> Result<InvoiceLine, BusinessError> {
+    effects none
+    doc "Validate a cart line, copy its product details, and compute its checked line total."
+    let quantity = cart.quantity();
+    if int::less-than(quantity, 1) {
+        result::error<InvoiceLine, BusinessError>(businessError::new(code = "INVALID_QUANTITY", message = string::concat("Quantity must be positive; received ", string::concat(int::to-string(quantity), "."))))
+    } else {
+        if int::greater-than(quantity, 2147483647) {
+            result::error<InvoiceLine, BusinessError>(businessError::new(code = "INVALID_QUANTITY", message = "Quantity must be at most 2147483647."))
+        } else {
+            match store::product(cart.product-id(), store) {
+                some product => {
+                    if money::nonnegative?(product.unit-price()) {
+                        match money::multiply-by-quantity(product.unit-price(), quantity) {
+                            ok line-total => {
+                                result::ok<InvoiceLine, BusinessError>(invoiceLine::new(product-id = product.id(), description = product.name(), quantity = quantity, unit-price = product.unit-price(), line-total = line-total))
+                            }
+                            error problem => {
+                                result::error<InvoiceLine, BusinessError>(problem)
+                            }
+                        }
+                    } else {
+                        result::error<InvoiceLine, BusinessError>(businessError::new(code = "NEGATIVE_PRODUCT_PRICE", message = "Product prices must be nonnegative."))
+                    }
+                }
+                none => {
+                    result::error<InvoiceLine, BusinessError>(businessError::new(code = "PRODUCT_NOT_FOUND", message = "The product does not exist."))
+                }
+            }
+        }
+    }
+}
+
+// frontend: flow/1
+
+word invoice.status-valid?(value: String) -> Bool {
+    effects none
+    doc "Accept only the open and paid invoice states."
+    bool::or(equals(value, "open"), equals(value, "paid"))
+}
+
+// frontend: flow/1
+
+word invoice.sum-lines(lines: List<InvoiceLine>) -> Result<Money, BusinessError> {
+    effects none
+    doc "Sum invoice line totals from zero using checked left-to-right Money addition."
+    let initial = invoiceTotalAccumulator::new(outcome = result::ok<Money, BusinessError>(Money::new(0)));
+    lines.fold(initial, invoice::sum-lines-step).outcome()
+}
+
+// frontend: flow/1
+
+word invoice.sum-lines-step(accumulator: InvoiceTotalAccumulator, line: InvoiceLine) -> InvoiceTotalAccumulator {
+    effects none
+    doc "Add one line total with checked arithmetic, preserving any earlier error."
+    match accumulator.outcome() {
+        ok subtotal => {
+            match money::add(subtotal, line.line-total()) {
+                ok total => {
+                    invoiceTotalAccumulator::new(outcome = result::ok<Money, BusinessError>(total))
+                }
+                error problem => {
+                    invoiceTotalAccumulator::new(outcome = result::error<Money, BusinessError>(problem))
+                }
+            }
+        }
+        error problem => {
+            accumulator
+        }
+    }
+}
+
+// frontend: flow/1
+
+word money.add(left: Money, right: Money) -> Result<Money, BusinessError> {
+    effects none
+    doc "Add signed minor-unit amounts with checked Int64 arithmetic."
+    let sum = int::add-checked(Money::value(left), Money::value(right));
+    match sum {
+        ok value => {
+            result::ok<Money, BusinessError>(Money::new(value))
+        }
+        error detail => {
+            result::error<Money, BusinessError>(businessError::new(code = "MONEY_OVERFLOW", message = "The money operation exceeded the Int64 minor-unit range."))
+        }
+    }
+}
+
+// frontend: flow/1
+
+word money.multiply-by-quantity(amount: Money, quantity: Int) -> Result<Money, BusinessError> {
+    effects none
+    doc "Multiply signed minor units by a signed Int32 quantity with checked arithmetic."
+    let below-int32 = int::less-than(quantity, -2147483648);
+    let above-int32 = int::greater-than(quantity, 2147483647);
+    if bool::or(below-int32, above-int32) {
+        result::error<Money, BusinessError>(businessError::new(code = "INVALID_QUANTITY", message = "Quantity must fit the signed Int32 range."))
+    } else {
+        let product = int::multiply-checked(Money::value(amount), quantity);
+        match product {
+            ok value => {
+                result::ok<Money, BusinessError>(Money::new(value))
+            }
+            error detail => {
+                result::error<Money, BusinessError>(businessError::new(code = "MONEY_OVERFLOW", message = "The money operation exceeded the Int64 minor-unit range."))
+            }
+        }
+    }
+}
+
+// frontend: flow/1
+
+word money.nonnegative?(amount: Money) -> Bool {
+    effects none
+    doc "Whether a signed minor-unit amount is zero or greater."
+    bool::not(int::less-than(Money::value(amount), 0))
+}
+
+// frontend: flow/1
+
+word payment-id.parse(value: String) -> Result<PaymentId, BusinessError> {
+    effects none
+    doc "Parse any Guid.TryParse-compatible form and store canonical PaymentId text."
+    let parsed = string::guid-normalize(value);
+    match parsed {
+        ok canonical => {
+            result::ok<PaymentId, BusinessError>(PaymentId::new(canonical))
+        }
+        error detail => {
+            result::error<PaymentId, BusinessError>(businessError::new(code = "INVALID_IDENTIFIER", message = "PaymentId must be a GUID."))
+        }
+    }
+}
+
+// frontend: flow/1
+
+word payment-receipt.create(reference: String, amount: Money) -> Result<PaymentReceipt, BusinessError> {
+    effects none
+    doc "Create a receipt with a trimmed, nonblank provider reference."
+    let normalized-reference = string::trim(reference);
+    if equals(string::length(normalized-reference), 0) {
+        result::error<PaymentReceipt, BusinessError>(businessError::new(code = "INVALID_PROVIDER_RECEIPT", message = "Payment receipt reference must not be empty."))
+    } else {
+        result::ok<PaymentReceipt, BusinessError>(paymentReceipt::new(reference = normalized-reference, amount = amount))
+    }
+}
+
+// frontend: flow/1
+
+word payment.apply-result(store: Store, id: PaymentId, invoice-id: InvoiceId, amount: Money, requested-at: Instant, outcome: Result<PaymentReceipt, BusinessError>) -> Result<Store, BusinessError> {
+    effects none
+    doc "Apply an explicit payment-provider outcome after validating the request and open invoice."
+    match store::payment(id, store) {
+        some existing => {
+            result::error<Store, BusinessError>(businessError::new(code = "DUPLICATE_PAYMENT", message = "A payment with this identifier already exists."))
+        }
+        none => {
+            if int::greater-than(Money::value(amount), 0) {
+                match store::invoice(invoice-id, store) {
+                    some invoice => {
+                        if equals(invoice.status(), InvoiceStatus::new("paid")) {
+                            result::error<Store, BusinessError>(businessError::new(code = "INVOICE_ALREADY_PAID", message = "The invoice is already paid."))
+                        } else {
+                            if equals(invoice.total(), amount) {
+                                match outcome {
+                                    ok receipt => {
+                                        match payment-receipt::create(receipt.reference(), receipt.amount()) {
+                                            ok valid-receipt => {
+                                                if equals(valid-receipt.amount(), amount) {
+                                                    let paid-invoice = invoice::new(id = invoice.id(), customer-id = invoice.customer-id(), lines = invoice.lines(), total = invoice.total(), created-at = invoice.created-at(), status = InvoiceStatus::new("paid"));
+                                                    let payment = payment::new(id = id, invoice-id = invoice-id, amount = amount, provider-reference = valid-receipt.reference(), paid-at = requested-at);
+                                                    let replaced = store::replace-invoice(store, paid-invoice);
+                                                    let updated = store::with-payments(replaced, list::append(replaced.payments(), payment));
+                                                    result::ok<Store, BusinessError>(updated)
+                                                } else {
+                                                    result::error<Store, BusinessError>(businessError::new(code = "INVALID_PROVIDER_RECEIPT", message = "Payment provider returned an invalid receipt: receipt amount does not match the requested amount"))
+                                                }
+                                            }
+                                            error invalid-receipt => {
+                                                result::error<Store, BusinessError>(invalid-receipt)
+                                            }
+                                        }
+                                    }
+                                    error provider-error => {
+                                        result::error<Store, BusinessError>(businessError::new(code = "PAYMENT_PROVIDER_FAILURE", message = provider-error.message()))
+                                    }
+                                }
+                            } else {
+                                result::error<Store, BusinessError>(businessError::new(code = "PAYMENT_AMOUNT_MISMATCH", message = "A payment must equal the full open invoice balance."))
+                            }
+                        }
+                    }
+                    none => {
+                        result::error<Store, BusinessError>(businessError::new(code = "INVOICE_NOT_FOUND", message = "The invoice does not exist."))
+                    }
+                }
+            } else {
+                result::error<Store, BusinessError>(businessError::new(code = "PAYMENT_AMOUNT_MUST_BE_POSITIVE", message = "A payment amount must be positive."))
+            }
+        }
+    }
+}
+
+// frontend: flow/1
+
+word product-id.parse(value: String) -> Result<ProductId, BusinessError> {
+    effects none
+    doc "Parse any Guid.TryParse-compatible form and store canonical ProductId text."
+    let parsed = string::guid-normalize(value);
+    match parsed {
+        ok canonical => {
+            result::ok<ProductId, BusinessError>(ProductId::new(canonical))
+        }
+        error detail => {
+            result::error<ProductId, BusinessError>(businessError::new(code = "INVALID_IDENTIFIER", message = "ProductId must be a GUID."))
+        }
+    }
+}
+
+// frontend: flow/1
+
+word product.create(id: ProductId, name: String, unit-price: Money) -> Result<Product, BusinessError> {
+    effects none
+    doc "Create a product with a trimmed name and a nonnegative unit price."
+    let normalized-name = string::trim(name);
+    if equals(string::length(normalized-name), 0) {
+        result::error<Product, BusinessError>(businessError::new(code = "INVALID_NAME", message = "Product name must contain non-whitespace text."))
+    } else {
+        if money::nonnegative?(unit-price) {
+            result::ok<Product, BusinessError>(product::new(id = id, name = normalized-name, unit-price = unit-price))
+        } else {
+            result::error<Product, BusinessError>(businessError::new(code = "NEGATIVE_PRODUCT_PRICE", message = "Product prices must be nonnegative."))
+        }
+    }
+}
+
+// frontend: flow/1
+
+word store.add-customer(customer: Customer, store: Store) -> Result<Store, BusinessError> {
+    effects none
+    doc "Append a customer when its ID is unused, or return DUPLICATE_CUSTOMER."
+    match store::customer(customer.id(), store) {
+        some existing => {
+            result::error<Store, BusinessError>(businessError::new(code = "DUPLICATE_CUSTOMER", message = "A customer with this identifier already exists."))
+        }
+        none => {
+            let updated = store::new(customers = list::append(store.customers(), customer), products = store.products(), subscriptions = store.subscriptions(), invoices = store.invoices(), payments = store.payments(), email-outbox = store.email-outbox(), sent-emails = store.sent-emails());
+            result::ok<Store, BusinessError>(updated)
+        }
+    }
+}
+
+// frontend: flow/1
+
+word store.add-product(product: Product, store: Store) -> Result<Store, BusinessError> {
+    effects none
+    doc "Append a product when its ID is unused, or return DUPLICATE_PRODUCT."
+    match store::product(product.id(), store) {
+        some existing => {
+            result::error<Store, BusinessError>(businessError::new(code = "DUPLICATE_PRODUCT", message = "A product with this identifier already exists."))
+        }
+        none => {
+            let updated = store::new(customers = store.customers(), products = list::append(store.products(), product), subscriptions = store.subscriptions(), invoices = store.invoices(), payments = store.payments(), email-outbox = store.email-outbox(), sent-emails = store.sent-emails());
+            result::ok<Store, BusinessError>(updated)
+        }
+    }
+}
+
+// frontend: flow/1
+
+word store.customer(id: CustomerId, store: Store) -> Option<Customer> {
+    effects none
+    doc "Find the first customer with this ID, preserving list order."
+    store.customers().fold(customerLookup::new(target = id, found = option::none<Customer>()), store::customer-fold-step).found()
+}
+
+// frontend: flow/1
+
+word store.customer-fold-step(accumulator: CustomerLookup, candidate: Customer) -> CustomerLookup {
+    effects none
+    doc "Keep the first customer whose ID matches the lookup key."
+    match accumulator.found() {
+        some existing => {
+            accumulator
+        }
+        none => {
+            if equals(candidate.id(), accumulator.target()) {
+                customerLookup::new(target = accumulator.target(), found = option::some<Customer>(candidate))
+            } else {
+                accumulator
+            }
+        }
+    }
+}
+
+// frontend: flow/1
+
+word store.empty(value: Unit) -> Store {
+    effects none
+    doc "Create a Store with all seven collections empty."
+    store::new(customers = list::empty<Customer>(), products = list::empty<Product>(), subscriptions = list::empty<Subscription>(), invoices = list::empty<Invoice>(), payments = list::empty<Payment>(), email-outbox = list::empty<EmailMessage>(), sent-emails = list::empty<EmailMessage>())
+}
+
+// frontend: flow/1
+
+word store.invoice(id: InvoiceId, store: Store) -> Option<Invoice> {
+    effects none
+    doc "Find the first invoice with this ID, preserving list order."
+    store.invoices().fold(invoiceLookup::new(target = id, found = option::none<Invoice>()), store::invoice-fold-step).found()
+}
+
+// frontend: flow/1
+
+word store.invoice-fold-step(accumulator: InvoiceLookup, candidate: Invoice) -> InvoiceLookup {
+    effects none
+    doc "Keep the first invoice whose ID matches the lookup key."
+    match accumulator.found() {
+        some existing => {
+            accumulator
+        }
+        none => {
+            if equals(candidate.id(), accumulator.target()) {
+                invoiceLookup::new(target = accumulator.target(), found = option::some<Invoice>(candidate))
+            } else {
+                accumulator
+            }
+        }
+    }
+}
+
+// frontend: flow/1
+
+word store.payment(id: PaymentId, store: Store) -> Option<Payment> {
+    effects none
+    doc "Find the first payment with this ID, preserving list order."
+    store.payments().fold(paymentLookup::new(target = id, found = option::none<Payment>()), store::payment-fold-step).found()
+}
+
+// frontend: flow/1
+
+word store.payment-fold-step(accumulator: PaymentLookup, candidate: Payment) -> PaymentLookup {
+    effects none
+    doc "Keep the first payment whose ID matches the lookup key."
+    match accumulator.found() {
+        some existing => {
+            accumulator
+        }
+        none => {
+            if equals(candidate.id(), accumulator.target()) {
+                paymentLookup::new(target = accumulator.target(), found = option::some<Payment>(candidate))
+            } else {
+                accumulator
+            }
+        }
+    }
+}
+
+// frontend: flow/1
+
+word store.product(id: ProductId, store: Store) -> Option<Product> {
+    effects none
+    doc "Find the first product with this ID, preserving list order."
+    store.products().fold(productLookup::new(target = id, found = option::none<Product>()), store::product-fold-step).found()
+}
+
+// frontend: flow/1
+
+word store.product-fold-step(accumulator: ProductLookup, candidate: Product) -> ProductLookup {
+    effects none
+    doc "Keep the first product whose ID matches the lookup key."
+    match accumulator.found() {
+        some existing => {
+            accumulator
+        }
+        none => {
+            if equals(candidate.id(), accumulator.target()) {
+                productLookup::new(target = accumulator.target(), found = option::some<Product>(candidate))
+            } else {
+                accumulator
+            }
+        }
+    }
+}
+
+// frontend: flow/1
+
+word store.replace-invoice(store: Store, invoice: Invoice) -> Store {
+    effects none
+    doc "Replace the first invoice with the same ID, keeping all other Store fields and invoice order."
+    let replacement = invoiceReplacement::new(target = invoice.id(), replacement = invoice, replaced = false, values = list::empty<Invoice>());
+    let completed = store.invoices().fold(replacement, store::replace-invoice-step);
+    store::with-invoices(store, completed.values())
+}
+
+// frontend: flow/1
+
+word store.replace-invoice-step(accumulator: InvoiceReplacement, candidate: Invoice) -> InvoiceReplacement {
+    effects none
+    doc "Replace only the first invoice with the target ID while preserving list order."
+    if accumulator.replaced() {
+        invoiceReplacement::new(target = accumulator.target(), replacement = accumulator.replacement(), replaced = true, values = list::append(accumulator.values(), candidate))
+    } else {
+        if equals(candidate.id(), accumulator.target()) {
+            invoiceReplacement::new(target = accumulator.target(), replacement = accumulator.replacement(), replaced = true, values = list::append(accumulator.values(), accumulator.replacement()))
+        } else {
+            invoiceReplacement::new(target = accumulator.target(), replacement = accumulator.replacement(), replaced = false, values = list::append(accumulator.values(), candidate))
+        }
+    }
+}
+
+// frontend: flow/1
+
+word store.subscription(id: SubscriptionId, store: Store) -> Option<Subscription> {
+    effects none
+    doc "Find the first subscription with this ID, preserving list order."
+    store.subscriptions().fold(subscriptionLookup::new(target = id, found = option::none<Subscription>()), store::subscription-fold-step).found()
+}
+
+// frontend: flow/1
+
+word store.subscription-fold-step(accumulator: SubscriptionLookup, candidate: Subscription) -> SubscriptionLookup {
+    effects none
+    doc "Keep the first subscription whose ID matches the lookup key."
+    match accumulator.found() {
+        some existing => {
+            accumulator
+        }
+        none => {
+            if equals(candidate.id(), accumulator.target()) {
+                subscriptionLookup::new(target = accumulator.target(), found = option::some<Subscription>(candidate))
+            } else {
+                accumulator
+            }
+        }
+    }
+}
+
+// frontend: flow/1
+
+word store.with-email-state(store: Store, outbox: List<EmailMessage>, sent: List<EmailMessage>) -> Store {
+    effects none
+    doc "Replace both email lists while preserving the five business entity lists."
+    store::new(customers = store.customers(), products = store.products(), subscriptions = store.subscriptions(), invoices = store.invoices(), payments = store.payments(), email-outbox = outbox, sent-emails = sent)
+}
+
+// frontend: flow/1
+
+word store.with-invoices(store: Store, values: List<Invoice>) -> Store {
+    effects none
+    doc "Replace the invoice list while preserving every other Store field."
+    store::new(customers = store.customers(), products = store.products(), subscriptions = store.subscriptions(), invoices = values, payments = store.payments(), email-outbox = store.email-outbox(), sent-emails = store.sent-emails())
+}
+
+// frontend: flow/1
+
+word store.with-payments(store: Store, values: List<Payment>) -> Store {
+    effects none
+    doc "Replace the payment list while preserving every other Store field."
+    store::new(customers = store.customers(), products = store.products(), subscriptions = store.subscriptions(), invoices = store.invoices(), payments = values, email-outbox = store.email-outbox(), sent-emails = store.sent-emails())
+}
+
+// frontend: flow/1
+
+word store.with-subscriptions(store: Store, values: List<Subscription>) -> Store {
+    effects none
+    doc "Replace the subscription list while preserving every other Store field."
+    store::new(customers = store.customers(), products = store.products(), subscriptions = values, invoices = store.invoices(), payments = store.payments(), email-outbox = store.email-outbox(), sent-emails = store.sent-emails())
+}
+
+// frontend: flow/1
+
+word subscription-id.parse(value: String) -> Result<SubscriptionId, BusinessError> {
+    effects none
+    doc "Parse any Guid.TryParse-compatible form and store canonical SubscriptionId text."
+    let parsed = string::guid-normalize(value);
+    match parsed {
+        ok canonical => {
+            result::ok<SubscriptionId, BusinessError>(SubscriptionId::new(canonical))
+        }
+        error detail => {
+            result::error<SubscriptionId, BusinessError>(businessError::new(code = "INVALID_IDENTIFIER", message = "SubscriptionId must be a GUID."))
+        }
+    }
+}
+
+// frontend: flow/1
+
+word subscription.cancel(store: Store, id: SubscriptionId, cancelled-at: Instant) -> Result<Store, BusinessError> {
+    effects none
+    doc "Cancel an active subscription at or after its start while preserving Store and list order."
+    match store::subscription(id, store) {
+        some existing => {
+            if equals(SubscriptionStatus::value(existing.status()), "cancelled") {
+                result::error<Store, BusinessError>(businessError::new(code = "SUBSCRIPTION_ALREADY_CANCELLED", message = "The subscription is already cancelled."))
+            } else {
+                if instant::before?(Instant::value(cancelled-at), Instant::value(existing.started-at())) {
+                    result::error<Store, BusinessError>(businessError::new(code = "CANCEL_BEFORE_START", message = "A subscription cannot be cancelled before it starts."))
+                } else {
+                    let cancelled = subscription::new(id = existing.id(), customer-id = existing.customer-id(), product-id = existing.product-id(), term = existing.term(), started-at = existing.started-at(), expires-at = existing.expires-at(), status = SubscriptionStatus::new("cancelled"), cancelled-at = option::some<Instant>(cancelled-at));
+                    let updated-subscriptions = subscription::replace-list(store.subscriptions(), id, cancelled);
+                    let updated-store = store::with-subscriptions(store, updated-subscriptions);
+                    result::ok<Store, BusinessError>(updated-store)
+                }
+            }
+        }
+        none => {
+            result::error<Store, BusinessError>(businessError::new(code = "SUBSCRIPTION_NOT_FOUND", message = "The subscription does not exist."))
+        }
+    }
+}
+
+// frontend: flow/1
+
+word subscription.replace-list(values: List<Subscription>, target-id: SubscriptionId, replacement: Subscription) -> List<Subscription> {
+    effects none
+    doc "Replace the first subscription with the target ID while preserving list order."
+    let initial = subscriptionReplacementState::new(target-id = target-id, replacement = replacement, output = list::empty<Subscription>(), replaced = false);
+    values.fold(initial, subscription::replace-step).output()
+}
+
+// frontend: flow/1
+
+word subscription.replace-step(state: SubscriptionReplacementState, candidate: Subscription) -> SubscriptionReplacementState {
+    effects none
+    doc "Copy subscriptions in order, replacing only the first item with the target ID."
+    let matches-target = equals(candidate.id(), state.target-id());
+    let replace-now = bool::and(bool::not(state.replaced()), matches-target);
+    if replace-now {
+        subscriptionReplacementState::new(target-id = state.target-id(), replacement = state.replacement(), output = list::append(state.output(), state.replacement()), replaced = true)
+    } else {
+        subscriptionReplacementState::new(target-id = state.target-id(), replacement = state.replacement(), output = list::append(state.output(), candidate), replaced = state.replaced())
+    }
+}
+
+// frontend: flow/1
+
+word subscription.start(store: Store, id: SubscriptionId, customer-id: CustomerId, product-id: ProductId, term: String, started-at: Instant, expires-at: Instant) -> Result<Store, BusinessError> {
+    effects none
+    doc "Append a new active subscription after checking ID, term, dates, customer, and product in reference order."
+    match store::subscription(id, store) {
+        some existing => {
+            result::error<Store, BusinessError>(businessError::new(code = "DUPLICATE_SUBSCRIPTION", message = "A subscription with this identifier already exists."))
+        }
+        none => {
+            let normalized-term = string::trim(term);
+            if equals(string::length(normalized-term), 0) {
+                result::error<Store, BusinessError>(businessError::new(code = "INVALID_SUBSCRIPTION_TERM", message = "Subscription term must contain non-whitespace text."))
+            } else {
+                let expires-before-start = instant::before?(Instant::value(expires-at), Instant::value(started-at));
+                let expires-equal-start = equals(Instant::value(expires-at), Instant::value(started-at));
+                if bool::or(expires-before-start, expires-equal-start) {
+                    result::error<Store, BusinessError>(businessError::new(code = "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START", message = "Subscription expiry must be later than its start."))
+                } else {
+                    match store::customer(customer-id, store) {
+                        some customer => {
+                            match store::product(product-id, store) {
+                                some product => {
+                                    let subscription = subscription::new(id = id, customer-id = customer-id, product-id = product-id, term = normalized-term, started-at = started-at, expires-at = expires-at, status = SubscriptionStatus::new("active"), cancelled-at = option::none<Instant>());
+                                    let updated = store::with-subscriptions(store, list::append(store.subscriptions(), subscription));
+                                    result::ok<Store, BusinessError>(updated)
+                                }
+                                none => {
+                                    result::error<Store, BusinessError>(businessError::new(code = "PRODUCT_NOT_FOUND", message = "The product does not exist."))
+                                }
+                            }
+                        }
+                        none => {
+                            result::error<Store, BusinessError>(businessError::new(code = "CUSTOMER_NOT_FOUND", message = "The customer does not exist."))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// frontend: flow/1
+
+word subscription.status-valid?(value: String) -> Bool {
+    effects none
+    doc "Accept only the active and cancelled subscription states."
+    bool::or(equals(value, "active"), equals(value, "cancelled"))
+}
+
+// frontend: flow/1
+
+test business.email-valid?/accepted {
+    business::email-valid?("dev.team\u002Balerts@example-domain.com")
+    => true
+}
+
+// frontend: flow/1
+
+test business.email-valid?/rejected-empty-local-segment {
+    business::email-valid?("dev..team@example.com")
+    => false
+}
+
+// frontend: flow/1
+
+test business.id-valid?/canonical {
+    business::id-valid?("00112233-4455-6677-8899-aabbccddeeff")
+    => true
+}
+
+// frontend: flow/1
+
+test business.id-valid?/noncanonical-uppercase {
+    business::id-valid?("00112233-4455-6677-8899-AABBCCDDEEFF")
+    => false
+}
+
+// frontend: flow/1
+
+test business.instant-valid?/canonical-utc {
+    business::instant-valid?("2024-02-29T12:00:00.0000000\u002B00:00")
+    => true
+}
+
+// frontend: flow/1
+
+test business.instant-valid?/offset-is-not-canonical {
+    business::instant-valid?("2024-02-29T12:00:00\u002B02:00")
+    => false
+}
+
+// frontend: flow/1
+
+test business.seed/exact-baseline {
+    let baseline = business::seed(unit);
+    let customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001");
+    let product-id = ProductId::new("20000000-0000-0000-0000-000000000001");
+    let subscription-id = SubscriptionId::new("30000000-0000-0000-0000-000000000001");
+    let customer-is-exact = match store::customer(customer-id, baseline) {
+    some selected => {
+        bool::and(equals(selected.email(), Email::new("ada@example.test")), bool::and(equals(selected.kind(), "regular"), bool::and(equals(selected.balance(), Money::new(1250)), equals(selected.created-at(), Instant::new("2026-01-01T12:00:00.0000000\u002B00:00")))))
+    }
+    none => {
+        false
+    }
+};
+    let product-is-exact = match store::product(product-id, baseline) {
+    some selected => {
+        bool::and(equals(selected.name(), "Monthly plan"), equals(selected.unit-price(), Money::new(199)))
+    }
+    none => {
+        false
+    }
+};
+    let subscription-is-exact = match store::subscription(subscription-id, baseline) {
+    some selected => {
+        bool::and(equals(selected.customer-id(), customer-id), bool::and(equals(selected.product-id(), product-id), bool::and(equals(selected.term(), "monthly"), bool::and(equals(selected.started-at(), Instant::new("2026-01-02T12:00:00.0000000\u002B00:00")), bool::and(equals(selected.expires-at(), Instant::new("2026-02-01T12:00:00.0000000\u002B00:00")), bool::and(equals(selected.status(), SubscriptionStatus::new("active")), equals(selected.cancelled-at(), option::none<Instant>())))))))
+    }
+    none => {
+        false
+    }
+};
+    bool::and(equals(baseline.customers().count(), 1), bool::and(equals(baseline.products().count(), 1), bool::and(equals(baseline.subscriptions().count(), 1), bool::and(equals(baseline.invoices().count(), 0), bool::and(equals(baseline.payments().count(), 0), bool::and(equals(baseline.email-outbox().count(), 0), bool::and(equals(baseline.sent-emails().count(), 0), bool::and(customer-is-exact, bool::and(product-is-exact, subscription-is-exact)))))))))
+    => true
+}
+
+// frontend: flow/1
+
+test customer-id.parse/braced-normalized {
+    match customer-id::parse(" {00112233-4455-6677-8899-AABBCCDDEEFF} ") {
+        ok id => {
+            CustomerId::value(id)
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "00112233-4455-6677-8899-aabbccddeeff"
+}
+
+// frontend: flow/1
+
+test customer-id.parse/canonical {
+    match customer-id::parse("00112233-4455-6677-8899-aabbccddeeff") {
+        ok id => {
+            CustomerId::value(id)
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "00112233-4455-6677-8899-aabbccddeeff"
+}
+
+// frontend: flow/1
+
+test customer-id.parse/invalid {
+    match customer-id::parse("not-a-guid") {
+        ok id => {
+            CustomerId::value(id)
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "INVALID_IDENTIFIER"
+}
+
+// frontend: flow/1
+
+test customer.create/blank-kind {
+    match customer::create(CustomerId::new("00112233-4455-6677-8899-aabbccddeeff"), Email::new("dev@example.com"), " \t ", Money::new(0), Instant::new("2024-02-29T12:00:00.0000000\u002B00:00")) {
+        ok value => {
+            value.kind()
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "INVALID_NAME"
+}
+
+// frontend: flow/1
+
+test customer.create/trimmed-kind {
+    match customer::create(CustomerId::new("00112233-4455-6677-8899-aabbccddeeff"), Email::new("dev@example.com"), "  partner  ", Money::new(-50), Instant::new("2024-02-29T12:00:00.0000000\u002B00:00")) {
+        ok value => {
+            value.kind()
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "partner"
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/premium-negative-fraction {
+    Money::value(customer::discounted-balance(customer::new(id = CustomerId::new("00000000-0000-0000-0000-000000000001"), email = Email::new("buyer@example.com"), kind = "premium", balance = Money::new(-1059), created-at = Instant::new("2026-01-01T12:00:00.0000000\u002B00:00"))))
+    => -954
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/premium-positive-fraction {
+    Money::value(customer::discounted-balance(customer::new(id = CustomerId::new("00000000-0000-0000-0000-000000000001"), email = Email::new("buyer@example.com"), kind = "premium", balance = Money::new(1059), created-at = Instant::new("2026-01-01T12:00:00.0000000\u002B00:00"))))
+    => 954
+}
+
+// frontend: flow/1
+
+test customer.discounted-balance/regular-unchanged {
+    Money::value(customer::discounted-balance(customer::new(id = CustomerId::new("00000000-0000-0000-0000-000000000001"), email = Email::new("buyer@example.com"), kind = "regular", balance = Money::new(1059), created-at = Instant::new("2026-01-01T12:00:00.0000000\u002B00:00"))))
+    => 1059
+}
+
+// frontend: flow/1
+
+test email-message.create/blank-body {
+    match email-message::create(Email::new("dev@example.com"), "Subject", " \t ") {
+        ok value => {
+            value.body()
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "INVALID_EMAIL_MESSAGE"
+}
+
+// frontend: flow/1
+
+test email-message.create/blank-subject {
+    match email-message::create(Email::new("dev@example.com"), "  ", "Body") {
+        ok value => {
+            value.subject()
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "INVALID_EMAIL_MESSAGE"
+}
+
+// frontend: flow/1
+
+test email-message.create/trims-fields {
+    match email-message::create(Email::new("dev@example.com"), "  Receipt ready  ", "  Your receipt is ready.  ") {
+        ok value => {
+            string::concat(value.subject(), string::concat("|", value.body()))
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "Receipt ready|Your receipt is ready."
+}
+
+// frontend: flow/1
+
+test email.apply-delivery-result/empty-outbox-precedes-provider-error {
+    let failure = businessError::new(code = "DECLINED", message = "mail rejected");
+    match email::apply-delivery-result(store::empty(unit), result::error<Unit, BusinessError>(failure)) {
+        ok updated => {
+            false
+        }
+        error problem => {
+            equals(problem.code(), "NO_PENDING_EMAIL")
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test email.apply-delivery-result/provider-failure-retains-fifo-state {
+    let first = emailMessage::new(to = Email::new("first@example.test"), subject = "First", body = "First body");
+    let later = emailMessage::new(to = Email::new("later@example.test"), subject = "Later", body = "Later body");
+    let initial = store::with-email-state(store::empty(unit), list::append(list::singleton<EmailMessage>(first), later), list::empty<EmailMessage>());
+    match email::apply-delivery-result(initial, result::error<Unit, BusinessError>(businessError::new(code = "TEMPORARY", message = "mail gateway unavailable"))) {
+        ok updated => {
+            false
+        }
+        error problem => {
+            bool::and(equals(problem.code(), "EMAIL_PROVIDER_FAILURE"), bool::and(equals(problem.message(), "mail gateway unavailable"), bool::and(equals(initial.email-outbox(), list::append(list::singleton<EmailMessage>(first), later)), equals(initial.sent-emails().count(), 0))))
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test email.apply-delivery-result/success-moves-only-first-message {
+    let first = emailMessage::new(to = Email::new("first@example.test"), subject = "First", body = "First body");
+    let later = emailMessage::new(to = Email::new("later@example.test"), subject = "Later", body = "Later body");
+    let prior-sent = emailMessage::new(to = Email::new("sent@example.test"), subject = "Sent", body = "Sent body");
+    let initial = store::with-email-state(store::empty(unit), list::append(list::singleton<EmailMessage>(first), later), list::singleton<EmailMessage>(prior-sent));
+    match email::apply-delivery-result(initial, result::ok<Unit, BusinessError>(unit)) {
+        ok updated => {
+            bool::and(equals(updated.email-outbox(), list::singleton<EmailMessage>(later)), bool::and(equals(updated.sent-emails(), list::append(list::singleton<EmailMessage>(prior-sent), first)), bool::and(equals(updated.customers(), initial.customers()), bool::and(equals(updated.products(), initial.products()), bool::and(equals(updated.subscriptions(), initial.subscriptions()), bool::and(equals(updated.invoices(), initial.invoices()), equals(updated.payments(), initial.payments())))))))
+        }
+        error problem => {
+            false
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test email.delivery-fold-step/first-message {
+    let message = emailMessage::new(to = Email::new("first@example.test"), subject = "First", body = "Body");
+    let state = emailDeliveryPlan::new(first = option::none<EmailMessage>(), remaining = list::empty<EmailMessage>());
+    let next = email::delivery-fold-step(state, message);
+    match next.first() {
+        some found => {
+            bool::and(equals(found, message), equals(next.remaining().count(), 0))
+        }
+        none => {
+            false
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test email.delivery-fold-step/later-message-appended {
+    let first = emailMessage::new(to = Email::new("first@example.test"), subject = "First", body = "Body");
+    let later = emailMessage::new(to = Email::new("later@example.test"), subject = "Later", body = "Body");
+    let state = emailDeliveryPlan::new(first = option::some<EmailMessage>(first), remaining = list::empty<EmailMessage>());
+    let next = email::delivery-fold-step(state, later);
+    bool::and(equals(next.first(), option::some<EmailMessage>(first)), equals(next.remaining(), list::singleton<EmailMessage>(later)))
+    => true
+}
+
+// frontend: flow/1
+
+test email.parse/invalid {
+    match email::parse("dev @example.com") {
+        ok address => {
+            Email::value(address)
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "INVALID_EMAIL"
+}
+
+// frontend: flow/1
+
+test email.parse/valid {
+    match email::parse("dev\u002Balerts@example.com") {
+        ok address => {
+            Email::value(address)
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "dev\u002Balerts@example.com"
+}
+
+// frontend: flow/1
+
+test email.queue/appends-trimmed-message-and-preserves-other-state {
+    let customer = customer::new(id = CustomerId::new("00000000-0000-0000-0000-000000000001"), email = Email::new("customer@example.test"), kind = "test", balance = Money::new(0), created-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"));
+    let older = emailMessage::new(to = customer.email(), subject = "Older", body = "Older body");
+    let prior-sent = emailMessage::new(to = customer.email(), subject = "Sent", body = "Sent body");
+    let base = store::empty(unit);
+    let with-customer = store::new(customers = list::singleton<Customer>(customer), products = base.products(), subscriptions = base.subscriptions(), invoices = base.invoices(), payments = base.payments(), email-outbox = list::singleton<EmailMessage>(older), sent-emails = list::singleton<EmailMessage>(prior-sent));
+    match email::queue(with-customer, customer.id(), "  New subject  ", "  New body  ") {
+        ok updated => {
+            let appended = emailMessage::new(to = customer.email(), subject = "New subject", body = "New body");
+            bool::and(equals(updated.email-outbox(), list::append(list::singleton<EmailMessage>(older), appended)), bool::and(equals(updated.sent-emails(), with-customer.sent-emails()), bool::and(equals(updated.customers(), with-customer.customers()), bool::and(equals(updated.products(), with-customer.products()), bool::and(equals(updated.subscriptions(), with-customer.subscriptions()), bool::and(equals(updated.invoices(), with-customer.invoices()), equals(updated.payments(), with-customer.payments())))))))
+        }
+        error problem => {
+            false
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test email.queue/missing-customer-precedes-message-validation {
+    match email::queue(store::empty(unit), CustomerId::new("00000000-0000-0000-0000-000000000001"), " ", " ") {
+        ok updated => {
+            false
+        }
+        error problem => {
+            equals(problem.code(), "CUSTOMER_NOT_FOUND")
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test email.queue/rejects-blank-message-without-mutating-store {
+    let customer = customer::new(id = CustomerId::new("00000000-0000-0000-0000-000000000001"), email = Email::new("customer@example.test"), kind = "test", balance = Money::new(0), created-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"));
+    let base = store::empty(unit);
+    let initial = store::new(customers = list::singleton<Customer>(customer), products = base.products(), subscriptions = base.subscriptions(), invoices = base.invoices(), payments = base.payments(), email-outbox = base.email-outbox(), sent-emails = base.sent-emails());
+    match email::queue(initial, customer.id(), "   ", "Body") {
+        ok updated => {
+            false
+        }
+        error problem => {
+            bool::and(equals(problem.code(), "INVALID_EMAIL_MESSAGE"), equals(initial.email-outbox().count(), 0))
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test instant.normalize/invalid {
+    match instant::normalize("next Tuesday") {
+        ok timestamp => {
+            Instant::value(timestamp)
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "INVALID_INSTANT"
+}
+
+// frontend: flow/1
+
+test instant.normalize/offset-to-utc {
+    match instant::normalize("2024-02-29T14:30:00\u002B02:30") {
+        ok timestamp => {
+            Instant::value(timestamp)
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "2024-02-29T12:00:00.0000000\u002B00:00"
+}
+
+// frontend: flow/1
+
+test invoice-id.parse/canonical {
+    match invoice-id::parse("00112233-4455-6677-8899-aabbccddeeff") {
+        ok id => {
+            InvoiceId::value(id)
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "00112233-4455-6677-8899-aabbccddeeff"
+}
+
+// frontend: flow/1
+
+test invoice-id.parse/invalid {
+    match invoice-id::parse("invalid") {
+        ok id => {
+            InvoiceId::value(id)
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "INVALID_IDENTIFIER"
+}
+
+// frontend: flow/1
+
+test invoice-id.parse/normalized {
+    match invoice-id::parse("(00112233-4455-6677-8899-AABBCCDDEEFF)") {
+        ok id => {
+            InvoiceId::value(id)
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "00112233-4455-6677-8899-aabbccddeeff"
+}
+
+// frontend: flow/1
+
+test invoice.build-lines/empty-fold {
+    match invoice::build-lines(business::seed(unit), list::empty<CartLine>()) {
+        ok lines => {
+            equals(lines.count(), 0)
+        }
+        error problem => {
+            false
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test invoice.build-lines/nonempty-fold-preserves-order {
+    let store = business::seed(unit);
+    let product-id = ProductId::new("20000000-0000-0000-0000-000000000001");
+    let first = cartLine::new(product-id = product-id, quantity = 2);
+    let second = cartLine::new(product-id = product-id, quantity = 1);
+    let cart = list::append(list::singleton<CartLine>(first), second);
+    match invoice::build-lines(store, cart) {
+        ok lines => {
+            let expected-first = invoiceLine::new(product-id = product-id, description = "Monthly plan", quantity = 2, unit-price = Money::new(199), line-total = Money::new(398));
+            let expected-second = invoiceLine::new(product-id = product-id, description = "Monthly plan", quantity = 1, unit-price = Money::new(199), line-total = Money::new(199));
+            equals(lines, list::append(list::singleton<InvoiceLine>(expected-first), expected-second))
+        }
+        error problem => {
+            false
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test invoice.build-lines/propagates-first-line-error {
+    let store = business::seed(unit);
+    let valid-id = ProductId::new("20000000-0000-0000-0000-000000000001");
+    let missing-id = ProductId::new("90000000-0000-0000-0000-000000000001");
+    let first = cartLine::new(product-id = valid-id, quantity = 1);
+    let bad = cartLine::new(product-id = missing-id, quantity = 1);
+    let later = cartLine::new(product-id = missing-id, quantity = 0);
+    let cart = list::append(list::append(list::singleton<CartLine>(first), bad), later);
+    match invoice::build-lines(store, cart) {
+        ok lines => {
+            false
+        }
+        error problem => {
+            equals(problem.code(), "PRODUCT_NOT_FOUND")
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test invoice.build-lines-step/appends-successful-line {
+    let initial = business::seed(unit);
+    let product-id = ProductId::new("20000000-0000-0000-0000-000000000001");
+    let accumulator = invoiceLinesAccumulator::new(store = initial, outcome = result::ok<List<InvoiceLine>, BusinessError>(list::empty<InvoiceLine>()));
+    let cart = cartLine::new(product-id = product-id, quantity = 2);
+    let updated = invoice::build-lines-step(accumulator, cart);
+    match updated.outcome() {
+        ok lines => {
+            let expected = invoiceLine::new(product-id = product-id, description = "Monthly plan", quantity = 2, unit-price = Money::new(199), line-total = Money::new(398));
+            equals(lines, list::singleton<InvoiceLine>(expected))
+        }
+        error problem => {
+            false
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test invoice.build-lines-step/captures-line-error {
+    let initial = invoiceLinesAccumulator::new(store = store::empty(unit), outcome = result::ok<List<InvoiceLine>, BusinessError>(list::empty<InvoiceLine>()));
+    let cart = cartLine::new(product-id = ProductId::new("90000000-0000-0000-0000-000000000001"), quantity = 1);
+    let updated = invoice::build-lines-step(initial, cart);
+    match updated.outcome() {
+        ok lines => {
+            false
+        }
+        error problem => {
+            equals(problem.code(), "PRODUCT_NOT_FOUND")
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test invoice.build-lines-step/preserves-prior-error {
+    let problem = businessError::new(code = "EARLIER", message = "first error");
+    let initial = invoiceLinesAccumulator::new(store = store::empty(unit), outcome = result::error<List<InvoiceLine>, BusinessError>(problem));
+    let cart = cartLine::new(product-id = ProductId::new("90000000-0000-0000-0000-000000000001"), quantity = 1);
+    let updated = invoice::build-lines-step(initial, cart);
+    match updated.outcome() {
+        ok lines => {
+            false
+        }
+        error actual => {
+            equals(actual.code(), "EARLIER")
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test invoice.create/appends-in-order-and-preserves-other-lists {
+    let base = business::seed(unit);
+    let customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001");
+    let product-id = ProductId::new("20000000-0000-0000-0000-000000000001");
+    let second-product-id = ProductId::new("93000000-0000-0000-0000-000000000001");
+    let second-product = product::new(id = second-product-id, name = "Notebook", unit-price = Money::new(25));
+    let products = list::append(base.products(), second-product);
+    let existing-payment = payment::new(id = PaymentId::new("93000000-0000-0000-0000-000000000002"), invoice-id = InvoiceId::new("93000000-0000-0000-0000-000000000003"), amount = Money::new(10), provider-reference = "preserved-payment", paid-at = Instant::new("2026-01-03T00:00:00.0000000\u002B00:00"));
+    let outbox-message = emailMessage::new(to = Email::new("pending@example.test"), subject = "pending", body = "queued");
+    let sent-message = emailMessage::new(to = Email::new("sent@example.test"), subject = "sent", body = "delivered");
+    let initial = store::new(customers = base.customers(), products = products, subscriptions = base.subscriptions(), invoices = base.invoices(), payments = list::singleton<Payment>(existing-payment), email-outbox = list::singleton<EmailMessage>(outbox-message), sent-emails = list::singleton<EmailMessage>(sent-message));
+    let first-cart-line = cartLine::new(product-id = product-id, quantity = 2);
+    let second-cart-line = cartLine::new(product-id = second-product-id, quantity = 1);
+    let cart = list::append(list::singleton<CartLine>(first-cart-line), second-cart-line);
+    let id = InvoiceId::new("93000000-0000-0000-0000-000000000004");
+    let created-at = Instant::new("2026-01-04T00:00:00.0000000\u002B00:00");
+    let expected-first = invoiceLine::new(product-id = product-id, description = "Monthly plan", quantity = 2, unit-price = Money::new(199), line-total = Money::new(398));
+    let expected-second = invoiceLine::new(product-id = second-product-id, description = "Notebook", quantity = 1, unit-price = Money::new(25), line-total = Money::new(25));
+    let expected-lines = list::append(list::singleton<InvoiceLine>(expected-first), expected-second);
+    let expected-invoice = invoice::new(id = id, customer-id = customer-id, lines = expected-lines, total = Money::new(423), created-at = created-at, status = InvoiceStatus::new("open"));
+    match invoice::create(initial, id, customer-id, cart, created-at) {
+        ok updated => {
+            bool::and(equals(updated.customers(), initial.customers()), bool::and(equals(updated.products(), initial.products()), bool::and(equals(updated.subscriptions(), initial.subscriptions()), bool::and(equals(updated.invoices(), list::append(initial.invoices(), expected-invoice)), bool::and(equals(updated.payments(), initial.payments()), bool::and(equals(updated.email-outbox(), initial.email-outbox()), equals(updated.sent-emails(), initial.sent-emails())))))))
+        }
+        error problem => {
+            false
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test invoice.create/customer-precedes-empty-cart {
+    match invoice::create(business::seed(unit), InvoiceId::new("91000000-0000-0000-0000-000000000001"), CustomerId::new("90000000-0000-0000-0000-000000000002"), list::empty<CartLine>(), Instant::new("2026-01-04T00:00:00.0000000\u002B00:00")) {
+        ok updated => {
+            false
+        }
+        error problem => {
+            equals(problem.code(), "CUSTOMER_NOT_FOUND")
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test invoice.create/duplicate-precedes-customer-and-cart {
+    let initial = business::seed(unit);
+    let id = InvoiceId::new("91000000-0000-0000-0000-000000000001");
+    let existing = invoice::new(id = id, customer-id = CustomerId::new("90000000-0000-0000-0000-000000000001"), lines = list::empty<InvoiceLine>(), total = Money::new(0), created-at = Instant::new("2026-01-03T00:00:00.0000000\u002B00:00"), status = InvoiceStatus::new("open"));
+    let with-invoice = store::with-invoices(initial, list::singleton<Invoice>(existing));
+    match invoice::create(with-invoice, id, CustomerId::new("90000000-0000-0000-0000-000000000002"), list::empty<CartLine>(), Instant::new("2026-01-04T00:00:00.0000000\u002B00:00")) {
+        ok updated => {
+            false
+        }
+        error problem => {
+            equals(problem.code(), "DUPLICATE_INVOICE")
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test invoice.create/later-line-error-precedes-overflow {
+    let base = business::seed(unit);
+    let max-id = ProductId::new("92000000-0000-0000-0000-000000000001");
+    let one-id = ProductId::new("92000000-0000-0000-0000-000000000002");
+    let max-product = product::new(id = max-id, name = "maximum", unit-price = Money::new(9223372036854775807));
+    let one-product = product::new(id = one-id, name = "one", unit-price = Money::new(1));
+    let products = list::append(list::singleton<Product>(max-product), one-product);
+    let initial = store::new(customers = base.customers(), products = products, subscriptions = base.subscriptions(), invoices = base.invoices(), payments = base.payments(), email-outbox = base.email-outbox(), sent-emails = base.sent-emails());
+    let first = cartLine::new(product-id = max-id, quantity = 1);
+    let second = cartLine::new(product-id = one-id, quantity = 1);
+    let later-invalid = cartLine::new(product-id = ProductId::new("92000000-0000-0000-0000-000000000003"), quantity = 1);
+    let cart = list::append(list::append(list::singleton<CartLine>(first), second), later-invalid);
+    match invoice::create(initial, InvoiceId::new("91000000-0000-0000-0000-000000000001"), CustomerId::new("10000000-0000-0000-0000-000000000001"), cart, Instant::new("2026-01-04T00:00:00.0000000\u002B00:00")) {
+        ok updated => {
+            false
+        }
+        error problem => {
+            equals(problem.code(), "PRODUCT_NOT_FOUND")
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test invoice.create/line-error {
+    let cart = cartLine::new(product-id = ProductId::new("90000000-0000-0000-0000-000000000001"), quantity = 1);
+    match invoice::create(business::seed(unit), InvoiceId::new("91000000-0000-0000-0000-000000000001"), CustomerId::new("10000000-0000-0000-0000-000000000001"), list::singleton<CartLine>(cart), Instant::new("2026-01-04T00:00:00.0000000\u002B00:00")) {
+        ok updated => {
+            false
+        }
+        error problem => {
+            equals(problem.code(), "PRODUCT_NOT_FOUND")
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test invoice.create/rejects-empty-cart {
+    match invoice::create(business::seed(unit), InvoiceId::new("91000000-0000-0000-0000-000000000001"), CustomerId::new("10000000-0000-0000-0000-000000000001"), list::empty<CartLine>(), Instant::new("2026-01-04T00:00:00.0000000\u002B00:00")) {
+        ok updated => {
+            false
+        }
+        error problem => {
+            equals(problem.code(), "EMPTY_INVOICE")
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test invoice.create/rejects-summed-overflow {
+    let base = business::seed(unit);
+    let max-id = ProductId::new("92000000-0000-0000-0000-000000000001");
+    let one-id = ProductId::new("92000000-0000-0000-0000-000000000002");
+    let max-product = product::new(id = max-id, name = "maximum", unit-price = Money::new(9223372036854775807));
+    let one-product = product::new(id = one-id, name = "one", unit-price = Money::new(1));
+    let products = list::append(list::singleton<Product>(max-product), one-product);
+    let initial = store::new(customers = base.customers(), products = products, subscriptions = base.subscriptions(), invoices = base.invoices(), payments = base.payments(), email-outbox = base.email-outbox(), sent-emails = base.sent-emails());
+    let first = cartLine::new(product-id = max-id, quantity = 1);
+    let second = cartLine::new(product-id = one-id, quantity = 1);
+    let cart = list::append(list::singleton<CartLine>(first), second);
+    match invoice::create(initial, InvoiceId::new("91000000-0000-0000-0000-000000000001"), CustomerId::new("10000000-0000-0000-0000-000000000001"), cart, Instant::new("2026-01-04T00:00:00.0000000\u002B00:00")) {
+        ok updated => {
+            false
+        }
+        error problem => {
+            equals(problem.code(), "MONEY_OVERFLOW")
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test invoice.line/checked-multiplication-overflow {
+    let blank = store::empty(unit);
+    let product-id = ProductId::new("90000000-0000-0000-0000-000000000001");
+    let item = product::new(id = product-id, name = "expensive", unit-price = Money::new(9223372036854775807));
+    let initial = store::new(customers = blank.customers(), products = list::singleton<Product>(item), subscriptions = blank.subscriptions(), invoices = blank.invoices(), payments = blank.payments(), email-outbox = blank.email-outbox(), sent-emails = blank.sent-emails());
+    let cart = cartLine::new(product-id = product-id, quantity = 2);
+    match invoice::line(initial, cart) {
+        ok line => {
+            false
+        }
+        error problem => {
+            equals(problem.code(), "MONEY_OVERFLOW")
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test invoice.line/int32-maximum-zero-price {
+    let blank = store::empty(unit);
+    let product-id = ProductId::new("90000000-0000-0000-0000-000000000001");
+    let item = product::new(id = product-id, name = "free", unit-price = Money::new(0));
+    let initial = store::new(customers = blank.customers(), products = list::singleton<Product>(item), subscriptions = blank.subscriptions(), invoices = blank.invoices(), payments = blank.payments(), email-outbox = blank.email-outbox(), sent-emails = blank.sent-emails());
+    let cart = cartLine::new(product-id = product-id, quantity = 2147483647);
+    match invoice::line(initial, cart) {
+        ok line => {
+            bool::and(equals(line.product-id(), product-id), bool::and(equals(line.description(), "free"), bool::and(equals(line.quantity(), 2147483647), bool::and(equals(line.unit-price(), Money::new(0)), equals(line.line-total(), Money::new(0))))))
+        }
+        error problem => {
+            false
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test invoice.line/int32-upper-bound-before-product-lookup {
+    let cart = cartLine::new(product-id = ProductId::new("90000000-0000-0000-0000-000000000001"), quantity = 2147483648);
+    match invoice::line(store::empty(unit), cart) {
+        ok line => {
+            false
+        }
+        error problem => {
+            equals(problem.code(), "INVALID_QUANTITY")
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test invoice.line/missing-product {
+    let cart = cartLine::new(product-id = ProductId::new("90000000-0000-0000-0000-000000000001"), quantity = 1);
+    match invoice::line(store::empty(unit), cart) {
+        ok line => {
+            false
+        }
+        error problem => {
+            equals(problem.code(), "PRODUCT_NOT_FOUND")
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test invoice.line/negative-public-product-price {
+    let blank = store::empty(unit);
+    let product-id = ProductId::new("90000000-0000-0000-0000-000000000001");
+    let item = product::new(id = product-id, name = "invalid", unit-price = Money::new(-1));
+    let initial = store::new(customers = blank.customers(), products = list::singleton<Product>(item), subscriptions = blank.subscriptions(), invoices = blank.invoices(), payments = blank.payments(), email-outbox = blank.email-outbox(), sent-emails = blank.sent-emails());
+    let cart = cartLine::new(product-id = product-id, quantity = 1);
+    match invoice::line(initial, cart) {
+        ok line => {
+            false
+        }
+        error problem => {
+            equals(problem.code(), "NEGATIVE_PRODUCT_PRICE")
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test invoice.line/nonpositive-quantity {
+    let cart = cartLine::new(product-id = ProductId::new("90000000-0000-0000-0000-000000000001"), quantity = 0);
+    match invoice::line(store::empty(unit), cart) {
+        ok line => {
+            false
+        }
+        error problem => {
+            equals(problem.code(), "INVALID_QUANTITY")
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test invoice.status-valid?/open {
+    invoice::status-valid?("open")
+    => true
+}
+
+// frontend: flow/1
+
+test invoice.status-valid?/paid {
+    invoice::status-valid?("paid")
+    => true
+}
+
+// frontend: flow/1
+
+test invoice.status-valid?/unknown {
+    invoice::status-valid?("void")
+    => false
+}
+
+// frontend: flow/1
+
+test invoice.sum-lines/empty-is-zero {
+    match invoice::sum-lines(list::empty<InvoiceLine>()) {
+        ok total => {
+            equals(total, Money::new(0))
+        }
+        error problem => {
+            false
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test invoice.sum-lines/nonempty-total {
+    let first = invoiceLine::new(product-id = ProductId::new("90000000-0000-0000-0000-000000000001"), description = "first", quantity = 1, unit-price = Money::new(25), line-total = Money::new(25));
+    let second = invoiceLine::new(product-id = ProductId::new("90000000-0000-0000-0000-000000000002"), description = "second", quantity = 2, unit-price = Money::new(50), line-total = Money::new(100));
+    match invoice::sum-lines(list::append(list::singleton<InvoiceLine>(first), second)) {
+        ok total => {
+            equals(total, Money::new(125))
+        }
+        error problem => {
+            false
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test invoice.sum-lines/overflow-preserves-error {
+    let first = invoiceLine::new(product-id = ProductId::new("90000000-0000-0000-0000-000000000001"), description = "maximum", quantity = 1, unit-price = Money::new(9223372036854775807), line-total = Money::new(9223372036854775807));
+    let second = invoiceLine::new(product-id = ProductId::new("90000000-0000-0000-0000-000000000002"), description = "one", quantity = 1, unit-price = Money::new(1), line-total = Money::new(1));
+    let third = invoiceLine::new(product-id = ProductId::new("90000000-0000-0000-0000-000000000003"), description = "later", quantity = 1, unit-price = Money::new(5), line-total = Money::new(5));
+    let lines = list::append(list::append(list::singleton<InvoiceLine>(first), second), third);
+    match invoice::sum-lines(lines) {
+        ok total => {
+            false
+        }
+        error problem => {
+            equals(problem.code(), "MONEY_OVERFLOW")
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test invoice.sum-lines-step/adds-successfully {
+    let initial = invoiceTotalAccumulator::new(outcome = result::ok<Money, BusinessError>(Money::new(40)));
+    let line = invoiceLine::new(product-id = ProductId::new("90000000-0000-0000-0000-000000000001"), description = "line", quantity = 1, unit-price = Money::new(30), line-total = Money::new(30));
+    match invoice::sum-lines-step(initial, line).outcome() {
+        ok total => {
+            equals(total, Money::new(70))
+        }
+        error problem => {
+            false
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test invoice.sum-lines-step/checked-addition-overflow {
+    let initial = invoiceTotalAccumulator::new(outcome = result::ok<Money, BusinessError>(Money::new(9223372036854775807)));
+    let line = invoiceLine::new(product-id = ProductId::new("90000000-0000-0000-0000-000000000001"), description = "line", quantity = 1, unit-price = Money::new(1), line-total = Money::new(1));
+    match invoice::sum-lines-step(initial, line).outcome() {
+        ok total => {
+            false
+        }
+        error problem => {
+            equals(problem.code(), "MONEY_OVERFLOW")
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test invoice.sum-lines-step/preserves-prior-error {
+    let problem = businessError::new(code = "EARLIER", message = "first error");
+    let initial = invoiceTotalAccumulator::new(outcome = result::error<Money, BusinessError>(problem));
+    let line = invoiceLine::new(product-id = ProductId::new("90000000-0000-0000-0000-000000000001"), description = "line", quantity = 1, unit-price = Money::new(10), line-total = Money::new(10));
+    let updated = invoice::sum-lines-step(initial, line);
+    match updated.outcome() {
+        ok total => {
+            false
+        }
+        error actual => {
+            equals(actual.code(), "EARLIER")
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test money.add/int64-overflow {
+    match money::add(Money::new(9223372036854775807), Money::new(1)) {
+        ok total => {
+            int::to-string(Money::value(total))
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "MONEY_OVERFLOW"
+}
+
+// frontend: flow/1
+
+test money.add/signed-values {
+    match money::add(Money::new(-250), Money::new(1000)) {
+        ok total => {
+            int::to-string(Money::value(total))
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "750"
+}
+
+// frontend: flow/1
+
+test money.multiply-by-quantity/above-int32 {
+    match money::multiply-by-quantity(Money::new(1), 2147483648) {
+        ok total => {
+            int::to-string(Money::value(total))
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "INVALID_QUANTITY"
+}
+
+// frontend: flow/1
+
+test money.multiply-by-quantity/below-int32 {
+    match money::multiply-by-quantity(Money::new(1), -2147483649) {
+        ok total => {
+            int::to-string(Money::value(total))
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "INVALID_QUANTITY"
+}
+
+// frontend: flow/1
+
+test money.multiply-by-quantity/int32-max {
+    match money::multiply-by-quantity(Money::new(1), 2147483647) {
+        ok total => {
+            int::to-string(Money::value(total))
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "2147483647"
+}
+
+// frontend: flow/1
+
+test money.multiply-by-quantity/int32-min {
+    match money::multiply-by-quantity(Money::new(1), -2147483648) {
+        ok total => {
+            int::to-string(Money::value(total))
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "-2147483648"
+}
+
+// frontend: flow/1
+
+test money.multiply-by-quantity/int64-overflow {
+    match money::multiply-by-quantity(Money::new(9223372036854775807), 2) {
+        ok total => {
+            int::to-string(Money::value(total))
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "MONEY_OVERFLOW"
+}
+
+// frontend: flow/1
+
+test money.multiply-by-quantity/negative-quantity {
+    match money::multiply-by-quantity(Money::new(125), -2) {
+        ok total => {
+            int::to-string(Money::value(total))
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "-250"
+}
+
+// frontend: flow/1
+
+test money.multiply-by-quantity/zero-quantity {
+    match money::multiply-by-quantity(Money::new(125), 0) {
+        ok total => {
+            int::to-string(Money::value(total))
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "0"
+}
+
+// frontend: flow/1
+
+test money.nonnegative?/negative {
+    money::nonnegative?(Money::new(-1))
+    => false
+}
+
+// frontend: flow/1
+
+test money.nonnegative?/zero {
+    money::nonnegative?(Money::new(0))
+    => true
+}
+
+// frontend: flow/1
+
+test payment-id.parse/canonical {
+    match payment-id::parse("00112233-4455-6677-8899-aabbccddeeff") {
+        ok id => {
+            PaymentId::value(id)
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "00112233-4455-6677-8899-aabbccddeeff"
+}
+
+// frontend: flow/1
+
+test payment-id.parse/invalid {
+    match payment-id::parse("invalid") {
+        ok id => {
+            PaymentId::value(id)
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "INVALID_IDENTIFIER"
+}
+
+// frontend: flow/1
+
+test payment-id.parse/normalized {
+    match payment-id::parse("00112233-4455-6677-8899-aabbccddeeff ") {
+        ok id => {
+            PaymentId::value(id)
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "00112233-4455-6677-8899-aabbccddeeff"
+}
+
+// frontend: flow/1
+
+test payment-receipt.create/blank-reference {
+    match payment-receipt::create(" \t ", Money::new(900)) {
+        ok value => {
+            value.reference()
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "INVALID_PROVIDER_RECEIPT"
+}
+
+// frontend: flow/1
+
+test payment-receipt.create/keeps-signed-amount {
+    match payment-receipt::create("provider-ref-42", Money::new(-900)) {
+        ok value => {
+            int::to-string(Money::value(value.amount()))
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "-900"
+}
+
+// frontend: flow/1
+
+test payment-receipt.create/trims-reference {
+    match payment-receipt::create("  provider-ref-42  ", Money::new(900)) {
+        ok value => {
+            value.reference()
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "provider-ref-42"
+}
+
+// frontend: flow/1
+
+test payment.apply-result/already-paid-precedes-amount-mismatch {
+    let invoice = invoice::new(id = InvoiceId::new("00000000-0000-0000-0000-000000000002"), customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"), lines = list::empty<InvoiceLine>(), total = Money::new(100), created-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"), status = InvoiceStatus::new("paid"));
+    let initial = store::with-invoices(store::empty(unit), list::singleton<Invoice>(invoice));
+    match payment::apply-result(initial, PaymentId::new("00000000-0000-0000-0000-000000000001"), invoice.id(), Money::new(99), Instant::new("2024-01-02T00:00:00.0000000\u002B00:00"), result::error<PaymentReceipt, BusinessError>(businessError::new(code = "IGNORED", message = "ignored"))) {
+        ok updated => {
+            false
+        }
+        error problem => {
+            equals(problem.code(), "INVOICE_ALREADY_PAID")
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test payment.apply-result/blank-public-receipt-rejected {
+    let invoice = invoice::new(id = InvoiceId::new("00000000-0000-0000-0000-000000000002"), customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"), lines = list::empty<InvoiceLine>(), total = Money::new(100), created-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"), status = InvoiceStatus::new("open"));
+    let initial = store::with-invoices(store::empty(unit), list::singleton<Invoice>(invoice));
+    let invalid = paymentReceipt::new(reference = "  ", amount = Money::new(100));
+    match payment::apply-result(initial, PaymentId::new("00000000-0000-0000-0000-000000000001"), invoice.id(), Money::new(100), Instant::new("2024-01-02T00:00:00.0000000\u002B00:00"), result::ok<PaymentReceipt, BusinessError>(invalid)) {
+        ok updated => {
+            false
+        }
+        error problem => {
+            bool::and(equals(problem.code(), "INVALID_PROVIDER_RECEIPT"), equals(initial.payments().count(), 0))
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test payment.apply-result/duplicate-precedes-invalid-amount {
+    let id = PaymentId::new("00000000-0000-0000-0000-000000000001");
+    let payment = payment::new(id = id, invoice-id = InvoiceId::new("00000000-0000-0000-0000-000000000002"), amount = Money::new(10), provider-reference = "existing-ref", paid-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"));
+    let base = store::empty(unit);
+    let initial = store::with-payments(base, list::singleton<Payment>(payment));
+    match payment::apply-result(initial, id, InvoiceId::new("00000000-0000-0000-0000-000000000003"), Money::new(0), Instant::new("2024-01-02T00:00:00.0000000\u002B00:00"), result::error<PaymentReceipt, BusinessError>(businessError::new(code = "IGNORED", message = "ignored"))) {
+        ok updated => {
+            false
+        }
+        error problem => {
+            equals(problem.code(), "DUPLICATE_PAYMENT")
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test payment.apply-result/full-invoice-amount-required {
+    let invoice = invoice::new(id = InvoiceId::new("00000000-0000-0000-0000-000000000002"), customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"), lines = list::empty<InvoiceLine>(), total = Money::new(100), created-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"), status = InvoiceStatus::new("open"));
+    let initial = store::with-invoices(store::empty(unit), list::singleton<Invoice>(invoice));
+    match payment::apply-result(initial, PaymentId::new("00000000-0000-0000-0000-000000000001"), invoice.id(), Money::new(99), Instant::new("2024-01-02T00:00:00.0000000\u002B00:00"), result::error<PaymentReceipt, BusinessError>(businessError::new(code = "IGNORED", message = "ignored"))) {
+        ok updated => {
+            false
+        }
+        error problem => {
+            equals(problem.code(), "PAYMENT_AMOUNT_MISMATCH")
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test payment.apply-result/invoice-not-found {
+    match payment::apply-result(store::empty(unit), PaymentId::new("00000000-0000-0000-0000-000000000001"), InvoiceId::new("00000000-0000-0000-0000-000000000002"), Money::new(1), Instant::new("2024-01-02T00:00:00.0000000\u002B00:00"), result::error<PaymentReceipt, BusinessError>(businessError::new(code = "IGNORED", message = "ignored"))) {
+        ok updated => {
+            false
+        }
+        error problem => {
+            equals(problem.code(), "INVOICE_NOT_FOUND")
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test payment.apply-result/nonpositive-amount-precedes-invoice-lookup {
+    match payment::apply-result(store::empty(unit), PaymentId::new("00000000-0000-0000-0000-000000000001"), InvoiceId::new("00000000-0000-0000-0000-000000000002"), Money::new(-1), Instant::new("2024-01-02T00:00:00.0000000\u002B00:00"), result::error<PaymentReceipt, BusinessError>(businessError::new(code = "IGNORED", message = "ignored"))) {
+        ok updated => {
+            false
+        }
+        error problem => {
+            equals(problem.code(), "PAYMENT_AMOUNT_MUST_BE_POSITIVE")
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test payment.apply-result/provider-error-is-data {
+    let invoice = invoice::new(id = InvoiceId::new("00000000-0000-0000-0000-000000000002"), customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"), lines = list::empty<InvoiceLine>(), total = Money::new(100), created-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"), status = InvoiceStatus::new("open"));
+    let initial = store::with-invoices(store::empty(unit), list::singleton<Invoice>(invoice));
+    match payment::apply-result(initial, PaymentId::new("00000000-0000-0000-0000-000000000001"), invoice.id(), Money::new(100), Instant::new("2024-01-02T00:00:00.0000000\u002B00:00"), result::error<PaymentReceipt, BusinessError>(businessError::new(code = "DECLINED", message = "declined by deterministic fake"))) {
+        ok updated => {
+            false
+        }
+        error problem => {
+            bool::and(equals(problem.code(), "PAYMENT_PROVIDER_FAILURE"), bool::and(equals(problem.message(), "declined by deterministic fake"), bool::and(equals(initial.invoices(), list::singleton<Invoice>(invoice)), equals(initial.payments().count(), 0))))
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test payment.apply-result/receipt-amount-must-match {
+    let invoice = invoice::new(id = InvoiceId::new("00000000-0000-0000-0000-000000000002"), customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"), lines = list::empty<InvoiceLine>(), total = Money::new(100), created-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"), status = InvoiceStatus::new("open"));
+    let initial = store::with-invoices(store::empty(unit), list::singleton<Invoice>(invoice));
+    let receipt = paymentReceipt::new(reference = "provider-ref", amount = Money::new(99));
+    match payment::apply-result(initial, PaymentId::new("00000000-0000-0000-0000-000000000001"), invoice.id(), Money::new(100), Instant::new("2024-01-02T00:00:00.0000000\u002B00:00"), result::ok<PaymentReceipt, BusinessError>(receipt)) {
+        ok updated => {
+            false
+        }
+        error problem => {
+            bool::and(equals(problem.code(), "INVALID_PROVIDER_RECEIPT"), bool::and(equals(initial.invoices(), list::singleton<Invoice>(invoice)), equals(initial.payments().count(), 0)))
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test payment.apply-result/success-updates-only-payment-and-invoice-state {
+    let invoice = invoice::new(id = InvoiceId::new("00000000-0000-0000-0000-000000000002"), customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"), lines = list::empty<InvoiceLine>(), total = Money::new(100), created-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"), status = InvoiceStatus::new("open"));
+    let old-payment = payment::new(id = PaymentId::new("00000000-0000-0000-0000-000000000004"), invoice-id = invoice.id(), amount = Money::new(5), provider-reference = "older-ref", paid-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"));
+    let queued = emailMessage::new(to = Email::new("queued@example.test"), subject = "Queued", body = "Queued body");
+    let sent = emailMessage::new(to = Email::new("sent@example.test"), subject = "Sent", body = "Sent body");
+    let base = store::empty(unit);
+    let with-invoice = store::with-invoices(base, list::singleton<Invoice>(invoice));
+    let with-payment = store::with-payments(with-invoice, list::singleton<Payment>(old-payment));
+    let initial = store::with-email-state(with-payment, list::singleton<EmailMessage>(queued), list::singleton<EmailMessage>(sent));
+    let receipt = paymentReceipt::new(reference = "  new-provider-ref  ", amount = Money::new(100));
+    match payment::apply-result(initial, PaymentId::new("00000000-0000-0000-0000-000000000001"), invoice.id(), Money::new(100), Instant::new("2024-01-02T00:00:00.0000000\u002B00:00"), result::ok<PaymentReceipt, BusinessError>(receipt)) {
+        ok updated => {
+            let new-invoice = updated.invoices().get(0);
+            let new-payment = updated.payments().get(1);
+            let expected-invoice = invoice::new(id = invoice.id(), customer-id = invoice.customer-id(), lines = invoice.lines(), total = invoice.total(), created-at = invoice.created-at(), status = InvoiceStatus::new("paid"));
+            let expected-payment = payment::new(id = PaymentId::new("00000000-0000-0000-0000-000000000001"), invoice-id = invoice.id(), amount = Money::new(100), provider-reference = "new-provider-ref", paid-at = Instant::new("2024-01-02T00:00:00.0000000\u002B00:00"));
+            let invoice-updated = equals(new-invoice, option::some<Invoice>(expected-invoice));
+            let payment-appended = equals(new-payment, option::some<Payment>(expected-payment));
+            let preserved-customers = equals(updated.customers(), initial.customers());
+            let preserved-products = equals(updated.products(), initial.products());
+            let preserved-subscriptions = equals(updated.subscriptions(), initial.subscriptions());
+            let old-payment-preserved = equals(updated.payments().get(0), option::some<Payment>(old-payment));
+            let outbox-preserved = equals(updated.email-outbox(), initial.email-outbox());
+            let sent-preserved = equals(updated.sent-emails(), initial.sent-emails());
+            bool::and(invoice-updated, bool::and(payment-appended, bool::and(preserved-customers, bool::and(preserved-products, bool::and(preserved-subscriptions, bool::and(old-payment-preserved, bool::and(outbox-preserved, sent-preserved)))))))
+        }
+        error problem => {
+            false
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test product-id.parse/canonical {
+    match product-id::parse("00112233-4455-6677-8899-aabbccddeeff") {
+        ok id => {
+            ProductId::value(id)
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "00112233-4455-6677-8899-aabbccddeeff"
+}
+
+// frontend: flow/1
+
+test product-id.parse/invalid {
+    match product-id::parse("invalid") {
+        ok id => {
+            ProductId::value(id)
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "INVALID_IDENTIFIER"
+}
+
+// frontend: flow/1
+
+test product-id.parse/normalized {
+    match product-id::parse("{00112233-4455-6677-8899-aabbccddeeff}") {
+        ok id => {
+            ProductId::value(id)
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "00112233-4455-6677-8899-aabbccddeeff"
+}
+
+// frontend: flow/1
+
+test product.create/blank-name {
+    match product::create(ProductId::new("00112233-4455-6677-8899-aabbccddeeff"), "  ", Money::new(100)) {
+        ok value => {
+            value.name()
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "INVALID_NAME"
+}
+
+// frontend: flow/1
+
+test product.create/negative-price {
+    match product::create(ProductId::new("00112233-4455-6677-8899-aabbccddeeff"), "Notebook", Money::new(-1)) {
+        ok value => {
+            value.name()
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "NEGATIVE_PRODUCT_PRICE"
+}
+
+// frontend: flow/1
+
+test product.create/trimmed-name-and-zero-price {
+    match product::create(ProductId::new("00112233-4455-6677-8899-aabbccddeeff"), "  Notebook  ", Money::new(0)) {
+        ok value => {
+            value.name()
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "Notebook"
+}
+
+// frontend: flow/1
+
+test store.add-customer/adds-and-preserves-all-collections {
+    let new-customer = customer::new(id = CustomerId::new("00000000-0000-0000-0000-000000000001"), email = Email::new("new@example.com"), kind = "new", balance = Money::new(0), created-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"));
+    let product = product::new(id = ProductId::new("00000000-0000-0000-0000-000000000002"), name = "saved product", unit-price = Money::new(25));
+    let subscription = subscription::new(id = SubscriptionId::new("00000000-0000-0000-0000-000000000003"), customer-id = CustomerId::new("00000000-0000-0000-0000-000000000004"), product-id = ProductId::new("00000000-0000-0000-0000-000000000002"), term = "monthly", started-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"), expires-at = Instant::new("2024-02-01T00:00:00.0000000\u002B00:00"), status = SubscriptionStatus::new("active"), cancelled-at = option::none<Instant>());
+    let invoice = invoice::new(id = InvoiceId::new("00000000-0000-0000-0000-000000000005"), customer-id = CustomerId::new("00000000-0000-0000-0000-000000000004"), lines = list::empty<InvoiceLine>(), total = Money::new(25), created-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"), status = InvoiceStatus::new("open"));
+    let payment = payment::new(id = PaymentId::new("00000000-0000-0000-0000-000000000006"), invoice-id = InvoiceId::new("00000000-0000-0000-0000-000000000005"), amount = Money::new(25), provider-reference = "saved-payment", paid-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"));
+    let email = emailMessage::new(to = Email::new("saved@example.com"), subject = "saved", body = "saved body");
+    let initial = store::new(customers = list::empty<Customer>(), products = list::singleton<Product>(product), subscriptions = list::singleton<Subscription>(subscription), invoices = list::singleton<Invoice>(invoice), payments = list::singleton<Payment>(payment), email-outbox = list::singleton<EmailMessage>(email), sent-emails = list::singleton<EmailMessage>(email));
+    match store::add-customer(new-customer, initial) {
+        ok updated => {
+            bool::and(equals(updated.customers(), list::append(initial.customers(), new-customer)), bool::and(equals(updated.products(), initial.products()), bool::and(equals(updated.subscriptions(), initial.subscriptions()), bool::and(equals(updated.invoices(), initial.invoices()), bool::and(equals(updated.payments(), initial.payments()), bool::and(equals(updated.email-outbox(), initial.email-outbox()), equals(updated.sent-emails(), initial.sent-emails())))))))
+        }
+        error problem => {
+            false
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test store.add-customer/duplicate-code-and-input-unchanged {
+    let existing = customer::new(id = CustomerId::new("00000000-0000-0000-0000-000000000001"), email = Email::new("same@example.com"), kind = "existing", balance = Money::new(0), created-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"));
+    let blank = store::empty(unit);
+    let initial = store::new(customers = list::singleton<Customer>(existing), products = blank.products(), subscriptions = blank.subscriptions(), invoices = blank.invoices(), payments = blank.payments(), email-outbox = blank.email-outbox(), sent-emails = blank.sent-emails());
+    match store::add-customer(existing, initial) {
+        ok updated => {
+            false
+        }
+        error problem => {
+            bool::and(equals(problem.code(), "DUPLICATE_CUSTOMER"), equals(initial.customers().count(), 1))
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test store.add-product/adds-and-preserves-all-collections {
+    let new-product = product::new(id = ProductId::new("00000000-0000-0000-0000-000000000001"), name = "new product", unit-price = Money::new(50));
+    let customer = customer::new(id = CustomerId::new("00000000-0000-0000-0000-000000000002"), email = Email::new("saved@example.com"), kind = "saved", balance = Money::new(0), created-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"));
+    let product = product::new(id = ProductId::new("00000000-0000-0000-0000-000000000003"), name = "saved product", unit-price = Money::new(25));
+    let subscription = subscription::new(id = SubscriptionId::new("00000000-0000-0000-0000-000000000004"), customer-id = CustomerId::new("00000000-0000-0000-0000-000000000002"), product-id = ProductId::new("00000000-0000-0000-0000-000000000003"), term = "monthly", started-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"), expires-at = Instant::new("2024-02-01T00:00:00.0000000\u002B00:00"), status = SubscriptionStatus::new("active"), cancelled-at = option::none<Instant>());
+    let invoice = invoice::new(id = InvoiceId::new("00000000-0000-0000-0000-000000000005"), customer-id = CustomerId::new("00000000-0000-0000-0000-000000000002"), lines = list::empty<InvoiceLine>(), total = Money::new(25), created-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"), status = InvoiceStatus::new("open"));
+    let payment = payment::new(id = PaymentId::new("00000000-0000-0000-0000-000000000006"), invoice-id = InvoiceId::new("00000000-0000-0000-0000-000000000005"), amount = Money::new(25), provider-reference = "saved-payment", paid-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"));
+    let email = emailMessage::new(to = Email::new("saved@example.com"), subject = "saved", body = "saved body");
+    let initial = store::new(customers = list::singleton<Customer>(customer), products = list::singleton<Product>(product), subscriptions = list::singleton<Subscription>(subscription), invoices = list::singleton<Invoice>(invoice), payments = list::singleton<Payment>(payment), email-outbox = list::singleton<EmailMessage>(email), sent-emails = list::singleton<EmailMessage>(email));
+    match store::add-product(new-product, initial) {
+        ok updated => {
+            bool::and(equals(updated.customers(), initial.customers()), bool::and(equals(updated.products(), list::append(initial.products(), new-product)), bool::and(equals(updated.subscriptions(), initial.subscriptions()), bool::and(equals(updated.invoices(), initial.invoices()), bool::and(equals(updated.payments(), initial.payments()), bool::and(equals(updated.email-outbox(), initial.email-outbox()), equals(updated.sent-emails(), initial.sent-emails())))))))
+        }
+        error problem => {
+            false
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test store.add-product/duplicate-code-and-input-unchanged {
+    let existing = product::new(id = ProductId::new("00000000-0000-0000-0000-000000000001"), name = "existing", unit-price = Money::new(10));
+    let blank = store::empty(unit);
+    let initial = store::new(customers = blank.customers(), products = list::singleton<Product>(existing), subscriptions = blank.subscriptions(), invoices = blank.invoices(), payments = blank.payments(), email-outbox = blank.email-outbox(), sent-emails = blank.sent-emails());
+    match store::add-product(existing, initial) {
+        ok updated => {
+            false
+        }
+        error problem => {
+            bool::and(equals(problem.code(), "DUPLICATE_PRODUCT"), equals(initial.products().count(), 1))
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test store.customer/empty-fold {
+    let key = CustomerId::new("00000000-0000-0000-0000-000000000001");
+    match store::customer(key, store::empty(unit)) {
+        some selected => {
+            false
+        }
+        none => {
+            true
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test store.customer/first-match-in-list-order {
+    let key = CustomerId::new("00000000-0000-0000-0000-000000000001");
+    let first = customer::new(id = key, email = Email::new("first@example.com"), kind = "first", balance = Money::new(0), created-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"));
+    let later = customer::new(id = key, email = Email::new("later@example.com"), kind = "later", balance = Money::new(0), created-at = Instant::new("2024-01-02T00:00:00.0000000\u002B00:00"));
+    let blank = store::empty(unit);
+    let input = store::new(customers = list::append(list::singleton<Customer>(first), later), products = blank.products(), subscriptions = blank.subscriptions(), invoices = blank.invoices(), payments = blank.payments(), email-outbox = blank.email-outbox(), sent-emails = blank.sent-emails());
+    match store::customer(key, input) {
+        some selected => {
+            equals(selected.kind(), "first")
+        }
+        none => {
+            false
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test store.customer-fold-step/match {
+    let key = CustomerId::new("00000000-0000-0000-0000-000000000001");
+    let person = customer::new(id = key, email = Email::new("first@example.com"), kind = "first", balance = Money::new(0), created-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"));
+    let initial = customerLookup::new(target = key, found = option::none<Customer>());
+    match store::customer-fold-step(initial, person).found() {
+        some selected => {
+            equals(selected.kind(), "first")
+        }
+        none => {
+            false
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test store.customer-fold-step/no-match {
+    let key = CustomerId::new("00000000-0000-0000-0000-000000000001");
+    let other = customer::new(id = CustomerId::new("00000000-0000-0000-0000-000000000002"), email = Email::new("other@example.com"), kind = "other", balance = Money::new(0), created-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"));
+    let initial = customerLookup::new(target = key, found = option::none<Customer>());
+    match store::customer-fold-step(initial, other).found() {
+        some selected => {
+            false
+        }
+        none => {
+            true
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test store.customer-fold-step/preserves-first {
+    let key = CustomerId::new("00000000-0000-0000-0000-000000000001");
+    let first = customer::new(id = key, email = Email::new("first@example.com"), kind = "first", balance = Money::new(0), created-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"));
+    let later = customer::new(id = key, email = Email::new("later@example.com"), kind = "later", balance = Money::new(0), created-at = Instant::new("2024-01-02T00:00:00.0000000\u002B00:00"));
+    let initial = customerLookup::new(target = key, found = option::some<Customer>(first));
+    match store::customer-fold-step(initial, later).found() {
+        some selected => {
+            equals(selected.kind(), "first")
+        }
+        none => {
+            false
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test store.empty/initializes-all-collections {
+    let empty-store = store::empty(unit);
+    bool::and(equals(empty-store.customers().count(), 0), bool::and(equals(empty-store.products().count(), 0), bool::and(equals(empty-store.subscriptions().count(), 0), bool::and(equals(empty-store.invoices().count(), 0), bool::and(equals(empty-store.payments().count(), 0), bool::and(equals(empty-store.email-outbox().count(), 0), equals(empty-store.sent-emails().count(), 0)))))))
+    => true
+}
+
+// frontend: flow/1
+
+test store.invoice/empty-fold {
+    let key = InvoiceId::new("00000000-0000-0000-0000-000000000001");
+    match store::invoice(key, store::empty(unit)) {
+        some selected => {
+            false
+        }
+        none => {
+            true
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test store.invoice/first-match-in-list-order {
+    let key = InvoiceId::new("00000000-0000-0000-0000-000000000001");
+    let first = invoice::new(id = key, customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"), lines = list::empty<InvoiceLine>(), total = Money::new(10), created-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"), status = InvoiceStatus::new("open"));
+    let later = invoice::new(id = key, customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"), lines = list::empty<InvoiceLine>(), total = Money::new(20), created-at = Instant::new("2024-01-02T00:00:00.0000000\u002B00:00"), status = InvoiceStatus::new("open"));
+    let blank = store::empty(unit);
+    let input = store::new(customers = blank.customers(), products = blank.products(), subscriptions = blank.subscriptions(), invoices = list::append(list::singleton<Invoice>(first), later), payments = blank.payments(), email-outbox = blank.email-outbox(), sent-emails = blank.sent-emails());
+    match store::invoice(key, input) {
+        some selected => {
+            equals(selected.total(), Money::new(10))
+        }
+        none => {
+            false
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test store.invoice-fold-step/match {
+    let key = InvoiceId::new("00000000-0000-0000-0000-000000000001");
+    let item = invoice::new(id = key, customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"), lines = list::empty<InvoiceLine>(), total = Money::new(10), created-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"), status = InvoiceStatus::new("open"));
+    let initial = invoiceLookup::new(target = key, found = option::none<Invoice>());
+    match store::invoice-fold-step(initial, item).found() {
+        some selected => {
+            equals(selected.total(), Money::new(10))
+        }
+        none => {
+            false
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test store.invoice-fold-step/no-match {
+    let key = InvoiceId::new("00000000-0000-0000-0000-000000000001");
+    let other = invoice::new(id = InvoiceId::new("00000000-0000-0000-0000-000000000002"), customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"), lines = list::empty<InvoiceLine>(), total = Money::new(0), created-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"), status = InvoiceStatus::new("open"));
+    let initial = invoiceLookup::new(target = key, found = option::none<Invoice>());
+    match store::invoice-fold-step(initial, other).found() {
+        some selected => {
+            false
+        }
+        none => {
+            true
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test store.invoice-fold-step/preserves-first {
+    let key = InvoiceId::new("00000000-0000-0000-0000-000000000001");
+    let first = invoice::new(id = key, customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"), lines = list::empty<InvoiceLine>(), total = Money::new(10), created-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"), status = InvoiceStatus::new("open"));
+    let later = invoice::new(id = key, customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"), lines = list::empty<InvoiceLine>(), total = Money::new(20), created-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"), status = InvoiceStatus::new("open"));
+    let initial = invoiceLookup::new(target = key, found = option::some<Invoice>(first));
+    match store::invoice-fold-step(initial, later).found() {
+        some selected => {
+            equals(selected.total(), Money::new(10))
+        }
+        none => {
+            false
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test store.payment/empty-fold {
+    let key = PaymentId::new("00000000-0000-0000-0000-000000000001");
+    match store::payment(key, store::empty(unit)) {
+        some selected => {
+            false
+        }
+        none => {
+            true
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test store.payment/first-match-in-list-order {
+    let key = PaymentId::new("00000000-0000-0000-0000-000000000001");
+    let first = payment::new(id = key, invoice-id = InvoiceId::new("00000000-0000-0000-0000-000000000003"), amount = Money::new(10), provider-reference = "first-ref", paid-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"));
+    let later = payment::new(id = key, invoice-id = InvoiceId::new("00000000-0000-0000-0000-000000000003"), amount = Money::new(20), provider-reference = "later-ref", paid-at = Instant::new("2024-01-02T00:00:00.0000000\u002B00:00"));
+    let blank = store::empty(unit);
+    let input = store::new(customers = blank.customers(), products = blank.products(), subscriptions = blank.subscriptions(), invoices = blank.invoices(), payments = list::append(list::singleton<Payment>(first), later), email-outbox = blank.email-outbox(), sent-emails = blank.sent-emails());
+    match store::payment(key, input) {
+        some selected => {
+            equals(selected.provider-reference(), "first-ref")
+        }
+        none => {
+            false
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test store.payment-fold-step/match {
+    let key = PaymentId::new("00000000-0000-0000-0000-000000000001");
+    let item = payment::new(id = key, invoice-id = InvoiceId::new("00000000-0000-0000-0000-000000000003"), amount = Money::new(10), provider-reference = "first-ref", paid-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"));
+    let initial = paymentLookup::new(target = key, found = option::none<Payment>());
+    match store::payment-fold-step(initial, item).found() {
+        some selected => {
+            equals(selected.provider-reference(), "first-ref")
+        }
+        none => {
+            false
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test store.payment-fold-step/no-match {
+    let key = PaymentId::new("00000000-0000-0000-0000-000000000001");
+    let other = payment::new(id = PaymentId::new("00000000-0000-0000-0000-000000000002"), invoice-id = InvoiceId::new("00000000-0000-0000-0000-000000000003"), amount = Money::new(10), provider-reference = "other-ref", paid-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"));
+    let initial = paymentLookup::new(target = key, found = option::none<Payment>());
+    match store::payment-fold-step(initial, other).found() {
+        some selected => {
+            false
+        }
+        none => {
+            true
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test store.payment-fold-step/preserves-first {
+    let key = PaymentId::new("00000000-0000-0000-0000-000000000001");
+    let first = payment::new(id = key, invoice-id = InvoiceId::new("00000000-0000-0000-0000-000000000003"), amount = Money::new(10), provider-reference = "first-ref", paid-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"));
+    let later = payment::new(id = key, invoice-id = InvoiceId::new("00000000-0000-0000-0000-000000000003"), amount = Money::new(20), provider-reference = "later-ref", paid-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"));
+    let initial = paymentLookup::new(target = key, found = option::some<Payment>(first));
+    match store::payment-fold-step(initial, later).found() {
+        some selected => {
+            equals(selected.provider-reference(), "first-ref")
+        }
+        none => {
+            false
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test store.product/empty-fold {
+    let key = ProductId::new("00000000-0000-0000-0000-000000000001");
+    match store::product(key, store::empty(unit)) {
+        some selected => {
+            false
+        }
+        none => {
+            true
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test store.product/first-match-in-list-order {
+    let key = ProductId::new("00000000-0000-0000-0000-000000000001");
+    let first = product::new(id = key, name = "first", unit-price = Money::new(10));
+    let later = product::new(id = key, name = "later", unit-price = Money::new(20));
+    let blank = store::empty(unit);
+    let input = store::new(customers = blank.customers(), products = list::append(list::singleton<Product>(first), later), subscriptions = blank.subscriptions(), invoices = blank.invoices(), payments = blank.payments(), email-outbox = blank.email-outbox(), sent-emails = blank.sent-emails());
+    match store::product(key, input) {
+        some selected => {
+            equals(selected.name(), "first")
+        }
+        none => {
+            false
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test store.product-fold-step/match {
+    let key = ProductId::new("00000000-0000-0000-0000-000000000001");
+    let item = product::new(id = key, name = "first", unit-price = Money::new(10));
+    let initial = productLookup::new(target = key, found = option::none<Product>());
+    match store::product-fold-step(initial, item).found() {
+        some selected => {
+            equals(selected.name(), "first")
+        }
+        none => {
+            false
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test store.product-fold-step/no-match {
+    let key = ProductId::new("00000000-0000-0000-0000-000000000001");
+    let other = product::new(id = ProductId::new("00000000-0000-0000-0000-000000000002"), name = "other", unit-price = Money::new(10));
+    let initial = productLookup::new(target = key, found = option::none<Product>());
+    match store::product-fold-step(initial, other).found() {
+        some selected => {
+            false
+        }
+        none => {
+            true
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test store.product-fold-step/preserves-first {
+    let key = ProductId::new("00000000-0000-0000-0000-000000000001");
+    let first = product::new(id = key, name = "first", unit-price = Money::new(10));
+    let later = product::new(id = key, name = "later", unit-price = Money::new(20));
+    let initial = productLookup::new(target = key, found = option::some<Product>(first));
+    match store::product-fold-step(initial, later).found() {
+        some selected => {
+            equals(selected.name(), "first")
+        }
+        none => {
+            false
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test store.replace-invoice/empty-fold-identity {
+    let replacement = invoice::new(id = InvoiceId::new("00000000-0000-0000-0000-000000000001"), customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"), lines = list::empty<InvoiceLine>(), total = Money::new(20), created-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"), status = InvoiceStatus::new("paid"));
+    store::replace-invoice(store::empty(unit), replacement).invoices().count()
+    => 0
+}
+
+// frontend: flow/1
+
+test store.replace-invoice/nonempty-fold-preserves-order-and-records {
+    let first = invoice::new(id = InvoiceId::new("00000000-0000-0000-0000-000000000001"), customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"), lines = list::empty<InvoiceLine>(), total = Money::new(20), created-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"), status = InvoiceStatus::new("open"));
+    let second = invoice::new(id = InvoiceId::new("00000000-0000-0000-0000-000000000002"), customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"), lines = list::empty<InvoiceLine>(), total = Money::new(40), created-at = Instant::new("2024-01-02T00:00:00.0000000\u002B00:00"), status = InvoiceStatus::new("open"));
+    let replacement = invoice::new(id = second.id(), customer-id = second.customer-id(), lines = second.lines(), total = Money::new(40), created-at = second.created-at(), status = InvoiceStatus::new("paid"));
+    let base = store::empty(unit);
+    let initial = store::with-invoices(base, list::append(list::singleton<Invoice>(first), second));
+    let updated = store::replace-invoice(initial, replacement);
+    bool::and(equals(updated.invoices().get(0), option::some<Invoice>(first)), bool::and(equals(updated.invoices().get(1), option::some<Invoice>(replacement)), bool::and(equals(updated.customers(), initial.customers()), bool::and(equals(updated.products(), initial.products()), bool::and(equals(updated.subscriptions(), initial.subscriptions()), bool::and(equals(updated.payments(), initial.payments()), bool::and(equals(updated.email-outbox(), initial.email-outbox()), equals(updated.sent-emails(), initial.sent-emails()))))))))
+    => true
+}
+
+// frontend: flow/1
+
+test store.replace-invoice-step/first-match-replaced {
+    let candidate = invoice::new(id = InvoiceId::new("00000000-0000-0000-0000-000000000001"), customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"), lines = list::empty<InvoiceLine>(), total = Money::new(20), created-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"), status = InvoiceStatus::new("open"));
+    let replacement = invoice::new(id = candidate.id(), customer-id = candidate.customer-id(), lines = candidate.lines(), total = Money::new(30), created-at = candidate.created-at(), status = InvoiceStatus::new("paid"));
+    let state = invoiceReplacement::new(target = candidate.id(), replacement = replacement, replaced = false, values = list::empty<Invoice>());
+    let next = store::replace-invoice-step(state, candidate);
+    bool::and(equals(next.replaced(), true), equals(next.values(), list::singleton<Invoice>(replacement)))
+    => true
+}
+
+// frontend: flow/1
+
+test store.replace-invoice-step/nonmatching-invoice {
+    let target = InvoiceId::new("00000000-0000-0000-0000-000000000001");
+    let candidate = invoice::new(id = InvoiceId::new("00000000-0000-0000-0000-000000000002"), customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"), lines = list::empty<InvoiceLine>(), total = Money::new(20), created-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"), status = InvoiceStatus::new("open"));
+    let state = invoiceReplacement::new(target = target, replacement = candidate, replaced = false, values = list::empty<Invoice>());
+    let next = store::replace-invoice-step(state, candidate);
+    bool::and(equals(next.replaced(), false), equals(next.values(), list::singleton<Invoice>(candidate)))
+    => true
+}
+
+// frontend: flow/1
+
+test store.replace-invoice-step/preserves-items-after-first-match {
+    let first = invoice::new(id = InvoiceId::new("00000000-0000-0000-0000-000000000001"), customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"), lines = list::empty<InvoiceLine>(), total = Money::new(20), created-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"), status = InvoiceStatus::new("open"));
+    let later = invoice::new(id = InvoiceId::new("00000000-0000-0000-0000-000000000002"), customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"), lines = list::empty<InvoiceLine>(), total = Money::new(40), created-at = Instant::new("2024-01-02T00:00:00.0000000\u002B00:00"), status = InvoiceStatus::new("open"));
+    let state = invoiceReplacement::new(target = first.id(), replacement = first, replaced = true, values = list::singleton<Invoice>(first));
+    let next = store::replace-invoice-step(state, later);
+    equals(next.values(), list::append(list::singleton<Invoice>(first), later))
+    => true
+}
+
+// frontend: flow/1
+
+test store.subscription/empty-fold {
+    let key = SubscriptionId::new("00000000-0000-0000-0000-000000000001");
+    match store::subscription(key, store::empty(unit)) {
+        some selected => {
+            false
+        }
+        none => {
+            true
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test store.subscription/first-match-in-list-order {
+    let key = SubscriptionId::new("00000000-0000-0000-0000-000000000001");
+    let first = subscription::new(id = key, customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"), product-id = ProductId::new("00000000-0000-0000-0000-000000000004"), term = "first", started-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"), expires-at = Instant::new("2024-02-01T00:00:00.0000000\u002B00:00"), status = SubscriptionStatus::new("active"), cancelled-at = option::none<Instant>());
+    let later = subscription::new(id = key, customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"), product-id = ProductId::new("00000000-0000-0000-0000-000000000004"), term = "later", started-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"), expires-at = Instant::new("2024-02-01T00:00:00.0000000\u002B00:00"), status = SubscriptionStatus::new("active"), cancelled-at = option::none<Instant>());
+    let blank = store::empty(unit);
+    let input = store::new(customers = blank.customers(), products = blank.products(), subscriptions = list::append(list::singleton<Subscription>(first), later), invoices = blank.invoices(), payments = blank.payments(), email-outbox = blank.email-outbox(), sent-emails = blank.sent-emails());
+    match store::subscription(key, input) {
+        some selected => {
+            equals(selected.term(), "first")
+        }
+        none => {
+            false
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test store.subscription-fold-step/match {
+    let key = SubscriptionId::new("00000000-0000-0000-0000-000000000001");
+    let item = subscription::new(id = key, customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"), product-id = ProductId::new("00000000-0000-0000-0000-000000000004"), term = "monthly", started-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"), expires-at = Instant::new("2024-02-01T00:00:00.0000000\u002B00:00"), status = SubscriptionStatus::new("active"), cancelled-at = option::none<Instant>());
+    let initial = subscriptionLookup::new(target = key, found = option::none<Subscription>());
+    match store::subscription-fold-step(initial, item).found() {
+        some selected => {
+            equals(selected.term(), "monthly")
+        }
+        none => {
+            false
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test store.subscription-fold-step/no-match {
+    let key = SubscriptionId::new("00000000-0000-0000-0000-000000000001");
+    let other = subscription::new(id = SubscriptionId::new("00000000-0000-0000-0000-000000000002"), customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"), product-id = ProductId::new("00000000-0000-0000-0000-000000000004"), term = "monthly", started-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"), expires-at = Instant::new("2024-02-01T00:00:00.0000000\u002B00:00"), status = SubscriptionStatus::new("active"), cancelled-at = option::none<Instant>());
+    let initial = subscriptionLookup::new(target = key, found = option::none<Subscription>());
+    match store::subscription-fold-step(initial, other).found() {
+        some selected => {
+            false
+        }
+        none => {
+            true
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test store.subscription-fold-step/preserves-first {
+    let key = SubscriptionId::new("00000000-0000-0000-0000-000000000001");
+    let first = subscription::new(id = key, customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"), product-id = ProductId::new("00000000-0000-0000-0000-000000000004"), term = "first", started-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"), expires-at = Instant::new("2024-02-01T00:00:00.0000000\u002B00:00"), status = SubscriptionStatus::new("active"), cancelled-at = option::none<Instant>());
+    let later = subscription::new(id = key, customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"), product-id = ProductId::new("00000000-0000-0000-0000-000000000004"), term = "later", started-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"), expires-at = Instant::new("2024-02-01T00:00:00.0000000\u002B00:00"), status = SubscriptionStatus::new("active"), cancelled-at = option::none<Instant>());
+    let initial = subscriptionLookup::new(target = key, found = option::some<Subscription>(first));
+    match store::subscription-fold-step(initial, later).found() {
+        some selected => {
+            equals(selected.term(), "first")
+        }
+        none => {
+            false
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test store.with-email-state/replaces-both-lists {
+    let initial = business::seed(unit);
+    let old-message = emailMessage::new(to = Email::new("old@example.test"), subject = "old", body = "old body");
+    let initial-with-old-email = store::with-email-state(initial, list::singleton<EmailMessage>(old-message), list::singleton<EmailMessage>(old-message));
+    let outbox-first = emailMessage::new(to = Email::new("first@example.test"), subject = "first", body = "first body");
+    let outbox-second = emailMessage::new(to = Email::new("second@example.test"), subject = "second", body = "second body");
+    let sent = emailMessage::new(to = Email::new("sent@example.test"), subject = "sent", body = "sent body");
+    let outbox = list::append(list::singleton<EmailMessage>(outbox-first), outbox-second);
+    let sent-list = list::singleton<EmailMessage>(sent);
+    let updated = store::with-email-state(initial-with-old-email, outbox, sent-list);
+    bool::and(equals(updated.email-outbox(), outbox), bool::and(equals(updated.sent-emails(), sent-list), bool::and(equals(updated.customers(), initial-with-old-email.customers()), bool::and(equals(updated.products(), initial-with-old-email.products()), bool::and(equals(updated.subscriptions(), initial-with-old-email.subscriptions()), bool::and(equals(updated.invoices(), initial-with-old-email.invoices()), equals(updated.payments(), initial-with-old-email.payments())))))))
+    => true
+}
+
+// frontend: flow/1
+
+test store.with-invoices/replaces-existing-list {
+    let initial = business::seed(unit);
+    let old-invoice = invoice::new(id = InvoiceId::new("41000000-0000-0000-0000-000000000000"), customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"), lines = list::empty<InvoiceLine>(), total = Money::new(10), created-at = Instant::new("2026-01-02T12:00:00.0000000\u002B00:00"), status = InvoiceStatus::new("open"));
+    let initial-with-old-invoice = store::with-invoices(initial, list::singleton<Invoice>(old-invoice));
+    let first = invoice::new(id = InvoiceId::new("41000000-0000-0000-0000-000000000001"), customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"), lines = list::empty<InvoiceLine>(), total = Money::new(20), created-at = Instant::new("2026-01-03T12:00:00.0000000\u002B00:00"), status = InvoiceStatus::new("open"));
+    let second = invoice::new(id = InvoiceId::new("41000000-0000-0000-0000-000000000002"), customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"), lines = list::empty<InvoiceLine>(), total = Money::new(30), created-at = Instant::new("2026-01-04T12:00:00.0000000\u002B00:00"), status = InvoiceStatus::new("open"));
+    let values = list::append(list::singleton<Invoice>(first), second);
+    let updated = store::with-invoices(initial-with-old-invoice, values);
+    bool::and(equals(updated.invoices(), values), bool::and(equals(updated.customers(), initial-with-old-invoice.customers()), bool::and(equals(updated.products(), initial-with-old-invoice.products()), bool::and(equals(updated.subscriptions(), initial-with-old-invoice.subscriptions()), bool::and(equals(updated.payments(), initial-with-old-invoice.payments()), bool::and(equals(updated.email-outbox(), initial-with-old-invoice.email-outbox()), equals(updated.sent-emails(), initial-with-old-invoice.sent-emails())))))))
+    => true
+}
+
+// frontend: flow/1
+
+test store.with-payments/replaces-existing-list {
+    let initial = business::seed(unit);
+    let old-payment = payment::new(id = PaymentId::new("42000000-0000-0000-0000-000000000000"), invoice-id = InvoiceId::new("41000000-0000-0000-0000-000000000001"), amount = Money::new(10), provider-reference = "old-payment", paid-at = Instant::new("2026-01-02T12:00:00.0000000\u002B00:00"));
+    let initial-with-old-payment = store::with-payments(initial, list::singleton<Payment>(old-payment));
+    let first = payment::new(id = PaymentId::new("42000000-0000-0000-0000-000000000001"), invoice-id = InvoiceId::new("41000000-0000-0000-0000-000000000001"), amount = Money::new(20), provider-reference = "first-payment", paid-at = Instant::new("2026-01-03T12:00:00.0000000\u002B00:00"));
+    let second = payment::new(id = PaymentId::new("42000000-0000-0000-0000-000000000002"), invoice-id = InvoiceId::new("41000000-0000-0000-0000-000000000001"), amount = Money::new(30), provider-reference = "second-payment", paid-at = Instant::new("2026-01-04T12:00:00.0000000\u002B00:00"));
+    let values = list::append(list::singleton<Payment>(first), second);
+    let updated = store::with-payments(initial-with-old-payment, values);
+    bool::and(equals(updated.payments(), values), bool::and(equals(updated.customers(), initial-with-old-payment.customers()), bool::and(equals(updated.products(), initial-with-old-payment.products()), bool::and(equals(updated.subscriptions(), initial-with-old-payment.subscriptions()), bool::and(equals(updated.invoices(), initial-with-old-payment.invoices()), bool::and(equals(updated.email-outbox(), initial-with-old-payment.email-outbox()), equals(updated.sent-emails(), initial-with-old-payment.sent-emails())))))))
+    => true
+}
+
+// frontend: flow/1
+
+test store.with-subscriptions/replaces-in-order {
+    let initial = business::seed(unit);
+    let first = subscription::new(id = SubscriptionId::new("40000000-0000-0000-0000-000000000001"), customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"), product-id = ProductId::new("20000000-0000-0000-0000-000000000001"), term = "first", started-at = Instant::new("2026-01-02T12:00:00.0000000\u002B00:00"), expires-at = Instant::new("2026-02-01T12:00:00.0000000\u002B00:00"), status = SubscriptionStatus::new("active"), cancelled-at = option::none<Instant>());
+    let second = subscription::new(id = SubscriptionId::new("40000000-0000-0000-0000-000000000002"), customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"), product-id = ProductId::new("20000000-0000-0000-0000-000000000001"), term = "second", started-at = Instant::new("2026-01-02T12:00:00.0000000\u002B00:00"), expires-at = Instant::new("2026-02-01T12:00:00.0000000\u002B00:00"), status = SubscriptionStatus::new("active"), cancelled-at = option::none<Instant>());
+    let values = list::append(list::singleton<Subscription>(first), second);
+    let updated = store::with-subscriptions(initial, values);
+    bool::and(equals(updated.subscriptions(), values), bool::and(equals(updated.customers(), initial.customers()), bool::and(equals(updated.products(), initial.products()), bool::and(equals(updated.invoices(), initial.invoices()), bool::and(equals(updated.payments(), initial.payments()), bool::and(equals(updated.email-outbox(), initial.email-outbox()), equals(updated.sent-emails(), initial.sent-emails())))))))
+    => true
+}
+
+// frontend: flow/1
+
+test subscription-id.parse/canonical {
+    match subscription-id::parse("00112233-4455-6677-8899-aabbccddeeff") {
+        ok id => {
+            SubscriptionId::value(id)
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "00112233-4455-6677-8899-aabbccddeeff"
+}
+
+// frontend: flow/1
+
+test subscription-id.parse/invalid {
+    match subscription-id::parse("invalid") {
+        ok id => {
+            SubscriptionId::value(id)
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "INVALID_IDENTIFIER"
+}
+
+// frontend: flow/1
+
+test subscription-id.parse/normalized {
+    match subscription-id::parse("00112233445566778899AABBCCDDEEFF") {
+        ok id => {
+            SubscriptionId::value(id)
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "00112233-4455-6677-8899-aabbccddeeff"
+}
+
+// frontend: flow/1
+
+test subscription.cancel/already-cancelled {
+    let baseline = business::seed(unit);
+    let cancelled = subscription::new(id = SubscriptionId::new("50000000-0000-0000-0000-000000000007"), customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"), product-id = ProductId::new("20000000-0000-0000-0000-000000000001"), term = "monthly", started-at = Instant::new("2026-01-02T12:00:00.0000000\u002B00:00"), expires-at = Instant::new("2026-02-01T12:00:00.0000000\u002B00:00"), status = SubscriptionStatus::new("cancelled"), cancelled-at = option::some<Instant>(Instant::new("2026-01-03T12:00:00.0000000\u002B00:00")));
+    let initial = store::with-subscriptions(baseline, list::singleton<Subscription>(cancelled));
+    match subscription::cancel(initial, SubscriptionId::new("50000000-0000-0000-0000-000000000007"), Instant::new("2026-01-04T12:00:00.0000000\u002B00:00")) {
+        ok updated => {
+            "UNEXPECTED_SUCCESS"
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "SUBSCRIPTION_ALREADY_CANCELLED"
+}
+
+// frontend: flow/1
+
+test subscription.cancel/equal-start-preserves-order-and-other-fields {
+    let baseline = business::seed(unit);
+    let first = subscription::new(id = SubscriptionId::new("50000000-0000-0000-0000-000000000009"), customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"), product-id = ProductId::new("20000000-0000-0000-0000-000000000001"), term = "first", started-at = Instant::new("2026-01-01T12:00:00.0000000\u002B00:00"), expires-at = Instant::new("2026-02-01T12:00:00.0000000\u002B00:00"), status = SubscriptionStatus::new("active"), cancelled-at = option::none<Instant>());
+    let target-id = SubscriptionId::new("50000000-0000-0000-0000-000000000010");
+    let target = subscription::new(id = target-id, customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"), product-id = ProductId::new("20000000-0000-0000-0000-000000000001"), term = "target", started-at = Instant::new("2026-01-02T12:00:00.0000000\u002B00:00"), expires-at = Instant::new("2026-02-01T12:00:00.0000000\u002B00:00"), status = SubscriptionStatus::new("active"), cancelled-at = option::none<Instant>());
+    let last = subscription::new(id = SubscriptionId::new("50000000-0000-0000-0000-000000000011"), customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"), product-id = ProductId::new("20000000-0000-0000-0000-000000000001"), term = "last", started-at = Instant::new("2026-01-03T12:00:00.0000000\u002B00:00"), expires-at = Instant::new("2026-02-01T12:00:00.0000000\u002B00:00"), status = SubscriptionStatus::new("active"), cancelled-at = option::none<Instant>());
+    let original-subscriptions = list::append(list::append(list::singleton<Subscription>(first), target), last);
+    let initial = store::with-subscriptions(baseline, original-subscriptions);
+    let expected-target = subscription::new(id = target-id, customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"), product-id = ProductId::new("20000000-0000-0000-0000-000000000001"), term = "target", started-at = Instant::new("2026-01-02T12:00:00.0000000\u002B00:00"), expires-at = Instant::new("2026-02-01T12:00:00.0000000\u002B00:00"), status = SubscriptionStatus::new("cancelled"), cancelled-at = option::some<Instant>(Instant::new("2026-01-02T12:00:00.0000000\u002B00:00")));
+    match subscription::cancel(initial, target-id, Instant::new("2026-01-02T12:00:00.0000000\u002B00:00")) {
+        ok updated => {
+            bool::and(equals(updated.subscriptions(), list::append(list::append(list::singleton<Subscription>(first), expected-target), last)), bool::and(equals(updated.customers(), initial.customers()), bool::and(equals(updated.products(), initial.products()), bool::and(equals(updated.invoices(), initial.invoices()), bool::and(equals(updated.payments(), initial.payments()), bool::and(equals(updated.email-outbox(), initial.email-outbox()), equals(updated.sent-emails(), initial.sent-emails())))))))
+        }
+        error problem => {
+            false
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test subscription.cancel/missing {
+    match subscription::cancel(store::empty(unit), SubscriptionId::new("90000000-0000-0000-0000-000000000001"), Instant::new("2026-01-02T12:00:00.0000000\u002B00:00")) {
+        ok updated => {
+            "UNEXPECTED_SUCCESS"
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "SUBSCRIPTION_NOT_FOUND"
+}
+
+// frontend: flow/1
+
+test subscription.cancel/rejects-before-start {
+    let baseline = business::seed(unit);
+    let initial = store::with-subscriptions(baseline, list::singleton<Subscription>(subscription::new(id = SubscriptionId::new("50000000-0000-0000-0000-000000000008"), customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"), product-id = ProductId::new("20000000-0000-0000-0000-000000000001"), term = "monthly", started-at = Instant::new("2026-01-02T12:00:00.0000000\u002B00:00"), expires-at = Instant::new("2026-02-01T12:00:00.0000000\u002B00:00"), status = SubscriptionStatus::new("active"), cancelled-at = option::none<Instant>())));
+    match subscription::cancel(initial, SubscriptionId::new("50000000-0000-0000-0000-000000000008"), Instant::new("2026-01-01T12:00:00.0000000\u002B00:00")) {
+        ok updated => {
+            "UNEXPECTED_SUCCESS"
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "CANCEL_BEFORE_START"
+}
+
+// frontend: flow/1
+
+test subscription.replace-list/empty-fold {
+    let replacement = subscription::new(id = SubscriptionId::new("50000000-0000-0000-0000-000000000001"), customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"), product-id = ProductId::new("20000000-0000-0000-0000-000000000001"), term = "replacement", started-at = Instant::new("2026-01-02T12:00:00.0000000\u002B00:00"), expires-at = Instant::new("2026-02-01T12:00:00.0000000\u002B00:00"), status = SubscriptionStatus::new("cancelled"), cancelled-at = option::some<Instant>(Instant::new("2026-01-02T12:00:00.0000000\u002B00:00")));
+    equals(subscription::replace-list(list::empty<Subscription>(), replacement.id(), replacement), list::empty<Subscription>())
+    => true
+}
+
+// frontend: flow/1
+
+test subscription.replace-list/nonempty-fold-replaces-first-in-order {
+    let first = subscription::new(id = SubscriptionId::new("50000000-0000-0000-0000-000000000002"), customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"), product-id = ProductId::new("20000000-0000-0000-0000-000000000001"), term = "first", started-at = Instant::new("2026-01-01T12:00:00.0000000\u002B00:00"), expires-at = Instant::new("2026-02-01T12:00:00.0000000\u002B00:00"), status = SubscriptionStatus::new("active"), cancelled-at = option::none<Instant>());
+    let target = subscription::new(id = SubscriptionId::new("50000000-0000-0000-0000-000000000003"), customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"), product-id = ProductId::new("20000000-0000-0000-0000-000000000001"), term = "target", started-at = Instant::new("2026-01-02T12:00:00.0000000\u002B00:00"), expires-at = Instant::new("2026-02-01T12:00:00.0000000\u002B00:00"), status = SubscriptionStatus::new("active"), cancelled-at = option::none<Instant>());
+    let replacement = subscription::new(id = target.id(), customer-id = target.customer-id(), product-id = target.product-id(), term = "replacement", started-at = target.started-at(), expires-at = target.expires-at(), status = SubscriptionStatus::new("cancelled"), cancelled-at = option::some<Instant>(Instant::new("2026-01-02T12:00:00.0000000\u002B00:00")));
+    equals(subscription::replace-list(list::append(list::singleton<Subscription>(first), target), target.id(), replacement), list::append(list::singleton<Subscription>(first), replacement))
+    => true
+}
+
+// frontend: flow/1
+
+test subscription.replace-step/keeps-later-duplicate {
+    let earlier = subscription::new(id = SubscriptionId::new("50000000-0000-0000-0000-000000000001"), customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"), product-id = ProductId::new("20000000-0000-0000-0000-000000000001"), term = "earlier", started-at = Instant::new("2026-01-02T12:00:00.0000000\u002B00:00"), expires-at = Instant::new("2026-02-01T12:00:00.0000000\u002B00:00"), status = SubscriptionStatus::new("active"), cancelled-at = option::none<Instant>());
+    let candidate = subscription::new(id = SubscriptionId::new("50000000-0000-0000-0000-000000000001"), customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"), product-id = ProductId::new("20000000-0000-0000-0000-000000000001"), term = "later duplicate", started-at = Instant::new("2026-01-02T12:00:00.0000000\u002B00:00"), expires-at = Instant::new("2026-02-01T12:00:00.0000000\u002B00:00"), status = SubscriptionStatus::new("active"), cancelled-at = option::none<Instant>());
+    let replacement = subscription::new(id = SubscriptionId::new("50000000-0000-0000-0000-000000000001"), customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"), product-id = ProductId::new("20000000-0000-0000-0000-000000000001"), term = "replacement", started-at = Instant::new("2026-01-02T12:00:00.0000000\u002B00:00"), expires-at = Instant::new("2026-02-01T12:00:00.0000000\u002B00:00"), status = SubscriptionStatus::new("active"), cancelled-at = option::none<Instant>());
+    let initial = subscriptionReplacementState::new(target-id = candidate.id(), replacement = replacement, output = list::singleton<Subscription>(earlier), replaced = true);
+    let updated = subscription::replace-step(initial, candidate);
+    bool::and(updated.replaced(), equals(updated.output(), list::append(list::singleton<Subscription>(earlier), candidate)))
+    => true
+}
+
+// frontend: flow/1
+
+test subscription.replace-step/keeps-nontarget {
+    let candidate = subscription::new(id = SubscriptionId::new("50000000-0000-0000-0000-000000000002"), customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"), product-id = ProductId::new("20000000-0000-0000-0000-000000000001"), term = "kept", started-at = Instant::new("2026-01-02T12:00:00.0000000\u002B00:00"), expires-at = Instant::new("2026-02-01T12:00:00.0000000\u002B00:00"), status = SubscriptionStatus::new("active"), cancelled-at = option::none<Instant>());
+    let replacement = subscription::new(id = SubscriptionId::new("50000000-0000-0000-0000-000000000001"), customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"), product-id = ProductId::new("20000000-0000-0000-0000-000000000001"), term = "replacement", started-at = Instant::new("2026-01-02T12:00:00.0000000\u002B00:00"), expires-at = Instant::new("2026-02-01T12:00:00.0000000\u002B00:00"), status = SubscriptionStatus::new("active"), cancelled-at = option::none<Instant>());
+    let initial = subscriptionReplacementState::new(target-id = SubscriptionId::new("50000000-0000-0000-0000-000000000001"), replacement = replacement, output = list::empty<Subscription>(), replaced = false);
+    let updated = subscription::replace-step(initial, candidate);
+    bool::and(bool::not(updated.replaced()), equals(updated.output(), list::singleton<Subscription>(candidate)))
+    => true
+}
+
+// frontend: flow/1
+
+test subscription.replace-step/replaces-first-match {
+    let candidate = subscription::new(id = SubscriptionId::new("50000000-0000-0000-0000-000000000001"), customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"), product-id = ProductId::new("20000000-0000-0000-0000-000000000001"), term = "original", started-at = Instant::new("2026-01-02T12:00:00.0000000\u002B00:00"), expires-at = Instant::new("2026-02-01T12:00:00.0000000\u002B00:00"), status = SubscriptionStatus::new("active"), cancelled-at = option::none<Instant>());
+    let replacement = subscription::new(id = SubscriptionId::new("50000000-0000-0000-0000-000000000001"), customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"), product-id = ProductId::new("20000000-0000-0000-0000-000000000001"), term = "replacement", started-at = Instant::new("2026-01-02T12:00:00.0000000\u002B00:00"), expires-at = Instant::new("2026-02-01T12:00:00.0000000\u002B00:00"), status = SubscriptionStatus::new("active"), cancelled-at = option::none<Instant>());
+    let initial = subscriptionReplacementState::new(target-id = candidate.id(), replacement = replacement, output = list::empty<Subscription>(), replaced = false);
+    let updated = subscription::replace-step(initial, candidate);
+    bool::and(updated.replaced(), equals(updated.output(), list::singleton<Subscription>(replacement)))
+    => true
+}
+
+// frontend: flow/1
+
+test subscription.start/appends-active-subscription {
+    let initial = business::seed(unit);
+    let id = SubscriptionId::new("50000000-0000-0000-0000-000000000001");
+    let customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001");
+    let product-id = ProductId::new("20000000-0000-0000-0000-000000000001");
+    match subscription::start(initial, id, customer-id, product-id, "  monthly  ", Instant::new("2026-01-02T12:00:00.0000000\u002B00:00"), Instant::new("2026-03-02T12:00:00.0000000\u002B00:00")) {
+        ok updated => {
+            match store::subscription(id, updated) {
+                some created => {
+                    bool::and(equals(created.term(), "monthly"), bool::and(equals(created.status(), SubscriptionStatus::new("active")), bool::and(equals(created.cancelled-at(), option::none<Instant>()), bool::and(equals(updated.subscriptions().count(), 2), bool::and(equals(updated.customers(), initial.customers()), bool::and(equals(updated.products(), initial.products()), bool::and(equals(updated.invoices(), initial.invoices()), bool::and(equals(updated.payments(), initial.payments()), bool::and(equals(updated.email-outbox(), initial.email-outbox()), equals(updated.sent-emails(), initial.sent-emails()))))))))))
+                }
+                none => {
+                    false
+                }
+            }
+        }
+        error problem => {
+            false
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+test subscription.start/duplicate-precedes-other-errors {
+    let initial = business::seed(unit);
+    match subscription::start(initial, SubscriptionId::new("30000000-0000-0000-0000-000000000001"), CustomerId::new("90000000-0000-0000-0000-000000000001"), ProductId::new("90000000-0000-0000-0000-000000000002"), " \t ", Instant::new("2026-01-02T12:00:00.0000000\u002B00:00"), Instant::new("2026-01-02T12:00:00.0000000\u002B00:00")) {
+        ok updated => {
+            "UNEXPECTED_SUCCESS"
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "DUPLICATE_SUBSCRIPTION"
+}
+
+// frontend: flow/1
+
+test subscription.start/rejects-blank-term {
+    let initial = business::seed(unit);
+    match subscription::start(initial, SubscriptionId::new("50000000-0000-0000-0000-000000000002"), CustomerId::new("10000000-0000-0000-0000-000000000001"), ProductId::new("20000000-0000-0000-0000-000000000001"), " \t ", Instant::new("2026-01-02T12:00:00.0000000\u002B00:00"), Instant::new("2026-03-02T12:00:00.0000000\u002B00:00")) {
+        ok updated => {
+            "UNEXPECTED_SUCCESS"
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "INVALID_SUBSCRIPTION_TERM"
+}
+
+// frontend: flow/1
+
+test subscription.start/rejects-expiry-before-start {
+    let initial = business::seed(unit);
+    match subscription::start(initial, SubscriptionId::new("50000000-0000-0000-0000-000000000003"), CustomerId::new("10000000-0000-0000-0000-000000000001"), ProductId::new("20000000-0000-0000-0000-000000000001"), "monthly", Instant::new("2026-01-03T12:00:00.0000000\u002B00:00"), Instant::new("2026-01-02T12:00:00.0000000\u002B00:00")) {
+        ok updated => {
+            "UNEXPECTED_SUCCESS"
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START"
+}
+
+// frontend: flow/1
+
+test subscription.start/rejects-expiry-equal-to-start {
+    let initial = business::seed(unit);
+    match subscription::start(initial, SubscriptionId::new("50000000-0000-0000-0000-000000000004"), CustomerId::new("10000000-0000-0000-0000-000000000001"), ProductId::new("20000000-0000-0000-0000-000000000001"), "monthly", Instant::new("2026-01-02T12:00:00.0000000\u002B00:00"), Instant::new("2026-01-02T12:00:00.0000000\u002B00:00")) {
+        ok updated => {
+            "UNEXPECTED_SUCCESS"
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START"
+}
+
+// frontend: flow/1
+
+test subscription.start/rejects-missing-customer-first {
+    let initial = business::seed(unit);
+    match subscription::start(initial, SubscriptionId::new("50000000-0000-0000-0000-000000000005"), CustomerId::new("90000000-0000-0000-0000-000000000001"), ProductId::new("90000000-0000-0000-0000-000000000002"), "monthly", Instant::new("2026-01-02T12:00:00.0000000\u002B00:00"), Instant::new("2026-03-02T12:00:00.0000000\u002B00:00")) {
+        ok updated => {
+            "UNEXPECTED_SUCCESS"
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "CUSTOMER_NOT_FOUND"
+}
+
+// frontend: flow/1
+
+test subscription.start/rejects-missing-product {
+    let initial = business::seed(unit);
+    match subscription::start(initial, SubscriptionId::new("50000000-0000-0000-0000-000000000006"), CustomerId::new("10000000-0000-0000-0000-000000000001"), ProductId::new("90000000-0000-0000-0000-000000000002"), "monthly", Instant::new("2026-01-02T12:00:00.0000000\u002B00:00"), Instant::new("2026-03-02T12:00:00.0000000\u002B00:00")) {
+        ok updated => {
+            "UNEXPECTED_SUCCESS"
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "PRODUCT_NOT_FOUND"
+}
+
+// frontend: flow/1
+
+test subscription.status-valid?/active {
+    subscription::status-valid?("active")
+    => true
+}
+
+// frontend: flow/1
+
+test subscription.status-valid?/cancelled {
+    subscription::status-valid?("cancelled")
+    => true
+}
+
+// frontend: flow/1
+
+test subscription.status-valid?/unknown {
+    subscription::status-valid?("expired")
+    => false
+}
+
+// frontend: flow/1
+
+example business.email-valid?/fixture-address {
+    business::email-valid?("dev.team@example.com")
+    => true
+}
+
+// frontend: flow/1
+
+example business.id-valid?/canonical-guid {
+    business::id-valid?("00112233-4455-6677-8899-aabbccddeeff")
+    => true
+}
+
+// frontend: flow/1
+
+example business.instant-valid?/canonical-utc {
+    business::instant-valid?("2024-02-29T12:00:00.0000000\u002B00:00")
+    => true
+}
+
+// frontend: flow/1
+
+example business.seed/deterministic-baseline {
+    business::seed(unit).customers().count()
+    => 1
+}
+
+// frontend: flow/1
+
+example customer-id.parse/normalizes-braces {
+    match customer-id::parse("{00112233-4455-6677-8899-AABBCCDDEEFF}") {
+        ok id => {
+            CustomerId::value(id)
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "00112233-4455-6677-8899-aabbccddeeff"
+}
+
+// frontend: flow/1
+
+example customer.create/trims-kind {
+    match customer::create(CustomerId::new("00112233-4455-6677-8899-aabbccddeeff"), Email::new("dev@example.com"), "  partner  ", Money::new(0), Instant::new("2024-02-29T12:00:00.0000000\u002B00:00")) {
+        ok value => {
+            value.kind()
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "partner"
+}
+
+// frontend: flow/1
+
+example email-message.create/trimmed-content {
+    match email-message::create(Email::new("dev@example.com"), "  Receipt ready  ", "  Your receipt is ready.  ") {
+        ok value => {
+            string::concat(value.subject(), string::concat("|", value.body()))
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "Receipt ready|Your receipt is ready."
+}
+
+// frontend: flow/1
+
+example email.apply-delivery-result/empty-outbox {
+    match email::apply-delivery-result(store::empty(unit), result::ok<Unit, BusinessError>(unit)) {
+        ok updated => {
+            "unexpected"
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "NO_PENDING_EMAIL"
+}
+
+// frontend: flow/1
+
+example email.parse/accepted-address {
+    match email::parse("dev@example.com") {
+        ok address => {
+            Email::value(address)
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "dev@example.com"
+}
+
+// frontend: flow/1
+
+example email.queue/missing-customer {
+    match email::queue(store::empty(unit), CustomerId::new("00000000-0000-0000-0000-000000000001"), "Notice", "Body") {
+        ok updated => {
+            "unexpected"
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "CUSTOMER_NOT_FOUND"
+}
+
+// frontend: flow/1
+
+example instant.normalize/to-utc {
+    match instant::normalize("2024-02-29T14:00:00\u002B02:00") {
+        ok timestamp => {
+            Instant::value(timestamp)
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "2024-02-29T12:00:00.0000000\u002B00:00"
+}
+
+// frontend: flow/1
+
+example invoice-id.parse/guid {
+    match invoice-id::parse("00112233-4455-6677-8899-aabbccddeeff") {
+        ok id => {
+            InvoiceId::value(id)
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "00112233-4455-6677-8899-aabbccddeeff"
+}
+
+// frontend: flow/1
+
+example invoice.build-lines/empty-cart {
+    match invoice::build-lines(business::seed(unit), list::empty<CartLine>()) {
+        ok lines => {
+            lines.count()
+        }
+        error problem => {
+            -1
+        }
+    }
+    => 0
+}
+
+// frontend: flow/1
+
+example invoice.create/open-invoice {
+    let cart = cartLine::new(product-id = ProductId::new("20000000-0000-0000-0000-000000000001"), quantity = 1);
+    match invoice::create(business::seed(unit), InvoiceId::new("94000000-0000-0000-0000-000000000001"), CustomerId::new("10000000-0000-0000-0000-000000000001"), list::singleton<CartLine>(cart), Instant::new("2026-01-04T00:00:00.0000000\u002B00:00")) {
+        ok updated => {
+            updated.invoices().count()
+        }
+        error problem => {
+            -1
+        }
+    }
+    => 1
+}
+
+// frontend: flow/1
+
+example invoice.line/snapshots-price-and-description {
+    let store = business::seed(unit);
+    let cart = cartLine::new(product-id = ProductId::new("20000000-0000-0000-0000-000000000001"), quantity = 2);
+    match invoice::line(store, cart) {
+        ok line => {
+            Money::value(line.line-total())
+        }
+        error problem => {
+            -1
+        }
+    }
+    => 398
+}
+
+// frontend: flow/1
+
+example invoice.status-valid?/open-state {
+    invoice::status-valid?("open")
+    => true
+}
+
+// frontend: flow/1
+
+example invoice.sum-lines/empty-total {
+    match invoice::sum-lines(list::empty<InvoiceLine>()) {
+        ok total => {
+            Money::value(total)
+        }
+        error problem => {
+            -1
+        }
+    }
+    => 0
+}
+
+// frontend: flow/1
+
+example money.add/signed-minor-units {
+    match money::add(Money::new(250), Money::new(300)) {
+        ok total => {
+            int::to-string(Money::value(total))
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "550"
+}
+
+// frontend: flow/1
+
+example money.multiply-by-quantity/signed-quantity {
+    match money::multiply-by-quantity(Money::new(250), -2) {
+        ok total => {
+            int::to-string(Money::value(total))
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "-500"
+}
+
+// frontend: flow/1
+
+example money.nonnegative?/zero {
+    money::nonnegative?(Money::new(0))
+    => true
+}
+
+// frontend: flow/1
+
+example payment-id.parse/guid {
+    match payment-id::parse("00112233-4455-6677-8899-aabbccddeeff") {
+        ok id => {
+            PaymentId::value(id)
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "00112233-4455-6677-8899-aabbccddeeff"
+}
+
+// frontend: flow/1
+
+example payment-receipt.create/trimmed-reference {
+    match payment-receipt::create("  provider-ref-42  ", Money::new(900)) {
+        ok value => {
+            value.reference()
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "provider-ref-42"
+}
+
+// frontend: flow/1
+
+example payment.apply-result/provider-decline {
+    let invoice = invoice::new(id = InvoiceId::new("00000000-0000-0000-0000-000000000002"), customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"), lines = list::empty<InvoiceLine>(), total = Money::new(100), created-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"), status = InvoiceStatus::new("open"));
+    let initial = store::with-invoices(store::empty(unit), list::singleton<Invoice>(invoice));
+    match payment::apply-result(initial, PaymentId::new("00000000-0000-0000-0000-000000000001"), invoice.id(), Money::new(100), Instant::new("2024-01-02T00:00:00.0000000\u002B00:00"), result::error<PaymentReceipt, BusinessError>(businessError::new(code = "DECLINED", message = "declined"))) {
+        ok updated => {
+            false
+        }
+        error problem => {
+            equals(problem.code(), "PAYMENT_PROVIDER_FAILURE")
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+example product-id.parse/guid {
+    match product-id::parse("00112233-4455-6677-8899-aabbccddeeff") {
+        ok id => {
+            ProductId::value(id)
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "00112233-4455-6677-8899-aabbccddeeff"
+}
+
+// frontend: flow/1
+
+example product.create/nonnegative-price {
+    match product::create(ProductId::new("00112233-4455-6677-8899-aabbccddeeff"), "Notebook", Money::new(250)) {
+        ok value => {
+            value.name()
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "Notebook"
+}
+
+// frontend: flow/1
+
+example store.add-customer/appends-new-customer {
+    let customer = customer::new(id = CustomerId::new("00000000-0000-0000-0000-000000000001"), email = Email::new("new@example.com"), kind = "new", balance = Money::new(0), created-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"));
+    match store::add-customer(customer, store::empty(unit)) {
+        ok updated => {
+            equals(updated.customers().count(), 1)
+        }
+        error problem => {
+            false
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+example store.add-product/appends-new-product {
+    let product = product::new(id = ProductId::new("00000000-0000-0000-0000-000000000001"), name = "new product", unit-price = Money::new(50));
+    match store::add-product(product, store::empty(unit)) {
+        ok updated => {
+            equals(updated.products().count(), 1)
+        }
+        error problem => {
+            false
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+example store.customer/missing-customer {
+    match store::customer(CustomerId::new("00000000-0000-0000-0000-000000000001"), store::empty(unit)) {
+        some found => {
+            false
+        }
+        none => {
+            true
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+example store.empty/empty-store {
+    store::empty(unit).customers().count()
+    => 0
+}
+
+// frontend: flow/1
+
+example store.invoice/missing-invoice {
+    match store::invoice(InvoiceId::new("00000000-0000-0000-0000-000000000001"), store::empty(unit)) {
+        some found => {
+            false
+        }
+        none => {
+            true
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+example store.payment/missing-payment {
+    match store::payment(PaymentId::new("00000000-0000-0000-0000-000000000001"), store::empty(unit)) {
+        some found => {
+            false
+        }
+        none => {
+            true
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+example store.product/missing-product {
+    match store::product(ProductId::new("00000000-0000-0000-0000-000000000001"), store::empty(unit)) {
+        some found => {
+            false
+        }
+        none => {
+            true
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+example store.replace-invoice/empty-store {
+    let invoice = invoice::new(id = InvoiceId::new("00000000-0000-0000-0000-000000000001"), customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"), lines = list::empty<InvoiceLine>(), total = Money::new(20), created-at = Instant::new("2024-01-01T00:00:00.0000000\u002B00:00"), status = InvoiceStatus::new("paid"));
+    store::replace-invoice(store::empty(unit), invoice).invoices().count()
+    => 0
+}
+
+// frontend: flow/1
+
+example store.subscription/missing-subscription {
+    match store::subscription(SubscriptionId::new("00000000-0000-0000-0000-000000000001"), store::empty(unit)) {
+        some found => {
+            false
+        }
+        none => {
+            true
+        }
+    }
+    => true
+}
+
+// frontend: flow/1
+
+example store.with-email-state/replaces-lists {
+    store::with-email-state(business::seed(unit), list::empty<EmailMessage>(), list::empty<EmailMessage>()).email-outbox().count()
+    => 0
+}
+
+// frontend: flow/1
+
+example store.with-invoices/replaces-list {
+    store::with-invoices(business::seed(unit), list::empty<Invoice>()).invoices().count()
+    => 0
+}
+
+// frontend: flow/1
+
+example store.with-payments/replaces-list {
+    store::with-payments(business::seed(unit), list::empty<Payment>()).payments().count()
+    => 0
+}
+
+// frontend: flow/1
+
+example store.with-subscriptions/replaces-list {
+    store::with-subscriptions(business::seed(unit), list::empty<Subscription>()).subscriptions().count()
+    => 0
+}
+
+// frontend: flow/1
+
+example subscription-id.parse/guid {
+    match subscription-id::parse("00112233-4455-6677-8899-aabbccddeeff") {
+        ok id => {
+            SubscriptionId::value(id)
+        }
+        error problem => {
+            problem.code()
+        }
+    }
+    => "00112233-4455-6677-8899-aabbccddeeff"
+}
+
+// frontend: flow/1
+
+example subscription.cancel/cancels-existing {
+    match subscription::cancel(business::seed(unit), SubscriptionId::new("30000000-0000-0000-0000-000000000001"), Instant::new("2026-01-02T12:00:00.0000000\u002B00:00")) {
+        ok updated => {
+            updated.subscriptions().count()
+        }
+        error problem => {
+            -1
+        }
+    }
+    => 1
+}
+
+// frontend: flow/1
+
+example subscription.replace-list/replaces-target {
+    let target = subscription::new(id = SubscriptionId::new("50000000-0000-0000-0000-000000000003"), customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"), product-id = ProductId::new("20000000-0000-0000-0000-000000000001"), term = "target", started-at = Instant::new("2026-01-02T12:00:00.0000000\u002B00:00"), expires-at = Instant::new("2026-02-01T12:00:00.0000000\u002B00:00"), status = SubscriptionStatus::new("active"), cancelled-at = option::none<Instant>());
+    let replacement = subscription::new(id = target.id(), customer-id = target.customer-id(), product-id = target.product-id(), term = "replacement", started-at = target.started-at(), expires-at = target.expires-at(), status = SubscriptionStatus::new("cancelled"), cancelled-at = option::some<Instant>(Instant::new("2026-01-02T12:00:00.0000000\u002B00:00")));
+    subscription::replace-list(list::singleton<Subscription>(target), target.id(), replacement).count()
+    => 1
+}
+
+// frontend: flow/1
+
+example subscription.replace-step/replaces-target-in-order {
+    let candidate = subscription::new(id = SubscriptionId::new("50000000-0000-0000-0000-000000000001"), customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"), product-id = ProductId::new("20000000-0000-0000-0000-000000000001"), term = "original", started-at = Instant::new("2026-01-02T12:00:00.0000000\u002B00:00"), expires-at = Instant::new("2026-02-01T12:00:00.0000000\u002B00:00"), status = SubscriptionStatus::new("active"), cancelled-at = option::none<Instant>());
+    let replacement = subscription::new(id = SubscriptionId::new("50000000-0000-0000-0000-000000000001"), customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"), product-id = ProductId::new("20000000-0000-0000-0000-000000000001"), term = "replacement", started-at = Instant::new("2026-01-02T12:00:00.0000000\u002B00:00"), expires-at = Instant::new("2026-02-01T12:00:00.0000000\u002B00:00"), status = SubscriptionStatus::new("active"), cancelled-at = option::none<Instant>());
+    let initial = subscriptionReplacementState::new(target-id = candidate.id(), replacement = replacement, output = list::empty<Subscription>(), replaced = false);
+    subscription::replace-step(initial, candidate).replaced()
+    => true
+}
+
+// frontend: flow/1
+
+example subscription.start/appends-active {
+    match subscription::start(business::seed(unit), SubscriptionId::new("50000000-0000-0000-0000-000000000001"), CustomerId::new("10000000-0000-0000-0000-000000000001"), ProductId::new("20000000-0000-0000-0000-000000000001"), "monthly", Instant::new("2026-01-02T12:00:00.0000000\u002B00:00"), Instant::new("2026-03-02T12:00:00.0000000\u002B00:00")) {
+        ok updated => {
+            updated.subscriptions().count()
+        }
+        error problem => {
+            -1
+        }
+    }
+    => 2
+}
+
+// frontend: flow/1
+
+example subscription.status-valid?/active-state {
+    subscription::status-valid?("active")
+    => true
+}
