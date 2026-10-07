@@ -1,0 +1,22 @@
+{
+  "studyId": "business-policy-help-002",
+  "kind": "coordinator-one-field-tamper-control",
+  "agentLaunched": false,
+  "changedField": "model",
+  "originalValue": "gpt-6-luna",
+  "tamperedValue": "invalid-control-model",
+  "originalPinSha256": "a7cd6a4adc8a5d475c676ed75cac9445db654ef2854bb8b951d852693411feb1",
+  "restoredPinSha256": "a7cd6a4adc8a5d475c676ed75cac9445db654ef2854bb8b951d852693411feb1",
+  "restoredByteExact": true,
+  "pinValidated": false,
+  "jsonlSessions": 0,
+  "processRuns": 0,
+  "behavior": {
+    "targetUsable": false,
+    "casesExpected": 10,
+    "casesExecuted": 0,
+    "casesRecorded": 0,
+    "cases": []
+  },
+  "reportPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\runs\\flat-S06\\tampered-pin-control.json"
+}

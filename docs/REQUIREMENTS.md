@@ -451,3 +451,10 @@ field validation before staging. Candidate/persistent replacement, library
 metadata reload and rejected-request state preservation have focused checks.
 Fresh Flat S06/S07 trials remain required to assess the interface improvement;
 this implementation does not establish a cost reduction or complete evaluation.
+
+Report 078 adds a versioned Flat S06/S07 authoring-help follow-up with the same
+64 signed-Money behavior cases, schema-only seed, separated metadata/behavior
+results, immutable source/runtime/prompt inventories and preserved control failures.
+The 59-check control matrix and repaired clean-freeze/tamper gates pass. Fresh
+external-agent outcomes remain pending; full evaluation and measured costs remain
+open. No backend or memory research is promoted ahead of this evaluation.

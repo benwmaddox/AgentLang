@@ -1,0 +1,2452 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-help-002",
+  "mode": "flat",
+  "taskId": "S06",
+  "passed": false,
+  "metadataPassed": false,
+  "behaviorPassed": false,
+  "safetyStop": "Frozen starting-state, runtime, source, prompt, allowlist, or verifier provenance did not validate; no CLI evaluation is allowed.",
+  "failure": "Frozen starting-state, runtime, source, prompt, allowlist, or verifier provenance did not validate; no CLI evaluation is allowed.",
+  "orchestrationError": null,
+  "evidencePath": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\runs\\flat-S06\\tampered-pin-control.json",
+  "requestedEvidencePath": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\runs\\flat-S06\\tampered-pin-control.json",
+  "evidencePathCollision": false,
+  "sequenceIndex": 2,
+  "resultKind": "unfrozen-preflight-or-control",
+  "checkFrozenPin": true,
+  "frozenPin": {
+    "required": true,
+    "checked": false,
+    "status": "failed validation",
+    "path": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\runs\\flat-S06\\prelaunch.json",
+    "sha256": "be0ff8ba6b666ae259c9c34bdd21fddf6103967759ac972d7c83d79d27e77964"
+  },
+  "prelaunch": {
+    "path": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\runs\\flat-S06\\prelaunch.json",
+    "sha256": "be0ff8ba6b666ae259c9c34bdd21fddf6103967759ac972d7c83d79d27e77964",
+    "data": {
+      "schemaVersion": 1,
+      "studyId": "business-policy-help-002",
+      "mode": "flat",
+      "taskId": "S06",
+      "sequenceIndex": 2,
+      "preparedAtUtc": "2026-10-07T00:26:02.7891446-04:00",
+      "sourceRevision": "c380703fe18393d811ecb18a33a1bc59745d8b9b",
+      "dirty": false,
+      "model": "invalid-control-model",
+      "reasoningEffort": "max",
+      "forkTurns": "none",
+      "projectPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\actors\\flat-S06",
+      "launchCommand": "& 'D:\\code\\AgentLang\\scripts\\Start-SubagentTrialHost.ps1' -CliDll 'D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll' -ProjectPath 'D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\actors\\flat-S06' -TracePath 'D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\runs\\flat-S06\\trace.jsonl' -AllowedOperations @('callers','commit','context','define','dependencies','describe','diff','effects','eval','example','examples','failed-tests','graph','help','history','ir','replace-word','search','search-dependency','search-output','search-type','source','task.begin','task.commit','task.log','task.status','test','test-all','tests','transitive-callers','transitive-dependencies','type-of','words') -Profile agentlang -Capabilities @() -ClockValue '2000-01-01T00:00:00Z' -MaxRequestBytes 262144 -MaxResponseBytes 524288 -ExchangeTimeoutMilliseconds 120000 -MaxExchanges 100",
+      "allowedOperations": [
+        "callers",
+        "commit",
+        "context",
+        "define",
+        "dependencies",
+        "describe",
+        "diff",
+        "effects",
+        "eval",
+        "example",
+        "examples",
+        "failed-tests",
+        "graph",
+        "help",
+        "history",
+        "ir",
+        "replace-word",
+        "search",
+        "search-dependency",
+        "search-output",
+        "search-type",
+        "source",
+        "task.begin",
+        "task.commit",
+        "task.log",
+        "task.status",
+        "test",
+        "test-all",
+        "tests",
+        "transitive-callers",
+        "transitive-dependencies",
+        "type-of",
+        "words"
+      ],
+      "maxExchanges": 100,
+      "maxRequestBytes": 262144,
+      "maxResponseBytes": 524288,
+      "exchangeTimeoutMilliseconds": 120000,
+      "profile": "agentlang",
+      "additionalCliArguments": [],
+      "capabilities": [],
+      "clockValue": "2000-01-01T00:00:00Z",
+      "inspectionBudgetEnabled": false,
+      "inspectionClassifierVersion": "trial-host-inspection-v1",
+      "promptPath": "prompt.txt",
+      "promptSha256": "937fb3ecfecb5713a077190d895cbe2d79b9c43002dd49b3dff372f8ee7faed5",
+      "promptUtf8Bytes": 7845,
+      "oraclePath": "experiments/AgentLang.SubagentTrials/business-policy-help-002/acceptance.json",
+      "oracleSha256": "d58fceeec3b659aebc58daa1d708d5f16cb43d12996f291c1c78a377fcfb89ef",
+      "independentVerifierPath": "scripts/Verify-AuthoringHelpTrial.ps1",
+      "independentVerifierSha256": "8e9fd793757def4624bb59f14918cd4f5a257dd95192cb04c99fdfaa56db77f0",
+      "preflightPath": "scripts/Verify-AuthoringHelpPreflight.ps1",
+      "preflightSha256": "42139234cc8499200aeaa7cb883fbafeaa8848e2897f789435731f4d665e1320",
+      "preparerPath": "scripts/Prepare-AuthoringHelpTrial.ps1",
+      "preparerSha256": "5de6e4a4616c673e6c80c560b5b4e33cf3df6f80391bb6e390d9e0b46d22d1a6",
+      "freezerPath": "scripts/Freeze-AuthoringHelpTrial.ps1",
+      "freezerSha256": "19c2ac2b3e8e8d38a1ef1ef9c2b994024ce5ec364f46f3b7a0a4641c271c3336",
+      "auditorPath": "scripts/Audit-AuthoringHelpTrace.ps1",
+      "auditorSha256": "5c91e5b47fd3877c53b7c2e624defd5c94446e555f9b30d06d32c5bb98ecd7fd",
+      "originalPreparerPath": "scripts/Prepare-BusinessPolicyTrial.ps1",
+      "originalPreparerSha256": "23af4c9536e72730d44a5cfbdcf70b05b17a1e35c83f841511f9e8bbc637c08a",
+      "hostPath": "scripts/Start-SubagentTrialHost.ps1",
+      "hostSha256": "d3b60698ef29cc6e7d9b42f37d9a298a311f409cb3f85112ca2a5dccf6148c4d",
+      "primerPath": "experiments/AgentLang.SubagentTrials/business-policy-help-002/language-primer.md",
+      "primerSha256": "7ca98f0c8c9a20a84076d2a6b62da7a36ac12959e17ec1890ec74f9cbf9b578e",
+      "taskPath": "experiments/AgentLang.Benchmarks/task-bank/public/S06.json",
+      "taskSha256": "11ce4abd6f37035862dd802e8e201260c9f78457dc510d6d150c99725ffcc180",
+      "seedSourcePath": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/flat-customer.agent",
+      "seedSourceSha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d",
+      "runtimeRoots": {
+        "cliDllPath": "src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll",
+        "cliDirectoryPath": "src/AgentLang.Cli/bin/Release/net9.0",
+        "businessDllPath": "experiments/AgentLang.Business/bin/Release/net9.0/AgentLang.Business.dll",
+        "businessDirectoryPath": "experiments/AgentLang.Business/bin/Release/net9.0"
+      },
+      "runtimeFiles": [
+        {
+          "runtime": "business",
+          "path": "AgentLang.Business.deps.json",
+          "bytes": 2486,
+          "sha256": "1dcce1cd3d0cb7b52152c9a5588419f0f876d75bc4218be09f56dd45a872ba46"
+        },
+        {
+          "runtime": "business",
+          "path": "AgentLang.Business.dll",
+          "bytes": 107008,
+          "sha256": "48837c07853194f2d8c5fa75b5f278e5fcef2db270ce42faa3a9251dff0007a4"
+        },
+        {
+          "runtime": "business",
+          "path": "AgentLang.Business.pdb",
+          "bytes": 21704,
+          "sha256": "6113c911717a2073a51e7af38af3365e248edc03caec40edc9a71724acb4d6e8"
+        },
+        {
+          "runtime": "business",
+          "path": "AgentLang.Business.xml",
+          "bytes": 355,
+          "sha256": "060ff74283ad20f2411b922e8c2f3d3d6282a2d752a3415afc5827350f1e0b54"
+        },
+        {
+          "runtime": "cli",
+          "path": "AgentLang.Cli.deps.json",
+          "bytes": 2903,
+          "sha256": "6382f6dc29bb8f827824839010e313b266e51a3f87a4fdb8c382931d2549e97e"
+        },
+        {
+          "runtime": "cli",
+          "path": "AgentLang.Cli.dll",
+          "bytes": 38400,
+          "sha256": "e9098ca964e19fb4e34f47ff4cd04f9a389dcb01a990455f77301afb613f9002"
+        },
+        {
+          "runtime": "cli",
+          "path": "AgentLang.Cli.exe",
+          "bytes": 156160,
+          "sha256": "28d1cdbe3633ae9cbc1bba40cd651604e57f67eb4d41a1676e0b1e49a21ed9e6"
+        },
+        {
+          "runtime": "cli",
+          "path": "AgentLang.Cli.pdb",
+          "bytes": 10240,
+          "sha256": "3330b8d29e092c250763c79514f1571626270da079580daa0d82f4247364e718"
+        },
+        {
+          "runtime": "cli",
+          "path": "AgentLang.Cli.runtimeconfig.json",
+          "bytes": 340,
+          "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+        },
+        {
+          "runtime": "cli",
+          "path": "AgentLang.Core.dll",
+          "bytes": 2125312,
+          "sha256": "f08538fd22b04c2e5518adeacb63502b1e467331a59f7a89bc965bcfc9e6501b"
+        },
+        {
+          "runtime": "cli",
+          "path": "AgentLang.Core.pdb",
+          "bytes": 558892,
+          "sha256": "c8f871daa133887c06a69f3b3ea629440584f96b4524286b88de83d1665bc35b"
+        },
+        {
+          "runtime": "cli",
+          "path": "AgentLang.Core.xml",
+          "bytes": 32515,
+          "sha256": "27b998f11066707f4fdc98519298cc8637ae1fb926d5fc2d1e2c40a7ce620fb5"
+        },
+        {
+          "runtime": "cli",
+          "path": "cs/FSharp.Core.resources.dll",
+          "bytes": 34600,
+          "sha256": "eb8bd755cfe0d39ce27615027fe22556e8b9dcb470f2b47a36f4bfbf3c31be64"
+        },
+        {
+          "runtime": "cli",
+          "path": "de/FSharp.Core.resources.dll",
+          "bytes": 35592,
+          "sha256": "7419e4f5ceed9e03821686e865fed7d29c6217fdf5d3a46a2919a369c98c38ce"
+        },
+        {
+          "runtime": "cli",
+          "path": "es/FSharp.Core.resources.dll",
+          "bytes": 34600,
+          "sha256": "636866649564c72eb763eb3942e021b52b1f9b3869d037aca48f73d4474353c5"
+        },
+        {
+          "runtime": "cli",
+          "path": "fr/FSharp.Core.resources.dll",
+          "bytes": 35128,
+          "sha256": "f38f2fd6bc4c4e233dd098a36b315a2bc87673cf2f07c6ba3daf71a3264f4a64"
+        },
+        {
+          "runtime": "cli",
+          "path": "FSharp.Core.dll",
+          "bytes": 2314000,
+          "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+        },
+        {
+          "runtime": "cli",
+          "path": "it/FSharp.Core.resources.dll",
+          "bytes": 34576,
+          "sha256": "61a0be9c6a2ed95f8e98493b17c54a55c68cef84e23a0d82114319e2c5f3c2cd"
+        },
+        {
+          "runtime": "cli",
+          "path": "ja/FSharp.Core.resources.dll",
+          "bytes": 37160,
+          "sha256": "dd7f36036d906e991da5505b074ef889a603f449d3324750fda5f5445ba2854f"
+        },
+        {
+          "runtime": "cli",
+          "path": "ko/FSharp.Core.resources.dll",
+          "bytes": 36104,
+          "sha256": "0f3ef625e379577e3b60c15d8cc3759d3dc8840f99894282df1e702b4a166462"
+        },
+        {
+          "runtime": "cli",
+          "path": "pl/FSharp.Core.resources.dll",
+          "bytes": 35632,
+          "sha256": "755bab9fbd85e5e4b4771870c9c4d655e91e3ce39cc1c2735fe0bc7cec6b84c3"
+        },
+        {
+          "runtime": "cli",
+          "path": "pt-BR/FSharp.Core.resources.dll",
+          "bytes": 34096,
+          "sha256": "a4bbbdaabf2003a5fdff5f5bc4143c3fd4a064f2681fc481f449d4558074dc61"
+        },
+        {
+          "runtime": "cli",
+          "path": "ru/FSharp.Core.resources.dll",
+          "bytes": 41232,
+          "sha256": "a1133f9ab7e661803d1af0c2489626bd53ac33a11dfe891f5a02f3186f2f5d78"
+        },
+        {
+          "runtime": "cli",
+          "path": "tr/FSharp.Core.resources.dll",
+          "bytes": 34072,
+          "sha256": "6b0cba5139a86ee681909fdfcebac07c99afba3bfcff4fb8ab12b9c2112a0b31"
+        },
+        {
+          "runtime": "cli",
+          "path": "zh-Hans/FSharp.Core.resources.dll",
+          "bytes": 32552,
+          "sha256": "25f82f35a9234bcaab272921b0d50054ddb4a669d96c111907c9d31f5b18c121"
+        },
+        {
+          "runtime": "cli",
+          "path": "zh-Hant/FSharp.Core.resources.dll",
+          "bytes": 32032,
+          "sha256": "ac03ee7c4112c755705776c700033794586f980fe9476e6a13811a7153beabb8"
+        }
+      ],
+      "startingProjectFiles": [
+        {
+          "path": ".agentlang/store/CURRENT",
+          "bytes": 134,
+          "sha256": "552b35c609db456bbe64f8edb7025de60a15bf342e9e3cc67919f52485b98bcc"
+        },
+        {
+          "path": ".agentlang/store/manifests/f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7.json",
+          "bytes": 1647,
+          "sha256": "f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7"
+        },
+        {
+          "path": ".agentlang/store/objects/2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0.agent",
+          "bytes": 66,
+          "sha256": "2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0"
+        },
+        {
+          "path": ".agentlang/store/objects/737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e.agent",
+          "bytes": 570,
+          "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+        },
+        {
+          "path": ".agentlang/store/objects/8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416.agent",
+          "bytes": 65,
+          "sha256": "8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416"
+        },
+        {
+          "path": ".agentlang/store/objects/9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14.agent",
+          "bytes": 150,
+          "sha256": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14"
+        },
+        {
+          "path": ".agentlang/store/objects/cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7.agent",
+          "bytes": 66,
+          "sha256": "cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7"
+        },
+        {
+          "path": ".agentlang/store/objects/e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17.agent",
+          "bytes": 20,
+          "sha256": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17"
+        },
+        {
+          "path": ".agentlang/store/objects/ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb.agent",
+          "bytes": 66,
+          "sha256": "ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb"
+        },
+        {
+          "path": ".agentlang/store/WRITE.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "dictionary.agent",
+          "bytes": 570,
+          "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+        },
+        {
+          "path": "fixtures/flat-customer.agent",
+          "bytes": 506,
+          "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+        }
+      ],
+      "startingProjectInventorySha256": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424",
+      "startingStatePath": ".agentlang/business-policy-help-002/runs/flat-S06/starting-state.json",
+      "startingStateSha256": "607cc6eb7f836ba18548e8a31bff7021254917d8bfff83ca7452c1e71de9e9a0",
+      "sourceArtifacts": [
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Prepare-AuthoringHelpTrial.ps1",
+          "sourcePath": "scripts/Prepare-AuthoringHelpTrial.ps1",
+          "bytes": 6840,
+          "sha256": "5de6e4a4616c673e6c80c560b5b4e33cf3df6f80391bb6e390d9e0b46d22d1a6"
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Freeze-AuthoringHelpTrial.ps1",
+          "sourcePath": "scripts/Freeze-AuthoringHelpTrial.ps1",
+          "bytes": 24921,
+          "sha256": "19c2ac2b3e8e8d38a1ef1ef9c2b994024ce5ec364f46f3b7a0a4641c271c3336"
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Verify-AuthoringHelpTrial.ps1",
+          "sourcePath": "scripts/Verify-AuthoringHelpTrial.ps1",
+          "bytes": 88832,
+          "sha256": "8e9fd793757def4624bb59f14918cd4f5a257dd95192cb04c99fdfaa56db77f0"
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Verify-AuthoringHelpPreflight.ps1",
+          "sourcePath": "scripts/Verify-AuthoringHelpPreflight.ps1",
+          "bytes": 39669,
+          "sha256": "42139234cc8499200aeaa7cb883fbafeaa8848e2897f789435731f4d665e1320"
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Audit-AuthoringHelpTrace.ps1",
+          "sourcePath": "scripts/Audit-AuthoringHelpTrace.ps1",
+          "bytes": 33397,
+          "sha256": "5c91e5b47fd3877c53b7c2e624defd5c94446e555f9b30d06d32c5bb98ecd7fd"
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Prepare-BusinessPolicyTrial.ps1",
+          "sourcePath": "scripts/Prepare-BusinessPolicyTrial.ps1",
+          "bytes": 29618,
+          "sha256": "23af4c9536e72730d44a5cfbdcf70b05b17a1e35c83f841511f9e8bbc637c08a"
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Start-SubagentTrialHost.ps1",
+          "sourcePath": "scripts/Start-SubagentTrialHost.ps1",
+          "bytes": 77884,
+          "sha256": "d3b60698ef29cc6e7d9b42f37d9a298a311f409cb3f85112ca2a5dccf6148c4d"
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/acceptance.json",
+          "sourcePath": "experiments/AgentLang.SubagentTrials/business-policy-help-002/acceptance.json",
+          "bytes": 15931,
+          "sha256": "d58fceeec3b659aebc58daa1d708d5f16cb43d12996f291c1c78a377fcfb89ef"
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/acceptance-business-policy-001.json",
+          "sourcePath": "experiments/AgentLang.SubagentTrials/business-policy-001/acceptance.json",
+          "bytes": 17436,
+          "sha256": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf"
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/public-task-S06.json",
+          "sourcePath": "experiments/AgentLang.Benchmarks/task-bank/public/S06.json",
+          "bytes": 760,
+          "sha256": "11ce4abd6f37035862dd802e8e201260c9f78457dc510d6d150c99725ffcc180"
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/public-task-S07.json",
+          "sourcePath": "experiments/AgentLang.Benchmarks/task-bank/public/S07.json",
+          "bytes": 779,
+          "sha256": "f2a3b584fbec86f0395228fde31d561c240b9bc5d5a9a4a927042ea8a6111a04"
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/language-primer.md",
+          "sourcePath": "experiments/AgentLang.SubagentTrials/business-policy-help-002/language-primer.md",
+          "bytes": 3931,
+          "sha256": "7ca98f0c8c9a20a84076d2a6b62da7a36ac12959e17ec1890ec74f9cbf9b578e"
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/flat-customer.agent",
+          "sourcePath": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/flat-customer.agent",
+          "bytes": 506,
+          "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+        }
+      ]
+    },
+    "passed": false
+  },
+  "startedUtc": "2026-10-07T04:27:13.9059811Z",
+  "finishedUtc": "2026-10-07T04:27:18.7972753Z",
+  "verifierSha256": "8e9fd793757def4624bb59f14918cd4f5a257dd95192cb04c99fdfaa56db77f0",
+  "oracle": {
+    "path": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-help-002\\acceptance.json",
+    "sha256": "d58fceeec3b659aebc58daa1d708d5f16cb43d12996f291c1c78a377fcfb89ef",
+    "symbol": "customer.discount-basis-points",
+    "cases": 10,
+    "independentResults": [
+      {
+        "id": "kind-1",
+        "kind": "premium",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Int",
+          "value": "1000"
+        }
+      },
+      {
+        "id": "kind-2",
+        "kind": "regular",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Int",
+          "value": "0"
+        }
+      },
+      {
+        "id": "kind-3",
+        "kind": "Premium",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Int",
+          "value": "0"
+        }
+      },
+      {
+        "id": "kind-4",
+        "kind": "PREMIUM",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Int",
+          "value": "0"
+        }
+      },
+      {
+        "id": "kind-5",
+        "kind": "premium ",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Int",
+          "value": "0"
+        }
+      },
+      {
+        "id": "kind-6",
+        "kind": " premium",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Int",
+          "value": "0"
+        }
+      },
+      {
+        "id": "kind-7",
+        "kind": "\tpremium",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Int",
+          "value": "0"
+        }
+      },
+      {
+        "id": "kind-8",
+        "kind": "premium\n",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Int",
+          "value": "0"
+        }
+      },
+      {
+        "id": "kind-9",
+        "kind": "",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Int",
+          "value": "0"
+        }
+      },
+      {
+        "id": "kind-10",
+        "kind": "prémi um",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Int",
+          "value": "0"
+        }
+      }
+    ]
+  },
+  "behavior": {
+    "targetUsable": false,
+    "casesExpected": 10,
+    "casesExecuted": 0,
+    "casesRecorded": 0,
+    "cases": []
+  },
+  "project": {
+    "argumentPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\actors\\flat-S06",
+    "path": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\actors\\flat-S06",
+    "treeSha256": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424",
+    "filesBefore": [
+      {
+        "path": ".agentlang/store/CURRENT",
+        "sha256": "552b35c609db456bbe64f8edb7025de60a15bf342e9e3cc67919f52485b98bcc"
+      },
+      {
+        "path": ".agentlang/store/manifests/f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7.json",
+        "sha256": "f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7"
+      },
+      {
+        "path": ".agentlang/store/objects/2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0.agent",
+        "sha256": "2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0"
+      },
+      {
+        "path": ".agentlang/store/objects/737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e.agent",
+        "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+      },
+      {
+        "path": ".agentlang/store/objects/8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416.agent",
+        "sha256": "8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416"
+      },
+      {
+        "path": ".agentlang/store/objects/9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14.agent",
+        "sha256": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14"
+      },
+      {
+        "path": ".agentlang/store/objects/cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7.agent",
+        "sha256": "cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7"
+      },
+      {
+        "path": ".agentlang/store/objects/e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17.agent",
+        "sha256": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17"
+      },
+      {
+        "path": ".agentlang/store/objects/ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb.agent",
+        "sha256": "ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb"
+      },
+      {
+        "path": ".agentlang/store/WRITE.lock",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "dictionary.agent",
+        "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+      },
+      {
+        "path": "fixtures/flat-customer.agent",
+        "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+      }
+    ],
+    "filesAfter": [
+      {
+        "path": ".agentlang/store/CURRENT",
+        "sha256": "552b35c609db456bbe64f8edb7025de60a15bf342e9e3cc67919f52485b98bcc"
+      },
+      {
+        "path": ".agentlang/store/manifests/f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7.json",
+        "sha256": "f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7"
+      },
+      {
+        "path": ".agentlang/store/objects/2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0.agent",
+        "sha256": "2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0"
+      },
+      {
+        "path": ".agentlang/store/objects/737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e.agent",
+        "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+      },
+      {
+        "path": ".agentlang/store/objects/8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416.agent",
+        "sha256": "8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416"
+      },
+      {
+        "path": ".agentlang/store/objects/9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14.agent",
+        "sha256": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14"
+      },
+      {
+        "path": ".agentlang/store/objects/cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7.agent",
+        "sha256": "cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7"
+      },
+      {
+        "path": ".agentlang/store/objects/e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17.agent",
+        "sha256": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17"
+      },
+      {
+        "path": ".agentlang/store/objects/ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb.agent",
+        "sha256": "ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb"
+      },
+      {
+        "path": ".agentlang/store/WRITE.lock",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "dictionary.agent",
+        "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+      },
+      {
+        "path": "fixtures/flat-customer.agent",
+        "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+      }
+    ]
+  },
+  "outputTreeSha256": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424",
+  "startingProject": {
+    "argumentPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\runs\\flat-S06\\starting-project",
+    "path": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\runs\\flat-S06\\starting-project",
+    "state": {
+      "path": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\runs\\flat-S06\\starting-state.json",
+      "sha256": "607cc6eb7f836ba18548e8a31bff7021254917d8bfff83ca7452c1e71de9e9a0",
+      "data": {
+        "schemaVersion": 1,
+        "studyId": "business-policy-help-002",
+        "mode": "flat",
+        "taskId": "S06",
+        "sequenceIndex": 2,
+        "seed": {
+          "path": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\seeds\\flat\\project",
+          "inventorySha256": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424"
+        },
+        "sourceInputs": [
+          {
+            "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/flat-customer.agent",
+            "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+          }
+        ],
+        "runtime": {
+          "cliPath": "src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll",
+          "cliSha256": "e9098ca964e19fb4e34f47ff4cd04f9a389dcb01a990455f77301afb613f9002",
+          "businessPath": "experiments/AgentLang.Business/bin/Release/net9.0/AgentLang.Business.dll",
+          "businessSha256": "48837c07853194f2d8c5fa75b5f278e5fcef2db270ce42faa3a9251dff0007a4"
+        },
+        "previousAcceptance": null,
+        "project": {
+          "path": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\runs\\flat-S06\\starting-project",
+          "files": [
+            {
+              "path": ".agentlang/store/CURRENT",
+              "sha256": "552b35c609db456bbe64f8edb7025de60a15bf342e9e3cc67919f52485b98bcc"
+            },
+            {
+              "path": ".agentlang/store/manifests/f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7.json",
+              "sha256": "f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7"
+            },
+            {
+              "path": ".agentlang/store/objects/2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0.agent",
+              "sha256": "2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0"
+            },
+            {
+              "path": ".agentlang/store/objects/737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e.agent",
+              "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+            },
+            {
+              "path": ".agentlang/store/objects/8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416.agent",
+              "sha256": "8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416"
+            },
+            {
+              "path": ".agentlang/store/objects/9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14.agent",
+              "sha256": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14"
+            },
+            {
+              "path": ".agentlang/store/objects/cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7.agent",
+              "sha256": "cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7"
+            },
+            {
+              "path": ".agentlang/store/objects/e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17.agent",
+              "sha256": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17"
+            },
+            {
+              "path": ".agentlang/store/objects/ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb.agent",
+              "sha256": "ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb"
+            },
+            {
+              "path": ".agentlang/store/WRITE.lock",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "dictionary.agent",
+              "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+            },
+            {
+              "path": "fixtures/flat-customer.agent",
+              "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+            }
+          ],
+          "inventorySha256": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424"
+        },
+        "actor": {
+          "projectPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\actors\\flat-S06",
+          "files": [
+            {
+              "path": ".agentlang/store/CURRENT",
+              "sha256": "552b35c609db456bbe64f8edb7025de60a15bf342e9e3cc67919f52485b98bcc"
+            },
+            {
+              "path": ".agentlang/store/manifests/f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7.json",
+              "sha256": "f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7"
+            },
+            {
+              "path": ".agentlang/store/objects/2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0.agent",
+              "sha256": "2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0"
+            },
+            {
+              "path": ".agentlang/store/objects/737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e.agent",
+              "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+            },
+            {
+              "path": ".agentlang/store/objects/8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416.agent",
+              "sha256": "8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416"
+            },
+            {
+              "path": ".agentlang/store/objects/9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14.agent",
+              "sha256": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14"
+            },
+            {
+              "path": ".agentlang/store/objects/cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7.agent",
+              "sha256": "cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7"
+            },
+            {
+              "path": ".agentlang/store/objects/e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17.agent",
+              "sha256": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17"
+            },
+            {
+              "path": ".agentlang/store/objects/ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb.agent",
+              "sha256": "ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb"
+            },
+            {
+              "path": ".agentlang/store/WRITE.lock",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "dictionary.agent",
+              "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+            },
+            {
+              "path": "fixtures/flat-customer.agent",
+              "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+            }
+          ],
+          "inventorySha256": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424"
+        },
+        "preparation": {
+          "scriptPath": "scripts/Prepare-AuthoringHelpTrial.ps1",
+          "scriptSha256": "5de6e4a4616c673e6c80c560b5b4e33cf3df6f80391bb6e390d9e0b46d22d1a6",
+          "dependencyPath": "scripts/Prepare-BusinessPolicyTrial.ps1",
+          "dependencySha256": "23af4c9536e72730d44a5cfbdcf70b05b17a1e35c83f841511f9e8bbc637c08a",
+          "sourceRevision": "c380703fe18393d811ecb18a33a1bc59745d8b9b",
+          "dirty": false,
+          "seedSummary": {
+            "authoredWordCount": 0,
+            "typeCount": 6,
+            "testCount": 0
+          }
+        }
+      }
+    },
+    "preservation": {
+      "mode": "flat",
+      "checked": false,
+      "sourceWords": 0,
+      "nominalTypes": 0,
+      "unchanged": null,
+      "startingProjectPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\runs\\flat-S06\\starting-project",
+      "startingProjectFiles": [
+        {
+          "path": ".agentlang/store/CURRENT",
+          "sha256": "552b35c609db456bbe64f8edb7025de60a15bf342e9e3cc67919f52485b98bcc"
+        },
+        {
+          "path": ".agentlang/store/manifests/f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7.json",
+          "sha256": "f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7"
+        },
+        {
+          "path": ".agentlang/store/objects/2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0.agent",
+          "sha256": "2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0"
+        },
+        {
+          "path": ".agentlang/store/objects/737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e.agent",
+          "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+        },
+        {
+          "path": ".agentlang/store/objects/8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416.agent",
+          "sha256": "8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416"
+        },
+        {
+          "path": ".agentlang/store/objects/9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14.agent",
+          "sha256": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14"
+        },
+        {
+          "path": ".agentlang/store/objects/cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7.agent",
+          "sha256": "cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7"
+        },
+        {
+          "path": ".agentlang/store/objects/e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17.agent",
+          "sha256": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17"
+        },
+        {
+          "path": ".agentlang/store/objects/ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb.agent",
+          "sha256": "ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb"
+        },
+        {
+          "path": ".agentlang/store/WRITE.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "dictionary.agent",
+          "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+        },
+        {
+          "path": "fixtures/flat-customer.agent",
+          "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+        }
+      ]
+    }
+  },
+  "runtime": {
+    "cliDll": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+    "cliSha256": "e9098ca964e19fb4e34f47ff4cd04f9a389dcb01a990455f77301afb613f9002"
+  },
+  "reuse": {
+    "candidatePriorTaskSymbols": [],
+    "priorTaskSymbols": null,
+    "startingDictionaryTaskSymbols": null,
+    "directDependencies": [],
+    "transitiveDependencies": [],
+    "reusedPriorTaskSymbols": null,
+    "status": "independent flat task; no predecessor dictionary reuse is claimed"
+  },
+  "checks": [
+    {
+      "name": "mode is flat",
+      "passed": true,
+      "details": "flat"
+    },
+    {
+      "name": "task id is supported by the fresh study",
+      "passed": true,
+      "details": "S06"
+    },
+    {
+      "name": "versioned acceptance corpus exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-help-002\\acceptance.json"
+    },
+    {
+      "name": "acceptance default Instant is a JSON string",
+      "passed": true
+    },
+    {
+      "name": "acceptance corpus study and canonical sequence match",
+      "passed": true,
+      "details": {
+        "studyId": "business-policy-help-002",
+        "sequence": [
+          "S01",
+          "S06",
+          "S07"
+        ]
+      }
+    },
+    {
+      "name": "acceptance records the unchanged 001 predecessor hash",
+      "passed": true,
+      "details": {
+        "expected": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+        "actual": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf"
+      }
+    },
+    {
+      "name": "acceptance task has the required strong signature",
+      "passed": true,
+      "details": {
+        "outputs": [
+          "Int"
+        ],
+        "symbol": "customer.discount-basis-points",
+        "inputs": [
+          "Customer"
+        ]
+      }
+    },
+    {
+      "name": "acceptance case count matches the unchanged corpus",
+      "passed": true,
+      "details": {
+        "expected": 10,
+        "actual": 10
+      }
+    },
+    {
+      "name": "acceptance case ids are nonempty and unique",
+      "passed": true
+    },
+    {
+      "name": "default Instant is canonical UTC round-trip text",
+      "passed": true,
+      "details": "2026-01-01T12:00:00.0000000+00:00"
+    },
+    {
+      "name": "all acceptance values match independent BigInteger oracle",
+      "passed": true
+    },
+    {
+      "name": "actor project directory exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\actors\\flat-S06"
+    },
+    {
+      "name": "immutable starting project exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\runs\\flat-S06\\starting-project"
+    },
+    {
+      "name": "evidence file is outside actor and starting projects",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\runs\\flat-S06\\tampered-pin-control.json"
+    },
+    {
+      "name": "evidence output destination is unused and will not overwrite a prior report",
+      "passed": true,
+      "details": {
+        "selected": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\runs\\flat-S06\\tampered-pin-control.json",
+        "collision": false,
+        "requested": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\runs\\flat-S06\\tampered-pin-control.json"
+      }
+    },
+    {
+      "name": "fresh pinned AgentLang CLI exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll"
+    },
+    {
+      "name": "starting-state schema and study match",
+      "passed": true
+    },
+    {
+      "name": "starting-state sequence index matches canonical order",
+      "passed": true,
+      "details": "expected one-based 2; actual 2"
+    },
+    {
+      "name": "starting-state project and actor paths match supplied run",
+      "passed": true,
+      "details": {
+        "actor": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\actors\\flat-S06",
+        "project": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\runs\\flat-S06\\starting-project"
+      }
+    },
+    {
+      "name": "starting-state pins CLI and Business runtime artifacts",
+      "passed": true
+    },
+    {
+      "name": "starting-state has source input hashes",
+      "passed": true
+    },
+    {
+      "name": "starting-state includes project hash rows",
+      "passed": true
+    },
+    {
+      "name": "starting-state project file hashes match immutable start",
+      "passed": true,
+      "details": [
+        {
+          "path": ".agentlang/store/CURRENT",
+          "expected": "552b35c609db456bbe64f8edb7025de60a15bf342e9e3cc67919f52485b98bcc",
+          "actual": "552b35c609db456bbe64f8edb7025de60a15bf342e9e3cc67919f52485b98bcc",
+          "passed": true
+        },
+        {
+          "path": ".agentlang/store/manifests/f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7.json",
+          "expected": "f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7",
+          "actual": "f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7",
+          "passed": true
+        },
+        {
+          "path": ".agentlang/store/objects/2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0.agent",
+          "expected": "2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0",
+          "actual": "2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0",
+          "passed": true
+        },
+        {
+          "path": ".agentlang/store/objects/737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e.agent",
+          "expected": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e",
+          "actual": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e",
+          "passed": true
+        },
+        {
+          "path": ".agentlang/store/objects/8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416.agent",
+          "expected": "8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416",
+          "actual": "8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416",
+          "passed": true
+        },
+        {
+          "path": ".agentlang/store/objects/9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14.agent",
+          "expected": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14",
+          "actual": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14",
+          "passed": true
+        },
+        {
+          "path": ".agentlang/store/objects/cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7.agent",
+          "expected": "cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7",
+          "actual": "cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7",
+          "passed": true
+        },
+        {
+          "path": ".agentlang/store/objects/e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17.agent",
+          "expected": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17",
+          "actual": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17",
+          "passed": true
+        },
+        {
+          "path": ".agentlang/store/objects/ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb.agent",
+          "expected": "ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb",
+          "actual": "ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb",
+          "passed": true
+        },
+        {
+          "path": ".agentlang/store/WRITE.lock",
+          "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "actual": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "passed": true
+        },
+        {
+          "path": "dictionary.agent",
+          "expected": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e",
+          "actual": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e",
+          "passed": true
+        },
+        {
+          "path": "fixtures/flat-customer.agent",
+          "expected": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d",
+          "actual": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "starting-state rows cover the complete project inventory",
+      "passed": true,
+      "details": {
+        "actual": 12,
+        "listed": 12
+      }
+    },
+    {
+      "name": "starting-state project inventory hash matches immutable start",
+      "passed": true,
+      "details": {
+        "expected": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424",
+        "actual": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424"
+      }
+    },
+    {
+      "name": "prepared actor inventory matches immutable start snapshot",
+      "passed": true
+    },
+    {
+      "name": "starting-state seed, source, and runtime hashes match",
+      "passed": true,
+      "details": [
+        {
+          "kind": "sourceInput",
+          "path": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-help-002\\artifacts\\flat-customer.agent",
+          "expected": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d",
+          "actual": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d",
+          "passed": true
+        },
+        {
+          "kind": "seed",
+          "path": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\seeds\\flat\\project",
+          "expected": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424",
+          "actual": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424",
+          "passed": true
+        },
+        {
+          "kind": "runtime",
+          "path": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+          "expected": "e9098ca964e19fb4e34f47ff4cd04f9a389dcb01a990455f77301afb613f9002",
+          "actual": "e9098ca964e19fb4e34f47ff4cd04f9a389dcb01a990455f77301afb613f9002",
+          "passed": true
+        },
+        {
+          "kind": "runtime",
+          "path": "D:\\code\\AgentLang\\experiments\\AgentLang.Business\\bin\\Release\\net9.0\\AgentLang.Business.dll",
+          "expected": "48837c07853194f2d8c5fa75b5f278e5fcef2db270ce42faa3a9251dff0007a4",
+          "actual": "48837c07853194f2d8c5fa75b5f278e5fcef2db270ce42faa3a9251dff0007a4",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "optional prior acceptance absent",
+      "passed": true,
+      "details": "No starting-state record was supplied for this isolated control or task."
+    },
+    {
+      "name": "provided CLI matches starting-state pin",
+      "passed": true,
+      "details": {
+        "pinned": "e9098ca964e19fb4e34f47ff4cd04f9a389dcb01a990455f77301afb613f9002",
+        "provided": "e9098ca964e19fb4e34f47ff4cd04f9a389dcb01a990455f77301afb613f9002"
+      }
+    },
+    {
+      "name": "frozen pin schema, study, mode, task, and sequence match",
+      "passed": true
+    },
+    {
+      "name": "frozen pin actor project path matches argument",
+      "passed": true,
+      "details": {
+        "expected": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\actors\\flat-S06",
+        "actual": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\actors\\flat-S06"
+      }
+    },
+    {
+      "name": "frozen run starting-state exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\runs\\flat-S06\\starting-state.json"
+    },
+    {
+      "name": "frozen starting-state hash matches pin",
+      "passed": true,
+      "details": {
+        "expected": "607cc6eb7f836ba18548e8a31bff7021254917d8bfff83ca7452c1e71de9e9a0",
+        "actual": "607cc6eb7f836ba18548e8a31bff7021254917d8bfff83ca7452c1e71de9e9a0"
+      }
+    },
+    {
+      "name": "frozen actor prompt exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\runs\\flat-S06\\prompt.txt"
+    },
+    {
+      "name": "frozen prompt hash matches pin",
+      "passed": true,
+      "details": {
+        "expected": "937fb3ecfecb5713a077190d895cbe2d79b9c43002dd49b3dff372f8ee7faed5",
+        "actual": "937fb3ecfecb5713a077190d895cbe2d79b9c43002dd49b3dff372f8ee7faed5"
+      }
+    },
+    {
+      "name": "frozen prompt byte count matches pin",
+      "passed": true
+    },
+    {
+      "name": "frozen oracle hash matches acceptance corpus",
+      "passed": true
+    },
+    {
+      "name": "frozen verifier path matches versioned verifier",
+      "passed": true,
+      "details": {
+        "expected": "D:\\code\\AgentLang\\scripts\\Verify-AuthoringHelpTrial.ps1",
+        "actual": "scripts/Verify-AuthoringHelpTrial.ps1"
+      }
+    },
+    {
+      "name": "frozen verifier hash matches current verifier",
+      "passed": true
+    },
+    {
+      "name": "frozen preflight path and hash match the versioned preflight",
+      "passed": true,
+      "details": {
+        "expected": "D:\\code\\AgentLang\\scripts\\Verify-AuthoringHelpPreflight.ps1",
+        "sha256": "42139234cc8499200aeaa7cb883fbafeaa8848e2897f789435731f4d665e1320",
+        "actual": "scripts/Verify-AuthoringHelpPreflight.ps1"
+      }
+    },
+    {
+      "name": "frozen host hash matches current protocol host",
+      "passed": true
+    },
+    {
+      "name": "frozen actor allowlist exactly matches the reviewed help-enabled operation set",
+      "passed": true,
+      "details": [
+        "callers",
+        "commit",
+        "context",
+        "define",
+        "dependencies",
+        "describe",
+        "diff",
+        "effects",
+        "eval",
+        "example",
+        "examples",
+        "failed-tests",
+        "graph",
+        "help",
+        "history",
+        "ir",
+        "replace-word",
+        "search",
+        "search-dependency",
+        "search-output",
+        "search-type",
+        "source",
+        "task.begin",
+        "task.commit",
+        "task.log",
+        "task.status",
+        "test",
+        "test-all",
+        "tests",
+        "transitive-callers",
+        "transitive-dependencies",
+        "type-of",
+        "words"
+      ]
+    },
+    {
+      "name": "frozen actor model, reasoning, and fork settings match the trial",
+      "passed": false,
+      "details": {
+        "reasoningEffort": "max",
+        "model": "invalid-control-model",
+        "forkTurns": "none"
+      }
+    },
+    {
+      "name": "frozen host settings retain raw-protocol limits and no cumulative inspection budget",
+      "passed": true
+    },
+    {
+      "name": "frozen source revision is a committed clean-source snapshot",
+      "passed": true,
+      "details": {
+        "pinned": "c380703fe18393d811ecb18a33a1bc59745d8b9b",
+        "resolves": true,
+        "pinDirty": false
+      }
+    },
+    {
+      "name": "frozen starting project file inventory matches",
+      "passed": true,
+      "details": {
+        "files": 12
+      }
+    },
+    {
+      "name": "frozen launch command matches pinned host, project, CLI, and allowlist settings",
+      "passed": true,
+      "details": {
+        "expected": "& 'D:\\code\\AgentLang\\scripts\\Start-SubagentTrialHost.ps1' -CliDll 'D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll' -ProjectPath 'D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\actors\\flat-S06' -TracePath 'D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\runs\\flat-S06\\trace.jsonl' -AllowedOperations @('callers','commit','context','define','dependencies','describe','diff','effects','eval','example','examples','failed-tests','graph','help','history','ir','replace-word','search','search-dependency','search-output','search-type','source','task.begin','task.commit','task.log','task.status','test','test-all','tests','transitive-callers','transitive-dependencies','type-of','words') -Profile agentlang -Capabilities @() -ClockValue '2000-01-01T00:00:00Z' -MaxRequestBytes 262144 -MaxResponseBytes 524288 -ExchangeTimeoutMilliseconds 120000 -MaxExchanges 100",
+        "actual": "& 'D:\\code\\AgentLang\\scripts\\Start-SubagentTrialHost.ps1' -CliDll 'D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll' -ProjectPath 'D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\actors\\flat-S06' -TracePath 'D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\runs\\flat-S06\\trace.jsonl' -AllowedOperations @('callers','commit','context','define','dependencies','describe','diff','effects','eval','example','examples','failed-tests','graph','help','history','ir','replace-word','search','search-dependency','search-output','search-type','source','task.begin','task.commit','task.log','task.status','test','test-all','tests','transitive-callers','transitive-dependencies','type-of','words') -Profile agentlang -Capabilities @() -ClockValue '2000-01-01T00:00:00Z' -MaxRequestBytes 262144 -MaxResponseBytes 524288 -ExchangeTimeoutMilliseconds 120000 -MaxExchanges 100"
+      }
+    },
+    {
+      "name": "frozen CLI and Business runtime roots match starting-state pins",
+      "passed": true,
+      "details": {
+        "businessDll": "D:\\code\\AgentLang\\experiments\\AgentLang.Business\\bin\\Release\\net9.0\\AgentLang.Business.dll",
+        "cliDll": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+        "cliDirectory": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0",
+        "startingBusinessSha256": "48837c07853194f2d8c5fa75b5f278e5fcef2db270ce42faa3a9251dff0007a4",
+        "businessDirectory": "D:\\code\\AgentLang\\experiments\\AgentLang.Business\\bin\\Release\\net9.0",
+        "startingBusinessPath": "experiments/AgentLang.Business/bin/Release/net9.0/AgentLang.Business.dll"
+      }
+    },
+    {
+      "name": "frozen CLI and Business runtime file inventories match",
+      "passed": true,
+      "details": {
+        "files": 26,
+        "cliDirectory": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0",
+        "businessDirectory": "D:\\code\\AgentLang\\experiments\\AgentLang.Business\\bin\\Release\\net9.0"
+      }
+    },
+    {
+      "name": "frozen source artifact inventory contains every required trial input exactly once",
+      "passed": true,
+      "details": {
+        "expected": [
+          "scripts/Prepare-AuthoringHelpTrial.ps1",
+          "scripts/Freeze-AuthoringHelpTrial.ps1",
+          "scripts/Verify-AuthoringHelpTrial.ps1",
+          "scripts/Verify-AuthoringHelpPreflight.ps1",
+          "scripts/Audit-AuthoringHelpTrace.ps1",
+          "scripts/Prepare-BusinessPolicyTrial.ps1",
+          "scripts/Start-SubagentTrialHost.ps1",
+          "experiments/AgentLang.SubagentTrials/business-policy-help-002/acceptance.json",
+          "experiments/AgentLang.SubagentTrials/business-policy-001/acceptance.json",
+          "experiments/AgentLang.Benchmarks/task-bank/public/S06.json",
+          "experiments/AgentLang.Benchmarks/task-bank/public/S07.json",
+          "experiments/AgentLang.SubagentTrials/business-policy-help-002/language-primer.md",
+          "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/flat-customer.agent"
+        ],
+        "missing": [],
+        "actual": [
+          {
+            "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Prepare-AuthoringHelpTrial.ps1",
+            "sourcePath": "scripts/Prepare-AuthoringHelpTrial.ps1"
+          },
+          {
+            "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Freeze-AuthoringHelpTrial.ps1",
+            "sourcePath": "scripts/Freeze-AuthoringHelpTrial.ps1"
+          },
+          {
+            "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Verify-AuthoringHelpTrial.ps1",
+            "sourcePath": "scripts/Verify-AuthoringHelpTrial.ps1"
+          },
+          {
+            "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Verify-AuthoringHelpPreflight.ps1",
+            "sourcePath": "scripts/Verify-AuthoringHelpPreflight.ps1"
+          },
+          {
+            "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Audit-AuthoringHelpTrace.ps1",
+            "sourcePath": "scripts/Audit-AuthoringHelpTrace.ps1"
+          },
+          {
+            "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Prepare-BusinessPolicyTrial.ps1",
+            "sourcePath": "scripts/Prepare-BusinessPolicyTrial.ps1"
+          },
+          {
+            "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Start-SubagentTrialHost.ps1",
+            "sourcePath": "scripts/Start-SubagentTrialHost.ps1"
+          },
+          {
+            "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/acceptance.json",
+            "sourcePath": "experiments/AgentLang.SubagentTrials/business-policy-help-002/acceptance.json"
+          },
+          {
+            "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/acceptance-business-policy-001.json",
+            "sourcePath": "experiments/AgentLang.SubagentTrials/business-policy-001/acceptance.json"
+          },
+          {
+            "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/public-task-S06.json",
+            "sourcePath": "experiments/AgentLang.Benchmarks/task-bank/public/S06.json"
+          },
+          {
+            "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/public-task-S07.json",
+            "sourcePath": "experiments/AgentLang.Benchmarks/task-bank/public/S07.json"
+          },
+          {
+            "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/language-primer.md",
+            "sourcePath": "experiments/AgentLang.SubagentTrials/business-policy-help-002/language-primer.md"
+          },
+          {
+            "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/flat-customer.agent",
+            "sourcePath": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/flat-customer.agent"
+          }
+        ]
+      }
+    },
+    {
+      "name": "all frozen source artifact snapshots and versioned inputs match working copy and commit",
+      "passed": true,
+      "details": [
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Prepare-AuthoringHelpTrial.ps1",
+          "sourcePath": "scripts/Prepare-AuthoringHelpTrial.ps1",
+          "expectedSha256": "5de6e4a4616c673e6c80c560b5b4e33cf3df6f80391bb6e390d9e0b46d22d1a6",
+          "workingSnapshotSha256": "5de6e4a4616c673e6c80c560b5b4e33cf3df6f80391bb6e390d9e0b46d22d1a6",
+          "workingSourceSha256": "5de6e4a4616c673e6c80c560b5b4e33cf3df6f80391bb6e390d9e0b46d22d1a6",
+          "sourceRevisionSnapshotSha256": [
+            {},
+            "5de6e4a4616c673e6c80c560b5b4e33cf3df6f80391bb6e390d9e0b46d22d1a6"
+          ],
+          "sourceRevisionSourceSha256": [
+            {},
+            "5de6e4a4616c673e6c80c560b5b4e33cf3df6f80391bb6e390d9e0b46d22d1a6"
+          ],
+          "bytes": 6840,
+          "passed": true
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Freeze-AuthoringHelpTrial.ps1",
+          "sourcePath": "scripts/Freeze-AuthoringHelpTrial.ps1",
+          "expectedSha256": "19c2ac2b3e8e8d38a1ef1ef9c2b994024ce5ec364f46f3b7a0a4641c271c3336",
+          "workingSnapshotSha256": "19c2ac2b3e8e8d38a1ef1ef9c2b994024ce5ec364f46f3b7a0a4641c271c3336",
+          "workingSourceSha256": "19c2ac2b3e8e8d38a1ef1ef9c2b994024ce5ec364f46f3b7a0a4641c271c3336",
+          "sourceRevisionSnapshotSha256": [
+            {},
+            "19c2ac2b3e8e8d38a1ef1ef9c2b994024ce5ec364f46f3b7a0a4641c271c3336"
+          ],
+          "sourceRevisionSourceSha256": [
+            {},
+            "19c2ac2b3e8e8d38a1ef1ef9c2b994024ce5ec364f46f3b7a0a4641c271c3336"
+          ],
+          "bytes": 24921,
+          "passed": true
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Verify-AuthoringHelpTrial.ps1",
+          "sourcePath": "scripts/Verify-AuthoringHelpTrial.ps1",
+          "expectedSha256": "8e9fd793757def4624bb59f14918cd4f5a257dd95192cb04c99fdfaa56db77f0",
+          "workingSnapshotSha256": "8e9fd793757def4624bb59f14918cd4f5a257dd95192cb04c99fdfaa56db77f0",
+          "workingSourceSha256": "8e9fd793757def4624bb59f14918cd4f5a257dd95192cb04c99fdfaa56db77f0",
+          "sourceRevisionSnapshotSha256": [
+            {},
+            "8e9fd793757def4624bb59f14918cd4f5a257dd95192cb04c99fdfaa56db77f0"
+          ],
+          "sourceRevisionSourceSha256": [
+            {},
+            "8e9fd793757def4624bb59f14918cd4f5a257dd95192cb04c99fdfaa56db77f0"
+          ],
+          "bytes": 88832,
+          "passed": true
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Verify-AuthoringHelpPreflight.ps1",
+          "sourcePath": "scripts/Verify-AuthoringHelpPreflight.ps1",
+          "expectedSha256": "42139234cc8499200aeaa7cb883fbafeaa8848e2897f789435731f4d665e1320",
+          "workingSnapshotSha256": "42139234cc8499200aeaa7cb883fbafeaa8848e2897f789435731f4d665e1320",
+          "workingSourceSha256": "42139234cc8499200aeaa7cb883fbafeaa8848e2897f789435731f4d665e1320",
+          "sourceRevisionSnapshotSha256": [
+            {},
+            "42139234cc8499200aeaa7cb883fbafeaa8848e2897f789435731f4d665e1320"
+          ],
+          "sourceRevisionSourceSha256": [
+            {},
+            "42139234cc8499200aeaa7cb883fbafeaa8848e2897f789435731f4d665e1320"
+          ],
+          "bytes": 39669,
+          "passed": true
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Audit-AuthoringHelpTrace.ps1",
+          "sourcePath": "scripts/Audit-AuthoringHelpTrace.ps1",
+          "expectedSha256": "5c91e5b47fd3877c53b7c2e624defd5c94446e555f9b30d06d32c5bb98ecd7fd",
+          "workingSnapshotSha256": "5c91e5b47fd3877c53b7c2e624defd5c94446e555f9b30d06d32c5bb98ecd7fd",
+          "workingSourceSha256": "5c91e5b47fd3877c53b7c2e624defd5c94446e555f9b30d06d32c5bb98ecd7fd",
+          "sourceRevisionSnapshotSha256": [
+            {},
+            "5c91e5b47fd3877c53b7c2e624defd5c94446e555f9b30d06d32c5bb98ecd7fd"
+          ],
+          "sourceRevisionSourceSha256": [
+            {},
+            "5c91e5b47fd3877c53b7c2e624defd5c94446e555f9b30d06d32c5bb98ecd7fd"
+          ],
+          "bytes": 33397,
+          "passed": true
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Prepare-BusinessPolicyTrial.ps1",
+          "sourcePath": "scripts/Prepare-BusinessPolicyTrial.ps1",
+          "expectedSha256": "23af4c9536e72730d44a5cfbdcf70b05b17a1e35c83f841511f9e8bbc637c08a",
+          "workingSnapshotSha256": "23af4c9536e72730d44a5cfbdcf70b05b17a1e35c83f841511f9e8bbc637c08a",
+          "workingSourceSha256": "23af4c9536e72730d44a5cfbdcf70b05b17a1e35c83f841511f9e8bbc637c08a",
+          "sourceRevisionSnapshotSha256": [
+            {},
+            "23af4c9536e72730d44a5cfbdcf70b05b17a1e35c83f841511f9e8bbc637c08a"
+          ],
+          "sourceRevisionSourceSha256": [
+            {},
+            "23af4c9536e72730d44a5cfbdcf70b05b17a1e35c83f841511f9e8bbc637c08a"
+          ],
+          "bytes": 29618,
+          "passed": true
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Start-SubagentTrialHost.ps1",
+          "sourcePath": "scripts/Start-SubagentTrialHost.ps1",
+          "expectedSha256": "d3b60698ef29cc6e7d9b42f37d9a298a311f409cb3f85112ca2a5dccf6148c4d",
+          "workingSnapshotSha256": "d3b60698ef29cc6e7d9b42f37d9a298a311f409cb3f85112ca2a5dccf6148c4d",
+          "workingSourceSha256": "d3b60698ef29cc6e7d9b42f37d9a298a311f409cb3f85112ca2a5dccf6148c4d",
+          "sourceRevisionSnapshotSha256": [
+            {},
+            "d3b60698ef29cc6e7d9b42f37d9a298a311f409cb3f85112ca2a5dccf6148c4d"
+          ],
+          "sourceRevisionSourceSha256": [
+            {},
+            "d3b60698ef29cc6e7d9b42f37d9a298a311f409cb3f85112ca2a5dccf6148c4d"
+          ],
+          "bytes": 77884,
+          "passed": true
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/acceptance.json",
+          "sourcePath": "experiments/AgentLang.SubagentTrials/business-policy-help-002/acceptance.json",
+          "expectedSha256": "d58fceeec3b659aebc58daa1d708d5f16cb43d12996f291c1c78a377fcfb89ef",
+          "workingSnapshotSha256": "d58fceeec3b659aebc58daa1d708d5f16cb43d12996f291c1c78a377fcfb89ef",
+          "workingSourceSha256": "d58fceeec3b659aebc58daa1d708d5f16cb43d12996f291c1c78a377fcfb89ef",
+          "sourceRevisionSnapshotSha256": [
+            {},
+            "d58fceeec3b659aebc58daa1d708d5f16cb43d12996f291c1c78a377fcfb89ef"
+          ],
+          "sourceRevisionSourceSha256": [
+            {},
+            "d58fceeec3b659aebc58daa1d708d5f16cb43d12996f291c1c78a377fcfb89ef"
+          ],
+          "bytes": 15931,
+          "passed": true
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/acceptance-business-policy-001.json",
+          "sourcePath": "experiments/AgentLang.SubagentTrials/business-policy-001/acceptance.json",
+          "expectedSha256": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+          "workingSnapshotSha256": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+          "workingSourceSha256": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+          "sourceRevisionSnapshotSha256": [
+            {},
+            "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf"
+          ],
+          "sourceRevisionSourceSha256": [
+            {},
+            "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf"
+          ],
+          "bytes": 17436,
+          "passed": true
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/public-task-S06.json",
+          "sourcePath": "experiments/AgentLang.Benchmarks/task-bank/public/S06.json",
+          "expectedSha256": "11ce4abd6f37035862dd802e8e201260c9f78457dc510d6d150c99725ffcc180",
+          "workingSnapshotSha256": "11ce4abd6f37035862dd802e8e201260c9f78457dc510d6d150c99725ffcc180",
+          "workingSourceSha256": "11ce4abd6f37035862dd802e8e201260c9f78457dc510d6d150c99725ffcc180",
+          "sourceRevisionSnapshotSha256": [
+            {},
+            "11ce4abd6f37035862dd802e8e201260c9f78457dc510d6d150c99725ffcc180"
+          ],
+          "sourceRevisionSourceSha256": [
+            {},
+            "11ce4abd6f37035862dd802e8e201260c9f78457dc510d6d150c99725ffcc180"
+          ],
+          "bytes": 760,
+          "passed": true
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/public-task-S07.json",
+          "sourcePath": "experiments/AgentLang.Benchmarks/task-bank/public/S07.json",
+          "expectedSha256": "f2a3b584fbec86f0395228fde31d561c240b9bc5d5a9a4a927042ea8a6111a04",
+          "workingSnapshotSha256": "f2a3b584fbec86f0395228fde31d561c240b9bc5d5a9a4a927042ea8a6111a04",
+          "workingSourceSha256": "f2a3b584fbec86f0395228fde31d561c240b9bc5d5a9a4a927042ea8a6111a04",
+          "sourceRevisionSnapshotSha256": [
+            {},
+            "f2a3b584fbec86f0395228fde31d561c240b9bc5d5a9a4a927042ea8a6111a04"
+          ],
+          "sourceRevisionSourceSha256": [
+            {},
+            "f2a3b584fbec86f0395228fde31d561c240b9bc5d5a9a4a927042ea8a6111a04"
+          ],
+          "bytes": 779,
+          "passed": true
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/language-primer.md",
+          "sourcePath": "experiments/AgentLang.SubagentTrials/business-policy-help-002/language-primer.md",
+          "expectedSha256": "7ca98f0c8c9a20a84076d2a6b62da7a36ac12959e17ec1890ec74f9cbf9b578e",
+          "workingSnapshotSha256": "7ca98f0c8c9a20a84076d2a6b62da7a36ac12959e17ec1890ec74f9cbf9b578e",
+          "workingSourceSha256": "7ca98f0c8c9a20a84076d2a6b62da7a36ac12959e17ec1890ec74f9cbf9b578e",
+          "sourceRevisionSnapshotSha256": [
+            {},
+            "7ca98f0c8c9a20a84076d2a6b62da7a36ac12959e17ec1890ec74f9cbf9b578e"
+          ],
+          "sourceRevisionSourceSha256": [
+            {},
+            "7ca98f0c8c9a20a84076d2a6b62da7a36ac12959e17ec1890ec74f9cbf9b578e"
+          ],
+          "bytes": 3931,
+          "passed": true
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/flat-customer.agent",
+          "sourcePath": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/flat-customer.agent",
+          "expectedSha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d",
+          "workingSnapshotSha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d",
+          "workingSourceSha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d",
+          "sourceRevisionSnapshotSha256": [
+            {},
+            "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+          ],
+          "sourceRevisionSourceSha256": [
+            {},
+            "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+          ],
+          "bytes": 506,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "frozen starting state was prepared by the pinned clean trial scripts",
+      "passed": true,
+      "details": {
+        "sourceRevision": "c380703fe18393d811ecb18a33a1bc59745d8b9b",
+        "seedSummaryPassed": true,
+        "preparation": {
+          "scriptPath": "scripts/Prepare-AuthoringHelpTrial.ps1",
+          "scriptSha256": "5de6e4a4616c673e6c80c560b5b4e33cf3df6f80391bb6e390d9e0b46d22d1a6",
+          "dependencyPath": "scripts/Prepare-BusinessPolicyTrial.ps1",
+          "dependencySha256": "23af4c9536e72730d44a5cfbdcf70b05b17a1e35c83f841511f9e8bbc637c08a",
+          "sourceRevision": "c380703fe18393d811ecb18a33a1bc59745d8b9b",
+          "dirty": false,
+          "seedSummary": {
+            "authoredWordCount": 0,
+            "typeCount": 6,
+            "testCount": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "required frozen provenance is valid before execution",
+      "passed": false,
+      "details": "Frozen starting-state, runtime, source, prompt, allowlist, or verifier provenance did not validate; no CLI evaluation is allowed."
+    },
+    {
+      "name": "safe executable target and independent oracle are available for behavior",
+      "passed": false,
+      "details": {
+        "oracleUsable": true,
+        "safetyStop": "Frozen starting-state, runtime, source, prompt, allowlist, or verifier provenance did not validate; no CLI evaluation is allowed.",
+        "targetUsable": false
+      }
+    },
+    {
+      "name": "actor project remains unchanged by verification",
+      "passed": true,
+      "details": {
+        "before": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424",
+        "after": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424"
+      }
+    }
+  ],
+  "metadataChecks": [
+    {
+      "name": "mode is flat",
+      "passed": true,
+      "details": "flat"
+    },
+    {
+      "name": "task id is supported by the fresh study",
+      "passed": true,
+      "details": "S06"
+    },
+    {
+      "name": "versioned acceptance corpus exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-help-002\\acceptance.json"
+    },
+    {
+      "name": "acceptance default Instant is a JSON string",
+      "passed": true
+    },
+    {
+      "name": "acceptance corpus study and canonical sequence match",
+      "passed": true,
+      "details": {
+        "studyId": "business-policy-help-002",
+        "sequence": [
+          "S01",
+          "S06",
+          "S07"
+        ]
+      }
+    },
+    {
+      "name": "acceptance records the unchanged 001 predecessor hash",
+      "passed": true,
+      "details": {
+        "expected": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+        "actual": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf"
+      }
+    },
+    {
+      "name": "acceptance task has the required strong signature",
+      "passed": true,
+      "details": {
+        "outputs": [
+          "Int"
+        ],
+        "symbol": "customer.discount-basis-points",
+        "inputs": [
+          "Customer"
+        ]
+      }
+    },
+    {
+      "name": "acceptance case count matches the unchanged corpus",
+      "passed": true,
+      "details": {
+        "expected": 10,
+        "actual": 10
+      }
+    },
+    {
+      "name": "acceptance case ids are nonempty and unique",
+      "passed": true
+    },
+    {
+      "name": "default Instant is canonical UTC round-trip text",
+      "passed": true,
+      "details": "2026-01-01T12:00:00.0000000+00:00"
+    },
+    {
+      "name": "all acceptance values match independent BigInteger oracle",
+      "passed": true
+    },
+    {
+      "name": "actor project directory exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\actors\\flat-S06"
+    },
+    {
+      "name": "immutable starting project exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\runs\\flat-S06\\starting-project"
+    },
+    {
+      "name": "evidence file is outside actor and starting projects",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\runs\\flat-S06\\tampered-pin-control.json"
+    },
+    {
+      "name": "evidence output destination is unused and will not overwrite a prior report",
+      "passed": true,
+      "details": {
+        "selected": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\runs\\flat-S06\\tampered-pin-control.json",
+        "collision": false,
+        "requested": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\runs\\flat-S06\\tampered-pin-control.json"
+      }
+    },
+    {
+      "name": "fresh pinned AgentLang CLI exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll"
+    },
+    {
+      "name": "starting-state schema and study match",
+      "passed": true
+    },
+    {
+      "name": "starting-state sequence index matches canonical order",
+      "passed": true,
+      "details": "expected one-based 2; actual 2"
+    },
+    {
+      "name": "starting-state project and actor paths match supplied run",
+      "passed": true,
+      "details": {
+        "actor": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\actors\\flat-S06",
+        "project": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\runs\\flat-S06\\starting-project"
+      }
+    },
+    {
+      "name": "starting-state pins CLI and Business runtime artifacts",
+      "passed": true
+    },
+    {
+      "name": "starting-state has source input hashes",
+      "passed": true
+    },
+    {
+      "name": "starting-state includes project hash rows",
+      "passed": true
+    },
+    {
+      "name": "starting-state project file hashes match immutable start",
+      "passed": true,
+      "details": [
+        {
+          "path": ".agentlang/store/CURRENT",
+          "expected": "552b35c609db456bbe64f8edb7025de60a15bf342e9e3cc67919f52485b98bcc",
+          "actual": "552b35c609db456bbe64f8edb7025de60a15bf342e9e3cc67919f52485b98bcc",
+          "passed": true
+        },
+        {
+          "path": ".agentlang/store/manifests/f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7.json",
+          "expected": "f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7",
+          "actual": "f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7",
+          "passed": true
+        },
+        {
+          "path": ".agentlang/store/objects/2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0.agent",
+          "expected": "2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0",
+          "actual": "2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0",
+          "passed": true
+        },
+        {
+          "path": ".agentlang/store/objects/737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e.agent",
+          "expected": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e",
+          "actual": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e",
+          "passed": true
+        },
+        {
+          "path": ".agentlang/store/objects/8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416.agent",
+          "expected": "8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416",
+          "actual": "8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416",
+          "passed": true
+        },
+        {
+          "path": ".agentlang/store/objects/9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14.agent",
+          "expected": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14",
+          "actual": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14",
+          "passed": true
+        },
+        {
+          "path": ".agentlang/store/objects/cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7.agent",
+          "expected": "cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7",
+          "actual": "cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7",
+          "passed": true
+        },
+        {
+          "path": ".agentlang/store/objects/e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17.agent",
+          "expected": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17",
+          "actual": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17",
+          "passed": true
+        },
+        {
+          "path": ".agentlang/store/objects/ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb.agent",
+          "expected": "ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb",
+          "actual": "ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb",
+          "passed": true
+        },
+        {
+          "path": ".agentlang/store/WRITE.lock",
+          "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "actual": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "passed": true
+        },
+        {
+          "path": "dictionary.agent",
+          "expected": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e",
+          "actual": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e",
+          "passed": true
+        },
+        {
+          "path": "fixtures/flat-customer.agent",
+          "expected": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d",
+          "actual": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "starting-state rows cover the complete project inventory",
+      "passed": true,
+      "details": {
+        "actual": 12,
+        "listed": 12
+      }
+    },
+    {
+      "name": "starting-state project inventory hash matches immutable start",
+      "passed": true,
+      "details": {
+        "expected": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424",
+        "actual": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424"
+      }
+    },
+    {
+      "name": "prepared actor inventory matches immutable start snapshot",
+      "passed": true
+    },
+    {
+      "name": "starting-state seed, source, and runtime hashes match",
+      "passed": true,
+      "details": [
+        {
+          "kind": "sourceInput",
+          "path": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-help-002\\artifacts\\flat-customer.agent",
+          "expected": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d",
+          "actual": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d",
+          "passed": true
+        },
+        {
+          "kind": "seed",
+          "path": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\seeds\\flat\\project",
+          "expected": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424",
+          "actual": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424",
+          "passed": true
+        },
+        {
+          "kind": "runtime",
+          "path": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+          "expected": "e9098ca964e19fb4e34f47ff4cd04f9a389dcb01a990455f77301afb613f9002",
+          "actual": "e9098ca964e19fb4e34f47ff4cd04f9a389dcb01a990455f77301afb613f9002",
+          "passed": true
+        },
+        {
+          "kind": "runtime",
+          "path": "D:\\code\\AgentLang\\experiments\\AgentLang.Business\\bin\\Release\\net9.0\\AgentLang.Business.dll",
+          "expected": "48837c07853194f2d8c5fa75b5f278e5fcef2db270ce42faa3a9251dff0007a4",
+          "actual": "48837c07853194f2d8c5fa75b5f278e5fcef2db270ce42faa3a9251dff0007a4",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "provided CLI matches starting-state pin",
+      "passed": true,
+      "details": {
+        "pinned": "e9098ca964e19fb4e34f47ff4cd04f9a389dcb01a990455f77301afb613f9002",
+        "provided": "e9098ca964e19fb4e34f47ff4cd04f9a389dcb01a990455f77301afb613f9002"
+      }
+    },
+    {
+      "name": "frozen pin schema, study, mode, task, and sequence match",
+      "passed": true
+    },
+    {
+      "name": "frozen pin actor project path matches argument",
+      "passed": true,
+      "details": {
+        "expected": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\actors\\flat-S06",
+        "actual": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\actors\\flat-S06"
+      }
+    },
+    {
+      "name": "frozen run starting-state exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\runs\\flat-S06\\starting-state.json"
+    },
+    {
+      "name": "frozen starting-state hash matches pin",
+      "passed": true,
+      "details": {
+        "expected": "607cc6eb7f836ba18548e8a31bff7021254917d8bfff83ca7452c1e71de9e9a0",
+        "actual": "607cc6eb7f836ba18548e8a31bff7021254917d8bfff83ca7452c1e71de9e9a0"
+      }
+    },
+    {
+      "name": "frozen actor prompt exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\runs\\flat-S06\\prompt.txt"
+    },
+    {
+      "name": "frozen prompt hash matches pin",
+      "passed": true,
+      "details": {
+        "expected": "937fb3ecfecb5713a077190d895cbe2d79b9c43002dd49b3dff372f8ee7faed5",
+        "actual": "937fb3ecfecb5713a077190d895cbe2d79b9c43002dd49b3dff372f8ee7faed5"
+      }
+    },
+    {
+      "name": "frozen prompt byte count matches pin",
+      "passed": true
+    },
+    {
+      "name": "frozen oracle hash matches acceptance corpus",
+      "passed": true
+    },
+    {
+      "name": "frozen verifier path matches versioned verifier",
+      "passed": true,
+      "details": {
+        "expected": "D:\\code\\AgentLang\\scripts\\Verify-AuthoringHelpTrial.ps1",
+        "actual": "scripts/Verify-AuthoringHelpTrial.ps1"
+      }
+    },
+    {
+      "name": "frozen verifier hash matches current verifier",
+      "passed": true
+    },
+    {
+      "name": "frozen preflight path and hash match the versioned preflight",
+      "passed": true,
+      "details": {
+        "expected": "D:\\code\\AgentLang\\scripts\\Verify-AuthoringHelpPreflight.ps1",
+        "sha256": "42139234cc8499200aeaa7cb883fbafeaa8848e2897f789435731f4d665e1320",
+        "actual": "scripts/Verify-AuthoringHelpPreflight.ps1"
+      }
+    },
+    {
+      "name": "frozen host hash matches current protocol host",
+      "passed": true
+    },
+    {
+      "name": "frozen actor allowlist exactly matches the reviewed help-enabled operation set",
+      "passed": true,
+      "details": [
+        "callers",
+        "commit",
+        "context",
+        "define",
+        "dependencies",
+        "describe",
+        "diff",
+        "effects",
+        "eval",
+        "example",
+        "examples",
+        "failed-tests",
+        "graph",
+        "help",
+        "history",
+        "ir",
+        "replace-word",
+        "search",
+        "search-dependency",
+        "search-output",
+        "search-type",
+        "source",
+        "task.begin",
+        "task.commit",
+        "task.log",
+        "task.status",
+        "test",
+        "test-all",
+        "tests",
+        "transitive-callers",
+        "transitive-dependencies",
+        "type-of",
+        "words"
+      ]
+    },
+    {
+      "name": "frozen actor model, reasoning, and fork settings match the trial",
+      "passed": false,
+      "details": {
+        "reasoningEffort": "max",
+        "model": "invalid-control-model",
+        "forkTurns": "none"
+      }
+    },
+    {
+      "name": "frozen host settings retain raw-protocol limits and no cumulative inspection budget",
+      "passed": true
+    },
+    {
+      "name": "frozen source revision is a committed clean-source snapshot",
+      "passed": true,
+      "details": {
+        "pinned": "c380703fe18393d811ecb18a33a1bc59745d8b9b",
+        "resolves": true,
+        "pinDirty": false
+      }
+    },
+    {
+      "name": "frozen starting project file inventory matches",
+      "passed": true,
+      "details": {
+        "files": 12
+      }
+    },
+    {
+      "name": "frozen launch command matches pinned host, project, CLI, and allowlist settings",
+      "passed": true,
+      "details": {
+        "expected": "& 'D:\\code\\AgentLang\\scripts\\Start-SubagentTrialHost.ps1' -CliDll 'D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll' -ProjectPath 'D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\actors\\flat-S06' -TracePath 'D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\runs\\flat-S06\\trace.jsonl' -AllowedOperations @('callers','commit','context','define','dependencies','describe','diff','effects','eval','example','examples','failed-tests','graph','help','history','ir','replace-word','search','search-dependency','search-output','search-type','source','task.begin','task.commit','task.log','task.status','test','test-all','tests','transitive-callers','transitive-dependencies','type-of','words') -Profile agentlang -Capabilities @() -ClockValue '2000-01-01T00:00:00Z' -MaxRequestBytes 262144 -MaxResponseBytes 524288 -ExchangeTimeoutMilliseconds 120000 -MaxExchanges 100",
+        "actual": "& 'D:\\code\\AgentLang\\scripts\\Start-SubagentTrialHost.ps1' -CliDll 'D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll' -ProjectPath 'D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\actors\\flat-S06' -TracePath 'D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\runs\\flat-S06\\trace.jsonl' -AllowedOperations @('callers','commit','context','define','dependencies','describe','diff','effects','eval','example','examples','failed-tests','graph','help','history','ir','replace-word','search','search-dependency','search-output','search-type','source','task.begin','task.commit','task.log','task.status','test','test-all','tests','transitive-callers','transitive-dependencies','type-of','words') -Profile agentlang -Capabilities @() -ClockValue '2000-01-01T00:00:00Z' -MaxRequestBytes 262144 -MaxResponseBytes 524288 -ExchangeTimeoutMilliseconds 120000 -MaxExchanges 100"
+      }
+    },
+    {
+      "name": "frozen CLI and Business runtime roots match starting-state pins",
+      "passed": true,
+      "details": {
+        "businessDll": "D:\\code\\AgentLang\\experiments\\AgentLang.Business\\bin\\Release\\net9.0\\AgentLang.Business.dll",
+        "cliDll": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+        "cliDirectory": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0",
+        "startingBusinessSha256": "48837c07853194f2d8c5fa75b5f278e5fcef2db270ce42faa3a9251dff0007a4",
+        "businessDirectory": "D:\\code\\AgentLang\\experiments\\AgentLang.Business\\bin\\Release\\net9.0",
+        "startingBusinessPath": "experiments/AgentLang.Business/bin/Release/net9.0/AgentLang.Business.dll"
+      }
+    },
+    {
+      "name": "frozen CLI and Business runtime file inventories match",
+      "passed": true,
+      "details": {
+        "files": 26,
+        "cliDirectory": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0",
+        "businessDirectory": "D:\\code\\AgentLang\\experiments\\AgentLang.Business\\bin\\Release\\net9.0"
+      }
+    },
+    {
+      "name": "frozen source artifact inventory contains every required trial input exactly once",
+      "passed": true,
+      "details": {
+        "expected": [
+          "scripts/Prepare-AuthoringHelpTrial.ps1",
+          "scripts/Freeze-AuthoringHelpTrial.ps1",
+          "scripts/Verify-AuthoringHelpTrial.ps1",
+          "scripts/Verify-AuthoringHelpPreflight.ps1",
+          "scripts/Audit-AuthoringHelpTrace.ps1",
+          "scripts/Prepare-BusinessPolicyTrial.ps1",
+          "scripts/Start-SubagentTrialHost.ps1",
+          "experiments/AgentLang.SubagentTrials/business-policy-help-002/acceptance.json",
+          "experiments/AgentLang.SubagentTrials/business-policy-001/acceptance.json",
+          "experiments/AgentLang.Benchmarks/task-bank/public/S06.json",
+          "experiments/AgentLang.Benchmarks/task-bank/public/S07.json",
+          "experiments/AgentLang.SubagentTrials/business-policy-help-002/language-primer.md",
+          "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/flat-customer.agent"
+        ],
+        "missing": [],
+        "actual": [
+          {
+            "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Prepare-AuthoringHelpTrial.ps1",
+            "sourcePath": "scripts/Prepare-AuthoringHelpTrial.ps1"
+          },
+          {
+            "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Freeze-AuthoringHelpTrial.ps1",
+            "sourcePath": "scripts/Freeze-AuthoringHelpTrial.ps1"
+          },
+          {
+            "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Verify-AuthoringHelpTrial.ps1",
+            "sourcePath": "scripts/Verify-AuthoringHelpTrial.ps1"
+          },
+          {
+            "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Verify-AuthoringHelpPreflight.ps1",
+            "sourcePath": "scripts/Verify-AuthoringHelpPreflight.ps1"
+          },
+          {
+            "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Audit-AuthoringHelpTrace.ps1",
+            "sourcePath": "scripts/Audit-AuthoringHelpTrace.ps1"
+          },
+          {
+            "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Prepare-BusinessPolicyTrial.ps1",
+            "sourcePath": "scripts/Prepare-BusinessPolicyTrial.ps1"
+          },
+          {
+            "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Start-SubagentTrialHost.ps1",
+            "sourcePath": "scripts/Start-SubagentTrialHost.ps1"
+          },
+          {
+            "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/acceptance.json",
+            "sourcePath": "experiments/AgentLang.SubagentTrials/business-policy-help-002/acceptance.json"
+          },
+          {
+            "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/acceptance-business-policy-001.json",
+            "sourcePath": "experiments/AgentLang.SubagentTrials/business-policy-001/acceptance.json"
+          },
+          {
+            "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/public-task-S06.json",
+            "sourcePath": "experiments/AgentLang.Benchmarks/task-bank/public/S06.json"
+          },
+          {
+            "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/public-task-S07.json",
+            "sourcePath": "experiments/AgentLang.Benchmarks/task-bank/public/S07.json"
+          },
+          {
+            "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/language-primer.md",
+            "sourcePath": "experiments/AgentLang.SubagentTrials/business-policy-help-002/language-primer.md"
+          },
+          {
+            "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/flat-customer.agent",
+            "sourcePath": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/flat-customer.agent"
+          }
+        ]
+      }
+    },
+    {
+      "name": "all frozen source artifact snapshots and versioned inputs match working copy and commit",
+      "passed": true,
+      "details": [
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Prepare-AuthoringHelpTrial.ps1",
+          "sourcePath": "scripts/Prepare-AuthoringHelpTrial.ps1",
+          "expectedSha256": "5de6e4a4616c673e6c80c560b5b4e33cf3df6f80391bb6e390d9e0b46d22d1a6",
+          "workingSnapshotSha256": "5de6e4a4616c673e6c80c560b5b4e33cf3df6f80391bb6e390d9e0b46d22d1a6",
+          "workingSourceSha256": "5de6e4a4616c673e6c80c560b5b4e33cf3df6f80391bb6e390d9e0b46d22d1a6",
+          "sourceRevisionSnapshotSha256": [
+            {},
+            "5de6e4a4616c673e6c80c560b5b4e33cf3df6f80391bb6e390d9e0b46d22d1a6"
+          ],
+          "sourceRevisionSourceSha256": [
+            {},
+            "5de6e4a4616c673e6c80c560b5b4e33cf3df6f80391bb6e390d9e0b46d22d1a6"
+          ],
+          "bytes": 6840,
+          "passed": true
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Freeze-AuthoringHelpTrial.ps1",
+          "sourcePath": "scripts/Freeze-AuthoringHelpTrial.ps1",
+          "expectedSha256": "19c2ac2b3e8e8d38a1ef1ef9c2b994024ce5ec364f46f3b7a0a4641c271c3336",
+          "workingSnapshotSha256": "19c2ac2b3e8e8d38a1ef1ef9c2b994024ce5ec364f46f3b7a0a4641c271c3336",
+          "workingSourceSha256": "19c2ac2b3e8e8d38a1ef1ef9c2b994024ce5ec364f46f3b7a0a4641c271c3336",
+          "sourceRevisionSnapshotSha256": [
+            {},
+            "19c2ac2b3e8e8d38a1ef1ef9c2b994024ce5ec364f46f3b7a0a4641c271c3336"
+          ],
+          "sourceRevisionSourceSha256": [
+            {},
+            "19c2ac2b3e8e8d38a1ef1ef9c2b994024ce5ec364f46f3b7a0a4641c271c3336"
+          ],
+          "bytes": 24921,
+          "passed": true
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Verify-AuthoringHelpTrial.ps1",
+          "sourcePath": "scripts/Verify-AuthoringHelpTrial.ps1",
+          "expectedSha256": "8e9fd793757def4624bb59f14918cd4f5a257dd95192cb04c99fdfaa56db77f0",
+          "workingSnapshotSha256": "8e9fd793757def4624bb59f14918cd4f5a257dd95192cb04c99fdfaa56db77f0",
+          "workingSourceSha256": "8e9fd793757def4624bb59f14918cd4f5a257dd95192cb04c99fdfaa56db77f0",
+          "sourceRevisionSnapshotSha256": [
+            {},
+            "8e9fd793757def4624bb59f14918cd4f5a257dd95192cb04c99fdfaa56db77f0"
+          ],
+          "sourceRevisionSourceSha256": [
+            {},
+            "8e9fd793757def4624bb59f14918cd4f5a257dd95192cb04c99fdfaa56db77f0"
+          ],
+          "bytes": 88832,
+          "passed": true
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Verify-AuthoringHelpPreflight.ps1",
+          "sourcePath": "scripts/Verify-AuthoringHelpPreflight.ps1",
+          "expectedSha256": "42139234cc8499200aeaa7cb883fbafeaa8848e2897f789435731f4d665e1320",
+          "workingSnapshotSha256": "42139234cc8499200aeaa7cb883fbafeaa8848e2897f789435731f4d665e1320",
+          "workingSourceSha256": "42139234cc8499200aeaa7cb883fbafeaa8848e2897f789435731f4d665e1320",
+          "sourceRevisionSnapshotSha256": [
+            {},
+            "42139234cc8499200aeaa7cb883fbafeaa8848e2897f789435731f4d665e1320"
+          ],
+          "sourceRevisionSourceSha256": [
+            {},
+            "42139234cc8499200aeaa7cb883fbafeaa8848e2897f789435731f4d665e1320"
+          ],
+          "bytes": 39669,
+          "passed": true
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Audit-AuthoringHelpTrace.ps1",
+          "sourcePath": "scripts/Audit-AuthoringHelpTrace.ps1",
+          "expectedSha256": "5c91e5b47fd3877c53b7c2e624defd5c94446e555f9b30d06d32c5bb98ecd7fd",
+          "workingSnapshotSha256": "5c91e5b47fd3877c53b7c2e624defd5c94446e555f9b30d06d32c5bb98ecd7fd",
+          "workingSourceSha256": "5c91e5b47fd3877c53b7c2e624defd5c94446e555f9b30d06d32c5bb98ecd7fd",
+          "sourceRevisionSnapshotSha256": [
+            {},
+            "5c91e5b47fd3877c53b7c2e624defd5c94446e555f9b30d06d32c5bb98ecd7fd"
+          ],
+          "sourceRevisionSourceSha256": [
+            {},
+            "5c91e5b47fd3877c53b7c2e624defd5c94446e555f9b30d06d32c5bb98ecd7fd"
+          ],
+          "bytes": 33397,
+          "passed": true
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Prepare-BusinessPolicyTrial.ps1",
+          "sourcePath": "scripts/Prepare-BusinessPolicyTrial.ps1",
+          "expectedSha256": "23af4c9536e72730d44a5cfbdcf70b05b17a1e35c83f841511f9e8bbc637c08a",
+          "workingSnapshotSha256": "23af4c9536e72730d44a5cfbdcf70b05b17a1e35c83f841511f9e8bbc637c08a",
+          "workingSourceSha256": "23af4c9536e72730d44a5cfbdcf70b05b17a1e35c83f841511f9e8bbc637c08a",
+          "sourceRevisionSnapshotSha256": [
+            {},
+            "23af4c9536e72730d44a5cfbdcf70b05b17a1e35c83f841511f9e8bbc637c08a"
+          ],
+          "sourceRevisionSourceSha256": [
+            {},
+            "23af4c9536e72730d44a5cfbdcf70b05b17a1e35c83f841511f9e8bbc637c08a"
+          ],
+          "bytes": 29618,
+          "passed": true
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Start-SubagentTrialHost.ps1",
+          "sourcePath": "scripts/Start-SubagentTrialHost.ps1",
+          "expectedSha256": "d3b60698ef29cc6e7d9b42f37d9a298a311f409cb3f85112ca2a5dccf6148c4d",
+          "workingSnapshotSha256": "d3b60698ef29cc6e7d9b42f37d9a298a311f409cb3f85112ca2a5dccf6148c4d",
+          "workingSourceSha256": "d3b60698ef29cc6e7d9b42f37d9a298a311f409cb3f85112ca2a5dccf6148c4d",
+          "sourceRevisionSnapshotSha256": [
+            {},
+            "d3b60698ef29cc6e7d9b42f37d9a298a311f409cb3f85112ca2a5dccf6148c4d"
+          ],
+          "sourceRevisionSourceSha256": [
+            {},
+            "d3b60698ef29cc6e7d9b42f37d9a298a311f409cb3f85112ca2a5dccf6148c4d"
+          ],
+          "bytes": 77884,
+          "passed": true
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/acceptance.json",
+          "sourcePath": "experiments/AgentLang.SubagentTrials/business-policy-help-002/acceptance.json",
+          "expectedSha256": "d58fceeec3b659aebc58daa1d708d5f16cb43d12996f291c1c78a377fcfb89ef",
+          "workingSnapshotSha256": "d58fceeec3b659aebc58daa1d708d5f16cb43d12996f291c1c78a377fcfb89ef",
+          "workingSourceSha256": "d58fceeec3b659aebc58daa1d708d5f16cb43d12996f291c1c78a377fcfb89ef",
+          "sourceRevisionSnapshotSha256": [
+            {},
+            "d58fceeec3b659aebc58daa1d708d5f16cb43d12996f291c1c78a377fcfb89ef"
+          ],
+          "sourceRevisionSourceSha256": [
+            {},
+            "d58fceeec3b659aebc58daa1d708d5f16cb43d12996f291c1c78a377fcfb89ef"
+          ],
+          "bytes": 15931,
+          "passed": true
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/acceptance-business-policy-001.json",
+          "sourcePath": "experiments/AgentLang.SubagentTrials/business-policy-001/acceptance.json",
+          "expectedSha256": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+          "workingSnapshotSha256": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+          "workingSourceSha256": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+          "sourceRevisionSnapshotSha256": [
+            {},
+            "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf"
+          ],
+          "sourceRevisionSourceSha256": [
+            {},
+            "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf"
+          ],
+          "bytes": 17436,
+          "passed": true
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/public-task-S06.json",
+          "sourcePath": "experiments/AgentLang.Benchmarks/task-bank/public/S06.json",
+          "expectedSha256": "11ce4abd6f37035862dd802e8e201260c9f78457dc510d6d150c99725ffcc180",
+          "workingSnapshotSha256": "11ce4abd6f37035862dd802e8e201260c9f78457dc510d6d150c99725ffcc180",
+          "workingSourceSha256": "11ce4abd6f37035862dd802e8e201260c9f78457dc510d6d150c99725ffcc180",
+          "sourceRevisionSnapshotSha256": [
+            {},
+            "11ce4abd6f37035862dd802e8e201260c9f78457dc510d6d150c99725ffcc180"
+          ],
+          "sourceRevisionSourceSha256": [
+            {},
+            "11ce4abd6f37035862dd802e8e201260c9f78457dc510d6d150c99725ffcc180"
+          ],
+          "bytes": 760,
+          "passed": true
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/public-task-S07.json",
+          "sourcePath": "experiments/AgentLang.Benchmarks/task-bank/public/S07.json",
+          "expectedSha256": "f2a3b584fbec86f0395228fde31d561c240b9bc5d5a9a4a927042ea8a6111a04",
+          "workingSnapshotSha256": "f2a3b584fbec86f0395228fde31d561c240b9bc5d5a9a4a927042ea8a6111a04",
+          "workingSourceSha256": "f2a3b584fbec86f0395228fde31d561c240b9bc5d5a9a4a927042ea8a6111a04",
+          "sourceRevisionSnapshotSha256": [
+            {},
+            "f2a3b584fbec86f0395228fde31d561c240b9bc5d5a9a4a927042ea8a6111a04"
+          ],
+          "sourceRevisionSourceSha256": [
+            {},
+            "f2a3b584fbec86f0395228fde31d561c240b9bc5d5a9a4a927042ea8a6111a04"
+          ],
+          "bytes": 779,
+          "passed": true
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/language-primer.md",
+          "sourcePath": "experiments/AgentLang.SubagentTrials/business-policy-help-002/language-primer.md",
+          "expectedSha256": "7ca98f0c8c9a20a84076d2a6b62da7a36ac12959e17ec1890ec74f9cbf9b578e",
+          "workingSnapshotSha256": "7ca98f0c8c9a20a84076d2a6b62da7a36ac12959e17ec1890ec74f9cbf9b578e",
+          "workingSourceSha256": "7ca98f0c8c9a20a84076d2a6b62da7a36ac12959e17ec1890ec74f9cbf9b578e",
+          "sourceRevisionSnapshotSha256": [
+            {},
+            "7ca98f0c8c9a20a84076d2a6b62da7a36ac12959e17ec1890ec74f9cbf9b578e"
+          ],
+          "sourceRevisionSourceSha256": [
+            {},
+            "7ca98f0c8c9a20a84076d2a6b62da7a36ac12959e17ec1890ec74f9cbf9b578e"
+          ],
+          "bytes": 3931,
+          "passed": true
+        },
+        {
+          "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/flat-customer.agent",
+          "sourcePath": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/flat-customer.agent",
+          "expectedSha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d",
+          "workingSnapshotSha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d",
+          "workingSourceSha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d",
+          "sourceRevisionSnapshotSha256": [
+            {},
+            "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+          ],
+          "sourceRevisionSourceSha256": [
+            {},
+            "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+          ],
+          "bytes": 506,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "frozen starting state was prepared by the pinned clean trial scripts",
+      "passed": true,
+      "details": {
+        "sourceRevision": "c380703fe18393d811ecb18a33a1bc59745d8b9b",
+        "seedSummaryPassed": true,
+        "preparation": {
+          "scriptPath": "scripts/Prepare-AuthoringHelpTrial.ps1",
+          "scriptSha256": "5de6e4a4616c673e6c80c560b5b4e33cf3df6f80391bb6e390d9e0b46d22d1a6",
+          "dependencyPath": "scripts/Prepare-BusinessPolicyTrial.ps1",
+          "dependencySha256": "23af4c9536e72730d44a5cfbdcf70b05b17a1e35c83f841511f9e8bbc637c08a",
+          "sourceRevision": "c380703fe18393d811ecb18a33a1bc59745d8b9b",
+          "dirty": false,
+          "seedSummary": {
+            "authoredWordCount": 0,
+            "typeCount": 6,
+            "testCount": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "required frozen provenance is valid before execution",
+      "passed": false,
+      "details": "Frozen starting-state, runtime, source, prompt, allowlist, or verifier provenance did not validate; no CLI evaluation is allowed."
+    }
+  ],
+  "behaviorChecks": [
+    {
+      "name": "safe executable target and independent oracle are available for behavior",
+      "passed": false,
+      "details": {
+        "oracleUsable": true,
+        "safetyStop": "Frozen starting-state, runtime, source, prompt, allowlist, or verifier provenance did not validate; no CLI evaluation is allowed.",
+        "targetUsable": false
+      }
+    },
+    {
+      "name": "actor project remains unchanged by verification",
+      "passed": true,
+      "details": {
+        "before": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424",
+        "after": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424"
+      }
+    }
+  ],
+  "testExecutionCount": 0,
+  "jsonlSessions": [],
+  "processRuns": [],
+  "oracleProtocol": "Independent BigInteger arithmetic; raw Kind uses ordinal exact comparison; Money and Int payloads are canonical signed Int64 decimal strings.",
+  "limits": [
+    "Metadata failures remain distinct from behavior outcomes.",
+    "A missing, untyped, impure, or unreloadable target prevents oracle execution.",
+    "No efficiency or token-use claim is made."
+  ]
+}

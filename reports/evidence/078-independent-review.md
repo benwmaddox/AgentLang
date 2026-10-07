@@ -33,3 +33,8 @@ Final bounded review found no additional blocker in the six guarded areas.
 Positive freeze/tamper execution remains required. A subsequent coordinator
 preparation failure exposed a new-field PowerShell assignment defect; it occurred
 before freeze or actor launch and requires a matching source/snapshot repair.
+
+Executed launch follow-up: repaired source c380703 validates both frozen pins.
+The one-field model tamper rejects before any CLI/session/case execution, and
+original pin bytes are restored exactly. This is coordinator control evidence,
+not a new independent review run or external agent outcome.

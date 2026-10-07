@@ -1,6 +1,6 @@
 # Versioned authoring-help evaluation tooling
 
-Status: focused controls passed; clean-source freeze checks pending. No new external-agent
+Status: focused controls and repaired clean-source freeze checks passed. No new external-agent
 outcome or efficiency result is claimed.
 
 Report 077 implemented inspectable authoring help after the two Flat metadata
@@ -80,3 +80,19 @@ defect: dictionary rows were sorted as objects without named properties. The
 verifier must materialize named runtime/path/bytes/hash properties before sorting,
 as the freezer does. Both controls stopped before execution, their evidence is
 preserved, and no actor launched. The complete valid-pin path remains a gate.
+
+Final launch gates passed from clean source c380703: both S06/S07 required pins
+validated, then safely stopped at the expected missing target with zero behavior
+cases. A one-field model-pin tamper failed exactly the model declaration check,
+with zero CLI sessions, processes and behavior cases. Because validation resolves
+the canonical pin path, this coordinator-only control temporarily replaced that
+file and restored its original bytes in a finally block; SHA-256 is identical
+before and after. No actor was running. The control is saved in
+[the tamper summary](evidence/078-tampered-pin-control.json), with full verification
+and both valid-pin prelaunch reports beside it. The earlier source commit and
+failed coordinator checks remain retained; they are not agent outcomes.
+
+The finalized primer grew from 3,091 to 3,931 UTF-8 bytes and from 418 to 528
+whitespace words. Those measurements are not LLM tokens or effective context.
+Only the two new Flat tasks are being rerun; this is neither a new conventional
+comparison nor a controlled causal test of help alone.
