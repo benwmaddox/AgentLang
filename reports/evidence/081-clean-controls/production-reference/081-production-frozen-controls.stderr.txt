@@ -1,0 +1,1 @@
+Retention 003 frozen reference-control phase is failed; LaunchReady=false. Evidence: D:\code\AgentLang\.agentlang\business-policy-retention-003\evidence\081-production-frozen-controls.json. Coordinator verification-completed event time must carry an explicit UTC suffix (Z or +00:00).

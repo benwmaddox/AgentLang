@@ -204,47 +204,12 @@ function Assert-JsonNoDuplicateProperties([System.Text.Json.JsonElement]$Element
     }
 }
 
-function Get-StrictJsonStringPath([System.Text.Json.JsonElement]$Root,[object[]]$Segments,[string]$Label) {
-    $element=$Root
-    foreach($segment in $Segments){
-        if($segment -is [int] -or $segment -is [long]){
-            $index=[int]$segment
-            if($element.ValueKind -ne [System.Text.Json.JsonValueKind]::Array -or $index -lt 0 -or $index -ge $element.GetArrayLength()){
-                throw "$Label has no JSON array element at index $index."
-            }
-            $element=$element[$index]
-            continue
-        }
-        if($element.ValueKind -ne [System.Text.Json.JsonValueKind]::Object){throw "$Label is not a JSON object at property '$segment'."}
-        $found=$false
-        $nextElement=$null
-        foreach($property in $element.EnumerateObject()){
-            if([StringComparer]::Ordinal.Equals($property.Name,[string]$segment)){
-                if($found){throw "$Label has an ambiguous duplicate property '$segment'."}
-                $found=$true
-                $nextElement=$property.Value
-            }
-        }
-        if(-not $found){throw "$Label is missing JSON property '$segment'."}
-        $element=$nextElement
-    }
-    if($element.ValueKind -ne [System.Text.Json.JsonValueKind]::String){throw "$Label must be a JSON string."}
-    return $element.GetString()
-}
-
-function Read-StrictReport([string]$Path,[hashtable]$RawStringPaths=$null) {
+function Read-StrictReport([string]$Path) {
     $bytes=[IO.File]::ReadAllBytes($Path)
     if($bytes.Length -ge 3 -and $bytes[0] -eq 239 -and $bytes[1] -eq 187 -and $bytes[2] -eq 191){throw "JSON input has a UTF-8 BOM: $Path"}
     $text=[Text.UTF8Encoding]::new($false,$true).GetString($bytes)
     $document=[System.Text.Json.JsonDocument]::Parse($text)
-    try{
-        Assert-JsonNoDuplicateProperties $document.RootElement $Path
-        if($null -ne $RawStringPaths){
-            foreach($key in @($RawStringPaths.Keys)){
-                $RawStringPaths[$key]=Get-StrictJsonStringPath -Root $document.RootElement -Segments @($RawStringPaths[$key]) -Label "$Path $key"
-            }
-        }
-    }finally{$document.Dispose()}
+    try{Assert-JsonNoDuplicateProperties $document.RootElement $Path}finally{$document.Dispose()}
     return ConvertFrom-Json -InputObject $text -AsHashtable -Depth 100
 }
 
@@ -450,7 +415,7 @@ function Convert-UtcInstant([string]$Value,[string]$Label) {
     return $parsed
 }
 
-function Read-StrictJsonLines([string]$Path,[hashtable]$RawTimestampFields=$null) {
+function Read-StrictJsonLines([string]$Path) {
     $bytes=[IO.File]::ReadAllBytes($Path)
     if($bytes.Length -ge 3 -and $bytes[0] -eq 239 -and $bytes[1] -eq 187 -and $bytes[2] -eq 191){throw "JSONL input has a UTF-8 BOM: $Path"}
     $text=[Text.UTF8Encoding]::new($false,$true).GetString($bytes)
@@ -460,12 +425,7 @@ function Read-StrictJsonLines([string]$Path,[hashtable]$RawTimestampFields=$null
     for($i=0;$i -lt $lines.Count-1;$i++){
         if([string]::IsNullOrWhiteSpace($lines[$i]) -or $lines[$i].EndsWith("`r",[StringComparison]::Ordinal)){throw "JSONL input has an empty or CR-terminated line: $Path"}
         $document=[System.Text.Json.JsonDocument]::Parse($lines[$i])
-        try{
-            Assert-JsonNoDuplicateProperties $document.RootElement "$Path event $($i+1)"
-            if($null -ne $RawTimestampFields -and $i -eq ($lines.Count - 3)){
-                $RawTimestampFields['penultimateAtUtc']=Get-StrictJsonStringPath -Root $document.RootElement -Segments @('atUtc') -Label "$Path penultimate event atUtc"
-            }
-        }finally{$document.Dispose()}
+        try{Assert-JsonNoDuplicateProperties $document.RootElement "$Path event $($i+1)"}finally{$document.Dispose()}
         $events.Add((ConvertFrom-Json -InputObject $lines[$i] -AsHashtable -Depth 100))
     }
     return ,$events.ToArray()
@@ -585,15 +545,10 @@ function Invoke-FrozenControlPhase {
         $global=Read-StrictReport $runFiles.globalFreeze
         $state=Read-StrictReport $runFiles.startingState
         $pin=Read-StrictReport $runFiles.prelaunch
-        $acceptanceRawUtc=@{finishedUtc=@('finishedUtc')}
-        $acceptance=Read-StrictReport $runFiles.acceptance $acceptanceRawUtc
+        $acceptance=Read-StrictReport $runFiles.acceptance
         $savedAudit=Read-StrictReport $runFiles.traceAudit
         $marker=Read-StrictReport $runFiles.marker
-        $coordinatorRawUtc=@{
-            verificationCompletedAtUtc=@('events',[int]0,'atUtc')
-            closeRequestedAtUtc=@('events',[int]1,'atUtc')
-        }
-        $coordinator=Read-StrictReport $runFiles.coordinator $coordinatorRawUtc
+        $coordinator=Read-StrictReport $runFiles.coordinator
         $design=Read-StrictReport (Join-Path $studyRoot 'design.json')
         $expectedPinHash=Get-Sha256 $runFiles.prelaunch
         $acceptanceHash=Get-Sha256 $runFiles.acceptance
@@ -609,8 +564,7 @@ function Invoke-FrozenControlPhase {
         $acceptanceProject=Get-Field $acceptance 'project'
         $acceptanceRows=@(Get-Field $acceptanceProject 'files')
         $auditClose=(Get-Field $savedAudit 'sessionEnd')
-        $traceRawUtc=@{}
-        $traceEvents=Read-StrictJsonLines $runFiles.trace $traceRawUtc
+        $traceEvents=Read-StrictJsonLines $runFiles.trace
         $traceClose=if($traceEvents.Count -ge 2){$traceEvents[-2]}else{$null}
         $markerIdentity=(Get-Field $marker 'schemaVersion') -eq 1 -and (Get-Field $marker 'studyId') -ceq $studyId -and (Get-Field $marker 'runId') -ceq 'R01' -and (Get-Field $marker 'controlKind') -ceq 'deterministic-reference' -and (Get-Field $marker 'modelActorLaunched') -eq $false
         Assert-Check 'R01 ownership marker identifies only a deterministic reference control' $markerIdentity $marker
@@ -627,10 +581,10 @@ function Invoke-FrozenControlPhase {
         $coordinatorEvents=@(Get-Field $coordinator 'events')
         $verifyEvent=if($coordinatorEvents.Count -ge 1){$coordinatorEvents[0]}else{$null}
         $closeEvent=if($coordinatorEvents.Count -ge 2){$coordinatorEvents[1]}else{$null}
-        $verifyAt=Convert-UtcInstant ([string]$coordinatorRawUtc['verificationCompletedAtUtc']) 'Coordinator verification-completed event time'
-        $closeRequestedAt=Convert-UtcInstant ([string]$coordinatorRawUtc['closeRequestedAtUtc']) 'Coordinator close-requested event time'
-        $verifierFinishedAt=Convert-UtcInstant ([string]$acceptanceRawUtc['finishedUtc']) 'Independent verifier completion time'
-        $actualCloseAt=Convert-UtcInstant ([string]$traceRawUtc['penultimateAtUtc']) 'Actual V2 host-close event time'
+        $verifyAt=Convert-UtcInstant ([string](Get-Field $verifyEvent 'atUtc')) 'Coordinator verification-completed event time'
+        $closeRequestedAt=Convert-UtcInstant ([string](Get-Field $closeEvent 'atUtc')) 'Coordinator close-requested event time'
+        $verifierFinishedAt=Convert-UtcInstant ([string](Get-Field $acceptance 'finishedUtc')) 'Independent verifier completion time'
+        $actualCloseAt=Convert-UtcInstant ([string](Get-Field $traceClose 'atUtc')) 'Actual V2 host-close event time'
         $coordinatorValid=(Get-Field $coordinator 'schemaVersion') -eq 1 -and (Get-Field $coordinator 'studyId') -ceq $studyId -and (Get-Field $coordinator 'runId') -ceq 'R01' -and (Get-Field $coordinator 'controlKind') -ceq 'deterministic-reference' -and (Get-Field $coordinator 'modelActorLaunched') -eq $false -and $coordinatorEvents.Count -eq 2 -and (Get-Field $verifyEvent 'event') -ceq 'verification-completed' -and (Get-Field $closeEvent 'event') -ceq 'close-requested' -and (Get-Field $verifyEvent 'acceptancePath') -ceq $runFiles.acceptance -and (Get-Field $verifyEvent 'acceptanceSha256') -ceq $acceptanceHash -and (Get-Field $closeEvent 'acceptanceSha256') -ceq $acceptanceHash -and (Get-Field $verifyEvent 'acceptancePassed') -eq $true -and (Get-Field $verifyEvent 'projectTreeSha256') -ceq $actorTreeHash -and $verifierFinishedAt -le $verifyAt -and $verifyAt -le $closeRequestedAt -and $closeRequestedAt -le $actualCloseAt -and (Get-Field $traceClose 'event') -ceq 'host-close' -and (Get-Field $traceClose 'requestCanonical') -ceq '{"op":"host.close"}'
         $controlResult.coordinatorOrderPassed=[bool]$coordinatorValid
         Assert-Check 'coordinator records independent acceptance before exact host-close request' $coordinatorValid @{verifierCompletedUtc=$verifierFinishedAt.ToString('O');verificationCompletedUtc=$verifyAt.ToString('O');closeRequestedUtc=$closeRequestedAt.ToString('O');hostCloseUtc=$actualCloseAt.ToString('O');acceptanceSha256=$acceptanceHash;projectTreeSha256=$actorTreeHash}

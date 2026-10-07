@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-retention-003",
+  "phase": "focused-raw-utc-reader-controls",
+  "result": "passed",
+  "source": {
+    "path": "scripts/Verify-RetentionPreflight.ps1",
+    "sha256": "96FDB0A7B7CCAA3CC79820CFFDB52B360186BBD58343F95128B79D14CA41EC2E",
+    "parser": "passed",
+    "powershellVersion": "7.6.5"
+  },
+  "positiveControls": {
+    "acceptanceFinishedUtc": "2026-10-07T12:12:34.4282865Z",
+    "coordinatorVerificationCompletedUtc": "2026-10-07T12:13:02.4978369Z",
+    "coordinatorCloseRequestedUtc": "2026-10-07T12:13:02.5011017Z",
+    "tracePenultimateAtUtc": "2026-10-07T12:13:17.7999220+00:00",
+    "explicitUtcSuffixesPreserved": true,
+    "chronologicalOrderPassed": true,
+    "parsedAcceptancePrelaunchCompactJsonEqualsParsedPin": true,
+    "canonicalInputHashesUnchanged": true,
+    "inputPaths": [
+      ".agentlang/business-policy-retention-003/runs/R01/acceptance.json",
+      ".agentlang/business-policy-retention-003/runs/R01/coordinator.json",
+      ".agentlang/business-policy-retention-003/runs/R01/trace.jsonl",
+      ".agentlang/business-policy-retention-003/runs/R01/prelaunch.json"
+    ]
+  },
+  "negativeControls": {
+    "invalidTimestamps": [
+      {
+        "value": "2026-10-07T08:09:58.2676128-04:00",
+        "rejected": true
+      },
+      {
+        "value": "2026-10-07T12:13:17.7999220",
+        "rejected": true
+      },
+      {
+        "value": "not-a-time",
+        "rejected": true
+      }
+    ],
+    "rawTokenShapes": [
+      {
+        "case": "missing",
+        "rejected": true
+      },
+      {
+        "case": "null",
+        "rejected": true
+      },
+      {
+        "case": "nonstring",
+        "rejected": true
+      },
+      {
+        "case": "duplicate",
+        "rejected": true
+      }
+    ],
+    "reorderedCoordinatorTimeRejected": true
+  },
+  "rawRunOutput": {
+    "path": ".agentlang/business-policy-retention-003/evidence/081-preflight-utc-controls.stdout.txt",
+    "sha256": "18eaf5f0188268484c1315c51318f656dc20ff1f9e2a56a8e7ad1f832989b121",
+    "note": "Captured focused-control stdout copied from the completed inline run."
+  },
+  "harness": {
+    "scriptPath": null,
+    "note": "Harness ran inline; no standalone harness script was present or saved."
+  },
+  "fullFrozenPhase": {
+    "run": false,
+    "status": "not-run",
+    "reason": "The current source edit is not yet committed/refrozen; the saved candidate and frozen inputs bind the prior source SHA. The production phase also invokes Git and temporarily exercises canonical pin/trace tamper controls.",
+    "nextRequirement": "Run the genuine frozen phase after the source is cleanly committed and the reference inputs are refrozen."
+  }
+}

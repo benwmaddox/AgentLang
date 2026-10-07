@@ -1,6 +1,6 @@
 # AgentLang: Agent-Oriented Extensible Language Prototype
 
-- Status: prototype specification, refined 2026-10-06
+- Status: prototype specification, refined 2026-10-07
 - Implementation: F# on .NET
 - Primary user: an AI coding agent
 - Secondary user: a developer inspecting and controlling that agent
@@ -9,7 +9,7 @@
 
 AgentLang tests whether a small, inspectable programming environment can retain project understanding as executable vocabulary. An agent discovers existing operations, creates and tests a reusable word, uses it to complete a task, and leaves it available to a later agent.
 
-The hypothesis is that accumulated, discoverable vocabulary reduces the marginal cost of the next correct software change. Correctness and task success must remain comparable to a conventional F# environment. Implementing a language is an enabling step, not evidence for the hypothesis.
+The primary hypothesis is that accumulated, discoverable, strongly typed vocabulary helps fresh AI coding agents make reliable changes, find established behavior, catch violations before committing, and recover from errors. Forth/Lisp-style vocabulary growth is valuable when later builders can discover and safely compose project concepts. Lower token, turn and interaction costs are secondary benefits to measure. Conventional F# is a strong correctness baseline; the experiment tests definition-level change boundaries, discoverability and reusable behavioral contracts as well as static checking. Implementing a language is an enabling step, not evidence for the hypothesis.
 
 The environment favors agent comprehension, explicit behavior, deterministic introspection, and testability over syntax terseness, compiler sophistication, and throughput. Named words are the primary unit of development. Plain source files remain the durable representation; agents interact through definition-level commands.
 
@@ -273,9 +273,19 @@ Error recovery measures need linked error/attempt events. Turns or tokens per re
 
 ## Research decision
 
-The north-star metric is marginal cost of a correct subsequent change as accepted vocabulary accumulates. Report cost and success together to avoid rewarding cheap failures.
+Treat the vocabulary/discoverability benefit as an open hypothesis. Preserve
+negative results and compare retained vocabulary against an identical reset-rich
+library, not only a primitive-only environment. Equal results, harder discovery,
+incorrect reuse, defect propagation and gate friction are legitimate outcomes.
+Do not change frozen acceptance criteria after observing a trial or repair actor
+outputs before scoring them. New reliability-focused studies need predeclared
+defects, regression checks and outcome definitions; existing studies retain
+their original design and evidence limitations.
 
-A promising signal is at least 20% fewer total input tokens or 20% fewer turns at comparable task success. Predefine what comparable means for the chosen sample and report uncertainty. Stronger evidence is reduced cost on later tasks without simpler tasks, or comparable success at substantially smaller context budgets.
+
+The primary outcome is reliability of subsequent changes as accepted vocabulary accumulates: independent behavioral acceptance, preservation of unrelated behavior, issues caught before commit, and recovery from diagnosed failures. Count incorrect accepted edits, unresolved errors and regressions as well as successful reuse. Distinguish compile-time/type/effect rejection, library-gate rejection and independent acceptance failure; rejection of a valid change is friction, not a caught defect. Marginal cost remains a secondary outcome. Report cost and success together to avoid rewarding cheap failures.
+
+A promising primary signal is more independently correct changes, fewer regressions or better issue detection/recovery under equivalent tasks and acceptance criteria. Include debugging and refactoring tasks with intentional defects and unrelated-behavior checks; reuse counts alone cannot establish reliability. A secondary efficiency signal is at least 20% fewer total input tokens or 20% fewer turns at comparable task success. Predefine what comparable means for the chosen sample and report uncertainty. Stronger evidence is reduced cost on later tasks without simpler tasks, or comparable success at substantially smaller context budgets.
 
 Investigate contrary evidence: ignored vocabulary, duplicate growth, expensive discovery, repeated stack confusion, language errors dominating time, raw-source fallbacks, missing primitives, or a conventional baseline performing as well with lower cost. These are useful outcomes, not failures to hide.
 
@@ -343,6 +353,17 @@ reuses existing compact context and preserves the frozen trial evidence.
 Future curator agents, synthesized context, maturity levels, contracts, and a second game/simulation domain remain hypotheses for later work. They must not delay the first measured agent task.
 
 ## Conditional development and release backends
+
+Product direction clarified 2026-10-07: the eventual release runtime should be lean
+and organized around typed mailboxes and bounded processing lifetimes. The current
+F#/.NET interpreter validates language semantics and editing workflows; it is not
+evidence for release memory usage or mailbox execution. Keep the near-term fresh
+agent evaluation ahead of allocator/backend implementation. Specify single-thread
+handler execution, queue/state capacity, checked message and response transfers,
+effect/resource cleanup and arena escape rules before adopting the concrete
+mailbox allocation model. Compare native footprint, peak/reserved memory and
+startup on equivalent workloads separately from agent-edit reliability.
+
 
 Optional mailbox memory candidate: declare a bounded typed retained-data layout
 outside processing arenas, and allow arena-backed program data stack allocation

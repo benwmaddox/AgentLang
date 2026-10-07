@@ -1,11 +1,11 @@
 # Matched vocabulary-retention preparation
 
-Status: auditor repairs passed the full diagnostic; genuine refreeze pending.
-Canonical Flat and rich baselines are archived. Frozen references passed 157
-checks and 10 independent cases, then closed successfully. Auditor defects were
-repaired and its full diagnostic passed 662 checks. That diagnostic substitutes
-three self-source identity checks and is explicitly not genuine acceptance.
-The preserved reference slots are clear for a new committed source freeze.
+Status: genuine reference acceptance and audit passed; final UTC reader repair
+pending. Canonical Flat and rich baselines are archived. On clean f52ef29 the
+marked reference passed 157 acceptance checks, 10 independent cases and 662
+production trace-audit checks without diagnostic exceptions, then remained
+preserved in its closed R01 slot. The frozen/tamper runner stopped after 14
+passing checks because its JSON reader coerced raw UTC strings into date objects.
 No model actors have been launched and no efficiency result is claimed.
 
 Published revisions f3f4391 and 5b0a367 passed 37/37 CI checks on both branches;
@@ -135,3 +135,20 @@ Both published 5b0a367 CI jobs completed successfully: prototype 37611904373 and
 The full auditor diagnostic passed all 662 checks, six exchanges, three test executions and no failed tests, including generic termination exit 0. It is explicitly diagnosticOnly=true: three current auditor self-source comparisons were replaced by exact committed pin/source-artifact bindings. It is not genuine frozen provenance or an agent result. Focused controls and independent review cover the runtime-source helper, source-input variable collision, separator characters, same-instant timestamp equivalence with other fields exact, ordered event construction, optional disabled budget fields, and exact LF/CRLF transport framing. No raw bytes are normalized for wire/hash validation. See evidence/081-auditor-fullpath-controls.json; all 21 diagnostic artifacts are byte-archived with evidence/081-auditor-diagnostic-archive-index.json. Full source repair SHA is 464da590. R01 was preserved and released after verifying original and added diagnostic files against archives; canonical baselines were retained (evidence/081-auditor-reference-slot-release.json). Genuine clean candidate/reference/audit controls remain required before fresh model launch. Exercising this positive path earlier would have avoided repeated freeze cycles; the earlier CI passes did not cover it.
 
 Committed source a8e9ca3 is now preserved in regenerated 23-source snapshots and a clean global freeze. The runtime bundle remains the 8bff657 fresh build and both canonical baseline identity inventories remain unchanged. The next operational controls use the production auditor without diagnostic exceptions.
+
+On clean f52ef29, all 63 candidate checks passed, the marked reference passed genuine frozen acceptance (157 checks and all 10 independent cases), and the production trace audit passed all 662 checks without diagnostic exceptions. Coordinator ordering and raw LF/CRLF hashes were checked. The remaining frozen/tamper runner stopped after 14 passing checks because default JSON date coercion removed the explicit UTC suffix before its timestamp validator. Canonical source/candidate/reference/audit/failure evidence is byte-archived under evidence/081-clean-controls/production-reference with index evidence/081-production-reference-index.json. No fresh model actor has run in this study. The user reaffirmed wanting actual agent-validation outcomes, which remain separate from these coordinator-authored controls.
+
+## Scoped raw UTC reader repair
+
+The preflight reader now extracts the four chronology timestamps as exact JSON
+String tokens from the same already-validated bytes and JsonDocument. Existing
+parsed objects and full identity comparisons remain unchanged. Missing, null,
+non-string and duplicate fields still reject; UTC suffix and ordering checks
+remain mandatory. Independent review found no weakened gate. The PowerShell
+parser and diff checks passed, and all 118 archived production-reference files
+were verified against their saved byte counts and SHA-256 hashes.
+
+Focused saved-input controls passed; they are not a replacement for the genuine
+frozen phase. That phase cannot accept the previous candidate and source pins
+after this source change. A clean commit, new source freeze and fresh candidate
+reference will precede its rerun. No fresh model actor has launched for study 003.

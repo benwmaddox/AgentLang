@@ -1,0 +1,24 @@
+{
+  "result": "passed",
+  "scope": "focused saved-input schema/timestamp controls only",
+  "acceptanceRaw": "2026-10-07T12:12:34.4282865Z",
+  "coordinatorRaw": [
+    "2026-10-07T12:13:02.4978369Z",
+    "2026-10-07T12:13:02.5011017Z"
+  ],
+  "tracePenultimateRaw": "2026-10-07T12:13:17.7999220+00:00",
+  "compactPrelaunchBindingPreserved": true,
+  "actualOrderPassed": true,
+  "rejectedTimestamps": [
+    "2026-10-07T08:09:58.2676128-04:00",
+    "2026-10-07T12:13:17.7999220",
+    "not-a-time"
+  ],
+  "rejectedRawTokenShapes": [
+    "missing",
+    "null",
+    "nonstring",
+    "duplicate"
+  ],
+  "canonicalInputHashesUnchanged": true
+}

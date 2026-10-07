@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-retention-003",
+  "passed": false,
+  "failure": "Retained S07 requires both accepted same-block S01 -PreviousProject and -PreviousAcceptance; fallback is explicit.",
+  "startedUtc": "2026-10-07T12:09:00.7646632Z",
+  "finishedUtc": "2026-10-07T12:09:01.1939145Z",
+  "sourceRevision": "f52ef294a02ea259a0f7700e4d26aa9398c25687",
+  "dirty": false,
+  "arm": "retained",
+  "block": "B1",
+  "taskId": "S07",
+  "runId": "R04",
+  "bootstrapOnly": false,
+  "result": null,
+  "checks": [
+    {
+      "name": "design schema and study id",
+      "passed": true
+    },
+    {
+      "name": "design sequence and arm order",
+      "passed": true
+    },
+    {
+      "name": "design conceals arm hypotheses from public prompts",
+      "passed": true
+    },
+    {
+      "name": "design declares exactly twelve ordered run cells",
+      "passed": true
+    },
+    {
+      "name": "design source paths are fixed and study-local",
+      "passed": true
+    },
+    {
+      "name": "acceptance identity, sequence, and predecessor SHA",
+      "passed": true
+    },
+    {
+      "name": "acceptance oracle and defaults equal the parsed predecessor corpus",
+      "passed": true
+    },
+    {
+      "name": "acceptance cases and task contracts equal predecessor S01/S07",
+      "passed": true
+    },
+    {
+      "name": "acceptance includes no S06 arm or case corpus",
+      "passed": true
+    },
+    {
+      "name": "S01 public contract matches independent oracle",
+      "passed": true
+    },
+    {
+      "name": "S07 public contract matches independent oracle",
+      "passed": true
+    },
+    {
+      "name": "shared primer is the exact preserved 002 help file",
+      "passed": true
+    },
+    {
+      "name": "Flat source seed is the exact preserved schema-only seed",
+      "passed": true
+    },
+    {
+      "name": "requested run maps to fixed public run id and task index",
+      "passed": true
+    }
+  ],
+  "preparerSha256": "42c63fb12de3ecd37b4827944f00a59613a1a66908d8c23c7c926e2d9d216aa9",
+  "requestedEvidencePath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\evidence\\081-preflight-candidate-0e26aa6b6cbf4694bae0b036fdafa4f4\\malformed-predecessor-preparation.json",
+  "evidencePath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\evidence\\081-preflight-candidate-0e26aa6b6cbf4694bae0b036fdafa4f4\\malformed-predecessor-preparation.json"
+}

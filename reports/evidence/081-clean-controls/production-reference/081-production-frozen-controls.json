@@ -1,0 +1,298 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-retention-003",
+  "phase": "frozen-control-preflight",
+  "startedUtc": "2026-10-07T12:15:02.9267891Z",
+  "finishedUtc": "2026-10-07T12:15:04.3010089Z",
+  "passed": false,
+  "candidatePassed": true,
+  "referenceControlsPassed": false,
+  "launchReady": false,
+  "failure": "Coordinator verification-completed event time must carry an explicit UTC suffix (Z or +00:00).",
+  "status": "failed",
+  "sourceRevision": "f52ef294a02ea259a0f7700e4d26aa9398c25687",
+  "dirty": false,
+  "preflightSha256": "d1c40e9df0a4907fe17e20c188bccda6f283cf5ea0c7b21bf50a2359477cf05c",
+  "sourceArtifacts": [
+    {
+      "path": "examples/business-invoices.agent",
+      "sha256": "a08b3e87e69c5983d35ec35059c3881067294b65b4e79e992e81dbf101ab338c"
+    },
+    {
+      "path": "examples/business-payments-email.agent",
+      "sha256": "455bb038269fc499c69e0cd0338e76c9f4c5ed064f6a7c2ba125bdc9bb8503e4"
+    },
+    {
+      "path": "examples/business-state.agent",
+      "sha256": "d301d24143c31e84269aceaec7f85e4b6aeeb44e1156e6e03a53febc1ed41cc9"
+    },
+    {
+      "path": "examples/business-store.agent",
+      "sha256": "f7dfe3d6cafa66fd888e76c5e925fc424aa05465b40e896467c2e1f064b767f3"
+    },
+    {
+      "path": "examples/business-subscriptions.agent",
+      "sha256": "2c9a61e7f20e5b80996f0308cc360e23bc408185744ba2ef57e5c217214d14d5"
+    },
+    {
+      "path": "examples/business-values.agent",
+      "sha256": "fe8227ce0c38ff6e193a74292a5b1d0ed0ac3e3869f0fe8feaf56eca62f30cbd"
+    },
+    {
+      "path": "experiments/AgentLang.Benchmarks/task-bank/public/S01.json",
+      "sha256": "97befde7d0e3231529ad681e785ace116210d8d99228eb2e9f76183738b7fada"
+    },
+    {
+      "path": "experiments/AgentLang.Benchmarks/task-bank/public/S07.json",
+      "sha256": "f2a3b584fbec86f0395228fde31d561c240b9bc5d5a9a4a927042ea8a6111a04"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-001/acceptance.json",
+      "sha256": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/acceptance.json",
+      "sha256": "d58fceeec3b659aebc58daa1d708d5f16cb43d12996f291c1c78a377fcfb89ef"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-help-002/language-primer.md",
+      "sha256": "7ca98f0c8c9a20a84076d2a6b62da7a36ac12959e17ec1890ec74f9cbf9b578e"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-retention-003/acceptance.json",
+      "sha256": "8ca4f975161541b8c60397267fe7bb4ecb4345e00674d91467ac151a0bb7d3f2"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-retention-003/artifacts/flat-customer.agent",
+      "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-retention-003/design.json",
+      "sha256": "c5b9d8a09cc671895f6ebd6bfd4023b8744cb8c8277cf6e2e7e6a4602d80b3ae"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-retention-003/language-primer.md",
+      "sha256": "7ca98f0c8c9a20a84076d2a6b62da7a36ac12959e17ec1890ec74f9cbf9b578e"
+    },
+    {
+      "path": "scripts/Audit-RetentionTrace.ps1",
+      "sha256": "464da59005f26f760b921748991b2e7fdc41a863afac92db250cdcd6115240ec"
+    },
+    {
+      "path": "scripts/Audit-SubagentTrialTerminationV2.ps1",
+      "sha256": "870ff9b9a1843c0a104d2185688486c7ed1e85399df6c554f9ee890c4dcf4a10"
+    },
+    {
+      "path": "scripts/Freeze-RetentionTrial.ps1",
+      "sha256": "357bdef9e9a9b28f12ad0efc85dfed7580da13294a591b895b8dc61604010f3b"
+    },
+    {
+      "path": "scripts/Prepare-BusinessPolicyTrial.ps1",
+      "sha256": "23af4c9536e72730d44a5cfbdcf70b05b17a1e35c83f841511f9e8bbc637c08a"
+    },
+    {
+      "path": "scripts/Prepare-RetentionTrial.ps1",
+      "sha256": "42c63fb12de3ecd37b4827944f00a59613a1a66908d8c23c7c926e2d9d216aa9"
+    },
+    {
+      "path": "scripts/Start-SubagentTrialHostV2.ps1",
+      "sha256": "6573321e8c0fc92926e43221ae10836fd5c62139e5fdb51cc34ff482fbc81f2b"
+    },
+    {
+      "path": "scripts/Verify-RetentionPreflight.ps1",
+      "sha256": "d1c40e9df0a4907fe17e20c188bccda6f283cf5ea0c7b21bf50a2359477cf05c"
+    },
+    {
+      "path": "scripts/Verify-RetentionTrial.ps1",
+      "sha256": "84b3d0a8c4aee192f28b3d553ee134b1dfd20879dcf3ed38b2c607b0bc313c2b"
+    }
+  ],
+  "runtime": {
+    "cliPath": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+    "cliSha256": "bbfe7d079f568a431148298de86a3aa26304a160781c2756591be070735f274a",
+    "businessPath": "D:\\code\\AgentLang\\experiments\\AgentLang.Business\\bin\\Release\\net9.0\\AgentLang.Business.dll",
+    "businessSha256": "41f0b6f0f44ac73f0b899090dc7dcd3f3d56129176b172ceca96cba9e638a13d"
+  },
+  "candidateEvidencePath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\evidence\\081-production-auditor-candidate.json",
+  "candidateEvidenceSha256": "531aa8915f42ed0432e4fd135ccfa3c67688ad2101265bb36ec02f68fc1e950b",
+  "control": {
+    "markerPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\runs\\R01\\preflight-reference-control.json",
+    "coordinatorPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\runs\\R01\\coordinator.json",
+    "runId": "R01",
+    "controlKind": "deterministic-reference",
+    "modelActorLaunched": false,
+    "acceptancePath": null,
+    "acceptanceSha256": null,
+    "traceAuditPath": null,
+    "traceAuditSha256": null,
+    "freshTraceAuditPath": null,
+    "freshTraceAuditSha256": null,
+    "finalProjectTreeSha256": null,
+    "coordinatorOrderPassed": false,
+    "tamperControls": []
+  },
+  "missingInputs": [],
+  "checks": [
+    {
+      "name": "final candidate evidence passed every check and completed owned cleanup",
+      "passed": true,
+      "details": {
+        "cleanup": {
+          "controlSlotRemoved": true,
+          "pinRejectionOutputRemoved": true,
+          "rawControlEvidence": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\evidence\\081-preflight-candidate-0e26aa6b6cbf4694bae0b036fdafa4f4",
+          "rawEvidenceRetained": true
+        },
+        "candidatePath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\evidence\\081-production-auditor-candidate.json",
+        "candidateRevision": "f52ef294a02ea259a0f7700e4d26aa9398c25687",
+        "failedChecks": [],
+        "candidateSha256": "531aa8915f42ed0432e4fd135ccfa3c67688ad2101265bb36ec02f68fc1e950b",
+        "failure": null,
+        "checkCount": 63
+      }
+    },
+    {
+      "name": "candidate source hash and complete frozen input inventory match current files",
+      "passed": true,
+      "details": {
+        "candidatePreflightSha256": "d1c40e9df0a4907fe17e20c188bccda6f283cf5ea0c7b21bf50a2359477cf05c",
+        "currentPreflightSha256": "d1c40e9df0a4907fe17e20c188bccda6f283cf5ea0c7b21bf50a2359477cf05c",
+        "sourceCount": 23
+      }
+    },
+    {
+      "name": "candidate runtime DLL hashes match the current frozen runtime inputs",
+      "passed": true,
+      "details": {
+        "candidate": {
+          "cliPath": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+          "cliSha256": "bbfe7d079f568a431148298de86a3aa26304a160781c2756591be070735f274a",
+          "businessPath": "D:\\code\\AgentLang\\experiments\\AgentLang.Business\\bin\\Release\\net9.0\\AgentLang.Business.dll",
+          "businessSha256": "41f0b6f0f44ac73f0b899090dc7dcd3f3d56129176b172ceca96cba9e638a13d"
+        },
+        "current": {
+          "cliPath": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+          "cliSha256": "bbfe7d079f568a431148298de86a3aa26304a160781c2756591be070735f274a",
+          "businessPath": "D:\\code\\AgentLang\\experiments\\AgentLang.Business\\bin\\Release\\net9.0\\AgentLang.Business.dll",
+          "businessSha256": "41f0b6f0f44ac73f0b899090dc7dcd3f3d56129176b172ceca96cba9e638a13d"
+        }
+      }
+    },
+    {
+      "name": "frozen control validation starts from a clean committed source tree",
+      "passed": true,
+      "details": {
+        "dirty": false,
+        "sourceRevision": "f52ef294a02ea259a0f7700e4d26aa9398c25687"
+      }
+    },
+    {
+      "name": "R01 ownership marker identifies only a deterministic reference control",
+      "passed": true,
+      "details": {
+        "schemaVersion": 1,
+        "studyId": "business-policy-retention-003",
+        "runId": "R01",
+        "controlKind": "deterministic-reference",
+        "modelActorLaunched": false
+      }
+    },
+    {
+      "name": "global freeze and canonical flat/rich baseline archives exist",
+      "passed": true,
+      "details": {
+        "globalSha256": "d6ac482758d4194326c3e3d52af5d39e064196007d653bbec93a55a635b34637",
+        "richManifestSha256": "c264aaae19cea12ceca3527002352ced901233a542e28e5ea9e190f51b350b72",
+        "flatManifestSha256": "960aea33700470b80eec1a43538ded7843790892f215c605141e121456723659"
+      }
+    },
+    {
+      "name": "R01 state, pin, and design bind the canonical B1 flat S01 cell",
+      "passed": true,
+      "details": {
+        "pinRunId": "R01",
+        "stateRunId": "R01"
+      }
+    },
+    {
+      "name": "R01 pin is launchable from clean committed Luna/max inputs",
+      "passed": true,
+      "details": {
+        "sourceRevision": "f52ef294a02ea259a0f7700e4d26aa9398c25687",
+        "reasoningEffort": "max",
+        "model": "gpt-6-luna"
+      }
+    },
+    {
+      "name": "pin, prompt, runtime, global manifest, and baseline archives bind their frozen hashes",
+      "passed": true,
+      "details": {
+        "pinSha256": "80b9a6b7b57a145285ec86c1666dda634ee2afff5c618a0a51dffc141afeeb23",
+        "businessSha256": "41f0b6f0f44ac73f0b899090dc7dcd3f3d56129176b172ceca96cba9e638a13d",
+        "promptSha256": "805c142c020701b3c153c9d517b20fdc79e388f0bdfc0e995bb8b98620cadf1d",
+        "cliSha256": "bbfe7d079f568a431148298de86a3aa26304a160781c2756591be070735f274a",
+        "globalSha256": "d6ac482758d4194326c3e3d52af5d39e064196007d653bbec93a55a635b34637"
+      }
+    },
+    {
+      "name": "host V2 limits, help access, and empty capabilities match the frozen protocol",
+      "passed": true,
+      "details": {
+        "hostProtocolVersion": "subagent-trial-host-v2",
+        "maxExchanges": 100,
+        "helpAllowed": true
+      }
+    },
+    {
+      "name": "frozen actor acceptance passed metadata and all ten S01 oracle cases",
+      "passed": true,
+      "details": {
+        "behaviorPassed": true,
+        "caseCount": 10,
+        "metadataPassed": true,
+        "acceptanceSha256": "9c61955c03d8eea67015113719acb9f878199ca1bffdbad22b1dc8b3020cc14c"
+      }
+    },
+    {
+      "name": "acceptance final actor inventory matches the post-close project tree while prepared actor inventory matches its pin",
+      "passed": true,
+      "details": {
+        "preparedActorInventorySha256": "e780f23d85487cb4b8d5bf8365104c98f32ed19575f80e0437489f7b35f32391",
+        "finalProjectTreeSha256": "c4ed17e96b83d8503db4a8f697cc96266c8f8b352b3df31edfb0533a0b0dec6c",
+        "files": 20,
+        "pinPreparedActorInventorySha256": "e780f23d85487cb4b8d5bf8365104c98f32ed19575f80e0437489f7b35f32391"
+      }
+    },
+    {
+      "name": "saved trace audit passes and binds this exact acceptance, pin, trace, and final tree",
+      "passed": true,
+      "details": {
+        "traceSha256": "704bba8f37ef9aeba5067f0cb09006517a0a2fdf3fda035207c2d42a7f251cc0",
+        "traceAuditSha256": "77c7ded37a86b1568dd4eca800bda8eb9f351cf39b6142c6db67401e7a2e7070",
+        "projectTreeSha256": "c4ed17e96b83d8503db4a8f697cc96266c8f8b352b3df31edfb0533a0b0dec6c",
+        "acceptanceSha256": "9c61955c03d8eea67015113719acb9f878199ca1bffdbad22b1dc8b3020cc14c"
+      }
+    },
+    {
+      "name": "saved acceptance binds this exact pin and independent verifier",
+      "passed": true,
+      "details": {
+        "pinSha256": "80b9a6b7b57a145285ec86c1666dda634ee2afff5c618a0a51dffc141afeeb23",
+        "verifierSha256": "84b3d0a8c4aee192f28b3d553ee134b1dfd20879dcf3ed38b2c607b0bc313c2b"
+      }
+    }
+  ],
+  "actorLaunchGate": {
+    "status": "not reached",
+    "requiredBeforeModelActorLaunch": true,
+    "runId": "R01",
+    "instruction": "The deterministic reference control occupies R01. Root must archive it or record verified owned cleanup before launching model actors."
+  },
+  "claimLimits": [
+    "R01 is an ownership-marked deterministic reference control; it is never counted as a model actor outcome.",
+    "A passed reference-control phase validates frozen inputs and a real V2 trace, but does not make R01 available for a model actor.",
+    "Root must archive the reference or record verified owned cleanup before any model actor launch.",
+    "The audit does not infer model identity from this deterministic control or add coordination events to the host trace.",
+    "Model tokens, turns, latency, and effective context size are not measured."
+  ]
+}
