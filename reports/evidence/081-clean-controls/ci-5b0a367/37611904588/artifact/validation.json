@@ -1,0 +1,552 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-10-07T11:07:19.8829443+00:00",
+  "completedAt": "2026-10-07T11:34:39.5945340+00:00",
+  "revision": "5b0a367862363bdee081de9678e529edeecdcf17",
+  "branch": "main",
+  "dirty": false,
+  "configuration": "Release",
+  "passed": true,
+  "checks": [
+    {
+      "name": "build",
+      "command": "dotnet build AgentLang.sln --configuration Release",
+      "exitCode": 0,
+      "durationMilliseconds": 88765,
+      "output": [
+        "  Determining projects to restore...",
+        "  Restored D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.ValueInspection.Tests\\AgentLang.ValueInspection.Tests.fsproj (in 1.9 sec).",
+        "  Restored D:\\a\\AgentLang\\AgentLang\\src\\AgentLang.Cli\\AgentLang.Cli.fsproj (in 1.9 sec).",
+        "  Restored D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.TrustedValues.Tests\\AgentLang.TrustedValues.Tests.fsproj (in 1.67 sec).",
+        "  Restored D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.Vocabulary.Tests\\AgentLang.Vocabulary.Tests.fsproj (in 1.91 sec).",
+        "  Restored D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.TaskBank.Tests\\AgentLang.TaskBank.Tests.fsproj (in 2 ms).",
+        "  Restored D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.Storage.Tests\\AgentLang.Storage.Tests.fsproj (in 2 ms).",
+        "  Restored D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.Source.Tests\\AgentLang.Source.Tests.fsproj (in 1 ms).",
+        "  Restored D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.IR.Tests\\AgentLang.IR.Tests.fsproj (in 3 ms).",
+        "  Restored D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.IR.Interpreter.Tests\\AgentLang.IR.Interpreter.Tests.fsproj (in 2 ms).",
+        "  Restored D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.IR.Formatting.Tests\\AgentLang.IR.Formatting.Tests.fsproj (in 2 ms).",
+        "  Restored D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.Harness.Tests\\AgentLang.Harness.Tests.fsproj (in 2 ms).",
+        "  Restored D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.Business.Tests\\AgentLang.Business.Tests.fsproj (in 2 ms).",
+        "  Restored D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.Business.Transitions.Tests\\AgentLang.Business.Transitions.Tests.fsproj (in 2 ms).",
+        "  Restored D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.Business.Contracts.Tests\\AgentLang.Business.Contracts.Tests.fsproj (in 2 ms).",
+        "  Restored D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.Acceptance\\AgentLang.Acceptance.fsproj (in 2 ms).",
+        "  Restored D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.Business.Language.Tests\\AgentLang.Business.Language.Tests.fsproj (in 3 ms).",
+        "  Restored D:\\a\\AgentLang\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj (in 2 ms).",
+        "  Restored D:\\a\\AgentLang\\AgentLang\\experiments\\AgentLang.SubagentTrials\\matched-renewal-001\\fixtures\\flow\\conventional\\MatchedRenewal.Flow.fsproj (in 1 ms).",
+        "  Restored D:\\a\\AgentLang\\AgentLang\\experiments\\AgentLang.SubagentTrials\\matched-renewal-001\\fixtures\\conventional\\MatchedRenewal.fsproj (in 1 ms).",
+        "  Restored D:\\a\\AgentLang\\AgentLang\\experiments\\AgentLang.Conventional\\AgentLang.Conventional.fsproj (in 1 ms).",
+        "  Restored D:\\a\\AgentLang\\AgentLang\\experiments\\AgentLang.Conventional.Cli\\AgentLang.Conventional.Cli.fsproj (in 2 ms).",
+        "  Restored D:\\a\\AgentLang\\AgentLang\\experiments\\AgentLang.Business\\AgentLang.Business.fsproj (in 1 ms).",
+        "  Restored D:\\a\\AgentLang\\AgentLang\\experiments\\AgentLang.Business.Contracts\\AgentLang.Business.Contracts.fsproj (in 2 ms).",
+        "  Restored D:\\a\\AgentLang\\AgentLang\\experiments\\AgentLang.Benchmarks\\AgentLang.Benchmarks.fsproj (in 1 ms).",
+        "  Restored D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.Flow.Tests\\AgentLang.Flow.Tests.fsproj (in 1 ms).",
+        "  Restored D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.Flow.Runtime.Tests\\AgentLang.Flow.Runtime.Tests.fsproj (in 2 ms).",
+        "  Restored D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.Flow.Lint.Tests\\AgentLang.Flow.Lint.Tests.fsproj (in 2 ms).",
+        "  Restored D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.Discovery.Tests\\AgentLang.Discovery.Tests.fsproj (in 1 ms).",
+        "  Restored D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.Conventional.Tests\\AgentLang.Conventional.Tests.fsproj (in 1 ms).",
+        "  Restored D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.Conventional.Cli.Tests\\AgentLang.Conventional.Cli.Tests.fsproj (in 2 ms).",
+        "  Restored D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.Cli.Tests\\AgentLang.Cli.Tests.fsproj (in 2 ms).",
+        "  AgentLang.TaskBank.Tests -> D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.TaskBank.Tests\\bin\\Release\\net9.0\\AgentLang.TaskBank.Tests.dll",
+        "  AgentLang.Business -> D:\\a\\AgentLang\\AgentLang\\experiments\\AgentLang.Business\\bin\\Release\\net9.0\\AgentLang.Business.dll",
+        "  MatchedRenewal -> D:\\a\\AgentLang\\AgentLang\\experiments\\AgentLang.SubagentTrials\\matched-renewal-001\\fixtures\\conventional\\bin\\Release\\net9.0\\MatchedRenewal.dll",
+        "  AgentLang.Conventional -> D:\\a\\AgentLang\\AgentLang\\experiments\\AgentLang.Conventional\\bin\\Release\\net9.0\\AgentLang.Conventional.dll",
+        "  MatchedRenewal.Flow -> D:\\a\\AgentLang\\AgentLang\\experiments\\AgentLang.SubagentTrials\\matched-renewal-001\\fixtures\\flow\\conventional\\bin\\Release\\net9.0\\MatchedRenewal.Flow.dll",
+        "  AgentLang.Conventional.Cli -> D:\\a\\AgentLang\\AgentLang\\experiments\\AgentLang.Conventional.Cli\\bin\\Release\\net9.0\\AgentLang.Conventional.Cli.dll",
+        "  AgentLang.Conventional.Tests -> D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.Conventional.Tests\\bin\\Release\\net9.0\\AgentLang.Conventional.Tests.dll",
+        "  AgentLang.Business.Contracts -> D:\\a\\AgentLang\\AgentLang\\experiments\\AgentLang.Business.Contracts\\bin\\Release\\net9.0\\AgentLang.Business.Contracts.dll",
+        "  AgentLang.Conventional.Cli.Tests -> D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.Conventional.Cli.Tests\\bin\\Release\\net9.0\\AgentLang.Conventional.Cli.Tests.dll",
+        "  AgentLang.Business.Tests -> D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.Business.Tests\\bin\\Release\\net9.0\\AgentLang.Business.Tests.dll",
+        "  AgentLang.Business.Contracts.Tests -> D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.Business.Contracts.Tests\\bin\\Release\\net9.0\\AgentLang.Business.Contracts.Tests.dll",
+        "  AgentLang.Core -> D:\\a\\AgentLang\\AgentLang\\src\\AgentLang.Core\\bin\\Release\\net9.0\\AgentLang.Core.dll",
+        "  AgentLang.Flow.Lint.Tests -> D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.Flow.Lint.Tests\\bin\\Release\\net9.0\\AgentLang.Flow.Lint.Tests.dll",
+        "  AgentLang.TrustedValues.Tests -> D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.TrustedValues.Tests\\bin\\Release\\net9.0\\AgentLang.TrustedValues.Tests.dll",
+        "  AgentLang.Business.Language.Tests -> D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.Business.Language.Tests\\bin\\Release\\net9.0\\AgentLang.Business.Language.Tests.dll",
+        "  AgentLang.Discovery.Tests -> D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.Discovery.Tests\\bin\\Release\\net9.0\\AgentLang.Discovery.Tests.dll",
+        "  AgentLang.IR.Tests -> D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.IR.Tests\\bin\\Release\\net9.0\\AgentLang.IR.Tests.dll",
+        "  AgentLang.IR.Interpreter.Tests -> D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.IR.Interpreter.Tests\\bin\\Release\\net9.0\\AgentLang.IR.Interpreter.Tests.dll",
+        "  AgentLang.Business.Transitions.Tests -> D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.Business.Transitions.Tests\\bin\\Release\\net9.0\\AgentLang.Business.Transitions.Tests.dll",
+        "  AgentLang.Benchmarks -> D:\\a\\AgentLang\\AgentLang\\experiments\\AgentLang.Benchmarks\\bin\\Release\\net9.0\\AgentLang.Benchmarks.dll",
+        "  AgentLang.Vocabulary.Tests -> D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.Vocabulary.Tests\\bin\\Release\\net9.0\\AgentLang.Vocabulary.Tests.dll",
+        "  AgentLang.Cli -> D:\\a\\AgentLang\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+        "  AgentLang.ValueInspection.Tests -> D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.ValueInspection.Tests\\bin\\Release\\net9.0\\AgentLang.ValueInspection.Tests.dll",
+        "  AgentLang.Cli.Tests -> D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.Cli.Tests\\bin\\Release\\net9.0\\AgentLang.Cli.Tests.dll",
+        "  AgentLang.Source.Tests -> D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.Source.Tests\\bin\\Release\\net9.0\\AgentLang.Source.Tests.dll",
+        "  AgentLang.IR.Formatting.Tests -> D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.IR.Formatting.Tests\\bin\\Release\\net9.0\\AgentLang.IR.Formatting.Tests.dll",
+        "  AgentLang.Harness.Tests -> D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.Harness.Tests\\bin\\Release\\net9.0\\AgentLang.Harness.Tests.dll",
+        "  AgentLang.Flow.Runtime.Tests -> D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.Flow.Runtime.Tests\\bin\\Release\\net9.0\\AgentLang.Flow.Runtime.Tests.dll",
+        "  AgentLang.Storage.Tests -> D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.Storage.Tests\\bin\\Release\\net9.0\\AgentLang.Storage.Tests.dll",
+        "  AgentLang.Acceptance -> D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.Acceptance\\bin\\Release\\net9.0\\AgentLang.Acceptance.dll",
+        "  AgentLang.Flow.Tests -> D:\\a\\AgentLang\\AgentLang\\tests\\AgentLang.Flow.Tests\\bin\\Release\\net9.0\\AgentLang.Flow.Tests.dll",
+        "",
+        "Build succeeded.",
+        "    0 Warning(s)",
+        "    0 Error(s)",
+        "",
+        "Time Elapsed 00:01:07.65"
+      ]
+    },
+    {
+      "name": "language-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Acceptance",
+      "exitCode": 0,
+      "durationMilliseconds": 11103,
+      "output": [
+        "PASS JSON-lines protocol and eval",
+        "PASS checked numeric boundaries",
+        "PASS effects and capability boundary",
+        "PASS Customer records, locals, and branches",
+        "PASS test-gated project commits",
+        "PASS candidate dependency persistence",
+        "PASS selected metadata dependency closure",
+        "PASS temporary metadata dependency rejection",
+        "PASS temporary session isolation",
+        "PASS scoped replacement and discard",
+        "PASS scoped test metadata persistence",
+        "PASS replacement caller tests gate durable updates",
+        "PASS stable word identity lifecycle",
+        "PASS runtime error test expectations",
+        "PASS typed value-expression expectations",
+        "PASS expectation-only dependency persistence",
+        "PASS expected-expression rename and coverage isolation",
+        "PASS strict structured eval and publication",
+        "PASS nominal and refined types",
+        "PASS validator rejection",
+        "PASS type-only commit",
+        "PASS frozen validator replacement",
+        "PASS raw source-site coverage identity",
+        "PASS library coverage gate",
+        "PASS task abort rollback",
+        "PASS task commit temporary cleanup",
+        "PASS task logs survive reload",
+        "PASS task log failures remain truthful warnings",
+        "PASS named snapshot restores project and providers",
+        "PASS semantic rename and deprecation",
+        "PASS typed containers and syntax metadata",
+        "PASS container library coverage",
+        "PASS live bounded Discovery commands",
+        "PASS compact word inventory",
+        "PASS verified IR runtime snapshots and formatter",
+        "All 35 acceptance groups passed (632 assertions)."
+      ]
+    },
+    {
+      "name": "harness-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Harness.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 6323,
+      "output": [
+        "PASS: 249 harness assertions"
+      ]
+    },
+    {
+      "name": "business-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Business.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 938,
+      "output": [
+        "PASS nominal identifiers and Email policy",
+        "PASS checked minor-unit arithmetic and price invariants",
+        "PASS immutable store and lookup",
+        "PASS subscription lifecycle",
+        "PASS invoice totals and validation",
+        "PASS payment provider boundary and receipt",
+        "PASS email outbox and provider isolation",
+        "Business reference: 7 groups, 113 assertions"
+      ]
+    },
+    {
+      "name": "business-contracts-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Business.Contracts.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 1037,
+      "output": [
+        "PASS deterministic baseline and canonical hash",
+        "PASS strict versioned document parsing",
+        "PASS identifiers, email policy, and normalization",
+        "PASS exact money, time, and quantity representations",
+        "PASS complete wire round-trip",
+        "PASS immutable Store projection and identity ledger",
+        "PASS fragment expansion and unsupported fields",
+        "PASS 7 groups, 69 assertions"
+      ]
+    },
+    {
+      "name": "trusted-values-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.TrustedValues.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 1248,
+      "output": [
+        "PASS GUID normalization and canonical storage",
+        "PASS Email validation against the conventional fixture",
+        "PASS checked Int64 arithmetic against BigInteger and Money",
+        "PASS instant parsing against the immutable contract",
+        "PASS canonical UTC comparison and day arithmetic",
+        "PASS primitive metadata and typed IR execution",
+        "PASS typed IR runtime and failure boundaries",
+        "Trusted values tests: 7 groups, 476 assertions"
+      ]
+    },
+    {
+      "name": "business-language-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Business.Language.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 15484,
+      "output": [
+        "PASS fixture and authored cases",
+        "PASS nominal identifiers, Email, and normalized instants against oracle",
+        "PASS Money checked arithmetic and signed Int32 quantity against oracle",
+        "PASS constructor validation, trimming precedence, and public-record boundary",
+        "PASS Store empty, multi-add, duplicate rejection, lookup order, and nominal rejection",
+        "PASS library/type commit, source and metadata persistence, and fresh reload",
+        "PASS 6 groups, 1368 assertions; 83 attached tests; 27 examples; 32 words and 26 types persisted and reloaded."
+      ]
+    },
+    {
+      "name": "business-transitions-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Business.Transitions.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 56371,
+      "output": [
+        "PASS fixture tests and examples",
+        "PASS deterministic seed, full-state projection, and strong types",
+        "PASS subscription start, cancel, and error precedence",
+        "PASS invoice lines, totals, and creation",
+        "PASS payment and email transition contracts",
+        "PASS stateful renewal, billing, payment, and FIFO retry",
+        "PASS dependency graph, effects, library coverage, and reload",
+        "PASS 7 groups, 3501 assertions; 151 tests and 44 examples per run; 53 words and 31 types persisted and reloaded."
+      ]
+    },
+    {
+      "name": "value-inspection-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.ValueInspection.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 1069,
+      "output": [
+        "PASS nested values and snapshot schema",
+        "PASS nominal distinction and ordering",
+        "PASS lossless integer and float encoding",
+        "PASS invalid host values and snapshots",
+        "PASS deterministic limits",
+        "AgentLang.ValueInspection.Tests: 44 assertions passed."
+      ]
+    },
+    {
+      "name": "source-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Source.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 1295,
+      "output": [
+        "All source tests passed (89 assertions)."
+      ]
+    },
+    {
+      "name": "flow-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Flow.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 3035,
+      "output": [
+        "Flow tests passed: 1006 assertions"
+      ]
+    },
+    {
+      "name": "flow-lint-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Flow.Lint.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 977,
+      "output": [
+        "AgentLang.Flow.Lint.Tests: 68 assertions passed."
+      ]
+    },
+    {
+      "name": "flow-runtime-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Flow.Runtime.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 23660,
+      "output": [
+        "Flow Runtime tests passed: 24 groups, 774 assertions."
+      ]
+    },
+    {
+      "name": "cli-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Cli.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 18108,
+      "output": [
+        "PASS CLI frontend selection and protocol authority",
+        "PASS compact and full words CLI requests",
+        "PASS Flow parser-driven interactive buffering",
+        "PASS Flow incomplete EOF and malformed recovery",
+        "PASS runtime help topics match protocol and recover from malformed input",
+        "PASS Flow file definition, CAS, and stable source identity",
+        "PASS Flow type source inspection and durable reload",
+        "PASS migrated Flow examples and fresh-process durability",
+        "PASS explicit Stack REPL retains end blocks",
+        "PASS 9 groups, 129 assertions"
+      ]
+    },
+    {
+      "name": "storage-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Storage.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 8410,
+      "output": [
+        "Storage tests passed: 16 groups, 314 assertions."
+      ]
+    },
+    {
+      "name": "conventional-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Conventional.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 9677,
+      "output": [
+        "PASS: 167 conventional tool assertions"
+      ]
+    },
+    {
+      "name": "conventional-cli-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Conventional.Cli.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 1056,
+      "output": [
+        "PASS default and custom exact limits",
+        "PASS excess mutation rejected before dispatch",
+        "PASS top-level and nested patch JSONL recovery",
+        "PASS patch respects the request limit",
+        "PASS malformed lines consume request budget",
+        "PASS default 100 request boundary",
+        "PASS invalid startup is rejected before dispatch",
+        "PASS 7 groups, 322 assertions"
+      ]
+    },
+    {
+      "name": "discovery-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Discovery.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 971,
+      "output": [
+        "AgentLang.Discovery.Tests: 106 assertions passed."
+      ]
+    },
+    {
+      "name": "ir-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.IR.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 2205,
+      "output": [
+        "PASS closed effect vocabulary",
+        "PASS concrete primitive specializations",
+        "PASS closed container constructors",
+        "PASS structured branches and coverage",
+        "PASS closed synthetic source classifications",
+        "PASS Option and Result payload scope",
+        "PASS generated record and scalar operations",
+        "PASS static callbacks and effects",
+        "PASS typed list fold verification",
+        "PASS identity and call-graph guards",
+        "PASS flat verifier stack safety",
+        "PASS compiler lowering and detached bodies",
+        "PASS attached Flow source origins",
+        "PASS compiler snapshot identity",
+        "AgentLang.IR.Tests: 114 assertions passed."
+      ]
+    },
+    {
+      "name": "ir-formatting-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.IR.Formatting.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 1191,
+      "output": [
+        "PASS verified authored function and branches",
+        "PASS callbacks locals and nominal closure",
+        "PASS generated and primitive documents",
+        "PASS structured lookup errors",
+        "PASS protocol depth guard",
+        "AgentLang.IR.Formatting.Tests: 43 assertions passed."
+      ]
+    },
+    {
+      "name": "ir-interpreter-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.IR.Interpreter.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 2176,
+      "output": [
+        "IR Interpreter tests passed (31 assertions)."
+      ]
+    },
+    {
+      "name": "vocabulary-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Vocabulary.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 910,
+      "output": [
+        "AgentLang.Vocabulary.Tests: 36 assertions passed."
+      ]
+    },
+    {
+      "name": "task-bank-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.TaskBank.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 928,
+      "output": [
+        "Task-bank validator passed: 2114 assertions, 60 tasks, 180 proposed vectors (minimum 3 / maximum 3 cases per task)."
+      ]
+    },
+    {
+      "name": "flow-call-binding-probe",
+      "command": "dotnet fsi --exec --reference:src/AgentLang.Core/bin/Release/net9.0/AgentLang.Core.dll scripts/Verify-FlowCallBindings.fsx",
+      "exitCode": 0,
+      "durationMilliseconds": 3778,
+      "output": [
+        "Core checkpoint: D:\\a\\AgentLang\\AgentLang\\src\\AgentLang.Core\\bin\\Release\\net9.0\\AgentLang.Core.dll",
+        "Core LastWriteTimeUtc: 10/7/2026 11:08:22 AM",
+        "Core SHA256: cb778afc61694b398cffe557eadb3c94126ad61ecf5368a9a70db47a95efed68",
+        "Flow call-binding probe passed 31 assertions."
+      ]
+    },
+    {
+      "name": "fresh-process-projection",
+      "command": "pwsh -NoProfile -File scripts/Verify-PersistenceProjection.ps1 -CliDll src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll -EvidencePath .agentlang/reports/validation.projection.json",
+      "exitCode": 0,
+      "durationMilliseconds": 8717,
+      "output": [
+        "Persistence projection verification passed. Evidence: D:\\a\\AgentLang\\AgentLang\\.agentlang\\reports\\validation.projection.json"
+      ]
+    },
+    {
+      "name": "matched-renewal-fixtures",
+      "command": "pwsh -NoProfile -File scripts/Verify-MatchedRenewalFixtures.ps1 -CliDll src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll -ConventionalDll experiments/AgentLang.SubagentTrials/matched-renewal-001/fixtures/conventional/bin/Release/net9.0/MatchedRenewal.dll -EvidencePath .agentlang/reports/validation.matched-fixtures.json",
+      "exitCode": 0,
+      "durationMilliseconds": 2106,
+      "output": [
+        "70 matched fixture checks passed. Evidence: D:\\a\\AgentLang\\AgentLang\\.agentlang\\reports\\validation.matched-fixtures.json"
+      ]
+    },
+    {
+      "name": "flow-matched-renewal-fixtures",
+      "command": "pwsh -NoProfile -File scripts/Verify-FlowMatchedRenewalFixtures.ps1 -CliDll src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll -ConventionalDll experiments/AgentLang.SubagentTrials/matched-renewal-001/fixtures/flow/conventional/bin/Release/net9.0/MatchedRenewal.Flow.dll -EvidencePath .agentlang/reports/validation.flow-matched-fixtures.json",
+      "exitCode": 0,
+      "durationMilliseconds": 4665,
+      "output": [
+        "129 Flow matched fixture checks passed. Evidence: D:\\a\\AgentLang\\AgentLang\\.agentlang\\reports\\validation.flow-matched-fixtures.json"
+      ]
+    },
+    {
+      "name": "matched-renewal-snapshots",
+      "command": "pwsh -NoProfile -File scripts/Verify-MatchedRenewalSnapshots.ps1 -CliDll src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll -EvidencePath .agentlang/reports/validation.matched-snapshots.json",
+      "exitCode": 0,
+      "durationMilliseconds": 1817,
+      "output": [
+        "26 frozen snapshot checks passed. Evidence: D:\\a\\AgentLang\\AgentLang\\.agentlang\\reports\\validation.matched-snapshots.json"
+      ]
+    },
+    {
+      "name": "flow-renewal-acceptance-gate",
+      "command": "pwsh -NoProfile -File scripts/Verify-FlowRenewalAcceptanceGate.ps1 -CliDll src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll -EvidencePath .agentlang/reports/validation.renewal-acceptance-gate.json",
+      "exitCode": 0,
+      "durationMilliseconds": 9467,
+      "output": [
+        "70 renewal acceptance regression checks passed. Evidence: D:\\a\\AgentLang\\AgentLang\\.agentlang\\reports\\validation.renewal-acceptance-gate.json"
+      ]
+    },
+    {
+      "name": "flow-renewal-replay",
+      "command": "pwsh -NoProfile -File scripts/Verify-FlowRenewalReplay.ps1 -CliDll src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll -EvidencePath .agentlang/reports/validation.renewal-replay.json",
+      "exitCode": 0,
+      "durationMilliseconds": 3798,
+      "output": [
+        "45 Flow renewal replay checks passed. Evidence: D:\\a\\AgentLang\\AgentLang\\.agentlang\\reports\\validation.renewal-replay.json"
+      ]
+    },
+    {
+      "name": "early-agent-negative-controls",
+      "command": "pwsh -NoProfile -File scripts/Verify-EarlyAgentNegativeControls.ps1 -CliDll src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll -EvidencePath .agentlang/reports/validation.early-agent-negative.json",
+      "exitCode": 0,
+      "durationMilliseconds": 8935,
+      "output": [
+        "5 wrong library solutions rejected after passing self-tests and own coverage. Evidence: D:\\a\\AgentLang\\AgentLang\\.agentlang\\reports\\validation.early-agent-negative.json"
+      ]
+    },
+    {
+      "name": "subagent-trial-host",
+      "command": "pwsh -NoProfile -File scripts/Verify-SubagentTrialHost.ps1 -CliDll src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll -EvidencePath .agentlang/reports/validation.subagent-host.json",
+      "exitCode": 0,
+      "durationMilliseconds": 67169,
+      "output": [
+        "Verification passed: 33 checks. Evidence: D:\\a\\AgentLang\\AgentLang\\.agentlang\\reports\\validation.subagent-host.json"
+      ]
+    },
+    {
+      "name": "subagent-trial-host-v2",
+      "command": "pwsh -NoProfile -File scripts/Verify-SubagentTrialHostV2.ps1 -CliDll src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll -EvidencePath .agentlang/reports/validation.subagent-host-v2.json",
+      "exitCode": 0,
+      "durationMilliseconds": 29332,
+      "output": [
+        "V2 focused verification passed: 29 checks. Evidence: D:\\a\\AgentLang\\AgentLang\\.agentlang\\reports\\validation.subagent-host-v2.json"
+      ]
+    },
+    {
+      "name": "parser-process-limits",
+      "command": "pwsh -NoProfile -File scripts/Verify-ParserLimits.ps1 -CliDll src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll -EvidencePath .agentlang/reports/validation.parser-limits.json",
+      "exitCode": 0,
+      "durationMilliseconds": 2227,
+      "output": [
+        "D:\\a\\AgentLang\\AgentLang\\.agentlang\\reports\\validation.parser-limits.json",
+        "[{\"passed\":true,\"name\":\"bounded host exited cleanly\"},{\"passed\":true,\"name\":\"exactly three responses\"},{\"passed\":true,\"name\":\"deep type rejected structurally\"},{\"passed\":true,\"name\":\"deep block rejected structurally\"},{\"passed\":true,\"name\":\"process remains usable after errors\"}]"
+      ]
+    },
+    {
+      "name": "business-policy-preflight",
+      "command": "pwsh -NoProfile -File scripts/Verify-BusinessPolicyPreflight.ps1 -Isolated -Configuration Release -EvidencePath .agentlang/reports/validation.business-policy-preflight.json",
+      "exitCode": 0,
+      "durationMilliseconds": 1239394,
+      "output": [
+        "growing/correct/S01: independent passed=True, expected=True",
+        "growing/correct/S06: independent passed=True, expected=True",
+        "growing/correct/S07: independent passed=True, expected=True",
+        "growing/noop/S01: independent passed=False, expected=False",
+        "growing/noop/S06: independent passed=False, expected=False",
+        "growing/noop/S07: independent passed=False, expected=False",
+        "growing/wrong-trim/S01: independent passed=False, expected=False",
+        "growing/wrong-rate/S06: independent passed=False, expected=False",
+        "growing/wrong-rounding/S07: independent passed=False, expected=False",
+        "growing/wrong-overflow/S07: independent passed=False, expected=False",
+        "flat/correct/S01: independent passed=True, expected=True",
+        "flat/correct/S06: independent passed=True, expected=True",
+        "flat/correct/S07: independent passed=True, expected=True",
+        "flat/noop/S01: independent passed=False, expected=False",
+        "flat/noop/S06: independent passed=False, expected=False",
+        "flat/noop/S07: independent passed=False, expected=False",
+        "flat/wrong-trim/S01: independent passed=False, expected=False",
+        "flat/wrong-rate/S06: independent passed=False, expected=False",
+        "flat/wrong-rounding/S07: independent passed=False, expected=False",
+        "flat/wrong-overflow/S07: independent passed=False, expected=False",
+        "conventional/correct/S01: independent passed=True, expected=True",
+        "conventional/correct/S06: independent passed=True, expected=True",
+        "conventional/correct/S07: independent passed=True, expected=True",
+        "conventional/noop/S01: independent passed=False, expected=False",
+        "conventional/noop/S06: independent passed=False, expected=False",
+        "conventional/noop/S07: independent passed=False, expected=False",
+        "conventional/wrong-trim/S01: independent passed=False, expected=False",
+        "conventional/wrong-rate/S06: independent passed=False, expected=False",
+        "conventional/wrong-rounding/S07: independent passed=False, expected=False",
+        "conventional/wrong-overflow/S07: independent passed=False, expected=False",
+        "Business policy preflight passes 98 checks across 30 independent outcomes."
+      ]
+    },
+    {
+      "name": "diff-whitespace",
+      "command": "git diff --check",
+      "exitCode": 0,
+      "durationMilliseconds": 45,
+      "output": []
+    },
+    {
+      "name": "staged-diff-whitespace",
+      "command": "git diff --cached --check",
+      "exitCode": 0,
+      "durationMilliseconds": 48,
+      "output": []
+    }
+  ]
+}

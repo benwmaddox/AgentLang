@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-retention-003",
+  "runId": "R01",
+  "resultKind": "auditor-fullpath-diagnostic",
+  "diagnosticOnly": true,
+  "diagnosticAuditPassed": true,
+  "accepted": false,
+  "genuineSourceProvenanceVerified": false,
+  "productionAuditorPath": "scripts/Audit-RetentionTrace.ps1",
+  "productionAuditorSha256": "464da59005f26f760b921748991b2e7fdc41a863afac92db250cdcd6115240ec",
+  "parserErrors": 0,
+  "diagnosticException": "The ignored copy bypassed only the three current working self-file hash comparisons for scripts/Audit-RetentionTrace.ps1. Its report records the copied auditor SHA. All other inputs, committed Git blobs, runtime, pin/global, baseline, acceptance, trace, protocol, and termination checks were strict.",
+  "selfSourceChecks": [
+    {
+      "line": 279,
+      "predicate": "working source matches frozen source for scripts/Audit-RetentionTrace.ps1",
+      "diagnosticTreatment": "Current working auditor hash was not compared; committed snapshot/source hash equality remained enforced."
+    },
+    {
+      "line": 452,
+      "predicate": "running trace auditor matches frozen source hash",
+      "diagnosticTreatment": "Replaced by exact pin auditor SHA equality with its unique sourceArtifacts row sha256, gitBlobSha256, and sourceGitBlobSha256."
+    },
+    {
+      "line": 470,
+      "predicate": "working frozen input hash for scripts/Audit-RetentionTrace.ps1",
+      "diagnosticTreatment": "Replaced by exact committed source-artifact hash equality; committed Git input hash remained enforced."
+    }
+  ],
+  "diagnosticCopy": {
+    "path": ".agentlang/business-policy-retention-003/evidence/081-audit-fullpath-diagnostic-17a6f6cd33a241109737ec53f12e4cd9.ps1",
+    "sha256": "79c4b9b5846559e2db2f2a530a1151cc3cbc10a2572cc9ecb819c4c013dc63b9"
+  },
+  "fullPathReport": {
+    "path": ".agentlang/business-policy-retention-003/runs/R01/trace-audit-diagnostic-17a6f6cd33a241109737ec53f12e4cd9.json",
+    "sha256": "ba922fdfb9f75ea2a5cb0344bdda85343e7850f6a3386a7c275c482b2c8b5231",
+    "passed": true,
+    "diagnosticOnly": true,
+    "checkCount": 662,
+    "failedCheckCount": 0,
+    "calls": 6,
+    "testExecutions": 3,
+    "testsFailed": 0,
+    "genericTerminationExitCode": 0,
+    "traceSha256": "b603ba47fba4732f53bd5942742eafad3bde6156a31c9a7d75ec65a6f0cadc07",
+    "acceptanceSha256": "4c3fd70a545bf86d02ba2c9aded7e3a170efadcfc2c3e44ebbaec0d38b0a39e2"
+  },
+  "console": {
+    "path": ".agentlang/business-policy-retention-003/evidence/081-audit-fullpath-diagnostic-17a6f6cd33a241109737ec53f12e4cd9-output.txt",
+    "sha256": "8e7e74e10ecc6bc5aea5cf3d4af82045b117b0ae80f62bbe3c0623b7106c6577"
+  },
+  "focusedControls": {
+    "timestampNormalization": {
+      "sameInstantAccepted": true,
+      "differentInstantRejected": true,
+      "missingOffsetRejected": true,
+      "invalidValueRejected": true,
+      "otherPrelaunchFieldTamperRejected": true,
+      "scope": "preparedAtUtc only; in-memory normalization after explicit-offset DateTimeOffset equivalence"
+    },
+    "eventSequence": {
+      "positiveExchangeCounts": [
+        0,
+        1,
+        6
+      ],
+      "missingExchangeRejected": true,
+      "extraExchangeRejected": true,
+      "reorderedCloseRejected": true
+    },
+    "disabledInspectionBudget": {
+      "actualAbsentFieldAccepted": true,
+      "explicitNullAccepted": true,
+      "nonNullValueRejected": true
+    },
+    "closeFrame": {
+      "canonicalAccepted": true,
+      "canonicalPlusOneCRAccepted": true,
+      "fixtureRawAccepted": true,
+      "LFRejected": true,
+      "multipleCRRejected": true,
+      "trailingSpaceRejected": true,
+      "extraFieldRejected": true,
+      "wrongOperationRejected": true
+    },
+    "exchangeFrames": {
+      "validatedFrames": 12,
+      "allRawLinesAccepted": true,
+      "allRawPlusLFWireBytesExact": true,
+      "noCRAccepted": true,
+      "singleTerminalCRAccepted": true,
+      "embeddedCRRejected": true,
+      "multipleCRRejected": true,
+      "LFRejected": true
+    }
+  }
+}

@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "resultKind": "non-genuine-auditor-fullpath-controls",
+  "accepted": false,
+  "genuineSourceProvenanceVerified": false,
+  "productionAuditorSha256": "464da59005f26f760b921748991b2e7fdc41a863afac92db250cdcd6115240ec",
+  "diagnosticOnly": true,
+  "fullpathPassed": true,
+  "checks": 662,
+  "exception": "Working self-file hash checks for scripts/Audit-RetentionTrace.ps1 are replaced only by exact committed pin/source-artifact hash equality; all other provenance and behavior checks remain unchanged.",
+  "files": [
+    {
+      "sourcePath": ".agentlang/business-policy-retention-003/evidence/081-audit-debug-2d7502038a4a43c1ba7c705c05be931b.txt",
+      "path": "reports/evidence/081-clean-controls/auditor-fullpath-diagnostics/.agentlang/business-policy-retention-003/evidence/081-audit-debug-2d7502038a4a43c1ba7c705c05be931b.txt",
+      "bytes": 5236591,
+      "sha256": "b590eca19334a4f02365e4fd87c945d7a4b4ccc53cd6a863faf4ee6a9dfb7ee8"
+    },
+    {
+      "sourcePath": ".agentlang/business-policy-retention-003/evidence/081-audit-fullpath-diagnostic-03689a577ada442abd200a28fd992c5a-output.txt",
+      "path": "reports/evidence/081-clean-controls/auditor-fullpath-diagnostics/.agentlang/business-policy-retention-003/evidence/081-audit-fullpath-diagnostic-03689a577ada442abd200a28fd992c5a-output.txt",
+      "bytes": 128,
+      "sha256": "1e8dc578d4ebfb78fe4aec5f4b5ebb0757b35382dc2e5a100cc4130430e4d390"
+    },
+    {
+      "sourcePath": ".agentlang/business-policy-retention-003/evidence/081-audit-fullpath-diagnostic-03689a577ada442abd200a28fd992c5a.ps1",
+      "path": "reports/evidence/081-clean-controls/auditor-fullpath-diagnostics/.agentlang/business-policy-retention-003/evidence/081-audit-fullpath-diagnostic-03689a577ada442abd200a28fd992c5a.ps1",
+      "bytes": 73960,
+      "sha256": "ccb37ec01846ce1d21cc74defc1df034ea30a236284184bca0f8d60be8e742de"
+    },
+    {
+      "sourcePath": ".agentlang/business-policy-retention-003/evidence/081-audit-fullpath-diagnostic-17a6f6cd33a241109737ec53f12e4cd9-output.txt",
+      "path": "reports/evidence/081-clean-controls/auditor-fullpath-diagnostics/.agentlang/business-policy-retention-003/evidence/081-audit-fullpath-diagnostic-17a6f6cd33a241109737ec53f12e4cd9-output.txt",
+      "bytes": 117,
+      "sha256": "8e7e74e10ecc6bc5aea5cf3d4af82045b117b0ae80f62bbe3c0623b7106c6577"
+    },
+    {
+      "sourcePath": ".agentlang/business-policy-retention-003/evidence/081-audit-fullpath-diagnostic-17a6f6cd33a241109737ec53f12e4cd9.ps1",
+      "path": "reports/evidence/081-clean-controls/auditor-fullpath-diagnostics/.agentlang/business-policy-retention-003/evidence/081-audit-fullpath-diagnostic-17a6f6cd33a241109737ec53f12e4cd9.ps1",
+      "bytes": 74268,
+      "sha256": "79c4b9b5846559e2db2f2a530a1151cc3cbc10a2572cc9ecb819c4c013dc63b9"
+    },
+    {
+      "sourcePath": ".agentlang/business-policy-retention-003/evidence/081-audit-fullpath-diagnostic-4511b9f741c14ac3a23b64d1ea31b28d.ps1",
+      "path": "reports/evidence/081-clean-controls/auditor-fullpath-diagnostics/.agentlang/business-policy-retention-003/evidence/081-audit-fullpath-diagnostic-4511b9f741c14ac3a23b64d1ea31b28d.ps1",
+      "bytes": 73977,
+      "sha256": "576bf098497dc622c6f49b4e78b2f5b5e9e7e8c150d0290fee070ace27486de6"
+    },
+    {
+      "sourcePath": ".agentlang/business-policy-retention-003/evidence/081-audit-fullpath-diagnostic-88cc9c424245414bbf0ae8f148666dd1-output.txt",
+      "path": "reports/evidence/081-clean-controls/auditor-fullpath-diagnostics/.agentlang/business-policy-retention-003/evidence/081-audit-fullpath-diagnostic-88cc9c424245414bbf0ae8f148666dd1-output.txt",
+      "bytes": 95,
+      "sha256": "259b65d295a6f935af2ef6779dec7e22f307c0920dd4f7014c9ccab6d76ff652"
+    },
+    {
+      "sourcePath": ".agentlang/business-policy-retention-003/evidence/081-audit-fullpath-diagnostic-88cc9c424245414bbf0ae8f148666dd1.ps1",
+      "path": "reports/evidence/081-clean-controls/auditor-fullpath-diagnostics/.agentlang/business-policy-retention-003/evidence/081-audit-fullpath-diagnostic-88cc9c424245414bbf0ae8f148666dd1.ps1",
+      "bytes": 74041,
+      "sha256": "e6e0b489fc137d8d794197acf7fde2340787586ae3248c096e8985db7ef28f78"
+    },
+    {
+      "sourcePath": ".agentlang/business-policy-retention-003/evidence/081-audit-fullpath-diagnostic-a74741573e9b4ff69a3c8f65f18796a3-output.txt",
+      "path": "reports/evidence/081-clean-controls/auditor-fullpath-diagnostics/.agentlang/business-policy-retention-003/evidence/081-audit-fullpath-diagnostic-a74741573e9b4ff69a3c8f65f18796a3-output.txt",
+      "bytes": 608,
+      "sha256": "238a776643f4aace7b3a8079e1fed1589698eb32de8814bb92d1639e576d4287"
+    },
+    {
+      "sourcePath": ".agentlang/business-policy-retention-003/evidence/081-audit-fullpath-diagnostic-a74741573e9b4ff69a3c8f65f18796a3.ps1",
+      "path": "reports/evidence/081-clean-controls/auditor-fullpath-diagnostics/.agentlang/business-policy-retention-003/evidence/081-audit-fullpath-diagnostic-a74741573e9b4ff69a3c8f65f18796a3.ps1",
+      "bytes": 73734,
+      "sha256": "9578d556a9e6138af4dc6ead4b25bf189c03377ce1d933eb809a56636d7f409a"
+    },
+    {
+      "sourcePath": ".agentlang/business-policy-retention-003/evidence/081-audit-fullpath-diagnostic-cbccbcd03c3442699d189b90b295f3e3-output.txt",
+      "path": "reports/evidence/081-clean-controls/auditor-fullpath-diagnostics/.agentlang/business-policy-retention-003/evidence/081-audit-fullpath-diagnostic-cbccbcd03c3442699d189b90b295f3e3-output.txt",
+      "bytes": 134,
+      "sha256": "d5d7e441bf98be816a56caab68d350086ed3326ef1f6af86f60cd0bf4f8a8f55"
+    },
+    {
+      "sourcePath": ".agentlang/business-policy-retention-003/evidence/081-audit-fullpath-diagnostic-cbccbcd03c3442699d189b90b295f3e3.ps1",
+      "path": "reports/evidence/081-clean-controls/auditor-fullpath-diagnostics/.agentlang/business-policy-retention-003/evidence/081-audit-fullpath-diagnostic-cbccbcd03c3442699d189b90b295f3e3.ps1",
+      "bytes": 73775,
+      "sha256": "4a42a233eabcc93bc0ccfb32678c8fdb556863963686dcb424ebb7d1d7c1524a"
+    },
+    {
+      "sourcePath": ".agentlang/business-policy-retention-003/evidence/081-audit-runtime-source-diagnostic-496a70815e064d07b001d8de6b2cd31a-output.txt",
+      "path": "reports/evidence/081-clean-controls/auditor-fullpath-diagnostics/.agentlang/business-policy-retention-003/evidence/081-audit-runtime-source-diagnostic-496a70815e064d07b001d8de6b2cd31a-output.txt",
+      "bytes": 121,
+      "sha256": "c88814e5747227f13ff3f68aa60e47765ba96ea9ea03dd45cb4f1108213489bf"
+    },
+    {
+      "sourcePath": ".agentlang/business-policy-retention-003/evidence/081-audit-runtime-source-diagnostic-496a70815e064d07b001d8de6b2cd31a.ps1",
+      "path": "reports/evidence/081-clean-controls/auditor-fullpath-diagnostics/.agentlang/business-policy-retention-003/evidence/081-audit-runtime-source-diagnostic-496a70815e064d07b001d8de6b2cd31a.ps1",
+      "bytes": 72214,
+      "sha256": "5e511c58a16fcafec443d0e54c83777f15713a0d5ee3fda351412ff7fc5e5293"
+    },
+    {
+      "sourcePath": ".agentlang/business-policy-retention-003/evidence/081-audit-runtime-source-diagnostic-4af350865e254ae083c7b87a8caf2189-output.txt",
+      "path": "reports/evidence/081-clean-controls/auditor-fullpath-diagnostics/.agentlang/business-policy-retention-003/evidence/081-audit-runtime-source-diagnostic-4af350865e254ae083c7b87a8caf2189-output.txt",
+      "bytes": 127,
+      "sha256": "dd5794d795b3f65a4140bad6733c1347c2f7292216d107dfa090e5ed6d77d136"
+    },
+    {
+      "sourcePath": ".agentlang/business-policy-retention-003/evidence/081-audit-runtime-source-diagnostic-4af350865e254ae083c7b87a8caf2189.ps1",
+      "path": "reports/evidence/081-clean-controls/auditor-fullpath-diagnostics/.agentlang/business-policy-retention-003/evidence/081-audit-runtime-source-diagnostic-4af350865e254ae083c7b87a8caf2189.ps1",
+      "bytes": 72533,
+      "sha256": "7172354564e715819d48a58bf02a512b3c6ce843c62fe7fa96590434512cd253"
+    },
+    {
+      "sourcePath": ".agentlang/business-policy-retention-003/evidence/081-audit-runtime-source-diagnostic-4d75484886b846b9ba85de18d8166ee2-output.txt",
+      "path": "reports/evidence/081-clean-controls/auditor-fullpath-diagnostics/.agentlang/business-policy-retention-003/evidence/081-audit-runtime-source-diagnostic-4d75484886b846b9ba85de18d8166ee2-output.txt",
+      "bytes": 208,
+      "sha256": "4b9280def7178b2ee4eedc6a3d81b91f00521c2534bbbcb1764b35424af0a6ee"
+    },
+    {
+      "sourcePath": ".agentlang/business-policy-retention-003/evidence/081-audit-runtime-source-diagnostic-4d75484886b846b9ba85de18d8166ee2.ps1",
+      "path": "reports/evidence/081-clean-controls/auditor-fullpath-diagnostics/.agentlang/business-policy-retention-003/evidence/081-audit-runtime-source-diagnostic-4d75484886b846b9ba85de18d8166ee2.ps1",
+      "bytes": 72447,
+      "sha256": "2b9ac4a26fd1a7b1f214d891e3a323dc5e38a52b74aee2f255972e94dc46f7d4"
+    },
+    {
+      "sourcePath": ".agentlang/business-policy-retention-003/evidence/081-audit-runtime-source-diagnostic-bd5ea0a550754b1092369bd6720e8870-output.txt",
+      "path": "reports/evidence/081-clean-controls/auditor-fullpath-diagnostics/.agentlang/business-policy-retention-003/evidence/081-audit-runtime-source-diagnostic-bd5ea0a550754b1092369bd6720e8870-output.txt",
+      "bytes": 132,
+      "sha256": "261ddc32f2a676d0b9243c773da78a350e77d655d6351c96a9a1325ec92e17b7"
+    },
+    {
+      "sourcePath": ".agentlang/business-policy-retention-003/evidence/081-audit-runtime-source-diagnostic-bd5ea0a550754b1092369bd6720e8870.ps1",
+      "path": "reports/evidence/081-clean-controls/auditor-fullpath-diagnostics/.agentlang/business-policy-retention-003/evidence/081-audit-runtime-source-diagnostic-bd5ea0a550754b1092369bd6720e8870.ps1",
+      "bytes": 72471,
+      "sha256": "0bde4e852a64003724bf81b72c7da1e300305861e8126e8033e4269571cdd992"
+    },
+    {
+      "sourcePath": ".agentlang/business-policy-retention-003/runs/R01/trace-audit-diagnostic-17a6f6cd33a241109737ec53f12e4cd9.json",
+      "path": "reports/evidence/081-clean-controls/auditor-fullpath-diagnostics/.agentlang/business-policy-retention-003/runs/R01/trace-audit-diagnostic-17a6f6cd33a241109737ec53f12e4cd9.json",
+      "bytes": 148641,
+      "sha256": "ba922fdfb9f75ea2a5cb0344bdda85343e7850f6a3386a7c275c482b2c8b5231"
+    }
+  ]
+}

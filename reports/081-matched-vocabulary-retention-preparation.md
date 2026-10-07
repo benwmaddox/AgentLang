@@ -1,14 +1,17 @@
 # Matched vocabulary-retention preparation
 
-Status: corrected frozen acceptance passed; trace-audit repair pending.
-Canonical Flat and rich baselines are archived. The corrected R01 reference
-passed 157 checks and 10 independent cases, then closed successfully. Its study
-trace audit failed on argument conversion; its marked slots remain occupied.
+Status: auditor repairs passed the full diagnostic; genuine refreeze pending.
+Canonical Flat and rich baselines are archived. Frozen references passed 157
+checks and 10 independent cases, then closed successfully. Auditor defects were
+repaired and its full diagnostic passed 662 checks. That diagnostic substitutes
+three self-source identity checks and is explicitly not genuine acceptance.
+The preserved reference slots are clear for a new committed source freeze.
 No model actors have been launched and no efficiency result is claimed.
 
-The latest published revision, f3f4391, passed 37/37 CI checks on both branches.
-Corrected clean revision 32226ef passed 63/63 candidate controls and genuine
-frozen reference acceptance. The remaining auditor repair will require its own
+Published revisions f3f4391 and 5b0a367 passed 37/37 CI checks on both branches;
+their downloaded evidence is archived separately.
+Corrected clean revisions 32226ef and 1f19949 passed 63/63 candidate controls
+and genuine frozen reference acceptance. The remaining auditor repair requires
 committed source pins and controls before the 12 isolated agent cells. The
 execution notes below preserve earlier states and failures; they are not the
 current launch status.
@@ -124,3 +127,9 @@ Main/prototype were fast-forwarded and atomically pushed to 5b0a367 with the cor
 The auditor's exact task-ID predicate is repaired and independently reviewed: sorting is materialized before the same exact S01|S07 comparison. Production-helper controls pass positive scalar Boolean and wrong-ID rejection (evidence/081-auditor-predicate-controls.json). The old source-bound reference remains preserved; 116 archive files matched before its owned run/actor and frozen source artifacts were moved aside. R01 slots are clear and baseline identities unchanged. A new clean freeze and genuine full audit remain required.
 
 The corrected auditor is pinned in regenerated 23-source snapshots and a clean global freeze, retaining the unchanged 8bff657 runtime and canonical baseline archives. A fresh full candidate/reference/audit run for this source inventory is pending.
+
+On clean 1f19949, the repaired-auditor inventory passed all 63 candidate checks and a new genuine frozen reference passed 157 checks plus all 10 S01 cases. Actual acceptance-before-close coordinator evidence is saved. The audit then advanced past its task predicate but failed an undefined Assert-RuntimeSourceUnchanged helper. Exact source/candidate/reference evidence is preserved under evidence/081-clean-controls/repaired-auditor-reference with index evidence/081-repaired-auditor-reference-index.json. No model actor ran; the missing helper and remaining helper dependencies are being reviewed together before another freeze.
+
+Both published 5b0a367 CI jobs completed successfully: prototype 37611904373 and main 37611904588 each passed 37/37 checks on clean source. Downloaded exact artifacts and metadata are archived under evidence/081-clean-controls/ci-5b0a367, indexed by evidence/081-ci-5b0a367-index.json. They do not validate the subsequent working auditor repairs or imply a measured model outcome.
+
+The full auditor diagnostic passed all 662 checks, six exchanges, three test executions and no failed tests, including generic termination exit 0. It is explicitly diagnosticOnly=true: three current auditor self-source comparisons were replaced by exact committed pin/source-artifact bindings. It is not genuine frozen provenance or an agent result. Focused controls and independent review cover the runtime-source helper, source-input variable collision, separator characters, same-instant timestamp equivalence with other fields exact, ordered event construction, optional disabled budget fields, and exact LF/CRLF transport framing. No raw bytes are normalized for wire/hash validation. See evidence/081-auditor-fullpath-controls.json; all 21 diagnostic artifacts are byte-archived with evidence/081-auditor-diagnostic-archive-index.json. Full source repair SHA is 464da590. R01 was preserved and released after verifying original and added diagnostic files against archives; canonical baselines were retained (evidence/081-auditor-reference-slot-release.json). Genuine clean candidate/reference/audit controls remain required before fresh model launch. Exercising this positive path earlier would have avoided repeated freeze cycles; the earlier CI passes did not cover it.

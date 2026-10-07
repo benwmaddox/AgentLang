@@ -317,9 +317,9 @@ function Get-VerifiedBaselineArchive([object]$Record, [string]$Revision, [object
     }
     $inputs = Sort-OrdinalRows @($manifest.sourceInputs | ForEach-Object { [pscustomobject][ordered]@{path=$_.path;sha256=$_.sha256} })
     Check ((ConvertTo-Json -InputObject $inputs -Depth 100 -Compress) -ceq (ConvertTo-Json -InputObject @($Record.sourceInputs) -Depth 100 -Compress)) "$($Record.kind) source inputs match the manifest"
-    foreach ($input in $inputs) {
-        $artifact = @($SourceArtifacts | Where-Object { $_.sourcePath -ceq $input.path -and $_.sha256 -ceq $input.sha256 })
-        Check ($artifact.Count -eq 1) "$($Record.kind) source input is pinned as a source artifact: $($input.path)"
+    foreach ($sourceInput in $inputs) {
+        $artifact = @($SourceArtifacts | Where-Object { $_.sourcePath -ceq $sourceInput.path -and $_.sha256 -ceq $sourceInput.sha256 })
+        Check ($artifact.Count -eq 1) "$($Record.kind) source input is pinned as a source artifact: $($sourceInput.path)"
     }
     return [pscustomobject][ordered]@{manifest=$manifest;inventory=$inventory;inventoryHash=$inventoryHash}
 }
@@ -350,10 +350,12 @@ function Invoke-GenericTerminationAudit([string]$TraceFile, [string]$AuditorFile
 }
 
 function Assert-Frame([object]$Frame, [string]$Label, [long]$MaxPayloadBytes) {
-    if ($null -eq $Frame.rawLine -or $Frame.rawLine -isnot [string]) { throw "$Label is missing its raw JSON payload." }
-    if ($Frame.rawLine.Contains("`n") -or $Frame.rawLine.Contains("`r")) { throw "$Label raw JSON payload contains a line terminator." }
-    $null = Read-JsonText ([string]$Frame.rawLine) $Label
-    $payloadBytes = [Text.UTF8Encoding]::new($false, $true).GetBytes([string]$Frame.rawLine)
+    $rawPayload = Get-Property $Frame 'rawLine'
+    if ($null -eq $rawPayload -or $rawPayload -isnot [string]) { throw "$Label is missing its raw JSON payload." }
+    $singleTrailingCr = $rawPayload.EndsWith("`r",[StringComparison]::Ordinal) -and -not $rawPayload.Substring(0,$rawPayload.Length - 1).Contains("`r")
+    if ($rawPayload.Contains("`n") -or ($rawPayload.Contains("`r") -and -not $singleTrailingCr)) { throw "$Label raw JSON payload contains a disallowed line terminator." }
+    $null = Read-JsonText $rawPayload $Label
+    $payloadBytes = [Text.UTF8Encoding]::new($false, $true).GetBytes($rawPayload)
     $wireBytes = [Convert]::FromBase64String([string]$Frame.wireBase64)
     $expectedWire = [byte[]]::new($payloadBytes.Length + 1)
     [Array]::Copy($payloadBytes,$expectedWire,$payloadBytes.Length)
@@ -365,10 +367,11 @@ function Assert-Frame([object]$Frame, [string]$Label, [long]$MaxPayloadBytes) {
     return [pscustomobject][ordered]@{payloadBytes=$payloadBytes.Length;wireBytes=$wireBytes.Length;wireSha256=$Frame.sha256;payloadSha256=(Get-Sha256Bytes $payloadBytes)}
 }
 
-function Assert-RuntimeBuildRevision([string]$BuildRevision, [string]$StudyRevision) {
-    $null = Get-GitSnapshotBytes $BuildRevision 'src/AgentLang.Core/Runtime.fs'
+function Assert-RuntimeSourceUnchanged([string]$BuildRevision, [string]$StudyRevision) {
+    $null = & git -C $repo cat-file -e "$BuildRevision^{commit}" 2>&1
+    if ($LASTEXITCODE -ne 0) { throw "Runtime build source revision is not a local Git commit: $BuildRevision" }
     $changed = @(& git -C $repo diff --name-only --no-renames $BuildRevision $StudyRevision -- src experiments/AgentLang.Business Directory.Build.props Directory.Build.targets '*.props' '*.targets')
-    if ($LASTEXITCODE -ne 0) { throw 'Could not compare runtime source at build revision and trial revision.' }
+    if ($LASTEXITCODE -ne 0) { throw 'Could not compare runtime source between its build commit and the study source revision.' }
     Check ($changed.Count -eq 0) 'runtime language/build source is unchanged since the clean pinned fresh build'
 }
 
@@ -634,7 +637,7 @@ try {
 
     $canonicalAcceptanceFile = [IO.Path]::GetFullPath((Join-Path $run 'acceptance.json'))
     $acceptanceFile = if ([string]::IsNullOrWhiteSpace($AcceptancePath)) { $canonicalAcceptanceFile } else { Get-FullPath $AcceptancePath }
-    $acceptanceRunPrefix = $run.TrimEnd([char[]]@('\\','/')) + [IO.Path]::DirectorySeparatorChar
+    $acceptanceRunPrefix = $run.TrimEnd([char[]]@([IO.Path]::DirectorySeparatorChar,[IO.Path]::AltDirectorySeparatorChar)) + [IO.Path]::DirectorySeparatorChar
     if (-not $acceptanceFile.StartsWith($acceptanceRunPrefix,[StringComparison]::OrdinalIgnoreCase)) { throw 'Acceptance evidence must remain inside this run directory.' }
     Check ($acceptanceFile -ceq $canonicalAcceptanceFile) 'acceptance evidence uses the canonical run/acceptance.json path'
     Check ((Test-Path -LiteralPath $acceptanceFile -PathType Leaf)) 'canonical per-run acceptance evidence exists'
@@ -649,6 +652,19 @@ try {
     $canonicalPinPath = [IO.Path]::GetFullPath($pinPath)
     $canonicalAcceptancePinPath = [string](Get-Property $acceptancePin 'path')
     $canonicalAcceptancePrelaunchPath = [string](Get-Property $acceptancePrelaunch 'path')
+    $acceptedPreparedAtValue = Get-Property $acceptancePrelaunchData 'preparedAtUtc'
+    $pinnedPreparedAtValue = Get-Property $pin 'preparedAtUtc'
+    $acceptedPreparedAt = [DateTimeOffset]::MinValue
+    $pinnedPreparedAt = [DateTimeOffset]::MinValue
+    $timestampCulture = [Globalization.CultureInfo]::InvariantCulture
+    $timestampStyles = [Globalization.DateTimeStyles]::RoundtripKind
+    $acceptedPreparedAtHasOffset = $acceptedPreparedAtValue -is [string] -and [regex]::IsMatch([string]$acceptedPreparedAtValue,'(?:Z|[+-][0-9]{2}:[0-9]{2})$',[Text.RegularExpressions.RegexOptions]::CultureInvariant)
+    $pinnedPreparedAtHasOffset = $pinnedPreparedAtValue -is [string] -and [regex]::IsMatch([string]$pinnedPreparedAtValue,'(?:Z|[+-][0-9]{2}:[0-9]{2})$',[Text.RegularExpressions.RegexOptions]::CultureInvariant)
+    $acceptedPreparedAtValid = $acceptedPreparedAtHasOffset -and [DateTimeOffset]::TryParse([string]$acceptedPreparedAtValue,$timestampCulture,$timestampStyles,[ref]$acceptedPreparedAt)
+    $pinnedPreparedAtValid = $pinnedPreparedAtHasOffset -and [DateTimeOffset]::TryParse([string]$pinnedPreparedAtValue,$timestampCulture,$timestampStyles,[ref]$pinnedPreparedAt)
+    $preparedAtEquivalent = $acceptedPreparedAtValid -and $pinnedPreparedAtValid -and $acceptedPreparedAt -eq $pinnedPreparedAt
+    # ConvertFrom-Json can reserialize an offset timestamp in local time; require the same instant and normalize only this field.
+    if ($preparedAtEquivalent) { $acceptancePrelaunchData['preparedAtUtc'] = [string]$pinnedPreparedAtValue }
     Check ($acceptance.schemaVersion -eq 1 -and $acceptance.studyId -ceq $studyId -and $acceptance.runId -ceq $pin.runId -and
         $acceptance.arm -ceq $pin.arm -and $acceptance.block -ceq $pin.block -and $acceptance.taskId -ceq $pin.taskId -and
         $acceptance.sequenceIndex -eq $pin.sequenceIndex -and $acceptance.resultKind -ceq 'frozen-actor-acceptance' -and
@@ -661,6 +677,7 @@ try {
         (Get-FullPath $canonicalAcceptancePrelaunchPath) -ceq $canonicalPinPath -and
         $acceptancePrelaunchData.runId -ceq $pin.runId -and $acceptancePrelaunchData.arm -ceq $pin.arm -and
         $acceptancePrelaunchData.block -ceq $pin.block -and $acceptancePrelaunchData.taskId -ceq $pin.taskId -and
+        $preparedAtEquivalent -and
         (ConvertTo-Json -InputObject $acceptancePrelaunchData -Depth 100 -Compress) -ceq (ConvertTo-Json -InputObject $pin -Depth 100 -Compress)) 'acceptance evidence binds the frozen pin and independent verifier'
     Check ($acceptanceProjectTreeHash -ceq $finalActorTreeHash -and
         (ConvertTo-Json -InputObject $acceptanceProjectRows -Depth 100 -Compress) -ceq (ConvertTo-Json -InputObject $finalActorRows -Depth 100 -Compress) -and
@@ -670,7 +687,11 @@ try {
     $end = $events[-1]
     $exchanges = @($events | Where-Object { $_.event -ceq 'exchange' })
     $eventNames = @($events | ForEach-Object { [string]$_.event })
-    $expectedEvents = @('session-start') + @('exchange' * $exchanges.Count) + @('host-close','session-end')
+    $expectedEvents = [Collections.Generic.List[string]]::new()
+    $expectedEvents.Add('session-start')
+    for ($eventIndex = 0; $eventIndex -lt $exchanges.Count; $eventIndex++) { $expectedEvents.Add('exchange') }
+    $expectedEvents.Add('host-close')
+    $expectedEvents.Add('session-end')
     Check ($eventNames.Count -eq ($exchanges.Count + 3) -and ($eventNames -join '|') -ceq ($expectedEvents -join '|')) 'trace has exactly start, all exchanges, explicit close, and end in order'
     Check ($events.Count -ge 3 -and $start.event -ceq 'session-start' -and $start.schemaVersion -eq 1 -and
         $start.hostProtocolVersion -ceq 'subagent-trial-host-v2') 'V2 schema-1 session-start is first event'
@@ -680,7 +701,7 @@ try {
     Check ($start.projectPath -ceq $pin.projectPath -and $start.profile -ceq $pin.profile -and $start.cliDll -ceq $cliDll) 'host loaded the pinned project/profile/CLI runtime'
     Check ($start.hostProtocolVersion -ceq $pin.hostProtocolVersion -and (@($start.transportControls) -join '|') -ceq 'host.close') 'host transport controls match freeze'
     Check (((Sort-OrdinalStrings @($start.allowedOperations)) -join '|') -ceq ((Sort-OrdinalStrings @($pin.allowedOperations)) -join '|')) 'host operation allowlist matches freeze'
-    Check (@($start.capabilities).Count -eq 0 -and @($start.additionalCliArguments).Count -eq 0 -and $null -eq $start.inspectionBudget) 'actual host has no effects, extra arguments, or cumulative inspection budget'
+    Check (@($start.capabilities).Count -eq 0 -and @($start.additionalCliArguments).Count -eq 0 -and $null -eq (Get-Property $start 'inspectionBudget')) 'actual host has no effects, extra arguments, or cumulative inspection budget'
     Check ($start.limits.maxExchanges -eq $pin.maxExchanges -and $start.limits.maxRequestBytes -eq $pin.maxRequestBytes -and
         $start.limits.maxResponseBytes -eq $pin.maxResponseBytes -and $start.limits.exchangeTimeoutMilliseconds -eq $pin.exchangeTimeoutMilliseconds) 'actual host limits match the frozen bounds'
 
@@ -703,7 +724,10 @@ try {
     $closeAt = [DateTimeOffset]::Parse([string]$close.atUtc)
     $finishedAt = [DateTimeOffset]::Parse([string]$end.finishedUtc)
     Check ($closeAt -ge $previousEventAt -and $finishedAt -ge $closeAt) 'explicit close and session end follow all actor exchanges'
-    Check ($close.requestCanonical -ceq '{"op":"host.close"}' -and $close.requestRaw -ceq '{"op":"host.close"}' -and
+    $exactCloseJson = '{"op":"host.close"}'
+    $closeRawIsExact = $close.requestRaw -is [string] -and
+        (($close.requestRaw -ceq $exactCloseJson) -or ($close.requestRaw -ceq ($exactCloseJson + "`r")))
+    Check ($close.requestCanonical -is [string] -and $close.requestCanonical -ceq $exactCloseJson -and $closeRawIsExact -and
         $close.exchangeCount -eq @($events | Where-Object { $_.event -ceq 'exchange' }).Count) 'final transport control is exact one-field host.close'
     Check ($exchanges.Count -le 100 -and $end.exchangeCount -eq $exchanges.Count -and $close.exchangeCount -eq $exchanges.Count) 'exchange count is complete and within 100-call cap'
     $requestBytes = 0L

@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-retention-003",
+  "runId": "R01",
+  "controlKind": "deterministic-reference",
+  "modelActorLaunched": false,
+  "referencePassed": true,
+  "events": [
+    {
+      "event": "verification-completed",
+      "atUtc": "2026-10-07T11:21:56.0242511Z",
+      "acceptancePath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\runs\\R01\\acceptance.json",
+      "acceptanceSha256": "4c3fd70a545bf86d02ba2c9aded7e3a170efadcfc2c3e44ebbaec0d38b0a39e2",
+      "acceptancePassed": true,
+      "projectTreeSha256": "5bf7b7b43f090e3bd7eab5d247a40b92f9658c51c27b14b0335bc2480b4d2e23"
+    },
+    {
+      "event": "close-requested",
+      "atUtc": "2026-10-07T11:21:56.0288579Z",
+      "acceptanceSha256": "4c3fd70a545bf86d02ba2c9aded7e3a170efadcfc2c3e44ebbaec0d38b0a39e2"
+    }
+  ]
+}
