@@ -1,0 +1,53 @@
+{
+  "revision": "47bc693ab5574aaa13147b9ee46285625939c4fc",
+  "dirty": true,
+  "coreSourceChanges": [],
+  "trustedPrimitiveCount": 58,
+  "authoredWords": 53,
+  "authoredTypes": 31,
+  "attachedTests": 151,
+  "examples": 44,
+  "files": [
+    {
+      "path": "examples/business-values.agent",
+      "sha256": "fe8227ce0c38ff6e193a74292a5b1d0ed0ac3e3869f0fe8feaf56eca62f30cbd"
+    },
+    {
+      "path": "examples/business-store.agent",
+      "sha256": "f7dfe3d6cafa66fd888e76c5e925fc424aa05465b40e896467c2e1f064b767f3"
+    },
+    {
+      "path": "examples/business-state.agent",
+      "sha256": "d301d24143c31e84269aceaec7f85e4b6aeeb44e1156e6e03a53febc1ed41cc9"
+    },
+    {
+      "path": "examples/business-subscriptions.agent",
+      "sha256": "2c9a61e7f20e5b80996f0308cc360e23bc408185744ba2ef57e5c217214d14d5"
+    },
+    {
+      "path": "examples/business-invoices.agent",
+      "sha256": "a08b3e87e69c5983d35ec35059c3881067294b65b4e79e992e81dbf101ab338c"
+    },
+    {
+      "path": "examples/business-payments-email.agent",
+      "sha256": "455bb038269fc499c69e0cd0338e76c9f4c5ed064f6a7c2ba125bdc9bb8503e4"
+    },
+    {
+      "path": "tests/AgentLang.Business.Transitions.Tests/Program.fs",
+      "sha256": "757d4ff7f81373e4d7ba9a9e897d4c1ce1ad786326d4e5192b3f6912b2ad5972"
+    },
+    {
+      "path": "tests/AgentLang.Business.Transitions.Tests/AgentLang.Business.Transitions.Tests.fsproj",
+      "sha256": "5ec4061fd6fd7296b958f6fa5752524a78840c3e4af833f0b4ce2f5aedeccf40"
+    },
+    {
+      "path": "scripts/Validate.ps1",
+      "sha256": "e0d3921c858c20153c89b83b2e5e0e9585c77eaa724b0fd420fa6fdff6aa852d"
+    },
+    {
+      "path": "AgentLang.sln",
+      "sha256": "b993430e04a1ffc448fb8aa7934e95463efad2bab33ad0f583297143406390d6"
+    }
+  ],
+  "boundary": "Flow fixture and acceptance additions only; no Core semantic IR, trusted primitive, host schema, storage or version changes. Public records and pure provider outcome inputs retain the documented limits."
+}

@@ -158,6 +158,15 @@ cover this slice. Complete subscription/invoice/payment/email transitions,
 benchmark seed and paired task adapters remain pending; public record
 constructors do not enforce the reference's private-record invariants.
 
+[Checkpoint 075](../reports/075-business-language-transitions.md) completes the
+pure subscription/invoice/payment/email transitions and deterministic baseline.
+The six Flow documents contain 53 authored words, 151 tests, 44 examples and
+31 types. Independent checks compare full state and stable errors to the F#
+reference, with library coverage and reload gates. Provider outcomes remain
+data; real provider invocation, matched business-task adapters and the full
+controlled evaluation are still pending. The next priority is fresh external
+agent tasks on this retained vocabulary, before memory/backend research.
+
 Historical external-agent workflow evidence: [report 054](../reports/054-flow-renewal-agent-control.md)
 records a separate inherited-history Luna/max control that created one tested
 library word by composing a retained domain word. Fresh-process acceptance
@@ -247,7 +256,7 @@ Standalone backend and baseline-audit evidence: [milestone 008](../reports/008-s
 | 40 | Verified: deterministic structural search | Exact nested nominal input/output types, declared effects and direct dependency queries; no embeddings |
 | 41 | Verified: compact bounded dependency/type context | Complete JSON entries, parser-verified call references, recursive nominal declarations, concise docs, hard budgets/omissions and exact transported data bytes; not inferred task relevance |
 | 42 | Partial: context/token accounting | Harness request bytes/provider usage and optional subagent inspection admission with raw/selected/pipe-delivery counters verified; exact model-token budget/retrieval breakdown pending |
-| 43 | Partial: complete small-business fixture | Strong Flow values and immutable Store foundation (32 words, 83 tests); full transitions, benchmark seed and matched adapters pending |
+| 43 | Partial: complete small-business fixture | 53 Flow words, 151 tests, pure transitions and deterministic seed; full-state reference verification in 075; real providers and matched task adapters pending |
 | 44 | Excluded from first domain: optional later simulation | Preserve for later generalization, not a V1 blocker |
 | 45 | Partial: equivalent conventional environment | Small Flow/F# fixtures and shared task vectors audited in report 057; full business fixture parity pending |
 | 46 | Partial: fresh/growing/debugging/discovery/refactoring experiments | Small fresh/growing/discovery pilot and rotated repeat complete; debugging/refactoring and broader controlled categories pending |

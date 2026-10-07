@@ -1,6 +1,6 @@
 # AgentLang small-business fixture plan
 
-Status: full business fixture design, with its trusted value prerequisites now implemented. No full language-domain implementation or behavioral equivalence is claimed by this document. The conventional reference is documented in [BUSINESS.md](BUSINESS.md). Closed containers, static callbacks/cases, record fields and their persistence have integrated acceptance evidence. Typed fold is implemented and validated in [milestone 055](../reports/055-early-evaluation-preparation.md). The nine trusted value helpers below are implemented; their focused and integrated verification is recorded in milestone 073.
+Status: pure business fixture implemented, with reference verification recorded in [milestone 075](../reports/075-business-language-transitions.md). The conventional reference is documented in [BUSINESS.md](BUSINESS.md). Actual provider calls and matched benchmark task adapters remain incomplete. Typed fold is implemented and validated in [milestone 055](../reports/055-early-evaluation-preparation.md); the nine trusted value prerequisites are verified in milestone 073.
 
 ## Recommendation
 
@@ -9,8 +9,9 @@ The first implementation slice is in
 [`business-store.agent`](../examples/business-store.agent). Both use Flow/1
 syntax. The foundation acceptance runner joins them in that order and stages
 one atomic document. The schematic Stack excerpts below describe the intended
-schema; the Flow files are the executable representation. Full transitions,
-deterministic seed and matched benchmark adapters are still pending.
+schema; the Flow files are the executable representation. The state,
+subscriptions, invoices and payments/email documents add the deterministic seed
+and pure transitions. Matched benchmark adapters remain pending.
 
 Represent the same immutable business state in AgentLang as records containing typed lists. Use the existing closed higher-order `list.fold` construct for lookup, replacement, and invoice totals. Its callback is a statically named word with signature `Accumulator T -> Accumulator`; the fold itself has signature `List<T> Accumulator -> Accumulator`, visits elements from left to right, and returns the initial accumulator for an empty list. A callback cannot capture caller locals, so the accumulator record must carry search keys, the original store, and any values needed during the fold. This keeps the language's no-closure rule visible and avoids a business-specific host escape hatch.
 
@@ -20,9 +21,9 @@ Keep business state transitions pure. The current runtime provides a virtual fil
 
 Current Core represents nested `List<T>`, `Option<T>`, and `Result<T,E>` values with their closed types retained at runtime. The source supports explicit constructors such as `list.empty<Customer>`, `option.none<Customer>`, `result.ok<Invoice, BusinessError>`, and `result.error<Invoice, BusinessError>`. `match-option` and `match-result` require both cases and isolate payload locals. `list.map <word>`, `list.filter <word>`, and `list.each <word>` invoke static one-argument callbacks and include callback effects/dependencies in checking. Runtime supports closed collection types in record fields, with persistence/reload covered by existing container and storage acceptance. This does not establish equivalence of the proposed full Store fixture.
 
-The remaining fixture work includes:
+The remaining evaluation work includes:
 
-- Build and verify domain lookup, total and replacement words using the implemented fold. Fold availability does not establish parity of the full Store fixture.
+- Build matched task adapters and fresh external-agent trials on the verified vocabulary. Pure reference conformance does not establish benchmark task success or agent efficiency.
 - Record declarations currently provide nominal fields, while F# Store uses keyed maps and payment/email providers are callable interfaces. AgentLang should deliberately use lists and pure outcome data instead of simulating a hidden map or invoking .NET.
 
 The current `Compiler.primitives` list contains 58 trusted words, versus 49 before this value-prerequisite milestone. Container constructors and branch/mapping forms are separately described syntax, not newly registered dictionary words. `list.fold` is likewise typed syntax with a closed static callback. The nine helpers below keep the dictionary inside the PRD's 50–100 range.
@@ -226,7 +227,7 @@ Suggested foundation vocabulary (grouped words, not a claim that all words alrea
 - Value policy: `money.add`, `money.multiply-by-quantity`, `money.nonnegative?`, `instant.normalize`, and status/Email constructors. Checked integer primitives back money calculations; no Float word participates in billing.
 - Store: `store.empty`, `store.customer`, `store.product`, `store.invoice`, `store.add-customer`, `store.add-product`, and typed add/find/update-step callbacks. Store collections are immutable lists.
 - Subscription: `subscription.start`, `subscription.cancel`, and lookup/update words. These enforce foreign-key existence, duplicate IDs, nonblank term, expiry after start, active-to-cancelled transition, and cancellation time not before start. They do not decide renewal eligibility.
-- Invoice: `invoice.create`, `invoice.line`, `invoice.total`, and supporting fold callbacks. Input cart is `List<CartLine>`; creation rejects an empty cart, unknown product, nonpositive quantity, negative price, and any checked overflow. Product descriptions and prices are copied into lines.
+- Invoice: `invoice.create`, `invoice.line`, `invoice.sum-lines`, and supporting fold callbacks. The existing generated `invoice.total : Invoice -> Money` accessor retains its name. Input cart is `List<CartLine>`; creation rejects an empty cart, unknown product, nonpositive quantity, negative price, and any checked overflow. Product descriptions and prices are copied into lines.
 - Payment: `payment.apply-result` takes an explicit `Result<PaymentReceipt, BusinessError>` alongside the pure Store/request data. An Error leaves the Store unchanged; an Ok receipt must match a positive full invoice balance before recording Payment and setting status Paid.
 - Email: `email.queue` appends a validated message. `email.apply-delivery-result` takes an explicit `Result<Unit, BusinessError>`; error retains the head of the outbox, success moves it to sent messages. No SMTP or network word is present.
 
@@ -234,7 +235,59 @@ For lookup, use a typed fold state containing the target ID and `Option<Entity>`
 
 Effect declarations for these foundation words are `none`; they transform passed immutable values only. Test fixtures should construct the payment/email provider result value in each case. If later work adds real providers, it needs an explicit Engine provider interface, per-test fresh mock state, effect preflight before callback invocation, and no capability grant inherited from test mode. The existing `--allow` capability set alone does not implement a pluggable provider.
 
-## Fidelity issues to resolve before calling the fixtures equivalent
+### Transition implementation contract
+
+The next implementation uses these public signatures. All transition results
+contain Store; the resulting entity is available through its typed Store lookup.
+The reference returns a Store/entity pair for several operations, so acceptance
+compares the resulting Store and its entity rather than claiming identical
+return representation.
+
+| Word | Inputs | Output |
+| --- | --- | --- |
+| `subscription.start` | Store, SubscriptionId, CustomerId, ProductId, String term, Instant start, Instant expiry | Result<Store, BusinessError> |
+| `subscription.cancel` | Store, SubscriptionId, Instant cancellation | Result<Store, BusinessError> |
+| `invoice.line` | Store, CartLine | Result<InvoiceLine, BusinessError> |
+| `invoice.sum-lines` | List<InvoiceLine> | Result<Money, BusinessError> |
+| `invoice.create` | Store, InvoiceId, CustomerId, List<CartLine>, Instant creation | Result<Store, BusinessError> |
+| `payment.apply-result` | Store, PaymentId, InvoiceId, Money, Instant request, Result<PaymentReceipt, BusinessError> | Result<Store, BusinessError> |
+| `email.queue` | Store, CustomerId, String subject, String body | Result<Store, BusinessError> |
+| `email.apply-delivery-result` | Store, Result<Unit, BusinessError> | Result<Store, BusinessError> |
+| `business.seed` | Unit | Store |
+
+Provider Error data maps to `PAYMENT_PROVIDER_FAILURE` or
+`EMAIL_PROVIDER_FAILURE` using its message. Validation occurs before consuming
+that outcome. This compares pure state behavior; it cannot prove whether a real
+provider would have been called. Failed transitions leave the passed Store
+unchanged.
+
+Invoice creation validates cart lines in order before summing their totals.
+A later line error must take precedence over a total overflow from earlier
+valid lines. Quantities are positive signed Int32 values. Empty totals return
+zero; empty invoice creation is rejected. Public record construction permits
+states unavailable through F# private constructors, so negative product prices
+and blank receipt references receive supplemental guards and separate boundary
+tests, outside the valid-reference-state comparison.
+
+The calculation word is named `invoice.sum-lines` because the Invoice record
+already generates `invoice.total : Invoice -> Money`. The dictionary rejects
+an authored word that collides with a generated accessor; this implementation
+preserves that rule and the established record schema.
+
+Four explicit Store reconstruction helpers replace subscriptions, invoices,
+payments, or the outbox/sent pair while preserving other collections. Static
+fold callbacks perform replacements and FIFO splitting without captured locals.
+The seed exactly matches `Contract.Factory.baseline`, including fixed IDs and
+UTC timestamps, and contains no invoice, payment, email, or benchmark answer.
+
+## Fidelity decisions and remaining boundaries
+
+This table records the design issues that guided implementation. Milestones
+074–075 resolve the GUID, Email, Money, quantity and UTC construction checks,
+and verify the pure transition surface. Sum-type representation, public record
+construction, null-only inputs and actual provider invocation remain explicit
+boundaries. The table's implementation instructions describe the chosen checks,
+not a claim that benchmark task adapters are complete.
 
 | Conventional contract | Current AgentLang gap or difference | Required decision/evidence |
 | --- | --- | --- |
@@ -250,7 +303,12 @@ Effect declarations for these foundation words are `none`; they transform passed
 
 ## Source layout and acceptance
 
-Add one readable fixture such as `examples/business.agent`, split into separate files only if the loader's existing persistence model supports that without making agent discovery harder. Keep types and initial seed data reusable, but keep benchmark tasks and hidden acceptance checks outside the starting dictionary. The seed should use fixed IDs and normalized timestamps; it must be a pure `business.seed : Unit -> Store` word so Flat and Growing runs begin identically.
+The acceptance runner joins six readable Flow documents in one atomic definition:
+values, Store operations, state reconstruction/seed, subscriptions, invoices,
+and payments/email. Committed definitions remain individually inspectable and
+retain their source on reload. Keep benchmark tasks and hidden acceptance checks
+outside the starting dictionary. The fixed pure `business.seed : Unit -> Store`
+provides identical initial data for Flat and Growing runs.
 
 Reuse the validated `list.fold` implementation and its Core tests: empty/nonempty order, wrong callback signatures, callback dependency/caller graph, effect preflight even for empty input, instruction limits, type joins, and project reload. Add domain tests for accumulators that carry an ID and partial Result; do not test only numeric sum.
 
@@ -264,4 +322,8 @@ The business-language acceptance should then verify:
 6. `test-all` passes, then commit the fixture words. Start a fresh Engine from the project directory and verify types, words, metadata, tests, examples, and `business.seed` reload identically. The seed must not depend on process randomness or a real provider.
 7. Only after the F# and language oracle corpora agree should the domain be described as equivalent. Publish observed mismatches and provider/data-boundary limits in a milestone report; do not infer benchmark gains from these conformance checks.
 
-The intended initial vocabulary remains 40–60 authored business words and 50–100 source tests, with trusted primitives kept within the PRD range. Recount after implementation, because records generate accessors automatically and coverage rules can require more test cases than the current seven-group F# smoke suite.
+The implemented vocabulary has 53 authored words, 151 source tests, 44 examples,
+and 31 nominal types. Generated constructors/accessors are counted separately
+from authored words. The vocabulary fits the initial 40–60-word target; tests
+exceed the 50–100 estimate because every reusable helper must cover its own
+branches and fold paths. The trusted catalog remains 58 primitives.

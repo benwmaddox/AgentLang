@@ -1,0 +1,16 @@
+{
+  "name": "focused-business-transitions",
+  "status": "passed",
+  "revision": "47bc693ab5574aaa13147b9ee46285625939c4fc",
+  "dirty": true,
+  "command": "dotnet run --project tests/AgentLang.Business.Transitions.Tests/AgentLang.Business.Transitions.Tests.fsproj --configuration Release -- --evidence reports/evidence/075-focused-business-transitions.json",
+  "result": "passed 7 groups and 3501 assertions",
+  "assertions": 3501,
+  "groups": 7,
+  "authoredWords": 53,
+  "authoredTypes": 31,
+  "attachedTests": 151,
+  "examplesPerRun": 44,
+  "reloadChecks": 255,
+  "fidelityBoundary": "Provider results are explicit pure values; no external payment or email provider is invoked. Error codes and Store projections are compared to the F# oracle. AgentLang record constructors are public, so supplemental invalid Product and PaymentReceipt boundary cases cannot be represented as valid F# domain records."
+}

@@ -69,3 +69,8 @@ This is implementation work by coding subagents, not a measured agent trial
 or evidence of lower token cost. The next evaluation step needs executable
 business tasks and matched acceptance adapters. LLVM and memory-model research
 remain deferred behind that work.
+
+Publication follow-up: clean [main CI](evidence/074-main-ci.json) passed all
+34 checks on `47bc693ab5574aaa13147b9ee46285625939c4fc`. Its
+[artifact](evidence/074-main-validation.json) records `dirty: false`, confirming
+the committed foundation rather than only the local working-tree run.
