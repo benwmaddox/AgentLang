@@ -1,0 +1,1 @@
+Retention B1/flat/S01 (R01) failed. Evidence: D:\code\AgentLang\.agentlang\business-policy-retention-003\runs\R01\acceptance.json. Frozen starting-state, runtime, source, prompt, allowlist, or verifier provenance did not validate; no CLI evaluation is allowed.

@@ -1,12 +1,13 @@
 # Matched vocabulary-retention preparation
 
-Status: genuine reference acceptance and audit passed; final UTC reader repair
-pending. Canonical Flat and rich baselines are archived. On clean f52ef29 the
-marked reference passed 157 acceptance checks, 10 independent cases and 662
-production trace-audit checks without diagnostic exceptions, then remained
-preserved in its closed R01 slot. The frozen/tamper runner stopped after 14
-passing checks because its JSON reader coerced raw UTC strings into date objects.
-No model actors have been launched and no efficiency result is claimed.
+Status: genuine UTC-repaired reference acceptance and audit passed; preserved
+verifier-path reader repair validated; clean frozen rerun pending. On clean 08fd174, candidate controls passed
+63/63, independent reference acceptance passed 157 checks and 10 cases, and
+production trace audit passed 662/662. The frozen phase passed its UTC chronology
+and fresh-audit gates, then stopped after 17 checks because its path regex did
+not accept the verifier diagnostic's sentence period after .json. All 118 exact
+reference/control files are preserved under utc-repair-reference. No model
+actors have launched for this study; no reliability or efficiency result is claimed.
 
 Published revisions f3f4391 and 5b0a367 passed 37/37 CI checks on both branches;
 their downloaded evidence is archived separately.
@@ -159,3 +160,29 @@ matched their preserved archive. R01 run/actor slots are absent; canonical
 baselines were not moved or regenerated. The compact extensible core and reliable
 edit hypotheses are explicit in the revised PRD. Existing frozen study criteria
 remain unchanged.
+
+## Genuine UTC-repair frozen rerun
+
+Clean 08fd174 candidate/reference controls ran without diagnostic source bypasses.
+The actual host.close request exited 0 after completed independent acceptance.
+Coordinator timestamps explicitly identify independent verifier completion and
+the clock observed immediately before that real close request; records were
+written after closure. Automatic approval review rejected the earlier attempt
+to write a close-request event ahead of the actual request; no such record was
+written. The later actual-events record and production audit passed.
+
+The final frozen failure preserves the alternate model-pin rejection report.
+Its expected path ends in .json followed by a sentence period; the current
+reader accepts only whitespace or end-of-text there. No actor outcome is
+reclassified. Focused reader repair precedes another clean frozen rerun.
+
+## Preserved-report path reader repair
+
+The reader now accepts the verifier diagnostic period after .json and requires
+exactly one report path. Four positive variants and six negative controls passed,
+including the actual saved stderr, ambiguous paths, outside-root paths and missing
+files. Strict parsing, intended model-pin rejection and zero CLI process runs
+were retained. Final source SHA-256 is 99d4701d4c94303b6a60edca3d4f50a7ff6f8ff54388f02f014aa39be8ecb11e.
+The closed 08fd174 reference and obsolete pins were moved only after exact archive
+checks; canonical baselines remain untouched. The next reliability study is a
+draft in docs/RELIABLE-EDIT-TRIAL-DRAFT.md, not an executed or frozen experiment.

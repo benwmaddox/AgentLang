@@ -1,0 +1,78 @@
+{
+  "result": "passed",
+  "scope": "focused AST-extracted Get-TamperVerifierReport with stubbed Invoke-StudyScript",
+  "sourceSha256": "99D4701D4C94303B6A60EDCA3D4F50A7FF6F8FF54388F02F014AA39BE8ECB11E",
+  "parser": "passed",
+  "authoritativeDiagnostic": {
+    "path": ".agentlang/business-policy-retention-003/evidence/081-preflight-frozen-control-819666982a0f4a299d05fbb0b8b27a36/frozen-model-pin-tamper-rejection-stderr.txt",
+    "sha256": "f6ea1f4dc6127a88c6110a342a3106a041b0f98ea5b0f8c67974da08eb2b862a"
+  },
+  "preservedEvidence": {
+    "path": ".agentlang/business-policy-retention-003/evidence/081-verifier-R01-preserved-4cef794183fe46b89d19df081d30aa00.json",
+    "sha256": "7a47cea1d3aa1bb33dface474b97c870159fff1e00b8dab2efbb4908dc210b69",
+    "safetyStop": "The requested evidence destination already exists; verifier stopped before CLI execution to preserve it.",
+    "processRunsCount": 0,
+    "intendedModelTamperCheckPassed": false
+  },
+  "positives": [
+    {
+      "name": "actual-saved-diagnostic",
+      "passed": true,
+      "resolvedPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\evidence\\081-verifier-R01-preserved-4cef794183fe46b89d19df081d30aa00.json",
+      "sha256": "7a47cea1d3aa1bb33dface474b97c870159fff1e00b8dab2efbb4908dc210b69"
+    },
+    {
+      "name": "period-plus-following-text",
+      "passed": true,
+      "resolvedPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\evidence\\081-verifier-R01-preserved-4cef794183fe46b89d19df081d30aa00.json",
+      "sha256": "7a47cea1d3aa1bb33dface474b97c870159fff1e00b8dab2efbb4908dc210b69"
+    },
+    {
+      "name": "path-at-end",
+      "passed": true,
+      "resolvedPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\evidence\\081-verifier-R01-preserved-4cef794183fe46b89d19df081d30aa00.json",
+      "sha256": "7a47cea1d3aa1bb33dface474b97c870159fff1e00b8dab2efbb4908dc210b69"
+    },
+    {
+      "name": "extra-whitespace",
+      "passed": true,
+      "resolvedPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\evidence\\081-verifier-R01-preserved-4cef794183fe46b89d19df081d30aa00.json",
+      "sha256": "7a47cea1d3aa1bb33dface474b97c870159fff1e00b8dab2efbb4908dc210b69"
+    }
+  ],
+  "negatives": [
+    {
+      "name": "missing-marker",
+      "rejected": true,
+      "diagnostic": "missing-marker did not report its preserved verifier evidence path: Verifier failed with no path."
+    },
+    {
+      "name": "non-json",
+      "rejected": true,
+      "diagnostic": "non-json did not report its preserved verifier evidence path: Evidence: D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\evidence\\081-verifier-R01-preserved-4cef794183fe46b89d19df081d30aa00.txt. Details."
+    },
+    {
+      "name": "malformed-json-extension",
+      "rejected": true,
+      "diagnostic": "malformed-json-extension did not report its preserved verifier evidence path: Evidence: D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\evidence\\081-verifier-R01-preserved-4cef794183fe46b89d19df081d30aa00.jsonx. Details."
+    },
+    {
+      "name": "ambiguous-multiple-evidence-paths",
+      "rejected": true,
+      "diagnostic": "ambiguous-multiple-evidence-paths reported ambiguous preserved verifier evidence paths: Evidence: D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\evidence\\081-verifier-R01-preserved-4cef794183fe46b89d19df081d30aa00.json. Again Evidence: D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\evidence\\081-verifier-R01-preserved-4cef794183fe46b89d19df081d30aa00.json."
+    },
+    {
+      "name": "outside-evidence-root",
+      "rejected": true,
+      "diagnostic": "outside-evidence-root verifier evidence was not written to the ignored evidence directory: D:\\code\\AgentLang\\reports\\evidence\\081-preflight-utc-controls.json"
+    },
+    {
+      "name": "missing-file",
+      "rejected": true,
+      "diagnostic": "missing-file verifier evidence was not written to the ignored evidence directory: D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\evidence\\absent-a1ee4269f0f7481ca8a2a0e489a2c6f0.json"
+    }
+  ],
+  "mockCalls": 10,
+  "realChildProcesses": 0,
+  "authoritativeFilesUnchanged": true
+}

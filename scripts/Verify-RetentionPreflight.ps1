@@ -478,9 +478,11 @@ function Get-TamperVerifierReport([string]$Label,[string]$RunDirectory,[object]$
         '-CliDll',$CliPath,'-RequireFrozenPin')
     $captured=Invoke-StudyScript $Label $verifierPath $arguments
     $combined=[regex]::Replace([string]$captured.stderr,'\s+',' ').Trim()
-    $match=[regex]::Match($combined,'Evidence:\s*(?<path>.+?\.json)(?:\s|$)')
-    if(-not $match.Success){throw "$Label did not report its preserved verifier evidence path: $combined"}
-    $evidencePath=[IO.Path]::GetFullPath($match.Groups['path'].Value)
+    $pathPattern='Evidence:\s*(?<path>.+?\.json)(?:\.(?=\s|$)|(?=\s|$))'
+    $pathMatches=[regex]::Matches($combined,$pathPattern)
+    if($pathMatches.Count -eq 0){throw "$Label did not report its preserved verifier evidence path: $combined"}
+    if($pathMatches.Count -ne 1){throw "$Label reported ambiguous preserved verifier evidence paths: $combined"}
+    $evidencePath=[IO.Path]::GetFullPath($pathMatches[0].Groups['path'].Value)
     if(-not (Test-ContainedPath $evidencePath $evidenceRoot) -or -not (Test-Path -LiteralPath $evidencePath -PathType Leaf)){
         throw "$Label verifier evidence was not written to the ignored evidence directory: $evidencePath"
     }

@@ -1,0 +1,4322 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-retention-003",
+  "arm": "flat",
+  "block": "B1",
+  "taskId": "S01",
+  "runId": "R01",
+  "passed": false,
+  "metadataPassed": false,
+  "behaviorPassed": true,
+  "safetyStop": null,
+  "failure": "metadataPassed=False; behaviorPassed=True; metadataFailures=starting project supplied for preservation and freeze validation, starting word and type preservation supplied; failedCases=",
+  "orchestrationError": null,
+  "evidencePath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\evidence\\081-preflight-candidate-a5a4af2f8fd5477dbaef348b27443102\\correct-S01-reference.acceptance.json",
+  "requestedEvidencePath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\evidence\\081-preflight-candidate-a5a4af2f8fd5477dbaef348b27443102\\correct-S01-reference.acceptance.json",
+  "evidencePathCollision": false,
+  "sequenceIndex": 1,
+  "resultKind": "unfrozen-preflight-or-control",
+  "checkFrozenPin": false,
+  "frozenPin": {
+    "required": false,
+    "checked": false,
+    "status": "unfrozen-preflight-or-control-without-starting-project",
+    "path": null,
+    "sha256": null
+  },
+  "prelaunch": null,
+  "startedUtc": "2026-10-07T12:40:19.0957875Z",
+  "verifiedStartedUtc": "2026-10-07T12:40:19.0957875Z",
+  "verifiedCompletedUtc": "2026-10-07T12:40:23.0324960Z",
+  "finishedUtc": "2026-10-07T12:40:23.0324960Z",
+  "verifierSha256": "84b3d0a8c4aee192f28b3d553ee134b1dfd20879dcf3ed38b2c607b0bc313c2b",
+  "oracle": {
+    "path": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-retention-003\\acceptance.json",
+    "sha256": "8ca4f975161541b8c60397267fe7bb4ecb4345e00674d91467ac151a0bb7d3f2",
+    "symbol": "customer.premium?",
+    "cases": 10,
+    "independentResults": [
+      {
+        "id": "kind-1",
+        "kind": "premium",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Bool",
+          "value": true
+        }
+      },
+      {
+        "id": "kind-2",
+        "kind": "regular",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Bool",
+          "value": false
+        }
+      },
+      {
+        "id": "kind-3",
+        "kind": "Premium",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Bool",
+          "value": false
+        }
+      },
+      {
+        "id": "kind-4",
+        "kind": "PREMIUM",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Bool",
+          "value": false
+        }
+      },
+      {
+        "id": "kind-5",
+        "kind": "premium ",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Bool",
+          "value": false
+        }
+      },
+      {
+        "id": "kind-6",
+        "kind": " premium",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Bool",
+          "value": false
+        }
+      },
+      {
+        "id": "kind-7",
+        "kind": "\tpremium",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Bool",
+          "value": false
+        }
+      },
+      {
+        "id": "kind-8",
+        "kind": "premium\n",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Bool",
+          "value": false
+        }
+      },
+      {
+        "id": "kind-9",
+        "kind": "",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Bool",
+          "value": false
+        }
+      },
+      {
+        "id": "kind-10",
+        "kind": "prémi um",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Bool",
+          "value": false
+        }
+      }
+    ]
+  },
+  "behavior": {
+    "targetUsable": true,
+    "casesExpected": 10,
+    "casesExecuted": 10,
+    "casesRecorded": 10,
+    "cases": [
+      {
+        "index": 1,
+        "id": "kind-1",
+        "executed": true,
+        "responseOk": true,
+        "passed": true,
+        "expected": {
+          "type": "Bool",
+          "value": true
+        },
+        "actual": {
+          "stackTypes": [
+            "Bool"
+          ],
+          "structured": {
+            "kind": "bool",
+            "value": true
+          },
+          "effects": {},
+          "console": []
+        },
+        "diagnostic": null,
+        "checks": [
+          {
+            "name": "kind-1 exact language output type",
+            "passed": true,
+            "details": "Bool"
+          },
+          {
+            "name": "kind-1 has no effects or console output",
+            "passed": true
+          },
+          {
+            "name": "kind-1 structured Bool",
+            "passed": true
+          }
+        ]
+      },
+      {
+        "index": 2,
+        "id": "kind-2",
+        "executed": true,
+        "responseOk": true,
+        "passed": true,
+        "expected": {
+          "type": "Bool",
+          "value": false
+        },
+        "actual": {
+          "stackTypes": [
+            "Bool"
+          ],
+          "structured": {
+            "kind": "bool",
+            "value": false
+          },
+          "effects": {},
+          "console": []
+        },
+        "diagnostic": null,
+        "checks": [
+          {
+            "name": "kind-2 exact language output type",
+            "passed": true,
+            "details": "Bool"
+          },
+          {
+            "name": "kind-2 has no effects or console output",
+            "passed": true
+          },
+          {
+            "name": "kind-2 structured Bool",
+            "passed": true
+          }
+        ]
+      },
+      {
+        "index": 3,
+        "id": "kind-3",
+        "executed": true,
+        "responseOk": true,
+        "passed": true,
+        "expected": {
+          "type": "Bool",
+          "value": false
+        },
+        "actual": {
+          "stackTypes": [
+            "Bool"
+          ],
+          "structured": {
+            "kind": "bool",
+            "value": false
+          },
+          "effects": {},
+          "console": []
+        },
+        "diagnostic": null,
+        "checks": [
+          {
+            "name": "kind-3 exact language output type",
+            "passed": true,
+            "details": "Bool"
+          },
+          {
+            "name": "kind-3 has no effects or console output",
+            "passed": true
+          },
+          {
+            "name": "kind-3 structured Bool",
+            "passed": true
+          }
+        ]
+      },
+      {
+        "index": 4,
+        "id": "kind-4",
+        "executed": true,
+        "responseOk": true,
+        "passed": true,
+        "expected": {
+          "type": "Bool",
+          "value": false
+        },
+        "actual": {
+          "stackTypes": [
+            "Bool"
+          ],
+          "structured": {
+            "kind": "bool",
+            "value": false
+          },
+          "effects": {},
+          "console": []
+        },
+        "diagnostic": null,
+        "checks": [
+          {
+            "name": "kind-4 exact language output type",
+            "passed": true,
+            "details": "Bool"
+          },
+          {
+            "name": "kind-4 has no effects or console output",
+            "passed": true
+          },
+          {
+            "name": "kind-4 structured Bool",
+            "passed": true
+          }
+        ]
+      },
+      {
+        "index": 5,
+        "id": "kind-5",
+        "executed": true,
+        "responseOk": true,
+        "passed": true,
+        "expected": {
+          "type": "Bool",
+          "value": false
+        },
+        "actual": {
+          "stackTypes": [
+            "Bool"
+          ],
+          "structured": {
+            "kind": "bool",
+            "value": false
+          },
+          "effects": {},
+          "console": []
+        },
+        "diagnostic": null,
+        "checks": [
+          {
+            "name": "kind-5 exact language output type",
+            "passed": true,
+            "details": "Bool"
+          },
+          {
+            "name": "kind-5 has no effects or console output",
+            "passed": true
+          },
+          {
+            "name": "kind-5 structured Bool",
+            "passed": true
+          }
+        ]
+      },
+      {
+        "index": 6,
+        "id": "kind-6",
+        "executed": true,
+        "responseOk": true,
+        "passed": true,
+        "expected": {
+          "type": "Bool",
+          "value": false
+        },
+        "actual": {
+          "stackTypes": [
+            "Bool"
+          ],
+          "structured": {
+            "kind": "bool",
+            "value": false
+          },
+          "effects": {},
+          "console": []
+        },
+        "diagnostic": null,
+        "checks": [
+          {
+            "name": "kind-6 exact language output type",
+            "passed": true,
+            "details": "Bool"
+          },
+          {
+            "name": "kind-6 has no effects or console output",
+            "passed": true
+          },
+          {
+            "name": "kind-6 structured Bool",
+            "passed": true
+          }
+        ]
+      },
+      {
+        "index": 7,
+        "id": "kind-7",
+        "executed": true,
+        "responseOk": true,
+        "passed": true,
+        "expected": {
+          "type": "Bool",
+          "value": false
+        },
+        "actual": {
+          "stackTypes": [
+            "Bool"
+          ],
+          "structured": {
+            "kind": "bool",
+            "value": false
+          },
+          "effects": {},
+          "console": []
+        },
+        "diagnostic": null,
+        "checks": [
+          {
+            "name": "kind-7 exact language output type",
+            "passed": true,
+            "details": "Bool"
+          },
+          {
+            "name": "kind-7 has no effects or console output",
+            "passed": true
+          },
+          {
+            "name": "kind-7 structured Bool",
+            "passed": true
+          }
+        ]
+      },
+      {
+        "index": 8,
+        "id": "kind-8",
+        "executed": true,
+        "responseOk": true,
+        "passed": true,
+        "expected": {
+          "type": "Bool",
+          "value": false
+        },
+        "actual": {
+          "stackTypes": [
+            "Bool"
+          ],
+          "structured": {
+            "kind": "bool",
+            "value": false
+          },
+          "effects": {},
+          "console": []
+        },
+        "diagnostic": null,
+        "checks": [
+          {
+            "name": "kind-8 exact language output type",
+            "passed": true,
+            "details": "Bool"
+          },
+          {
+            "name": "kind-8 has no effects or console output",
+            "passed": true
+          },
+          {
+            "name": "kind-8 structured Bool",
+            "passed": true
+          }
+        ]
+      },
+      {
+        "index": 9,
+        "id": "kind-9",
+        "executed": true,
+        "responseOk": true,
+        "passed": true,
+        "expected": {
+          "type": "Bool",
+          "value": false
+        },
+        "actual": {
+          "stackTypes": [
+            "Bool"
+          ],
+          "structured": {
+            "kind": "bool",
+            "value": false
+          },
+          "effects": {},
+          "console": []
+        },
+        "diagnostic": null,
+        "checks": [
+          {
+            "name": "kind-9 exact language output type",
+            "passed": true,
+            "details": "Bool"
+          },
+          {
+            "name": "kind-9 has no effects or console output",
+            "passed": true
+          },
+          {
+            "name": "kind-9 structured Bool",
+            "passed": true
+          }
+        ]
+      },
+      {
+        "index": 10,
+        "id": "kind-10",
+        "executed": true,
+        "responseOk": true,
+        "passed": true,
+        "expected": {
+          "type": "Bool",
+          "value": false
+        },
+        "actual": {
+          "stackTypes": [
+            "Bool"
+          ],
+          "structured": {
+            "kind": "bool",
+            "value": false
+          },
+          "effects": {},
+          "console": []
+        },
+        "diagnostic": null,
+        "checks": [
+          {
+            "name": "kind-10 exact language output type",
+            "passed": true,
+            "details": "Bool"
+          },
+          {
+            "name": "kind-10 has no effects or console output",
+            "passed": true
+          },
+          {
+            "name": "kind-10 structured Bool",
+            "passed": true
+          }
+        ]
+      }
+    ]
+  },
+  "project": {
+    "argumentPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\control-fixtures\\retention-preflight-control-slot\\projects\\positive-S01",
+    "path": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\control-fixtures\\retention-preflight-control-slot\\projects\\positive-S01",
+    "files": [
+      {
+        "path": ".agentlang/store/CURRENT",
+        "bytes": 134,
+        "sha256": "b7d8cf0d8c601dd7467b6a02077d3cd55d7213866037a1c79ee081e8d1814f37"
+      },
+      {
+        "path": ".agentlang/store/WRITE.lock",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": ".agentlang/store/manifests/33c8a41e17132ba2c2f0ff28868c7d4aaff469c37f39ed2c6db3947813bbce3d.json",
+        "bytes": 13378,
+        "sha256": "33c8a41e17132ba2c2f0ff28868c7d4aaff469c37f39ed2c6db3947813bbce3d"
+      },
+      {
+        "path": ".agentlang/store/manifests/f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7.json",
+        "bytes": 1647,
+        "sha256": "f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7"
+      },
+      {
+        "path": ".agentlang/store/objects/2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0.agent",
+        "bytes": 66,
+        "sha256": "2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0"
+      },
+      {
+        "path": ".agentlang/store/objects/33cdec71d9107a508559f3d454ea0c5ba959cd1446e4d1b37fe3ae47d9478caf.agent",
+        "bytes": 192,
+        "sha256": "33cdec71d9107a508559f3d454ea0c5ba959cd1446e4d1b37fe3ae47d9478caf"
+      },
+      {
+        "path": ".agentlang/store/objects/45e4d3407d9737bab7e66c5360fe7b7ed6cfb0f2e3f2b9757cddcb1e358f2a35.agent",
+        "bytes": 296,
+        "sha256": "45e4d3407d9737bab7e66c5360fe7b7ed6cfb0f2e3f2b9757cddcb1e358f2a35"
+      },
+      {
+        "path": ".agentlang/store/objects/5d8f41a3f2a198eb185bb517ea207ecae6092640076e7bfc5d85956a821f58d7.agent",
+        "bytes": 2093,
+        "sha256": "5d8f41a3f2a198eb185bb517ea207ecae6092640076e7bfc5d85956a821f58d7"
+      },
+      {
+        "path": ".agentlang/store/objects/65059af75fa896a85c9f98ef6390ed33df208b54c9ad29630cf2b710d694f738.agent",
+        "bytes": 291,
+        "sha256": "65059af75fa896a85c9f98ef6390ed33df208b54c9ad29630cf2b710d694f738"
+      },
+      {
+        "path": ".agentlang/store/objects/68777020e6552b02df62439f107332a68b5a514b3b9ba1ceac59295ba84f01cc.agent",
+        "bytes": 289,
+        "sha256": "68777020e6552b02df62439f107332a68b5a514b3b9ba1ceac59295ba84f01cc"
+      },
+      {
+        "path": ".agentlang/store/objects/737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e.agent",
+        "bytes": 570,
+        "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+      },
+      {
+        "path": ".agentlang/store/objects/7b9a12b46102809cf54446a0d127b72730d197099f74d3236e6dd9c3c0c6e25f.agent",
+        "bytes": 288,
+        "sha256": "7b9a12b46102809cf54446a0d127b72730d197099f74d3236e6dd9c3c0c6e25f"
+      },
+      {
+        "path": ".agentlang/store/objects/8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416.agent",
+        "bytes": 65,
+        "sha256": "8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416"
+      },
+      {
+        "path": ".agentlang/store/objects/9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14.agent",
+        "bytes": 150,
+        "sha256": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14"
+      },
+      {
+        "path": ".agentlang/store/objects/cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7.agent",
+        "bytes": 66,
+        "sha256": "cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7"
+      },
+      {
+        "path": ".agentlang/store/objects/e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17.agent",
+        "bytes": 20,
+        "sha256": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17"
+      },
+      {
+        "path": ".agentlang/store/objects/ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb.agent",
+        "bytes": 66,
+        "sha256": "ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb"
+      },
+      {
+        "path": "dictionary.agent",
+        "bytes": 2093,
+        "sha256": "5d8f41a3f2a198eb185bb517ea207ecae6092640076e7bfc5d85956a821f58d7"
+      },
+      {
+        "path": "fixtures/flat-customer.agent",
+        "bytes": 506,
+        "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+      }
+    ],
+    "inventorySha256": "9a9fa7043076e21631fb99e53d09b0131036ead0e886591e5c90abd5e7472cb4",
+    "treeSha256": "9a9fa7043076e21631fb99e53d09b0131036ead0e886591e5c90abd5e7472cb4",
+    "inventoryCapturedAtUtc": "2026-10-07T12:40:22.9619725Z",
+    "filesBefore": [
+      {
+        "path": ".agentlang/store/CURRENT",
+        "bytes": 134,
+        "sha256": "b7d8cf0d8c601dd7467b6a02077d3cd55d7213866037a1c79ee081e8d1814f37"
+      },
+      {
+        "path": ".agentlang/store/WRITE.lock",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": ".agentlang/store/manifests/33c8a41e17132ba2c2f0ff28868c7d4aaff469c37f39ed2c6db3947813bbce3d.json",
+        "bytes": 13378,
+        "sha256": "33c8a41e17132ba2c2f0ff28868c7d4aaff469c37f39ed2c6db3947813bbce3d"
+      },
+      {
+        "path": ".agentlang/store/manifests/f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7.json",
+        "bytes": 1647,
+        "sha256": "f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7"
+      },
+      {
+        "path": ".agentlang/store/objects/2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0.agent",
+        "bytes": 66,
+        "sha256": "2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0"
+      },
+      {
+        "path": ".agentlang/store/objects/33cdec71d9107a508559f3d454ea0c5ba959cd1446e4d1b37fe3ae47d9478caf.agent",
+        "bytes": 192,
+        "sha256": "33cdec71d9107a508559f3d454ea0c5ba959cd1446e4d1b37fe3ae47d9478caf"
+      },
+      {
+        "path": ".agentlang/store/objects/45e4d3407d9737bab7e66c5360fe7b7ed6cfb0f2e3f2b9757cddcb1e358f2a35.agent",
+        "bytes": 296,
+        "sha256": "45e4d3407d9737bab7e66c5360fe7b7ed6cfb0f2e3f2b9757cddcb1e358f2a35"
+      },
+      {
+        "path": ".agentlang/store/objects/5d8f41a3f2a198eb185bb517ea207ecae6092640076e7bfc5d85956a821f58d7.agent",
+        "bytes": 2093,
+        "sha256": "5d8f41a3f2a198eb185bb517ea207ecae6092640076e7bfc5d85956a821f58d7"
+      },
+      {
+        "path": ".agentlang/store/objects/65059af75fa896a85c9f98ef6390ed33df208b54c9ad29630cf2b710d694f738.agent",
+        "bytes": 291,
+        "sha256": "65059af75fa896a85c9f98ef6390ed33df208b54c9ad29630cf2b710d694f738"
+      },
+      {
+        "path": ".agentlang/store/objects/68777020e6552b02df62439f107332a68b5a514b3b9ba1ceac59295ba84f01cc.agent",
+        "bytes": 289,
+        "sha256": "68777020e6552b02df62439f107332a68b5a514b3b9ba1ceac59295ba84f01cc"
+      },
+      {
+        "path": ".agentlang/store/objects/737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e.agent",
+        "bytes": 570,
+        "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+      },
+      {
+        "path": ".agentlang/store/objects/7b9a12b46102809cf54446a0d127b72730d197099f74d3236e6dd9c3c0c6e25f.agent",
+        "bytes": 288,
+        "sha256": "7b9a12b46102809cf54446a0d127b72730d197099f74d3236e6dd9c3c0c6e25f"
+      },
+      {
+        "path": ".agentlang/store/objects/8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416.agent",
+        "bytes": 65,
+        "sha256": "8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416"
+      },
+      {
+        "path": ".agentlang/store/objects/9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14.agent",
+        "bytes": 150,
+        "sha256": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14"
+      },
+      {
+        "path": ".agentlang/store/objects/cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7.agent",
+        "bytes": 66,
+        "sha256": "cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7"
+      },
+      {
+        "path": ".agentlang/store/objects/e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17.agent",
+        "bytes": 20,
+        "sha256": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17"
+      },
+      {
+        "path": ".agentlang/store/objects/ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb.agent",
+        "bytes": 66,
+        "sha256": "ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb"
+      },
+      {
+        "path": "dictionary.agent",
+        "bytes": 2093,
+        "sha256": "5d8f41a3f2a198eb185bb517ea207ecae6092640076e7bfc5d85956a821f58d7"
+      },
+      {
+        "path": "fixtures/flat-customer.agent",
+        "bytes": 506,
+        "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+      }
+    ],
+    "filesAfter": [
+      {
+        "path": ".agentlang/store/CURRENT",
+        "bytes": 134,
+        "sha256": "b7d8cf0d8c601dd7467b6a02077d3cd55d7213866037a1c79ee081e8d1814f37"
+      },
+      {
+        "path": ".agentlang/store/WRITE.lock",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": ".agentlang/store/manifests/33c8a41e17132ba2c2f0ff28868c7d4aaff469c37f39ed2c6db3947813bbce3d.json",
+        "bytes": 13378,
+        "sha256": "33c8a41e17132ba2c2f0ff28868c7d4aaff469c37f39ed2c6db3947813bbce3d"
+      },
+      {
+        "path": ".agentlang/store/manifests/f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7.json",
+        "bytes": 1647,
+        "sha256": "f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7"
+      },
+      {
+        "path": ".agentlang/store/objects/2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0.agent",
+        "bytes": 66,
+        "sha256": "2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0"
+      },
+      {
+        "path": ".agentlang/store/objects/33cdec71d9107a508559f3d454ea0c5ba959cd1446e4d1b37fe3ae47d9478caf.agent",
+        "bytes": 192,
+        "sha256": "33cdec71d9107a508559f3d454ea0c5ba959cd1446e4d1b37fe3ae47d9478caf"
+      },
+      {
+        "path": ".agentlang/store/objects/45e4d3407d9737bab7e66c5360fe7b7ed6cfb0f2e3f2b9757cddcb1e358f2a35.agent",
+        "bytes": 296,
+        "sha256": "45e4d3407d9737bab7e66c5360fe7b7ed6cfb0f2e3f2b9757cddcb1e358f2a35"
+      },
+      {
+        "path": ".agentlang/store/objects/5d8f41a3f2a198eb185bb517ea207ecae6092640076e7bfc5d85956a821f58d7.agent",
+        "bytes": 2093,
+        "sha256": "5d8f41a3f2a198eb185bb517ea207ecae6092640076e7bfc5d85956a821f58d7"
+      },
+      {
+        "path": ".agentlang/store/objects/65059af75fa896a85c9f98ef6390ed33df208b54c9ad29630cf2b710d694f738.agent",
+        "bytes": 291,
+        "sha256": "65059af75fa896a85c9f98ef6390ed33df208b54c9ad29630cf2b710d694f738"
+      },
+      {
+        "path": ".agentlang/store/objects/68777020e6552b02df62439f107332a68b5a514b3b9ba1ceac59295ba84f01cc.agent",
+        "bytes": 289,
+        "sha256": "68777020e6552b02df62439f107332a68b5a514b3b9ba1ceac59295ba84f01cc"
+      },
+      {
+        "path": ".agentlang/store/objects/737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e.agent",
+        "bytes": 570,
+        "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+      },
+      {
+        "path": ".agentlang/store/objects/7b9a12b46102809cf54446a0d127b72730d197099f74d3236e6dd9c3c0c6e25f.agent",
+        "bytes": 288,
+        "sha256": "7b9a12b46102809cf54446a0d127b72730d197099f74d3236e6dd9c3c0c6e25f"
+      },
+      {
+        "path": ".agentlang/store/objects/8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416.agent",
+        "bytes": 65,
+        "sha256": "8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416"
+      },
+      {
+        "path": ".agentlang/store/objects/9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14.agent",
+        "bytes": 150,
+        "sha256": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14"
+      },
+      {
+        "path": ".agentlang/store/objects/cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7.agent",
+        "bytes": 66,
+        "sha256": "cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7"
+      },
+      {
+        "path": ".agentlang/store/objects/e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17.agent",
+        "bytes": 20,
+        "sha256": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17"
+      },
+      {
+        "path": ".agentlang/store/objects/ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb.agent",
+        "bytes": 66,
+        "sha256": "ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb"
+      },
+      {
+        "path": "dictionary.agent",
+        "bytes": 2093,
+        "sha256": "5d8f41a3f2a198eb185bb517ea207ecae6092640076e7bfc5d85956a821f58d7"
+      },
+      {
+        "path": "fixtures/flat-customer.agent",
+        "bytes": 506,
+        "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+      }
+    ]
+  },
+  "outputTreeSha256": "9a9fa7043076e21631fb99e53d09b0131036ead0e886591e5c90abd5e7472cb4",
+  "startingProject": {
+    "argumentPath": null,
+    "path": null,
+    "state": null,
+    "preservation": {
+      "arm": "flat",
+      "checked": false,
+      "sourceWords": 0,
+      "nominalTypes": 0,
+      "unchanged": null
+    },
+    "baselineLive": null
+  },
+  "runtime": {
+    "cliDll": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+    "cliSha256": "bbfe7d079f568a431148298de86a3aa26304a160781c2756591be070735f274a"
+  },
+  "reuse": {
+    "candidatePriorTaskSymbols": [],
+    "priorTaskSymbols": null,
+    "startingDictionaryTaskSymbols": null,
+    "directDependencies": [],
+    "transitiveDependencies": [],
+    "reusedPriorTaskSymbols": null,
+    "status": "baseline-started arm/task; no prior-study helper reuse is claimed"
+  },
+  "checks": [
+    {
+      "name": "arm, block, task, and run identity match the canonical rotated design",
+      "passed": true,
+      "details": {
+        "expectedRunId": "R01",
+        "arm": "flat",
+        "taskId": "S01",
+        "block": "B1",
+        "runId": "R01"
+      }
+    },
+    {
+      "name": "task id is supported by the fresh study",
+      "passed": true,
+      "details": "S01"
+    },
+    {
+      "name": "baseline fallback flag is restricted to retained S07",
+      "passed": true,
+      "details": {
+        "arm": "flat",
+        "taskId": "S01",
+        "baselineFallback": false
+      }
+    },
+    {
+      "name": "versioned acceptance corpus exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-retention-003\\acceptance.json"
+    },
+    {
+      "name": "acceptance default Instant is a JSON string",
+      "passed": true
+    },
+    {
+      "name": "acceptance corpus study and canonical sequence match",
+      "passed": true,
+      "details": {
+        "sequence": [
+          "S01",
+          "S07"
+        ],
+        "studyId": "business-policy-retention-003"
+      }
+    },
+    {
+      "name": "acceptance records the unchanged 001 predecessor hash",
+      "passed": true,
+      "details": {
+        "actual": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+        "expected": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf"
+      }
+    },
+    {
+      "name": "acceptance task has the required strong signature",
+      "passed": true,
+      "details": {
+        "outputs": [
+          "Bool"
+        ],
+        "inputs": [
+          "Customer"
+        ],
+        "symbol": "customer.premium?"
+      }
+    },
+    {
+      "name": "acceptance case count matches the unchanged corpus",
+      "passed": true,
+      "details": {
+        "actual": 10,
+        "expected": 10
+      }
+    },
+    {
+      "name": "acceptance case ids are nonempty and unique",
+      "passed": true
+    },
+    {
+      "name": "default Instant is canonical UTC round-trip text",
+      "passed": true,
+      "details": "2026-01-01T12:00:00.0000000+00:00"
+    },
+    {
+      "name": "all acceptance values match independent BigInteger oracle",
+      "passed": true
+    },
+    {
+      "name": "actor project directory exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\control-fixtures\\retention-preflight-control-slot\\projects\\positive-S01"
+    },
+    {
+      "name": "starting project supplied for preservation and freeze validation",
+      "passed": false
+    },
+    {
+      "name": "evidence file is outside actor and starting projects",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\evidence\\081-preflight-candidate-a5a4af2f8fd5477dbaef348b27443102\\correct-S01-reference.acceptance.json"
+    },
+    {
+      "name": "evidence output destination is unused and will not overwrite a prior report",
+      "passed": true,
+      "details": {
+        "collision": false,
+        "selected": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\evidence\\081-preflight-candidate-a5a4af2f8fd5477dbaef348b27443102\\correct-S01-reference.acceptance.json",
+        "requested": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\evidence\\081-preflight-candidate-a5a4af2f8fd5477dbaef348b27443102\\correct-S01-reference.acceptance.json"
+      }
+    },
+    {
+      "name": "fresh pinned AgentLang CLI exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll"
+    },
+    {
+      "name": "unfrozen verifier run classified as preflight/control",
+      "passed": true,
+      "details": "No StartingProjectPath was supplied."
+    },
+    {
+      "name": "scratch project path is inside verifier tests root",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\tests\\verify-flat-R01-03fe33b5fc504e6d9914a6d12e478760"
+    },
+    {
+      "name": "language scratch copy contains source project",
+      "passed": true,
+      "details": {
+        "files": 19
+      }
+    },
+    {
+      "name": "target exists in the fresh actor project",
+      "passed": true,
+      "details": "customer.premium?"
+    },
+    {
+      "name": "target is an authored user word",
+      "passed": true,
+      "details": {
+        "name": "customer.premium?",
+        "id": "word_090aecde5a4946f2bf852ef6e6c1f165"
+      }
+    },
+    {
+      "name": "target has the exact strong typed acceptance signature",
+      "passed": true,
+      "details": {
+        "outputs": [
+          "Bool"
+        ],
+        "inputs": [
+          "Customer"
+        ],
+        "expectedOutput": "Bool"
+      }
+    },
+    {
+      "name": "target is a persistent library word",
+      "passed": true,
+      "details": {
+        "status": "persistent",
+        "id": "word_090aecde5a4946f2bf852ef6e6c1f165",
+        "maturity": "library"
+      }
+    },
+    {
+      "name": "fresh process can reload target metadata",
+      "passed": true,
+      "details": {
+        "name": "customer.premium?",
+        "flowReference": "customer::premium?",
+        "flowReferenceUnavailableReason": null,
+        "inputs": [
+          "Customer"
+        ],
+        "outputs": [
+          "Bool"
+        ],
+        "parameters": [
+          {
+            "name": "customer",
+            "type": "Customer"
+          }
+        ],
+        "effects": [],
+        "documentation": "Classifies the raw customer kind using exact ordinal equality.",
+        "id": "word_090aecde5a4946f2bf852ef6e6c1f165",
+        "dependencies": [
+          "customer.kind",
+          "equals"
+        ],
+        "transitiveDependencies": [
+          "customer.kind",
+          "equals"
+        ],
+        "callers": [],
+        "tests": [
+          "case-sensitive",
+          "premium",
+          "regular"
+        ],
+        "examples": [
+          "premium"
+        ],
+        "source": "<revision:customer.premium?/1>",
+        "line": 1,
+        "kind": "word",
+        "status": "persistent",
+        "maturity": "library",
+        "deprecated": false,
+        "revision": 1,
+        "testCount": 3,
+        "exampleCount": 1,
+        "coverage": {
+          "instructionsCovered": 0,
+          "instructionsTotal": 4,
+          "branchesCovered": 0,
+          "branchesTotal": 0,
+          "uncoveredInstructions": [
+            "<revision:customer.premium?/1>:4:12",
+            "<revision:customer.premium?/1>:4:27",
+            "<revision:customer.premium?/1>:4:38",
+            "<revision:customer.premium?/1>:4:5"
+          ],
+          "uncoveredBranchOutcomes": [],
+          "status": "not-run"
+        }
+      }
+    },
+    {
+      "name": "target has pure effects",
+      "passed": true,
+      "details": []
+    },
+    {
+      "name": "starting word and type preservation supplied",
+      "passed": false
+    },
+    {
+      "name": "fresh process reloads target test-all metadata",
+      "passed": true
+    },
+    {
+      "name": "fresh process reloads target describe metadata",
+      "passed": true
+    },
+    {
+      "name": "fresh process reloads target dependencies metadata",
+      "passed": true
+    },
+    {
+      "name": "fresh process reloads target transitive-dependencies metadata",
+      "passed": true
+    },
+    {
+      "name": "fresh process reloads target source metadata",
+      "passed": true
+    },
+    {
+      "name": "fresh process reloads target examples metadata",
+      "passed": true
+    },
+    {
+      "name": "all attached tests pass",
+      "passed": true,
+      "details": {
+        "failed": [],
+        "count": 3
+      }
+    },
+    {
+      "name": "target owns passing tests",
+      "passed": true,
+      "details": 3
+    },
+    {
+      "name": "target has meaningful documentation",
+      "passed": true,
+      "details": "Classifies the raw customer kind using exact ordinal equality."
+    },
+    {
+      "name": "target has attached examples",
+      "passed": true
+    },
+    {
+      "name": "target remains pure, supported, and nondeprecated",
+      "passed": true,
+      "details": {
+        "status": "persistent",
+        "effects": [],
+        "kind": "word",
+        "deprecated": false,
+        "maturity": "library"
+      }
+    },
+    {
+      "name": "current complete own instruction and branch coverage",
+      "passed": true,
+      "details": {
+        "instructionsCovered": 4,
+        "instructionsTotal": 4,
+        "branchesCovered": 0,
+        "branchesTotal": 0,
+        "uncoveredInstructions": [],
+        "uncoveredBranchOutcomes": [],
+        "status": "current"
+      }
+    },
+    {
+      "name": "all attached examples pass with meaningful target calls",
+      "passed": true,
+      "details": {
+        "count": 1,
+        "results": [
+          {
+            "word": "customer.premium?",
+            "name": "premium",
+            "source": "example customer.premium?/premium { customer::premium?(customer::new(id = CustomerId::new(\"10000000-0000-0000-0000-000000000001\"), email = Email::new(\"ada@example.test\"), kind = \"premium\", balance = Money::new(1050), created-at = Instant::new(\"2026-01-01T12:00:00.0000000+00:00\"))) => true }",
+            "expected": "true",
+            "passed": true,
+            "actual": [
+              "true"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "refreshed tests all pass",
+      "passed": true,
+      "details": {
+        "failed": [],
+        "protocolError": null
+      }
+    },
+    {
+      "name": "refreshed own coverage remains complete",
+      "passed": true,
+      "details": {
+        "instructionsCovered": 4,
+        "instructionsTotal": 4,
+        "branchesCovered": 0,
+        "branchesTotal": 0,
+        "uncoveredInstructions": [],
+        "uncoveredBranchOutcomes": [],
+        "status": "current"
+      }
+    },
+    {
+      "name": "kind-1 exact language output type",
+      "passed": true,
+      "details": "Bool"
+    },
+    {
+      "name": "kind-1 has no effects or console output",
+      "passed": true
+    },
+    {
+      "name": "kind-1 structured Bool",
+      "passed": true
+    },
+    {
+      "name": "oracle case kind-1 matches independent result",
+      "passed": true,
+      "details": {
+        "diagnostic": null,
+        "expected": {
+          "type": "Bool",
+          "value": true
+        },
+        "actual": {
+          "stackTypes": [
+            "Bool"
+          ],
+          "structured": {
+            "kind": "bool",
+            "value": true
+          },
+          "effects": {},
+          "console": []
+        }
+      }
+    },
+    {
+      "name": "kind-2 exact language output type",
+      "passed": true,
+      "details": "Bool"
+    },
+    {
+      "name": "kind-2 has no effects or console output",
+      "passed": true
+    },
+    {
+      "name": "kind-2 structured Bool",
+      "passed": true
+    },
+    {
+      "name": "oracle case kind-2 matches independent result",
+      "passed": true,
+      "details": {
+        "diagnostic": null,
+        "expected": {
+          "type": "Bool",
+          "value": false
+        },
+        "actual": {
+          "stackTypes": [
+            "Bool"
+          ],
+          "structured": {
+            "kind": "bool",
+            "value": false
+          },
+          "effects": {},
+          "console": []
+        }
+      }
+    },
+    {
+      "name": "kind-3 exact language output type",
+      "passed": true,
+      "details": "Bool"
+    },
+    {
+      "name": "kind-3 has no effects or console output",
+      "passed": true
+    },
+    {
+      "name": "kind-3 structured Bool",
+      "passed": true
+    },
+    {
+      "name": "oracle case kind-3 matches independent result",
+      "passed": true,
+      "details": {
+        "diagnostic": null,
+        "expected": {
+          "type": "Bool",
+          "value": false
+        },
+        "actual": {
+          "stackTypes": [
+            "Bool"
+          ],
+          "structured": {
+            "kind": "bool",
+            "value": false
+          },
+          "effects": {},
+          "console": []
+        }
+      }
+    },
+    {
+      "name": "kind-4 exact language output type",
+      "passed": true,
+      "details": "Bool"
+    },
+    {
+      "name": "kind-4 has no effects or console output",
+      "passed": true
+    },
+    {
+      "name": "kind-4 structured Bool",
+      "passed": true
+    },
+    {
+      "name": "oracle case kind-4 matches independent result",
+      "passed": true,
+      "details": {
+        "diagnostic": null,
+        "expected": {
+          "type": "Bool",
+          "value": false
+        },
+        "actual": {
+          "stackTypes": [
+            "Bool"
+          ],
+          "structured": {
+            "kind": "bool",
+            "value": false
+          },
+          "effects": {},
+          "console": []
+        }
+      }
+    },
+    {
+      "name": "kind-5 exact language output type",
+      "passed": true,
+      "details": "Bool"
+    },
+    {
+      "name": "kind-5 has no effects or console output",
+      "passed": true
+    },
+    {
+      "name": "kind-5 structured Bool",
+      "passed": true
+    },
+    {
+      "name": "oracle case kind-5 matches independent result",
+      "passed": true,
+      "details": {
+        "diagnostic": null,
+        "expected": {
+          "type": "Bool",
+          "value": false
+        },
+        "actual": {
+          "stackTypes": [
+            "Bool"
+          ],
+          "structured": {
+            "kind": "bool",
+            "value": false
+          },
+          "effects": {},
+          "console": []
+        }
+      }
+    },
+    {
+      "name": "kind-6 exact language output type",
+      "passed": true,
+      "details": "Bool"
+    },
+    {
+      "name": "kind-6 has no effects or console output",
+      "passed": true
+    },
+    {
+      "name": "kind-6 structured Bool",
+      "passed": true
+    },
+    {
+      "name": "oracle case kind-6 matches independent result",
+      "passed": true,
+      "details": {
+        "diagnostic": null,
+        "expected": {
+          "type": "Bool",
+          "value": false
+        },
+        "actual": {
+          "stackTypes": [
+            "Bool"
+          ],
+          "structured": {
+            "kind": "bool",
+            "value": false
+          },
+          "effects": {},
+          "console": []
+        }
+      }
+    },
+    {
+      "name": "kind-7 exact language output type",
+      "passed": true,
+      "details": "Bool"
+    },
+    {
+      "name": "kind-7 has no effects or console output",
+      "passed": true
+    },
+    {
+      "name": "kind-7 structured Bool",
+      "passed": true
+    },
+    {
+      "name": "oracle case kind-7 matches independent result",
+      "passed": true,
+      "details": {
+        "diagnostic": null,
+        "expected": {
+          "type": "Bool",
+          "value": false
+        },
+        "actual": {
+          "stackTypes": [
+            "Bool"
+          ],
+          "structured": {
+            "kind": "bool",
+            "value": false
+          },
+          "effects": {},
+          "console": []
+        }
+      }
+    },
+    {
+      "name": "kind-8 exact language output type",
+      "passed": true,
+      "details": "Bool"
+    },
+    {
+      "name": "kind-8 has no effects or console output",
+      "passed": true
+    },
+    {
+      "name": "kind-8 structured Bool",
+      "passed": true
+    },
+    {
+      "name": "oracle case kind-8 matches independent result",
+      "passed": true,
+      "details": {
+        "diagnostic": null,
+        "expected": {
+          "type": "Bool",
+          "value": false
+        },
+        "actual": {
+          "stackTypes": [
+            "Bool"
+          ],
+          "structured": {
+            "kind": "bool",
+            "value": false
+          },
+          "effects": {},
+          "console": []
+        }
+      }
+    },
+    {
+      "name": "kind-9 exact language output type",
+      "passed": true,
+      "details": "Bool"
+    },
+    {
+      "name": "kind-9 has no effects or console output",
+      "passed": true
+    },
+    {
+      "name": "kind-9 structured Bool",
+      "passed": true
+    },
+    {
+      "name": "oracle case kind-9 matches independent result",
+      "passed": true,
+      "details": {
+        "diagnostic": null,
+        "expected": {
+          "type": "Bool",
+          "value": false
+        },
+        "actual": {
+          "stackTypes": [
+            "Bool"
+          ],
+          "structured": {
+            "kind": "bool",
+            "value": false
+          },
+          "effects": {},
+          "console": []
+        }
+      }
+    },
+    {
+      "name": "kind-10 exact language output type",
+      "passed": true,
+      "details": "Bool"
+    },
+    {
+      "name": "kind-10 has no effects or console output",
+      "passed": true
+    },
+    {
+      "name": "kind-10 structured Bool",
+      "passed": true
+    },
+    {
+      "name": "oracle case kind-10 matches independent result",
+      "passed": true,
+      "details": {
+        "diagnostic": null,
+        "expected": {
+          "type": "Bool",
+          "value": false
+        },
+        "actual": {
+          "stackTypes": [
+            "Bool"
+          ],
+          "structured": {
+            "kind": "bool",
+            "value": false
+          },
+          "effects": {},
+          "console": []
+        }
+      }
+    },
+    {
+      "name": "actor project remains unchanged by verification",
+      "passed": true,
+      "details": {
+        "before": "9a9fa7043076e21631fb99e53d09b0131036ead0e886591e5c90abd5e7472cb4",
+        "after": "9a9fa7043076e21631fb99e53d09b0131036ead0e886591e5c90abd5e7472cb4"
+      }
+    },
+    {
+      "name": "verifier scratch copy safely removed",
+      "passed": true
+    }
+  ],
+  "metadataChecks": [
+    {
+      "name": "arm, block, task, and run identity match the canonical rotated design",
+      "passed": true,
+      "details": {
+        "expectedRunId": "R01",
+        "arm": "flat",
+        "taskId": "S01",
+        "block": "B1",
+        "runId": "R01"
+      }
+    },
+    {
+      "name": "task id is supported by the fresh study",
+      "passed": true,
+      "details": "S01"
+    },
+    {
+      "name": "baseline fallback flag is restricted to retained S07",
+      "passed": true,
+      "details": {
+        "arm": "flat",
+        "taskId": "S01",
+        "baselineFallback": false
+      }
+    },
+    {
+      "name": "versioned acceptance corpus exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-retention-003\\acceptance.json"
+    },
+    {
+      "name": "acceptance default Instant is a JSON string",
+      "passed": true
+    },
+    {
+      "name": "acceptance corpus study and canonical sequence match",
+      "passed": true,
+      "details": {
+        "sequence": [
+          "S01",
+          "S07"
+        ],
+        "studyId": "business-policy-retention-003"
+      }
+    },
+    {
+      "name": "acceptance records the unchanged 001 predecessor hash",
+      "passed": true,
+      "details": {
+        "actual": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+        "expected": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf"
+      }
+    },
+    {
+      "name": "acceptance task has the required strong signature",
+      "passed": true,
+      "details": {
+        "outputs": [
+          "Bool"
+        ],
+        "inputs": [
+          "Customer"
+        ],
+        "symbol": "customer.premium?"
+      }
+    },
+    {
+      "name": "acceptance case count matches the unchanged corpus",
+      "passed": true,
+      "details": {
+        "actual": 10,
+        "expected": 10
+      }
+    },
+    {
+      "name": "acceptance case ids are nonempty and unique",
+      "passed": true
+    },
+    {
+      "name": "default Instant is canonical UTC round-trip text",
+      "passed": true,
+      "details": "2026-01-01T12:00:00.0000000+00:00"
+    },
+    {
+      "name": "all acceptance values match independent BigInteger oracle",
+      "passed": true
+    },
+    {
+      "name": "actor project directory exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\control-fixtures\\retention-preflight-control-slot\\projects\\positive-S01"
+    },
+    {
+      "name": "starting project supplied for preservation and freeze validation",
+      "passed": false
+    },
+    {
+      "name": "evidence file is outside actor and starting projects",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\evidence\\081-preflight-candidate-a5a4af2f8fd5477dbaef348b27443102\\correct-S01-reference.acceptance.json"
+    },
+    {
+      "name": "evidence output destination is unused and will not overwrite a prior report",
+      "passed": true,
+      "details": {
+        "collision": false,
+        "selected": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\evidence\\081-preflight-candidate-a5a4af2f8fd5477dbaef348b27443102\\correct-S01-reference.acceptance.json",
+        "requested": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\evidence\\081-preflight-candidate-a5a4af2f8fd5477dbaef348b27443102\\correct-S01-reference.acceptance.json"
+      }
+    },
+    {
+      "name": "fresh pinned AgentLang CLI exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll"
+    },
+    {
+      "name": "unfrozen verifier run classified as preflight/control",
+      "passed": true,
+      "details": "No StartingProjectPath was supplied."
+    },
+    {
+      "name": "scratch project path is inside verifier tests root",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\tests\\verify-flat-R01-03fe33b5fc504e6d9914a6d12e478760"
+    },
+    {
+      "name": "language scratch copy contains source project",
+      "passed": true,
+      "details": {
+        "files": 19
+      }
+    },
+    {
+      "name": "target exists in the fresh actor project",
+      "passed": true,
+      "details": "customer.premium?"
+    },
+    {
+      "name": "target is an authored user word",
+      "passed": true,
+      "details": {
+        "name": "customer.premium?",
+        "id": "word_090aecde5a4946f2bf852ef6e6c1f165"
+      }
+    },
+    {
+      "name": "target has the exact strong typed acceptance signature",
+      "passed": true,
+      "details": {
+        "outputs": [
+          "Bool"
+        ],
+        "inputs": [
+          "Customer"
+        ],
+        "expectedOutput": "Bool"
+      }
+    },
+    {
+      "name": "target is a persistent library word",
+      "passed": true,
+      "details": {
+        "status": "persistent",
+        "id": "word_090aecde5a4946f2bf852ef6e6c1f165",
+        "maturity": "library"
+      }
+    },
+    {
+      "name": "fresh process can reload target metadata",
+      "passed": true,
+      "details": {
+        "name": "customer.premium?",
+        "flowReference": "customer::premium?",
+        "flowReferenceUnavailableReason": null,
+        "inputs": [
+          "Customer"
+        ],
+        "outputs": [
+          "Bool"
+        ],
+        "parameters": [
+          {
+            "name": "customer",
+            "type": "Customer"
+          }
+        ],
+        "effects": [],
+        "documentation": "Classifies the raw customer kind using exact ordinal equality.",
+        "id": "word_090aecde5a4946f2bf852ef6e6c1f165",
+        "dependencies": [
+          "customer.kind",
+          "equals"
+        ],
+        "transitiveDependencies": [
+          "customer.kind",
+          "equals"
+        ],
+        "callers": [],
+        "tests": [
+          "case-sensitive",
+          "premium",
+          "regular"
+        ],
+        "examples": [
+          "premium"
+        ],
+        "source": "<revision:customer.premium?/1>",
+        "line": 1,
+        "kind": "word",
+        "status": "persistent",
+        "maturity": "library",
+        "deprecated": false,
+        "revision": 1,
+        "testCount": 3,
+        "exampleCount": 1,
+        "coverage": {
+          "instructionsCovered": 0,
+          "instructionsTotal": 4,
+          "branchesCovered": 0,
+          "branchesTotal": 0,
+          "uncoveredInstructions": [
+            "<revision:customer.premium?/1>:4:12",
+            "<revision:customer.premium?/1>:4:27",
+            "<revision:customer.premium?/1>:4:38",
+            "<revision:customer.premium?/1>:4:5"
+          ],
+          "uncoveredBranchOutcomes": [],
+          "status": "not-run"
+        }
+      }
+    },
+    {
+      "name": "target has pure effects",
+      "passed": true,
+      "details": []
+    },
+    {
+      "name": "starting word and type preservation supplied",
+      "passed": false
+    },
+    {
+      "name": "fresh process reloads target test-all metadata",
+      "passed": true
+    },
+    {
+      "name": "fresh process reloads target describe metadata",
+      "passed": true
+    },
+    {
+      "name": "fresh process reloads target dependencies metadata",
+      "passed": true
+    },
+    {
+      "name": "fresh process reloads target transitive-dependencies metadata",
+      "passed": true
+    },
+    {
+      "name": "fresh process reloads target source metadata",
+      "passed": true
+    },
+    {
+      "name": "fresh process reloads target examples metadata",
+      "passed": true
+    },
+    {
+      "name": "all attached tests pass",
+      "passed": true,
+      "details": {
+        "failed": [],
+        "count": 3
+      }
+    },
+    {
+      "name": "target owns passing tests",
+      "passed": true,
+      "details": 3
+    },
+    {
+      "name": "target has meaningful documentation",
+      "passed": true,
+      "details": "Classifies the raw customer kind using exact ordinal equality."
+    },
+    {
+      "name": "target has attached examples",
+      "passed": true
+    },
+    {
+      "name": "target remains pure, supported, and nondeprecated",
+      "passed": true,
+      "details": {
+        "status": "persistent",
+        "effects": [],
+        "kind": "word",
+        "deprecated": false,
+        "maturity": "library"
+      }
+    },
+    {
+      "name": "current complete own instruction and branch coverage",
+      "passed": true,
+      "details": {
+        "instructionsCovered": 4,
+        "instructionsTotal": 4,
+        "branchesCovered": 0,
+        "branchesTotal": 0,
+        "uncoveredInstructions": [],
+        "uncoveredBranchOutcomes": [],
+        "status": "current"
+      }
+    },
+    {
+      "name": "all attached examples pass with meaningful target calls",
+      "passed": true,
+      "details": {
+        "count": 1,
+        "results": [
+          {
+            "word": "customer.premium?",
+            "name": "premium",
+            "source": "example customer.premium?/premium { customer::premium?(customer::new(id = CustomerId::new(\"10000000-0000-0000-0000-000000000001\"), email = Email::new(\"ada@example.test\"), kind = \"premium\", balance = Money::new(1050), created-at = Instant::new(\"2026-01-01T12:00:00.0000000+00:00\"))) => true }",
+            "expected": "true",
+            "passed": true,
+            "actual": [
+              "true"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "refreshed tests all pass",
+      "passed": true,
+      "details": {
+        "failed": [],
+        "protocolError": null
+      }
+    },
+    {
+      "name": "refreshed own coverage remains complete",
+      "passed": true,
+      "details": {
+        "instructionsCovered": 4,
+        "instructionsTotal": 4,
+        "branchesCovered": 0,
+        "branchesTotal": 0,
+        "uncoveredInstructions": [],
+        "uncoveredBranchOutcomes": [],
+        "status": "current"
+      }
+    }
+  ],
+  "behaviorChecks": [
+    {
+      "name": "kind-1 exact language output type",
+      "passed": true,
+      "details": "Bool"
+    },
+    {
+      "name": "kind-1 has no effects or console output",
+      "passed": true
+    },
+    {
+      "name": "kind-1 structured Bool",
+      "passed": true
+    },
+    {
+      "name": "oracle case kind-1 matches independent result",
+      "passed": true,
+      "details": {
+        "diagnostic": null,
+        "expected": {
+          "type": "Bool",
+          "value": true
+        },
+        "actual": {
+          "stackTypes": [
+            "Bool"
+          ],
+          "structured": {
+            "kind": "bool",
+            "value": true
+          },
+          "effects": {},
+          "console": []
+        }
+      }
+    },
+    {
+      "name": "kind-2 exact language output type",
+      "passed": true,
+      "details": "Bool"
+    },
+    {
+      "name": "kind-2 has no effects or console output",
+      "passed": true
+    },
+    {
+      "name": "kind-2 structured Bool",
+      "passed": true
+    },
+    {
+      "name": "oracle case kind-2 matches independent result",
+      "passed": true,
+      "details": {
+        "diagnostic": null,
+        "expected": {
+          "type": "Bool",
+          "value": false
+        },
+        "actual": {
+          "stackTypes": [
+            "Bool"
+          ],
+          "structured": {
+            "kind": "bool",
+            "value": false
+          },
+          "effects": {},
+          "console": []
+        }
+      }
+    },
+    {
+      "name": "kind-3 exact language output type",
+      "passed": true,
+      "details": "Bool"
+    },
+    {
+      "name": "kind-3 has no effects or console output",
+      "passed": true
+    },
+    {
+      "name": "kind-3 structured Bool",
+      "passed": true
+    },
+    {
+      "name": "oracle case kind-3 matches independent result",
+      "passed": true,
+      "details": {
+        "diagnostic": null,
+        "expected": {
+          "type": "Bool",
+          "value": false
+        },
+        "actual": {
+          "stackTypes": [
+            "Bool"
+          ],
+          "structured": {
+            "kind": "bool",
+            "value": false
+          },
+          "effects": {},
+          "console": []
+        }
+      }
+    },
+    {
+      "name": "kind-4 exact language output type",
+      "passed": true,
+      "details": "Bool"
+    },
+    {
+      "name": "kind-4 has no effects or console output",
+      "passed": true
+    },
+    {
+      "name": "kind-4 structured Bool",
+      "passed": true
+    },
+    {
+      "name": "oracle case kind-4 matches independent result",
+      "passed": true,
+      "details": {
+        "diagnostic": null,
+        "expected": {
+          "type": "Bool",
+          "value": false
+        },
+        "actual": {
+          "stackTypes": [
+            "Bool"
+          ],
+          "structured": {
+            "kind": "bool",
+            "value": false
+          },
+          "effects": {},
+          "console": []
+        }
+      }
+    },
+    {
+      "name": "kind-5 exact language output type",
+      "passed": true,
+      "details": "Bool"
+    },
+    {
+      "name": "kind-5 has no effects or console output",
+      "passed": true
+    },
+    {
+      "name": "kind-5 structured Bool",
+      "passed": true
+    },
+    {
+      "name": "oracle case kind-5 matches independent result",
+      "passed": true,
+      "details": {
+        "diagnostic": null,
+        "expected": {
+          "type": "Bool",
+          "value": false
+        },
+        "actual": {
+          "stackTypes": [
+            "Bool"
+          ],
+          "structured": {
+            "kind": "bool",
+            "value": false
+          },
+          "effects": {},
+          "console": []
+        }
+      }
+    },
+    {
+      "name": "kind-6 exact language output type",
+      "passed": true,
+      "details": "Bool"
+    },
+    {
+      "name": "kind-6 has no effects or console output",
+      "passed": true
+    },
+    {
+      "name": "kind-6 structured Bool",
+      "passed": true
+    },
+    {
+      "name": "oracle case kind-6 matches independent result",
+      "passed": true,
+      "details": {
+        "diagnostic": null,
+        "expected": {
+          "type": "Bool",
+          "value": false
+        },
+        "actual": {
+          "stackTypes": [
+            "Bool"
+          ],
+          "structured": {
+            "kind": "bool",
+            "value": false
+          },
+          "effects": {},
+          "console": []
+        }
+      }
+    },
+    {
+      "name": "kind-7 exact language output type",
+      "passed": true,
+      "details": "Bool"
+    },
+    {
+      "name": "kind-7 has no effects or console output",
+      "passed": true
+    },
+    {
+      "name": "kind-7 structured Bool",
+      "passed": true
+    },
+    {
+      "name": "oracle case kind-7 matches independent result",
+      "passed": true,
+      "details": {
+        "diagnostic": null,
+        "expected": {
+          "type": "Bool",
+          "value": false
+        },
+        "actual": {
+          "stackTypes": [
+            "Bool"
+          ],
+          "structured": {
+            "kind": "bool",
+            "value": false
+          },
+          "effects": {},
+          "console": []
+        }
+      }
+    },
+    {
+      "name": "kind-8 exact language output type",
+      "passed": true,
+      "details": "Bool"
+    },
+    {
+      "name": "kind-8 has no effects or console output",
+      "passed": true
+    },
+    {
+      "name": "kind-8 structured Bool",
+      "passed": true
+    },
+    {
+      "name": "oracle case kind-8 matches independent result",
+      "passed": true,
+      "details": {
+        "diagnostic": null,
+        "expected": {
+          "type": "Bool",
+          "value": false
+        },
+        "actual": {
+          "stackTypes": [
+            "Bool"
+          ],
+          "structured": {
+            "kind": "bool",
+            "value": false
+          },
+          "effects": {},
+          "console": []
+        }
+      }
+    },
+    {
+      "name": "kind-9 exact language output type",
+      "passed": true,
+      "details": "Bool"
+    },
+    {
+      "name": "kind-9 has no effects or console output",
+      "passed": true
+    },
+    {
+      "name": "kind-9 structured Bool",
+      "passed": true
+    },
+    {
+      "name": "oracle case kind-9 matches independent result",
+      "passed": true,
+      "details": {
+        "diagnostic": null,
+        "expected": {
+          "type": "Bool",
+          "value": false
+        },
+        "actual": {
+          "stackTypes": [
+            "Bool"
+          ],
+          "structured": {
+            "kind": "bool",
+            "value": false
+          },
+          "effects": {},
+          "console": []
+        }
+      }
+    },
+    {
+      "name": "kind-10 exact language output type",
+      "passed": true,
+      "details": "Bool"
+    },
+    {
+      "name": "kind-10 has no effects or console output",
+      "passed": true
+    },
+    {
+      "name": "kind-10 structured Bool",
+      "passed": true
+    },
+    {
+      "name": "oracle case kind-10 matches independent result",
+      "passed": true,
+      "details": {
+        "diagnostic": null,
+        "expected": {
+          "type": "Bool",
+          "value": false
+        },
+        "actual": {
+          "stackTypes": [
+            "Bool"
+          ],
+          "structured": {
+            "kind": "bool",
+            "value": false
+          },
+          "effects": {},
+          "console": []
+        }
+      }
+    },
+    {
+      "name": "actor project remains unchanged by verification",
+      "passed": true,
+      "details": {
+        "before": "9a9fa7043076e21631fb99e53d09b0131036ead0e886591e5c90abd5e7472cb4",
+        "after": "9a9fa7043076e21631fb99e53d09b0131036ead0e886591e5c90abd5e7472cb4"
+      }
+    },
+    {
+      "name": "verifier scratch copy safely removed",
+      "passed": true
+    }
+  ],
+  "testExecutionCount": 2,
+  "jsonlSessions": [
+    {
+      "label": "fresh actor words inventory",
+      "requestCount": 1,
+      "requests": [
+        "{\"op\":\"words\"}"
+      ],
+      "responseCount": 1,
+      "responseLines": [
+        "{\"ok\":true,\"kind\":\"words\",\"text\":\"75 word(s).\",\"data\":{\"words\":[{\"name\":\"CustomerId.new\",\"id\":\"generated_CustomerId.new\",\"inputs\":[\"String\"],\"outputs\":[\"CustomerId\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"CustomerId.value\",\"id\":\"generated_CustomerId.value\",\"inputs\":[\"CustomerId\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"Email.new\",\"id\":\"generated_Email.new\",\"inputs\":[\"String\"],\"outputs\":[\"Email\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"Email.value\",\"id\":\"generated_Email.value\",\"inputs\":[\"Email\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"Instant.new\",\"id\":\"generated_Instant.new\",\"inputs\":[\"String\"],\"outputs\":[\"Instant\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"Instant.value\",\"id\":\"generated_Instant.value\",\"inputs\":[\"Instant\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"Money.new\",\"id\":\"generated_Money.new\",\"inputs\":[\"Int\"],\"outputs\":[\"Money\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"Money.value\",\"id\":\"generated_Money.value\",\"inputs\":[\"Money\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"ProductId.new\",\"id\":\"generated_ProductId.new\",\"inputs\":[\"String\"],\"outputs\":[\"ProductId\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"ProductId.value\",\"id\":\"generated_ProductId.value\",\"inputs\":[\"ProductId\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"add\",\"id\":\"primitive_add\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"bool.and\",\"id\":\"primitive_bool.and\",\"inputs\":[\"Bool\",\"Bool\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"bool.not\",\"id\":\"primitive_bool.not\",\"inputs\":[\"Bool\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"bool.or\",\"id\":\"primitive_bool.or\",\"inputs\":[\"Bool\",\"Bool\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"clock.now\",\"id\":\"primitive_clock.now\",\"inputs\":[],\"outputs\":[\"String\"],\"effects\":[\"clock.read\"],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"console.write\",\"id\":\"primitive_console.write\",\"inputs\":[\"String\"],\"outputs\":[\"Unit\"],\"effects\":[\"console.write\"],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"customer.balance\",\"id\":\"generated_customer.balance\",\"inputs\":[\"Customer\"],\"outputs\":[\"Money\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"customer.created-at\",\"id\":\"generated_customer.created-at\",\"inputs\":[\"Customer\"],\"outputs\":[\"Instant\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"customer.email\",\"id\":\"generated_customer.email\",\"inputs\":[\"Customer\"],\"outputs\":[\"Email\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"customer.id\",\"id\":\"generated_customer.id\",\"inputs\":[\"Customer\"],\"outputs\":[\"CustomerId\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"customer.kind\",\"id\":\"generated_customer.kind\",\"inputs\":[\"Customer\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"customer.new\",\"id\":\"generated_customer.new\",\"inputs\":[\"CustomerId\",\"Email\",\"String\",\"Money\",\"Instant\"],\"outputs\":[\"Customer\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"customer.premium?\",\"id\":\"word_090aecde5a4946f2bf852ef6e6c1f165\",\"inputs\":[\"Customer\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"divide\",\"id\":\"primitive_divide\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"drop\",\"id\":\"primitive_drop\",\"inputs\":[\"a\"],\"outputs\":[],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"dup\",\"id\":\"primitive_dup\",\"inputs\":[\"a\"],\"outputs\":[\"a\",\"a\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"equals\",\"id\":\"primitive_equals\",\"inputs\":[\"a\",\"a\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"file.exists?\",\"id\":\"primitive_file.exists?\",\"inputs\":[\"String\"],\"outputs\":[\"Bool\"],\"effects\":[\"fs.read\"],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"file.read\",\"id\":\"primitive_file.read\",\"inputs\":[\"String\"],\"outputs\":[\"String\"],\"effects\":[\"fs.read\"],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"file.write\",\"id\":\"primitive_file.write\",\"inputs\":[\"String\",\"String\"],\"outputs\":[\"Unit\"],\"effects\":[\"fs.write\"],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.add\",\"id\":\"primitive_float.add\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Float\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.divide\",\"id\":\"primitive_float.divide\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Float\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.greater-or-equal\",\"id\":\"primitive_float.greater-or-equal\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.greater-than\",\"id\":\"primitive_float.greater-than\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.less-or-equal\",\"id\":\"primitive_float.less-or-equal\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.less-than\",\"id\":\"primitive_float.less-than\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.multiply\",\"id\":\"primitive_float.multiply\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Float\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.round\",\"id\":\"primitive_float.round\",\"inputs\":[\"Float\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.subtract\",\"id\":\"primitive_float.subtract\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Float\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.to-int\",\"id\":\"primitive_float.to-int\",\"inputs\":[\"Float\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.to-string\",\"id\":\"primitive_float.to-string\",\"inputs\":[\"Float\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"instant.add-days\",\"id\":\"primitive_instant.add-days\",\"inputs\":[\"String\",\"Int\"],\"outputs\":[\"Result\\u003CString, String\\u003E\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"instant.before?\",\"id\":\"primitive_instant.before?\",\"inputs\":[\"String\",\"String\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"instant.is-canonical-utc?\",\"id\":\"primitive_instant.is-canonical-utc?\",\"inputs\":[\"String\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"instant.parse-utc\",\"id\":\"primitive_instant.parse-utc\",\"inputs\":[\"String\"],\"outputs\":[\"Result\\u003CString, String\\u003E\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.abs\",\"id\":\"primitive_int.abs\",\"inputs\":[\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.add-checked\",\"id\":\"primitive_int.add-checked\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Result\\u003CInt, String\\u003E\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.greater-or-equal\",\"id\":\"primitive_int.greater-or-equal\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.greater-than\",\"id\":\"primitive_int.greater-than\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.less-or-equal\",\"id\":\"primitive_int.less-or-equal\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.less-than\",\"id\":\"primitive_int.less-than\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.max\",\"id\":\"primitive_int.max\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.min\",\"id\":\"primitive_int.min\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.multiply-checked\",\"id\":\"primitive_int.multiply-checked\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Result\\u003CInt, String\\u003E\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.to-float\",\"id\":\"primitive_int.to-float\",\"inputs\":[\"Int\"],\"outputs\":[\"Float\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.to-string\",\"id\":\"primitive_int.to-string\",\"inputs\":[\"Int\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"list.append\",\"id\":\"primitive_list.append\",\"inputs\":[\"List\\u003Ca\\u003E\",\"a\"],\"outputs\":[\"List\\u003Ca\\u003E\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"list.concat\",\"id\":\"primitive_list.concat\",\"inputs\":[\"List\\u003Ca\\u003E\",\"List\\u003Ca\\u003E\"],\"outputs\":[\"List\\u003Ca\\u003E\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"list.count\",\"id\":\"primitive_list.count\",\"inputs\":[\"List\\u003Ca\\u003E\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"list.get\",\"id\":\"primitive_list.get\",\"inputs\":[\"List\\u003Ca\\u003E\",\"Int\"],\"outputs\":[\"Option\\u003Ca\\u003E\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"list.is-empty?\",\"id\":\"primitive_list.is-empty?\",\"inputs\":[\"List\\u003Ca\\u003E\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"multiply\",\"id\":\"primitive_multiply\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.concat\",\"id\":\"primitive_string.concat\",\"inputs\":[\"String\",\"String\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.contains\",\"id\":\"primitive_string.contains\",\"inputs\":[\"String\",\"String\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.email-address-valid?\",\"id\":\"primitive_string.email-address-valid?\",\"inputs\":[\"String\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.ends-with\",\"id\":\"primitive_string.ends-with\",\"inputs\":[\"String\",\"String\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.guid-canonical?\",\"id\":\"primitive_string.guid-canonical?\",\"inputs\":[\"String\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.guid-normalize\",\"id\":\"primitive_string.guid-normalize\",\"inputs\":[\"String\"],\"outputs\":[\"Result\\u003CString, String\\u003E\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.length\",\"id\":\"primitive_string.length\",\"inputs\":[\"String\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.starts-with\",\"id\":\"primitive_string.starts-with\",\"inputs\":[\"String\",\"String\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.to-lower\",\"id\":\"primitive_string.to-lower\",\"inputs\":[\"String\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.to-upper\",\"id\":\"primitive_string.to-upper\",\"inputs\":[\"String\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.trim\",\"id\":\"primitive_string.trim\",\"inputs\":[\"String\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"subtract\",\"id\":\"primitive_subtract\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"swap\",\"id\":\"primitive_swap\",\"inputs\":[\"a\",\"b\"],\"outputs\":[\"b\",\"a\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false}],\"constructs\":[{\"name\":\"list.empty\",\"kind\":\"syntax\",\"syntax\":\"list.empty\\u003CT\\u003E\",\"inputs\":[],\"outputs\":[\"List\\u003CT\\u003E\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"none\",\"documentation\":\"Constructs an empty List\\u003CT\\u003E. T must be a declared closed type.\",\"coverageOutcomes\":[]},{\"name\":\"list.singleton\",\"kind\":\"syntax\",\"syntax\":\"T list.singleton\\u003CT\\u003E\",\"inputs\":[\"T\"],\"outputs\":[\"List\\u003CT\\u003E\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"none\",\"documentation\":\"Constructs a one-element List\\u003CT\\u003E after checking the payload against the explicit T.\",\"coverageOutcomes\":[]},{\"name\":\"option.none\",\"kind\":\"syntax\",\"syntax\":\"option.none\\u003CT\\u003E\",\"inputs\":[],\"outputs\":[\"Option\\u003CT\\u003E\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"none\",\"documentation\":\"Constructs a typed none; the element type is always explicit.\",\"coverageOutcomes\":[]},{\"name\":\"option.some\",\"kind\":\"syntax\",\"syntax\":\"T option.some\\u003CT\\u003E\",\"inputs\":[\"T\"],\"outputs\":[\"Option\\u003CT\\u003E\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"none\",\"documentation\":\"Constructs a typed some after checking the payload against the explicit T.\",\"coverageOutcomes\":[]},{\"name\":\"result.ok\",\"kind\":\"syntax\",\"syntax\":\"T result.ok\\u003CT, E\\u003E\",\"inputs\":[\"T\"],\"outputs\":[\"Result\\u003CT, E\\u003E\"],\"typeParameters\":[\"T\",\"E\"],\"effects\":[],\"effectRule\":\"none\",\"documentation\":\"Constructs a typed ok; both result type parameters are always explicit.\",\"coverageOutcomes\":[]},{\"name\":\"result.error\",\"kind\":\"syntax\",\"syntax\":\"E result.error\\u003CT, E\\u003E\",\"inputs\":[\"E\"],\"outputs\":[\"Result\\u003CT, E\\u003E\"],\"typeParameters\":[\"T\",\"E\"],\"effects\":[],\"effectRule\":\"none\",\"documentation\":\"Constructs a typed error; the inactive success type remains explicit.\",\"coverageOutcomes\":[]},{\"name\":\"list.map\",\"kind\":\"syntax\",\"syntax\":\"list.map \\u003Cword\\u003E\",\"inputs\":[\"List\\u003CT\\u003E\"],\"outputs\":[\"List\\u003CU\\u003E\"],\"typeParameters\":[\"T\",\"U\"],\"effects\":[],\"effectRule\":\"inherits callback word effects\",\"documentation\":\"Statically names one callback word with signature T -\\u003E U. The callback is type checked before any element is visited.\",\"coverageOutcomes\":[\"empty\",\"nonempty\"]},{\"name\":\"list.filter\",\"kind\":\"syntax\",\"syntax\":\"list.filter \\u003Cword\\u003E\",\"inputs\":[\"List\\u003CT\\u003E\"],\"outputs\":[\"List\\u003CT\\u003E\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"inherits callback word effects\",\"documentation\":\"Statically names one callback word with signature T -\\u003E Bool. Retains elements for true and drops them for false.\",\"coverageOutcomes\":[\"empty\",\"nonempty\",\"keep\",\"drop\"]},{\"name\":\"list.each\",\"kind\":\"syntax\",\"syntax\":\"list.each \\u003Cword\\u003E\",\"inputs\":[\"List\\u003CT\\u003E\"],\"outputs\":[\"Unit\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"inherits callback word effects\",\"documentation\":\"Statically names one callback word with signature T -\\u003E Unit and visits each element.\",\"coverageOutcomes\":[\"empty\",\"nonempty\"]},{\"name\":\"list.fold\",\"kind\":\"syntax\",\"syntax\":\"list.fold \\u003Cword\\u003E\",\"inputs\":[\"List\\u003CT\\u003E\",\"Accumulator\"],\"outputs\":[\"Accumulator\"],\"typeParameters\":[\"T\",\"Accumulator\"],\"effects\":[],\"effectRule\":\"inherits callback word effects\",\"documentation\":\"Statically names one callback with signature Accumulator Item -\\u003E Accumulator. Visits items from left to right; an empty list returns the initial accumulator unchanged. The callback cannot capture caller locals.\",\"coverageOutcomes\":[\"empty\",\"nonempty\"]},{\"name\":\"match-option\",\"kind\":\"syntax\",\"syntax\":\"match-option / some \\u003Clocal\\u003E / none / end\",\"inputs\":[\"Option\\u003CT\\u003E (top of stack)\"],\"outputs\":[\"same stack from both cases\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"union of both case effects\",\"documentation\":\"Requires both cases. The some payload local exists only inside its case; both cases must leave identical stack and outer-local types.\",\"coverageOutcomes\":[\"some\",\"none\"]},{\"name\":\"match-result\",\"kind\":\"syntax\",\"syntax\":\"match-result / ok \\u003Clocal\\u003E / error \\u003Clocal\\u003E / end\",\"inputs\":[\"Result\\u003CT, E\\u003E (top of stack)\"],\"outputs\":[\"same stack from both cases\"],\"typeParameters\":[\"T\",\"E\"],\"effects\":[],\"effectRule\":\"union of both case effects\",\"documentation\":\"Requires both cases. Each payload local exists only inside its own case; both cases must leave identical stack and outer-local types.\",\"coverageOutcomes\":[\"ok\",\"error\"]}]}}"
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "words",
+          "text": "75 word(s).",
+          "data": {
+            "words": [
+              {
+                "name": "CustomerId.new",
+                "id": "generated_CustomerId.new",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "CustomerId"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "CustomerId.value",
+                "id": "generated_CustomerId.value",
+                "inputs": [
+                  "CustomerId"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "Email.new",
+                "id": "generated_Email.new",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Email"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "Email.value",
+                "id": "generated_Email.value",
+                "inputs": [
+                  "Email"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "Instant.new",
+                "id": "generated_Instant.new",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Instant"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "Instant.value",
+                "id": "generated_Instant.value",
+                "inputs": [
+                  "Instant"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "Money.new",
+                "id": "generated_Money.new",
+                "inputs": [
+                  "Int"
+                ],
+                "outputs": [
+                  "Money"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "Money.value",
+                "id": "generated_Money.value",
+                "inputs": [
+                  "Money"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "ProductId.new",
+                "id": "generated_ProductId.new",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "ProductId"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "ProductId.value",
+                "id": "generated_ProductId.value",
+                "inputs": [
+                  "ProductId"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "add",
+                "id": "primitive_add",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "bool.and",
+                "id": "primitive_bool.and",
+                "inputs": [
+                  "Bool",
+                  "Bool"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "bool.not",
+                "id": "primitive_bool.not",
+                "inputs": [
+                  "Bool"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "bool.or",
+                "id": "primitive_bool.or",
+                "inputs": [
+                  "Bool",
+                  "Bool"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "clock.now",
+                "id": "primitive_clock.now",
+                "inputs": [],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [
+                  "clock.read"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "console.write",
+                "id": "primitive_console.write",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Unit"
+                ],
+                "effects": [
+                  "console.write"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "customer.balance",
+                "id": "generated_customer.balance",
+                "inputs": [
+                  "Customer"
+                ],
+                "outputs": [
+                  "Money"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "customer.created-at",
+                "id": "generated_customer.created-at",
+                "inputs": [
+                  "Customer"
+                ],
+                "outputs": [
+                  "Instant"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "customer.email",
+                "id": "generated_customer.email",
+                "inputs": [
+                  "Customer"
+                ],
+                "outputs": [
+                  "Email"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "customer.id",
+                "id": "generated_customer.id",
+                "inputs": [
+                  "Customer"
+                ],
+                "outputs": [
+                  "CustomerId"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "customer.kind",
+                "id": "generated_customer.kind",
+                "inputs": [
+                  "Customer"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "customer.new",
+                "id": "generated_customer.new",
+                "inputs": [
+                  "CustomerId",
+                  "Email",
+                  "String",
+                  "Money",
+                  "Instant"
+                ],
+                "outputs": [
+                  "Customer"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "customer.premium?",
+                "id": "word_090aecde5a4946f2bf852ef6e6c1f165",
+                "inputs": [
+                  "Customer"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "divide",
+                "id": "primitive_divide",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "drop",
+                "id": "primitive_drop",
+                "inputs": [
+                  "a"
+                ],
+                "outputs": [],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "dup",
+                "id": "primitive_dup",
+                "inputs": [
+                  "a"
+                ],
+                "outputs": [
+                  "a",
+                  "a"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "equals",
+                "id": "primitive_equals",
+                "inputs": [
+                  "a",
+                  "a"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "file.exists?",
+                "id": "primitive_file.exists?",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [
+                  "fs.read"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "file.read",
+                "id": "primitive_file.read",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [
+                  "fs.read"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "file.write",
+                "id": "primitive_file.write",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "Unit"
+                ],
+                "effects": [
+                  "fs.write"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.add",
+                "id": "primitive_float.add",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.divide",
+                "id": "primitive_float.divide",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.greater-or-equal",
+                "id": "primitive_float.greater-or-equal",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.greater-than",
+                "id": "primitive_float.greater-than",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.less-or-equal",
+                "id": "primitive_float.less-or-equal",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.less-than",
+                "id": "primitive_float.less-than",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.multiply",
+                "id": "primitive_float.multiply",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.round",
+                "id": "primitive_float.round",
+                "inputs": [
+                  "Float"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.subtract",
+                "id": "primitive_float.subtract",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.to-int",
+                "id": "primitive_float.to-int",
+                "inputs": [
+                  "Float"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.to-string",
+                "id": "primitive_float.to-string",
+                "inputs": [
+                  "Float"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "instant.add-days",
+                "id": "primitive_instant.add-days",
+                "inputs": [
+                  "String",
+                  "Int"
+                ],
+                "outputs": [
+                  "Result<String, String>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "instant.before?",
+                "id": "primitive_instant.before?",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "instant.is-canonical-utc?",
+                "id": "primitive_instant.is-canonical-utc?",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "instant.parse-utc",
+                "id": "primitive_instant.parse-utc",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Result<String, String>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.abs",
+                "id": "primitive_int.abs",
+                "inputs": [
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.add-checked",
+                "id": "primitive_int.add-checked",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Result<Int, String>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.greater-or-equal",
+                "id": "primitive_int.greater-or-equal",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.greater-than",
+                "id": "primitive_int.greater-than",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.less-or-equal",
+                "id": "primitive_int.less-or-equal",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.less-than",
+                "id": "primitive_int.less-than",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.max",
+                "id": "primitive_int.max",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.min",
+                "id": "primitive_int.min",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.multiply-checked",
+                "id": "primitive_int.multiply-checked",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Result<Int, String>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.to-float",
+                "id": "primitive_int.to-float",
+                "inputs": [
+                  "Int"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.to-string",
+                "id": "primitive_int.to-string",
+                "inputs": [
+                  "Int"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.append",
+                "id": "primitive_list.append",
+                "inputs": [
+                  "List<a>",
+                  "a"
+                ],
+                "outputs": [
+                  "List<a>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.concat",
+                "id": "primitive_list.concat",
+                "inputs": [
+                  "List<a>",
+                  "List<a>"
+                ],
+                "outputs": [
+                  "List<a>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.count",
+                "id": "primitive_list.count",
+                "inputs": [
+                  "List<a>"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.get",
+                "id": "primitive_list.get",
+                "inputs": [
+                  "List<a>",
+                  "Int"
+                ],
+                "outputs": [
+                  "Option<a>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.is-empty?",
+                "id": "primitive_list.is-empty?",
+                "inputs": [
+                  "List<a>"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "multiply",
+                "id": "primitive_multiply",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.concat",
+                "id": "primitive_string.concat",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.contains",
+                "id": "primitive_string.contains",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.email-address-valid?",
+                "id": "primitive_string.email-address-valid?",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.ends-with",
+                "id": "primitive_string.ends-with",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.guid-canonical?",
+                "id": "primitive_string.guid-canonical?",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.guid-normalize",
+                "id": "primitive_string.guid-normalize",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Result<String, String>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.length",
+                "id": "primitive_string.length",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.starts-with",
+                "id": "primitive_string.starts-with",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.to-lower",
+                "id": "primitive_string.to-lower",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.to-upper",
+                "id": "primitive_string.to-upper",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.trim",
+                "id": "primitive_string.trim",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "subtract",
+                "id": "primitive_subtract",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "swap",
+                "id": "primitive_swap",
+                "inputs": [
+                  "a",
+                  "b"
+                ],
+                "outputs": [
+                  "b",
+                  "a"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              }
+            ],
+            "constructs": [
+              {
+                "name": "list.empty",
+                "kind": "syntax",
+                "syntax": "list.empty<T>",
+                "inputs": [],
+                "outputs": [
+                  "List<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs an empty List<T>. T must be a declared closed type.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "list.singleton",
+                "kind": "syntax",
+                "syntax": "T list.singleton<T>",
+                "inputs": [
+                  "T"
+                ],
+                "outputs": [
+                  "List<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a one-element List<T> after checking the payload against the explicit T.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "option.none",
+                "kind": "syntax",
+                "syntax": "option.none<T>",
+                "inputs": [],
+                "outputs": [
+                  "Option<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a typed none; the element type is always explicit.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "option.some",
+                "kind": "syntax",
+                "syntax": "T option.some<T>",
+                "inputs": [
+                  "T"
+                ],
+                "outputs": [
+                  "Option<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a typed some after checking the payload against the explicit T.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "result.ok",
+                "kind": "syntax",
+                "syntax": "T result.ok<T, E>",
+                "inputs": [
+                  "T"
+                ],
+                "outputs": [
+                  "Result<T, E>"
+                ],
+                "typeParameters": [
+                  "T",
+                  "E"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a typed ok; both result type parameters are always explicit.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "result.error",
+                "kind": "syntax",
+                "syntax": "E result.error<T, E>",
+                "inputs": [
+                  "E"
+                ],
+                "outputs": [
+                  "Result<T, E>"
+                ],
+                "typeParameters": [
+                  "T",
+                  "E"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a typed error; the inactive success type remains explicit.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "list.map",
+                "kind": "syntax",
+                "syntax": "list.map <word>",
+                "inputs": [
+                  "List<T>"
+                ],
+                "outputs": [
+                  "List<U>"
+                ],
+                "typeParameters": [
+                  "T",
+                  "U"
+                ],
+                "effects": [],
+                "effectRule": "inherits callback word effects",
+                "documentation": "Statically names one callback word with signature T -> U. The callback is type checked before any element is visited.",
+                "coverageOutcomes": [
+                  "empty",
+                  "nonempty"
+                ]
+              },
+              {
+                "name": "list.filter",
+                "kind": "syntax",
+                "syntax": "list.filter <word>",
+                "inputs": [
+                  "List<T>"
+                ],
+                "outputs": [
+                  "List<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "inherits callback word effects",
+                "documentation": "Statically names one callback word with signature T -> Bool. Retains elements for true and drops them for false.",
+                "coverageOutcomes": [
+                  "empty",
+                  "nonempty",
+                  "keep",
+                  "drop"
+                ]
+              },
+              {
+                "name": "list.each",
+                "kind": "syntax",
+                "syntax": "list.each <word>",
+                "inputs": [
+                  "List<T>"
+                ],
+                "outputs": [
+                  "Unit"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "inherits callback word effects",
+                "documentation": "Statically names one callback word with signature T -> Unit and visits each element.",
+                "coverageOutcomes": [
+                  "empty",
+                  "nonempty"
+                ]
+              },
+              {
+                "name": "list.fold",
+                "kind": "syntax",
+                "syntax": "list.fold <word>",
+                "inputs": [
+                  "List<T>",
+                  "Accumulator"
+                ],
+                "outputs": [
+                  "Accumulator"
+                ],
+                "typeParameters": [
+                  "T",
+                  "Accumulator"
+                ],
+                "effects": [],
+                "effectRule": "inherits callback word effects",
+                "documentation": "Statically names one callback with signature Accumulator Item -> Accumulator. Visits items from left to right; an empty list returns the initial accumulator unchanged. The callback cannot capture caller locals.",
+                "coverageOutcomes": [
+                  "empty",
+                  "nonempty"
+                ]
+              },
+              {
+                "name": "match-option",
+                "kind": "syntax",
+                "syntax": "match-option / some <local> / none / end",
+                "inputs": [
+                  "Option<T> (top of stack)"
+                ],
+                "outputs": [
+                  "same stack from both cases"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "union of both case effects",
+                "documentation": "Requires both cases. The some payload local exists only inside its case; both cases must leave identical stack and outer-local types.",
+                "coverageOutcomes": [
+                  "some",
+                  "none"
+                ]
+              },
+              {
+                "name": "match-result",
+                "kind": "syntax",
+                "syntax": "match-result / ok <local> / error <local> / end",
+                "inputs": [
+                  "Result<T, E> (top of stack)"
+                ],
+                "outputs": [
+                  "same stack from both cases"
+                ],
+                "typeParameters": [
+                  "T",
+                  "E"
+                ],
+                "effects": [],
+                "effectRule": "union of both case effects",
+                "documentation": "Requires both cases. Each payload local exists only inside its own case; both cases must leave identical stack and outer-local types.",
+                "coverageOutcomes": [
+                  "ok",
+                  "error"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "parseErrors": [],
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 528,
+      "stderr": ""
+    },
+    {
+      "label": "fresh target metadata reload",
+      "requestCount": 1,
+      "requests": [
+        "{\"op\":\"describe\",\"word\":\"customer.premium?\"}"
+      ],
+      "responseCount": 1,
+      "responseLines": [
+        "{\"ok\":true,\"kind\":\"describe\",\"text\":\"Description for customer.premium?.\",\"data\":{\"name\":\"customer.premium?\",\"flowReference\":\"customer::premium?\",\"flowReferenceUnavailableReason\":null,\"inputs\":[\"Customer\"],\"outputs\":[\"Bool\"],\"parameters\":[{\"name\":\"customer\",\"type\":\"Customer\"}],\"effects\":[],\"documentation\":\"Classifies the raw customer kind using exact ordinal equality.\",\"id\":\"word_090aecde5a4946f2bf852ef6e6c1f165\",\"dependencies\":[\"customer.kind\",\"equals\"],\"transitiveDependencies\":[\"customer.kind\",\"equals\"],\"callers\":[],\"tests\":[\"case-sensitive\",\"premium\",\"regular\"],\"examples\":[\"premium\"],\"source\":\"\\u003Crevision:customer.premium?/1\\u003E\",\"line\":1,\"kind\":\"word\",\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false,\"revision\":1,\"testCount\":3,\"exampleCount\":1,\"coverage\":{\"instructionsCovered\":0,\"instructionsTotal\":4,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[\"\\u003Crevision:customer.premium?/1\\u003E:4:12\",\"\\u003Crevision:customer.premium?/1\\u003E:4:27\",\"\\u003Crevision:customer.premium?/1\\u003E:4:38\",\"\\u003Crevision:customer.premium?/1\\u003E:4:5\"],\"uncoveredBranchOutcomes\":[],\"status\":\"not-run\"}}}"
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "describe",
+          "text": "Description for customer.premium?.",
+          "data": {
+            "name": "customer.premium?",
+            "flowReference": "customer::premium?",
+            "flowReferenceUnavailableReason": null,
+            "inputs": [
+              "Customer"
+            ],
+            "outputs": [
+              "Bool"
+            ],
+            "parameters": [
+              {
+                "name": "customer",
+                "type": "Customer"
+              }
+            ],
+            "effects": [],
+            "documentation": "Classifies the raw customer kind using exact ordinal equality.",
+            "id": "word_090aecde5a4946f2bf852ef6e6c1f165",
+            "dependencies": [
+              "customer.kind",
+              "equals"
+            ],
+            "transitiveDependencies": [
+              "customer.kind",
+              "equals"
+            ],
+            "callers": [],
+            "tests": [
+              "case-sensitive",
+              "premium",
+              "regular"
+            ],
+            "examples": [
+              "premium"
+            ],
+            "source": "<revision:customer.premium?/1>",
+            "line": 1,
+            "kind": "word",
+            "status": "persistent",
+            "maturity": "library",
+            "deprecated": false,
+            "revision": 1,
+            "testCount": 3,
+            "exampleCount": 1,
+            "coverage": {
+              "instructionsCovered": 0,
+              "instructionsTotal": 4,
+              "branchesCovered": 0,
+              "branchesTotal": 0,
+              "uncoveredInstructions": [
+                "<revision:customer.premium?/1>:4:12",
+                "<revision:customer.premium?/1>:4:27",
+                "<revision:customer.premium?/1>:4:38",
+                "<revision:customer.premium?/1>:4:5"
+              ],
+              "uncoveredBranchOutcomes": [],
+              "status": "not-run"
+            }
+          }
+        }
+      ],
+      "parseErrors": [],
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 517,
+      "stderr": ""
+    },
+    {
+      "label": "target tests, documentation, dependencies, source, and examples",
+      "requestCount": 6,
+      "requests": [
+        "{\"op\":\"test-all\"}",
+        "{\"op\":\"describe\",\"word\":\"customer.premium?\"}",
+        "{\"op\":\"dependencies\",\"word\":\"customer.premium?\"}",
+        "{\"op\":\"transitive-dependencies\",\"word\":\"customer.premium?\"}",
+        "{\"op\":\"source\",\"word\":\"customer.premium?\"}",
+        "{\"op\":\"examples\",\"word\":\"customer.premium?\"}"
+      ],
+      "responseCount": 6,
+      "responseLines": [
+        "{\"ok\":true,\"kind\":\"test\",\"text\":\"3/3 test(s) passed.\",\"data\":{\"results\":[{\"name\":\"case-sensitive\",\"word\":\"customer.premium?\",\"passed\":true,\"expected\":\"false\",\"actual\":[\"false\"]},{\"name\":\"premium\",\"word\":\"customer.premium?\",\"passed\":true,\"expected\":\"true\",\"actual\":[\"true\"]},{\"name\":\"regular\",\"word\":\"customer.premium?\",\"passed\":true,\"expected\":\"false\",\"actual\":[\"false\"]}]}}",
+        "{\"ok\":true,\"kind\":\"describe\",\"text\":\"Description for customer.premium?.\",\"data\":{\"name\":\"customer.premium?\",\"flowReference\":\"customer::premium?\",\"flowReferenceUnavailableReason\":null,\"inputs\":[\"Customer\"],\"outputs\":[\"Bool\"],\"parameters\":[{\"name\":\"customer\",\"type\":\"Customer\"}],\"effects\":[],\"documentation\":\"Classifies the raw customer kind using exact ordinal equality.\",\"id\":\"word_090aecde5a4946f2bf852ef6e6c1f165\",\"dependencies\":[\"customer.kind\",\"equals\"],\"transitiveDependencies\":[\"customer.kind\",\"equals\"],\"callers\":[],\"tests\":[\"case-sensitive\",\"premium\",\"regular\"],\"examples\":[\"premium\"],\"source\":\"\\u003Crevision:customer.premium?/1\\u003E\",\"line\":1,\"kind\":\"word\",\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false,\"revision\":1,\"testCount\":3,\"exampleCount\":1,\"coverage\":{\"instructionsCovered\":4,\"instructionsTotal\":4,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[],\"status\":\"current\"}}}",
+        "{\"ok\":true,\"kind\":\"dependencies\",\"text\":\"2 direct dependency/dependencies.\",\"data\":{\"dependencies\":[\"customer.kind\",\"equals\"],\"callers\":[]}}",
+        "{\"ok\":true,\"kind\":\"transitive-dependencies\",\"text\":\"2 transitive dependencies for \\u0027customer.premium?\\u0027.\",\"data\":{\"word\":\"customer.premium?\",\"dependencies\":[\"customer.kind\",\"equals\"],\"count\":2}}",
+        "{\"ok\":true,\"kind\":\"source\",\"text\":\"word customer.premium?(customer: Customer) -\\u003E Bool {\\n    effects none\\n    doc \\u0022Classifies the raw customer kind using exact ordinal equality.\\u0022\\n    equals(customer::kind(customer), \\u0022premium\\u0022)\\n}\",\"data\":\"word customer.premium?(customer: Customer) -\\u003E Bool {\\n    effects none\\n    doc \\u0022Classifies the raw customer kind using exact ordinal equality.\\u0022\\n    equals(customer::kind(customer), \\u0022premium\\u0022)\\n}\"}",
+        "{\"ok\":true,\"kind\":\"examples\",\"text\":\"1 example(s).\",\"data\":[\"premium\"]}"
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "test",
+          "text": "3/3 test(s) passed.",
+          "data": {
+            "results": [
+              {
+                "name": "case-sensitive",
+                "word": "customer.premium?",
+                "passed": true,
+                "expected": "false",
+                "actual": [
+                  "false"
+                ]
+              },
+              {
+                "name": "premium",
+                "word": "customer.premium?",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "regular",
+                "word": "customer.premium?",
+                "passed": true,
+                "expected": "false",
+                "actual": [
+                  "false"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "describe",
+          "text": "Description for customer.premium?.",
+          "data": {
+            "name": "customer.premium?",
+            "flowReference": "customer::premium?",
+            "flowReferenceUnavailableReason": null,
+            "inputs": [
+              "Customer"
+            ],
+            "outputs": [
+              "Bool"
+            ],
+            "parameters": [
+              {
+                "name": "customer",
+                "type": "Customer"
+              }
+            ],
+            "effects": [],
+            "documentation": "Classifies the raw customer kind using exact ordinal equality.",
+            "id": "word_090aecde5a4946f2bf852ef6e6c1f165",
+            "dependencies": [
+              "customer.kind",
+              "equals"
+            ],
+            "transitiveDependencies": [
+              "customer.kind",
+              "equals"
+            ],
+            "callers": [],
+            "tests": [
+              "case-sensitive",
+              "premium",
+              "regular"
+            ],
+            "examples": [
+              "premium"
+            ],
+            "source": "<revision:customer.premium?/1>",
+            "line": 1,
+            "kind": "word",
+            "status": "persistent",
+            "maturity": "library",
+            "deprecated": false,
+            "revision": 1,
+            "testCount": 3,
+            "exampleCount": 1,
+            "coverage": {
+              "instructionsCovered": 4,
+              "instructionsTotal": 4,
+              "branchesCovered": 0,
+              "branchesTotal": 0,
+              "uncoveredInstructions": [],
+              "uncoveredBranchOutcomes": [],
+              "status": "current"
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "dependencies",
+          "text": "2 direct dependency/dependencies.",
+          "data": {
+            "dependencies": [
+              "customer.kind",
+              "equals"
+            ],
+            "callers": []
+          }
+        },
+        {
+          "ok": true,
+          "kind": "transitive-dependencies",
+          "text": "2 transitive dependencies for 'customer.premium?'.",
+          "data": {
+            "word": "customer.premium?",
+            "dependencies": [
+              "customer.kind",
+              "equals"
+            ],
+            "count": 2
+          }
+        },
+        {
+          "ok": true,
+          "kind": "source",
+          "text": "word customer.premium?(customer: Customer) -> Bool {\n    effects none\n    doc \"Classifies the raw customer kind using exact ordinal equality.\"\n    equals(customer::kind(customer), \"premium\")\n}",
+          "data": "word customer.premium?(customer: Customer) -> Bool {\n    effects none\n    doc \"Classifies the raw customer kind using exact ordinal equality.\"\n    equals(customer::kind(customer), \"premium\")\n}"
+        },
+        {
+          "ok": true,
+          "kind": "examples",
+          "text": "1 example(s).",
+          "data": [
+            "premium"
+          ]
+        }
+      ],
+      "parseErrors": [],
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 559,
+      "stderr": ""
+    },
+    {
+      "label": "run target examples",
+      "requestCount": 1,
+      "requests": [
+        "{\"op\":\"example\",\"word\":\"customer.premium?\"}"
+      ],
+      "responseCount": 1,
+      "responseLines": [
+        "{\"ok\":true,\"kind\":\"example\",\"text\":\"1/1 example(s) passed.\",\"data\":{\"results\":[{\"word\":\"customer.premium?\",\"name\":\"premium\",\"source\":\"example customer.premium?/premium { customer::premium?(customer::new(id = CustomerId::new(\\u002210000000-0000-0000-0000-000000000001\\u0022), email = Email::new(\\u0022ada@example.test\\u0022), kind = \\u0022premium\\u0022, balance = Money::new(1050), created-at = Instant::new(\\u00222026-01-01T12:00:00.0000000\\u002B00:00\\u0022))) =\\u003E true }\",\"expected\":\"true\",\"passed\":true,\"actual\":[\"true\"]}]}}"
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "example",
+          "text": "1/1 example(s) passed.",
+          "data": {
+            "results": [
+              {
+                "word": "customer.premium?",
+                "name": "premium",
+                "source": "example customer.premium?/premium { customer::premium?(customer::new(id = CustomerId::new(\"10000000-0000-0000-0000-000000000001\"), email = Email::new(\"ada@example.test\"), kind = \"premium\", balance = Money::new(1050), created-at = Instant::new(\"2026-01-01T12:00:00.0000000+00:00\"))) => true }",
+                "expected": "true",
+                "passed": true,
+                "actual": [
+                  "true"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "parseErrors": [],
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 539,
+      "stderr": ""
+    },
+    {
+      "label": "refresh target coverage",
+      "requestCount": 2,
+      "requests": [
+        "{\"op\":\"test-all\"}",
+        "{\"op\":\"describe\",\"word\":\"customer.premium?\"}"
+      ],
+      "responseCount": 2,
+      "responseLines": [
+        "{\"ok\":true,\"kind\":\"test\",\"text\":\"3/3 test(s) passed.\",\"data\":{\"results\":[{\"name\":\"case-sensitive\",\"word\":\"customer.premium?\",\"passed\":true,\"expected\":\"false\",\"actual\":[\"false\"]},{\"name\":\"premium\",\"word\":\"customer.premium?\",\"passed\":true,\"expected\":\"true\",\"actual\":[\"true\"]},{\"name\":\"regular\",\"word\":\"customer.premium?\",\"passed\":true,\"expected\":\"false\",\"actual\":[\"false\"]}]}}",
+        "{\"ok\":true,\"kind\":\"describe\",\"text\":\"Description for customer.premium?.\",\"data\":{\"name\":\"customer.premium?\",\"flowReference\":\"customer::premium?\",\"flowReferenceUnavailableReason\":null,\"inputs\":[\"Customer\"],\"outputs\":[\"Bool\"],\"parameters\":[{\"name\":\"customer\",\"type\":\"Customer\"}],\"effects\":[],\"documentation\":\"Classifies the raw customer kind using exact ordinal equality.\",\"id\":\"word_090aecde5a4946f2bf852ef6e6c1f165\",\"dependencies\":[\"customer.kind\",\"equals\"],\"transitiveDependencies\":[\"customer.kind\",\"equals\"],\"callers\":[],\"tests\":[\"case-sensitive\",\"premium\",\"regular\"],\"examples\":[\"premium\"],\"source\":\"\\u003Crevision:customer.premium?/1\\u003E\",\"line\":1,\"kind\":\"word\",\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false,\"revision\":1,\"testCount\":3,\"exampleCount\":1,\"coverage\":{\"instructionsCovered\":4,\"instructionsTotal\":4,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[],\"status\":\"current\"}}}"
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "test",
+          "text": "3/3 test(s) passed.",
+          "data": {
+            "results": [
+              {
+                "name": "case-sensitive",
+                "word": "customer.premium?",
+                "passed": true,
+                "expected": "false",
+                "actual": [
+                  "false"
+                ]
+              },
+              {
+                "name": "premium",
+                "word": "customer.premium?",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "regular",
+                "word": "customer.premium?",
+                "passed": true,
+                "expected": "false",
+                "actual": [
+                  "false"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "describe",
+          "text": "Description for customer.premium?.",
+          "data": {
+            "name": "customer.premium?",
+            "flowReference": "customer::premium?",
+            "flowReferenceUnavailableReason": null,
+            "inputs": [
+              "Customer"
+            ],
+            "outputs": [
+              "Bool"
+            ],
+            "parameters": [
+              {
+                "name": "customer",
+                "type": "Customer"
+              }
+            ],
+            "effects": [],
+            "documentation": "Classifies the raw customer kind using exact ordinal equality.",
+            "id": "word_090aecde5a4946f2bf852ef6e6c1f165",
+            "dependencies": [
+              "customer.kind",
+              "equals"
+            ],
+            "transitiveDependencies": [
+              "customer.kind",
+              "equals"
+            ],
+            "callers": [],
+            "tests": [
+              "case-sensitive",
+              "premium",
+              "regular"
+            ],
+            "examples": [
+              "premium"
+            ],
+            "source": "<revision:customer.premium?/1>",
+            "line": 1,
+            "kind": "word",
+            "status": "persistent",
+            "maturity": "library",
+            "deprecated": false,
+            "revision": 1,
+            "testCount": 3,
+            "exampleCount": 1,
+            "coverage": {
+              "instructionsCovered": 4,
+              "instructionsTotal": 4,
+              "branchesCovered": 0,
+              "branchesTotal": 0,
+              "uncoveredInstructions": [],
+              "uncoveredBranchOutcomes": [],
+              "status": "current"
+            }
+          }
+        }
+      ],
+      "parseErrors": [],
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 548,
+      "stderr": ""
+    },
+    {
+      "label": "independent oracle cases 1-10",
+      "requestCount": 10,
+      "requests": [
+        "{\"op\":\"eval\",\"frontend\":\"flow\",\"structured\":true,\"code\":\"customer::premium?(customer::new(id = CustomerId::new(\\\"10000000-0000-0000-0000-000000000001\\\"), email = Email::new(\\\"ada@example.test\\\"), kind = \\\"premium\\\", balance = Money::new(1250), created-at = Instant::new(\\\"2026-01-01T12:00:00.0000000+00:00\\\")))\"}",
+        "{\"op\":\"eval\",\"frontend\":\"flow\",\"structured\":true,\"code\":\"customer::premium?(customer::new(id = CustomerId::new(\\\"10000000-0000-0000-0000-000000000001\\\"), email = Email::new(\\\"ada@example.test\\\"), kind = \\\"regular\\\", balance = Money::new(1250), created-at = Instant::new(\\\"2026-01-01T12:00:00.0000000+00:00\\\")))\"}",
+        "{\"op\":\"eval\",\"frontend\":\"flow\",\"structured\":true,\"code\":\"customer::premium?(customer::new(id = CustomerId::new(\\\"10000000-0000-0000-0000-000000000001\\\"), email = Email::new(\\\"ada@example.test\\\"), kind = \\\"Premium\\\", balance = Money::new(1250), created-at = Instant::new(\\\"2026-01-01T12:00:00.0000000+00:00\\\")))\"}",
+        "{\"op\":\"eval\",\"frontend\":\"flow\",\"structured\":true,\"code\":\"customer::premium?(customer::new(id = CustomerId::new(\\\"10000000-0000-0000-0000-000000000001\\\"), email = Email::new(\\\"ada@example.test\\\"), kind = \\\"PREMIUM\\\", balance = Money::new(1250), created-at = Instant::new(\\\"2026-01-01T12:00:00.0000000+00:00\\\")))\"}",
+        "{\"op\":\"eval\",\"frontend\":\"flow\",\"structured\":true,\"code\":\"customer::premium?(customer::new(id = CustomerId::new(\\\"10000000-0000-0000-0000-000000000001\\\"), email = Email::new(\\\"ada@example.test\\\"), kind = \\\"premium \\\", balance = Money::new(1250), created-at = Instant::new(\\\"2026-01-01T12:00:00.0000000+00:00\\\")))\"}",
+        "{\"op\":\"eval\",\"frontend\":\"flow\",\"structured\":true,\"code\":\"customer::premium?(customer::new(id = CustomerId::new(\\\"10000000-0000-0000-0000-000000000001\\\"), email = Email::new(\\\"ada@example.test\\\"), kind = \\\" premium\\\", balance = Money::new(1250), created-at = Instant::new(\\\"2026-01-01T12:00:00.0000000+00:00\\\")))\"}",
+        "{\"op\":\"eval\",\"frontend\":\"flow\",\"structured\":true,\"code\":\"customer::premium?(customer::new(id = CustomerId::new(\\\"10000000-0000-0000-0000-000000000001\\\"), email = Email::new(\\\"ada@example.test\\\"), kind = \\\"\\\\tpremium\\\", balance = Money::new(1250), created-at = Instant::new(\\\"2026-01-01T12:00:00.0000000+00:00\\\")))\"}",
+        "{\"op\":\"eval\",\"frontend\":\"flow\",\"structured\":true,\"code\":\"customer::premium?(customer::new(id = CustomerId::new(\\\"10000000-0000-0000-0000-000000000001\\\"), email = Email::new(\\\"ada@example.test\\\"), kind = \\\"premium\\\\n\\\", balance = Money::new(1250), created-at = Instant::new(\\\"2026-01-01T12:00:00.0000000+00:00\\\")))\"}",
+        "{\"op\":\"eval\",\"frontend\":\"flow\",\"structured\":true,\"code\":\"customer::premium?(customer::new(id = CustomerId::new(\\\"10000000-0000-0000-0000-000000000001\\\"), email = Email::new(\\\"ada@example.test\\\"), kind = \\\"\\\", balance = Money::new(1250), created-at = Instant::new(\\\"2026-01-01T12:00:00.0000000+00:00\\\")))\"}",
+        "{\"op\":\"eval\",\"frontend\":\"flow\",\"structured\":true,\"code\":\"customer::premium?(customer::new(id = CustomerId::new(\\\"10000000-0000-0000-0000-000000000001\\\"), email = Email::new(\\\"ada@example.test\\\"), kind = \\\"prémi um\\\", balance = Money::new(1250), created-at = Instant::new(\\\"2026-01-01T12:00:00.0000000+00:00\\\")))\"}"
+      ],
+      "responseCount": 10,
+      "responseLines": [
+        "{\"ok\":true,\"kind\":\"eval\",\"text\":\"true\",\"data\":{\"stack\":[\"true\"],\"stackTypes\":[\"Bool\"],\"console\":[],\"effects\":{},\"structuredStack\":{\"formatVersion\":1,\"values\":[{\"kind\":\"bool\",\"value\":true}]}}}",
+        "{\"ok\":true,\"kind\":\"eval\",\"text\":\"false\",\"data\":{\"stack\":[\"false\"],\"stackTypes\":[\"Bool\"],\"console\":[],\"effects\":{},\"structuredStack\":{\"formatVersion\":1,\"values\":[{\"kind\":\"bool\",\"value\":false}]}}}",
+        "{\"ok\":true,\"kind\":\"eval\",\"text\":\"false\",\"data\":{\"stack\":[\"false\"],\"stackTypes\":[\"Bool\"],\"console\":[],\"effects\":{},\"structuredStack\":{\"formatVersion\":1,\"values\":[{\"kind\":\"bool\",\"value\":false}]}}}",
+        "{\"ok\":true,\"kind\":\"eval\",\"text\":\"false\",\"data\":{\"stack\":[\"false\"],\"stackTypes\":[\"Bool\"],\"console\":[],\"effects\":{},\"structuredStack\":{\"formatVersion\":1,\"values\":[{\"kind\":\"bool\",\"value\":false}]}}}",
+        "{\"ok\":true,\"kind\":\"eval\",\"text\":\"false\",\"data\":{\"stack\":[\"false\"],\"stackTypes\":[\"Bool\"],\"console\":[],\"effects\":{},\"structuredStack\":{\"formatVersion\":1,\"values\":[{\"kind\":\"bool\",\"value\":false}]}}}",
+        "{\"ok\":true,\"kind\":\"eval\",\"text\":\"false\",\"data\":{\"stack\":[\"false\"],\"stackTypes\":[\"Bool\"],\"console\":[],\"effects\":{},\"structuredStack\":{\"formatVersion\":1,\"values\":[{\"kind\":\"bool\",\"value\":false}]}}}",
+        "{\"ok\":true,\"kind\":\"eval\",\"text\":\"false\",\"data\":{\"stack\":[\"false\"],\"stackTypes\":[\"Bool\"],\"console\":[],\"effects\":{},\"structuredStack\":{\"formatVersion\":1,\"values\":[{\"kind\":\"bool\",\"value\":false}]}}}",
+        "{\"ok\":true,\"kind\":\"eval\",\"text\":\"false\",\"data\":{\"stack\":[\"false\"],\"stackTypes\":[\"Bool\"],\"console\":[],\"effects\":{},\"structuredStack\":{\"formatVersion\":1,\"values\":[{\"kind\":\"bool\",\"value\":false}]}}}",
+        "{\"ok\":true,\"kind\":\"eval\",\"text\":\"false\",\"data\":{\"stack\":[\"false\"],\"stackTypes\":[\"Bool\"],\"console\":[],\"effects\":{},\"structuredStack\":{\"formatVersion\":1,\"values\":[{\"kind\":\"bool\",\"value\":false}]}}}",
+        "{\"ok\":true,\"kind\":\"eval\",\"text\":\"false\",\"data\":{\"stack\":[\"false\"],\"stackTypes\":[\"Bool\"],\"console\":[],\"effects\":{},\"structuredStack\":{\"formatVersion\":1,\"values\":[{\"kind\":\"bool\",\"value\":false}]}}}"
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "true",
+          "data": {
+            "stack": [
+              "true"
+            ],
+            "stackTypes": [
+              "Bool"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "bool",
+                  "value": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "false",
+          "data": {
+            "stack": [
+              "false"
+            ],
+            "stackTypes": [
+              "Bool"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "bool",
+                  "value": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "false",
+          "data": {
+            "stack": [
+              "false"
+            ],
+            "stackTypes": [
+              "Bool"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "bool",
+                  "value": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "false",
+          "data": {
+            "stack": [
+              "false"
+            ],
+            "stackTypes": [
+              "Bool"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "bool",
+                  "value": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "false",
+          "data": {
+            "stack": [
+              "false"
+            ],
+            "stackTypes": [
+              "Bool"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "bool",
+                  "value": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "false",
+          "data": {
+            "stack": [
+              "false"
+            ],
+            "stackTypes": [
+              "Bool"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "bool",
+                  "value": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "false",
+          "data": {
+            "stack": [
+              "false"
+            ],
+            "stackTypes": [
+              "Bool"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "bool",
+                  "value": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "false",
+          "data": {
+            "stack": [
+              "false"
+            ],
+            "stackTypes": [
+              "Bool"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "bool",
+                  "value": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "false",
+          "data": {
+            "stack": [
+              "false"
+            ],
+            "stackTypes": [
+              "Bool"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "bool",
+                  "value": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "false",
+          "data": {
+            "stack": [
+              "false"
+            ],
+            "stackTypes": [
+              "Bool"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "bool",
+                  "value": false
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "parseErrors": [],
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 617,
+      "stderr": ""
+    }
+  ],
+  "processRuns": [],
+  "oracleProtocol": "Independent BigInteger arithmetic; raw Kind uses ordinal exact comparison; Money and Int payloads are canonical signed Int64 decimal strings.",
+  "limits": [
+    "Metadata failures remain distinct from behavior outcomes.",
+    "A missing, untyped, impure, or unreloadable target prevents oracle execution.",
+    "No efficiency or token-use claim is made."
+  ]
+}
