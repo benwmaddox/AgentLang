@@ -7,3 +7,6 @@ history/
 
 # Frozen study baselines include the runtime's otherwise ignored store and history.
 !experiments/AgentLang.SubagentTrials/business-policy-retention-003/artifacts/baselines/**
+
+# Exact synthetic trial archives retain their ignored store and history evidence.
+!reports/evidence/081-clean-controls/**

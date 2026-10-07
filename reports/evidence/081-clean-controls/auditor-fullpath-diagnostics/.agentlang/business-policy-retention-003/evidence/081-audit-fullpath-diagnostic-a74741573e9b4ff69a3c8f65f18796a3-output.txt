@@ -1,0 +1,22 @@
+
+Extent          : )
+ErrorId         : UnexpectedToken
+Message         : Unexpected token ')' in expression or statement.
+IncompleteInput : False
+
+Extent          : )
+ErrorId         : UnexpectedToken
+Message         : Unexpected token ')' in expression or statement.
+IncompleteInput : False
+
+Extent          : )
+ErrorId         : UnexpectedToken
+Message         : Unexpected token ')' in expression or statement.
+IncompleteInput : False
+
+Extent          : )
+ErrorId         : UnexpectedToken
+Message         : Unexpected token ')' in expression or statement.
+IncompleteInput : False
+
+

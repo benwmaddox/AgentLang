@@ -1,0 +1,7 @@
+record Customer {
+    field id: CustomerId;
+    field email: Email;
+    field kind: String;
+    field balance: Money;
+    field created-at: Instant;
+}

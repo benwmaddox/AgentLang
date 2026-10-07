@@ -1,0 +1,1 @@
+Retention B1/flat/S01 (R01) failed. Evidence: D:\code\AgentLang\.agentlang\business-policy-retention-003\evidence\081-verifier-R01-preserved-193e3bf124f84e2692274cd3f71a72dd.json. The requested evidence destination already exists; verifier stopped before CLI execution to preserve it.

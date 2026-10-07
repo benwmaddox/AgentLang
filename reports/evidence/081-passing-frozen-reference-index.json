@@ -1,0 +1,628 @@
+{
+  "schemaVersion": 1,
+  "sourceRevision": "256dd800478c3a9417c5f42c6c31ba1a6c5b2112",
+  "modelActorLaunched": false,
+  "candidateChecks": 63,
+  "acceptanceChecks": 157,
+  "independentCases": 10,
+  "traceAuditChecks": 662,
+  "frozenChecks": 21,
+  "referenceControlsPassed": true,
+  "files": [
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/081-path-repair-candidate.console.txt",
+      "bytes": 200,
+      "sha256": "21f3dd878887ffeb10cd4fd4ad6c1b9808efa54e433fde46c64ba01301fb456d"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/081-path-repair-candidate.json",
+      "bytes": 145020,
+      "sha256": "03fe2858dd36d2111db7b7fe93ef39cd3b780ed8be833dcc4cb8aa323ad4ac9d"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/081-path-repair-frozen-controls.console.txt",
+      "bytes": 317,
+      "sha256": "f7be52d9ee1795b656a8cca011f9e7797d876b7022d8c52dfe12e4aa13892b7e"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/081-path-repair-frozen-controls.json",
+      "bytes": 18976,
+      "sha256": "269423bad22178b2faa2c68331ea1bb734cd628c3e5ced11c24848ed4d069526"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/081-path-repair-reference-audit.console.txt",
+      "bytes": 117,
+      "sha256": "8e7e74e10ecc6bc5aea5cf3d4af82045b117b0ae80f62bbe3c0623b7106c6577"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/081-path-repair-reference-prepare.console.txt",
+      "bytes": 1339,
+      "sha256": "f76f933eb57679891a23b67379769278ff712bc1c7de5e0fb51435edcbb55245"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/081-path-repair-reference-prepare.json",
+      "bytes": 5731,
+      "sha256": "b9c63f03b2a4a88b61c75396feed5ff09a1fcc25f23e7c2bf3eac897dca5883b"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/081-path-repair-reference-verifier.console.txt",
+      "bytes": 142,
+      "sha256": "b44e510e19ba012a55c970c21c4346a2130196417a8fe1de08daf690d81fabc8"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/081-verifier-R01-preserved-193e3bf124f84e2692274cd3f71a72dd.json",
+      "bytes": 660460,
+      "sha256": "0ae545ba6cf61fa70f24802625bb4014ecee905df601471b498bb1327dee8413"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/081-verifier-R01-preserved-6ef9eb11955e457aa5d77524d27b27ee.json",
+      "bytes": 660457,
+      "sha256": "a091e71c2005758394762bff7058e679d6032572f084bf5d81f7913479bd27a0"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/actors/R01/.agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "543219f509cc2ed913f4b4d2f1d1c64c32434350d6208db70ad0e36df903164f"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/actors/R01/.agentlang/store/manifests/ad513909099c4bdf7933aea9304d411e80fd58b7ac995507b610f27918b593ee.json",
+      "bytes": 13385,
+      "sha256": "ad513909099c4bdf7933aea9304d411e80fd58b7ac995507b610f27918b593ee"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/actors/R01/.agentlang/store/manifests/f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7.json",
+      "bytes": 1647,
+      "sha256": "f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/actors/R01/.agentlang/store/objects/2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0.agent",
+      "bytes": 66,
+      "sha256": "2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/actors/R01/.agentlang/store/objects/33cdec71d9107a508559f3d454ea0c5ba959cd1446e4d1b37fe3ae47d9478caf.agent",
+      "bytes": 192,
+      "sha256": "33cdec71d9107a508559f3d454ea0c5ba959cd1446e4d1b37fe3ae47d9478caf"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/actors/R01/.agentlang/store/objects/45e4d3407d9737bab7e66c5360fe7b7ed6cfb0f2e3f2b9757cddcb1e358f2a35.agent",
+      "bytes": 296,
+      "sha256": "45e4d3407d9737bab7e66c5360fe7b7ed6cfb0f2e3f2b9757cddcb1e358f2a35"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/actors/R01/.agentlang/store/objects/5d8f41a3f2a198eb185bb517ea207ecae6092640076e7bfc5d85956a821f58d7.agent",
+      "bytes": 2093,
+      "sha256": "5d8f41a3f2a198eb185bb517ea207ecae6092640076e7bfc5d85956a821f58d7"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/actors/R01/.agentlang/store/objects/65059af75fa896a85c9f98ef6390ed33df208b54c9ad29630cf2b710d694f738.agent",
+      "bytes": 291,
+      "sha256": "65059af75fa896a85c9f98ef6390ed33df208b54c9ad29630cf2b710d694f738"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/actors/R01/.agentlang/store/objects/68777020e6552b02df62439f107332a68b5a514b3b9ba1ceac59295ba84f01cc.agent",
+      "bytes": 289,
+      "sha256": "68777020e6552b02df62439f107332a68b5a514b3b9ba1ceac59295ba84f01cc"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/actors/R01/.agentlang/store/objects/737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e.agent",
+      "bytes": 570,
+      "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/actors/R01/.agentlang/store/objects/7b9a12b46102809cf54446a0d127b72730d197099f74d3236e6dd9c3c0c6e25f.agent",
+      "bytes": 288,
+      "sha256": "7b9a12b46102809cf54446a0d127b72730d197099f74d3236e6dd9c3c0c6e25f"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/actors/R01/.agentlang/store/objects/8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416.agent",
+      "bytes": 65,
+      "sha256": "8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/actors/R01/.agentlang/store/objects/9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14.agent",
+      "bytes": 150,
+      "sha256": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/actors/R01/.agentlang/store/objects/cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7.agent",
+      "bytes": 66,
+      "sha256": "cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/actors/R01/.agentlang/store/objects/e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17.agent",
+      "bytes": 20,
+      "sha256": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/actors/R01/.agentlang/store/objects/ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb.agent",
+      "bytes": 66,
+      "sha256": "ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/actors/R01/.agentlang/store/WRITE.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/actors/R01/dictionary.agent",
+      "bytes": 2093,
+      "sha256": "5d8f41a3f2a198eb185bb517ea207ecae6092640076e7bfc5d85956a821f58d7"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/actors/R01/fixtures/flat-customer.agent",
+      "bytes": 506,
+      "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/actors/R01/history/task-0001.json",
+      "bytes": 535,
+      "sha256": "03c367e193a1d5bdfbf35fc115c18104714e47300d1ee86bfc780e01eeaba48e"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/bootstrap-only-fresh-seeds-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/bootstrap-only-fresh-seeds-stdout.txt",
+      "bytes": 62442,
+      "sha256": "9239b0499e127ca7f840c70bfde8c58d73329750f04151c21e7bf33004a97e0e"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/bootstrap-preparation.json",
+      "bytes": 203883,
+      "sha256": "3912ea9a4a7a94101d27081cb19686ce694cfd20da01b7d8139d1abd24210237"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/candidate-correct-S01-authoring-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/candidate-correct-S01-authoring-stdout.txt",
+      "bytes": 878,
+      "sha256": "086abe8acb89632aa3dacb8c2e6cfbcc81c1b962f3379e98b881163ae1f6413d"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/candidate-correct-S07-authoring-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/candidate-correct-S07-authoring-stdout.txt",
+      "bytes": 20830,
+      "sha256": "98df2a3b40cf8f6857caf70e3ec0f9140a60f315871e1a787bf1c8011fa5774e"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/candidate-wrong-formula-S07-authoring-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/candidate-wrong-formula-S07-authoring-stdout.txt",
+      "bytes": 20830,
+      "sha256": "371f08416f318b5464b07803747dcd04be72622213c622dc2c4f31959d8c1f96"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/correct-S01-reference-independent-verifier-stderr.txt",
+      "bytes": 396,
+      "sha256": "8acd5f1c51c75406b08012f91df7148fca3f730d339236e95e183a271baf4052"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/correct-S01-reference-independent-verifier-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/correct-S01-reference-verifier-stderr.txt",
+      "bytes": 396,
+      "sha256": "8acd5f1c51c75406b08012f91df7148fca3f730d339236e95e183a271baf4052"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/correct-S01-reference-verifier-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/correct-S01-reference.acceptance.json",
+      "bytes": 157864,
+      "sha256": "c0e5317ddd4a0028fe40fcf8ee61067567bd2973e97b23f79d1922e33d2c269d"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/correct-S07-reference-independent-verifier-stderr.txt",
+      "bytes": 400,
+      "sha256": "a13c520ab2c4e8cc68610edf2783078022b2510c84becdc9f57bccd59d4bf0b9"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/correct-S07-reference-independent-verifier-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/correct-S07-reference-verifier-stderr.txt",
+      "bytes": 400,
+      "sha256": "a13c520ab2c4e8cc68610edf2783078022b2510c84becdc9f57bccd59d4bf0b9"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/correct-S07-reference-verifier-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/correct-S07-reference.acceptance.json",
+      "bytes": 853504,
+      "sha256": "d25c84e2879ca276351a95302bd70ced02a6574b4c6ad13e1093aaad27b2264f"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/flat-fresh-seed-live-check-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/flat-fresh-seed-live-check-stdout.txt",
+      "bytes": 17601,
+      "sha256": "a37e646deb3ef34abfbba52f5654ad60c7e435b5f7d12e9514b54aa39f396842"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/malformed-predecessor-preparation.json",
+      "bytes": 2497,
+      "sha256": "4a1cc434f29a4ed4bdde48e94699d3f8767cf7ce7b4498d6226b6e82b536e5b5"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/missing-frozen-pin-rejection-stderr.txt",
+      "bytes": 262,
+      "sha256": "f180606d3637a3a73bd60ae8e061ae2d32dc10fc9c666f9f531ce8434b23cd94"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/missing-frozen-pin-rejection-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/no-op-missing-S01-independent-verifier-stderr.txt",
+      "bytes": 281,
+      "sha256": "8155cb4820677865c32735cf18da4a2ce81fb6259217628648c29b56841e881b"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/no-op-missing-S01-independent-verifier-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/no-op-missing-S01-verifier-stderr.txt",
+      "bytes": 281,
+      "sha256": "8155cb4820677865c32735cf18da4a2ce81fb6259217628648c29b56841e881b"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/no-op-missing-S01-verifier-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/no-op-missing-S01.acceptance.json",
+      "bytes": 87081,
+      "sha256": "1a54a65f2e7010e05bd7e802835f5d4720d47bde615e2fb3b87a1211bb84fd04"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/predecessor-without-project-preparation-stderr.txt",
+      "bytes": 311,
+      "sha256": "67edb1f906a01f0e24126f93881fd8043c6af2f6568db7129e3262d254b9bd05"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/predecessor-without-project-preparation-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/predecessor-without-project.json",
+      "bytes": 75,
+      "sha256": "3e18e289248aba87ef24d7a22092cdaa2d547e94dfdc3d29aff59993e14043b6"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/required-pin-rejection.acceptance.json",
+      "bytes": 28399,
+      "sha256": "c3e9e6dfc8900660e5c76696f89e55349984dee43b467e88f5a9b3178ef18444"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/rich-fresh-seed-live-check-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/rich-fresh-seed-live-check-stdout.txt",
+      "bytes": 69234,
+      "sha256": "36923bf4fa729d846bac2cf1bc19ac0eb337f954dd69239e89ebc9960a47b9a7"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/wrong-formula-S07-independent-verifier-stderr.txt",
+      "bytes": 534,
+      "sha256": "5ff8ac93cca14323fe4b73f5ee95ae1232408874173d866b8d3d5341faea73fa"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/wrong-formula-S07-independent-verifier-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/wrong-formula-S07-verifier-stderr.txt",
+      "bytes": 534,
+      "sha256": "5ff8ac93cca14323fe4b73f5ee95ae1232408874173d866b8d3d5341faea73fa"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/wrong-formula-S07-verifier-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/candidate-raw/wrong-formula-S07.acceptance.json",
+      "bytes": 850123,
+      "sha256": "112da3f72166f94a91e0a981d35bcaef87e83e336d2c3f1d8f6446660545a289"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/frozen-raw/frozen-model-pin-tamper-rejection-stderr.txt",
+      "bytes": 286,
+      "sha256": "b2a855addab4fd7a2dd0e8c894bd74ed910f0a267512aba710f43f282471932b"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/frozen-raw/frozen-model-pin-tamper-rejection-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/frozen-raw/frozen-reference-close-tamper-rejection-stderr.txt",
+      "bytes": 143,
+      "sha256": "f464421e5d356cac8eac092ab0bb24d880212acb9ce4a55061606094824cd84d"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/frozen-raw/frozen-reference-close-tamper-rejection-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/frozen-raw/frozen-reference-fresh-trace-audit-stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/frozen-raw/frozen-reference-fresh-trace-audit-stdout.txt",
+      "bytes": 117,
+      "sha256": "8e7e74e10ecc6bc5aea5cf3d4af82045b117b0ae80f62bbe3c0623b7106c6577"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/frozen-raw/frozen-source-pin-tamper-rejection-stderr.txt",
+      "bytes": 286,
+      "sha256": "ff93b0f3c7b572953671b7947516d8138abd9449131b968e2221957ab58a5395"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/frozen-raw/frozen-source-pin-tamper-rejection-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/global-freeze.json",
+      "bytes": 101715,
+      "sha256": "c8abdd4f7ba0e11470b5949d14391797aaef0bc8b52d5213e31961cc4653e1ce"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/runs/R01/acceptance.json",
+      "bytes": 998378,
+      "sha256": "7e9a79e8f744bac4782cb1b5e8ee5156f731968efa5a4ade69bb1cbf00b6945a"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/runs/R01/coordinator.json",
+      "bytes": 1005,
+      "sha256": "369af58e31746d82249b65133a70756054b553ebb727d0a966bed6f888947b8b"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/runs/R01/preflight-reference-control.json",
+      "bytes": 170,
+      "sha256": "43a1bebcf6d0f8369688fc593a850d0c8dcf680fcf505da8ae3ed9316756bfff"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/runs/R01/prelaunch.json",
+      "bytes": 111895,
+      "sha256": "0f16d5b6227a6d17acf6ebadbbac075b6dff4a8d997176b687d4f7f04a12550c"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/runs/R01/prompt.txt",
+      "bytes": 7805,
+      "sha256": "805c142c020701b3c153c9d517b20fdc79e388f0bdfc0e995bb8b98620cadf1d"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/runs/R01/starting-project/.agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "552b35c609db456bbe64f8edb7025de60a15bf342e9e3cc67919f52485b98bcc"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/runs/R01/starting-project/.agentlang/store/manifests/f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7.json",
+      "bytes": 1647,
+      "sha256": "f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/runs/R01/starting-project/.agentlang/store/objects/2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0.agent",
+      "bytes": 66,
+      "sha256": "2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/runs/R01/starting-project/.agentlang/store/objects/737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e.agent",
+      "bytes": 570,
+      "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/runs/R01/starting-project/.agentlang/store/objects/8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416.agent",
+      "bytes": 65,
+      "sha256": "8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/runs/R01/starting-project/.agentlang/store/objects/9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14.agent",
+      "bytes": 150,
+      "sha256": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/runs/R01/starting-project/.agentlang/store/objects/cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7.agent",
+      "bytes": 66,
+      "sha256": "cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/runs/R01/starting-project/.agentlang/store/objects/e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17.agent",
+      "bytes": 20,
+      "sha256": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/runs/R01/starting-project/.agentlang/store/objects/ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb.agent",
+      "bytes": 66,
+      "sha256": "ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/runs/R01/starting-project/.agentlang/store/WRITE.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/runs/R01/starting-project/dictionary.agent",
+      "bytes": 570,
+      "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/runs/R01/starting-project/fixtures/flat-customer.agent",
+      "bytes": 506,
+      "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/runs/R01/starting-state.json",
+      "bytes": 11435,
+      "sha256": "1d3a3c97971432a2ab9f6ad9f76941f5ba4dfa25cc7086d39e24c64ae320e750"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/runs/R01/trace-audit.json",
+      "bytes": 148187,
+      "sha256": "e6cf66082bccb213c275f1c05904437d865afe06e625efe495f6bf6f64ab1357"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/runs/R01/trace-audit.preflight-393c12a4d3d64c7dac49a74ffbdb0aec.json",
+      "bytes": 148187,
+      "sha256": "e6cf66082bccb213c275f1c05904437d865afe06e625efe495f6bf6f64ab1357"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/runs/R01/trace.jsonl",
+      "bytes": 28838,
+      "sha256": "64bdffdd68e060586b602edbafe812f45a04fb73e9ca4874ccab007a32962e55"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/source-snapshot/acceptance-business-policy-001.json",
+      "bytes": 17436,
+      "sha256": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/source-snapshot/acceptance-business-policy-help-002.json",
+      "bytes": 15931,
+      "sha256": "d58fceeec3b659aebc58daa1d708d5f16cb43d12996f291c1c78a377fcfb89ef"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/source-snapshot/acceptance.json",
+      "bytes": 15951,
+      "sha256": "8ca4f975161541b8c60397267fe7bb4ecb4345e00674d91467ac151a0bb7d3f2"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/source-snapshot/design.json",
+      "bytes": 4001,
+      "sha256": "c5b9d8a09cc671895f6ebd6bfd4023b8744cb8c8277cf6e2e7e6a4602d80b3ae"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/source-snapshot/examples/business-invoices.agent",
+      "bytes": 30002,
+      "sha256": "a08b3e87e69c5983d35ec35059c3881067294b65b4e79e992e81dbf101ab338c"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/source-snapshot/examples/business-payments-email.agent",
+      "bytes": 36869,
+      "sha256": "455bb038269fc499c69e0cd0338e76c9f4c5ed064f6a7c2ba125bdc9bb8503e4"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/source-snapshot/examples/business-state.agent",
+      "bytes": 15078,
+      "sha256": "d301d24143c31e84269aceaec7f85e4b6aeeb44e1156e6e03a53febc1ed41cc9"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/source-snapshot/examples/business-store.agent",
+      "bytes": 37409,
+      "sha256": "f7dfe3d6cafa66fd888e76c5e925fc424aa05465b40e896467c2e1f064b767f3"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/source-snapshot/examples/business-subscriptions.agent",
+      "bytes": 30486,
+      "sha256": "2c9a61e7f20e5b80996f0308cc360e23bc408185744ba2ef57e5c217214d14d5"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/source-snapshot/examples/business-values.agent",
+      "bytes": 26707,
+      "sha256": "fe8227ce0c38ff6e193a74292a5b1d0ed0ac3e3869f0fe8feaf56eca62f30cbd"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/source-snapshot/flat-customer.agent",
+      "bytes": 506,
+      "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/source-snapshot/language-primer-business-policy-help-002.md",
+      "bytes": 3931,
+      "sha256": "7ca98f0c8c9a20a84076d2a6b62da7a36ac12959e17ec1890ec74f9cbf9b578e"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/source-snapshot/language-primer.md",
+      "bytes": 3931,
+      "sha256": "7ca98f0c8c9a20a84076d2a6b62da7a36ac12959e17ec1890ec74f9cbf9b578e"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/source-snapshot/public-task-S01.json",
+      "bytes": 784,
+      "sha256": "97befde7d0e3231529ad681e785ace116210d8d99228eb2e9f76183738b7fada"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/source-snapshot/public-task-S07.json",
+      "bytes": 779,
+      "sha256": "f2a3b584fbec86f0395228fde31d561c240b9bc5d5a9a4a927042ea8a6111a04"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/source-snapshot/scripts/Audit-RetentionTrace.ps1",
+      "bytes": 72956,
+      "sha256": "464da59005f26f760b921748991b2e7fdc41a863afac92db250cdcd6115240ec"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/source-snapshot/scripts/Audit-SubagentTrialTerminationV2.ps1",
+      "bytes": 15874,
+      "sha256": "870ff9b9a1843c0a104d2185688486c7ed1e85399df6c554f9ee890c4dcf4a10"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/source-snapshot/scripts/Freeze-RetentionTrial.ps1",
+      "bytes": 76308,
+      "sha256": "357bdef9e9a9b28f12ad0efc85dfed7580da13294a591b895b8dc61604010f3b"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/source-snapshot/scripts/Prepare-BusinessPolicyTrial.ps1",
+      "bytes": 29618,
+      "sha256": "23af4c9536e72730d44a5cfbdcf70b05b17a1e35c83f841511f9e8bbc637c08a"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/source-snapshot/scripts/Prepare-RetentionTrial.ps1",
+      "bytes": 57718,
+      "sha256": "42c63fb12de3ecd37b4827944f00a59613a1a66908d8c23c7c926e2d9d216aa9"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/source-snapshot/scripts/Start-SubagentTrialHostV2.ps1",
+      "bytes": 81288,
+      "sha256": "6573321e8c0fc92926e43221ae10836fd5c62139e5fdb51cc34ff482fbc81f2b"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/source-snapshot/scripts/Verify-RetentionPreflight.ps1",
+      "bytes": 92031,
+      "sha256": "99d4701d4c94303b6a60edca3d4f50a7ff6f8ff54388f02f014aa39be8ecb11e"
+    },
+    {
+      "path": "reports/evidence/081-clean-controls/passing-frozen-reference/source-snapshot/scripts/Verify-RetentionTrial.ps1",
+      "bytes": 129190,
+      "sha256": "84b3d0a8c4aee192f28b3d553ee134b1dfd20879dcf3ed38b2c607b0bc313c2b"
+    }
+  ]
+}

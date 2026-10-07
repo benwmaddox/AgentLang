@@ -1,0 +1,5 @@
+word customer.premium?(customer: Customer) -> Bool {
+    effects none
+    doc "Classifies the raw customer kind using exact ordinal equality."
+    equals(customer::kind(customer), "premium")
+}

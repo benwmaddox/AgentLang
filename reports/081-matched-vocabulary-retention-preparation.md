@@ -1,13 +1,11 @@
 # Matched vocabulary-retention preparation
 
-Status: genuine UTC-repaired reference acceptance and audit passed; preserved
-verifier-path reader repair validated; clean frozen rerun pending. On clean 08fd174, candidate controls passed
-63/63, independent reference acceptance passed 157 checks and 10 cases, and
-production trace audit passed 662/662. The frozen phase passed its UTC chronology
-and fresh-audit gates, then stopped after 17 checks because its path regex did
-not accept the verifier diagnostic's sentence period after .json. All 118 exact
-reference/control files are preserved under utc-repair-reference. No model
-actors have launched for this study; no reliability or efficiency result is claimed.
+Status: full genuine preparation controls passed on clean 256dd80. Candidate
+controls passed 63/63; reference acceptance passed 157 checks and 10 cases;
+production trace audit passed 662/662; frozen reference/tamper controls passed
+21/21. The marked closed reference is preserved byte-for-byte and R01 actor/run
+slots are free. All 123 passing evidence files are archived. Fresh model actors
+have not launched; these are harness results, not agent reliability outcomes.
 
 Published revisions f3f4391 and 5b0a367 passed 37/37 CI checks on both branches;
 their downloaded evidence is archived separately.
@@ -186,3 +184,19 @@ were retained. Final source SHA-256 is 99d4701d4c94303b6a60edca3d4f50a7ff6f8ff54
 The closed 08fd174 reference and obsolete pins were moved only after exact archive
 checks; canonical baselines remain untouched. The next reliability study is a
 draft in docs/RELIABLE-EDIT-TRIAL-DRAFT.md, not an executed or frozen experiment.
+
+## Passing genuine frozen milestone
+
+The real frozen rerun on 256dd80 accepts explicit UTC chronology, model and source
+pin tamper rejection before CLI execution, host-close trace tamper rejection, and
+exact restoration. The passing deterministic reference remains archived under
+passing-frozen-reference and ignored accepted-reference-256dd80; valid source
+freeze and canonical baselines remain in place. Saved slot-release evidence
+proves R01 is free. No model actor ran in preparation.
+
+Publication audit found ignored synthetic store/history files present in prior
+local archives but absent from Git staging. An explicit 081-clean-controls ignore
+exception now includes those exact files; their existing inventory hashes remain
+the source of truth. This corrects archive publication completeness without
+changing original trial bytes or results. Full runtime CI at older published
+revisions remains separate; no new managed-runtime build or memory claim is made.
