@@ -4,6 +4,11 @@ Status: default Flow authoring passed the complete 27-check local Release gate, 
 
 ## Architecture and target syntax
 
+The example below describes implemented Flow/1. For the approved next revision
+with `fn`, plain record properties, `==` and default pure effects, see the
+[revised teaching example](EXAMPLE-SYNTAX-MIGRATION.md). That revision remains
+pending implementation; historical and frozen examples retain their source.
+
 Keep words as inspectable operations with stable identities, types, effects, documentation, tests, dependencies and history. Keep the authoritative verified semantic IR and its interpreter. Add an expression authoring AST and lowering pass, not another interpreter. F# remains the host/compiler implementation; LLVM and memory-layout research remain later work.
 
 Use named typed parameters, immutable lexical locals, ordinary calls, expression-valued branches, and dot chains. Encourage nearby producers and consumers without forcing every computation into a linear chain. No OOP, inheritance, dynamic dispatch, implicit current-value blocks, or .NET method invocation is introduced.

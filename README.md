@@ -16,6 +16,11 @@ Close-to-first-use is advisory lint, and unrestricted mutable globals are exclud
 
 The decisions and scope live in [docs/PRD.md](docs/PRD.md) and [docs/DECISIONS.md](docs/DECISIONS.md).
 
+The approved next syntax uses `fn`, plain record properties and `==`, with
+omitted effects meaning `none`. See the [revised customer example](docs/EXAMPLE-SYNTAX-MIGRATION.md).
+That syntax is a design preview; the quickstart and executable examples below
+still use the implemented Flow/1 parser.
+
 [Authoring through the runtime](docs/AUTHORING.md) explains inline documentation,
 attached tests/examples, library coverage and revision-checked replacements.
 Use JSONL `help` or REPL `:help TOPIC` for the corresponding inspectable contracts.

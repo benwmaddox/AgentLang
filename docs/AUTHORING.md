@@ -1,5 +1,9 @@
 # Authoring through the runtime
 
+These instructions describe the implemented Flow/1 syntax. The approved
+`fn`, property access, `==` and default-pure revision is illustrated in the
+[new-syntax examples](EXAMPLE-SYNTAX-MIGRATION.md), pending parser implementation.
+
 Start with a compact inventory or search, then describe the relevant words.
 Names in protocol queries use dots; ordinary Flow calls use the parser-verified
 `flowReference` returned by `describe`. Nominal types stay distinct: a Money
