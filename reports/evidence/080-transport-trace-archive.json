@@ -549,5 +549,7 @@
     }
   ],
   "count": 78,
-  "bytes": 498077
+  "bytes": 498077,
+  "uniqueFileCount": 51,
+  "uniqueFileBytes": 344334
 }

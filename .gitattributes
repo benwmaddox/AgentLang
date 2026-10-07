@@ -1,4 +1,8 @@
 * text=auto eol=lf
+# Versioned transport control evidence retains source and archive byte hashes.
+reports/evidence/080-* -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+reports/evidence/080-transport-traces/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+reports/evidence/079-main*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 # Exact-Money trial inputs, outputs and transcripts are byte-addressed.
 experiments/AgentLang.SubagentTrials/business-policy-001/runs/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 experiments/AgentLang.SubagentTrials/business-policy-help-002/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
