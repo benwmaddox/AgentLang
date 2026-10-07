@@ -1,0 +1,73 @@
+[
+  {
+    "name": "PersistenceProjection",
+    "exitCode": 0,
+    "output": [
+      "Persistence projection verification passed. Evidence: D:\\code\\AgentLang\\.agentlang\\flow2-process-PersistenceProjection.json"
+    ]
+  },
+  {
+    "name": "MatchedRenewalFixtures",
+    "exitCode": 0,
+    "output": [
+      "70 matched fixture checks passed. Evidence: D:\\code\\AgentLang\\.agentlang\\flow2-process-MatchedRenewalFixtures.json"
+    ]
+  },
+  {
+    "name": "FlowMatchedRenewalFixtures",
+    "exitCode": 0,
+    "output": [
+      "129 Flow matched fixture checks passed. Evidence: D:\\code\\AgentLang\\.agentlang\\flow2-process-FlowMatchedRenewalFixtures.json"
+    ]
+  },
+  {
+    "name": "MatchedRenewalSnapshots",
+    "exitCode": 0,
+    "output": [
+      "26 frozen snapshot checks passed. Evidence: D:\\code\\AgentLang\\.agentlang\\flow2-process-MatchedRenewalSnapshots.json"
+    ]
+  },
+  {
+    "name": "FlowRenewalAcceptanceGate",
+    "exitCode": 0,
+    "output": [
+      "70 renewal acceptance regression checks passed. Evidence: D:\\code\\AgentLang\\.agentlang\\flow2-process-FlowRenewalAcceptanceGate.json"
+    ]
+  },
+  {
+    "name": "FlowRenewalReplay",
+    "exitCode": 0,
+    "output": [
+      "45 Flow renewal replay checks passed. Evidence: D:\\code\\AgentLang\\.agentlang\\flow2-process-FlowRenewalReplay.json"
+    ]
+  },
+  {
+    "name": "EarlyAgentNegativeControls",
+    "exitCode": 0,
+    "output": [
+      "5 wrong library solutions rejected after passing self-tests and own coverage. Evidence: D:\\code\\AgentLang\\.agentlang\\flow2-process-EarlyAgentNegativeControls.json"
+    ]
+  },
+  {
+    "name": "SubagentTrialHost",
+    "exitCode": 0,
+    "output": [
+      "Verification passed: 33 checks. Evidence: D:\\code\\AgentLang\\.agentlang\\flow2-process-SubagentTrialHost.json"
+    ]
+  },
+  {
+    "name": "SubagentTrialHostV2",
+    "exitCode": 0,
+    "output": [
+      "V2 focused verification passed: 29 checks. Evidence: D:\\code\\AgentLang\\.agentlang\\flow2-process-SubagentTrialHostV2.json"
+    ]
+  },
+  {
+    "name": "ParserLimits",
+    "exitCode": 0,
+    "output": [
+      "D:\\code\\AgentLang\\.agentlang\\flow2-process-ParserLimits.json",
+      "[{\"passed\":true,\"name\":\"bounded host exited cleanly\"},{\"passed\":true,\"name\":\"exactly three responses\"},{\"passed\":true,\"name\":\"deep type rejected structurally\"},{\"passed\":true,\"name\":\"deep block rejected structurally\"},{\"passed\":true,\"name\":\"process remains usable after errors\"}]"
+    ]
+  }
+]

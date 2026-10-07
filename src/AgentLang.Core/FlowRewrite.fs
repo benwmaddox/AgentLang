@@ -31,6 +31,8 @@ module FlowRewrite =
         | StoredCallForm.Direct -> FlowAstPathSegment.CallArgument index
         | StoredCallForm.AbsoluteRoot -> FlowAstPathSegment.RootCallArgument index
         | StoredCallForm.DotStage _ -> FlowAstPathSegment.DotArgument index
+        | StoredCallForm.PropertyAccess _ ->
+            invalidArg (nameof form) "Record property accesses do not have explicit call argument paths."
         | StoredCallForm.StaticCallback _ ->
             invalidArg (nameof form) "Static callbacks do not use ordinary expression argument paths."
 
@@ -78,6 +80,13 @@ module FlowRewrite =
                             None (Some span) [ "map/filter/each with one word reference; fold with one seed and one final word reference" ] []
                     add role path (StoredCallForm.DotStage stage) stage span
                     visitArguments role path (StoredCallForm.DotStage stage) arguments
+            | FlowExpression.Property(receiver, field, span) ->
+                add role path (StoredCallForm.PropertyAccess field) field span
+                visitExpression role (pathChild path FlowAstPathSegment.PropertyReceiver) receiver
+            | FlowExpression.Equality(left, right, span) ->
+                add role path StoredCallForm.Direct "equals" span
+                visitExpression role (pathChild path FlowAstPathSegment.EqualityLeft) left
+                visitExpression role (pathChild path FlowAstPathSegment.EqualityRight) right
             | FlowExpression.If(condition, thenStatements, elseStatements, _) ->
                 visitExpression role (pathChild path FlowAstPathSegment.IfCondition) condition
                 visitStatements role (pathChild path (FlowAstPathSegment.IfThenStatement 0)) thenStatements
@@ -376,6 +385,37 @@ module FlowRewrite =
                                         argument)
                             recordSite role oldPath newPath (StoredCallForm.DotStage stage) stage newForm newRequestedName span |> ignore
                             FlowExpression.DotCall(newReceiver, stage, rewrittenArguments, span)
+                | FlowExpression.Property(receiver, field, span) ->
+                    let binding = bindingMap[(role, oldPath)]
+                    if binding.Target = target then
+                        Diagnostics.raiseError "FLOW_REWRITE_PROPERTY_TARGET"
+                            "A generated record-field accessor cannot be renamed by rewriting a word reference; change the record declaration and dependent sources together."
+                            (Some owner) (Some span) [ "unchanged declared field name" ] [ field ]
+                    let newReceiver =
+                        rewriteExpression role
+                            (pathChild oldPath FlowAstPathSegment.PropertyReceiver)
+                            (pathChild newPath FlowAstPathSegment.PropertyReceiver)
+                            receiver
+                    recordSite role oldPath newPath
+                        (StoredCallForm.PropertyAccess field) field
+                        (StoredCallForm.PropertyAccess field) field span |> ignore
+                    FlowExpression.Property(newReceiver, field, span)
+                | FlowExpression.Equality(left, right, span) ->
+                    let binding = bindingMap[(role, oldPath)]
+                    if binding.Target = target then
+                        Diagnostics.raiseError "FLOW_REWRITE_OPERATOR_TARGET"
+                            "Equality is intrinsic syntax and cannot be rewritten as a renamed dictionary call."
+                            (Some owner) (Some span) [ "unchanged equality operator" ] [ newName ]
+                    let newLeft =
+                        rewriteExpression role
+                            (pathChild oldPath FlowAstPathSegment.EqualityLeft)
+                            (pathChild newPath FlowAstPathSegment.EqualityLeft) left
+                    let newRight =
+                        rewriteExpression role
+                            (pathChild oldPath FlowAstPathSegment.EqualityRight)
+                            (pathChild newPath FlowAstPathSegment.EqualityRight) right
+                    recordSite role oldPath newPath StoredCallForm.Direct "equals" StoredCallForm.Direct "equals" span |> ignore
+                    FlowExpression.Equality(newLeft, newRight, span)
                 | FlowExpression.If(condition, thenStatements, elseStatements, span) ->
                     FlowExpression.If(
                         rewriteExpression role
@@ -506,7 +546,8 @@ module FlowRewrite =
             let rootsOf (parsed: FlowWordDefinition) : (StoredCallBodyRole * FlowExpression list * FlowStatement list) list =
                 [ StoredCallBodyRole.Definition, [], parsed.Body ]
             rewriteDocument newName target definition.Name None (Set.singleton StoredCallBodyRole.Definition)
-                roots bindings rewrite rootsOf FlowSource.renderWord FlowParser.parseWord definition.Span.File definition.SourceText)
+                roots bindings rewrite rootsOf FlowSource.renderWord
+                (FlowParser.parseWordWithVersion definition.SyntaxVersion) definition.Span.File definition.SourceText)
 
     let rewriteTest (oldName: string) (newName: string) (target: StoredCallTarget) (definition: FlowTestDefinition) (bindings: StoredCallBinding list) : Result<FlowRewriteResult<FlowTestDefinition>, Diagnostic> =
         withLanguageErrors (fun () ->
@@ -536,7 +577,8 @@ module FlowRewrite =
                   StoredCallBodyRole.ExpectedExpression, expected, [] ]
             rewriteDocument newName target definition.Word (Some definition.CaseName)
                 (Set.ofList [ StoredCallBodyRole.Actual; StoredCallBodyRole.ExpectedExpression ])
-                roots bindings rewrite rootsOf FlowSource.renderTest FlowParser.parseTest definition.Span.File definition.SourceText)
+                roots bindings rewrite rootsOf FlowSource.renderTest
+                (FlowParser.parseTestWithVersion definition.SyntaxVersion) definition.Span.File definition.SourceText)
 
     let rewriteExample (oldName: string) (newName: string) (target: StoredCallTarget) (definition: FlowExampleDefinition) (bindings: StoredCallBinding list) : Result<FlowRewriteResult<FlowExampleDefinition>, Diagnostic> =
         withLanguageErrors (fun () ->
@@ -550,4 +592,5 @@ module FlowRewrite =
                 [ StoredCallBodyRole.Actual, [], parsed.Body ]
             rewriteDocument newName target definition.Word (Some definition.CaseName)
                 (Set.singleton StoredCallBodyRole.Actual)
-                roots bindings rewrite rootsOf FlowSource.renderExample FlowParser.parseExample definition.Span.File definition.SourceText)
+                roots bindings rewrite rootsOf FlowSource.renderExample
+                (FlowParser.parseExampleWithVersion definition.SyntaxVersion) definition.Span.File definition.SourceText)

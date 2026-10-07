@@ -1,6 +1,6 @@
 # Frontend and source-library revision plan
 
-**Status: implementation pending.** This plan links the approved language direction in [docs/PRD.md](../docs/PRD.md). It is based on the current `prototype` checkout and preserves the requirements added during this conversation.
+**Status: Flow/2 frontend implemented; stricter module/library contracts pending.** See [report 100](100-flow2-authoring.md) for frontend validation. This plan links the approved language direction in [docs/PRD.md](../docs/PRD.md). It is based on the current `prototype` checkout and preserves the requirements added during this conversation.
 
 ## Current repository evidence
 
@@ -23,11 +23,16 @@
 
 5. **Qualification evidence.** Require 100% own-function branch coverage and the existing own-instruction/case/iteration obligations. Record each target invocation's arguments by parameter and its actual returned value from the tested function's execution. For each finite `Bool` or enum parameter, attached tests must exercise every valid value independently; do not impose a Cartesian product across parameters. For finite declared returns, observe every return value, including `true` and `false` for branchless Bool functions. Cover every enum case when enums exist. For `Option` and `Result`, cover each inhabitable alternative, and enumerate finite payloads; infinite payload domains do not require exhaustive payload values, but alternatives and meaningful boundary tests remain required. Do not waive unreachable values from a broad return contract; use a narrower contract or keep the function at project maturity. Exclude assertion/expectation expressions and unrelated callers from input, return, and branch evidence. Bind successful qualification to the tested revision and dependency identities.
 
-6. **Injected test effects.** Add deterministic effect-provider injection for IO and other declared effects. Injection must preserve the declared effect set, compile-time checking, and runtime capability policy. Tests remain attached to a specific function and coverage is collected only from its actual invocation(s); test expectations run in isolation and cannot contribute coverage.
+6. **Injected test effects and scoped function overrides.** Add deterministic effect-provider injection for IO and other declared effects. Also support a test-local dictionary overlay that temporarily redefines a function for that test and its nested calls, including IO functions, then drops the redefinition automatically. Match input/output types, preserve effect/capability contracts, keep production bindings/history unchanged, and restore on every exit path. A mocked body cannot supply coverage for the original implementation or qualify a mocked target. Tests remain attached to a specific function and coverage is collected only from its actual invocation(s); test expectations run in isolation and cannot contribute coverage.
 
 7. **Static exhaustive matches.** Every function must statically handle every possible case of supported closed variant types. Reject incomplete matches before execution, regardless of maturity or passing tests. Guarded cases must not establish exhaustiveness solely through observed tests. Report missing cases and spans. The separate library gate must still execute and assert each branch and match arm.
 
 ## Recommended implementation sequence
+
+Scoped-override backend rule: invalidate transitive compiled callers and inline
+or callback specializations when a test installs an override. Interpret the
+affected closure initially, then restore original-generation dispatch on cleanup.
+Neither stale JIT code nor mock-specific code may survive as production behavior.
 
 1. Add the new frontend version and AST metadata for module membership, declaration intent (`fn` versus `library fn`), and omission-aware effects. Extend source-format persistence and reload with backward-compatible Stack/1 and Flow/1 fixtures. Resolve how a source document selects its module and syntax version before coding; the current parser assigns Flow/1 internally and the public frontend selector only distinguishes `stack` and `flow` (`Runtime.fs:2799-2809`). If module membership is stored outside retained source, version the manifest while continuing to load manifest versions 1-3.
 2. Parse parameters, calls, property reads, and `==`; lower property reads to declared record accessors and `==` to `equals`. Add a bounded Flow formatter (in `FlowSyntax.fs` or a dedicated formatter module) that follows the explicit metadata layout and operates on a parsed document without replacing retained source implicitly. Preserve `.method(...)` parsing and version 1 fixtures.

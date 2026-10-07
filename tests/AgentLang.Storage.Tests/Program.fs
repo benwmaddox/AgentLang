@@ -195,6 +195,7 @@ module Program =
         manifest, [ project; definition; test; example ], projectText
 
     let private flowFormat : SourceFormat = { Frontend = SourceFrontend.Flow; Version = 1 }
+    let private flow2Format : SourceFormat = { Frontend = SourceFrontend.Flow; Version = 2 }
     let private stackFormat : SourceFormat = { Frontend = SourceFrontend.Stack; Version = 1 }
 
     let private typeSource name definition sourceFormat validatorTarget : TypeSource =
@@ -356,6 +357,12 @@ module Program =
         let changedVersion =
             { manifest with
                 Revisions = [ { manifest.Revisions.Head with SourceFormat = { Frontend = SourceFrontend.Stack; Version = 2 } } ] }
+        let changedFlow2Version =
+            { manifest with
+                Revisions = [ { manifest.Revisions.Head with SourceFormat = flow2Format } ] }
+        let unsupportedFlowVersion =
+            { manifest with
+                Revisions = [ { manifest.Revisions.Head with SourceFormat = { Frontend = SourceFrontend.Flow; Version = 3 } } ] }
         let definitionBinding =
             callBinding manifest.Revisions.Head.Definition None StoredCallBodyRole.Definition
                 [ FlowAstPathSegment.BlockStatement 0; FlowAstPathSegment.EvaluateExpression ]
@@ -375,6 +382,8 @@ module Program =
         for name, invalid, expectedCode in
             [ "frontend", changedFormat, "STORAGE_INVALID_MANIFEST"
               "source-version", changedVersion, "STORAGE_UNSUPPORTED_VERSION"
+              "flow2-source-version", changedFlow2Version, "STORAGE_INVALID_MANIFEST"
+              "unsupported-flow-version", unsupportedFlowVersion, "STORAGE_UNSUPPORTED_VERSION"
               "bindings", changedBindings, "STORAGE_INVALID_MANIFEST"
               "type-frontend", changedTypeFrontend, "STORAGE_INVALID_MANIFEST"
               "type-validator-target", changedTypeTarget, "STORAGE_INVALID_MANIFEST"
@@ -462,6 +471,57 @@ module Program =
         let reversedStore = Storage.create (Path.Combine(root, "v2-reversed"))
         let reversed = Storage.commit reversedStore 0L reversedManifest sources projectText |> ok "commit reversed input call-binding order"
         equal committed.ManifestHash reversed.ManifestHash "v2 canonical serialization ignores input binding order"
+
+    let private testFlow2SourceFormatsAndBindingPaths root =
+        let baseManifest, sources, projectText = flowV2Fixture "flow2-source"
+        let baseRevision = baseManifest.Revisions.Head
+        let propertyBinding =
+            callBinding baseRevision.Definition None StoredCallBodyRole.Definition
+                [ FlowAstPathSegment.BlockStatement 0
+                  FlowAstPathSegment.EvaluateExpression
+                  FlowAstPathSegment.EqualityLeft
+                  FlowAstPathSegment.PropertyReceiver ]
+                (StoredCallForm.PropertyAccess "email") "Customer::email" (StoredCallTarget.GeneratedWord "generated:record:Customer.email")
+        let invalidFlow1Manifest =
+            { baseManifest with
+                Revisions = [ { baseRevision with SourceFormat = flowFormat; CallBindings = [ propertyBinding ] } ] }
+        Storage.commit (Storage.create (Path.Combine(root, "flow1-property-binding-refused"))) 0L invalidFlow1Manifest sources projectText
+        |> error "STORAGE_INVALID_MANIFEST"
+        |> ignore
+        let revision =
+            { baseRevision with
+                SourceFormat = flow2Format
+                CallBindings = baseRevision.CallBindings @ [ propertyBinding ] }
+        let flow2Type = source StorageObjectKind.TypeDefinition "record Flow2Type { field value: String; }"
+        let manifest =
+            { baseManifest with
+                FormatVersion = 3
+                Types = [ typeSource "Flow2Type" flow2Type.Reference flow2Format None ]
+                Revisions = [ revision ] }
+        let project = Path.Combine(root, "flow2-source-formats")
+        let store = Storage.create project
+        let committed = Storage.commit store 0L manifest (flow2Type :: sources) projectText |> ok "commit Flow/2 source metadata and binding paths"
+        let loaded = Storage.load store |> ok "reload Flow/2 source metadata and binding paths"
+        equal committed.ManifestHash loaded.ManifestHash "Flow/2 source metadata reload keeps manifest identity"
+        equal flow2Format loaded.Manifest.Value.Revisions.Head.SourceFormat "Flow/2 word source metadata round trips"
+        equal flow2Format loaded.Manifest.Value.Types.Head.SourceFormat "Flow/2 type source metadata round trips in schema v3"
+        check (loaded.Manifest.Value.Revisions.Head.CallBindings |> List.contains propertyBinding) "property binding form and Flow/2 AST path round trip"
+        let rawManifest = JsonNode.Parse(File.ReadAllText(Path.Combine(storageRoot project, "manifests", loaded.ManifestHash.Value + ".json"))).AsObject()
+        let rawRevision = rawManifest["revisions"].AsArray().[0].AsObject()
+        let rawPropertyBinding =
+            rawRevision["callBindings"].AsArray()
+            |> Seq.map (fun item -> item.AsObject())
+            |> Seq.find (fun item -> (item["form"]["kind"]).GetValue<string>() = "propertyAccess")
+        equal "email" ((rawPropertyBinding["form"]["field"]).GetValue<string>()) "property field has explicit durable encoding"
+        let path = rawPropertyBinding["path"].AsArray()
+        equal "equalityLeft" ((path[2]["segment"]).GetValue<string>()) "equality-left binding path has explicit durable encoding"
+        equal "propertyReceiver" ((path[3]["segment"]).GetValue<string>()) "property receiver binding path has explicit durable encoding"
+        let invalid =
+            { manifest with
+                Revisions = [ { revision with CallBindings = [ { propertyBinding with Form = StoredCallForm.PropertyAccess "" } ] } ] }
+        Storage.commit (Storage.create (Path.Combine(root, "flow2-empty-property"))) 0L invalid (flow2Type :: sources) projectText
+        |> error "STORAGE_INVALID_MANIFEST"
+        |> ignore
 
     let private testFoldStaticCallbackBindingRoundTrip root =
         let baseManifest, sources, projectText = flowV2Fixture "fold-binding"
@@ -1231,6 +1291,7 @@ module Program =
             testFrozenV1Compatibility root
             testManifestV1WriterRefusesMeaningfulV2Fields root
             testManifestV2RoundTripAndCanonicalBindings root
+            testFlow2SourceFormatsAndBindingPaths root
             testFoldStaticCallbackBindingRoundTrip root
             testManifestV3TypeSourceRoundTripAndValidation root
             testV1HistoryMigrationAndSnapshotRestore root

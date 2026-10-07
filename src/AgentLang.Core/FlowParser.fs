@@ -20,6 +20,7 @@ module FlowParser =
     type private State =
         { File: string
           Source: string
+          SyntaxVersion: int
           Tokens: Token array
           mutable Index: int
           mutable Depth: int
@@ -32,6 +33,8 @@ module FlowParser =
         | FlowExpression.Call(_, _, span)
         | FlowExpression.RootCall(_, _, span)
         | FlowExpression.DotCall(_, _, _, span)
+        | FlowExpression.Property(_, _, span)
+        | FlowExpression.Equality(_, _, span)
         | FlowExpression.If(_, _, _, span)
         | FlowExpression.Container(_, _, _, span)
         | FlowExpression.MatchOption(_, _, _, span)
@@ -138,7 +141,7 @@ module FlowParser =
                     let pair = if offset + 1 < source.Length then source.Substring(offset, 2) else ""
                     let symbol =
                         match pair with
-                        | "->" | "::" | "=>" -> pair
+                        | "->" | "::" | "=>" | "==" -> pair
                         | _ -> string source[offset]
                     for _ in symbol do advance ()
                     add Symbol startOffset startLine startColumn
@@ -549,6 +552,22 @@ module FlowParser =
     and private parseExpressionState state =
         withDepth state (fun () ->
             let first = current state |> Option.defaultWith (fun () -> tokenError state "FLOW_INCOMPLETE_INPUT" "Expected a Flow expression.")
+            let left = parsePostfixExpressionState state
+            match current state with
+            | Some operator when operator.Text = "==" ->
+                if state.SyntaxVersion <> 2 then
+                    fail state.File operator.Line operator.Column operator.Text.Length "FLOW_SYNTAX_VERSION" "The '==' operator requires Flow/2 syntax."
+                consume state |> ignore
+                let right = parsePostfixExpressionState state
+                match current state with
+                | Some following when following.Text = "==" ->
+                    fail state.File following.Line following.Column following.Text.Length "FLOW_EQUALITY_CHAIN" "Equality operators cannot be chained; parenthesize one comparison."
+                | _ -> ()
+                FlowExpression.Equality(left, right, sourceSpan state.File first (previous state))
+            | _ -> left)
+
+    and private parsePostfixExpressionState state =
+            let first = current state |> Option.defaultWith (fun () -> tokenError state "FLOW_INCOMPLETE_INPUT" "Expected a Flow expression.")
             let primary =
                 match first.Kind, first.Text with
                 | Number, _ ->
@@ -578,6 +597,13 @@ module FlowParser =
                     expect state "else" |> ignore
                     let elseBranch = parseBlock state
                     FlowExpression.If(condition, thenBranch, elseBranch, sourceSpan state.File first (previous state))
+                | Symbol, "(" when state.SyntaxVersion = 2 ->
+                    consume state |> ignore
+                    let grouped = parseExpressionState state
+                    expect state ")" |> ignore
+                    grouped
+                | Symbol, "(" ->
+                    fail state.File first.Line first.Column first.Text.Length "FLOW_SYNTAX_VERSION" "Parenthesized expression grouping requires Flow/2 syntax."
                 | Symbol, "::" ->
                     let target = parseRootTarget state
                     if peek state <> Some "(" then
@@ -600,11 +626,14 @@ module FlowParser =
             let mutable result = primary
             while accept state "." do
                 let stage = expectIdentifier state
-                if peek state <> Some "(" then
+                if peek state = Some "(" then
+                    let arguments = parseArguments state (staticCallbackStage stage.Text)
+                    result <- FlowExpression.DotCall(result, stage.Text, arguments, sourceSpan state.File first (previous state))
+                elif state.SyntaxVersion = 2 then
+                    result <- FlowExpression.Property(result, stage.Text, sourceSpan state.File first (previous state))
+                else
                     tokenError state "FLOW_DOT_CALL_REQUIRES_ARGUMENTS" "A dot stage must be a statically named call with parentheses."
-                let arguments = parseArguments state (staticCallbackStage stage.Text)
-                result <- FlowExpression.DotCall(result, stage.Text, arguments, sourceSpan state.File first (previous state))
-            result)
+            result
 
     let private parseEffects state markerLine =
         let first =
@@ -647,7 +676,12 @@ module FlowParser =
 
     let rec private parseWordState state =
         withDepth state (fun () ->
-            let wordToken = expect state "word"
+            let expectedKeyword = if state.SyntaxVersion = 1 then "word" else "fn"
+            match peek state with
+            | Some "fn" when state.SyntaxVersion = 1 -> tokenError state "FLOW_SYNTAX_VERSION" "The 'fn' declaration requires Flow/2 syntax."
+            | Some "word" when state.SyntaxVersion = 2 -> tokenError state "FLOW_SYNTAX_VERSION" "The 'word' declaration requires Flow/1 syntax; use 'fn' in Flow/2."
+            | _ -> ()
+            let wordToken = expect state expectedKeyword
             let name, nameSpan = parseWordName state
             expect state "(" |> ignore
             let parameters = ResizeArray<FlowParameter>()
@@ -704,9 +738,11 @@ module FlowParser =
             let declaredEffects =
                 effects
                 |> Option.defaultWith (fun () ->
-                    match current state with
-                    | None -> tokenError state "FLOW_INCOMPLETE_INPUT" "Expected the required effects declaration before end of input."
-                    | Some _ -> tokenError state "FLOW_EFFECTS_REQUIRED" "Word definitions require an explicit effects declaration.")
+                    if state.SyntaxVersion = 2 then Set.empty
+                    else
+                        match current state with
+                        | None -> tokenError state "FLOW_INCOMPLETE_INPUT" "Expected the required effects declaration before end of input."
+                        | Some _ -> tokenError state "FLOW_EFFECTS_REQUIRED" "Word definitions require an explicit effects declaration.")
             let body = parseBlockBody state
             let endToken = expect state "}"
             let span = sourceSpan state.File wordToken (Some endToken)
@@ -715,11 +751,12 @@ module FlowParser =
                   Parameters = List.ofSeq parameters
                   Outputs = outputs
                   Effects = declaredEffects
+                  EffectsDeclared = effects.IsSome
                   Documentation = documentation
                   Body = body
                   SourceText = sourceSlice state wordToken endToken
                   Span = span
-                  SyntaxVersion = 1 }
+                  SyntaxVersion = state.SyntaxVersion }
             FlowStructure.validateWordNesting definition
             definition)
 
@@ -790,7 +827,7 @@ module FlowParser =
                   Expected = expected
                   SourceText = sourceSlice state startToken endToken
                   Span = sourceSpan state.File startToken (Some endToken)
-                  SyntaxVersion = 1
+                  SyntaxVersion = state.SyntaxVersion
                   HeaderSpan = headerSpan
                   ExpectationSpan = expectationSpan }
             FlowStructure.validateTestNesting definition
@@ -823,7 +860,7 @@ module FlowParser =
                   ExpectedSpan = expectedSpan
                   SourceText = sourceSlice state startToken endToken
                   Span = sourceSpan state.File startToken (Some endToken)
-                  SyntaxVersion = 1
+                  SyntaxVersion = state.SyntaxVersion
                   HeaderSpan = headerSpan
                   ExpectationSpan = expectationSpan }
             FlowStructure.validateExampleNesting definition
@@ -931,22 +968,26 @@ module FlowParser =
           SourceText = sourceSlice state startToken endToken
           Span = sourceSpan state.File startToken (Some endToken) }
 
-    let private createState file source =
+    let private createState syntaxVersion file source =
+        if syntaxVersion <> 1 && syntaxVersion <> 2 then
+            fail file 1 1 1 "FLOW_VERSION_UNSUPPORTED" "Only Flow syntax versions 1 and 2 are supported by this parser."
         let tokens, endLine, endColumn = tokenize file source
-        { File = file; Source = source; Tokens = tokens; Index = 0; Depth = 0; EndLine = endLine; EndColumn = endColumn }
+        { File = file; Source = source; SyntaxVersion = syntaxVersion; Tokens = tokens; Index = 0; Depth = 0; EndLine = endLine; EndColumn = endColumn }
 
     let private rejectTrailing (state: State) kind =
         if not (atEnd state) then
             tokenError state "FLOW_TRAILING_INPUT" $"Unexpected content follows the Flow {kind} definition."
 
-    let parseExpression file source =
+    let parseExpressionWithVersion syntaxVersion file source =
         try
-            let state = createState file source
+            let state = createState syntaxVersion file source
             let expression = parseExpressionState state
             if not (atEnd state) then tokenError state "FLOW_TRAILING_INPUT" "Unexpected token follows the Flow expression."
-            FlowStructure.validateExpressionNesting [ expression ]
+            FlowStructure.validateExpressionNestingWithVersion syntaxVersion [ expression ]
             Ok expression
         with LanguageException error -> Error error
+
+    let parseExpression file source = parseExpressionWithVersion 1 file source
 
     /// Resolve a dictionary name to an exact ordinary Flow call spelling.
     /// Names intercepted by Flow syntax and invalid candidates remain unavailable.
@@ -968,33 +1009,39 @@ module FlowParser =
                 None, Some "The candidate does not target the exact dictionary key."
             | Ok _ -> None, Some "The candidate is intercepted by Flow syntax instead of an ordinary call."
 
-    let parseWord file source =
+    let parseWordWithVersion syntaxVersion file source =
         try
-            let state = createState file source
+            let state = createState syntaxVersion file source
             let definition = parseWordState state
             rejectTrailing state "word"
             Ok { definition with SourceText = source }
         with LanguageException error -> Error error
 
-    let parseTest file source =
+    let parseWord file source = parseWordWithVersion 1 file source
+
+    let parseTestWithVersion syntaxVersion file source =
         try
-            let state = createState file source
+            let state = createState syntaxVersion file source
             let definition = parseTestState state
             rejectTrailing state "test"
             Ok { definition with SourceText = source }
         with LanguageException error -> Error error
 
-    let parseExample file source =
+    let parseTest file source = parseTestWithVersion 1 file source
+
+    let parseExampleWithVersion syntaxVersion file source =
         try
-            let state = createState file source
+            let state = createState syntaxVersion file source
             let definition = parseExampleState state
             rejectTrailing state "example"
             Ok { definition with SourceText = source }
         with LanguageException error -> Error error
 
-    let parseDocument file source =
+    let parseExample file source = parseExampleWithVersion 1 file source
+
+    let parseDocumentWithVersion syntaxVersion file source =
         try
-            let state = createState file source
+            let state = createState syntaxVersion file source
             let records = ResizeArray<RecordDefinition>()
             let scalars = ResizeArray<ScalarTypeDefinition>()
             let words = ResizeArray<FlowWordDefinition>()
@@ -1014,13 +1061,16 @@ module FlowParser =
                     let definition = parseScalarState state
                     addType definition.Name definition.Span
                     scalars.Add definition
-                | Some "word" -> words.Add(parseWordState state)
+                | Some "word" when state.SyntaxVersion = 1 -> words.Add(parseWordState state)
+                | Some "word" -> tokenError state "FLOW_SYNTAX_VERSION" "The 'word' declaration requires Flow/1 syntax; use 'fn' in Flow/2."
+                | Some "fn" when state.SyntaxVersion = 2 -> words.Add(parseWordState state)
+                | Some "fn" -> tokenError state "FLOW_SYNTAX_VERSION" "The 'fn' declaration requires Flow/2 syntax."
                 | Some "test" -> tests.Add(parseTestState state)
                 | Some "example" -> examples.Add(parseExampleState state)
                 | Some _ -> tokenError state "FLOW_PROJECT_UNKNOWN_DECLARATION" "A Flow project document contains only record, type, word, test, and example declarations."
                 | None -> ()
             Ok
-                { SyntaxVersion = 1
+                { SyntaxVersion = state.SyntaxVersion
                   SourceText = source
                   Records = List.ofSeq records
                   Scalars = List.ofSeq scalars
@@ -1028,3 +1078,5 @@ module FlowParser =
                   Tests = List.ofSeq tests
                   Examples = List.ofSeq examples }
         with LanguageException error -> Error error
+
+    let parseDocument file source = parseDocumentWithVersion 1 file source

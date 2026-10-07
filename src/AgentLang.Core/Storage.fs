@@ -46,6 +46,7 @@ type StoredCallForm =
     | Direct
     | AbsoluteRoot
     | DotStage of stage: string
+    | PropertyAccess of field: string
     | StaticCallback of stage: string * qualification: FlowWordReferenceQualification
 
 [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
@@ -359,6 +360,13 @@ module Storage =
         | SourceFrontend.Stack -> "stack"
         | SourceFrontend.Flow -> "flow"
 
+    let private isSupportedSourceFormat frontend version =
+        match frontend, version with
+        | SourceFrontend.Stack, 1
+        | SourceFrontend.Flow, 1
+        | SourceFrontend.Flow, 2 -> true
+        | _ -> false
+
     let private parseSourceFrontend path = function
         | "stack" -> SourceFrontend.Stack
         | "flow" -> SourceFrontend.Flow
@@ -374,8 +382,8 @@ module Storage =
         let value = requireObject "word revision source format" node
         let frontend = requireString "word revision source frontend" value["frontend"] |> parseSourceFrontend path
         let version = requireInt "word revision source format version" value["version"]
-        if version <> 1 then
-            failure "STORAGE_UNSUPPORTED_VERSION" $"Source syntax version {version} is not supported." path
+        if not (isSupportedSourceFormat frontend version) then
+            failure "STORAGE_UNSUPPORTED_VERSION" $"Source syntax format {sourceFrontendName frontend}/{version} is not supported." path
         { Frontend = frontend
           Version = version }
 
@@ -406,6 +414,9 @@ module Storage =
         | FlowAstPathSegment.RootCallArgument index -> setIndexed "rootCallArgument" index
         | FlowAstPathSegment.DotReceiver -> setNamed "dotReceiver"
         | FlowAstPathSegment.DotArgument index -> setIndexed "dotArgument" index
+        | FlowAstPathSegment.PropertyReceiver -> setNamed "propertyReceiver"
+        | FlowAstPathSegment.EqualityLeft -> setNamed "equalityLeft"
+        | FlowAstPathSegment.EqualityRight -> setNamed "equalityRight"
         | FlowAstPathSegment.IfCondition -> setNamed "ifCondition"
         | FlowAstPathSegment.IfThenStatement index -> setIndexed "ifThenStatement" index
         | FlowAstPathSegment.IfElseStatement index -> setIndexed "ifElseStatement" index
@@ -437,6 +448,9 @@ module Storage =
         | "rootCallArgument" -> indexed FlowAstPathSegment.RootCallArgument
         | "dotReceiver" -> FlowAstPathSegment.DotReceiver
         | "dotArgument" -> indexed FlowAstPathSegment.DotArgument
+        | "propertyReceiver" -> FlowAstPathSegment.PropertyReceiver
+        | "equalityLeft" -> FlowAstPathSegment.EqualityLeft
+        | "equalityRight" -> FlowAstPathSegment.EqualityRight
         | "ifCondition" -> FlowAstPathSegment.IfCondition
         | "ifThenStatement" -> indexed FlowAstPathSegment.IfThenStatement
         | "ifElseStatement" -> indexed FlowAstPathSegment.IfElseStatement
@@ -463,6 +477,11 @@ module Storage =
             node["kind"] <- jsonString "dotStage"
             node["stage"] <- jsonString stage
             node :> JsonNode
+        | StoredCallForm.PropertyAccess field ->
+            let node = JsonObject()
+            node["kind"] <- jsonString "propertyAccess"
+            node["field"] <- jsonString field
+            node :> JsonNode
         | StoredCallForm.StaticCallback(stage, qualification) ->
             let node = JsonObject()
             node["kind"] <- jsonString "staticCallback"
@@ -481,6 +500,7 @@ module Storage =
         | "direct" -> StoredCallForm.Direct
         | "absoluteRoot" -> StoredCallForm.AbsoluteRoot
         | "dotStage" -> StoredCallForm.DotStage(requireString "call binding dot stage" value["stage"])
+        | "propertyAccess" -> StoredCallForm.PropertyAccess(requireString "call binding property field" value["field"])
         | "staticCallback" ->
             let qualification =
                 match requireString "call binding callback qualification" value["qualification"] with
@@ -575,6 +595,9 @@ module Storage =
         | FlowAstPathSegment.DestructureInitializer
         | FlowAstPathSegment.EvaluateExpression
         | FlowAstPathSegment.DotReceiver
+        | FlowAstPathSegment.PropertyReceiver
+        | FlowAstPathSegment.EqualityLeft
+        | FlowAstPathSegment.EqualityRight
         | FlowAstPathSegment.IfCondition
         | FlowAstPathSegment.ContainerPayload
         | FlowAstPathSegment.OptionScrutinee
@@ -830,8 +853,8 @@ module Storage =
             validMetadataText "Type name" 256 path item.Name
             if item.Definition.Kind <> StorageObjectKind.TypeDefinition then
                 failure "STORAGE_INVALID_MANIFEST" $"Type '{item.Name}' must reference a type-definition object." path
-            if item.SourceFormat.Version <> 1 then
-                failure "STORAGE_UNSUPPORTED_VERSION" $"Type source syntax version {item.SourceFormat.Version} is not supported." path
+            if not (isSupportedSourceFormat item.SourceFormat.Frontend item.SourceFormat.Version) then
+                failure "STORAGE_UNSUPPORTED_VERSION" $"Type source syntax format {sourceFrontendName item.SourceFormat.Frontend}/{item.SourceFormat.Version} is not supported." path
             if manifest.FormatVersion < 3 && (item.SourceFormat <> defaultTypeSourceFormat || item.ValidatorTarget.IsSome) then
                 failure "STORAGE_INVALID_MANIFEST" $"Manifest version {manifest.FormatVersion} only supports Stack version 1 type sources without validator targets." path
             match item.ValidatorTarget with
@@ -868,8 +891,8 @@ module Storage =
             validMetadataText "Revision word name" 256 path revision.Name
             validMetadataText "Revision actor" 128 path revision.Actor
             if revision.Revision < 1 then failure "STORAGE_INVALID_MANIFEST" "Word revision number must be positive." path
-            if revision.SourceFormat.Version <> 1 then
-                failure "STORAGE_UNSUPPORTED_VERSION" $"Source syntax version {revision.SourceFormat.Version} is not supported." path
+            if not (isSupportedSourceFormat revision.SourceFormat.Frontend revision.SourceFormat.Version) then
+                failure "STORAGE_UNSUPPORTED_VERSION" $"Source syntax format {sourceFrontendName revision.SourceFormat.Frontend}/{revision.SourceFormat.Version} is not supported." path
             if manifest.FormatVersion = 1 && revision.SourceFormat <> defaultSourceFormat then
                 failure "STORAGE_INVALID_MANIFEST" "Version-1 manifests only support Stack version 1 source metadata." path
             match manifest.FormatVersion, revision.SourceFormat.Frontend with
@@ -896,9 +919,21 @@ module Storage =
             for binding in revision.CallBindings do
                 validMetadataText "Call binding requested name" 256 path binding.RequestedName
                 validMetadataText "Call binding target identity" 128 path (match binding.Target with | StoredCallTarget.UserWord value | StoredCallTarget.Primitive value | StoredCallTarget.GeneratedWord value -> value)
+                if revision.SourceFormat = { Frontend = SourceFrontend.Flow; Version = 1 } then
+                    let (FlowAstPath.FlowAstPath pathSegments) = binding.Path
+                    let hasFlow2Path =
+                        pathSegments
+                        |> List.exists (function
+                            | FlowAstPathSegment.PropertyReceiver
+                            | FlowAstPathSegment.EqualityLeft
+                            | FlowAstPathSegment.EqualityRight -> true
+                            | _ -> false)
+                    if hasFlow2Path || (match binding.Form with | StoredCallForm.PropertyAccess _ -> true | _ -> false) then
+                        failure "STORAGE_INVALID_MANIFEST" "Flow/1 revisions cannot contain Flow/2 property-access or equality call-binding metadata." path
                 match binding.Form with
                 | StoredCallForm.Direct | StoredCallForm.AbsoluteRoot -> ()
                 | StoredCallForm.DotStage stage -> validMetadataText "Call binding dot stage" 128 path stage
+                | StoredCallForm.PropertyAccess field -> validMetadataText "Call binding property field" 128 path field
                 | StoredCallForm.StaticCallback(stage, _) ->
                     if stage <> "map" && stage <> "filter" && stage <> "each" && stage <> "fold" then
                         failure "STORAGE_INVALID_MANIFEST" $"Static callback stage '{stage}' is not supported." path

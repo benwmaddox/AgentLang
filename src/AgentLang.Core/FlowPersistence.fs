@@ -16,6 +16,7 @@ module FlowPersistence =
         | FlowLowering.FlowCallForm.Direct -> StoredCallForm.Direct
         | FlowLowering.FlowCallForm.AbsoluteRoot -> StoredCallForm.AbsoluteRoot
         | FlowLowering.FlowCallForm.DotStage stage -> StoredCallForm.DotStage stage
+        | FlowLowering.FlowCallForm.PropertyAccess field -> StoredCallForm.PropertyAccess field
         | FlowLowering.FlowCallForm.StaticCallback(stage, qualification) ->
             StoredCallForm.StaticCallback(stage, qualification)
 

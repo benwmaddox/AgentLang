@@ -1,7 +1,7 @@
 # This small policy is illustrative and deliberately does not implement the full
 # Internet email standard.
-word email.valid?(address: String) -> Bool {
-    effects none
+fn email.valid?(address: String) -> Bool {
+
     let contains-at = string::contains(address, "@");
     let contains-dot = string::contains(address, ".");
     let contains-space = string::contains(address, " ");

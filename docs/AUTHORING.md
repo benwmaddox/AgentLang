@@ -1,8 +1,20 @@
 # Authoring through the runtime
 
-These instructions describe the implemented Flow/1 syntax. The approved
-`fn`, property access, `==` and default-pure revision is illustrated in the
-[new-syntax examples](EXAMPLE-SYNTAX-MIGRATION.md), pending parser implementation.
+The older examples below describe Flow/1, which remains the default when a
+request omits `syntaxVersion`. Select `syntaxVersion: 2` in JSON requests or
+`--syntax-version 2` in the human CLI for `fn`, plain record properties, typed
+`==` and omitted pure effects. See the [Flow/2 examples](EXAMPLE-SYNTAX-MIGRATION.md).
+The dictionary and semantic IR are shared; each retained definition preserves
+its source version. Select the same version for attached tests and replacements.
+Runtime `help` requests also accept `syntaxVersion: 2`.
+
+Flow/2 distinguishes `record.field` from `.function(...)`: a property must be a
+declared field of a plain record, and function calls require parentheses.
+Equality does not perform nominal or numeric coercions. `==` binds more loosely
+than calls/properties, and chained comparisons require explicit parentheses.
+Effects and documentation form the metadata block, followed by a blank line.
+`format` returns canonical source without committing a change; accept formatted
+source through the ordinary definition and revision checks.
 
 Start with a compact inventory or search, then describe the relevant words.
 Names in protocol queries use dots; ordinary Flow calls use the parser-verified

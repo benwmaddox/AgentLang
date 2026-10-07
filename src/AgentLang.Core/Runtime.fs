@@ -268,11 +268,12 @@ module Runtime =
 
         let helpPayload (request: AuthoringHelp.HelpRequest) =
             let topic = AuthoringHelp.requestTopic request
-            let content = AuthoringHelp.content request.Topic
+            let content = AuthoringHelp.contentForVersion request.SyntaxVersion request.Topic
             let payload = JsonObject()
             payload["schemaVersion"] <- jint AuthoringHelp.schemaVersion
             payload["topics"] <- jsonNode AuthoringHelp.topicNames
             payload["topic"] <- jstr topic
+            payload["syntaxVersion"] <- jint request.SyntaxVersion
             payload["title"] <- jstr content.Title
             payload["documentation"] <- jstr content.Documentation
 
@@ -451,10 +452,11 @@ module Runtime =
             for KeyValue(name, source) in state.TypeSources do
                 match source.SourceFormat.Frontend, source.SourceFormat.Version with
                 | SourceFrontend.Stack, 1
-                | SourceFrontend.Flow, 1 -> ()
+                | SourceFrontend.Flow, 1
+                | SourceFrontend.Flow, 2 -> ()
                 | frontend, version ->
                     let frontendName = if frontend = SourceFrontend.Flow then "Flow" else "Stack"
-                    error "RUNTIME_UNSUPPORTED_TYPE_FRONTEND" $"Type '{name}' uses unsupported {frontendName} syntax version {version}." (Some name) None [ "Stack/1 or Flow/1" ] [ $"{frontendName}/{version}" ]
+                    error "RUNTIME_UNSUPPORTED_TYPE_FRONTEND" $"Type '{name}' uses unsupported {frontendName} syntax version {version}." (Some name) None [ "Stack/1"; "Flow/1"; "Flow/2" ] [ $"{frontendName}/{version}" ]
                 match state.Records.TryFind name, state.Scalars.TryFind name with
                 | Some _, Some _ -> error "TYPE_SOURCE_OWNER_AMBIGUOUS" $"Type source '{name}' maps to both a record and scalar." (Some name) None [] []
                 | Some _, None when source.ValidatorTarget.IsSome ->
@@ -626,28 +628,28 @@ module Runtime =
             let stackWordNames = state.FlowWords |> Map.toSeq |> Seq.map (fun (_, authored) -> authored.Source.OwnerName) |> Set.ofSeq
             let flowTestKeys = state.FlowTests |> Map.toSeq |> Seq.map (fun (_, item) -> item.Source.OwnerName + "/" + item.Source.CaseName) |> Set.ofSeq
             let flowExampleKeys = state.FlowExamples |> Map.toSeq |> Seq.map (fun (_, item) -> item.Source.OwnerName + "/" + item.Source.CaseName) |> Set.ofSeq
-            let addSection (frontend: string) (source: string) =
-                if hasFlow then sections.Add("// frontend: " + frontend + "/1")
+            let addSection (frontend: string) (version: int) (source: string) =
+                if hasFlow then sections.Add("// frontend: " + frontend + "/" + string version)
                 sections.Add(source.Replace("\r\n", "\n"))
             for name, item in state.Records |> Map.toSeq |> Seq.sortBy fst do
                 if item.Status = Persistent then
                     match (state.TypeSources.TryFind name |> Option.defaultValue (defaultTypeSource state name)).SourceFormat with
-                    | { Frontend = SourceFrontend.Stack; Version = 1 } -> addSection "stack" (Source.renderRecord item.Definition)
-                    | { Frontend = SourceFrontend.Flow; Version = 1 } -> addSection "flow" (FlowSource.renderRecord item.Definition)
-                    | format -> error "RUNTIME_UNSUPPORTED_TYPE_FRONTEND" $"Type '{name}' uses unsupported source format {format.Frontend}/{format.Version}." (Some name) None [ "Stack/1 or Flow/1" ] [ $"{format.Frontend}/{format.Version}" ]
+                    | { Frontend = SourceFrontend.Stack; Version = 1 } -> addSection "stack" 1 (Source.renderRecord item.Definition)
+                    | { Frontend = SourceFrontend.Flow; Version = version } when version = 1 || version = 2 -> addSection "flow" version (FlowSource.renderRecord item.Definition)
+                    | format -> error "RUNTIME_UNSUPPORTED_TYPE_FRONTEND" $"Type '{name}' uses unsupported source format {format.Frontend}/{format.Version}." (Some name) None [ "Stack/1"; "Flow/1"; "Flow/2" ] [ $"{format.Frontend}/{format.Version}" ]
             for name, item in state.Scalars |> Map.toSeq |> Seq.sortBy fst do
                 if item.Status = Persistent then
                     match (state.TypeSources.TryFind name |> Option.defaultValue (defaultTypeSource state name)).SourceFormat with
-                    | { Frontend = SourceFrontend.Stack; Version = 1 } -> addSection "stack" (Source.renderScalar item.Definition)
-                    | { Frontend = SourceFrontend.Flow; Version = 1 } -> addSection "flow" (FlowSource.renderScalar item.Definition)
-                    | format -> error "RUNTIME_UNSUPPORTED_TYPE_FRONTEND" $"Type '{name}' uses unsupported source format {format.Frontend}/{format.Version}." (Some name) None [ "Stack/1 or Flow/1" ] [ $"{format.Frontend}/{format.Version}" ]
+                    | { Frontend = SourceFrontend.Stack; Version = 1 } -> addSection "stack" 1 (Source.renderScalar item.Definition)
+                    | { Frontend = SourceFrontend.Flow; Version = version } when version = 1 || version = 2 -> addSection "flow" version (FlowSource.renderScalar item.Definition)
+                    | format -> error "RUNTIME_UNSUPPORTED_TYPE_FRONTEND" $"Type '{name}' uses unsupported source format {format.Frontend}/{format.Version}." (Some name) None [ "Stack/1"; "Flow/1"; "Flow/2" ] [ $"{format.Frontend}/{format.Version}" ]
             for word in topologicalWords state do
-                if not (stackWordNames.Contains word.Definition.Name) then addSection "stack" (Source.renderWord true word.Definition)
+                if not (stackWordNames.Contains word.Definition.Name) then addSection "stack" 1 (Source.renderWord true word.Definition)
             state.FlowWords
             |> Map.toList
             |> List.map snd
             |> List.sortBy (fun authored -> authored.Definition.Name)
-            |> List.iter (fun authored -> addSection "flow" (FlowSource.renderWord authored.Definition))
+            |> List.iter (fun authored -> addSection "flow" authored.Definition.SyntaxVersion (FlowSource.renderWord authored.Definition))
             let durableTypes =
                 Set.union
                     (state.Records |> Map.toSeq |> Seq.choose (fun (name, item) -> if item.Status = Persistent then Some(lowerFirst name) else None) |> Set.ofSeq)
@@ -662,16 +664,16 @@ module Runtime =
                     || (durableTypes |> Set.exists (fun prefix -> test.Word = prefix + ".new" || test.Word = prefix + ".value" || test.Word.StartsWith(prefix + ".", StringComparison.Ordinal)))
                 )
                 |> List.sortBy (fun test -> test.Word, test.Name)
-            for test in durableTests do addSection "stack" (Source.renderTest test)
+            for test in durableTests do addSection "stack" 1 (Source.renderTest test)
             state.FlowTests
             |> Map.toList
             |> List.map snd
             |> List.filter (fun authored -> state.Words.TryFind authored.Source.OwnerName |> Option.exists (fun word -> word.Status = Persistent))
             |> List.sortBy (fun authored -> authored.Source.OwnerName, authored.Source.CaseName)
             |> List.iter (fun authored ->
-                match FlowParser.parseTest authored.Source.SourceFile authored.Source.Content with
+                match FlowParser.parseTestWithVersion authored.Source.SyntaxVersion authored.Source.SourceFile authored.Source.Content with
                 | Error diagnostic -> raise (LanguageException diagnostic)
-                | Ok definition -> addSection "flow" (FlowSource.renderTest definition))
+                | Ok definition -> addSection "flow" authored.Source.SyntaxVersion (FlowSource.renderTest definition))
             let durableExamples =
                 state.Examples
                 |> Map.toList
@@ -682,16 +684,16 @@ module Runtime =
                     || (durableTypes |> Set.exists (fun prefix -> example.Word = prefix + ".new" || example.Word = prefix + ".value" || example.Word.StartsWith(prefix + ".", StringComparison.Ordinal)))
                 )
                 |> List.sortBy (fun example -> example.Word, example.Name)
-            for example in durableExamples do addSection "stack" (Source.renderExample example)
+            for example in durableExamples do addSection "stack" 1 (Source.renderExample example)
             state.FlowExamples
             |> Map.toList
             |> List.map snd
             |> List.filter (fun authored -> state.Words.TryFind authored.Source.OwnerName |> Option.exists (fun word -> word.Status = Persistent))
             |> List.sortBy (fun authored -> authored.Source.OwnerName, authored.Source.CaseName)
             |> List.iter (fun authored ->
-                match FlowParser.parseExample authored.Source.SourceFile authored.Source.Content with
+                match FlowParser.parseExampleWithVersion authored.Source.SyntaxVersion authored.Source.SourceFile authored.Source.Content with
                 | Error diagnostic -> raise (LanguageException diagnostic)
-                | Ok definition -> addSection "flow" (FlowSource.renderExample definition))
+                | Ok definition -> addSection "flow" authored.Source.SyntaxVersion (FlowSource.renderExample definition))
             if hasFlow then String.concat "\n\n" sections + "\n"
             else String.concat (Environment.NewLine + Environment.NewLine) sections + Environment.NewLine
 
@@ -893,9 +895,10 @@ module Runtime =
                             if authored.Source.OwnerId <> WordId wordId
                                || authored.Source.OwnerName <> item.Definition.Name
                                || authored.Source.OwnerRevision <> item.Definition.Revision
-                               || authored.Definition.SyntaxVersion <> 1 then
+                               || authored.Source.SyntaxVersion <> authored.Definition.SyntaxVersion
+                               || not (List.contains authored.Definition.SyntaxVersion [ 1; 2 ]) then
                                 error "FLOW_RUNTIME_OWNER_MISMATCH" "A Flow definition must match the persistent word ID, name, revision, and supported source version." (Some item.Definition.Name) None
-                                    [ wordId; item.Definition.Name; string item.Definition.Revision; "Flow/1" ]
+                                    [ wordId; item.Definition.Name; string item.Definition.Revision; "Flow/1 or Flow/2" ]
                                     [ wordIdText authored.Source.OwnerId; authored.Source.OwnerName; string authored.Source.OwnerRevision; string authored.Definition.SyntaxVersion ]
                             match authored.StoredBindings with
                             | None -> error "FLOW_RUNTIME_BINDINGS_MISSING" "Flow call bindings must be regenerated against the exact candidate program before publication." (Some item.Definition.Name) None [] []
@@ -1100,10 +1103,11 @@ module Runtime =
                            || entry.Definition.Revision <> authored.Source.OwnerRevision
                            || entry.Definition.Name <> authored.Definition.Name
                            || authored.Definition.Name <> authored.Source.OwnerName
-                           || authored.Definition.SyntaxVersion <> 1
+                           || authored.Source.SyntaxVersion <> authored.Definition.SyntaxVersion
+                           || not (List.contains authored.Definition.SyntaxVersion [ 1; 2 ])
                            || authored.Source.Reference.Kind <> StorageObjectKind.WordDefinition then
                             error "FLOW_RUNTIME_OWNER_METADATA_MISMATCH" "Flow authored source identity, revision, kind, and executable projection must describe the same user word." (Some authored.Source.OwnerName) None
-                                [ identity; wordIdText authored.Source.OwnerId; authored.Source.OwnerName; string entry.Revision; "Flow/1" ]
+                                [ identity; wordIdText authored.Source.OwnerId; authored.Source.OwnerName; string entry.Revision; "Flow/1 or Flow/2" ]
                                 [ mappedIdentity |> Option.map wordIdText |> Option.defaultValue "missing"; string authored.Source.OwnerRevision; string authored.Source.Reference.Kind; string authored.Definition.SyntaxVersion ]
                     let validateAttachment kind (key: string) (attachment: FlowAuthoredAttachment) =
                         let source = attachment.Source
@@ -1120,13 +1124,14 @@ module Runtime =
                             | FlowLowering.FlowAttachmentKind.Example -> StorageObjectKind.ExampleDefinition
                         if key <> flowAttachmentKey source.OwnerId source.CaseName
                            || source.OwnerName <> owner.Source.OwnerName
+                           || source.SyntaxVersion <> owner.Source.SyntaxVersion
                            || source.OwnerRevision <> ownerEntry.Revision
                            || source.OwnerRevision <> owner.Source.OwnerRevision
                            || source.Reference.Kind <> expectedKind
                            || source.Kind <> kind then
                             error "FLOW_RUNTIME_ATTACHMENT_METADATA_MISMATCH" "Flow attachment key, owner revision, source kind, and owner source must agree within the runtime snapshot." (Some(source.OwnerName + "/" + source.CaseName)) None
-                                [ flowAttachmentKey source.OwnerId source.CaseName; owner.Source.OwnerName; string ownerEntry.Revision; string expectedKind ]
-                                [ key; source.OwnerName; string source.OwnerRevision; string source.Reference.Kind ]
+                                [ flowAttachmentKey source.OwnerId source.CaseName; owner.Source.OwnerName; string owner.Source.SyntaxVersion; ownerEntry.Revision.ToString(CultureInfo.InvariantCulture); string expectedKind ]
+                                [ key; source.OwnerName; string source.SyntaxVersion; string source.OwnerRevision; string source.Reference.Kind ]
                     state.FlowTests |> Map.iter (fun key attachment -> validateAttachment FlowLowering.FlowAttachmentKind.Test key attachment)
                     state.FlowExamples |> Map.iter (fun key attachment -> validateAttachment FlowLowering.FlowAttachmentKind.Example key attachment)
                     let wordInventory: FlowLowering.FlowSourceInventory =
@@ -1497,10 +1502,10 @@ module Runtime =
                                     scalars.Add scalar
                                     { SourceFormat = typeSource.SourceFormat; Content = source; Reference = typeSource.Definition; ValidatorTarget = typeSource.ValidatorTarget }
                                 | _ -> mismatch $"Manifest type object '{typeSource.Name}' does not contain exactly that type." (Some typeSource.Name)
-                            | SourceFrontend.Flow, 1 ->
+                            | SourceFrontend.Flow, version when version = 1 || version = 2 ->
                                 let file = $"<type:{typeSource.Name}/{typeSource.Definition.Hash}>"
                                 let parsed =
-                                    match FlowParser.parseDocument file source with
+                                    match FlowParser.parseDocumentWithVersion version file source with
                                     | Ok document -> document
                                     | Error diagnostic -> raise (LanguageException diagnostic)
                                 match parsed.Records, parsed.Scalars with
@@ -1512,18 +1517,19 @@ module Runtime =
                                     { SourceFormat = typeSource.SourceFormat; Content = source; Reference = typeSource.Definition; ValidatorTarget = typeSource.ValidatorTarget }
                                 | _ -> mismatch $"Manifest Flow type object '{typeSource.Name}' does not contain exactly that type." (Some typeSource.Name)
                             | frontend, version ->
-                                error "RUNTIME_UNSUPPORTED_TYPE_FRONTEND" $"Stored type '{typeSource.Name}' uses unsupported {frontend}/{version}." (Some typeSource.Name) None [ "Stack/1 or Flow/1" ] [ $"{frontend}/{version}" ]
+                                error "RUNTIME_UNSUPPORTED_TYPE_FRONTEND" $"Stored type '{typeSource.Name}' uses unsupported {frontend}/{version}." (Some typeSource.Name) None [ "Stack/1"; "Flow/1"; "Flow/2" ] [ $"{frontend}/{version}" ]
                         loadedTypeSources.Add(typeSource.Name, authored)
 
                 let validateSourceFormat (metadata: WordRevision) =
                     let frontendName = function SourceFrontend.Stack -> "Stack" | SourceFrontend.Flow -> "Flow"
                     match metadata.SourceFormat.Frontend, metadata.SourceFormat.Version with
                     | SourceFrontend.Stack, 1
-                    | SourceFrontend.Flow, 1 -> ()
+                    | SourceFrontend.Flow, 1
+                    | SourceFrontend.Flow, 2 -> ()
                     | frontend, version ->
                         error "RUNTIME_UNSUPPORTED_FRONTEND"
                             $"Stored revision '{metadata.WordId}/{metadata.Revision}' uses unsupported {frontendName frontend} syntax version {version}."
-                            (Some metadata.Name) None [ "Stack/1 or Flow/1" ] [ $"{frontendName frontend}/{version}" ]
+                            (Some metadata.Name) None [ "Stack/1"; "Flow/1"; "Flow/2" ] [ $"{frontendName frontend}/{version}" ]
 
                 let stackDefinition file source (metadata: WordRevision) =
                     let parsed = parseProjectSource file source
@@ -1535,7 +1541,7 @@ module Runtime =
                     | _ -> mismatch $"Stored Stack revision {metadata.WordId}/{metadata.Revision} does not match its manifest metadata." (Some metadata.Name)
 
                 let flowDefinition file source (metadata: WordRevision) =
-                    match FlowParser.parseWord file source with
+                    match FlowParser.parseWordWithVersion metadata.SourceFormat.Version file source with
                     | Error diagnostic -> raise (LanguageException diagnostic)
                     | Ok definition when definition.Name = metadata.Name && definition.SyntaxVersion = metadata.SourceFormat.Version -> definition
                     | Ok definition -> mismatch $"Stored Flow revision {metadata.WordId}/{metadata.Revision} does not match its manifest owner or syntax version." (Some metadata.Name)
@@ -1546,10 +1552,10 @@ module Runtime =
                     | [ test ], [], [], [], [] when test.Word = owner -> test
                     | _ -> mismatch $"Stored Stack test for '{owner}' is invalid or has a foreign owner." (Some owner)
 
-                let flowTest file source owner =
-                    match FlowParser.parseTest file source with
+                let flowTest syntaxVersion file source owner =
+                    match FlowParser.parseTestWithVersion syntaxVersion file source with
                     | Error diagnostic -> raise (LanguageException diagnostic)
-                    | Ok test when test.Word = owner -> test
+                    | Ok test when test.Word = owner && test.SyntaxVersion = syntaxVersion -> test
                     | Ok test -> mismatch $"Stored Flow test for '{owner}' has foreign owner '{test.Word}'." (Some owner)
 
                 let stackExample file source owner =
@@ -1558,10 +1564,10 @@ module Runtime =
                     | [ example ], [], [], [], [] when example.Word = owner -> example
                     | _ -> mismatch $"Stored Stack example for '{owner}' is invalid or has a foreign owner." (Some owner)
 
-                let flowExample file source owner =
-                    match FlowParser.parseExample file source with
+                let flowExample syntaxVersion file source owner =
+                    match FlowParser.parseExampleWithVersion syntaxVersion file source with
                     | Error diagnostic -> raise (LanguageException diagnostic)
-                    | Ok example when example.Word = owner -> example
+                    | Ok example when example.Word = owner && example.SyntaxVersion = syntaxVersion -> example
                     | Ok example -> mismatch $"Stored Flow example for '{owner}' has foreign owner '{example.Word}'." (Some owner)
 
                 let bindingSubset source caseName roles (metadata: WordRevision) =
@@ -1602,14 +1608,14 @@ module Runtime =
                             let file = $"{sourceFile}/test:{reference.Hash}"
                             match metadata.SourceFormat.Frontend with
                             | SourceFrontend.Stack -> Choice1Of2(stackTest file source metadata.Name)
-                            | SourceFrontend.Flow -> Choice2Of2(flowTest file source metadata.Name))
+                            | SourceFrontend.Flow -> Choice2Of2(flowTest metadata.SourceFormat.Version file source metadata.Name))
                     let parsedExamples =
                         List.zip metadata.Examples revisionContent.ExampleSources
                         |> List.map (fun (reference, source) ->
                             let file = $"{sourceFile}/example:{reference.Hash}"
                             match metadata.SourceFormat.Frontend with
                             | SourceFrontend.Stack -> Choice1Of2(stackExample file source metadata.Name)
-                            | SourceFrontend.Flow -> Choice2Of2(flowExample file source metadata.Name))
+                            | SourceFrontend.Flow -> Choice2Of2(flowExample metadata.SourceFormat.Version file source metadata.Name))
                     let testNames =
                         parsedTests
                         |> List.map (function Choice1Of2 test -> test.Name | Choice2Of2 test -> test.CaseName)
@@ -1636,6 +1642,8 @@ module Runtime =
                         let ownerId = WordId metadata.WordId
                         let sourceDocument: FlowLowering.FlowSourceDocument =
                             { OwnerName = metadata.Name
+                              SyntaxVersion = metadata.SourceFormat.Version
+                              EffectsDeclared = definition.EffectsDeclared
                               OwnerId = ownerId
                               OwnerRevision = metadata.Revision
                               Reference = metadata.Definition
@@ -1654,6 +1662,7 @@ module Runtime =
                                 let key = flowAttachmentKey ownerId test.CaseName
                                 let sourceDocument: FlowLowering.FlowAttachmentSourceDocument =
                                     { OwnerName = metadata.Name
+                                      SyntaxVersion = metadata.SourceFormat.Version
                                       OwnerId = ownerId
                                       OwnerRevision = metadata.Revision
                                       Kind = FlowLowering.FlowAttachmentKind.Test
@@ -1673,6 +1682,7 @@ module Runtime =
                                 let key = flowAttachmentKey ownerId example.CaseName
                                 let sourceDocument: FlowLowering.FlowAttachmentSourceDocument =
                                     { OwnerName = metadata.Name
+                                      SyntaxVersion = metadata.SourceFormat.Version
                                       OwnerId = ownerId
                                       OwnerRevision = metadata.Revision
                                       Kind = FlowLowering.FlowAttachmentKind.Example
@@ -1766,7 +1776,7 @@ module Runtime =
                         | SourceFrontend.Flow ->
                             let file = $"<type:{typeSource.Name}/{typeSource.Definition.Hash}>"
                             let parsed =
-                                match FlowParser.parseDocument file authored.Content with
+                                match FlowParser.parseDocumentWithVersion typeSource.SourceFormat.Version file authored.Content with
                                 | Ok document -> document
                                 | Error diagnostic -> raise (LanguageException diagnostic)
                             match parsed.Records, parsed.Scalars with
@@ -2808,6 +2818,26 @@ module Runtime =
                 | value ->
                     error "RUNTIME_FRONTEND_INVALID" "An explicit frontend selector must be a string." None None [ "stack"; "flow" ] [ flowJsonKind value ]
 
+        let selectedSyntaxVersion (arguments: JsonObject) frontend =
+            if not (arguments.ContainsKey "syntaxVersion") then 1
+            else
+                match arguments["syntaxVersion"] with
+                | :? JsonValue as value ->
+                    let mutable version = 0
+                    if not (value.TryGetValue<int>(&version)) then
+                        error "RUNTIME_SOURCE_VERSION_INVALID" "Argument 'syntaxVersion' must be an integer." None None [ "integer" ] [ flowJsonKind (value :> JsonNode) ]
+                    match frontend, version with
+                    | "stack", 1
+                    | "flow", 1
+                    | "flow", 2 -> version
+                    | "stack", _ ->
+                        error "RUNTIME_SOURCE_VERSION_UNSUPPORTED" $"Stack syntax version {version} is not supported." None None [ "1" ] [ string version ]
+                    | "flow", _ ->
+                        error "RUNTIME_SOURCE_VERSION_UNSUPPORTED" $"Flow syntax version {version} is not supported." None None [ "1"; "2" ] [ string version ]
+                    | _ -> error "RUNTIME_FRONTEND_UNSUPPORTED" $"Frontend '{frontend}' is not supported." None None [ "stack"; "flow" ] [ frontend ]
+                | value ->
+                    error "RUNTIME_SOURCE_VERSION_INVALID" "Argument 'syntaxVersion' must be an integer." None None [ "integer" ] [ flowJsonKind value ]
+
         let flowArgumentError name expected actual =
             error "FLOW_RUNTIME_INVALID_ARGUMENT" $"Flow runtime argument '{name}' must be {expected}." None None [ expected ] [ actual ]
 
@@ -2873,7 +2903,10 @@ module Runtime =
         let rejectUnknownFields path allowed (actual: string list) =
             let unknown = actual |> ordinalSort
             if not (List.isEmpty unknown) then
-                let location = if path = "" then "Flow define request" else $"Flow define attachment row '{path}'"
+                let location =
+                    if path = "" then "Flow define request"
+                    elif path = "format" then "Flow format request"
+                    else $"Flow define attachment row '{path}'"
                 let docHint =
                     if unknown |> List.exists (fun name -> name = "doc" || name = "documentation") then
                         " Documentation belongs inside Flow word source as `doc \"...\"`; use help topic `define` for the request schema."
@@ -2908,12 +2941,12 @@ module Runtime =
                     | _ -> ())
             | _ -> ()
 
-        let registerFlowProjectParsed (arguments: JsonObject) (document: FlowProjectDocument) =
+        let registerFlowProjectParsed (arguments: JsonObject) syntaxVersion (document: FlowProjectDocument) =
             let old = data
             let temporary = readOptionalStrictBool arguments "temporary" false
             let hasTypes = not document.Records.IsEmpty || not document.Scalars.IsEmpty
-            if document.SyntaxVersion <> 1 then
-                error "FLOW_VERSION_UNSUPPORTED" "Only Flow project syntax version 1 is supported by this runtime." None None [ "1" ] [ string document.SyntaxVersion ]
+            if document.SyntaxVersion <> syntaxVersion then
+                error "FLOW_VERSION_UNSUPPORTED" "Flow project syntax version does not match the selected syntaxVersion." None None [ string syntaxVersion ] [ string document.SyntaxVersion ]
             if document.Records.IsEmpty && document.Scalars.IsEmpty && document.Words.IsEmpty then
                 error "FLOW_PROJECT_EMPTY" "A Flow project document must declare at least one type or word." None None [ "record, type, or word declaration" ] []
             if hasTypes && temporary then
@@ -2959,14 +2992,14 @@ module Runtime =
                     let sourceObject = Storage.sourceObject StorageObjectKind.TypeDefinition content
                     let file = $"<flow-type:{parsed.Name}/{sourceObject.Reference.Hash}>"
                     let reparsed =
-                        match FlowParser.parseDocument file content with
+                        match FlowParser.parseDocumentWithVersion syntaxVersion file content with
                         | Ok value -> value
                         | Error diagnostic -> raise (LanguageException diagnostic)
                     match reparsed.Records, reparsed.Scalars, reparsed.Words, reparsed.Tests, reparsed.Examples with
                     | [ definition ], [], [], [], [] when definition.Name = parsed.Name ->
                         parsed.Name,
                         ({ Definition = definition; Status = Candidate }: RecordEntry),
-                        { SourceFormat = { Frontend = SourceFrontend.Flow; Version = 1 }
+                        { SourceFormat = { Frontend = SourceFrontend.Flow; Version = syntaxVersion }
                           Content = content
                           Reference = sourceObject.Reference
                           ValidatorTarget = None }
@@ -2978,14 +3011,14 @@ module Runtime =
                     let sourceObject = Storage.sourceObject StorageObjectKind.TypeDefinition content
                     let file = $"<flow-type:{parsed.Name}/{sourceObject.Reference.Hash}>"
                     let reparsed =
-                        match FlowParser.parseDocument file content with
+                        match FlowParser.parseDocumentWithVersion syntaxVersion file content with
                         | Ok value -> value
                         | Error diagnostic -> raise (LanguageException diagnostic)
                     match reparsed.Records, reparsed.Scalars, reparsed.Words, reparsed.Tests, reparsed.Examples with
                     | [], [ definition ], [], [], [] when definition.Name = parsed.Name ->
                         parsed.Name,
                         ({ Definition = definition; Status = Candidate }: ScalarEntry),
-                        { SourceFormat = { Frontend = SourceFrontend.Flow; Version = 1 }
+                        { SourceFormat = { Frontend = SourceFrontend.Flow; Version = syntaxVersion }
                           Content = content
                           Reference = sourceObject.Reference
                           ValidatorTarget = None }
@@ -2999,19 +3032,21 @@ module Runtime =
             let wordRows =
                 document.Words
                 |> List.map (fun parsed ->
-                    if parsed.SyntaxVersion <> 1 then
-                        error "FLOW_VERSION_UNSUPPORTED" "Only Flow word syntax version 1 is supported by this runtime." (Some parsed.Name) (Some parsed.Span) [ "1" ] [ string parsed.SyntaxVersion ]
+                    if parsed.SyntaxVersion <> syntaxVersion then
+                        error "FLOW_VERSION_UNSUPPORTED" "Flow word syntax version does not match the selected syntaxVersion." (Some parsed.Name) (Some parsed.Span) [ string syntaxVersion ] [ string parsed.SyntaxVersion ]
                     let ownerId = identities[parsed.Name]
                     let content = parsed.SourceText
                     let sourceObject = Storage.sourceObject StorageObjectKind.WordDefinition content
                     let sourceFile = $"<flow:{parsed.Name}/{revision}:{sourceObject.Reference.Hash}>"
                     let definition =
-                        match FlowParser.parseWord sourceFile content with
+                        match FlowParser.parseWordWithVersion syntaxVersion sourceFile content with
                         | Ok value when value.Name = parsed.Name -> value
                         | Ok value -> error "FLOW_RUNTIME_OWNER_MISMATCH" "A standalone Flow word source changed its declared owner during validation." (Some parsed.Name) (Some value.Span) [ parsed.Name ] [ value.Name ]
                         | Error diagnostic -> raise (LanguageException diagnostic)
                     let source: FlowLowering.FlowSourceDocument =
                         { OwnerName = definition.Name
+                          SyntaxVersion = syntaxVersion
+                          EffectsDeclared = definition.EffectsDeclared
                           OwnerId = ownerId
                           OwnerRevision = revision
                           Reference = sourceObject.Reference
@@ -3046,12 +3081,13 @@ module Runtime =
                     let sourceObject = Storage.sourceObject StorageObjectKind.TestDefinition content
                     let sourceFile = $"<flow:{parsed.Word}/{revision}>/test:{sourceObject.Reference.Hash}"
                     let definition =
-                        match FlowParser.parseTest sourceFile content with
+                        match FlowParser.parseTestWithVersion syntaxVersion sourceFile content with
                         | Ok value when value.Word = parsed.Word -> value
                         | Ok value -> error "FLOW_ATTACHMENT_OWNER_MISMATCH" "A standalone Flow test source changed its declared owner during validation." (Some parsed.Word) (Some value.Span) [ parsed.Word ] [ value.Word ]
                         | Error diagnostic -> raise (LanguageException diagnostic)
                     let source: FlowLowering.FlowAttachmentSourceDocument =
                         { OwnerName = parsed.Word
+                          SyntaxVersion = syntaxVersion
                           OwnerId = identity
                           OwnerRevision = revision
                           Kind = FlowLowering.FlowAttachmentKind.Test
@@ -3068,12 +3104,13 @@ module Runtime =
                     let sourceObject = Storage.sourceObject StorageObjectKind.ExampleDefinition content
                     let sourceFile = $"<flow:{parsed.Word}/{revision}>/example:{sourceObject.Reference.Hash}"
                     let definition =
-                        match FlowParser.parseExample sourceFile content with
+                        match FlowParser.parseExampleWithVersion syntaxVersion sourceFile content with
                         | Ok value when value.Word = parsed.Word -> value
                         | Ok value -> error "FLOW_ATTACHMENT_OWNER_MISMATCH" "A standalone Flow example source changed its declared owner during validation." (Some parsed.Word) (Some value.Span) [ parsed.Word ] [ value.Word ]
                         | Error diagnostic -> raise (LanguageException diagnostic)
                     let source: FlowLowering.FlowAttachmentSourceDocument =
                         { OwnerName = parsed.Word
+                          SyntaxVersion = syntaxVersion
                           OwnerId = identity
                           OwnerRevision = revision
                           Kind = FlowLowering.FlowAttachmentKind.Example
@@ -3149,15 +3186,15 @@ module Runtime =
                 payload["examples"] <- jsonNode (newExamples |> List.map (fun (_, attachment) -> attachment.Source.CaseName) |> List.sort)
             success "defined" "Flow project declarations, attached cases, refined type metadata, and bindings validated atomically." (Some payload)
 
-        let registerFlowParsedLegacy (arguments: JsonObject) =
+        let registerFlowParsedLegacy (arguments: JsonObject) syntaxVersion =
             let old = data
             let source = requiredFlowString arguments "source"
             let parsedWord =
-                match FlowParser.parseWord "<flow-definition>" source with
+                match FlowParser.parseWordWithVersion syntaxVersion "<flow-definition>" source with
                 | Ok definition -> definition
                 | Error diagnostic -> raise (LanguageException diagnostic)
-            if parsedWord.SyntaxVersion <> 1 then
-                error "FLOW_VERSION_UNSUPPORTED" "Only Flow syntax version 1 is supported by this runtime." (Some parsedWord.Name) (Some parsedWord.Span) [ "1" ] [ string parsedWord.SyntaxVersion ]
+            if parsedWord.SyntaxVersion <> syntaxVersion then
+                error "FLOW_VERSION_UNSUPPORTED" "Flow word syntax version does not match the selected syntaxVersion." (Some parsedWord.Name) (Some parsedWord.Span) [ string syntaxVersion ] [ string parsedWord.SyntaxVersion ]
 
             let replace = readOptionalStrictBool arguments "replace" false
             let temporary = readOptionalStrictBool arguments "temporary" false
@@ -3196,13 +3233,14 @@ module Runtime =
                     let sourceObject = Storage.sourceObject StorageObjectKind.TestDefinition caseSource
                     let file = $"<flow:{parsedWord.Name}/{revision}>/test:{sourceObject.Reference.Hash}"
                     let definition =
-                        match FlowParser.parseTest file caseSource with
+                        match FlowParser.parseTestWithVersion syntaxVersion file caseSource with
                         | Ok value -> value
                         | Error diagnostic -> raise (LanguageException diagnostic)
                     if definition.Word <> parsedWord.Name then
                         error "FLOW_ATTACHMENT_OWNER_MISMATCH" "A Flow test source must name the word being defined." (Some parsedWord.Name) (Some definition.Span) [ parsedWord.Name ] [ definition.Word ]
                     let sourceDocument: FlowLowering.FlowAttachmentSourceDocument =
                         { OwnerName = parsedWord.Name
+                          SyntaxVersion = syntaxVersion
                           OwnerId = ownerId
                           OwnerRevision = revision
                           Kind = FlowLowering.FlowAttachmentKind.Test
@@ -3217,13 +3255,14 @@ module Runtime =
                     let sourceObject = Storage.sourceObject StorageObjectKind.ExampleDefinition caseSource
                     let file = $"<flow:{parsedWord.Name}/{revision}>/example:{sourceObject.Reference.Hash}"
                     let definition =
-                        match FlowParser.parseExample file caseSource with
+                        match FlowParser.parseExampleWithVersion syntaxVersion file caseSource with
                         | Ok value -> value
                         | Error diagnostic -> raise (LanguageException diagnostic)
                     if definition.Word <> parsedWord.Name then
                         error "FLOW_ATTACHMENT_OWNER_MISMATCH" "A Flow example source must name the word being defined." (Some parsedWord.Name) (Some definition.Span) [ parsedWord.Name ] [ definition.Word ]
                     let sourceDocument: FlowLowering.FlowAttachmentSourceDocument =
                         { OwnerName = parsedWord.Name
+                          SyntaxVersion = syntaxVersion
                           OwnerId = ownerId
                           OwnerRevision = revision
                           Kind = FlowLowering.FlowAttachmentKind.Example
@@ -3240,6 +3279,10 @@ module Runtime =
             rejectDuplicateCases "example" parsedExamples
 
             let currentFlowWord = old.FlowWords.TryFind(wordIdText ownerId)
+            match currentFlowWord with
+            | Some authored when authored.Source.SyntaxVersion <> syntaxVersion && not (arguments.ContainsKey "syntaxVersion") ->
+                error "FLOW_SOURCE_VERSION_CHANGE_REQUIRES_SELECTION" "Replacing a Flow word with a different syntax version requires an explicit syntaxVersion selector." (Some parsedWord.Name) (Some parsedWord.Span) [ string authored.Source.SyntaxVersion; "explicit syntaxVersion" ] [ string syntaxVersion ]
+            | _ -> ()
             let currentFlowTests = old.FlowTests |> Map.filter (fun _ item -> item.Source.OwnerId = ownerId)
             let currentFlowExamples = old.FlowExamples |> Map.filter (fun _ item -> item.Source.OwnerId = ownerId)
             let suppliedTestNames = parsedTests |> List.map fst |> Set.ofList
@@ -3281,6 +3324,8 @@ module Runtime =
                 |> Option.bind (fun _ -> oldDefinitionBindings)
             let flowSource: FlowLowering.FlowSourceDocument =
                 { OwnerName = parsedWord.Name
+                  SyntaxVersion = syntaxVersion
+                  EffectsDeclared = parsedWord.EffectsDeclared
                   OwnerId = ownerId
                   OwnerRevision = revision
                   Reference = definitionObject.Reference
@@ -3387,7 +3432,7 @@ module Runtime =
             payload["examples"] <- jsonNode (executable.State.FlowExamples |> Map.toList |> List.map snd |> List.filter (fun item -> item.Source.OwnerId = ownerId) |> List.map (fun item -> item.Source.CaseName) |> List.sort)
             success "defined" "Flow definition, tests, examples, and retained source bindings validated and staged." (Some payload)
 
-        let registerFlowAttachmentsOnly (arguments: JsonObject) (document: FlowProjectDocument) =
+        let registerFlowAttachmentsOnly (arguments: JsonObject) syntaxVersion (document: FlowProjectDocument) =
             let old = data
             let attachmentSources =
                 (document.Tests |> List.map (fun item -> item.Word))
@@ -3409,6 +3454,13 @@ module Runtime =
                 |> Option.defaultWith (fun () -> error "FLOW_ATTACHMENT_OWNER_NOT_FOUND" $"Flow attachment owner '{ownerName}' is not a current user word." (Some ownerName) None [ "existing Flow user word" ] [])
             if ownerWord.Status = Primitive || ownerWord.Builtin.IsSome then
                 error "FLOW_ATTACHMENT_OWNER_NOT_FLOW_WORD" $"Flow attachment owner '{ownerName}' is a primitive or generated word and cannot own authored Flow cases." (Some ownerName) None [ "user-authored Flow word" ] [ ownerName ]
+            let ownerSyntaxVersion =
+                old.WordIds.TryFind ownerName
+                |> Option.bind (fun identity -> old.FlowWords.TryFind identity)
+                |> Option.map (fun authored -> authored.Definition.SyntaxVersion)
+                |> Option.defaultWith (fun () -> error "FLOW_ATTACHMENT_OWNER_NOT_FLOW_WORD" $"Flow attachment owner '{ownerName}' has no Flow source version." (Some ownerName) None [ "Flow-authored word" ] [])
+            if ownerSyntaxVersion <> syntaxVersion then
+                error "FLOW_ATTACHMENT_VERSION_MISMATCH" "Flow attachment syntaxVersion must match the owner word's source version." (Some ownerName) None [ string ownerSyntaxVersion ] [ string syntaxVersion ]
             let ownerIdText =
                 old.WordIds.TryFind ownerName
                 |> Option.defaultWith (fun () -> error "FLOW_ATTACHMENT_OWNER_NOT_FLOW_WORD" $"Flow attachment owner '{ownerName}' has no stable user-word identity." (Some ownerName) None [ "existing Flow user word" ] [])
@@ -3455,21 +3507,21 @@ module Runtime =
             if not replace && not hasExpectedRevision then
                 routed["replace"] <- jbool true
                 routed["expectedRevision"] <- jint ownerWord.Revision
-            registerFlowParsedLegacy routed
+            registerFlowParsedLegacy routed syntaxVersion
 
-        let registerFlowParsed (arguments: JsonObject) =
+        let registerFlowParsed (arguments: JsonObject) syntaxVersion =
             let source = requiredFlowString arguments "source"
             let document =
-                match FlowParser.parseDocument "<flow-project>" source with
+                match FlowParser.parseDocumentWithVersion syntaxVersion "<flow-project>" source with
                 | Ok value -> value
                 | Error diagnostic -> raise (LanguageException diagnostic)
             if document.Records.IsEmpty && document.Scalars.IsEmpty && document.Words.IsEmpty && (not document.Tests.IsEmpty || not document.Examples.IsEmpty) then
-                registerFlowAttachmentsOnly arguments document
+                registerFlowAttachmentsOnly arguments syntaxVersion document
             elif document.Records.IsEmpty && document.Scalars.IsEmpty && document.Words.Length = 1 then
                 if document.Tests.IsEmpty && document.Examples.IsEmpty then
                     // Preserve the byte-for-byte legacy source object for the established
                     // one-word request shape, including comments and trailing whitespace.
-                    registerFlowParsedLegacy arguments
+                    registerFlowParsedLegacy arguments syntaxVersion
                 else
                     // Inline cases are a convenient document form for a single owner. The
                     // existing owner CAS implementation remains the authority for updates.
@@ -3480,9 +3532,9 @@ module Runtime =
                     routed["source"] <- jstr document.Words.Head.SourceText
                     routed["tests"] <- jsonNode ((flowSourceStrings arguments "tests") @ (document.Tests |> List.map (fun test -> test.SourceText)))
                     routed["examples"] <- jsonNode ((flowSourceStrings arguments "examples") @ (document.Examples |> List.map (fun example -> example.SourceText)))
-                    registerFlowParsedLegacy routed
+                    registerFlowParsedLegacy routed syntaxVersion
             else
-                registerFlowProjectParsed arguments document
+                registerFlowProjectParsed arguments syntaxVersion document
 
         let discoveryArgumentKind (value: JsonNode) : string =
             match value with
@@ -3583,14 +3635,16 @@ module Runtime =
                 | "eval" ->
                     let structured = readOptionalStrictBool args "structured" false
                     let code = readString args "code" ""
-                    match selectedFrontend args with
+                    let frontend = selectedFrontend args
+                    let syntaxVersion = selectedSyntaxVersion args frontend
+                    match frontend with
                     | "flow" ->
-                        match FlowParser.parseExpression "<flow-eval>" code with
+                        match FlowParser.parseExpressionWithVersion syntaxVersion "<flow-eval>" code with
                         | Error diagnostic -> response false "error" (Diagnostics.render diagnostic) None (Some diagnostic)
                         | Ok expression ->
                             let snapshot = currentSnapshot ()
                             let flowContext = snapshot.FlowContext |> Option.defaultWith (fun () -> error "FLOW_RUNTIME_CONTEXT_MISSING" "The active runtime snapshot has no Flow context." None None [] [])
-                            let compiled = FlowLowering.compileExpression flowContext expression
+                            let compiled = FlowLowering.compileExpressionWithVersion syntaxVersion flowContext expression
                             let evalSnapshot = { snapshot with Program = compiled.Program }
                             let trace = createTrace None virtualFiles
                             let result = executeIRBody evalSnapshot "<flow-eval>" trace compiled.Body
@@ -3630,10 +3684,12 @@ module Runtime =
                                 match structuredStack with Some value -> dataNode["structuredStack"] <- value | None -> ()
                                 success "eval" (result |> List.map Types.formatValue |> String.concat " ") (Some dataNode)
                 | "define" ->
-                    match selectedFrontend args with
+                    let frontend = selectedFrontend args
+                    let syntaxVersion = selectedSyntaxVersion args frontend
+                    match frontend with
                     | "flow" ->
                         validateFlowDefineArguments args
-                        registerFlowParsed args
+                        registerFlowParsed args syntaxVersion
                     | _ ->
                         let source = readString args "source" (readString args "code" "")
                         match Parser.parse "<definition>" source with
@@ -3641,6 +3697,30 @@ module Runtime =
                         | Ok parsed ->
                             registerParsed parsed (readBool args "temporary" false)
                             success "defined" "Definitions parsed, type checked, and staged." (Some(jsonNode (parsed.Words |> List.map (fun word -> word.Name))))
+                | "format" ->
+                    let allowed = [ "source"; "frontend"; "syntaxVersion" ]
+                    let allowedSet = Set.ofList allowed
+                    let unknown =
+                        args
+                        |> Seq.map (fun (KeyValue(key, _)) -> key)
+                        |> Seq.filter (allowedSet.Contains >> not)
+                        |> Seq.toList
+                    rejectUnknownFields "format" allowed unknown
+                    let frontend = selectedFrontend args
+                    let syntaxVersion = selectedSyntaxVersion args frontend
+                    if frontend <> "flow" then
+                        error "SOURCE_FORMAT_UNSUPPORTED" "The format operation currently accepts Flow source." None None [ "frontend flow" ] [ frontend ]
+                    let source = requiredFlowString args "source"
+                    let document =
+                        match FlowParser.parseDocumentWithVersion syntaxVersion "<flow-format>" source with
+                        | Ok value -> value
+                        | Error diagnostic -> raise (LanguageException diagnostic)
+                    let formatted = FlowSource.renderDocument document
+                    let payload = JsonObject()
+                    payload["frontend"] <- jstr frontend
+                    payload["syntaxVersion"] <- jint syntaxVersion
+                    payload["source"] <- jstr formatted
+                    success "format" "Canonical Flow source; submit it with define to stage an edit." (Some payload)
                 | "help" ->
                     match AuthoringHelp.parseRequest args with
                     | Ok request ->
@@ -3985,7 +4065,7 @@ module Runtime =
                                 data.FlowTests
                                 |> Map.map (fun _ authored ->
                                     let parsed =
-                                        match FlowParser.parseTest authored.Source.SourceFile authored.Source.Content with
+                                        match FlowParser.parseTestWithVersion authored.Source.SyntaxVersion authored.Source.SourceFile authored.Source.Content with
                                         | Ok definition -> definition
                                         | Error diagnostic -> raise (LanguageException diagnostic)
                                     let prior = requireBindings ("Flow test '" + authored.Source.OwnerName + "/" + authored.Source.CaseName + "'") authored.StoredBindings
@@ -3999,7 +4079,7 @@ module Runtime =
                                 data.FlowExamples
                                 |> Map.map (fun _ authored ->
                                     let parsed =
-                                        match FlowParser.parseExample authored.Source.SourceFile authored.Source.Content with
+                                        match FlowParser.parseExampleWithVersion authored.Source.SyntaxVersion authored.Source.SourceFile authored.Source.Content with
                                         | Ok definition -> definition
                                         | Error diagnostic -> raise (LanguageException diagnostic)
                                     let prior = requireBindings ("Flow example '" + authored.Source.OwnerName + "/" + authored.Source.CaseName + "'") authored.StoredBindings
@@ -4047,9 +4127,9 @@ module Runtime =
                                     let sourceObject = Storage.sourceObject StorageObjectKind.WordDefinition content
                                     let sourceFile = flowSourceFile ownerName revision
                                     let definition =
-                                        match FlowParser.parseWord sourceFile content with
-                                        | Ok parsed when parsed.Name = ownerName && parsed.SyntaxVersion = 1 -> parsed
-                                        | Ok parsed -> error "FLOW_REWRITE_OWNER_MISMATCH" "Rewritten Flow source did not preserve its stable owner name and syntax version." (Some ownerName) (Some parsed.Span) [ ownerName; "Flow/1" ] [ parsed.Name; string parsed.SyntaxVersion ]
+                                        match FlowParser.parseWordWithVersion authored.Source.SyntaxVersion sourceFile content with
+                                        | Ok parsed when parsed.Name = ownerName && parsed.SyntaxVersion = authored.Source.SyntaxVersion -> parsed
+                                        | Ok parsed -> error "FLOW_REWRITE_OWNER_MISMATCH" "Rewritten Flow source did not preserve its stable owner name and syntax version." (Some ownerName) (Some parsed.Span) [ ownerName; $"Flow/{authored.Source.SyntaxVersion}" ] [ parsed.Name; string parsed.SyntaxVersion ]
                                         | Error diagnostic -> raise (LanguageException diagnostic)
                                     let source =
                                         { authored.Source with
@@ -4070,8 +4150,8 @@ module Runtime =
                                     let sourceObject = Storage.sourceObject StorageObjectKind.TestDefinition content
                                     let sourceFile = flowTestSourceFile ownerName revision sourceObject.Reference
                                     let definition =
-                                        match FlowParser.parseTest sourceFile content with
-                                        | Ok parsed when parsed.Word = ownerName && parsed.CaseName = authored.Source.CaseName -> parsed
+                                        match FlowParser.parseTestWithVersion authored.Source.SyntaxVersion sourceFile content with
+                                        | Ok parsed when parsed.Word = ownerName && parsed.CaseName = authored.Source.CaseName && parsed.SyntaxVersion = authored.Source.SyntaxVersion -> parsed
                                         | Ok parsed -> error "FLOW_REWRITE_OWNER_MISMATCH" "Rewritten Flow test did not preserve its stable owner and case name." (Some(ownerName + "/" + authored.Source.CaseName)) (Some parsed.Span) [ ownerName; authored.Source.CaseName ] [ parsed.Word; parsed.CaseName ]
                                         | Error diagnostic -> raise (LanguageException diagnostic)
                                     let source =
@@ -4095,8 +4175,8 @@ module Runtime =
                                     let sourceObject = Storage.sourceObject StorageObjectKind.ExampleDefinition content
                                     let sourceFile = flowExampleSourceFile ownerName revision sourceObject.Reference
                                     let definition =
-                                        match FlowParser.parseExample sourceFile content with
-                                        | Ok parsed when parsed.Word = ownerName && parsed.CaseName = authored.Source.CaseName -> parsed
+                                        match FlowParser.parseExampleWithVersion authored.Source.SyntaxVersion sourceFile content with
+                                        | Ok parsed when parsed.Word = ownerName && parsed.CaseName = authored.Source.CaseName && parsed.SyntaxVersion = authored.Source.SyntaxVersion -> parsed
                                         | Ok parsed -> error "FLOW_REWRITE_OWNER_MISMATCH" "Rewritten Flow example did not preserve its stable owner and case name." (Some(ownerName + "/" + authored.Source.CaseName)) (Some parsed.Span) [ ownerName; authored.Source.CaseName ] [ parsed.Word; parsed.CaseName ]
                                         | Error diagnostic -> raise (LanguageException diagnostic)
                                     let source =
@@ -4335,7 +4415,7 @@ module Runtime =
                                         error "FLOW_RUNTIME_SOURCE_MISMATCH" "A Flow definition source no longer matches its immutable source reference." (Some name) None [ authored.Source.Reference.Hash ] [ definitionObject.Reference.Hash ]
                                     let sourceFile = $"<flow:{name}/{revision}>"
                                     let definition =
-                                        match FlowParser.parseWord sourceFile authored.Source.Content with
+                                        match FlowParser.parseWordWithVersion authored.Source.SyntaxVersion sourceFile authored.Source.Content with
                                         | Ok parsed when parsed.Name = name && parsed.SyntaxVersion = authored.Definition.SyntaxVersion -> parsed
                                         | Ok parsed -> error "FLOW_RUNTIME_OWNER_MISMATCH" "Flow deprecation metadata does not match the authored owner and syntax version." (Some name) (Some parsed.Span) [ name; string authored.Definition.SyntaxVersion ] [ parsed.Name; string parsed.SyntaxVersion ]
                                         | Error diagnostic -> raise (LanguageException diagnostic)

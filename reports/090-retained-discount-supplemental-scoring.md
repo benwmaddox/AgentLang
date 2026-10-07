@@ -79,17 +79,21 @@ exercise predecessor binding, not only discount behavior in an unrelated fixture
 
 ## Interpretation
 
-A passing supplemental score would establish only the unchanged output's
+A passing supplemental score establishes only the unchanged output's
 behavior on the specified cases and the checks actually recorded. It cannot
 repair the failed original verifier, establish a passing trace audit, erase
 prompt-delivery deviations or support a standardized retention-effect claim.
 The original actor used retained vocabulary, but reuse alone does not prove
 reliability gains. No token, turn, native-memory or performance inference follows.
 
-No supplemental result is recorded yet. Add actual commands, results and saved
-artifact references after implementation review and local execution.
+The completed result is recorded above and archived in phase 08. Earlier failed
+attempts below remain historical evidence; they do not supersede that result.
 
 ## Development validation before production scoring
+
+The following entries describe earlier development stages. Any statements that
+replay or review remained pending apply to that stage, before the successful
+phase-08 execution reported above. They are not the current scoring status.
 
 A read-only review of draft SHA-256
 `239b3bc3dc1d415779e3e1e474421b22447aa9a80e5beb122f82fe66d0cd3dfd`

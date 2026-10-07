@@ -21,18 +21,21 @@ module Program =
         """AgentLang CLI
 
 Usage:
-  agentlang [--project DIR] [--allow effect,...] [--clock ISO] [--frontend flow|stack]
+  agentlang [--project DIR] [--allow effect,...] [--clock ISO] [--frontend flow|stack] [--syntax-version 1|2]
   agentlang [--project DIR] [--allow effect,...] --jsonl
-  agentlang [--project DIR] [--frontend flow|stack] --eval CODE
+  agentlang [--project DIR] [--frontend flow|stack] [--syntax-version 1|2] --eval CODE
   agentlang [--project DIR] [--request JSON]
 
 The human REPL and --eval default to Flow. Select --frontend stack to use the
 legacy Stack syntax. --request and --jsonl honor request-level frontend fields
 and preserve the runtime default when a request omits one.
+Syntax version defaults to 1. Select --syntax-version 2 for fn, record properties,
+and ==. JSON requests select their own syntaxVersion; Stack supports only version 1.
 
 Human REPL commands:
   :define FILE [--replace --expected-revision N]
                      Stage declarations from a .agent file (quoted or unquoted paths)
+  :format FILE      Print canonical Flow source without changing the file or dictionary
   :words [--compact] List available words
   :describe WORD     Show a word's metadata
   :source --type TYPE Show the exact authored type declaration
@@ -84,7 +87,9 @@ Human REPL commands:
                 try (response["error"]["code"]).GetValue<string>()
                 with _ -> "error"
             Console.WriteLine($"  [{code}]")
-        if not (isNull response["data"]) then
+        if response["kind"].GetValue<string>() = "format" && not (isNull response["data"]) then
+            Console.WriteLine((response["data"]["source"]).GetValue<string>())
+        elif not (isNull response["data"]) then
             let options = JsonSerializerOptions(WriteIndented = true)
             Console.WriteLine(response["data"].ToJsonString(options))
 
@@ -166,12 +171,13 @@ Human REPL commands:
                     | unknown :: _ -> Error $"Unknown :define option '{unknown}'."
                 parseOptions (parts |> List.skip optionStart) false None
 
-    let private humanRequest (engine: Runtime.Engine) (frontend: string) (line: string) =
+    let private humanRequest (engine: Runtime.Engine) (frontend: string) (syntaxVersion: int) (line: string) =
         let trimmed = line.Trim()
         if not (trimmed.StartsWith(":", StringComparison.Ordinal)) then
             let args = newArgs ()
             args["code"] <- jsonString line
             args["frontend"] <- jsonString frontend
+            args["syntaxVersion"] <- JsonValue.Create(syntaxVersion)
             engine.Dispatch("eval", args)
         else
             let commandLine = trimmed.Substring(1).Trim()
@@ -189,6 +195,7 @@ Human REPL commands:
                 | Ok(path, replace, expectedRevision) ->
                     args["source"] <- jsonString (File.ReadAllText(Path.GetFullPath(path)))
                     args["frontend"] <- jsonString frontend
+                    args["syntaxVersion"] <- JsonValue.Create(syntaxVersion)
                     if replace then
                         args["replace"] <- JsonValue.Create(true)
                         args["expectedRevision"] <- JsonValue.Create(expectedRevision.Value)
@@ -196,7 +203,16 @@ Human REPL commands:
             | "eval" ->
                 args["code"] <- jsonString rest
                 args["frontend"] <- jsonString frontend
+                args["syntaxVersion"] <- JsonValue.Create(syntaxVersion)
                 engine.Dispatch("eval", args)
+            | "format" ->
+                match commandWords rest with
+                | Ok [ path ] ->
+                    args["source"] <- jsonString (File.ReadAllText(Path.GetFullPath(path)))
+                    args["frontend"] <- jsonString frontend
+                    args["syntaxVersion"] <- JsonValue.Create(syntaxVersion)
+                    engine.Dispatch("format", args)
+                | _ -> commandError "CLI_INVALID_COMMAND" ":format requires one file path."
             | "search" ->
                 args["query"] <- jsonString rest
                 engine.Dispatch("search", args)
@@ -210,6 +226,7 @@ Human REPL commands:
                 args["effect"] <- jsonString rest
                 engine.Dispatch(command, args)
             | "help" ->
+                args["syntaxVersion"] <- JsonValue.Create(syntaxVersion)
                 match commandWords rest with
                 | Error message -> commandError "CLI_INVALID_COMMAND" message
                 | Ok [] -> engine.Dispatch("help", args)
@@ -319,17 +336,17 @@ Human REPL commands:
 
     let private flowDefinitionSource (source: string) =
         match firstFlowSignificantLine source with
-        | Some(line, marker) when line.StartsWith("temp word ", StringComparison.Ordinal) -> source.Remove(marker, "temp ".Length), true
+        | Some(line, marker) when line.StartsWith("temp word ", StringComparison.Ordinal) || line.StartsWith("temp fn ", StringComparison.Ordinal) -> source.Remove(marker, "temp ".Length), true
         | _ -> source, false
 
     let private flowStartsWithDeclaration (source: string) =
         match firstFlowSignificantLine source |> Option.map fst with
         | None -> false
         | Some line ->
-            [ "record "; "type "; "word "; "test "; "example "; "temp word " ]
+            [ "record "; "type "; "word "; "fn "; "test "; "example "; "temp word "; "temp fn " ]
             |> List.exists (fun prefix -> line.StartsWith(prefix, StringComparison.Ordinal))
 
-    let private readFlowSubmission (firstLine: string) =
+    let private readFlowSubmission syntaxVersion (firstLine: string) =
         // Keep this in sync with FlowParser's hard source-size guard. Truncating
         // to one unit beyond the parser limit makes it return FLOW_SOURCE_LIMIT
         // without letting a continuation grow an unbounded in-memory buffer.
@@ -358,11 +375,11 @@ Human REPL commands:
             isDefinition <- flowStartsWithDeclaration currentSource
             let incomplete =
                 if isDefinition then
-                    match FlowParser.parseDocument "<repl>" text with
+                    match FlowParser.parseDocumentWithVersion syntaxVersion "<repl>" text with
                     | Error diagnostic -> diagnostic.Code = "FLOW_INCOMPLETE_INPUT"
                     | Ok _ -> false
                 else
-                    match FlowParser.parseExpression "<repl>" text with
+                    match FlowParser.parseExpressionWithVersion syntaxVersion "<repl>" text with
                     | Error diagnostic -> diagnostic.Code = "FLOW_INCOMPLETE_INPUT"
                     | Ok _ -> false
             if incomplete then
@@ -405,11 +422,11 @@ Human REPL commands:
                     | _ -> ()
             { Source = source.ToString(); IsDefinition = declaration; PendingLine = None }
 
-    let private readSubmission frontend firstLine =
-        if frontend = "flow" then readFlowSubmission firstLine
+    let private readSubmission frontend syntaxVersion firstLine =
+        if frontend = "flow" then readFlowSubmission syntaxVersion firstLine
         else readStackSubmission firstLine
 
-    let private runRepl (engine: Runtime.Engine) (frontend: string) =
+    let private runRepl (engine: Runtime.Engine) (frontend: string) (syntaxVersion: int) =
         let mutable running = true
         let mutable pendingLine: string option = None
         while running do
@@ -428,7 +445,7 @@ Human REPL commands:
                 | "" -> ()
                 | _ ->
                     try
-                        let submission = readSubmission frontend nextLine
+                        let submission = readSubmission frontend syntaxVersion nextLine
                         pendingLine <- submission.PendingLine
                         let response =
                             if submission.IsDefinition then
@@ -436,10 +453,11 @@ Human REPL commands:
                                 let definitionSource, temporary = flowDefinitionSource submission.Source
                                 args["source"] <- jsonString definitionSource
                                 args["frontend"] <- jsonString frontend
+                                args["syntaxVersion"] <- JsonValue.Create(syntaxVersion)
                                 if temporary then args["temporary"] <- JsonValue.Create(true)
                                 engine.Dispatch("define", args)
                             else
-                                humanRequest engine frontend submission.Source
+                                humanRequest engine frontend syntaxVersion submission.Source
                         renderHuman response
                     with ex ->
                         Console.WriteLine($"error: {ex.Message}")
@@ -452,6 +470,8 @@ Human REPL commands:
         let mutable jsonLines = false
         let mutable frontend = "flow"
         let mutable frontendSpecified = false
+        let mutable syntaxVersion = 1
+        let mutable syntaxVersionSpecified = false
         let mutable action: Action option = None
         let mutable help = false
         let mutable problem: string option = None
@@ -489,6 +509,15 @@ Human REPL commands:
                     | Some value when value = "flow" || value = "stack" -> frontend <- value
                     | Some value -> problem <- Some($"--frontend must be 'flow' or 'stack', not '{value}'.")
                     | None -> ()
+            | "--syntax-version" ->
+                if syntaxVersionSpecified then problem <- Some("--syntax-version may only be specified once.")
+                else
+                    syntaxVersionSpecified <- true
+                    match requireValue "--syntax-version" with
+                    | Some "1" -> syntaxVersion <- 1
+                    | Some "2" -> syntaxVersion <- 2
+                    | Some value -> problem <- Some($"--syntax-version must be '1' or '2', not '{value}'.")
+                    | None -> ()
             | "--jsonl" -> jsonLines <- true
             | "--eval" ->
                 match requireValue "--eval" with
@@ -514,11 +543,14 @@ Human REPL commands:
         | None when jsonLines && action.IsSome ->
             Console.Error.WriteLine("--jsonl reads requests from standard input; remove --eval or --request.")
             2
-        | None when frontendSpecified && jsonLines ->
+        | None when (frontendSpecified || syntaxVersionSpecified) && jsonLines ->
             Console.Error.WriteLine("--frontend selects human REPL and --eval syntax; JSONL requests must select their own frontend.")
             2
-        | None when frontendSpecified && (match action with Some(Request _) -> true | _ -> false) ->
+        | None when (frontendSpecified || syntaxVersionSpecified) && (match action with Some(Request _) -> true | _ -> false) ->
             Console.Error.WriteLine("--frontend cannot be combined with --request; the request must select its own frontend.")
+            2
+        | None when frontend = "stack" && syntaxVersion <> 1 ->
+            Console.Error.WriteLine("The Stack frontend supports only --syntax-version 1.")
             2
         | None ->
             let engine = Runtime.Engine(projectDirectory, capabilities, ?clockValue = clockValue)
@@ -531,6 +563,7 @@ Human REPL commands:
                     let args = newArgs ()
                     args["code"] <- jsonString code
                     args["frontend"] <- jsonString frontend
+                    args["syntaxVersion"] <- JsonValue.Create(syntaxVersion)
                     let response = engine.Dispatch("eval", args)
                     renderHuman response
                     if response["ok"].GetValue<bool>() then 0 else 1
@@ -539,5 +572,5 @@ Human REPL commands:
                     renderHuman response
                     if response["ok"].GetValue<bool>() then 0 else 1
                 | None ->
-                    runRepl engine frontend
+                    runRepl engine frontend syntaxVersion
                     0

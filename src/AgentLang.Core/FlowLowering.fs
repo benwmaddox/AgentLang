@@ -70,6 +70,10 @@ module FlowLowering =
         { OwnerName: string
           OwnerId: WordId
           OwnerRevision: int
+          SyntaxVersion: int
+          /// Declaration shape retained beside the effective Core effect set.
+          /// Flow/2 distinguishes an omitted pure clause from `effects none`.
+          EffectsDeclared: bool
           Reference: SourceRef
           SourceFile: string
           Content: string }
@@ -89,6 +93,7 @@ module FlowLowering =
         | Direct
         | AbsoluteRoot
         | DotStage of string
+        | PropertyAccess of string
         | StaticCallback of string * FlowWordReferenceQualification
 
     [<RequireQualifiedAccess>]
@@ -137,6 +142,7 @@ module FlowLowering =
         { OwnerName: string
           OwnerId: WordId
           OwnerRevision: int
+          SyntaxVersion: int
           Kind: FlowAttachmentKind
           CaseName: string
           Reference: SourceRef
@@ -309,6 +315,8 @@ module FlowLowering =
         | FlowExpression.Call(_, _, span)
         | FlowExpression.RootCall(_, _, span)
         | FlowExpression.DotCall(_, _, _, span)
+        | FlowExpression.Property(_, _, span)
+        | FlowExpression.Equality(_, _, span)
         | FlowExpression.If(_, _, _, span)
         | FlowExpression.Container(_, _, _, span)
         | FlowExpression.MatchOption(_, _, _, span)
@@ -415,6 +423,16 @@ module FlowLowering =
 
     let private exactCandidateFor (state: LoweringState) name =
         state.Signatures.TryFind name
+
+    let private fieldAccessorCandidate (state: LoweringState) recordName fieldName span =
+        state.Signatures
+        |> Map.toSeq
+        |> Seq.tryPick (fun (_, candidate) ->
+            match candidate.Kind with
+            | SignatureKind.Generated(RecordAccessor(owner, field)) when owner = recordName && field = fieldName -> Some candidate
+            | _ -> None)
+        |> Option.defaultWith (fun () ->
+            fail "FLOW_PROPERTY_ACCESSOR_MISSING" "A declared record field has no generated accessor in the compiler catalog." (Some recordName) (Some span) [ fieldName ] [])
 
     let private validateClosedTypeArgument (context: Context) (argument: FlowTypeArgument) =
         let known = knownTypes context
@@ -743,6 +761,28 @@ module FlowLowering =
             | _ ->
                 let _, _, outputs = selectCallOutputs context state environment stage (Some receiverType) arguments span
                 outputs
+        | FlowExpression.Property(receiver, fieldName, propertySpan) ->
+            let receiverType = inferExpression context state environment receiver
+            match receiverType with
+            | TNamed recordName ->
+                match context.CompilerContext.Records.TryFind recordName with
+                | None ->
+                    fail "FLOW_PROPERTY_REQUIRES_RECORD" "Flow/2 property access is defined only for declared record types." None (Some propertySpan) [ "record type" ] [ Types.format receiverType ]
+                | Some record ->
+                    match record.Fields |> List.tryFind (fun field -> field.Name = fieldName) with
+                    | None ->
+                        fail "FLOW_PROPERTY_UNKNOWN_FIELD" $"Record '{recordName}' has no field named '{fieldName}'." None (Some propertySpan)
+                            (record.Fields |> List.map (fun field -> field.Name)) [ fieldName ]
+                    | Some _ ->
+                        let accessor = fieldAccessorCandidate state recordName fieldName propertySpan
+                        let _, _, outputs = selectCallOutputs context state environment accessor.Name (Some receiverType) [] propertySpan
+                        outputs
+            | actual ->
+                fail "FLOW_PROPERTY_REQUIRES_RECORD" "Flow/2 property access is defined only for declared record types." None (Some propertySpan) [ "record type" ] [ Types.format actual ]
+        | FlowExpression.Equality(left, right, equalitySpan) ->
+            let arguments = [ FlowArgument.Positional left; FlowArgument.Positional right ]
+            let _, _, outputs = selectCallOutputs context state environment "equals" None arguments equalitySpan
+            outputs
         | FlowExpression.Container(kind, typeArguments, payload, constructorSpan) ->
             let types = constructorTypeArguments context kind typeArguments constructorSpan
             let outputType, requiredPayloadType =
@@ -879,6 +919,7 @@ module FlowLowering =
         | FlowCallForm.Direct -> FlowAstPathSegment.CallArgument index
         | FlowCallForm.AbsoluteRoot -> FlowAstPathSegment.RootCallArgument index
         | FlowCallForm.DotStage _ -> FlowAstPathSegment.DotArgument index
+        | FlowCallForm.PropertyAccess _ -> invalidArg (nameof form) "Record property accesses do not have explicit call arguments."
         | FlowCallForm.StaticCallback _ -> invalidArg (nameof form) "Static callbacks do not lower through ordinary argument binding."
 
     let private callEvent path form requestedName candidate span =
@@ -902,13 +943,13 @@ module FlowLowering =
             | Some reference -> rejectWordReferenceContext reference
             | None -> ()
             let candidate, bound, _ = selectCallOutputs context state environment name None arguments callSpan
-            lowerResolvedCall context state environment path FlowCallForm.Direct name candidate bound None arguments callSpan
+            lowerResolvedCall context state environment path FlowCallForm.Direct name candidate bound None arguments callSpan (argumentPath FlowCallForm.Direct)
         | FlowExpression.RootCall(target, arguments, callSpan) ->
             match callbackReferenceIn arguments with
             | Some reference -> rejectWordReferenceContext reference
             | None -> ()
             let candidate, bound, _ = selectRootCallOutputs context state environment target arguments callSpan
-            lowerResolvedCall context state environment path FlowCallForm.AbsoluteRoot target.Name candidate bound None arguments callSpan
+            lowerResolvedCall context state environment path FlowCallForm.AbsoluteRoot target.Name candidate bound None arguments callSpan (argumentPath FlowCallForm.AbsoluteRoot)
         | FlowExpression.DotCall(receiver, stage, arguments, callSpan) ->
             match listCallbackOperation stage, arguments with
             | _, [ FlowArgument.Positional seed; FlowArgument.WordReference reference ] when stage = "fold" ->
@@ -955,7 +996,32 @@ module FlowLowering =
             | _ ->
                 let receiverType = inferExpression context state environment receiver
                 let candidate, bound, _ = selectCallOutputs context state environment stage (Some receiverType) arguments callSpan
-                lowerResolvedCall context state environment path (FlowCallForm.DotStage stage) stage candidate bound (Some receiver) arguments callSpan
+                lowerResolvedCall context state environment path (FlowCallForm.DotStage stage) stage candidate bound (Some receiver) arguments callSpan (argumentPath (FlowCallForm.DotStage stage))
+        | FlowExpression.Property(receiver, fieldName, propertySpan) ->
+            let receiverType = inferExpression context state environment receiver
+            let recordName =
+                match receiverType with
+                | TNamed name when context.CompilerContext.Records.ContainsKey name -> name
+                | TNamed name ->
+                    fail "FLOW_PROPERTY_REQUIRES_RECORD" "Flow/2 property access is defined only for declared record types." None (Some propertySpan) [ "record type" ] [ name ]
+                | actual ->
+                    fail "FLOW_PROPERTY_REQUIRES_RECORD" "Flow/2 property access is defined only for declared record types." None (Some propertySpan) [ "record type" ] [ Types.format actual ]
+            let record = context.CompilerContext.Records[recordName]
+            if not (record.Fields |> List.exists (fun field -> field.Name = fieldName)) then
+                fail "FLOW_PROPERTY_UNKNOWN_FIELD" $"Record '{recordName}' has no field named '{fieldName}'." None (Some propertySpan)
+                    (record.Fields |> List.map (fun field -> field.Name)) [ fieldName ]
+            let accessor = fieldAccessorCandidate state recordName fieldName propertySpan
+            let candidate, bound, _ = selectCallOutputs context state environment accessor.Name (Some receiverType) [] propertySpan
+            lowerResolvedCall context state environment path (FlowCallForm.PropertyAccess fieldName) fieldName candidate bound (Some receiver) [] propertySpan (argumentPath (FlowCallForm.PropertyAccess fieldName))
+        | FlowExpression.Equality(left, right, equalitySpan) ->
+            let arguments = [ FlowArgument.Positional left; FlowArgument.Positional right ]
+            let candidate, bound, _ = selectCallOutputs context state environment "equals" None arguments equalitySpan
+            let equalityOperandPath index =
+                match index with
+                | 0 -> FlowAstPathSegment.EqualityLeft
+                | 1 -> FlowAstPathSegment.EqualityRight
+                | _ -> failwith "validated equality operand index is outside the binary operator"
+            lowerResolvedCall context state environment path FlowCallForm.Direct "equals" candidate bound None arguments equalitySpan equalityOperandPath
         | FlowExpression.Container(kind, typeArguments, payload, constructorSpan) ->
             inferExpression context state environment expression |> ignore
             let payloadFragment = payload |> Option.map (lowerFlowExpression context state environment (extendPath path FlowAstPathSegment.ContainerPayload))
@@ -998,7 +1064,7 @@ module FlowLowering =
             { Expressions = conditionFragment.Expressions @ [ If([ thenScope ], [ elseScope ], ifSpan) ]
               CallEvents = conditionFragment.CallEvents @ thenFragment.CallEvents @ elseFragment.CallEvents }
 
-    and private lowerResolvedCall context state environment path form requestedName candidate (bound: BoundArguments) receiver arguments callSpan =
+    and private lowerResolvedCall context state environment path form requestedName candidate (bound: BoundArguments) receiver arguments callSpan argumentPathForIndex =
         let argumentFormalIndexes =
             let offset = if receiver.IsSome then 1 else 0
             let mutable positional = offset
@@ -1012,8 +1078,11 @@ module FlowLowering =
                     | _ -> -1
                 | FlowArgument.WordReference reference -> rejectWordReferenceContext reference)
         let targetName = candidate.Name
-        let receiverPath = extendPath path FlowAstPathSegment.DotReceiver
-        let valuePath index = extendPath path (argumentPath form index)
+        let receiverPath =
+            match form with
+            | FlowCallForm.PropertyAccess _ -> extendPath path FlowAstPathSegment.PropertyReceiver
+            | _ -> extendPath path FlowAstPathSegment.DotReceiver
+        let valuePath index = extendPath path (argumentPathForIndex index)
         let lowerArgument index = function
             | FlowArgument.Positional value | FlowArgument.Named(_, value, _) ->
                 lowerFlowExpression context state environment (valuePath index) value
@@ -1214,6 +1283,12 @@ module FlowLowering =
         | FlowCallForm.StaticCallback("each", _) -> match operation with | IrOperation.ListEach _ -> true | _ -> false
         | FlowCallForm.StaticCallback("fold", _) -> match operation with | IrOperation.ListFold _ -> true | _ -> false
         | FlowCallForm.StaticCallback _ -> false
+        | FlowCallForm.PropertyAccess _ ->
+            match candidate.Kind, operation with
+            // The call site is authored as a property read, but the compiler
+            // specializes the exact generated accessor target to GetRecordField.
+            | SignatureKind.Generated(RecordAccessor _), IrOperation.GetRecordField _ -> true
+            | _ -> false
         | _ ->
             match candidate.Kind, operation with
             | SignatureKind.Generated(RecordConstructor _), IrOperation.MakeRecord _ -> true
@@ -1230,6 +1305,9 @@ module FlowLowering =
         | FlowCallForm.StaticCallback("each", _) -> "list-each"
         | FlowCallForm.StaticCallback("fold", _) -> "list-fold"
         | FlowCallForm.StaticCallback _ -> "invalid-list-callback"
+        // The owner-site operation calls a generated accessor; the accessor's
+        // own implementation site is separately marked as a record field.
+        | FlowCallForm.PropertyAccess _ -> "call"
         | _ -> "call"
 
     let private reconcileCallEvents (program: VerifiedIrProgram) ownerName ownerId ownerRevision (events: FlowCallEvent list) =
@@ -1364,8 +1442,11 @@ module FlowLowering =
         if actualReference <> document.Reference then
             fail "FLOW_SOURCE_HASH_MISMATCH" "The supplied Flow source reference does not match the exact strict UTF-8 source bytes." (Some document.OwnerName) None
                 [ actualReference.Hash ] [ document.Reference.Hash ]
-        match FlowParser.parseWord document.SourceFile document.Content with
-        | Ok definition when definition.Name = document.OwnerName -> definition
+        match FlowParser.parseWordWithVersion document.SyntaxVersion document.SourceFile document.Content with
+        | Ok definition when definition.Name = document.OwnerName && definition.EffectsDeclared = document.EffectsDeclared -> definition
+        | Ok definition when definition.Name = document.OwnerName ->
+            fail "FLOW_SOURCE_EFFECTS_DECLARATION_MISMATCH" "The Flow source's explicit-effects shape differs from the host-retained source metadata." (Some document.OwnerName) (Some definition.Span)
+                [ string document.EffectsDeclared ] [ string definition.EffectsDeclared ]
         | Ok definition ->
             fail "FLOW_SOURCE_OWNER_NAME_MISMATCH" "The parsed Flow source word name differs from its host-declared owner name." (Some document.OwnerName) (Some definition.Span)
                 [ document.OwnerName ] [ definition.Name ]
@@ -1385,6 +1466,11 @@ module FlowLowering =
             | FlowExpression.DotCall(receiver, stage, arguments, _) ->
                 walkExpression (extendPath path FlowAstPathSegment.DotReceiver) receiver
                 arguments |> List.iteri (fun index argument -> walkArgument path (FlowCallForm.DotStage stage) index argument)
+            | FlowExpression.Property(receiver, _, _) ->
+                walkExpression (extendPath path FlowAstPathSegment.PropertyReceiver) receiver
+            | FlowExpression.Equality(left, right, _) ->
+                walkExpression (extendPath path FlowAstPathSegment.EqualityLeft) left
+                walkExpression (extendPath path FlowAstPathSegment.EqualityRight) right
             | FlowExpression.If(condition, thenStatements, elseStatements, _) ->
                 walkExpression (extendPath path FlowAstPathSegment.IfCondition) condition
                 walkStatements (extendPath path (FlowAstPathSegment.IfThenStatement 0)) thenStatements
@@ -1438,6 +1524,13 @@ module FlowLowering =
                 add role path span
                 walkExpression role (extendPath path FlowAstPathSegment.DotReceiver) receiver
                 arguments |> List.iteri (fun index argument -> walkArgument role path (FlowCallForm.DotStage stage) index argument)
+            | FlowExpression.Property(receiver, _, span) ->
+                add role path span
+                walkExpression role (extendPath path FlowAstPathSegment.PropertyReceiver) receiver
+            | FlowExpression.Equality(left, right, span) ->
+                add role path span
+                walkExpression role (extendPath path FlowAstPathSegment.EqualityLeft) left
+                walkExpression role (extendPath path FlowAstPathSegment.EqualityRight) right
             | FlowExpression.If(condition, thenStatements, elseStatements, _) ->
                 walkExpression role (extendPath path FlowAstPathSegment.IfCondition) condition
                 walkStatements role (extendPath path (FlowAstPathSegment.IfThenStatement 0)) thenStatements
@@ -1532,26 +1625,31 @@ module FlowLowering =
                 else diagnostic.Message + " Flow AST path(s): " + pathText + "."
             raise (LanguageException { diagnostic with Word = Some flowWord.Name; Message = message })
 
-    let private lowerExpressionBody context expression : FlowLoweredExpression =
+    let private lowerExpressionBody syntaxVersion context expression : FlowLoweredExpression =
         let state = freshState context
         inferExpression context state Map.empty expression |> ignore
         let lowered = lowerFlowExpression context state Map.empty (FlowAstPath.FlowAstPath []) expression
         { Expressions = lowered.Expressions
-          SourceText = FlowSource.renderExpression expression
-          SyntaxVersion = 1
+          SourceText = FlowSource.renderExpressionWithVersion syntaxVersion expression
+          SyntaxVersion = syntaxVersion
           Projection = makeProjection state }
 
-    let lowerExpression context expression =
-        FlowStructure.validateExpressionNesting [ expression ]
-        lowerExpressionBody context expression
+    let lowerExpressionWithVersion syntaxVersion context expression =
+        FlowStructure.validateExpressionNestingWithVersion syntaxVersion [ expression ]
+        lowerExpressionBody syntaxVersion context expression
 
-    let checkExpression context expression =
-        let lowered = lowerExpression context expression
+    let lowerExpression context expression = lowerExpressionWithVersion 1 context expression
+
+    let checkExpressionWithVersion syntaxVersion context expression =
+        let lowered = lowerExpressionWithVersion syntaxVersion context expression
         let checkedExpression = Compiler.checkExpression (knownTypes context) context.CompilerContext.Words lowered.Expressions
         lowered, checkedExpression
 
-    let compileExpression context expression : CompiledExpression =
-        let lowered, checkedExpression = checkExpression context expression
+    let checkExpression context expression =
+        checkExpressionWithVersion 1 context expression
+
+    let compileExpressionWithVersion syntaxVersion context expression : CompiledExpression =
+        let lowered, checkedExpression = checkExpressionWithVersion syntaxVersion context expression
         match checkedExpression.Stack with
         | [ _ ] -> ()
         | actual -> fail "FLOW_EXPRESSION_ARITY" "An isolated Flow expression must produce exactly one value." None (Some(spanOfExpression expression)) [ "one value" ] (actual |> List.map Types.format)
@@ -1564,13 +1662,17 @@ module FlowLowering =
           Body = body
           SiteOrigins = sourceSites bodyData.BodySourceMap }
 
+    let compileExpression context expression : CompiledExpression =
+        compileExpressionWithVersion 1 context expression
+
     type private LoweredWordArtifacts =
         { Lowered: FlowLoweredWord
           CallEvents: FlowCallEvent list }
 
     let private lowerWordWithSignaturesAndEvents context signatures retainedOrigins (flowWord: FlowWordDefinition) : LoweredWordArtifacts =
         FlowStructure.validateWordNesting flowWord
-        if flowWord.SyntaxVersion <> 1 then fail "FLOW_VERSION_UNSUPPORTED" "Only Flow syntax version 1 is supported by this compiler slice." (Some flowWord.Name) (Some flowWord.Span) [ "1" ] [ string flowWord.SyntaxVersion ]
+        if flowWord.SyntaxVersion <> 1 && flowWord.SyntaxVersion <> 2 then
+            fail "FLOW_VERSION_UNSUPPORTED" "Only Flow syntax versions 1 and 2 are supported by this compiler slice." (Some flowWord.Name) (Some flowWord.Span) [ "1"; "2" ] [ string flowWord.SyntaxVersion ]
         let names = flowWord.Parameters |> List.map (fun parameter -> parameter.Name)
         if names.Length <> (Set.ofList names).Count then fail "FLOW_DUPLICATE_PARAMETER" "Flow word parameters must have unique names." (Some flowWord.Name) (Some flowWord.Span) [] names
         let state = freshStateWith retainedOrigins signatures
@@ -2338,7 +2440,7 @@ module FlowLowering =
         compileBatchFlowSourcesCore false context inventory sourceChanges
 
     let private requireAttachmentVersion kind word span version =
-        if version <> 1 then fail "FLOW_VERSION_UNSUPPORTED" $"Only Flow syntax version 1 is supported for Flow {kind} attachments." (Some word) (Some span) [ "1" ] [ string version ]
+        if version <> 1 && version <> 2 then fail "FLOW_VERSION_UNSUPPORTED" $"Only Flow syntax versions 1 and 2 are supported for Flow {kind} attachments." (Some word) (Some span) [ "1"; "2" ] [ string version ]
 
     let private lowerTestWithEvents
         (context: Context)
@@ -2550,11 +2652,11 @@ module FlowLowering =
         let parsed =
             match document.Kind with
             | FlowAttachmentKind.Test ->
-                match FlowParser.parseTest document.SourceFile document.Content with
+                match FlowParser.parseTestWithVersion document.SyntaxVersion document.SourceFile document.Content with
                 | Ok test -> ParsedFlowTest test
                 | Error problem -> raise (LanguageException { problem with Word = Some document.OwnerName })
             | FlowAttachmentKind.Example ->
-                match FlowParser.parseExample document.SourceFile document.Content with
+                match FlowParser.parseExampleWithVersion document.SyntaxVersion document.SourceFile document.Content with
                 | Ok example -> ParsedFlowExample example
                 | Error problem -> raise (LanguageException { problem with Word = Some document.OwnerName })
         let (parsedOwner, parsedCase, parsedSpan) =

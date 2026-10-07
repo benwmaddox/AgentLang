@@ -188,7 +188,32 @@ unrelated callers, and bind successful qualification to the tested revision
 and dependency identities. The R02 result shows why complete structural
 coverage and self-authored passing expectations alone cannot prove behavior.
 
-This is an approved frontend direction, not currently implemented syntax. Keep
+Tests must also support scoped dictionary function redefinition, including for
+functions that perform IO. A test can install a temporary replacement under the
+same function identity, execute its target so nested calls see the replacement,
+and automatically discard it when the test ends. This is a typed dictionary
+overlay for one test, not a persistent replacement or only a host-provider mock.
+Require the same input/output signature and an explicit compatible effect
+contract; retain the original caller's declared effects and capability checks.
+Never modify the persistent dictionary, history or production bindings.
+Remove the overlay and restore original dispatch on success, assertion failure, runtime error,
+cancellation and test abort, and prevent leakage between tests or sessions.
+The overridden body supplies no coverage evidence for the original body;
+mocking the tested function cannot satisfy its own library qualification.
+Record active overrides separately in test diagnostics and logs. Define concrete
+test syntax and verify nested-call routing, cleanup and isolation before claiming
+this mechanism is implemented. Provider injection remains independently useful.
+Compiled callers must see the scoped replacement too. Invalidate all affected
+transitive JIT callers, inlined bodies and callback specializations; the safe
+initial policy is to run that closure interpreted against the test overlay.
+Discard test-specific code and restore original-generation dispatch afterward.
+This is controlled late binding through the dictionary with statically checked
+identities/signatures/effects, not arbitrary runtime method discovery. AOT release
+builds may pin the dictionary graph and optimize calls without a live interpreter.
+
+Flow/2 implements `fn`, record properties, typed `==`, omitted pure effects and
+explicit formatting (report 100). Module/library qualification and scoped test
+overrides below remain planned. Keep
 the authoritative semantic IR unchanged where these forms can lower to existing
 operations. Preserve existing authored sources and frontend versions across
 reload, introspection and history; define compatibility and update executable
@@ -470,7 +495,15 @@ reuses existing compact context and preserves the frozen trial evidence.
 
 Future curator agents, synthesized context, maturity levels, contracts, and a second game/simulation domain remain hypotheses for later work. They must not delay the first measured agent task.
 
-## Conditional development and release backends
+## Development and release backend target
+
+Priority clarified 2026-10-07: first produce an evidence-backed efficacy report
+on reliable edits, discovery and vocabulary reuse. Secondary is efficient LLVM
+execution through development interpreter/JIT and release AOT, with a chosen
+memory design (arenas are the main candidate). Do not require all optional
+language features or a proven comparative reliability advantage before a small
+native conformance and memory-design prototype. Safety and measured behavior
+remain prerequisites for adopting a memory model or claiming performance.
 
 Product direction clarified 2026-10-07: the eventual release runtime should be lean
 and organized around typed mailboxes and bounded processing lifetimes. The current
@@ -498,11 +531,18 @@ must use separately bounded storage or checked copies before scratch reset.
 
 Proposed allocation direction: scoped arenas with bulk reclamation for suitable phases, plus a separate lifetime strategy for retained data. Specify escape/promotion, nested value ownership, old executable generations, rollback/snapshot retention, capacity accounting and resource cleanup before native allocation. Arena reset is distinct from effect rollback and may retain backing capacity; measure allocation/cleanup time and used/reserved/peak memory. The current managed runtime does not implement arenas. See [the region contract](MEMORY-REGIONS.md) and [assessment](../reports/020-arena-allocation-assessment.md). Keep the early frontend migration ahead of general allocator implementation.
 
-If the initial experiments support the hypothesis, evolve toward separate development and release runtimes. Development retains the interpreter, REPL, introspection, and hot word replacement, and may use LLVM JIT compilation for stable or frequently executed words. Release uses LLVM AOT to emit optimized native code with a minimal runtime and ships neither the interpreter nor compiler.
+Evolve toward separate development and release runtimes as the secondary
+execution target. Development retains the interpreter, REPL, introspection,
+and hot word replacement, with LLVM JIT compilation for stable or frequently
+executed words. Release uses LLVM AOT to emit optimized native code with a
+minimal runtime and ships neither the interpreter nor compiler.
 
 The typed semantic IR is the authoritative executable representation from the initial architecture. Source and AST are authoring representations; type/effect checking lowers them to this IR before execution. Interpreter, JIT, and AOT must share type identities, numeric/error behavior, control flow, effects, and value semantics. Native performance, memory use, and startup approaching Rust or C are later evaluation goals, not current guarantees.
 
-LLVM implementation remains outside V1 and is conditional on successful experiments. The Runtime now executes the small verified semantic IR through its interpreter, as recorded in report 010. The source frontend migration must preserve that boundary without adding LLVM.
+LLVM remains outside the initial V1 interpreter milestone, but is the secondary
+project target after efficacy assessment. The Runtime now executes the small
+verified semantic IR through its interpreter, as recorded in report 010. The
+source frontend migration preserves that boundary without adding LLVM.
 
 ## Final-stage research: sustained application migration
 

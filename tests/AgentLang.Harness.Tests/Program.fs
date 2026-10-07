@@ -252,7 +252,7 @@ module Program =
         check (stackTask.SystemPrompt.Contains("word name : Input -> Output", StringComparison.Ordinal)) "an explicit historical Stack run receives the Stack definition primer"
 
     let private testFlowFrontendSeedAndToolDispatch root =
-        let flowSeed = Path.GetFullPath(Path.Combine(__SOURCE_DIRECTORY__, "..", "..", "examples", "customer.agent"))
+        let flowSeed = Path.GetFullPath(Path.Combine(__SOURCE_DIRECTORY__, "..", "fixtures", "flow1", "customer.agent"))
         let flowSettings =
             { config root Flat "flow-seed-inventory" [ step "test-all" (JsonObject()) None None (Some 4) ] with
                 Frontend = SourceFrontend.Flow

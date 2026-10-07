@@ -13,7 +13,8 @@ module AuthoringHelp =
         | Examples
 
     type HelpRequest =
-        { Topic: Topic }
+        { Topic: Topic
+          SyntaxVersion: int }
 
     type TopicInstruction =
         { Topic: string
@@ -87,29 +88,47 @@ module AuthoringHelp =
             else "number"
         | _ -> "value"
 
-    /// Parse the optional topic selector. Unknown names and non-string values are errors.
+    /// Parse optional topic and syntax-version selectors. Unknown names, unsupported
+    /// versions, and selectors with the wrong JSON type are errors.
     let parseRequest (arguments: JsonObject) : Result<HelpRequest, Diagnostic> =
         let unknownFields =
             arguments
             |> Seq.map (fun (KeyValue(key, _)) -> key)
-            |> Seq.filter (fun key -> key <> "topic")
+            |> Seq.filter (fun key -> key <> "topic" && key <> "syntaxVersion")
             |> Seq.sortWith (fun left right -> StringComparer.Ordinal.Compare(left, right))
             |> Seq.toList
         if not (List.isEmpty unknownFields) then
-            Error(diagnostic "HELP_INVALID_ARGUMENT" "Help accepts only the optional 'topic' field." [ "topic" ] unknownFields)
-        elif not (arguments.ContainsKey "topic") then
-            Ok { Topic = Topic.Authoring }
+            Error(diagnostic "HELP_INVALID_ARGUMENT" "Help accepts only the optional 'topic' and 'syntaxVersion' fields." [ "syntaxVersion"; "topic" ] unknownFields)
         else
-            match arguments["topic"] with
-            | :? JsonValue as scalar ->
-                let mutable name = ""
-                if not (scalar.TryGetValue<string>(&name)) then
-                    Error(diagnostic "HELP_INVALID_ARGUMENT" "Help argument 'topic' must be a string." [ "string" ] [ jsonKind (scalar :> JsonNode) ])
+            let topicResult =
+                if not (arguments.ContainsKey "topic") then Ok Topic.Authoring
                 else
-                    match tryTopic name with
-                    | Some topic -> Ok { Topic = topic }
-                    | None -> Error(diagnostic "HELP_UNKNOWN_TOPIC" $"Unknown help topic '{name}'." topicNames [ name ])
-            | value -> Error(diagnostic "HELP_INVALID_ARGUMENT" "Help argument 'topic' must be a string." [ "string" ] [ jsonKind value ])
+                    match arguments["topic"] with
+                    | :? JsonValue as scalar ->
+                        let mutable name = ""
+                        if not (scalar.TryGetValue<string>(&name)) then
+                            Error(diagnostic "HELP_INVALID_ARGUMENT" "Help argument 'topic' must be a string." [ "string" ] [ jsonKind (scalar :> JsonNode) ])
+                        else
+                            match tryTopic name with
+                            | Some topic -> Ok topic
+                            | None -> Error(diagnostic "HELP_UNKNOWN_TOPIC" $"Unknown help topic '{name}'." topicNames [ name ])
+                    | value -> Error(diagnostic "HELP_INVALID_ARGUMENT" "Help argument 'topic' must be a string." [ "string" ] [ jsonKind value ])
+            let versionResult =
+                if not (arguments.ContainsKey "syntaxVersion") then Ok 1
+                else
+                    match arguments["syntaxVersion"] with
+                    | :? JsonValue as scalar ->
+                        let mutable version = 0
+                        if not (scalar.TryGetValue<int>(&version)) then
+                            Error(diagnostic "HELP_INVALID_ARGUMENT" "Help argument 'syntaxVersion' must be an integer." [ "integer" ] [ jsonKind (scalar :> JsonNode) ])
+                        elif version <> 1 && version <> 2 then
+                            Error(diagnostic "HELP_SOURCE_VERSION_UNSUPPORTED" $"Flow syntax version {version} is not supported by help." [ "1"; "2" ] [ string version ])
+                        else Ok version
+                    | value -> Error(diagnostic "HELP_INVALID_ARGUMENT" "Help argument 'syntaxVersion' must be an integer." [ "integer" ] [ jsonKind value ])
+            match topicResult, versionResult with
+            | Error problem, _ -> Error problem
+            | _, Error problem -> Error problem
+            | Ok topic, Ok syntaxVersion -> Ok { Topic = topic; SyntaxVersion = syntaxVersion }
 
     let requestTopic (request: HelpRequest) = topicName request.Topic
 
@@ -132,6 +151,10 @@ module AuthoringHelp =
             Type = "string"
             Required = false
             Documentation = "Selects a frontend. Omit it to use Flow; the Flow allowlist applies only when Flow is selected." }
+          { Name = "syntaxVersion"
+            Type = "integer"
+            Required = false
+            Documentation = "Selects Flow syntax version 1 or 2. Omit it for version 1; Stack supports version 1 only." }
           { Name = "source"
             Type = "string"
             Required = true
@@ -174,9 +197,27 @@ test tutorial.sign/positive { tutorial::sign(2) => 1 }
 
 example tutorial.sign/negative { tutorial::sign(-2) => -1 }"""
 
+    let private tutorialSourceV2 =
+        """fn tutorial.sign(value: Int) -> Int {
+    doc "Returns -1 for negative integers and 1 for zero or positive integers."
+    if int::less-than(value, 0) { -1 } else { 1 }
+}
+
+test tutorial.sign/negative { tutorial::sign(-2) => -1 }
+test tutorial.sign/zero { tutorial::sign(0) => 1 }
+test tutorial.sign/positive { tutorial::sign(2) => 1 }
+
+example tutorial.sign/negative { tutorial::sign(-2) => -1 }"""
+
     let private tutorialWordSource =
         """word tutorial.sign(value: Int) -> Int {
     effects none
+    doc "Returns -1 for negative integers and 1 for zero or positive integers."
+    if int::less-than(value, 0) { -1 } else { 1 }
+}"""
+
+    let private tutorialWordSourceV2 =
+        """fn tutorial.sign(value: Int) -> Int {
     doc "Returns -1 for negative integers and 1 for zero or positive integers."
     if int::less-than(value, 0) { -1 } else { 1 }
 }"""
@@ -199,7 +240,7 @@ example tutorial.sign/negative { tutorial::sign(-2) => -1 }"""
         [ Topic.Authoring,
             { Title = "Authoring through the runtime"
               Documentation =
-                "Use one JSON object per JSONL request. Flow is the default frontend for define and eval. Inspect a word with describe, then ask for help on define, replacement, or examples. Help returns instructions only; the active host still controls which operations it allows."
+                "Use one JSON object per JSONL request. Flow is the default frontend for define and eval. Select Flow syntax with syntaxVersion (version 1 is the default); use format to request canonical source without changing the project, then submit an explicit define request to stage an edit. Inspect a word with describe, then ask for help on define, replacement, or examples. Help returns instructions only; the active host still controls which operations it allows."
               AllowedFlowDefineFields = []
               SourceExamples = []
               RequestExamples =
@@ -213,13 +254,17 @@ example tutorial.sign/negative { tutorial::sign(-2) => -1 }"""
           Topic.Define,
             { Title = "Define Flow source"
               Documentation =
-                "A Flow define request takes source and the optional fields listed below. Omit frontend to select Flow. Put documentation in the word body as `doc \"...\"`; doc and documentation are not request fields. A local binding stays inside one invocation. Declare effects in the word source, using `effects none` when there are no effects. For one-word declarations, attach tests and examples inline or through their source arrays. Multi-declaration project documents are add-only and must keep cases inline. An attachment-only document must keep cases inline and name exactly one existing Flow owner. Adding a new attachment-only case captures the current owner revision; replacing a case or removing one requires replace=true with the current expectedRevision, and removals also require its current expected source hash. Each case owner is the dictionary name before the slash. Define stages a candidate or temporary word and does not persist it."
+                "A Flow define request takes source and the optional fields listed below. Omit frontend to select Flow and syntaxVersion to select Flow/1; use syntaxVersion 2 for Flow/2. Put documentation in the word body as `doc \"...\"`; doc and documentation are not request fields. A local binding stays inside one invocation. Declare effects in the word source, using `effects none` when there are no effects. For one-word declarations, attach tests and examples inline or through their source arrays. Multi-declaration project documents are add-only and must keep cases inline. An attachment-only document must keep cases inline and name exactly one existing Flow owner. Adding a new attachment-only case captures the current owner revision; replacing a case or removing one requires replace=true with the current expectedRevision, and removals also require its current expected source hash. Each case owner is the dictionary name before the slash. Define stages a candidate or temporary word and does not persist it. The format operation returns canonical Flow text without changing the project; submit the result through define when you want to stage that edit."
               AllowedFlowDefineFields = flowDefineFields
               SourceExamples = [ tutorialSourceExample ]
               RequestExamples =
                 [ { Name = "define-tutorial-sign"
                     Description = "Define the complete source example using Flow's default frontend."
                     Operation = "define"
+                    Fields = [ textField "source" tutorialSource ] }
+                  { Name = "format-tutorial-sign"
+                    Description = "Return canonical Flow source without changing the project."
+                    Operation = "format"
                     Fields = [ textField "source" tutorialSource ] }
                   { Name = "test-tutorial-sign"
                     Description = "Run the attached tests for this word."
@@ -308,4 +353,44 @@ example tutorial.sign/negative { tutorial::sign(-2) => -1 }"""
                     Fields = [ textField "word" "tutorial.sign" ] } ] } ]
         |> Map.ofList
 
-    let content (topic: Topic) = topicContent[topic]
+    let contentForVersion syntaxVersion (topic: Topic) =
+        let original = topicContent[topic]
+        if syntaxVersion = 1 then original
+        else
+            let versionedSource =
+                match topic with
+                | Topic.Define -> Some tutorialSourceV2
+                | _ -> None
+            let requestExamples =
+                original.RequestExamples
+                |> List.map (fun example ->
+                    let source =
+                        match topic, example.Name with
+                        | Topic.Define, "define-tutorial-sign"
+                        | Topic.Define, "format-tutorial-sign" -> Some tutorialSourceV2
+                        | Topic.Replacement, "stage-replacement" -> Some tutorialWordSourceV2
+                        | _ -> None
+                    let fields =
+                        example.Fields
+                        |> List.map (fun (name, value) ->
+                            if name = "source" then name, Text(source |> Option.defaultValue tutorialSourceV2)
+                            else name, value)
+                    let needsVersion =
+                        example.Name = "define-tutorial-sign"
+                        || example.Name = "format-tutorial-sign"
+                        || example.Name = "stage-replacement"
+                        || example.Name.StartsWith("help-", StringComparison.Ordinal)
+                    let fields =
+                        if needsVersion && not (fields |> List.exists (fun (name, _) -> name = "syntaxVersion")) then
+                            fields @ [ "syntaxVersion", Integer 2 ]
+                        else fields
+                    { example with Fields = fields })
+            { original with
+                Documentation = original.Documentation + " This help response is selected for Flow/2; write function declarations with `fn`."
+                SourceExamples =
+                    match versionedSource, original.SourceExamples with
+                    | Some source, example :: _ -> [ { example with Source = source } ]
+                    | _ -> original.SourceExamples
+                RequestExamples = requestExamples }
+
+    let content (topic: Topic) = contentForVersion 1 topic

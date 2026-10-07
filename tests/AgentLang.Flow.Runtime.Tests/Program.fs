@@ -120,7 +120,12 @@ module Program =
         let outputDirectory = DirectoryInfo(AppContext.BaseDirectory.TrimEnd([| Path.DirectorySeparatorChar; Path.AltDirectorySeparatorChar |]))
         let configuration = outputDirectory.Parent.Name
         let repositoryRoot = Path.GetFullPath(Path.Combine(__SOURCE_DIRECTORY__, "..", ".."))
-        let cliAssembly = Path.Combine(repositoryRoot, "src", "AgentLang.Cli", "bin", configuration, "net9.0", "AgentLang.Cli.dll")
+        let configuredCli = Environment.GetEnvironmentVariable("AGENTLANG_TEST_CLI")
+        let cliAssembly =
+            if String.IsNullOrWhiteSpace configuredCli then
+                Path.Combine(repositoryRoot, "src", "AgentLang.Cli", "bin", configuration, "net9.0", "AgentLang.Cli.dll")
+            else
+                Path.GetFullPath configuredCli
         check (File.Exists cliAssembly) $"CLI assembly exists for the {configuration} integration-test build"
         let startInfo = ProcessStartInfo("dotnet")
         startInfo.UseShellExecute <- false
@@ -197,6 +202,35 @@ module Program =
         check (not (fieldNames |> List.contains "code")) "Flow define help does not advertise a code alias"
         check ((stringValue defineData.["documentation"]).Contains("doc", StringComparison.Ordinal)) "define help explains inline word documentation"
         check ((stringValue defineData.["documentation"]).Contains("effects", StringComparison.Ordinal)) "define help explains effect declarations"
+
+        let flow2HelpEngine = Runtime.Engine(Path.Combine(root, "authoring-help-flow2"), Set.empty, "2041-02-03T04:05:06Z")
+        let defineHelpV2 =
+            dispatch flow2HelpEngine "help" [ "topic", jstr "define"; "syntaxVersion", jint 2 ]
+            |> expectOk "read Flow/2 define help"
+        let defineHelpDataV2 = defineHelpV2["data"]
+        equal 2 ((defineHelpDataV2["syntaxVersion"]).GetValue<int>()) "help response records selected syntaxVersion"
+        check ((stringValue (defineHelpDataV2["documentation"])).Contains("Flow/2", StringComparison.Ordinal)) "Flow/2 help identifies its selected syntax"
+        let sourceExampleV2 = (defineHelpDataV2["sourceExamples"]).AsArray() |> Seq.head |> fun item -> stringValue (item["source"])
+        check (sourceExampleV2.StartsWith("fn tutorial.sign", StringComparison.Ordinal)) "Flow/2 help returns an fn source example"
+        check (not (sourceExampleV2.Contains("effects ", StringComparison.Ordinal))) "Flow/2 help preserves omitted effects metadata"
+        let formatRequestV2 =
+            (defineHelpDataV2["requestExamples"]).AsArray()
+            |> Seq.find (fun item -> stringValue item["name"] = "format-tutorial-sign")
+            |> fun item -> item["request"]
+        equal 2 ((formatRequestV2["syntaxVersion"]).GetValue<int>()) "Flow/2 format example selects syntax version 2"
+        let formattedHelpSource = Protocol.dispatchLine flow2HelpEngine (formatRequestV2.ToJsonString()) |> expectOk "format the Flow/2 help example"
+        let stagedBeforeDefine = dispatch flow2HelpEngine "words" [] |> expectOk "check help example before explicit define"
+        check (not ((stagedBeforeDefine["data"]["words"]).AsArray() |> Seq.exists (fun item -> stringValue (item["name"]) = "tutorial.sign"))) "Flow/2 formatter does not stage the help example"
+        let defineRequestV2 =
+            (defineHelpDataV2["requestExamples"]).AsArray()
+            |> Seq.find (fun item -> stringValue item["name"] = "define-tutorial-sign")
+            |> fun item -> item["request"]
+        equal 2 ((defineRequestV2["syntaxVersion"]).GetValue<int>()) "Flow/2 define example selects syntax version 2"
+        let explicitDefineRequest = defineRequestV2.AsObject()
+        let formattedHelpData = formattedHelpSource["data"]
+        explicitDefineRequest["source"] <- jstr (stringValue (formattedHelpData["source"]))
+        Protocol.dispatchLine flow2HelpEngine (explicitDefineRequest.ToJsonString()) |> expectOk "stage the Flow/2 help example through explicit define" |> ignore
+        assertAllPassed 3 (dispatch flow2HelpEngine "test" [ "word", jstr "tutorial.sign" ] |> expectOk "run Flow/2 help tests")
 
         let sourceExample = defineData.["sourceExamples"].AsArray() |> Seq.head
         let canonicalSource = stringValue sourceExample.["source"]
@@ -276,8 +310,10 @@ module Program =
         equal [ "string" ] (jsonArrayStrings invalidType.["error"].["expected"]) "invalid help topic type expects a string"
         equal [ "boolean" ] (jsonArrayStrings invalidType.["error"].["actual"]) "invalid help topic type reports actual JSON kind"
         let invalidField = dispatch engine "help" [ "extra", jstr "ignored" ] |> expectError "HELP_INVALID_ARGUMENT"
-        equal [ "topic" ] (jsonArrayStrings invalidField.["error"].["expected"]) "help rejects fields other than the topic selector"
+        equal [ "syntaxVersion"; "topic" ] (jsonArrayStrings invalidField.["error"].["expected"]) "help documents its topic and syntax-version selectors"
         equal [ "extra" ] (jsonArrayStrings invalidField.["error"].["actual"]) "help invalid field error identifies unknown key"
+        dispatch engine "help" [ "syntaxVersion", jstr "2" ] |> expectError "HELP_INVALID_ARGUMENT" |> ignore
+        dispatch engine "help" [ "syntaxVersion", jint 3 ] |> expectError "HELP_SOURCE_VERSION_UNSUPPORTED" |> ignore
         let recoveredHelp = dispatch engine "help" [] |> expectOk "valid help follows invalid topic requests"
         equal [ "authoring"; "define"; "replacement"; "examples" ] (jsonArrayStrings recoveredHelp.["data"].["topics"]) "help recovers after invalid requests"
 
@@ -407,7 +443,7 @@ module Program =
                   "documentation", jstr "metadata is inline"
                   "extra", jbool true ]
             |> expectError "FLOW_RUNTIME_UNKNOWN_ARGUMENT"
-        equal [ "examples"; "expectedRevision"; "frontend"; "removeAttachments"; "replace"; "source"; "temporary"; "tests" ]
+        equal [ "examples"; "expectedRevision"; "frontend"; "removeAttachments"; "replace"; "source"; "syntaxVersion"; "temporary"; "tests" ]
             (jsonArrayStrings unknownTopLevel.["error"].["expected"]) "unknown Flow field error returns the allowed field set"
         equal [ "code"; "documentation"; "extra" ] (jsonArrayStrings unknownTopLevel.["error"].["actual"]) "unknown Flow fields are reported in sorted order"
         let unknownMessage = stringValue unknownTopLevel.["error"].["message"]
@@ -598,6 +634,121 @@ module Program =
         let malformedDefaultDefine = dispatch engine "define" [ "source", jstr "word malformed" ]
         check (not (succeeded malformedDefaultDefine)) "malformed omitted-frontend definition is rejected"
         check ((errorCode malformedDefaultDefine).StartsWith("FLOW_", StringComparison.Ordinal)) "malformed omitted-frontend definition is not passed to the Stack parser"
+
+    let private testFlow2FormatDefinePersistReloadAndRewrite root =
+        let project = Path.Combine(root, "flow2-persistence")
+        let engine = Runtime.Engine(project, Set.empty, "2042-03-04T05:06:07Z")
+        let source =
+            "record Customer { field email: String; }\n\n"
+            + "fn customer.has-email(value: Customer) -> Bool {\n"
+            + "    value.email == \"a@example.com\"\n"
+            + "}\n\n"
+            + "test customer.has-email/matching {\n"
+            + "    customer::has-email(customer::new(email = \"a@example.com\"))\n"
+            + "    => true\n"
+            + "}"
+        let canonicalDocument =
+            FlowParser.parseDocumentWithVersion 2 "<flow2-runtime-test>" source
+            |> Result.defaultWith (fun diagnostic -> failwith (Diagnostics.render diagnostic))
+        let expectedCanonical = FlowSource.renderDocument canonicalDocument
+        let canonicalWordSource =
+            FlowParser.parseDocumentWithVersion 2 "<flow2-canonical-word>" expectedCanonical
+            |> Result.defaultWith (fun diagnostic -> failwith (Diagnostics.render diagnostic))
+            |> fun document -> document.Words |> List.exactlyOne |> fun definition -> definition.SourceText
+        let canonicalTestSource =
+            FlowParser.parseDocumentWithVersion 2 "<flow2-canonical-test>" expectedCanonical
+            |> Result.defaultWith (fun diagnostic -> failwith (Diagnostics.render diagnostic))
+            |> fun document -> document.Tests |> List.exactlyOne |> fun definition -> definition.SourceText
+        let beforeGeneration = Storage.load (Storage.create project) |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let beforeWords = dispatch engine "words" [] |> expectOk "capture vocabulary before formatting" |> fun response -> response["data"].ToJsonString()
+        let formatRequest = JsonObject()
+        formatRequest["op"] <- jstr "format"
+        let formatArgs = JsonObject()
+        formatArgs["source"] <- jstr source
+        formatArgs["frontend"] <- jstr "flow"
+        formatRequest["args"] <- formatArgs
+        formatRequest["syntaxVersion"] <- jint 2
+        let formatted = Protocol.dispatchLine engine (formatRequest.ToJsonString()) |> expectOk "format Flow/2 through the JSON-lines protocol"
+        let formattedData = formatted["data"]
+        equal 2 ((formattedData["syntaxVersion"]).GetValue<int>()) "format response reports its selected syntax version"
+        equal expectedCanonical (stringValue (formattedData["source"])) "format response contains the canonical Flow/2 source"
+        let afterFormat = Storage.load (Storage.create project) |> Result.defaultWith (fun problem -> failwith problem.Message)
+        equal beforeGeneration.Generation afterFormat.Generation "format does not advance persisted storage generation"
+        equal beforeGeneration.ManifestHash afterFormat.ManifestHash "format does not change persisted manifest authority"
+        equal beforeWords (dispatch engine "words" [] |> expectOk "check vocabulary after formatting" |> fun response -> response["data"].ToJsonString()) "format does not stage words or types"
+
+        dispatch engine "format" [ "frontend", jstr "stack"; "syntaxVersion", jint 2; "source", jstr source ]
+        |> expectError "RUNTIME_SOURCE_VERSION_UNSUPPORTED"
+        |> ignore
+        dispatch engine "format" [ "syntaxVersion", jstr "2"; "source", jstr source ]
+        |> expectError "RUNTIME_SOURCE_VERSION_INVALID"
+        |> ignore
+        dispatch engine "format" [ "frontend", jstr "stack"; "source", jstr source ]
+        |> expectError "SOURCE_FORMAT_UNSUPPORTED"
+        |> ignore
+
+        defineFlowProject engine expectedCanonical [ "syntaxVersion", jint 2 ]
+        |> expectOk "explicitly define the returned Flow/2 source"
+        |> ignore
+        equal 1 (dispatch engine "test" [ "word", jstr "customer.has-email" ] |> expectOk "run the staged Flow/2 test" |> fun response -> (response["data"]["results"]).AsArray().Count) "Flow/2 test runs before commit"
+        dispatch engine "eval" [ "frontend", jstr "flow"; "syntaxVersion", jint 2; "code", jstr "\"a@example.com\" == \"a@example.com\"" ]
+        |> expectOk "evaluate a versioned Flow/2 equality expression"
+        |> fun response -> equal "true" (stringValue ((response["data"]["stack"]).[0])) "versioned expression lowering preserves equality"
+
+        commit engine "commit" "Customer" [] |> expectOk "commit the Flow/2 record source" |> ignore
+        commit engine "commit" "customer.has-email" [] |> expectOk "commit the Flow/2 function and attached test" |> ignore
+        assertAllPassed 1 (dispatch engine "test" [ "word", jstr "customer.has-email" ] |> expectOk "run the committed Flow/2 case")
+        let store = Storage.create project
+        let committed = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let manifest = committed.Manifest |> Option.defaultWith (fun () -> failwith "Flow/2 project did not publish a manifest")
+        let recordMetadata = manifest.Types |> List.find (fun item -> item.Name = "Customer")
+        equal { Frontend = SourceFrontend.Flow; Version = 2 } recordMetadata.SourceFormat "Flow/2 record source version persists"
+        let head = manifest.Words |> List.find (fun item -> item.CurrentName = "customer.has-email")
+        let revision = manifest.Revisions |> List.find (fun item -> item.WordId = head.WordId && item.Revision = head.CurrentRevision)
+        equal { Frontend = SourceFrontend.Flow; Version = 2 } revision.SourceFormat "Flow/2 function source version persists"
+        equal (digest canonicalWordSource) revision.Definition.Hash "word source hash uses exact canonical source bytes"
+        let propertyBinding = revision.CallBindings |> List.find (fun binding -> binding.Form = StoredCallForm.PropertyAccess "email")
+        equal (FlowAstPath.FlowAstPath [ FlowAstPathSegment.BlockStatement 0; FlowAstPathSegment.EvaluateExpression; FlowAstPathSegment.EqualityLeft ])
+            propertyBinding.Path
+            "property accessor binding path identifies the property expression within equality-left"
+        check (File.ReadAllText(Path.Combine(project, "dictionary.agent")).Contains("// frontend: flow/2", StringComparison.Ordinal)) "aggregate export identifies Flow/2 source blocks"
+        let retainedDefinition = Storage.readSource store revision.Definition |> Result.defaultWith (fun problem -> failwith problem.Message)
+        check (retainedDefinition.StartsWith("fn customer.has-email", StringComparison.Ordinal)) "durable definition keeps the Flow/2 fn declaration"
+        check (not (retainedDefinition.Contains("effects ", StringComparison.Ordinal))) "durable definition preserves omitted effects metadata"
+        equal [ canonicalTestSource ]
+            (revision.Tests |> List.map (Storage.readSource store >> Result.defaultWith (fun problem -> failwith problem.Message)))
+            "Flow/2 test source bytes persist exactly"
+
+        let v1Replacement =
+            "word customer.has-email(value: Customer) -> Bool {\n"
+            + "    effects none\n"
+            + "    true\n"
+            + "}"
+        dispatch engine "define"
+            [ "frontend", jstr "flow"
+              "source", jstr v1Replacement
+              "replace", jbool true
+              "expectedRevision", jint revision.Revision ]
+        |> expectError "FLOW_SOURCE_VERSION_CHANGE_REQUIRES_SELECTION"
+        |> ignore
+        equal committed.ManifestHash (Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)).ManifestHash "implicit Flow/2 downgrade refusal leaves persisted authority unchanged"
+
+        let renamed = dispatch engine "rename" [ "word", jstr "customer.has-email"; "to", jstr "customer.matches-email" ] |> expectOk "rename a persisted Flow/2 function and rewrite its case"
+        let renamedData = renamed["data"]
+        equal "customer.matches-email" (stringValue (renamedData["to"])) "rename publishes the requested Flow/2 owner"
+        let renamedSnapshot = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let renamedManifest = renamedSnapshot.Manifest |> Option.defaultWith (fun () -> failwith "Flow/2 rename did not retain a manifest")
+        let renamedHead = renamedManifest.Words |> List.find (fun item -> item.CurrentName = "customer.matches-email")
+        let renamedRevision = renamedManifest.Revisions |> List.find (fun item -> item.WordId = renamedHead.WordId && item.Revision = renamedHead.CurrentRevision)
+        equal { Frontend = SourceFrontend.Flow; Version = 2 } renamedRevision.SourceFormat "rename retains Flow/2 source metadata"
+        let renamedText = Storage.readSource store renamedRevision.Definition |> Result.defaultWith (fun problem -> failwith problem.Message)
+        check (renamedText.StartsWith("fn customer.matches-email", StringComparison.Ordinal)) "rename rewrites the Flow/2 fn owner and preserves source syntax"
+        check (not (renamedText.Contains("effects ", StringComparison.Ordinal))) "rename preserves omitted Flow/2 effect declaration"
+        let reloaded = Runtime.Engine(project, Set.empty, "2042-03-04T05:06:07Z")
+        assertAllPassed 1 (dispatch reloaded "test" [ "word", jstr "customer.matches-email" ] |> expectOk "run the rewritten Flow/2 case after fresh reload")
+        let reloadedValue = evalFlow reloaded "customer::matches-email(customer::new(email = \"a@example.com\"))" |> expectOk "evaluate the rewritten Flow/2 word after fresh reload"
+        let reloadedStack = (reloadedValue["data"]["stack"]).AsArray()
+        equal "true" (stringValue reloadedStack.[0]) "fresh reload compiles and executes Flow/2 property access"
 
     let private testDescribeFlowReferences root =
         let engine = Runtime.Engine(Path.Combine(root, "describe-flow-references"), Set.empty)
@@ -2866,6 +3017,7 @@ module Program =
             testFlowUnknownArgumentsAndExpectationGuidance root
             testExplicitFrontendAndDurableReload root
             testExplicitFrontendCannotFallBack root
+            testFlow2FormatDefinePersistReloadAndRewrite root
             testDescribeFlowReferences root
             testGeneratedRecordCasesPersistBesideFlow root
             testStackGeneratedCasesSurviveV1Manifest root
@@ -2884,7 +3036,7 @@ module Program =
             testFlowStaticListFold root
             testFlowValidatorCannotBeRenamedAfterTypeCommit root
             testFlowProjectDocumentTypesCommitAndReload root
-            printfn $"Flow Runtime tests passed: 24 groups, {assertions} assertions."
+            printfn $"Flow Runtime tests passed: 25 groups, {assertions} assertions."
             0
         finally
             if Directory.Exists root then Directory.Delete(root, true)

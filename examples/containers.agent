@@ -5,54 +5,54 @@ record ContainerEnvelope {
     field result: Result<List<Int>, String>;
 }
 
-word container.option-default(value: Option<Int>) -> Int {
-    effects none
+fn container.option-default(value: Option<Int>) -> Int {
+
     match value {
         some selected => { selected }
         none => { 0 }
     }
 }
 
-word container.result-count(value: Result<List<Int>, String>) -> Int {
-    effects none
+fn container.result-count(value: Result<List<Int>, String>) -> Int {
+
     match value {
         ok numbers => { numbers.count() }
         error message => { 0 }
     }
 }
 
-word container.envelope-email-count(envelope: ContainerEnvelope) -> Int {
-    effects none
-    envelope.emails().count()
+fn container.envelope-email-count(envelope: ContainerEnvelope) -> Int {
+
+    envelope.emails.count()
 }
 
-word container.increment(value: Int) -> Int {
-    effects none
+fn container.increment(value: Int) -> Int {
+
     add(value, 1)
 }
 
-word container.negative?(value: Int) -> Bool {
-    effects none
+fn container.negative?(value: Int) -> Bool {
+
     int::less-than(value, 0)
 }
 
-word container.ignore-int(value: Int) -> Unit {
-    effects none
+fn container.ignore-int(value: Int) -> Unit {
+
     unit
 }
 
-word container.incremented-count(values: List<Int>) -> Int {
-    effects none
+fn container.incremented-count(values: List<Int>) -> Int {
+
     values.map(container::increment).count()
 }
 
-word container.negative-count(values: List<Int>) -> Int {
-    effects none
+fn container.negative-count(values: List<Int>) -> Int {
+
     values.filter(container::negative?).count()
 }
 
-word container.visit-numbers(values: List<Int>) -> Unit {
-    effects none
+fn container.visit-numbers(values: List<Int>) -> Unit {
+
     values.each(container::ignore-int)
 }
 

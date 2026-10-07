@@ -45,6 +45,8 @@ let private authoredFlowSource (ownerId: WordId) (ownerRevision: int) (source: s
     { OwnerName = definition.Name
       OwnerId = ownerId
       OwnerRevision = ownerRevision
+      SyntaxVersion = definition.SyntaxVersion
+      EffectsDeclared = definition.EffectsDeclared
       Reference = stored.Reference
       SourceFile = definition.Span.File
       Content = source }
@@ -86,6 +88,7 @@ let private authoredFlowAttachment
     { OwnerName = ownerName
       OwnerId = ownerId
       OwnerRevision = ownerRevision
+      SyntaxVersion = 1
       Kind = kind
       CaseName = caseName
       Reference = stored.Reference
@@ -345,6 +348,7 @@ let private testIterativeAstDepthLimit () =
           Parameters = []
           Outputs = [ TInt ]
           Effects = Set.empty
+          EffectsDeclared = true
           Documentation = ""
           Body = [ FlowStatement.Evaluate body ]
           SourceText = "host-built AST"
@@ -459,6 +463,230 @@ let private testIterativeAstDepthLimit () =
             Parameters = [ { Name = "value"; Type = sharedResultType 15; Span = sourceSpan } ] }
     expectLanguageError "word parameters and body share one expanded-node budget" "FLOW_STRUCTURE_LIMIT" (fun () ->
         FlowSource.renderWord combinedDagWord |> ignore)
+
+let private testFlow2Frontend () =
+    let parseWordV2 source =
+        match FlowParser.parseWordWithVersion 2 "<flow2-test>" source with
+        | Ok definition -> definition
+        | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+    let parseExpressionV2 source =
+        match FlowParser.parseExpressionWithVersion 2 "<flow2-test>" source with
+        | Ok expression -> expression
+        | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+
+    let implicitEffectsSource =
+        """fn sample.pure() -> Bool {
+    true
+}"""
+    let implicitEffects = parseWordV2 implicitEffectsSource
+    check "Flow/2 fn accepts omitted effects" (not implicitEffects.EffectsDeclared && Set.isEmpty implicitEffects.Effects)
+    equal "Flow/2 renderer preserves omitted effects" implicitEffectsSource (FlowSource.renderWord implicitEffects)
+    let explicitEffects =
+        parseWordV2
+            """fn sample.documented() -> Bool {
+    effects none
+    doc "Flow/2 metadata"
+
+    true
+}"""
+    check "Flow/2 tracks an authored pure effects clause" explicitEffects.EffectsDeclared
+    let renderedExplicit = FlowSource.renderWord explicitEffects
+    check "Flow/2 renderer inserts a blank line after metadata" (renderedExplicit.Contains("    doc \"Flow/2 metadata\"\n\n    true", StringComparison.Ordinal))
+    equal "Flow/2 word renderer round-trips metadata shape" renderedExplicit
+        (renderedExplicit |> parseWordV2 |> FlowSource.renderWord)
+
+    let legacySource = "word legacy() -> Int {\n    effects none\n    1\n}"
+    let legacy =
+        match FlowParser.parseWord "<flow1-test>" legacySource with
+        | Ok definition -> definition
+        | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+    equal "Flow/1 keeps its required effects metadata and byte format" legacySource (FlowSource.renderWord legacy)
+    expectError "Flow/1 rejects the Flow/2 declaration keyword" "FLOW_SYNTAX_VERSION"
+        (FlowParser.parseWordWithVersion 1 "<flow1-test>" implicitEffectsSource) |> ignore
+    expectError "Flow/2 rejects the Flow/1 declaration keyword" "FLOW_SYNTAX_VERSION"
+        (FlowParser.parseWordWithVersion 2 "<flow2-test>" legacySource) |> ignore
+    expectError "Flow/1 still requires effects" "FLOW_EFFECTS_REQUIRED"
+        (FlowParser.parseWord "<flow1-test>" "word missing.effects() -> Bool {\n    true\n}") |> ignore
+    let omittedV2 = parseWordV2 implicitEffectsSource
+    check "Flow/2 accepts omitted effects" (Set.isEmpty omittedV2.Effects)
+    expectError "Flow/1 rejects infix equality" "FLOW_SYNTAX_VERSION"
+        (FlowParser.parseExpression "<flow1-test>" "1 == 1") |> ignore
+    expectError "Flow/1 rejects property reads as dot calls" "FLOW_DOT_CALL_REQUIRES_ARGUMENTS"
+        (FlowParser.parseExpression "<flow1-test>" "value.email") |> ignore
+    expectError "Flow/1 does not gain transparent grouping" "FLOW_SYNTAX_VERSION"
+        (FlowParser.parseExpressionWithVersion 1 "<flow1-test>" "(1)") |> ignore
+    match FlowParser.parseExpressionWithVersion 2 "<flow2-test>" "(1)" with
+    | Ok(FlowExpression.Literal(LInt 1L, _)) -> check "Flow/2 accepts grouping needed for non-associative equality" true
+    | other -> failwithf "Expected grouped Flow/2 literal, got %A" other
+
+    match parseExpressionV2 "value.email" with
+    | FlowExpression.Property(FlowExpression.Local("value", _), "email", _) -> check "Flow/2 parses record property reads" true
+    | other -> failwithf "Expected Flow/2 property AST, got %A" other
+    let comparison = parseExpressionV2 "(1 == 1) == (1 == 2)"
+    match comparison with
+    | FlowExpression.Equality(FlowExpression.Equality _, FlowExpression.Equality _, _) -> check "parentheses permit explicitly grouped equality" true
+    | other -> failwithf "Expected grouped Flow/2 equality AST, got %A" other
+    let comparisonText = FlowSource.renderExpressionWithVersion 2 comparison
+    equal "grouped equality renderer preserves operand parentheses" "(1 == 1) == (1 == 2)" comparisonText
+    equal "grouped equality reparses deterministically" comparisonText
+        (comparisonText |> parseExpressionV2 |> FlowSource.renderExpressionWithVersion 2)
+    expectError "unparenthesized equality is non-associative" "FLOW_EQUALITY_CHAIN"
+        (FlowParser.parseExpressionWithVersion 2 "<flow2-test>" "1 == 1 == true") |> ignore
+    let groupedDot = parseExpressionV2 "(true == false).identity()"
+    let groupedDotText = FlowSource.renderExpressionWithVersion 2 groupedDot
+    equal "Flow/2 formatter groups equality before a postfix dot call" "(true == false).identity()" groupedDotText
+    match groupedDotText |> parseExpressionV2 with
+    | FlowExpression.DotCall(FlowExpression.Equality _, "identity", _, _) -> check "grouped equality dot-call round-trips without changing precedence" true
+    | other -> failwithf "Expected grouped equality receiver, got %A" other
+
+    let v2ProjectSource =
+        """record Customer { field email: String; }
+fn customer.has-email(value: Customer) -> Bool {
+    doc "Flow/2 property and equality"
+
+    value.email == "a@example.com"
+}"""
+    let project =
+        match FlowParser.parseDocumentWithVersion 2 "<flow2-project>" v2ProjectSource with
+        | Ok document -> document
+        | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+    equal "Flow/2 project parser records its source version" 2 project.SyntaxVersion
+    let canonicalProject = FlowSource.renderDocument project
+    check "Flow/2 project formatter preserves fn declarations" (canonicalProject.Contains("fn customer.has-email", StringComparison.Ordinal))
+    equal "Flow/2 project renderer round-trips" canonicalProject
+        (canonicalProject
+         |> fun source -> FlowParser.parseDocumentWithVersion 2 "<flow2-project>" source
+         |> Result.map FlowSource.renderDocument
+         |> Result.defaultWith (Diagnostics.render >> failwith))
+    let v2TestText =
+        """test customer.has-email/value {
+    value.email == "a@example.com"
+    => value ("a@example.com" == "a@example.com")
+}"""
+    let v2Test =
+        match FlowParser.parseTestWithVersion 2 "<flow2-test>" v2TestText with
+        | Ok definition -> definition
+        | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+    equal "Flow/2 test parser retains the selected syntax version" 2 v2Test.SyntaxVersion
+    let canonicalV2Test = FlowSource.renderTest v2Test
+    equal "Flow/2 test renderer round-trips Flow/2 expressions" canonicalV2Test
+        (canonicalV2Test
+         |> fun source -> FlowParser.parseTestWithVersion 2 "<flow2-test>" source
+         |> Result.map FlowSource.renderTest
+         |> Result.defaultWith (Diagnostics.render >> failwith))
+    let v2ExampleText =
+        """example customer.has-email/sample {
+    value.email == "a@example.com"
+    => true
+}"""
+    let v2Example =
+        match FlowParser.parseExampleWithVersion 2 "<flow2-example>" v2ExampleText with
+        | Ok definition -> definition
+        | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+    equal "Flow/2 example parser retains the selected syntax version" 2 v2Example.SyntaxVersion
+    equal "Flow/2 example renderer round-trips Flow/2 property expressions" (FlowSource.renderExample v2Example)
+        (FlowSource.renderExample v2Example
+         |> fun source -> FlowParser.parseExampleWithVersion 2 "<flow2-example>" source
+         |> Result.map FlowSource.renderExample
+         |> Result.defaultWith (Diagnostics.render >> failwith))
+
+    let recordDefinition =
+        { Name = "Customer"
+          Fields = [ { Name = "email"; Type = TString } ]
+          SourceText = "record Customer { field email: String; }"
+          Span = sourceSpan }
+    let recordContext =
+        loweringContextWith
+            (Map.ofList [ "Customer", recordDefinition ]) Map.empty
+            [ generatedEntry "customer.new" (RecordConstructor "Customer") [ TString ] [ TNamed "Customer" ] Set.empty
+              generatedEntry "customer.email" (RecordAccessor("Customer", "email")) [ TNamed "Customer" ] [ TString ] Set.empty ]
+            Map.empty
+    let v2Word = parseWordV2 project.Words.Head.SourceText
+    let compiledWord = FlowLowering.compileWord recordContext (WordId "flow2-has-email") v2Word
+    let invocation =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+            compiledWord.Context.CompilerContext compiledWord.Program "flow2-invoke" []
+            [ Push(LString "a@example.com", sourceSpan)
+              Call("customer.new", sourceSpan)
+              Call("customer.has-email", sourceSpan) ]
+            compiledWord.Context.SourceOrigins
+    equal "Flow/2 property and equality lower and execute through declared record fields" [ BoolValue true ]
+        (IrInterpreter.executeBody (host (ResizeArray())) "flow2-property-equality" invocation)
+    let callBound = FlowLowering.compileWordWithCallBindings recordContext (WordId "flow2-bound-has-email") v2Word
+    let propertySite = callBound.CallSites |> List.find (fun site -> match site.Form with | FlowCallForm.PropertyAccess "email" -> true | _ -> false)
+    let equalitySite = callBound.CallSites |> List.find (fun site -> site.Form = FlowCallForm.Direct && site.RequestedName = "equals")
+    equal "property binding path identifies its receiver"
+        (FlowAstPath.FlowAstPath [ FlowAstPathSegment.BlockStatement 0; FlowAstPathSegment.EvaluateExpression; FlowAstPathSegment.EqualityLeft ])
+        propertySite.Path
+    equal "equality binding path identifies the operator"
+        (FlowAstPath.FlowAstPath [ FlowAstPathSegment.BlockStatement 0; FlowAstPathSegment.EvaluateExpression ]) equalitySite.Path
+    let rewriteSource = Storage.sourceObject StorageObjectKind.WordDefinition v2Word.SourceText
+    let rewriteBindings =
+        callBound.CallSites
+        |> List.map (fun site ->
+            { OwnerName = v2Word.Name
+              OwnerId = WordId "flow2-bound-has-email"
+              OwnerRevision = 1
+              Source = rewriteSource.Reference
+              Site = site })
+        |> FlowPersistence.wordBindings
+    let rewrittenV2 =
+        match FlowRewrite.rewriteWord v2Word.Name "customer.has-email-renamed" (StoredCallTarget.UserWord "unrelated-target") v2Word rewriteBindings with
+        | Ok result -> result
+        | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+    equal "Flow rewrite renders and reparses using the authored Flow/2 version" 2 rewrittenV2.Definition.SyntaxVersion
+    check "Flow/2 rewrite keeps the fn declaration" (FlowSource.renderWord rewrittenV2.Definition |> fun source -> source.StartsWith("fn customer.has-email-renamed", StringComparison.Ordinal))
+
+    let sourceReference = Storage.sourceObject StorageObjectKind.WordDefinition implicitEffectsSource
+    let inconsistentEffectsSource: FlowSourceDocument =
+        { OwnerName = "sample.pure"
+          OwnerId = WordId "flow2-effects-shape"
+          OwnerRevision = 1
+          SyntaxVersion = 2
+          EffectsDeclared = true
+          Reference = sourceReference.Reference
+          SourceFile = "<flow2-source>"
+          Content = implicitEffectsSource }
+    let emptySourceInventory: FlowSourceInventory = { ExpectedFlowOwnerIds = Set.empty; Sources = [] }
+    expectLanguageError "source-backed Flow validation compares EffectsDeclared with parsed metadata" "FLOW_SOURCE_EFFECTS_DECLARATION_MISMATCH" (fun () ->
+        FlowLowering.compileBatchFlowSources recordContext emptySourceInventory
+            [ { RevisionIntent = FlowWordRevisionIntent.Add(WordId "flow2-effects-shape", 1); Source = inconsistentEffectsSource } ]
+        |> ignore)
+
+    let invalidType = parseWordV2 "fn customer.bad-property(value: Int) -> String { value.email }"
+    expectLanguageError "property access rejects non-record receiver types" "FLOW_PROPERTY_REQUIRES_RECORD" (fun () ->
+        FlowLowering.checkWord recordContext invalidType |> ignore)
+    let unknownField = parseWordV2 "fn customer.bad-field(value: Customer) -> String { value.missing }"
+    expectLanguageError "property access rejects undeclared record fields" "FLOW_PROPERTY_UNKNOWN_FIELD" (fun () ->
+        FlowLowering.checkWord recordContext unknownField |> ignore)
+    let fakeAccessorContext =
+        loweringContextWith
+            (Map.ofList [ "Customer", recordDefinition ]) Map.empty
+            [ wordEntry "customer.email" [ TNamed "Customer" ] [ TString ] Set.empty [] ] Map.empty
+    expectLanguageError "property access does not resolve an arbitrary same-named host word" "FLOW_PROPERTY_ACCESSOR_MISSING" (fun () ->
+        FlowLowering.checkWord fakeAccessorContext v2Word |> ignore)
+    expectLanguageError "equality preserves generic equals type constraints" "FLOW_ARGUMENT_TYPE" (fun () ->
+        FlowLowering.checkExpressionWithVersion 2 recordContext (parseExpressionV2 "\"email\" == 7") |> ignore)
+
+    let hostV1Property =
+        { legacy with
+            Body = [ FlowStatement.Evaluate(FlowExpression.Property(FlowExpression.Local("value", sourceSpan), "field", sourceSpan)) ] }
+    expectLanguageError "host-built Flow/1 words cannot contain Flow/2 property nodes" "FLOW_SYNTAX_VERSION" (fun () ->
+        FlowSource.renderWord hostV1Property |> ignore)
+    expectLanguageError "host-built Flow/1 expressions cannot contain Flow/2 equality nodes" "FLOW_SYNTAX_VERSION" (fun () ->
+        FlowLowering.lowerExpression recordContext (FlowExpression.Equality(FlowExpression.Literal(LInt 1L, sourceSpan), FlowExpression.Literal(LInt 1L, sourceSpan), sourceSpan)) |> ignore)
+
+    let lintWord =
+        parseWordV2
+            """fn customer.lint(value: Customer) -> Bool {
+    let saved = value;
+    let same = saved.email == "email";
+    same
+}"""
+    match FlowLint.analyze FlowLint.defaultOptions lintWord with
+    | Ok [] -> check "FlowLint follows locals through property and equality nodes" true
+    | Ok warnings -> failwithf "Flow/2 property/equality linter reported unexpected warnings: %A" warnings
+    | Error problem -> failwith $"{problem.Code}: {problem.Message}"
 
 let private testSparseFlowSourceMarkerAllocation () =
     let context = loweringContext [] (Map.ofList [ "add", [ "left"; "right" ] ])
@@ -1340,6 +1568,7 @@ let private testFlowOutputVectors () =
                 |> List.map (function
                     | FlowExpression.Literal(_, source) | FlowExpression.Local(_, source) -> source
                     | FlowExpression.Call(_, _, source) | FlowExpression.RootCall(_, _, source) | FlowExpression.DotCall(_, _, _, source)
+                    | FlowExpression.Property(_, _, source) | FlowExpression.Equality(_, _, source)
                     | FlowExpression.If(_, _, _, source) | FlowExpression.Container(_, _, _, source)
                     | FlowExpression.MatchOption(_, _, _, source) | FlowExpression.MatchResult(_, _, _, source) -> source)
                 |> Some
@@ -2137,7 +2366,7 @@ let private testFlowAuthoredCases () =
     let invalidOwnerTest = { literalTest with Word = "storefront/select" }
     expectLanguageError "host-built noncanonical owner fails rendering" "FLOW_CASE_OWNER_NAME_INVALID" (fun () -> FlowSource.renderTest invalidOwnerTest |> ignore)
     expectLanguageError "host-built noncanonical owner fails lowering" "FLOW_CASE_OWNER_NAME_INVALID" (fun () -> FlowLowering.lowerTest compiledChoice.Context invalidOwnerTest |> ignore)
-    let unsupportedCaseVersion = { literalTest with SyntaxVersion = 2 }
+    let unsupportedCaseVersion = { literalTest with SyntaxVersion = 3 }
     expectLanguageError "host-built unsupported test version fails rendering" "FLOW_VERSION_UNSUPPORTED" (fun () -> FlowSource.renderTest unsupportedCaseVersion |> ignore)
     expectLanguageError "host-built unsupported test version fails lowering" "FLOW_VERSION_UNSUPPORTED" (fun () -> FlowLowering.lowerTest compiledChoice.Context unsupportedCaseVersion |> ignore)
 
@@ -2643,6 +2872,7 @@ let private testFlowCallBindingSources () =
           Parameters = []
           Outputs = [ TInt ]
           Effects = Set.empty
+          EffectsDeclared = true
           Documentation = ""
           Body =
             [ FlowStatement.Evaluate(FlowExpression.Call("left.value", [], duplicateSpan))
@@ -3682,30 +3912,34 @@ let private testFlowAttachmentCallBindings () =
 let private testFlowPersistenceBindings () =
     let path =
         FlowAstPath.FlowAstPath
-            [ FlowAstPathSegment.BlockStatement 1
-              FlowAstPathSegment.LetInitializer
-              FlowAstPathSegment.DestructureInitializer
-              FlowAstPathSegment.EvaluateExpression
-              FlowAstPathSegment.ReturnOutput 2
-              FlowAstPathSegment.CallArgument 3
-              FlowAstPathSegment.RootCallArgument 4
-              FlowAstPathSegment.DotReceiver
-              FlowAstPathSegment.DotArgument 5
-              FlowAstPathSegment.IfCondition
-              FlowAstPathSegment.IfThenStatement 6
-              FlowAstPathSegment.IfElseStatement 7
-              FlowAstPathSegment.ContainerPayload
-              FlowAstPathSegment.OptionScrutinee
-              FlowAstPathSegment.OptionSomeStatement 8
-              FlowAstPathSegment.OptionNoneStatement 9
-              FlowAstPathSegment.ResultScrutinee
-              FlowAstPathSegment.ResultOkStatement 10
+            [ FlowAstPathSegment.BlockStatement 1;
+              FlowAstPathSegment.LetInitializer;
+              FlowAstPathSegment.DestructureInitializer;
+              FlowAstPathSegment.EvaluateExpression;
+              FlowAstPathSegment.ReturnOutput 2;
+              FlowAstPathSegment.CallArgument 3;
+              FlowAstPathSegment.RootCallArgument 4;
+              FlowAstPathSegment.DotReceiver;
+              FlowAstPathSegment.DotArgument 5;
+              FlowAstPathSegment.PropertyReceiver;
+              FlowAstPathSegment.EqualityLeft;
+              FlowAstPathSegment.EqualityRight;
+              FlowAstPathSegment.IfCondition;
+              FlowAstPathSegment.IfThenStatement 6;
+              FlowAstPathSegment.IfElseStatement 7;
+              FlowAstPathSegment.ContainerPayload;
+              FlowAstPathSegment.OptionScrutinee;
+              FlowAstPathSegment.OptionSomeStatement 8;
+              FlowAstPathSegment.OptionNoneStatement 9;
+              FlowAstPathSegment.ResultScrutinee;
+              FlowAstPathSegment.ResultOkStatement 10;
               FlowAstPathSegment.ResultErrorStatement 11 ]
     let callSpan = span "persisted-bindings.flow" 9 4 18
     let forms: (FlowCallForm * StoredCallForm) list =
         [ FlowCallForm.Direct, StoredCallForm.Direct
           FlowCallForm.AbsoluteRoot, StoredCallForm.AbsoluteRoot
           FlowCallForm.DotStage "select", StoredCallForm.DotStage "select"
+          FlowCallForm.PropertyAccess "email", StoredCallForm.PropertyAccess "email"
           FlowCallForm.StaticCallback("map", FlowWordReferenceQualification.ExplicitShort),
               StoredCallForm.StaticCallback("map", FlowWordReferenceQualification.ExplicitShort)
           FlowCallForm.StaticCallback("filter", FlowWordReferenceQualification.NamespaceQualified),
@@ -3819,6 +4053,7 @@ let private testFlowRewrite () =
         | FlowCallForm.Direct -> StoredCallForm.Direct
         | FlowCallForm.AbsoluteRoot -> StoredCallForm.AbsoluteRoot
         | FlowCallForm.DotStage stage -> StoredCallForm.DotStage stage
+        | FlowCallForm.PropertyAccess field -> StoredCallForm.PropertyAccess field
         | FlowCallForm.StaticCallback(stage, qualification) -> StoredCallForm.StaticCallback(stage, qualification)
 
     let storedTarget = function
@@ -3902,6 +4137,7 @@ let private testFlowRewrite () =
                 let form =
                     match row.Form with
                     | StoredCallForm.StaticCallback(stage, _) -> StoredCallForm.StaticCallback(stage, FlowWordReferenceQualification.AbsoluteRoot)
+                    | StoredCallForm.PropertyAccess field -> StoredCallForm.PropertyAccess field
                     | StoredCallForm.Direct | StoredCallForm.AbsoluteRoot | StoredCallForm.DotStage _ -> StoredCallForm.AbsoluteRoot
                 { row with Form = form; RequestedName = "choose" })
     equal "flat rewrite preserves every binding row and stable target while mapping all target forms" expectedFlatRows flatRewrite.Bindings
@@ -3993,6 +4229,7 @@ let private testFlowRewrite () =
                  let form =
                      match row.Form with
                      | StoredCallForm.StaticCallback(stage, _) -> StoredCallForm.StaticCallback(stage, FlowWordReferenceQualification.NamespaceQualified)
+                     | StoredCallForm.PropertyAccess field -> StoredCallForm.PropertyAccess field
                      | StoredCallForm.Direct | StoredCallForm.AbsoluteRoot | StoredCallForm.DotStage _ -> StoredCallForm.Direct
                  { row with RequestedName = "modern.pick"; Form = form }))
         qualifiedRewrite.Bindings
@@ -4449,6 +4686,7 @@ let private testFlowProjectDocumentParser () =
 let main _ =
     testParserLocationsAndQualification ()
     testIterativeAstDepthLimit ()
+    testFlow2Frontend ()
     testSparseFlowSourceMarkerAllocation ()
     testFlowSourceCanonicalRoundTrip ()
     testContainerAndMatchSyntaxRoundTrip ()

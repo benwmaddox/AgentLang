@@ -8,7 +8,7 @@ The IR records exact input/output stack types, local types, resolved stable word
 
 The first lowering milestone preserves existing semantics and protocol behavior. Run all current acceptance tests against the IR interpreter, plus focused tests for stack joins, locals, error spans, nominal identities, callback effects, and coverage mapping. Branch/outcome coverage must continue to identify source-level obligations after lowering. Runtime errors remain structured; host exceptions cannot become successful error expectations.
 
-Later, conditional on successful language experiments:
+Secondary execution target, following the efficacy review:
 
 | Environment | Execution and shipped components |
 | --- | --- |
@@ -19,7 +19,28 @@ Define conformance fixtures before adding native backends. They must agree on In
 
 Development calls resolve through versioned word identities. Hot replacement must invalidate compiled callers or route them through an updated dispatch boundary; stale compiled bodies must not silently retain replaced behavior. Pin the release dependency graph and reject unresolved candidates/temporary words before AOT.
 
+The dictionary provides controlled late binding of implementations, not dynamic
+name/type guessing. Resolve identities, signatures and effect contracts before
+execution. For a scoped test override, invalidate the transitive compiled caller
+closure, including inlined/specialized dependencies and static callbacks. The
+initial safe policy is to interpret that affected closure against the test's
+dictionary overlay for its duration. Other unaffected compiled functions may
+remain native. On cleanup, remove the overlay and restore or rebuild dispatch
+against the original generation; do not reuse code compiled for the mock.
+Retain active executable generations until their frames have finished. Ordinary
+definitions/history stay unchanged. Release AOT pins implementations and may
+use direct calls/inlining without requiring a live development dictionary.
+
 LLVM integration, ABI/layout, allocation strategy, linking, debug information, and native performance targets remain later design work. Require explicit versions and deterministic layout oracles when those contracts are introduced. Do not make LLVM a dependency of the initial runtime or agent pilot.
+
+Priority update, 2026-10-07: the efficacy report remains first. Efficient LLVM
+execution (development interpreter + JIT, release AOT) and a chosen memory design
+are second, rather than waiting for every optional language feature. A comparative
+reliability advantage is not a prerequisite for a bounded native prototype.
+Start with a small semantic-conformance slice and measured arena lifetime/pooling
+experiment. Per-turn scratch with explicit retained mailbox state is the main
+candidate; compare whole-request arenas before adopting it. General native
+release support still requires complete semantics and checked lifetime/ABI rules.
 
 The proposed allocation direction includes [scoped arenas](MEMORY-REGIONS.md) for phase-oriented values and a distinct retained-data strategy. Define escape/promotion and old-generation retention before resetting a region. Bulk reclamation must not invalidate returned values, snapshots or active code, and does not replace resource cleanup. The managed interpreter and eventual native backends share value/lifetime semantics without a promise of identical physical allocation. No arena implementation or memory gain is claimed yet.
 

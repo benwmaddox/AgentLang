@@ -1,0 +1,469 @@
+{
+  "schemaVersion": 1,
+  "kind": "subagent-trial-host-v2-focused-verification",
+  "outcome": "passed",
+  "createdUtc": "2026-10-07T19:43:55.7908325+00:00",
+  "repoRoot": "D:\\code\\AgentLang",
+  "testedHead": "f914c9905e375d772ad006b84002cd4316490722",
+  "workingTreeDirty": true,
+  "cliDll": "D:\\code\\AgentLang\\.agentlang\\flow2-validation\\bin\\AgentLang.Cli\\release\\AgentLang.Cli.dll",
+  "cliFiles": [
+    {
+      "name": "AgentLang.Cli.dll",
+      "sha256": "803e525580697852b8d5b35b9145bd51d01850fa273f0d049d60dec6cd7fa113"
+    },
+    {
+      "name": "AgentLang.Core.dll",
+      "sha256": "520f98ecfcb3019824f355bf04a60d854e8ebad3cecfdba3e7bd3d226c9ebe18"
+    },
+    {
+      "name": "FSharp.Core.dll",
+      "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+    }
+  ],
+  "wrapperFiles": [
+    {
+      "path": "scripts/Start-SubagentTrialHostV2.ps1",
+      "sha256": "6573321e8c0fc92926e43221ae10836fd5c62139e5fdb51cc34ff482fbc81f2b"
+    },
+    {
+      "path": "scripts/Audit-SubagentTrialTerminationV2.ps1",
+      "sha256": "870ff9b9a1843c0a104d2185688486c7ed1e85399df6c554f9ee890c4dcf4a10"
+    },
+    {
+      "path": "scripts/Verify-SubagentTrialHostV2.ps1",
+      "sha256": "5b1c351b4e1917db0d6c0f2f7342e9e05cd3ff73f5237accda32359af9665041"
+    }
+  ],
+  "fakeChildFiles": [
+    {
+      "name": "FakeRuntime.deps.json",
+      "bytes": 425,
+      "sha256": "0ff1bdcaa1e0aec9542b462d5555495a075fd707be91bb5da237092db151518b"
+    },
+    {
+      "name": "FakeRuntime.dll",
+      "bytes": 6144,
+      "sha256": "a9bf8134ccabfa29dfeb30358f64482132d4fbbe1d425041734213e84e165b1e"
+    },
+    {
+      "name": "FakeRuntime.exe",
+      "bytes": 156160,
+      "sha256": "ec3bb4d9a6076456b55531d5f32af3bf8ed38b16aa5da6f7b52d455239d762c9"
+    },
+    {
+      "name": "FakeRuntime.pdb",
+      "bytes": 12104,
+      "sha256": "adc4100bbce0caf57100ad75f8d9aaed6d2745b37e5605c21470a21e7d8e5775"
+    },
+    {
+      "name": "FakeRuntime.runtimeconfig.json",
+      "bytes": 340,
+      "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+    }
+  ],
+  "artifacts": ".agentlang/subagent-host-v2-verification-7302622b2f934bf0a3c071037b26a617",
+  "checkCount": 29,
+  "passedCheckCount": 29,
+  "failedCheckCount": 0,
+  "checks": [
+    {
+      "name": "controlled fake child builds",
+      "passed": true,
+      "detail": "  Determining projects to restore...\r\n  Restored D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-7302622b2f934bf0a3c071037b26a617\\fake-runtime-source\\FakeRuntime.csproj (in 50 ms).\r\n  FakeRuntime -> D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-7302622b2f934bf0a3c071037b26a617\\fake-runtime-output\\FakeRuntime.dll\r\n\r\nBuild succeeded.\r\n    0 Warning(s)\r\n    0 Error(s)\r\n\r\nTime Elapsed 00:00:00.92\r\n"
+    },
+    {
+      "name": "startup rejects exposing host.close as an allowed runtime operation before launching the child",
+      "passed": true,
+      "detail": "exit=1; traceEvents=0; childStarted=False; expectedDiagnostic='The reserved host.close transport control cannot be exposed as a runtime operation.'; diagnosticMatched=True; output=TRIAL_HOST_FAILURE: The reserved host.close transport control cannot be exposed as a runtime operation."
+    },
+    {
+      "name": "real CLI flow completes through explicit host.close",
+      "passed": true,
+      "detail": "processExit=0; timedOut=False; responses=5; stdoutResponsesOk=True; traceResponsesOk=True; closeEvents=1; term=host-close; hostExit=0; runtimeExit=0"
+    },
+    {
+      "name": "host.close produces no stdout acknowledgement and does not consume an exchange",
+      "passed": true,
+      "detail": "closeCount=5; exchangeEvents=5"
+    },
+    {
+      "name": "fresh CLI process reloads committed definition and test after host.close",
+      "passed": true,
+      "detail": "responses=3; testPassed=True"
+    },
+    {
+      "name": "generic termination audit accepts real CLI close trace",
+      "passed": true,
+      "detail": "Termination audit passed: 5 broker exchanges, close wire 20 bytes, host/runtime exits 0/0.\r\n"
+    },
+    {
+      "name": "host.close is accepted at the exact exchange limit without incrementing it",
+      "passed": true,
+      "detail": "responses=3; forwarded=3; closeCount=3"
+    },
+    {
+      "name": "generic termination audit checks exchange ordinals and preserved close wire at limit",
+      "passed": true,
+      "detail": "Termination audit passed: 3 broker exchanges, close wire 20 bytes, host/runtime exits 0/0.\r\n"
+    },
+    {
+      "name": "close-only CRLF control succeeds under a one-byte response cap without an ack",
+      "passed": true,
+      "detail": "exit=0; stdoutBytes=0; runtimeExit=0; rawHasCR=True"
+    },
+    {
+      "name": "generic audit verifies CRLF wire preservation and one-field canonical close",
+      "passed": true,
+      "detail": "Termination audit passed: 0 broker exchanges, close wire 25 bytes, host/runtime exits 0/0.\r\n"
+    },
+    {
+      "name": "extra-field and duplicate-key close frames are rejected and never forwarded",
+      "passed": true,
+      "detail": "invalidResponses=2; countedExchanges=3; rejectedCloseExchanges=2; forwarded=1"
+    },
+    {
+      "name": "audit accepts valid terminal close after rejected malformed close requests",
+      "passed": true,
+      "detail": "Termination audit passed: 3 broker exchanges, close wire 20 bytes, host/runtime exits 0/0.\r\n"
+    },
+    {
+      "name": "partial LF close is not recognized as the transport control",
+      "passed": true,
+      "detail": "exit=2; termination=other-failure; rejectionCode=TRIAL_UNTERMINATED_REQUEST; expectedDiagnostic='JSONL requests must end with LF; the unterminated final request was not forwarded.'; diagnosticMatched=True; responseOutput={\"ok\":false,\"kind\":\"error\",\"text\":\"JSONL requests must end with LF; the unterminated final request was not forwarded.\",\"error\":{\"code\":\"TRIAL_UNTERMINATED_REQUEST\",\"message\":\"JSONL requests must end with LF; the unterminated final request was not forwarded.\"}}; auditExit=1"
+    },
+    {
+      "name": "partial close fails the explicit termination audit because no complete close control was traced",
+      "passed": true,
+      "detail": "Termination audit failed: Expected exactly one host-close event; found 0.\r\n"
+    },
+    {
+      "name": "ordinary stdin EOF is recorded separately from explicit actor completion",
+      "passed": true,
+      "detail": "hostExit=0; termination=input-eof; runtimeExit=0"
+    },
+    {
+      "name": "generic audit rejects ordinary EOF because no host.close event was traced",
+      "passed": true,
+      "detail": "Termination audit failed: Expected exactly one host-close event; found 0.\r\n"
+    },
+    {
+      "name": "hanging child shutdown is bounded and cannot pass termination audit",
+      "passed": true,
+      "detail": "hostProcessExit=3; hostExit=3; runtimeExit=-1; durationMs=1704.691; auditExit=1"
+    },
+    {
+      "name": "mutation source trace parses as a flat list of typed events",
+      "passed": true,
+      "detail": "eventCount=6; eventTypes=session-start,exchange,exchange,exchange,host-close,session-end"
+    },
+    {
+      "name": "mutation source baseline passes the termination auditor before mutation",
+      "passed": true,
+      "detail": "Termination audit passed: 3 broker exchanges, close wire 20 bytes, host/runtime exits 0/0.\r\n"
+    },
+    {
+      "name": "audit rejects a mutated host-close wire hash for the hash mismatch",
+      "passed": true,
+      "detail": "Termination audit failed: host-close requestWireSha256 does not match the preserved wire bytes.\r\n"
+    },
+    {
+      "name": "audit rejects duplicated host-close terminal evidence for the duplicate event",
+      "passed": true,
+      "detail": "Termination audit failed: Expected exactly one host-close event; found 2.\r\n"
+    },
+    {
+      "name": "audit rejects a missing host-close event for the missing terminal control",
+      "passed": true,
+      "detail": "Termination audit failed: Expected exactly one host-close event; found 0.\r\n"
+    },
+    {
+      "name": "audit rejects a missing terminal session-end event for the missing end",
+      "passed": true,
+      "detail": "Termination audit failed: Expected exactly one session-end event; found 0.\r\n"
+    },
+    {
+      "name": "audit rejects a preserved close frame larger than configured maxRequestBytes for the payload limit",
+      "passed": true,
+      "detail": "Termination audit failed: Preserved host-close payload exceeds the configured request limit.\r\n"
+    },
+    {
+      "name": "audit rejects a session-start maxExchanges above the host cap for the configured cap",
+      "passed": true,
+      "detail": "Termination audit failed: session-start is missing a valid maxExchanges limit or exceeds the host cap.\r\n"
+    },
+    {
+      "name": "audit rejects a host-close exchange count that differs from the broker trace for the count mismatch",
+      "passed": true,
+      "detail": "Termination audit failed: host-close exchangeCount does not equal the number of broker exchanges.\r\n"
+    },
+    {
+      "name": "audit rejects uncertain prior exchange history for the nonterminal state",
+      "passed": true,
+      "detail": "Termination audit failed: Exchange 1 has nonterminal execution state 'uncertain'.\r\n"
+    },
+    {
+      "name": "audit rejects incomplete observed runtime response bytes for incompleteness",
+      "passed": true,
+      "detail": "Termination audit failed: Exchange 1 observed runtime response is incomplete.\r\n"
+    },
+    {
+      "name": "audit rejects cancellation history before a synthetic clean close for the cancellation event",
+      "passed": true,
+      "detail": "Termination audit failed: Trace contains a host cancellation event.\r\n"
+    }
+  ],
+  "traceInventory": [
+    {
+      "run": "real-cli-write-close",
+      "path": ".agentlang/reports/trial-host-v2-7302622b2f934bf0a3c071037b26a617-real-cli-write-close.jsonl",
+      "bytes": 13559,
+      "sha256": "c89102420763b5969314e045ff5b5e61e4231fe9bbc9d8d992fae41e91f1a68c",
+      "eventCount": 8,
+      "eventNames": [
+        "session-start",
+        "exchange",
+        "exchange",
+        "exchange",
+        "exchange",
+        "exchange",
+        "host-close",
+        "session-end"
+      ],
+      "terminationKind": "host-close"
+    },
+    {
+      "run": "real-cli-reload-close",
+      "path": ".agentlang/reports/trial-host-v2-7302622b2f934bf0a3c071037b26a617-real-cli-reload-close.jsonl",
+      "bytes": 11008,
+      "sha256": "c926cde6b34e9e6ffa6d2731a545de3ac8c02d7296eda2d29edbe110a9406993",
+      "eventCount": 6,
+      "eventNames": [
+        "session-start",
+        "exchange",
+        "exchange",
+        "exchange",
+        "host-close",
+        "session-end"
+      ],
+      "terminationKind": "host-close"
+    },
+    {
+      "run": "close-at-exchange-limit",
+      "path": ".agentlang/reports/trial-host-v2-7302622b2f934bf0a3c071037b26a617-close-at-exchange-limit.jsonl",
+      "bytes": 5537,
+      "sha256": "ae86e44c7a3c68f06203fe45af4c17498be36e79098cfde6439a9103bb5b4441",
+      "eventCount": 6,
+      "eventNames": [
+        "session-start",
+        "exchange",
+        "exchange",
+        "exchange",
+        "host-close",
+        "session-end"
+      ],
+      "terminationKind": "host-close"
+    },
+    {
+      "run": "close-only-one-byte-response-cap",
+      "path": ".agentlang/reports/trial-host-v2-7302622b2f934bf0a3c071037b26a617-close-only-one-byte-response-cap.jsonl",
+      "bytes": 2389,
+      "sha256": "900446e1a9485494a5575da650383d102f6a04c953c1d7201452f703723fbf20",
+      "eventCount": 3,
+      "eventNames": [
+        "session-start",
+        "host-close",
+        "session-end"
+      ],
+      "terminationKind": "host-close"
+    },
+    {
+      "run": "malformed-close-frames",
+      "path": ".agentlang/reports/trial-host-v2-7302622b2f934bf0a3c071037b26a617-malformed-close-frames.jsonl",
+      "bytes": 7586,
+      "sha256": "40c03f3a3f41744d5fd8763dfa0ee1d6efe3e55c7442908910a0e8dce641c21c",
+      "eventCount": 6,
+      "eventNames": [
+        "session-start",
+        "exchange",
+        "exchange",
+        "exchange",
+        "host-close",
+        "session-end"
+      ],
+      "terminationKind": "host-close"
+    },
+    {
+      "run": "partial-lf-close",
+      "path": ".agentlang/reports/trial-host-v2-7302622b2f934bf0a3c071037b26a617-partial-lf-close.jsonl",
+      "bytes": 2259,
+      "sha256": "c11beaf7b39ebb7d1e4d0cfd17cbbf489f51eed6e608e0f9ece1aee845441556",
+      "eventCount": 3,
+      "eventNames": [
+        "session-start",
+        "request-rejected",
+        "session-end"
+      ],
+      "terminationKind": "other-failure"
+    },
+    {
+      "run": "ordinary-input-eof",
+      "path": ".agentlang/reports/trial-host-v2-7302622b2f934bf0a3c071037b26a617-ordinary-input-eof.jsonl",
+      "bytes": 3120,
+      "sha256": "e8160eea6b19800f6df77b53108aac8683c92984db20c2dd2d420442df832b33",
+      "eventCount": 3,
+      "eventNames": [
+        "session-start",
+        "exchange",
+        "session-end"
+      ],
+      "terminationKind": "input-eof"
+    },
+    {
+      "run": "child-hang-on-close",
+      "path": ".agentlang/reports/trial-host-v2-7302622b2f934bf0a3c071037b26a617-child-hang-on-close.jsonl",
+      "bytes": 2495,
+      "sha256": "257385b5df62d0025e7a43cb3ae350b3178252a8204e86598aa5c24fdc438854",
+      "eventCount": 4,
+      "eventNames": [
+        "session-start",
+        "host-close",
+        "shutdown-timeout",
+        "session-end"
+      ],
+      "terminationKind": "other-failure"
+    }
+  ],
+  "audits": [
+    {
+      "name": "real-cli-write-trace",
+      "tracePath": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-7302622b2f934bf0a3c071037b26a617-real-cli-write-close.jsonl",
+      "exitCode": 0,
+      "stdout": "Termination audit passed: 5 broker exchanges, close wire 20 bytes, host/runtime exits 0/0.\r\n",
+      "stderr": ""
+    },
+    {
+      "name": "close-at-limit-trace",
+      "tracePath": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-7302622b2f934bf0a3c071037b26a617-close-at-exchange-limit.jsonl",
+      "exitCode": 0,
+      "stdout": "Termination audit passed: 3 broker exchanges, close wire 20 bytes, host/runtime exits 0/0.\r\n",
+      "stderr": ""
+    },
+    {
+      "name": "close-only-crlf-trace",
+      "tracePath": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-7302622b2f934bf0a3c071037b26a617-close-only-one-byte-response-cap.jsonl",
+      "exitCode": 0,
+      "stdout": "Termination audit passed: 0 broker exchanges, close wire 25 bytes, host/runtime exits 0/0.\r\n",
+      "stderr": ""
+    },
+    {
+      "name": "malformed-then-valid-close-trace",
+      "tracePath": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-7302622b2f934bf0a3c071037b26a617-malformed-close-frames.jsonl",
+      "exitCode": 0,
+      "stdout": "Termination audit passed: 3 broker exchanges, close wire 20 bytes, host/runtime exits 0/0.\r\n",
+      "stderr": ""
+    },
+    {
+      "name": "partial-close-trace",
+      "tracePath": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-7302622b2f934bf0a3c071037b26a617-partial-lf-close.jsonl",
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "Termination audit failed: Expected exactly one host-close event; found 0.\r\n"
+    },
+    {
+      "name": "ordinary-eof-trace",
+      "tracePath": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-7302622b2f934bf0a3c071037b26a617-ordinary-input-eof.jsonl",
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "Termination audit failed: Expected exactly one host-close event; found 0.\r\n"
+    },
+    {
+      "name": "hanging-child-trace",
+      "tracePath": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-7302622b2f934bf0a3c071037b26a617-child-hang-on-close.jsonl",
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "Termination audit failed: host-close must be the final transport event before session-end.\r\n"
+    },
+    {
+      "name": "mutation-source-baseline",
+      "tracePath": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-7302622b2f934bf0a3c071037b26a617-close-at-exchange-limit.jsonl",
+      "exitCode": 0,
+      "stdout": "Termination audit passed: 3 broker exchanges, close wire 20 bytes, host/runtime exits 0/0.\r\n",
+      "stderr": ""
+    },
+    {
+      "name": "mutated-host-close-wire-hash",
+      "tracePath": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-7302622b2f934bf0a3c071037b26a617\\audit-mutations\\mutated-wire-hash.jsonl",
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "Termination audit failed: host-close requestWireSha256 does not match the preserved wire bytes.\r\n"
+    },
+    {
+      "name": "duplicate-host-close-event",
+      "tracePath": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-7302622b2f934bf0a3c071037b26a617\\audit-mutations\\duplicate-host-close-event.jsonl",
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "Termination audit failed: Expected exactly one host-close event; found 2.\r\n"
+    },
+    {
+      "name": "missing-host-close-event",
+      "tracePath": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-7302622b2f934bf0a3c071037b26a617\\audit-mutations\\missing-host-close-event.jsonl",
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "Termination audit failed: Expected exactly one host-close event; found 0.\r\n"
+    },
+    {
+      "name": "missing-session-end-event",
+      "tracePath": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-7302622b2f934bf0a3c071037b26a617\\audit-mutations\\missing-session-end-event.jsonl",
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "Termination audit failed: Expected exactly one session-end event; found 0.\r\n"
+    },
+    {
+      "name": "close-payload-over-configured-limit",
+      "tracePath": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-7302622b2f934bf0a3c071037b26a617\\audit-mutations\\close-payload-over-configured-limit.jsonl",
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "Termination audit failed: Preserved host-close payload exceeds the configured request limit.\r\n"
+    },
+    {
+      "name": "max-exchanges-over-host-cap",
+      "tracePath": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-7302622b2f934bf0a3c071037b26a617\\audit-mutations\\max-exchanges-over-host-cap.jsonl",
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "Termination audit failed: session-start is missing a valid maxExchanges limit or exceeds the host cap.\r\n"
+    },
+    {
+      "name": "mutated-close-exchange-count",
+      "tracePath": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-7302622b2f934bf0a3c071037b26a617\\audit-mutations\\mutated-close-exchange-count.jsonl",
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "Termination audit failed: host-close exchangeCount does not equal the number of broker exchanges.\r\n"
+    },
+    {
+      "name": "uncertain-prior-exchange",
+      "tracePath": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-7302622b2f934bf0a3c071037b26a617\\audit-mutations\\uncertain-prior-exchange.jsonl",
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "Termination audit failed: Exchange 1 has nonterminal execution state 'uncertain'.\r\n"
+    },
+    {
+      "name": "partial-observed-runtime-response",
+      "tracePath": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-7302622b2f934bf0a3c071037b26a617\\audit-mutations\\partial-observed-runtime-response.jsonl",
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "Termination audit failed: Exchange 1 observed runtime response is incomplete.\r\n"
+    },
+    {
+      "name": "cancelled-prior-history",
+      "tracePath": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-7302622b2f934bf0a3c071037b26a617\\audit-mutations\\cancelled-prior-history.jsonl",
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "Termination audit failed: Trace contains a host cancellation event.\r\n"
+    }
+  ],
+  "limits": {
+    "shutdown": "The fake hanging child is used only to confirm bounded close cleanup and that the termination auditor rejects nonzero or missing runtime completion.",
+    "verification": "Focused transport and persistence verification; no model behavior, throughput, or end-user turn metrics are inferred."
+  }
+}

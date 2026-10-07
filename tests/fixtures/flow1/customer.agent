@@ -4,16 +4,16 @@ record Customer {
     field balance: Float;
 }
 
-fn customer.premium?(customer: Customer) -> Bool {
+word customer.premium?(customer: Customer) -> Bool {
+    effects none
     doc "Whether this customer has premium status."
-
-    customer.kind == "premium"
+    equals(customer.kind(), "premium")
 }
 
-fn customer.discounted-balance(customer: Customer) -> Float {
+word customer.discounted-balance(customer: Customer) -> Float {
+    effects none
     doc "Apply a 10% discount to premium customers."
-
-    let balance = customer.balance;
+    let balance = customer.balance();
     if customer.premium?() {
         float::multiply(balance, 0.9)
     } else {

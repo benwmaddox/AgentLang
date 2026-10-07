@@ -147,6 +147,11 @@ module FlowLint =
                         | FlowExpression.DotCall(receiver, _, arguments, _) ->
                             analyzeExpression outerFrames localBindings statementIndex receiver
                             for argument in arguments do analyzeArgument outerFrames localBindings statementIndex argument
+                        | FlowExpression.Property(receiver, _, _) ->
+                            analyzeExpression outerFrames localBindings statementIndex receiver
+                        | FlowExpression.Equality(left, right, _) ->
+                            analyzeExpression outerFrames localBindings statementIndex left
+                            analyzeExpression outerFrames localBindings statementIndex right
                         | FlowExpression.If(condition, thenBranch, elseBranch, _) ->
                             analyzeExpression outerFrames localBindings statementIndex condition
                             let parentFrame =

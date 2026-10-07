@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "validatedBaseRevision": "f914c9905e375d772ad006b84002cd4316490722",
+  "workingTreeDirty": true,
+  "files": [
+    {
+      "name": "flow2-binding-probe.log",
+      "bytes": 281,
+      "sha256": "491a8e43f36b83f6eff4ef433bbe684bf3023c339f4e3bdafdc5c11e611c71e2"
+    },
+    {
+      "name": "flow2-full-build.log",
+      "bytes": 4624,
+      "sha256": "1047c46c3fa6c05c69b4190b3de459097c4a1ad524a35cba532d1dafd0da9a01"
+    },
+    {
+      "name": "flow2-full-tests-failed-assertions.json",
+      "bytes": 10746,
+      "sha256": "0e33b03ead88ae342a3d617b30a827c9f0e9deacb369bc1680f68e9feb293504"
+    },
+    {
+      "name": "flow2-full-tests-failed-paths.json",
+      "bytes": 10634,
+      "sha256": "3d2f035a6254210aa9e3f2bd9128db586e567d6f645bbec6b30aeb5cb450b016"
+    },
+    {
+      "name": "flow2-full-tests-failed.json",
+      "bytes": 13576,
+      "sha256": "d7b4bb5805877e41054fe83c56f04ec8c40c6cd66582ce1dc0b0a5cba99cba82"
+    },
+    {
+      "name": "flow2-full-tests.json",
+      "bytes": 9447,
+      "sha256": "ad8d8b430816b378dab97a55f7838121b9ecfb0cb5643bc1b30fd48f7c2359bb"
+    },
+    {
+      "name": "flow2-ir-parity.json",
+      "bytes": 439609,
+      "sha256": "6fa99b07c0e90ac3cc6f2a5cec225c9a29fd902ab09d70018bbe2237a0f54156"
+    },
+    {
+      "name": "flow2-pinned-runtime-check.json",
+      "bytes": 2151,
+      "sha256": "b3ffa20fc4ac68cef5b687de31a119fbbf1588a9aca5ea8dc459e4a615625897"
+    },
+    {
+      "name": "flow2-process-EarlyAgentNegativeControls.json",
+      "bytes": 98357,
+      "sha256": "55b0c6962e9b87772a108a9e4e95612c2978b00f5432c71324dacf24d54cbe24"
+    },
+    {
+      "name": "flow2-process-FlowMatchedRenewalFixtures.json",
+      "bytes": 222131,
+      "sha256": "d897cd78c1c07f127869f82f66abc4c8aa1a49ddb41c0561fa4987b7bcbc6a2a"
+    },
+    {
+      "name": "flow2-process-FlowRenewalAcceptanceGate.json",
+      "bytes": 989401,
+      "sha256": "051f7ddba3f41173866aac174a74afbf6129c6e2fcf18c2d355c84f62fde5ef4"
+    },
+    {
+      "name": "flow2-process-FlowRenewalReplay.json",
+      "bytes": 292999,
+      "sha256": "81ba14e0f6ac894b5fbd909456334b9ca94d976612b48d216d11076d6d7058f1"
+    },
+    {
+      "name": "flow2-process-gates.json",
+      "bytes": 2562,
+      "sha256": "ea16d74ee132c41637207af9abac35ffd53702e16f0310b3ae71e78c645d5bea"
+    },
+    {
+      "name": "flow2-process-MatchedRenewalFixtures.json",
+      "bytes": 97040,
+      "sha256": "513dc94b3f6e81751b7ab345211381f5df0bc4a1ad536112f4305dde762aeadd"
+    },
+    {
+      "name": "flow2-process-MatchedRenewalSnapshots.json",
+      "bytes": 83138,
+      "sha256": "82ace2832c5171c8c2a394ead99cd95e1305dc15651a8dcc05fd51cf260d950b"
+    },
+    {
+      "name": "flow2-process-ParserLimits.json",
+      "bytes": 3186,
+      "sha256": "02aca06af47e2a979f2c73c801d10667d57fcbfcd23904c0065e3e7b29f0b28c"
+    },
+    {
+      "name": "flow2-process-PersistenceProjection.json",
+      "bytes": 112601,
+      "sha256": "ee3154658ca27a3194b389b004d3dc57027ef8a7417966f5cd7cc7b5daffee8d"
+    },
+    {
+      "name": "flow2-process-SubagentTrialHost.json",
+      "bytes": 334816,
+      "sha256": "bac31cc4437f41eb5b7729889b91ccf9b714d66b879e241a37b422a48d59d222"
+    },
+    {
+      "name": "flow2-process-SubagentTrialHostV2.json",
+      "bytes": 20897,
+      "sha256": "f63bc519940d932e1318153aa2872a6af4d376bf34c9be907667cff5a958b17b"
+    },
+    {
+      "name": "flow2-runtime-final-build.log",
+      "bytes": 542,
+      "sha256": "9a53d171fca843054f5de3a22673bc88fe4c9cc0aaa5090ab6a46ee2a8c3a22b"
+    }
+  ]
+}

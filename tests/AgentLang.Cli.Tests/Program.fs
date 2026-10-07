@@ -38,10 +38,14 @@ module Program =
         Path.GetFullPath(Path.Combine(__SOURCE_DIRECTORY__, "..", ".."))
 
     let private cliAssembly () : string =
-        let outputDirectory: DirectoryInfo = DirectoryInfo(AppContext.BaseDirectory.TrimEnd([| Path.DirectorySeparatorChar; Path.AltDirectorySeparatorChar |]))
-        let configuration = outputDirectory.Parent.Name
-        let assembly = Path.Combine(repositoryRoot (), "src", "AgentLang.Cli", "bin", configuration, "net9.0", "AgentLang.Cli.dll")
-        if not (File.Exists assembly) then failwith $"CLI assembly was not built for {configuration}: {assembly}"
+        let explicitAssembly = Environment.GetEnvironmentVariable("AGENTLANG_TEST_CLI")
+        let assembly =
+            if not (String.IsNullOrWhiteSpace explicitAssembly) then Path.GetFullPath explicitAssembly
+            else
+                let outputDirectory: DirectoryInfo = DirectoryInfo(AppContext.BaseDirectory.TrimEnd([| Path.DirectorySeparatorChar; Path.AltDirectorySeparatorChar |]))
+                let configuration = outputDirectory.Parent.Name
+                Path.Combine(repositoryRoot (), "src", "AgentLang.Cli", "bin", configuration, "net9.0", "AgentLang.Cli.dll")
+        if not (File.Exists assembly) then failwith $"CLI assembly was not built: {assembly}"
         assembly
 
     let private runCli (projectDirectory: string) (extraArguments: string list) (inputLines: string list) (timeoutMilliseconds: int) =
@@ -424,7 +428,7 @@ module Program =
         let containersDefinition = ":define " + quotedPath (example "containers.agent")
         withProject (fun project ->
             let customer =
-                runCli project []
+                runCli project [ "--syntax-version"; "2" ]
                     [ customerDefinition; ":test-all"
                       ":examples customer.discounted-balance"
                       ":commit customer.premium? --library"
@@ -437,12 +441,12 @@ module Program =
             contains "selected candidates committed." customer.StandardOutput "customer words commit after library coverage passes"
 
             let customerReload =
-                runCli project [ "--eval"; "customer::discounted-balance(customer::new(kind = \"premium\", balance = 100.0))" ] [] 15000
+                runCli project [ "--syntax-version"; "2"; "--eval"; "customer::discounted-balance(customer::new(kind = \"premium\", balance = 100.0))" ] [] 15000
             expectExit 0 customerReload "reload committed customer vocabulary in a fresh process"
             contains "90" customerReload.StandardOutput "fresh process calculates the premium customer balance as 90"
 
             let refined =
-                runCli project []
+                runCli project [ "--syntax-version"; "2" ]
                     [ refinedDefinition; ":test-all"
                       ":examples email.valid?"
                       ":commit email.valid? --library"
@@ -457,14 +461,14 @@ module Program =
             contains "selected candidates committed." refined.StandardOutput "email validator and refined types commit"
 
             let speedReload =
-                runCli project []
+                runCli project [ "--syntax-version"; "2" ]
                     [ "MetersPerSecond::new(3.5)"; "KilometersPerHour::new(12.0)"; ":quit" ] 15000
             expectExit 0 speedReload "reload nominal speed wrappers in a fresh process"
             contains "MetersPerSecond" speedReload.StandardOutput "fresh process constructs the nominal meters-per-second type"
             contains "KilometersPerHour" speedReload.StandardOutput "fresh process constructs the nominal kilometers-per-hour type"
 
             let containers =
-                runCli project []
+                runCli project [ "--syntax-version"; "2" ]
                     [ containersDefinition; ":test-all"
                       ":commit container.option-default --library"
                       ":commit container.result-count --library"
@@ -482,7 +486,7 @@ module Program =
             contains "selected candidates committed." containers.StandardOutput "container library words commit after their tests and coverage pass"
 
             let containerReload =
-                runCli project [ "--eval"; "container::option-default(option::some<Int>(90))" ] [] 15000
+                runCli project [ "--syntax-version"; "2"; "--eval"; "container::option-default(option::some<Int>(90))" ] [] 15000
             expectExit 0 containerReload "reload committed generic container vocabulary"
             contains "90" containerReload.StandardOutput "fresh process executes a committed generic container word")
 
@@ -501,6 +505,52 @@ module Program =
             contains "Definitions parsed, type checked, and staged." result.StandardOutput "legacy Stack definition stages"
             contains "42" result.StandardOutput "legacy end-terminated word executes in the explicit Stack frontend")
 
+    let private testFlow2Cli () =
+        withProject (fun project ->
+            let input =
+                [ "record Flag { field active: Bool; }"
+                  "fn flag.active?(flag: Flag) -> Bool {"
+                  "    doc \"Read a plain record property.\""
+                  ""
+                  "    flag.active == true"
+                  "}"
+                  "test flag.active?/true { flag::active?(flag::new(active = true)) => true }"
+                  "test flag.active?/false { flag::active?(flag::new(active = false)) => false }"
+                  ":test flag.active?"
+                  ":commit flag.active? --library"
+                  "temp fn scratch() -> Int { 42 }"
+                  ":eval scratch()"
+                  ":quit" ]
+            let result = runCli project [ "--syntax-version"; "2" ] input 20000
+            expectExit 0 result "Flow/2 human definitions and temporary functions"
+            expectNoCliDiagnostics result "Flow/2 property and equality"
+            contains "2/2 test(s) passed" result.StandardOutput "Flow/2 attached tests run"
+            contains "selected candidates committed." result.StandardOutput "Flow/2 library commit passes"
+            contains "42" result.StandardOutput "temporary fn is evaluated in the session"
+            let reload = runCli project [ "--syntax-version"; "2"; "--eval"; "flag::active?(flag::new(active = false))" ] [] 15000
+            expectExit 0 reload "Flow/2 committed function reload"
+            contains "false" reload.StandardOutput "reloaded property function returns false"
+            let stack2 = runCli project [ "--frontend"; "stack"; "--syntax-version"; "2"; "--eval"; "1" ] [] 10000
+            expectExit 2 stack2 "Stack/2 is rejected"
+            let jsonlFlag = runCli project [ "--syntax-version"; "2"; "--jsonl" ] [] 10000
+            expectExit 2 jsonlFlag "JSONL requests own their version selector"
+            let invalid = runCli project [ "--syntax-version"; "3"; "--eval"; "1" ] [] 10000
+            expectExit 2 invalid "unsupported CLI syntax version is rejected")
+
+    let private testFlow2Formatting () =
+        withProject (fun project ->
+            let source = "fn sample(value: Int) -> Int { doc \"Echo an integer.\" value }"
+            let path = Path.Combine(project, "format-input.agent")
+            File.WriteAllText(path, source)
+            let result = runCli project [ "--syntax-version"; "2" ] [ ":format " + quotedPath path; ":quit" ] 10000
+            expectExit 0 result "Flow/2 human formatter"
+            expectNoCliDiagnostics result "Flow/2 formatting"
+            contains "fn sample(value: Int) -> Int {" result.StandardOutput "canonical fn is printed"
+            contains "doc \"Echo an integer.\"\n\n    value" (result.StandardOutput.Replace("\r\n", "\n")) "metadata has a blank line before code"
+            equal source (File.ReadAllText path) "formatter does not overwrite input file"
+            let absent = runCli project [ "--syntax-version"; "2"; "--eval"; "sample(1)" ] [] 10000
+            expectExit 1 absent "formatter does not install a function")
+
     [<EntryPoint>]
     let main _ =
         try
@@ -513,6 +563,8 @@ module Program =
             group "Flow type source inspection and durable reload" testTypeSourceInspectionAndReload
             group "migrated Flow examples and fresh-process durability" testMigratedFlowExamples
             group "explicit Stack REPL retains end blocks" testExplicitStackEndBlocks
+            group "Flow/2 CLI selection, properties, temporary functions and reload" testFlow2Cli
+            group "Flow/2 human formatting is an explicit nonmutating operation" testFlow2Formatting
             printfn "PASS %d groups, %d assertions" groups assertions
             0
         with ex ->

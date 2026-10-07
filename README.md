@@ -18,10 +18,11 @@ The decisions and scope live in [docs/PRD.md](docs/PRD.md) and [docs/DECISIONS.m
 The [current roadmap](docs/ROADMAP.md) distinguishes implemented features,
 active agent validation and approved future work.
 
-The approved next syntax uses `fn`, plain record properties and `==`, with
+Flow/2 uses `fn`, plain record properties and `==`, with
 omitted effects meaning `none`. See the [revised customer example](docs/EXAMPLE-SYNTAX-MIGRATION.md).
-That syntax is a design preview; the quickstart and executable examples below
-still use the implemented Flow/1 parser.
+Select `syntaxVersion: 2` in JSON requests or `--syntax-version 2` in the human
+CLI. Omitted version selectors retain Flow/1 for compatibility with existing
+clients. Stored source always retains its declared frontend version.
 
 [Authoring through the runtime](docs/AUTHORING.md) explains inline documentation,
 attached tests/examples, library coverage and revision-checked replacements.
@@ -49,10 +50,10 @@ dotnet run --project src/AgentLang.Cli -- --project .agentlang/flow-quickstart -
 Send these requests, one per line:
 
 ~~~json
-{"op":"define","source":"word increment(value: Int) -> Int {\n    effects none\n    value.add(1)\n}\ntest increment/basic {\n    ::increment(41)\n    => 42\n}"}
+{"op":"define","syntaxVersion":2,"source":"fn increment(value: Int) -> Int {\n    doc \"Increase a value by one.\"\n\n    value.add(1)\n}\ntest increment/basic {\n    ::increment(41)\n    => 42\n}"}
 {"op":"test","word":"increment"}
 {"op":"commit","word":"increment"}
-{"op":"eval","code":"::increment(41)"}
+{"op":"eval","syntaxVersion":2,"code":"::increment(41)"}
 {"op":"source","word":"increment"}
 ~~~
 
@@ -66,7 +67,7 @@ current dictionary regardless of the frontend that authored a word.
 Start the human REPL:
 
 ~~~powershell
-dotnet run --project src/AgentLang.Cli -- --project .agentlang
+dotnet run --project src/AgentLang.Cli -- --project .agentlang --syntax-version 2
 ~~~
 
 At its prompt, stage the Flow example, test it and commit reusable vocabulary:
@@ -85,7 +86,7 @@ be exercised. Selected dependencies and types commit with their callers.
 Start a fresh process to reuse the vocabulary:
 
 ~~~powershell
-dotnet run --project src/AgentLang.Cli -- --project .agentlang --eval 'customer::discounted-balance(customer::new(kind = "premium", balance = 100.0))'
+dotnet run --project src/AgentLang.Cli -- --project .agentlang --syntax-version 2 --eval 'customer::discounted-balance(customer::new(kind = "premium", balance = 100.0))'
 ~~~
 
 The result is 90. This example uses binary floating point and does not model
@@ -110,11 +111,15 @@ exact root dictionary name; `customer::premium?` addresses `customer.premium?`.
 Declaration headers and test/example owners spell the dictionary identity
 verbatim, with dots between namespace segments when present.
 Short calls reject ambiguity rather than choose a changing meaning.
+Plain record fields use `customer.kind`; a function call still requires
+parentheses, such as `customer.premium?()`. Property access cannot invoke an
+arbitrary dictionary function. `==` requires identical operand types, including
+nominal identity; it does not unwrap Email to String or convert numeric types.
 
 ~~~text
-word positive-part(value: Int) -> Int {
-    effects none
+fn positive-part(value: Int) -> Int {
     doc "Keep a positive value, otherwise return zero."
+
     if int::greater-than(value, 0) { value } else { 0 }
 }
 test positive-part/positive {
@@ -127,7 +132,8 @@ test positive-part/nonpositive {
 }
 ~~~
 
-Every word declares its types and effects. Named inputs and `let name = expression`
+Every function declares its types. Omitted effects mean pure; effectful functions
+must explicitly declare their effects. Named inputs and `let name = expression`
 locals are immutable and word-scoped. Locals near first use are advisory lint.
 Both conditional paths must return the same types; no value is silently dropped.
 Tests assert literal values, structured runtime errors or independently evaluated
@@ -163,6 +169,11 @@ Use `:source WORD` for a word and `:source --type TYPE` for the exact type sourc
 Protocol equivalents are `{"op":"source","word":"increment"}` and
 `{"op":"source","type":"Email"}`. Source hashes, stable identities, tests,
 examples, history and dependency queries remain available after reload.
+`{"op":"format","syntaxVersion":2,"source":"..."}` returns canonical Flow
+source without changing the dictionary. The human equivalent is `:format FILE`.
+Submit the returned text through the normal definition/revision operation to
+accept it as retained source. Formatting preserves explicit versus omitted
+effects and puts a blank line between metadata and executable code.
 
 After defining a Flow word, a separate test/example declaration can add a new
 case to that word. Existing case replacement requires explicit owner revision

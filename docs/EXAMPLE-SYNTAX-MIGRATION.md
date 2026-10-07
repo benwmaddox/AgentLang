@@ -1,8 +1,9 @@
 # Examples for the revised function syntax
 
-Status: approved syntax preview, not accepted by the current Flow/1 parser.
+Status: Flow/2 implementation; select `syntaxVersion: 2` or CLI `--syntax-version 2`.
 The implementation boundary is described in [report 085](../reports/085-frontend-library-revision-plan.md).
-Use the files in `examples/` for executable demonstrations today.
+The customer, refined-types and containers teaching files in `examples/` use
+this version. Business fixture files remain Flow/1 compatibility fixtures.
 
 ## Customer example
 

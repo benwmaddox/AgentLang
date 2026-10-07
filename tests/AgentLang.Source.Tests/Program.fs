@@ -613,6 +613,30 @@ end
             |> List.forall id
         check preservesPushCallOrder "A large flat operation line should preserve the source operation order."
 
+    let private testFlow2CanonicalRoundTrip () =
+        let source =
+            "record Customer { field email: String; }\n\n"
+            + "fn customer.has-email(value: Customer) -> Bool {\n"
+            + "    value.email == \"a@example.com\"\n"
+            + "}"
+        let parsed =
+            FlowParser.parseDocumentWithVersion 2 "<flow2-source-test>" source
+            |> Result.defaultWith (fun diagnostic -> failwith (Diagnostics.render diagnostic))
+        equal 2 parsed.SyntaxVersion "Flow/2 project document retains its syntax version"
+        equal 1 parsed.Records.Length "Flow/2 document parses its record"
+        let definition = parsed.Words |> List.exactlyOne
+        equal 2 definition.SyntaxVersion "Flow/2 word retains its syntax version"
+        equal false definition.EffectsDeclared "omitted Flow/2 effects remain distinguishable from an explicit declaration"
+        let formatted = FlowSource.renderDocument parsed
+        check (formatted.StartsWith("record Customer {\n    field email: String;\n}", StringComparison.Ordinal)) "Flow/2 formatter emits canonical record source"
+        check (formatted.Contains("fn customer.has-email(value: Customer) -> Bool", StringComparison.Ordinal)) "Flow/2 formatter retains the fn declaration"
+        check (formatted.Contains("value.email == \"a@example.com\"", StringComparison.Ordinal)) "Flow/2 formatter retains property access and equality"
+        check (not (formatted.Contains("effects ", StringComparison.Ordinal))) "Flow/2 formatter does not invent an undeclared effects line"
+        let reparsed =
+            FlowParser.parseDocumentWithVersion 2 "<flow2-source-roundtrip>" formatted
+            |> Result.defaultWith (fun diagnostic -> failwith (Diagnostics.render diagnostic))
+        equal formatted (FlowSource.renderDocument reparsed) "Flow/2 document has stable canonical rendering"
+
     [<EntryPoint>]
     let main _ =
         try
@@ -622,6 +646,7 @@ end
             testSemanticRename ()
             testRuntimeSemanticEquivalence ()
             testParserNestingAndFlatInputLimits ()
+            testFlow2CanonicalRoundTrip ()
             Console.WriteLine($"All source tests passed ({assertions} assertions).")
             0
         with error ->

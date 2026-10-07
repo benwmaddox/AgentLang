@@ -5,6 +5,13 @@ for the [PRD](PRD.md). Reliable agent edits, discovery and reuse of accumulated
 typed vocabulary remain the primary research question. Runtime performance and
 development cost are separate measurements.
 
+Priority update: an efficacy report comes first; efficient LLVM execution with
+interpreter/JIT/AOT and a chosen memory design comes second. See
+[report 101](../reports/101-approach-efficacy-review.md). Finish the bounded syntax
+work already in flight, then use a small defect-repair comparison to address the
+remaining reliability question. Native conformance and arena selection should
+not wait for every optional feature or proof of a comparative advantage.
+
 ## 1. Finish the bounded vocabulary-retention review
 
 The interpreter, typed semantic IR, dictionary, task transactions, introspection,
@@ -31,7 +38,8 @@ Next actions:
    controls; F# was equally correct. See [report 099](../reports/099-quick-agent-comparison.md)
    for metadata omissions, fixture friction and limits. This is feasibility
    evidence, not a demonstrated retention advantage.
-2. Return to the approved syntax and library work below. Preserve original 003
+2. Finish the bounded Flow/2 milestone below, then prioritize the small repair
+   comparison and native conformance slice. Preserve original 003
    on hold and the unfinished 004 runners as unvalidated drafts. The twelve-cell
    repaired study is deferred by the user's instruction to compare sooner;
    its prior freeze requirements still apply if that study is resumed.
@@ -42,10 +50,10 @@ alone is not acceptance of the research hypothesis.
 
 ## 2. Make the approved examples executable
 
-The [revised examples](EXAMPLE-SYNTAX-MIGRATION.md) currently preview `fn`, plain
+The [revised examples](EXAMPLE-SYNTAX-MIGRATION.md) now use executable Flow/2 `fn`, plain
 record properties, typed `==`, omitted pure effects and metadata spacing.
-Implement an explicitly versioned Flow/2 authoring path over the same verified
-semantic IR, with durable source-version selection and an explicit formatter.
+The explicitly versioned Flow/2 authoring path uses the same verified
+semantic IR, with durable source-version selection and an explicit formatter (report 100).
 Retain Flow/1 and Stack/1 historical bytes and interpretation.
 
 Acceptance includes property/method disambiguation, nominal-type equality
@@ -56,30 +64,20 @@ suites and applicable full local validation with fresh build outputs that do
 not overwrite the frozen experiment binaries. See
 [the implementation plan](../reports/085-frontend-library-revision-plan.md).
 
-## 3. Strengthen reusable library contracts
+## 3. Build a lean native execution target and choose memory semantics
 
-Implement the approved module boundaries and stricter qualification rules:
-cross-module authored calls require library qualification; library functions
-call only qualified authored library functions or trusted/generated operations.
-Add exhaustive matching for every function, finite return-value coverage and
-per-parameter Bool/enum coverage alongside own-function branch coverage.
-Qualification must survive reload correctly and become invalid when its bound
-dependency contracts change. Deterministic injectable effects retain capability
-and declared-effect enforcement.
-
-Full Cartesian input coverage and MC/DC remain decisions to evaluate, not
-silently adopted requirements. Test coverage establishes observed behavior;
-compiler exhaustiveness establishes handled alternatives. Require both where
-specified. After implementation, run another bounded external-agent study to
-test whether the stronger contracts improve edits and recovery.
-
-## 4. Research a lean native runtime
-
-Keep the semantic IR authoritative. Later development backends may add LLVM
+Keep the semantic IR authoritative. Development backends add LLVM
 JIT while release builds use LLVM AOT plus a minimal runtime. Research arenas,
 an arena-backed program-data stack, bounded mailboxes and suspended-I/O state
 with explicit lifetime and buffer rules. Compare whole-request arenas against
 per-turn scratch arenas with retained continuations under equal resource limits.
+The first native slice should establish interpreter/native agreement for
+checked arithmetic, typed values, calls, branches and structured failures, with
+versioned layout/ABI fixtures. Use an actual arena/pool prototype to measure
+used/reserved/process memory, escaping outputs and cancellation cleanup.
+Then expand conformance and implement development JIT generation invalidation
+and compiler-free AOT release builds. A small slice does not imply general
+native support; the same semantic IR remains authoritative throughout.
 The approved [async arena experiment](ASYNC-ARENA-EVALUATION.md) makes per-turn
 scratch the main candidate and whole-request arenas the comparison. Measure
 sustained successful requests per second at the same enforced memory ceiling
@@ -107,6 +105,27 @@ safety. Require semantic conformance and measured memory, throughput and tail
 latency before choosing the model. The proposed long-running Campfire migration
 comes after stable language behavior and implemented native memory/runtime
 support, as described in [report 088](../reports/088-late-application-migration-research.md).
+
+## 4. Strengthen reusable library contracts
+
+Implement the approved module boundaries and stricter qualification rules:
+cross-module authored calls require library qualification; library functions
+call only qualified authored library functions or trusted/generated operations.
+Add exhaustive matching for every function, finite return-value coverage and
+per-parameter Bool/enum coverage alongside own-function branch coverage.
+Qualification must survive reload correctly and become invalid when its bound
+dependency contracts change. Deterministic injectable effects retain capability
+and declared-effect enforcement.
+Add test-local typed dictionary overrides as well: nested calls can see a scoped
+replacement of an IO or ordinary function, then automatic cleanup restores the
+original even on failure or cancellation. Keep persistent bindings intact and
+exclude mocked bodies from the original implementation's coverage evidence.
+
+Full Cartesian input coverage and MC/DC remain decisions to evaluate, not
+silently adopted requirements. Test coverage establishes observed behavior;
+compiler exhaustiveness establishes handled alternatives. Require both where
+specified. After implementation, run another bounded external-agent study to
+test whether the stronger contracts improve edits and recovery.
 
 For every milestone: save the report, run applicable checks locally, commit,
 merge and push together. Automatic CI remains disabled; remote publication
