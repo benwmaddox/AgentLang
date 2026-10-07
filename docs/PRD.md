@@ -110,6 +110,62 @@ one blank line between that metadata and executable body code. It need not emit
 `effects none` for an omitted pure contract. This layout does not alter semantic
 meaning or source provenance; formatting is an explicit source edit.
 
+Library qualification must be expressible in source. The proposed declaration
+is `library fn`; ordinary `fn` retains the lighter project-function gate.
+Library intent is not qualification: publication must validate and run the
+strict gate before persisting library maturity, and introspection must expose
+the distinction. Do not infer library status merely from a namespace or file.
+
+Modules form enforced function-call boundaries. Ordinary `fn` definitions are
+callable within their declaring module; another module may call an authored
+function only after that function has passed library qualification. Introduce
+explicit, durable module membership and compiler/verified-program checks rather
+than deriving access from dotted names or file locations. Renames must preserve
+membership and identity. Keep this a small module model without dependency
+resolution or sophisticated package management. Introspection may still inspect
+internal functions; visibility for inspection is separate from call access.
+
+Host-launched entry functions may remain ordinary functions through an explicit
+entry-point mechanism; this does not permit ordinary cross-module calls to them.
+Define availability rules for trusted primitives, generated constructors and
+field accessors separately. A library function may use ordinary private helpers
+inside its module. Its qualification must bind the complete dependency closure
+and be invalidated by relevant helper revisions, with requalification and
+affected-caller tests before publication. Cross-module authored dependencies
+must themselves be qualified library functions. This provides a reusable tested
+interface without imposing the library gate on every internal or entry function.
+
+The required library gate includes 100% own-function branch coverage and 100%
+coverage of finite declared return values. A Bool-returning function must
+exercise both true and false, even if its body has no syntactic branch. Cover
+every declared enum case when enum types are supported. For Option/Result,
+cover each inhabitable alternative; fully finite payloads also require their
+finite values. Infinite payload domains do not require exhaustive values, but
+their alternatives and meaningful boundary tests remain obligations. A broad
+finite return contract whose values cannot all be produced cannot qualify by
+silently exempting unreachable values; it needs an appropriately narrower
+contract or remains a project function. These are additional requirements,
+not a claim that the current coverage implementation already enforces them.
+
+Library functions also require finite input coverage: for each Bool or enum
+parameter, their own attached tests must exercise every valid declared value.
+Record the actual parameter values at tested function invocation; constants in
+expectation expressions or unrelated callers cannot satisfy this obligation.
+Track coverage independently for each parameter, alongside finite return-value
+and branch coverage. Add meaningful interaction tests when parameters combine;
+per-parameter coverage does not prove every combination or the business rule.
+Do not silently substitute a passing structural coverage result for these
+input/output obligations. Enum coverage becomes applicable when enum types are
+implemented; the initial Bool cases must work even for branchless functions.
+
+Tests must support injected deterministic effect providers for IO and other
+declared effects. Injection must preserve the function's effect contract and
+capability enforcement rather than granting an escape hatch. Record coverage
+from the tested function's execution, excluding expectation expressions and
+unrelated callers, and bind successful qualification to the tested revision
+and dependency identities. The R02 result shows why complete structural
+coverage and self-authored passing expectations alone cannot prove behavior.
+
 This is an approved frontend direction, not currently implemented syntax. Keep
 the authoritative semantic IR unchanged where these forms can lower to existing
 operations. Preserve existing authored sources and frontend versions across
