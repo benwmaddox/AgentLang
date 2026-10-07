@@ -25,17 +25,16 @@ This does not repair the original blocked trial or establish a retention benefit
 
 Next actions:
 
-1. Preserve 003 on hold after its audit failure. Prepare a separately versioned
-   004 study with all twelve fresh cells under one repaired harness version,
-   keeping the tasks, baseline bytes and runtime fixed. Do not combine old
-   outcomes into its result table; see [the repair plan](../reports/097-uniform-retention-study-repair.md).
-2. Validate accepted-predecessor, explicit-fallback and reject-before-execution
-   controls before freezing 004. Launch only after clean-source/global/run pins
-   and frozen controls pass. Preserve original artifacts and failed controls;
-   never silently replace 003 source or acceptance records.
-3. Publish a comparative review with independent outcomes, actual reuse,
-   incorrect edits and recovery observations. Separate missing harness results
-   from program failures. Report unavailable model usage as unavailable.
+1. The quick preliminary comparison is complete: all four fresh actors passed
+   54 independent S07 cases, starting definitions were preserved, and retained
+   helper reuse was observed. Retained made more runtime calls than the language
+   controls; F# was equally correct. See [report 099](../reports/099-quick-agent-comparison.md)
+   for metadata omissions, fixture friction and limits. This is feasibility
+   evidence, not a demonstrated retention advantage.
+2. Return to the approved syntax and library work below. Preserve original 003
+   on hold and the unfinished 004 runners as unvalidated drafts. The twelve-cell
+   repaired study is deferred by the user's instruction to compare sooner;
+   its prior freeze requirements still apply if that study is resumed.
 
 Acceptance is an evidence-backed review of the declared conditions, including
 their limitations. Completing a language feature or passing actor-written tests

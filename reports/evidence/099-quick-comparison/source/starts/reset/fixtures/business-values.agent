@@ -1,0 +1,840 @@
+# Typed business values for the small-business fixture.
+# All operations are pure. These words validate inputs and build immutable
+# values; they do not encode benchmark task policy.
+
+record BusinessError {
+    field code: String;
+    field message: String;
+}
+
+word business.id-valid?(value: String) -> Bool {
+    effects none
+    doc "Whether an identifier is in canonical lower-case GUID D form."
+    string::guid-canonical?(value)
+}
+
+word business.email-valid?(value: String) -> Bool {
+    effects none
+    doc "Whether an address satisfies the fixture's bounded ASCII email policy."
+    string::email-address-valid?(value)
+}
+
+word business.instant-valid?(value: String) -> Bool {
+    effects none
+    doc "Whether an instant is canonical UTC round-trip text."
+    instant::is-canonical-utc?(value)
+}
+
+word subscription.status-valid?(value: String) -> Bool {
+    effects none
+    doc "Accept only the active and cancelled subscription states."
+    bool::or(equals(value, "active"), equals(value, "cancelled"))
+}
+
+word invoice.status-valid?(value: String) -> Bool {
+    effects none
+    doc "Accept only the open and paid invoice states."
+    bool::or(equals(value, "open"), equals(value, "paid"))
+}
+
+type CustomerId : String {
+    validate business::id-valid?;
+}
+
+type SubscriptionId : String {
+    validate business::id-valid?;
+}
+
+type InvoiceId : String {
+    validate business::id-valid?;
+}
+
+type ProductId : String {
+    validate business::id-valid?;
+}
+
+type PaymentId : String {
+    validate business::id-valid?;
+}
+
+type Email : String {
+    validate business::email-valid?;
+}
+
+type Money : Int { }
+
+type Instant : String {
+    validate business::instant-valid?;
+}
+
+type SubscriptionStatus : String {
+    validate subscription::status-valid?;
+}
+
+type InvoiceStatus : String {
+    validate invoice::status-valid?;
+}
+
+word customer-id.parse(value: String) -> Result<CustomerId, BusinessError> {
+    effects none
+    doc "Parse any Guid.TryParse-compatible form and store canonical CustomerId text."
+    let parsed = string::guid-normalize(value);
+    match parsed {
+        ok canonical => { result::ok<CustomerId, BusinessError>(CustomerId::new(canonical)) }
+        error detail => { result::error<CustomerId, BusinessError>(businessError::new(code = "INVALID_IDENTIFIER", message = "CustomerId must be a GUID.")) }
+    }
+}
+
+word subscription-id.parse(value: String) -> Result<SubscriptionId, BusinessError> {
+    effects none
+    doc "Parse any Guid.TryParse-compatible form and store canonical SubscriptionId text."
+    let parsed = string::guid-normalize(value);
+    match parsed {
+        ok canonical => { result::ok<SubscriptionId, BusinessError>(SubscriptionId::new(canonical)) }
+        error detail => { result::error<SubscriptionId, BusinessError>(businessError::new(code = "INVALID_IDENTIFIER", message = "SubscriptionId must be a GUID.")) }
+    }
+}
+
+word invoice-id.parse(value: String) -> Result<InvoiceId, BusinessError> {
+    effects none
+    doc "Parse any Guid.TryParse-compatible form and store canonical InvoiceId text."
+    let parsed = string::guid-normalize(value);
+    match parsed {
+        ok canonical => { result::ok<InvoiceId, BusinessError>(InvoiceId::new(canonical)) }
+        error detail => { result::error<InvoiceId, BusinessError>(businessError::new(code = "INVALID_IDENTIFIER", message = "InvoiceId must be a GUID.")) }
+    }
+}
+
+word product-id.parse(value: String) -> Result<ProductId, BusinessError> {
+    effects none
+    doc "Parse any Guid.TryParse-compatible form and store canonical ProductId text."
+    let parsed = string::guid-normalize(value);
+    match parsed {
+        ok canonical => { result::ok<ProductId, BusinessError>(ProductId::new(canonical)) }
+        error detail => { result::error<ProductId, BusinessError>(businessError::new(code = "INVALID_IDENTIFIER", message = "ProductId must be a GUID.")) }
+    }
+}
+
+word payment-id.parse(value: String) -> Result<PaymentId, BusinessError> {
+    effects none
+    doc "Parse any Guid.TryParse-compatible form and store canonical PaymentId text."
+    let parsed = string::guid-normalize(value);
+    match parsed {
+        ok canonical => { result::ok<PaymentId, BusinessError>(PaymentId::new(canonical)) }
+        error detail => { result::error<PaymentId, BusinessError>(businessError::new(code = "INVALID_IDENTIFIER", message = "PaymentId must be a GUID.")) }
+    }
+}
+
+word email.parse(value: String) -> Result<Email, BusinessError> {
+    effects none
+    doc "Validate and wrap an address without changing its spelling."
+    if business::email-valid?(value) {
+        result::ok<Email, BusinessError>(Email::new(value))
+    } else {
+        result::error<Email, BusinessError>(businessError::new(code = "INVALID_EMAIL", message = "Email does not match the documented address policy."))
+    }
+}
+
+word instant.normalize(value: String) -> Result<Instant, BusinessError> {
+    effects none
+    doc "Parse an explicitly zoned ISO instant and store canonical UTC text."
+    let parsed = instant::parse-utc(value);
+    match parsed {
+        ok canonical => { result::ok<Instant, BusinessError>(Instant::new(canonical)) }
+        error detail => { result::error<Instant, BusinessError>(businessError::new(code = "INVALID_INSTANT", message = "Instant must be an explicitly zoned ISO timestamp.")) }
+    }
+}
+
+word money.add(left: Money, right: Money) -> Result<Money, BusinessError> {
+    effects none
+    doc "Add signed minor-unit amounts with checked Int64 arithmetic."
+    let sum = int::add-checked(Money::value(left), Money::value(right));
+    match sum {
+        ok value => { result::ok<Money, BusinessError>(Money::new(value)) }
+        error detail => { result::error<Money, BusinessError>(businessError::new(code = "MONEY_OVERFLOW", message = "The money operation exceeded the Int64 minor-unit range.")) }
+    }
+}
+
+word money.multiply-by-quantity(amount: Money, quantity: Int) -> Result<Money, BusinessError> {
+    effects none
+    doc "Multiply signed minor units by a signed Int32 quantity with checked arithmetic."
+    let below-int32 = int::less-than(quantity, -2147483648);
+    let above-int32 = int::greater-than(quantity, 2147483647);
+    if bool::or(below-int32, above-int32) {
+        result::error<Money, BusinessError>(businessError::new(code = "INVALID_QUANTITY", message = "Quantity must fit the signed Int32 range."))
+    } else {
+        let product = int::multiply-checked(Money::value(amount), quantity);
+        match product {
+            ok value => { result::ok<Money, BusinessError>(Money::new(value)) }
+            error detail => { result::error<Money, BusinessError>(businessError::new(code = "MONEY_OVERFLOW", message = "The money operation exceeded the Int64 minor-unit range.")) }
+        }
+    }
+}
+
+word money.nonnegative?(amount: Money) -> Bool {
+    effects none
+    doc "Whether a signed minor-unit amount is zero or greater."
+    bool::not(int::less-than(Money::value(amount), 0))
+}
+
+record Customer {
+    field id: CustomerId;
+    field email: Email;
+    field kind: String;
+    field balance: Money;
+    field created-at: Instant;
+}
+
+record Product {
+    field id: ProductId;
+    field name: String;
+    field unit-price: Money;
+}
+
+record Subscription {
+    field id: SubscriptionId;
+    field customer-id: CustomerId;
+    field product-id: ProductId;
+    field term: String;
+    field started-at: Instant;
+    field expires-at: Instant;
+    field status: SubscriptionStatus;
+    field cancelled-at: Option<Instant>;
+}
+
+record InvoiceLine {
+    field product-id: ProductId;
+    field description: String;
+    field quantity: Int;
+    field unit-price: Money;
+    field line-total: Money;
+}
+
+record CartLine {
+    field product-id: ProductId;
+    field quantity: Int;
+}
+
+record Invoice {
+    field id: InvoiceId;
+    field customer-id: CustomerId;
+    field lines: List<InvoiceLine>;
+    field total: Money;
+    field created-at: Instant;
+    field status: InvoiceStatus;
+}
+
+record PaymentReceipt {
+    field reference: String;
+    field amount: Money;
+}
+
+record Payment {
+    field id: PaymentId;
+    field invoice-id: InvoiceId;
+    field amount: Money;
+    field provider-reference: String;
+    field paid-at: Instant;
+}
+
+record EmailMessage {
+    field to: Email;
+    field subject: String;
+    field body: String;
+}
+
+record Store {
+    field customers: List<Customer>;
+    field products: List<Product>;
+    field subscriptions: List<Subscription>;
+    field invoices: List<Invoice>;
+    field payments: List<Payment>;
+    field email-outbox: List<EmailMessage>;
+    field sent-emails: List<EmailMessage>;
+}
+
+word customer.create(id: CustomerId, email: Email, kind: String, balance: Money, created-at: Instant) -> Result<Customer, BusinessError> {
+    effects none
+    doc "Create a customer with a trimmed, nonblank kind."
+    let normalized-kind = string::trim(kind);
+    if equals(string::length(normalized-kind), 0) {
+        result::error<Customer, BusinessError>(businessError::new(code = "INVALID_NAME", message = "Customer kind must contain non-whitespace text."))
+    } else {
+        result::ok<Customer, BusinessError>(customer::new(id = id, email = email, kind = normalized-kind, balance = balance, created-at = created-at))
+    }
+}
+
+word product.create(id: ProductId, name: String, unit-price: Money) -> Result<Product, BusinessError> {
+    effects none
+    doc "Create a product with a trimmed name and a nonnegative unit price."
+    let normalized-name = string::trim(name);
+    if equals(string::length(normalized-name), 0) {
+        result::error<Product, BusinessError>(businessError::new(code = "INVALID_NAME", message = "Product name must contain non-whitespace text."))
+    } else {
+        if money::nonnegative?(unit-price) {
+            result::ok<Product, BusinessError>(product::new(id = id, name = normalized-name, unit-price = unit-price))
+        } else {
+            result::error<Product, BusinessError>(businessError::new(code = "NEGATIVE_PRODUCT_PRICE", message = "Product prices must be nonnegative."))
+        }
+    }
+}
+
+word payment-receipt.create(reference: String, amount: Money) -> Result<PaymentReceipt, BusinessError> {
+    effects none
+    doc "Create a receipt with a trimmed, nonblank provider reference."
+    let normalized-reference = string::trim(reference);
+    if equals(string::length(normalized-reference), 0) {
+        result::error<PaymentReceipt, BusinessError>(businessError::new(code = "INVALID_PROVIDER_RECEIPT", message = "Payment receipt reference must not be empty."))
+    } else {
+        result::ok<PaymentReceipt, BusinessError>(paymentReceipt::new(reference = normalized-reference, amount = amount))
+    }
+}
+
+word email-message.create(to: Email, subject: String, body: String) -> Result<EmailMessage, BusinessError> {
+    effects none
+    doc "Create an email message after trimming its nonblank subject and body."
+    let normalized-subject = string::trim(subject);
+    let normalized-body = string::trim(body);
+    let subject-is-blank = equals(string::length(normalized-subject), 0);
+    let body-is-blank = equals(string::length(normalized-body), 0);
+    if bool::or(subject-is-blank, body-is-blank) {
+        result::error<EmailMessage, BusinessError>(businessError::new(code = "INVALID_EMAIL_MESSAGE", message = "Email subject and body must contain non-whitespace text."))
+    } else {
+        result::ok<EmailMessage, BusinessError>(emailMessage::new(to = to, subject = normalized-subject, body = normalized-body))
+    }
+}
+
+test business.id-valid?/canonical {
+    business::id-valid?("00112233-4455-6677-8899-aabbccddeeff")
+    => true
+}
+
+test business.id-valid?/noncanonical-uppercase {
+    business::id-valid?("00112233-4455-6677-8899-AABBCCDDEEFF")
+    => false
+}
+
+test business.email-valid?/accepted {
+    business::email-valid?("dev.team+alerts@example-domain.com")
+    => true
+}
+
+test business.email-valid?/rejected-empty-local-segment {
+    business::email-valid?("dev..team@example.com")
+    => false
+}
+
+test business.instant-valid?/canonical-utc {
+    business::instant-valid?("2024-02-29T12:00:00.0000000+00:00")
+    => true
+}
+
+test business.instant-valid?/offset-is-not-canonical {
+    business::instant-valid?("2024-02-29T12:00:00+02:00")
+    => false
+}
+
+test subscription.status-valid?/active {
+    subscription::status-valid?("active")
+    => true
+}
+
+test subscription.status-valid?/cancelled {
+    subscription::status-valid?("cancelled")
+    => true
+}
+
+test subscription.status-valid?/unknown {
+    subscription::status-valid?("expired")
+    => false
+}
+
+test invoice.status-valid?/open {
+    invoice::status-valid?("open")
+    => true
+}
+
+test invoice.status-valid?/paid {
+    invoice::status-valid?("paid")
+    => true
+}
+
+test invoice.status-valid?/unknown {
+    invoice::status-valid?("void")
+    => false
+}
+
+test customer-id.parse/canonical {
+    match customer-id::parse("00112233-4455-6677-8899-aabbccddeeff") {
+        ok id => { CustomerId::value(id) }
+        error problem => { problem.code() }
+    }
+    => "00112233-4455-6677-8899-aabbccddeeff"
+}
+
+test customer-id.parse/braced-normalized {
+    match customer-id::parse(" {00112233-4455-6677-8899-AABBCCDDEEFF} ") {
+        ok id => { CustomerId::value(id) }
+        error problem => { problem.code() }
+    }
+    => "00112233-4455-6677-8899-aabbccddeeff"
+}
+
+test customer-id.parse/invalid {
+    match customer-id::parse("not-a-guid") {
+        ok id => { CustomerId::value(id) }
+        error problem => { problem.code() }
+    }
+    => "INVALID_IDENTIFIER"
+}
+
+test subscription-id.parse/canonical {
+    match subscription-id::parse("00112233-4455-6677-8899-aabbccddeeff") {
+        ok id => { SubscriptionId::value(id) }
+        error problem => { problem.code() }
+    }
+    => "00112233-4455-6677-8899-aabbccddeeff"
+}
+
+test subscription-id.parse/normalized {
+    match subscription-id::parse("00112233445566778899AABBCCDDEEFF") {
+        ok id => { SubscriptionId::value(id) }
+        error problem => { problem.code() }
+    }
+    => "00112233-4455-6677-8899-aabbccddeeff"
+}
+
+test subscription-id.parse/invalid {
+    match subscription-id::parse("invalid") {
+        ok id => { SubscriptionId::value(id) }
+        error problem => { problem.code() }
+    }
+    => "INVALID_IDENTIFIER"
+}
+
+test invoice-id.parse/canonical {
+    match invoice-id::parse("00112233-4455-6677-8899-aabbccddeeff") {
+        ok id => { InvoiceId::value(id) }
+        error problem => { problem.code() }
+    }
+    => "00112233-4455-6677-8899-aabbccddeeff"
+}
+
+test invoice-id.parse/normalized {
+    match invoice-id::parse("(00112233-4455-6677-8899-AABBCCDDEEFF)") {
+        ok id => { InvoiceId::value(id) }
+        error problem => { problem.code() }
+    }
+    => "00112233-4455-6677-8899-aabbccddeeff"
+}
+
+test invoice-id.parse/invalid {
+    match invoice-id::parse("invalid") {
+        ok id => { InvoiceId::value(id) }
+        error problem => { problem.code() }
+    }
+    => "INVALID_IDENTIFIER"
+}
+
+test product-id.parse/canonical {
+    match product-id::parse("00112233-4455-6677-8899-aabbccddeeff") {
+        ok id => { ProductId::value(id) }
+        error problem => { problem.code() }
+    }
+    => "00112233-4455-6677-8899-aabbccddeeff"
+}
+
+test product-id.parse/normalized {
+    match product-id::parse("{00112233-4455-6677-8899-aabbccddeeff}") {
+        ok id => { ProductId::value(id) }
+        error problem => { problem.code() }
+    }
+    => "00112233-4455-6677-8899-aabbccddeeff"
+}
+
+test product-id.parse/invalid {
+    match product-id::parse("invalid") {
+        ok id => { ProductId::value(id) }
+        error problem => { problem.code() }
+    }
+    => "INVALID_IDENTIFIER"
+}
+
+test payment-id.parse/canonical {
+    match payment-id::parse("00112233-4455-6677-8899-aabbccddeeff") {
+        ok id => { PaymentId::value(id) }
+        error problem => { problem.code() }
+    }
+    => "00112233-4455-6677-8899-aabbccddeeff"
+}
+
+test payment-id.parse/normalized {
+    match payment-id::parse("00112233-4455-6677-8899-aabbccddeeff ") {
+        ok id => { PaymentId::value(id) }
+        error problem => { problem.code() }
+    }
+    => "00112233-4455-6677-8899-aabbccddeeff"
+}
+
+test payment-id.parse/invalid {
+    match payment-id::parse("invalid") {
+        ok id => { PaymentId::value(id) }
+        error problem => { problem.code() }
+    }
+    => "INVALID_IDENTIFIER"
+}
+
+test email.parse/valid {
+    match email::parse("dev+alerts@example.com") {
+        ok address => { Email::value(address) }
+        error problem => { problem.code() }
+    }
+    => "dev+alerts@example.com"
+}
+
+test email.parse/invalid {
+    match email::parse("dev @example.com") {
+        ok address => { Email::value(address) }
+        error problem => { problem.code() }
+    }
+    => "INVALID_EMAIL"
+}
+
+test instant.normalize/offset-to-utc {
+    match instant::normalize("2024-02-29T14:30:00+02:30") {
+        ok timestamp => { Instant::value(timestamp) }
+        error problem => { problem.code() }
+    }
+    => "2024-02-29T12:00:00.0000000+00:00"
+}
+
+test instant.normalize/invalid {
+    match instant::normalize("next Tuesday") {
+        ok timestamp => { Instant::value(timestamp) }
+        error problem => { problem.code() }
+    }
+    => "INVALID_INSTANT"
+}
+
+test money.add/signed-values {
+    match money::add(Money::new(-250), Money::new(1000)) {
+        ok total => { int::to-string(Money::value(total)) }
+        error problem => { problem.code() }
+    }
+    => "750"
+}
+
+test money.add/int64-overflow {
+    match money::add(Money::new(9223372036854775807), Money::new(1)) {
+        ok total => { int::to-string(Money::value(total)) }
+        error problem => { problem.code() }
+    }
+    => "MONEY_OVERFLOW"
+}
+
+test money.multiply-by-quantity/negative-quantity {
+    match money::multiply-by-quantity(Money::new(125), -2) {
+        ok total => { int::to-string(Money::value(total)) }
+        error problem => { problem.code() }
+    }
+    => "-250"
+}
+
+test money.multiply-by-quantity/zero-quantity {
+    match money::multiply-by-quantity(Money::new(125), 0) {
+        ok total => { int::to-string(Money::value(total)) }
+        error problem => { problem.code() }
+    }
+    => "0"
+}
+
+test money.multiply-by-quantity/int32-min {
+    match money::multiply-by-quantity(Money::new(1), -2147483648) {
+        ok total => { int::to-string(Money::value(total)) }
+        error problem => { problem.code() }
+    }
+    => "-2147483648"
+}
+
+test money.multiply-by-quantity/int32-max {
+    match money::multiply-by-quantity(Money::new(1), 2147483647) {
+        ok total => { int::to-string(Money::value(total)) }
+        error problem => { problem.code() }
+    }
+    => "2147483647"
+}
+
+test money.multiply-by-quantity/below-int32 {
+    match money::multiply-by-quantity(Money::new(1), -2147483649) {
+        ok total => { int::to-string(Money::value(total)) }
+        error problem => { problem.code() }
+    }
+    => "INVALID_QUANTITY"
+}
+
+test money.multiply-by-quantity/above-int32 {
+    match money::multiply-by-quantity(Money::new(1), 2147483648) {
+        ok total => { int::to-string(Money::value(total)) }
+        error problem => { problem.code() }
+    }
+    => "INVALID_QUANTITY"
+}
+
+test money.multiply-by-quantity/int64-overflow {
+    match money::multiply-by-quantity(Money::new(9223372036854775807), 2) {
+        ok total => { int::to-string(Money::value(total)) }
+        error problem => { problem.code() }
+    }
+    => "MONEY_OVERFLOW"
+}
+
+test money.nonnegative?/zero {
+    money::nonnegative?(Money::new(0))
+    => true
+}
+
+test money.nonnegative?/negative {
+    money::nonnegative?(Money::new(-1))
+    => false
+}
+
+test customer.create/trimmed-kind {
+    match customer::create(
+        CustomerId::new("00112233-4455-6677-8899-aabbccddeeff"),
+        Email::new("dev@example.com"),
+        "  partner  ",
+        Money::new(-50),
+        Instant::new("2024-02-29T12:00:00.0000000+00:00")) {
+        ok value => { value.kind() }
+        error problem => { problem.code() }
+    }
+    => "partner"
+}
+
+test customer.create/blank-kind {
+    match customer::create(
+        CustomerId::new("00112233-4455-6677-8899-aabbccddeeff"),
+        Email::new("dev@example.com"),
+        " \t ",
+        Money::new(0),
+        Instant::new("2024-02-29T12:00:00.0000000+00:00")) {
+        ok value => { value.kind() }
+        error problem => { problem.code() }
+    }
+    => "INVALID_NAME"
+}
+
+test product.create/trimmed-name-and-zero-price {
+    match product::create(
+        ProductId::new("00112233-4455-6677-8899-aabbccddeeff"),
+        "  Notebook  ",
+        Money::new(0)) {
+        ok value => { value.name() }
+        error problem => { problem.code() }
+    }
+    => "Notebook"
+}
+
+test product.create/blank-name {
+    match product::create(
+        ProductId::new("00112233-4455-6677-8899-aabbccddeeff"),
+        "  ",
+        Money::new(100)) {
+        ok value => { value.name() }
+        error problem => { problem.code() }
+    }
+    => "INVALID_NAME"
+}
+
+test product.create/negative-price {
+    match product::create(
+        ProductId::new("00112233-4455-6677-8899-aabbccddeeff"),
+        "Notebook",
+        Money::new(-1)) {
+        ok value => { value.name() }
+        error problem => { problem.code() }
+    }
+    => "NEGATIVE_PRODUCT_PRICE"
+}
+
+test payment-receipt.create/trims-reference {
+    match payment-receipt::create("  provider-ref-42  ", Money::new(900)) {
+        ok value => { value.reference() }
+        error problem => { problem.code() }
+    }
+    => "provider-ref-42"
+}
+
+test payment-receipt.create/keeps-signed-amount {
+    match payment-receipt::create("provider-ref-42", Money::new(-900)) {
+        ok value => { int::to-string(Money::value(value.amount())) }
+        error problem => { problem.code() }
+    }
+    => "-900"
+}
+
+test payment-receipt.create/blank-reference {
+    match payment-receipt::create(" \t ", Money::new(900)) {
+        ok value => { value.reference() }
+        error problem => { problem.code() }
+    }
+    => "INVALID_PROVIDER_RECEIPT"
+}
+
+test email-message.create/trims-fields {
+    match email-message::create(Email::new("dev@example.com"), "  Receipt ready  ", "  Your receipt is ready.  ") {
+        ok value => { string::concat(value.subject(), string::concat("|", value.body())) }
+        error problem => { problem.code() }
+    }
+    => "Receipt ready|Your receipt is ready."
+}
+
+test email-message.create/blank-subject {
+    match email-message::create(Email::new("dev@example.com"), "  ", "Body") {
+        ok value => { value.subject() }
+        error problem => { problem.code() }
+    }
+    => "INVALID_EMAIL_MESSAGE"
+}
+
+test email-message.create/blank-body {
+    match email-message::create(Email::new("dev@example.com"), "Subject", " \t ") {
+        ok value => { value.body() }
+        error problem => { problem.code() }
+    }
+    => "INVALID_EMAIL_MESSAGE"
+}
+
+example business.id-valid?/canonical-guid {
+    business::id-valid?("00112233-4455-6677-8899-aabbccddeeff")
+    => true
+}
+
+example business.email-valid?/fixture-address {
+    business::email-valid?("dev.team@example.com")
+    => true
+}
+
+example business.instant-valid?/canonical-utc {
+    business::instant-valid?("2024-02-29T12:00:00.0000000+00:00")
+    => true
+}
+
+example subscription.status-valid?/active-state {
+    subscription::status-valid?("active")
+    => true
+}
+
+example invoice.status-valid?/open-state {
+    invoice::status-valid?("open")
+    => true
+}
+
+example customer-id.parse/normalizes-braces {
+    match customer-id::parse("{00112233-4455-6677-8899-AABBCCDDEEFF}") {
+        ok id => { CustomerId::value(id) }
+        error problem => { problem.code() }
+    }
+    => "00112233-4455-6677-8899-aabbccddeeff"
+}
+
+example subscription-id.parse/guid {
+    match subscription-id::parse("00112233-4455-6677-8899-aabbccddeeff") {
+        ok id => { SubscriptionId::value(id) }
+        error problem => { problem.code() }
+    }
+    => "00112233-4455-6677-8899-aabbccddeeff"
+}
+
+example invoice-id.parse/guid {
+    match invoice-id::parse("00112233-4455-6677-8899-aabbccddeeff") {
+        ok id => { InvoiceId::value(id) }
+        error problem => { problem.code() }
+    }
+    => "00112233-4455-6677-8899-aabbccddeeff"
+}
+
+example product-id.parse/guid {
+    match product-id::parse("00112233-4455-6677-8899-aabbccddeeff") {
+        ok id => { ProductId::value(id) }
+        error problem => { problem.code() }
+    }
+    => "00112233-4455-6677-8899-aabbccddeeff"
+}
+
+example payment-id.parse/guid {
+    match payment-id::parse("00112233-4455-6677-8899-aabbccddeeff") {
+        ok id => { PaymentId::value(id) }
+        error problem => { problem.code() }
+    }
+    => "00112233-4455-6677-8899-aabbccddeeff"
+}
+
+example email.parse/accepted-address {
+    match email::parse("dev@example.com") {
+        ok address => { Email::value(address) }
+        error problem => { problem.code() }
+    }
+    => "dev@example.com"
+}
+
+example instant.normalize/to-utc {
+    match instant::normalize("2024-02-29T14:00:00+02:00") {
+        ok timestamp => { Instant::value(timestamp) }
+        error problem => { problem.code() }
+    }
+    => "2024-02-29T12:00:00.0000000+00:00"
+}
+
+example money.add/signed-minor-units {
+    match money::add(Money::new(250), Money::new(300)) {
+        ok total => { int::to-string(Money::value(total)) }
+        error problem => { problem.code() }
+    }
+    => "550"
+}
+
+example money.multiply-by-quantity/signed-quantity {
+    match money::multiply-by-quantity(Money::new(250), -2) {
+        ok total => { int::to-string(Money::value(total)) }
+        error problem => { problem.code() }
+    }
+    => "-500"
+}
+
+example money.nonnegative?/zero {
+    money::nonnegative?(Money::new(0))
+    => true
+}
+
+example customer.create/trims-kind {
+    match customer::create(CustomerId::new("00112233-4455-6677-8899-aabbccddeeff"), Email::new("dev@example.com"), "  partner  ", Money::new(0), Instant::new("2024-02-29T12:00:00.0000000+00:00")) {
+        ok value => { value.kind() }
+        error problem => { problem.code() }
+    }
+    => "partner"
+}
+
+example product.create/nonnegative-price {
+    match product::create(ProductId::new("00112233-4455-6677-8899-aabbccddeeff"), "Notebook", Money::new(250)) {
+        ok value => { value.name() }
+        error problem => { problem.code() }
+    }
+    => "Notebook"
+}
+
+example payment-receipt.create/trimmed-reference {
+    match payment-receipt::create("  provider-ref-42  ", Money::new(900)) {
+        ok value => { value.reference() }
+        error problem => { problem.code() }
+    }
+    => "provider-ref-42"
+}
+
+example email-message.create/trimmed-content {
+    match email-message::create(Email::new("dev@example.com"), "  Receipt ready  ", "  Your receipt is ready.  ") {
+        ok value => { string::concat(value.subject(), string::concat("|", value.body())) }
+        error problem => { problem.code() }
+    }
+    => "Receipt ready|Your receipt is ready."
+}

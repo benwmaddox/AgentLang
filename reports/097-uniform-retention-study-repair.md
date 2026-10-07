@@ -1,7 +1,10 @@
 # Uniform retention study repair
 
-Status: implementation and candidate controls in progress; no 004 freeze or
-actor launch is claimed.
+Status: deferred at the user's request to minimize comparison preparation and
+compare promptly. The five V4 runners parse, but their candidate/frozen controls
+were not executed; they remain drafts. No 004 freeze or actor launch is claimed.
+The near-term comparison uses the existing runtime, fixtures and behavioral
+verifiers in a separate exploratory run, documented in report 099.
 
 The original 003 study's stop rule withholds launches after preflight or audit
 failure. R04 hit the undefined `$prior` in the retained-predecessor verifier

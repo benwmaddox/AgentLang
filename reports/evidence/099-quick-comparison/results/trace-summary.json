@@ -1,0 +1,167 @@
+[
+  {
+    "arm": "reset",
+    "exchanges": 43,
+    "operations": [
+      {
+        "Name": "commit",
+        "Count": 1
+      },
+      {
+        "Name": "define",
+        "Count": 3
+      },
+      {
+        "Name": "describe",
+        "Count": 21
+      },
+      {
+        "Name": "eval",
+        "Count": 2
+      },
+      {
+        "Name": "help",
+        "Count": 1
+      },
+      {
+        "Name": "source",
+        "Count": 8
+      },
+      {
+        "Name": "task.begin",
+        "Count": 1
+      },
+      {
+        "Name": "task.commit",
+        "Count": 1
+      },
+      {
+        "Name": "task.status",
+        "Count": 1
+      },
+      {
+        "Name": "test",
+        "Count": 3
+      },
+      {
+        "Name": "words",
+        "Count": 1
+      }
+    ],
+    "protocolFailures": [
+      {
+        "index": 3,
+        "operation": "describe",
+        "ok": false,
+        "code": "NAME_UNKNOWN_WORD",
+        "kind": "error"
+      },
+      {
+        "index": 25,
+        "operation": "describe",
+        "ok": false,
+        "code": "NAME_UNKNOWN_WORD",
+        "kind": "error"
+      },
+      {
+        "index": 26,
+        "operation": "eval",
+        "ok": false,
+        "code": "FLOW_INCOMPLETE_INPUT",
+        "kind": "error"
+      },
+      {
+        "index": 27,
+        "operation": "eval",
+        "ok": false,
+        "code": "FLOW_INCOMPLETE_INPUT",
+        "kind": "error"
+      }
+    ],
+    "sessionSeconds": 343.0252522,
+    "terminal": {
+      "event": "session-end",
+      "finishedUtc": "2026-10-07T14:46:14.9892061-04:00",
+      "exchangeCount": 43,
+      "terminationKind": "host-close",
+      "hostExitCode": 0,
+      "runtimeExitCode": 0,
+      "runtimeStderrPrefixBytes": 0,
+      "runtimeStderrTotalBytes": 0,
+      "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "runtimeStderrCaptureTruncated": false
+    }
+  },
+  {
+    "arm": "retained",
+    "exchanges": 58,
+    "operations": [
+      {
+        "Name": "commit",
+        "Count": 1
+      },
+      {
+        "Name": "context",
+        "Count": 1
+      },
+      {
+        "Name": "define",
+        "Count": 2
+      },
+      {
+        "Name": "describe",
+        "Count": 40
+      },
+      {
+        "Name": "examples",
+        "Count": 1
+      },
+      {
+        "Name": "help",
+        "Count": 3
+      },
+      {
+        "Name": "search",
+        "Count": 1
+      },
+      {
+        "Name": "source",
+        "Count": 3
+      },
+      {
+        "Name": "task.begin",
+        "Count": 1
+      },
+      {
+        "Name": "task.commit",
+        "Count": 1
+      },
+      {
+        "Name": "task.status",
+        "Count": 1
+      },
+      {
+        "Name": "test",
+        "Count": 2
+      },
+      {
+        "Name": "words",
+        "Count": 1
+      }
+    ],
+    "protocolFailures": [],
+    "sessionSeconds": 735.6991175,
+    "terminal": {
+      "event": "session-end",
+      "finishedUtc": "2026-10-07T14:52:39.6445863-04:00",
+      "exchangeCount": 58,
+      "terminationKind": "host-close",
+      "hostExitCode": 0,
+      "runtimeExitCode": 0,
+      "runtimeStderrPrefixBytes": 0,
+      "runtimeStderrTotalBytes": 0,
+      "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "runtimeStderrCaptureTruncated": false
+    }
+  }
+]

@@ -1,0 +1,28 @@
+{
+  "kind": "preliminary-quick-comparison",
+  "task": "S07",
+  "arms": [
+    "flat",
+    "retained",
+    "reset",
+    "conventional"
+  ],
+  "model": "gpt-6-luna",
+  "reasoning": "max",
+  "freshContext": true,
+  "taskContract": "Customer -> Money; exact ordinal premium receives 10% discount, truncate fractional minor units toward zero; preserve all signed Int64 inputs",
+  "sourceRevision": "1f1dbba66b6515c70a7955743029efbef2f3b4ed",
+  "createdUtc": "2026-10-07T18:39:17.6111442Z",
+  "languageSeeds": {
+    "flat": "experiments/AgentLang.SubagentTrials/business-policy-retention-003/artifacts/baselines/flat/project",
+    "retained": ".agentlang/business-policy-retention-003/actors/R03",
+    "reset": "experiments/AgentLang.SubagentTrials/business-policy-retention-003/artifacts/baselines/rich/project"
+  },
+  "cliSha256": "bbfe7d079f568a431148298de86a3aa26304a160781c2756591be070735f274a",
+  "businessSha256": "41f0b6f0f44ac73f0b899090dc7dcd3f3d56129176b172ceca96cba9e638a13d",
+  "limits": [
+    "One fresh actor per condition, one task; exploratory, not a statistical retention claim",
+    "No global freeze or original study reclassification",
+    "No native memory or token-efficiency claim"
+  ]
+}

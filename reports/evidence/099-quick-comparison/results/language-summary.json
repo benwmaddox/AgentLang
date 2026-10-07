@@ -1,0 +1,131 @@
+[
+  {
+    "arm": "flat",
+    "behaviorPassed": true,
+    "recomputed": 54,
+    "cases": 54,
+    "preserved": true,
+    "sourceWords": 0,
+    "nominalTypes": 6,
+    "coverage": {
+      "instructionsCovered": 37,
+      "instructionsTotal": 37,
+      "branchesCovered": 2,
+      "branchesTotal": 2,
+      "uncoveredInstructions": [],
+      "uncoveredBranchOutcomes": [],
+      "status": "current"
+    },
+    "exchanges": 33,
+    "sessionSeconds": 817.0389242,
+    "terminal": {
+      "event": "session-end",
+      "finishedUtc": "2026-10-07T14:54:29.1647498-04:00",
+      "exchangeCount": 33,
+      "terminationKind": "host-close",
+      "hostExitCode": 0,
+      "runtimeExitCode": 0,
+      "runtimeStderrPrefixBytes": 0,
+      "runtimeStderrTotalBytes": 0,
+      "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "runtimeStderrCaptureTruncated": false
+    },
+    "metadataFailures": [
+      {
+        "name": "starting-state source and project pins"
+      },
+      {
+        "name": "target has attached examples"
+      },
+      {
+        "name": "all attached examples pass with meaningful target calls"
+      }
+    ]
+  },
+  {
+    "arm": "retained",
+    "behaviorPassed": true,
+    "recomputed": 54,
+    "cases": 54,
+    "preserved": true,
+    "sourceWords": 54,
+    "nominalTypes": 31,
+    "coverage": {
+      "instructionsCovered": 33,
+      "instructionsTotal": 33,
+      "branchesCovered": 2,
+      "branchesTotal": 2,
+      "uncoveredInstructions": [],
+      "uncoveredBranchOutcomes": [],
+      "status": "current"
+    },
+    "exchanges": 58,
+    "sessionSeconds": 735.6991175,
+    "terminal": {
+      "event": "session-end",
+      "finishedUtc": "2026-10-07T14:52:39.6445863-04:00",
+      "exchangeCount": 58,
+      "terminationKind": "host-close",
+      "hostExitCode": 0,
+      "runtimeExitCode": 0,
+      "runtimeStderrPrefixBytes": 0,
+      "runtimeStderrTotalBytes": 0,
+      "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "runtimeStderrCaptureTruncated": false
+    },
+    "metadataFailures": [
+      {
+        "name": "starting-state source and project pins"
+      },
+      {
+        "name": "target has attached examples"
+      },
+      {
+        "name": "all attached examples pass with meaningful target calls"
+      }
+    ]
+  },
+  {
+    "arm": "reset",
+    "behaviorPassed": true,
+    "recomputed": 54,
+    "cases": 54,
+    "preserved": true,
+    "sourceWords": 53,
+    "nominalTypes": 31,
+    "coverage": {
+      "instructionsCovered": 35,
+      "instructionsTotal": 35,
+      "branchesCovered": 2,
+      "branchesTotal": 2,
+      "uncoveredInstructions": [],
+      "uncoveredBranchOutcomes": [],
+      "status": "current"
+    },
+    "exchanges": 43,
+    "sessionSeconds": 343.0252522,
+    "terminal": {
+      "event": "session-end",
+      "finishedUtc": "2026-10-07T14:46:14.9892061-04:00",
+      "exchangeCount": 43,
+      "terminationKind": "host-close",
+      "hostExitCode": 0,
+      "runtimeExitCode": 0,
+      "runtimeStderrPrefixBytes": 0,
+      "runtimeStderrTotalBytes": 0,
+      "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "runtimeStderrCaptureTruncated": false
+    },
+    "metadataFailures": [
+      {
+        "name": "starting-state source and project pins"
+      },
+      {
+        "name": "target has attached examples"
+      },
+      {
+        "name": "all attached examples pass with meaningful target calls"
+      }
+    ]
+  }
+]

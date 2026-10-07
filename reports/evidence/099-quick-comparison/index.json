@@ -1,0 +1,286 @@
+{
+  "schemaVersion": 1,
+  "kind": "quick-comparison-archive",
+  "files": [
+    {
+      "path": "plan.json",
+      "bytes": 1233,
+      "sha256": "f3a49e393cfd5a91dc766383801901d7da4fde2554ca777ce13948881472c225"
+    },
+    {
+      "path": "results/conventional-behavior.json",
+      "bytes": 12474,
+      "sha256": "588250eba53310e5b68c005a1a33dcf2e428cb42f258ed8ebdbb8f009e6a8782"
+    },
+    {
+      "path": "results/conventional-probe-input.json",
+      "bytes": 5190,
+      "sha256": "fa64b64c2c90ec826533179b0561679f6b75522aa4fddc92989abc54f820744b"
+    },
+    {
+      "path": "results/conventional-probe-output.json",
+      "bytes": 3449,
+      "sha256": "376b5fa8886004bcf459f5219b9a82a578d96c361834912f7c9b197fd29c94e2"
+    },
+    {
+      "path": "results/conventional.json",
+      "bytes": 20225,
+      "sha256": "f1e2bdff7166fb8204ec4ccd73ab618b92a7ee18c9a197d5f85cce5c02625363"
+    },
+    {
+      "path": "results/flat.json",
+      "bytes": 550955,
+      "sha256": "85992ec1dd2d70e82a296d3e1c54ec8d600a831d30b3335808b3c41d60075a75"
+    },
+    {
+      "path": "results/language-summary.json",
+      "bytes": 3662,
+      "sha256": "fa17f11aa72c2272921be87a330677360da7a757462bede505262a54d28bef22"
+    },
+    {
+      "path": "results/reset-recomputed.json",
+      "bytes": 76,
+      "sha256": "b9c5d9b37b71e792304bbd11bcb97324ac10dbbb403f3e4963b0e232f9a93a21"
+    },
+    {
+      "path": "results/reset.json",
+      "bytes": 1740551,
+      "sha256": "e3e7eb7432d5f8a62f841d00a7f31b170f11bdd361ed7da6d957d4bd34cd11bf"
+    },
+    {
+      "path": "results/retained.json",
+      "bytes": 1740159,
+      "sha256": "9630d79376d9c153f363fe0d6463bffab27a3a95200c3f44ed4317091fc0aedd"
+    },
+    {
+      "path": "results/trace-summary.json",
+      "bytes": 3483,
+      "sha256": "016297e64ace84c313a9efa8b6e3bac78d1deaec30d9bfcf8806f2e75af9184c"
+    },
+    {
+      "path": "source/actors/conventional/BusinessPolicy.fsproj",
+      "bytes": 575,
+      "sha256": "ce2978afdd5ccadb638425c1b25a428e8334c65b983689d8526e7c082412c650"
+    },
+    {
+      "path": "source/actors/conventional/Domain.fs",
+      "bytes": 2291,
+      "sha256": "564012a232c9f2f162a87109c8e6926d0d6352dd8222b3d9be5cfb466d7fca85"
+    },
+    {
+      "path": "source/actors/conventional/Operations.fs",
+      "bytes": 826,
+      "sha256": "4f5275c459755cc0d6d9a0077a59e28d68d7c6248320401d7b9852ce8e456f32"
+    },
+    {
+      "path": "source/actors/conventional/Program.fs",
+      "bytes": 3142,
+      "sha256": "b9e5a7257aada4cb6564be3a3dce35ffff0a672cf4b5c29838a27c0327b0f04f"
+    },
+    {
+      "path": "source/actors/conventional/SelfTests.fs",
+      "bytes": 3142,
+      "sha256": "8ac00c78d6ab84bb58520105b2e3f74bc8a0bc7c432dd752b178f7674443812b"
+    },
+    {
+      "path": "source/actors/flat/dictionary.agent",
+      "bytes": 3904,
+      "sha256": "bee32ec53287242e6ad85dde965ac328b9e6654d9bd61a4cd78dd1b6863800b5"
+    },
+    {
+      "path": "source/actors/flat/fixtures/flat-customer.agent",
+      "bytes": 506,
+      "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+    },
+    {
+      "path": "source/actors/reset/dictionary.agent",
+      "bytes": 172368,
+      "sha256": "aaf7a424f16479fd00d4dd353e83d4d80a9f736c6b97feeeed1b0017c3776f9b"
+    },
+    {
+      "path": "source/actors/reset/fixtures/business-invoices.agent",
+      "bytes": 30002,
+      "sha256": "a08b3e87e69c5983d35ec35059c3881067294b65b4e79e992e81dbf101ab338c"
+    },
+    {
+      "path": "source/actors/reset/fixtures/business-payments-email.agent",
+      "bytes": 36869,
+      "sha256": "455bb038269fc499c69e0cd0338e76c9f4c5ed064f6a7c2ba125bdc9bb8503e4"
+    },
+    {
+      "path": "source/actors/reset/fixtures/business-state.agent",
+      "bytes": 15078,
+      "sha256": "d301d24143c31e84269aceaec7f85e4b6aeeb44e1156e6e03a53febc1ed41cc9"
+    },
+    {
+      "path": "source/actors/reset/fixtures/business-store.agent",
+      "bytes": 37409,
+      "sha256": "f7dfe3d6cafa66fd888e76c5e925fc424aa05465b40e896467c2e1f064b767f3"
+    },
+    {
+      "path": "source/actors/reset/fixtures/business-subscriptions.agent",
+      "bytes": 30486,
+      "sha256": "2c9a61e7f20e5b80996f0308cc360e23bc408185744ba2ef57e5c217214d14d5"
+    },
+    {
+      "path": "source/actors/reset/fixtures/business-values.agent",
+      "bytes": 26707,
+      "sha256": "fe8227ce0c38ff6e193a74292a5b1d0ed0ac3e3869f0fe8feaf56eca62f30cbd"
+    },
+    {
+      "path": "source/actors/retained/dictionary.agent",
+      "bytes": 174393,
+      "sha256": "73ca4fa0e4434bbb5bdde2d2e02a3834be3135419c60843730e9d8c1456ef95e"
+    },
+    {
+      "path": "source/actors/retained/fixtures/business-invoices.agent",
+      "bytes": 30002,
+      "sha256": "a08b3e87e69c5983d35ec35059c3881067294b65b4e79e992e81dbf101ab338c"
+    },
+    {
+      "path": "source/actors/retained/fixtures/business-payments-email.agent",
+      "bytes": 36869,
+      "sha256": "455bb038269fc499c69e0cd0338e76c9f4c5ed064f6a7c2ba125bdc9bb8503e4"
+    },
+    {
+      "path": "source/actors/retained/fixtures/business-state.agent",
+      "bytes": 15078,
+      "sha256": "d301d24143c31e84269aceaec7f85e4b6aeeb44e1156e6e03a53febc1ed41cc9"
+    },
+    {
+      "path": "source/actors/retained/fixtures/business-store.agent",
+      "bytes": 37409,
+      "sha256": "f7dfe3d6cafa66fd888e76c5e925fc424aa05465b40e896467c2e1f064b767f3"
+    },
+    {
+      "path": "source/actors/retained/fixtures/business-subscriptions.agent",
+      "bytes": 30486,
+      "sha256": "2c9a61e7f20e5b80996f0308cc360e23bc408185744ba2ef57e5c217214d14d5"
+    },
+    {
+      "path": "source/actors/retained/fixtures/business-values.agent",
+      "bytes": 26707,
+      "sha256": "fe8227ce0c38ff6e193a74292a5b1d0ed0ac3e3869f0fe8feaf56eca62f30cbd"
+    },
+    {
+      "path": "source/starts/conventional/BusinessPolicy.fsproj",
+      "bytes": 575,
+      "sha256": "ce2978afdd5ccadb638425c1b25a428e8334c65b983689d8526e7c082412c650"
+    },
+    {
+      "path": "source/starts/conventional/Domain.fs",
+      "bytes": 2291,
+      "sha256": "564012a232c9f2f162a87109c8e6926d0d6352dd8222b3d9be5cfb466d7fca85"
+    },
+    {
+      "path": "source/starts/conventional/Operations.fs",
+      "bytes": 443,
+      "sha256": "818dd374ea39d9beefaa5cb39af5d377835ab1a2bc682fc8011d639f80eaf7f8"
+    },
+    {
+      "path": "source/starts/conventional/Program.fs",
+      "bytes": 3142,
+      "sha256": "b9e5a7257aada4cb6564be3a3dce35ffff0a672cf4b5c29838a27c0327b0f04f"
+    },
+    {
+      "path": "source/starts/conventional/SelfTests.fs",
+      "bytes": 1430,
+      "sha256": "cdadb745b541c49c2bf2d313100f42a47f3cbf91ed1e6776566306834d2ab894"
+    },
+    {
+      "path": "source/starts/flat/dictionary.agent",
+      "bytes": 570,
+      "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+    },
+    {
+      "path": "source/starts/flat/fixtures/flat-customer.agent",
+      "bytes": 506,
+      "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+    },
+    {
+      "path": "source/starts/reset/dictionary.agent",
+      "bytes": 169377,
+      "sha256": "375e836e393d8ee3974486fa87eb168b62cd1d09f866d111a60adc0f20342bcf"
+    },
+    {
+      "path": "source/starts/reset/fixtures/business-invoices.agent",
+      "bytes": 30002,
+      "sha256": "a08b3e87e69c5983d35ec35059c3881067294b65b4e79e992e81dbf101ab338c"
+    },
+    {
+      "path": "source/starts/reset/fixtures/business-payments-email.agent",
+      "bytes": 36869,
+      "sha256": "455bb038269fc499c69e0cd0338e76c9f4c5ed064f6a7c2ba125bdc9bb8503e4"
+    },
+    {
+      "path": "source/starts/reset/fixtures/business-state.agent",
+      "bytes": 15078,
+      "sha256": "d301d24143c31e84269aceaec7f85e4b6aeeb44e1156e6e03a53febc1ed41cc9"
+    },
+    {
+      "path": "source/starts/reset/fixtures/business-store.agent",
+      "bytes": 37409,
+      "sha256": "f7dfe3d6cafa66fd888e76c5e925fc424aa05465b40e896467c2e1f064b767f3"
+    },
+    {
+      "path": "source/starts/reset/fixtures/business-subscriptions.agent",
+      "bytes": 30486,
+      "sha256": "2c9a61e7f20e5b80996f0308cc360e23bc408185744ba2ef57e5c217214d14d5"
+    },
+    {
+      "path": "source/starts/reset/fixtures/business-values.agent",
+      "bytes": 26707,
+      "sha256": "fe8227ce0c38ff6e193a74292a5b1d0ed0ac3e3869f0fe8feaf56eca62f30cbd"
+    },
+    {
+      "path": "source/starts/retained/dictionary.agent",
+      "bytes": 171677,
+      "sha256": "0ad9919a724c23728802baea6886b24722a1dc7113b1a4a114cc8a4a48c2ebc6"
+    },
+    {
+      "path": "source/starts/retained/fixtures/business-invoices.agent",
+      "bytes": 30002,
+      "sha256": "a08b3e87e69c5983d35ec35059c3881067294b65b4e79e992e81dbf101ab338c"
+    },
+    {
+      "path": "source/starts/retained/fixtures/business-payments-email.agent",
+      "bytes": 36869,
+      "sha256": "455bb038269fc499c69e0cd0338e76c9f4c5ed064f6a7c2ba125bdc9bb8503e4"
+    },
+    {
+      "path": "source/starts/retained/fixtures/business-state.agent",
+      "bytes": 15078,
+      "sha256": "d301d24143c31e84269aceaec7f85e4b6aeeb44e1156e6e03a53febc1ed41cc9"
+    },
+    {
+      "path": "source/starts/retained/fixtures/business-store.agent",
+      "bytes": 37409,
+      "sha256": "f7dfe3d6cafa66fd888e76c5e925fc424aa05465b40e896467c2e1f064b767f3"
+    },
+    {
+      "path": "source/starts/retained/fixtures/business-subscriptions.agent",
+      "bytes": 30486,
+      "sha256": "2c9a61e7f20e5b80996f0308cc360e23bc408185744ba2ef57e5c217214d14d5"
+    },
+    {
+      "path": "source/starts/retained/fixtures/business-values.agent",
+      "bytes": 26707,
+      "sha256": "fe8227ce0c38ff6e193a74292a5b1d0ed0ac3e3869f0fe8feaf56eca62f30cbd"
+    },
+    {
+      "path": "traces/flat.jsonl",
+      "bytes": 261632,
+      "sha256": "9f62951d9246d4e9c4c78171fcee61ebc86e442d96339e35d963bf83c8b094cc"
+    },
+    {
+      "path": "traces/reset.jsonl",
+      "bytes": 329618,
+      "sha256": "3755082b2c7c0f95af7e82528e78ce4444238610009ec42ec7d6fe7bcde15639"
+    },
+    {
+      "path": "traces/retained.jsonl",
+      "bytes": 379409,
+      "sha256": "f24be787998ee57bfd7cbf05590b57f68e468b74ef057a7e35eb1b4a3f222582"
+    }
+  ]
+}

@@ -1,0 +1,514 @@
+{
+  "kind": "quick-independent-behavior",
+  "probeExitCode": 0,
+  "casesExpected": 54,
+  "casesExecuted": 54,
+  "casesPassed": 54,
+  "passed": true,
+  "preservation": [
+    {
+      "path": "Domain.fs",
+      "unchanged": true
+    },
+    {
+      "path": "Program.fs",
+      "unchanged": true
+    },
+    {
+      "path": "BusinessPolicy.fsproj",
+      "unchanged": true
+    },
+    {
+      "path": "lib/AgentLang.Business.dll",
+      "unchanged": true
+    }
+  ],
+  "cases": [
+    {
+      "id": "premium-1",
+      "kind": "premium",
+      "balanceMinor": "0",
+      "expected": "0",
+      "actual": "0",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "premium-2",
+      "kind": "premium",
+      "balanceMinor": "1",
+      "expected": "0",
+      "actual": "0",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "premium-3",
+      "kind": "premium",
+      "balanceMinor": "9",
+      "expected": "8",
+      "actual": "8",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "premium-4",
+      "kind": "premium",
+      "balanceMinor": "10",
+      "expected": "9",
+      "actual": "9",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "premium-5",
+      "kind": "premium",
+      "balanceMinor": "11",
+      "expected": "9",
+      "actual": "9",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "premium-6",
+      "kind": "premium",
+      "balanceMinor": "19",
+      "expected": "17",
+      "actual": "17",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "premium-7",
+      "kind": "premium",
+      "balanceMinor": "20",
+      "expected": "18",
+      "actual": "18",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "premium-8",
+      "kind": "premium",
+      "balanceMinor": "1050",
+      "expected": "945",
+      "actual": "945",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "premium-9",
+      "kind": "premium",
+      "balanceMinor": "-1",
+      "expected": "0",
+      "actual": "0",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "premium-10",
+      "kind": "premium",
+      "balanceMinor": "-9",
+      "expected": "-8",
+      "actual": "-8",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "premium-11",
+      "kind": "premium",
+      "balanceMinor": "-10",
+      "expected": "-9",
+      "actual": "-9",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "premium-12",
+      "kind": "premium",
+      "balanceMinor": "-11",
+      "expected": "-9",
+      "actual": "-9",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "premium-13",
+      "kind": "premium",
+      "balanceMinor": "-19",
+      "expected": "-17",
+      "actual": "-17",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "premium-14",
+      "kind": "premium",
+      "balanceMinor": "-1050",
+      "expected": "-945",
+      "actual": "-945",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "premium-15",
+      "kind": "premium",
+      "balanceMinor": "9007199254740993",
+      "expected": "8106479329266893",
+      "actual": "8106479329266893",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "premium-16",
+      "kind": "premium",
+      "balanceMinor": "-9007199254740993",
+      "expected": "-8106479329266893",
+      "actual": "-8106479329266893",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "premium-17",
+      "kind": "premium",
+      "balanceMinor": "9223372036854775807",
+      "expected": "8301034833169298226",
+      "actual": "8301034833169298226",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "premium-18",
+      "kind": "premium",
+      "balanceMinor": "-9223372036854775808",
+      "expected": "-8301034833169298227",
+      "actual": "-8301034833169298227",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-1-1",
+      "kind": "regular",
+      "balanceMinor": "1",
+      "expected": "1",
+      "actual": "1",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-1-2",
+      "kind": "regular",
+      "balanceMinor": "-1050",
+      "expected": "-1050",
+      "actual": "-1050",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-1-3",
+      "kind": "regular",
+      "balanceMinor": "9223372036854775807",
+      "expected": "9223372036854775807",
+      "actual": "9223372036854775807",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-1-4",
+      "kind": "regular",
+      "balanceMinor": "-9223372036854775808",
+      "expected": "-9223372036854775808",
+      "actual": "-9223372036854775808",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-2-1",
+      "kind": "Premium",
+      "balanceMinor": "1",
+      "expected": "1",
+      "actual": "1",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-2-2",
+      "kind": "Premium",
+      "balanceMinor": "-1050",
+      "expected": "-1050",
+      "actual": "-1050",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-2-3",
+      "kind": "Premium",
+      "balanceMinor": "9223372036854775807",
+      "expected": "9223372036854775807",
+      "actual": "9223372036854775807",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-2-4",
+      "kind": "Premium",
+      "balanceMinor": "-9223372036854775808",
+      "expected": "-9223372036854775808",
+      "actual": "-9223372036854775808",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-3-1",
+      "kind": "PREMIUM",
+      "balanceMinor": "1",
+      "expected": "1",
+      "actual": "1",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-3-2",
+      "kind": "PREMIUM",
+      "balanceMinor": "-1050",
+      "expected": "-1050",
+      "actual": "-1050",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-3-3",
+      "kind": "PREMIUM",
+      "balanceMinor": "9223372036854775807",
+      "expected": "9223372036854775807",
+      "actual": "9223372036854775807",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-3-4",
+      "kind": "PREMIUM",
+      "balanceMinor": "-9223372036854775808",
+      "expected": "-9223372036854775808",
+      "actual": "-9223372036854775808",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-4-1",
+      "kind": "premium ",
+      "balanceMinor": "1",
+      "expected": "1",
+      "actual": "1",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-4-2",
+      "kind": "premium ",
+      "balanceMinor": "-1050",
+      "expected": "-1050",
+      "actual": "-1050",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-4-3",
+      "kind": "premium ",
+      "balanceMinor": "9223372036854775807",
+      "expected": "9223372036854775807",
+      "actual": "9223372036854775807",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-4-4",
+      "kind": "premium ",
+      "balanceMinor": "-9223372036854775808",
+      "expected": "-9223372036854775808",
+      "actual": "-9223372036854775808",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-5-1",
+      "kind": " premium",
+      "balanceMinor": "1",
+      "expected": "1",
+      "actual": "1",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-5-2",
+      "kind": " premium",
+      "balanceMinor": "-1050",
+      "expected": "-1050",
+      "actual": "-1050",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-5-3",
+      "kind": " premium",
+      "balanceMinor": "9223372036854775807",
+      "expected": "9223372036854775807",
+      "actual": "9223372036854775807",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-5-4",
+      "kind": " premium",
+      "balanceMinor": "-9223372036854775808",
+      "expected": "-9223372036854775808",
+      "actual": "-9223372036854775808",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-6-1",
+      "kind": "\tpremium",
+      "balanceMinor": "1",
+      "expected": "1",
+      "actual": "1",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-6-2",
+      "kind": "\tpremium",
+      "balanceMinor": "-1050",
+      "expected": "-1050",
+      "actual": "-1050",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-6-3",
+      "kind": "\tpremium",
+      "balanceMinor": "9223372036854775807",
+      "expected": "9223372036854775807",
+      "actual": "9223372036854775807",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-6-4",
+      "kind": "\tpremium",
+      "balanceMinor": "-9223372036854775808",
+      "expected": "-9223372036854775808",
+      "actual": "-9223372036854775808",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-7-1",
+      "kind": "premium\n",
+      "balanceMinor": "1",
+      "expected": "1",
+      "actual": "1",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-7-2",
+      "kind": "premium\n",
+      "balanceMinor": "-1050",
+      "expected": "-1050",
+      "actual": "-1050",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-7-3",
+      "kind": "premium\n",
+      "balanceMinor": "9223372036854775807",
+      "expected": "9223372036854775807",
+      "actual": "9223372036854775807",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-7-4",
+      "kind": "premium\n",
+      "balanceMinor": "-9223372036854775808",
+      "expected": "-9223372036854775808",
+      "actual": "-9223372036854775808",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-8-1",
+      "kind": "",
+      "balanceMinor": "1",
+      "expected": "1",
+      "actual": "1",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-8-2",
+      "kind": "",
+      "balanceMinor": "-1050",
+      "expected": "-1050",
+      "actual": "-1050",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-8-3",
+      "kind": "",
+      "balanceMinor": "9223372036854775807",
+      "expected": "9223372036854775807",
+      "actual": "9223372036854775807",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-8-4",
+      "kind": "",
+      "balanceMinor": "-9223372036854775808",
+      "expected": "-9223372036854775808",
+      "actual": "-9223372036854775808",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-9-1",
+      "kind": "prémi um",
+      "balanceMinor": "1",
+      "expected": "1",
+      "actual": "1",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-9-2",
+      "kind": "prémi um",
+      "balanceMinor": "-1050",
+      "expected": "-1050",
+      "actual": "-1050",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-9-3",
+      "kind": "prémi um",
+      "balanceMinor": "9223372036854775807",
+      "expected": "9223372036854775807",
+      "actual": "9223372036854775807",
+      "resultType": "Money",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-9-4",
+      "kind": "prémi um",
+      "balanceMinor": "-9223372036854775808",
+      "expected": "-9223372036854775808",
+      "actual": "-9223372036854775808",
+      "resultType": "Money",
+      "passed": true
+    }
+  ]
+}

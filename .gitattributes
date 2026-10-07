@@ -77,3 +77,4 @@ scripts/Verify-RetentionPreflightV4.ps1 -text whitespace=blank-at-eol,blank-at-e
 scripts/Audit-RetentionTraceV4.ps1 -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 experiments/AgentLang.SubagentTrials/business-policy-retention-004/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 reports/evidence/090-supplemental/** -text -whitespace
+reports/evidence/099-quick-comparison/** -text -whitespace
