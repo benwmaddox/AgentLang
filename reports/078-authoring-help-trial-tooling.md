@@ -53,3 +53,10 @@ The solution also built fresh in Release with zero warnings/errors. Runtime sour
 is unchanged from milestone 077, whose exact main CI run passed all 36 checks.
 A valid frozen-pin check and one-field tamper control remain pending until this
 tooling is committed; agents have not launched.
+
+The first postcommit preparation exposed a wrapper defect: strict PowerShell
+property assignment could not add the new preparation field to the original
+helper's starting-state object. It failed before prompt/pin creation or actor
+launch. The partial preparation is retained under the ignored failure archive;
+the preparer and its corresponding source snapshot are corrected together before
+a new clean-source commit and retry.

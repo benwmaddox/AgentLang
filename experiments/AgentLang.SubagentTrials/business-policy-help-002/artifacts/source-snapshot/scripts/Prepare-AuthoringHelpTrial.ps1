@@ -109,7 +109,7 @@ $startingState.sourceInputs = @(
 )
 $sourceRevision = (& git -C $repo rev-parse HEAD | Out-String).Trim()
 $workingChanges = (& git -C $repo status --porcelain --untracked-files=all | Out-String)
-$startingState.preparation = [pscustomobject]@{
+$preparationMetadata = [pscustomobject][ordered]@{
     scriptPath = 'scripts/Prepare-AuthoringHelpTrial.ps1'
     scriptSha256 = Get-Sha256 $PSCommandPath
     dependencyPath = 'scripts/Prepare-BusinessPolicyTrial.ps1'
@@ -122,6 +122,7 @@ $startingState.preparation = [pscustomobject]@{
         testCount = [int]$prepareResult.testCount
     }
 }
+$startingState | Add-Member -MemberType NoteProperty -Name 'preparation' -Value $preparationMetadata
 $startingState | ConvertTo-Json -Depth 100 | ForEach-Object {
     [IO.File]::WriteAllText($startingStatePath, $_ + "`n", [Text.UTF8Encoding]::new($false))
 }

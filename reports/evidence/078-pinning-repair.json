@@ -1,0 +1,199 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-help-002",
+  "status": "preparation wrapper corrected and partial failed preparation preserved; retry/freeze pending new clean source commit",
+  "checkedAtUtc": "2026-10-07T00:11:13.6487168-04:00",
+  "sourceRevisionAtRepair": "c6b68a9c12ba3e2c02385b8fef51b49c4a76f066",
+  "dirtyAtRepair": true,
+  "repair": {
+    "priorFailure": "Strict PowerShell property assignment could not add the new preparation field to the original helper starting-state object.",
+    "changedFile": "scripts/Prepare-AuthoringHelpTrial.ps1",
+    "correction": "Use Add-Member to add the preparation note property to the deserialized starting-state PSCustomObject.",
+    "previousCommittedSnapshotSha256": "69f9cfea46b93e650bc8e05f338255a5317cdd16702ef5f5363c81a96c51de74",
+    "correctedSourceSha256": "5de6e4a4616c673e6c80c560b5b4e33cf3df6f80391bb6e390d9e0b46d22d1a6",
+    "matchingRawSnapshotPath": "experiments/AgentLang.SubagentTrials/business-policy-help-002/artifacts/source-snapshot/scripts/Prepare-AuthoringHelpTrial.ps1",
+    "matchingRawSnapshotSha256": "5de6e4a4616c673e6c80c560b5b4e33cf3df6f80391bb6e390d9e0b46d22d1a6",
+    "matchingRawSnapshotBytes": 6840,
+    "originalSourceRevision": "c6b68a9c12ba3e2c02385b8fef51b49c4a76f066"
+  },
+  "preservedFailedPreparation": {
+    "archiveRoot": ".agentlang/business-policy-help-002/failed-preparations/20261007T-repair-AddMember",
+    "actorPath": ".agentlang/business-policy-help-002/failed-preparations/20261007T-repair-AddMember/actors/flat-S06",
+    "runPath": ".agentlang/business-policy-help-002/failed-preparations/20261007T-repair-AddMember/runs/flat-S06",
+    "containmentVerifiedUnderStudyRoot": true,
+    "movedWithNativeMoveItem": true,
+    "uniqueTargetsWereAbsentBeforeMove": true,
+    "fileCount": 25,
+    "inventorySha256": "73c1c6b46291de2443fa6b218b661c33e4ffcc090a24ce6e440f404c89f4f988",
+    "fileHashesPreservedFromPreMoveInventory": true,
+    "filesMatchingPromptPinTraceSessionOrJsonlNames": 0,
+    "startingStateMode": "flat",
+    "startingStateTaskId": "S06",
+    "startingStateSequenceIndex": 2,
+    "partialActorProjectMaterialized": true,
+    "externalActorLaunched": false,
+    "promptCreated": false,
+    "frozenPinCreated": false,
+    "sessionTraceCreated": false,
+    "actorAuditRun": false
+  },
+  "priorStaticEvidence": {
+    "path": "reports/evidence/078-pinning-focused.json",
+    "sha256": "a976d51fa3ebef97f8f4516e71159407cabc1323ea7a0add90e5826a6e3d256c",
+    "leftUnchanged": true,
+    "sourceArtifactCount": 13,
+    "corpusTotalCases": 64,
+    "s06Cases": 10,
+    "s07Cases": 54,
+    "exactDefaultsPreserved": true,
+    "seedBytes": 506,
+    "seedSha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d",
+    "primerUtf8Bytes": 3931,
+    "primerWhitespaceWords": 528,
+    "verifierPreflightPassed": true,
+    "verifierPreflightChecks": 59,
+    "verifierPreflightOutcomes": 14
+  },
+  "validation": {
+    "astParsed": [
+      "scripts/Prepare-AuthoringHelpTrial.ps1",
+      "scripts/Freeze-AuthoringHelpTrial.ps1",
+      "scripts/Audit-AuthoringHelpTrace.ps1"
+    ],
+    "astParseFailures": 0,
+    "sourceAndSnapshotRawByteHashEqual": true,
+    "gitDiffCheck": "passed"
+  },
+  "limitations": [
+    "No retry preparation, freeze, frozen-pin verification, actor launch, trace, or audit has run after the fix.",
+    "This repair record does not change or overwrite the earlier static pinning evidence.",
+    "A new clean tooling commit is required before real preparation and freezing."
+  ],
+  "preservedArchiveFileHashes": [
+    {
+      "path": ".agentlang/business-policy-help-002/failed-preparations/20261007T-repair-AddMember/actors/flat-S06/.agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "552b35c609db456bbe64f8edb7025de60a15bf342e9e3cc67919f52485b98bcc"
+    },
+    {
+      "path": ".agentlang/business-policy-help-002/failed-preparations/20261007T-repair-AddMember/actors/flat-S06/.agentlang/store/manifests/f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7.json",
+      "bytes": 1647,
+      "sha256": "f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7"
+    },
+    {
+      "path": ".agentlang/business-policy-help-002/failed-preparations/20261007T-repair-AddMember/actors/flat-S06/.agentlang/store/objects/2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0.agent",
+      "bytes": 66,
+      "sha256": "2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0"
+    },
+    {
+      "path": ".agentlang/business-policy-help-002/failed-preparations/20261007T-repair-AddMember/actors/flat-S06/.agentlang/store/objects/737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e.agent",
+      "bytes": 570,
+      "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+    },
+    {
+      "path": ".agentlang/business-policy-help-002/failed-preparations/20261007T-repair-AddMember/actors/flat-S06/.agentlang/store/objects/8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416.agent",
+      "bytes": 65,
+      "sha256": "8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416"
+    },
+    {
+      "path": ".agentlang/business-policy-help-002/failed-preparations/20261007T-repair-AddMember/actors/flat-S06/.agentlang/store/objects/9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14.agent",
+      "bytes": 150,
+      "sha256": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14"
+    },
+    {
+      "path": ".agentlang/business-policy-help-002/failed-preparations/20261007T-repair-AddMember/actors/flat-S06/.agentlang/store/objects/cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7.agent",
+      "bytes": 66,
+      "sha256": "cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7"
+    },
+    {
+      "path": ".agentlang/business-policy-help-002/failed-preparations/20261007T-repair-AddMember/actors/flat-S06/.agentlang/store/objects/e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17.agent",
+      "bytes": 20,
+      "sha256": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17"
+    },
+    {
+      "path": ".agentlang/business-policy-help-002/failed-preparations/20261007T-repair-AddMember/actors/flat-S06/.agentlang/store/objects/ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb.agent",
+      "bytes": 66,
+      "sha256": "ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb"
+    },
+    {
+      "path": ".agentlang/business-policy-help-002/failed-preparations/20261007T-repair-AddMember/actors/flat-S06/.agentlang/store/WRITE.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/business-policy-help-002/failed-preparations/20261007T-repair-AddMember/actors/flat-S06/dictionary.agent",
+      "bytes": 570,
+      "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+    },
+    {
+      "path": ".agentlang/business-policy-help-002/failed-preparations/20261007T-repair-AddMember/actors/flat-S06/fixtures/flat-customer.agent",
+      "bytes": 506,
+      "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+    },
+    {
+      "path": ".agentlang/business-policy-help-002/failed-preparations/20261007T-repair-AddMember/runs/flat-S06/starting-project/.agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "552b35c609db456bbe64f8edb7025de60a15bf342e9e3cc67919f52485b98bcc"
+    },
+    {
+      "path": ".agentlang/business-policy-help-002/failed-preparations/20261007T-repair-AddMember/runs/flat-S06/starting-project/.agentlang/store/manifests/f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7.json",
+      "bytes": 1647,
+      "sha256": "f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7"
+    },
+    {
+      "path": ".agentlang/business-policy-help-002/failed-preparations/20261007T-repair-AddMember/runs/flat-S06/starting-project/.agentlang/store/objects/2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0.agent",
+      "bytes": 66,
+      "sha256": "2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0"
+    },
+    {
+      "path": ".agentlang/business-policy-help-002/failed-preparations/20261007T-repair-AddMember/runs/flat-S06/starting-project/.agentlang/store/objects/737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e.agent",
+      "bytes": 570,
+      "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+    },
+    {
+      "path": ".agentlang/business-policy-help-002/failed-preparations/20261007T-repair-AddMember/runs/flat-S06/starting-project/.agentlang/store/objects/8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416.agent",
+      "bytes": 65,
+      "sha256": "8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416"
+    },
+    {
+      "path": ".agentlang/business-policy-help-002/failed-preparations/20261007T-repair-AddMember/runs/flat-S06/starting-project/.agentlang/store/objects/9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14.agent",
+      "bytes": 150,
+      "sha256": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14"
+    },
+    {
+      "path": ".agentlang/business-policy-help-002/failed-preparations/20261007T-repair-AddMember/runs/flat-S06/starting-project/.agentlang/store/objects/cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7.agent",
+      "bytes": 66,
+      "sha256": "cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7"
+    },
+    {
+      "path": ".agentlang/business-policy-help-002/failed-preparations/20261007T-repair-AddMember/runs/flat-S06/starting-project/.agentlang/store/objects/e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17.agent",
+      "bytes": 20,
+      "sha256": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17"
+    },
+    {
+      "path": ".agentlang/business-policy-help-002/failed-preparations/20261007T-repair-AddMember/runs/flat-S06/starting-project/.agentlang/store/objects/ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb.agent",
+      "bytes": 66,
+      "sha256": "ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb"
+    },
+    {
+      "path": ".agentlang/business-policy-help-002/failed-preparations/20261007T-repair-AddMember/runs/flat-S06/starting-project/.agentlang/store/WRITE.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/business-policy-help-002/failed-preparations/20261007T-repair-AddMember/runs/flat-S06/starting-project/dictionary.agent",
+      "bytes": 570,
+      "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+    },
+    {
+      "path": ".agentlang/business-policy-help-002/failed-preparations/20261007T-repair-AddMember/runs/flat-S06/starting-project/fixtures/flat-customer.agent",
+      "bytes": 506,
+      "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+    },
+    {
+      "path": ".agentlang/business-policy-help-002/failed-preparations/20261007T-repair-AddMember/runs/flat-S06/starting-state.json",
+      "bytes": 6145,
+      "sha256": "6bcdf6451999743a89df9379b60c0a60bb1d23b1d23d2bdeebb204ae484ff9da"
+    }
+  ]
+}
