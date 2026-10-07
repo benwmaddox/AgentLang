@@ -521,6 +521,12 @@ scope. The associated X discussion is motivation supplied by the user, not
 verified evidence of migration quality or performance. See the
 [migration research plan](../reports/088-late-application-migration-research.md).
 
+The user supplied the original [DHH X conversation](https://x.com/dhh/status/2104633108092092880)
+for historical context. Retain it and later review accessible replies and quote
+posts; record attribution and access limits in the [discussion history](CAMPFIRE-DISCUSSION-HISTORY.md).
+A public response is a future option once quality and competitive performance
+are demonstrated with reproducible evidence and stated limitations.
+
 Migrate bounded vertical slices incrementally using external AI subagents,
 then exercise the migrated system over prolonged operation and subsequent
 changes by fresh agents. Preserve the same explicit type/effect, dictionary,

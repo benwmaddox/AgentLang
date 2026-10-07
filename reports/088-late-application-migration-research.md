@@ -29,6 +29,12 @@ These make it a promising candidate for independently checking a port. This
 review read the repository landing page and README; it did not audit source,
 reproduce performance claims or verify the X posts mentioned by the user.
 
+The user subsequently supplied the original
+[DHH X conversation](https://x.com/dhh/status/2104633108092092880). Its link,
+access limitations, discussion leads and conditions for a possible future
+public response are saved in the [discussion history](../docs/CAMPFIRE-DISCUSSION-HISTORY.md).
+Replies and quote posts are research leads; claims require independent evidence.
+
 Before starting, pin the Rust and Rails reference revisions, inspect licensing,
 inventory dependencies, validate the reference locally and assess which parity
 tests can serve as independent oracles. Select a feasible initial vertical
