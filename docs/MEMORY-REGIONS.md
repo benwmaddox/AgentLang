@@ -132,6 +132,15 @@ policy, measured separately from scratch reclamation. Inspectable mailbox/handle
 signatures, declared effects and per-item allocation metrics would preserve the
 project's existing comprehension and observability goals.
 
+### Approved later async arena comparison
+
+The later async comparison is now explicitly requested: prioritize per-turn
+scratch with bounded retained continuations and pending I/O, and compare it
+against whole-request arenas. The [evaluation contract](ASYNC-ARENA-EVALUATION.md)
+defines equal-memory throughput, tail-latency, slow-client and cancellation
+checks. This approves research sequencing, not a V1 async feature or a proven
+memory/performance result.
+
 ### Candidate: declared retained data plus mailbox scratch
 
 The user proposed a statically defined set of data outside arenas, using Stasis

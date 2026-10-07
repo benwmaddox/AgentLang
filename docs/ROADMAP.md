@@ -79,6 +79,12 @@ JIT while release builds use LLVM AOT plus a minimal runtime. Research arenas,
 an arena-backed program-data stack, bounded mailboxes and suspended-I/O state
 with explicit lifetime and buffer rules. Compare whole-request arenas against
 per-turn scratch arenas with retained continuations under equal resource limits.
+The approved [async arena experiment](ASYNC-ARENA-EVALUATION.md) makes per-turn
+scratch the main candidate and whole-request arenas the comparison. Measure
+sustained successful requests per second at the same enforced memory ceiling
+and acceptable tail latency, including slow clients, cancellation and bounded
+pending I/O. Record copying, backpressure and whole-process memory as well as
+arena accounting before adopting either design.
 
 No current interpreter result proves native footprint, throughput or arena
 safety. Require semantic conformance and measured memory, throughput and tail
