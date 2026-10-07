@@ -1,7 +1,8 @@
 # R04 supplemental scoring boundary
 
 Status: scoring criteria recorded before supplemental execution. Implementation
-and results are pending. This document does not claim independent acceptance.
+is under review and focused validation; production results remain pending.
+This document does not claim independent acceptance.
 
 ## Why a separate score is needed
 
@@ -54,3 +55,28 @@ reliability gains. No token, turn, native-memory or performance inference follow
 
 No supplemental result is recorded yet. Add actual commands, results and saved
 artifact references after implementation review and local execution.
+
+## Development validation before production scoring
+
+A read-only review of draft SHA-256
+`239b3bc3dc1d415779e3e1e474421b22447aa9a80e5beb122f82fe66d0cd3dfd`
+found a directory passed to a leaf-file hash helper, an undefined evidence-field
+variable, and missing actual-comparator/predecessor-flag controls. These were
+sent to the implementation owner for correction. This is a draft review, not
+certification of a later script revision.
+
+Root ran `pwsh -NoProfile -File scripts/Score-RetentionOutputSupplement.ps1 -SelfTest`:
+
+| Draft SHA-256 (unchanged during invocation) | Exit | Observed failure |
+| --- | --- | --- |
+| `68e70fab99c2f256fb488c29470967bd79f3b13087fab8635cc4ed603f9be57d` | 1 | Max-Int64 fixture expected value disagreed with independent BigInteger arithmetic |
+| `f099caddf3eba17df758b9d582d247caaf38b3f0500137dbfac738582c336639` | 1 | Rounding-discriminator control failed |
+
+For the latter failure, a diagnostic invocation of the actual comparator with a
+structured Money value of 8 and an expected value of 8 returned `passed=true`.
+The fixture incorrectly treated nearest rounding of 90% of 9 as 9; it is 8,
+the same as truncation. A proper discriminator such as 90% of 1 gives nearest
+1 versus truncation 0. These failures concern scorer test fixtures, not R04
+business behavior. No production scratch replay or canonical acceptance repair
+is claimed by these checks. Passing focused controls and a reviewed result
+writer are still required before using any supplemental outcome.
