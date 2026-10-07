@@ -1,0 +1,5 @@
+word customer.premium?(customer: Customer) -> Bool {
+    effects none
+    doc "Returns true exactly when the customer's kind is the ordinal string \"premium\"."
+    if ::equals(customer::kind(customer), "premium") { true } else { false }
+}

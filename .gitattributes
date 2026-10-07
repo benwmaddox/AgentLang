@@ -45,3 +45,9 @@ reports/evidence/081-clean-controls/passing-frozen-reference/frozen-raw/frozen-r
 
 # Captured close-tamper diagnostics retain their original trailing whitespace.
 reports/evidence/081-clean-controls/*/frozen-raw/frozen-reference-close-tamper-rejection-stderr.txt -whitespace
+
+# Exact fresh-agent and downloaded CI evidence retain original bytes.
+reports/evidence/083-R01/** -text -whitespace
+reports/evidence/083-R01-index.json -text
+reports/evidence/081-clean-controls/ci-7532a90/** -text -whitespace
+reports/evidence/083-R01-index.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

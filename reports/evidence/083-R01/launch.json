@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-retention-003",
+  "runId": "R01",
+  "actor": "/root/retention003_r01",
+  "spawnTool": "collaboration.spawn_agent",
+  "model": "gpt-6-luna",
+  "reasoningEffort": "max",
+  "forkTurns": "none",
+  "modelActorLaunched": true,
+  "launchRevision": "745974e6173a3f3dd952c7171e0a2c9557fa69d8",
+  "frozenPromptPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\runs\\R01\\prompt.txt",
+  "frozenPromptSha256": "ae81436165df3667ddcd98a88e5da4490886742ca0438301dd4c3253253b295a",
+  "messageSource": "Corrected frozen public prompt copied into spawn request; native request visible in conversation",
+  "nativeUsageAvailable": false,
+  "coordinatorProvidedSolution": false,
+  "prelaunchSha256": "c43c568a4c1933ffdb3cef5d8beb3a5a4c2da2c987681934be4542ba6fac0515"
+}

@@ -10,3 +10,6 @@ history/
 
 # Exact synthetic trial archives retain their ignored store and history evidence.
 !reports/evidence/081-clean-controls/**
+
+# Frozen fresh-agent evidence includes synthetic durable stores and history.
+!reports/evidence/083-R01/**

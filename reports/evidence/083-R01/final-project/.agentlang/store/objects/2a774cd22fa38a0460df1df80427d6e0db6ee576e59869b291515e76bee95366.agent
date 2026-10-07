@@ -1,0 +1,99 @@
+// frontend: flow/1
+
+record Customer {
+    field id: CustomerId;
+    field email: Email;
+    field kind: String;
+    field balance: Money;
+    field created-at: Instant;
+}
+
+// frontend: flow/1
+
+type CustomerId : String {
+    validate string::guid-canonical?;
+}
+
+// frontend: flow/1
+
+type Email : String {
+    validate string::email-address-valid?;
+}
+
+// frontend: flow/1
+
+type Instant : String {
+    validate instant::is-canonical-utc?;
+}
+
+// frontend: flow/1
+
+type Money : Int {
+}
+
+// frontend: flow/1
+
+type ProductId : String {
+    validate string::guid-canonical?;
+}
+
+// frontend: flow/1
+
+word customer.premium?(customer: Customer) -> Bool {
+    effects none
+    doc "Returns true exactly when the customer\u0027s kind is the ordinal string \u0022premium\u0022."
+    if ::equals(customer::kind(customer), "premium") {
+        true
+    } else {
+        false
+    }
+}
+
+// frontend: flow/1
+
+test customer.premium?/case_mismatch {
+    customer::premium?(customer::new(CustomerId::new("00000000-0000-0000-0000-000000000000"), Email::new("user@example.com"), "Premium", Money::new(0), Instant::new("2000-01-01T00:00:00.0000000\u002B00:00")))
+    => false
+}
+
+// frontend: flow/1
+
+test customer.premium?/exact_premium {
+    customer::premium?(customer::new(CustomerId::new("00000000-0000-0000-0000-000000000000"), Email::new("user@example.com"), "premium", Money::new(0), Instant::new("2000-01-01T00:00:00.0000000\u002B00:00")))
+    => true
+}
+
+// frontend: flow/1
+
+test customer.premium?/leading_space {
+    customer::premium?(customer::new(CustomerId::new("00000000-0000-0000-0000-000000000000"), Email::new("user@example.com"), " premium", Money::new(0), Instant::new("2000-01-01T00:00:00.0000000\u002B00:00")))
+    => false
+}
+
+// frontend: flow/1
+
+test customer.premium?/other_kind {
+    customer::premium?(customer::new(CustomerId::new("00000000-0000-0000-0000-000000000000"), Email::new("user@example.com"), "standard", Money::new(0), Instant::new("2000-01-01T00:00:00.0000000\u002B00:00")))
+    => false
+}
+
+// frontend: flow/1
+
+test customer.premium?/trailing_space {
+    customer::premium?(customer::new(CustomerId::new("00000000-0000-0000-0000-000000000000"), Email::new("user@example.com"), "premium ", Money::new(0), Instant::new("2000-01-01T00:00:00.0000000\u002B00:00")))
+    => false
+}
+
+// frontend: flow/1
+
+example customer.premium?/case_mismatch {
+    customer::premium?(customer::new(CustomerId::new("00000000-0000-0000-0000-000000000000"), Email::new("user@example.com"), "Premium", Money::new(0), Instant::new("2000-01-01T00:00:00.0000000\u002B00:00")))
+    => false
+}
+
+// frontend: flow/1
+
+example customer.premium?/exact_premium {
+    customer::premium?(customer::new(CustomerId::new("00000000-0000-0000-0000-000000000000"), Email::new("user@example.com"), "premium", Money::new(0), Instant::new("2000-01-01T00:00:00.0000000\u002B00:00")))
+    => true
+}

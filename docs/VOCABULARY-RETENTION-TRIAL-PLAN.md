@@ -1,6 +1,7 @@
 # Matched vocabulary retention trial
 
-Status: implementation in progress; no actors launched or results claimed.
+Status: frozen preparation passed; R01 fresh actor accepted and integrity-audited.
+One of twelve cells completed (report 083); no comparative result claimed.
 
 The next priority is external-agent behavior, before backend or memory research.
 The new package is `business-policy-retention-003`; completed 001/002 studies and

@@ -1,0 +1,9 @@
+test customer.premium?/trailing_space {
+    customer::premium?(customer::new(
+        CustomerId::new("00000000-0000-0000-0000-000000000000"),
+        Email::new("user@example.com"),
+        "premium ",
+        Money::new(0),
+        Instant::new("2000-01-01T00:00:00.0000000+00:00")
+    )) => false
+}

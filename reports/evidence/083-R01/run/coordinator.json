@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-retention-003",
+  "runId": "R01",
+  "modelActorLaunched": true,
+  "actor": "/root/retention003_r01",
+  "events": [
+    {
+      "event": "verification-completed",
+      "atUtc": "2026-10-07T14:03:49.8339319Z",
+      "timestampSource": "independent verifier finishedUtc",
+      "acceptancePath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\runs\\R01\\acceptance.json",
+      "acceptanceSha256": "a1e4e582cae1123edde45c3e16531b14b6a467912877c75e0f5f74ea2783cb32",
+      "acceptancePassed": true,
+      "projectTreeSha256": "4eb1e2039fb231dd259ee2463d36fb7cc73e5d88ad2f3d5140635ce204703cca"
+    },
+    {
+      "event": "close-requested",
+      "atUtc": "2026-10-07T14:04:41Z",
+      "timestampSource": "clock tool immediately before actual collaboration.send_message requesting actor-owned close",
+      "acceptanceSha256": "a1e4e582cae1123edde45c3e16531b14b6a467912877c75e0f5f74ea2783cb32"
+    }
+  ]
+}

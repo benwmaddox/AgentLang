@@ -1,0 +1,39 @@
+{
+  "task": "task-0001",
+  "goal": "Implement customer.premium? as a pure public Customer -\u003E Bool operation that returns true exactly when Customer.Kind equals ordinal \u0022premium\u0022, preserving case and whitespace; add boundary and branch tests, examples, and concise documentation while preserving unrelated behavior.",
+  "active": false,
+  "wordsInspected": [
+    "Customer",
+    "CustomerId",
+    "CustomerId.new",
+    "Email",
+    "Instant",
+    "Money",
+    "context:customer.new",
+    "customer.new",
+    "customer.premium?",
+    "equals",
+    "instant.is-canonical-utc?",
+    "instant.parse-utc"
+  ],
+  "wordsUsed": [
+    "CustomerId.new",
+    "Email.new",
+    "Instant.new",
+    "Money.new",
+    "customer.kind",
+    "customer.new",
+    "customer.premium?",
+    "equals",
+    "instant.is-canonical-utc?",
+    "string.email-address-valid?",
+    "string.guid-canonical?"
+  ],
+  "wordsCreated": [
+    "customer.premium?"
+  ],
+  "testsRun": 15,
+  "testsFailed": 5,
+  "effects": {},
+  "errors": []
+}

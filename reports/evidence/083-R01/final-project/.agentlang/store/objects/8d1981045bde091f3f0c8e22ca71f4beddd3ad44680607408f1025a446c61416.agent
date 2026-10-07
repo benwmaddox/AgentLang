@@ -1,0 +1,3 @@
+type ProductId : String {
+    validate string::guid-canonical?;
+}
