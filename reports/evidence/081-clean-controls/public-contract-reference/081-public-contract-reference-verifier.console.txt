@@ -1,0 +1,1 @@
+Retention B1/flat/S01 (R01) passed 157 checks. Evidence: D:\code\AgentLang\.agentlang\business-policy-retention-003\runs\R01\acceptance.json

@@ -1,0 +1,26 @@
+# Flat reset: typed Customer shape only; no task policy words.
+type CustomerId : String {
+    validate string::guid-canonical?;
+}
+
+type ProductId : String {
+    validate string::guid-canonical?;
+}
+
+type Email : String {
+    validate string::email-address-valid?;
+}
+
+type Money : Int { }
+
+type Instant : String {
+    validate instant::is-canonical-utc?;
+}
+
+record Customer {
+    field id: CustomerId;
+    field email: Email;
+    field kind: String;
+    field balance: Money;
+    field created-at: Instant;
+}

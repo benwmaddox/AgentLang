@@ -1,0 +1,1 @@
+Retention 003 candidate evidence and deterministic frozen-reference controls passed; R01 remains occupied by that reference. LaunchReady=false until root archives it or records verified owned cleanup. Evidence: D:\code\AgentLang\.agentlang\business-policy-retention-003\evidence\081-public-contract-frozen-controls.json

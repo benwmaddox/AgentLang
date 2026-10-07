@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "sourceRevision": "d9c07feaaa375e5d61f2631d65241b76b4cc834d",
+  "modelActorLaunched": false,
+  "referenceControlsPassed": true,
+  "runSlotAbsent": true,
+  "actorSlotAbsent": true,
+  "preservedIgnoredRoot": ".agentlang/business-policy-retention-003/accepted-public-contract-reference",
+  "sourceFreezeRetained": true,
+  "canonicalBaselinesMoved": false
+}

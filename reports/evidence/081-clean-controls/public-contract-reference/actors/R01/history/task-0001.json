@@ -1,0 +1,26 @@
+{
+  "task": "task-0001",
+  "goal": "Deterministic R01 reference control",
+  "active": false,
+  "wordsInspected": [],
+  "wordsUsed": [
+    "CustomerId.new",
+    "Email.new",
+    "Instant.new",
+    "Money.new",
+    "customer.kind",
+    "customer.new",
+    "customer.premium?",
+    "equals",
+    "instant.is-canonical-utc?",
+    "string.email-address-valid?",
+    "string.guid-canonical?"
+  ],
+  "wordsCreated": [
+    "customer.premium?"
+  ],
+  "testsRun": 6,
+  "testsFailed": 0,
+  "effects": {},
+  "errors": []
+}

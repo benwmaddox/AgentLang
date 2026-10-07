@@ -1,12 +1,12 @@
 # Matched vocabulary-retention preparation
 
-Status: frozen integrity controls passed; public prompt contract repair pending.
-Candidate
-controls passed 63/63; reference acceptance passed 157 checks and 10 cases;
-production trace audit passed 662/662; frozen reference/tamper controls passed
-21/21. The marked closed reference is preserved byte-for-byte and R01 actor/run
-slots are free. All 123 passing evidence files are archived. Fresh model actors
-have not launched; these are harness results, not agent reliability outcomes.
+Status: genuine corrected-public-contract preparation passed on clean d9c07fe.
+Candidate controls passed 63/63, reference acceptance passed 157 checks and
+10 cases, production trace audit passed 662/662, and frozen controls passed
+21/21. The actual written prompt contains the required public name/signature.
+All 123 exact reference/control files are archived; closed reference slots are
+free and canonical baselines unchanged. No fresh model actor has launched for
+this study; these are preparation results, not agent reliability outcomes.
 
 Published revisions f3f4391 and 5b0a367 passed 37/37 CI checks on both branches;
 their downloaded evidence is archived separately.
@@ -228,3 +228,14 @@ or policy change. These controls do not prove the full pin-write path; a clean
 refreeze and genuine rerun follow. Old snapshots/global manifest were preserved
 under superseded-prompt-contract-7532a90 only after matching the passing archive.
 Canonical baselines remain unchanged.
+
+## Genuine corrected-public-contract milestone
+
+Clean d9c07fe reran all candidate and frozen gates without source exceptions.
+The real emitted S01 prompt includes customer.premium? and Customer -> Bool.
+The deterministic replay passed all ten independent cases and explicit-close
+audit; model/source/close tamper controls and exact restoration passed. The
+closed reference was moved only after matching all archived bytes; source/global
+freeze remains valid. Next is a fresh no-history Luna/max actor using only the
+corrected frozen public prompt. The compact-core source baseline is saved in
+report 082; it is not a memory or actor measurement.

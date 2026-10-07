@@ -42,3 +42,6 @@ reports/evidence/081-superseded-freeze/** -text whitespace=blank-at-eol,blank-at
 reports/evidence/081-clean-controls/auditor-fullpath-diagnostics/.agentlang/business-policy-retention-003/evidence/081-audit-debug-2d7502038a4a43c1ba7c705c05be931b.txt -whitespace
 reports/evidence/081-clean-controls/auditor-fullpath-diagnostics/.agentlang/business-policy-retention-003/evidence/081-audit-fullpath-diagnostic-a74741573e9b4ff69a3c8f65f18796a3-output.txt -whitespace
 reports/evidence/081-clean-controls/passing-frozen-reference/frozen-raw/frozen-reference-close-tamper-rejection-stderr.txt -whitespace
+
+# Captured close-tamper diagnostics retain their original trailing whitespace.
+reports/evidence/081-clean-controls/*/frozen-raw/frozen-reference-close-tamper-rejection-stderr.txt -whitespace
