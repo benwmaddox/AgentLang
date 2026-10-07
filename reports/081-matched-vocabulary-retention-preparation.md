@@ -1,6 +1,7 @@
 # Matched vocabulary-retention preparation
 
-Status: full genuine preparation controls passed on clean 256dd80. Candidate
+Status: frozen integrity controls passed; public prompt contract repair pending.
+Candidate
 controls passed 63/63; reference acceptance passed 157 checks and 10 cases;
 production trace audit passed 662/662; frozen reference/tamper controls passed
 21/21. The marked closed reference is preserved byte-for-byte and R01 actor/run
@@ -200,3 +201,30 @@ exception now includes those exact files; their existing inventory hashes remain
 the source of truth. This corrects archive publication completeness without
 changing original trial bytes or results. Full runtime CI at older published
 revisions remains separate; no new managed-runtime build or memory claim is made.
+
+## Prelaunch public-contract audit
+
+Milestone 7532a90 was fast-forwarded to main and prototype and atomically pushed.
+Repository privacy was rechecked as PRIVATE. Three reference inventory sets
+(359 rows) matched committed blobs and recorded SHA-256 hashes. Remote CI for
+this revision is not yet claimed.
+
+Before spawning the first fresh actor, root reviewed its complete frozen public
+prompt. It contained the S01 goal but neither customer.premium? nor Customer ->
+Bool, although both are public task fields. Acceptance would otherwise require
+guessing a hidden name. No model actor or host launched. The unused pin, prompt,
+starting project and actor project are preserved exactly (27 files); R01 slots
+are free. The prompt builder must include and validate public names/signatures
+for both tasks before clean refreeze and launch. Earlier passing integrity
+controls do not prove prompt-contract completeness.
+
+## Public-contract prompt repair
+
+The production prompt builder now validates the public task record and prints
+its operation and signature. AST-extracted production-function controls passed
+for S01 and S07 and rejected missing-contract/nonstring-signature records.
+Independent source review found no material issue, private-oracle interpolation
+or policy change. These controls do not prove the full pin-write path; a clean
+refreeze and genuine rerun follow. Old snapshots/global manifest were preserved
+under superseded-prompt-contract-7532a90 only after matching the passing archive.
+Canonical baselines remain unchanged.

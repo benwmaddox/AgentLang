@@ -1,0 +1,253 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-retention-003",
+  "arm": "flat",
+  "block": "B1",
+  "taskId": "S01",
+  "sequenceIndex": 1,
+  "runId": "R01",
+  "baseline": {
+    "kind": "flat",
+    "path": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-retention-003\\artifacts\\baselines\\flat\\project",
+    "manifestPath": "experiments/AgentLang.SubagentTrials/business-policy-retention-003/artifacts/baselines/flat/manifest.json",
+    "manifestSha256": "960aea33700470b80eec1a43538ded7843790892f215c605141e121456723659",
+    "seedStateSha256": "e1fbd436f02eca1bd74430dbf019d4d17f4b133ce8f48b02d4a3ff0ae52a5790",
+    "files": [
+      {
+        "path": ".agentlang/store/CURRENT",
+        "bytes": 134,
+        "sha256": "552b35c609db456bbe64f8edb7025de60a15bf342e9e3cc67919f52485b98bcc"
+      },
+      {
+        "path": ".agentlang/store/WRITE.lock",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": ".agentlang/store/manifests/f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7.json",
+        "bytes": 1647,
+        "sha256": "f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7"
+      },
+      {
+        "path": ".agentlang/store/objects/2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0.agent",
+        "bytes": 66,
+        "sha256": "2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0"
+      },
+      {
+        "path": ".agentlang/store/objects/737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e.agent",
+        "bytes": 570,
+        "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+      },
+      {
+        "path": ".agentlang/store/objects/8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416.agent",
+        "bytes": 65,
+        "sha256": "8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416"
+      },
+      {
+        "path": ".agentlang/store/objects/9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14.agent",
+        "bytes": 150,
+        "sha256": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14"
+      },
+      {
+        "path": ".agentlang/store/objects/cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7.agent",
+        "bytes": 66,
+        "sha256": "cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7"
+      },
+      {
+        "path": ".agentlang/store/objects/e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17.agent",
+        "bytes": 20,
+        "sha256": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17"
+      },
+      {
+        "path": ".agentlang/store/objects/ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb.agent",
+        "bytes": 66,
+        "sha256": "ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb"
+      },
+      {
+        "path": "dictionary.agent",
+        "bytes": 570,
+        "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+      },
+      {
+        "path": "fixtures/flat-customer.agent",
+        "bytes": 506,
+        "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+      }
+    ],
+    "inventorySha256": "e780f23d85487cb4b8d5bf8365104c98f32ed19575f80e0437489f7b35f32391",
+    "sourceInputs": [
+      {
+        "path": "experiments/AgentLang.SubagentTrials/business-policy-retention-003/artifacts/flat-customer.agent",
+        "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+      }
+    ],
+    "counts": {
+      "words": 0,
+      "types": 6,
+      "tests": 0
+    }
+  },
+  "runtime": {
+    "cliPath": "src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll",
+    "cliSha256": "bbfe7d079f568a431148298de86a3aa26304a160781c2756591be070735f274a",
+    "businessPath": "experiments/AgentLang.Business/bin/Release/net9.0/AgentLang.Business.dll",
+    "businessSha256": "41f0b6f0f44ac73f0b899090dc7dcd3f3d56129176b172ceca96cba9e638a13d",
+    "buildSourceRevision": "8bff657bc4a4a0c2406a1ed3b5448f4b2ae4902c"
+  },
+  "preparation": {
+    "scriptPath": "scripts/Prepare-RetentionTrial.ps1",
+    "scriptSha256": "42c63fb12de3ecd37b4827944f00a59613a1a66908d8c23c7c926e2d9d216aa9",
+    "bootstrapperPath": "scripts/Prepare-BusinessPolicyTrial.ps1",
+    "bootstrapperSha256": "23af4c9536e72730d44a5cfbdcf70b05b17a1e35c83f841511f9e8bbc637c08a",
+    "sourceRevision": "7532a90d73a4c499583bd3a4c15aefd981dbf65a",
+    "dirty": false,
+    "oraclePath": "experiments/AgentLang.SubagentTrials/business-policy-retention-003/acceptance.json",
+    "oracleSha256": "8ca4f975161541b8c60397267fe7bb4ecb4345e00674d91467ac151a0bb7d3f2",
+    "primerPath": "experiments/AgentLang.SubagentTrials/business-policy-retention-003/language-primer.md",
+    "primerSha256": "7ca98f0c8c9a20a84076d2a6b62da7a36ac12959e17ec1890ec74f9cbf9b578e",
+    "designPath": "experiments/AgentLang.SubagentTrials/business-policy-retention-003/design.json",
+    "designSha256": "c5b9d8a09cc671895f6ebd6bfd4023b8744cb8c8277cf6e2e7e6a4602d80b3ae",
+    "publicTaskPath": "experiments/AgentLang.Benchmarks/task-bank/public/S01.json",
+    "publicTaskSha256": "97befde7d0e3231529ad681e785ace116210d8d99228eb2e9f76183738b7fada"
+  },
+  "sourceInputs": [
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-retention-003/artifacts/flat-customer.agent",
+      "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+    }
+  ],
+  "previousAcceptance": null,
+  "priorOutcome": "baseline",
+  "project": {
+    "path": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\runs\\R01\\starting-project",
+    "files": [
+      {
+        "path": ".agentlang/store/CURRENT",
+        "bytes": 134,
+        "sha256": "552b35c609db456bbe64f8edb7025de60a15bf342e9e3cc67919f52485b98bcc"
+      },
+      {
+        "path": ".agentlang/store/WRITE.lock",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": ".agentlang/store/manifests/f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7.json",
+        "bytes": 1647,
+        "sha256": "f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7"
+      },
+      {
+        "path": ".agentlang/store/objects/2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0.agent",
+        "bytes": 66,
+        "sha256": "2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0"
+      },
+      {
+        "path": ".agentlang/store/objects/737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e.agent",
+        "bytes": 570,
+        "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+      },
+      {
+        "path": ".agentlang/store/objects/8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416.agent",
+        "bytes": 65,
+        "sha256": "8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416"
+      },
+      {
+        "path": ".agentlang/store/objects/9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14.agent",
+        "bytes": 150,
+        "sha256": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14"
+      },
+      {
+        "path": ".agentlang/store/objects/cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7.agent",
+        "bytes": 66,
+        "sha256": "cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7"
+      },
+      {
+        "path": ".agentlang/store/objects/e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17.agent",
+        "bytes": 20,
+        "sha256": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17"
+      },
+      {
+        "path": ".agentlang/store/objects/ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb.agent",
+        "bytes": 66,
+        "sha256": "ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb"
+      },
+      {
+        "path": "dictionary.agent",
+        "bytes": 570,
+        "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+      },
+      {
+        "path": "fixtures/flat-customer.agent",
+        "bytes": 506,
+        "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+      }
+    ],
+    "inventorySha256": "e780f23d85487cb4b8d5bf8365104c98f32ed19575f80e0437489f7b35f32391"
+  },
+  "actor": {
+    "projectPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\actors\\R01",
+    "files": [
+      {
+        "path": ".agentlang/store/CURRENT",
+        "bytes": 134,
+        "sha256": "552b35c609db456bbe64f8edb7025de60a15bf342e9e3cc67919f52485b98bcc"
+      },
+      {
+        "path": ".agentlang/store/WRITE.lock",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": ".agentlang/store/manifests/f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7.json",
+        "bytes": 1647,
+        "sha256": "f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7"
+      },
+      {
+        "path": ".agentlang/store/objects/2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0.agent",
+        "bytes": 66,
+        "sha256": "2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0"
+      },
+      {
+        "path": ".agentlang/store/objects/737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e.agent",
+        "bytes": 570,
+        "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+      },
+      {
+        "path": ".agentlang/store/objects/8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416.agent",
+        "bytes": 65,
+        "sha256": "8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416"
+      },
+      {
+        "path": ".agentlang/store/objects/9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14.agent",
+        "bytes": 150,
+        "sha256": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14"
+      },
+      {
+        "path": ".agentlang/store/objects/cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7.agent",
+        "bytes": 66,
+        "sha256": "cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7"
+      },
+      {
+        "path": ".agentlang/store/objects/e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17.agent",
+        "bytes": 20,
+        "sha256": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17"
+      },
+      {
+        "path": ".agentlang/store/objects/ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb.agent",
+        "bytes": 66,
+        "sha256": "ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb"
+      },
+      {
+        "path": "dictionary.agent",
+        "bytes": 570,
+        "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+      },
+      {
+        "path": "fixtures/flat-customer.agent",
+        "bytes": 506,
+        "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+      }
+    ],
+    "inventorySha256": "e780f23d85487cb4b8d5bf8365104c98f32ed19575f80e0437489f7b35f32391"
+  }
+}

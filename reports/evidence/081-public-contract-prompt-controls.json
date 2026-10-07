@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-retention-003",
+  "kind": "public-contract-prompt-controls",
+  "capturedAtUtc": "2026-10-07T13:32:03.4522972+00:00",
+  "source": {
+    "path": "scripts/Freeze-RetentionTrial.ps1",
+    "sha256": "f5f6287652006a617f0195f056c9b005d904948fc0e6360387248f15d1043f5b",
+    "builderFunction": "New-RetentionTrialPrompt"
+  },
+  "method": {
+    "builderFunctionExtractedFromParsedProductionAst": true,
+    "promptFunctionInvokedInMemory": true,
+    "hostStarted": false,
+    "modelActorLaunched": false,
+    "canonicalPinsOrSnapshotsChanged": false
+  },
+  "positive": [
+    {
+      "taskId": "S01",
+      "publicOperation": "customer.premium?",
+      "publicSignature": "Customer -> Bool",
+      "operationIncluded": true,
+      "signatureIncluded": true,
+      "privateEvidenceFieldsAbsent": true
+    },
+    {
+      "taskId": "S07",
+      "publicOperation": "customer.discounted-balance",
+      "publicSignature": "Customer -> Money",
+      "operationIncluded": true,
+      "signatureIncluded": true,
+      "privateEvidenceFieldsAbsent": true
+    }
+  ],
+  "negative": [
+    {
+      "case": "missing-requiredPublicContract",
+      "rejectedBeforePromptOutput": true,
+      "oracleFallbackUsed": false
+    },
+    {
+      "case": "nonstring-signature",
+      "rejectedBeforePromptOutput": true,
+      "oracleFallbackUsed": false
+    }
+  ],
+  "result": {
+    "passed": true,
+    "limitation": "These controls invoke the production prompt-builder function directly. They do not exercise the full frozen-pin write path or launch an actor."
+  }
+}

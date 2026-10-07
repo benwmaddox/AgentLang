@@ -179,6 +179,79 @@ function Read-Json([string]$Path) {
     finally { $document.Dispose() }
 }
 
+function New-RetentionTrialPrompt(
+    [object]$PublicTask,
+    [string]$StudyId,
+    [string]$RunId,
+    [string]$TaskId,
+    [string]$Model,
+    [string]$ReasoningEffort,
+    [string]$Project,
+    [string]$Authorization,
+    [string]$Primer,
+    [string]$Repo,
+    [string]$Command
+) {
+    if ($PublicTask -isnot [Collections.IDictionary] -or $PublicTask.id -cne $TaskId) {
+        throw "Public task record is missing or does not identify $TaskId."
+    }
+    $contract = $PublicTask.requiredPublicContract
+    if ($contract -isnot [Collections.IDictionary]) {
+        throw "Public task $TaskId is missing a well-formed requiredPublicContract."
+    }
+
+    foreach ($field in @('symbol','signature','behavior')) {
+        if (-not $contract.Contains($field) -or $contract[$field] -isnot [string]) {
+            throw "Public task $TaskId requiredPublicContract is missing a string $field field."
+        }
+        $value = [string]$contract[$field]
+        if ([string]::IsNullOrWhiteSpace($value) -or $value -cne $value.Trim() -or $value.Contains("`r") -or $value.Contains("`n")) {
+            throw "Public task $TaskId requiredPublicContract has a malformed $field field."
+        }
+    }
+    $symbol = [string]$contract.symbol
+    $signature = [string]$contract.signature
+    $signatureParts = $signature.Split(' -> ', [StringSplitOptions]::None)
+    if ($symbol -notmatch '^[A-Za-z][A-Za-z0-9_.-]*\??$' -or $signatureParts.Count -ne 2 -or
+        $signatureParts[0] -notmatch '^[A-Za-z][A-Za-z0-9_.-]*$' -or $signatureParts[1] -notmatch '^[A-Za-z][A-Za-z0-9_.-]*$') {
+        throw "Public task $TaskId requiredPublicContract has an invalid operation symbol or signature."
+    }
+    if ($PublicTask.goal -isnot [string] -or [string]::IsNullOrWhiteSpace([string]$PublicTask.goal)) {
+        throw "Public task $TaskId is missing a usable public goal."
+    }
+
+    $prompt = @"
+Run $StudyId $RunId task $TaskId as a fresh $Model/$ReasoningEffort coding agent with no inherited turns.
+Your assigned project is $Project.
+You are an external coding agent in a disposable synthetic project. Use only the supplied JSONL protocol and the assigned project. Do not use raw file access, shell commands, other tools, network access, or any project outside this broker. Do not inspect coordinator source, acceptance logic, other runs, prior outputs, or sibling projects. Preserve unrelated definitions, types, and tests. Make only changes necessary for this task.
+
+Human authorization directly covers these isolated project edits and local tests:
+$Authorization
+
+Task $TaskId
+$($PublicTask.goal)
+Required public operation: $symbol
+Required public signature: $signature
+The operation name and signature above come from this task's public record. Use them as written.
+The Customer.Kind/kind value is raw data; comparisons are ordinal and case-sensitive. Do not trim or lowercase it. Money is signed Int64 minor units; Float is not an allowed implementation of money. Every signed Int64 value is valid, including negatives and both limits.
+
+Use the help operation when needed. The broker exposes a bounded allowlist with no granted capabilities or side effects. Call task.begin before authoring, add meaningful boundary and branch tests, examples and concise documentation as the task requires, run the available task tests, and finish durably with task.commit. Preserve earlier task functions, tests, and examples when the task is S07.
+
+The independent coordinator will review the final project and request acceptance. After you have completed the task, report the work and request independent acceptance while leaving this session live. Only after the coordinator has independently accepted the result and asks you to close, send the exact one-field JSONL request {"op":"host.close"}. Do not send it earlier. Do not treat EOF, Ctrl+C, timeout, or an observation delay as completion. Do not send any other transport-control request.
+
+Do not spawn or delegate. Preserve user and coordinator changes. Report actual tests, errors, and unavailable capabilities. Model token usage, turns, and effective context windows are not measured.
+
+$($Primer)
+
+Execute exactly the following PowerShell command with exec_command, workdir $Repo, sandbox_permissions require_escalated, tty true, and a short initial yield. Do not issue other shell or file commands.
+
+$Command
+
+No startup banner is printed. Send one JSONL request per line on the same write_stdin session. After successful task completion, report the host session ID and leave it live for independent acceptance. Then, only when the coordinator requests teardown after acceptance, send the exact host.close request above. Report the actual tests, errors, and missing capabilities.
+"@
+    return $prompt.Replace("`r`n", "`n")
+}
+
 function Assert-NoReparseTree([string]$Path) {
     $root = Get-Item -LiteralPath $Path -Force
     if (($root.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { throw "Reparse points are not allowed in frozen inputs: $Path" }
@@ -1023,37 +1096,12 @@ foreach ($sourceInput in $stateSourceInputs) {
 
 $sequenceIndex = if ($TaskId -eq 'S01') { 1 } else { 2 }
 $command = "& $(Quote-PowerShell (Get-FullPath 'scripts/Start-SubagentTrialHostV2.ps1')) -CliDll $(Quote-PowerShell $runtimeInfo.cliPath) -ProjectPath $(Quote-PowerShell $project) -TracePath $(Quote-PowerShell (Join-Path $run 'trace.jsonl')) -AllowedOperations @('" + ($allowedOperations -join "','") + "') -Profile agentlang -Capabilities @() -ClockValue '2000-01-01T00:00:00Z' -MaxRequestBytes 262144 -MaxResponseBytes 524288 -ExchangeTimeoutMilliseconds 120000 -MaxExchanges 100"
-$taskGoal = [string]$task.goal
 $primerPath = Get-FullPath "$studyPath/language-primer.md"
 $primer = [IO.File]::ReadAllText($primerPath).TrimEnd()
 $authorization = '"Yes, run the remaining isolated experiments"'
-$prompt = @"
-Run $studyId $RunId task $TaskId as a fresh gpt-6-luna/max coding agent with no inherited turns.
-Your assigned project is $project.
-You are an external coding agent in a disposable synthetic project. Use only the supplied JSONL protocol and the assigned project. Do not use raw file access, shell commands, other tools, network access, or any project outside this broker. Do not inspect coordinator source, acceptance logic, other runs, prior outputs, or sibling projects. Preserve unrelated definitions, types, and tests. Make only changes necessary for this task.
-
-Human authorization directly covers these isolated project edits and local tests:
-$authorization
-
-Task $TaskId
-$taskGoal
-The Customer.Kind/kind value is raw data; comparisons are ordinal and case-sensitive. Do not trim or lowercase it. Money is signed Int64 minor units; Float is not an allowed implementation of money. Every signed Int64 value is valid, including negatives and both limits.
-
-Use the help operation when needed. The broker exposes a bounded allowlist with no granted capabilities or side effects. Call task.begin before authoring, add meaningful boundary and branch tests, examples and concise documentation as the task requires, run the available task tests, and finish durably with task.commit. Preserve earlier task functions, tests, and examples when the task is S07.
-
-The independent coordinator will review the final project and request acceptance. After you have completed the task, report the work and request independent acceptance while leaving this session live. Only after the coordinator has independently accepted the result and asks you to close, send the exact one-field JSONL request {"op":"host.close"}. Do not send it earlier. Do not treat EOF, Ctrl+C, timeout, or an observation delay as completion. Do not send any other transport-control request.
-
-Do not spawn or delegate. Preserve user and coordinator changes. Report actual tests, errors, and unavailable capabilities. Model token usage, turns, and effective context windows are not measured.
-
-$($primer)
-
-Execute exactly the following PowerShell command with exec_command, workdir $repo, sandbox_permissions require_escalated, tty true, and a short initial yield. Do not issue other shell or file commands.
-
-$command
-
-No startup banner is printed. Send one JSONL request per line on the same write_stdin session. After successful task completion, report the host session ID and leave it live for independent acceptance. Then, only when the coordinator requests teardown after acceptance, send the exact host.close request above. Report the actual tests, errors, and missing capabilities.
-"@
-$prompt = $prompt.Replace("`r`n","`n")
+$prompt = New-RetentionTrialPrompt -PublicTask $task -StudyId $studyId -RunId $RunId -TaskId $TaskId `
+    -Model $Model -ReasoningEffort $ReasoningEffort -Project $project -Authorization $authorization `
+    -Primer $primer -Repo $repo -Command $command
 $promptBytes = [Text.UTF8Encoding]::new($false).GetBytes($prompt)
 $promptHash = Get-Sha256Bytes $promptBytes
 
