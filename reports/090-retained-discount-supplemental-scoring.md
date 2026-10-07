@@ -161,3 +161,22 @@ runtime-field, flat-inventory and early-failure initialization checks align with
 the saved records. Root's focused runner again passed 20 controls on that hash,
 with matching before/after source hashes; this reinforces the controls' limited
 scope. Fix both blockers and rerun controls before production execution.
+
+After correcting the two saved-schema reads, new malformed-response controls
+exposed collection enumeration in the generic field helper: a singleton array
+became a scalar and an empty array became null before shape checking. Root's
+focused runner exited 1 on stable scorer source
+`e2d06652aad31886399df640f3a4d8cd00210ce1a187c3c25519700d65537340`.
+The exact failed control evidence is archived in phase-05. The repair uses a
+separate non-enumerating protocol-field helper rather than changing existing
+field access globally. Passing controls and actual replay remain distinct gates.
+
+The next scratch attempt passed the repaired predecessor/path/tree checks but
+stopped before runtime on nested canonical source rows: wrapping an already
+non-enumerated array produced a count of one. Its exact failed evidence is
+preserved in phase-06. After the helper fix, root independently exercised the
+three inventory helpers against actual frozen pin/global records at stable
+scorer SHA-256 `04d0ad451f4338085ebee63167e90014c37630d158968282a127af7a8c2cc3e8`.
+Both source inventories contain 23 flat rows and both runtime inventories 26;
+the canonical rows match exactly, with zero runtime calls. This narrow actual-
+input check is archived alongside the failure. It is not behavior acceptance.

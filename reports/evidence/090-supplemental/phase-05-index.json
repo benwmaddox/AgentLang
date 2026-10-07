@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Preserve failed malformed-response controls before non-enumerating field fix",
+  "files": [
+    {
+      "source": ".agentlang/business-policy-retention-003/evidence/090-root-controls-0828d41c2843482f8b94bf4f34633bb1.json",
+      "path": "reports/evidence/090-supplemental/phase-05/090-root-controls-0828d41c2843482f8b94bf4f34633bb1.json",
+      "bytes": 4326,
+      "sha256": "17eca4173d22e9365bce009c398cf78c8a09e2278aa96d9f2abe47888371c9b6"
+    }
+  ]
+}

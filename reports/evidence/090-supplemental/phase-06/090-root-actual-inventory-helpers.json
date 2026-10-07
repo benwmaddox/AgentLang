@@ -1,0 +1,11 @@
+{
+  "sourceBefore": "04d0ad451f4338085ebee63167e90014c37630d158968282a127af7a8c2cc3e8",
+  "sourceAfter": "04d0ad451f4338085ebee63167e90014c37630d158968282a127af7a8c2cc3e8",
+  "sourceRows": 23,
+  "globalSourceRows": 23,
+  "runtimeRows": 26,
+  "globalRuntimeRows": 26,
+  "sourceInventoriesEqual": true,
+  "runtimeInventoriesEqual": true,
+  "runtimeCalls": 0
+}

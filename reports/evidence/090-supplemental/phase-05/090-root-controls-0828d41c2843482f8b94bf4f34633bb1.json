@@ -1,0 +1,23 @@
+{
+  "command": "pwsh -NoLogo -NoProfile -File scripts/Test-RetentionOutputSupplement.ps1",
+  "exitCode": 1,
+  "scorerBefore": "e2d06652aad31886399df640f3a4d8cd00210ce1a187c3c25519700d65537340",
+  "scorerAfter": "e2d06652aad31886399df640f3a4d8cd00210ce1a187c3c25519700d65537340",
+  "stableSource": true,
+  "output": [
+    "Exception: D:\\code\\AgentLang\\scripts\\Test-RetentionOutputSupplement.ps1:11",
+    "Line |",
+    "  11 |  … de -ne 0) { throw \"Supplemental scorer self-test exited $exitCode. Ou …",
+    "     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+    "     | Supplemental scorer self-test exited 1. Output: At",
+    "     | D:\\code\\AgentLang\\scripts\\Score-RetentionOutputSupplement.ps1:717 char:134 + … -cne '1') { throw \"Actual",
+    "     | structured-result comparison did not accept … +              ",
+    "     | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ at Invoke-SupplementalSelfTest,",
+    "     | D:\\code\\AgentLang\\scripts\\Score-RetentionOutputSupplement.ps1: line 717 at <ScriptBlock>,",
+    "     | D:\\code\\AgentLang\\scripts\\Score-RetentionOutputSupplement.ps1: line 990  PSMessageDetails      :  Exception     ",
+    "     | : System.Management.Automation.RuntimeException: Actual structured-result comparison did not accept truncation",
+    "     | and reject incorrect nearest rounding. good={\"passed\":false,\"diagnostic\":\"missing or malformed stackTypes,",
+    "     | effects, console, or structuredStack.values protocol",
+    "     | collection\",\"actual\":{\"stackTypes\":\"Money\",\"effects\":{},\"console\":null,\"structuredValues\":{\"kind\":\"scalar\",\"name\":\"Money\",\"baseType\":{\"kind\":\"int\"},\"value\":{\"kind\":\"int\",\"value\":\"0\"}}}};bad={\"passed\":false,\"diagnostic\":\"missing or malformed stackTypes, effects, console, or structuredStack.values protocol collection\",\"actual\":{\"stackTypes\":\"Money\",\"effects\":{},\"console\":null,\"structuredValues\":{\"kind\":\"scalar\",\"name\":\"Money\",\"baseType\":{\"kind\":\"int\"},\"value\":{\"kind\":\"int\",\"value\":\"1\"}}}};expected=0;wrong=1 TargetObject          : Actual structured-result comparison did not accept truncation and reject incorrect nearest rounding. good={\"passed\":false,\"diagnostic\":\"missing or malformed stackTypes, effects, console, or structuredStack.values protocol collection\",\"actual\":{\"stackTypes\":\"Money\",\"effects\":{},\"console\":null,\"structuredValues\":{\"kind\":\"scalar\",\"name\":\"Money\",\"baseType\":{\"kind\":\"int\"},\"value\":{\"kind\":\"int\",\"value\":\"0\"}}}};bad={\"passed\":false,\"diagnostic\":\"missing or malformed stackTypes, effects, console, or structuredStack.values protocol collection\",\"actual\":{\"stackTypes\":\"Money\",\"effects\":{},\"console\":null,\"structuredValues\":{\"kind\":\"scalar\",\"name\":\"Money\",\"baseType\":{\"kind\":\"int\"},\"value\":{\"kind\":\"int\",\"value\":\"1\"}}}};expected=0;wrong=1 CategoryInfo          : OperationStopped: (Actual structured-r…;expected=0;wrong=1:String) [], RuntimeException FullyQualifiedErrorId : Actual structured-result comparison did not accept truncation and reject incorrect nearest rounding. good={\"passed\":false,\"diagnostic\":\"missing or malformed stackTypes, effects, console, or structuredStack.values protocol collection\",\"actual\":{\"stackTypes\":\"Money\",\"effects\":{},\"console\":null,\"structuredValues\":{\"kind\":\"scalar\",\"name\":\"Money\",\"baseType\":{\"kind\":\"int\"},\"value\":{\"kind\":\"int\",\"value\":\"0\"}}}};bad={\"passed\":false,\"diagnostic\":\"missing or malformed stackTypes, effects, console, or structuredStack.values protocol collection\",\"actual\":{\"stackTypes\":\"Money\",\"effects\":{},\"console\":null,\"structuredValues\":{\"kind\":\"scalar\",\"name\":\"Money\",\"baseType\":{\"kind\":\"int\"},\"value\":{\"kind\":\"int\",\"value\":\"1\"}}}};expected=0;wrong=1 ErrorDetails          :  InvocationInfo        : System.Management.Automation.InvocationInfo ScriptStackTrace      : at Invoke-SupplementalSelfTest, D:\\code\\AgentLang\\scripts\\Score-RetentionOutputSupplement.ps1: line 717                         at <ScriptBlock>, D:\\code\\AgentLang\\scripts\\Score-RetentionOutputSupplement.ps1: line 990 PipelineIterationInfo : {}"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Failed source inventory binding and subsequent independent actual-inventory helper check",
+  "files": [
+    {
+      "source": ".agentlang/business-policy-retention-003/supplemental/evidence/R04-retention-output-supplement-20261007T180639Z-3147b4b099ef4063a8a6801b84b3c852.json",
+      "path": "reports/evidence/090-supplemental/phase-06/R04-retention-output-supplement-20261007T180639Z-3147b4b099ef4063a8a6801b84b3c852.json",
+      "bytes": 168274,
+      "sha256": "a3cc8fe69c4b2b3f01500dbe39cee7b2d05c14f171938fcbdfca8be817420139"
+    },
+    {
+      "source": ".agentlang/business-policy-retention-003/evidence/090-root-actual-inventory-helpers.json",
+      "path": "reports/evidence/090-supplemental/phase-06/090-root-actual-inventory-helpers.json",
+      "bytes": 369,
+      "sha256": "9f339ed5b63c05425c3b5e0a9421415c694028980f885ceb5f6246352fa50560"
+    }
+  ]
+}
