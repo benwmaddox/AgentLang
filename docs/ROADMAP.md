@@ -24,13 +24,14 @@ Next actions:
    original records before execution, score all 54 pinned cases on scratch
    copies, and preserve the failed canonical outcome. Its result cannot repair
    the original controlled trial or establish a retention advantage.
-2. Continue the predeclared fresh-agent order, starting with R05/reset-rich/S01,
-   only from a clean committed checkout with valid source, runtime and launch
-   pins. Save original failures as well as successes.
-3. Address the known retained-predecessor verifier defect through an explicit
-   study amendment or separately versioned harness before treating later
-   affected cells as valid controlled evidence. Preserve original artifacts;
-   do not silently replace frozen source or acceptance records.
+2. Preserve 003 on hold after its audit failure. Prepare a separately versioned
+   004 study with all twelve fresh cells under one repaired harness version,
+   keeping the tasks, baseline bytes and runtime fixed. Do not combine old
+   outcomes into its result table; see [the repair plan](../reports/097-uniform-retention-study-repair.md).
+3. Validate accepted-predecessor, explicit-fallback and reject-before-execution
+   controls before freezing 004. Launch only after clean-source/global/run pins
+   and frozen controls pass. Preserve original artifacts and failed controls;
+   never silently replace 003 source or acceptance records.
 4. Publish a comparative review with independent outcomes, actual reuse,
    incorrect edits and recovery observations. Separate missing harness results
    from program failures. Report unavailable model usage as unavailable.

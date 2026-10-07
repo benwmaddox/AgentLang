@@ -8,6 +8,12 @@ report (reports 083, 084, 087, 089). Four of twelve actor attempts have been
 made; R04 has no behavior outcome. No comparative retention advantage is
 established.
 
+Further 003 launches are on hold under the predeclared stop rule after R04's
+audit failure. A fresh uniform 004 repair is being prepared with the same design,
+tasks, baselines and runtime, and all twelve new actors. See
+[report 097](../reports/097-uniform-retention-study-repair.md). This preserves
+the original 003 evidence and does not relabel its blocked cell as accepted.
+
 The next priority is external-agent behavior, before backend or memory research.
 The new package is `business-policy-retention-003`; completed 001/002 studies and
 their frozen source snapshots remain unchanged. The model is an external coding
