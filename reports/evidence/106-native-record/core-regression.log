@@ -1,0 +1,16 @@
+PASS closed effect vocabulary
+PASS concrete primitive specializations
+PASS closed container constructors
+PASS structured branches and coverage
+PASS closed synthetic source classifications
+PASS Option and Result payload scope
+PASS generated record and scalar operations
+PASS static callbacks and effects
+PASS typed list fold verification
+PASS identity and call-graph guards
+PASS flat verifier stack safety
+PASS compiler lowering and detached bodies
+PASS attached Flow source origins
+PASS compiler snapshot identity
+AgentLang.IR.Tests: 114 assertions passed.
+IR Interpreter tests passed (31 assertions).

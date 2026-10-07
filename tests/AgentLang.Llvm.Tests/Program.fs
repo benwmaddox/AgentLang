@@ -22,6 +22,10 @@ let private check name condition =
     assertions <- assertions + 1
     if not condition then failwith $"{name}: assertion failed"
 
+let private printStage (name: string) =
+    Console.WriteLine("[native-conformance] " + name)
+    Console.Out.Flush()
+
 let private span file column =
     { File = file
       Line = 1
@@ -51,6 +55,26 @@ let private generatedScalarEntry (name: string) (builtin: Builtin) (inputs: Lang
     let entry = wordEntry name inputs outputs Set.empty []
     { entry with Builtin = Some builtin }
 
+let private lowerFirst (name: string) =
+    if String.IsNullOrEmpty name then name
+    else string (Char.ToLowerInvariant name[0]) + name.Substring(1)
+
+let private generatedRecordEntries (records: Map<string, RecordDefinition>) =
+    records
+    |> Map.toList
+    |> List.collect (fun (name, record) ->
+        let prefix = lowerFirst name
+        let constructorName = prefix + ".new"
+        let constructor = wordEntry constructorName (record.Fields |> List.map (fun field -> field.Type)) [ TNamed name ] Set.empty []
+        let constructor = { constructor with Builtin = Some(RecordConstructor name) }
+        let accessors =
+            record.Fields
+            |> List.map (fun field ->
+                let accessorName = prefix + "." + field.Name
+                let accessor = wordEntry accessorName [ TNamed name ] [ field.Type ] Set.empty []
+                { accessor with Builtin = Some(RecordAccessor(name, field.Name)) })
+        constructor :: accessors)
+
 let private contextWithDefinitions
     (extraWords: WordEntry list)
     (records: Map<string, RecordDefinition>)
@@ -63,7 +87,7 @@ let private contextWithDefinitions
               generatedScalarEntry accessorName (ScalarAccessor scalar.Name) [ TNamed scalar.Name ] [ scalar.BaseType ] ])
     let scalarMap = scalarDefinitions |> List.map (fun (scalar, _, _) -> scalar.Name, scalar) |> Map.ofList
     let words =
-        extraWords @ generatedWords
+        extraWords @ generatedRecordEntries records @ generatedWords
         |> List.fold (fun found entry -> Map.add entry.Definition.Name entry found) Compiler.primitives
     let wordIds =
         words
@@ -143,6 +167,7 @@ let private formatValues values =
     values |> List.map Types.formatValue
 
 let private fixtureRoot = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "scalar-cases.json")))
+let private recordFixtureRoot = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "record-cases.json")))
 
 let private fixtureValues (name: string) =
     fixtureRoot.RootElement.GetProperty(name).EnumerateArray()
@@ -151,6 +176,14 @@ let private fixtureValues (name: string) =
 
 let private fixtureError (name: string) : JsonElement =
     fixtureRoot.RootElement.GetProperty(name)
+
+let private recordFixtureValues (name: string) =
+    recordFixtureRoot.RootElement.GetProperty(name).EnumerateArray()
+    |> Seq.map (fun value -> value.GetString())
+    |> Seq.toList
+
+let private recordFixtureError (name: string) : JsonElement =
+    recordFixtureRoot.RootElement.GetProperty(name)
 
 let private artifactRoot =
     let run = Guid.NewGuid().ToString("N")
@@ -173,6 +206,18 @@ let private compareSuccessfulCase (fixtureName: string) (executionName: string) 
         let actual = native.Execute executionName
         check ($"{fixtureName} {optimization} native/interpreter parity") (actual.Values = interpreted)
         check ($"{fixtureName} {optimization} step count") (actual.StepsConsumed = expectedSteps)
+
+let private compareSuccessfulRecordCase (fixtureName: string) (executionName: string) (body: VerifiedIrBody) (expected: Value list) =
+    check (fixtureName + " independent expected result") (formatValues expected = recordFixtureValues fixtureName)
+    let interpreted, expectedSteps = interpreterResultAndSteps executionName body
+    check (fixtureName + " interpreter agrees with independent expected result") (interpreted = expected)
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use native = compileNative fixtureName optimization body
+        let ordinary = native.Execute executionName
+        check ($"{fixtureName} {optimization} existing Execute API decodes records") (ordinary.Values = interpreted && ordinary.StepsConsumed = expectedSteps)
+        use retained = native.ExecuteRetained executionName
+        check ($"{fixtureName} {optimization} retained result decodes records") (retained.Decode() = interpreted && retained.Values = interpreted)
+        check ($"{fixtureName} {optimization} retained result preserves instruction fuel") (retained.StepsConsumed = expectedSteps)
 
 let private compareErrorCase (fixtureName: string) (executionName: string) (sources: NativeDiagnosticSources) (body: VerifiedIrBody) =
     let expectedFixture = fixtureError fixtureName
@@ -211,27 +256,70 @@ let private rawExecute (libraryPath: string) =
     let pointer = NativeLibrary.GetExport(handle, "agentlang_execute")
     Marshal.GetDelegateForFunctionPointer<RawExecuteDelegate>(pointer), handle
 
-let private rawExecutionStatusAndSteps (native: NativeCompiledProgram) =
-    let execute, library = rawExecute native.LibraryPath
+let private allocateRawArena byteCapacity nodeCapacity generation =
+    let data = Marshal.AllocHGlobal(max 8 byteCapacity)
+    let nodes = Marshal.AllocHGlobal(max NativeAbi.NodeSize (nodeCapacity * NativeAbi.NodeSize))
+    let descriptor = Marshal.AllocHGlobal NativeAbi.ArenaSize
+    Marshal.WriteIntPtr(descriptor, NativeAbi.ArenaDataOffset, data)
+    Marshal.WriteInt32(descriptor, NativeAbi.ArenaByteCapacityOffset, byteCapacity)
+    Marshal.WriteInt32(descriptor, NativeAbi.ArenaUsedOffset, 0)
+    Marshal.WriteIntPtr(descriptor, NativeAbi.ArenaNodesOffset, nodes)
+    Marshal.WriteInt32(descriptor, NativeAbi.ArenaNodeCapacityOffset, nodeCapacity)
+    Marshal.WriteInt32(descriptor, NativeAbi.ArenaNodeCountOffset, 0)
+    Marshal.WriteInt32(descriptor, NativeAbi.ArenaGenerationOffset, generation)
+    Marshal.WriteInt32(descriptor, NativeAbi.ArenaFlagsOffset, 0)
+    Marshal.WriteInt64(descriptor, NativeAbi.ArenaReservedOffset, 0L)
+    descriptor, data, nodes
+
+let private freeRawArena (descriptor, data, nodes) =
+    Marshal.FreeHGlobal descriptor
+    Marshal.FreeHGlobal data
+    Marshal.FreeHGlobal nodes
+
+let private withRawExecutionBuffers
+    (native: NativeCompiledProgram)
+    scratchByteCapacity
+    scratchNodeCapacity
+    retainedByteCapacity
+    retainedNodeCapacity
+    (action: nativeint -> nativeint -> nativeint -> nativeint -> nativeint -> unit) =
+    let scratch = allocateRawArena scratchByteCapacity scratchNodeCapacity 7
+    let retained = allocateRawArena retainedByteCapacity retainedNodeCapacity 11
     let context = Marshal.AllocHGlobal NativeAbi.ContextSize
-    let outputs =
-        if native.OutputCapacity = 0 then IntPtr.Zero
-        else Marshal.AllocHGlobal(native.OutputCapacity * NativeAbi.SlotSize)
+    // Raw guard tests reserve one unadvertised slot for an overrun canary.
+    let outputSlotCapacity = max 1 native.OutputCount + 1
+    let outputs = Marshal.AllocHGlobal(outputSlotCapacity * NativeAbi.SlotSize)
+    let workspace = Marshal.AllocHGlobal(max NativeAbi.SlotSize (native.WorkspaceCapacity * NativeAbi.SlotSize))
     let status = Marshal.AllocHGlobal sizeof<int32>
     try
+        Marshal.Copy(Array.zeroCreate<byte> NativeAbi.ContextSize, 0, context, NativeAbi.ContextSize)
         Marshal.WriteInt32(context, NativeAbi.ContextAbiVersionOffset, int NativeAbi.Version)
-        Marshal.WriteInt32(context, NativeAbi.ContextStepsConsumedOffset, 0)
         Marshal.WriteInt32(context, NativeAbi.ContextErrorMetadataIdOffset, -1)
-        Marshal.WriteInt32(context, NativeAbi.ContextReservedOffset, 0)
-        Marshal.WriteInt64(context, NativeAbi.ContextErrorArgument0Offset, 0L)
-        Marshal.WriteInt64(context, NativeAbi.ContextErrorArgument1Offset, 0L)
+        Marshal.WriteIntPtr(context, NativeAbi.ContextScratchOffset, nativeint (let descriptor, _, _ = scratch in descriptor))
+        Marshal.WriteIntPtr(context, NativeAbi.ContextRetainedOffset, nativeint (let descriptor, _, _ = retained in descriptor))
+        Marshal.WriteIntPtr(context, NativeAbi.ContextWorkspaceOffset, nativeint workspace)
+        Marshal.WriteInt32(context, NativeAbi.ContextWorkspaceCapacityOffset, native.WorkspaceCapacity)
         Marshal.WriteInt32(status, NativeAbi.StatusInvalidRequest)
-        execute.Invoke(nativeint context, nativeint outputs, native.OutputCapacity, nativeint status)
-        Marshal.ReadInt32 status, Marshal.ReadInt32(context, NativeAbi.ContextStepsConsumedOffset)
+        action (nativeint context) (nativeint outputs) (nativeint status) (nativeint (let descriptor, _, _ = scratch in descriptor)) (nativeint (let descriptor, _, _ = retained in descriptor))
     finally
         Marshal.FreeHGlobal status
-        if outputs <> IntPtr.Zero then Marshal.FreeHGlobal outputs
+        Marshal.FreeHGlobal workspace
+        Marshal.FreeHGlobal outputs
         Marshal.FreeHGlobal context
+        freeRawArena retained
+        freeRawArena scratch
+
+let private rawExecutionStatusAndSteps (native: NativeCompiledProgram) =
+    let execute, library = rawExecute native.LibraryPath
+    try
+        let mutable statusValue = NativeAbi.StatusInvalidRequest
+        let mutable steps = 0
+        withRawExecutionBuffers native 1_000_000 10_000 1_000_000 10_000 (fun context outputs status scratch retained ->
+            execute.Invoke(context, outputs, native.OutputCount, status)
+            statusValue <- Marshal.ReadInt32 status
+            steps <- Marshal.ReadInt32(context, NativeAbi.ContextStepsConsumedOffset))
+        statusValue, steps
+    finally
         NativeLibrary.Free library
 
 let private testLayoutAndRequestGuards multiOutputBody scratchBody =
@@ -239,48 +327,131 @@ let private testLayoutAndRequestGuards multiOutputBody scratchBody =
     let layoutHandle = NativeLibrary.Load native.LibraryPath
     try
         let capacityQuery = Marshal.GetDelegateForFunctionPointer<CapacityDelegate>(NativeLibrary.GetExport(layoutHandle, "agentlang_output_capacity"))
-        check "exported scratch capacity query matches managed API" (capacityQuery.Invoke() = native.OutputCapacity)
-        check "logical result count remains separate from scratch capacity" (native.OutputCount = 4 && native.OutputCapacity = 4)
+        check "exported workspace capacity query matches managed API" (capacityQuery.Invoke() = native.WorkspaceCapacity)
+        check "logical result count and public capacity stay distinct from workspace capacity" (
+            native.OutputCount = 4 && native.OutputCapacity = 4 && native.WorkspaceCapacity >= native.OutputCapacity)
         let layout = Marshal.GetDelegateForFunctionPointer<LayoutDelegate>(NativeLibrary.GetExport(layoutHandle, "agentlang_abi_layout"))
-        let layoutBuffer = Marshal.AllocHGlobal(8 * sizeof<int64>)
+        let layoutBuffer = Marshal.AllocHGlobal(13 * sizeof<int64>)
         try
             layout.Invoke(nativeint layoutBuffer)
-            let actualLayout = [ for index in 0 .. 7 -> Marshal.ReadInt64(layoutBuffer, index * sizeof<int64>) ]
+            let actualLayout = [ for index in 0 .. 12 -> Marshal.ReadInt64(layoutBuffer, index * sizeof<int64>) ]
             let expectedOffsets =
                 [ NativeAbi.ContextAbiVersionOffset
                   NativeAbi.ContextStepsConsumedOffset
                   NativeAbi.ContextErrorMetadataIdOffset
                   NativeAbi.ContextReservedOffset
                   NativeAbi.ContextErrorArgument0Offset
-                  NativeAbi.ContextErrorArgument1Offset ]
+                  NativeAbi.ContextErrorArgument1Offset
+                  NativeAbi.ContextScratchOffset
+                  NativeAbi.ContextRetainedOffset
+                  NativeAbi.ContextWorkspaceOffset
+                  NativeAbi.ContextWorkspaceCapacityOffset
+                  NativeAbi.ContextReservedTailOffset ]
             let expectedLayout =
                 [ int64 NativeAbi.ContextSize
                   int64 NativeAbi.ContextAlignment ]
                 @ (expectedOffsets |> List.map int64)
             check "LLVM-reported context size/alignment/field offsets" (actualLayout = expectedLayout)
-            check "managed context size matches ABI fixture" (Marshal.SizeOf<NativeExecutionContext>() = NativeAbi.ContextSize)
-            let fieldNames = [ "AbiVersion"; "StepsConsumed"; "ErrorMetadataId"; "Reserved"; "ErrorArgument0"; "ErrorArgument1" ]
-            let managedOffsets = fieldNames |> List.map (fun name -> Marshal.OffsetOf<NativeExecutionContext>(name).ToInt32())
-            check "managed context field offsets match ABI fixture" (managedOffsets = expectedOffsets)
-            let json = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "abi-v1.json")))
-            let root = json.RootElement
-            check "ABI fixture size matches native layout" (root.GetProperty("context").GetProperty("size").GetInt32() = int actualLayout[0])
-            check "ABI fixture alignment matches native layout" (root.GetProperty("context").GetProperty("alignment").GetInt32() = int actualLayout[1])
-            let fixtureOffsets =
-                root.GetProperty("context").GetProperty("fields").EnumerateArray()
-                |> Seq.map (fun field -> field.GetProperty("offset").GetInt32())
-                |> Seq.toList
-            check "ABI fixture field order matches native layout" (fixtureOffsets = expectedOffsets)
-            let resultBuffer = root.GetProperty("resultBuffer")
-            check "ABI fixture separates logical output count and scratch capacity" (
-                resultBuffer.GetProperty("example").GetProperty("logicalOutputCount").GetInt32() = 1
-                && resultBuffer.GetProperty("example").GetProperty("requiredScratchCapacity").GetInt32() = 2)
-            let nominalSupport = root.GetProperty("nativeSemanticSupport").GetProperty("nominalScalars")
-            let nominalBases = nominalSupport.GetProperty("supportedBaseTypes").EnumerateArray() |> Seq.map (fun value -> value.GetString()) |> Seq.toList
-            check "ABI fixture documents unchanged i64 encoding for supported nominal scalars" (
-                nominalBases = [ "Int"; "Bool" ]
-                && nominalSupport.GetProperty("slotEncoding").GetString().Contains("existing i64 encoding"))
-            json.Dispose()
+            use v2Json = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "abi-v2.json")))
+            let v2 = v2Json.RootElement
+            let contextFixture = v2.GetProperty("context")
+            check "ABI v2 fixture independently fixes context size and alignment" (
+                v2.GetProperty("abiVersion").GetInt32() = 2
+                && v2.GetProperty("nativeLayoutOracle").GetString().Contains("runtime_test.c --layout-json")
+                && contextFixture.GetProperty("size").GetInt32() = 64
+                && contextFixture.GetProperty("alignment").GetInt32() = 8
+                && int actualLayout[0] = 64
+                && int actualLayout[1] = 8)
+            let entryParameters = v2.GetProperty("publicEntry").GetProperty("parameters").EnumerateArray() |> Seq.toList
+            let outputCapacityParameter = entryParameters |> List.find (fun parameter -> parameter.GetProperty("name").GetString() = "outputCapacity")
+            check "ABI v2 documents signed 32-bit public and workspace capacity signatures" (
+                outputCapacityParameter.GetProperty("type").GetString() = "int32_t"
+                && v2.GetProperty("workspaceCapacityQuery").GetProperty("return").GetString() = "int32_t")
+            let statusPrecondition =
+                v2.GetProperty("preconditions").EnumerateArray()
+                |> Seq.exists (fun condition -> condition.GetString().Contains("raw callers initialize status to INVALID_REQUEST"))
+            check "ABI v2 documents caller status initialization and no-write early rejection" statusPrecondition
+            let contextFields = contextFixture.GetProperty("fields").EnumerateArray() |> Seq.toList
+            let contextFixtureOffsets = contextFields |> List.map (fun field -> field.GetProperty("offset").GetInt32())
+            let contextFieldNames = [ "AbiVersion"; "StepsConsumed"; "ErrorMetadataId"; "ReservedPrefix"; "ErrorArgument0"; "ErrorArgument1"; "Scratch"; "Retained"; "Workspace"; "WorkspaceCapacity"; "ReservedTail" ]
+            let managedContextOffsets = contextFieldNames |> List.map (fun name -> Marshal.OffsetOf<NativeExecutionContext>(name).ToInt32())
+            check "managed context size and every field offset match the independent fixture" (
+                Marshal.SizeOf<NativeExecutionContext>() = 64
+                && contextFixtureOffsets = [ 0; 4; 8; 12; 16; 24; 32; 40; 48; 56; 60 ]
+                && managedContextOffsets = contextFixtureOffsets)
+            check "native context layout export matches the independent fixture" (
+                actualLayout = [ 64L; 8L; 0L; 4L; 8L; 12L; 16L; 24L; 32L; 40L; 48L; 56L; 60L ])
+
+            let fieldsOf (parent: JsonElement) (name: string) =
+                parent.GetProperty(name).GetProperty("fields").EnumerateArray() |> Seq.toList
+            check "arena descriptor managed size and alignment match the independent fixture" (
+                Marshal.SizeOf<NativeArenaDescriptor>() = 48
+                && v2.GetProperty("arena").GetProperty("size").GetInt32() = 48
+                && v2.GetProperty("arena").GetProperty("alignment").GetInt32() = 8)
+            let arenaFields = fieldsOf v2 "arena"
+            let arenaOffsets = [ "Data"; "ByteCapacity"; "Used"; "Nodes"; "NodeCapacity"; "NodeCount"; "Generation"; "Flags"; "Reserved" ] |> List.map (fun name -> Marshal.OffsetOf<NativeArenaDescriptor>(name).ToInt32())
+            check "arena descriptor managed offsets match the independent fixture" (arenaOffsets = (arenaFields |> List.map (fun field -> field.GetProperty("offset").GetInt32())) && arenaOffsets = [ 0; 8; 12; 16; 24; 28; 32; 36; 40 ])
+            let nodeFields = fieldsOf v2 "node"
+            let nodeOffsets = [ "TypeId"; "FieldCount"; "PayloadOffset"; "PayloadBytes"; "Mark"; "Reserved"; "ForwardHandle" ] |> List.map (fun name -> Marshal.OffsetOf<NativeNode>(name).ToInt32())
+            check "node managed size, alignment, and offsets match the independent fixture" (
+                Marshal.SizeOf<NativeNode>() = 32
+                && v2.GetProperty("node").GetProperty("size").GetInt32() = 32
+                && v2.GetProperty("node").GetProperty("alignment").GetInt32() = 8
+                && nodeOffsets = (nodeFields |> List.map (fun field -> field.GetProperty("offset").GetInt32()))
+                && nodeOffsets = [ 0; 4; 8; 12; 16; 20; 24 ])
+            let typeFields = fieldsOf v2 "typeDescriptor"
+            let typeOffsets = [ "Kind"; "FieldCount"; "FieldTypes" ] |> List.map (fun name -> Marshal.OffsetOf<NativeTypeDescriptor>(name).ToInt32())
+            check "type descriptor managed size, alignment, and offsets match the independent fixture" (
+                Marshal.SizeOf<NativeTypeDescriptor>() = 16
+                && v2.GetProperty("typeDescriptor").GetProperty("size").GetInt32() = 16
+                && v2.GetProperty("typeDescriptor").GetProperty("alignment").GetInt32() = 8
+                && typeOffsets = (typeFields |> List.map (fun field -> field.GetProperty("offset").GetInt32()))
+                && typeOffsets = [ 0; 4; 8 ])
+            let programFields = fieldsOf v2 "programDescriptor"
+            let programOffsets = [ "Types"; "TypeCount"; "Reserved" ] |> List.map (fun name -> Marshal.OffsetOf<NativeProgramDescriptor>(name).ToInt32())
+            check "program descriptor managed size, alignment, and offsets match the independent fixture" (
+                Marshal.SizeOf<NativeProgramDescriptor>() = 16
+                && v2.GetProperty("programDescriptor").GetProperty("size").GetInt32() = 16
+                && v2.GetProperty("programDescriptor").GetProperty("alignment").GetInt32() = 8
+                && programOffsets = (programFields |> List.map (fun field -> field.GetProperty("offset").GetInt32()))
+                && programOffsets = [ 0; 8; 12 ])
+
+            let typeIndices = v2.GetProperty("typeIndices")
+            let typeKinds = v2.GetProperty("typeKinds")
+            check "ABI v2 fixture separates type array indices from descriptor kind tags" (
+                typeIndices.GetProperty("int").GetUInt32() = NativeAbi.TypeIdInt
+                && typeIndices.GetProperty("bool").GetUInt32() = NativeAbi.TypeIdBool
+                && typeIndices.GetProperty("unit").GetUInt32() = NativeAbi.TypeIdUnit
+                && typeKinds.GetProperty("int").GetUInt32() = NativeAbi.TypeKindInt
+                && typeKinds.GetProperty("bool").GetUInt32() = NativeAbi.TypeKindBool
+                && typeKinds.GetProperty("unit").GetUInt32() = NativeAbi.TypeKindUnit
+                && typeKinds.GetProperty("record").GetUInt32() = NativeAbi.TypeKindRecord)
+            let v2Example = v2.GetProperty("resultBuffer").GetProperty("example")
+            check "ABI v2 fixture separates public output slots from workspace slots" (
+                v2Example.GetProperty("logicalOutputCount").GetInt32() = 1
+                && v2Example.GetProperty("publicOutputCapacity").GetInt32() = 1
+                && v2Example.GetProperty("maxRecordConstructorFieldCount").GetInt32() = 3
+                && v2Example.GetProperty("requiredWorkspaceCapacity").GetInt32() = 4
+                && v2.GetProperty("workspaceCapacityQuery").GetProperty("meaning").GetString().Contains("not the public root capacity"))
+            check "runtime status values match the independent fixture" (
+                let status = v2.GetProperty("status")
+                status.GetProperty("success").GetInt32() = NativeAbi.StatusSuccess
+                && status.GetProperty("languageDiagnostic").GetInt32() = NativeAbi.StatusDiagnostic
+                && status.GetProperty("invalidRequest").GetInt32() = NativeAbi.StatusInvalidRequest
+                && status.GetProperty("scratchCapacity").GetInt32() = NativeAbi.StatusScratchCapacity
+                && status.GetProperty("retainedCapacity").GetInt32() = NativeAbi.StatusRetainedCapacity
+                && status.GetProperty("invalidReference").GetInt32() = NativeAbi.StatusInvalidReference)
+
+            use v1Json = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "abi-v1.json")))
+            let v1 = v1Json.RootElement
+            let v1Context = v1.GetProperty("context")
+            let v1Offsets = v1Context.GetProperty("fields").EnumerateArray() |> Seq.map (fun field -> field.GetProperty("offset").GetInt32()) |> Seq.toList
+            check "historical ABI v1 fixture remains unchanged" (
+                v1.GetProperty("abiVersion").GetInt32() = 1
+                && v1Context.GetProperty("size").GetInt32() = 32
+                && v1Context.GetProperty("alignment").GetInt32() = 8
+                && v1Offsets = [ 0; 4; 8; 12; 16; 24 ]
+                && v1.GetProperty("resultBuffer").GetProperty("example").GetProperty("requiredScratchCapacity").GetInt32() = 2)
         finally
             Marshal.FreeHGlobal layoutBuffer
     finally
@@ -288,47 +459,79 @@ let private testLayoutAndRequestGuards multiOutputBody scratchBody =
 
     let checkRequestGuards name body =
         use guarded = compileNative name LlvmOptimization.O0 body
-        check (name + " native scratch-capacity query") (
+        check (name + " native workspace-capacity query") (
             let library = NativeLibrary.Load guarded.LibraryPath
             try
                 let query = Marshal.GetDelegateForFunctionPointer<CapacityDelegate>(NativeLibrary.GetExport(library, "agentlang_output_capacity"))
-                query.Invoke() = guarded.OutputCapacity
+                query.Invoke() = guarded.WorkspaceCapacity
             finally
                 NativeLibrary.Free library)
         if name = "abi-scratch-guard" then
-            check "one logical result can require two scratch slots" (guarded.OutputCount = 1 && guarded.OutputCapacity = 2)
+            check "one logical result can require two workspace slots" (
+                guarded.OutputCount = 1 && guarded.OutputCapacity = 1 && guarded.WorkspaceCapacity = 2)
         let execute, executeHandle = rawExecute guarded.LibraryPath
         try
-            let context = Marshal.AllocHGlobal NativeAbi.ContextSize
-            let canaryCount = max 1 guarded.OutputCapacity + 1
-            let canaries = Marshal.AllocHGlobal(canaryCount * NativeAbi.SlotSize)
-            let status = Marshal.AllocHGlobal sizeof<int32>
-            try
-                let sentinel = 0x123456789ABCDEFL
-                let callGuard version capacity =
+            let canaryCount = max 1 guarded.OutputCount + 1
+            let sentinel = 0x123456789ABCDEFL
+            let callGuard label version capacity initialStatus expectedStatus =
+                withRawExecutionBuffers guarded 1024 16 1024 16 (fun context outputs status _scratch _retained ->
                     Marshal.WriteInt32(context, NativeAbi.ContextAbiVersionOffset, version)
                     Marshal.WriteInt32(context, NativeAbi.ContextStepsConsumedOffset, 55)
                     Marshal.WriteInt32(context, NativeAbi.ContextErrorMetadataIdOffset, 77)
                     for index in 0 .. canaryCount - 1 do
-                        Marshal.WriteInt64(canaries, index * NativeAbi.SlotSize, sentinel + int64 index)
-                    Marshal.WriteInt32(status, 0)
-                    execute.Invoke(nativeint context, nativeint canaries, capacity, nativeint status)
-                    let statusValue = Marshal.ReadInt32 status
+                        Marshal.WriteInt64(outputs, index * NativeAbi.SlotSize, sentinel + int64 index)
+                    Marshal.WriteInt32(status, initialStatus)
+                    execute.Invoke(context, outputs, capacity, status)
                     let unchanged =
                         [ 0 .. canaryCount - 1 ]
-                        |> List.forall (fun index -> Marshal.ReadInt64(canaries, index * NativeAbi.SlotSize) = sentinel + int64 index)
-                    check (name + " invalid request rejected before output writes") (statusValue = NativeAbi.StatusInvalidRequest && unchanged)
-                    check (name + " invalid request leaves execution context untouched") (
+                        |> List.forall (fun index -> Marshal.ReadInt64(outputs, index * NativeAbi.SlotSize) = sentinel + int64 index)
+                    check (name + " " + label + " preserves status and output guards") (
+                        Marshal.ReadInt32(status) = expectedStatus && unchanged)
+                    check (name + " " + label + " leaves the execution context untouched") (
                         Marshal.ReadInt32(context, NativeAbi.ContextStepsConsumedOffset) = 55
-                        && Marshal.ReadInt32(context, NativeAbi.ContextErrorMetadataIdOffset) = 77)
-                callGuard (int NativeAbi.Version + 1) guarded.OutputCapacity
-                callGuard (int NativeAbi.Version) (guarded.OutputCapacity - 1)
-            finally
-                Marshal.FreeHGlobal status
-                Marshal.FreeHGlobal canaries
-                Marshal.FreeHGlobal context
+                        && Marshal.ReadInt32(context, NativeAbi.ContextErrorMetadataIdOffset) = 77))
+            let statusSentinel = 0x13572468
+            callGuard "wrong ABI version" (int NativeAbi.Version + 1) guarded.OutputCount statusSentinel statusSentinel
+            callGuard "insufficient public output capacity" (int NativeAbi.Version) (guarded.OutputCount - 1) NativeAbi.StatusInvalidRequest NativeAbi.StatusInvalidRequest
         finally
             NativeLibrary.Free executeHandle
+
+    use legacyNative = compileNative "abi-v1-prefix-guard" LlvmOptimization.O0 multiOutputBody
+    let executeLegacy, legacyHandle = rawExecute legacyNative.LibraryPath
+    try
+        let prefix = Marshal.AllocHGlobal NativeAbi.ContextSize
+        let outputCount = max 1 legacyNative.OutputCount
+        let outputs = Marshal.AllocHGlobal((outputCount + 1) * NativeAbi.SlotSize)
+        let status = Marshal.AllocHGlobal sizeof<int32>
+        try
+            let sentinel = 0x76543210FEDCBA98L
+            Marshal.WriteInt32(prefix, 0, 1)
+            Marshal.WriteInt32(prefix, 4, 91)
+            Marshal.WriteInt32(prefix, 8, 37)
+            Marshal.WriteInt32(prefix, 12, 0)
+            Marshal.WriteInt64(prefix, 16, 0x1122334455667788L)
+            Marshal.WriteInt64(prefix, 24, 0x2233445566778899L)
+            Marshal.WriteIntPtr(prefix, NativeAbi.ContextScratchOffset, nativeint 1)
+            Marshal.WriteIntPtr(prefix, NativeAbi.ContextRetainedOffset, nativeint 2)
+            Marshal.WriteIntPtr(prefix, NativeAbi.ContextWorkspaceOffset, nativeint 3)
+            Marshal.WriteInt32(prefix, NativeAbi.ContextWorkspaceCapacityOffset, 7)
+            for index in 0 .. outputCount do Marshal.WriteInt64(outputs, index * NativeAbi.SlotSize, sentinel + int64 index)
+            let statusSentinel = 0x13572468
+            Marshal.WriteInt32(status, statusSentinel)
+            executeLegacy.Invoke(nativeint prefix, nativeint outputs, legacyNative.OutputCount, nativeint status)
+            let unchanged = [ 0 .. outputCount ] |> List.forall (fun index -> Marshal.ReadInt64(outputs, index * NativeAbi.SlotSize) = sentinel + int64 index)
+            check "ABI v1 prefix is rejected before status or output writes" (Marshal.ReadInt32(status) = statusSentinel && unchanged)
+            check "ABI v1 prefix is rejected before context initialization" (
+                Marshal.ReadInt32(prefix, 4) = 91
+                && Marshal.ReadInt32(prefix, 8) = 37
+                && Marshal.ReadInt64(prefix, 16) = 0x1122334455667788L
+                && Marshal.ReadInt64(prefix, 24) = 0x2233445566778899L)
+        finally
+            Marshal.FreeHGlobal status
+            Marshal.FreeHGlobal outputs
+            Marshal.FreeHGlobal prefix
+    finally
+        NativeLibrary.Free legacyHandle
 
     checkRequestGuards "abi-multi-output-guard" multiOutputBody
     checkRequestGuards "abi-scratch-guard" scratchBody
@@ -397,9 +600,11 @@ let private testNominalScalarSupport () =
     let support = fixtureRoot.RootElement.GetProperty("native-support")
     let supportedBases = support.GetProperty("nominalScalarBases").EnumerateArray() |> Seq.map (fun value -> value.GetString()) |> Seq.toList
     let excluded = support.GetProperty("excluded").EnumerateArray() |> Seq.map (fun value -> value.GetString()) |> Seq.toList
+    let supportedKinds = support.GetProperty("supportedKinds").EnumerateArray() |> Seq.map (fun value -> value.GetString()) |> Seq.toList
     check "scalar fixture records the native nominal support boundary" (
         supportedBases = [ "Int"; "Bool" ]
-        && excluded = [ "records"; "Float"; "String"; "containers"; "effects" ])
+        && supportedKinds = [ "records" ]
+        && excluded = [ "Float"; "String"; "containers"; "effects" ])
 
     let positiveValidator =
         wordEntry "is-positive?" [ TInt ] [ TBool ] Set.empty [
@@ -547,7 +752,7 @@ let private testNominalScalarSupport () =
             compileNativeWithSources "zero-output-validator" optimization (NativeDiagnosticSources.fromLoweringContext intContext) zeroOutputBody
         let actual = native.Execute "zero-output-validator"
         check ($"{optimization} zero-output body keeps its logical output count") (native.OutputCount = 0)
-        check ($"{optimization} validator Bool result has scratch capacity") (native.OutputCapacity = 1)
+        check ($"{optimization} validator Bool result has workspace capacity") (native.WorkspaceCapacity = 1)
         check ($"{optimization} zero-output validator preserves fuel accounting") (actual.Values = interpretedZeroOutput && actual.StepsConsumed = expectedZeroOutputSteps)
 
 let private testNominalScalarDiagnosticsAndRejections () =
@@ -634,21 +839,6 @@ let private testNominalScalarDiagnosticsAndRejections () =
     let unitBaseError = errorOf (fun () -> Compiler.compileIrProgram unitContext |> ignore)
     check "Unit scalar declaration remains rejected by the compiler's current type rule" (unitBaseError.Code = "TYPE_UNSUPPORTED_SCALAR_BASE")
 
-    let record =
-        { Name = "NativeRecord"
-          Fields = [ { Name = "value"; Type = TInt } ]
-          SourceText = "record NativeRecord"
-          Span = span "NativeRecord.agent" 1 }
-    let recordConstructor = wordEntry "NativeRecord.create" [ TInt ] [ TNamed "NativeRecord" ] Set.empty []
-    let recordConstructor = { recordConstructor with Builtin = Some(RecordConstructor "NativeRecord") }
-    let recordContext = contextWithRecords [ recordConstructor ] [ record ]
-    let recordBody = compileBody recordContext "unsupported-record" [
-        Push(LInt 1L, span "unsupported-record.agent" 1)
-        Call("NativeRecord.create", span "unsupported-record.agent" 2)
-    ]
-    let recordError = errorOf (fun () -> LlvmAot.emit recordBody |> ignore)
-    check "record generated targets remain rejected" (recordError.Code = "IR_LLVM_UNSUPPORTED_TARGET")
-
 let private testNominalScalarDepth () =
     let positiveValidator =
         wordEntry "is-positive?" [ TInt ] [ TBool ] Set.empty [
@@ -716,6 +906,464 @@ let private testNominalScalarDepth () =
     runCase "BoundaryDepthTag" TInt (Some "is-positive?") 61 (LInt 1L) false
     runCase "PrimitiveDepthFlag" TBool (Some "bool.not") 63 (LBool true) true
     runCase "PrimitiveBoundaryFlag" TBool (Some "bool.not") 62 (LBool false) false
+
+let private recordField name fieldType =
+    { Name = name
+      Type = fieldType }
+
+let private recordDefinition name fields =
+    { Name = name
+      Fields = fields
+      SourceText = "record " + name
+      Span = span (name + ".agent") 1 }
+
+let private contextWithRecordDefinitions extraWords (records: RecordDefinition list) scalarDefinitions =
+    let recordMap = records |> List.map (fun record -> record.Name, record) |> Map.ofList
+    contextWithDefinitions extraWords recordMap scalarDefinitions
+
+let private compareRecordErrorCase (fixtureName: string) (executionName: string) (body: VerifiedIrBody) =
+    let expectedFixture = recordFixtureError fixtureName
+    let interpreted = errorOf (fun () -> interpreterResult executionName body |> ignore)
+    let expectedStringList (propertyName: string) =
+        expectedFixture.GetProperty(propertyName).EnumerateArray()
+        |> Seq.map (fun value -> value.GetString())
+        |> Seq.toList
+    let expectedSpan =
+        let fixture = expectedFixture.GetProperty("span")
+        if fixture.ValueKind = JsonValueKind.Null then None
+        else
+            Some
+                { File = fixture.GetProperty("file").GetString()
+                  Line = fixture.GetProperty("line").GetInt32()
+                  Column = fixture.GetProperty("column").GetInt32()
+                  Length = fixture.GetProperty("length").GetInt32() }
+    let matchesFixture =
+        interpreted.Code = expectedFixture.GetProperty("code").GetString()
+        && interpreted.Word = Some(expectedFixture.GetProperty("word").GetString())
+        && interpreted.Message = expectedFixture.GetProperty("message").GetString()
+        && interpreted.Expected = expectedStringList "expected"
+        && interpreted.Actual = expectedStringList "actual"
+        && interpreted.Span = expectedSpan
+    if not matchesFixture then
+        let actualDiagnostic =
+            [ "code=" + interpreted.Code
+              "word=" + sprintf "%A" interpreted.Word
+              "message=" + sprintf "%A" interpreted.Message
+              "expected=" + sprintf "%A" interpreted.Expected
+              "actual=" + sprintf "%A" interpreted.Actual
+              "span=" + sprintf "%A" interpreted.Span ]
+            |> String.concat "; "
+        failwith (
+            fixtureName
+            + " independent diagnostic fixture mismatch. Fixture: "
+            + expectedFixture.GetRawText()
+            + ". Interpreter: "
+            + actualDiagnostic)
+    check (fixtureName + " independent diagnostic fixture") matchesFixture
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use native = compileNative fixtureName optimization body
+        let actual = errorOf (fun () -> native.Execute executionName |> ignore)
+        check ($"{fixtureName} {optimization} complete diagnostic parity") (actual = interpreted)
+
+let private testRecordConformance () =
+    let positiveValidator =
+        wordEntry "is-positive?" [ TInt ] [ TBool ] Set.empty [
+            Push(LInt 0L, span "positive-field.agent" 1)
+            Call("int.greater-than", span "positive-field.agent" 2)
+        ]
+    let ticketRecords = [
+        recordDefinition "Leaf" [ recordField "active" TBool; recordField "value" TInt ]
+        recordDefinition "Ticket" [ recordField "owner" (TNamed "PositiveId"); recordField "leaf" (TNamed "Leaf") ]
+    ]
+    let ticketContext =
+        contextWithRecordDefinitions [ positiveValidator ] ticketRecords [
+            scalarDefinition "PositiveId" TInt (Some "is-positive?"), "PositiveId.new", "PositiveId.value"
+        ]
+    let ticketBody = compileBody ticketContext "record-nested-fields" [
+        Push(LInt 7L, span "ticket.agent" 1)
+        Call("PositiveId.new", span "ticket.agent" 2)
+        Let("owner", span "ticket.agent" 3)
+        Push(LBool true, span "ticket.agent" 5)
+        Push(LInt 17L, span "ticket.agent" 6)
+        Call("leaf.new", span "ticket.agent" 7)
+        Let("base-leaf", span "ticket.agent" 8)
+        Push(LBool false, span "ticket.agent" 10)
+        If(
+            [ Push(LBool false, span "ticket.agent" 11); Push(LInt 99L, span "ticket.agent" 12); Call("leaf.new", span "ticket.agent" 13) ],
+            [ Load("base-leaf", span "ticket.agent" 14) ],
+            span "ticket.agent" 10)
+        Let("chosen-leaf", span "ticket.agent" 15)
+        Load("owner", span "ticket.agent" 17)
+        Load("chosen-leaf", span "ticket.agent" 18)
+        Call("ticket.new", span "ticket.agent" 19)
+        Call("dup", span "ticket.agent" 20)
+        Call("ticket.leaf", span "ticket.agent" 21)
+        Call("leaf.value", span "ticket.agent" 22)
+        Call("swap", span "ticket.agent" 23)
+        Call("dup", span "ticket.agent" 24)
+        Call("ticket.owner", span "ticket.agent" 25)
+        Call("PositiveId.value", span "ticket.agent" 26)
+    ]
+    let leaf = RecordValue("Leaf", Map.ofList [ "active", BoolValue true; "value", IntValue 17L ])
+    let ticket = RecordValue("Ticket", Map.ofList [ "leaf", leaf; "owner", NamedValue("PositiveId", IntValue 7L) ])
+    compareSuccessfulRecordCase "record-nested-fields" "record-nested-fields" ticketBody [ IntValue 17L; ticket; IntValue 7L ]
+
+    let sharingContext =
+        contextWithRecordDefinitions [] [
+            recordDefinition "Leaf" [ recordField "value" TInt ]
+            recordDefinition "Box" [ recordField "child" (TNamed "Leaf"); recordField "tag" TInt ]
+            recordDefinition "Empty" []
+            recordDefinition "Orphan" [ recordField "value" TInt ]
+        ] []
+    let sharingBody = compileBody sharingContext "record-sharing" [
+        Push(LInt 99L, span "sharing.agent" 1)
+        Call("orphan.new", span "sharing.agent" 2)
+        Call("drop", span "sharing.agent" 3)
+        Push(LInt 5L, span "sharing.agent" 4)
+        Call("leaf.new", span "sharing.agent" 5)
+        Let("shared", span "sharing.agent" 6)
+        Load("shared", span "sharing.agent" 7)
+        Push(LInt 10L, span "sharing.agent" 8)
+        Call("box.new", span "sharing.agent" 9)
+        Let("first", span "sharing.agent" 10)
+        Load("shared", span "sharing.agent" 11)
+        Push(LInt 20L, span "sharing.agent" 12)
+        Call("box.new", span "sharing.agent" 13)
+        Let("second", span "sharing.agent" 14)
+        Push(LInt 5L, span "sharing.agent" 15)
+        Call("leaf.new", span "sharing.agent" 16)
+        Let("equal-but-distinct", span "sharing.agent" 17)
+        Load("first", span "sharing.agent" 19)
+        Load("second", span "sharing.agent" 20)
+        Load("shared", span "sharing.agent" 21)
+        Load("equal-but-distinct", span "sharing.agent" 22)
+        Load("shared", span "sharing.agent" 23)
+        Load("equal-but-distinct", span "sharing.agent" 24)
+        Call("equals", span "sharing.agent" 25)
+        Load("first", span "sharing.agent" 26)
+        Load("second", span "sharing.agent" 27)
+        Call("equals", span "sharing.agent" 28)
+        Call("empty.new", span "sharing.agent" 29)
+    ]
+    let sharedLeaf = RecordValue("Leaf", Map.ofList [ "value", IntValue 5L ])
+    let firstBox = RecordValue("Box", Map.ofList [ "child", sharedLeaf; "tag", IntValue 10L ])
+    let secondBox = RecordValue("Box", Map.ofList [ "child", sharedLeaf; "tag", IntValue 20L ])
+    let distinctEqualLeaf = RecordValue("Leaf", Map.ofList [ "value", IntValue 5L ])
+    compareSuccessfulRecordCase "record-sharing" "record-sharing" sharingBody [ firstBox; secondBox; sharedLeaf; distinctEqualLeaf; BoolValue true; BoolValue false; RecordValue("Empty", Map.empty) ]
+
+    let emptyContext = contextWithRecordDefinitions [] [ recordDefinition "Empty" [] ] []
+    let emptyBody = compileBody emptyContext "record-empty" [ Call("empty.new", span "empty-record.agent" 1) ]
+    compareSuccessfulRecordCase "record-empty" "record-empty" emptyBody [ RecordValue("Empty", Map.empty) ]
+    let emptyDiscarded = compileBody emptyContext "record-empty-discarded" [
+        Call("empty.new", span "empty-record.agent" 1)
+        Call("drop", span "empty-record.agent" 2)
+    ]
+    use emptyDiscardedNative = compileNative "record-empty-discarded" LlvmOptimization.O0 emptyDiscarded
+    let emptyDiscardedResult = emptyDiscardedNative.Execute "record-empty-discarded"
+    let emptyDiscardedFixture = recordFixtureRoot.RootElement.GetProperty("record-empty-discarded")
+    check "zero-output empty-record execution still reserves one helper workspace slot" (
+        emptyDiscardedNative.OutputCount = 0
+        && emptyDiscardedNative.OutputCapacity = 0
+        && emptyDiscardedNative.WorkspaceCapacity = emptyDiscardedFixture.GetProperty("requiredWorkspaceCapacity").GetInt32()
+        && emptyDiscardedResult.Values.IsEmpty)
+    sharingBody, [ firstBox; secondBox; sharedLeaf; distinctEqualLeaf; BoolValue true; BoolValue false; RecordValue("Empty", Map.empty) ]
+
+let private testRecordValueMetrics () =
+    let depthCase maxIndex executionName =
+        let records =
+            [ 0 .. maxIndex ]
+            |> List.map (fun index ->
+                if index = 0 then recordDefinition "D0" [ recordField "value" TInt ]
+                else recordDefinition ($"D{index}") [ recordField "child" (TNamed ($"D{index - 1}")) ])
+        let context = contextWithRecordDefinitions [] records []
+        let expressions = ResizeArray<Expr>()
+        expressions.Add(Push(LInt 1L, span "record-depth.agent" 1))
+        expressions.Add(Call("d0.new", span "record-depth.agent" 2))
+        expressions.Add(Let("current", span "record-depth.agent" 3))
+        for index in 1 .. maxIndex do
+            expressions.Add(Load("current", span "record-depth.agent" (index + 4)))
+            expressions.Add(Call(($"d{index}.new"), span "record-depth.agent" (index + 2)))
+            expressions.Add(Let("current", span "record-depth.agent" (index + 6)))
+        if executionName = "record-depth-256" then
+            expressions.Add(Load("current", span "record-depth.agent" (maxIndex + 8)))
+        compileBody context executionName (List.ofSeq expressions)
+
+    let depth256 = depthCase 254 "record-depth-256"
+    let depthSpec = recordFixtureRoot.RootElement.GetProperty("record-depth-256")
+    let mutable expectedDeepValue = RecordValue("D0", Map.ofList [ "value", IntValue 1L ])
+    for index in 1 .. depthSpec.GetProperty("depth").GetInt32() - 2 do
+        expectedDeepValue <- RecordValue($"D{index}", Map.ofList [ "child", expectedDeepValue ])
+    check "depth-256 fixture names the independently constructed root" (
+        Types.ofValue expectedDeepValue = TNamed(depthSpec.GetProperty("rootType").GetString())
+        && depthSpec.GetProperty("leaf").GetString() = "D0 { value = 1 }")
+    let interpreted256, expectedSteps = interpreterResultAndSteps "record-depth-256" depth256
+    check "record value at the depth-256 boundary matches the independent expected value" (interpreted256 = [ expectedDeepValue ])
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use native = compileNative "record-depth-256" optimization depth256
+        use retained = native.ExecuteRetained "record-depth-256"
+        check ($"{optimization} record depth-256 retained decode") (retained.Decode() = [ expectedDeepValue ] && retained.StepsConsumed = expectedSteps)
+
+    let depth257 = depthCase 255 "record-depth-257"
+    compareRecordErrorCase "record-depth-257" "record-depth-257" depth257
+
+    let untakenRecords =
+        [ 0 .. 255 ]
+        |> List.map (fun index ->
+            if index = 0 then recordDefinition "D0" [ recordField "value" TInt ]
+            else recordDefinition ($"D{index}") [ recordField "child" (TNamed ($"D{index - 1}")) ])
+    let untakenContext = contextWithRecordDefinitions [] untakenRecords []
+    let untakenThen = ResizeArray<Expr>()
+    untakenThen.Add(Push(LInt 1L, span "record-untaken-depth.agent" 2))
+    untakenThen.Add(Call("d0.new", span "record-untaken-depth.agent" 3))
+    for index in 1 .. 255 do
+        untakenThen.Add(Call($"d{index}.new", span "record-untaken-depth.agent" (index + 3)))
+    untakenThen.Add(Call("drop", span "record-untaken-depth.agent" 260))
+    untakenThen.Add(Push(LInt 1L, span "record-untaken-depth.agent" 261))
+    let overLimitUntaken = compileBody untakenContext "record-over-limit-untaken-branch" [
+        Push(LBool false, span "record-untaken-depth.agent" 1)
+        If(List.ofSeq untakenThen, [ Push(LInt 2L, span "record-untaken-depth.agent" 262) ], span "record-untaken-depth.agent" 1)
+    ]
+    compareSuccessfulRecordCase "record-over-limit-untaken-branch" "record-over-limit-untaken-branch" overLimitUntaken [ IntValue 2L ]
+
+    let aggregateNames = [ 0 .. 14 ] |> List.map (fun index -> string (char (int 'A' + index)))
+    let aggregateRecords =
+        aggregateNames
+        |> List.mapi (fun index name ->
+            if index = 0 then recordDefinition name [ recordField "x" TInt ]
+            else recordDefinition name [ recordField "left" (TNamed aggregateNames[index - 1]); recordField "right" (TNamed aggregateNames[index - 1]) ])
+    let aggregateContext = contextWithRecordDefinitions [] aggregateRecords []
+    let aggregateExpressions = ResizeArray<Expr>()
+    aggregateExpressions.Add(Push(LInt 1L, span "record-aggregate.agent" 1))
+    aggregateExpressions.Add(Call("a.new", span "record-aggregate.agent" 2))
+    for index in 1 .. aggregateNames.Length - 1 do
+        aggregateExpressions.Add(Call("dup", span "record-aggregate.agent" (index + 2)))
+        aggregateExpressions.Add(Call(lowerFirst aggregateNames[index] + ".new", span "record-aggregate.agent" (index + 3)))
+    aggregateExpressions.Add(Let("saved", span "record-aggregate.agent" 30))
+    aggregateExpressions.Add(Push(LInt 1L, span "record-aggregate.agent" 31))
+    aggregateExpressions.Add(Call("a.new", span "record-aggregate.agent" 31))
+    for index in 1 .. aggregateNames.Length - 1 do
+        aggregateExpressions.Add(Call("dup", span "record-aggregate.agent" 31))
+        let sourceColumn = if index = aggregateNames.Length - 1 then 32 else 31
+        aggregateExpressions.Add(Call(lowerFirst aggregateNames[index] + ".new", span "record-aggregate.agent" sourceColumn))
+    let aggregateBody = compileBody aggregateContext "record-aliased-aggregate-limit" (List.ofSeq aggregateExpressions)
+    let aggregateFixture = recordFixtureRoot.RootElement.GetProperty("record-aliased-aggregate-limit")
+    let aggregateMetrics = aggregateFixture.GetProperty("metricCalculation")
+    check "aggregate fixture independently identifies the first output-size crossing at dup M" (
+        aggregateMetrics.GetProperty("savedRootExpandedNodes").GetInt32() = 49_151
+        && aggregateMetrics.GetProperty("savedRootEstimatedOutputBytes").GetInt32() = 6_094_686
+        && aggregateMetrics.GetProperty("secondRootType").GetString() = "M"
+        && aggregateMetrics.GetProperty("secondRootExpandedNodes").GetInt32() = 12_287
+        && aggregateMetrics.GetProperty("secondRootEstimatedOutputBytes").GetInt32() = 1_523_550
+        && aggregateMetrics.GetProperty("combinedExpandedNodesAtDup").GetInt32() = 73_725
+        && aggregateMetrics.GetProperty("combinedEstimatedOutputBytesAtDup").GetInt32() = 9_141_786
+        && aggregateMetrics.GetProperty("firstFailingOperation").GetString() = "dup"
+        && aggregateMetrics.GetProperty("firstFailingColumn").GetInt32() = 31
+        && aggregateMetrics.GetProperty("combinedExpandedNodesAtDup").GetInt32() < 100_000
+        && aggregateMetrics.GetProperty("combinedEstimatedOutputBytesAtDup").GetInt32() > 8_000_000)
+    compareRecordErrorCase "record-aliased-aggregate-limit" "record-aliased-aggregate-limit" aggregateBody
+
+    let nodeNames = [ 0 .. 15 ] |> List.map (fun index -> string (char (int 'A' + index)))
+    let nodeRecords =
+        nodeNames
+        |> List.mapi (fun index name ->
+            if index = 0 then recordDefinition name []
+            else recordDefinition name [ recordField "l" (TNamed nodeNames[index - 1]); recordField "r" (TNamed nodeNames[index - 1]) ])
+    let nodeContext = contextWithRecordDefinitions [] nodeRecords []
+    let nodeExpressions = ResizeArray<Expr>()
+    nodeExpressions.Add(Call("a.new", span "record-node-limit.agent" 1))
+    for index in 1 .. nodeNames.Length - 1 do
+        nodeExpressions.Add(Call("dup", span "record-node-limit.agent" (index + 1)))
+        nodeExpressions.Add(Call(lowerFirst nodeNames[index] + ".new", span "record-node-limit.agent" (index + 2)))
+    nodeExpressions.Add(Call("dup", span "record-node-limit.agent" 32))
+    let nodeLimited = compileBody nodeContext "record-aliased-node-limit" (List.ofSeq nodeExpressions)
+    let nodeFixture = recordFixtureError "record-aliased-node-limit"
+    check "one aliased record root is below both limits before duplicated aggregate accounting" (
+        nodeFixture.GetProperty("rootExpandedNodes").GetInt32() = 65535
+        && nodeFixture.GetProperty("rootEstimatedOutputBytes").GetInt32() = 7470984
+        && nodeFixture.GetProperty("rootExpandedNodes").GetInt32() < 100_000
+        && nodeFixture.GetProperty("rootEstimatedOutputBytes").GetInt32() < 8_000_000)
+    compareRecordErrorCase "record-aliased-node-limit" "record-aliased-node-limit" nodeLimited
+
+    let largeName = String.replicate 334_000 "Q"
+    let nominalContext = contextWithScalarDefinitions [] [ scalarDefinition largeName TInt None, largeName + ".new", largeName + ".value" ]
+    let nominalAlias = compileBody nominalContext "nominal-aliased-output-limit" [
+        Push(LInt 7L, span "nominal-output.agent" 1)
+        Call(largeName + ".new", span "nominal-output.agent" 2)
+        Call("dup", span "nominal-output.agent" 3)
+    ]
+    compareRecordErrorCase "nominal-aliased-output-limit" "nominal-aliased-output-limit" nominalAlias
+
+let private testRecordPreflightRejections () =
+    let unsupportedFixture = recordFixtureError "unsupported-record-fields"
+    let unsupportedCases = unsupportedFixture.GetProperty("cases").EnumerateArray() |> Seq.map (fun value -> value.GetString()) |> Seq.toList
+    let cases = [ "Float", TFloat; "String", TString; "List<Int>", TList TInt ]
+    check "record fixture lists the unsupported field kinds independently" (unsupportedCases = [ "Float"; "String"; "List<Int>" ])
+    for index, (typeName, fieldType) in List.indexed cases do
+        let recordName = $"Unsupported{index}"
+        let record = recordDefinition recordName [ recordField "payload" fieldType ]
+        let context = contextWithRecordDefinitions [] [ record ] []
+        let body =
+            if fieldType = TFloat then
+                compileBody context "unsupported-record-float-branch" [
+                    Push(LBool false, span "unsupported-record.agent" 1)
+                    If(
+                        [ Push(LFloat 1.5, span "unsupported-record.agent" 2)
+                          Call("unsupported0.new", span "unsupported-record.agent" 3)
+                          Call("drop", span "unsupported-record.agent" 4)
+                          Push(LInt 1L, span "unsupported-record.agent" 5) ],
+                        [ Push(LInt 2L, span "unsupported-record.agent" 6) ],
+                        span "unsupported-record.agent" 1)
+                ]
+            else compileBody context ("unsupported-record-" + string index) [ Push(LInt 1L, span "unsupported-record.agent" 1) ]
+        let actual = errorOf (fun () -> LlvmAot.emit body |> ignore)
+        check ($"{typeName} record field preflight rejects before Clang") (
+            actual.Code = unsupportedFixture.GetProperty("code").GetString()
+            && actual.Message = unsupportedFixture.GetProperty("message").GetString()
+            && actual.Word = Some recordName
+            && actual.Span.IsNone
+            && actual.Expected = (unsupportedFixture.GetProperty("expected").EnumerateArray() |> Seq.map (fun value -> value.GetString()) |> Seq.toList)
+            && actual.Actual = [ typeName ])
+
+    let recursiveRecords = [
+        recordDefinition "A" [ recordField "b" (TNamed "B") ]
+        recordDefinition "B" [ recordField "a" (TNamed "A") ]
+    ]
+    let recursiveContext = contextWithRecordDefinitions [] recursiveRecords []
+    let recursiveBody = compileBody recursiveContext "recursive-record-types" [ Push(LInt 1L, span "recursive-record.agent" 1) ]
+    let recursive = errorOf (fun () -> LlvmAot.emit recursiveBody |> ignore)
+    let recursiveFixture = recordFixtureError "recursive-record-types"
+    let recursiveExpected (propertyName: string) =
+        recursiveFixture.GetProperty(propertyName).EnumerateArray()
+        |> Seq.map (fun value -> value.GetString())
+        |> Seq.toList
+    check "recursive record graph is rejected during native preflight with an independent cycle fixture" (
+        recursive.Code = recursiveFixture.GetProperty("code").GetString()
+        && recursive.Message = recursiveFixture.GetProperty("message").GetString()
+        && recursive.Word = Some(recursiveFixture.GetProperty("word").GetString())
+        && recursive.Span.IsNone
+        && recursive.Expected = recursiveExpected "expected"
+        && recursive.Actual = recursiveExpected "actual")
+
+let private testRetainedOwnershipAndCapacity sharingBody expectedValues =
+    use native = compileNative "record-retained-capacity" LlvmOptimization.O0 sharingBody
+    let firstOrdinary = native.Execute "record-sharing"
+    let secondOrdinary = native.Execute "record-sharing"
+    check "repeated Execute calls on one compiled record program preserve type metadata" (
+        firstOrdinary.Values = expectedValues && secondOrdinary.Values = expectedValues)
+    use baseline = native.ExecuteRetained "record-sharing"
+    let arenaFixture = recordFixtureRoot.RootElement.GetProperty("record-sharing-arenas")
+    let scratchBytes = arenaFixture.GetProperty("scratchBytes").GetInt32()
+    let scratchNodes = arenaFixture.GetProperty("scratchNodes").GetInt32()
+    let retainedBytes = arenaFixture.GetProperty("retainedBytes").GetInt32()
+    let retainedNodes = arenaFixture.GetProperty("retainedNodes").GetInt32()
+    check "retained owner matches independent values and arena counts" (
+        baseline.Decode() = expectedValues
+        && baseline.RetainedByteCount = retainedBytes
+        && baseline.RetainedNodeCount = retainedNodes
+        && retainedBytes = 48
+        && retainedNodes = 5)
+    check "independent scratch arena sizing covers each constructor exactly once" (
+        scratchBytes = 56 && scratchNodes = 6)
+
+    let failureFor options =
+        try
+            use _result = native.ExecuteRetained("record-sharing", options = options)
+            failwith "Expected NativeResourceLimitException."
+        with
+        | :? NativeResourceLimitException as failure -> failure
+
+    let exactOptions = {
+        NativeExecutionOptions.defaults with
+            ScratchByteCapacity = Some scratchBytes
+            ScratchNodeCapacity = Some scratchNodes
+            RetainedByteCapacity = Some retainedBytes
+            RetainedNodeCapacity = Some retainedNodes
+    }
+    use exact = native.ExecuteRetained("record-sharing", options = exactOptions)
+    check "exact-fit scratch and retained capacities succeed" (
+        exact.Decode() = expectedValues
+        && exact.RetainedByteCount = retainedBytes
+        && exact.RetainedNodeCount = retainedNodes)
+
+    let scratchByteFailureOptions = { exactOptions with ScratchByteCapacity = Some(scratchBytes - 1) }
+    let scratchByteFailure = failureFor scratchByteFailureOptions
+    check "one-byte-short scratch reports exact required and available bytes" (
+        scratchByteFailure.Code = "NATIVE_SCRATCH_CAPACITY"
+        && scratchByteFailure.Arena = "scratch"
+        && scratchByteFailure.RequiredBytes = scratchBytes
+        && scratchByteFailure.AvailableBytes = scratchBytes - 1
+        && scratchByteFailure.AvailableNodes = scratchNodes)
+
+    let scratchNodeFailureOptions = { exactOptions with ScratchNodeCapacity = Some(scratchNodes - 1) }
+    let scratchNodeFailure = failureFor scratchNodeFailureOptions
+    check "one-node-short scratch reports exact required and available nodes" (
+        scratchNodeFailure.Code = "NATIVE_SCRATCH_CAPACITY"
+        && scratchNodeFailure.Arena = "scratch"
+        && scratchNodeFailure.RequiredNodes = scratchNodes
+        && scratchNodeFailure.AvailableNodes = scratchNodes - 1
+        && scratchNodeFailure.AvailableBytes = scratchBytes)
+
+    let retainedByteFailureOptions = { exactOptions with RetainedByteCapacity = Some(retainedBytes - 1) }
+    let retainedByteFailure = failureFor retainedByteFailureOptions
+    check "one-byte-short retained arena reports exact required and available bytes" (
+        retainedByteFailure.Code = "NATIVE_RETAINED_CAPACITY"
+        && retainedByteFailure.Arena = "retained"
+        && retainedByteFailure.RequiredBytes = retainedBytes
+        && retainedByteFailure.AvailableBytes = retainedBytes - 1
+        && retainedByteFailure.RequiredNodes = retainedNodes
+        && retainedByteFailure.AvailableNodes = retainedNodes)
+
+    let retainedNodeFailureOptions = { exactOptions with RetainedNodeCapacity = Some(retainedNodes - 1) }
+    let retainedNodeFailure = failureFor retainedNodeFailureOptions
+    check "one-node-short retained arena reports exact required and available nodes" (
+        retainedNodeFailure.Code = "NATIVE_RETAINED_CAPACITY"
+        && retainedNodeFailure.Arena = "retained"
+        && retainedNodeFailure.RequiredNodes = retainedNodes
+        && retainedNodeFailure.AvailableNodes = retainedNodes - 1
+        && retainedNodeFailure.RequiredBytes = retainedBytes
+        && retainedNodeFailure.AvailableBytes = retainedBytes)
+
+    let execute, library = rawExecute native.LibraryPath
+    try
+        let rawFailure label scratchBytes scratchNodes retainedBytes retainedNodes expectedStatus expectedRequiredBytes expectedRequiredNodes =
+            withRawExecutionBuffers native scratchBytes scratchNodes retainedBytes retainedNodes (fun context outputs status _scratch retained ->
+                let sentinel = 0x5647382910ABCDEFL
+                for index in 0 .. native.OutputCount do Marshal.WriteInt64(outputs, index * NativeAbi.SlotSize, sentinel + int64 index)
+                execute.Invoke(context, outputs, native.OutputCount, status)
+                let outputsUnchanged =
+                    [ 0 .. native.OutputCount ]
+                    |> List.forall (fun index -> Marshal.ReadInt64(outputs, index * NativeAbi.SlotSize) = sentinel + int64 index)
+                check (label + " native status matches capacity failure") (Marshal.ReadInt32(status) = expectedStatus)
+                check (label + " public outputs and canary remain unchanged") outputsUnchanged
+                check (label + " native capacity diagnostics match required totals") (
+                    Marshal.ReadInt64(context, NativeAbi.ContextErrorArgument0Offset) = int64 expectedRequiredBytes
+                    && Marshal.ReadInt64(context, NativeAbi.ContextErrorArgument1Offset) = int64 expectedRequiredNodes)
+                check (label + " failed promotion leaves retained owner empty") (
+                    Marshal.ReadInt32(retained, NativeAbi.ArenaUsedOffset) = 0
+                    && Marshal.ReadInt32(retained, NativeAbi.ArenaNodeCountOffset) = 0))
+
+        rawFailure "scratch byte atomicity" (scratchBytes - 1) scratchNodes retainedBytes retainedNodes NativeAbi.StatusScratchCapacity scratchByteFailure.RequiredBytes scratchByteFailure.RequiredNodes
+        rawFailure "scratch node atomicity" scratchBytes (scratchNodes - 1) retainedBytes retainedNodes NativeAbi.StatusScratchCapacity scratchNodeFailure.RequiredBytes scratchNodeFailure.RequiredNodes
+        rawFailure "retained byte promotion atomicity" scratchBytes scratchNodes (retainedBytes - 1) retainedNodes NativeAbi.StatusRetainedCapacity retainedByteFailure.RequiredBytes retainedByteFailure.RequiredNodes
+        rawFailure "retained node promotion atomicity" scratchBytes scratchNodes retainedBytes (retainedNodes - 1) NativeAbi.StatusRetainedCapacity retainedNodeFailure.RequiredBytes retainedNodeFailure.RequiredNodes
+    finally
+        NativeLibrary.Free library
+
+    use reusableScratch = new NativeScratchArena(1_000_000, 10_000)
+    let reusableOptions = { NativeExecutionOptions.defaults with ScratchArena = Some reusableScratch }
+    let firstResult = native.ExecuteRetained("record-sharing", options = reusableOptions)
+    let secondResult = native.ExecuteRetained("record-sharing", options = reusableOptions)
+    let mutable firstDisposed = false
+    try
+        reusableScratch.PoisonAndClear()
+        check "first retained decode survives scratch poisoning and reuse" (firstResult.Decode() = expectedValues)
+        (firstResult :> IDisposable).Dispose()
+        firstDisposed <- true
+        (native :> IDisposable).Dispose()
+        check "undecoded retained result survives peer disposal, scratch reuse, and compiled DLL disposal" (secondResult.Decode() = expectedValues)
+    finally
+        if not firstDisposed then (firstResult :> IDisposable).Dispose()
+        (secondResult :> IDisposable).Dispose()
 
 let private testNominalValidatorFuelLimit () =
     let validatorInstructions =
@@ -855,6 +1503,7 @@ let private testCompilerRuntimeDiscovery () =
 [<EntryPoint>]
 let main _ =
     try
+        printStage "scalar operators and arithmetic"
         let boundary = compileBody (contextWith []) "signed-boundaries" [
             Push(LInt Int64.MinValue, span "boundary.agent" 1)
             Push(LInt 0L, span "boundary.agent" 2)
@@ -987,8 +1636,10 @@ let main _ =
             Call("drop", span "scratch.agent" 2)
         ]
         compareSuccessfulCase "call-output-scratch" "call-output-scratch" scratchBody [ IntValue 11L ]
+        printStage "ABI layout and raw request guards"
         testLayoutAndRequestGuards multiOutput scratchBody
 
+        printStage "branches, locals, and user-word calls"
         let branchJoin = compileBody (contextWith []) "branch-else-join" [
             Push(LInt 10L, span "branch.agent" 1)
             Let("saved", span "branch.agent" 2)
@@ -1104,9 +1755,18 @@ let main _ =
         testFuelAndSourceMetadata ()
         testCallDepth ()
         testLargeStackFrame ()
+        printStage "nominal scalar support and limits"
         testNominalScalarSupport ()
         testNominalScalarDiagnosticsAndRejections ()
         testNominalScalarDepth ()
+        printStage "record construction, accessors, aliases, and equality"
+        let sharingBody, sharingExpected = testRecordConformance ()
+        printStage "record value depth and aggregate limits"
+        testRecordValueMetrics ()
+        printStage "record preflight diagnostics"
+        testRecordPreflightRejections ()
+        printStage "record capacity atomicity and retained ownership"
+        testRetainedOwnershipAndCapacity sharingBody sharingExpected
         testNominalValidatorFuelLimit ()
         testRejectsEffectsAndUnsupportedUntakenBranches ()
         testCatalogTrustBoundary ()

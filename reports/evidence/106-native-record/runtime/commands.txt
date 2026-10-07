@@ -1,0 +1,6 @@
+clang.exe -std=c11 -ffreestanding -fno-builtin -Wall -Wextra -Werror -O0 -c src/AgentLang.Llvm/native/arena_runtime.c -o %TEMP%\agentlang_arena_O0.obj
+clang.exe -std=c11 -ffreestanding -fno-builtin -Wall -Wextra -Werror -O2 -c src/AgentLang.Llvm/native/arena_runtime.c -o %TEMP%\agentlang_arena_O2.obj
+clang.exe -std=c11 -Wall -Wextra -Werror -O0 src/AgentLang.Llvm/native/runtime_test.c %TEMP%\agentlang_arena_O0.obj -o %TEMP%\agentlang_native_test_O0.exe
+clang.exe -std=c11 -Wall -Wextra -Werror -O2 src/AgentLang.Llvm/native/runtime_test.c %TEMP%\agentlang_arena_O2.obj -o %TEMP%\agentlang_native_test_O2.exe
+clang.exe -std=c11 -ffreestanding -fno-builtin -Wall -Wextra -Werror -O1 -fsanitize=undefined -fsanitize-trap=undefined -c src/AgentLang.Llvm/native/arena_runtime.c -o %TEMP%\agentlang_arena_ubsan_O1.obj
+clang.exe -std=c11 -ffreestanding -fno-builtin -Wall -Wextra -Werror -O1 -fsanitize=undefined -fsanitize-trap=undefined src/AgentLang.Llvm/native/runtime_test.c %TEMP%\agentlang_arena_ubsan_O1.obj -o %TEMP%\agentlang_native_test_ubsan_O1.exe

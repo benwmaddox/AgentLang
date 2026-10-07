@@ -119,6 +119,32 @@ module LlvmToolchain =
             raise (InvalidOperationException(
                 $"LLVM tool failed ({child.ExitCode}): {executable} {joinedArguments}{Environment.NewLine}{stdout}{stderr}"))
 
+    let private optimizationArgument = function
+        | LlvmOptimization.O0 -> "-O0"
+        | LlvmOptimization.O2 -> "-O2"
+
+    let private compileLlvmObject (toolchain: LlvmToolchain) optimization (llvmIrPath: string) (objectPath: string) workingDirectory =
+        if File.Exists objectPath then File.Delete objectPath
+        run toolchain.ClangPath
+            [ "--target=x86_64-pc-windows-msvc"
+              "-x"; "ir"
+              "-c"; Path.GetFullPath llvmIrPath
+              optimizationArgument optimization
+              "-o"; objectPath ]
+            workingDirectory
+
+    let private linkObjects (toolchain: LlvmToolchain) (outputDllPath: string) (objectPaths: string list) =
+        if File.Exists outputDllPath then File.Delete outputDllPath
+        let workingDirectory = Path.GetDirectoryName outputDllPath
+        let runtimeLibraries = toolchain.CompilerRuntimeLibrary |> Option.toList
+        run toolchain.LldLinkPath
+            ([ "/dll"; "/noentry"; "/nodefaultlib"; "/machine:x64"
+               $"/out:{outputDllPath}" ] @ objectPaths @ runtimeLibraries)
+            workingDirectory
+        if not (File.Exists outputDllPath) then
+            raise (InvalidOperationException($"lld-link did not create its requested DLL: {outputDllPath}"))
+        outputDllPath
+
     /// Compile deterministic textual LLVM IR to a Windows x64 COFF object and
     /// link a DLL with lld-link. The installed MSVC static runtime archive is
     /// added when available so legitimate stack probes remain supported; with
@@ -130,22 +156,42 @@ module LlvmToolchain =
         Directory.CreateDirectory workingDirectory |> ignore
         if not (File.Exists irPath) then invalidArg (nameof llvmIrPath) "LLVM IR input does not exist."
         let objectPath = Path.ChangeExtension(dllPath, ".obj")
-        let optimizationArgument =
-            match optimization with
-            | LlvmOptimization.O0 -> "-O0"
-            | LlvmOptimization.O2 -> "-O2"
+        compileLlvmObject toolchain optimization irPath objectPath workingDirectory |> ignore
+        linkObjects toolchain dllPath [ objectPath ]
+
+    /// Compile the freestanding arena runtime at the same optimization level
+    /// as the emitted LLVM body and link both fresh objects into one DLL.
+    let compileLibraryWithRuntime
+        (toolchain: LlvmToolchain)
+        optimization
+        (llvmIrPath: string)
+        (runtimeSourcePath: string)
+        (runtimeIncludeDirectory: string)
+        (outputDllPath: string) =
+        let irPath = Path.GetFullPath llvmIrPath
+        let sourcePath = Path.GetFullPath runtimeSourcePath
+        let includeDirectory = Path.GetFullPath runtimeIncludeDirectory
+        let dllPath = Path.GetFullPath outputDllPath
+        let workingDirectory = Path.GetDirectoryName dllPath
+        Directory.CreateDirectory workingDirectory |> ignore
+        if not (File.Exists irPath) then invalidArg (nameof llvmIrPath) "LLVM IR input does not exist."
+        if not (File.Exists sourcePath) then invalidArg (nameof runtimeSourcePath) "Native runtime source does not exist."
+        if not (Directory.Exists includeDirectory) then invalidArg (nameof runtimeIncludeDirectory) "Native runtime include directory does not exist."
+        let llvmObjectPath = Path.Combine(workingDirectory, "agentlang-native.obj")
+        let runtimeObjectPath = Path.Combine(workingDirectory, "agentlang-arena-runtime.obj")
+        compileLlvmObject toolchain optimization irPath llvmObjectPath workingDirectory |> ignore
+        if File.Exists runtimeObjectPath then File.Delete runtimeObjectPath
         run toolchain.ClangPath
             [ "--target=x86_64-pc-windows-msvc"
-              "-x"; "ir"
-              "-c"; irPath
-              optimizationArgument
-              "-o"; objectPath ]
+              "-std=c11"
+              "-ffreestanding"
+              "-fno-builtin"
+              "-Wall"
+              "-Wextra"
+              "-Werror"
+              optimizationArgument optimization
+              "-c"; sourcePath
+              "-I"; includeDirectory
+              "-o"; runtimeObjectPath ]
             workingDirectory
-        let runtimeLibraries = toolchain.CompilerRuntimeLibrary |> Option.toList
-        run toolchain.LldLinkPath
-            ([ "/dll"; "/noentry"; "/nodefaultlib"; "/machine:x64"
-               $"/out:{dllPath}"; objectPath ] @ runtimeLibraries)
-            workingDirectory
-        if not (File.Exists dllPath) then
-            raise (InvalidOperationException($"lld-link did not create its requested DLL: {dllPath}"))
-        dllPath
+        linkObjects toolchain dllPath [ llvmObjectPath; runtimeObjectPath ]

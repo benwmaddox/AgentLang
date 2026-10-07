@@ -2,19 +2,24 @@
 
 Each milestone report records delivered behavior, exact validation commands and results, observed feedback, and remaining limitations. Passing implementation checks does not establish the language's research hypothesis. Agent trials must identify the provider/model, modes, fixtures, acceptance oracles, usage source, and budget policy; scripted trials must be labeled as scripted.
 
-Milestone publication includes updated reports in the same reviewed commit set as the implementation. After local validation, merge that commit set into the private repository's `main` branch and push it; record the resulting revision and CI evidence. Documentation-only checkpoints must identify implementation that remains in progress.
+Milestone publication includes updated reports in the same reviewed commit set as the implementation. After local validation, merge that commit set into the repository's `main` branch and push it; record the resulting revision and local validation evidence. Documentation-only checkpoints must identify implementation that remains in progress.
 
 Run `./scripts/Validate.ps1` from PowerShell to build the solution and run every required acceptance runner and process verifier. Missing required projects or verifier scripts fail the gate. The command saves machine-readable evidence in `.agentlang/reports/validation.json` and exits with failure if any check fails. Use `-ReportPath PATH` to retain a particular run. Its `dirty` flag distinguishes a tested working tree from a committed revision; milestone prose should say which was tested.
 
-CI runs the same command and uploads its JSON report. Human feedback and milestone conclusions belong in numbered Markdown reports here. Credentials must never appear in reports. Live provider traces can contain project information and should remain in the experiment's local output directory unless deliberately reviewed for publication.
+Validation runs locally. The GitHub workflow is manual-only; milestone publication does not trigger a CI run. Human feedback and milestone conclusions belong in numbered Markdown reports here. Credentials must never appear in reports. Live provider traces can contain project information and should remain in the experiment's local output directory unless deliberately reviewed for publication.
 
-Current checkpoint: [075 — Pure business transitions](075-business-language-transitions.md)
-adds subscriptions, invoices, payment outcomes, FIFO email and a reproducible
-seed to the strict Flow foundation. Matched benchmark task adapters remain
-incomplete. Foundation [074](074-business-language-foundation.md) passed clean
-main CI. The latest paired agent result is
-[072 — Conventional stateful comparison](072-conventional-stateful-comparison.md):
-both actors succeed, with fewer F# exchanges but no controlled cost conclusion.
+Current research assessment: [101 — Approach efficacy review](101-approach-efficacy-review.md)
+finds that discovery, typed composition and vocabulary reuse work, but comparative
+reliability superiority remains unproven. [102 — Guided defect repair](102-guided-defect-repair-comparison.md)
+records successful repairs in retained, reset and conventional F# conditions;
+it does not establish blind defect discovery or a correctness advantage.
+
+The native checkpoint is [106 — Record ownership](106-native-record-ownership.md),
+with 342 conformance assertions and separate native safety/ABI evidence. It extends
+[105 — Refined scalars](105-native-refined-scalars.md) with scratch and retained
+record storage. [104 — Arena/mailbox feasibility](104-native-arena-mailbox-feasibility.md)
+remains a separate bounded memory experiment. These runtime checks establish no
+agent-efficacy advantage.
 
 Recent research reports include [064 — Repeated comparison](064-repeat-agent-purpose-review.md),
 [067 — Selective retrieval](067-selective-retrieval-study.md),

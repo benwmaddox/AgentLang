@@ -1,7 +1,8 @@
 {
   "native-support": {
     "nominalScalarBases": ["Int", "Bool"],
-    "excluded": ["records", "Float", "String", "containers", "effects"],
+    "supportedKinds": ["records"],
+    "excluded": ["Float", "String", "containers", "effects"],
     "unit": "plain Unit values are supported; Unit nominal scalar bases remain disallowed by Core validation"
   },
   "signed-boundaries": ["true", "true"],

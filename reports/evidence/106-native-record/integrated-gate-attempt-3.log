@@ -1,0 +1,29 @@
+  Determining projects to restore...
+  Restored D:\code\AgentLang\src\AgentLang.Core\AgentLang.Core.fsproj (in 201 ms).
+  Restored D:\code\AgentLang\tests\AgentLang.Llvm.Tests\AgentLang.Llvm.Tests.fsproj (in 201 ms).
+  Restored D:\code\AgentLang\src\AgentLang.Llvm\AgentLang.Llvm.fsproj (in 201 ms).
+  AgentLang.Core -> D:\code\AgentLang\.agentlang\native-validation\run-c534cc8a74aa46d393c2eb581922d8b2\bin\AgentLang.Core\debug\AgentLang.Core.dll
+  AgentLang.Llvm -> D:\code\AgentLang\.agentlang\native-validation\run-c534cc8a74aa46d393c2eb581922d8b2\bin\AgentLang.Llvm\debug\AgentLang.Llvm.dll
+  AgentLang.Llvm.Tests -> D:\code\AgentLang\.agentlang\native-validation\run-c534cc8a74aa46d393c2eb581922d8b2\bin\AgentLang.Llvm.Tests\debug\AgentLang.Llvm.Tests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:17.64
+[native-conformance] scalar operators and arithmetic
+[native-conformance] ABI layout and raw request guards
+[native-conformance] branches, locals, and user-word calls
+[native-conformance] nominal scalar support and limits
+[native-conformance] record construction, accessors, aliases, and equality
+[native-conformance] record value depth and aggregate limits
+System.Exception: record-aliased-aggregate-limit independent diagnostic fixture: assertion failed
+   at AgentLang.Llvm.Tests.check[a](a name, Boolean condition) in D:\code\AgentLang\tests\AgentLang.Llvm.Tests\Program.fs:line 23
+   at AgentLang.Llvm.Tests.compareRecordErrorCase(String fixtureName, String executionName, VerifiedIrBody body) in D:\code\AgentLang\tests\AgentLang.Llvm.Tests\Program.fs:line 946
+   at AgentLang.Llvm.Tests.testRecordValueMetrics() in D:\code\AgentLang\tests\AgentLang.Llvm.Tests\Program.fs:line 1133
+   at AgentLang.Llvm.Tests.main(String[] _arg1) in D:\code\AgentLang\tests\AgentLang.Llvm.Tests\Program.fs:line 1735
+Exception: D:\code\AgentLang\scripts\Verify-NativeConformance.ps1:24
+Line |
+  24 |          throw "Native conformance tests failed with exit code $LASTEX …
+     |          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Native conformance tests failed with exit code 1.

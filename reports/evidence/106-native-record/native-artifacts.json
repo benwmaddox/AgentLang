@@ -1,0 +1,754 @@
+[
+  {
+    "path": "abi-guard\\O0\\agentlang-native.dll",
+    "sha256": "75d13a1ecb6fd288ff64231298a489a38db43d66e2cb31660742a658ae6fe427",
+    "bytes": 17920,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "abi-multi-output-guard\\O0\\agentlang-native.dll",
+    "sha256": "75d13a1ecb6fd288ff64231298a489a38db43d66e2cb31660742a658ae6fe427",
+    "bytes": 17920,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "abi-scratch-guard\\O0\\agentlang-native.dll",
+    "sha256": "70848650afe424456c35581604a4a28cbb3fc89b22b2237770f7643bf0712151",
+    "bytes": 17920,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "abi-v1-prefix-guard\\O0\\agentlang-native.dll",
+    "sha256": "75d13a1ecb6fd288ff64231298a489a38db43d66e2cb31660742a658ae6fe427",
+    "bytes": 17920,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "alias-overflow\\O0\\agentlang-native.dll",
+    "sha256": "4b5300d7b210d180b53165bf497f8ed53eb838f70244eaaffffb4d233fc9e467",
+    "bytes": 17920,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "alias-overflow\\O2\\agentlang-native.dll",
+    "sha256": "baa157d9b6835de0c94e803c14fe3421fc100670d4915cc772921c93b3adf629",
+    "bytes": 13312,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "arithmetic-and-bool\\O0\\agentlang-native.dll",
+    "sha256": "a8d70bf058c55a08852c6f817af319abe586d68255771c745f2a0dce965b5fbd",
+    "bytes": 20992,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "arithmetic-and-bool\\O2\\agentlang-native.dll",
+    "sha256": "0df657b43a890f059e5b7cbe4696c4a05d1b640517bb0dc2aa39e5bb51f7acf1",
+    "bytes": 13312,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "bool-refinement-failed\\O0\\agentlang-native.dll",
+    "sha256": "7ff02659a6d0926ac1599807cc720f345de5987def6e50d5f6f1e1ac035e844d",
+    "bytes": 17920,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "bool-refinement-failed\\O2\\agentlang-native.dll",
+    "sha256": "01239fbc2037bfe3b732fe5e3639ac9791b1c7c1905ae96bab9d6e6843536807",
+    "bytes": 13312,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "boolean-truth-table\\O0\\agentlang-native.dll",
+    "sha256": "c5ad30d14e37e26c1540d67543252cc88306eb972482716da2db115eaf150771",
+    "bytes": 19968,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "boolean-truth-table\\O2\\agentlang-native.dll",
+    "sha256": "884bb57977fa5658d7b23feeb6feb0a21d5d829a4f315d348e22fd9f65a6f364",
+    "bytes": 13312,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "branch-else-join\\O0\\agentlang-native.dll",
+    "sha256": "cf25c0e530244c0d03f0d7662d3e3d2d474cb3b22addb8203dbd4e1dc5bf2364",
+    "bytes": 17920,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "branch-else-join\\O2\\agentlang-native.dll",
+    "sha256": "f408ab4b4ae4d53a5f414fec214d7382b6dae46397f1777bb5a4421558c86fe6",
+    "bytes": 13312,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "branch-then-join\\O0\\agentlang-native.dll",
+    "sha256": "be325ffb866487b0444e144429d097ec0322a5ab0de2f48413134af5a82cc905",
+    "bytes": 17920,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "branch-then-join\\O2\\agentlang-native.dll",
+    "sha256": "61ccf4b06cb44bc8afb6654163858c5dd6de196ea35dc604967e393a0ed1e5c0",
+    "bytes": 13312,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "call-depth\\O0\\agentlang-native.dll",
+    "sha256": "d85820e53e2e86cb2207858e05e496dc7f1c3c2818b1d681e04cdd50efd5c413",
+    "bytes": 29184,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "call-depth\\O2\\agentlang-native.dll",
+    "sha256": "77e0242d4ea3156bfdaee5705475ad349c51624be32e42354c281ef8c5e1b562",
+    "bytes": 13312,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "call-output-scratch\\O0\\agentlang-native.dll",
+    "sha256": "70848650afe424456c35581604a4a28cbb3fc89b22b2237770f7643bf0712151",
+    "bytes": 17920,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "call-output-scratch\\O2\\agentlang-native.dll",
+    "sha256": "7c7969556d87b27c852384a0ec688be0a11d416449aa4000e040962e24102d68",
+    "bytes": 13312,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "checked-overflow\\O0\\agentlang-native.dll",
+    "sha256": "90dde0e0219dc09fba743ce8a2e6d04dd9cebecd6466584f00a621ded1dbe0f2",
+    "bytes": 17920,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "checked-overflow\\O2\\agentlang-native.dll",
+    "sha256": "85d5f625f678aaf3a26cd084c7f43f1ecedba27f2349aaf519be22a108cfb7b5",
+    "bytes": 13312,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "comparison-outcomes\\O0\\agentlang-native.dll",
+    "sha256": "ad52128c91137d0ad8a32711667140d4219c039e22f6c677c044c41a3b64bdb3",
+    "bytes": 19456,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "comparison-outcomes\\O2\\agentlang-native.dll",
+    "sha256": "74bc0a421ea1262ffd154261295113b97935f433904dda9a4f1c0f29e7f66225",
+    "bytes": 13312,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "deep-scalar-BoundaryDepthTag\\O0\\agentlang-native.dll",
+    "sha256": "04780f2f4daef6f16e98eb5dae02a0d05a91cbea79245ce8137699e7863e4b02",
+    "bytes": 29184,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "deep-scalar-BoundaryDepthTag\\O2\\agentlang-native.dll",
+    "sha256": "0ce9d9e6cb8cde5ed29c1f2cf8b5cc5ea9aa8d98d232ab2555fcd84fa504f9f3",
+    "bytes": 13312,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "deep-scalar-DepthTag\\O0\\agentlang-native.dll",
+    "sha256": "3e444128cdc7519fd660a4037fe16b98bf1534e4b500a36d5cfebb6702baa9cc",
+    "bytes": 28672,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "deep-scalar-DepthTag\\O2\\agentlang-native.dll",
+    "sha256": "6a4c512a811479de530e9d1e4f1160470891a6732e506205f49133b9a02d0102",
+    "bytes": 13312,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "deep-scalar-PrimitiveBoundaryFlag\\O0\\agentlang-native.dll",
+    "sha256": "b2013a47e2bbe8698b56309783e8192a8a38a8fe0e5d3fea6eb5854be2f4d6e0",
+    "bytes": 28672,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "deep-scalar-PrimitiveBoundaryFlag\\O2\\agentlang-native.dll",
+    "sha256": "f7a665313bb2f8e17ef486b07ce8ad2feec76cb1ed737b7c7f1a3df213a9002e",
+    "bytes": 13312,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "deep-scalar-PrimitiveDepthFlag\\O0\\agentlang-native.dll",
+    "sha256": "3a9cda0a6866697094910f5eda73bd231ca20dcc56318f5a4136ff07deb1c2cf",
+    "bytes": 29184,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "deep-scalar-PrimitiveDepthFlag\\O2\\agentlang-native.dll",
+    "sha256": "609023ebea23fd9131cf893788b8e92d03d8e0df978d630366040f5b17411c57",
+    "bytes": 13312,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "deep-scalar-RefinedDepthTag\\O0\\agentlang-native.dll",
+    "sha256": "ece1afbc9f916eef2f3ea4b7ad07da0173e50a8d6f2bd5686b9ff7ec4a8b5515",
+    "bytes": 29184,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "deep-scalar-RefinedDepthTag\\O2\\agentlang-native.dll",
+    "sha256": "2b17f4e69ec6b63e90479bad3e8acf20d9bbbacf7bad311552318d070e9c4382",
+    "bytes": 13312,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "divide-by-zero\\O0\\agentlang-native.dll",
+    "sha256": "3638bee7e082cb834d62ae21a0fa4acbd77758c3e8bca7b42dd697818390a432",
+    "bytes": 17920,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "divide-by-zero\\O2\\agentlang-native.dll",
+    "sha256": "767fe6e88e6a4d6c8b52131fa286172e2c98474f9a9fcdf104e7e544b6d75938",
+    "bytes": 13312,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "divide-overflow\\O0\\agentlang-native.dll",
+    "sha256": "58d7cc4c036d14070c4b9edf235cf04d3fb8c2e3b52f51b697734e9af74f89de",
+    "bytes": 17920,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "divide-overflow\\O2\\agentlang-native.dll",
+    "sha256": "0a1778ab861d8f342deb143004f3a1929931e6b0b9b0b7606c1ed6609f84c6bc",
+    "bytes": 13312,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "first-failure\\O0\\agentlang-native.dll",
+    "sha256": "6cabab1f13c557047e8fbae8f5d097684a93a37c47ddab536f6e393b5bf43ea3",
+    "bytes": 17920,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "first-failure\\O2\\agentlang-native.dll",
+    "sha256": "53ddd71a31e8abe984931d47b566ccf68cab8854616e61abe19e0b66f3eff654",
+    "bytes": 13312,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "frozen-validator\\O0\\agentlang-native.dll",
+    "sha256": "9065b75514bf46574916fa4be648a95098061ae65f1d1480e8c2c85d1d799c37",
+    "bytes": 17920,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "frozen-validator\\O2\\agentlang-native.dll",
+    "sha256": "58fbfe635b48365331629c902cc28139532559e54401e64ae9b9de0803ff018d",
+    "bytes": 13312,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "fuel-source\\O0\\agentlang-native.dll",
+    "sha256": "f784e953aef06e4e5a0c741f4df0afa4a23f58cc39fb8eb5b44cc91e9578da76",
+    "bytes": 692736,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "fuel-source\\O2\\agentlang-native.dll",
+    "sha256": "eefd2a0baf42a91265ff7deb367a6091351dca55999f0cd5fd3cb7a0f0f8c7ed",
+    "bytes": 303104,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "large-frame\\O0\\agentlang-native.dll",
+    "sha256": "bd7380956113d8e6016ea1fc929c1a42fb3977df143ffea965e3de251d19cfcb",
+    "bytes": 481792,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "large-frame\\O2\\agentlang-native.dll",
+    "sha256": "62763140f9d6d38487297bb0fe1949fcf038e79d79d617b0cd8728cd79003c30",
+    "bytes": 153088,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "multi-output\\O0\\agentlang-native.dll",
+    "sha256": "30337ccc63644293a7d96a73c7bfb39052515625fc62e40d71e9c308e0cbe9d8",
+    "bytes": 17920,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "multi-output\\O2\\agentlang-native.dll",
+    "sha256": "a48c896876a24dce6e9dfb8224792dc461e8e63383fae3b9e18cd5e36c3228e1",
+    "bytes": 13312,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "multiply-overflow\\O0\\agentlang-native.dll",
+    "sha256": "568554b148a594e77b905b92efd14d060a3fa1e84bfa3c2e748b8a9a6066a04d",
+    "bytes": 17920,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "multiply-overflow\\O2\\agentlang-native.dll",
+    "sha256": "1a3429667909b564a98926c4c0d761aae92d8781732124a18baebc7c4204fda7",
+    "bytes": 13312,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "nominal-aliased-output-limit\\O0\\agentlang-native.dll",
+    "sha256": "051b0ff7c3c6805935c949c0720a34bc0120fb020aaeaaa3fa2c5138cadfa110",
+    "bytes": 17920,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "nominal-aliased-output-limit\\O2\\agentlang-native.dll",
+    "sha256": "2e7b7cad0780f3299bac809961850c612d4462a7602d6dcb36a041a978045dda",
+    "bytes": 13312,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "nominal-bool-cases\\O0\\agentlang-native.dll",
+    "sha256": "1913d30ee28850f61a7f32f178f630f2d2707631f6d9f0e8e8696a39481d2b77",
+    "bytes": 18432,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "nominal-bool-cases\\O2\\agentlang-native.dll",
+    "sha256": "fec9eab98f86232d651ac141caf70657c967d79efcc24712fc3a5b78f2654722",
+    "bytes": 13312,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "nominal-branch-call\\O0\\agentlang-native.dll",
+    "sha256": "2af29b19d81b85ae2bdbeb017d5db3e520bcb4a629662d90d662ae867a0d2ccf",
+    "bytes": 19968,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "nominal-branch-call\\O2\\agentlang-native.dll",
+    "sha256": "a392fbd9cc64b2f9413c8b3104fd5095366198ff85af274e853a5e7642e5c18e",
+    "bytes": 13824,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "nominal-int-cases\\O0\\agentlang-native.dll",
+    "sha256": "087f6fdb1d6c7f71fcc792cbf4620fe7dbe8d08ba7dfc171db0224b9adf3c874",
+    "bytes": 18432,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "nominal-int-cases\\O2\\agentlang-native.dll",
+    "sha256": "711de460ce768f9c932eb95a3014059c6d4ac211ff1cafce7b432326458ee121",
+    "bytes": 13312,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "reachable-user-calls\\O0\\agentlang-native.dll",
+    "sha256": "3b5913bc37b718cbf75765fbff9a5a0aebbff43bf0ee4d9725685d6f7d163ee4",
+    "bytes": 18432,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "reachable-user-calls\\O2\\agentlang-native.dll",
+    "sha256": "0253433da420113a61786388a1eab09cfbc091492cf7b00d197d79afa557054f",
+    "bytes": 13312,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "record-aliased-aggregate-limit\\O0\\agentlang-native.dll",
+    "sha256": "9b2ea8e041eb019b38132bf50035b0cfc9d0b418b660c36b0f9dba7729af016e",
+    "bytes": 31744,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "record-aliased-aggregate-limit\\O2\\agentlang-native.dll",
+    "sha256": "481ffe0790237b438a5717c65eaf1cb27a4afb22ccbe9cc36562544c6783cc74",
+    "bytes": 17920,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "record-aliased-node-limit\\O0\\agentlang-native.dll",
+    "sha256": "92c48832a0fb7e286c24d8243f667ec38f86c6fc94199fbe06bb56066e0a795e",
+    "bytes": 25600,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "record-aliased-node-limit\\O2\\agentlang-native.dll",
+    "sha256": "90e7afa5656a2ee217313116d584ac78220abe020c0f4c3dc08539a0d3efcc8c",
+    "bytes": 15872,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "record-depth-256\\O0\\agentlang-native.dll",
+    "sha256": "ca157e9f3c3fd332ba6bdbf2b33b195c51c17f7fc64ac0166aef0ad9b19899a2",
+    "bytes": 148992,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "record-depth-256\\O2\\agentlang-native.dll",
+    "sha256": "6fee5c52482c2b3c8187d7d0ab70e7bac5fd9700b4eec5094e8e5f08216a1fd3",
+    "bytes": 66560,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "record-depth-257\\O0\\agentlang-native.dll",
+    "sha256": "0be4b5c6d346a28fd9177744447c1b15dafe4c0c87759f3ce81b9c2e082f7d70",
+    "bytes": 149504,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "record-depth-257\\O2\\agentlang-native.dll",
+    "sha256": "fb69cbb9dd13469e7a2eaf6baba58c31a286e6a9582e59a307cd261f4eba6e83",
+    "bytes": 62976,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "record-empty\\O0\\agentlang-native.dll",
+    "sha256": "7091a7e6bc789a4969d91ca79c30233c47b8024510dfef3bf49753ec199e384d",
+    "bytes": 17920,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "record-empty\\O2\\agentlang-native.dll",
+    "sha256": "08ad12e159ae093a9929ddaa73b3971726ea6bdc0e89153ada4a622cab04d6e9",
+    "bytes": 13312,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "record-empty-discarded\\O0\\agentlang-native.dll",
+    "sha256": "7627cbc5984944dfc11c09dd286f969f660cb57d3a44dd2e75c708f3a5eccccd",
+    "bytes": 17920,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "record-nested-fields\\O0\\agentlang-native.dll",
+    "sha256": "c27f684d052f69c0804381dc77a43496ae6c76e505fc05da0a90d891920615f8",
+    "bytes": 21504,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "record-nested-fields\\O2\\agentlang-native.dll",
+    "sha256": "20b1d036c8c90a0310d01fe1f9314bd4479f22db93d0eae4e3cfa70d2236ddb7",
+    "bytes": 14336,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "record-over-limit-untaken-branch\\O0\\agentlang-native.dll",
+    "sha256": "269a09f07ff9a5756a6cdc46bbfb44f8bb43a9dd8c809c925beb03679c11d964",
+    "bytes": 118784,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "record-over-limit-untaken-branch\\O2\\agentlang-native.dll",
+    "sha256": "07b3ef0ce74489ee5bf498caa25b4f44d9d40d450598e07cbe72d292558f98cc",
+    "bytes": 18944,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "record-retained-capacity\\O0\\agentlang-native.dll",
+    "sha256": "00fc651601274d57328c68f0c2197eeec48819f75d1e858b15a01b279af20faa",
+    "bytes": 21504,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "record-sharing\\O0\\agentlang-native.dll",
+    "sha256": "1b4b8214bf5017c9e91d82d90c932767891c1b25cc64c0d443e8cadd81cd63f0",
+    "bytes": 21504,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "record-sharing\\O2\\agentlang-native.dll",
+    "sha256": "1babe379581119a68a81bcf52a07f6152970f4758c3e506c12ad716989ad1846",
+    "bytes": 15360,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "refinement-failed\\O0\\agentlang-native.dll",
+    "sha256": "b502ac07b7752ac0eb825b113cad61bd72c0909decc682327c189ce950d3bbf2",
+    "bytes": 17920,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "refinement-failed\\O2\\agentlang-native.dll",
+    "sha256": "754d1e4297e7f2ab4c8d96ecff2d5a01bbc434006ff8175bd1d0b32dfc3c4098",
+    "bytes": 13312,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "scope-restores-local\\O0\\agentlang-native.dll",
+    "sha256": "26a564834f86957f87d9eb6703d41547ed0b176157be549292d3ce3bef2faac8",
+    "bytes": 17920,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "scope-restores-local\\O2\\agentlang-native.dll",
+    "sha256": "d78cb6ef85d83e2b1eadb4b2c5866bd061e5cc4aeac6255fb4f142a7f515b20f",
+    "bytes": 13312,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "signed-boundaries\\O0\\agentlang-native.dll",
+    "sha256": "153aaf60b9fa4a7ecbb4622df95285f2f3de1ef00f8175d61431a1c457f5c7fc",
+    "bytes": 17920,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "signed-boundaries\\O2\\agentlang-native.dll",
+    "sha256": "585ec681c83a05715820a17cd54f939b802b2ae2d005eb5d3d5c192307167fff",
+    "bytes": 13312,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "signed-truncating-divide\\O0\\agentlang-native.dll",
+    "sha256": "9d1abbe19a77b2d4a834726fd4f14259c3c1ec725e14ddf3a153b91b67f25b41",
+    "bytes": 18432,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "signed-truncating-divide\\O2\\agentlang-native.dll",
+    "sha256": "13be06d1fab4b6583c4e5b2b2f9c700d13499f0a4f307c0be83d479eae755aaa",
+    "bytes": 13312,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "subtract-overflow\\O0\\agentlang-native.dll",
+    "sha256": "307f56ed06d5875a5518d65275a14ffd1e83e8da32d624104a9ff4021b47d930",
+    "bytes": 17920,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "subtract-overflow\\O2\\agentlang-native.dll",
+    "sha256": "b3171866d4ec9e448567b258c207ec094aae726847d360b787da715065d22152",
+    "bytes": 13312,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "validator-arithmetic-failure\\O0\\agentlang-native.dll",
+    "sha256": "b4b692706e6564455bdf6a4b9af4f074d3fe3c5c6349120c1c48f4fcca2c98de",
+    "bytes": 17920,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "validator-arithmetic-failure\\O2\\agentlang-native.dll",
+    "sha256": "346d5f0d11cf65b0745cb44534a955818691630727ac3db1817761f2a12a0268",
+    "bytes": 13312,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "validator-fuel-limit\\O0\\agentlang-native.dll",
+    "sha256": "152b8d56ea216ed55c241905328de653b9414d4079809fabf6673a06f7cacad3",
+    "bytes": 692736,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "validator-fuel-limit\\O2\\agentlang-native.dll",
+    "sha256": "57ae24abc8c227aa3f995d6c0f370dedb7fefaabf992dfe523a35b7b036ee84d",
+    "bytes": 303104,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "zero-output-validator\\O0\\agentlang-native.dll",
+    "sha256": "75d266eb928c1e7cbdace12b4a2c4e42725b9221296731b6072bd570653d2b47",
+    "bytes": 17920,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "zero-output-validator\\O2\\agentlang-native.dll",
+    "sha256": "33c0328f01c3813261b9772436de414fb4c080f4ef32cf43c7e6f6c082354978",
+    "bytes": 13312,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  }
+]

@@ -1,0 +1,134 @@
+{
+  "status": "passed bounded native record conformance",
+  "baseCommit": "263d90b8cffe0eac0bbaac63c87c234b28986a82",
+  "testedWorkingTree": true,
+  "nativeAssertions": 342,
+  "irAssertions": 114,
+  "interpreterAssertions": 31,
+  "cHarnessAssertionsPerConfiguration": 77,
+  "cHarnessConfigurations": [
+    "O0",
+    "O2",
+    "O1-UBSan-trap"
+  ],
+  "cFixtureLayoutChecks": 43,
+  "generatedDlls": 94,
+  "peImports": false,
+  "clrHeaders": false,
+  "frozenFilesUnchanged": 10,
+  "finalCommand": "pwsh -NoProfile -File scripts/Verify-NativeConformance.ps1",
+  "finalLog": "native-conformance.log",
+  "researchConclusion": "No new agent efficacy comparison or superiority claim",
+  "files": [
+    {
+      "path": "backend-build.log",
+      "bytes": 290,
+      "sha256": "392fa409e095d0479d0b02d203fb2f35b7a70211d213d0a76cea42763f4c707d"
+    },
+    {
+      "path": "core-regression.log",
+      "bytes": 602,
+      "sha256": "e15e67b3114ef015187f8f8881eb5cf2633f9aee508bf743c6903fc1a8bdf073"
+    },
+    {
+      "path": "emitted-ir.zip",
+      "bytes": 5731364,
+      "sha256": "50598bab210be901a4ffd7f32c0242a27816e53e53cc2bdb430cca0ec68ce08a"
+    },
+    {
+      "path": "frozen-runtime.json",
+      "bytes": 2758,
+      "sha256": "bf9841c2a26dc2c40b892adb132375ed98f68c65ff863cfbc24ea8ea139f05fc"
+    },
+    {
+      "path": "integrated-gate-attempt-1.log",
+      "bytes": 1643,
+      "sha256": "f1ad818fdb8bab9b9ec4e6058e315e72d5d1c06595f8e5206ad4556ea8ff098d"
+    },
+    {
+      "path": "integrated-gate-attempt-2.log",
+      "bytes": 1141,
+      "sha256": "c88ddb121ae58e1a342a17c8ee3af9d451ff5aeaaad1eb41ba01004949ebd013"
+    },
+    {
+      "path": "integrated-gate-attempt-3.log",
+      "bytes": 2136,
+      "sha256": "19d3643ad7b01949f4b7c4086811a3d720f2a4050e8a76179fce21e874e149fc"
+    },
+    {
+      "path": "native-artifacts.json",
+      "bytes": 23065,
+      "sha256": "3819da0984f37428ab41bc9706e39cf8c17e8b6f9d35c65c39ce6ed3ea274264"
+    },
+    {
+      "path": "native-conformance.log",
+      "bytes": 1458,
+      "sha256": "70c5448152eedcea0db397da4e613f4e907ec2d0a365636ba5c662706cfe9891"
+    },
+    {
+      "path": "native-objects.json",
+      "bytes": 48260,
+      "sha256": "b8dd3e793ba72ab869dfa11333ca687951f36027599303aae29fb35631bf9bd8"
+    },
+    {
+      "path": "source-hashes.json",
+      "bytes": 2349,
+      "sha256": "1225bc0d83f6b27e3f953ff82c347a6061b75079a19a55a436a77080cd527de2"
+    },
+    {
+      "path": "source.zip",
+      "bytes": 67623,
+      "sha256": "c6f97e4d7682bc44ad3620926ced709a12c3dd63d53976cd14bcf34a8b51a0f3"
+    },
+    {
+      "path": "toolchain.txt",
+      "bytes": 171,
+      "sha256": "3485a3daba6be10c6481ee1a6dfb4c663fbb6793ee51b349411eaa493038ee63"
+    },
+    {
+      "path": "runtime/c-layout.json",
+      "bytes": 743,
+      "sha256": "1462f81a8e96480635029fcd9108a0cae85a5965a84e4c6c3d749033348ada36"
+    },
+    {
+      "path": "runtime/c-layout.txt",
+      "bytes": 824,
+      "sha256": "420888078215a35aea2bfccc565c7a16026030bb40bef4ca9eaf891903abb24d"
+    },
+    {
+      "path": "runtime/commands.txt",
+      "bytes": 1057,
+      "sha256": "386f3780b9354187c7cc5a70127af0eba4d4982c5ca5ec9d190d41ceb67535ff"
+    },
+    {
+      "path": "runtime/fixture-layout-comparison.log",
+      "bytes": 67,
+      "sha256": "3d3fb0cd89cabcc34d0644027f600bf2a5728f322c483d6cc30c63144849ef1d"
+    },
+    {
+      "path": "runtime/runtime-test-O0.log",
+      "bytes": 52,
+      "sha256": "54f9ea7d9717509c731fbd043210c6d3dffc7c8d26046c9574a732c9cd5acb0e"
+    },
+    {
+      "path": "runtime/runtime-test-O2.log",
+      "bytes": 52,
+      "sha256": "54f9ea7d9717509c731fbd043210c6d3dffc7c8d26046c9574a732c9cd5acb0e"
+    },
+    {
+      "path": "runtime/runtime-test-UBSan-trap.log",
+      "bytes": 52,
+      "sha256": "54f9ea7d9717509c731fbd043210c6d3dffc7c8d26046c9574a732c9cd5acb0e"
+    },
+    {
+      "path": "runtime/sha256.txt",
+      "bytes": 1079,
+      "sha256": "733772796ed9e69eace1373428981248fba176e1d95f33a4bbcf2eed1ca2533a"
+    },
+    {
+      "path": "runtime/undefined-symbols.txt",
+      "bytes": 45,
+      "sha256": "066b2e854052cf2f00c69bf9790cc86e86afb2dbab0f6975bf296e5c84254432"
+    }
+  ]
+}

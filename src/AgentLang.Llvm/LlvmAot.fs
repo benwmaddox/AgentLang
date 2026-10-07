@@ -9,10 +9,6 @@ open System.Security.Cryptography
 open System.Text
 open AgentLang
 
-type NativeExecutionResult =
-    { Values: Value list
-      StepsConsumed: int }
-
 /// Definition spans frozen from the same word snapshot used to create a
 /// verified body. Primitive overflow diagnostics use PrimitiveDefinitionSpans;
 /// call-depth diagnostics use WordDefinitionSpans.
@@ -47,10 +43,6 @@ type private EmittedValue =
     { Type: IrType
       Operand: string }
 
-type internal NativeScalarType =
-    { TypeName: string
-      BaseType: IrType }
-
 [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
 type private ExecuteDelegate = delegate of nativeint * nativeint * int32 * nativeint -> unit
 
@@ -81,9 +73,23 @@ type private CodeBuilder() =
 
 [<Sealed>]
 type NativeCompiledProgram internal
-    (libraryPath: string, outputTypes: IrType list, outputCapacity: int, scalarTypes: Map<ProgramTypeKey, NativeScalarType>, metadata: ErrorMetadata array) =
+    (libraryPath: string,
+     outputTypeIds: uint32 array,
+     outputCapacity: int,
+     workspaceCapacity: int,
+     requiresRecordArenas: bool,
+     valueMetadata: NativeProgramMetadata,
+     metadata: ErrorMetadata array) as this =
     let mutable libraryHandle = IntPtr.Zero
     let mutable executeDelegate: ExecuteDelegate option = None
+    let lifetimeGate = obj ()
+
+    let invokeNative contextPointer outputPointer capacity statusPointer =
+        lock lifetimeGate (fun () ->
+            if libraryHandle = IntPtr.Zero then raise (ObjectDisposedException(nameof NativeCompiledProgram))
+            match executeDelegate with
+            | None -> raise (ObjectDisposedException(nameof NativeCompiledProgram))
+            | Some native -> native.Invoke(contextPointer, outputPointer, capacity, statusPointer))
 
     do
         let handle = NativeLibrary.Load libraryPath
@@ -98,89 +104,146 @@ type NativeCompiledProgram internal
 
     member _.LibraryPath = libraryPath
     /// Number of values returned by the verified entry body.
-    member _.OutputCount = outputTypes.Length
-    /// Required i64 slots in the caller-owned scratch buffer shared by the
-    /// entry body and its reachable user-word calls.
+    member _.OutputCount = outputTypeIds.Length
+    /// Required public i64 slots for the returned roots.
     member _.OutputCapacity = outputCapacity
+    /// Required i64 slots in the per-execution workspace shared by calls and
+    /// native record helpers.
+    member _.WorkspaceCapacity = workspaceCapacity
 
-    /// Separate Execute calls use separate buffers and can run concurrently.
-    /// Dispose must not race an Execute call because it unloads the native DLL.
-    member _.Execute(executionName: string) =
+    /// Execute and return an owned native retained arena. The result remains
+    /// decodable after this compiled program is disposed.
+    member _.ExecuteRetained(executionName: string, ?options: NativeExecutionOptions) : NativeRetainedResult =
         if String.IsNullOrWhiteSpace executionName then invalidArg (nameof executionName) "Execution name must be nonempty."
         if libraryHandle = IntPtr.Zero then raise (ObjectDisposedException(nameof NativeCompiledProgram))
-        let outputCount = outputTypes.Length
-        let mutable contextPointer = IntPtr.Zero
-        let mutable outputPointer = IntPtr.Zero
-        let mutable statusPointer = IntPtr.Zero
+        let selectedOptions = defaultArg options NativeExecutionOptions.defaults
+        let defaultArenaBytes, defaultArenaNodes =
+            if requiresRecordArenas then 1024 * 1024, 10000
+            else 0, 0
+        let capacityValue name requested defaultValue =
+            let value = defaultArg requested defaultValue
+            if value < 0 then invalidArg name "Native arena capacities cannot be negative."
+            value
+        let selectedScratch =
+            match selectedOptions.ScratchArena with
+            | Some scratch -> scratch
+            | None ->
+                let byteCapacity = capacityValue "ScratchByteCapacity" selectedOptions.ScratchByteCapacity defaultArenaBytes
+                let nodeCapacity = capacityValue "ScratchNodeCapacity" selectedOptions.ScratchNodeCapacity defaultArenaNodes
+                new NativeScratchArena(byteCapacity, nodeCapacity)
+        let ownsScratch = selectedOptions.ScratchArena.IsNone
+        let scratchOwner = selectedScratch.Owner
         try
-            contextPointer <- Marshal.AllocHGlobal NativeAbi.ContextSize
-            outputPointer <-
-                if outputCapacity = 0 then IntPtr.Zero
-                else Marshal.AllocHGlobal(outputCapacity * NativeAbi.SlotSize)
-            statusPointer <- Marshal.AllocHGlobal sizeof<int32>
-            Marshal.WriteInt32(contextPointer, NativeAbi.ContextAbiVersionOffset, int NativeAbi.Version)
-            Marshal.WriteInt32(contextPointer, NativeAbi.ContextStepsConsumedOffset, 0)
-            Marshal.WriteInt32(contextPointer, NativeAbi.ContextErrorMetadataIdOffset, -1)
-            Marshal.WriteInt32(contextPointer, NativeAbi.ContextReservedOffset, 0)
-            Marshal.WriteInt64(contextPointer, NativeAbi.ContextErrorArgument0Offset, 0L)
-            Marshal.WriteInt64(contextPointer, NativeAbi.ContextErrorArgument1Offset, 0L)
-            Marshal.WriteInt32(statusPointer, NativeAbi.StatusInvalidRequest)
-            match executeDelegate with
-            | None -> raise (ObjectDisposedException(nameof NativeCompiledProgram))
-            | Some native -> native.Invoke(nativeint contextPointer, nativeint outputPointer, outputCapacity, nativeint statusPointer)
-            let status = Marshal.ReadInt32 statusPointer
-            let steps = Marshal.ReadInt32(contextPointer, NativeAbi.ContextStepsConsumedOffset)
-            match status with
-            | NativeAbi.StatusSuccess ->
-                let values =
-                    outputTypes
-                    |> List.mapi (fun index ty ->
-                        let raw = Marshal.ReadInt64(outputPointer, index * NativeAbi.SlotSize)
-                        let rec decode valueType value =
-                            match valueType with
-                            | IrInt -> IntValue value
-                            | IrBool when value = 0L -> BoolValue false
-                            | IrBool when value = 1L -> BoolValue true
-                            | IrBool -> raise (InvalidDataException($"Native Bool output slot {index} was not encoded as 0 or 1: {value}."))
-                            | IrUnit when value = 0L -> UnitValue
-                            | IrUnit -> raise (InvalidDataException($"Native Unit output slot {index} was not encoded as 0: {value}."))
-                            | IrNominal key ->
-                                match scalarTypes.TryFind key with
-                                | Some scalar -> NamedValue(scalar.TypeName, decode scalar.BaseType value)
-                                | None -> raise (InvalidDataException($"Native artifact returned unsupported ABI output type {IrTypes.format valueType}."))
-                            | unsupported ->
-                                raise (InvalidDataException($"Native artifact returned unsupported ABI output type {IrTypes.format unsupported}."))
-                        decode ty raw)
-                { Values = values; StepsConsumed = steps }
-            | NativeAbi.StatusDiagnostic ->
-                let metadataId = Marshal.ReadInt32(contextPointer, NativeAbi.ContextErrorMetadataIdOffset)
-                if metadataId < 0 || metadataId >= metadata.Length then
-                    raise (InvalidDataException($"Native artifact returned unknown diagnostic metadata id {metadataId}."))
-                let item = metadata[metadataId]
-                let word =
-                    match item.WordSource with
-                    | FixedWord value -> Some value
-                    | EntryExecutionName -> Some executionName
-                let actual =
-                    if item.HasOverflowOperands then
-                        [ Marshal.ReadInt64(contextPointer, NativeAbi.ContextErrorArgument0Offset).ToString(CultureInfo.InvariantCulture)
-                          Marshal.ReadInt64(contextPointer, NativeAbi.ContextErrorArgument1Offset).ToString(CultureInfo.InvariantCulture) ]
-                    else item.Diagnostic.Actual
-                raise (LanguageException { item.Diagnostic with Word = word; Actual = actual })
-            | NativeAbi.StatusInvalidRequest ->
-                raise (InvalidOperationException("The native LLVM entry rejected the ABI version, output capacity, or output pointer."))
-            | other -> raise (InvalidDataException($"Native LLVM entry returned unknown status {other}."))
+            let scratchBytes = capacityValue "ScratchByteCapacity" selectedOptions.ScratchByteCapacity scratchOwner.ByteCapacity
+            let scratchNodes = capacityValue "ScratchNodeCapacity" selectedOptions.ScratchNodeCapacity scratchOwner.NodeCapacity
+            if scratchBytes <> scratchOwner.ByteCapacity || scratchNodes <> scratchOwner.NodeCapacity then
+                invalidArg (nameof options) "Explicit scratch capacities must match the supplied NativeScratchArena."
+            let retainedByteCapacity = capacityValue "RetainedByteCapacity" selectedOptions.RetainedByteCapacity defaultArenaBytes
+            let retainedNodeCapacity = capacityValue "RetainedNodeCapacity" selectedOptions.RetainedNodeCapacity defaultArenaNodes
+            let scratchGeneration = NativeGeneration.next ()
+            let retainedGeneration = NativeGeneration.next ()
+            if scratchGeneration = retainedGeneration then invalidOp "Native arena generations must be unique."
+            let retainedOwner = new NativeArenaOwner(retainedByteCapacity, retainedNodeCapacity)
+            let mutable transferRetainedOwner = false
+            try
+                lock scratchOwner.SyncRoot (fun () ->
+                    scratchOwner.Initialize scratchGeneration
+                    retainedOwner.Initialize retainedGeneration
+                    let mutable contextPointer = IntPtr.Zero
+                    let mutable outputPointer = IntPtr.Zero
+                    let mutable workspacePointer = IntPtr.Zero
+                    let mutable statusPointer = IntPtr.Zero
+                    try
+                        contextPointer <- Marshal.AllocHGlobal NativeAbi.ContextSize
+                        outputPointer <-
+                            if outputCapacity = 0 then IntPtr.Zero
+                            else Marshal.AllocHGlobal(outputCapacity * NativeAbi.SlotSize)
+                        workspacePointer <-
+                            if workspaceCapacity = 0 then IntPtr.Zero
+                            else Marshal.AllocHGlobal(workspaceCapacity * NativeAbi.SlotSize)
+                        statusPointer <- Marshal.AllocHGlobal sizeof<int32>
+                        Marshal.WriteInt32(contextPointer, NativeAbi.ContextAbiVersionOffset, int NativeAbi.Version)
+                        Marshal.WriteInt32(contextPointer, NativeAbi.ContextStepsConsumedOffset, 0)
+                        Marshal.WriteInt32(contextPointer, NativeAbi.ContextErrorMetadataIdOffset, -1)
+                        Marshal.WriteInt32(contextPointer, NativeAbi.ContextReservedOffset, 0)
+                        Marshal.WriteInt64(contextPointer, NativeAbi.ContextErrorArgument0Offset, 0L)
+                        Marshal.WriteInt64(contextPointer, NativeAbi.ContextErrorArgument1Offset, 0L)
+                        Marshal.WriteIntPtr(contextPointer, NativeAbi.ContextScratchOffset, scratchOwner.DescriptorPointer)
+                        Marshal.WriteIntPtr(contextPointer, NativeAbi.ContextRetainedOffset, retainedOwner.DescriptorPointer)
+                        Marshal.WriteIntPtr(contextPointer, NativeAbi.ContextWorkspaceOffset, workspacePointer)
+                        Marshal.WriteInt32(contextPointer, NativeAbi.ContextWorkspaceCapacityOffset, workspaceCapacity)
+                        Marshal.WriteInt32(contextPointer, NativeAbi.ContextReservedTailOffset, 0)
+                        Marshal.WriteInt32(statusPointer, NativeAbi.StatusInvalidRequest)
+                        invokeNative (nativeint contextPointer) (nativeint outputPointer) outputCapacity (nativeint statusPointer)
+                        let status = Marshal.ReadInt32 statusPointer
+                        let steps = Marshal.ReadInt32(contextPointer, NativeAbi.ContextStepsConsumedOffset)
+                        match status with
+                        | NativeAbi.StatusSuccess ->
+                            let rootValues =
+                                Array.init outputTypeIds.Length (fun index -> Marshal.ReadInt64(outputPointer, index * NativeAbi.SlotSize))
+                            let result = new NativeRetainedResult(steps, rootValues, outputTypeIds, retainedOwner, valueMetadata.Types)
+                            transferRetainedOwner <- true
+                            result
+                        | NativeAbi.StatusDiagnostic ->
+                            let metadataId = Marshal.ReadInt32(contextPointer, NativeAbi.ContextErrorMetadataIdOffset)
+                            if metadataId < 0 || metadataId >= metadata.Length then
+                                raise (InvalidDataException($"Native artifact returned unknown diagnostic metadata id {metadataId}."))
+                            let item = metadata[metadataId]
+                            let word =
+                                match item.WordSource with
+                                | FixedWord value -> Some value
+                                | EntryExecutionName -> Some executionName
+                            let actual =
+                                if item.HasOverflowOperands then
+                                    [ Marshal.ReadInt64(contextPointer, NativeAbi.ContextErrorArgument0Offset).ToString(CultureInfo.InvariantCulture)
+                                      Marshal.ReadInt64(contextPointer, NativeAbi.ContextErrorArgument1Offset).ToString(CultureInfo.InvariantCulture) ]
+                                else item.Diagnostic.Actual
+                            raise (LanguageException { item.Diagnostic with Word = word; Actual = actual })
+                        | NativeAbi.StatusScratchCapacity
+                        | NativeAbi.StatusRetainedCapacity as capacityStatus ->
+                            let isScratch = capacityStatus = NativeAbi.StatusScratchCapacity
+                            let arenaName = if isScratch then "scratch" else "retained"
+                            let code = if isScratch then "NATIVE_SCRATCH_CAPACITY" else "NATIVE_RETAINED_CAPACITY"
+                            let arena = if isScratch then scratchOwner else retainedOwner
+                            raise (NativeResourceLimitException(
+                                code, arenaName,
+                                Marshal.ReadInt64(contextPointer, NativeAbi.ContextErrorArgument0Offset),
+                                Marshal.ReadInt64(contextPointer, NativeAbi.ContextErrorArgument1Offset),
+                                arena.ByteCapacity, arena.NodeCapacity))
+                        | NativeAbi.StatusInvalidRequest ->
+                            raise (InvalidOperationException("The native LLVM entry rejected the ABI version, arena, workspace, output capacity, or pointer layout."))
+                        | NativeAbi.StatusInvalidReference ->
+                            raise (InvalidDataException("The native LLVM entry rejected a record handle or graph reference."))
+                        | other -> raise (InvalidDataException($"Native LLVM entry returned unknown status {other}."))
+                    finally
+                        if statusPointer <> IntPtr.Zero then Marshal.FreeHGlobal statusPointer
+                        if workspacePointer <> IntPtr.Zero then Marshal.FreeHGlobal workspacePointer
+                        if outputPointer <> IntPtr.Zero then Marshal.FreeHGlobal outputPointer
+                        if contextPointer <> IntPtr.Zero then Marshal.FreeHGlobal contextPointer)
+            finally
+                if not transferRetainedOwner then (retainedOwner :> IDisposable).Dispose()
         finally
-            if statusPointer <> IntPtr.Zero then Marshal.FreeHGlobal statusPointer
-            if outputPointer <> IntPtr.Zero then Marshal.FreeHGlobal outputPointer
-            if contextPointer <> IntPtr.Zero then Marshal.FreeHGlobal contextPointer
+            // Reusable scratch arenas are invalidated after both success
+            // and failure. Execute holds the same lock while C is running.
+            try
+                lock scratchOwner.SyncRoot (fun () -> scratchOwner.Reset(false))
+            with :? ObjectDisposedException -> ()
+            if ownsScratch then (selectedScratch :> IDisposable).Dispose()
+
+
+    /// Execute without retaining the native result after it has been decoded.
+    member _.Execute(executionName: string) =
+        use retained = this.ExecuteRetained executionName
+        { Values = retained.Decode()
+          StepsConsumed = retained.StepsConsumed }
 
     interface IDisposable with
         member _.Dispose() =
-            if libraryHandle <> IntPtr.Zero then
-                NativeLibrary.Free libraryHandle
-                libraryHandle <- IntPtr.Zero
-                executeDelegate <- None
+            lock lifetimeGate (fun () ->
+                if libraryHandle <> IntPtr.Zero then
+                    NativeLibrary.Free libraryHandle
+                    libraryHandle <- IntPtr.Zero
+                    executeDelegate <- None)
 
 [<RequireQualifiedAccess>]
 module LlvmAot =
@@ -206,26 +269,90 @@ module LlvmAot =
     let private callDiagnostic (code: string) (message: string) (owner: string) (span: SourceSpan option) (expected: string list) (actual: string list) =
         raiseDiagnostic code message (Some owner) span expected actual
 
-    let private ensureScalarType (program: IrProgram) (owner: string) (span: SourceSpan option) (ty: IrType) =
-        match ty with
-        | IrInt | IrBool | IrUnit -> ()
-        | IrNominal key ->
+    let private nominalTypeName (program: IrProgram) key =
+        match program.NominalTypesByKey.TryFind key with
+        | Some(IrRecordDefinition record) -> record.TypeName
+        | Some(IrScalarDefinition scalar) -> scalar.TypeName
+        | None -> IrTypes.format (IrNominal key)
+
+    let private validateRecordTypeGraph (program: IrProgram) =
+        let state = Dictionary<ProgramTypeKey, int>()
+        let recordChildren key =
             match program.NominalTypesByKey.TryFind key with
-            | Some(IrScalarDefinition scalar) ->
-                match scalar.BaseType with
-                | IrInt | IrBool -> ()
-                | unsupported ->
-                    callDiagnostic "IR_LLVM_UNSUPPORTED_TYPE" "The LLVM scalar backend supports nominal scalars only when their base is Int or Bool."
-                        owner span [ "nominal scalar based on Int or Bool" ] [ $"{scalar.TypeName}: {IrTypes.format unsupported}" ]
             | Some(IrRecordDefinition record) ->
-                callDiagnostic "IR_LLVM_UNSUPPORTED_TYPE" "The LLVM scalar backend does not support nominal records."
-                    owner span [ "Int, Bool, Unit, or supported nominal scalar" ] [ record.TypeName ]
-            | None ->
-                callDiagnostic "IR_LLVM_UNSUPPORTED_TYPE" "The LLVM scalar backend cannot resolve an unknown nominal type."
-                    owner span [ "known nominal scalar" ] [ IrTypes.format ty ]
-        | unsupported ->
-            callDiagnostic "IR_LLVM_UNSUPPORTED_TYPE" "The LLVM scalar backend supports only Int, Bool, Unit, and nominal Int/Bool scalar values."
-                owner span [ "Int"; "Bool"; "Unit" ] [ IrTypes.format unsupported ]
+                record.RecordFields
+                |> List.sortBy (fun field -> field.FieldIndex)
+                |> List.choose (fun field ->
+                    match field.FieldType with
+                    | IrNominal childKey ->
+                        match program.NominalTypesByKey.TryFind childKey with
+                        | Some(IrRecordDefinition _) -> Some childKey
+                        | _ -> None
+                    | _ -> None)
+            | _ -> []
+        for KeyValue(root, definition) in program.NominalTypesByKey do
+            match definition with
+            | IrRecordDefinition _ when not (state.ContainsKey root) ->
+                let active = ResizeArray<ProgramTypeKey>()
+                let frames = Stack<ProgramTypeKey * ProgramTypeKey list * int>()
+                state[root] <- 1
+                active.Add root
+                frames.Push(root, recordChildren root, 0)
+                while frames.Count > 0 do
+                    let current, children, childIndex = frames.Pop()
+                    if childIndex >= children.Length then
+                        state[current] <- 2
+                        active.RemoveAt(active.Count - 1)
+                    else
+                        frames.Push(current, children, childIndex + 1)
+                        let child = children[childIndex]
+                        match state.TryGetValue child with
+                        | true, 1 ->
+                            let activeIndex = active |> Seq.tryFindIndex ((=) child) |> Option.defaultValue 0
+                            let cycle =
+                                [ yield! active |> Seq.skip activeIndex |> Seq.map (nominalTypeName program)
+                                  yield nominalTypeName program child ]
+                            callDiagnostic "IR_LLVM_RECURSIVE_RECORD_TYPE"
+                                "The LLVM native-value backend does not support recursive record type graphs."
+                                (nominalTypeName program child) None [ "acyclic immutable record type graph" ] [ String.concat " -> " cycle ]
+                        | true, 2 -> ()
+                        | _ ->
+                            state[child] <- 1
+                            active.Add child
+                            frames.Push(child, recordChildren child, 0)
+            | _ -> ()
+
+    let private ensureNativeType (program: IrProgram) (owner: string) (span: SourceSpan option) (ty: IrType) =
+        let seen = HashSet<IrType>()
+        let pending = Stack<bool * string * SourceSpan option * IrType>()
+        pending.Push(false, owner, span, ty)
+        while pending.Count > 0 do
+            let inRecordField, currentOwner, currentSpan, currentType = pending.Pop()
+            if seen.Add currentType then
+                match currentType with
+                | IrInt | IrBool | IrUnit -> ()
+                | IrNominal key ->
+                    match program.NominalTypesByKey.TryFind key with
+                    | Some(IrScalarDefinition scalar) ->
+                        match scalar.BaseType with
+                        | IrInt | IrBool -> ()
+                        | unsupported ->
+                            callDiagnostic "IR_LLVM_UNSUPPORTED_TYPE" "The LLVM scalar backend supports nominal scalars only when their base is Int or Bool."
+                                currentOwner currentSpan [ "nominal scalar based on Int or Bool" ] [ $"{scalar.TypeName}: {IrTypes.format unsupported}" ]
+                    | Some(IrRecordDefinition record) ->
+                        for field in record.RecordFields |> List.sortByDescending (fun item -> item.FieldIndex) do
+                            pending.Push(true, record.TypeName, None, field.FieldType)
+                    | None ->
+                        callDiagnostic "IR_LLVM_UNSUPPORTED_TYPE" "The LLVM native-value backend cannot resolve an unknown nominal type."
+                            currentOwner currentSpan [ "known nominal scalar or record" ] [ IrTypes.format currentType ]
+                | unsupported when inRecordField ->
+                    callDiagnostic "IR_LLVM_UNSUPPORTED_TYPE"
+                        "Native records may contain only Int, Bool, Unit, nominal Int/Bool scalars, and other immutable records."
+                        currentOwner currentSpan [ "Int"; "Bool"; "Unit"; "nominal Int/Bool"; "immutable record" ] [ IrTypes.format unsupported ]
+                | unsupported ->
+                    callDiagnostic "IR_LLVM_UNSUPPORTED_TYPE"
+                        "The LLVM scalar backend supports only Int, Bool, Unit, nominal Int/Bool scalar values, and immutable records."
+                        currentOwner currentSpan [ "Int"; "Bool"; "Unit"; "nominal Int/Bool scalar"; "immutable record" ] [ IrTypes.format unsupported ]
 
     let private callsInBlock (program: IrProgram) (block: IrBlock) =
         let found = ResizeArray<IrResolvedCall * SourceSiteId>()
@@ -335,10 +462,9 @@ module LlvmAot =
                     rejectEffects owner span target.TargetEffects
                     match target.Operation with
                     | WrapScalarOperation key
-                    | UnwrapScalarOperation key -> ensureScalarType program owner span (IrNominal key)
-                    | _ ->
-                        callDiagnostic "IR_LLVM_UNSUPPORTED_TARGET" "Generated record calls are outside the LLVM scalar slice."
-                            owner span [ "scalar constructor or accessor" ] [ call.ResolvedName ]
+                    | UnwrapScalarOperation key
+                    | MakeRecordOperation key -> ensureNativeType program owner span (IrNominal key)
+                    | GetRecordFieldOperation(key, _) -> ensureNativeType program owner span (IrNominal key)
 
         for call, site in callsInBlock program body.BodyBlock do inspectCall body.BodyName site call
         while pending.Count > 0 do
@@ -350,7 +476,7 @@ module LlvmAot =
         reachable
 
     let rec private validateCall (program: IrProgram) (owner: string) (span: SourceSpan option) (call: IrResolvedCall) =
-        for ty in call.InputTypes @ call.OutputTypes do ensureScalarType program owner span ty
+        for ty in call.InputTypes @ call.OutputTypes do ensureNativeType program owner span ty
         match call.ResolvedTarget with
         | UserWordTarget _ -> ()
         | GeneratedWordTarget(id, revision) ->
@@ -382,9 +508,32 @@ module LlvmAot =
                 | _ ->
                     callDiagnostic "IR_LLVM_TARGET_SIGNATURE" "Generated scalar accessor does not match its frozen nominal type."
                         owner span [ "nominal scalar -> base type" ] (call.OutputTypes |> List.map IrTypes.format)
-            | _ ->
-                callDiagnostic "IR_LLVM_UNSUPPORTED_TARGET" "Generated record calls are outside the LLVM scalar slice."
-                    owner span [ "scalar constructor or accessor" ] [ call.ResolvedName ]
+            | MakeRecordOperation key ->
+                match program.NominalTypesByKey.TryFind key with
+                | Some(IrRecordDefinition record) ->
+                    let fieldTypes = record.RecordFields |> List.sortBy (fun field -> field.FieldIndex) |> List.map (fun field -> field.FieldType)
+                    if target.InputTypes <> fieldTypes || target.OutputTypes <> [ IrNominal key ] then
+                        callDiagnostic "IR_LLVM_TARGET_SIGNATURE" "Generated record constructor does not match its frozen nominal type."
+                            owner span
+                            [ String.concat " " (fieldTypes |> List.map IrTypes.format) + " -> " + IrTypes.format (IrNominal key) ]
+                            [ String.concat " " (target.InputTypes |> List.map IrTypes.format) + " -> " + String.concat " " (target.OutputTypes |> List.map IrTypes.format) ]
+                    ensureNativeType program owner span (IrNominal key)
+                | _ ->
+                    callDiagnostic "IR_LLVM_TARGET_SIGNATURE" "Generated record constructor refers to a non-record nominal type."
+                        owner span [ "record fields -> nominal record" ] (call.OutputTypes |> List.map IrTypes.format)
+            | GetRecordFieldOperation(key, fieldIndex) ->
+                match program.NominalTypesByKey.TryFind key with
+                | Some(IrRecordDefinition record) when fieldIndex >= 0 && fieldIndex < record.RecordFields.Length ->
+                    let fieldTypes = record.RecordFields |> List.sortBy (fun field -> field.FieldIndex) |> List.map (fun field -> field.FieldType)
+                    let fieldType = fieldTypes[fieldIndex]
+                    if target.InputTypes <> [ IrNominal key ] || target.OutputTypes <> [ fieldType ] then
+                        callDiagnostic "IR_LLVM_TARGET_SIGNATURE" "Generated record accessor does not match its frozen nominal type or field index."
+                            owner span [ IrTypes.format (IrNominal key) + " -> " + IrTypes.format fieldType ]
+                            [ String.concat " " (target.InputTypes |> List.map IrTypes.format) + " -> " + String.concat " " (target.OutputTypes |> List.map IrTypes.format) ]
+                    ensureNativeType program owner span (IrNominal key)
+                | _ ->
+                    callDiagnostic "IR_LLVM_TARGET_SIGNATURE" "Generated record accessor refers to an absent record field."
+                        owner span [ "record -> declared field" ] (call.OutputTypes |> List.map IrTypes.format)
         | PrimitiveTarget(PrimitiveId operation) ->
             if not (supportedPrimitiveOperations.Contains operation) then
                 callDiagnostic "IR_LLVM_UNSUPPORTED_PRIMITIVE"
@@ -412,15 +561,15 @@ module LlvmAot =
 
     let rec private validateBlock (program: IrProgram) (owner: string) (sourceMap: Map<SourceSiteId, IrSourceSite>) (block: IrBlock) =
         let validateShape shape =
-            shape.StackTypes |> List.iter (ensureScalarType program owner None)
-            shape.LocalTypes |> Map.iter (fun _ ty -> ensureScalarType program owner None ty)
+            shape.StackTypes |> List.iter (ensureNativeType program owner None)
+            shape.LocalTypes |> Map.iter (fun _ ty -> ensureNativeType program owner None ty)
         validateShape block.EntryShape
         validateShape block.ExitShape
         for instruction in block.Code do
             let span = sourceSpan sourceMap instruction.Site
             match instruction.Operation with
             | IrOperation.Constant(literal, ty) ->
-                ensureScalarType program owner span ty
+                ensureNativeType program owner span ty
                 match literal with
                 | LInt _ when ty = IrInt -> ()
                 | LBool _ when ty = IrBool -> ()
@@ -430,6 +579,32 @@ module LlvmAot =
                         "The LLVM scalar backend supports Int, Bool, and Unit constants only."
                         owner span [ "Int"; "Bool"; "Unit" ] [ sprintf "%A : %s" literal (IrTypes.format ty) ]
             | IrOperation.Call call -> validateCall program owner span call
+            | IrOperation.MakeRecord(call, key) ->
+                validateCall program owner span call
+                ensureNativeType program owner span (IrNominal key)
+                match call.ResolvedTarget with
+                | GeneratedWordTarget(id, _) ->
+                    match program.GeneratedTargetsById.TryFind id with
+                    | Some { Operation = MakeRecordOperation targetKey } when targetKey = key -> ()
+                    | _ ->
+                        callDiagnostic "IR_LLVM_TARGET_OPERATION" "Record construction does not target its matching generated constructor."
+                            owner span [ sprintf "%A" (MakeRecordOperation key) ] [ call.ResolvedName ]
+                | _ ->
+                    callDiagnostic "IR_LLVM_TARGET_OPERATION" "Record construction requires a generated constructor target."
+                        owner span [ "generated record constructor" ] [ call.ResolvedName ]
+            | IrOperation.GetRecordField(call, key, fieldIndex) ->
+                validateCall program owner span call
+                ensureNativeType program owner span (IrNominal key)
+                match call.ResolvedTarget with
+                | GeneratedWordTarget(id, _) ->
+                    match program.GeneratedTargetsById.TryFind id with
+                    | Some { Operation = GetRecordFieldOperation(targetKey, targetIndex) } when targetKey = key && targetIndex = fieldIndex -> ()
+                    | _ ->
+                        callDiagnostic "IR_LLVM_TARGET_OPERATION" "Record access does not target its matching generated field accessor."
+                            owner span [ sprintf "%A" (GetRecordFieldOperation(key, fieldIndex)) ] [ call.ResolvedName ]
+                | _ ->
+                    callDiagnostic "IR_LLVM_TARGET_OPERATION" "Record access requires a generated field accessor target."
+                        owner span [ "generated record accessor" ] [ call.ResolvedName ]
             | IrOperation.WrapScalar(call, key, validator) ->
                 validateCall program owner span call
                 match call.ResolvedTarget with
@@ -503,39 +678,83 @@ module LlvmAot =
         let body = VerifiedIrBody.inspect verifiedBody
         if not (List.isEmpty body.BodyInputTypes) then
             callDiagnostic "IR_LLVM_BODY_INPUT_UNSUPPORTED"
-                "The LLVM ABI-v1 entry accepts only verified bodies with an empty initial stack."
+                "The LLVM ABI-v2 entry accepts only verified bodies with an empty initial stack."
                 body.BodyName None [] (body.BodyInputTypes |> List.map IrTypes.format)
         let sourceMap = sourceMapFor verifiedBody
+        validateRecordTypeGraph program
+        for KeyValue(key, definition) in program.NominalTypesByKey do
+            match definition with
+            | IrRecordDefinition record -> ensureNativeType program record.TypeName None (IrNominal key)
+            | IrScalarDefinition scalar -> ensureNativeType program scalar.TypeName None (IrNominal key)
         let reachable = reachableFunctions verifiedBody sourceMap
-        body.BodyInputTypes @ body.BodyOutputTypes |> List.iter (ensureScalarType program body.BodyName None)
+        body.BodyInputTypes @ body.BodyOutputTypes |> List.iter (ensureNativeType program body.BodyName None)
         validateBlock program body.BodyName sourceMap body.BodyBlock
         let functions =
             program.FunctionsById
             |> Map.toList
             |> List.choose (fun (id, functionValue) -> if reachable.Contains id then Some(id, functionValue) else None)
         for _, functionValue in functions do
-            functionValue.InputTypes @ functionValue.OutputTypes |> List.iter (ensureScalarType program functionValue.FunctionName None)
+            functionValue.InputTypes @ functionValue.OutputTypes |> List.iter (ensureNativeType program functionValue.FunctionName None)
             validateBlock program functionValue.FunctionName program.SourceMap functionValue.FunctionBody
 
-        let nativeScalarTypes =
-            program.NominalTypesByKey
-            |> Map.toList
-            |> List.choose (fun (key, definition) ->
-                match definition with
-                | IrScalarDefinition scalar ->
-                    Some(key, { TypeName = scalar.TypeName; BaseType = scalar.BaseType })
-                | IrRecordDefinition _ -> None)
-            |> Map.ofList
+        let nativeValueMetadata = NativeProgramMetadata.create program
 
         let metadata = ResizeArray<ErrorMetadata>()
         let output = StringBuilder()
         output.AppendLine("target triple = " + "\"" + "x86_64-pc-windows-msvc" + "\"") |> ignore
-        output.AppendLine("%NativeExecutionContext = type { i32, i32, i32, i32, i64, i64 }") |> ignore
+        output.AppendLine("%NativeExecutionContext = type { i32, i32, i32, i32, i64, i64, ptr, ptr, ptr, i32, i32 }") |> ignore
         output.AppendLine("%NativeExecutionContextAlignmentProbe = type { i8, %NativeExecutionContext }") |> ignore
+        output.AppendLine("%NativeTypeDescriptor = type { i32, i32, ptr }") |> ignore
+        output.AppendLine("%NativeProgramDescriptor = type { ptr, i32, i32 }") |> ignore
+        output.AppendLine("declare i32 @al_runtime_validate_request(ptr, ptr, i32, i32, ptr, i32)") |> ignore
+        output.AppendLine("declare i32 @al_runtime_make_record(ptr, ptr, i32, ptr, i32, ptr)") |> ignore
+        output.AppendLine("declare i32 @al_runtime_get_field(ptr, ptr, i32, i64, i32, ptr)") |> ignore
+        output.AppendLine("declare i32 @al_runtime_equal(ptr, ptr, i32, i64, i64, ptr)") |> ignore
+        output.AppendLine("declare i32 @al_runtime_promote(ptr, ptr, ptr, ptr, i32, ptr, i32)") |> ignore
         output.AppendLine("declare { i64, i1 } @llvm.sadd.with.overflow.i64(i64, i64)") |> ignore
         output.AppendLine("declare { i64, i1 } @llvm.ssub.with.overflow.i64(i64, i64)") |> ignore
         output.AppendLine("declare { i64, i1 } @llvm.smul.with.overflow.i64(i64, i64)") |> ignore
         output.AppendLine() |> ignore
+
+        for typeMetadata in nativeValueMetadata.Types do
+            match typeMetadata.Definition with
+            | Some(NativeRecordMetadata(_, fields)) when not (List.isEmpty fields) ->
+                let fieldIds = fields |> List.map (fun (_, fieldTypeId) -> $"i32 {fieldTypeId}") |> String.concat ", "
+                output.AppendLine($"@agentlang_fields_{typeMetadata.TypeId} = private constant [{fields.Length} x i32] [{fieldIds}]") |> ignore
+            | _ -> ()
+        let descriptorValues =
+            nativeValueMetadata.Types
+            |> Array.map (fun typeMetadata ->
+                match typeMetadata.Definition with
+                | Some(NativeRecordMetadata(_, fields)) when not (List.isEmpty fields) ->
+                    let fieldPointer =
+                        $"ptr getelementptr inbounds ([{fields.Length} x i32], ptr @agentlang_fields_{typeMetadata.TypeId}, i32 0, i32 0)"
+                    $"%%NativeTypeDescriptor {{ i32 {typeMetadata.Kind}, i32 {fields.Length}, {fieldPointer} }}"
+                | _ -> $"%%NativeTypeDescriptor {{ i32 {typeMetadata.Kind}, i32 0, ptr null }}")
+            |> String.concat ", "
+        output.AppendLine($"@agentlang_type_descriptors = private constant [{nativeValueMetadata.Types.Length} x %%NativeTypeDescriptor] [{descriptorValues}]") |> ignore
+        output.AppendLine($"@agentlang_program = private constant %%NativeProgramDescriptor {{ ptr getelementptr inbounds ([{nativeValueMetadata.Types.Length} x %%NativeTypeDescriptor], ptr @agentlang_type_descriptors, i32 0, i32 0), i32 {nativeValueMetadata.Types.Length}, i32 0 }}") |> ignore
+        let rootTypeIds =
+            body.BodyOutputTypes
+            |> List.map (fun ty -> nativeValueMetadata.TypeIdsByIrType[ty])
+            |> List.toArray
+        let rootTypeValues = rootTypeIds |> Array.map (fun typeId -> $"i32 {typeId}") |> String.concat ", "
+        output.AppendLine($"@agentlang_root_type_ids = private constant [{rootTypeIds.Length} x i32] [{rootTypeValues}]") |> ignore
+        output.AppendLine() |> ignore
+        let valueMetrics = NativeProgramMetadata.valueMetrics nativeValueMetadata
+        let outputCapacity = body.BodyOutputTypes.Length
+        let functionOutputMax = functions |> List.map (fun (_, functionValue) -> functionValue.OutputTypes.Length) |> List.fold max 0
+        let recordDefinitions =
+            nativeValueMetadata.Types
+            |> Array.choose (fun ty ->
+                match ty.Definition with
+                | Some(NativeRecordMetadata(_, fields)) -> Some fields.Length
+                | _ -> None)
+        let helperWorkspaceCapacity =
+            if recordDefinitions.Length = 0 then 0
+            else (recordDefinitions |> Array.max) + 1
+        let workspaceCapacity = max outputCapacity (max functionOutputMax helperWorkspaceCapacity)
+        let requiresRecordArenas = recordDefinitions.Length > 0
 
         let emitFieldPointer (builder: CodeBuilder) (field: int) =
             let pointer = builder.Fresh "ctx.field"
@@ -550,6 +769,45 @@ module LlvmAot =
             builder.Emit($"{statusPointer} = getelementptr inbounds i32, ptr %%status, i64 0")
             builder.Emit($"store i32 {NativeAbi.StatusDiagnostic}, ptr {statusPointer}, align 4")
             builder.Emit("ret void")
+
+        let emitRuntimeResult (builder: CodeBuilder) (result: string) =
+            let successLabel = builder.FreshLabel "runtime.success"
+            let invalidRequestLabel = builder.FreshLabel "runtime.invalid.request"
+            let invalidReferenceLabel = builder.FreshLabel "runtime.invalid.reference"
+            let scratchCapacityLabel = builder.FreshLabel "runtime.scratch.capacity"
+            let retainedCapacityLabel = builder.FreshLabel "runtime.retained.capacity"
+            let invalidResultLabel = builder.FreshLabel "runtime.invalid.result"
+            builder.Emit(
+                $"switch i32 {result}, label %%{invalidResultLabel} [ " +
+                $"i32 0, label %%{successLabel} i32 1, label %%{invalidRequestLabel} " +
+                $"i32 2, label %%{invalidReferenceLabel} i32 3, label %%{scratchCapacityLabel} " +
+                $"i32 4, label %%{retainedCapacityLabel} ]")
+            let storeStatusAndReturn label status =
+                builder.Switch label
+                builder.Emit($"store i32 {status}, ptr %%status, align 4")
+                builder.Emit("ret void")
+            storeStatusAndReturn invalidRequestLabel NativeAbi.StatusInvalidRequest
+            storeStatusAndReturn invalidReferenceLabel NativeAbi.StatusInvalidReference
+            storeStatusAndReturn scratchCapacityLabel NativeAbi.StatusScratchCapacity
+            storeStatusAndReturn retainedCapacityLabel NativeAbi.StatusRetainedCapacity
+            storeStatusAndReturn invalidResultLabel NativeAbi.StatusInvalidRequest
+            builder.Switch successLabel
+
+        let emitValueLimitFailure (builder: CodeBuilder) currentWord wordSource span failure =
+            let diagnostic =
+                operationDiagnostic "RUNTIME_VALUE_LIMIT"
+                    $"Runtime value exceeds the {failure.Dimension} safety limit."
+                    currentWord span [ failure.Expected ] [ failure.Actual ]
+            let failureLabel = builder.FreshLabel "value.limit.failure"
+            let unreachableLabel = builder.FreshLabel "value.limit.continue"
+            builder.Emit($"br label %%{failureLabel}")
+            builder.Switch failureLabel
+            emitFailure builder diagnostic wordSource
+            builder.Switch unreachableLabel
+
+        let emitValueLimitCheck (builder: CodeBuilder) currentWord wordSource span (stack: EmittedValue list) (locals: Map<LocalSlot, EmittedValue>) =
+            let roots = (stack |> List.map (fun value -> value.Type)) @ (locals |> Map.toList |> List.map (fun (_, value) -> value.Type))
+            valueMetrics.CheckRoots roots |> Option.iter (emitValueLimitFailure builder currentWord wordSource span)
 
         let emitErrorWhen (builder: CodeBuilder) (condition: string) (diagnostic: Diagnostic) wordSource =
             let failureLabel = builder.FreshLabel "failure"
@@ -591,6 +849,11 @@ module LlvmAot =
             let result = builder.Fresh "bool.slot"
             builder.Emit($"{result} = zext i1 {value} to i64")
             result
+
+        let emitWorkspaceSlot (builder: CodeBuilder) (index: int) =
+            let pointer = builder.Fresh "workspace.slot"
+            builder.Emit($"{pointer} = getelementptr inbounds i64, ptr %%outputs, i64 {index}")
+            pointer
 
         let emitOverflow (builder: CodeBuilder) operation resolvedName (left: string) (right: string) =
             let tuple = builder.Fresh "checked.tuple"
@@ -666,9 +929,28 @@ module LlvmAot =
                 builder.Emit($"{comparison} = icmp {predicate} i64 {left.Operand}, {right.Operand}")
                 [ { Type = IrBool; Operand = emitZext builder comparison } ]
             | "equals", [ left; right ] ->
-                let comparison = builder.Fresh "scalar.equals"
-                builder.Emit($"{comparison} = icmp eq i64 {left.Operand}, {right.Operand}")
-                [ { Type = IrBool; Operand = emitZext builder comparison } ]
+                match left.Type with
+                | IrNominal key ->
+                    match program.NominalTypesByKey.TryFind key with
+                    | Some(IrRecordDefinition _) ->
+                        let typeId = nativeValueMetadata.TypeIdsByIrType[IrNominal key]
+                        let outputPointer = emitWorkspaceSlot builder 0
+                        let runtimeResult = builder.Fresh "record.equal.status"
+                        builder.Emit($"{runtimeResult} = call i32 @al_runtime_equal(ptr %%ctx, ptr @agentlang_program, i32 {typeId}, i64 {left.Operand}, i64 {right.Operand}, ptr {outputPointer})")
+                        emitRuntimeResult builder runtimeResult
+                        let raw = builder.Fresh "record.equal.value"
+                        builder.Emit($"{raw} = load i32, ptr {outputPointer}, align 4")
+                        let result = builder.Fresh "record.equal.slot"
+                        builder.Emit($"{result} = zext i32 {raw} to i64")
+                        [ { Type = IrBool; Operand = result } ]
+                    | _ ->
+                        let comparison = builder.Fresh "scalar.equals"
+                        builder.Emit($"{comparison} = icmp eq i64 {left.Operand}, {right.Operand}")
+                        [ { Type = IrBool; Operand = emitZext builder comparison } ]
+                | _ ->
+                    let comparison = builder.Fresh "scalar.equals"
+                    builder.Emit($"{comparison} = icmp eq i64 {left.Operand}, {right.Operand}")
+                    [ { Type = IrBool; Operand = emitZext builder comparison } ]
             | "bool.and", [ left; right ]
             | "bool.or", [ left; right ] ->
                 let leftBool = emitBoolCast builder left.Operand
@@ -700,11 +982,12 @@ module LlvmAot =
             let entryValues =
                 functionInputs
                 |> List.mapi (fun index ty ->
-                    ensureScalarType program functionName None ty
+                    ensureNativeType program functionName None ty
                     { Type = ty; Operand = $"%%arg{index}" })
             let rec emitBlock (currentWord: string) (wordSource: ErrorWord) (block: IrBlock) (startStack: EmittedValue list) (startLocals: Map<LocalSlot, EmittedValue>) =
                 let mutable stack = startStack
                 let mutable localValues = startLocals
+                emitValueLimitCheck builder currentWord wordSource None stack localValues
                 let popOne () =
                     match stack with
                     | [] -> invalidOp "Verified LLVM IR unexpectedly underflowed its operand stack."
@@ -786,6 +1069,37 @@ module LlvmAot =
                         match program.NominalTypesByKey.TryFind key with
                         | Some(IrScalarDefinition scalar) -> [ { Type = scalar.BaseType; Operand = value.Operand } ]
                         | _ -> invalidOp "Validated scalar accessor referred to a non-scalar nominal type."
+                    | MakeRecordOperation key, fields ->
+                        match program.NominalTypesByKey.TryFind key with
+                        | Some(IrRecordDefinition record) ->
+                            let declaredFields = record.RecordFields |> List.sortBy (fun field -> field.FieldIndex)
+                            if fields.Length <> declaredFields.Length then
+                                invalidOp "Validated record constructor received a different field count."
+                            for index, value in List.indexed fields do
+                                let fieldPointer = emitWorkspaceSlot builder index
+                                builder.Emit($"store i64 {value.Operand}, ptr {fieldPointer}, align 8")
+                            let outputPointer = emitWorkspaceSlot builder fields.Length
+                            let typeId = nativeValueMetadata.TypeIdsByIrType[IrNominal key]
+                            let runtimeResult = builder.Fresh "record.make.status"
+                            builder.Emit($"{runtimeResult} = call i32 @al_runtime_make_record(ptr %%ctx, ptr @agentlang_program, i32 {typeId}, ptr %%outputs, i32 {fields.Length}, ptr {outputPointer})")
+                            emitRuntimeResult builder runtimeResult
+                            let handle = builder.Fresh "record.make.handle"
+                            builder.Emit($"{handle} = load i64, ptr {outputPointer}, align 8")
+                            [ { Type = IrNominal key; Operand = handle } ]
+                        | _ -> invalidOp "Validated generated record constructor referred to a non-record type."
+                    | GetRecordFieldOperation(key, fieldIndex), [ recordValue ] ->
+                        match program.NominalTypesByKey.TryFind key with
+                        | Some(IrRecordDefinition record) when fieldIndex >= 0 && fieldIndex < record.RecordFields.Length ->
+                            let outputPointer = emitWorkspaceSlot builder 0
+                            let typeId = nativeValueMetadata.TypeIdsByIrType[IrNominal key]
+                            let runtimeResult = builder.Fresh "record.field.status"
+                            builder.Emit($"{runtimeResult} = call i32 @al_runtime_get_field(ptr %%ctx, ptr @agentlang_program, i32 {typeId}, i64 {recordValue.Operand}, i32 {fieldIndex}, ptr {outputPointer})")
+                            emitRuntimeResult builder runtimeResult
+                            let field = record.RecordFields |> List.sortBy (fun item -> item.FieldIndex) |> List.item fieldIndex
+                            let raw = builder.Fresh "record.field.value"
+                            builder.Emit($"{raw} = load i64, ptr {outputPointer}, align 8")
+                            [ { Type = field.FieldType; Operand = raw } ]
+                        | _ -> invalidOp "Validated generated record accessor referred to an absent record field."
                     | _ -> invalidOp "Validated generated target is not a supported scalar constructor or accessor."
                 for instruction in block.Code do
                     emitCharge builder currentWord wordSource instruction.Site
@@ -855,17 +1169,22 @@ module LlvmAot =
                                 { Type = left.Type; Operand = phi })
                                 thenLocals
                     | IrOperation.Call call
+                    | IrOperation.MakeRecord(call, _)
+                    | IrOperation.GetRecordField(call, _, _)
                     | IrOperation.WrapScalar(call, _, _)
                     | IrOperation.UnwrapScalar(call, _) ->
                         let arguments = popArguments call.InputTypes.Length
                         stack <- stack @ emitResolvedCall call arguments "%depth"
                     | _ -> invalidOp "LLVM validation missed an unsupported operation."
+                    emitValueLimitCheck builder currentWord wordSource span stack localValues
                 stack, localValues
             let resultStack =
                 let source = if isEntry then EntryExecutionName else FixedWord functionName
                 emitBlock functionName source block entryValues Map.empty |> fst
             if resultStack.Length <> functionOutputs.Length then
                 invalidOp "Verified LLVM body exit stack differed from its declared outputs."
+            if isEntry then
+                emitValueLimitCheck builder functionName EntryExecutionName None resultStack Map.empty
             for (index, (value, expected)) in List.indexed (List.zip resultStack functionOutputs) do
                 if value.Type <> expected then invalidOp "Verified LLVM output type differed from its declared signature."
                 let pointer = builder.Fresh "output.ptr"
@@ -880,12 +1199,8 @@ module LlvmAot =
         for _, functionValue in functions do
             emitFunction functionValue.FunctionName (functionSymbol functionValue.FunctionId functionValue.FunctionRevision)
                 functionValue.InputTypes functionValue.OutputTypes functionValue.LocalNames functionValue.FunctionBody false
-        let outputCapacity =
-            body.BodyOutputTypes.Length
-            :: (functions |> List.map (fun (_, functionValue) -> functionValue.OutputTypes.Length))
-            |> List.max
 
-        output.AppendLine($"define dllexport i32 @agentlang_output_capacity() {{ ret i32 {outputCapacity} }}") |> ignore
+        output.AppendLine($"define dllexport i32 @agentlang_output_capacity() {{ ret i32 {workspaceCapacity} }}") |> ignore
         output.AppendLine() |> ignore
         output.AppendLine("define dllexport void @agentlang_abi_layout(ptr %output) {") |> ignore
         output.AppendLine("entry:") |> ignore
@@ -893,16 +1208,16 @@ module LlvmAot =
         output.AppendLine("  %size = ptrtoint ptr %size.ptr to i64") |> ignore
         output.AppendLine("  %align.ptr = getelementptr %NativeExecutionContextAlignmentProbe, ptr null, i32 0, i32 1") |> ignore
         output.AppendLine("  %alignment = ptrtoint ptr %align.ptr to i64") |> ignore
-        for index in 0 .. 5 do
+        for index in 0 .. 10 do
             output.AppendLine($"  %%field{index}.ptr = getelementptr %%NativeExecutionContext, ptr null, i32 0, i32 {index}") |> ignore
             output.AppendLine($"  %%field{index} = ptrtoint ptr %%field{index}.ptr to i64") |> ignore
-        output.AppendLine("  %items = alloca [8 x i64], align 8") |> ignore
-        for index in 0 .. 7 do
+        output.AppendLine("  %items = alloca [13 x i64], align 8") |> ignore
+        for index in 0 .. 12 do
             let valueName = if index = 0 then "%size" elif index = 1 then "%alignment" else $"%%field{index - 2}"
-            output.AppendLine($"  %%out{index} = getelementptr inbounds [8 x i64], ptr %%items, i64 0, i64 {index}") |> ignore
+            output.AppendLine($"  %%out{index} = getelementptr inbounds [13 x i64], ptr %%items, i64 0, i64 {index}") |> ignore
             output.AppendLine($"  store i64 {valueName}, ptr %%out{index}, align 8") |> ignore
-        for index in 0 .. 7 do
-            output.AppendLine($"  %%item{index} = getelementptr inbounds [8 x i64], ptr %%items, i64 0, i64 {index}") |> ignore
+        for index in 0 .. 12 do
+            output.AppendLine($"  %%item{index} = getelementptr inbounds [13 x i64], ptr %%items, i64 0, i64 {index}") |> ignore
             output.AppendLine($"  %%value{index} = load i64, ptr %%item{index}, align 8") |> ignore
             output.AppendLine($"  %%dest{index} = getelementptr inbounds i64, ptr %%output, i64 {index}") |> ignore
             output.AppendLine($"  store i64 %%value{index}, ptr %%dest{index}, align 8") |> ignore
@@ -912,26 +1227,12 @@ module LlvmAot =
 
         output.AppendLine("define dllexport void @agentlang_execute(ptr %ctx, ptr %outputs, i32 %capacity, ptr %status) {") |> ignore
         output.AppendLine("entry:") |> ignore
-        output.AppendLine("  %version.ptr = getelementptr %NativeExecutionContext, ptr %ctx, i32 0, i32 0") |> ignore
-        output.AppendLine("  %version = load i32, ptr %version.ptr, align 4") |> ignore
-        output.AppendLine("  %version.ok = icmp eq i32 %version, 1") |> ignore
-        output.AppendLine("  br i1 %version.ok, label %capacity.check, label %invalid.version") |> ignore
-        output.AppendLine("invalid.version:") |> ignore
-        output.AppendLine($"  store i32 {NativeAbi.StatusInvalidRequest}, ptr %%status, align 4") |> ignore
+        output.AppendLine($"  %%validation.result = call i32 @al_runtime_validate_request(ptr %%ctx, ptr %%outputs, i32 {outputCapacity}, i32 %%capacity, ptr %%status, i32 {workspaceCapacity})") |> ignore
+        output.AppendLine("  %request.valid = icmp eq i32 %validation.result, 0") |> ignore
+        output.AppendLine("  br i1 %request.valid, label %request.accepted, label %request.rejected") |> ignore
+        output.AppendLine("request.rejected:") |> ignore
         output.AppendLine("  ret void") |> ignore
-        output.AppendLine("capacity.check:") |> ignore
-        output.AppendLine($"  %%capacity.ok = icmp sge i32 %%capacity, {outputCapacity}") |> ignore
-        output.AppendLine("  %outputs.null = icmp eq ptr %outputs, null") |> ignore
-        output.AppendLine("  %outputs.required = icmp ne i32 %capacity, 0") |> ignore
-        output.AppendLine("  %null.invalid = and i1 %outputs.null, %outputs.required") |> ignore
-        output.AppendLine("  %capacity.invalid = xor i1 %capacity.ok, true") |> ignore
-        output.AppendLine("  %request.invalid = or i1 %capacity.invalid, %null.invalid") |> ignore
-        output.AppendLine("  br i1 %request.invalid, label %invalid.request, label %request.valid") |> ignore
-        output.AppendLine("invalid.request:") |> ignore
-        output.AppendLine($"  store i32 {NativeAbi.StatusInvalidRequest}, ptr %%status, align 4") |> ignore
-        output.AppendLine("  ret void") |> ignore
-        output.AppendLine("request.valid:") |> ignore
-        output.AppendLine("  store i32 0, ptr %status, align 4") |> ignore
+        output.AppendLine("request.accepted:") |> ignore
         output.AppendLine("  %steps.ptr = getelementptr %NativeExecutionContext, ptr %ctx, i32 0, i32 1") |> ignore
         output.AppendLine("  store i32 0, ptr %steps.ptr, align 4") |> ignore
         output.AppendLine("  %error.ptr = getelementptr %NativeExecutionContext, ptr %ctx, i32 0, i32 2") |> ignore
@@ -942,26 +1243,70 @@ module LlvmAot =
         output.AppendLine("  store i64 0, ptr %arg0.ptr, align 8") |> ignore
         output.AppendLine("  %arg1.ptr = getelementptr %NativeExecutionContext, ptr %ctx, i32 0, i32 5") |> ignore
         output.AppendLine("  store i64 0, ptr %arg1.ptr, align 8") |> ignore
-        output.AppendLine("  call void @agentlang_body(ptr %ctx, ptr %outputs, ptr %status, i32 0)") |> ignore
+        output.AppendLine("  %workspace.ptr = getelementptr %NativeExecutionContext, ptr %ctx, i32 0, i32 8") |> ignore
+        output.AppendLine("  %workspace = load ptr, ptr %workspace.ptr, align 8") |> ignore
+        output.AppendLine("  call void @agentlang_body(ptr %ctx, ptr %workspace, ptr %status, i32 0)") |> ignore
+        output.AppendLine("  %body.status = load i32, ptr %status, align 4") |> ignore
+        output.AppendLine("  %body.succeeded = icmp eq i32 %body.status, 0") |> ignore
+        output.AppendLine("  br i1 %body.succeeded, label %promote, label %body.failed") |> ignore
+        output.AppendLine("body.failed:") |> ignore
+        output.AppendLine("  ret void") |> ignore
+        output.AppendLine("promote:") |> ignore
+        output.AppendLine($"  %%promote.result = call i32 @al_runtime_promote(ptr %%ctx, ptr @agentlang_program, ptr %%workspace, ptr @agentlang_root_type_ids, i32 {rootTypeIds.Length}, ptr %%outputs, i32 %%capacity)") |> ignore
+        output.AppendLine("  switch i32 %promote.result, label %promote.invalid [ i32 0, label %promote.succeeded i32 1, label %promote.invalid.request i32 2, label %promote.invalid.reference i32 3, label %promote.scratch.capacity i32 4, label %promote.retained.capacity ]") |> ignore
+        output.AppendLine("promote.invalid:") |> ignore
+        output.AppendLine($"  store i32 {NativeAbi.StatusInvalidRequest}, ptr %%status, align 4") |> ignore
+        output.AppendLine("  ret void") |> ignore
+        output.AppendLine("promote.invalid.request:") |> ignore
+        output.AppendLine($"  store i32 {NativeAbi.StatusInvalidRequest}, ptr %%status, align 4") |> ignore
+        output.AppendLine("  ret void") |> ignore
+        output.AppendLine("promote.invalid.reference:") |> ignore
+        output.AppendLine($"  store i32 {NativeAbi.StatusInvalidReference}, ptr %%status, align 4") |> ignore
+        output.AppendLine("  ret void") |> ignore
+        output.AppendLine("promote.scratch.capacity:") |> ignore
+        output.AppendLine($"  store i32 {NativeAbi.StatusScratchCapacity}, ptr %%status, align 4") |> ignore
+        output.AppendLine("  ret void") |> ignore
+        output.AppendLine("promote.retained.capacity:") |> ignore
+        output.AppendLine($"  store i32 {NativeAbi.StatusRetainedCapacity}, ptr %%status, align 4") |> ignore
+        output.AppendLine("  ret void") |> ignore
+        output.AppendLine("promote.succeeded:") |> ignore
         output.AppendLine("  ret void") |> ignore
         output.AppendLine("}") |> ignore
 
-        output.ToString(), metadata.ToArray(), body.BodyOutputTypes, outputCapacity, nativeScalarTypes
+        output.ToString(), metadata.ToArray(), body.BodyOutputTypes, outputCapacity, workspaceCapacity, requiresRecordArenas, nativeValueMetadata
 
     /// Emit deterministic LLVM IR from the exact compiler-verified body and its
     /// reachable verified user-word closure. No source is reparsed or relowered.
     let emit (verifiedBody: VerifiedIrBody) =
-        emitModule NativeDiagnosticSources.empty verifiedBody |> fun (llvmIr, _, _, _, _) -> llvmIr
+        emitModule NativeDiagnosticSources.empty verifiedBody |> fun (llvmIr, _, _, _, _, _, _) -> llvmIr
+
+    let private writeEmbeddedResource (assembly: Reflection.Assembly) resourceName outputPath =
+        use source = assembly.GetManifestResourceStream resourceName
+        if isNull source then invalidOp $"Embedded native runtime resource '{resourceName}' was not found."
+        use destination = File.Create outputPath
+        source.CopyTo destination
 
     /// Compile one effect-free scalar body to a dependency-free Windows x64
     /// DLL. The output directory retains the LLVM IR/object/DLL for inspection.
     let compile (toolchain: LlvmToolchain) optimization outputDirectory (diagnosticSources: NativeDiagnosticSources) (verifiedBody: VerifiedIrBody) =
         if String.IsNullOrWhiteSpace outputDirectory then invalidArg (nameof outputDirectory) "Output directory must be nonempty."
-        let llvmIr, metadata, outputTypes, outputCapacity, scalarTypes = emitModule diagnosticSources verifiedBody
+        let llvmIr, metadata, outputTypes, outputCapacity, workspaceCapacity, requiresRecordArenas, valueMetadata =
+            emitModule diagnosticSources verifiedBody
         let fullDirectory = Path.GetFullPath outputDirectory
         Directory.CreateDirectory fullDirectory |> ignore
         let llvmIrPath = Path.Combine(fullDirectory, "agentlang-native.ll")
         let libraryPath = Path.Combine(fullDirectory, "agentlang-native.dll")
         File.WriteAllText(llvmIrPath, llvmIr, UTF8Encoding(false))
-        let compiledPath = LlvmToolchain.compileLibrary toolchain optimization llvmIrPath libraryPath
-        new NativeCompiledProgram(compiledPath, outputTypes, outputCapacity, scalarTypes, metadata)
+        let runtimeDirectory = Path.Combine(fullDirectory, "native-runtime")
+        Directory.CreateDirectory runtimeDirectory |> ignore
+        let assembly = typeof<NativeCompiledProgram>.Assembly
+        let runtimeHeaderPath = Path.Combine(runtimeDirectory, "arena_runtime.h")
+        let runtimeSourcePath = Path.Combine(runtimeDirectory, "arena_runtime.c")
+        writeEmbeddedResource assembly "AgentLang.Llvm.native.arena_runtime.h" runtimeHeaderPath
+        writeEmbeddedResource assembly "AgentLang.Llvm.native.arena_runtime.c" runtimeSourcePath
+        let compiledPath =
+            LlvmToolchain.compileLibraryWithRuntime toolchain optimization llvmIrPath runtimeSourcePath runtimeDirectory libraryPath
+        let outputTypeIds = outputTypes |> List.map (fun ty -> valueMetadata.TypeIdsByIrType[ty]) |> List.toArray
+        new NativeCompiledProgram(
+            compiledPath, outputTypeIds, outputCapacity, workspaceCapacity,
+            requiresRecordArenas, valueMetadata, metadata)

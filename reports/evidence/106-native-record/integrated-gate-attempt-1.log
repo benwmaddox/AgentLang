@@ -1,0 +1,22 @@
+  Determining projects to restore...
+  Restored D:\code\AgentLang\tests\AgentLang.Llvm.Tests\AgentLang.Llvm.Tests.fsproj (in 191 ms).
+  Restored D:\code\AgentLang\src\AgentLang.Core\AgentLang.Core.fsproj (in 191 ms).
+  Restored D:\code\AgentLang\src\AgentLang.Llvm\AgentLang.Llvm.fsproj (in 191 ms).
+  AgentLang.Core -> D:\code\AgentLang\.agentlang\native-validation\run-c10cd1ac48df49d49c8828bd86ed4776\bin\AgentLang.Core\debug\AgentLang.Core.dll
+  AgentLang.Llvm -> D:\code\AgentLang\.agentlang\native-validation\run-c10cd1ac48df49d49c8828bd86ed4776\bin\AgentLang.Llvm\debug\AgentLang.Llvm.dll
+  AgentLang.Llvm.Tests -> D:\code\AgentLang\.agentlang\native-validation\run-c10cd1ac48df49d49c8828bd86ed4776\bin\AgentLang.Llvm.Tests\debug\AgentLang.Llvm.Tests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:16.00
+System.Exception: ABI v1 prefix is rejected before output writes: assertion failed
+   at AgentLang.Llvm.Tests.check[a](a name, Boolean condition) in D:\code\AgentLang\tests\AgentLang.Llvm.Tests\Program.fs:line 23
+   at AgentLang.Llvm.Tests.testLayoutAndRequestGuards(VerifiedIrBody multiOutputBody, VerifiedIrBody scratchBody) in D:\code\AgentLang\tests\AgentLang.Llvm.Tests\Program.fs:line 513
+   at AgentLang.Llvm.Tests.main(String[] _arg1) in D:\code\AgentLang\tests\AgentLang.Llvm.Tests\Program.fs:line 1598
+Exception: D:\code\AgentLang\scripts\Verify-NativeConformance.ps1:24
+Line |
+  24 |          throw "Native conformance tests failed with exit code $LASTEX …
+     |          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Native conformance tests failed with exit code 1.

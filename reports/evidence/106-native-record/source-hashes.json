@@ -1,0 +1,66 @@
+[
+  {
+    "path": "src/AgentLang.Llvm/AgentLang.Llvm.fsproj",
+    "sha256": "cb31b3aff26bd05e3714fbb733cbbdd91eb623e620f6353f06df7772fabb1273"
+  },
+  {
+    "path": "src/AgentLang.Llvm/LlvmAot.fs",
+    "sha256": "5cdf52935e88729e26b3d785e16dc98429eb276ea4555b1312e24b0d7233bf4e"
+  },
+  {
+    "path": "src/AgentLang.Llvm/LlvmToolchain.fs",
+    "sha256": "932d65398ffc6c6d7942c4722a43f9176c6c0fa839e2433505a668ec1523dcc4"
+  },
+  {
+    "path": "src/AgentLang.Llvm/NativeAbi.fs",
+    "sha256": "5c6161b1146453b0853bde6a509b725db6a6e7ecc3d13a61a8ca0b1ecee7da4a"
+  },
+  {
+    "path": "src/AgentLang.Llvm/NativeValueMetrics.fs",
+    "sha256": "d47f2a2a94b61d796f90787e06f97d763dfa21b787776efa7bd5380b025bf8c8"
+  },
+  {
+    "path": "src/AgentLang.Llvm/NativeValues.fs",
+    "sha256": "8694bf19caad50a417cfdd2c6745ed0be2609ecd70d5fc955bf77093820b520d"
+  },
+  {
+    "path": "src/AgentLang.Llvm/native/arena_runtime.c",
+    "sha256": "d3aa0175162f700f6b4ac823511b666d312e1d41befd1ebb2863589d0ab59c31"
+  },
+  {
+    "path": "src/AgentLang.Llvm/native/arena_runtime.h",
+    "sha256": "272c7da235f52114829172428435e1dd0b115f780091b29393c32ad49ee59de5"
+  },
+  {
+    "path": "src/AgentLang.Llvm/native/runtime_test.c",
+    "sha256": "48ca812c5f4c4926b822a729fc1e014eb7eb9479d2cc402b17badc3da4fac073"
+  },
+  {
+    "path": "tests/AgentLang.Llvm.Tests/Program.fs",
+    "sha256": "4583ed9ba64f082340a24dfa0dbc311082bc51ec650f48e19769994f5d34de2a"
+  },
+  {
+    "path": "tests/AgentLang.Llvm.Tests/AgentLang.Llvm.Tests.fsproj",
+    "sha256": "814206b1a0ec03807c98013f4cab256e71c3f7a2467ca08fe4d59147262f601b"
+  },
+  {
+    "path": "scripts/Verify-NativeConformance.ps1",
+    "sha256": "50c37ccec2520c7ca69017f660be3a1d5693571ba2976d45e89926e50712d394"
+  },
+  {
+    "path": "tests/fixtures/native-conformance/abi-v1.json",
+    "sha256": "ff6324bb46d6cd3fc101ae074a59806cb17be04452e64eeb9c6fe35bb22d4615"
+  },
+  {
+    "path": "tests/fixtures/native-conformance/abi-v2.json",
+    "sha256": "b738f4e1b540ba00bd161eaa9d08c41aadac4f18da5fff997157a7a86ca64a33"
+  },
+  {
+    "path": "tests/fixtures/native-conformance/record-cases.json",
+    "sha256": "380ba2aad9c15e565930f85207f73128373bf21c449659bca21ba8bb33ab0fcd"
+  },
+  {
+    "path": "tests/fixtures/native-conformance/scalar-cases.json",
+    "sha256": "a7927551aad4bd8071fdebe9a19f757ec6054f271a56d1e5c698d0a027606f63"
+  }
+]

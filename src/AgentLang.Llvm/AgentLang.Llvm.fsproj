@@ -6,8 +6,15 @@
 
   <ItemGroup>
     <Compile Include="NativeAbi.fs" />
+    <Compile Include="NativeValues.fs" />
+    <Compile Include="NativeValueMetrics.fs" />
     <Compile Include="LlvmToolchain.fs" />
     <Compile Include="LlvmAot.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="native\arena_runtime.h" LogicalName="AgentLang.Llvm.native.arena_runtime.h" />
+    <EmbeddedResource Include="native\arena_runtime.c" LogicalName="AgentLang.Llvm.native.arena_runtime.c" />
   </ItemGroup>
 
   <ItemGroup>

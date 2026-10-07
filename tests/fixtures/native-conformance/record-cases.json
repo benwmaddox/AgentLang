@@ -1,0 +1,106 @@
+{
+  "native-support": {
+    "supported": [
+      "record constructors and accessors",
+      "Int, Bool, and Unit fields",
+      "refined Int/Bool scalar fields",
+      "nested records",
+      "empty records",
+      "structural equality",
+      "shared record children across returned roots"
+    ],
+    "excluded": ["Float", "String", "containers", "effects", "recursive record type graphs"]
+  },
+  "record-nested-fields": [
+    "17",
+    "Ticket { leaf = Leaf { active = true, value = 17 }, owner = PositiveId(7) }",
+    "7"
+  ],
+  "record-sharing": [
+    "Box { child = Leaf { value = 5 }, tag = 10 }",
+    "Box { child = Leaf { value = 5 }, tag = 20 }",
+    "Leaf { value = 5 }",
+    "Leaf { value = 5 }",
+    "true",
+    "false",
+    "Empty {  }"
+  ],
+  "record-empty": ["Empty {  }"],
+  "record-empty-discarded": {
+    "values": [],
+    "requiredWorkspaceCapacity": 1
+  },
+  "record-sharing-arenas": {
+    "scratchBytes": 56,
+    "scratchNodes": 6,
+    "retainedBytes": 48,
+    "retainedNodes": 5,
+    "derivation": "Scratch also contains one discarded Orphan payload (8 bytes, 1 node). Output-reachable payloads are Leaf 8 bytes; two Box payloads 16 bytes each; a distinct Leaf payload 8 bytes; Empty payload 0 bytes: retained totals are 48 bytes and 5 nodes."
+  },
+  "record-depth-256": {
+    "depth": 256,
+    "rootType": "D254",
+    "leaf": "D0 { value = 1 }"
+  },
+  "record-depth-257": {
+    "code": "RUNTIME_VALUE_LIMIT",
+    "word": "record-depth-257",
+    "message": "Runtime value exceeds the depth safety limit.",
+    "expected": ["depth <= 256"],
+    "actual": ["257"],
+    "span": { "file": "record-depth.agent", "line": 1, "column": 257, "length": 1 }
+  },
+  "record-aliased-aggregate-limit": {
+    "code": "RUNTIME_VALUE_LIMIT",
+    "word": "record-aliased-aggregate-limit",
+    "message": "Runtime value exceeds the output-size safety limit.",
+    "expected": ["estimated UTF-8 output bytes <= 8000000"],
+    "actual": ["8000001"],
+    "metricCalculation": {
+      "savedRootType": "O",
+      "savedRootExpandedNodes": 49151,
+      "savedRootEstimatedOutputBytes": 6094686,
+      "secondRootType": "M",
+      "secondRootExpandedNodes": 12287,
+      "secondRootEstimatedOutputBytes": 1523550,
+      "combinedExpandedNodesAtDup": 73725,
+      "combinedEstimatedOutputBytesAtDup": 9141786,
+      "firstFailingOperation": "dup",
+      "firstFailingColumn": 31,
+      "derivation": "A is 210 bytes/2 nodes including its Int child; each B-O construction adds a 162-byte record node and two prior roots. O plus two M values first exceeds 8000000 bytes at dup M while remaining below 100000 nodes."
+    },
+    "span": { "file": "record-aggregate.agent", "line": 1, "column": 31, "length": 1 }
+  },
+  "record-aliased-node-limit": {
+    "code": "RUNTIME_VALUE_LIMIT",
+    "word": "record-aliased-node-limit",
+    "message": "Runtime value exceeds the expanded-node safety limit.",
+    "expected": ["expanded nodes <= 100000"],
+    "actual": ["100001"],
+    "rootExpandedNodes": 65535,
+    "rootEstimatedOutputBytes": 7470984,
+    "span": { "file": "record-node-limit.agent", "line": 1, "column": 32, "length": 1 }
+  },
+  "record-over-limit-untaken-branch": ["2"],
+  "nominal-aliased-output-limit": {
+    "code": "RUNTIME_VALUE_LIMIT",
+    "word": "nominal-aliased-output-limit",
+    "message": "Runtime value exceeds the output-size safety limit.",
+    "expected": ["estimated UTF-8 output bytes <= 8000000"],
+    "actual": ["8000001"],
+    "span": { "file": "nominal-output.agent", "line": 1, "column": 3, "length": 1 }
+  },
+  "recursive-record-types": {
+    "code": "IR_LLVM_RECURSIVE_RECORD_TYPE",
+    "word": "A",
+    "message": "The LLVM native-value backend does not support recursive record type graphs.",
+    "expected": ["acyclic immutable record type graph"],
+    "actual": ["A -> B -> A"]
+  },
+  "unsupported-record-fields": {
+    "code": "IR_LLVM_UNSUPPORTED_TYPE",
+    "message": "Native records may contain only Int, Bool, Unit, nominal Int/Bool scalars, and other immutable records.",
+    "expected": ["Int", "Bool", "Unit", "nominal Int/Bool", "immutable record"],
+    "cases": ["Float", "String", "List<Int>"]
+  }
+}

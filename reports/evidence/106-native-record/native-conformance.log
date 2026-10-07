@@ -1,0 +1,22 @@
+  Determining projects to restore...
+  Restored D:\code\AgentLang\src\AgentLang.Llvm\AgentLang.Llvm.fsproj (in 194 ms).
+  Restored D:\code\AgentLang\src\AgentLang.Core\AgentLang.Core.fsproj (in 194 ms).
+  Restored D:\code\AgentLang\tests\AgentLang.Llvm.Tests\AgentLang.Llvm.Tests.fsproj (in 194 ms).
+  AgentLang.Core -> D:\code\AgentLang\.agentlang\native-validation\run-a4d0d78a13fe4c54858f65d265d6bb7e\bin\AgentLang.Core\debug\AgentLang.Core.dll
+  AgentLang.Llvm -> D:\code\AgentLang\.agentlang\native-validation\run-a4d0d78a13fe4c54858f65d265d6bb7e\bin\AgentLang.Llvm\debug\AgentLang.Llvm.dll
+  AgentLang.Llvm.Tests -> D:\code\AgentLang\.agentlang\native-validation\run-a4d0d78a13fe4c54858f65d265d6bb7e\bin\AgentLang.Llvm.Tests\debug\AgentLang.Llvm.Tests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:16.29
+[native-conformance] scalar operators and arithmetic
+[native-conformance] ABI layout and raw request guards
+[native-conformance] branches, locals, and user-word calls
+[native-conformance] nominal scalar support and limits
+[native-conformance] record construction, accessors, aliases, and equality
+[native-conformance] record value depth and aggregate limits
+[native-conformance] record preflight diagnostics
+[native-conformance] record capacity atomicity and retained ownership
+AgentLang.Llvm.Tests: 342 assertions passed; artifacts: D:\code\AgentLang\.agentlang\native-validation\tests-61f93197a83a4a4580af26aa8932b643

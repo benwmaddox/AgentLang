@@ -1,6 +1,6 @@
 # Shared semantic IR and later native backends
 
-This is the architecture contract. Source lowering, IR verification, a standalone interpreter, and structured inspection are implemented. The public Runtime now executes verified IR through the interpreter; cutover validation is recorded in report 010. An optional scalar LLVM AOT backend is locally validated; see [report 103](../reports/103-llvm-architecture-and-native-slice.md). JIT and general native release support remain future work.
+This is the architecture contract. Source lowering, IR verification, a standalone interpreter, and structured inspection are implemented. The public Runtime now executes verified IR through the interpreter; cutover validation is recorded in report 010. An optional LLVM AOT backend for scalars and fixed-layout records is locally validated; see [report 106](../reports/106-native-record-ownership.md). JIT and general native release support remain future work.
 
 Source → parsed AST → resolved/type-and-effect-checked definitions → typed semantic IR → interpreter.
 
@@ -42,7 +42,7 @@ experiment. Per-turn scratch with explicit retained mailbox state is the main
 candidate; compare whole-request arenas before adopting it. General native
 release support still requires complete semantics and checked lifetime/ABI rules.
 
-The proposed allocation direction includes [scoped arenas](MEMORY-REGIONS.md) for phase-oriented values and a distinct retained-data strategy. Define escape/promotion and old-generation retention before resetting a region. Bulk reclamation must not invalidate returned values, snapshots or active code, and does not replace resource cleanup. The managed interpreter and eventual native backends share value/lifetime semantics without a promise of identical physical allocation. A standalone native arena/mailbox experiment measured bounded memory behavior in [report 104](../reports/104-native-arena-mailbox-feasibility.md); AgentLang execution still has no integrated arena lifetime enforcement.
+The proposed allocation direction includes [scoped arenas](MEMORY-REGIONS.md) for phase-oriented values and a distinct retained-data strategy. Define escape/promotion and old-generation retention before resetting a region. Bulk reclamation must not invalidate returned values, snapshots or active code, and does not replace resource cleanup. The managed interpreter and eventual native backends share value/lifetime semantics without a promise of identical physical allocation. A standalone native arena/mailbox experiment measured bounded memory behavior in [report 104](../reports/104-native-arena-mailbox-feasibility.md); native record execution now has an invocation-scratch and retained-output boundary ([report 106](../reports/106-native-record-ownership.md)). Mailbox/suspension lifetimes remain unimplemented.
 
 Later syntax research may introduce a frontend with named inputs, expression notation, or pipelines while retaining local flow through recently produced values. All frontends must lower to this same typed semantic IR and preserve evaluation order, diagnostics, effects, and source-level coverage obligations. Source notation and backend memory behavior are separate experiments. LLVM is an execution/code-generation backend, not necessarily a replacement for the F# host/compiler implementation; lower memory usage requires measured allocation and value-layout choices. See [the late syntax research item](PRD.md#late-research-syntax-and-stack-locality).
 
@@ -54,11 +54,12 @@ managed runtime. Select the later native runtime language on explicit allocator,
 mailbox, interoperability and maintenance needs while preserving semantic and
 ABI conformance. No full host rewrite is required by the native target.
 
-## Scalar native API boundary
+## Native value API boundary
 
 `AgentLang.Llvm` compiles an empty-input `VerifiedIrBody` and its reachable
 verified dictionary snapshot. The initial target is Windows x64 with Int, Bool
-and Unit values, plus Int/Bool-backed nominal scalar values. Unsupported types, operations and effects fail before tool
+and Unit values, Int/Bool-backed nominal scalar values, and acyclic records of
+these values. Unsupported types, operations and effects fail before tool
 invocation; there is no interpreter fallback within a compiled program.
 
 The host supplies frozen `NativeDiagnosticSources` from the same lowering
@@ -69,11 +70,15 @@ metadata identifier; it does not unwind a managed exception across the ABI.
 The diagnostic metadata currently lives in the compiler-side artifact handle,
 so this API is not yet a standalone release packaging format.
 
-ABI v1 uses a 32-byte context, 8-byte scalar slots and a 4-byte status. Nested
-calls share caller-owned scratch output capacity; logical output count is a
-separate value. This scratch buffer is not the proposed arena allocator.
-The exact contract and independent layout oracle are in
-[`abi-v1.json`](../tests/fixtures/native-conformance/abi-v1.json).
+ABI v2 uses a 64-byte context, 8-byte value slots and a 4-byte status, with
+explicit scratch/retained arena descriptors and separate call workspace.
+Public output capacity is the logical root count. The historical export name
+`agentlang_output_capacity()` reports required workspace slots, including record
+constructor fields and helper storage. Raw callers initialize status to
+InvalidRequest; early unsafe/unsupported request rejection leaves it untouched.
+The managed wrapper handles initialization. The contract and independent layout
+oracle are in [`abi-v2.json`](../tests/fixtures/native-conformance/abi-v2.json);
+the historical v1 fixture remains for rejection tests.
 Run the optional local native gate documented in the README; compiling the
 ordinary solution does not invoke LLVM tools.
 
@@ -84,5 +89,18 @@ Constructors invoke the validator from the bound immutable program, including
 its reachable dependencies, with interpreter-equivalent depth, fuel and failure
 semantics. Unsupported validator code is rejected even in an untaken branch.
 See [report 105](../reports/105-native-refined-scalars.md) for validation status.
-The physical ABI remains version 1; record references and region ownership still
-require their own layout and lifetime contract.
+ABI v2 adds generation/index record handles, typed graph validation and atomic
+promotion of successful roots from scratch to a separate retained native owner.
+`ExecuteRetained` returns a disposable owner; its first decode can occur after
+scratch reuse and compiled-library disposal. `Execute` decodes and disposes it.
+Physical backing includes payload bytes, node directories, descriptors and call
+workspace. Shared records count once for retained storage but once per occurrence
+for language value limits. Capacity errors are separate native resource outcomes.
+
+A small freestanding C runtime is embedded as source and compiled fresh with each
+artifact. The F# host allocates backing buffers; generated code has no managed
+callbacks, OS allocation or arbitrary .NET access. Repeated graph validation can
+be quadratic, so this is conformance evidence, not a throughput claim. Records
+containing Float, String, containers, effects and recursive type graphs are still
+rejected before Clang. Mailboxes, suspension, JIT and standalone release packaging
+remain future work.
