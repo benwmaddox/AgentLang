@@ -327,3 +327,14 @@ and 31 nominal types. Generated constructors/accessors are counted separately
 from authored words. The vocabulary fits the initial 40–60-word target; tests
 exceed the 50–100 estimate because every reusable helper must cover its own
 branches and fold paths. The trusted catalog remains 58 primitives.
+
+## Exact-Money external-agent checkpoint
+
+[Report 076](../reports/076-exact-money-agent-policy-study.md) completes a fresh
+three-mode S01/S06/S07 dependency sequence: seven of nine full acceptance passes,
+158 independent behavior cases passed, and classification reuse in Growing and
+Conventional. Flat S06/S07 failed documentation metadata before independent
+behavior checks. This is partial task-adapter/evaluation progress; broader matched
+business tasks, the complete 60-task suite, actual model usage and controlled
+context/cost results remain pending. The next shortest path is metadata and
+replacement discoverability, followed by fresh focused trials.

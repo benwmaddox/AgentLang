@@ -1,0 +1,1543 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "studyId": "business-policy-001",
+  "mode": "growing",
+  "taskId": "S07",
+  "checks": [
+    {
+      "name": "trace has start and terminal events",
+      "passed": true
+    },
+    {
+      "name": "schema-1 unbudgeted session",
+      "passed": true
+    },
+    {
+      "name": "runtime exited cleanly; host ended normally or was cancelled between complete exchanges",
+      "passed": true
+    },
+    {
+      "name": "actor project and profile match freeze",
+      "passed": true
+    },
+    {
+      "name": "exchange limits match freeze",
+      "passed": true
+    },
+    {
+      "name": "allowlist matches freeze",
+      "passed": true
+    },
+    {
+      "name": "capabilities match freeze",
+      "passed": true
+    },
+    {
+      "name": "fixed validation target matches freeze",
+      "passed": true
+    },
+    {
+      "name": "freeze predates launch",
+      "passed": true
+    },
+    {
+      "name": "runtime file pin: AgentLang.Cli.deps.json",
+      "passed": true
+    },
+    {
+      "name": "runtime file pin: AgentLang.Cli.dll",
+      "passed": true
+    },
+    {
+      "name": "runtime file pin: AgentLang.Cli.runtimeconfig.json",
+      "passed": true
+    },
+    {
+      "name": "runtime file pin: AgentLang.Core.dll",
+      "passed": true
+    },
+    {
+      "name": "runtime file pin: FSharp.Core.dll",
+      "passed": true
+    },
+    {
+      "name": "host unchanged after freeze",
+      "passed": true
+    },
+    {
+      "name": "verifier unchanged after freeze",
+      "passed": true
+    },
+    {
+      "name": "oracle unchanged after freeze",
+      "passed": true
+    },
+    {
+      "name": "starting inventory unchanged after freeze",
+      "passed": true
+    },
+    {
+      "name": "public prompt unchanged after freeze",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 1",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 1",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 1",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 1",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 1",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 2",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 2",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 2",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 2",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 2",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 3",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 3",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 3",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 3",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 3",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 4",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 4",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 4",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 4",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 4",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 5",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 5",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 5",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 5",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 5",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 6",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 6",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 6",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 6",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 6",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 7",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 7",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 7",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 7",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 7",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 8",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 8",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 8",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 8",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 8",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 9",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 9",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 9",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 9",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 9",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 10",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 10",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 10",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 10",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 10",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 11",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 11",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 11",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 11",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 11",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 12",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 12",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 12",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 12",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 12",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 13",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 13",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 13",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 13",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 13",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 14",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 14",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 14",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 14",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 14",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 15",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 15",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 15",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 15",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 15",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 16",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 16",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 16",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 16",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 16",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 17",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 17",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 17",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 17",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 17",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 18",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 18",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 18",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 18",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 18",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 19",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 19",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 19",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 19",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 19",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 20",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 20",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 20",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 20",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 20",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 21",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 21",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 21",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 21",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 21",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 22",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 22",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 22",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 22",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 22",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 23",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 23",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 23",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 23",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 23",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 24",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 24",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 24",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 24",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 24",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 25",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 25",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 25",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 25",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 25",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 26",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 26",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 26",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 26",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 26",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 27",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 27",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 27",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 27",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 27",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 28",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 28",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 28",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 28",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 28",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 29",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 29",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 29",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 29",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 29",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 30",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 30",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 30",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 30",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 30",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 31",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 31",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 31",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 31",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 31",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 32",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 32",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 32",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 32",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 32",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 33",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 33",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 33",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 33",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 33",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 34",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 34",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 34",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 34",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 34",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 35",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 35",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 35",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 35",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 35",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 36",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 36",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 36",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 36",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 36",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 37",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 37",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 37",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 37",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 37",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 38",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 38",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 38",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 38",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 38",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 39",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 39",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 39",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 39",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 39",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 40",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 40",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 40",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 40",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 40",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 41",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 41",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 41",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 41",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 41",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 42",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 42",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 42",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 42",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 42",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 43",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 43",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 43",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 43",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 43",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 44",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 44",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 44",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 44",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 44",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 45",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 45",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 45",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 45",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 45",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 46",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 46",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 46",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 46",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 46",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 47",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 47",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 47",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 47",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 47",
+      "passed": true
+    },
+    {
+      "name": "terminal exchange count matches frames",
+      "passed": true
+    }
+  ],
+  "exchanges": 47,
+  "requestPayloadBytes": 30309,
+  "selectedResponsePayloadBytes": 45289,
+  "diagnostics": [
+    {
+      "index": 10,
+      "op": "search-type",
+      "error": {
+        "code": "DISCOVERY_INVALID_ARGUMENT",
+        "message": "Discovery argument 'type' must be a string.",
+        "expected": [
+          "a string"
+        ],
+        "actual": [
+          "missing"
+        ]
+      }
+    },
+    {
+      "index": 11,
+      "op": "search-type",
+      "error": {
+        "code": "DISCOVERY_INVALID_ARGUMENT",
+        "message": "Discovery argument 'type' must be a string.",
+        "expected": [
+          "a string"
+        ],
+        "actual": [
+          "missing"
+        ]
+      }
+    },
+    {
+      "index": 24,
+      "op": "describe",
+      "error": {
+        "code": "NAME_UNKNOWN_WORD",
+        "message": "Word 'Customer.new' is not defined.",
+        "word": "Customer.new",
+        "expected": [],
+        "actual": []
+      }
+    },
+    {
+      "index": 31,
+      "op": "define",
+      "error": {
+        "code": "FLOW_EXPECTATION_LITERAL_REQUIRED",
+        "message": "A Flow test requires a literal expectation.",
+        "span": {
+          "file": "<flow-project>",
+          "line": 17,
+          "column": 265,
+          "length": 15
+        },
+        "expected": [],
+        "actual": []
+      }
+    },
+    {
+      "index": 33,
+      "op": "define",
+      "error": {
+        "code": "TEST_EXPECTED_STACK",
+        "message": "Test 'capitalized-kind-is-nonpremium' must leave exactly one value matching its expected literal. Flow attachment context: owner='customer.discounted-balance' (WordId \"word_085dd89b34eb4528a992cbf4026b3b06\"), kind='test', case='capitalized-kind-is-nonpremium'.",
+        "word": "customer.discounted-balance",
+        "span": {
+          "file": "<flow:customer.discounted-balance/1>/test:4d90f1952fa116e1f6ecb5c461f4faef9c8b30c0ae7b655d10ff40dc974389f0",
+          "line": 1,
+          "column": 1,
+          "length": 339
+        },
+        "expected": [
+          "String"
+        ],
+        "actual": [
+          "Money"
+        ]
+      }
+    },
+    {
+      "index": 34,
+      "op": "describe",
+      "error": {
+        "code": "NAME_UNKNOWN_WORD",
+        "message": "Word 'customer.discounted-balance' is not defined.",
+        "word": "customer.discounted-balance",
+        "expected": [],
+        "actual": []
+      }
+    },
+    {
+      "index": 36,
+      "op": "source",
+      "error": {
+        "code": "NAME_UNKNOWN_WORD",
+        "message": "Word 'customer.discounted-balance' is not defined.",
+        "word": "customer.discounted-balance",
+        "expected": [],
+        "actual": []
+      }
+    },
+    {
+      "index": 40,
+      "op": "define",
+      "error": {
+        "code": "FLOW_WORD_ALREADY_EXISTS",
+        "message": "Flow word 'customer.discounted-balance' already exists; use replace with its expectedRevision to update it.",
+        "word": "customer.discounted-balance",
+        "span": {
+          "file": "<flow-definition>",
+          "line": 1,
+          "column": 1,
+          "length": 658
+        },
+        "expected": [
+          "unused word name or replace=true"
+        ],
+        "actual": [
+          "customer.discounted-balance"
+        ]
+      }
+    },
+    {
+      "index": 41,
+      "op": "replace-word",
+      "error": {
+        "code": "REPLACE_NOT_STAGED",
+        "message": "replace-word requires the name of a staged replacement for an existing persistent word.",
+        "word": "customer.discounted-balance",
+        "expected": [],
+        "actual": []
+      }
+    }
+  ],
+  "requests": [
+    {
+      "index": 1,
+      "op": "words",
+      "requestBytes": 30,
+      "responseBytes": 4844,
+      "ok": true
+    },
+    {
+      "index": 2,
+      "op": "search",
+      "requestBytes": 35,
+      "responseBytes": 603,
+      "ok": true
+    },
+    {
+      "index": 3,
+      "op": "task.begin",
+      "requestBytes": 248,
+      "responseBytes": 442,
+      "ok": true
+    },
+    {
+      "index": 4,
+      "op": "describe",
+      "requestBytes": 58,
+      "responseBytes": 1562,
+      "ok": true
+    },
+    {
+      "index": 5,
+      "op": "describe",
+      "requestBytes": 45,
+      "responseBytes": 1286,
+      "ok": true
+    },
+    {
+      "index": 6,
+      "op": "describe",
+      "requestBytes": 54,
+      "responseBytes": 3293,
+      "ok": true
+    },
+    {
+      "index": 7,
+      "op": "describe",
+      "requestBytes": 48,
+      "responseBytes": 862,
+      "ok": true
+    },
+    {
+      "index": 8,
+      "op": "describe",
+      "requestBytes": 39,
+      "responseBytes": 848,
+      "ok": true
+    },
+    {
+      "index": 9,
+      "op": "describe",
+      "requestBytes": 37,
+      "responseBytes": 843,
+      "ok": true
+    },
+    {
+      "index": 10,
+      "op": "search-type",
+      "requestBytes": 40,
+      "responseBytes": 276,
+      "ok": false
+    },
+    {
+      "index": 11,
+      "op": "search-type",
+      "requestBytes": 37,
+      "responseBytes": 276,
+      "ok": false
+    },
+    {
+      "index": 12,
+      "op": "context",
+      "requestBytes": 104,
+      "responseBytes": 2133,
+      "ok": true
+    },
+    {
+      "index": 13,
+      "op": "source",
+      "requestBytes": 56,
+      "responseBytes": 630,
+      "ok": true
+    },
+    {
+      "index": 14,
+      "op": "source",
+      "requestBytes": 43,
+      "responseBytes": 560,
+      "ok": true
+    },
+    {
+      "index": 15,
+      "op": "search-type",
+      "requestBytes": 39,
+      "responseBytes": 430,
+      "ok": true
+    },
+    {
+      "index": 16,
+      "op": "search-type",
+      "requestBytes": 36,
+      "responseBytes": 609,
+      "ok": true
+    },
+    {
+      "index": 17,
+      "op": "describe",
+      "requestBytes": 34,
+      "responseBytes": 725,
+      "ok": true
+    },
+    {
+      "index": 18,
+      "op": "describe",
+      "requestBytes": 36,
+      "responseBytes": 733,
+      "ok": true
+    },
+    {
+      "index": 19,
+      "op": "describe",
+      "requestBytes": 36,
+      "responseBytes": 733,
+      "ok": true
+    },
+    {
+      "index": 20,
+      "op": "describe",
+      "requestBytes": 31,
+      "responseBytes": 713,
+      "ok": true
+    },
+    {
+      "index": 21,
+      "op": "describe",
+      "requestBytes": 35,
+      "responseBytes": 728,
+      "ok": true
+    },
+    {
+      "index": 22,
+      "op": "describe",
+      "requestBytes": 35,
+      "responseBytes": 728,
+      "ok": true
+    },
+    {
+      "index": 23,
+      "op": "describe",
+      "requestBytes": 44,
+      "responseBytes": 769,
+      "ok": true
+    },
+    {
+      "index": 24,
+      "op": "describe",
+      "requestBytes": 40,
+      "responseBytes": 261,
+      "ok": false
+    },
+    {
+      "index": 25,
+      "op": "describe",
+      "requestBytes": 40,
+      "responseBytes": 855,
+      "ok": true
+    },
+    {
+      "index": 26,
+      "op": "describe",
+      "requestBytes": 58,
+      "responseBytes": 1562,
+      "ok": true
+    },
+    {
+      "index": 27,
+      "op": "tests",
+      "requestBytes": 55,
+      "responseBytes": 186,
+      "ok": true
+    },
+    {
+      "index": 28,
+      "op": "examples",
+      "requestBytes": 58,
+      "responseBytes": 81,
+      "ok": true
+    },
+    {
+      "index": 29,
+      "op": "example",
+      "requestBytes": 83,
+      "responseBytes": 593,
+      "ok": true
+    },
+    {
+      "index": 30,
+      "op": "source",
+      "requestBytes": 41,
+      "responseBytes": 1466,
+      "ok": true
+    },
+    {
+      "index": 31,
+      "op": "define",
+      "requestBytes": 4688,
+      "responseBytes": 364,
+      "ok": false
+    },
+    {
+      "index": 32,
+      "op": "test",
+      "requestBytes": 33,
+      "responseBytes": 486,
+      "ok": true
+    },
+    {
+      "index": 33,
+      "op": "define",
+      "requestBytes": 4600,
+      "responseBytes": 1132,
+      "ok": false
+    },
+    {
+      "index": 34,
+      "op": "describe",
+      "requestBytes": 55,
+      "responseBytes": 321,
+      "ok": false
+    },
+    {
+      "index": 35,
+      "op": "tests",
+      "requestBytes": 52,
+      "responseBytes": 66,
+      "ok": true
+    },
+    {
+      "index": 36,
+      "op": "source",
+      "requestBytes": 53,
+      "responseBytes": 321,
+      "ok": false
+    },
+    {
+      "index": 37,
+      "op": "task.status",
+      "requestBytes": 21,
+      "responseBytes": 2004,
+      "ok": true
+    },
+    {
+      "index": 38,
+      "op": "define",
+      "requestBytes": 4710,
+      "responseBytes": 556,
+      "ok": true
+    },
+    {
+      "index": 39,
+      "op": "test",
+      "requestBytes": 51,
+      "responseBytes": 1703,
+      "ok": true
+    },
+    {
+      "index": 40,
+      "op": "define",
+      "requestBytes": 4710,
+      "responseBytes": 626,
+      "ok": false
+    },
+    {
+      "index": 41,
+      "op": "replace-word",
+      "requestBytes": 4774,
+      "responseBytes": 377,
+      "ok": false
+    },
+    {
+      "index": 42,
+      "op": "define",
+      "requestBytes": 4746,
+      "responseBytes": 556,
+      "ok": true
+    },
+    {
+      "index": 43,
+      "op": "test",
+      "requestBytes": 51,
+      "responseBytes": 1508,
+      "ok": true
+    },
+    {
+      "index": 44,
+      "op": "example",
+      "requestBytes": 80,
+      "responseBytes": 597,
+      "ok": true
+    },
+    {
+      "index": 45,
+      "op": "commit",
+      "requestBytes": 68,
+      "responseBytes": 654,
+      "ok": true
+    },
+    {
+      "index": 46,
+      "op": "task.status",
+      "requestBytes": 21,
+      "responseBytes": 2168,
+      "ok": true
+    },
+    {
+      "index": 47,
+      "op": "task.commit",
+      "requestBytes": 21,
+      "responseBytes": 2220,
+      "ok": true
+    }
+  ],
+  "traceSha256": "e2134fff89ca0774b6dcdae75bb539843ec4f7d5cb9c29bbc22626792c188a21",
+  "sessionEnd": {
+    "event": "session-end",
+    "finishedUtc": "2026-10-06T21:41:40.3215724-04:00",
+    "exchangeCount": 47,
+    "hostExitCode": 0,
+    "runtimeExitCode": 0,
+    "runtimeStderrPrefixBytes": 0,
+    "runtimeStderrTotalBytes": 0,
+    "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runtimeStderrCaptureTruncated": false
+  },
+  "successfulSourceMutationRequests": 2,
+  "testBatches": [
+    {
+      "index": 32,
+      "op": "test",
+      "tests": 2,
+      "failed": 0
+    },
+    {
+      "index": 39,
+      "op": "test",
+      "tests": 10,
+      "failed": 2
+    },
+    {
+      "index": 43,
+      "op": "test",
+      "tests": 10,
+      "failed": 0
+    }
+  ],
+  "testsRun": 22.0,
+  "testsFailed": 2.0,
+  "testCountStatus": "counted runtime test results; repeated test batches count again",
+  "auditSha256": "8310775024cd87d7b01ff0a48731cacad239a5b94ea74d84fd838140525952b0",
+  "protocolDurationMilliseconds": 538002.455,
+  "activeProtocolSpanMilliseconds": 326885.0861,
+  "oracleSha256": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+  "verifierSha256": "72c480d32e4c00377ffa2ed861c854a199d7faec4bc39d10a585df7fe9b2ecd5",
+  "limits": [
+    "Schema1 counts selected response frames before stdout flush; it does not prove model consumption.",
+    "Protocol duration includes coordinator acceptance/teardown wait; active span ends at the last exchange. Both exclude setup before host start.",
+    "Trials run concurrently; repository validation overlaps the final language trials. Controlled latency is unavailable.",
+    "Exact LLM tokens, model turns and effective context are unavailable.",
+    "One exploratory task sequence; no efficiency conclusion."
+  ]
+}

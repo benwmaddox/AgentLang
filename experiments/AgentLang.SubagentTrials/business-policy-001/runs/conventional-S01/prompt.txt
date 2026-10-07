@@ -1,0 +1,74 @@
+Run business-policy-001 conventional-S01 as a fresh gpt-6-luna/max coding agent with no inherited turns.
+Your assigned project is D:\code\AgentLang\.agentlang\business-policy-001\actors\conventional-S01.
+You own only Operations.fs and SelfTests.fs. Domain.fs, Program.fs, BusinessPolicy.fsproj and lib files are immutable. Preserve runSeedTests; add assertions to runOwnTests and runnable examples to runExamples. Preserve earlier task functions and their tests. No F# instruction/branch coverage tooling is supplied.
+
+You are an external coding agent in a disposable synthetic project. Inspect
+available capabilities before editing. Prefer useful existing abstractions.
+Add meaningful branch and boundary tests, concise documentation, and a runnable
+example for the required reusable operation. Preserve unrelated definitions,
+types and previous tests. Complete the task through the supplied protocol only.
+
+Customer.Kind/kind is raw data: comparison is ordinal and case-sensitive. Do
+not trim or lowercase it. Money is signed Int64 minor units; Float is not an
+allowed implementation of money.
+
+Human authorization covers these isolated project edits and local tests:
+"Yes, run the remaining isolated experiments". Do not read coordinator source,
+independent acceptance, sibling projects, archived prior solutions or raw
+repository files. Do not use arbitrary shell commands or raw file tools. If
+automatic approval rejects an action, report it and stop dependent work;
+do not bypass it. You are not alone in the checkout; preserve other work.
+Do not spawn or delegate. Observation timeout is not execution failure:
+resume the same live handle and inspect state before repeating an uncertain edit.
+LLM token usage, model turns and effective context windows are not measured.
+
+Task S01
+Return true exactly when Kind is the ordinal string "premium"; do not lowercase or trim raw data. Implement the named public operation and attach tests for the listed behavior. Inspect available vocabulary first and preserve unrelated behavior.
+
+Required operation: CustomerPolicies.isPremium : Customer -> bool
+Customer fields are id/email/kind/balance/created-at (F# Id/Email/Kind/Balance/CreatedAt).
+The Customer is a public record with strict nominal fields; direct construction preserves raw Kind. Construction helpers that trim Kind do not define this task's policy.
+
+You work in a conventional F# console project through a small repository JSONL
+broker. Start the exact supplied trial host once and send one request per line
+through its returned session. The coordinator fixes the project and validation
+target; you cannot choose arbitrary commands.
+
+```json
+{"op":"search","query":"Customer"}
+{"op":"read","path":"Domain.fs"}
+{"op":"inspect","path":"Domain.fs"}
+```
+
+Read returns exact UTF-8 content and a SHA-256 hash. Paths must be relative to
+the editable project. A small edit uses a unique exact context anchor:
+
+```json
+{"op":"patch","path":"Domain.fs","expectedSha256":"<hash from read>","oldText":"<unique current text>","newText":"<replacement text>"}
+```
+
+All fields are required strings. Empty newText deletes the matched text.
+OldText must be nonempty and occur exactly once, including overlapping matches.
+Matching is ordinal; no newline normalization or fuzzy matching occurs. Stale
+hashes, missing/ambiguous anchors, invalid paths and oversized results fail
+without editing. Success returns the new hash. Re-read after uncertainty.
+Full-file `replace` remains available with path, expectedSha256 and content.
+
+```json
+{"op":"validate"}
+```
+
+Validate runs the host-selected F# project including your self-tests. Add
+meaningful branch and boundary assertions, and preserve earlier behavior/tests.
+The independent coordinator oracle is separate from these self-tests. Requests
+can use top-level fields or nested args, with exactly the documented fields.
+The host permits inspect, read, search, patch, replace and validate. F# module
+order follows ordinary lexical name resolution. Do not invoke raw file tools,
+shell edits, other executables or arbitrary build commands during the trial.
+
+
+Execute exactly the following PowerShell command with exec_command, workdir D:\code\AgentLang, sandbox_permissions require_escalated, tty true and a short initial yield. The known sandbox ACL helper requires this host execution for the authorized experiment. Do not issue other shell/file commands.
+
+& 'D:\code\AgentLang\scripts\Start-SubagentTrialHost.ps1' -CliDll 'D:\code\AgentLang\.agentlang\business-policy-001\broker-bin\AgentLang.Conventional.Cli.dll' -ProjectPath 'D:\code\AgentLang\.agentlang\business-policy-001\actors\conventional-S01' -TracePath 'D:\code\AgentLang\experiments\AgentLang.SubagentTrials\business-policy-001\runs\conventional-S01\trace.jsonl' -AllowedOperations @('inspect','read','search','patch','replace','validate') -Profile conventional -AdditionalCliArguments @('--validation-project','BusinessPolicy.fsproj') -ExchangeTimeoutMilliseconds 120000 -MaxExchanges 100
+
+No startup banner is printed. Send one JSONL request per line on the same write_stdin session. After successful completion, report the host session ID and leave it live until the coordinator completes independent acceptance. Then, when requested, tear down your own session using Ctrl+C through write_stdin without an extra JSONL request. Do not send quit commands or EOF. Report actual tests, errors and missing capabilities.

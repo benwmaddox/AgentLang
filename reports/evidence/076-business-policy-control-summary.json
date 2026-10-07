@@ -1,0 +1,269 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-001",
+  "passed": true,
+  "outcomes": 30,
+  "parts": [
+    {
+      "path": "reports/evidence/076-business-policy-preflight-money.json",
+      "sha256": "12980a0fcf0580a76420436ea581754bc758744446609c60607d32f9164d4b92"
+    },
+    {
+      "path": "reports/evidence/076-business-policy-preflight-growing-policy.json",
+      "sha256": "2d3d73dd3065c214e385e8afb6dccc63337046bd8fe448bf1e24bb4551aada44"
+    },
+    {
+      "path": "reports/evidence/076-business-policy-preflight-flat.json",
+      "sha256": "54ba3e159693c68986bff520a958922ece5c94343ebdc72fad1457398df73eff"
+    },
+    {
+      "path": "reports/evidence/076-business-policy-preflight-conventional.json",
+      "sha256": "dbb6fa7cf735e99b3768ab1c44166c06298cf37e73fc5a1d07b90422c505a525"
+    }
+  ],
+  "oracleSha256": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+  "verifierSha256": "e7ca93c2ab9255da45410dff55630b19e247b1d930d1e8638532d87af1a2449e",
+  "preflightSha256": "9b383f81fe0c2d22292fbff2d0e815fd424ab7b9a0b675bfada217b9d2f0b089",
+  "results": [
+    {
+      "mode": "growing",
+      "control": "correct",
+      "taskId": "S07",
+      "expectedPassed": true,
+      "passed": true,
+      "failure": null
+    },
+    {
+      "mode": "growing",
+      "control": "noop",
+      "taskId": "S07",
+      "expectedPassed": false,
+      "passed": false,
+      "failure": "Business policy verification failed: target exists in actor project"
+    },
+    {
+      "mode": "growing",
+      "control": "wrong-rounding",
+      "taskId": "S07",
+      "expectedPassed": false,
+      "passed": false,
+      "failure": "Business policy verification failed: premium-2 structured nominal Money"
+    },
+    {
+      "mode": "growing",
+      "control": "wrong-overflow",
+      "taskId": "S07",
+      "expectedPassed": false,
+      "passed": false,
+      "failure": "The property 'message' cannot be found on this object. Verify that the property exists."
+    },
+    {
+      "mode": "growing",
+      "control": "correct",
+      "taskId": "S01",
+      "expectedPassed": true,
+      "passed": true,
+      "failure": null
+    },
+    {
+      "mode": "growing",
+      "control": "correct",
+      "taskId": "S06",
+      "expectedPassed": true,
+      "passed": true,
+      "failure": null
+    },
+    {
+      "mode": "growing",
+      "control": "noop",
+      "taskId": "S01",
+      "expectedPassed": false,
+      "passed": false,
+      "failure": "Business policy verification failed: target exists in actor project"
+    },
+    {
+      "mode": "growing",
+      "control": "noop",
+      "taskId": "S06",
+      "expectedPassed": false,
+      "passed": false,
+      "failure": "Business policy verification failed: target exists in actor project"
+    },
+    {
+      "mode": "growing",
+      "control": "wrong-trim",
+      "taskId": "S01",
+      "expectedPassed": false,
+      "passed": false,
+      "failure": "Business policy verification failed: kind-5 structured Bool"
+    },
+    {
+      "mode": "growing",
+      "control": "wrong-rate",
+      "taskId": "S06",
+      "expectedPassed": false,
+      "passed": false,
+      "failure": "Business policy verification failed: kind-1 structured Int"
+    },
+    {
+      "mode": "flat",
+      "control": "correct",
+      "taskId": "S01",
+      "expectedPassed": true,
+      "passed": true,
+      "failure": null
+    },
+    {
+      "mode": "flat",
+      "control": "correct",
+      "taskId": "S06",
+      "expectedPassed": true,
+      "passed": true,
+      "failure": null
+    },
+    {
+      "mode": "flat",
+      "control": "correct",
+      "taskId": "S07",
+      "expectedPassed": true,
+      "passed": true,
+      "failure": null
+    },
+    {
+      "mode": "flat",
+      "control": "noop",
+      "taskId": "S01",
+      "expectedPassed": false,
+      "passed": false,
+      "failure": "Business policy verification failed: target exists in actor project"
+    },
+    {
+      "mode": "flat",
+      "control": "noop",
+      "taskId": "S06",
+      "expectedPassed": false,
+      "passed": false,
+      "failure": "Business policy verification failed: target exists in actor project"
+    },
+    {
+      "mode": "flat",
+      "control": "noop",
+      "taskId": "S07",
+      "expectedPassed": false,
+      "passed": false,
+      "failure": "Business policy verification failed: target exists in actor project"
+    },
+    {
+      "mode": "flat",
+      "control": "wrong-trim",
+      "taskId": "S01",
+      "expectedPassed": false,
+      "passed": false,
+      "failure": "Business policy verification failed: kind-5 structured Bool"
+    },
+    {
+      "mode": "flat",
+      "control": "wrong-rate",
+      "taskId": "S06",
+      "expectedPassed": false,
+      "passed": false,
+      "failure": "Business policy verification failed: kind-1 structured Int"
+    },
+    {
+      "mode": "flat",
+      "control": "wrong-rounding",
+      "taskId": "S07",
+      "expectedPassed": false,
+      "passed": false,
+      "failure": "Business policy verification failed: premium-2 structured nominal Money"
+    },
+    {
+      "mode": "flat",
+      "control": "wrong-overflow",
+      "taskId": "S07",
+      "expectedPassed": false,
+      "passed": false,
+      "failure": "The property 'message' cannot be found on this object. Verify that the property exists."
+    },
+    {
+      "mode": "conventional",
+      "control": "correct",
+      "taskId": "S01",
+      "expectedPassed": true,
+      "passed": true,
+      "failure": null
+    },
+    {
+      "mode": "conventional",
+      "control": "correct",
+      "taskId": "S06",
+      "expectedPassed": true,
+      "passed": true,
+      "failure": null
+    },
+    {
+      "mode": "conventional",
+      "control": "correct",
+      "taskId": "S07",
+      "expectedPassed": true,
+      "passed": true,
+      "failure": null
+    },
+    {
+      "mode": "conventional",
+      "control": "noop",
+      "taskId": "S01",
+      "expectedPassed": false,
+      "passed": false,
+      "failure": "Business policy verification failed: conventional target has meaningful source documentation"
+    },
+    {
+      "mode": "conventional",
+      "control": "noop",
+      "taskId": "S06",
+      "expectedPassed": false,
+      "passed": false,
+      "failure": "Business policy verification failed: conventional target has meaningful source documentation"
+    },
+    {
+      "mode": "conventional",
+      "control": "noop",
+      "taskId": "S07",
+      "expectedPassed": false,
+      "passed": false,
+      "failure": "Business policy verification failed: conventional target has meaningful source documentation"
+    },
+    {
+      "mode": "conventional",
+      "control": "wrong-trim",
+      "taskId": "S01",
+      "expectedPassed": false,
+      "passed": false,
+      "failure": "Business policy verification failed: kind-5 conventional exact typed oracle result"
+    },
+    {
+      "mode": "conventional",
+      "control": "wrong-rate",
+      "taskId": "S06",
+      "expectedPassed": false,
+      "passed": false,
+      "failure": "Business policy verification failed: kind-1 conventional exact typed oracle result"
+    },
+    {
+      "mode": "conventional",
+      "control": "wrong-rounding",
+      "taskId": "S07",
+      "expectedPassed": false,
+      "passed": false,
+      "failure": "Business policy verification failed: premium-2 conventional exact typed oracle result"
+    },
+    {
+      "mode": "conventional",
+      "control": "wrong-overflow",
+      "taskId": "S07",
+      "expectedPassed": false,
+      "passed": false,
+      "failure": "Business policy verification failed: conventional typed probe exits successfully"
+    }
+  ]
+}

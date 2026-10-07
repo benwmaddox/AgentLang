@@ -55,7 +55,7 @@
         }
       },
       "expected": {
-        "result": 1,
+        "result": 0,
         "errorCode": null,
         "stateProjection": null
       }

@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-001",
+  "mode": "conventional",
+  "taskId": "S01",
+  "sequenceIndex": 1,
+  "seed": {
+    "path": "D:\\code\\AgentLang\\.agentlang\\business-policy-001\\seeds\\conventional\\project",
+    "inventorySha256": "d5f12a083191b0edd8e02156685768c39dc8bd13be81e9dc5d57601ff5ada0f1"
+  },
+  "sourceInputs": [
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-001/conventional/BusinessPolicy.fsproj",
+      "sha256": "ce2978afdd5ccadb638425c1b25a428e8334c65b983689d8526e7c082412c650"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-001/conventional/Domain.fs",
+      "sha256": "564012a232c9f2f162a87109c8e6926d0d6352dd8222b3d9be5cfb466d7fca85"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-001/conventional/Operations.fs",
+      "sha256": "818dd374ea39d9beefaa5cb39af5d377835ab1a2bc682fc8011d639f80eaf7f8"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-001/conventional/SelfTests.fs",
+      "sha256": "cdadb745b541c49c2bf2d313100f42a47f3cbf91ed1e6776566306834d2ab894"
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/business-policy-001/conventional/Program.fs",
+      "sha256": "b9e5a7257aada4cb6564be3a3dce35ffff0a672cf4b5c29838a27c0327b0f04f"
+    }
+  ],
+  "runtime": {
+    "cliPath": ".agentlang/business-policy-001/language-bin/AgentLang.Cli.dll",
+    "cliSha256": "38b546978c5849d71c5f49dbef6526d95fa59ed11efb34f1d649443ce13b1edf",
+    "businessPath": "experiments/AgentLang.Business/bin/Release/net9.0/AgentLang.Business.dll",
+    "businessSha256": "5508b72886e72ccabd60c838b329678ae09f5bcaa805967244d37b0b30a19cb1",
+    "copiedBusinessSha256": "5508b72886e72ccabd60c838b329678ae09f5bcaa805967244d37b0b30a19cb1"
+  },
+  "previousAcceptance": null,
+  "project": {
+    "path": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-001\\runs\\conventional-S01\\starting-project",
+    "files": [
+      {
+        "path": "BusinessPolicy.fsproj",
+        "sha256": "ce2978afdd5ccadb638425c1b25a428e8334c65b983689d8526e7c082412c650"
+      },
+      {
+        "path": "Domain.fs",
+        "sha256": "564012a232c9f2f162a87109c8e6926d0d6352dd8222b3d9be5cfb466d7fca85"
+      },
+      {
+        "path": "lib/AgentLang.Business.dll",
+        "sha256": "5508b72886e72ccabd60c838b329678ae09f5bcaa805967244d37b0b30a19cb1"
+      },
+      {
+        "path": "Operations.fs",
+        "sha256": "818dd374ea39d9beefaa5cb39af5d377835ab1a2bc682fc8011d639f80eaf7f8"
+      },
+      {
+        "path": "Program.fs",
+        "sha256": "b9e5a7257aada4cb6564be3a3dce35ffff0a672cf4b5c29838a27c0327b0f04f"
+      },
+      {
+        "path": "SelfTests.fs",
+        "sha256": "cdadb745b541c49c2bf2d313100f42a47f3cbf91ed1e6776566306834d2ab894"
+      }
+    ],
+    "inventorySha256": "d5f12a083191b0edd8e02156685768c39dc8bd13be81e9dc5d57601ff5ada0f1"
+  },
+  "actor": {
+    "projectPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-001\\actors\\conventional-S01",
+    "files": [
+      {
+        "path": "BusinessPolicy.fsproj",
+        "sha256": "ce2978afdd5ccadb638425c1b25a428e8334c65b983689d8526e7c082412c650"
+      },
+      {
+        "path": "Domain.fs",
+        "sha256": "564012a232c9f2f162a87109c8e6926d0d6352dd8222b3d9be5cfb466d7fca85"
+      },
+      {
+        "path": "lib/AgentLang.Business.dll",
+        "sha256": "5508b72886e72ccabd60c838b329678ae09f5bcaa805967244d37b0b30a19cb1"
+      },
+      {
+        "path": "Operations.fs",
+        "sha256": "818dd374ea39d9beefaa5cb39af5d377835ab1a2bc682fc8011d639f80eaf7f8"
+      },
+      {
+        "path": "Program.fs",
+        "sha256": "b9e5a7257aada4cb6564be3a3dce35ffff0a672cf4b5c29838a27c0327b0f04f"
+      },
+      {
+        "path": "SelfTests.fs",
+        "sha256": "cdadb745b541c49c2bf2d313100f42a47f3cbf91ed1e6776566306834d2ab894"
+      }
+    ],
+    "inventorySha256": "d5f12a083191b0edd8e02156685768c39dc8bd13be81e9dc5d57601ff5ada0f1"
+  }
+}

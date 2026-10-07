@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-001",
+  "mode": "growing",
+  "taskId": "S07",
+  "agentTask": "/root/policy_growing_s07",
+  "model": "gpt-6-luna",
+  "reasoningEffort": "max",
+  "forkTurns": "none",
+  "recordedAtUtc": "2026-10-07T01:33:12.1236407+00:00",
+  "promptSha256": "bbc94e07e2f35ee52a4e1f078a2850ac3795842d0d4978d2471848bb359ac660",
+  "prelaunchSha256": "b30e88d618357948f65b038299b3cd911f83ee9d7335b70b8e0f5820a7443c87",
+  "delivery": "Frozen public prompt supplied in full as initial collaboration task; no inherited turns."
+}

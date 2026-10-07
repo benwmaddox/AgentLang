@@ -98,3 +98,10 @@ benchmark adapters and controlled agent-cost results remain outside this slice.
 This is coding-agent implementation and reference verification, not a measured
 task trial. The next step is executable business-task adapters and paired fresh
 subagents using the retained vocabulary. Memory and LLVM research remain deferred.
+
+## Publication follow-up
+
+Revision `3a7c0cc943924cac6403a35cab8992e3a60f1ab3` is published on `main`
+and `prototype`. [Main CI](evidence/075-main-ci.json) completed successfully;
+its [clean validation artifact](evidence/075-main-validation.json) confirms all
+35 required checks passed on that exact revision with `dirty: false`.

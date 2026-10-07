@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-001",
+  "passed": false,
+  "failure": "Business policy preflight failed: correct control self-tests and library commit pass",
+  "checks": [
+    {
+      "name": "growing seed exists",
+      "passed": true
+    },
+    {
+      "name": "correct control CLI exit",
+      "passed": true
+    },
+    {
+      "name": "correct control one response per request",
+      "passed": true
+    },
+    {
+      "name": "correct control self-tests and library commit pass",
+      "passed": false
+    }
+  ],
+  "runs": [],
+  "sourceRevision": "3a7c0cc943924cac6403a35cab8992e3a60f1ab3",
+  "dirty": true,
+  "oracleSha256": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+  "verifierSha256": "458f55728a2abbccc1768ce79d75698e46f84e1378e4999539e6f2e4dd914686",
+  "preflightSha256": "e5f8fd29d3ff54529764045affe2f4c592db294ee5e2ebb2744cadec15d3ef3d"
+}

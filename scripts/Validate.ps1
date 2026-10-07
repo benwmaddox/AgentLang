@@ -104,6 +104,8 @@ try {
         $parserReportPath = [System.IO.Path]::ChangeExtension($ReportPath, 'parser-limits.json')
         $cliBinaryPath = "src/AgentLang.Cli/bin/$Configuration/net9.0/AgentLang.Cli.dll"
         $null = Invoke-ValidationCheck 'parser-process-limits' 'pwsh' @('-NoProfile', '-File', 'scripts/Verify-ParserLimits.ps1', '-CliDll', $cliBinaryPath, '-EvidencePath', $parserReportPath)
+        $businessPolicyReportPath = [System.IO.Path]::ChangeExtension($ReportPath, 'business-policy-preflight.json')
+        $null = Invoke-ValidationCheck 'business-policy-preflight' 'pwsh' @('-NoProfile', '-File', 'scripts/Verify-BusinessPolicyPreflight.ps1', '-Isolated', '-Configuration', $Configuration, '-EvidencePath', $businessPolicyReportPath)
     }
     $null = Invoke-ValidationCheck 'diff-whitespace' 'git' @('diff', '--check')
     $null = Invoke-ValidationCheck 'staged-diff-whitespace' 'git' @('diff', '--cached', '--check')

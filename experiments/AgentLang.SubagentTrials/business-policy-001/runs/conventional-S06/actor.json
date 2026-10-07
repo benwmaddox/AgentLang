@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-001",
+  "mode": "conventional",
+  "taskId": "S06",
+  "agentTask": "/root/policy_conventional_s06",
+  "model": "gpt-6-luna",
+  "reasoningEffort": "max",
+  "forkTurns": "none",
+  "recordedAtUtc": "2026-10-07T01:21:26.8349493+00:00",
+  "promptSha256": "e27c3a3f9e02f22d00ab242628d6d1c362f38a37df9cb47ae353b2f15e74e4ff",
+  "prelaunchSha256": "b84e404458379266615179f6ab3f4835012dea0ec6c2c3e252d836f6e07ddf0b",
+  "delivery": "Frozen public prompt supplied in full as initial collaboration task; no inherited turns."
+}

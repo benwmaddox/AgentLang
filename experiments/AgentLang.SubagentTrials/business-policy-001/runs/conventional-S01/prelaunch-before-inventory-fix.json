@@ -1,0 +1,181 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-001",
+  "mode": "conventional",
+  "taskId": "S01",
+  "preparedAtUtc": "2026-10-07T01:10:57.9389741+00:00",
+  "sourceRevision": "3a7c0cc943924cac6403a35cab8992e3a60f1ab3",
+  "dirty": true,
+  "model": "gpt-6-luna",
+  "reasoningEffort": "max",
+  "forkTurns": "none",
+  "projectPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-001\\actors\\conventional-S01",
+  "launchCommand": "& 'D:\\code\\AgentLang\\scripts\\Start-SubagentTrialHost.ps1' -CliDll 'D:\\code\\AgentLang\\.agentlang\\business-policy-001\\broker-bin\\AgentLang.Conventional.Cli.dll' -ProjectPath 'D:\\code\\AgentLang\\.agentlang\\business-policy-001\\actors\\conventional-S01' -TracePath 'D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-001\\runs\\conventional-S01\\trace.jsonl' -AllowedOperations @('inspect','read','search','patch','replace','validate') -Profile conventional -AdditionalCliArguments @('--validation-project','BusinessPolicy.fsproj') -ExchangeTimeoutMilliseconds 120000 -MaxExchanges 100",
+  "allowedOperations": [
+    "inspect",
+    "read",
+    "search",
+    "patch",
+    "replace",
+    "validate"
+  ],
+  "maxExchanges": 100,
+  "exchangeTimeoutMilliseconds": 120000,
+  "profile": "conventional",
+  "additionalCliArguments": [
+    "--validation-project",
+    "BusinessPolicy.fsproj"
+  ],
+  "inspectionBudgetEnabled": false,
+  "capabilities": [],
+  "promptSha256": "2273910817f73b74314da67e70cabef7eede55694a0c070ef788ea3fbcd93b4d",
+  "promptUtf8Bytes": 5420,
+  "oracleSha256": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+  "independentVerifierSha256": "72c480d32e4c00377ffa2ed861c854a199d7faec4bc39d10a585df7fe9b2ecd5",
+  "hostSha256": "d3b60698ef29cc6e7d9b42f37d9a298a311f409cb3f85112ca2a5dccf6148c4d",
+  "runtimeFiles": [
+    {
+      "path": "AgentLang.Conventional.Cli.deps.json",
+      "bytes": 2974,
+      "sha256": "286c223538b469e3a5a6364bebc0d68051682db3c80cd6bb043def2b7b33eace"
+    },
+    {
+      "path": "AgentLang.Conventional.Cli.dll",
+      "bytes": 17920,
+      "sha256": "0826dfa11b7ad72c53322642047255ae8c3fb130f5e825369412125fd02ef351"
+    },
+    {
+      "path": "AgentLang.Conventional.Cli.exe",
+      "bytes": 156160,
+      "sha256": "23cb99e685f30cf2371c5846c75539d5a6b175467eb4dbf7ea4e6a780067c939"
+    },
+    {
+      "path": "AgentLang.Conventional.Cli.pdb",
+      "bytes": 4820,
+      "sha256": "24f6e2eba84187435047a94d1ea9e883bc4673d8980954e385a002ede7b25049"
+    },
+    {
+      "path": "AgentLang.Conventional.Cli.runtimeconfig.json",
+      "bytes": 340,
+      "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+    },
+    {
+      "path": "AgentLang.Conventional.dll",
+      "bytes": 53248,
+      "sha256": "5c17ce683d1a3a1b179cb68a711bec44ce6dc7ab5025576f4695588ad45c568d"
+    },
+    {
+      "path": "AgentLang.Conventional.pdb",
+      "bytes": 12844,
+      "sha256": "6c59b7237f1359069deb425572d9775d12a759fd0e6c0073e738ccf7bd8ad64b"
+    },
+    {
+      "path": "AgentLang.Conventional.xml",
+      "bytes": 1055,
+      "sha256": "621b5c7c93c495c1dfc83279858dbb31ecd999f56d5237070bf05c59159b81eb"
+    },
+    {
+      "path": "cs/FSharp.Core.resources.dll",
+      "bytes": 34600,
+      "sha256": "eb8bd755cfe0d39ce27615027fe22556e8b9dcb470f2b47a36f4bfbf3c31be64"
+    },
+    {
+      "path": "de/FSharp.Core.resources.dll",
+      "bytes": 35592,
+      "sha256": "7419e4f5ceed9e03821686e865fed7d29c6217fdf5d3a46a2919a369c98c38ce"
+    },
+    {
+      "path": "es/FSharp.Core.resources.dll",
+      "bytes": 34600,
+      "sha256": "636866649564c72eb763eb3942e021b52b1f9b3869d037aca48f73d4474353c5"
+    },
+    {
+      "path": "fr/FSharp.Core.resources.dll",
+      "bytes": 35128,
+      "sha256": "f38f2fd6bc4c4e233dd098a36b315a2bc87673cf2f07c6ba3daf71a3264f4a64"
+    },
+    {
+      "path": "FSharp.Core.dll",
+      "bytes": 2314000,
+      "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+    },
+    {
+      "path": "it/FSharp.Core.resources.dll",
+      "bytes": 34576,
+      "sha256": "61a0be9c6a2ed95f8e98493b17c54a55c68cef84e23a0d82114319e2c5f3c2cd"
+    },
+    {
+      "path": "ja/FSharp.Core.resources.dll",
+      "bytes": 37160,
+      "sha256": "dd7f36036d906e991da5505b074ef889a603f449d3324750fda5f5445ba2854f"
+    },
+    {
+      "path": "ko/FSharp.Core.resources.dll",
+      "bytes": 36104,
+      "sha256": "0f3ef625e379577e3b60c15d8cc3759d3dc8840f99894282df1e702b4a166462"
+    },
+    {
+      "path": "pl/FSharp.Core.resources.dll",
+      "bytes": 35632,
+      "sha256": "755bab9fbd85e5e4b4771870c9c4d655e91e3ce39cc1c2735fe0bc7cec6b84c3"
+    },
+    {
+      "path": "pt-BR/FSharp.Core.resources.dll",
+      "bytes": 34096,
+      "sha256": "a4bbbdaabf2003a5fdff5f5bc4143c3fd4a064f2681fc481f449d4558074dc61"
+    },
+    {
+      "path": "ru/FSharp.Core.resources.dll",
+      "bytes": 41232,
+      "sha256": "a1133f9ab7e661803d1af0c2489626bd53ac33a11dfe891f5a02f3186f2f5d78"
+    },
+    {
+      "path": "tr/FSharp.Core.resources.dll",
+      "bytes": 34072,
+      "sha256": "6b0cba5139a86ee681909fdfcebac07c99afba3bfcff4fb8ab12b9c2112a0b31"
+    },
+    {
+      "path": "zh-Hans/FSharp.Core.resources.dll",
+      "bytes": 32552,
+      "sha256": "25f82f35a9234bcaab272921b0d50054ddb4a669d96c111907c9d31f5b18c121"
+    },
+    {
+      "path": "zh-Hant/FSharp.Core.resources.dll",
+      "bytes": 32032,
+      "sha256": "ac03ee7c4112c755705776c700033794586f980fe9476e6a13811a7153beabb8"
+    }
+  ],
+  "startingProjectFiles": [
+    {
+      "path": "BusinessPolicy.fsproj",
+      "bytes": 575,
+      "sha256": "ce2978afdd5ccadb638425c1b25a428e8334c65b983689d8526e7c082412c650"
+    },
+    {
+      "path": "Domain.fs",
+      "bytes": 2291,
+      "sha256": "564012a232c9f2f162a87109c8e6926d0d6352dd8222b3d9be5cfb466d7fca85"
+    },
+    {
+      "path": "lib/AgentLang.Business.dll",
+      "bytes": 107008,
+      "sha256": "5508b72886e72ccabd60c838b329678ae09f5bcaa805967244d37b0b30a19cb1"
+    },
+    {
+      "path": "Operations.fs",
+      "bytes": 443,
+      "sha256": "818dd374ea39d9beefaa5cb39af5d377835ab1a2bc682fc8011d639f80eaf7f8"
+    },
+    {
+      "path": "Program.fs",
+      "bytes": 3142,
+      "sha256": "b9e5a7257aada4cb6564be3a3dce35ffff0a672cf4b5c29838a27c0327b0f04f"
+    },
+    {
+      "path": "SelfTests.fs",
+      "bytes": 1430,
+      "sha256": "cdadb745b541c49c2bf2d313100f42a47f3cbf91ed1e6776566306834d2ab894"
+    }
+  ],
+  "startingStateSha256": "122e235607def3d69e7ebea609562b9f19a414973d2893bc2ed9a0362548e153"
+}

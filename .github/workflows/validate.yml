@@ -36,5 +36,6 @@ jobs:
             .agentlang/reports/validation.subagent-host*.json
             .agentlang/reports/trial-host-*.jsonl
             .agentlang/reports/validation.parser-limits*.json
+            .agentlang/reports/validation.business-policy-preflight.json
           include-hidden-files: true
           if-no-files-found: warn

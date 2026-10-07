@@ -1,0 +1,6 @@
+{
+  "passed": true,
+  "checkedFiles": 149,
+  "scope": "Frozen run artifacts and pinned preparation, freeze, verifier, host and oracle",
+  "method": "SHA256 of git index blob bytes equals working file bytes"
+}

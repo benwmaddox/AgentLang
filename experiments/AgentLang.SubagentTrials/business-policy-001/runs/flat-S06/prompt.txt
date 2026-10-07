@@ -1,0 +1,97 @@
+Run business-policy-001 flat-S06 as a fresh gpt-6-luna/max coding agent with no inherited turns.
+Your assigned project is D:\code\AgentLang\.agentlang\business-policy-001\actors\flat-S06.
+You own staged definitions in this project through the protocol. Use Flow authoring. Every reusable authored helper must have passing own tests and full own instruction/branch coverage before library commit. End with durable task.commit. Preserve existing types, source and tests. All task operations are pure; the host grants no effects.
+
+You are an external coding agent in a disposable synthetic project. Inspect
+available capabilities before editing. Prefer useful existing abstractions.
+Add meaningful branch and boundary tests, concise documentation, and a runnable
+example for the required reusable operation. Preserve unrelated definitions,
+types and previous tests. Complete the task through the supplied protocol only.
+
+Customer.Kind/kind is raw data: comparison is ordinal and case-sensitive. Do
+not trim or lowercase it. Money is signed Int64 minor units; Float is not an
+allowed implementation of money.
+
+Human authorization covers these isolated project edits and local tests:
+"Yes, run the remaining isolated experiments". Do not read coordinator source,
+independent acceptance, sibling projects, archived prior solutions or raw
+repository files. Do not use arbitrary shell commands or raw file tools. If
+automatic approval rejects an action, report it and stop dependent work;
+do not bypass it. You are not alone in the checkout; preserve other work.
+Do not spawn or delegate. Observation timeout is not execution failure:
+resume the same live handle and inspect state before repeating an uncertain edit.
+LLM token usage, model turns and effective context windows are not measured.
+
+Task S06
+Return 1000 basis points for premium customers and zero for every other raw Kind. Implement the named public operation and attach tests for the listed behavior. Inspect available vocabulary first and preserve unrelated behavior.
+
+Required operation: customer.discount-basis-points : Customer -> Int
+Customer fields are id/email/kind/balance/created-at (F# Id/Email/Kind/Balance/CreatedAt).
+The Customer is a public record with strict nominal fields; direct construction preserves raw Kind. Construction helpers that trim Kind do not define this task's policy.
+
+You work through a JSONL protocol in a deterministic typed language. Start the
+exact supplied trial host once and send one JSON request per line through that
+same returned session. AI agents are external users; the runtime contains none.
+
+Use compact inventory or structural search to discover names:
+
+```json
+{"op":"words","compact":true}
+{"op":"search","query":"customer"}
+```
+
+`describe` returns detailed word metadata and source. `context` returns bounded
+signature/effect/dependency/documentation/type metadata for a word and its
+closure, omitting whole entries when necessary. Check omission counts. It has
+`maxDepth`, `maxWords` and `maxUtf8Bytes` fields; the latter bounds its complete
+data JSON, not the response wrapper. Both return parser-verified `flowReference`
+call spellings. Use dictionary names for protocol queries, declarations and
+test owners; use call references for expression targets. Root `add` is `::add`;
+`numbers.increment` is `numbers::increment`. Dot chaining passes a receiver as
+the first input. A null reference has an explanation.
+
+Flow uses named typed inputs, immutable `let` bindings, ordinary calls and no
+implicit nominal conversions. Both branches must produce the declared result:
+
+```text
+word increment(value: Int) -> Int {
+    effects none
+    ::add(value, 1)
+}
+test increment/basic {
+    ::increment(1) => 2
+}
+```
+
+```json
+{"op":"task.begin","goal":"<public task>"}
+{"op":"define","frontend":"flow","source":"<word and attached tests>"}
+{"op":"test","word":"increment"}
+{"op":"commit","word":"increment","library":true}
+{"op":"task.commit"}
+```
+
+Tests belong to words through the slash separator. These tasks require pure
+retained library words with passing own tests and complete own instruction and
+branch coverage. Caller tests cannot replace helper coverage. Add tests using
+an attachment-only Flow document when useful. Preserve prior types, helpers and
+tests. Use only the supplied protocol; do not read language project files.
+
+`describe.coverage` currently reflects the most recent test batch. Testing one
+word replaces that batch; another word can then display `not-run` even when its
+earlier own suite passed. Use the returned `test` coverage for that run, or
+`test-all` before inspecting several words' current own coverage together.
+
+No cumulative inspection-response byte cap is enabled. The 100-exchange host bound and per-exchange deadline apply. Observe the same live session across timeouts.
+
+Report completion after public tests and durable task commit, with actual
+outcomes, errors, missing capabilities and the host session ID. Leave that
+session open; the coordinator handles teardown separately. Do not send quit
+commands or control characters through JSONL. Do not spawn other agents.
+
+
+Execute exactly the following PowerShell command with exec_command, workdir D:\code\AgentLang, sandbox_permissions require_escalated, tty true and a short initial yield. The known sandbox ACL helper requires this host execution for the authorized experiment. Do not issue other shell/file commands.
+
+& 'D:\code\AgentLang\scripts\Start-SubagentTrialHost.ps1' -CliDll 'D:\code\AgentLang\.agentlang\business-policy-001\language-bin\AgentLang.Cli.dll' -ProjectPath 'D:\code\AgentLang\.agentlang\business-policy-001\actors\flat-S06' -TracePath 'D:\code\AgentLang\experiments\AgentLang.SubagentTrials\business-policy-001\runs\flat-S06\trace.jsonl' -AllowedOperations @('words','describe','search','source','dependencies','callers','eval','define','test','test-all','tests','commit','replace-word','task.begin','task.commit','task.status','task.log','ir','context','failed-tests','examples','example','effects','type-of','search-type','search-output','history','diff','graph','transitive-dependencies','transitive-callers','search-dependency') -Profile agentlang -ExchangeTimeoutMilliseconds 120000 -MaxExchanges 100
+
+No startup banner is printed. Send one JSONL request per line on the same write_stdin session. After successful completion, report the host session ID and leave it live until the coordinator completes independent acceptance. Then, when requested, tear down your own session using Ctrl+C through write_stdin without an extra JSONL request. Do not send quit commands or EOF. Report actual tests, errors and missing capabilities.

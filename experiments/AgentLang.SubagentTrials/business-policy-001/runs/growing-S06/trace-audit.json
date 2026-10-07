@@ -1,0 +1,509 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "studyId": "business-policy-001",
+  "mode": "growing",
+  "taskId": "S06",
+  "checks": [
+    {
+      "name": "trace has start and terminal events",
+      "passed": true
+    },
+    {
+      "name": "schema-1 unbudgeted session",
+      "passed": true
+    },
+    {
+      "name": "runtime exited cleanly; host ended normally or was cancelled between complete exchanges",
+      "passed": true
+    },
+    {
+      "name": "actor project and profile match freeze",
+      "passed": true
+    },
+    {
+      "name": "exchange limits match freeze",
+      "passed": true
+    },
+    {
+      "name": "allowlist matches freeze",
+      "passed": true
+    },
+    {
+      "name": "capabilities match freeze",
+      "passed": true
+    },
+    {
+      "name": "fixed validation target matches freeze",
+      "passed": true
+    },
+    {
+      "name": "freeze predates launch",
+      "passed": true
+    },
+    {
+      "name": "runtime file pin: AgentLang.Cli.deps.json",
+      "passed": true
+    },
+    {
+      "name": "runtime file pin: AgentLang.Cli.dll",
+      "passed": true
+    },
+    {
+      "name": "runtime file pin: AgentLang.Cli.runtimeconfig.json",
+      "passed": true
+    },
+    {
+      "name": "runtime file pin: AgentLang.Core.dll",
+      "passed": true
+    },
+    {
+      "name": "runtime file pin: FSharp.Core.dll",
+      "passed": true
+    },
+    {
+      "name": "host unchanged after freeze",
+      "passed": true
+    },
+    {
+      "name": "verifier unchanged after freeze",
+      "passed": true
+    },
+    {
+      "name": "oracle unchanged after freeze",
+      "passed": true
+    },
+    {
+      "name": "starting inventory unchanged after freeze",
+      "passed": true
+    },
+    {
+      "name": "public prompt unchanged after freeze",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 1",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 1",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 1",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 1",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 1",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 2",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 2",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 2",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 2",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 2",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 3",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 3",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 3",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 3",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 3",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 4",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 4",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 4",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 4",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 4",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 5",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 5",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 5",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 5",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 5",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 6",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 6",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 6",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 6",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 6",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 7",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 7",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 7",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 7",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 7",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 8",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 8",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 8",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 8",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 8",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 9",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 9",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 9",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 9",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 9",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 10",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 10",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 10",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 10",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 10",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 11",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 11",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 11",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 11",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 11",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 12",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 12",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 12",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 12",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 12",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 13",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 13",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 13",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 13",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 13",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 14",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 14",
+      "passed": true
+    },
+    {
+      "name": "frame bytes/hash exchange 14",
+      "passed": true
+    },
+    {
+      "name": "decoded frame exchange 14",
+      "passed": true
+    },
+    {
+      "name": "request allowlist exchange 14",
+      "passed": true
+    },
+    {
+      "name": "terminal exchange count matches frames",
+      "passed": true
+    }
+  ],
+  "exchanges": 14,
+  "requestPayloadBytes": 3766,
+  "selectedResponsePayloadBytes": 13779,
+  "diagnostics": [],
+  "requests": [
+    {
+      "index": 1,
+      "op": "words",
+      "requestBytes": 30,
+      "responseBytes": 4811,
+      "ok": true
+    },
+    {
+      "index": 2,
+      "op": "search",
+      "requestBytes": 35,
+      "responseBytes": 570,
+      "ok": true
+    },
+    {
+      "index": 3,
+      "op": "task.begin",
+      "requestBytes": 180,
+      "responseBytes": 374,
+      "ok": true
+    },
+    {
+      "index": 4,
+      "op": "describe",
+      "requestBytes": 45,
+      "responseBytes": 1254,
+      "ok": true
+    },
+    {
+      "index": 5,
+      "op": "source",
+      "requestBytes": 43,
+      "responseBytes": 560,
+      "ok": true
+    },
+    {
+      "index": 6,
+      "op": "source",
+      "requestBytes": 41,
+      "responseBytes": 1466,
+      "ok": true
+    },
+    {
+      "index": 7,
+      "op": "describe",
+      "requestBytes": 40,
+      "responseBytes": 855,
+      "ok": true
+    },
+    {
+      "index": 8,
+      "op": "examples",
+      "requestBytes": 45,
+      "responseBytes": 76,
+      "ok": true
+    },
+    {
+      "index": 9,
+      "op": "example",
+      "requestBytes": 65,
+      "responseBytes": 544,
+      "ok": true
+    },
+    {
+      "index": 10,
+      "op": "define",
+      "requestBytes": 3013,
+      "responseBytes": 411,
+      "ok": true
+    },
+    {
+      "index": 11,
+      "op": "test",
+      "requestBytes": 54,
+      "responseBytes": 1007,
+      "ok": true
+    },
+    {
+      "index": 12,
+      "op": "example",
+      "requestBytes": 83,
+      "responseBytes": 593,
+      "ok": true
+    },
+    {
+      "index": 13,
+      "op": "commit",
+      "requestBytes": 71,
+      "responseBytes": 442,
+      "ok": true
+    },
+    {
+      "index": 14,
+      "op": "task.commit",
+      "requestBytes": 21,
+      "responseBytes": 816,
+      "ok": true
+    }
+  ],
+  "traceSha256": "41206ab44828b4a1ddf7ce7be0b95597c9995ed3a4c72b7621bef0976fd642e5",
+  "sessionEnd": {
+    "event": "session-end",
+    "finishedUtc": "2026-10-06T21:31:02.2204074-04:00",
+    "exchangeCount": 14,
+    "hostExitCode": 0,
+    "runtimeExitCode": 0,
+    "runtimeStderrPrefixBytes": 0,
+    "runtimeStderrTotalBytes": 0,
+    "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runtimeStderrCaptureTruncated": false
+  },
+  "successfulSourceMutationRequests": 1,
+  "testBatches": [
+    {
+      "index": 11,
+      "op": "test",
+      "tests": 7,
+      "failed": 0
+    }
+  ],
+  "testsRun": 7.0,
+  "testsFailed": 0.0,
+  "testCountStatus": "counted runtime test results; repeated test batches count again",
+  "auditSha256": "8310775024cd87d7b01ff0a48731cacad239a5b94ea74d84fd838140525952b0",
+  "protocolDurationMilliseconds": 369589.8886,
+  "activeProtocolSpanMilliseconds": 158226.2993,
+  "oracleSha256": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+  "verifierSha256": "72c480d32e4c00377ffa2ed861c854a199d7faec4bc39d10a585df7fe9b2ecd5",
+  "limits": [
+    "Schema1 counts selected response frames before stdout flush; it does not prove model consumption.",
+    "Protocol duration includes coordinator acceptance/teardown wait; active span ends at the last exchange. Both exclude setup before host start.",
+    "Trials run concurrently; repository validation overlaps the final language trials. Controlled latency is unavailable.",
+    "Exact LLM tokens, model turns and effective context are unavailable.",
+    "One exploratory task sequence; no efficiency conclusion."
+  ]
+}

@@ -1,0 +1,1506 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-001",
+  "passed": false,
+  "failure": "Business policy preflight failed: growing correct S01 matches independent expectation",
+  "checks": [
+    {
+      "name": "growing seed exists",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "correct control CLI exit",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "correct control one response per request",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "correct control self-tests and library commit pass",
+      "passed": true,
+      "details": [
+        {
+          "ok": true,
+          "kind": "defined",
+          "text": "Flow project declarations, attached cases, refined type metadata, and bindings validated atomically.",
+          "data": {
+            "frontend": "flow",
+            "words": [
+              {
+                "name": "customer.premium?",
+                "id": "word_8cde4cab207544ba9e2182e6363c08f4",
+                "revision": 1
+              },
+              {
+                "name": "customer.discount-basis-points",
+                "id": "word_efbfd3dd208a4a288e2188f313d874f2",
+                "revision": 1
+              },
+              {
+                "name": "customer.discounted-balance",
+                "id": "word_4130f59aee0644758b4380d6b3b5ff7e",
+                "revision": 1
+              }
+            ],
+            "types": []
+          }
+        },
+        {
+          "ok": true,
+          "kind": "test",
+          "text": "157/157 test(s) passed.",
+          "data": {
+            "results": [
+              {
+                "name": "accepted",
+                "word": "business.email-valid?",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "rejected-empty-local-segment",
+                "word": "business.email-valid?",
+                "passed": true,
+                "expected": "false",
+                "actual": [
+                  "false"
+                ]
+              },
+              {
+                "name": "canonical",
+                "word": "business.id-valid?",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "noncanonical-uppercase",
+                "word": "business.id-valid?",
+                "passed": true,
+                "expected": "false",
+                "actual": [
+                  "false"
+                ]
+              },
+              {
+                "name": "canonical-utc",
+                "word": "business.instant-valid?",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "offset-is-not-canonical",
+                "word": "business.instant-valid?",
+                "passed": true,
+                "expected": "false",
+                "actual": [
+                  "false"
+                ]
+              },
+              {
+                "name": "exact-baseline",
+                "word": "business.seed",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "braced-normalized",
+                "word": "customer-id.parse",
+                "passed": true,
+                "expected": "\"00112233-4455-6677-8899-aabbccddeeff\"",
+                "actual": [
+                  "\"00112233-4455-6677-8899-aabbccddeeff\""
+                ]
+              },
+              {
+                "name": "canonical",
+                "word": "customer-id.parse",
+                "passed": true,
+                "expected": "\"00112233-4455-6677-8899-aabbccddeeff\"",
+                "actual": [
+                  "\"00112233-4455-6677-8899-aabbccddeeff\""
+                ]
+              },
+              {
+                "name": "invalid",
+                "word": "customer-id.parse",
+                "passed": true,
+                "expected": "\"INVALID_IDENTIFIER\"",
+                "actual": [
+                  "\"INVALID_IDENTIFIER\""
+                ]
+              },
+              {
+                "name": "blank-kind",
+                "word": "customer.create",
+                "passed": true,
+                "expected": "\"INVALID_NAME\"",
+                "actual": [
+                  "\"INVALID_NAME\""
+                ]
+              },
+              {
+                "name": "trimmed-kind",
+                "word": "customer.create",
+                "passed": true,
+                "expected": "\"partner\"",
+                "actual": [
+                  "\"partner\""
+                ]
+              },
+              {
+                "name": "premium",
+                "word": "customer.discount-basis-points",
+                "passed": true,
+                "expected": "1000",
+                "actual": [
+                  "1000"
+                ]
+              },
+              {
+                "name": "regular",
+                "word": "customer.discount-basis-points",
+                "passed": true,
+                "expected": "0",
+                "actual": [
+                  "0"
+                ]
+              },
+              {
+                "name": "premium",
+                "word": "customer.discounted-balance",
+                "passed": true,
+                "expected": "945",
+                "actual": [
+                  "945"
+                ]
+              },
+              {
+                "name": "regular",
+                "word": "customer.discounted-balance",
+                "passed": true,
+                "expected": "1050",
+                "actual": [
+                  "1050"
+                ]
+              },
+              {
+                "name": "premium",
+                "word": "customer.premium?",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "regular",
+                "word": "customer.premium?",
+                "passed": true,
+                "expected": "false",
+                "actual": [
+                  "false"
+                ]
+              },
+              {
+                "name": "blank-body",
+                "word": "email-message.create",
+                "passed": true,
+                "expected": "\"INVALID_EMAIL_MESSAGE\"",
+                "actual": [
+                  "\"INVALID_EMAIL_MESSAGE\""
+                ]
+              },
+              {
+                "name": "blank-subject",
+                "word": "email-message.create",
+                "passed": true,
+                "expected": "\"INVALID_EMAIL_MESSAGE\"",
+                "actual": [
+                  "\"INVALID_EMAIL_MESSAGE\""
+                ]
+              },
+              {
+                "name": "trims-fields",
+                "word": "email-message.create",
+                "passed": true,
+                "expected": "\"Receipt ready|Your receipt is ready.\"",
+                "actual": [
+                  "\"Receipt ready|Your receipt is ready.\""
+                ]
+              },
+              {
+                "name": "empty-outbox-precedes-provider-error",
+                "word": "email.apply-delivery-result",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "provider-failure-retains-fifo-state",
+                "word": "email.apply-delivery-result",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "success-moves-only-first-message",
+                "word": "email.apply-delivery-result",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "first-message",
+                "word": "email.delivery-fold-step",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "later-message-appended",
+                "word": "email.delivery-fold-step",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "invalid",
+                "word": "email.parse",
+                "passed": true,
+                "expected": "\"INVALID_EMAIL\"",
+                "actual": [
+                  "\"INVALID_EMAIL\""
+                ]
+              },
+              {
+                "name": "valid",
+                "word": "email.parse",
+                "passed": true,
+                "expected": "\"dev\\u002Balerts@example.com\"",
+                "actual": [
+                  "\"dev\\u002Balerts@example.com\""
+                ]
+              },
+              {
+                "name": "appends-trimmed-message-and-preserves-other-state",
+                "word": "email.queue",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "missing-customer-precedes-message-validation",
+                "word": "email.queue",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "rejects-blank-message-without-mutating-store",
+                "word": "email.queue",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "invalid",
+                "word": "instant.normalize",
+                "passed": true,
+                "expected": "\"INVALID_INSTANT\"",
+                "actual": [
+                  "\"INVALID_INSTANT\""
+                ]
+              },
+              {
+                "name": "offset-to-utc",
+                "word": "instant.normalize",
+                "passed": true,
+                "expected": "\"2024-02-29T12:00:00.0000000\\u002B00:00\"",
+                "actual": [
+                  "\"2024-02-29T12:00:00.0000000\\u002B00:00\""
+                ]
+              },
+              {
+                "name": "canonical",
+                "word": "invoice-id.parse",
+                "passed": true,
+                "expected": "\"00112233-4455-6677-8899-aabbccddeeff\"",
+                "actual": [
+                  "\"00112233-4455-6677-8899-aabbccddeeff\""
+                ]
+              },
+              {
+                "name": "invalid",
+                "word": "invoice-id.parse",
+                "passed": true,
+                "expected": "\"INVALID_IDENTIFIER\"",
+                "actual": [
+                  "\"INVALID_IDENTIFIER\""
+                ]
+              },
+              {
+                "name": "normalized",
+                "word": "invoice-id.parse",
+                "passed": true,
+                "expected": "\"00112233-4455-6677-8899-aabbccddeeff\"",
+                "actual": [
+                  "\"00112233-4455-6677-8899-aabbccddeeff\""
+                ]
+              },
+              {
+                "name": "empty-fold",
+                "word": "invoice.build-lines",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "nonempty-fold-preserves-order",
+                "word": "invoice.build-lines",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "propagates-first-line-error",
+                "word": "invoice.build-lines",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "appends-successful-line",
+                "word": "invoice.build-lines-step",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "captures-line-error",
+                "word": "invoice.build-lines-step",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "preserves-prior-error",
+                "word": "invoice.build-lines-step",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "appends-in-order-and-preserves-other-lists",
+                "word": "invoice.create",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "customer-precedes-empty-cart",
+                "word": "invoice.create",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "duplicate-precedes-customer-and-cart",
+                "word": "invoice.create",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "later-line-error-precedes-overflow",
+                "word": "invoice.create",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "line-error",
+                "word": "invoice.create",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "rejects-empty-cart",
+                "word": "invoice.create",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "rejects-summed-overflow",
+                "word": "invoice.create",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "checked-multiplication-overflow",
+                "word": "invoice.line",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "int32-maximum-zero-price",
+                "word": "invoice.line",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "int32-upper-bound-before-product-lookup",
+                "word": "invoice.line",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "missing-product",
+                "word": "invoice.line",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "negative-public-product-price",
+                "word": "invoice.line",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "nonpositive-quantity",
+                "word": "invoice.line",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "open",
+                "word": "invoice.status-valid?",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "paid",
+                "word": "invoice.status-valid?",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "unknown",
+                "word": "invoice.status-valid?",
+                "passed": true,
+                "expected": "false",
+                "actual": [
+                  "false"
+                ]
+              },
+              {
+                "name": "empty-is-zero",
+                "word": "invoice.sum-lines",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "nonempty-total",
+                "word": "invoice.sum-lines",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "overflow-preserves-error",
+                "word": "invoice.sum-lines",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "adds-successfully",
+                "word": "invoice.sum-lines-step",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "checked-addition-overflow",
+                "word": "invoice.sum-lines-step",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "preserves-prior-error",
+                "word": "invoice.sum-lines-step",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "int64-overflow",
+                "word": "money.add",
+                "passed": true,
+                "expected": "\"MONEY_OVERFLOW\"",
+                "actual": [
+                  "\"MONEY_OVERFLOW\""
+                ]
+              },
+              {
+                "name": "signed-values",
+                "word": "money.add",
+                "passed": true,
+                "expected": "\"750\"",
+                "actual": [
+                  "\"750\""
+                ]
+              },
+              {
+                "name": "above-int32",
+                "word": "money.multiply-by-quantity",
+                "passed": true,
+                "expected": "\"INVALID_QUANTITY\"",
+                "actual": [
+                  "\"INVALID_QUANTITY\""
+                ]
+              },
+              {
+                "name": "below-int32",
+                "word": "money.multiply-by-quantity",
+                "passed": true,
+                "expected": "\"INVALID_QUANTITY\"",
+                "actual": [
+                  "\"INVALID_QUANTITY\""
+                ]
+              },
+              {
+                "name": "int32-max",
+                "word": "money.multiply-by-quantity",
+                "passed": true,
+                "expected": "\"2147483647\"",
+                "actual": [
+                  "\"2147483647\""
+                ]
+              },
+              {
+                "name": "int32-min",
+                "word": "money.multiply-by-quantity",
+                "passed": true,
+                "expected": "\"-2147483648\"",
+                "actual": [
+                  "\"-2147483648\""
+                ]
+              },
+              {
+                "name": "int64-overflow",
+                "word": "money.multiply-by-quantity",
+                "passed": true,
+                "expected": "\"MONEY_OVERFLOW\"",
+                "actual": [
+                  "\"MONEY_OVERFLOW\""
+                ]
+              },
+              {
+                "name": "negative-quantity",
+                "word": "money.multiply-by-quantity",
+                "passed": true,
+                "expected": "\"-250\"",
+                "actual": [
+                  "\"-250\""
+                ]
+              },
+              {
+                "name": "zero-quantity",
+                "word": "money.multiply-by-quantity",
+                "passed": true,
+                "expected": "\"0\"",
+                "actual": [
+                  "\"0\""
+                ]
+              },
+              {
+                "name": "negative",
+                "word": "money.nonnegative?",
+                "passed": true,
+                "expected": "false",
+                "actual": [
+                  "false"
+                ]
+              },
+              {
+                "name": "zero",
+                "word": "money.nonnegative?",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "canonical",
+                "word": "payment-id.parse",
+                "passed": true,
+                "expected": "\"00112233-4455-6677-8899-aabbccddeeff\"",
+                "actual": [
+                  "\"00112233-4455-6677-8899-aabbccddeeff\""
+                ]
+              },
+              {
+                "name": "invalid",
+                "word": "payment-id.parse",
+                "passed": true,
+                "expected": "\"INVALID_IDENTIFIER\"",
+                "actual": [
+                  "\"INVALID_IDENTIFIER\""
+                ]
+              },
+              {
+                "name": "normalized",
+                "word": "payment-id.parse",
+                "passed": true,
+                "expected": "\"00112233-4455-6677-8899-aabbccddeeff\"",
+                "actual": [
+                  "\"00112233-4455-6677-8899-aabbccddeeff\""
+                ]
+              },
+              {
+                "name": "blank-reference",
+                "word": "payment-receipt.create",
+                "passed": true,
+                "expected": "\"INVALID_PROVIDER_RECEIPT\"",
+                "actual": [
+                  "\"INVALID_PROVIDER_RECEIPT\""
+                ]
+              },
+              {
+                "name": "keeps-signed-amount",
+                "word": "payment-receipt.create",
+                "passed": true,
+                "expected": "\"-900\"",
+                "actual": [
+                  "\"-900\""
+                ]
+              },
+              {
+                "name": "trims-reference",
+                "word": "payment-receipt.create",
+                "passed": true,
+                "expected": "\"provider-ref-42\"",
+                "actual": [
+                  "\"provider-ref-42\""
+                ]
+              },
+              {
+                "name": "already-paid-precedes-amount-mismatch",
+                "word": "payment.apply-result",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "blank-public-receipt-rejected",
+                "word": "payment.apply-result",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "duplicate-precedes-invalid-amount",
+                "word": "payment.apply-result",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "full-invoice-amount-required",
+                "word": "payment.apply-result",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "invoice-not-found",
+                "word": "payment.apply-result",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "nonpositive-amount-precedes-invoice-lookup",
+                "word": "payment.apply-result",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "provider-error-is-data",
+                "word": "payment.apply-result",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "receipt-amount-must-match",
+                "word": "payment.apply-result",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "success-updates-only-payment-and-invoice-state",
+                "word": "payment.apply-result",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "canonical",
+                "word": "product-id.parse",
+                "passed": true,
+                "expected": "\"00112233-4455-6677-8899-aabbccddeeff\"",
+                "actual": [
+                  "\"00112233-4455-6677-8899-aabbccddeeff\""
+                ]
+              },
+              {
+                "name": "invalid",
+                "word": "product-id.parse",
+                "passed": true,
+                "expected": "\"INVALID_IDENTIFIER\"",
+                "actual": [
+                  "\"INVALID_IDENTIFIER\""
+                ]
+              },
+              {
+                "name": "normalized",
+                "word": "product-id.parse",
+                "passed": true,
+                "expected": "\"00112233-4455-6677-8899-aabbccddeeff\"",
+                "actual": [
+                  "\"00112233-4455-6677-8899-aabbccddeeff\""
+                ]
+              },
+              {
+                "name": "blank-name",
+                "word": "product.create",
+                "passed": true,
+                "expected": "\"INVALID_NAME\"",
+                "actual": [
+                  "\"INVALID_NAME\""
+                ]
+              },
+              {
+                "name": "negative-price",
+                "word": "product.create",
+                "passed": true,
+                "expected": "\"NEGATIVE_PRODUCT_PRICE\"",
+                "actual": [
+                  "\"NEGATIVE_PRODUCT_PRICE\""
+                ]
+              },
+              {
+                "name": "trimmed-name-and-zero-price",
+                "word": "product.create",
+                "passed": true,
+                "expected": "\"Notebook\"",
+                "actual": [
+                  "\"Notebook\""
+                ]
+              },
+              {
+                "name": "adds-and-preserves-all-collections",
+                "word": "store.add-customer",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "duplicate-code-and-input-unchanged",
+                "word": "store.add-customer",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "adds-and-preserves-all-collections",
+                "word": "store.add-product",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "duplicate-code-and-input-unchanged",
+                "word": "store.add-product",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "empty-fold",
+                "word": "store.customer",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "first-match-in-list-order",
+                "word": "store.customer",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "match",
+                "word": "store.customer-fold-step",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "no-match",
+                "word": "store.customer-fold-step",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "preserves-first",
+                "word": "store.customer-fold-step",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "initializes-all-collections",
+                "word": "store.empty",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "empty-fold",
+                "word": "store.invoice",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "first-match-in-list-order",
+                "word": "store.invoice",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "match",
+                "word": "store.invoice-fold-step",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "no-match",
+                "word": "store.invoice-fold-step",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "preserves-first",
+                "word": "store.invoice-fold-step",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "empty-fold",
+                "word": "store.payment",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "first-match-in-list-order",
+                "word": "store.payment",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "match",
+                "word": "store.payment-fold-step",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "no-match",
+                "word": "store.payment-fold-step",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "preserves-first",
+                "word": "store.payment-fold-step",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "empty-fold",
+                "word": "store.product",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "first-match-in-list-order",
+                "word": "store.product",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "match",
+                "word": "store.product-fold-step",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "no-match",
+                "word": "store.product-fold-step",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "preserves-first",
+                "word": "store.product-fold-step",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "empty-fold-identity",
+                "word": "store.replace-invoice",
+                "passed": true,
+                "expected": "0",
+                "actual": [
+                  "0"
+                ]
+              },
+              {
+                "name": "nonempty-fold-preserves-order-and-records",
+                "word": "store.replace-invoice",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "first-match-replaced",
+                "word": "store.replace-invoice-step",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "nonmatching-invoice",
+                "word": "store.replace-invoice-step",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "preserves-items-after-first-match",
+                "word": "store.replace-invoice-step",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "empty-fold",
+                "word": "store.subscription",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "first-match-in-list-order",
+                "word": "store.subscription",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "match",
+                "word": "store.subscription-fold-step",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "no-match",
+                "word": "store.subscription-fold-step",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "preserves-first",
+                "word": "store.subscription-fold-step",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "replaces-both-lists",
+                "word": "store.with-email-state",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "replaces-existing-list",
+                "word": "store.with-invoices",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "replaces-existing-list",
+                "word": "store.with-payments",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "replaces-in-order",
+                "word": "store.with-subscriptions",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "canonical",
+                "word": "subscription-id.parse",
+                "passed": true,
+                "expected": "\"00112233-4455-6677-8899-aabbccddeeff\"",
+                "actual": [
+                  "\"00112233-4455-6677-8899-aabbccddeeff\""
+                ]
+              },
+              {
+                "name": "invalid",
+                "word": "subscription-id.parse",
+                "passed": true,
+                "expected": "\"INVALID_IDENTIFIER\"",
+                "actual": [
+                  "\"INVALID_IDENTIFIER\""
+                ]
+              },
+              {
+                "name": "normalized",
+                "word": "subscription-id.parse",
+                "passed": true,
+                "expected": "\"00112233-4455-6677-8899-aabbccddeeff\"",
+                "actual": [
+                  "\"00112233-4455-6677-8899-aabbccddeeff\""
+                ]
+              },
+              {
+                "name": "already-cancelled",
+                "word": "subscription.cancel",
+                "passed": true,
+                "expected": "\"SUBSCRIPTION_ALREADY_CANCELLED\"",
+                "actual": [
+                  "\"SUBSCRIPTION_ALREADY_CANCELLED\""
+                ]
+              },
+              {
+                "name": "equal-start-preserves-order-and-other-fields",
+                "word": "subscription.cancel",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "missing",
+                "word": "subscription.cancel",
+                "passed": true,
+                "expected": "\"SUBSCRIPTION_NOT_FOUND\"",
+                "actual": [
+                  "\"SUBSCRIPTION_NOT_FOUND\""
+                ]
+              },
+              {
+                "name": "rejects-before-start",
+                "word": "subscription.cancel",
+                "passed": true,
+                "expected": "\"CANCEL_BEFORE_START\"",
+                "actual": [
+                  "\"CANCEL_BEFORE_START\""
+                ]
+              },
+              {
+                "name": "empty-fold",
+                "word": "subscription.replace-list",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "nonempty-fold-replaces-first-in-order",
+                "word": "subscription.replace-list",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "keeps-later-duplicate",
+                "word": "subscription.replace-step",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "keeps-nontarget",
+                "word": "subscription.replace-step",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "replaces-first-match",
+                "word": "subscription.replace-step",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "appends-active-subscription",
+                "word": "subscription.start",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "duplicate-precedes-other-errors",
+                "word": "subscription.start",
+                "passed": true,
+                "expected": "\"DUPLICATE_SUBSCRIPTION\"",
+                "actual": [
+                  "\"DUPLICATE_SUBSCRIPTION\""
+                ]
+              },
+              {
+                "name": "rejects-blank-term",
+                "word": "subscription.start",
+                "passed": true,
+                "expected": "\"INVALID_SUBSCRIPTION_TERM\"",
+                "actual": [
+                  "\"INVALID_SUBSCRIPTION_TERM\""
+                ]
+              },
+              {
+                "name": "rejects-expiry-before-start",
+                "word": "subscription.start",
+                "passed": true,
+                "expected": "\"SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START\"",
+                "actual": [
+                  "\"SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START\""
+                ]
+              },
+              {
+                "name": "rejects-expiry-equal-to-start",
+                "word": "subscription.start",
+                "passed": true,
+                "expected": "\"SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START\"",
+                "actual": [
+                  "\"SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START\""
+                ]
+              },
+              {
+                "name": "rejects-missing-customer-first",
+                "word": "subscription.start",
+                "passed": true,
+                "expected": "\"CUSTOMER_NOT_FOUND\"",
+                "actual": [
+                  "\"CUSTOMER_NOT_FOUND\""
+                ]
+              },
+              {
+                "name": "rejects-missing-product",
+                "word": "subscription.start",
+                "passed": true,
+                "expected": "\"PRODUCT_NOT_FOUND\"",
+                "actual": [
+                  "\"PRODUCT_NOT_FOUND\""
+                ]
+              },
+              {
+                "name": "active",
+                "word": "subscription.status-valid?",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "cancelled",
+                "word": "subscription.status-valid?",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "unknown",
+                "word": "subscription.status-valid?",
+                "passed": true,
+                "expected": "false",
+                "actual": [
+                  "false"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "commit",
+          "text": "6 attached test(s) passed; selected candidates committed.",
+          "data": [
+            "customer.discount-basis-points/premium",
+            "customer.discount-basis-points/regular",
+            "customer.discounted-balance/premium",
+            "customer.discounted-balance/regular",
+            "customer.premium?/premium",
+            "customer.premium?/regular"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "growing correct S01 verifier evidence exists",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "growing correct S01 matches independent expectation",
+      "passed": false,
+      "details": null
+    }
+  ],
+  "runs": [],
+  "sourceRevision": "3a7c0cc943924cac6403a35cab8992e3a60f1ab3",
+  "dirty": true,
+  "oracleSha256": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+  "verifierSha256": "458f55728a2abbccc1768ce79d75698e46f84e1378e4999539e6f2e4dd914686",
+  "preflightSha256": "e66cd7409fd771b982e69b157c3e7fca0b2d4e796a361c6df296c2eb89d6aa68"
+}

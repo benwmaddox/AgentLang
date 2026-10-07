@@ -436,3 +436,11 @@ Exact clean source CI for report 052 passed all 27 checks on
 proves the default Flow authoring milestone, not completion of the full PRD or
 measured agent benefit. The report/evidence-only publication is integrated into
 private main after this source gate; its main CI is observed separately.
+
+Report 076 adds a fresh exact-Money policy sequence (S01/S06/S07) in all three
+modes: seven of nine full acceptance passes, 158 independent behavior cases,
+and retained classification reuse. Flat S06/S07 stopped at missing documentation;
+their independent behavior cases were not reached. Sections 45–52, 57–62, 74,
+80–82 remain partial/pending: this is not the full task bank, a controlled
+model-cost result or proof of marginal-cost improvement. Metadata/replacement
+usability and fresh follow-up trials precede backend/memory research.

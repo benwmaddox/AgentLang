@@ -1,0 +1,4178 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-001",
+  "mode": "flat",
+  "taskId": "S06",
+  "passed": false,
+  "failure": "Business policy verification failed: target has meaningful documentation",
+  "sequenceIndex": 2,
+  "resultKind": "frozen-actor-acceptance",
+  "checkFrozenPin": true,
+  "frozenPin": {
+    "required": true,
+    "checked": true,
+    "status": "validated",
+    "path": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-001\\runs\\flat-S06\\prelaunch.json",
+    "sha256": "53bf619e5d25eb844d86b8b664d0c21929d21b26101cc481755e0457531c186d"
+  },
+  "prelaunch": {
+    "path": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-001\\runs\\flat-S06\\prelaunch.json",
+    "sha256": "53bf619e5d25eb844d86b8b664d0c21929d21b26101cc481755e0457531c186d",
+    "data": {
+      "schemaVersion": 1,
+      "studyId": "business-policy-001",
+      "mode": "flat",
+      "taskId": "S06",
+      "preparedAtUtc": "2026-10-06T21:19:12.7674635-04:00",
+      "sourceRevision": "3a7c0cc943924cac6403a35cab8992e3a60f1ab3",
+      "dirty": true,
+      "model": "gpt-6-luna",
+      "reasoningEffort": "max",
+      "forkTurns": "none",
+      "projectPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-001\\actors\\flat-S06",
+      "launchCommand": "& 'D:\\code\\AgentLang\\scripts\\Start-SubagentTrialHost.ps1' -CliDll 'D:\\code\\AgentLang\\.agentlang\\business-policy-001\\language-bin\\AgentLang.Cli.dll' -ProjectPath 'D:\\code\\AgentLang\\.agentlang\\business-policy-001\\actors\\flat-S06' -TracePath 'D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-001\\runs\\flat-S06\\trace.jsonl' -AllowedOperations @('words','describe','search','source','dependencies','callers','eval','define','test','test-all','tests','commit','replace-word','task.begin','task.commit','task.status','task.log','ir','context','failed-tests','examples','example','effects','type-of','search-type','search-output','history','diff','graph','transitive-dependencies','transitive-callers','search-dependency') -Profile agentlang -ExchangeTimeoutMilliseconds 120000 -MaxExchanges 100",
+      "allowedOperations": [
+        "words",
+        "describe",
+        "search",
+        "source",
+        "dependencies",
+        "callers",
+        "eval",
+        "define",
+        "test",
+        "test-all",
+        "tests",
+        "commit",
+        "replace-word",
+        "task.begin",
+        "task.commit",
+        "task.status",
+        "task.log",
+        "ir",
+        "context",
+        "failed-tests",
+        "examples",
+        "example",
+        "effects",
+        "type-of",
+        "search-type",
+        "search-output",
+        "history",
+        "diff",
+        "graph",
+        "transitive-dependencies",
+        "transitive-callers",
+        "search-dependency"
+      ],
+      "maxExchanges": 100,
+      "exchangeTimeoutMilliseconds": 120000,
+      "profile": "agentlang",
+      "additionalCliArguments": null,
+      "inspectionBudgetEnabled": false,
+      "capabilities": [],
+      "promptSha256": "d525f741931a21f1123ef9fcca9d18e803ed8aba539859ca958fedf705a1cda6",
+      "promptUtf8Bytes": 6648,
+      "oracleSha256": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+      "independentVerifierSha256": "72c480d32e4c00377ffa2ed861c854a199d7faec4bc39d10a585df7fe9b2ecd5",
+      "hostSha256": "d3b60698ef29cc6e7d9b42f37d9a298a311f409cb3f85112ca2a5dccf6148c4d",
+      "runtimeFiles": [
+        {
+          "path": "AgentLang.Cli.deps.json",
+          "bytes": 2903,
+          "sha256": "6382f6dc29bb8f827824839010e313b266e51a3f87a4fdb8c382931d2549e97e"
+        },
+        {
+          "path": "AgentLang.Cli.dll",
+          "bytes": 37888,
+          "sha256": "38b546978c5849d71c5f49dbef6526d95fa59ed11efb34f1d649443ce13b1edf"
+        },
+        {
+          "path": "AgentLang.Cli.exe",
+          "bytes": 156160,
+          "sha256": "3290607f00934950e28e3752b1495712940db7995e01ebebc8198f137e7b6966"
+        },
+        {
+          "path": "AgentLang.Cli.pdb",
+          "bytes": 10136,
+          "sha256": "6f1f92e42ade43ddc2fdf000cd3f5e52c8c3ac4858c1efd0448d94a357eeb04a"
+        },
+        {
+          "path": "AgentLang.Cli.runtimeconfig.json",
+          "bytes": 340,
+          "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+        },
+        {
+          "path": "AgentLang.Core.dll",
+          "bytes": 2073600,
+          "sha256": "1f3e3def46b2414c91e8aaf7da068400746e4f407d8d92d42611b98d45eb269e"
+        },
+        {
+          "path": "AgentLang.Core.pdb",
+          "bytes": 550976,
+          "sha256": "10cb57ca15115d70c17436ff8e257ba48f4d7cc60cf97602e8e7de67dacea1b8"
+        },
+        {
+          "path": "AgentLang.Core.xml",
+          "bytes": 32146,
+          "sha256": "b56571bc8e9401a00c1d10a1b46c64cfb2b88ed4732737be702f6bf14d104daa"
+        },
+        {
+          "path": "cs/FSharp.Core.resources.dll",
+          "bytes": 34600,
+          "sha256": "eb8bd755cfe0d39ce27615027fe22556e8b9dcb470f2b47a36f4bfbf3c31be64"
+        },
+        {
+          "path": "de/FSharp.Core.resources.dll",
+          "bytes": 35592,
+          "sha256": "7419e4f5ceed9e03821686e865fed7d29c6217fdf5d3a46a2919a369c98c38ce"
+        },
+        {
+          "path": "es/FSharp.Core.resources.dll",
+          "bytes": 34600,
+          "sha256": "636866649564c72eb763eb3942e021b52b1f9b3869d037aca48f73d4474353c5"
+        },
+        {
+          "path": "fr/FSharp.Core.resources.dll",
+          "bytes": 35128,
+          "sha256": "f38f2fd6bc4c4e233dd098a36b315a2bc87673cf2f07c6ba3daf71a3264f4a64"
+        },
+        {
+          "path": "FSharp.Core.dll",
+          "bytes": 2314000,
+          "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+        },
+        {
+          "path": "it/FSharp.Core.resources.dll",
+          "bytes": 34576,
+          "sha256": "61a0be9c6a2ed95f8e98493b17c54a55c68cef84e23a0d82114319e2c5f3c2cd"
+        },
+        {
+          "path": "ja/FSharp.Core.resources.dll",
+          "bytes": 37160,
+          "sha256": "dd7f36036d906e991da5505b074ef889a603f449d3324750fda5f5445ba2854f"
+        },
+        {
+          "path": "ko/FSharp.Core.resources.dll",
+          "bytes": 36104,
+          "sha256": "0f3ef625e379577e3b60c15d8cc3759d3dc8840f99894282df1e702b4a166462"
+        },
+        {
+          "path": "pl/FSharp.Core.resources.dll",
+          "bytes": 35632,
+          "sha256": "755bab9fbd85e5e4b4771870c9c4d655e91e3ce39cc1c2735fe0bc7cec6b84c3"
+        },
+        {
+          "path": "pt-BR/FSharp.Core.resources.dll",
+          "bytes": 34096,
+          "sha256": "a4bbbdaabf2003a5fdff5f5bc4143c3fd4a064f2681fc481f449d4558074dc61"
+        },
+        {
+          "path": "ru/FSharp.Core.resources.dll",
+          "bytes": 41232,
+          "sha256": "a1133f9ab7e661803d1af0c2489626bd53ac33a11dfe891f5a02f3186f2f5d78"
+        },
+        {
+          "path": "tr/FSharp.Core.resources.dll",
+          "bytes": 34072,
+          "sha256": "6b0cba5139a86ee681909fdfcebac07c99afba3bfcff4fb8ab12b9c2112a0b31"
+        },
+        {
+          "path": "zh-Hans/FSharp.Core.resources.dll",
+          "bytes": 32552,
+          "sha256": "25f82f35a9234bcaab272921b0d50054ddb4a669d96c111907c9d31f5b18c121"
+        },
+        {
+          "path": "zh-Hant/FSharp.Core.resources.dll",
+          "bytes": 32032,
+          "sha256": "ac03ee7c4112c755705776c700033794586f980fe9476e6a13811a7153beabb8"
+        }
+      ],
+      "startingProjectFiles": [
+        {
+          "path": ".agentlang/store/CURRENT",
+          "bytes": 134,
+          "sha256": "552b35c609db456bbe64f8edb7025de60a15bf342e9e3cc67919f52485b98bcc"
+        },
+        {
+          "path": ".agentlang/store/manifests/f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7.json",
+          "bytes": 1647,
+          "sha256": "f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7"
+        },
+        {
+          "path": ".agentlang/store/objects/2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0.agent",
+          "bytes": 66,
+          "sha256": "2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0"
+        },
+        {
+          "path": ".agentlang/store/objects/737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e.agent",
+          "bytes": 570,
+          "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+        },
+        {
+          "path": ".agentlang/store/objects/8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416.agent",
+          "bytes": 65,
+          "sha256": "8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416"
+        },
+        {
+          "path": ".agentlang/store/objects/9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14.agent",
+          "bytes": 150,
+          "sha256": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14"
+        },
+        {
+          "path": ".agentlang/store/objects/cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7.agent",
+          "bytes": 66,
+          "sha256": "cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7"
+        },
+        {
+          "path": ".agentlang/store/objects/e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17.agent",
+          "bytes": 20,
+          "sha256": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17"
+        },
+        {
+          "path": ".agentlang/store/objects/ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb.agent",
+          "bytes": 66,
+          "sha256": "ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb"
+        },
+        {
+          "path": ".agentlang/store/WRITE.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "dictionary.agent",
+          "bytes": 570,
+          "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+        },
+        {
+          "path": "fixtures/flat-customer.agent",
+          "bytes": 506,
+          "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+        }
+      ],
+      "startingStateSha256": "51592cd8f1d73631a2b8be8976351a4b6a954835624dfd24f442588b8c70e9a8"
+    }
+  },
+  "startedUtc": "2026-10-07T01:30:39.4926399Z",
+  "finishedUtc": "2026-10-07T01:30:41.8979353Z",
+  "verifierSha256": "72c480d32e4c00377ffa2ed861c854a199d7faec4bc39d10a585df7fe9b2ecd5",
+  "oracle": {
+    "path": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-001\\acceptance.json",
+    "sha256": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+    "symbol": "customer.discount-basis-points",
+    "cases": 10,
+    "independentResults": [
+      {
+        "id": "kind-1",
+        "kind": "premium",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Int",
+          "value": "1000"
+        }
+      },
+      {
+        "id": "kind-2",
+        "kind": "regular",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Int",
+          "value": "0"
+        }
+      },
+      {
+        "id": "kind-3",
+        "kind": "Premium",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Int",
+          "value": "0"
+        }
+      },
+      {
+        "id": "kind-4",
+        "kind": "PREMIUM",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Int",
+          "value": "0"
+        }
+      },
+      {
+        "id": "kind-5",
+        "kind": "premium ",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Int",
+          "value": "0"
+        }
+      },
+      {
+        "id": "kind-6",
+        "kind": " premium",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Int",
+          "value": "0"
+        }
+      },
+      {
+        "id": "kind-7",
+        "kind": "\tpremium",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Int",
+          "value": "0"
+        }
+      },
+      {
+        "id": "kind-8",
+        "kind": "premium\n",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Int",
+          "value": "0"
+        }
+      },
+      {
+        "id": "kind-9",
+        "kind": "",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Int",
+          "value": "0"
+        }
+      },
+      {
+        "id": "kind-10",
+        "kind": "prémi um",
+        "balanceMinor": "1250",
+        "expected": {
+          "type": "Int",
+          "value": "0"
+        }
+      }
+    ]
+  },
+  "project": {
+    "argumentPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-001\\actors\\flat-S06",
+    "path": "D:\\code\\AgentLang\\.agentlang\\business-policy-001\\actors\\flat-S06",
+    "treeSha256": null,
+    "filesBefore": [
+      {
+        "path": ".agentlang/store/CURRENT",
+        "sha256": "bc7fb5ef36e4116833e5f80d3e2512d0cdf3402cf541dc4a3a0a2324629f2c3b"
+      },
+      {
+        "path": ".agentlang/store/manifests/b5468ba190b13340862dd8ed12d94339b73d1f5540f7b4889e7b2cea87db61fa.json",
+        "sha256": "b5468ba190b13340862dd8ed12d94339b73d1f5540f7b4889e7b2cea87db61fa"
+      },
+      {
+        "path": ".agentlang/store/manifests/f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7.json",
+        "sha256": "f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7"
+      },
+      {
+        "path": ".agentlang/store/objects/1eac29bdc957e2754bebadd50805118faca122f575580cde303205b3a0a1a9f5.agent",
+        "sha256": "1eac29bdc957e2754bebadd50805118faca122f575580cde303205b3a0a1a9f5"
+      },
+      {
+        "path": ".agentlang/store/objects/2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0.agent",
+        "sha256": "2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0"
+      },
+      {
+        "path": ".agentlang/store/objects/2f138f157e7369d9cf66c06787400c04fa92a14defa68f52c391737d864038e6.agent",
+        "sha256": "2f138f157e7369d9cf66c06787400c04fa92a14defa68f52c391737d864038e6"
+      },
+      {
+        "path": ".agentlang/store/objects/737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e.agent",
+        "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+      },
+      {
+        "path": ".agentlang/store/objects/8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416.agent",
+        "sha256": "8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416"
+      },
+      {
+        "path": ".agentlang/store/objects/9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14.agent",
+        "sha256": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14"
+      },
+      {
+        "path": ".agentlang/store/objects/9afd492b622a1aa23f35371037ec977cb5585e774efabd6349ace6582ff0c241.agent",
+        "sha256": "9afd492b622a1aa23f35371037ec977cb5585e774efabd6349ace6582ff0c241"
+      },
+      {
+        "path": ".agentlang/store/objects/a16a96f15209fdbde7b2d31b23462c7fd9b2ef92c2412fa1dd512e1994929607.agent",
+        "sha256": "a16a96f15209fdbde7b2d31b23462c7fd9b2ef92c2412fa1dd512e1994929607"
+      },
+      {
+        "path": ".agentlang/store/objects/a8b1f774c4423cdac30feb6249b389a9ca7f2ca0088e647681e1c0390fe138d2.agent",
+        "sha256": "a8b1f774c4423cdac30feb6249b389a9ca7f2ca0088e647681e1c0390fe138d2"
+      },
+      {
+        "path": ".agentlang/store/objects/aed8680d6c51db3fcd4fcb89bfe6a652a702ae04c4d12a54b4f33edcb24ce490.agent",
+        "sha256": "aed8680d6c51db3fcd4fcb89bfe6a652a702ae04c4d12a54b4f33edcb24ce490"
+      },
+      {
+        "path": ".agentlang/store/objects/b95bb20bd8245289e265e53958712cfe000f87bb1a1cabdebddb52d5c4a7f57c.agent",
+        "sha256": "b95bb20bd8245289e265e53958712cfe000f87bb1a1cabdebddb52d5c4a7f57c"
+      },
+      {
+        "path": ".agentlang/store/objects/cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7.agent",
+        "sha256": "cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7"
+      },
+      {
+        "path": ".agentlang/store/objects/d1d90e1bd6b96a225bc22fb432449c2602a81fdb586e3b7966325e1ecd0b50a9.agent",
+        "sha256": "d1d90e1bd6b96a225bc22fb432449c2602a81fdb586e3b7966325e1ecd0b50a9"
+      },
+      {
+        "path": ".agentlang/store/objects/e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17.agent",
+        "sha256": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17"
+      },
+      {
+        "path": ".agentlang/store/objects/ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb.agent",
+        "sha256": "ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb"
+      },
+      {
+        "path": ".agentlang/store/WRITE.lock",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "dictionary.agent",
+        "sha256": "d1d90e1bd6b96a225bc22fb432449c2602a81fdb586e3b7966325e1ecd0b50a9"
+      },
+      {
+        "path": "fixtures/flat-customer.agent",
+        "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+      },
+      {
+        "path": "history/task-0001.json",
+        "sha256": "a7203c7d75f5f1b9c1151bcef66c3677ee1400f36ba588ba31ea020a412bfb8c"
+      }
+    ],
+    "filesAfter": [
+      {
+        "path": ".agentlang/store/CURRENT",
+        "sha256": "bc7fb5ef36e4116833e5f80d3e2512d0cdf3402cf541dc4a3a0a2324629f2c3b"
+      },
+      {
+        "path": ".agentlang/store/manifests/b5468ba190b13340862dd8ed12d94339b73d1f5540f7b4889e7b2cea87db61fa.json",
+        "sha256": "b5468ba190b13340862dd8ed12d94339b73d1f5540f7b4889e7b2cea87db61fa"
+      },
+      {
+        "path": ".agentlang/store/manifests/f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7.json",
+        "sha256": "f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7"
+      },
+      {
+        "path": ".agentlang/store/objects/1eac29bdc957e2754bebadd50805118faca122f575580cde303205b3a0a1a9f5.agent",
+        "sha256": "1eac29bdc957e2754bebadd50805118faca122f575580cde303205b3a0a1a9f5"
+      },
+      {
+        "path": ".agentlang/store/objects/2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0.agent",
+        "sha256": "2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0"
+      },
+      {
+        "path": ".agentlang/store/objects/2f138f157e7369d9cf66c06787400c04fa92a14defa68f52c391737d864038e6.agent",
+        "sha256": "2f138f157e7369d9cf66c06787400c04fa92a14defa68f52c391737d864038e6"
+      },
+      {
+        "path": ".agentlang/store/objects/737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e.agent",
+        "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+      },
+      {
+        "path": ".agentlang/store/objects/8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416.agent",
+        "sha256": "8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416"
+      },
+      {
+        "path": ".agentlang/store/objects/9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14.agent",
+        "sha256": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14"
+      },
+      {
+        "path": ".agentlang/store/objects/9afd492b622a1aa23f35371037ec977cb5585e774efabd6349ace6582ff0c241.agent",
+        "sha256": "9afd492b622a1aa23f35371037ec977cb5585e774efabd6349ace6582ff0c241"
+      },
+      {
+        "path": ".agentlang/store/objects/a16a96f15209fdbde7b2d31b23462c7fd9b2ef92c2412fa1dd512e1994929607.agent",
+        "sha256": "a16a96f15209fdbde7b2d31b23462c7fd9b2ef92c2412fa1dd512e1994929607"
+      },
+      {
+        "path": ".agentlang/store/objects/a8b1f774c4423cdac30feb6249b389a9ca7f2ca0088e647681e1c0390fe138d2.agent",
+        "sha256": "a8b1f774c4423cdac30feb6249b389a9ca7f2ca0088e647681e1c0390fe138d2"
+      },
+      {
+        "path": ".agentlang/store/objects/aed8680d6c51db3fcd4fcb89bfe6a652a702ae04c4d12a54b4f33edcb24ce490.agent",
+        "sha256": "aed8680d6c51db3fcd4fcb89bfe6a652a702ae04c4d12a54b4f33edcb24ce490"
+      },
+      {
+        "path": ".agentlang/store/objects/b95bb20bd8245289e265e53958712cfe000f87bb1a1cabdebddb52d5c4a7f57c.agent",
+        "sha256": "b95bb20bd8245289e265e53958712cfe000f87bb1a1cabdebddb52d5c4a7f57c"
+      },
+      {
+        "path": ".agentlang/store/objects/cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7.agent",
+        "sha256": "cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7"
+      },
+      {
+        "path": ".agentlang/store/objects/d1d90e1bd6b96a225bc22fb432449c2602a81fdb586e3b7966325e1ecd0b50a9.agent",
+        "sha256": "d1d90e1bd6b96a225bc22fb432449c2602a81fdb586e3b7966325e1ecd0b50a9"
+      },
+      {
+        "path": ".agentlang/store/objects/e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17.agent",
+        "sha256": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17"
+      },
+      {
+        "path": ".agentlang/store/objects/ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb.agent",
+        "sha256": "ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb"
+      },
+      {
+        "path": ".agentlang/store/WRITE.lock",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "dictionary.agent",
+        "sha256": "d1d90e1bd6b96a225bc22fb432449c2602a81fdb586e3b7966325e1ecd0b50a9"
+      },
+      {
+        "path": "fixtures/flat-customer.agent",
+        "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+      },
+      {
+        "path": "history/task-0001.json",
+        "sha256": "a7203c7d75f5f1b9c1151bcef66c3677ee1400f36ba588ba31ea020a412bfb8c"
+      }
+    ]
+  },
+  "outputTreeSha256": null,
+  "startingProject": {
+    "argumentPath": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-001\\runs\\flat-S06\\starting-project",
+    "path": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-001\\runs\\flat-S06\\starting-project",
+    "state": {
+      "path": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-001\\runs\\flat-S06\\starting-state.json",
+      "sha256": "51592cd8f1d73631a2b8be8976351a4b6a954835624dfd24f442588b8c70e9a8",
+      "data": {
+        "schemaVersion": 1,
+        "studyId": "business-policy-001",
+        "mode": "flat",
+        "taskId": "S06",
+        "sequenceIndex": 2,
+        "seed": {
+          "path": "D:\\code\\AgentLang\\.agentlang\\business-policy-001\\seeds\\flat\\project",
+          "inventorySha256": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424"
+        },
+        "sourceInputs": [
+          {
+            "path": ".agentlang/business-policy-001/flat-customer.agent",
+            "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+          }
+        ],
+        "runtime": {
+          "cliPath": ".agentlang/business-policy-001/language-bin/AgentLang.Cli.dll",
+          "cliSha256": "38b546978c5849d71c5f49dbef6526d95fa59ed11efb34f1d649443ce13b1edf",
+          "businessPath": "experiments/AgentLang.Business/bin/Release/net9.0/AgentLang.Business.dll",
+          "businessSha256": "5508b72886e72ccabd60c838b329678ae09f5bcaa805967244d37b0b30a19cb1"
+        },
+        "previousAcceptance": null,
+        "project": {
+          "path": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-001\\runs\\flat-S06\\starting-project",
+          "files": [
+            {
+              "path": ".agentlang/store/CURRENT",
+              "sha256": "552b35c609db456bbe64f8edb7025de60a15bf342e9e3cc67919f52485b98bcc"
+            },
+            {
+              "path": ".agentlang/store/manifests/f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7.json",
+              "sha256": "f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7"
+            },
+            {
+              "path": ".agentlang/store/objects/2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0.agent",
+              "sha256": "2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0"
+            },
+            {
+              "path": ".agentlang/store/objects/737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e.agent",
+              "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+            },
+            {
+              "path": ".agentlang/store/objects/8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416.agent",
+              "sha256": "8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416"
+            },
+            {
+              "path": ".agentlang/store/objects/9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14.agent",
+              "sha256": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14"
+            },
+            {
+              "path": ".agentlang/store/objects/cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7.agent",
+              "sha256": "cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7"
+            },
+            {
+              "path": ".agentlang/store/objects/e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17.agent",
+              "sha256": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17"
+            },
+            {
+              "path": ".agentlang/store/objects/ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb.agent",
+              "sha256": "ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb"
+            },
+            {
+              "path": ".agentlang/store/WRITE.lock",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "dictionary.agent",
+              "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+            },
+            {
+              "path": "fixtures/flat-customer.agent",
+              "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+            }
+          ],
+          "inventorySha256": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424"
+        },
+        "actor": {
+          "projectPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-001\\actors\\flat-S06",
+          "files": [
+            {
+              "path": ".agentlang/store/CURRENT",
+              "sha256": "552b35c609db456bbe64f8edb7025de60a15bf342e9e3cc67919f52485b98bcc"
+            },
+            {
+              "path": ".agentlang/store/manifests/f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7.json",
+              "sha256": "f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7"
+            },
+            {
+              "path": ".agentlang/store/objects/2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0.agent",
+              "sha256": "2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0"
+            },
+            {
+              "path": ".agentlang/store/objects/737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e.agent",
+              "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+            },
+            {
+              "path": ".agentlang/store/objects/8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416.agent",
+              "sha256": "8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416"
+            },
+            {
+              "path": ".agentlang/store/objects/9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14.agent",
+              "sha256": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14"
+            },
+            {
+              "path": ".agentlang/store/objects/cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7.agent",
+              "sha256": "cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7"
+            },
+            {
+              "path": ".agentlang/store/objects/e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17.agent",
+              "sha256": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17"
+            },
+            {
+              "path": ".agentlang/store/objects/ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb.agent",
+              "sha256": "ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb"
+            },
+            {
+              "path": ".agentlang/store/WRITE.lock",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "dictionary.agent",
+              "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+            },
+            {
+              "path": "fixtures/flat-customer.agent",
+              "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+            }
+          ],
+          "inventorySha256": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424"
+        }
+      }
+    },
+    "preservation": {
+      "mode": "flat",
+      "checked": true,
+      "sourceWords": 0,
+      "nominalTypes": 6,
+      "unchanged": true,
+      "startingProjectPath": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-001\\runs\\flat-S06\\starting-project",
+      "startingProjectFiles": [
+        {
+          "path": ".agentlang/store/CURRENT",
+          "sha256": "552b35c609db456bbe64f8edb7025de60a15bf342e9e3cc67919f52485b98bcc"
+        },
+        {
+          "path": ".agentlang/store/manifests/f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7.json",
+          "sha256": "f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7"
+        },
+        {
+          "path": ".agentlang/store/objects/2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0.agent",
+          "sha256": "2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0"
+        },
+        {
+          "path": ".agentlang/store/objects/737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e.agent",
+          "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+        },
+        {
+          "path": ".agentlang/store/objects/8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416.agent",
+          "sha256": "8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416"
+        },
+        {
+          "path": ".agentlang/store/objects/9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14.agent",
+          "sha256": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14"
+        },
+        {
+          "path": ".agentlang/store/objects/cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7.agent",
+          "sha256": "cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7"
+        },
+        {
+          "path": ".agentlang/store/objects/e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17.agent",
+          "sha256": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17"
+        },
+        {
+          "path": ".agentlang/store/objects/ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb.agent",
+          "sha256": "ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb"
+        },
+        {
+          "path": ".agentlang/store/WRITE.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "dictionary.agent",
+          "sha256": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e"
+        },
+        {
+          "path": "fixtures/flat-customer.agent",
+          "sha256": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d"
+        }
+      ],
+      "startingWords": [],
+      "startingTypes": [
+        "Customer",
+        "CustomerId",
+        "Email",
+        "Instant",
+        "Money",
+        "ProductId"
+      ],
+      "addedUserWords": [
+        "customer.discount-basis-points"
+      ],
+      "addedNominalTypes": []
+    }
+  },
+  "runtime": {
+    "cliDll": "D:\\code\\AgentLang\\.agentlang\\business-policy-001\\language-bin\\AgentLang.Cli.dll",
+    "cliSha256": "38b546978c5849d71c5f49dbef6526d95fa59ed11efb34f1d649443ce13b1edf"
+  },
+  "reuse": {
+    "candidatePriorTaskSymbols": [],
+    "priorTaskSymbols": null,
+    "startingDictionaryTaskSymbols": null,
+    "directDependencies": [],
+    "transitiveDependencies": [],
+    "reusedPriorTaskSymbols": null,
+    "status": "unavailable until starting inventory and dependency graph are checked"
+  },
+  "checks": [
+    {
+      "name": "mode is supported",
+      "passed": true,
+      "details": "flat"
+    },
+    {
+      "name": "task id is supported",
+      "passed": true,
+      "details": "S06"
+    },
+    {
+      "name": "acceptance corpus exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-001\\acceptance.json"
+    },
+    {
+      "name": "acceptance default Instant is a JSON string",
+      "passed": true
+    },
+    {
+      "name": "acceptance corpus schema and sequence match",
+      "passed": true
+    },
+    {
+      "name": "acceptance task signature matches policy contract",
+      "passed": true,
+      "details": "customer.discount-basis-points"
+    },
+    {
+      "name": "acceptance case count matches policy corpus",
+      "passed": true,
+      "details": {
+        "actual": 10,
+        "expected": 10
+      }
+    },
+    {
+      "name": "acceptance case ids are nonempty and unique",
+      "passed": true
+    },
+    {
+      "name": "all acceptance expected values match independent BigInteger oracle",
+      "passed": true
+    },
+    {
+      "name": "actor project directory exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\business-policy-001\\actors\\flat-S06"
+    },
+    {
+      "name": "pinned AgentLang CLI exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\business-policy-001\\language-bin\\AgentLang.Cli.dll"
+    },
+    {
+      "name": "immutable starting project exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-001\\runs\\flat-S06\\starting-project"
+    },
+    {
+      "name": "evidence file is outside actor and starting projects",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-001\\runs\\flat-S06\\acceptance.json"
+    },
+    {
+      "name": "starting-state schema and study match",
+      "passed": true
+    },
+    {
+      "name": "starting-state sequence index matches canonical order",
+      "passed": true,
+      "details": "expected one-based 2; actual 2"
+    },
+    {
+      "name": "starting-state project and actor paths match supplied run",
+      "passed": true,
+      "details": {
+        "project": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-001\\runs\\flat-S06\\starting-project",
+        "actor": "D:\\code\\AgentLang\\.agentlang\\business-policy-001\\actors\\flat-S06"
+      }
+    },
+    {
+      "name": "starting-state pins CLI and Business runtime artifacts",
+      "passed": true
+    },
+    {
+      "name": "starting-state has source input hashes",
+      "passed": true
+    },
+    {
+      "name": "starting-state includes project hash rows",
+      "passed": true
+    },
+    {
+      "name": "starting-state project file hashes match immutable start",
+      "passed": true,
+      "details": [
+        {
+          "path": ".agentlang/store/CURRENT",
+          "expected": "552b35c609db456bbe64f8edb7025de60a15bf342e9e3cc67919f52485b98bcc",
+          "actual": "552b35c609db456bbe64f8edb7025de60a15bf342e9e3cc67919f52485b98bcc",
+          "passed": true
+        },
+        {
+          "path": ".agentlang/store/manifests/f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7.json",
+          "expected": "f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7",
+          "actual": "f349f185bcef8753b68ed8b72dd9f0e15f9b3b618880ce462472208b5e7a02c7",
+          "passed": true
+        },
+        {
+          "path": ".agentlang/store/objects/2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0.agent",
+          "expected": "2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0",
+          "actual": "2d195038898a2aec62d3571c3d3118725dd89d6403e4fbe8ad73065773ee62d0",
+          "passed": true
+        },
+        {
+          "path": ".agentlang/store/objects/737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e.agent",
+          "expected": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e",
+          "actual": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e",
+          "passed": true
+        },
+        {
+          "path": ".agentlang/store/objects/8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416.agent",
+          "expected": "8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416",
+          "actual": "8d1981045bde091f3f0c8e22ca71f4beddd3ad44680607408f1025a446c61416",
+          "passed": true
+        },
+        {
+          "path": ".agentlang/store/objects/9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14.agent",
+          "expected": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14",
+          "actual": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14",
+          "passed": true
+        },
+        {
+          "path": ".agentlang/store/objects/cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7.agent",
+          "expected": "cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7",
+          "actual": "cbe8ae8043238a1820049896560457d91bb30cf674d814e86a461d7b3a596bd7",
+          "passed": true
+        },
+        {
+          "path": ".agentlang/store/objects/e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17.agent",
+          "expected": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17",
+          "actual": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17",
+          "passed": true
+        },
+        {
+          "path": ".agentlang/store/objects/ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb.agent",
+          "expected": "ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb",
+          "actual": "ffc5d4686ded51e9e577d17f7b816da29cde478e68e4bc4bd3d62c256df235bb",
+          "passed": true
+        },
+        {
+          "path": ".agentlang/store/WRITE.lock",
+          "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "actual": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "passed": true
+        },
+        {
+          "path": "dictionary.agent",
+          "expected": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e",
+          "actual": "737582605d2bf97f4edff571b620f4fbd5aa1d412c42af6175e1ab415a25598e",
+          "passed": true
+        },
+        {
+          "path": "fixtures/flat-customer.agent",
+          "expected": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d",
+          "actual": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "starting-state rows cover the complete project inventory",
+      "passed": true,
+      "details": {
+        "actual": 12,
+        "listed": 12
+      }
+    },
+    {
+      "name": "starting-state project inventory hash matches immutable start",
+      "passed": true,
+      "details": {
+        "actual": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424",
+        "expected": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424"
+      }
+    },
+    {
+      "name": "prepared actor inventory matches immutable start snapshot",
+      "passed": true
+    },
+    {
+      "name": "starting-state seed, source, and runtime hashes match",
+      "passed": true,
+      "details": [
+        {
+          "kind": "sourceInput",
+          "path": "D:\\code\\AgentLang\\.agentlang\\business-policy-001\\flat-customer.agent",
+          "expected": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d",
+          "actual": "da8dfe6933606872f630e3d3a1cf66d887eb3f0aeb04e5cb03ec82bf8ce3745d",
+          "passed": true
+        },
+        {
+          "kind": "seed",
+          "path": "D:\\code\\AgentLang\\.agentlang\\business-policy-001\\seeds\\flat\\project",
+          "expected": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424",
+          "actual": "174d7118914e6919af969fa0a878c5ec8eda96ed99daab86dd908b5984137424",
+          "passed": true
+        },
+        {
+          "kind": "runtime",
+          "path": "D:\\code\\AgentLang\\.agentlang\\business-policy-001\\language-bin\\AgentLang.Cli.dll",
+          "expected": "38b546978c5849d71c5f49dbef6526d95fa59ed11efb34f1d649443ce13b1edf",
+          "actual": "38b546978c5849d71c5f49dbef6526d95fa59ed11efb34f1d649443ce13b1edf",
+          "passed": true
+        },
+        {
+          "kind": "runtime",
+          "path": "D:\\code\\AgentLang\\experiments\\AgentLang.Business\\bin\\Release\\net9.0\\AgentLang.Business.dll",
+          "expected": "5508b72886e72ccabd60c838b329678ae09f5bcaa805967244d37b0b30a19cb1",
+          "actual": "5508b72886e72ccabd60c838b329678ae09f5bcaa805967244d37b0b30a19cb1",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "optional prior acceptance absent",
+      "passed": true,
+      "details": "No starting-state record was supplied for this isolated control or task."
+    },
+    {
+      "name": "provided CLI matches starting-state pin",
+      "passed": true,
+      "details": {
+        "pinned": "38b546978c5849d71c5f49dbef6526d95fa59ed11efb34f1d649443ce13b1edf",
+        "provided": "38b546978c5849d71c5f49dbef6526d95fa59ed11efb34f1d649443ce13b1edf"
+      }
+    },
+    {
+      "name": "frozen pin schema, study, mode, and task match",
+      "passed": true
+    },
+    {
+      "name": "frozen pin actor project path matches argument",
+      "passed": true,
+      "details": {
+        "actual": "D:\\code\\AgentLang\\.agentlang\\business-policy-001\\actors\\flat-S06",
+        "expected": "D:\\code\\AgentLang\\.agentlang\\business-policy-001\\actors\\flat-S06"
+      }
+    },
+    {
+      "name": "frozen run starting-state exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-001\\runs\\flat-S06\\starting-state.json"
+    },
+    {
+      "name": "frozen starting-state hash matches pin",
+      "passed": true,
+      "details": {
+        "actual": "51592cd8f1d73631a2b8be8976351a4b6a954835624dfd24f442588b8c70e9a8",
+        "expected": "51592cd8f1d73631a2b8be8976351a4b6a954835624dfd24f442588b8c70e9a8"
+      }
+    },
+    {
+      "name": "frozen actor prompt exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\business-policy-001\\runs\\flat-S06\\prompt.txt"
+    },
+    {
+      "name": "frozen prompt hash matches pin",
+      "passed": true,
+      "details": {
+        "actual": "d525f741931a21f1123ef9fcca9d18e803ed8aba539859ca958fedf705a1cda6",
+        "expected": "d525f741931a21f1123ef9fcca9d18e803ed8aba539859ca958fedf705a1cda6"
+      }
+    },
+    {
+      "name": "frozen oracle hash matches acceptance corpus",
+      "passed": true
+    },
+    {
+      "name": "frozen verifier hash matches current verifier",
+      "passed": true
+    },
+    {
+      "name": "frozen host hash matches current protocol host",
+      "passed": true
+    },
+    {
+      "name": "frozen starting project file inventory matches",
+      "passed": true,
+      "details": {
+        "files": 12
+      }
+    },
+    {
+      "name": "frozen runtime directory exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\business-policy-001\\language-bin"
+    },
+    {
+      "name": "frozen runtime file inventory matches",
+      "passed": true,
+      "details": {
+        "path": "D:\\code\\AgentLang\\.agentlang\\business-policy-001\\language-bin",
+        "files": 22
+      }
+    },
+    {
+      "name": "scratch project path is inside verifier tests root",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\business-policy-001\\tests\\verify-flat-S06-2c6db44b34404af4a8eb9559ee08a876"
+    },
+    {
+      "name": "language scratch copy contains source project",
+      "passed": true
+    },
+    {
+      "name": "target exists in actor project",
+      "passed": true,
+      "details": "customer.discount-basis-points"
+    },
+    {
+      "name": "target is an authored user word",
+      "passed": true,
+      "details": "customer.discount-basis-points"
+    },
+    {
+      "name": "all starting user words retain identity, signature, status, and source",
+      "passed": true,
+      "details": []
+    },
+    {
+      "name": "all starting nominal type sources are preserved",
+      "passed": true,
+      "details": []
+    },
+    {
+      "name": "target output matches acceptance signature",
+      "passed": true,
+      "details": {
+        "inputs": [
+          "Customer"
+        ],
+        "outputs": [
+          "Int"
+        ]
+      }
+    },
+    {
+      "name": "target is a persistent library word",
+      "passed": true,
+      "details": {
+        "maturity": "library",
+        "status": "persistent",
+        "id": "word_9705c29454344be3918968374c8e2e7e"
+      }
+    },
+    {
+      "name": "all attached tests pass",
+      "passed": true,
+      "details": {
+        "count": 5,
+        "failed": []
+      }
+    },
+    {
+      "name": "target owns passing tests",
+      "passed": true,
+      "details": 5
+    },
+    {
+      "name": "target has meaningful documentation",
+      "passed": false,
+      "details": ""
+    }
+  ],
+  "jsonlSessions": [
+    {
+      "label": "starting words inventory",
+      "requestCount": 1,
+      "requests": [
+        "{\"op\":\"words\"}"
+      ],
+      "responseCount": 1,
+      "responseLines": [
+        "{\"ok\":true,\"kind\":\"words\",\"text\":\"74 word(s).\",\"data\":{\"words\":[{\"name\":\"CustomerId.new\",\"id\":\"generated_CustomerId.new\",\"inputs\":[\"String\"],\"outputs\":[\"CustomerId\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"CustomerId.value\",\"id\":\"generated_CustomerId.value\",\"inputs\":[\"CustomerId\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"Email.new\",\"id\":\"generated_Email.new\",\"inputs\":[\"String\"],\"outputs\":[\"Email\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"Email.value\",\"id\":\"generated_Email.value\",\"inputs\":[\"Email\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"Instant.new\",\"id\":\"generated_Instant.new\",\"inputs\":[\"String\"],\"outputs\":[\"Instant\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"Instant.value\",\"id\":\"generated_Instant.value\",\"inputs\":[\"Instant\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"Money.new\",\"id\":\"generated_Money.new\",\"inputs\":[\"Int\"],\"outputs\":[\"Money\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"Money.value\",\"id\":\"generated_Money.value\",\"inputs\":[\"Money\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"ProductId.new\",\"id\":\"generated_ProductId.new\",\"inputs\":[\"String\"],\"outputs\":[\"ProductId\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"ProductId.value\",\"id\":\"generated_ProductId.value\",\"inputs\":[\"ProductId\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"add\",\"id\":\"primitive_add\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"bool.and\",\"id\":\"primitive_bool.and\",\"inputs\":[\"Bool\",\"Bool\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"bool.not\",\"id\":\"primitive_bool.not\",\"inputs\":[\"Bool\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"bool.or\",\"id\":\"primitive_bool.or\",\"inputs\":[\"Bool\",\"Bool\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"clock.now\",\"id\":\"primitive_clock.now\",\"inputs\":[],\"outputs\":[\"String\"],\"effects\":[\"clock.read\"],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"console.write\",\"id\":\"primitive_console.write\",\"inputs\":[\"String\"],\"outputs\":[\"Unit\"],\"effects\":[\"console.write\"],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"customer.balance\",\"id\":\"generated_customer.balance\",\"inputs\":[\"Customer\"],\"outputs\":[\"Money\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"customer.created-at\",\"id\":\"generated_customer.created-at\",\"inputs\":[\"Customer\"],\"outputs\":[\"Instant\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"customer.email\",\"id\":\"generated_customer.email\",\"inputs\":[\"Customer\"],\"outputs\":[\"Email\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"customer.id\",\"id\":\"generated_customer.id\",\"inputs\":[\"Customer\"],\"outputs\":[\"CustomerId\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"customer.kind\",\"id\":\"generated_customer.kind\",\"inputs\":[\"Customer\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"customer.new\",\"id\":\"generated_customer.new\",\"inputs\":[\"CustomerId\",\"Email\",\"String\",\"Money\",\"Instant\"],\"outputs\":[\"Customer\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"divide\",\"id\":\"primitive_divide\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"drop\",\"id\":\"primitive_drop\",\"inputs\":[\"a\"],\"outputs\":[],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"dup\",\"id\":\"primitive_dup\",\"inputs\":[\"a\"],\"outputs\":[\"a\",\"a\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"equals\",\"id\":\"primitive_equals\",\"inputs\":[\"a\",\"a\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"file.exists?\",\"id\":\"primitive_file.exists?\",\"inputs\":[\"String\"],\"outputs\":[\"Bool\"],\"effects\":[\"fs.read\"],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"file.read\",\"id\":\"primitive_file.read\",\"inputs\":[\"String\"],\"outputs\":[\"String\"],\"effects\":[\"fs.read\"],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"file.write\",\"id\":\"primitive_file.write\",\"inputs\":[\"String\",\"String\"],\"outputs\":[\"Unit\"],\"effects\":[\"fs.write\"],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.add\",\"id\":\"primitive_float.add\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Float\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.divide\",\"id\":\"primitive_float.divide\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Float\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.greater-or-equal\",\"id\":\"primitive_float.greater-or-equal\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.greater-than\",\"id\":\"primitive_float.greater-than\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.less-or-equal\",\"id\":\"primitive_float.less-or-equal\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.less-than\",\"id\":\"primitive_float.less-than\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.multiply\",\"id\":\"primitive_float.multiply\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Float\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.round\",\"id\":\"primitive_float.round\",\"inputs\":[\"Float\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.subtract\",\"id\":\"primitive_float.subtract\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Float\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.to-int\",\"id\":\"primitive_float.to-int\",\"inputs\":[\"Float\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.to-string\",\"id\":\"primitive_float.to-string\",\"inputs\":[\"Float\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"instant.add-days\",\"id\":\"primitive_instant.add-days\",\"inputs\":[\"String\",\"Int\"],\"outputs\":[\"Result\\u003CString, String\\u003E\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"instant.before?\",\"id\":\"primitive_instant.before?\",\"inputs\":[\"String\",\"String\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"instant.is-canonical-utc?\",\"id\":\"primitive_instant.is-canonical-utc?\",\"inputs\":[\"String\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"instant.parse-utc\",\"id\":\"primitive_instant.parse-utc\",\"inputs\":[\"String\"],\"outputs\":[\"Result\\u003CString, String\\u003E\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.abs\",\"id\":\"primitive_int.abs\",\"inputs\":[\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.add-checked\",\"id\":\"primitive_int.add-checked\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Result\\u003CInt, String\\u003E\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.greater-or-equal\",\"id\":\"primitive_int.greater-or-equal\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.greater-than\",\"id\":\"primitive_int.greater-than\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.less-or-equal\",\"id\":\"primitive_int.less-or-equal\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.less-than\",\"id\":\"primitive_int.less-than\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.max\",\"id\":\"primitive_int.max\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.min\",\"id\":\"primitive_int.min\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.multiply-checked\",\"id\":\"primitive_int.multiply-checked\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Result\\u003CInt, String\\u003E\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.to-float\",\"id\":\"primitive_int.to-float\",\"inputs\":[\"Int\"],\"outputs\":[\"Float\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.to-string\",\"id\":\"primitive_int.to-string\",\"inputs\":[\"Int\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"list.append\",\"id\":\"primitive_list.append\",\"inputs\":[\"List\\u003Ca\\u003E\",\"a\"],\"outputs\":[\"List\\u003Ca\\u003E\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"list.concat\",\"id\":\"primitive_list.concat\",\"inputs\":[\"List\\u003Ca\\u003E\",\"List\\u003Ca\\u003E\"],\"outputs\":[\"List\\u003Ca\\u003E\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"list.count\",\"id\":\"primitive_list.count\",\"inputs\":[\"List\\u003Ca\\u003E\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"list.get\",\"id\":\"primitive_list.get\",\"inputs\":[\"List\\u003Ca\\u003E\",\"Int\"],\"outputs\":[\"Option\\u003Ca\\u003E\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"list.is-empty?\",\"id\":\"primitive_list.is-empty?\",\"inputs\":[\"List\\u003Ca\\u003E\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"multiply\",\"id\":\"primitive_multiply\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.concat\",\"id\":\"primitive_string.concat\",\"inputs\":[\"String\",\"String\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.contains\",\"id\":\"primitive_string.contains\",\"inputs\":[\"String\",\"String\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.email-address-valid?\",\"id\":\"primitive_string.email-address-valid?\",\"inputs\":[\"String\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.ends-with\",\"id\":\"primitive_string.ends-with\",\"inputs\":[\"String\",\"String\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.guid-canonical?\",\"id\":\"primitive_string.guid-canonical?\",\"inputs\":[\"String\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.guid-normalize\",\"id\":\"primitive_string.guid-normalize\",\"inputs\":[\"String\"],\"outputs\":[\"Result\\u003CString, String\\u003E\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.length\",\"id\":\"primitive_string.length\",\"inputs\":[\"String\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.starts-with\",\"id\":\"primitive_string.starts-with\",\"inputs\":[\"String\",\"String\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.to-lower\",\"id\":\"primitive_string.to-lower\",\"inputs\":[\"String\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.to-upper\",\"id\":\"primitive_string.to-upper\",\"inputs\":[\"String\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.trim\",\"id\":\"primitive_string.trim\",\"inputs\":[\"String\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"subtract\",\"id\":\"primitive_subtract\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"swap\",\"id\":\"primitive_swap\",\"inputs\":[\"a\",\"b\"],\"outputs\":[\"b\",\"a\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false}],\"constructs\":[{\"name\":\"list.empty\",\"kind\":\"syntax\",\"syntax\":\"list.empty\\u003CT\\u003E\",\"inputs\":[],\"outputs\":[\"List\\u003CT\\u003E\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"none\",\"documentation\":\"Constructs an empty List\\u003CT\\u003E. T must be a declared closed type.\",\"coverageOutcomes\":[]},{\"name\":\"list.singleton\",\"kind\":\"syntax\",\"syntax\":\"T list.singleton\\u003CT\\u003E\",\"inputs\":[\"T\"],\"outputs\":[\"List\\u003CT\\u003E\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"none\",\"documentation\":\"Constructs a one-element List\\u003CT\\u003E after checking the payload against the explicit T.\",\"coverageOutcomes\":[]},{\"name\":\"option.none\",\"kind\":\"syntax\",\"syntax\":\"option.none\\u003CT\\u003E\",\"inputs\":[],\"outputs\":[\"Option\\u003CT\\u003E\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"none\",\"documentation\":\"Constructs a typed none; the element type is always explicit.\",\"coverageOutcomes\":[]},{\"name\":\"option.some\",\"kind\":\"syntax\",\"syntax\":\"T option.some\\u003CT\\u003E\",\"inputs\":[\"T\"],\"outputs\":[\"Option\\u003CT\\u003E\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"none\",\"documentation\":\"Constructs a typed some after checking the payload against the explicit T.\",\"coverageOutcomes\":[]},{\"name\":\"result.ok\",\"kind\":\"syntax\",\"syntax\":\"T result.ok\\u003CT, E\\u003E\",\"inputs\":[\"T\"],\"outputs\":[\"Result\\u003CT, E\\u003E\"],\"typeParameters\":[\"T\",\"E\"],\"effects\":[],\"effectRule\":\"none\",\"documentation\":\"Constructs a typed ok; both result type parameters are always explicit.\",\"coverageOutcomes\":[]},{\"name\":\"result.error\",\"kind\":\"syntax\",\"syntax\":\"E result.error\\u003CT, E\\u003E\",\"inputs\":[\"E\"],\"outputs\":[\"Result\\u003CT, E\\u003E\"],\"typeParameters\":[\"T\",\"E\"],\"effects\":[],\"effectRule\":\"none\",\"documentation\":\"Constructs a typed error; the inactive success type remains explicit.\",\"coverageOutcomes\":[]},{\"name\":\"list.map\",\"kind\":\"syntax\",\"syntax\":\"list.map \\u003Cword\\u003E\",\"inputs\":[\"List\\u003CT\\u003E\"],\"outputs\":[\"List\\u003CU\\u003E\"],\"typeParameters\":[\"T\",\"U\"],\"effects\":[],\"effectRule\":\"inherits callback word effects\",\"documentation\":\"Statically names one callback word with signature T -\\u003E U. The callback is type checked before any element is visited.\",\"coverageOutcomes\":[\"empty\",\"nonempty\"]},{\"name\":\"list.filter\",\"kind\":\"syntax\",\"syntax\":\"list.filter \\u003Cword\\u003E\",\"inputs\":[\"List\\u003CT\\u003E\"],\"outputs\":[\"List\\u003CT\\u003E\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"inherits callback word effects\",\"documentation\":\"Statically names one callback word with signature T -\\u003E Bool. Retains elements for true and drops them for false.\",\"coverageOutcomes\":[\"empty\",\"nonempty\",\"keep\",\"drop\"]},{\"name\":\"list.each\",\"kind\":\"syntax\",\"syntax\":\"list.each \\u003Cword\\u003E\",\"inputs\":[\"List\\u003CT\\u003E\"],\"outputs\":[\"Unit\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"inherits callback word effects\",\"documentation\":\"Statically names one callback word with signature T -\\u003E Unit and visits each element.\",\"coverageOutcomes\":[\"empty\",\"nonempty\"]},{\"name\":\"list.fold\",\"kind\":\"syntax\",\"syntax\":\"list.fold \\u003Cword\\u003E\",\"inputs\":[\"List\\u003CT\\u003E\",\"Accumulator\"],\"outputs\":[\"Accumulator\"],\"typeParameters\":[\"T\",\"Accumulator\"],\"effects\":[],\"effectRule\":\"inherits callback word effects\",\"documentation\":\"Statically names one callback with signature Accumulator Item -\\u003E Accumulator. Visits items from left to right; an empty list returns the initial accumulator unchanged. The callback cannot capture caller locals.\",\"coverageOutcomes\":[\"empty\",\"nonempty\"]},{\"name\":\"match-option\",\"kind\":\"syntax\",\"syntax\":\"match-option / some \\u003Clocal\\u003E / none / end\",\"inputs\":[\"Option\\u003CT\\u003E (top of stack)\"],\"outputs\":[\"same stack from both cases\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"union of both case effects\",\"documentation\":\"Requires both cases. The some payload local exists only inside its case; both cases must leave identical stack and outer-local types.\",\"coverageOutcomes\":[\"some\",\"none\"]},{\"name\":\"match-result\",\"kind\":\"syntax\",\"syntax\":\"match-result / ok \\u003Clocal\\u003E / error \\u003Clocal\\u003E / end\",\"inputs\":[\"Result\\u003CT, E\\u003E (top of stack)\"],\"outputs\":[\"same stack from both cases\"],\"typeParameters\":[\"T\",\"E\"],\"effects\":[],\"effectRule\":\"union of both case effects\",\"documentation\":\"Requires both cases. Each payload local exists only inside its own case; both cases must leave identical stack and outer-local types.\",\"coverageOutcomes\":[\"ok\",\"error\"]}]}}"
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "words",
+          "text": "74 word(s).",
+          "data": {
+            "words": [
+              {
+                "name": "CustomerId.new",
+                "id": "generated_CustomerId.new",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "CustomerId"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "CustomerId.value",
+                "id": "generated_CustomerId.value",
+                "inputs": [
+                  "CustomerId"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "Email.new",
+                "id": "generated_Email.new",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Email"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "Email.value",
+                "id": "generated_Email.value",
+                "inputs": [
+                  "Email"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "Instant.new",
+                "id": "generated_Instant.new",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Instant"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "Instant.value",
+                "id": "generated_Instant.value",
+                "inputs": [
+                  "Instant"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "Money.new",
+                "id": "generated_Money.new",
+                "inputs": [
+                  "Int"
+                ],
+                "outputs": [
+                  "Money"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "Money.value",
+                "id": "generated_Money.value",
+                "inputs": [
+                  "Money"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "ProductId.new",
+                "id": "generated_ProductId.new",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "ProductId"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "ProductId.value",
+                "id": "generated_ProductId.value",
+                "inputs": [
+                  "ProductId"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "add",
+                "id": "primitive_add",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "bool.and",
+                "id": "primitive_bool.and",
+                "inputs": [
+                  "Bool",
+                  "Bool"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "bool.not",
+                "id": "primitive_bool.not",
+                "inputs": [
+                  "Bool"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "bool.or",
+                "id": "primitive_bool.or",
+                "inputs": [
+                  "Bool",
+                  "Bool"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "clock.now",
+                "id": "primitive_clock.now",
+                "inputs": [],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [
+                  "clock.read"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "console.write",
+                "id": "primitive_console.write",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Unit"
+                ],
+                "effects": [
+                  "console.write"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "customer.balance",
+                "id": "generated_customer.balance",
+                "inputs": [
+                  "Customer"
+                ],
+                "outputs": [
+                  "Money"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "customer.created-at",
+                "id": "generated_customer.created-at",
+                "inputs": [
+                  "Customer"
+                ],
+                "outputs": [
+                  "Instant"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "customer.email",
+                "id": "generated_customer.email",
+                "inputs": [
+                  "Customer"
+                ],
+                "outputs": [
+                  "Email"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "customer.id",
+                "id": "generated_customer.id",
+                "inputs": [
+                  "Customer"
+                ],
+                "outputs": [
+                  "CustomerId"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "customer.kind",
+                "id": "generated_customer.kind",
+                "inputs": [
+                  "Customer"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "customer.new",
+                "id": "generated_customer.new",
+                "inputs": [
+                  "CustomerId",
+                  "Email",
+                  "String",
+                  "Money",
+                  "Instant"
+                ],
+                "outputs": [
+                  "Customer"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "divide",
+                "id": "primitive_divide",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "drop",
+                "id": "primitive_drop",
+                "inputs": [
+                  "a"
+                ],
+                "outputs": [],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "dup",
+                "id": "primitive_dup",
+                "inputs": [
+                  "a"
+                ],
+                "outputs": [
+                  "a",
+                  "a"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "equals",
+                "id": "primitive_equals",
+                "inputs": [
+                  "a",
+                  "a"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "file.exists?",
+                "id": "primitive_file.exists?",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [
+                  "fs.read"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "file.read",
+                "id": "primitive_file.read",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [
+                  "fs.read"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "file.write",
+                "id": "primitive_file.write",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "Unit"
+                ],
+                "effects": [
+                  "fs.write"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.add",
+                "id": "primitive_float.add",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.divide",
+                "id": "primitive_float.divide",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.greater-or-equal",
+                "id": "primitive_float.greater-or-equal",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.greater-than",
+                "id": "primitive_float.greater-than",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.less-or-equal",
+                "id": "primitive_float.less-or-equal",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.less-than",
+                "id": "primitive_float.less-than",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.multiply",
+                "id": "primitive_float.multiply",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.round",
+                "id": "primitive_float.round",
+                "inputs": [
+                  "Float"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.subtract",
+                "id": "primitive_float.subtract",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.to-int",
+                "id": "primitive_float.to-int",
+                "inputs": [
+                  "Float"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.to-string",
+                "id": "primitive_float.to-string",
+                "inputs": [
+                  "Float"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "instant.add-days",
+                "id": "primitive_instant.add-days",
+                "inputs": [
+                  "String",
+                  "Int"
+                ],
+                "outputs": [
+                  "Result<String, String>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "instant.before?",
+                "id": "primitive_instant.before?",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "instant.is-canonical-utc?",
+                "id": "primitive_instant.is-canonical-utc?",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "instant.parse-utc",
+                "id": "primitive_instant.parse-utc",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Result<String, String>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.abs",
+                "id": "primitive_int.abs",
+                "inputs": [
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.add-checked",
+                "id": "primitive_int.add-checked",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Result<Int, String>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.greater-or-equal",
+                "id": "primitive_int.greater-or-equal",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.greater-than",
+                "id": "primitive_int.greater-than",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.less-or-equal",
+                "id": "primitive_int.less-or-equal",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.less-than",
+                "id": "primitive_int.less-than",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.max",
+                "id": "primitive_int.max",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.min",
+                "id": "primitive_int.min",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.multiply-checked",
+                "id": "primitive_int.multiply-checked",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Result<Int, String>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.to-float",
+                "id": "primitive_int.to-float",
+                "inputs": [
+                  "Int"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.to-string",
+                "id": "primitive_int.to-string",
+                "inputs": [
+                  "Int"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.append",
+                "id": "primitive_list.append",
+                "inputs": [
+                  "List<a>",
+                  "a"
+                ],
+                "outputs": [
+                  "List<a>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.concat",
+                "id": "primitive_list.concat",
+                "inputs": [
+                  "List<a>",
+                  "List<a>"
+                ],
+                "outputs": [
+                  "List<a>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.count",
+                "id": "primitive_list.count",
+                "inputs": [
+                  "List<a>"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.get",
+                "id": "primitive_list.get",
+                "inputs": [
+                  "List<a>",
+                  "Int"
+                ],
+                "outputs": [
+                  "Option<a>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.is-empty?",
+                "id": "primitive_list.is-empty?",
+                "inputs": [
+                  "List<a>"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "multiply",
+                "id": "primitive_multiply",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.concat",
+                "id": "primitive_string.concat",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.contains",
+                "id": "primitive_string.contains",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.email-address-valid?",
+                "id": "primitive_string.email-address-valid?",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.ends-with",
+                "id": "primitive_string.ends-with",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.guid-canonical?",
+                "id": "primitive_string.guid-canonical?",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.guid-normalize",
+                "id": "primitive_string.guid-normalize",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Result<String, String>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.length",
+                "id": "primitive_string.length",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.starts-with",
+                "id": "primitive_string.starts-with",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.to-lower",
+                "id": "primitive_string.to-lower",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.to-upper",
+                "id": "primitive_string.to-upper",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.trim",
+                "id": "primitive_string.trim",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "subtract",
+                "id": "primitive_subtract",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "swap",
+                "id": "primitive_swap",
+                "inputs": [
+                  "a",
+                  "b"
+                ],
+                "outputs": [
+                  "b",
+                  "a"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              }
+            ],
+            "constructs": [
+              {
+                "name": "list.empty",
+                "kind": "syntax",
+                "syntax": "list.empty<T>",
+                "inputs": [],
+                "outputs": [
+                  "List<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs an empty List<T>. T must be a declared closed type.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "list.singleton",
+                "kind": "syntax",
+                "syntax": "T list.singleton<T>",
+                "inputs": [
+                  "T"
+                ],
+                "outputs": [
+                  "List<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a one-element List<T> after checking the payload against the explicit T.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "option.none",
+                "kind": "syntax",
+                "syntax": "option.none<T>",
+                "inputs": [],
+                "outputs": [
+                  "Option<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a typed none; the element type is always explicit.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "option.some",
+                "kind": "syntax",
+                "syntax": "T option.some<T>",
+                "inputs": [
+                  "T"
+                ],
+                "outputs": [
+                  "Option<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a typed some after checking the payload against the explicit T.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "result.ok",
+                "kind": "syntax",
+                "syntax": "T result.ok<T, E>",
+                "inputs": [
+                  "T"
+                ],
+                "outputs": [
+                  "Result<T, E>"
+                ],
+                "typeParameters": [
+                  "T",
+                  "E"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a typed ok; both result type parameters are always explicit.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "result.error",
+                "kind": "syntax",
+                "syntax": "E result.error<T, E>",
+                "inputs": [
+                  "E"
+                ],
+                "outputs": [
+                  "Result<T, E>"
+                ],
+                "typeParameters": [
+                  "T",
+                  "E"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a typed error; the inactive success type remains explicit.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "list.map",
+                "kind": "syntax",
+                "syntax": "list.map <word>",
+                "inputs": [
+                  "List<T>"
+                ],
+                "outputs": [
+                  "List<U>"
+                ],
+                "typeParameters": [
+                  "T",
+                  "U"
+                ],
+                "effects": [],
+                "effectRule": "inherits callback word effects",
+                "documentation": "Statically names one callback word with signature T -> U. The callback is type checked before any element is visited.",
+                "coverageOutcomes": [
+                  "empty",
+                  "nonempty"
+                ]
+              },
+              {
+                "name": "list.filter",
+                "kind": "syntax",
+                "syntax": "list.filter <word>",
+                "inputs": [
+                  "List<T>"
+                ],
+                "outputs": [
+                  "List<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "inherits callback word effects",
+                "documentation": "Statically names one callback word with signature T -> Bool. Retains elements for true and drops them for false.",
+                "coverageOutcomes": [
+                  "empty",
+                  "nonempty",
+                  "keep",
+                  "drop"
+                ]
+              },
+              {
+                "name": "list.each",
+                "kind": "syntax",
+                "syntax": "list.each <word>",
+                "inputs": [
+                  "List<T>"
+                ],
+                "outputs": [
+                  "Unit"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "inherits callback word effects",
+                "documentation": "Statically names one callback word with signature T -> Unit and visits each element.",
+                "coverageOutcomes": [
+                  "empty",
+                  "nonempty"
+                ]
+              },
+              {
+                "name": "list.fold",
+                "kind": "syntax",
+                "syntax": "list.fold <word>",
+                "inputs": [
+                  "List<T>",
+                  "Accumulator"
+                ],
+                "outputs": [
+                  "Accumulator"
+                ],
+                "typeParameters": [
+                  "T",
+                  "Accumulator"
+                ],
+                "effects": [],
+                "effectRule": "inherits callback word effects",
+                "documentation": "Statically names one callback with signature Accumulator Item -> Accumulator. Visits items from left to right; an empty list returns the initial accumulator unchanged. The callback cannot capture caller locals.",
+                "coverageOutcomes": [
+                  "empty",
+                  "nonempty"
+                ]
+              },
+              {
+                "name": "match-option",
+                "kind": "syntax",
+                "syntax": "match-option / some <local> / none / end",
+                "inputs": [
+                  "Option<T> (top of stack)"
+                ],
+                "outputs": [
+                  "same stack from both cases"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "union of both case effects",
+                "documentation": "Requires both cases. The some payload local exists only inside its case; both cases must leave identical stack and outer-local types.",
+                "coverageOutcomes": [
+                  "some",
+                  "none"
+                ]
+              },
+              {
+                "name": "match-result",
+                "kind": "syntax",
+                "syntax": "match-result / ok <local> / error <local> / end",
+                "inputs": [
+                  "Result<T, E> (top of stack)"
+                ],
+                "outputs": [
+                  "same stack from both cases"
+                ],
+                "typeParameters": [
+                  "T",
+                  "E"
+                ],
+                "effects": [],
+                "effectRule": "union of both case effects",
+                "documentation": "Requires both cases. Each payload local exists only inside its own case; both cases must leave identical stack and outer-local types.",
+                "coverageOutcomes": [
+                  "ok",
+                  "error"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "parseErrors": [],
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 277,
+      "stderr": ""
+    },
+    {
+      "label": "actor words inventory",
+      "requestCount": 1,
+      "requests": [
+        "{\"op\":\"words\"}"
+      ],
+      "responseCount": 1,
+      "responseLines": [
+        "{\"ok\":true,\"kind\":\"words\",\"text\":\"75 word(s).\",\"data\":{\"words\":[{\"name\":\"CustomerId.new\",\"id\":\"generated_CustomerId.new\",\"inputs\":[\"String\"],\"outputs\":[\"CustomerId\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"CustomerId.value\",\"id\":\"generated_CustomerId.value\",\"inputs\":[\"CustomerId\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"Email.new\",\"id\":\"generated_Email.new\",\"inputs\":[\"String\"],\"outputs\":[\"Email\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"Email.value\",\"id\":\"generated_Email.value\",\"inputs\":[\"Email\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"Instant.new\",\"id\":\"generated_Instant.new\",\"inputs\":[\"String\"],\"outputs\":[\"Instant\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"Instant.value\",\"id\":\"generated_Instant.value\",\"inputs\":[\"Instant\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"Money.new\",\"id\":\"generated_Money.new\",\"inputs\":[\"Int\"],\"outputs\":[\"Money\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"Money.value\",\"id\":\"generated_Money.value\",\"inputs\":[\"Money\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"ProductId.new\",\"id\":\"generated_ProductId.new\",\"inputs\":[\"String\"],\"outputs\":[\"ProductId\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"ProductId.value\",\"id\":\"generated_ProductId.value\",\"inputs\":[\"ProductId\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"add\",\"id\":\"primitive_add\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"bool.and\",\"id\":\"primitive_bool.and\",\"inputs\":[\"Bool\",\"Bool\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"bool.not\",\"id\":\"primitive_bool.not\",\"inputs\":[\"Bool\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"bool.or\",\"id\":\"primitive_bool.or\",\"inputs\":[\"Bool\",\"Bool\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"clock.now\",\"id\":\"primitive_clock.now\",\"inputs\":[],\"outputs\":[\"String\"],\"effects\":[\"clock.read\"],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"console.write\",\"id\":\"primitive_console.write\",\"inputs\":[\"String\"],\"outputs\":[\"Unit\"],\"effects\":[\"console.write\"],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"customer.balance\",\"id\":\"generated_customer.balance\",\"inputs\":[\"Customer\"],\"outputs\":[\"Money\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"customer.created-at\",\"id\":\"generated_customer.created-at\",\"inputs\":[\"Customer\"],\"outputs\":[\"Instant\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"customer.discount-basis-points\",\"id\":\"word_9705c29454344be3918968374c8e2e7e\",\"inputs\":[\"Customer\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"customer.email\",\"id\":\"generated_customer.email\",\"inputs\":[\"Customer\"],\"outputs\":[\"Email\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"customer.id\",\"id\":\"generated_customer.id\",\"inputs\":[\"Customer\"],\"outputs\":[\"CustomerId\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"customer.kind\",\"id\":\"generated_customer.kind\",\"inputs\":[\"Customer\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"customer.new\",\"id\":\"generated_customer.new\",\"inputs\":[\"CustomerId\",\"Email\",\"String\",\"Money\",\"Instant\"],\"outputs\":[\"Customer\"],\"effects\":[],\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"divide\",\"id\":\"primitive_divide\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"drop\",\"id\":\"primitive_drop\",\"inputs\":[\"a\"],\"outputs\":[],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"dup\",\"id\":\"primitive_dup\",\"inputs\":[\"a\"],\"outputs\":[\"a\",\"a\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"equals\",\"id\":\"primitive_equals\",\"inputs\":[\"a\",\"a\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"file.exists?\",\"id\":\"primitive_file.exists?\",\"inputs\":[\"String\"],\"outputs\":[\"Bool\"],\"effects\":[\"fs.read\"],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"file.read\",\"id\":\"primitive_file.read\",\"inputs\":[\"String\"],\"outputs\":[\"String\"],\"effects\":[\"fs.read\"],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"file.write\",\"id\":\"primitive_file.write\",\"inputs\":[\"String\",\"String\"],\"outputs\":[\"Unit\"],\"effects\":[\"fs.write\"],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.add\",\"id\":\"primitive_float.add\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Float\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.divide\",\"id\":\"primitive_float.divide\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Float\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.greater-or-equal\",\"id\":\"primitive_float.greater-or-equal\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.greater-than\",\"id\":\"primitive_float.greater-than\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.less-or-equal\",\"id\":\"primitive_float.less-or-equal\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.less-than\",\"id\":\"primitive_float.less-than\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.multiply\",\"id\":\"primitive_float.multiply\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Float\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.round\",\"id\":\"primitive_float.round\",\"inputs\":[\"Float\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.subtract\",\"id\":\"primitive_float.subtract\",\"inputs\":[\"Float\",\"Float\"],\"outputs\":[\"Float\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.to-int\",\"id\":\"primitive_float.to-int\",\"inputs\":[\"Float\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"float.to-string\",\"id\":\"primitive_float.to-string\",\"inputs\":[\"Float\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"instant.add-days\",\"id\":\"primitive_instant.add-days\",\"inputs\":[\"String\",\"Int\"],\"outputs\":[\"Result\\u003CString, String\\u003E\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"instant.before?\",\"id\":\"primitive_instant.before?\",\"inputs\":[\"String\",\"String\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"instant.is-canonical-utc?\",\"id\":\"primitive_instant.is-canonical-utc?\",\"inputs\":[\"String\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"instant.parse-utc\",\"id\":\"primitive_instant.parse-utc\",\"inputs\":[\"String\"],\"outputs\":[\"Result\\u003CString, String\\u003E\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.abs\",\"id\":\"primitive_int.abs\",\"inputs\":[\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.add-checked\",\"id\":\"primitive_int.add-checked\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Result\\u003CInt, String\\u003E\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.greater-or-equal\",\"id\":\"primitive_int.greater-or-equal\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.greater-than\",\"id\":\"primitive_int.greater-than\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.less-or-equal\",\"id\":\"primitive_int.less-or-equal\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.less-than\",\"id\":\"primitive_int.less-than\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.max\",\"id\":\"primitive_int.max\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.min\",\"id\":\"primitive_int.min\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.multiply-checked\",\"id\":\"primitive_int.multiply-checked\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Result\\u003CInt, String\\u003E\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.to-float\",\"id\":\"primitive_int.to-float\",\"inputs\":[\"Int\"],\"outputs\":[\"Float\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"int.to-string\",\"id\":\"primitive_int.to-string\",\"inputs\":[\"Int\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"list.append\",\"id\":\"primitive_list.append\",\"inputs\":[\"List\\u003Ca\\u003E\",\"a\"],\"outputs\":[\"List\\u003Ca\\u003E\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"list.concat\",\"id\":\"primitive_list.concat\",\"inputs\":[\"List\\u003Ca\\u003E\",\"List\\u003Ca\\u003E\"],\"outputs\":[\"List\\u003Ca\\u003E\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"list.count\",\"id\":\"primitive_list.count\",\"inputs\":[\"List\\u003Ca\\u003E\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"list.get\",\"id\":\"primitive_list.get\",\"inputs\":[\"List\\u003Ca\\u003E\",\"Int\"],\"outputs\":[\"Option\\u003Ca\\u003E\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"list.is-empty?\",\"id\":\"primitive_list.is-empty?\",\"inputs\":[\"List\\u003Ca\\u003E\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"multiply\",\"id\":\"primitive_multiply\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.concat\",\"id\":\"primitive_string.concat\",\"inputs\":[\"String\",\"String\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.contains\",\"id\":\"primitive_string.contains\",\"inputs\":[\"String\",\"String\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.email-address-valid?\",\"id\":\"primitive_string.email-address-valid?\",\"inputs\":[\"String\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.ends-with\",\"id\":\"primitive_string.ends-with\",\"inputs\":[\"String\",\"String\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.guid-canonical?\",\"id\":\"primitive_string.guid-canonical?\",\"inputs\":[\"String\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.guid-normalize\",\"id\":\"primitive_string.guid-normalize\",\"inputs\":[\"String\"],\"outputs\":[\"Result\\u003CString, String\\u003E\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.length\",\"id\":\"primitive_string.length\",\"inputs\":[\"String\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.starts-with\",\"id\":\"primitive_string.starts-with\",\"inputs\":[\"String\",\"String\"],\"outputs\":[\"Bool\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.to-lower\",\"id\":\"primitive_string.to-lower\",\"inputs\":[\"String\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.to-upper\",\"id\":\"primitive_string.to-upper\",\"inputs\":[\"String\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"string.trim\",\"id\":\"primitive_string.trim\",\"inputs\":[\"String\"],\"outputs\":[\"String\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"subtract\",\"id\":\"primitive_subtract\",\"inputs\":[\"Int\",\"Int\"],\"outputs\":[\"Int\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false},{\"name\":\"swap\",\"id\":\"primitive_swap\",\"inputs\":[\"a\",\"b\"],\"outputs\":[\"b\",\"a\"],\"effects\":[],\"status\":\"primitive\",\"maturity\":\"library\",\"deprecated\":false}],\"constructs\":[{\"name\":\"list.empty\",\"kind\":\"syntax\",\"syntax\":\"list.empty\\u003CT\\u003E\",\"inputs\":[],\"outputs\":[\"List\\u003CT\\u003E\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"none\",\"documentation\":\"Constructs an empty List\\u003CT\\u003E. T must be a declared closed type.\",\"coverageOutcomes\":[]},{\"name\":\"list.singleton\",\"kind\":\"syntax\",\"syntax\":\"T list.singleton\\u003CT\\u003E\",\"inputs\":[\"T\"],\"outputs\":[\"List\\u003CT\\u003E\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"none\",\"documentation\":\"Constructs a one-element List\\u003CT\\u003E after checking the payload against the explicit T.\",\"coverageOutcomes\":[]},{\"name\":\"option.none\",\"kind\":\"syntax\",\"syntax\":\"option.none\\u003CT\\u003E\",\"inputs\":[],\"outputs\":[\"Option\\u003CT\\u003E\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"none\",\"documentation\":\"Constructs a typed none; the element type is always explicit.\",\"coverageOutcomes\":[]},{\"name\":\"option.some\",\"kind\":\"syntax\",\"syntax\":\"T option.some\\u003CT\\u003E\",\"inputs\":[\"T\"],\"outputs\":[\"Option\\u003CT\\u003E\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"none\",\"documentation\":\"Constructs a typed some after checking the payload against the explicit T.\",\"coverageOutcomes\":[]},{\"name\":\"result.ok\",\"kind\":\"syntax\",\"syntax\":\"T result.ok\\u003CT, E\\u003E\",\"inputs\":[\"T\"],\"outputs\":[\"Result\\u003CT, E\\u003E\"],\"typeParameters\":[\"T\",\"E\"],\"effects\":[],\"effectRule\":\"none\",\"documentation\":\"Constructs a typed ok; both result type parameters are always explicit.\",\"coverageOutcomes\":[]},{\"name\":\"result.error\",\"kind\":\"syntax\",\"syntax\":\"E result.error\\u003CT, E\\u003E\",\"inputs\":[\"E\"],\"outputs\":[\"Result\\u003CT, E\\u003E\"],\"typeParameters\":[\"T\",\"E\"],\"effects\":[],\"effectRule\":\"none\",\"documentation\":\"Constructs a typed error; the inactive success type remains explicit.\",\"coverageOutcomes\":[]},{\"name\":\"list.map\",\"kind\":\"syntax\",\"syntax\":\"list.map \\u003Cword\\u003E\",\"inputs\":[\"List\\u003CT\\u003E\"],\"outputs\":[\"List\\u003CU\\u003E\"],\"typeParameters\":[\"T\",\"U\"],\"effects\":[],\"effectRule\":\"inherits callback word effects\",\"documentation\":\"Statically names one callback word with signature T -\\u003E U. The callback is type checked before any element is visited.\",\"coverageOutcomes\":[\"empty\",\"nonempty\"]},{\"name\":\"list.filter\",\"kind\":\"syntax\",\"syntax\":\"list.filter \\u003Cword\\u003E\",\"inputs\":[\"List\\u003CT\\u003E\"],\"outputs\":[\"List\\u003CT\\u003E\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"inherits callback word effects\",\"documentation\":\"Statically names one callback word with signature T -\\u003E Bool. Retains elements for true and drops them for false.\",\"coverageOutcomes\":[\"empty\",\"nonempty\",\"keep\",\"drop\"]},{\"name\":\"list.each\",\"kind\":\"syntax\",\"syntax\":\"list.each \\u003Cword\\u003E\",\"inputs\":[\"List\\u003CT\\u003E\"],\"outputs\":[\"Unit\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"inherits callback word effects\",\"documentation\":\"Statically names one callback word with signature T -\\u003E Unit and visits each element.\",\"coverageOutcomes\":[\"empty\",\"nonempty\"]},{\"name\":\"list.fold\",\"kind\":\"syntax\",\"syntax\":\"list.fold \\u003Cword\\u003E\",\"inputs\":[\"List\\u003CT\\u003E\",\"Accumulator\"],\"outputs\":[\"Accumulator\"],\"typeParameters\":[\"T\",\"Accumulator\"],\"effects\":[],\"effectRule\":\"inherits callback word effects\",\"documentation\":\"Statically names one callback with signature Accumulator Item -\\u003E Accumulator. Visits items from left to right; an empty list returns the initial accumulator unchanged. The callback cannot capture caller locals.\",\"coverageOutcomes\":[\"empty\",\"nonempty\"]},{\"name\":\"match-option\",\"kind\":\"syntax\",\"syntax\":\"match-option / some \\u003Clocal\\u003E / none / end\",\"inputs\":[\"Option\\u003CT\\u003E (top of stack)\"],\"outputs\":[\"same stack from both cases\"],\"typeParameters\":[\"T\"],\"effects\":[],\"effectRule\":\"union of both case effects\",\"documentation\":\"Requires both cases. The some payload local exists only inside its case; both cases must leave identical stack and outer-local types.\",\"coverageOutcomes\":[\"some\",\"none\"]},{\"name\":\"match-result\",\"kind\":\"syntax\",\"syntax\":\"match-result / ok \\u003Clocal\\u003E / error \\u003Clocal\\u003E / end\",\"inputs\":[\"Result\\u003CT, E\\u003E (top of stack)\"],\"outputs\":[\"same stack from both cases\"],\"typeParameters\":[\"T\",\"E\"],\"effects\":[],\"effectRule\":\"union of both case effects\",\"documentation\":\"Requires both cases. Each payload local exists only inside its own case; both cases must leave identical stack and outer-local types.\",\"coverageOutcomes\":[\"ok\",\"error\"]}]}}"
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "words",
+          "text": "75 word(s).",
+          "data": {
+            "words": [
+              {
+                "name": "CustomerId.new",
+                "id": "generated_CustomerId.new",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "CustomerId"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "CustomerId.value",
+                "id": "generated_CustomerId.value",
+                "inputs": [
+                  "CustomerId"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "Email.new",
+                "id": "generated_Email.new",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Email"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "Email.value",
+                "id": "generated_Email.value",
+                "inputs": [
+                  "Email"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "Instant.new",
+                "id": "generated_Instant.new",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Instant"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "Instant.value",
+                "id": "generated_Instant.value",
+                "inputs": [
+                  "Instant"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "Money.new",
+                "id": "generated_Money.new",
+                "inputs": [
+                  "Int"
+                ],
+                "outputs": [
+                  "Money"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "Money.value",
+                "id": "generated_Money.value",
+                "inputs": [
+                  "Money"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "ProductId.new",
+                "id": "generated_ProductId.new",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "ProductId"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "ProductId.value",
+                "id": "generated_ProductId.value",
+                "inputs": [
+                  "ProductId"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "add",
+                "id": "primitive_add",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "bool.and",
+                "id": "primitive_bool.and",
+                "inputs": [
+                  "Bool",
+                  "Bool"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "bool.not",
+                "id": "primitive_bool.not",
+                "inputs": [
+                  "Bool"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "bool.or",
+                "id": "primitive_bool.or",
+                "inputs": [
+                  "Bool",
+                  "Bool"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "clock.now",
+                "id": "primitive_clock.now",
+                "inputs": [],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [
+                  "clock.read"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "console.write",
+                "id": "primitive_console.write",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Unit"
+                ],
+                "effects": [
+                  "console.write"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "customer.balance",
+                "id": "generated_customer.balance",
+                "inputs": [
+                  "Customer"
+                ],
+                "outputs": [
+                  "Money"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "customer.created-at",
+                "id": "generated_customer.created-at",
+                "inputs": [
+                  "Customer"
+                ],
+                "outputs": [
+                  "Instant"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "customer.discount-basis-points",
+                "id": "word_9705c29454344be3918968374c8e2e7e",
+                "inputs": [
+                  "Customer"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "customer.email",
+                "id": "generated_customer.email",
+                "inputs": [
+                  "Customer"
+                ],
+                "outputs": [
+                  "Email"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "customer.id",
+                "id": "generated_customer.id",
+                "inputs": [
+                  "Customer"
+                ],
+                "outputs": [
+                  "CustomerId"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "customer.kind",
+                "id": "generated_customer.kind",
+                "inputs": [
+                  "Customer"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "customer.new",
+                "id": "generated_customer.new",
+                "inputs": [
+                  "CustomerId",
+                  "Email",
+                  "String",
+                  "Money",
+                  "Instant"
+                ],
+                "outputs": [
+                  "Customer"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "divide",
+                "id": "primitive_divide",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "drop",
+                "id": "primitive_drop",
+                "inputs": [
+                  "a"
+                ],
+                "outputs": [],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "dup",
+                "id": "primitive_dup",
+                "inputs": [
+                  "a"
+                ],
+                "outputs": [
+                  "a",
+                  "a"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "equals",
+                "id": "primitive_equals",
+                "inputs": [
+                  "a",
+                  "a"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "file.exists?",
+                "id": "primitive_file.exists?",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [
+                  "fs.read"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "file.read",
+                "id": "primitive_file.read",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [
+                  "fs.read"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "file.write",
+                "id": "primitive_file.write",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "Unit"
+                ],
+                "effects": [
+                  "fs.write"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.add",
+                "id": "primitive_float.add",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.divide",
+                "id": "primitive_float.divide",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.greater-or-equal",
+                "id": "primitive_float.greater-or-equal",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.greater-than",
+                "id": "primitive_float.greater-than",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.less-or-equal",
+                "id": "primitive_float.less-or-equal",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.less-than",
+                "id": "primitive_float.less-than",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.multiply",
+                "id": "primitive_float.multiply",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.round",
+                "id": "primitive_float.round",
+                "inputs": [
+                  "Float"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.subtract",
+                "id": "primitive_float.subtract",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.to-int",
+                "id": "primitive_float.to-int",
+                "inputs": [
+                  "Float"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.to-string",
+                "id": "primitive_float.to-string",
+                "inputs": [
+                  "Float"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "instant.add-days",
+                "id": "primitive_instant.add-days",
+                "inputs": [
+                  "String",
+                  "Int"
+                ],
+                "outputs": [
+                  "Result<String, String>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "instant.before?",
+                "id": "primitive_instant.before?",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "instant.is-canonical-utc?",
+                "id": "primitive_instant.is-canonical-utc?",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "instant.parse-utc",
+                "id": "primitive_instant.parse-utc",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Result<String, String>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.abs",
+                "id": "primitive_int.abs",
+                "inputs": [
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.add-checked",
+                "id": "primitive_int.add-checked",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Result<Int, String>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.greater-or-equal",
+                "id": "primitive_int.greater-or-equal",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.greater-than",
+                "id": "primitive_int.greater-than",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.less-or-equal",
+                "id": "primitive_int.less-or-equal",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.less-than",
+                "id": "primitive_int.less-than",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.max",
+                "id": "primitive_int.max",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.min",
+                "id": "primitive_int.min",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.multiply-checked",
+                "id": "primitive_int.multiply-checked",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Result<Int, String>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.to-float",
+                "id": "primitive_int.to-float",
+                "inputs": [
+                  "Int"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.to-string",
+                "id": "primitive_int.to-string",
+                "inputs": [
+                  "Int"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.append",
+                "id": "primitive_list.append",
+                "inputs": [
+                  "List<a>",
+                  "a"
+                ],
+                "outputs": [
+                  "List<a>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.concat",
+                "id": "primitive_list.concat",
+                "inputs": [
+                  "List<a>",
+                  "List<a>"
+                ],
+                "outputs": [
+                  "List<a>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.count",
+                "id": "primitive_list.count",
+                "inputs": [
+                  "List<a>"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.get",
+                "id": "primitive_list.get",
+                "inputs": [
+                  "List<a>",
+                  "Int"
+                ],
+                "outputs": [
+                  "Option<a>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.is-empty?",
+                "id": "primitive_list.is-empty?",
+                "inputs": [
+                  "List<a>"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "multiply",
+                "id": "primitive_multiply",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.concat",
+                "id": "primitive_string.concat",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.contains",
+                "id": "primitive_string.contains",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.email-address-valid?",
+                "id": "primitive_string.email-address-valid?",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.ends-with",
+                "id": "primitive_string.ends-with",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.guid-canonical?",
+                "id": "primitive_string.guid-canonical?",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.guid-normalize",
+                "id": "primitive_string.guid-normalize",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Result<String, String>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.length",
+                "id": "primitive_string.length",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.starts-with",
+                "id": "primitive_string.starts-with",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.to-lower",
+                "id": "primitive_string.to-lower",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.to-upper",
+                "id": "primitive_string.to-upper",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.trim",
+                "id": "primitive_string.trim",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "subtract",
+                "id": "primitive_subtract",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "swap",
+                "id": "primitive_swap",
+                "inputs": [
+                  "a",
+                  "b"
+                ],
+                "outputs": [
+                  "b",
+                  "a"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              }
+            ],
+            "constructs": [
+              {
+                "name": "list.empty",
+                "kind": "syntax",
+                "syntax": "list.empty<T>",
+                "inputs": [],
+                "outputs": [
+                  "List<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs an empty List<T>. T must be a declared closed type.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "list.singleton",
+                "kind": "syntax",
+                "syntax": "T list.singleton<T>",
+                "inputs": [
+                  "T"
+                ],
+                "outputs": [
+                  "List<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a one-element List<T> after checking the payload against the explicit T.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "option.none",
+                "kind": "syntax",
+                "syntax": "option.none<T>",
+                "inputs": [],
+                "outputs": [
+                  "Option<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a typed none; the element type is always explicit.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "option.some",
+                "kind": "syntax",
+                "syntax": "T option.some<T>",
+                "inputs": [
+                  "T"
+                ],
+                "outputs": [
+                  "Option<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a typed some after checking the payload against the explicit T.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "result.ok",
+                "kind": "syntax",
+                "syntax": "T result.ok<T, E>",
+                "inputs": [
+                  "T"
+                ],
+                "outputs": [
+                  "Result<T, E>"
+                ],
+                "typeParameters": [
+                  "T",
+                  "E"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a typed ok; both result type parameters are always explicit.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "result.error",
+                "kind": "syntax",
+                "syntax": "E result.error<T, E>",
+                "inputs": [
+                  "E"
+                ],
+                "outputs": [
+                  "Result<T, E>"
+                ],
+                "typeParameters": [
+                  "T",
+                  "E"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a typed error; the inactive success type remains explicit.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "list.map",
+                "kind": "syntax",
+                "syntax": "list.map <word>",
+                "inputs": [
+                  "List<T>"
+                ],
+                "outputs": [
+                  "List<U>"
+                ],
+                "typeParameters": [
+                  "T",
+                  "U"
+                ],
+                "effects": [],
+                "effectRule": "inherits callback word effects",
+                "documentation": "Statically names one callback word with signature T -> U. The callback is type checked before any element is visited.",
+                "coverageOutcomes": [
+                  "empty",
+                  "nonempty"
+                ]
+              },
+              {
+                "name": "list.filter",
+                "kind": "syntax",
+                "syntax": "list.filter <word>",
+                "inputs": [
+                  "List<T>"
+                ],
+                "outputs": [
+                  "List<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "inherits callback word effects",
+                "documentation": "Statically names one callback word with signature T -> Bool. Retains elements for true and drops them for false.",
+                "coverageOutcomes": [
+                  "empty",
+                  "nonempty",
+                  "keep",
+                  "drop"
+                ]
+              },
+              {
+                "name": "list.each",
+                "kind": "syntax",
+                "syntax": "list.each <word>",
+                "inputs": [
+                  "List<T>"
+                ],
+                "outputs": [
+                  "Unit"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "inherits callback word effects",
+                "documentation": "Statically names one callback word with signature T -> Unit and visits each element.",
+                "coverageOutcomes": [
+                  "empty",
+                  "nonempty"
+                ]
+              },
+              {
+                "name": "list.fold",
+                "kind": "syntax",
+                "syntax": "list.fold <word>",
+                "inputs": [
+                  "List<T>",
+                  "Accumulator"
+                ],
+                "outputs": [
+                  "Accumulator"
+                ],
+                "typeParameters": [
+                  "T",
+                  "Accumulator"
+                ],
+                "effects": [],
+                "effectRule": "inherits callback word effects",
+                "documentation": "Statically names one callback with signature Accumulator Item -> Accumulator. Visits items from left to right; an empty list returns the initial accumulator unchanged. The callback cannot capture caller locals.",
+                "coverageOutcomes": [
+                  "empty",
+                  "nonempty"
+                ]
+              },
+              {
+                "name": "match-option",
+                "kind": "syntax",
+                "syntax": "match-option / some <local> / none / end",
+                "inputs": [
+                  "Option<T> (top of stack)"
+                ],
+                "outputs": [
+                  "same stack from both cases"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "union of both case effects",
+                "documentation": "Requires both cases. The some payload local exists only inside its case; both cases must leave identical stack and outer-local types.",
+                "coverageOutcomes": [
+                  "some",
+                  "none"
+                ]
+              },
+              {
+                "name": "match-result",
+                "kind": "syntax",
+                "syntax": "match-result / ok <local> / error <local> / end",
+                "inputs": [
+                  "Result<T, E> (top of stack)"
+                ],
+                "outputs": [
+                  "same stack from both cases"
+                ],
+                "typeParameters": [
+                  "T",
+                  "E"
+                ],
+                "effects": [],
+                "effectRule": "union of both case effects",
+                "documentation": "Requires both cases. Each payload local exists only inside its own case; both cases must leave identical stack and outer-local types.",
+                "coverageOutcomes": [
+                  "ok",
+                  "error"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "parseErrors": [],
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 449,
+      "stderr": ""
+    },
+    {
+      "label": "starting project source 1-6",
+      "requestCount": 6,
+      "requests": [
+        "{\"op\":\"source\",\"type\":\"Customer\"}",
+        "{\"op\":\"source\",\"type\":\"CustomerId\"}",
+        "{\"op\":\"source\",\"type\":\"Email\"}",
+        "{\"op\":\"source\",\"type\":\"Instant\"}",
+        "{\"op\":\"source\",\"type\":\"Money\"}",
+        "{\"op\":\"source\",\"type\":\"ProductId\"}"
+      ],
+      "responseCount": 6,
+      "responseLines": [
+        "{\"ok\":true,\"kind\":\"source\",\"text\":\"record Customer {\\n    field id: CustomerId;\\n    field email: Email;\\n    field kind: String;\\n    field balance: Money;\\n    field created-at: Instant;\\n}\",\"data\":\"record Customer {\\n    field id: CustomerId;\\n    field email: Email;\\n    field kind: String;\\n    field balance: Money;\\n    field created-at: Instant;\\n}\"}",
+        "{\"ok\":true,\"kind\":\"source\",\"text\":\"type CustomerId : String {\\n    validate string::guid-canonical?;\\n}\",\"data\":\"type CustomerId : String {\\n    validate string::guid-canonical?;\\n}\"}",
+        "{\"ok\":true,\"kind\":\"source\",\"text\":\"type Email : String {\\n    validate string::email-address-valid?;\\n}\",\"data\":\"type Email : String {\\n    validate string::email-address-valid?;\\n}\"}",
+        "{\"ok\":true,\"kind\":\"source\",\"text\":\"type Instant : String {\\n    validate instant::is-canonical-utc?;\\n}\",\"data\":\"type Instant : String {\\n    validate instant::is-canonical-utc?;\\n}\"}",
+        "{\"ok\":true,\"kind\":\"source\",\"text\":\"type Money : Int { }\",\"data\":\"type Money : Int { }\"}",
+        "{\"ok\":true,\"kind\":\"source\",\"text\":\"type ProductId : String {\\n    validate string::guid-canonical?;\\n}\",\"data\":\"type ProductId : String {\\n    validate string::guid-canonical?;\\n}\"}"
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "source",
+          "text": "record Customer {\n    field id: CustomerId;\n    field email: Email;\n    field kind: String;\n    field balance: Money;\n    field created-at: Instant;\n}",
+          "data": "record Customer {\n    field id: CustomerId;\n    field email: Email;\n    field kind: String;\n    field balance: Money;\n    field created-at: Instant;\n}"
+        },
+        {
+          "ok": true,
+          "kind": "source",
+          "text": "type CustomerId : String {\n    validate string::guid-canonical?;\n}",
+          "data": "type CustomerId : String {\n    validate string::guid-canonical?;\n}"
+        },
+        {
+          "ok": true,
+          "kind": "source",
+          "text": "type Email : String {\n    validate string::email-address-valid?;\n}",
+          "data": "type Email : String {\n    validate string::email-address-valid?;\n}"
+        },
+        {
+          "ok": true,
+          "kind": "source",
+          "text": "type Instant : String {\n    validate instant::is-canonical-utc?;\n}",
+          "data": "type Instant : String {\n    validate instant::is-canonical-utc?;\n}"
+        },
+        {
+          "ok": true,
+          "kind": "source",
+          "text": "type Money : Int { }",
+          "data": "type Money : Int { }"
+        },
+        {
+          "ok": true,
+          "kind": "source",
+          "text": "type ProductId : String {\n    validate string::guid-canonical?;\n}",
+          "data": "type ProductId : String {\n    validate string::guid-canonical?;\n}"
+        }
+      ],
+      "parseErrors": [],
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 264,
+      "stderr": ""
+    },
+    {
+      "label": "actor project source 1-6",
+      "requestCount": 6,
+      "requests": [
+        "{\"op\":\"source\",\"type\":\"Customer\"}",
+        "{\"op\":\"source\",\"type\":\"CustomerId\"}",
+        "{\"op\":\"source\",\"type\":\"Email\"}",
+        "{\"op\":\"source\",\"type\":\"Instant\"}",
+        "{\"op\":\"source\",\"type\":\"Money\"}",
+        "{\"op\":\"source\",\"type\":\"ProductId\"}"
+      ],
+      "responseCount": 6,
+      "responseLines": [
+        "{\"ok\":true,\"kind\":\"source\",\"text\":\"record Customer {\\n    field id: CustomerId;\\n    field email: Email;\\n    field kind: String;\\n    field balance: Money;\\n    field created-at: Instant;\\n}\",\"data\":\"record Customer {\\n    field id: CustomerId;\\n    field email: Email;\\n    field kind: String;\\n    field balance: Money;\\n    field created-at: Instant;\\n}\"}",
+        "{\"ok\":true,\"kind\":\"source\",\"text\":\"type CustomerId : String {\\n    validate string::guid-canonical?;\\n}\",\"data\":\"type CustomerId : String {\\n    validate string::guid-canonical?;\\n}\"}",
+        "{\"ok\":true,\"kind\":\"source\",\"text\":\"type Email : String {\\n    validate string::email-address-valid?;\\n}\",\"data\":\"type Email : String {\\n    validate string::email-address-valid?;\\n}\"}",
+        "{\"ok\":true,\"kind\":\"source\",\"text\":\"type Instant : String {\\n    validate instant::is-canonical-utc?;\\n}\",\"data\":\"type Instant : String {\\n    validate instant::is-canonical-utc?;\\n}\"}",
+        "{\"ok\":true,\"kind\":\"source\",\"text\":\"type Money : Int { }\",\"data\":\"type Money : Int { }\"}",
+        "{\"ok\":true,\"kind\":\"source\",\"text\":\"type ProductId : String {\\n    validate string::guid-canonical?;\\n}\",\"data\":\"type ProductId : String {\\n    validate string::guid-canonical?;\\n}\"}"
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "source",
+          "text": "record Customer {\n    field id: CustomerId;\n    field email: Email;\n    field kind: String;\n    field balance: Money;\n    field created-at: Instant;\n}",
+          "data": "record Customer {\n    field id: CustomerId;\n    field email: Email;\n    field kind: String;\n    field balance: Money;\n    field created-at: Instant;\n}"
+        },
+        {
+          "ok": true,
+          "kind": "source",
+          "text": "type CustomerId : String {\n    validate string::guid-canonical?;\n}",
+          "data": "type CustomerId : String {\n    validate string::guid-canonical?;\n}"
+        },
+        {
+          "ok": true,
+          "kind": "source",
+          "text": "type Email : String {\n    validate string::email-address-valid?;\n}",
+          "data": "type Email : String {\n    validate string::email-address-valid?;\n}"
+        },
+        {
+          "ok": true,
+          "kind": "source",
+          "text": "type Instant : String {\n    validate instant::is-canonical-utc?;\n}",
+          "data": "type Instant : String {\n    validate instant::is-canonical-utc?;\n}"
+        },
+        {
+          "ok": true,
+          "kind": "source",
+          "text": "type Money : Int { }",
+          "data": "type Money : Int { }"
+        },
+        {
+          "ok": true,
+          "kind": "source",
+          "text": "type ProductId : String {\n    validate string::guid-canonical?;\n}",
+          "data": "type ProductId : String {\n    validate string::guid-canonical?;\n}"
+        }
+      ],
+      "parseErrors": [],
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 423,
+      "stderr": ""
+    },
+    {
+      "label": "target library and attached cases",
+      "requestCount": 6,
+      "requests": [
+        "{\"op\":\"test-all\"}",
+        "{\"op\":\"describe\",\"word\":\"customer.discount-basis-points\"}",
+        "{\"op\":\"dependencies\",\"word\":\"customer.discount-basis-points\"}",
+        "{\"op\":\"transitive-dependencies\",\"word\":\"customer.discount-basis-points\"}",
+        "{\"op\":\"source\",\"word\":\"customer.discount-basis-points\"}",
+        "{\"op\":\"examples\",\"word\":\"customer.discount-basis-points\"}"
+      ],
+      "responseCount": 6,
+      "responseLines": [
+        "{\"ok\":true,\"kind\":\"test\",\"text\":\"5/5 test(s) passed.\",\"data\":{\"results\":[{\"name\":\"case-sensitive\",\"word\":\"customer.discount-basis-points\",\"passed\":true,\"expected\":\"0\",\"actual\":[\"0\"]},{\"name\":\"empty-kind\",\"word\":\"customer.discount-basis-points\",\"passed\":true,\"expected\":\"0\",\"actual\":[\"0\"]},{\"name\":\"exact-premium\",\"word\":\"customer.discount-basis-points\",\"passed\":true,\"expected\":\"1000\",\"actual\":[\"1000\"]},{\"name\":\"leading-space-is-raw\",\"word\":\"customer.discount-basis-points\",\"passed\":true,\"expected\":\"0\",\"actual\":[\"0\"]},{\"name\":\"trailing-space-is-raw\",\"word\":\"customer.discount-basis-points\",\"passed\":true,\"expected\":\"0\",\"actual\":[\"0\"]}]}}",
+        "{\"ok\":true,\"kind\":\"describe\",\"text\":\"Description for customer.discount-basis-points.\",\"data\":{\"name\":\"customer.discount-basis-points\",\"flowReference\":\"customer::discount-basis-points\",\"flowReferenceUnavailableReason\":null,\"inputs\":[\"Customer\"],\"outputs\":[\"Int\"],\"parameters\":[{\"name\":\"customer\",\"type\":\"Customer\"}],\"effects\":[],\"documentation\":\"\",\"id\":\"word_9705c29454344be3918968374c8e2e7e\",\"dependencies\":[\"customer.kind\",\"equals\"],\"transitiveDependencies\":[\"customer.kind\",\"equals\"],\"callers\":[],\"tests\":[\"case-sensitive\",\"empty-kind\",\"exact-premium\",\"leading-space-is-raw\",\"trailing-space-is-raw\"],\"examples\":[\"exact-premium\"],\"source\":\"\\u003Crevision:customer.discount-basis-points/4\\u003E\",\"line\":1,\"kind\":\"word\",\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false,\"revision\":4,\"testCount\":5,\"exampleCount\":1,\"coverage\":{\"instructionsCovered\":9,\"instructionsTotal\":9,\"branchesCovered\":2,\"branchesTotal\":2,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[],\"status\":\"current\"}}}",
+        "{\"ok\":true,\"kind\":\"dependencies\",\"text\":\"2 direct dependency/dependencies.\",\"data\":{\"dependencies\":[\"customer.kind\",\"equals\"],\"callers\":[]}}",
+        "{\"ok\":true,\"kind\":\"transitive-dependencies\",\"text\":\"2 transitive dependencies for \\u0027customer.discount-basis-points\\u0027.\",\"data\":{\"word\":\"customer.discount-basis-points\",\"dependencies\":[\"customer.kind\",\"equals\"],\"count\":2}}",
+        "{\"ok\":true,\"kind\":\"source\",\"text\":\"word customer.discount-basis-points(customer: Customer) -\\u003E Int {\\n    effects none\\n    let kind = customer::kind(customer)\\n    if ::equals(kind, \\u0022premium\\u0022) {\\n        1000\\n    } else {\\n        0\\n    }\\n}\",\"data\":\"word customer.discount-basis-points(customer: Customer) -\\u003E Int {\\n    effects none\\n    let kind = customer::kind(customer)\\n    if ::equals(kind, \\u0022premium\\u0022) {\\n        1000\\n    } else {\\n        0\\n    }\\n}\"}",
+        "{\"ok\":true,\"kind\":\"examples\",\"text\":\"1 example(s).\",\"data\":[\"exact-premium\"]}"
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "test",
+          "text": "5/5 test(s) passed.",
+          "data": {
+            "results": [
+              {
+                "name": "case-sensitive",
+                "word": "customer.discount-basis-points",
+                "passed": true,
+                "expected": "0",
+                "actual": [
+                  "0"
+                ]
+              },
+              {
+                "name": "empty-kind",
+                "word": "customer.discount-basis-points",
+                "passed": true,
+                "expected": "0",
+                "actual": [
+                  "0"
+                ]
+              },
+              {
+                "name": "exact-premium",
+                "word": "customer.discount-basis-points",
+                "passed": true,
+                "expected": "1000",
+                "actual": [
+                  "1000"
+                ]
+              },
+              {
+                "name": "leading-space-is-raw",
+                "word": "customer.discount-basis-points",
+                "passed": true,
+                "expected": "0",
+                "actual": [
+                  "0"
+                ]
+              },
+              {
+                "name": "trailing-space-is-raw",
+                "word": "customer.discount-basis-points",
+                "passed": true,
+                "expected": "0",
+                "actual": [
+                  "0"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "describe",
+          "text": "Description for customer.discount-basis-points.",
+          "data": {
+            "name": "customer.discount-basis-points",
+            "flowReference": "customer::discount-basis-points",
+            "flowReferenceUnavailableReason": null,
+            "inputs": [
+              "Customer"
+            ],
+            "outputs": [
+              "Int"
+            ],
+            "parameters": [
+              {
+                "name": "customer",
+                "type": "Customer"
+              }
+            ],
+            "effects": [],
+            "documentation": "",
+            "id": "word_9705c29454344be3918968374c8e2e7e",
+            "dependencies": [
+              "customer.kind",
+              "equals"
+            ],
+            "transitiveDependencies": [
+              "customer.kind",
+              "equals"
+            ],
+            "callers": [],
+            "tests": [
+              "case-sensitive",
+              "empty-kind",
+              "exact-premium",
+              "leading-space-is-raw",
+              "trailing-space-is-raw"
+            ],
+            "examples": [
+              "exact-premium"
+            ],
+            "source": "<revision:customer.discount-basis-points/4>",
+            "line": 1,
+            "kind": "word",
+            "status": "persistent",
+            "maturity": "library",
+            "deprecated": false,
+            "revision": 4,
+            "testCount": 5,
+            "exampleCount": 1,
+            "coverage": {
+              "instructionsCovered": 9,
+              "instructionsTotal": 9,
+              "branchesCovered": 2,
+              "branchesTotal": 2,
+              "uncoveredInstructions": [],
+              "uncoveredBranchOutcomes": [],
+              "status": "current"
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "dependencies",
+          "text": "2 direct dependency/dependencies.",
+          "data": {
+            "dependencies": [
+              "customer.kind",
+              "equals"
+            ],
+            "callers": []
+          }
+        },
+        {
+          "ok": true,
+          "kind": "transitive-dependencies",
+          "text": "2 transitive dependencies for 'customer.discount-basis-points'.",
+          "data": {
+            "word": "customer.discount-basis-points",
+            "dependencies": [
+              "customer.kind",
+              "equals"
+            ],
+            "count": 2
+          }
+        },
+        {
+          "ok": true,
+          "kind": "source",
+          "text": "word customer.discount-basis-points(customer: Customer) -> Int {\n    effects none\n    let kind = customer::kind(customer)\n    if ::equals(kind, \"premium\") {\n        1000\n    } else {\n        0\n    }\n}",
+          "data": "word customer.discount-basis-points(customer: Customer) -> Int {\n    effects none\n    let kind = customer::kind(customer)\n    if ::equals(kind, \"premium\") {\n        1000\n    } else {\n        0\n    }\n}"
+        },
+        {
+          "ok": true,
+          "kind": "examples",
+          "text": "1 example(s).",
+          "data": [
+            "exact-premium"
+          ]
+        }
+      ],
+      "parseErrors": [],
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 457,
+      "stderr": ""
+    }
+  ],
+  "processRuns": [],
+  "oracleProtocol": "BigInteger integer oracle; raw Kind uses ordinal exact comparison; Money and Int payloads require canonical decimal strings.",
+  "limits": [
+    "Behavioral acceptance and source preservation only; no model-efficiency or token claim.",
+    "Conventional checks use source-review signals, build, seed/self-test/example execution, and typed probe; they do not claim F# instruction coverage.",
+    "Conventional trial isolation is cooperative: validation builds and launches only a disposable copy.",
+    "Customer.Kind is intentionally raw in the public policy facade; no claim is made about private reference-constructor normalization."
+  ]
+}
