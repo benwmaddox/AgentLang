@@ -118,3 +118,8 @@ not a full application migration. Native interpreter/JIT/AOT results must agree
 on checked arithmetic, nominal identity, errors, effects and value lifetime
 semantics. The Campfire migration stays after a stable implemented native
 runtime and chosen memory design.
+
+Follow-up: [report 102](102-guided-defect-repair-comparison.md) completed the
+small guided repair comparison. All three conditions improved from 42/54 to
+54/54 independent cases, with preserved unrelated behavior. This adds repair
+feasibility evidence and still does not establish comparative superiority.

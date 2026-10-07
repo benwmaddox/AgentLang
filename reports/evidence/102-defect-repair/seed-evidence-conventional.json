@@ -1,0 +1,47 @@
+{
+  "comparison": "repair-comparison-001",
+  "variant": "conventional",
+  "seedDirectory": ".agentlang/repair-comparison-001/starts/conventional",
+  "sourceSeedDirectory": ".agentlang/quick-comparison-001/starts/conventional",
+  "files": [
+    { "path": "BusinessPolicy.fsproj", "sourceSha256": "ce2978afdd5ccadb638425c1b25a428e8334c65b983689d8526e7c082412c650", "seedSha256": "ce2978afdd5ccadb638425c1b25a428e8334c65b983689d8526e7c082412c650", "unchangedFromSource": true },
+    { "path": "Domain.fs", "sourceSha256": "564012a232c9f2f162a87109c8e6926d0d6352dd8222b3d9be5cfb466d7fca85", "seedSha256": "564012a232c9f2f162a87109c8e6926d0d6352dd8222b3d9be5cfb466d7fca85", "unchangedFromSource": true },
+    { "path": "Operations.fs", "sourceSha256": "818dd374ea39d9beefaa5cb39af5d377835ab1a2bc682fc8011d639f80eaf7f8", "seedSha256": "94fcffb57cc67d8471a778e84913fbec2a9c611e3f72df23e0cc35d76c2e8447", "unchangedFromSource": false },
+    { "path": "Program.fs", "sourceSha256": "b9e5a7257aada4cb6564be3a3dce35ffff0a672cf4b5c29838a27c0327b0f04f", "seedSha256": "b9e5a7257aada4cb6564be3a3dce35ffff0a672cf4b5c29838a27c0327b0f04f", "unchangedFromSource": true },
+    { "path": "SelfTests.fs", "sourceSha256": "cdadb745b541c49c2bf2d313100f42a47f3cbf91ed1e6776566306834d2ab894", "seedSha256": "93ae97c88b662f7b9a9f7fa0ba9e1c57e2f5bb262f8d4b099722799bb4b994bf", "unchangedFromSource": false },
+    { "path": "lib/AgentLang.Business.dll", "sourceSha256": "41f0b6f0f44ac73f0b899090dc7dcd3f3d56129176b172ceca96cba9e638a13d", "seedSha256": "41f0b6f0f44ac73f0b899090dc7dcd3f3d56129176b172ceca96cba9e638a13d", "unchangedFromSource": true }
+  ],
+  "preservedBehavior": {
+    "seedChecks": "unchanged; 7 pass",
+    "unrelatedOperations": "isPremium and discountBasisPoints remain the original Not implemented stubs",
+    "s07SeededDefect": "exact ordinal premium uses balance - balance / 10L; other kinds return the original balance",
+    "ownExpectations": [
+      { "kind": "premium", "balanceMinor": "1059", "expectedMinor": "954" },
+      { "kind": "premium", "balanceMinor": "-1059", "expectedMinor": "-954" },
+      { "kind": "regular", "balanceMinor": "1059", "expectedMinor": "1059" }
+    ]
+  },
+  "validation": {
+    "build": {
+      "command": "dotnet build .agentlang\\repair-comparison-001\\starts\\conventional\\BusinessPolicy.fsproj --configuration Release --verbosity minimal",
+      "exitCode": 0,
+      "stdout": "  Determining projects to restore...\r\n  All projects are up-to-date for restore.\r\n  BusinessPolicy -> D:\\code\\AgentLang\\.agentlang\\repair-comparison-001\\starts\\conventional\\bin\\Release\\net9.0\\BusinessPolicy.dll\r\n\r\nBuild succeeded.\r\n    0 Warning(s)\r\n    0 Error(s)\r\n\r\nTime Elapsed 00:00:01.93\r\n"
+    },
+    "seedAndOwnTests": {
+      "command": "dotnet run --project .agentlang\\repair-comparison-001\\starts\\conventional\\BusinessPolicy.fsproj --configuration Release --no-build",
+      "exitCode": 0,
+      "stdout": "Seed checks passed: 7\r\nOwn checks passed: 3\r\n"
+    },
+    "s07Probe": {
+      "command": "dotnet run --project .agentlang\\repair-comparison-001\\starts\\conventional\\BusinessPolicy.fsproj --configuration Release --no-build -- --probe S07 .agentlang\\repair-comparison-001\\starts\\conventional\\.s07-probe-cases.json",
+      "inputCases": [
+        { "id": "premium-positive", "kind": "premium", "balanceMinor": "1059" },
+        { "id": "premium-negative", "kind": "premium", "balanceMinor": "-1059" },
+        { "id": "regular-positive", "kind": "regular", "balanceMinor": "1059" }
+      ],
+      "temporaryInputFileRemoved": true,
+      "exitCode": 0,
+      "stdout": "[{\"id\":\"premium-positive\",\"resultType\":\"Money\",\"value\":\"954\"},{\"id\":\"premium-negative\",\"resultType\":\"Money\",\"value\":\"-954\"},{\"id\":\"regular-positive\",\"resultType\":\"Money\",\"value\":\"1059\"}]\r\n"
+    }
+  }
+}

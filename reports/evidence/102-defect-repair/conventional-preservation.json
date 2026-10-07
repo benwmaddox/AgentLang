@@ -1,0 +1,26 @@
+[
+  {
+    "path": "Domain.fs",
+    "unchanged": true
+  },
+  {
+    "path": "Program.fs",
+    "unchanged": true
+  },
+  {
+    "path": "BusinessPolicy.fsproj",
+    "unchanged": true
+  },
+  {
+    "path": "lib/AgentLang.Business.dll",
+    "unchanged": true
+  },
+  {
+    "path": "unrelated operation prefix",
+    "unchanged": true
+  },
+  {
+    "path": "seed tests prefix",
+    "unchanged": true
+  }
+]

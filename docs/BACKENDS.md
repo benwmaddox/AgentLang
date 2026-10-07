@@ -45,3 +45,11 @@ release support still requires complete semantics and checked lifetime/ABI rules
 The proposed allocation direction includes [scoped arenas](MEMORY-REGIONS.md) for phase-oriented values and a distinct retained-data strategy. Define escape/promotion and old-generation retention before resetting a region. Bulk reclamation must not invalidate returned values, snapshots or active code, and does not replace resource cleanup. The managed interpreter and eventual native backends share value/lifetime semantics without a promise of identical physical allocation. No arena implementation or memory gain is claimed yet.
 
 Later syntax research may introduce a frontend with named inputs, expression notation, or pipelines while retaining local flow through recently produced values. All frontends must lower to this same typed semantic IR and preserve evaluation order, diagnostics, effects, and source-level coverage obligations. Source notation and backend memory behavior are separate experiments. LLVM is an execution/code-generation backend, not necessarily a replacement for the F# host/compiler implementation; lower memory usage requires measured allocation and value-layout choices. See [the late syntax research item](PRD.md#late-research-syntax-and-stack-locality).
+
+Implementation-language flexibility (2026-10-07): F# is the current host, not a
+required architecture choice. Prefer the implementation that is correct,
+maintainable and effective for its role. Retain the tested F# frontend/type/IR
+pipeline for the initial LLVM backend; native emitted code does not require a
+managed runtime. Select the later native runtime language on explicit allocator,
+mailbox, interoperability and maintenance needs while preserving semantic and
+ABI conformance. No full host rewrite is required by the native target.

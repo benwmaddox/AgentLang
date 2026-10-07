@@ -1,0 +1,1 @@
+Retention B1/retained/S07 (R04) failed. Evidence: D:\code\AgentLang\.agentlang\repair-comparison-001\results\retained-after.json. metadataPassed=False; behaviorPassed=True; metadataFailures=starting-state source and project pins, target has attached examples, all attached examples pass with meaningful target calls; failedCases=

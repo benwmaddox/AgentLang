@@ -7,9 +7,9 @@ development cost are separate measurements.
 
 Priority update: an efficacy report comes first; efficient LLVM execution with
 interpreter/JIT/AOT and a chosen memory design comes second. See
-[report 101](../reports/101-approach-efficacy-review.md). Finish the bounded syntax
-work already in flight, then use a small defect-repair comparison to address the
-remaining reliability question. Native conformance and arena selection should
+[report 101](../reports/101-approach-efficacy-review.md). Flow/2 is complete (report 100), and the guided repair comparison (report 102)
+is complete: all three conditions repaired the defect, with no reliability
+superiority established. Native conformance and arena selection should
 not wait for every optional feature or proof of a comparative advantage.
 
 ## 1. Finish the bounded vocabulary-retention review
@@ -38,8 +38,8 @@ Next actions:
    controls; F# was equally correct. See [report 099](../reports/099-quick-agent-comparison.md)
    for metadata omissions, fixture friction and limits. This is feasibility
    evidence, not a demonstrated retention advantage.
-2. Finish the bounded Flow/2 milestone below, then prioritize the small repair
-   comparison and native conformance slice. Preserve original 003
+2. The guided repair comparison is complete (report 102). Proceed with the
+   accepted native architecture (report 103) while research continues. Preserve original 003
    on hold and the unfinished 004 runners as unvalidated drafts. The twelve-cell
    repaired study is deferred by the user's instruction to compare sooner;
    its prior freeze requirements still apply if that study is resumed.
@@ -48,7 +48,7 @@ Acceptance is an evidence-backed review of the declared conditions, including
 their limitations. Completing a language feature or passing actor-written tests
 alone is not acceptance of the research hypothesis.
 
-## 2. Make the approved examples executable
+## 2. Completed: make the approved examples executable
 
 The [revised examples](EXAMPLE-SYNTAX-MIGRATION.md) now use executable Flow/2 `fn`, plain
 record properties, typed `==`, omitted pure effects and metadata spacing.
@@ -56,7 +56,7 @@ The explicitly versioned Flow/2 authoring path uses the same verified
 semantic IR, with durable source-version selection and an explicit formatter (report 100).
 Retain Flow/1 and Stack/1 historical bytes and interpretation.
 
-Acceptance includes property/method disambiguation, nominal-type equality
+Validated acceptance includes property/method disambiguation, nominal-type equality
 rejection, effect checking before execution, formatter idempotence and
 define/test/commit/reload round trips. Migrate executable examples and runtime
 help together after these checks pass. Run focused Flow, Source and Storage
@@ -65,6 +65,11 @@ not overwrite the frozen experiment binaries. See
 [the implementation plan](../reports/085-frontend-library-revision-plan.md).
 
 ## 3. Build a lean native execution target and choose memory semantics
+
+Architecture accepted and scalar LLVM AOT implementation in progress; see
+[report 103](../reports/103-llvm-architecture-and-native-slice.md). The user
+authorized this step based on demonstrated capability; comparative reliability
+research continues. Implementation language remains open to maintenance needs.
 
 Keep the semantic IR authoritative. Development backends add LLVM
 JIT while release builds use LLVM AOT plus a minimal runtime. Research arenas,

@@ -1,0 +1,232 @@
+{
+  "schemaVersion": 1,
+  "kind": "language-seed-evidence",
+  "createdUtc": "2026-10-07T20:06:32Z",
+  "frozenCliPath": "src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll",
+  "frozenCliSha256": "bbfe7d079f568a431148298de86a3aa26304a160781c2756591be070735f274a",
+  "matchedComparison": "quick-comparison-001",
+  "defect": {
+    "plantedPremiumFormula": "balance - truncate_toward_zero(balance / 10)",
+    "intendedRuleForScoring": "truncate_toward_zero(balance * 9 / 10)",
+    "publicCases": [
+      {
+        "kind": "premium",
+        "balance": 1059,
+        "seedResult": 954,
+        "correctResult": 953
+      },
+      {
+        "kind": "premium",
+        "balance": -1059,
+        "seedResult": -954,
+        "correctResult": -953
+      },
+      {
+        "kind": "regular",
+        "balance": 1059,
+        "seedResult": 1059,
+        "correctResult": 1059
+      }
+    ],
+    "ownTestCountPerArm": 3
+  },
+  "arms": {
+    "retained": {
+      "startPath": ".agentlang/repair-comparison-001/starts/retained",
+      "matchedBasePath": ".agentlang/quick-comparison-001/starts/retained",
+      "strategy": "Call existing customer.premium?",
+      "signature": "Customer -> Money",
+      "effects": [],
+      "libraryStatus": "persistent",
+      "maturity": "library",
+      "definitionSource": "word customer.discounted-balance(customer: Customer) -> Money {\n    effects none\n    doc \"For premium customers, subtracts one tenth of the balance truncated toward zero; other kinds keep their balance.\"\n    let balance = customer::balance(customer);\n    if customer::premium?(customer) {\n        let minor-units = Money::value(balance);\n        let discount = ::divide(minor-units, 10);\n        Money::new(::subtract(minor-units, discount))\n    } else {\n        balance\n    }\n}",
+      "defineSourceSha256": "8453b9dad4fcc894ede53de750fa9e6bc455ca378e0df25664d48abe72f543ad",
+      "targetDefinitionSha256": "80d87f670e88ff72ad4a379379ebcbe533565350196dabd503f46662d940031f",
+      "tests": [
+        {
+          "caseName": "premium-positive-fraction",
+          "sourceSha256": "75fa4223495493c56f93821b55af0b099b15a7282cd7150af36563aa5ef4124f",
+          "source": "test customer.discounted-balance/premium-positive-fraction {\n    Money::value(customer::discounted-balance(customer::new(id = CustomerId::new(\"00000000-0000-0000-0000-000000000001\"), email = Email::new(\"buyer@example.com\"), kind = \"premium\", balance = Money::new(1059), created-at = Instant::new(\"2026-01-01T12:00:00.0000000+00:00\"))))\n    => 954\n}",
+          "kind": "premium",
+          "balance": 1059,
+          "seedExpected": 954,
+          "correctExpected": 953
+        },
+        {
+          "caseName": "premium-negative-fraction",
+          "sourceSha256": "b3c513d3568b4168d88883cfd1fe36ed983fb3253e74f51985ac1e73a5903a9e",
+          "source": "test customer.discounted-balance/premium-negative-fraction {\n    Money::value(customer::discounted-balance(customer::new(id = CustomerId::new(\"00000000-0000-0000-0000-000000000001\"), email = Email::new(\"buyer@example.com\"), kind = \"premium\", balance = Money::new(-1059), created-at = Instant::new(\"2026-01-01T12:00:00.0000000+00:00\"))))\n    => -954\n}",
+          "kind": "premium",
+          "balance": -1059,
+          "seedExpected": -954,
+          "correctExpected": -953
+        },
+        {
+          "caseName": "regular-unchanged",
+          "sourceSha256": "4b9e3b681b3cb4b59f427fb9fa3ae58aa16be39e6261064668da9e3a8abf86f4",
+          "source": "test customer.discounted-balance/regular-unchanged {\n    Money::value(customer::discounted-balance(customer::new(id = CustomerId::new(\"00000000-0000-0000-0000-000000000001\"), email = Email::new(\"buyer@example.com\"), kind = \"regular\", balance = Money::new(1059), created-at = Instant::new(\"2026-01-01T12:00:00.0000000+00:00\"))))\n    => 1059\n}",
+          "kind": "regular",
+          "balance": 1059,
+          "seedExpected": 1059,
+          "correctExpected": 1059
+        }
+      ],
+      "protocol": {
+        "startupCommand": "dotnet D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll --project D:\\code\\AgentLang\\.agentlang\\repair-comparison-001\\starts\\retained --jsonl",
+        "defineRequest": {
+          "op": "define",
+          "source": "word customer.discounted-balance(customer: Customer) -> Money {\n    effects none\n    doc \"For premium customers, subtracts one tenth of the balance truncated toward zero; other kinds keep their balance.\"\n    let balance = customer::balance(customer);\n    if customer::premium?(customer) {\n        let minor-units = Money::value(balance);\n        let discount = ::divide(minor-units, 10);\n        Money::new(::subtract(minor-units, discount))\n    } else {\n        balance\n    }\n}\n\ntest customer.discounted-balance/premium-positive-fraction {\n    Money::value(customer::discounted-balance(customer::new(id = CustomerId::new(\"00000000-0000-0000-0000-000000000001\"), email = Email::new(\"buyer@example.com\"), kind = \"premium\", balance = Money::new(1059), created-at = Instant::new(\"2026-01-01T12:00:00.0000000+00:00\"))))\n    => 954\n}\n\ntest customer.discounted-balance/premium-negative-fraction {\n    Money::value(customer::discounted-balance(customer::new(id = CustomerId::new(\"00000000-0000-0000-0000-000000000001\"), email = Email::new(\"buyer@example.com\"), kind = \"premium\", balance = Money::new(-1059), created-at = Instant::new(\"2026-01-01T12:00:00.0000000+00:00\"))))\n    => -954\n}\n\ntest customer.discounted-balance/regular-unchanged {\n    Money::value(customer::discounted-balance(customer::new(id = CustomerId::new(\"00000000-0000-0000-0000-000000000001\"), email = Email::new(\"buyer@example.com\"), kind = \"regular\", balance = Money::new(1059), created-at = Instant::new(\"2026-01-01T12:00:00.0000000+00:00\"))))\n    => 1059\n}"
+        },
+        "testRequest": {
+          "op": "test",
+          "word": "customer.discounted-balance"
+        },
+        "commitRequest": {
+          "op": "commit",
+          "word": "customer.discounted-balance",
+          "library": true
+        },
+        "freshReloadCommand": "dotnet D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll --project D:\\code\\AgentLang\\.agentlang\\repair-comparison-001\\starts\\retained --jsonl",
+        "freshReloadTestRequest": {
+          "op": "test",
+          "word": "customer.discounted-balance"
+        },
+        "freshReloadDescribeRequest": {
+          "op": "describe",
+          "word": "customer.discounted-balance"
+        }
+      },
+      "results": {
+        "initialTestSummary": "3/3 passed",
+        "freshReloadTestSummary": "3/3 passed",
+        "freshReloadStatus": "persistent",
+        "freshReloadMaturity": "library",
+        "initialCoverage": {
+          "instructionsCovered": 18,
+          "instructionsTotal": 18,
+          "branchesCovered": 2,
+          "branchesTotal": 2
+        },
+        "freshReloadCoverage": {
+          "instructionsCovered": 18,
+          "instructionsTotal": 18,
+          "branchesCovered": 2,
+          "branchesTotal": 2
+        }
+      },
+      "preservation": {
+        "baseManifestId": "53dd6623a5a62f5a63ecea442abb38b5a43e416f4e158e289965a01327f5e884",
+        "baseManifestSha256": "53dd6623a5a62f5a63ecea442abb38b5a43e416f4e158e289965a01327f5e884",
+        "finalManifestId": "926318318197efaeb5b53ec742a2754750bd002919fedebf6ea4eb67969d6b3b",
+        "finalManifestSha256": "926318318197efaeb5b53ec742a2754750bd002919fedebf6ea4eb67969d6b3b",
+        "baseDictionarySha256": "0ad9919a724c23728802baea6886b24722a1dc7113b1a4a114cc8a4a48c2ebc6",
+        "finalDictionarySha256": "e96a8a2516a22d4e4c992106af432bfa63401fed5aabce7681c0a81f48d80c54",
+        "baseSourceObjectCount": 289,
+        "finalSourceObjectCount": 294,
+        "missingBaseSourceObjects": 0,
+        "addedSourceObjects": 5,
+        "fixtureFiles": 6,
+        "fixtureHashMismatches": []
+      }
+    },
+    "reset": {
+      "startPath": ".agentlang/repair-comparison-001/starts/reset",
+      "matchedBasePath": ".agentlang/quick-comparison-001/starts/reset",
+      "strategy": "Compare raw customer.kind ordinally with premium",
+      "signature": "Customer -> Money",
+      "effects": [],
+      "libraryStatus": "persistent",
+      "maturity": "library",
+      "definitionSource": "word customer.discounted-balance(customer: Customer) -> Money {\n    effects none\n    doc \"For raw kind exactly premium, subtracts one tenth of the balance truncated toward zero; other kinds keep their balance.\"\n    let balance = customer::balance(customer);\n    if ::equals(customer::kind(customer), \"premium\") {\n        let minor-units = Money::value(balance);\n        let discount = ::divide(minor-units, 10);\n        Money::new(::subtract(minor-units, discount))\n    } else {\n        balance\n    }\n}",
+      "defineSourceSha256": "9f4bb3fdae253828a3198de88fbe838d1ce2834c514e7e2708589fe3ca179595",
+      "targetDefinitionSha256": "e49b6cf5926a79a81146fae9d7fa1ccb38ece086c841e96cb11297a9b51f5cba",
+      "tests": [
+        {
+          "caseName": "premium-positive-fraction",
+          "sourceSha256": "75fa4223495493c56f93821b55af0b099b15a7282cd7150af36563aa5ef4124f",
+          "source": "test customer.discounted-balance/premium-positive-fraction {\n    Money::value(customer::discounted-balance(customer::new(id = CustomerId::new(\"00000000-0000-0000-0000-000000000001\"), email = Email::new(\"buyer@example.com\"), kind = \"premium\", balance = Money::new(1059), created-at = Instant::new(\"2026-01-01T12:00:00.0000000+00:00\"))))\n    => 954\n}",
+          "kind": "premium",
+          "balance": 1059,
+          "seedExpected": 954,
+          "correctExpected": 953
+        },
+        {
+          "caseName": "premium-negative-fraction",
+          "sourceSha256": "b3c513d3568b4168d88883cfd1fe36ed983fb3253e74f51985ac1e73a5903a9e",
+          "source": "test customer.discounted-balance/premium-negative-fraction {\n    Money::value(customer::discounted-balance(customer::new(id = CustomerId::new(\"00000000-0000-0000-0000-000000000001\"), email = Email::new(\"buyer@example.com\"), kind = \"premium\", balance = Money::new(-1059), created-at = Instant::new(\"2026-01-01T12:00:00.0000000+00:00\"))))\n    => -954\n}",
+          "kind": "premium",
+          "balance": -1059,
+          "seedExpected": -954,
+          "correctExpected": -953
+        },
+        {
+          "caseName": "regular-unchanged",
+          "sourceSha256": "4b9e3b681b3cb4b59f427fb9fa3ae58aa16be39e6261064668da9e3a8abf86f4",
+          "source": "test customer.discounted-balance/regular-unchanged {\n    Money::value(customer::discounted-balance(customer::new(id = CustomerId::new(\"00000000-0000-0000-0000-000000000001\"), email = Email::new(\"buyer@example.com\"), kind = \"regular\", balance = Money::new(1059), created-at = Instant::new(\"2026-01-01T12:00:00.0000000+00:00\"))))\n    => 1059\n}",
+          "kind": "regular",
+          "balance": 1059,
+          "seedExpected": 1059,
+          "correctExpected": 1059
+        }
+      ],
+      "protocol": {
+        "startupCommand": "dotnet D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll --project D:\\code\\AgentLang\\.agentlang\\repair-comparison-001\\starts\\reset --jsonl",
+        "defineRequest": {
+          "op": "define",
+          "source": "word customer.discounted-balance(customer: Customer) -> Money {\n    effects none\n    doc \"For raw kind exactly premium, subtracts one tenth of the balance truncated toward zero; other kinds keep their balance.\"\n    let balance = customer::balance(customer);\n    if ::equals(customer::kind(customer), \"premium\") {\n        let minor-units = Money::value(balance);\n        let discount = ::divide(minor-units, 10);\n        Money::new(::subtract(minor-units, discount))\n    } else {\n        balance\n    }\n}\n\ntest customer.discounted-balance/premium-positive-fraction {\n    Money::value(customer::discounted-balance(customer::new(id = CustomerId::new(\"00000000-0000-0000-0000-000000000001\"), email = Email::new(\"buyer@example.com\"), kind = \"premium\", balance = Money::new(1059), created-at = Instant::new(\"2026-01-01T12:00:00.0000000+00:00\"))))\n    => 954\n}\n\ntest customer.discounted-balance/premium-negative-fraction {\n    Money::value(customer::discounted-balance(customer::new(id = CustomerId::new(\"00000000-0000-0000-0000-000000000001\"), email = Email::new(\"buyer@example.com\"), kind = \"premium\", balance = Money::new(-1059), created-at = Instant::new(\"2026-01-01T12:00:00.0000000+00:00\"))))\n    => -954\n}\n\ntest customer.discounted-balance/regular-unchanged {\n    Money::value(customer::discounted-balance(customer::new(id = CustomerId::new(\"00000000-0000-0000-0000-000000000001\"), email = Email::new(\"buyer@example.com\"), kind = \"regular\", balance = Money::new(1059), created-at = Instant::new(\"2026-01-01T12:00:00.0000000+00:00\"))))\n    => 1059\n}"
+        },
+        "testRequest": {
+          "op": "test",
+          "word": "customer.discounted-balance"
+        },
+        "commitRequest": {
+          "op": "commit",
+          "word": "customer.discounted-balance",
+          "library": true
+        },
+        "freshReloadCommand": "dotnet D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll --project D:\\code\\AgentLang\\.agentlang\\repair-comparison-001\\starts\\reset --jsonl",
+        "freshReloadTestRequest": {
+          "op": "test",
+          "word": "customer.discounted-balance"
+        },
+        "freshReloadDescribeRequest": {
+          "op": "describe",
+          "word": "customer.discounted-balance"
+        }
+      },
+      "results": {
+        "initialTestSummary": "3/3 passed",
+        "freshReloadTestSummary": "3/3 passed",
+        "freshReloadStatus": "persistent",
+        "freshReloadMaturity": "library",
+        "initialCoverage": {
+          "instructionsCovered": 20,
+          "instructionsTotal": 20,
+          "branchesCovered": 2,
+          "branchesTotal": 2
+        },
+        "freshReloadCoverage": {
+          "instructionsCovered": 20,
+          "instructionsTotal": 20,
+          "branchesCovered": 2,
+          "branchesTotal": 2
+        }
+      },
+      "preservation": {
+        "baseManifestId": "ab673bef6fe7b5e2a3ebd2c00dd3a9e0b8cc67633e55d1963e58035134536f7a",
+        "baseManifestSha256": "ab673bef6fe7b5e2a3ebd2c00dd3a9e0b8cc67633e55d1963e58035134536f7a",
+        "finalManifestId": "ed44eff881071f3c1e84096d6d8e67756662696e35567b6418df22719154b383",
+        "finalManifestSha256": "ed44eff881071f3c1e84096d6d8e67756662696e35567b6418df22719154b383",
+        "baseDictionarySha256": "375e836e393d8ee3974486fa87eb168b62cd1d09f866d111a60adc0f20342bcf",
+        "finalDictionarySha256": "44af909fe1f64e8e16d308c74f1d7b05e0ea3ec1c02f7c3a1ea19031ceb25d01",
+        "baseSourceObjectCount": 280,
+        "finalSourceObjectCount": 285,
+        "missingBaseSourceObjects": 0,
+        "addedSourceObjects": 5,
+        "fixtureFiles": 6,
+        "fixtureHashMismatches": []
+      }
+    }
+  },
+  "actorsStartedBySeedPreparer": false
+}

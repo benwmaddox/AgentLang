@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "kind": "exploratory-defect-repair",
+  "createdUtc": "2026-10-07T19:52:49.5160310Z",
+  "sourceRevision": "313599d",
+  "model": "gpt-6-luna",
+  "reasoning": "max",
+  "freshActors": true,
+  "arms": [
+    "retained",
+    "reset",
+    "conventional"
+  ],
+  "task": "Repair the existing customer discounted-balance operation. For raw kind exactly \"premium\" (ordinal and case-sensitive), return 90% of the signed balance, truncating the final fractional minor unit toward zero. Every other raw kind returns the original balance. Support every signed Int64 balance without overflow. Existing passing tests may encode the wrong rule: correct those expectations and add useful regression tests. Preserve unrelated operations, types, and tests. Keep the public Customer -> Money signature, pure effects, and durable library qualification where supported. Complete the repair and report the actual tests you ran.",
+  "languageSyntax": "Flow/1",
+  "languageRuntimeSha256": "bbfe7d079f568a431148298de86a3aa26304a160781c2756591be070735f274a",
+  "design": "Matched planted rounding defect and misleading passing tests; reuse report099 controls and54case independent scoring",
+  "acceptance": [
+    "signed rounding behavior",
+    "wrong expectations corrected",
+    "all unrelated starting definitions preserved",
+    "own tests pass",
+    "library qualification retained for language"
+  ],
+  "limitations": [
+    "one fresh actor per condition",
+    "guided repair, not blind defect discovery",
+    "frozen Flow1 runtime; does not evaluate Flow2 authoring",
+    "no model-token or native performance claims"
+  ],
+  "maxLanguageExchanges": 100
+}

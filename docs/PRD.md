@@ -1,10 +1,17 @@
 # AgentLang: Agent-Oriented Extensible Language Prototype
 
 - Status: prototype specification, refined 2026-10-07
-- Implementation: F# on .NET
+- Current prototype implementation: F# on .NET; implementation language is not a product constraint
 - Primary user: an AI coding agent
 - Secondary user: a developer inspecting and controlling that agent
 
+Implementation-language decision: prioritize correctness, maintainability and
+measured runtime behavior over retaining any particular host language. Keep the
+existing F# compiler/frontends while they serve those goals; choose the native
+runtime implementation independently when allocation, mailboxes and platform
+integration need it. Preserve the language semantics and versioned IR/ABI
+contracts across any implementation-language change. A rewrite requires a
+concrete benefit; it is not a prerequisite for LLVM-generated native output.
 ## Purpose and hypothesis
 
 AgentLang tests whether a small, inspectable programming environment can retain project understanding as executable vocabulary. An agent discovers existing operations, creates and tests a reusable word, uses it to complete a task, and leaves it available to a later agent.

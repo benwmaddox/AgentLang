@@ -1,0 +1,56 @@
+[
+  {
+    "arm": "retained",
+    "positive": {
+      "stack": [
+        "953"
+      ],
+      "stackTypes": [
+        "Int"
+      ],
+      "console": [],
+      "effects": {}
+    },
+    "negative": {
+      "stack": [
+        "-953"
+      ],
+      "stackTypes": [
+        "Int"
+      ],
+      "console": [],
+      "effects": {}
+    },
+    "positiveOk": true,
+    "negativeOk": true,
+    "allTests": 163,
+    "testsFailed": 0
+  },
+  {
+    "arm": "reset",
+    "positive": {
+      "stack": [
+        "953"
+      ],
+      "stackTypes": [
+        "Int"
+      ],
+      "console": [],
+      "effects": {}
+    },
+    "negative": {
+      "stack": [
+        "-953"
+      ],
+      "stackTypes": [
+        "Int"
+      ],
+      "console": [],
+      "effects": {}
+    },
+    "positiveOk": true,
+    "negativeOk": true,
+    "allTests": 157,
+    "testsFailed": 0
+  }
+]

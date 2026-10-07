@@ -1,0 +1,82 @@
+[
+  {
+    "arm": "retained",
+    "actorExchanges": 33,
+    "allExchanges": 34,
+    "protocolErrors": 0,
+    "testBatches": [
+      {
+        "op": "test",
+        "word": "customer.discounted-balance",
+        "total": 3,
+        "failed": 0
+      },
+      {
+        "op": "test",
+        "word": "customer.discounted-balance",
+        "total": 6,
+        "failed": 0
+      },
+      {
+        "op": "test-all",
+        "word": null,
+        "total": 163,
+        "failed": 0
+      }
+    ],
+    "end": {
+      "event": "session-end",
+      "finishedUtc": "2026-10-07T16:15:57.8864195-04:00",
+      "exchangeCount": 34,
+      "hostExitCode": 0,
+      "runtimeExitCode": 0,
+      "runtimeStderrPrefixBytes": 0,
+      "runtimeStderrTotalBytes": 0,
+      "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "runtimeStderrCaptureTruncated": false
+    }
+  },
+  {
+    "arm": "reset",
+    "actorExchanges": 40,
+    "allExchanges": 40,
+    "protocolErrors": 0,
+    "testBatches": [
+      {
+        "op": "test",
+        "word": "customer.discounted-balance",
+        "total": 3,
+        "failed": 0
+      },
+      {
+        "op": "test",
+        "word": "customer.discounted-balance",
+        "total": 6,
+        "failed": 6
+      },
+      {
+        "op": "test",
+        "word": "customer.discounted-balance",
+        "total": 6,
+        "failed": 2
+      },
+      {
+        "op": "test",
+        "word": "customer.discounted-balance",
+        "total": 6,
+        "failed": 0
+      }
+    ],
+    "end": {
+      "event": "session-end",
+      "finishedUtc": "2026-10-07T16:19:04.909755-04:00",
+      "exchangeCount": 40,
+      "hostExitCode": 0,
+      "runtimeExitCode": 0,
+      "runtimeStderrPrefixBytes": 0,
+      "runtimeStderrTotalBytes": 0,
+      "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "runtimeStderrCaptureTruncated": false
+    }
+  }
+]

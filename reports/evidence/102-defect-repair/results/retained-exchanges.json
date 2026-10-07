@@ -1,0 +1,200 @@
+[
+  {
+    "op": "help",
+    "ok": true,
+    "code": null,
+    "word": null
+  },
+  {
+    "op": "task.begin",
+    "ok": true,
+    "code": null,
+    "word": null
+  },
+  {
+    "op": "words",
+    "ok": true,
+    "code": null,
+    "word": null
+  },
+  {
+    "op": "describe",
+    "ok": true,
+    "code": null,
+    "word": "customer.discounted-balance"
+  },
+  {
+    "op": "source",
+    "ok": true,
+    "code": null,
+    "word": "customer.discounted-balance"
+  },
+  {
+    "op": "source",
+    "ok": true,
+    "code": null,
+    "word": "customer.premium?"
+  },
+  {
+    "op": "source",
+    "ok": true,
+    "code": null,
+    "word": "customer.kind"
+  },
+  {
+    "op": "source",
+    "ok": true,
+    "code": null,
+    "word": "divide"
+  },
+  {
+    "op": "source",
+    "ok": true,
+    "code": null,
+    "word": "int.multiply-checked"
+  },
+  {
+    "op": "tests",
+    "ok": true,
+    "code": null,
+    "word": "customer.discounted-balance"
+  },
+  {
+    "op": "help",
+    "ok": true,
+    "code": null,
+    "word": null
+  },
+  {
+    "op": "help",
+    "ok": true,
+    "code": null,
+    "word": null
+  },
+  {
+    "op": "source",
+    "ok": true,
+    "code": null,
+    "word": "multiply"
+  },
+  {
+    "op": "source",
+    "ok": true,
+    "code": null,
+    "word": "subtract"
+  },
+  {
+    "op": "help",
+    "ok": true,
+    "code": null,
+    "word": null
+  },
+  {
+    "op": "tests",
+    "ok": true,
+    "code": null,
+    "word": "customer.discounted-balance"
+  },
+  {
+    "op": "source",
+    "ok": true,
+    "code": null,
+    "word": "customer.create"
+  },
+  {
+    "op": "source",
+    "ok": true,
+    "code": null,
+    "word": "customer.balance"
+  },
+  {
+    "op": "source",
+    "ok": true,
+    "code": null,
+    "word": "Money.new"
+  },
+  {
+    "op": "source",
+    "ok": true,
+    "code": null,
+    "word": "instant.normalize"
+  },
+  {
+    "op": "test",
+    "ok": true,
+    "code": null,
+    "word": "customer.discounted-balance"
+  },
+  {
+    "op": "describe",
+    "ok": true,
+    "code": null,
+    "word": "customer.new"
+  },
+  {
+    "op": "describe",
+    "ok": true,
+    "code": null,
+    "word": "CustomerId.new"
+  },
+  {
+    "op": "describe",
+    "ok": true,
+    "code": null,
+    "word": "Email.new"
+  },
+  {
+    "op": "describe",
+    "ok": true,
+    "code": null,
+    "word": "Instant.new"
+  },
+  {
+    "op": "source",
+    "ok": true,
+    "code": null,
+    "word": "business.seed"
+  },
+  {
+    "op": "define",
+    "ok": true,
+    "code": null,
+    "word": null
+  },
+  {
+    "op": "test",
+    "ok": true,
+    "code": null,
+    "word": "customer.discounted-balance"
+  },
+  {
+    "op": "describe",
+    "ok": true,
+    "code": null,
+    "word": "customer.discounted-balance"
+  },
+  {
+    "op": "callers",
+    "ok": true,
+    "code": null,
+    "word": "customer.discounted-balance"
+  },
+  {
+    "op": "test-all",
+    "ok": true,
+    "code": null,
+    "word": null
+  },
+  {
+    "op": "replace-word",
+    "ok": true,
+    "code": null,
+    "word": "customer.discounted-balance"
+  },
+  {
+    "op": "task.commit",
+    "ok": true,
+    "code": null,
+    "word": null
+  }
+]

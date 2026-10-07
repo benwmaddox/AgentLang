@@ -1,0 +1,3 @@
+{"op":"eval","frontend":"flow","code":"Money::value(customer::discounted-balance(customer::new(id = CustomerId::new(\"10000000-0000-0000-0000-000000000001\"), email = Email::new(\"ada@example.test\"), kind = \"premium\", balance = Money::new(1059), created-at = Instant::new(\"2026-01-01T12:00:00.0000000+00:00\"))))"}
+{"op":"eval","frontend":"flow","code":"Money::value(customer::discounted-balance(customer::new(id = CustomerId::new(\"10000000-0000-0000-0000-000000000001\"), email = Email::new(\"ada@example.test\"), kind = \"premium\", balance = Money::new(-1059), created-at = Instant::new(\"2026-01-01T12:00:00.0000000+00:00\"))))"}
+{"op":"test-all"}

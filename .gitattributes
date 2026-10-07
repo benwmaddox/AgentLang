@@ -80,3 +80,5 @@ reports/evidence/090-supplemental/** -text -whitespace
 reports/evidence/099-quick-comparison/** -text -whitespace
 
 reports/evidence/100-flow2/** -text -whitespace
+
+reports/evidence/102-defect-repair/** -text -whitespace
