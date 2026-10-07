@@ -97,6 +97,10 @@ slow retirement. Research state identity/routing and safe draining separately;
 counts alone do not bound memory or add CPU parallelism to a single thread.
 For mailboxes with distinct state, the preferred candidate is `min = max` with
 stable identities; stack capacity can still be released independently on idle.
+At async suspension, the proposed refinement stores surviving data and resume
+state in that same mailbox, returns its stack arena to the pool, and reacquires
+stack storage for resumption. No additional processing mailbox is required;
+ordering during suspension remains a policy to specify and test.
 
 No current interpreter result proves native footprint, throughput or arena
 safety. Require semantic conformance and measured memory, throughput and tail

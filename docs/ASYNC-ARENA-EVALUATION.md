@@ -23,6 +23,38 @@ The working hypothesis is that releasing scratch before I/O waits permits more
 useful concurrent requests under a memory ceiling. Copying retained state and
 additional transitions may instead limit CPU throughput. Measure both outcomes.
 
+### Refinement: suspend and resume the same mailbox
+
+The user proposed keeping all data that survives an async suspension in the
+original mailbox's bounded retained state, returning its stack arena to the
+pool, and acquiring stack storage again when the operation completes. The
+mailbox identity and static state persist. No second mailbox is required for
+processing the continuation; completion schedules resumption of the same one.
+
+Continuation state includes required locals, nested data, the resume location
+and pending-operation identity. I/O buffers must also have valid retained owners
+before the provider can use them. Copy or transfer whole reachable values with
+their nominal types intact; storing pointers into returned scratch is invalid.
+Bounded promotion failure must leave a defined error/cleanup outcome, not a
+partially published continuation. Data no longer needed need not be retained.
+
+On suspension, complete the state transition and resource ownership checks
+before returning the old arena. On completion, validate the pending operation
+and schedule a turn on the same mailbox's execution lane with a new logical
+arena lifetime. Pooling may reuse the same physical chunk; old references must
+remain invalid. Define how cancellation, duplicate/late completion and code
+replacement interact with the stored resume location before implementation.
+
+Whether unrelated messages can execute in that mailbox during suspension is an
+open scheduling decision. Single-thread execution alone does not define ordering
+or protect invariants across intervening turns. Record the policy and test it.
+
+Returning the stack arena to a pool at suspension differs from releasing its
+backing memory to the OS. The pool may retain unused chunks for reuse and release
+them after inactivity, subject to aggregate limits. Ordinary completed turns may
+reuse assigned stack capacity under the idle-release candidate; async suspension
+explicitly hands capacity back to the pool. No native behavior is implemented yet.
+
 ## Safety prerequisites
 
 - Reject escapes into released regions, including nested containers and aliases.
