@@ -59,6 +59,12 @@ ordinary interpreter tests do not require LLVM. See
 for supported semantics, evidence and limits. This is not yet a general release
 packager, JIT backend or arena/mailbox runtime.
 
+A separate Windows C11 arena/mailbox experiment compares per-turn and
+whole-request lifetimes. Run `pwsh -NoProfile -File scripts/Verify-NativeArenaMailbox.ps1`
+for its fresh native safety checks and fixed comparison. See
+[report 104](reports/104-native-arena-mailbox-feasibility.md) for measured memory
+results and limits. This experiment is not yet integrated into language execution.
+
 ## Try Flow authoring
 
 Start the JSON-lines CLI:

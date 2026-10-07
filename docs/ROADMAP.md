@@ -71,6 +71,15 @@ The first scalar LLVM AOT implementation is locally validated; see
 authorized this step based on demonstrated capability; comparative reliability
 research continues. Implementation language remains open to maintenance needs.
 
+The first standalone native arena/mailbox comparison is complete; see
+[report 104](../reports/104-native-arena-mailbox-feasibility.md). All 72 runs
+passed. Per-turn backing fell 77–80% for suspended workloads with disposable data,
+but the retained-only control used more backing and copying. This supports
+continuing the candidate, not a production throughput claim or language-wide
+lifetime guarantee. Next, specify a narrow retained-value/lifetime contract in
+the verified IR and add native conformance before broad runtime integration.
+The standalone probe does not implement AgentLang mailboxes or idle trimming.
+
 Keep the semantic IR authoritative. Development backends add LLVM
 JIT while release builds use LLVM AOT plus a minimal runtime. Research arenas,
 an arena-backed program-data stack, bounded mailboxes and suspended-I/O state

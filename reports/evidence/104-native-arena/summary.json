@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "runs": 72,
+  "checkerAssertions": 5154,
+  "checkerControls": 13,
+  "nativeAssertionsPerBuild": [
+    248,
+    248
+  ],
+  "offered": 2304.0,
+  "completed": 2172.0,
+  "cancelled": 132.0,
+  "fixedMetadataBytes": 33752,
+  "source": {
+    "path": "experiments/native-arena-mailbox/probe.c",
+    "bytes": 91991,
+    "sha256": "1e8705648edf27f7b86abded64884e77b26ea0c73291bf26af4a7b96f7ec3a2d"
+  },
+  "groups": [
+    {
+      "mode": "request",
+      "scenario": "cancellation",
+      "runs": 6,
+      "peakBackingBytes": 4587520,
+      "peakPayloadBytes": 4232448,
+      "copyBytes": 0,
+      "allocatorCalls": 280,
+      "processPeakMinimum": 5165056.0,
+      "processPeakMaximum": 5169152.0
+    },
+    {
+      "mode": "request",
+      "scenario": "cpu",
+      "runs": 6,
+      "peakBackingBytes": 573440,
+      "peakPayloadBytes": 525504,
+      "copyBytes": 0,
+      "allocatorCalls": 35,
+      "processPeakMinimum": 1114112.0,
+      "processPeakMaximum": 1122304.0
+    },
+    {
+      "mode": "request",
+      "scenario": "delayed-large",
+      "runs": 6,
+      "peakBackingBytes": 4587520,
+      "peakPayloadBytes": 4293888,
+      "copyBytes": 0,
+      "allocatorCalls": 280,
+      "processPeakMinimum": 5160960.0,
+      "processPeakMaximum": 5169152.0
+    },
+    {
+      "mode": "request",
+      "scenario": "delayed-small",
+      "runs": 6,
+      "peakBackingBytes": 4587520,
+      "peakPayloadBytes": 4204800,
+      "copyBytes": 0,
+      "allocatorCalls": 280,
+      "processPeakMinimum": 5160960.0,
+      "processPeakMaximum": 5169152.0
+    },
+    {
+      "mode": "request",
+      "scenario": "retained-only",
+      "runs": 6,
+      "peakBackingBytes": 393216,
+      "peakPayloadBytes": 99584,
+      "copyBytes": 0,
+      "allocatorCalls": 24,
+      "processPeakMinimum": 933888.0,
+      "processPeakMaximum": 946176.0
+    },
+    {
+      "mode": "request",
+      "scenario": "slow-output",
+      "runs": 6,
+      "peakBackingBytes": 4718592,
+      "peakPayloadBytes": 4302224,
+      "copyBytes": 0,
+      "allocatorCalls": 288,
+      "processPeakMinimum": 5292032.0,
+      "processPeakMaximum": 5300224.0
+    },
+    {
+      "mode": "turn",
+      "scenario": "cancellation",
+      "runs": 6,
+      "peakBackingBytes": 933888,
+      "peakPayloadBytes": 563056,
+      "copyBytes": 19968,
+      "allocatorCalls": 57,
+      "processPeakMinimum": 1478656.0,
+      "processPeakMaximum": 1486848.0
+    },
+    {
+      "mode": "turn",
+      "scenario": "cpu",
+      "runs": 6,
+      "peakBackingBytes": 573440,
+      "peakPayloadBytes": 525504,
+      "copyBytes": 0,
+      "allocatorCalls": 35,
+      "processPeakMinimum": 1110016.0,
+      "processPeakMaximum": 1122304.0
+    },
+    {
+      "mode": "turn",
+      "scenario": "delayed-large",
+      "runs": 6,
+      "peakBackingBytes": 933888,
+      "peakPayloadBytes": 632176,
+      "copyBytes": 265728,
+      "allocatorCalls": 57,
+      "processPeakMinimum": 1478656.0,
+      "processPeakMaximum": 1490944.0
+    },
+    {
+      "mode": "turn",
+      "scenario": "delayed-small",
+      "runs": 6,
+      "peakBackingBytes": 933888,
+      "peakPayloadBytes": 535024,
+      "copyBytes": 7680,
+      "allocatorCalls": 57,
+      "processPeakMinimum": 1474560.0,
+      "processPeakMaximum": 1490944.0
+    },
+    {
+      "mode": "turn",
+      "scenario": "retained-only",
+      "runs": 6,
+      "peakBackingBytes": 409600,
+      "peakPayloadBytes": 107888,
+      "copyBytes": 265728,
+      "allocatorCalls": 25,
+      "processPeakMinimum": 954368.0,
+      "processPeakMaximum": 962560.0
+    },
+    {
+      "mode": "turn",
+      "scenario": "slow-output",
+      "runs": 6,
+      "peakBackingBytes": 1064960,
+      "peakPayloadBytes": 628896,
+      "copyBytes": 7680,
+      "allocatorCalls": 65,
+      "processPeakMinimum": 1605632.0,
+      "processPeakMaximum": 1617920.0
+    }
+  ]
+}

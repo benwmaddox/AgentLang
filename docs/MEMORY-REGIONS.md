@@ -1,6 +1,11 @@
 # Proposed scoped arenas and retained memory
 
-Status: proposed memory design, 2026-10-05. No arena allocator or region lifetime checking is implemented. Preserve the current managed runtime while completing the flow frontend; settle lifetime/conformance rules before any native allocator backend.
+Status: proposed language memory design, 2026-10-07. Flow/2 and the first scalar
+LLVM slice are implemented. The standalone C arena/mailbox feasibility probe
+in [report 104](../reports/104-native-arena-mailbox-feasibility.md) passed its
+bounded ownership and comparison checks; AgentLang itself still has no arena
+allocator or region lifetime checking. Settle the verified-IR lifetime contract
+before integrating these mechanisms into language execution.
 
 ## Objective
 

@@ -123,3 +123,8 @@ Follow-up: [report 102](102-guided-defect-repair-comparison.md) completed the
 small guided repair comparison. All three conditions improved from 42/54 to
 54/54 independent cases, with preserved unrelated behavior. This adds repair
 feasibility evidence and still does not establish comparative superiority.
+
+Execution follow-up: [report 103](103-llvm-architecture-and-native-slice.md)
+validates the first bounded scalar LLVM AOT backend. General native release
+support, JIT and language-level arena lifetimes remain incomplete. Native
+conformance does not change the comparative agent-reliability conclusion above.

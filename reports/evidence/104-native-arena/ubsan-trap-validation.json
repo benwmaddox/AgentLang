@@ -1,0 +1,24 @@
+{
+  "compiler": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\Llvm\\x64\\bin\\clang.exe",
+  "arguments": [
+    "-std=c11",
+    "-Wall",
+    "-Wextra",
+    "-Werror",
+    "-O1",
+    "-fsanitize=undefined",
+    "-fsanitize-trap=undefined",
+    "experiments/native-arena-mailbox/probe.c",
+    "-o",
+    "D:\\code\\AgentLang\\.agentlang\\arena-probe\\ubsan\\probe-ubsan-trap.exe",
+    "-lpsapi"
+  ],
+  "sourceSha256": "1e8705648edf27f7b86abded64884e77b26ea0c73291bf26af4a7b96f7ec3a2d",
+  "executableSha256": "4fdcdd19c87ebcb134ad37dd8e7203e21d0dcde5b99f7ae16ed3a1e127f3d2de",
+  "buildExitCode": 0,
+  "buildOutput": [],
+  "selfTestExitCode": 0,
+  "selfTestOutput": [
+    "{\"schemaVersion\":1,\"kind\":\"self-test\",\"passed\":true,\"assertions\":248,\"processLimitEnforced\":true}"
+  ]
+}

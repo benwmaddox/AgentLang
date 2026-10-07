@@ -1,8 +1,10 @@
 # Async arena throughput experiment
 
-Status: approved later research, 2026-10-07. No native allocator or async mailbox
-implementation is claimed. This follows agent-behavior validation and the native
-memory safety prerequisites in [the roadmap](ROADMAP.md).
+Status: real-I/O throughput evaluation remains planned, 2026-10-07. A standalone
+native ownership/memory comparison is complete in [report 104](../reports/104-native-arena-mailbox-feasibility.md):
+72 runs passed, with lower per-turn backing for disposable working data and a
+retained-only counterexample. AgentLang-integrated lifetimes, actual async I/O,
+saturation and tail latency remain untested. See [the roadmap](ROADMAP.md).
 
 ## Candidates
 
@@ -53,7 +55,8 @@ Returning the stack arena to a pool at suspension differs from releasing its
 backing memory to the OS. The pool may retain unused chunks for reuse and release
 them after inactivity, subject to aggregate limits. Ordinary completed turns may
 reuse assigned stack capacity under the idle-release candidate; async suspension
-explicitly hands capacity back to the pool. No native behavior is implemented yet.
+explicitly hands capacity back to the pool. The standalone probe implements
+bounded pooling, but no idle-release policy or language-integrated native behavior.
 
 ## Safety prerequisites
 

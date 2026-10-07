@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "description": "Standalone native arena/mailbox comparison; not AgentLang-integrated execution",
+  "files": [
+    {
+      "name": "comparison.json",
+      "bytes": 2386745,
+      "sha256": "b2579a93036c793b161ee9aeadfccdb763e7fa4b836f0355c743cc4cf9ae1700"
+    },
+    {
+      "name": "contract-before-results.md",
+      "bytes": 5529,
+      "sha256": "9d679302d3bfe6a84d5db1349fb0830476c2a95851931e9ab9af7cf58f1eb81f"
+    },
+    {
+      "name": "frozen-runtime.json",
+      "bytes": 2758,
+      "sha256": "bf9841c2a26dc2c40b892adb132375ed98f68c65ff863cfbc24ea8ea139f05fc"
+    },
+    {
+      "name": "source.zip",
+      "bytes": 27633,
+      "sha256": "e2d79fc879309854d5d256409c0da0c546e0bf0080a26ad6a1a8eb67e0a483d6"
+    },
+    {
+      "name": "summary.json",
+      "bytes": 3860,
+      "sha256": "93ce37b3bcd26c005c2799f64714cf318e4ed117ccc33af81df2cbc23f82e103"
+    },
+    {
+      "name": "ubsan-runtime-link-attempt.json",
+      "bytes": 8157,
+      "sha256": "e0636620e3e9d015312b567838d72d226f19b82eafee46c3f0bd9028e08d712f"
+    },
+    {
+      "name": "ubsan-trap-validation.json",
+      "bytes": 818,
+      "sha256": "04f7710c1a2fdd9083e989536a30d53c49ccfaacf7da2ab8ec4e3128735692c3"
+    }
+  ],
+  "sources": [
+    {
+      "path": "experiments/native-arena-mailbox/probe.c",
+      "sha256": "1e8705648edf27f7b86abded64884e77b26ea0c73291bf26af4a7b96f7ec3a2d"
+    },
+    {
+      "path": "experiments/native-arena-mailbox/README.md",
+      "sha256": "32977097a6d1973e21e2738932a2d461c1e29d2c44b76fff3c8452b2f1d1e37f"
+    },
+    {
+      "path": "scripts/Verify-NativeArenaMailbox.ps1",
+      "sha256": "cb20590cc5a621ac5ab71c47cc55b58836a0ae4ba9cc555675488ad78e7f239c"
+    }
+  ]
+}
