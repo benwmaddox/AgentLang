@@ -213,7 +213,20 @@ function Validate-FrozenPin([string]$StartPath, [string]$ActorPath, [string]$Run
         return $null
     }
     $pinCheckStart = $metadataChecks.Count
-    $pin = Get-Content -LiteralPath $pinPath -Raw | ConvertFrom-Json -AsHashtable -Depth 100
+    $pinRaw = Get-Content -LiteralPath $pinPath -Raw
+    $pin = $pinRaw | ConvertFrom-Json -AsHashtable -Depth 100
+    # ConvertFrom-Json can coerce ISO-like strings into DateTime values. Read this
+    # protocol string from its JSON token so validation remains exact and invariant.
+    $pinClockValue = $null
+    $pinDocument = [System.Text.Json.JsonDocument]::Parse($pinRaw)
+    try {
+        $clockElement = [System.Text.Json.JsonElement]::new()
+        if ($pinDocument.RootElement.TryGetProperty('clockValue', [ref]$clockElement) -and $clockElement.ValueKind -eq [System.Text.Json.JsonValueKind]::String) {
+            $pinClockValue = $clockElement.GetString()
+        }
+    } finally {
+        $pinDocument.Dispose()
+    }
     $pinHash = Get-Sha256 $pinPath
     $frozenPinInfo.sha256 = $pinHash
     $expectedIndex = [array]::IndexOf($sequence,$CurrentTask) + 1
@@ -251,9 +264,7 @@ function Validate-FrozenPin([string]$StartPath, [string]$ActorPath, [string]$Run
     ) | Sort-Object -CaseSensitive
     Add-Check 'frozen actor allowlist exactly matches the reviewed help-enabled operation set' ((($allowedOperations | Sort-Object -CaseSensitive) -join "`0") -ceq ($expectedAllowedOperations -join "`0")) $allowedOperations
     Add-Check 'frozen actor model, reasoning, and fork settings match the trial' ([string](Get-Field $pin 'model') -ceq 'gpt-6-luna' -and [string](Get-Field $pin 'reasoningEffort') -ceq 'max' -and [string](Get-Field $pin 'forkTurns') -ceq 'none') @{model=(Get-Field $pin 'model');reasoningEffort=(Get-Field $pin 'reasoningEffort');forkTurns=(Get-Field $pin 'forkTurns')}
-    Add-Check 'frozen host settings retain raw-protocol limits and no cumulative inspection budget' ([int](Get-Field $pin 'maxExchanges') -eq 100 -and [int](Get-Field $pin 'maxRequestBytes') -eq 262144 -and [int](Get-Field $pin 'maxResponseBytes') -eq 524288 -and [int](Get-Field $pin 'exchangeTimeoutMilliseconds') -eq 120000 -and (Get-Field $pin 'inspectionBudgetEnabled') -eq $false -and [string](Get-Field $pin 'inspectionClassifierVersion') -ceq 'trial-host-inspection-v1' -and [string](Get-Field $pin 'profile') -ceq 'agentlang' -and [string](Get-Field $pin 'clockValue') -ceq '2000-01-01T00:00:00Z' -and @(Get-Field $pin 'additionalCliArguments').Count -eq 0 -and @(Get-Field $pin 'capabilities').Count -eq 0)
-    $expectedLaunchCommand = "& '$($hostPath.Replace("'","''"))' -CliDll '$($cliDllPath.Replace("'","''"))' -ProjectPath '$($ActorPath.Replace("'","''"))' -TracePath '$((Join-Path $runDirectory 'trace.jsonl').Replace("'","''"))' -AllowedOperations @('" + ($expectedAllowedOperations -join "','") + "') -Profile agentlang -Capabilities @() -ClockValue '2000-01-01T00:00:00Z' -MaxRequestBytes 262144 -MaxResponseBytes 524288 -ExchangeTimeoutMilliseconds 120000 -MaxExchanges 100"
-    Add-Check 'frozen launch command matches pinned host, project, CLI, and allowlist settings' ([string](Get-Field $pin 'launchCommand') -ceq $expectedLaunchCommand) @{expected=$expectedLaunchCommand;actual=(Get-Field $pin 'launchCommand')}
+    Add-Check 'frozen host settings retain raw-protocol limits and no cumulative inspection budget' ([int](Get-Field $pin 'maxExchanges') -eq 100 -and [int](Get-Field $pin 'maxRequestBytes') -eq 262144 -and [int](Get-Field $pin 'maxResponseBytes') -eq 524288 -and [int](Get-Field $pin 'exchangeTimeoutMilliseconds') -eq 120000 -and (Get-Field $pin 'inspectionBudgetEnabled') -eq $false -and [string](Get-Field $pin 'inspectionClassifierVersion') -ceq 'trial-host-inspection-v1' -and [string](Get-Field $pin 'profile') -ceq 'agentlang' -and $pinClockValue -ceq '2000-01-01T00:00:00Z' -and @(Get-Field $pin 'additionalCliArguments').Count -eq 0 -and @(Get-Field $pin 'capabilities').Count -eq 0)
     $pinnedRevision = [string]$pin.sourceRevision
     $revisionResolves = $pinnedRevision -match '^[0-9a-fA-F]{40}$'
     if ($revisionResolves) {
@@ -274,6 +285,8 @@ function Validate-FrozenPin([string]$StartPath, [string]$ActorPath, [string]$Run
     $cliDirectoryPath = Resolve-RepoPath $cliDirectoryRelative
     $businessDllPath = Resolve-RepoPath $businessDllRelative
     $businessDirectoryPath = Resolve-RepoPath $businessDirectoryRelative
+    $expectedLaunchCommand = "& '$($hostPath.Replace("'","''"))' -CliDll '$($cliDllPath.Replace("'","''"))' -ProjectPath '$($ActorPath.Replace("'","''"))' -TracePath '$((Join-Path $runDirectory 'trace.jsonl').Replace("'","''"))' -AllowedOperations @('" + ($expectedAllowedOperations -join "','") + "') -Profile agentlang -Capabilities @() -ClockValue '2000-01-01T00:00:00Z' -MaxRequestBytes 262144 -MaxResponseBytes 524288 -ExchangeTimeoutMilliseconds 120000 -MaxExchanges 100"
+    Add-Check 'frozen launch command matches pinned host, project, CLI, and allowlist settings' ([string](Get-Field $pin 'launchCommand') -ceq $expectedLaunchCommand) @{expected=$expectedLaunchCommand;actual=(Get-Field $pin 'launchCommand')}
     $unsafeRuntimePaths = @(@($cliDllRelative,$cliDirectoryRelative,$businessDllRelative,$businessDirectoryRelative) | Where-Object { [string]::IsNullOrWhiteSpace($_) -or [IO.Path]::IsPathFullyQualified($_) -or $_ -match '(^|[\\/])\.\.([\\/]|$)' })
     $runtimePathsSafe = $unsafeRuntimePaths.Count -eq 0 -and (Test-Within $cliDllPath $repo) -and (Test-Within $cliDirectoryPath $repo) -and (Test-Within $businessDllPath $repo) -and (Test-Within $businessDirectoryPath $repo)
     $cliRootOk = $runtimePathsSafe -and (Test-Path -LiteralPath $cliDllPath -PathType Leaf) -and (Test-Path -LiteralPath $cliDirectoryPath -PathType Container) -and [IO.Path]::GetFullPath($cliDllPath) -ieq [IO.Path]::GetFullPath($RuntimeCliPath) -and [IO.Path]::GetFullPath($cliDirectoryPath) -ieq [IO.Path]::GetFullPath((Split-Path -Parent $RuntimeCliPath))

@@ -1,0 +1,37 @@
+{
+  "kind": "coordinator-freeze-control-repair",
+  "agentLaunched": false,
+  "failedSourceRevision": "f5598522c72aa719247128c81da0453a4018e644",
+  "failedControlSha256": "a3c64079b42bdbc2a2769547f648701319fb4d8b61393c3ba60da4a3ef8fb0ce",
+  "failedControl": "reports/evidence/078-valid-pin-initial-failure.json",
+  "archivedDirectories": [
+    {
+      "from": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\actors\\flat-S06",
+      "to": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\failed-freeze-controls\\20261007T042154-12cc2bd86bf940fc8dd39531e4f4dd92\\actors\\flat-S06"
+    },
+    {
+      "from": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\actors\\flat-S07",
+      "to": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\failed-freeze-controls\\20261007T042154-12cc2bd86bf940fc8dd39531e4f4dd92\\actors\\flat-S07"
+    },
+    {
+      "from": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\runs\\flat-S06",
+      "to": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\failed-freeze-controls\\20261007T042154-12cc2bd86bf940fc8dd39531e4f4dd92\\runs\\flat-S06"
+    },
+    {
+      "from": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\runs\\flat-S07",
+      "to": "D:\\code\\AgentLang\\.agentlang\\business-policy-help-002\\failed-freeze-controls\\20261007T042154-12cc2bd86bf940fc8dd39531e4f4dd92\\runs\\flat-S07"
+    }
+  ],
+  "fixes": [
+    "Preserve raw JSON clock string to avoid DateTime coercion",
+    "Resolve CLI path before checking launch command"
+  ],
+  "sourceSha256": "7aabaa1fe1b93714bc0602330db0afb49f7d4fdf955d0279e568edfcc6eba5fb",
+  "snapshotSha256": "7aabaa1fe1b93714bc0602330db0afb49f7d4fdf955d0279e568edfcc6eba5fb",
+  "noRuntimeDiagnostic": {
+    "hostSettings": true,
+    "cliInvoked": false,
+    "launchCommand": true
+  },
+  "positiveRefreezePending": true
+}

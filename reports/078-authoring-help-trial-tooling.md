@@ -60,3 +60,17 @@ helper's starting-state object. It failed before prompt/pin creation or actor
 launch. The partial preparation is retained under the ignored failure archive;
 the preparer and its corresponding source snapshot are corrected together before
 a new clean-source commit and retry.
+
+Both preparations and freezes succeeded at clean repair revision f559852. The
+positive required-pin control then exposed a verifier initialization-order defect
+and a host-settings assertion mismatch. It stopped with zero CLI sessions,
+processes and oracle cases. No actor launched. This failed freeze/control state
+is preserved; both trials must be frozen again after the verifier/source-snapshot
+repair. The earlier matrix did not exercise a valid pin, so it was insufficient
+to establish launch readiness.
+
+The pin-check repair reads the clock from its raw JSON string token, avoiding
+PowerShell ISO timestamp coercion, and checks the launch command after resolving
+the CLI runtime path. A no-runtime diagnostic confirmed both predicates against
+the preserved pin. AST/LF checks and exact verifier/source-snapshot hashing pass;
+the full positive pin test still requires the repaired clean-source freeze.
