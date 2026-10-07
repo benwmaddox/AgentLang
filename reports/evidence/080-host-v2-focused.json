@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "kind": "subagent-trial-host-v2-focused-verification",
+  "outcome": "failed",
+  "createdUtc": "2026-10-07T05:02:19.2299037+00:00",
+  "repoRoot": "D:\\code\\AgentLang",
+  "testedHead": "93b9e19bbec50c1d642bea3efb9d2680f5cda82b",
+  "workingTreeDirty": true,
+  "cliDll": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+  "cliFiles": [
+    {
+      "name": "AgentLang.Cli.dll",
+      "sha256": "e9098ca964e19fb4e34f47ff4cd04f9a389dcb01a990455f77301afb613f9002"
+    },
+    {
+      "name": "AgentLang.Core.dll",
+      "sha256": "f08538fd22b04c2e5518adeacb63502b1e467331a59f7a89bc965bcfc9e6501b"
+    },
+    {
+      "name": "FSharp.Core.dll",
+      "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+    }
+  ],
+  "wrapperFiles": [
+    {
+      "path": "scripts/Start-SubagentTrialHostV2.ps1",
+      "sha256": "6573321e8c0fc92926e43221ae10836fd5c62139e5fdb51cc34ff482fbc81f2b"
+    },
+    {
+      "path": "scripts/Audit-SubagentTrialTerminationV2.ps1",
+      "sha256": "3e96eeb319be8e36472fb21eb1fc805407efe0aa34e9e8dc2e5273cbb10fa03d"
+    },
+    {
+      "path": "scripts/Verify-SubagentTrialHostV2.ps1",
+      "sha256": "924f3d2eb0175cf505461fdf80d1ddb7846c143ce3b6cd612f07c39ec0745c56"
+    }
+  ],
+  "fakeChildDll": null,
+  "artifacts": ".agentlang/subagent-host-v2-verification-8e659ecd0ac043f1b661488de054b286",
+  "error": "Cannot bind argument to parameter 'InputBytes' because it is an empty array.",
+  "checkCount": 0,
+  "passedCheckCount": 0,
+  "failedCheckCount": 0,
+  "checks": [],
+  "traceInventory": [],
+  "audits": []
+}

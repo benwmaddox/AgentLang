@@ -465,3 +465,10 @@ fail on unrecorded Ctrl+C cancellation events; implementation acceptance and
 audit status stay separate. This supports task usability, not controlled cost
 improvement. Versioned terminal observability and rotated matched repetitions
 remain the shortest evaluation work before backend/memory research.
+
+Report 080 adds a versioned external trial host with explicit transport close
+and a scoped termination auditor. The focused 29-check matrix passes, including
+real durable commit/reload and diagnostic-specific tamper rejection; failed
+coordinator attempts and raw traces remain preserved. Its new 37-check full gate
+is pending. No completed frozen actor audit is reclassified, and no model-cost
+or vocabulary-growth benefit is inferred from transport validation.

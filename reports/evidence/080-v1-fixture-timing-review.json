@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "kind": "subagent-trial-host-v1-fixture-timing-review",
+  "finding": "A healthy generated fake-runtime fixture inherited a 2000 ms exchange deadline and exceeded it on the Windows CI runner. The host correctly reported an uncertain timeout; the intended counter-reset assertion then observed zero admitted bytes.",
+  "ciFailure": {
+    "workflowRunId": 37571612474,
+    "testedHead": "a50ae7a4c78a9bcd2499ba7618ea7ea85a8f341b",
+    "artifactPath": ".agentlang/ci/078-failed-main/validation.subagent-host.json",
+    "outcome": "failed",
+    "onlyFailedCheck": {
+      "name": "a fresh host session starts with an independent zeroed inspection counter",
+      "detail": "start=0; end=0"
+    },
+    "source": {
+      "path": "scripts/Verify-SubagentTrialHost.ps1",
+      "sha256BeforeChange": "bbaab4a647a4c982659cb34d42ef99be465ff3a30f20f0893c2bbd63361ea669",
+      "fixtureCallLine": 821,
+      "helperDefaultLines": [
+        261,
+        299,
+        303
+      ],
+      "exchangeTimeoutMilliseconds": 2000,
+      "outerTimeoutMilliseconds": 15000
+    },
+    "runtime": {
+      "kind": "verifier-generated fake CLI runtime",
+      "executable": "dotnet",
+      "cliDll": "D:\\a\\AgentLang\\AgentLang\\.agentlang\\subagent-host-verification-f1f0b5ac3d4c49a9afef504b40f51eb7\\fake-runtime-output\\FakeRuntime.dll",
+      "cliDllSha256": null,
+      "profile": "agentlang",
+      "arguments": [
+        "--fake-mode=budget-responses"
+      ],
+      "operation": "search",
+      "requestRawLine": "{\"op\":\"search\",\"reply\":\"small\"}"
+    },
+    "failure": {
+      "hostExitCode": 124,
+      "hostTimedOut": false,
+      "hostDurationMilliseconds": 5604.508,
+      "exchangeElapsedMilliseconds": 2283.7113,
+      "errorCode": "TRIAL_EXCHANGE_TIMEOUT",
+      "errorMessage": "Request delivery and response did not both complete before the single exchange deadline. Execution outcome is uncertain; do not retry automatically, inspect persisted project state first.",
+      "requestDelivery": {
+        "state": "uncertain",
+        "attemptedUtf8Bytes": 32,
+        "confirmedUtf8Bytes": null,
+        "completeLineConfirmed": false
+      },
+      "executionState": "uncertain",
+      "automaticRetry": "never; inspect authoritative stored state after any uncertain outcome",
+      "responseCount": 1
+    }
+  },
+  "change": {
+    "path": "scripts/Verify-SubagentTrialHost.ps1",
+    "sourceSha256AfterChange": "fae8349bdfcd983325b92578a614a8d627d38627a7724c93cd73552b8a02253c",
+    "defaults": {
+      "exchangeTimeoutMillisecondsBefore": 2000,
+      "exchangeTimeoutMillisecondsAfter": 15000,
+      "outerTimeoutMillisecondsBefore": 15000,
+      "outerTimeoutMillisecondsAfter": 30000
+    },
+    "scope": "Verifier fixture defaults only; no runtime host default or semantic assertion changed.",
+    "rationale": "The generated fake child is launched through the verifier subprocess path, and ordinary healthy fixture startup can exceed two seconds on Windows CI. Fifteen seconds allows the request and response to exercise the intended protocol assertion; a thirty-second outer budget accommodates subprocess startup and cleanup without replacing an exchange timeout with an automatic retry."
+  },
+  "explicitTimeoutAudit": {
+    "unchanged": true,
+    "fixtures": [
+      {
+        "name": "timeout-partial-response",
+        "line": 635,
+        "exchangeTimeoutMilliseconds": 4000,
+        "assertion": "The absolute exchange deadline remains bounded to 3000–6500 ms and verifies the captured partial response."
+      },
+      {
+        "name": "large-write-no-reader",
+        "line": 654,
+        "exchangeTimeoutMilliseconds": 500,
+        "outerTimeoutMilliseconds": 10000,
+        "assertion": "The test still requires uncertain delivery, no automatic retry, and a 400–2500 ms exchange duration."
+      },
+      {
+        "name": "valid-response-before-write-timeout",
+        "line": 890,
+        "exchangeTimeoutMilliseconds": 2000,
+        "outerTimeoutMilliseconds": 15000,
+        "assertion": "The test still verifies uncertain delivery/execution, forensic response capture, zero admitted inspection bytes, and no automatic retry."
+      }
+    ],
+    "explicitLongRealRuntimeBudgetsUnchanged": [
+      "language-write-session: 15000 ms exchange / 90000 ms outer",
+      "language-reload-session: 15000 ms exchange / 60000 ms outer",
+      "language-write-zero-inspection-budget: 15000 ms exchange / 90000 ms outer"
+    ]
+  },
+  "baselineRerun": {
+    "evidencePath": ".agentlang/reports/validation.subagent-host-retry-02.json",
+    "command": "Root-reported exact replay of the failing main-CI validation command before this source change.",
+    "outcome": "passed",
+    "terminalExitCode": 0,
+    "testedHead": "93b9e19bbec50c1d642bea3efb9d2680f5cda82b",
+    "checksPassed": 33,
+    "sourceSha256AtRerun": "bbaab4a647a4c982659cb34d42ef99be465ff3a30f20f0893c2bbd63361ea669",
+    "freshSessionCheck": {
+      "passed": true,
+      "detail": "start=0; end=11",
+      "hostExitCode": 0,
+      "hostDurationMilliseconds": 1823.625,
+      "exchangeElapsedMilliseconds": 59.3825
+    }
+  },
+  "staticReview": {
+    "powershellAstParsePassed": true,
+    "gitDiffCheckPassed": true,
+    "postChangeFocusedVerifierRun": "Not run; the root task owner will run full Validate after the v2 matrix completes."
+  }
+}

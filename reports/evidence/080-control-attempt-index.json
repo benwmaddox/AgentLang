@@ -1,0 +1,70 @@
+{
+  "kind": "coordinator-control-attempt-index",
+  "agentExperiment": false,
+  "qualification": "Failed attempts are retained. Partial checks from retry07 do not establish intended negative controls because its mutation fixture had a nested-array bug. Retry08 audits a valid flat baseline and matches intended rejection diagnostics.",
+  "attempts": [
+    {
+      "path": "reports/evidence/080-host-v2-focused-retry-01.json",
+      "sha256": "c1094191753286ec341119ebc399525683f78bd35d36a90bf02d33f46d682c62",
+      "outcome": "failed",
+      "checks": 2,
+      "error": "Verification failed: real CLI flow completes through explicit host.close — hostExit=0; responses=5; runtimeExit=0"
+    },
+    {
+      "path": "reports/evidence/080-host-v2-focused-retry-02.json",
+      "sha256": "a3cf262a0bf60e281d189b8e9f4d544b1c1ef54fddd3caf49d597eac8124171d",
+      "outcome": "failed",
+      "checks": 3,
+      "error": "Verification failed: real CLI flow completes through explicit host.close — processExit=0; timedOut=False; responses=5; stdoutResponsesOk=True; traceResponsesOk=True; closeEvents=8; term=host-close; hostExit=0; runtimeExit=0"
+    },
+    {
+      "path": "reports/evidence/080-host-v2-focused-retry-03.json",
+      "sha256": "569781e33da714446038ee8599a094a052fcbcfc3e3d47f8c9d65e353540747e",
+      "outcome": "failed",
+      "checks": 2,
+      "error": "Cannot convert 'System.Object[]' to the type 'System.String' required by parameter 'InputObject'. Specified method is not supported."
+    },
+    {
+      "path": "reports/evidence/080-host-v2-focused-retry-04.json",
+      "sha256": "4b7079f92b40b5125f78769cc2d6226f8a6ff1aebbb5fee7d3ffab5541d3a15a",
+      "outcome": "failed",
+      "checks": 10,
+      "error": "The property 'error' cannot be found on this object. Verify that the property exists."
+    },
+    {
+      "path": "reports/evidence/080-host-v2-focused-retry-05.json",
+      "sha256": "d16ba86cdab96a398c0e9c179d49a67394c932ae5c74fc9a1497fc49cfacf1bf",
+      "outcome": "failed",
+      "checks": 10,
+      "error": "The property 'Count' cannot be found on this object. Verify that the property exists."
+    },
+    {
+      "path": "reports/evidence/080-host-v2-focused-retry-06.json",
+      "sha256": "09b32fe1d467080469bc24fac2a168d3cf1b720a2226d8d1c0f660536272061d",
+      "outcome": "failed",
+      "checks": 17,
+      "error": "The property 'requestWireSha256' cannot be found on this object. Verify that the property exists and can be set."
+    },
+    {
+      "path": "reports/evidence/080-host-v2-focused-retry-07.json",
+      "sha256": "32f56aed64d9cecc3d00e8a38719dc9b037c9ab179aa7d8ab9563cb26527f37f",
+      "outcome": "failed",
+      "checks": 21,
+      "error": "The property 'requestWireUtf8Bytes' cannot be found on this object. Verify that the property exists."
+    },
+    {
+      "path": "reports/evidence/080-host-v2-focused-retry-08.json",
+      "sha256": "3b299f3fa6335c67a46c021b9ca137974014996b4926e18bdb1a8c26dc0f40e3",
+      "outcome": "passed",
+      "checks": 29,
+      "error": null
+    },
+    {
+      "path": "reports/evidence/080-host-v2-focused.json",
+      "sha256": "3a6ea60336214c9ef056fb32a705ae902dbaf367de03666da9e3672f2daf647f",
+      "outcome": "failed",
+      "checks": 0,
+      "error": "Cannot bind argument to parameter 'InputBytes' because it is an empty array."
+    }
+  ]
+}

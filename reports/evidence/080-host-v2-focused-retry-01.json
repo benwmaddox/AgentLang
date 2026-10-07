@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "kind": "subagent-trial-host-v2-focused-verification",
+  "outcome": "failed",
+  "createdUtc": "2026-10-07T05:02:50.0378566+00:00",
+  "repoRoot": "D:\\code\\AgentLang",
+  "testedHead": "93b9e19bbec50c1d642bea3efb9d2680f5cda82b",
+  "workingTreeDirty": true,
+  "cliDll": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+  "cliFiles": [
+    {
+      "name": "AgentLang.Cli.dll",
+      "sha256": "e9098ca964e19fb4e34f47ff4cd04f9a389dcb01a990455f77301afb613f9002"
+    },
+    {
+      "name": "AgentLang.Core.dll",
+      "sha256": "f08538fd22b04c2e5518adeacb63502b1e467331a59f7a89bc965bcfc9e6501b"
+    },
+    {
+      "name": "FSharp.Core.dll",
+      "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+    }
+  ],
+  "wrapperFiles": [
+    {
+      "path": "scripts/Start-SubagentTrialHostV2.ps1",
+      "sha256": "6573321e8c0fc92926e43221ae10836fd5c62139e5fdb51cc34ff482fbc81f2b"
+    },
+    {
+      "path": "scripts/Audit-SubagentTrialTerminationV2.ps1",
+      "sha256": "3e96eeb319be8e36472fb21eb1fc805407efe0aa34e9e8dc2e5273cbb10fa03d"
+    },
+    {
+      "path": "scripts/Verify-SubagentTrialHostV2.ps1",
+      "sha256": "f2ca3fa4728861179c1285e314f30765f2f88917e80421e813ae93f124e679bf"
+    }
+  ],
+  "fakeChildDll": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-7da02fbc721147ac9554b0457d88616c\\fake-runtime-output\\FakeRuntime.dll",
+  "artifacts": ".agentlang/subagent-host-v2-verification-7da02fbc721147ac9554b0457d88616c",
+  "error": "Verification failed: real CLI flow completes through explicit host.close — hostExit=0; responses=5; runtimeExit=0",
+  "checkCount": 2,
+  "passedCheckCount": 1,
+  "failedCheckCount": 1,
+  "checks": [
+    {
+      "name": "controlled fake child builds",
+      "passed": true,
+      "detail": "  Determining projects to restore...\r\n  Restored D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-7da02fbc721147ac9554b0457d88616c\\fake-runtime-source\\FakeRuntime.csproj (in 50 ms).\r\n  FakeRuntime -> D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-7da02fbc721147ac9554b0457d88616c\\fake-runtime-output\\FakeRuntime.dll\r\n\r\nBuild succeeded.\r\n    0 Warning(s)\r\n    0 Error(s)\r\n\r\nTime Elapsed 00:00:03.69\r\n"
+    },
+    {
+      "name": "real CLI flow completes through explicit host.close",
+      "passed": false,
+      "detail": "hostExit=0; responses=5; runtimeExit=0"
+    }
+  ],
+  "traceInventory": [
+    {
+      "run": "real-cli-write-close",
+      "path": ".agentlang/reports/trial-host-v2-7da02fbc721147ac9554b0457d88616c-real-cli-write-close.jsonl",
+      "bytes": 13545,
+      "sha256": "432e3571cf90db69b386e3d7025a0571aa2663892298b4cfbfc563d247bea59b",
+      "eventCount": 8,
+      "eventNames": [
+        "session-start",
+        "exchange",
+        "exchange",
+        "exchange",
+        "exchange",
+        "exchange",
+        "host-close",
+        "session-end"
+      ],
+      "terminationKind": "host-close"
+    }
+  ],
+  "audits": []
+}

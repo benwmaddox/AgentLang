@@ -101,6 +101,8 @@ try {
         $hostReportPath = [System.IO.Path]::ChangeExtension($ReportPath, 'subagent-host.json')
         $cliBinaryPath = "src/AgentLang.Cli/bin/$Configuration/net9.0/AgentLang.Cli.dll"
         $null = Invoke-ValidationCheck 'subagent-trial-host' 'pwsh' @('-NoProfile', '-File', 'scripts/Verify-SubagentTrialHost.ps1', '-CliDll', $cliBinaryPath, '-EvidencePath', $hostReportPath)
+        $hostV2ReportPath = [System.IO.Path]::ChangeExtension($ReportPath, 'subagent-host-v2.json')
+        $null = Invoke-ValidationCheck 'subagent-trial-host-v2' 'pwsh' @('-NoProfile', '-File', 'scripts/Verify-SubagentTrialHostV2.ps1', '-CliDll', $cliBinaryPath, '-EvidencePath', $hostV2ReportPath)
         $parserReportPath = [System.IO.Path]::ChangeExtension($ReportPath, 'parser-limits.json')
         $cliBinaryPath = "src/AgentLang.Cli/bin/$Configuration/net9.0/AgentLang.Cli.dll"
         $null = Invoke-ValidationCheck 'parser-process-limits' 'pwsh' @('-NoProfile', '-File', 'scripts/Verify-ParserLimits.ps1', '-CliDll', $cliBinaryPath, '-EvidencePath', $parserReportPath)

@@ -1,0 +1,23 @@
+{
+  "kind": "independent-static-review",
+  "reviewer": "fresh bounded Luna/max review",
+  "executedTests": false,
+  "scope": [
+    "scripts/Verify-SubagentTrialHostV2.ps1",
+    "scripts/Audit-SubagentTrialTerminationV2.ps1"
+  ],
+  "findings": [
+    {
+      "finding": "Nested mutation array allowed unrelated malformed trace rejection",
+      "resolution": "Read-JsonLines enumerates flat events, explicit shape check and valid baseline audit, intended rejection diagnostics for every mutation",
+      "status": "statically addressed; focused retry08 passed"
+    },
+    {
+      "finding": "Reserved allowlist and partial-LF host checks accept overly broad failure",
+      "resolution": "Require expected host diagnostics in existing assertions",
+      "status": "Statically addressed after review; exact diagnostic assertions and captured diagnostics added. Clean-source full gate still required."
+    }
+  ],
+  "limitation": "Static review is not executed conformance, whole-study provenance audit or model outcome evidence.",
+  "finalVerifierSha256": "5b1c351b4e1917db0d6c0f2f7342e9e05cd3ff73f5237accda32359af9665041"
+}

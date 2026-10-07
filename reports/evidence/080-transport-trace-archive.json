@@ -1,0 +1,553 @@
+{
+  "kind": "byte-preserved-transport-trace-archive",
+  "entries": [
+    {
+      "attempt": "080-host-v2-focused-retry-01",
+      "source": ".agentlang/reports/trial-host-v2-7da02fbc721147ac9554b0457d88616c-real-cli-write-close.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-01/trial-host-v2-7da02fbc721147ac9554b0457d88616c-real-cli-write-close.jsonl",
+      "bytes": 13545,
+      "sha256": "432e3571cf90db69b386e3d7025a0571aa2663892298b4cfbfc563d247bea59b"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-02",
+      "source": ".agentlang/reports/trial-host-v2-0cebb141608c4938bbe01aac3067637c-real-cli-write-close.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-02/trial-host-v2-0cebb141608c4938bbe01aac3067637c-real-cli-write-close.jsonl",
+      "bytes": 13542,
+      "sha256": "5d0863b181ee1b6a9fa1ab5378d6794db0fd822bec6655dc5e5743ee94e88161"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-03",
+      "source": ".agentlang/reports/trial-host-v2-f7dba05d28234af8bdcc7f5cfd7bdc14-real-cli-write-close.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-03/trial-host-v2-f7dba05d28234af8bdcc7f5cfd7bdc14-real-cli-write-close.jsonl",
+      "bytes": 13545,
+      "sha256": "821e44b8d4196d9d7e15e8554422be95c472c195f55178ec00298d541e256922"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-04",
+      "source": ".agentlang/reports/trial-host-v2-5cb4a16f4cb74afcaaa3eec22fd5e5c3-close-at-exchange-limit.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-04/trial-host-v2-5cb4a16f4cb74afcaaa3eec22fd5e5c3-close-at-exchange-limit.jsonl",
+      "bytes": 5538,
+      "sha256": "4a65b500f63c9a270c1de810b41dd62f8f6361d5be4f86736c2a1b1f91ad382c"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-04",
+      "source": ".agentlang/reports/trial-host-v2-5cb4a16f4cb74afcaaa3eec22fd5e5c3-close-only-one-byte-response-cap.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-04/trial-host-v2-5cb4a16f4cb74afcaaa3eec22fd5e5c3-close-only-one-byte-response-cap.jsonl",
+      "bytes": 2389,
+      "sha256": "9b95e82ab6cd68c8cef460c880b6cffc70ed2fa01342956a6193367b1e187d2c"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-04",
+      "source": ".agentlang/reports/trial-host-v2-5cb4a16f4cb74afcaaa3eec22fd5e5c3-malformed-close-frames.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-04/trial-host-v2-5cb4a16f4cb74afcaaa3eec22fd5e5c3-malformed-close-frames.jsonl",
+      "bytes": 7587,
+      "sha256": "c37e409a6846fbcde273e1a74e43e7ced114b13c3c8e192fc009172b091b97c7"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-04",
+      "source": ".agentlang/reports/trial-host-v2-5cb4a16f4cb74afcaaa3eec22fd5e5c3-real-cli-reload-close.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-04/trial-host-v2-5cb4a16f4cb74afcaaa3eec22fd5e5c3-real-cli-reload-close.jsonl",
+      "bytes": 10991,
+      "sha256": "4a17a115dd93335228716b31eb62c8a57157203602bc203658261378cf57ffdb"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-04",
+      "source": ".agentlang/reports/trial-host-v2-5cb4a16f4cb74afcaaa3eec22fd5e5c3-real-cli-write-close.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-04/trial-host-v2-5cb4a16f4cb74afcaaa3eec22fd5e5c3-real-cli-write-close.jsonl",
+      "bytes": 13545,
+      "sha256": "3187f40a085a73089af70653a2e9489353bd9cbe1e5e329ebe1dd34c4fef0b67"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-04",
+      "source": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-5cb4a16f4cb74afcaaa3eec22fd5e5c3-close-at-exchange-limit.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-04/trial-host-v2-5cb4a16f4cb74afcaaa3eec22fd5e5c3-close-at-exchange-limit.jsonl",
+      "bytes": 5538,
+      "sha256": "4a65b500f63c9a270c1de810b41dd62f8f6361d5be4f86736c2a1b1f91ad382c"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-04",
+      "source": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-5cb4a16f4cb74afcaaa3eec22fd5e5c3-close-only-one-byte-response-cap.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-04/trial-host-v2-5cb4a16f4cb74afcaaa3eec22fd5e5c3-close-only-one-byte-response-cap.jsonl",
+      "bytes": 2389,
+      "sha256": "9b95e82ab6cd68c8cef460c880b6cffc70ed2fa01342956a6193367b1e187d2c"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-04",
+      "source": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-5cb4a16f4cb74afcaaa3eec22fd5e5c3-real-cli-write-close.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-04/trial-host-v2-5cb4a16f4cb74afcaaa3eec22fd5e5c3-real-cli-write-close.jsonl",
+      "bytes": 13545,
+      "sha256": "3187f40a085a73089af70653a2e9489353bd9cbe1e5e329ebe1dd34c4fef0b67"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-05",
+      "source": ".agentlang/reports/trial-host-v2-38f2a289c8694de5a3a611e57dd503d1-close-at-exchange-limit.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-05/trial-host-v2-38f2a289c8694de5a3a611e57dd503d1-close-at-exchange-limit.jsonl",
+      "bytes": 5538,
+      "sha256": "4a0133c71d8a6fd7b9f8f226eb6140ceb59d2b8951feb37d8c25f8b94ed8d119"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-05",
+      "source": ".agentlang/reports/trial-host-v2-38f2a289c8694de5a3a611e57dd503d1-close-only-one-byte-response-cap.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-05/trial-host-v2-38f2a289c8694de5a3a611e57dd503d1-close-only-one-byte-response-cap.jsonl",
+      "bytes": 2389,
+      "sha256": "ed22004a4a6fa824f00d0a1c3f831c7806b0eb050899e4bfbf62ed9fdcf6d420"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-05",
+      "source": ".agentlang/reports/trial-host-v2-38f2a289c8694de5a3a611e57dd503d1-malformed-close-frames.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-05/trial-host-v2-38f2a289c8694de5a3a611e57dd503d1-malformed-close-frames.jsonl",
+      "bytes": 7587,
+      "sha256": "6d9f5009b380abbc866a8f6943ce63b1516ee4f49d3b75d84134fc60720f0650"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-05",
+      "source": ".agentlang/reports/trial-host-v2-38f2a289c8694de5a3a611e57dd503d1-real-cli-reload-close.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-05/trial-host-v2-38f2a289c8694de5a3a611e57dd503d1-real-cli-reload-close.jsonl",
+      "bytes": 10991,
+      "sha256": "5b61640698d26f283e9c44f1c081605ade507f6291689ee2e36468e2ebb32ce7"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-05",
+      "source": ".agentlang/reports/trial-host-v2-38f2a289c8694de5a3a611e57dd503d1-real-cli-write-close.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-05/trial-host-v2-38f2a289c8694de5a3a611e57dd503d1-real-cli-write-close.jsonl",
+      "bytes": 13544,
+      "sha256": "1e87f507525f8ca9afc2b71ff45985b00c450a42a44bc66f061291e3ed5f3336"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-05",
+      "source": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-38f2a289c8694de5a3a611e57dd503d1-close-at-exchange-limit.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-05/trial-host-v2-38f2a289c8694de5a3a611e57dd503d1-close-at-exchange-limit.jsonl",
+      "bytes": 5538,
+      "sha256": "4a0133c71d8a6fd7b9f8f226eb6140ceb59d2b8951feb37d8c25f8b94ed8d119"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-05",
+      "source": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-38f2a289c8694de5a3a611e57dd503d1-close-only-one-byte-response-cap.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-05/trial-host-v2-38f2a289c8694de5a3a611e57dd503d1-close-only-one-byte-response-cap.jsonl",
+      "bytes": 2389,
+      "sha256": "ed22004a4a6fa824f00d0a1c3f831c7806b0eb050899e4bfbf62ed9fdcf6d420"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-05",
+      "source": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-38f2a289c8694de5a3a611e57dd503d1-real-cli-write-close.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-05/trial-host-v2-38f2a289c8694de5a3a611e57dd503d1-real-cli-write-close.jsonl",
+      "bytes": 13544,
+      "sha256": "1e87f507525f8ca9afc2b71ff45985b00c450a42a44bc66f061291e3ed5f3336"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-06",
+      "source": ".agentlang/reports/trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-child-hang-on-close.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-06/trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-child-hang-on-close.jsonl",
+      "bytes": 2498,
+      "sha256": "dfe30551282f0be756bc9bbf234be30832bd8fa0d3540b2c3776f592c2617e0e"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-06",
+      "source": ".agentlang/reports/trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-close-at-exchange-limit.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-06/trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-close-at-exchange-limit.jsonl",
+      "bytes": 5538,
+      "sha256": "e1f49439c5bb21ca62719157d2a03013ee4d6eb38cc9b052078451ecd34b082b"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-06",
+      "source": ".agentlang/reports/trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-close-only-one-byte-response-cap.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-06/trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-close-only-one-byte-response-cap.jsonl",
+      "bytes": 2389,
+      "sha256": "d102cf841ef77f336b6379264a928f3f849c1f2e299f3cf14f32354090848844"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-06",
+      "source": ".agentlang/reports/trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-malformed-close-frames.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-06/trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-malformed-close-frames.jsonl",
+      "bytes": 7587,
+      "sha256": "ebb9fbb7ed84703f2334008b6914252b4f16cf4dd295b10b3abe75945e492315"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-06",
+      "source": ".agentlang/reports/trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-ordinary-input-eof.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-06/trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-ordinary-input-eof.jsonl",
+      "bytes": 3120,
+      "sha256": "10624bd8b835dabc6cbb390c160c315d9e20072a816e234c5de1164129a632dd"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-06",
+      "source": ".agentlang/reports/trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-partial-lf-close.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-06/trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-partial-lf-close.jsonl",
+      "bytes": 2259,
+      "sha256": "c937ff03b8c303c8c91ee61c7b28371c54d452bdba68d2690418007f6e99e7e4"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-06",
+      "source": ".agentlang/reports/trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-real-cli-reload-close.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-06/trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-real-cli-reload-close.jsonl",
+      "bytes": 10990,
+      "sha256": "18354d3ae8168292b2b55b19df1e7698230de0337f90cf48678ea3e54d650667"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-06",
+      "source": ".agentlang/reports/trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-real-cli-write-close.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-06/trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-real-cli-write-close.jsonl",
+      "bytes": 13543,
+      "sha256": "cf7b74f56b2e159f7f210cbbf48e97b377e8292b9ef82302f3fb4b0680fbc3d7"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-06",
+      "source": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-child-hang-on-close.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-06/trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-child-hang-on-close.jsonl",
+      "bytes": 2498,
+      "sha256": "dfe30551282f0be756bc9bbf234be30832bd8fa0d3540b2c3776f592c2617e0e"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-06",
+      "source": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-close-at-exchange-limit.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-06/trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-close-at-exchange-limit.jsonl",
+      "bytes": 5538,
+      "sha256": "e1f49439c5bb21ca62719157d2a03013ee4d6eb38cc9b052078451ecd34b082b"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-06",
+      "source": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-close-only-one-byte-response-cap.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-06/trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-close-only-one-byte-response-cap.jsonl",
+      "bytes": 2389,
+      "sha256": "d102cf841ef77f336b6379264a928f3f849c1f2e299f3cf14f32354090848844"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-06",
+      "source": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-malformed-close-frames.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-06/trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-malformed-close-frames.jsonl",
+      "bytes": 7587,
+      "sha256": "ebb9fbb7ed84703f2334008b6914252b4f16cf4dd295b10b3abe75945e492315"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-06",
+      "source": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-ordinary-input-eof.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-06/trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-ordinary-input-eof.jsonl",
+      "bytes": 3120,
+      "sha256": "10624bd8b835dabc6cbb390c160c315d9e20072a816e234c5de1164129a632dd"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-06",
+      "source": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-partial-lf-close.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-06/trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-partial-lf-close.jsonl",
+      "bytes": 2259,
+      "sha256": "c937ff03b8c303c8c91ee61c7b28371c54d452bdba68d2690418007f6e99e7e4"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-06",
+      "source": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-real-cli-write-close.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-06/trial-host-v2-957b1639ada349b3989d2f9ce4f2e668-real-cli-write-close.jsonl",
+      "bytes": 13543,
+      "sha256": "cf7b74f56b2e159f7f210cbbf48e97b377e8292b9ef82302f3fb4b0680fbc3d7"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-07",
+      "source": ".agentlang/reports/trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-child-hang-on-close.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-07/trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-child-hang-on-close.jsonl",
+      "bytes": 2498,
+      "sha256": "b52cd0240b840f103858a2fa968e8a4aedef245f26a04678bd63b750bb9df5d5"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-07",
+      "source": ".agentlang/reports/trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-close-at-exchange-limit.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-07/trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-close-at-exchange-limit.jsonl",
+      "bytes": 5538,
+      "sha256": "f0b3a972258e2a885e7b54d4ad0e8a6a63a589e6eef209b0f80329d11bd1ff7f"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-07",
+      "source": ".agentlang/reports/trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-close-only-one-byte-response-cap.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-07/trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-close-only-one-byte-response-cap.jsonl",
+      "bytes": 2388,
+      "sha256": "cbcc28a1f26f40d3f8793dcc80abc4083b40f90df145f5a85f44491f7f809e45"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-07",
+      "source": ".agentlang/reports/trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-malformed-close-frames.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-07/trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-malformed-close-frames.jsonl",
+      "bytes": 7587,
+      "sha256": "2999b93aae3ee958630225d83f148c6042ceeb77513e0120e18ebb2dd86fe710"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-07",
+      "source": ".agentlang/reports/trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-ordinary-input-eof.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-07/trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-ordinary-input-eof.jsonl",
+      "bytes": 3120,
+      "sha256": "20a64395c7c6effd4063bb0a2e2b652a213c5f9d1244ef63eabd144a21271de7"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-07",
+      "source": ".agentlang/reports/trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-partial-lf-close.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-07/trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-partial-lf-close.jsonl",
+      "bytes": 2258,
+      "sha256": "e03c5a86a67dea98eb6e6185468c66c8dc80d8a66dae3f772ffceb8f440a273b"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-07",
+      "source": ".agentlang/reports/trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-real-cli-reload-close.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-07/trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-real-cli-reload-close.jsonl",
+      "bytes": 10992,
+      "sha256": "4b2f41c8685d313cfbde7f7e2f4c11e80bd0641a31e27154656c5b2a4ed2bb25"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-07",
+      "source": ".agentlang/reports/trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-real-cli-write-close.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-07/trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-real-cli-write-close.jsonl",
+      "bytes": 13544,
+      "sha256": "6dbd25736125ca17e92dbb9c3270f5767f94a23fab3250c1ec99b1de14e22b42"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-07",
+      "source": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-child-hang-on-close.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-07/trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-child-hang-on-close.jsonl",
+      "bytes": 2498,
+      "sha256": "b52cd0240b840f103858a2fa968e8a4aedef245f26a04678bd63b750bb9df5d5"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-07",
+      "source": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-close-at-exchange-limit.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-07/trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-close-at-exchange-limit.jsonl",
+      "bytes": 5538,
+      "sha256": "f0b3a972258e2a885e7b54d4ad0e8a6a63a589e6eef209b0f80329d11bd1ff7f"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-07",
+      "source": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-close-only-one-byte-response-cap.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-07/trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-close-only-one-byte-response-cap.jsonl",
+      "bytes": 2388,
+      "sha256": "cbcc28a1f26f40d3f8793dcc80abc4083b40f90df145f5a85f44491f7f809e45"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-07",
+      "source": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-malformed-close-frames.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-07/trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-malformed-close-frames.jsonl",
+      "bytes": 7587,
+      "sha256": "2999b93aae3ee958630225d83f148c6042ceeb77513e0120e18ebb2dd86fe710"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-07",
+      "source": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-ordinary-input-eof.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-07/trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-ordinary-input-eof.jsonl",
+      "bytes": 3120,
+      "sha256": "20a64395c7c6effd4063bb0a2e2b652a213c5f9d1244ef63eabd144a21271de7"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-07",
+      "source": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-partial-lf-close.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-07/trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-partial-lf-close.jsonl",
+      "bytes": 2258,
+      "sha256": "e03c5a86a67dea98eb6e6185468c66c8dc80d8a66dae3f772ffceb8f440a273b"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-07",
+      "source": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-real-cli-write-close.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-07/trial-host-v2-bbec2c6c6e8340aab380da9da3d24449-real-cli-write-close.jsonl",
+      "bytes": 13544,
+      "sha256": "6dbd25736125ca17e92dbb9c3270f5767f94a23fab3250c1ec99b1de14e22b42"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-07",
+      "source": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-bbec2c6c6e8340aab380da9da3d24449\\audit-mutations\\duplicate-host-close-event.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-07/duplicate-host-close-event.jsonl",
+      "bytes": 10568,
+      "sha256": "2507493c07cb181bf85bf818433c3bdb9fb828f71e225b2effbd1c6ab150d3a7"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-07",
+      "source": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-bbec2c6c6e8340aab380da9da3d24449\\audit-mutations\\missing-host-close-event.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-07/missing-host-close-event.jsonl",
+      "bytes": 5284,
+      "sha256": "9c671e484f7903c0bcc27af2242e1c4a6a6ceea832a4fb7a26e0c42cca8447cb"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-07",
+      "source": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-bbec2c6c6e8340aab380da9da3d24449\\audit-mutations\\missing-session-end-event.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-07/missing-session-end-event.jsonl",
+      "bytes": 5284,
+      "sha256": "9c671e484f7903c0bcc27af2242e1c4a6a6ceea832a4fb7a26e0c42cca8447cb"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-07",
+      "source": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-bbec2c6c6e8340aab380da9da3d24449\\audit-mutations\\mutated-wire-hash.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-07/mutated-wire-hash.jsonl",
+      "bytes": 5719,
+      "sha256": "54a07ebb66faa3b374f8afbdf3ff0fda76a7f8bf4fe486eccfaa3202462124dd"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-08",
+      "source": ".agentlang/reports/trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-child-hang-on-close.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-child-hang-on-close.jsonl",
+      "bytes": 2495,
+      "sha256": "3b2e7711e0579f2a4291f946f3e821be5f302fd314c74e5d0e3c5583cdaba6bd"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-08",
+      "source": ".agentlang/reports/trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-close-at-exchange-limit.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-close-at-exchange-limit.jsonl",
+      "bytes": 5538,
+      "sha256": "60e7f62f84dfe13cc139e107dea6806b23b72913fb54d266366632e2e8291dcc"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-08",
+      "source": ".agentlang/reports/trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-close-only-one-byte-response-cap.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-close-only-one-byte-response-cap.jsonl",
+      "bytes": 2389,
+      "sha256": "825257f70d733cd09b2b50d6aee0eae6f06827616c23b85f6c5d3357ca79e5bd"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-08",
+      "source": ".agentlang/reports/trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-malformed-close-frames.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-malformed-close-frames.jsonl",
+      "bytes": 7587,
+      "sha256": "92916bb82d30fa512d8eab44940123c4c69d400c246737a9cdbc538cf505a377"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-08",
+      "source": ".agentlang/reports/trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-ordinary-input-eof.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-ordinary-input-eof.jsonl",
+      "bytes": 3120,
+      "sha256": "01fc3eb982d19de35bdbc05589e0b01e32bdd8665a3f46de369f14260779e5c2"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-08",
+      "source": ".agentlang/reports/trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-partial-lf-close.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-partial-lf-close.jsonl",
+      "bytes": 2259,
+      "sha256": "bc15ca7aecbcab720e412aa732045d153923d56492cb58c723d1a744569f638b"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-08",
+      "source": ".agentlang/reports/trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-real-cli-reload-close.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-real-cli-reload-close.jsonl",
+      "bytes": 10991,
+      "sha256": "d0e121966666687500806a87270cfee569b84eba2f467c5eecdd6d22b415ecd6"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-08",
+      "source": ".agentlang/reports/trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-real-cli-write-close.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-real-cli-write-close.jsonl",
+      "bytes": 13545,
+      "sha256": "b2493a097ad922952794e00056b8d8f2f55481e4d7e40794c615d8eb86f47e75"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-08",
+      "source": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-child-hang-on-close.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-child-hang-on-close.jsonl",
+      "bytes": 2495,
+      "sha256": "3b2e7711e0579f2a4291f946f3e821be5f302fd314c74e5d0e3c5583cdaba6bd"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-08",
+      "source": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-close-at-exchange-limit.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-close-at-exchange-limit.jsonl",
+      "bytes": 5538,
+      "sha256": "60e7f62f84dfe13cc139e107dea6806b23b72913fb54d266366632e2e8291dcc"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-08",
+      "source": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-close-only-one-byte-response-cap.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-close-only-one-byte-response-cap.jsonl",
+      "bytes": 2389,
+      "sha256": "825257f70d733cd09b2b50d6aee0eae6f06827616c23b85f6c5d3357ca79e5bd"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-08",
+      "source": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-malformed-close-frames.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-malformed-close-frames.jsonl",
+      "bytes": 7587,
+      "sha256": "92916bb82d30fa512d8eab44940123c4c69d400c246737a9cdbc538cf505a377"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-08",
+      "source": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-ordinary-input-eof.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-ordinary-input-eof.jsonl",
+      "bytes": 3120,
+      "sha256": "01fc3eb982d19de35bdbc05589e0b01e32bdd8665a3f46de369f14260779e5c2"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-08",
+      "source": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-partial-lf-close.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-partial-lf-close.jsonl",
+      "bytes": 2259,
+      "sha256": "bc15ca7aecbcab720e412aa732045d153923d56492cb58c723d1a744569f638b"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-08",
+      "source": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-real-cli-write-close.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/trial-host-v2-274067804ff34c3ea2d7a3dc0da491aa-real-cli-write-close.jsonl",
+      "bytes": 13545,
+      "sha256": "b2493a097ad922952794e00056b8d8f2f55481e4d7e40794c615d8eb86f47e75"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-08",
+      "source": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-274067804ff34c3ea2d7a3dc0da491aa\\audit-mutations\\cancelled-prior-history.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/cancelled-prior-history.jsonl",
+      "bytes": 5360,
+      "sha256": "07d9fd1c161029188081fa4418125b5a54c9fc512b1051d34083e3f2887863b7"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-08",
+      "source": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-274067804ff34c3ea2d7a3dc0da491aa\\audit-mutations\\close-payload-over-configured-limit.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/close-payload-over-configured-limit.jsonl",
+      "bytes": 5280,
+      "sha256": "1a4f83dc22983c82a5e0e52716f1599ff122177b46fddc9c6d4aca27de05a8ed"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-08",
+      "source": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-274067804ff34c3ea2d7a3dc0da491aa\\audit-mutations\\duplicate-host-close-event.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/duplicate-host-close-event.jsonl",
+      "bytes": 5617,
+      "sha256": "39c8579e8b3977504f51c924b03b61cfcd5e1e800bf482e910095e2e41fe3ab1"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-08",
+      "source": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-274067804ff34c3ea2d7a3dc0da491aa\\audit-mutations\\max-exchanges-over-host-cap.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/max-exchanges-over-host-cap.jsonl",
+      "bytes": 5286,
+      "sha256": "34bc5e200ccd51a6c2fb4f8b0fdc76f55f4d5bd20960920a46b40ef58404ea45"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-08",
+      "source": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-274067804ff34c3ea2d7a3dc0da491aa\\audit-mutations\\missing-host-close-event.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/missing-host-close-event.jsonl",
+      "bytes": 4951,
+      "sha256": "756eab99dc8419cb83e44e07b0a206b25e813a9d2308941f501abda67827b34c"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-08",
+      "source": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-274067804ff34c3ea2d7a3dc0da491aa\\audit-mutations\\missing-session-end-event.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/missing-session-end-event.jsonl",
+      "bytes": 4934,
+      "sha256": "95bcbe560ba7914ae474e102f9d0760ee66da653b155cf8036aa3b1430260b8e"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-08",
+      "source": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-274067804ff34c3ea2d7a3dc0da491aa\\audit-mutations\\mutated-close-exchange-count.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/mutated-close-exchange-count.jsonl",
+      "bytes": 5284,
+      "sha256": "dbf094f6b6cf70e61ede8b6b5b2d15137f0249833795fba0dc0fb7de7bff40bf"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-08",
+      "source": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-274067804ff34c3ea2d7a3dc0da491aa\\audit-mutations\\mutated-wire-hash.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/mutated-wire-hash.jsonl",
+      "bytes": 5284,
+      "sha256": "888efdc0a05e59546699c7375788c9f8126558d96362e69046f3244738bdb96b"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-08",
+      "source": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-274067804ff34c3ea2d7a3dc0da491aa\\audit-mutations\\partial-observed-runtime-response.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/partial-observed-runtime-response.jsonl",
+      "bytes": 5722,
+      "sha256": "f40ff5a04fc675e7cdac5c3c4477dc42d79ebe4a54860050b624a88b749aa314"
+    },
+    {
+      "attempt": "080-host-v2-focused-retry-08",
+      "source": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-274067804ff34c3ea2d7a3dc0da491aa\\audit-mutations\\uncertain-prior-exchange.jsonl",
+      "path": "reports/evidence/080-transport-traces/080-host-v2-focused-retry-08/uncertain-prior-exchange.jsonl",
+      "bytes": 5257,
+      "sha256": "2ccd8f1870a98349ddbef954be4429f8617f64c185bc8e070032b4092d233cae"
+    }
+  ],
+  "count": 78,
+  "bytes": 498077
+}

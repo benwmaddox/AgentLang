@@ -258,7 +258,7 @@ function New-HostArguments {
         [string]$Profile = 'agentlang',
         [string[]]$AdditionalCliArguments = @(),
         [string[]]$Capabilities = @(),
-        [int]$ExchangeTimeoutMilliseconds = 2000,
+        [int]$ExchangeTimeoutMilliseconds = 15000,
         [int]$MaxRequestBytes = 262144,
         [int]$MaxResponseBytes = 524288,
         [Nullable[long]]$MaxInspectionResponseBytes = $null
@@ -296,11 +296,11 @@ function Invoke-TrialHost {
         [string]$Profile = 'agentlang',
         [string[]]$AdditionalCliArguments = @(),
         [string[]]$Capabilities = @(),
-        [int]$ExchangeTimeoutMilliseconds = 2000,
+        [int]$ExchangeTimeoutMilliseconds = 15000,
         [int]$MaxRequestBytes = 262144,
         [int]$MaxResponseBytes = 524288,
         [Nullable[long]]$MaxInspectionResponseBytes = $null,
-        [int]$OuterTimeoutMilliseconds = 15000
+        [int]$OuterTimeoutMilliseconds = 30000
     )
     if ([string]::IsNullOrWhiteSpace($ProjectPath)) {
         $projectPath = Join-Path $artifactRoot $Name

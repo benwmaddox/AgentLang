@@ -76,3 +76,13 @@ passed all 36 checks. Report 078 adds the passing 59-check control matrix,
 repaired clean-source freezing and one-field tamper rejection before execution.
 The exact 078 publication CI run 37571612474 is still in progress at report time;
 no new full-gate pass is claimed here.
+
+CI follow-up: run 37571612474 later failed only the existing v1 fake-child
+inspection-counter reset deadline. Its exact command passed locally on unchanged
+verifier source. Failure evidence and the bounded fixture timing correction are
+recorded in [report 080](080-explicit-trial-transport-termination.md); agent
+acceptance and frozen trace-audit outcomes are unchanged.
+
+Exact 079 main source 93b9e19 subsequently passed all 36 CI checks in run
+37573276020 with a clean checkout. Saved [CI validation](evidence/079-main-validation.json)
+confirms this source gate; it does not change either frozen termination audit.

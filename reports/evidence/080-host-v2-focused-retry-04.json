@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 1,
+  "kind": "subagent-trial-host-v2-focused-verification",
+  "outcome": "failed",
+  "createdUtc": "2026-10-07T05:13:31.1663249+00:00",
+  "repoRoot": "D:\\code\\AgentLang",
+  "testedHead": "93b9e19bbec50c1d642bea3efb9d2680f5cda82b",
+  "workingTreeDirty": true,
+  "cliDll": "D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+  "cliFiles": [
+    {
+      "name": "AgentLang.Cli.dll",
+      "sha256": "e9098ca964e19fb4e34f47ff4cd04f9a389dcb01a990455f77301afb613f9002"
+    },
+    {
+      "name": "AgentLang.Core.dll",
+      "sha256": "f08538fd22b04c2e5518adeacb63502b1e467331a59f7a89bc965bcfc9e6501b"
+    },
+    {
+      "name": "FSharp.Core.dll",
+      "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+    }
+  ],
+  "wrapperFiles": [
+    {
+      "path": "scripts/Start-SubagentTrialHostV2.ps1",
+      "sha256": "6573321e8c0fc92926e43221ae10836fd5c62139e5fdb51cc34ff482fbc81f2b"
+    },
+    {
+      "path": "scripts/Audit-SubagentTrialTerminationV2.ps1",
+      "sha256": "385a821b540198e4e141c08f55509a291bd5fe6dc1047aeb3e37ba611e2eaed8"
+    },
+    {
+      "path": "scripts/Verify-SubagentTrialHostV2.ps1",
+      "sha256": "a9480e4148e20196ae9a4c7bca5fc3384c542655b6023e37188d252bd1e37029"
+    }
+  ],
+  "fakeChildDll": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-5cb4a16f4cb74afcaaa3eec22fd5e5c3\\fake-runtime-output\\FakeRuntime.dll",
+  "artifacts": ".agentlang/subagent-host-v2-verification-5cb4a16f4cb74afcaaa3eec22fd5e5c3",
+  "error": "The property 'error' cannot be found on this object. Verify that the property exists.",
+  "checkCount": 10,
+  "passedCheckCount": 10,
+  "failedCheckCount": 0,
+  "checks": [
+    {
+      "name": "controlled fake child builds",
+      "passed": true,
+      "detail": "  Determining projects to restore...\r\n  Restored D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-5cb4a16f4cb74afcaaa3eec22fd5e5c3\\fake-runtime-source\\FakeRuntime.csproj (in 95 ms).\r\n  FakeRuntime -> D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-5cb4a16f4cb74afcaaa3eec22fd5e5c3\\fake-runtime-output\\FakeRuntime.dll\r\n\r\nBuild succeeded.\r\n    0 Warning(s)\r\n    0 Error(s)\r\n\r\nTime Elapsed 00:00:01.61\r\n"
+    },
+    {
+      "name": "startup rejects exposing host.close as an allowed runtime operation before launching the child",
+      "passed": true,
+      "detail": "exit=1; traceEvents=0; childStarted=False"
+    },
+    {
+      "name": "real CLI flow completes through explicit host.close",
+      "passed": true,
+      "detail": "processExit=0; timedOut=False; responses=5; stdoutResponsesOk=True; traceResponsesOk=True; closeEvents=1; term=host-close; hostExit=0; runtimeExit=0"
+    },
+    {
+      "name": "host.close produces no stdout acknowledgement and does not consume an exchange",
+      "passed": true,
+      "detail": "closeCount=5; exchangeEvents=5"
+    },
+    {
+      "name": "fresh CLI process reloads committed definition and test after host.close",
+      "passed": true,
+      "detail": "responses=3; testPassed=True"
+    },
+    {
+      "name": "generic termination audit accepts real CLI close trace",
+      "passed": true,
+      "detail": "Termination audit passed: 5 broker exchanges, close wire 20 bytes, host/runtime exits 0/0.\r\n"
+    },
+    {
+      "name": "host.close is accepted at the exact exchange limit without incrementing it",
+      "passed": true,
+      "detail": "responses=3; forwarded=3; closeCount=3"
+    },
+    {
+      "name": "generic termination audit checks exchange ordinals and preserved close wire at limit",
+      "passed": true,
+      "detail": "Termination audit passed: 3 broker exchanges, close wire 20 bytes, host/runtime exits 0/0.\r\n"
+    },
+    {
+      "name": "close-only CRLF control succeeds under a one-byte response cap without an ack",
+      "passed": true,
+      "detail": "exit=0; stdoutBytes=0; runtimeExit=0; rawHasCR=True"
+    },
+    {
+      "name": "generic audit verifies CRLF wire preservation and one-field canonical close",
+      "passed": true,
+      "detail": "Termination audit passed: 0 broker exchanges, close wire 25 bytes, host/runtime exits 0/0.\r\n"
+    }
+  ],
+  "traceInventory": [
+    {
+      "run": "real-cli-write-close",
+      "path": ".agentlang/reports/trial-host-v2-5cb4a16f4cb74afcaaa3eec22fd5e5c3-real-cli-write-close.jsonl",
+      "bytes": 13545,
+      "sha256": "3187f40a085a73089af70653a2e9489353bd9cbe1e5e329ebe1dd34c4fef0b67",
+      "eventCount": 8,
+      "eventNames": [
+        "session-start",
+        "exchange",
+        "exchange",
+        "exchange",
+        "exchange",
+        "exchange",
+        "host-close",
+        "session-end"
+      ],
+      "terminationKind": "host-close"
+    },
+    {
+      "run": "real-cli-reload-close",
+      "path": ".agentlang/reports/trial-host-v2-5cb4a16f4cb74afcaaa3eec22fd5e5c3-real-cli-reload-close.jsonl",
+      "bytes": 10991,
+      "sha256": "4a17a115dd93335228716b31eb62c8a57157203602bc203658261378cf57ffdb",
+      "eventCount": 6,
+      "eventNames": [
+        "session-start",
+        "exchange",
+        "exchange",
+        "exchange",
+        "host-close",
+        "session-end"
+      ],
+      "terminationKind": "host-close"
+    },
+    {
+      "run": "close-at-exchange-limit",
+      "path": ".agentlang/reports/trial-host-v2-5cb4a16f4cb74afcaaa3eec22fd5e5c3-close-at-exchange-limit.jsonl",
+      "bytes": 5538,
+      "sha256": "4a65b500f63c9a270c1de810b41dd62f8f6361d5be4f86736c2a1b1f91ad382c",
+      "eventCount": 6,
+      "eventNames": [
+        "session-start",
+        "exchange",
+        "exchange",
+        "exchange",
+        "host-close",
+        "session-end"
+      ],
+      "terminationKind": "host-close"
+    },
+    {
+      "run": "close-only-one-byte-response-cap",
+      "path": ".agentlang/reports/trial-host-v2-5cb4a16f4cb74afcaaa3eec22fd5e5c3-close-only-one-byte-response-cap.jsonl",
+      "bytes": 2389,
+      "sha256": "9b95e82ab6cd68c8cef460c880b6cffc70ed2fa01342956a6193367b1e187d2c",
+      "eventCount": 3,
+      "eventNames": [
+        "session-start",
+        "host-close",
+        "session-end"
+      ],
+      "terminationKind": "host-close"
+    },
+    {
+      "run": "malformed-close-frames",
+      "path": ".agentlang/reports/trial-host-v2-5cb4a16f4cb74afcaaa3eec22fd5e5c3-malformed-close-frames.jsonl",
+      "bytes": 7587,
+      "sha256": "c37e409a6846fbcde273e1a74e43e7ced114b13c3c8e192fc009172b091b97c7",
+      "eventCount": 6,
+      "eventNames": [
+        "session-start",
+        "exchange",
+        "exchange",
+        "exchange",
+        "host-close",
+        "session-end"
+      ],
+      "terminationKind": "host-close"
+    }
+  ],
+  "audits": [
+    {
+      "name": "real-cli-write-trace",
+      "tracePath": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-5cb4a16f4cb74afcaaa3eec22fd5e5c3-real-cli-write-close.jsonl",
+      "exitCode": 0,
+      "stdout": "Termination audit passed: 5 broker exchanges, close wire 20 bytes, host/runtime exits 0/0.\r\n",
+      "stderr": ""
+    },
+    {
+      "name": "close-at-limit-trace",
+      "tracePath": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-5cb4a16f4cb74afcaaa3eec22fd5e5c3-close-at-exchange-limit.jsonl",
+      "exitCode": 0,
+      "stdout": "Termination audit passed: 3 broker exchanges, close wire 20 bytes, host/runtime exits 0/0.\r\n",
+      "stderr": ""
+    },
+    {
+      "name": "close-only-crlf-trace",
+      "tracePath": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-5cb4a16f4cb74afcaaa3eec22fd5e5c3-close-only-one-byte-response-cap.jsonl",
+      "exitCode": 0,
+      "stdout": "Termination audit passed: 0 broker exchanges, close wire 25 bytes, host/runtime exits 0/0.\r\n",
+      "stderr": ""
+    }
+  ]
+}
