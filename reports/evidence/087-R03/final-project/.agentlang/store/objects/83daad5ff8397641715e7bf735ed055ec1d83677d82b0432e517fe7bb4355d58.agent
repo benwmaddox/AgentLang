@@ -1,0 +1,4 @@
+example money.nonnegative?/zero {
+    money::nonnegative?(Money::new(0))
+    => true
+}

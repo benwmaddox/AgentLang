@@ -1,0 +1,80 @@
+word payment.apply-result(store: Store, id: PaymentId, invoice-id: InvoiceId, amount: Money, requested-at: Instant, outcome: Result<PaymentReceipt, BusinessError>) -> Result<Store, BusinessError> {
+    effects none
+    doc "Apply an explicit payment-provider outcome after validating the request and open invoice."
+    match store::payment(id, store) {
+        some existing => {
+            result::error<Store, BusinessError>(businessError::new(
+                code = "DUPLICATE_PAYMENT",
+                message = "A payment with this identifier already exists."))
+        }
+        none => {
+            if int::greater-than(Money::value(amount), 0) {
+                match store::invoice(invoice-id, store) {
+                    none => {
+                        result::error<Store, BusinessError>(businessError::new(
+                            code = "INVOICE_NOT_FOUND",
+                            message = "The invoice does not exist."))
+                    }
+                    some invoice => {
+                        if equals(invoice.status(), InvoiceStatus::new("paid")) {
+                            result::error<Store, BusinessError>(businessError::new(
+                                code = "INVOICE_ALREADY_PAID",
+                                message = "The invoice is already paid."))
+                        } else {
+                            if equals(invoice.total(), amount) {
+                                match outcome {
+                                    error provider-error => {
+                                        result::error<Store, BusinessError>(businessError::new(
+                                            code = "PAYMENT_PROVIDER_FAILURE",
+                                            message = provider-error.message()))
+                                    }
+                                    ok receipt => {
+                                        match payment-receipt::create(receipt.reference(), receipt.amount()) {
+                                            error invalid-receipt => {
+                                                result::error<Store, BusinessError>(invalid-receipt)
+                                            }
+                                            ok valid-receipt => {
+                                                if equals(valid-receipt.amount(), amount) {
+                                                    let paid-invoice = invoice::new(
+                                                        id = invoice.id(),
+                                                        customer-id = invoice.customer-id(),
+                                                        lines = invoice.lines(),
+                                                        total = invoice.total(),
+                                                        created-at = invoice.created-at(),
+                                                        status = InvoiceStatus::new("paid"));
+                                                    let payment = payment::new(
+                                                        id = id,
+                                                        invoice-id = invoice-id,
+                                                        amount = amount,
+                                                        provider-reference = valid-receipt.reference(),
+                                                        paid-at = requested-at);
+                                                    let replaced = store::replace-invoice(store, paid-invoice);
+                                                    let updated = store::with-payments(
+                                                        replaced,
+                                                        list::append(replaced.payments(), payment));
+                                                    result::ok<Store, BusinessError>(updated)
+                                                } else {
+                                                    result::error<Store, BusinessError>(businessError::new(
+                                                        code = "INVALID_PROVIDER_RECEIPT",
+                                                        message = "Payment provider returned an invalid receipt: receipt amount does not match the requested amount"))
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            } else {
+                                result::error<Store, BusinessError>(businessError::new(
+                                    code = "PAYMENT_AMOUNT_MISMATCH",
+                                    message = "A payment must equal the full open invoice balance."))
+                            }
+                        }
+                    }
+                }
+            } else {
+                result::error<Store, BusinessError>(businessError::new(
+                    code = "PAYMENT_AMOUNT_MUST_BE_POSITIVE",
+                    message = "A payment amount must be positive."))
+            }
+        }
+    }
+}

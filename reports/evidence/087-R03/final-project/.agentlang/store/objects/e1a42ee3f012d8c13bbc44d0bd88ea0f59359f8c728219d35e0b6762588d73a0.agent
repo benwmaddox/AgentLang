@@ -1,0 +1,16 @@
+word store.invoice-fold-step(accumulator: InvoiceLookup, candidate: Invoice) -> InvoiceLookup {
+    effects none
+    doc "Keep the first invoice whose ID matches the lookup key."
+    match accumulator.found() {
+        some existing => { accumulator }
+        none => {
+            if equals(candidate.id(), accumulator.target()) {
+                invoiceLookup::new(
+                    target = accumulator.target(),
+                    found = option::some<Invoice>(candidate))
+            } else {
+                accumulator
+            }
+        }
+    }
+}

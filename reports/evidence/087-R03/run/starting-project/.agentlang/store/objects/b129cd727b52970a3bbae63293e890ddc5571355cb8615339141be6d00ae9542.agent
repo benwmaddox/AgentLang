@@ -1,0 +1,9 @@
+word subscription-id.parse(value: String) -> Result<SubscriptionId, BusinessError> {
+    effects none
+    doc "Parse any Guid.TryParse-compatible form and store canonical SubscriptionId text."
+    let parsed = string::guid-normalize(value);
+    match parsed {
+        ok canonical => { result::ok<SubscriptionId, BusinessError>(SubscriptionId::new(canonical)) }
+        error detail => { result::error<SubscriptionId, BusinessError>(businessError::new(code = "INVALID_IDENTIFIER", message = "SubscriptionId must be a GUID.")) }
+    }
+}

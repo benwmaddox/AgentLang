@@ -1,0 +1,9 @@
+example store.subscription/missing-subscription {
+    match store::subscription(
+        SubscriptionId::new("00000000-0000-0000-0000-000000000001"),
+        store::empty(unit)) {
+        some found => { false }
+        none => { true }
+    }
+    => true
+}

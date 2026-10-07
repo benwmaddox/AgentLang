@@ -1,0 +1,12 @@
+test customer.create/trimmed-kind {
+    match customer::create(
+        CustomerId::new("00112233-4455-6677-8899-aabbccddeeff"),
+        Email::new("dev@example.com"),
+        "  partner  ",
+        Money::new(-50),
+        Instant::new("2024-02-29T12:00:00.0000000+00:00")) {
+        ok value => { value.kind() }
+        error problem => { problem.code() }
+    }
+    => "partner"
+}

@@ -1,0 +1,5 @@
+word business.instant-valid?(value: String) -> Bool {
+    effects none
+    doc "Whether an instant is canonical UTC round-trip text."
+    instant::is-canonical-utc?(value)
+}

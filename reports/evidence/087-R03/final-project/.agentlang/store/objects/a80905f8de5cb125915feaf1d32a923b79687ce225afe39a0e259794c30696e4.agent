@@ -1,0 +1,4 @@
+record BusinessError {
+    field code: String;
+    field message: String;
+}

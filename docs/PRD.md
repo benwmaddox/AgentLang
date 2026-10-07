@@ -128,12 +128,16 @@ internal functions; visibility for inspection is separate from call access.
 Host-launched entry functions may remain ordinary functions through an explicit
 entry-point mechanism; this does not permit ordinary cross-module calls to them.
 Define availability rules for trusted primitives, generated constructors and
-field accessors separately. A library function may use ordinary private helpers
-inside its module. Its qualification must bind the complete dependency closure
-and be invalidated by relevant helper revisions, with requalification and
-affected-caller tests before publication. Cross-module authored dependencies
-must themselves be qualified library functions. This provides a reusable tested
-interface without imposing the library gate on every internal or entry function.
+field accessors separately. Library functions may call only qualified library
+functions, trusted primitives and generated type operations; this applies to
+same-module private helpers and callbacks supplied to collection operations as
+well as direct and cross-module calls. Ordinary functions may call ordinary or
+library functions subject to module visibility. Library qualification is separate
+from public export visibility: an internal helper may qualify without becoming
+an exported API. Qualification must bind the complete dependency closure and
+be invalidated by relevant helper revisions, with requalification and
+affected-caller tests before publication. This provides a reusable tested
+interface while development and host entry functions retain the lighter gate.
 
 The required library gate includes 100% own-function branch coverage and 100%
 coverage of finite declared return values. A Bool-returning function must
@@ -147,6 +151,13 @@ silently exempting unreachable values; it needs an appropriately narrower
 contract or remains a project function. These are additional requirements,
 not a claim that the current coverage implementation already enforces them.
 
+Here exhaustive value coverage means explicitly enumerated domains: Bool,
+enum cases, Unit, and supported closed composites of enumerated payloads.
+Large scalar domains such as Int, Float, String and numeric Money are not
+enumerated exhaustively merely because a runtime representation is bounded.
+For composites containing those domains, cover each applicable variant/tag
+and use boundary and behavioral assertions for the payload.
+
 Library functions also require finite input coverage: for each Bool or enum
 parameter, their own attached tests must exercise every valid declared value.
 Record the actual parameter values at tested function invocation; constants in
@@ -157,6 +168,17 @@ per-parameter coverage does not prove every combination or the business rule.
 Do not silently substitute a passing structural coverage result for these
 input/output obligations. Enum coverage becomes applicable when enum types are
 implemented; the initial Bool cases must work even for branchless functions.
+
+Exhaustive pattern matching is required by the compiler for every function,
+independently of library maturity or observed test coverage. For each supported
+closed variant type (including Bool, Option, Result and future enums), reject a
+match that leaves any possible case unhandled before execution or persistence.
+A guarded case cannot establish exhaustiveness merely because its tests passed;
+require statically sufficient pattern coverage or an unconditional fallback.
+Diagnostics should identify missing cases and their source spans. Library tests
+must still exercise their own branches and assert behavior: a statically handled
+case is not proof that its implementation is correct. This requirement does not
+claim that a new general enum/match frontend has already been implemented.
 
 Tests must support injected deterministic effect providers for IO and other
 declared effects. Injection must preserve the function's effect contract and
@@ -481,3 +503,40 @@ If the initial experiments support the hypothesis, evolve toward separate develo
 The typed semantic IR is the authoritative executable representation from the initial architecture. Source and AST are authoring representations; type/effect checking lowers them to this IR before execution. Interpreter, JIT, and AOT must share type identities, numeric/error behavior, control flow, effects, and value semantics. Native performance, memory use, and startup approaching Rust or C are later evaluation goals, not current guarantees.
 
 LLVM implementation remains outside V1 and is conditional on successful experiments. The Runtime now executes the small verified semantic IR through its interpreter, as recorded in report 010. The source frontend migration must preserve that boundary without adding LLVM.
+
+## Final-stage research: sustained application migration
+
+User-directed addition, 2026-10-07: after the language is stable and native
+arena-backed program-data-stack behavior is implemented and independently
+validated, undertake a long-running migration of a substantial existing
+application. This is a late, potentially final evaluation stage; it must not
+delay current agent-behavior experiments or expand V1 into a web framework.
+Interpreter execution alone does not satisfy the memory/runtime prerequisite.
+
+The initial candidate is [Basecamp's ONCE Campfire Rust implementation](https://github.com/basecamp/once-campfire-rust).
+Its documented Rails compatibility and parity harness provide potential
+external behavioral references. Pin repository revisions, inspect licensing,
+and assess harness reuse and host dependencies before selecting the final
+scope. The associated X discussion is motivation supplied by the user, not
+verified evidence of migration quality or performance. See the
+[migration research plan](../reports/088-late-application-migration-research.md).
+
+Migrate bounded vertical slices incrementally using external AI subagents,
+then exercise the migrated system over prolonged operation and subsequent
+changes by fresh agents. Preserve the same explicit type/effect, dictionary,
+library qualification and semantic IR boundaries. Record missing capabilities
+and trusted-core growth; do not hide application logic in a broad host escape
+hatch. Separate compatibility gaps and justified language additions from
+behavioral regressions. Allow the study to conclude that the approach is
+unsuitable for this application.
+
+Predeclare independent compatibility and regression oracles, representative
+workloads, fault scenarios, resource budgets and stopping criteria. Compare
+the pinned reference and native candidate on equivalent environments. Measure
+correct edits, regressions, discoverability, vocabulary reuse/pollution,
+long-running memory stability, arena reclamation, queue/state capacity,
+startup, latency and throughput. Report used, reserved and peak memory as
+separate quantities, along with host-library allocations and runtime failures.
+Retain raw artifacts and periodic reports, including failed migration attempts
+and semantic mismatches. A successful initial port is not sufficient: later
+maintenance and sustained execution are part of the acceptance evidence.

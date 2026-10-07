@@ -1,0 +1,4 @@
+record InvoiceLookup {
+    field target: InvoiceId;
+    field found: Option<Invoice>;
+}

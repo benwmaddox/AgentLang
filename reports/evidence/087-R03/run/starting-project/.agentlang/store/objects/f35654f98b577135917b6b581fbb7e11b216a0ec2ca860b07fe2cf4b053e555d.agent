@@ -1,0 +1,17 @@
+test invoice.sum-lines-step/preserves-prior-error {
+    let problem = businessError::new(code = "EARLIER", message = "first error");
+    let initial = invoiceTotalAccumulator::new(
+        outcome = result::error<Money, BusinessError>(problem));
+    let line = invoiceLine::new(
+        product-id = ProductId::new("90000000-0000-0000-0000-000000000001"),
+        description = "line",
+        quantity = 1,
+        unit-price = Money::new(10),
+        line-total = Money::new(10));
+    let updated = invoice::sum-lines-step(initial, line);
+    match updated.outcome() {
+        error actual => { equals(actual.code(), "EARLIER") }
+        ok total => { false }
+    }
+    => true
+}

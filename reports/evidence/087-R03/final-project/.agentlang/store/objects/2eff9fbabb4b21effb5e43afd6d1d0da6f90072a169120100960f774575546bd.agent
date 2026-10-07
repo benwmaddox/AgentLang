@@ -1,0 +1,5 @@
+word subscription.status-valid?(value: String) -> Bool {
+    effects none
+    doc "Accept only the active and cancelled subscription states."
+    bool::or(equals(value, "active"), equals(value, "cancelled"))
+}

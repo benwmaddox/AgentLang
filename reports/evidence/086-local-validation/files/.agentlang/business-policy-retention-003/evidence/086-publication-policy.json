@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "observedAtUtc": "2026-10-07T15:26:51.5150139Z",
+  "userRequestedVisibility": "public",
+  "repository": {
+    "isPrivate": false,
+    "nameWithOwner": "benwmaddox/AgentLang",
+    "url": "https://github.com/benwmaddox/AgentLang",
+    "visibility": "PUBLIC"
+  },
+  "visibilityConversionRetryExitCode": 0,
+  "automaticWorkflowChange": "remove push and pull_request; retain workflow_dispatch",
+  "workflowChangePublished": false,
+  "validationMode": "local Debug full scripts/Validate.ps1; in progress",
+  "hostedDisableAttempt": "HTTP 500; subsequent workflow state was active"
+}

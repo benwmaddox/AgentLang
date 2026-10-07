@@ -1,0 +1,11 @@
+example invoice.line/snapshots-price-and-description {
+    let store = business::seed(unit);
+    let cart = cartLine::new(
+        product-id = ProductId::new("20000000-0000-0000-0000-000000000001"),
+        quantity = 2);
+    match invoice::line(store, cart) {
+        ok line => { Money::value(line.line-total()) }
+        error problem => { -1 }
+    }
+    => 398
+}

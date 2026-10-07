@@ -1,0 +1,10 @@
+word payment-receipt.create(reference: String, amount: Money) -> Result<PaymentReceipt, BusinessError> {
+    effects none
+    doc "Create a receipt with a trimmed, nonblank provider reference."
+    let normalized-reference = string::trim(reference);
+    if equals(string::length(normalized-reference), 0) {
+        result::error<PaymentReceipt, BusinessError>(businessError::new(code = "INVALID_PROVIDER_RECEIPT", message = "Payment receipt reference must not be empty."))
+    } else {
+        result::ok<PaymentReceipt, BusinessError>(paymentReceipt::new(reference = normalized-reference, amount = amount))
+    }
+}

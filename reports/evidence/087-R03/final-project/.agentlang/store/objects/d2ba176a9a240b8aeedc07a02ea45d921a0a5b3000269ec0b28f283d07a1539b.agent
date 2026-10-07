@@ -1,0 +1,9 @@
+example store.product/missing-product {
+    match store::product(
+        ProductId::new("00000000-0000-0000-0000-000000000001"),
+        store::empty(unit)) {
+        some found => { false }
+        none => { true }
+    }
+    => true
+}

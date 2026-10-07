@@ -1,0 +1,59 @@
+word subscription.start(store: Store, id: SubscriptionId, customer-id: CustomerId, product-id: ProductId, term: String, started-at: Instant, expires-at: Instant) -> Result<Store, BusinessError> {
+    effects none
+    doc "Append a new active subscription after checking ID, term, dates, customer, and product in reference order."
+    match store::subscription(id, store) {
+        some existing => {
+            result::error<Store, BusinessError>(businessError::new(
+                code = "DUPLICATE_SUBSCRIPTION",
+                message = "A subscription with this identifier already exists."))
+        }
+        none => {
+            let normalized-term = string::trim(term);
+            if equals(string::length(normalized-term), 0) {
+                result::error<Store, BusinessError>(businessError::new(
+                    code = "INVALID_SUBSCRIPTION_TERM",
+                    message = "Subscription term must contain non-whitespace text."))
+            } else {
+                let expires-before-start = instant::before?(Instant::value(expires-at), Instant::value(started-at));
+                let expires-equal-start = equals(Instant::value(expires-at), Instant::value(started-at));
+                if bool::or(expires-before-start, expires-equal-start) {
+                    result::error<Store, BusinessError>(businessError::new(
+                        code = "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START",
+                        message = "Subscription expiry must be later than its start."))
+                } else {
+                    match store::customer(customer-id, store) {
+                        none => {
+                            result::error<Store, BusinessError>(businessError::new(
+                                code = "CUSTOMER_NOT_FOUND",
+                                message = "The customer does not exist."))
+                        }
+                        some customer => {
+                            match store::product(product-id, store) {
+                                none => {
+                                    result::error<Store, BusinessError>(businessError::new(
+                                        code = "PRODUCT_NOT_FOUND",
+                                        message = "The product does not exist."))
+                                }
+                                some product => {
+                                    let subscription = subscription::new(
+                                        id = id,
+                                        customer-id = customer-id,
+                                        product-id = product-id,
+                                        term = normalized-term,
+                                        started-at = started-at,
+                                        expires-at = expires-at,
+                                        status = SubscriptionStatus::new("active"),
+                                        cancelled-at = option::none<Instant>());
+                                    let updated = store::with-subscriptions(
+                                        store,
+                                        list::append(store.subscriptions(), subscription));
+                                    result::ok<Store, BusinessError>(updated)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

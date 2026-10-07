@@ -1,0 +1,32 @@
+test store.with-email-state/replaces-both-lists {
+    let initial = business::seed(unit);
+    let old-message = emailMessage::new(
+        to = Email::new("old@example.test"), subject = "old", body = "old body");
+    let initial-with-old-email = store::with-email-state(
+        initial,
+        list::singleton<EmailMessage>(old-message),
+        list::singleton<EmailMessage>(old-message));
+    let outbox-first = emailMessage::new(
+        to = Email::new("first@example.test"), subject = "first", body = "first body");
+    let outbox-second = emailMessage::new(
+        to = Email::new("second@example.test"), subject = "second", body = "second body");
+    let sent = emailMessage::new(
+        to = Email::new("sent@example.test"), subject = "sent", body = "sent body");
+    let outbox = list::append(list::singleton<EmailMessage>(outbox-first), outbox-second);
+    let sent-list = list::singleton<EmailMessage>(sent);
+    let updated = store::with-email-state(initial-with-old-email, outbox, sent-list);
+    bool::and(
+        equals(updated.email-outbox(), outbox),
+        bool::and(
+            equals(updated.sent-emails(), sent-list),
+            bool::and(
+                equals(updated.customers(), initial-with-old-email.customers()),
+                bool::and(
+                    equals(updated.products(), initial-with-old-email.products()),
+                    bool::and(
+                        equals(updated.subscriptions(), initial-with-old-email.subscriptions()),
+                        bool::and(
+                            equals(updated.invoices(), initial-with-old-email.invoices()),
+                            equals(updated.payments(), initial-with-old-email.payments())))))))
+    => true
+}

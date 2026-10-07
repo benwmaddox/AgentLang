@@ -1,0 +1,10 @@
+word subscription.replace-list(values: List<Subscription>, target-id: SubscriptionId, replacement: Subscription) -> List<Subscription> {
+    effects none
+    doc "Replace the first subscription with the target ID while preserving list order."
+    let initial = subscriptionReplacementState::new(
+        target-id = target-id,
+        replacement = replacement,
+        output = list::empty<Subscription>(),
+        replaced = false);
+    values.fold(initial, subscription::replace-step).output()
+}

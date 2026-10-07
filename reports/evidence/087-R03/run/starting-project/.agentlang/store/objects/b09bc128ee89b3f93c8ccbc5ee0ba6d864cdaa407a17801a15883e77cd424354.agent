@@ -1,0 +1,4 @@
+example store.with-subscriptions/replaces-list {
+    store::with-subscriptions(business::seed(unit), list::empty<Subscription>()).subscriptions().count()
+    => 0
+}

@@ -1,0 +1,37 @@
+{
+  "task": "task-0001",
+  "goal": "Implement customer.premium? to return true exactly when Customer.Kind is ordinal-equal to premium, with tests, example, and documentation.",
+  "active": false,
+  "wordsInspected": [
+    "CustomerId.new",
+    "Email.new",
+    "Instant.new",
+    "Money.new",
+    "customer.premium?",
+    "instant.is-canonical-utc?",
+    "instant.parse-utc"
+  ],
+  "wordsUsed": [
+    "CustomerId.new",
+    "Email.new",
+    "Instant.new",
+    "Money.new",
+    "business.email-valid?",
+    "business.id-valid?",
+    "business.instant-valid?",
+    "customer.kind",
+    "customer.new",
+    "customer.premium?",
+    "equals",
+    "instant.is-canonical-utc?",
+    "string.email-address-valid?",
+    "string.guid-canonical?"
+  ],
+  "wordsCreated": [
+    "customer.premium?"
+  ],
+  "testsRun": 18,
+  "testsFailed": 6,
+  "effects": {},
+  "errors": []
+}

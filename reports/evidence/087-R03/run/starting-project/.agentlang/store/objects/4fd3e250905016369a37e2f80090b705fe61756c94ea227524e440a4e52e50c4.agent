@@ -1,0 +1,7 @@
+example customer-id.parse/normalizes-braces {
+    match customer-id::parse("{00112233-4455-6677-8899-AABBCCDDEEFF}") {
+        ok id => { CustomerId::value(id) }
+        error problem => { problem.code() }
+    }
+    => "00112233-4455-6677-8899-aabbccddeeff"
+}

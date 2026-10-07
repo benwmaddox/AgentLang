@@ -16,3 +16,11 @@ history/
 
 # The second fresh-agent cell retains its synthetic durable stores and history.
 !reports/evidence/084-R02/**
+
+# The retained-arm fresh-agent archive preserves its synthetic store and history.
+!reports/evidence/087-R03/**
+
+# Preserve exact local validation, trace, CI, and policy evidence bytes.
+!reports/evidence/086-local-validation/
+!reports/evidence/086-local-validation/**
+!reports/evidence/086-local-validation-index.json

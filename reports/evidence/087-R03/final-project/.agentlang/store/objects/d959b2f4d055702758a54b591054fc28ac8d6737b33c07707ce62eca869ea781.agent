@@ -1,0 +1,4 @@
+test subscription.status-valid?/unknown {
+    subscription::status-valid?("expired")
+    => false
+}

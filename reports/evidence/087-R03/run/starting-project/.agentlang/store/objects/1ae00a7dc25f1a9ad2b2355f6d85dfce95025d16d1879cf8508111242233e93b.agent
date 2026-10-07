@@ -1,0 +1,9 @@
+word email.parse(value: String) -> Result<Email, BusinessError> {
+    effects none
+    doc "Validate and wrap an address without changing its spelling."
+    if business::email-valid?(value) {
+        result::ok<Email, BusinessError>(Email::new(value))
+    } else {
+        result::error<Email, BusinessError>(businessError::new(code = "INVALID_EMAIL", message = "Email does not match the documented address policy."))
+    }
+}

@@ -7,8 +7,11 @@ Candidate controls passed 63/63, reference acceptance passed 157 checks and
 All 123 exact reference/control files are archived; closed reference slots are
 free and canonical baselines unchanged. R01 (B1/Flat/S01) passed independent
 acceptance and integrity audit (report 083). R02 (B1/Flat/S07) passed integrity
-audit but failed independent behavior acceptance (report 084). Two of twelve
-cells are complete; no comparative result is established.
+audit but failed independent behavior acceptance (report 084). R03
+(B1/Retained/S01) has now passed independent acceptance and integrity audit
+(report 087), bringing the completed count to three of twelve. No comparative
+retention effect is established; the accepted R03 output must be transferred to
+the same-block R04 S07 cell.
 
 Published revisions f3f4391 and 5b0a367 passed 37/37 CI checks on both branches;
 their downloaded evidence is archived separately.

@@ -1,0 +1,4 @@
+test subscription.status-valid?/cancelled {
+    subscription::status-valid?("cancelled")
+    => true
+}

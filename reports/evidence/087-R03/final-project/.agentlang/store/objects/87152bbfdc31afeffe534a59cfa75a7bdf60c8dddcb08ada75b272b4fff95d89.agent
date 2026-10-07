@@ -1,0 +1,12 @@
+word store.with-invoices(store: Store, values: List<Invoice>) -> Store {
+    effects none
+    doc "Replace the invoice list while preserving every other Store field."
+    store::new(
+        customers = store.customers(),
+        products = store.products(),
+        subscriptions = store.subscriptions(),
+        invoices = values,
+        payments = store.payments(),
+        email-outbox = store.email-outbox(),
+        sent-emails = store.sent-emails())
+}

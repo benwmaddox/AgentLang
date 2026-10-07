@@ -1,0 +1,4 @@
+record CustomerLookup {
+    field target: CustomerId;
+    field found: Option<Customer>;
+}

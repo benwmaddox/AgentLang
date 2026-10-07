@@ -1,0 +1,21 @@
+test email.apply-delivery-result/provider-failure-retains-fifo-state {
+    let first = emailMessage::new(to = Email::new("first@example.test"), subject = "First", body = "First body");
+    let later = emailMessage::new(to = Email::new("later@example.test"), subject = "Later", body = "Later body");
+    let initial = store::with-email-state(
+        store::empty(unit),
+        list::append(list::singleton<EmailMessage>(first), later),
+        list::empty<EmailMessage>());
+    match email::apply-delivery-result(
+        initial,
+        result::error<Unit, BusinessError>(businessError::new(code = "TEMPORARY", message = "mail gateway unavailable"))) {
+        error problem => {
+            bool::and(
+                equals(problem.code(), "EMAIL_PROVIDER_FAILURE"),
+                bool::and(
+                    equals(problem.message(), "mail gateway unavailable"),
+                    bool::and(equals(initial.email-outbox(), list::append(list::singleton<EmailMessage>(first), later)), equals(initial.sent-emails().count(), 0))))
+        }
+        ok updated => { false }
+    }
+    => true
+}

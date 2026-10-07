@@ -1,0 +1,9 @@
+word instant.normalize(value: String) -> Result<Instant, BusinessError> {
+    effects none
+    doc "Parse an explicitly zoned ISO instant and store canonical UTC text."
+    let parsed = instant::parse-utc(value);
+    match parsed {
+        ok canonical => { result::ok<Instant, BusinessError>(Instant::new(canonical)) }
+        error detail => { result::error<Instant, BusinessError>(businessError::new(code = "INVALID_INSTANT", message = "Instant must be an explicitly zoned ISO timestamp.")) }
+    }
+}

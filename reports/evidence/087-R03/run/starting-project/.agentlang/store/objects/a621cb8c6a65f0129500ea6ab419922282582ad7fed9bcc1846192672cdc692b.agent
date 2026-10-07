@@ -1,0 +1,7 @@
+test money.add/signed-values {
+    match money::add(Money::new(-250), Money::new(1000)) {
+        ok total => { int::to-string(Money::value(total)) }
+        error problem => { problem.code() }
+    }
+    => "750"
+}

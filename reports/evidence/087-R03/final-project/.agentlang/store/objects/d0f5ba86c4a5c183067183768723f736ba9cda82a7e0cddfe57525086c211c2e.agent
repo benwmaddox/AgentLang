@@ -1,0 +1,7 @@
+test invoice-id.parse/invalid {
+    match invoice-id::parse("invalid") {
+        ok id => { InvoiceId::value(id) }
+        error problem => { problem.code() }
+    }
+    => "INVALID_IDENTIFIER"
+}

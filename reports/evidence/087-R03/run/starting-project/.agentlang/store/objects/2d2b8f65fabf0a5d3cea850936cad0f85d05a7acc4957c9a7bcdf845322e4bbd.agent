@@ -1,0 +1,15 @@
+test email.delivery-fold-step/first-message {
+    let message = emailMessage::new(
+        to = Email::new("first@example.test"),
+        subject = "First",
+        body = "Body");
+    let state = emailDeliveryPlan::new(
+        first = option::none<EmailMessage>(),
+        remaining = list::empty<EmailMessage>());
+    let next = email::delivery-fold-step(state, message);
+    match next.first() {
+        some found => { bool::and(equals(found, message), equals(next.remaining().count(), 0)) }
+        none => { false }
+    }
+    => true
+}

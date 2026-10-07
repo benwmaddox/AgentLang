@@ -1,0 +1,68 @@
+test payment.apply-result/success-updates-only-payment-and-invoice-state {
+    let invoice = invoice::new(
+        id = InvoiceId::new("00000000-0000-0000-0000-000000000002"),
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"),
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(100),
+        created-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"),
+        status = InvoiceStatus::new("open"));
+    let old-payment = payment::new(
+        id = PaymentId::new("00000000-0000-0000-0000-000000000004"),
+        invoice-id = invoice.id(),
+        amount = Money::new(5),
+        provider-reference = "older-ref",
+        paid-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"));
+    let queued = emailMessage::new(to = Email::new("queued@example.test"), subject = "Queued", body = "Queued body");
+    let sent = emailMessage::new(to = Email::new("sent@example.test"), subject = "Sent", body = "Sent body");
+    let base = store::empty(unit);
+    let with-invoice = store::with-invoices(base, list::singleton<Invoice>(invoice));
+    let with-payment = store::with-payments(with-invoice, list::singleton<Payment>(old-payment));
+    let initial = store::with-email-state(with-payment, list::singleton<EmailMessage>(queued), list::singleton<EmailMessage>(sent));
+    let receipt = paymentReceipt::new(reference = "  new-provider-ref  ", amount = Money::new(100));
+    match payment::apply-result(
+        initial,
+        PaymentId::new("00000000-0000-0000-0000-000000000001"),
+        invoice.id(),
+        Money::new(100),
+        Instant::new("2024-01-02T00:00:00.0000000+00:00"),
+        result::ok<PaymentReceipt, BusinessError>(receipt)) {
+        error problem => { false }
+        ok updated => {
+            let new-invoice = updated.invoices().get(0);
+            let new-payment = updated.payments().get(1);
+            let expected-invoice = invoice::new(
+                id = invoice.id(),
+                customer-id = invoice.customer-id(),
+                lines = invoice.lines(),
+                total = invoice.total(),
+                created-at = invoice.created-at(),
+                status = InvoiceStatus::new("paid"));
+            let expected-payment = payment::new(
+                id = PaymentId::new("00000000-0000-0000-0000-000000000001"),
+                invoice-id = invoice.id(),
+                amount = Money::new(100),
+                provider-reference = "new-provider-ref",
+                paid-at = Instant::new("2024-01-02T00:00:00.0000000+00:00"));
+            let invoice-updated = equals(new-invoice, option::some<Invoice>(expected-invoice));
+            let payment-appended = equals(new-payment, option::some<Payment>(expected-payment));
+            let preserved-customers = equals(updated.customers(), initial.customers());
+            let preserved-products = equals(updated.products(), initial.products());
+            let preserved-subscriptions = equals(updated.subscriptions(), initial.subscriptions());
+            let old-payment-preserved = equals(updated.payments().get(0), option::some<Payment>(old-payment));
+            let outbox-preserved = equals(updated.email-outbox(), initial.email-outbox());
+            let sent-preserved = equals(updated.sent-emails(), initial.sent-emails());
+            bool::and(
+                invoice-updated,
+                bool::and(
+                    payment-appended,
+                    bool::and(
+                        preserved-customers,
+                        bool::and(
+                            preserved-products,
+                            bool::and(
+                                preserved-subscriptions,
+                                bool::and(old-payment-preserved, bool::and(outbox-preserved, sent-preserved)))))))
+        }
+    }
+    => true
+}

@@ -1,0 +1,19 @@
+test invoice.sum-lines/nonempty-total {
+    let first = invoiceLine::new(
+        product-id = ProductId::new("90000000-0000-0000-0000-000000000001"),
+        description = "first",
+        quantity = 1,
+        unit-price = Money::new(25),
+        line-total = Money::new(25));
+    let second = invoiceLine::new(
+        product-id = ProductId::new("90000000-0000-0000-0000-000000000002"),
+        description = "second",
+        quantity = 2,
+        unit-price = Money::new(50),
+        line-total = Money::new(100));
+    match invoice::sum-lines(list::append(list::singleton<InvoiceLine>(first), second)) {
+        ok total => { equals(total, Money::new(125)) }
+        error problem => { false }
+    }
+    => true
+}

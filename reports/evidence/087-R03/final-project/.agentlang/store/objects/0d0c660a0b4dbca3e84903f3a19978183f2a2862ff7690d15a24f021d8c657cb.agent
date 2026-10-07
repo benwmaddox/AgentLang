@@ -1,0 +1,11 @@
+word store.replace-invoice(store: Store, invoice: Invoice) -> Store {
+    effects none
+    doc "Replace the first invoice with the same ID, keeping all other Store fields and invoice order."
+    let replacement = invoiceReplacement::new(
+        target = invoice.id(),
+        replacement = invoice,
+        replaced = false,
+        values = list::empty<Invoice>());
+    let completed = store.invoices().fold(replacement, store::replace-invoice-step);
+    store::with-invoices(store, completed.values())
+}

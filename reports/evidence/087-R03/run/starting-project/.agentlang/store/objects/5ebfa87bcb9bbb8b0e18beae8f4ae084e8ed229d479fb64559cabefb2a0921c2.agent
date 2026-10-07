@@ -1,0 +1,10 @@
+word customer.create(id: CustomerId, email: Email, kind: String, balance: Money, created-at: Instant) -> Result<Customer, BusinessError> {
+    effects none
+    doc "Create a customer with a trimmed, nonblank kind."
+    let normalized-kind = string::trim(kind);
+    if equals(string::length(normalized-kind), 0) {
+        result::error<Customer, BusinessError>(businessError::new(code = "INVALID_NAME", message = "Customer kind must contain non-whitespace text."))
+    } else {
+        result::ok<Customer, BusinessError>(customer::new(id = id, email = email, kind = normalized-kind, balance = balance, created-at = created-at))
+    }
+}

@@ -1,0 +1,12 @@
+test invoice.create/customer-precedes-empty-cart {
+    match invoice::create(
+        business::seed(unit),
+        InvoiceId::new("91000000-0000-0000-0000-000000000001"),
+        CustomerId::new("90000000-0000-0000-0000-000000000002"),
+        list::empty<CartLine>(),
+        Instant::new("2026-01-04T00:00:00.0000000+00:00")) {
+        ok updated => { false }
+        error problem => { equals(problem.code(), "CUSTOMER_NOT_FOUND") }
+    }
+    => true
+}

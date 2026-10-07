@@ -1,0 +1,43 @@
+word invoice.line(store: Store, cart: CartLine) -> Result<InvoiceLine, BusinessError> {
+    effects none
+    doc "Validate a cart line, copy its product details, and compute its checked line total."
+    let quantity = cart.quantity();
+    if int::less-than(quantity, 1) {
+        result::error<InvoiceLine, BusinessError>(businessError::new(
+            code = "INVALID_QUANTITY",
+            message = string::concat("Quantity must be positive; received ", string::concat(int::to-string(quantity), "."))))
+    } else {
+        if int::greater-than(quantity, 2147483647) {
+            result::error<InvoiceLine, BusinessError>(businessError::new(
+                code = "INVALID_QUANTITY",
+                message = "Quantity must be at most 2147483647."))
+        } else {
+            match store::product(cart.product-id(), store) {
+                none => {
+                    result::error<InvoiceLine, BusinessError>(businessError::new(
+                        code = "PRODUCT_NOT_FOUND",
+                        message = "The product does not exist."))
+                }
+                some product => {
+                    if money::nonnegative?(product.unit-price()) {
+                        match money::multiply-by-quantity(product.unit-price(), quantity) {
+                            ok line-total => {
+                                result::ok<InvoiceLine, BusinessError>(invoiceLine::new(
+                                    product-id = product.id(),
+                                    description = product.name(),
+                                    quantity = quantity,
+                                    unit-price = product.unit-price(),
+                                    line-total = line-total))
+                            }
+                            error problem => { result::error<InvoiceLine, BusinessError>(problem) }
+                        }
+                    } else {
+                        result::error<InvoiceLine, BusinessError>(businessError::new(
+                            code = "NEGATIVE_PRODUCT_PRICE",
+                            message = "Product prices must be nonnegative."))
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,23 @@
+test store.invoice-fold-step/preserves-first {
+    let key = InvoiceId::new("00000000-0000-0000-0000-000000000001");
+    let first = invoice::new(
+        id = key,
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"),
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(10),
+        created-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"),
+        status = InvoiceStatus::new("open"));
+    let later = invoice::new(
+        id = key,
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"),
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(20),
+        created-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"),
+        status = InvoiceStatus::new("open"));
+    let initial = invoiceLookup::new(target = key, found = option::some<Invoice>(first));
+    match store::invoice-fold-step(initial, later).found() {
+        some selected => { equals(selected.total(), Money::new(10)) }
+        none => { false }
+    }
+    => true
+}

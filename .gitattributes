@@ -54,3 +54,9 @@ reports/evidence/083-R01-index.json -text whitespace=blank-at-eol,blank-at-eof,s
 reports/evidence/084-R02/** -text -whitespace
 reports/evidence/084-R02-index.json -text
 reports/evidence/084-R02-index.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+reports/evidence/087-R03/** -text -whitespace
+reports/evidence/087-R03-index.json -text
+reports/evidence/087-R03-index.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+reports/evidence/086-local-validation/** -text -whitespace
+reports/evidence/086-local-validation-index.json -text
+reports/evidence/086-local-validation-index.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

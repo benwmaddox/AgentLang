@@ -1,0 +1,27 @@
+example subscription.replace-step/replaces-target-in-order {
+    let candidate = subscription::new(
+        id = SubscriptionId::new("50000000-0000-0000-0000-000000000001"),
+        customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        product-id = ProductId::new("20000000-0000-0000-0000-000000000001"),
+        term = "original",
+        started-at = Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        expires-at = Instant::new("2026-02-01T12:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("active"),
+        cancelled-at = option::none<Instant>());
+    let replacement = subscription::new(
+        id = SubscriptionId::new("50000000-0000-0000-0000-000000000001"),
+        customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        product-id = ProductId::new("20000000-0000-0000-0000-000000000001"),
+        term = "replacement",
+        started-at = Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        expires-at = Instant::new("2026-02-01T12:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("active"),
+        cancelled-at = option::none<Instant>());
+    let initial = subscriptionReplacementState::new(
+        target-id = candidate.id(),
+        replacement = replacement,
+        output = list::empty<Subscription>(),
+        replaced = false);
+    subscription::replace-step(initial, candidate).replaced()
+    => true
+}

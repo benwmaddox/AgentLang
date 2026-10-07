@@ -1,0 +1,7 @@
+test email-message.create/trims-fields {
+    match email-message::create(Email::new("dev@example.com"), "  Receipt ready  ", "  Your receipt is ready.  ") {
+        ok value => { string::concat(value.subject(), string::concat("|", value.body())) }
+        error problem => { problem.code() }
+    }
+    => "Receipt ready|Your receipt is ready."
+}

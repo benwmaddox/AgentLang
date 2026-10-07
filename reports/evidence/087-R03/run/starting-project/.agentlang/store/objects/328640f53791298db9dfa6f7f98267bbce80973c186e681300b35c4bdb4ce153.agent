@@ -1,0 +1,12 @@
+word store.with-payments(store: Store, values: List<Payment>) -> Store {
+    effects none
+    doc "Replace the payment list while preserving every other Store field."
+    store::new(
+        customers = store.customers(),
+        products = store.products(),
+        subscriptions = store.subscriptions(),
+        invoices = store.invoices(),
+        payments = values,
+        email-outbox = store.email-outbox(),
+        sent-emails = store.sent-emails())
+}

@@ -1,0 +1,4 @@
+example store.empty/empty-store {
+    store::empty(unit).customers().count()
+    => 0
+}

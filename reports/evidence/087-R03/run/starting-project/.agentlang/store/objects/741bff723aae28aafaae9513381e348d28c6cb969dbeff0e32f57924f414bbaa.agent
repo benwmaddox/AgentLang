@@ -1,0 +1,24 @@
+test store.replace-invoice-step/first-match-replaced {
+    let candidate = invoice::new(
+        id = InvoiceId::new("00000000-0000-0000-0000-000000000001"),
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"),
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(20),
+        created-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"),
+        status = InvoiceStatus::new("open"));
+    let replacement = invoice::new(
+        id = candidate.id(),
+        customer-id = candidate.customer-id(),
+        lines = candidate.lines(),
+        total = Money::new(30),
+        created-at = candidate.created-at(),
+        status = InvoiceStatus::new("paid"));
+    let state = invoiceReplacement::new(
+        target = candidate.id(),
+        replacement = replacement,
+        replaced = false,
+        values = list::empty<Invoice>());
+    let next = store::replace-invoice-step(state, candidate);
+    bool::and(equals(next.replaced(), true), equals(next.values(), list::singleton<Invoice>(replacement)))
+    => true
+}

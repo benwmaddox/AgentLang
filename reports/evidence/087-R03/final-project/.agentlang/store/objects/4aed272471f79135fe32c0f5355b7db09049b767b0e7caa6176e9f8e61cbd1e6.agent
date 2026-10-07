@@ -1,0 +1,22 @@
+word store.add-product(product: Product, store: Store) -> Result<Store, BusinessError> {
+    effects none
+    doc "Append a product when its ID is unused, or return DUPLICATE_PRODUCT."
+    match store::product(product.id(), store) {
+        some existing => {
+            result::error<Store, BusinessError>(businessError::new(
+                code = "DUPLICATE_PRODUCT",
+                message = "A product with this identifier already exists."))
+        }
+        none => {
+            let updated = store::new(
+                customers = store.customers(),
+                products = list::append(store.products(), product),
+                subscriptions = store.subscriptions(),
+                invoices = store.invoices(),
+                payments = store.payments(),
+                email-outbox = store.email-outbox(),
+                sent-emails = store.sent-emails());
+            result::ok<Store, BusinessError>(updated)
+        }
+    }
+}

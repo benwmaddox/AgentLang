@@ -1,0 +1,4 @@
+example subscription.status-valid?/active-state {
+    subscription::status-valid?("active")
+    => true
+}

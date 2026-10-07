@@ -1,0 +1,7 @@
+test invoice.build-lines/empty-fold {
+    match invoice::build-lines(business::seed(unit), list::empty<CartLine>()) {
+        ok lines => { equals(lines.count(), 0) }
+        error problem => { false }
+    }
+    => true
+}

@@ -1,0 +1,21 @@
+test subscription.cancel/already-cancelled {
+    let baseline = business::seed(unit);
+    let cancelled = subscription::new(
+        id = SubscriptionId::new("50000000-0000-0000-0000-000000000007"),
+        customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        product-id = ProductId::new("20000000-0000-0000-0000-000000000001"),
+        term = "monthly",
+        started-at = Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        expires-at = Instant::new("2026-02-01T12:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("cancelled"),
+        cancelled-at = option::some<Instant>(Instant::new("2026-01-03T12:00:00.0000000+00:00")));
+    let initial = store::with-subscriptions(baseline, list::singleton<Subscription>(cancelled));
+    match subscription::cancel(
+        initial,
+        SubscriptionId::new("50000000-0000-0000-0000-000000000007"),
+        Instant::new("2026-01-04T12:00:00.0000000+00:00")) {
+        ok updated => { "UNEXPECTED_SUCCESS" }
+        error problem => { problem.code() }
+    }
+    => "SUBSCRIPTION_ALREADY_CANCELLED"
+}

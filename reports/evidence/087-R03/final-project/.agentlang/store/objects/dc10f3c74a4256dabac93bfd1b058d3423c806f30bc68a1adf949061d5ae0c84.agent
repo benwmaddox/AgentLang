@@ -1,0 +1,15 @@
+test invoice.sum-lines-step/adds-successfully {
+    let initial = invoiceTotalAccumulator::new(
+        outcome = result::ok<Money, BusinessError>(Money::new(40)));
+    let line = invoiceLine::new(
+        product-id = ProductId::new("90000000-0000-0000-0000-000000000001"),
+        description = "line",
+        quantity = 1,
+        unit-price = Money::new(30),
+        line-total = Money::new(30));
+    match invoice::sum-lines-step(initial, line).outcome() {
+        ok total => { equals(total, Money::new(70)) }
+        error problem => { false }
+    }
+    => true
+}

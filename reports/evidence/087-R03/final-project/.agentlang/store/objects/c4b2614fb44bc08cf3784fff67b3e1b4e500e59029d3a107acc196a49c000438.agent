@@ -1,0 +1,14 @@
+word product.create(id: ProductId, name: String, unit-price: Money) -> Result<Product, BusinessError> {
+    effects none
+    doc "Create a product with a trimmed name and a nonnegative unit price."
+    let normalized-name = string::trim(name);
+    if equals(string::length(normalized-name), 0) {
+        result::error<Product, BusinessError>(businessError::new(code = "INVALID_NAME", message = "Product name must contain non-whitespace text."))
+    } else {
+        if money::nonnegative?(unit-price) {
+            result::ok<Product, BusinessError>(product::new(id = id, name = normalized-name, unit-price = unit-price))
+        } else {
+            result::error<Product, BusinessError>(businessError::new(code = "NEGATIVE_PRODUCT_PRICE", message = "Product prices must be nonnegative."))
+        }
+    }
+}

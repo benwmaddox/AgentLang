@@ -1,0 +1,4 @@
+record SubscriptionLookup {
+    field target: SubscriptionId;
+    field found: Option<Subscription>;
+}

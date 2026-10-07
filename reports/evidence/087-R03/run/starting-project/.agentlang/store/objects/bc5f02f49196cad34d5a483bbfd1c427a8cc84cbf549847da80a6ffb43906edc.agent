@@ -1,0 +1,16 @@
+word store.subscription-fold-step(accumulator: SubscriptionLookup, candidate: Subscription) -> SubscriptionLookup {
+    effects none
+    doc "Keep the first subscription whose ID matches the lookup key."
+    match accumulator.found() {
+        some existing => { accumulator }
+        none => {
+            if equals(candidate.id(), accumulator.target()) {
+                subscriptionLookup::new(
+                    target = accumulator.target(),
+                    found = option::some<Subscription>(candidate))
+            } else {
+                accumulator
+            }
+        }
+    }
+}

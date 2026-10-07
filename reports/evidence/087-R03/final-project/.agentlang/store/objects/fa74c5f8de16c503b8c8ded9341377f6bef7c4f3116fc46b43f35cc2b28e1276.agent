@@ -1,0 +1,7 @@
+test money.multiply-by-quantity/int32-max {
+    match money::multiply-by-quantity(Money::new(1), 2147483647) {
+        ok total => { int::to-string(Money::value(total)) }
+        error problem => { problem.code() }
+    }
+    => "2147483647"
+}

@@ -1,0 +1,2679 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "failure": null,
+  "cliSha256": "97714e343d7b38426d8e822d5d8b0de7d155c06ca39c25a8f4a4aa9be1739b6d",
+  "checks": [
+    {
+      "name": "flat source hash",
+      "passed": true
+    },
+    {
+      "name": "flat process exit",
+      "passed": true
+    },
+    {
+      "name": "flat response count",
+      "passed": true
+    },
+    {
+      "name": "flat protocol succeeds",
+      "passed": true
+    },
+    {
+      "name": "flat exact manifest",
+      "passed": true
+    },
+    {
+      "name": "flat authored count",
+      "passed": true
+    },
+    {
+      "name": "flat manifest word count",
+      "passed": true
+    },
+    {
+      "name": "flat renewal absent",
+      "passed": true
+    },
+    {
+      "name": "flat test count",
+      "passed": true
+    },
+    {
+      "name": "flat tests pass",
+      "passed": true
+    },
+    {
+      "name": "flat restore refuses existing project",
+      "passed": true
+    },
+    {
+      "name": "growing source hash",
+      "passed": true
+    },
+    {
+      "name": "growing process exit",
+      "passed": true
+    },
+    {
+      "name": "growing response count",
+      "passed": true
+    },
+    {
+      "name": "growing protocol succeeds",
+      "passed": true
+    },
+    {
+      "name": "growing exact manifest",
+      "passed": true
+    },
+    {
+      "name": "growing authored count",
+      "passed": true
+    },
+    {
+      "name": "growing manifest word count",
+      "passed": true
+    },
+    {
+      "name": "growing stable identity customer.premium?",
+      "passed": true
+    },
+    {
+      "name": "growing stable identity customer.discounted-balance",
+      "passed": true
+    },
+    {
+      "name": "growing renewal absent",
+      "passed": true
+    },
+    {
+      "name": "growing test count",
+      "passed": true
+    },
+    {
+      "name": "growing tests pass",
+      "passed": true
+    },
+    {
+      "name": "growing restore refuses existing project",
+      "passed": true
+    },
+    {
+      "name": "modified bundle rejected",
+      "passed": true
+    },
+    {
+      "name": "modified bundle creates no project",
+      "passed": true
+    }
+  ],
+  "traces": [
+    {
+      "profile": "flat",
+      "restore": {
+        "profile": "flat",
+        "project": "D:\\code\\AgentLang\\.agentlang\\matched-snapshot-verification\\flat-a9d68589fc4a4874b201d2611a067789",
+        "snapshot": "matched-renewal-start",
+        "manifestHash": "272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e",
+        "bundleSha256": "82cef4b9efd38d6ffecb162f1734609ea3122c5bc82251f61c6edfb31c75738b",
+        "limits": "Runtime load still validates storage semantics. Host capabilities and binaries are pinned separately."
+      },
+      "requests": [
+        {
+          "args": {
+            "name": "matched-renewal-start"
+          },
+          "op": "snapshot.load"
+        },
+        {
+          "op": "words"
+        },
+        {
+          "op": "test-all"
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "snapshot.load",
+          "text": "Loaded committed snapshot 'matched-renewal-start'.",
+          "data": {
+            "name": "matched-renewal-start",
+            "manifestHash": "272b44c7e2a752f75f1554ed00c94c53d7632e7ecfedd82b9af6ade26c268a3e",
+            "virtualFiles": 0,
+            "clockValue": "2000-01-01T00:00:00Z"
+          }
+        },
+        {
+          "ok": true,
+          "kind": "words",
+          "text": "64 word(s).",
+          "data": {
+            "words": [
+              {
+                "name": "add",
+                "id": "primitive_add",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "bool.and",
+                "id": "primitive_bool.and",
+                "inputs": [
+                  "Bool",
+                  "Bool"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "bool.not",
+                "id": "primitive_bool.not",
+                "inputs": [
+                  "Bool"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "bool.or",
+                "id": "primitive_bool.or",
+                "inputs": [
+                  "Bool",
+                  "Bool"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "clock.now",
+                "id": "primitive_clock.now",
+                "inputs": [],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [
+                  "clock.read"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "console.write",
+                "id": "primitive_console.write",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Unit"
+                ],
+                "effects": [
+                  "console.write"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "customer.balance",
+                "id": "generated_customer.balance",
+                "inputs": [
+                  "Customer"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "customer.kind",
+                "id": "generated_customer.kind",
+                "inputs": [
+                  "Customer"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "customer.new",
+                "id": "generated_customer.new",
+                "inputs": [
+                  "String",
+                  "Float"
+                ],
+                "outputs": [
+                  "Customer"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "divide",
+                "id": "primitive_divide",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "drop",
+                "id": "primitive_drop",
+                "inputs": [
+                  "a"
+                ],
+                "outputs": [],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "dup",
+                "id": "primitive_dup",
+                "inputs": [
+                  "a"
+                ],
+                "outputs": [
+                  "a",
+                  "a"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "equals",
+                "id": "primitive_equals",
+                "inputs": [
+                  "a",
+                  "a"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "file.exists?",
+                "id": "primitive_file.exists?",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [
+                  "fs.read"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "file.read",
+                "id": "primitive_file.read",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [
+                  "fs.read"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "file.write",
+                "id": "primitive_file.write",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "Unit"
+                ],
+                "effects": [
+                  "fs.write"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.add",
+                "id": "primitive_float.add",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.divide",
+                "id": "primitive_float.divide",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.greater-or-equal",
+                "id": "primitive_float.greater-or-equal",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.greater-than",
+                "id": "primitive_float.greater-than",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.less-or-equal",
+                "id": "primitive_float.less-or-equal",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.less-than",
+                "id": "primitive_float.less-than",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.multiply",
+                "id": "primitive_float.multiply",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.round",
+                "id": "primitive_float.round",
+                "inputs": [
+                  "Float"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.subtract",
+                "id": "primitive_float.subtract",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.to-int",
+                "id": "primitive_float.to-int",
+                "inputs": [
+                  "Float"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.to-string",
+                "id": "primitive_float.to-string",
+                "inputs": [
+                  "Float"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "instant.add-days",
+                "id": "primitive_instant.add-days",
+                "inputs": [
+                  "String",
+                  "Int"
+                ],
+                "outputs": [
+                  "Result<String, String>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "instant.before?",
+                "id": "primitive_instant.before?",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "instant.is-canonical-utc?",
+                "id": "primitive_instant.is-canonical-utc?",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "instant.parse-utc",
+                "id": "primitive_instant.parse-utc",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Result<String, String>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.abs",
+                "id": "primitive_int.abs",
+                "inputs": [
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.add-checked",
+                "id": "primitive_int.add-checked",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Result<Int, String>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.greater-or-equal",
+                "id": "primitive_int.greater-or-equal",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.greater-than",
+                "id": "primitive_int.greater-than",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.less-or-equal",
+                "id": "primitive_int.less-or-equal",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.less-than",
+                "id": "primitive_int.less-than",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.max",
+                "id": "primitive_int.max",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.min",
+                "id": "primitive_int.min",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.multiply-checked",
+                "id": "primitive_int.multiply-checked",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Result<Int, String>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.to-float",
+                "id": "primitive_int.to-float",
+                "inputs": [
+                  "Int"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.to-string",
+                "id": "primitive_int.to-string",
+                "inputs": [
+                  "Int"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.append",
+                "id": "primitive_list.append",
+                "inputs": [
+                  "List<a>",
+                  "a"
+                ],
+                "outputs": [
+                  "List<a>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.concat",
+                "id": "primitive_list.concat",
+                "inputs": [
+                  "List<a>",
+                  "List<a>"
+                ],
+                "outputs": [
+                  "List<a>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.count",
+                "id": "primitive_list.count",
+                "inputs": [
+                  "List<a>"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.get",
+                "id": "primitive_list.get",
+                "inputs": [
+                  "List<a>",
+                  "Int"
+                ],
+                "outputs": [
+                  "Option<a>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.is-empty?",
+                "id": "primitive_list.is-empty?",
+                "inputs": [
+                  "List<a>"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "multiply",
+                "id": "primitive_multiply",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.concat",
+                "id": "primitive_string.concat",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.contains",
+                "id": "primitive_string.contains",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.email-address-valid?",
+                "id": "primitive_string.email-address-valid?",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.ends-with",
+                "id": "primitive_string.ends-with",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.guid-canonical?",
+                "id": "primitive_string.guid-canonical?",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.guid-normalize",
+                "id": "primitive_string.guid-normalize",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Result<String, String>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.length",
+                "id": "primitive_string.length",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.starts-with",
+                "id": "primitive_string.starts-with",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.to-lower",
+                "id": "primitive_string.to-lower",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.to-upper",
+                "id": "primitive_string.to-upper",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.trim",
+                "id": "primitive_string.trim",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "subscription.new",
+                "id": "generated_subscription.new",
+                "inputs": [
+                  "String",
+                  "Bool"
+                ],
+                "outputs": [
+                  "Subscription"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "subscription.renewable",
+                "id": "generated_subscription.renewable",
+                "inputs": [
+                  "Subscription"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "subscription.term",
+                "id": "generated_subscription.term",
+                "inputs": [
+                  "Subscription"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "subtract",
+                "id": "primitive_subtract",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "swap",
+                "id": "primitive_swap",
+                "inputs": [
+                  "a",
+                  "b"
+                ],
+                "outputs": [
+                  "b",
+                  "a"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              }
+            ],
+            "constructs": [
+              {
+                "name": "list.empty",
+                "kind": "syntax",
+                "syntax": "list.empty<T>",
+                "inputs": [],
+                "outputs": [
+                  "List<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs an empty List<T>. T must be a declared closed type.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "list.singleton",
+                "kind": "syntax",
+                "syntax": "T list.singleton<T>",
+                "inputs": [
+                  "T"
+                ],
+                "outputs": [
+                  "List<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a one-element List<T> after checking the payload against the explicit T.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "option.none",
+                "kind": "syntax",
+                "syntax": "option.none<T>",
+                "inputs": [],
+                "outputs": [
+                  "Option<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a typed none; the element type is always explicit.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "option.some",
+                "kind": "syntax",
+                "syntax": "T option.some<T>",
+                "inputs": [
+                  "T"
+                ],
+                "outputs": [
+                  "Option<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a typed some after checking the payload against the explicit T.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "result.ok",
+                "kind": "syntax",
+                "syntax": "T result.ok<T, E>",
+                "inputs": [
+                  "T"
+                ],
+                "outputs": [
+                  "Result<T, E>"
+                ],
+                "typeParameters": [
+                  "T",
+                  "E"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a typed ok; both result type parameters are always explicit.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "result.error",
+                "kind": "syntax",
+                "syntax": "E result.error<T, E>",
+                "inputs": [
+                  "E"
+                ],
+                "outputs": [
+                  "Result<T, E>"
+                ],
+                "typeParameters": [
+                  "T",
+                  "E"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a typed error; the inactive success type remains explicit.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "list.map",
+                "kind": "syntax",
+                "syntax": "list.map <word>",
+                "inputs": [
+                  "List<T>"
+                ],
+                "outputs": [
+                  "List<U>"
+                ],
+                "typeParameters": [
+                  "T",
+                  "U"
+                ],
+                "effects": [],
+                "effectRule": "inherits callback word effects",
+                "documentation": "Statically names one callback word with signature T -> U. The callback is type checked before any element is visited.",
+                "coverageOutcomes": [
+                  "empty",
+                  "nonempty"
+                ]
+              },
+              {
+                "name": "list.filter",
+                "kind": "syntax",
+                "syntax": "list.filter <word>",
+                "inputs": [
+                  "List<T>"
+                ],
+                "outputs": [
+                  "List<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "inherits callback word effects",
+                "documentation": "Statically names one callback word with signature T -> Bool. Retains elements for true and drops them for false.",
+                "coverageOutcomes": [
+                  "empty",
+                  "nonempty",
+                  "keep",
+                  "drop"
+                ]
+              },
+              {
+                "name": "list.each",
+                "kind": "syntax",
+                "syntax": "list.each <word>",
+                "inputs": [
+                  "List<T>"
+                ],
+                "outputs": [
+                  "Unit"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "inherits callback word effects",
+                "documentation": "Statically names one callback word with signature T -> Unit and visits each element.",
+                "coverageOutcomes": [
+                  "empty",
+                  "nonempty"
+                ]
+              },
+              {
+                "name": "list.fold",
+                "kind": "syntax",
+                "syntax": "list.fold <word>",
+                "inputs": [
+                  "List<T>",
+                  "Accumulator"
+                ],
+                "outputs": [
+                  "Accumulator"
+                ],
+                "typeParameters": [
+                  "T",
+                  "Accumulator"
+                ],
+                "effects": [],
+                "effectRule": "inherits callback word effects",
+                "documentation": "Statically names one callback with signature Accumulator Item -> Accumulator. Visits items from left to right; an empty list returns the initial accumulator unchanged. The callback cannot capture caller locals.",
+                "coverageOutcomes": [
+                  "empty",
+                  "nonempty"
+                ]
+              },
+              {
+                "name": "match-option",
+                "kind": "syntax",
+                "syntax": "match-option / some <local> / none / end",
+                "inputs": [
+                  "Option<T> (top of stack)"
+                ],
+                "outputs": [
+                  "same stack from both cases"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "union of both case effects",
+                "documentation": "Requires both cases. The some payload local exists only inside its case; both cases must leave identical stack and outer-local types.",
+                "coverageOutcomes": [
+                  "some",
+                  "none"
+                ]
+              },
+              {
+                "name": "match-result",
+                "kind": "syntax",
+                "syntax": "match-result / ok <local> / error <local> / end",
+                "inputs": [
+                  "Result<T, E> (top of stack)"
+                ],
+                "outputs": [
+                  "same stack from both cases"
+                ],
+                "typeParameters": [
+                  "T",
+                  "E"
+                ],
+                "effects": [],
+                "effectRule": "union of both case effects",
+                "documentation": "Requires both cases. Each payload local exists only inside its own case; both cases must leave identical stack and outer-local types.",
+                "coverageOutcomes": [
+                  "ok",
+                  "error"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "test",
+          "text": "0/0 test(s) passed.",
+          "data": {
+            "results": []
+          }
+        }
+      ],
+      "exitCode": 0
+    },
+    {
+      "profile": "growing",
+      "restore": {
+        "profile": "growing",
+        "project": "D:\\code\\AgentLang\\.agentlang\\matched-snapshot-verification\\growing-55dcd88692dd4bdbbcc73e9f0dbe9dd9",
+        "snapshot": "matched-renewal-start",
+        "manifestHash": "480feeaec8a8ad5d860349890bbbe151b2345f7c746f1400e926da68eb181521",
+        "bundleSha256": "4b88ad1a244230c91fc1b453dd3f2b472ae983d91cfb9c755a5b69023ee8e678",
+        "limits": "Runtime load still validates storage semantics. Host capabilities and binaries are pinned separately."
+      },
+      "requests": [
+        {
+          "args": {
+            "name": "matched-renewal-start"
+          },
+          "op": "snapshot.load"
+        },
+        {
+          "op": "words"
+        },
+        {
+          "op": "test-all"
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "snapshot.load",
+          "text": "Loaded committed snapshot 'matched-renewal-start'.",
+          "data": {
+            "name": "matched-renewal-start",
+            "manifestHash": "480feeaec8a8ad5d860349890bbbe151b2345f7c746f1400e926da68eb181521",
+            "virtualFiles": 0,
+            "clockValue": "2000-01-01T00:00:00Z"
+          }
+        },
+        {
+          "ok": true,
+          "kind": "words",
+          "text": "66 word(s).",
+          "data": {
+            "words": [
+              {
+                "name": "add",
+                "id": "primitive_add",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "bool.and",
+                "id": "primitive_bool.and",
+                "inputs": [
+                  "Bool",
+                  "Bool"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "bool.not",
+                "id": "primitive_bool.not",
+                "inputs": [
+                  "Bool"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "bool.or",
+                "id": "primitive_bool.or",
+                "inputs": [
+                  "Bool",
+                  "Bool"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "clock.now",
+                "id": "primitive_clock.now",
+                "inputs": [],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [
+                  "clock.read"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "console.write",
+                "id": "primitive_console.write",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Unit"
+                ],
+                "effects": [
+                  "console.write"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "customer.balance",
+                "id": "generated_customer.balance",
+                "inputs": [
+                  "Customer"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "customer.discounted-balance",
+                "id": "word_90c3fe0f880848bf84d63dd72b8707bf",
+                "inputs": [
+                  "Customer"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "customer.kind",
+                "id": "generated_customer.kind",
+                "inputs": [
+                  "Customer"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "customer.new",
+                "id": "generated_customer.new",
+                "inputs": [
+                  "String",
+                  "Float"
+                ],
+                "outputs": [
+                  "Customer"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "customer.premium?",
+                "id": "word_6f1915c78d344e4386fedc1ffecc01f0",
+                "inputs": [
+                  "Customer"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "divide",
+                "id": "primitive_divide",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "drop",
+                "id": "primitive_drop",
+                "inputs": [
+                  "a"
+                ],
+                "outputs": [],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "dup",
+                "id": "primitive_dup",
+                "inputs": [
+                  "a"
+                ],
+                "outputs": [
+                  "a",
+                  "a"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "equals",
+                "id": "primitive_equals",
+                "inputs": [
+                  "a",
+                  "a"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "file.exists?",
+                "id": "primitive_file.exists?",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [
+                  "fs.read"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "file.read",
+                "id": "primitive_file.read",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [
+                  "fs.read"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "file.write",
+                "id": "primitive_file.write",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "Unit"
+                ],
+                "effects": [
+                  "fs.write"
+                ],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.add",
+                "id": "primitive_float.add",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.divide",
+                "id": "primitive_float.divide",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.greater-or-equal",
+                "id": "primitive_float.greater-or-equal",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.greater-than",
+                "id": "primitive_float.greater-than",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.less-or-equal",
+                "id": "primitive_float.less-or-equal",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.less-than",
+                "id": "primitive_float.less-than",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.multiply",
+                "id": "primitive_float.multiply",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.round",
+                "id": "primitive_float.round",
+                "inputs": [
+                  "Float"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.subtract",
+                "id": "primitive_float.subtract",
+                "inputs": [
+                  "Float",
+                  "Float"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.to-int",
+                "id": "primitive_float.to-int",
+                "inputs": [
+                  "Float"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "float.to-string",
+                "id": "primitive_float.to-string",
+                "inputs": [
+                  "Float"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "instant.add-days",
+                "id": "primitive_instant.add-days",
+                "inputs": [
+                  "String",
+                  "Int"
+                ],
+                "outputs": [
+                  "Result<String, String>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "instant.before?",
+                "id": "primitive_instant.before?",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "instant.is-canonical-utc?",
+                "id": "primitive_instant.is-canonical-utc?",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "instant.parse-utc",
+                "id": "primitive_instant.parse-utc",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Result<String, String>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.abs",
+                "id": "primitive_int.abs",
+                "inputs": [
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.add-checked",
+                "id": "primitive_int.add-checked",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Result<Int, String>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.greater-or-equal",
+                "id": "primitive_int.greater-or-equal",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.greater-than",
+                "id": "primitive_int.greater-than",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.less-or-equal",
+                "id": "primitive_int.less-or-equal",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.less-than",
+                "id": "primitive_int.less-than",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.max",
+                "id": "primitive_int.max",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.min",
+                "id": "primitive_int.min",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.multiply-checked",
+                "id": "primitive_int.multiply-checked",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Result<Int, String>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.to-float",
+                "id": "primitive_int.to-float",
+                "inputs": [
+                  "Int"
+                ],
+                "outputs": [
+                  "Float"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "int.to-string",
+                "id": "primitive_int.to-string",
+                "inputs": [
+                  "Int"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.append",
+                "id": "primitive_list.append",
+                "inputs": [
+                  "List<a>",
+                  "a"
+                ],
+                "outputs": [
+                  "List<a>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.concat",
+                "id": "primitive_list.concat",
+                "inputs": [
+                  "List<a>",
+                  "List<a>"
+                ],
+                "outputs": [
+                  "List<a>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.count",
+                "id": "primitive_list.count",
+                "inputs": [
+                  "List<a>"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.get",
+                "id": "primitive_list.get",
+                "inputs": [
+                  "List<a>",
+                  "Int"
+                ],
+                "outputs": [
+                  "Option<a>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "list.is-empty?",
+                "id": "primitive_list.is-empty?",
+                "inputs": [
+                  "List<a>"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "multiply",
+                "id": "primitive_multiply",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.concat",
+                "id": "primitive_string.concat",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.contains",
+                "id": "primitive_string.contains",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.email-address-valid?",
+                "id": "primitive_string.email-address-valid?",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.ends-with",
+                "id": "primitive_string.ends-with",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.guid-canonical?",
+                "id": "primitive_string.guid-canonical?",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.guid-normalize",
+                "id": "primitive_string.guid-normalize",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Result<String, String>"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.length",
+                "id": "primitive_string.length",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.starts-with",
+                "id": "primitive_string.starts-with",
+                "inputs": [
+                  "String",
+                  "String"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.to-lower",
+                "id": "primitive_string.to-lower",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.to-upper",
+                "id": "primitive_string.to-upper",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "string.trim",
+                "id": "primitive_string.trim",
+                "inputs": [
+                  "String"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "subscription.new",
+                "id": "generated_subscription.new",
+                "inputs": [
+                  "String",
+                  "Bool"
+                ],
+                "outputs": [
+                  "Subscription"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "subscription.renewable",
+                "id": "generated_subscription.renewable",
+                "inputs": [
+                  "Subscription"
+                ],
+                "outputs": [
+                  "Bool"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "subscription.term",
+                "id": "generated_subscription.term",
+                "inputs": [
+                  "Subscription"
+                ],
+                "outputs": [
+                  "String"
+                ],
+                "effects": [],
+                "status": "persistent",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "subtract",
+                "id": "primitive_subtract",
+                "inputs": [
+                  "Int",
+                  "Int"
+                ],
+                "outputs": [
+                  "Int"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              },
+              {
+                "name": "swap",
+                "id": "primitive_swap",
+                "inputs": [
+                  "a",
+                  "b"
+                ],
+                "outputs": [
+                  "b",
+                  "a"
+                ],
+                "effects": [],
+                "status": "primitive",
+                "maturity": "library",
+                "deprecated": false
+              }
+            ],
+            "constructs": [
+              {
+                "name": "list.empty",
+                "kind": "syntax",
+                "syntax": "list.empty<T>",
+                "inputs": [],
+                "outputs": [
+                  "List<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs an empty List<T>. T must be a declared closed type.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "list.singleton",
+                "kind": "syntax",
+                "syntax": "T list.singleton<T>",
+                "inputs": [
+                  "T"
+                ],
+                "outputs": [
+                  "List<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a one-element List<T> after checking the payload against the explicit T.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "option.none",
+                "kind": "syntax",
+                "syntax": "option.none<T>",
+                "inputs": [],
+                "outputs": [
+                  "Option<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a typed none; the element type is always explicit.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "option.some",
+                "kind": "syntax",
+                "syntax": "T option.some<T>",
+                "inputs": [
+                  "T"
+                ],
+                "outputs": [
+                  "Option<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a typed some after checking the payload against the explicit T.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "result.ok",
+                "kind": "syntax",
+                "syntax": "T result.ok<T, E>",
+                "inputs": [
+                  "T"
+                ],
+                "outputs": [
+                  "Result<T, E>"
+                ],
+                "typeParameters": [
+                  "T",
+                  "E"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a typed ok; both result type parameters are always explicit.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "result.error",
+                "kind": "syntax",
+                "syntax": "E result.error<T, E>",
+                "inputs": [
+                  "E"
+                ],
+                "outputs": [
+                  "Result<T, E>"
+                ],
+                "typeParameters": [
+                  "T",
+                  "E"
+                ],
+                "effects": [],
+                "effectRule": "none",
+                "documentation": "Constructs a typed error; the inactive success type remains explicit.",
+                "coverageOutcomes": []
+              },
+              {
+                "name": "list.map",
+                "kind": "syntax",
+                "syntax": "list.map <word>",
+                "inputs": [
+                  "List<T>"
+                ],
+                "outputs": [
+                  "List<U>"
+                ],
+                "typeParameters": [
+                  "T",
+                  "U"
+                ],
+                "effects": [],
+                "effectRule": "inherits callback word effects",
+                "documentation": "Statically names one callback word with signature T -> U. The callback is type checked before any element is visited.",
+                "coverageOutcomes": [
+                  "empty",
+                  "nonempty"
+                ]
+              },
+              {
+                "name": "list.filter",
+                "kind": "syntax",
+                "syntax": "list.filter <word>",
+                "inputs": [
+                  "List<T>"
+                ],
+                "outputs": [
+                  "List<T>"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "inherits callback word effects",
+                "documentation": "Statically names one callback word with signature T -> Bool. Retains elements for true and drops them for false.",
+                "coverageOutcomes": [
+                  "empty",
+                  "nonempty",
+                  "keep",
+                  "drop"
+                ]
+              },
+              {
+                "name": "list.each",
+                "kind": "syntax",
+                "syntax": "list.each <word>",
+                "inputs": [
+                  "List<T>"
+                ],
+                "outputs": [
+                  "Unit"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "inherits callback word effects",
+                "documentation": "Statically names one callback word with signature T -> Unit and visits each element.",
+                "coverageOutcomes": [
+                  "empty",
+                  "nonempty"
+                ]
+              },
+              {
+                "name": "list.fold",
+                "kind": "syntax",
+                "syntax": "list.fold <word>",
+                "inputs": [
+                  "List<T>",
+                  "Accumulator"
+                ],
+                "outputs": [
+                  "Accumulator"
+                ],
+                "typeParameters": [
+                  "T",
+                  "Accumulator"
+                ],
+                "effects": [],
+                "effectRule": "inherits callback word effects",
+                "documentation": "Statically names one callback with signature Accumulator Item -> Accumulator. Visits items from left to right; an empty list returns the initial accumulator unchanged. The callback cannot capture caller locals.",
+                "coverageOutcomes": [
+                  "empty",
+                  "nonempty"
+                ]
+              },
+              {
+                "name": "match-option",
+                "kind": "syntax",
+                "syntax": "match-option / some <local> / none / end",
+                "inputs": [
+                  "Option<T> (top of stack)"
+                ],
+                "outputs": [
+                  "same stack from both cases"
+                ],
+                "typeParameters": [
+                  "T"
+                ],
+                "effects": [],
+                "effectRule": "union of both case effects",
+                "documentation": "Requires both cases. The some payload local exists only inside its case; both cases must leave identical stack and outer-local types.",
+                "coverageOutcomes": [
+                  "some",
+                  "none"
+                ]
+              },
+              {
+                "name": "match-result",
+                "kind": "syntax",
+                "syntax": "match-result / ok <local> / error <local> / end",
+                "inputs": [
+                  "Result<T, E> (top of stack)"
+                ],
+                "outputs": [
+                  "same stack from both cases"
+                ],
+                "typeParameters": [
+                  "T",
+                  "E"
+                ],
+                "effects": [],
+                "effectRule": "union of both case effects",
+                "documentation": "Requires both cases. Each payload local exists only inside its own case; both cases must leave identical stack and outer-local types.",
+                "coverageOutcomes": [
+                  "ok",
+                  "error"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "test",
+          "text": "7/7 test(s) passed.",
+          "data": {
+            "results": [
+              {
+                "name": "case-sensitive",
+                "word": "customer.discounted-balance",
+                "passed": true,
+                "expected": "80",
+                "actual": [
+                  "80"
+                ]
+              },
+              {
+                "name": "premium",
+                "word": "customer.discounted-balance",
+                "passed": true,
+                "expected": "90",
+                "actual": [
+                  "90"
+                ]
+              },
+              {
+                "name": "premium-larger-balance",
+                "word": "customer.discounted-balance",
+                "passed": true,
+                "expected": "225",
+                "actual": [
+                  "225"
+                ]
+              },
+              {
+                "name": "standard",
+                "word": "customer.discounted-balance",
+                "passed": true,
+                "expected": "100",
+                "actual": [
+                  "100"
+                ]
+              },
+              {
+                "name": "case-sensitive",
+                "word": "customer.premium?",
+                "passed": true,
+                "expected": "false",
+                "actual": [
+                  "false"
+                ]
+              },
+              {
+                "name": "premium",
+                "word": "customer.premium?",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "standard",
+                "word": "customer.premium?",
+                "passed": true,
+                "expected": "false",
+                "actual": [
+                  "false"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "exitCode": 0
+    }
+  ],
+  "limits": "Frozen toy starting states only; no agent trial or memory/performance measurement."
+}

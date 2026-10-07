@@ -1,0 +1,152 @@
+[
+  {
+    "path": "src/AgentLang.Core/bin/Release/net9.0/AgentLang.Core.deps.json",
+    "bytes": 2474,
+    "sha256": "fdb608cd25481963ace0ddb4a8312aac36030e6f63deb069865ef2e610c99558"
+  },
+  {
+    "path": "experiments/AgentLang.Business/bin/Release/net9.0/AgentLang.Business.dll",
+    "bytes": 107008,
+    "sha256": "41f0b6f0f44ac73f0b899090dc7dcd3f3d56129176b172ceca96cba9e638a13d"
+  },
+  {
+    "path": "experiments/AgentLang.Business/bin/Release/net9.0/AgentLang.Business.deps.json",
+    "bytes": 2486,
+    "sha256": "1dcce1cd3d0cb7b52152c9a5588419f0f876d75bc4218be09f56dd45a872ba46"
+  },
+  {
+    "path": "src/AgentLang.Cli/bin/Release/net9.0/zh-Hant/FSharp.Core.resources.dll",
+    "bytes": 32032,
+    "sha256": "ac03ee7c4112c755705776c700033794586f980fe9476e6a13811a7153beabb8"
+  },
+  {
+    "path": "src/AgentLang.Cli/bin/Release/net9.0/zh-Hans/FSharp.Core.resources.dll",
+    "bytes": 32552,
+    "sha256": "25f82f35a9234bcaab272921b0d50054ddb4a669d96c111907c9d31f5b18c121"
+  },
+  {
+    "path": "src/AgentLang.Cli/bin/Release/net9.0/tr/FSharp.Core.resources.dll",
+    "bytes": 34072,
+    "sha256": "6b0cba5139a86ee681909fdfcebac07c99afba3bfcff4fb8ab12b9c2112a0b31"
+  },
+  {
+    "path": "src/AgentLang.Cli/bin/Release/net9.0/ru/FSharp.Core.resources.dll",
+    "bytes": 41232,
+    "sha256": "a1133f9ab7e661803d1af0c2489626bd53ac33a11dfe891f5a02f3186f2f5d78"
+  },
+  {
+    "path": "src/AgentLang.Cli/bin/Release/net9.0/pt-BR/FSharp.Core.resources.dll",
+    "bytes": 34096,
+    "sha256": "a4bbbdaabf2003a5fdff5f5bc4143c3fd4a064f2681fc481f449d4558074dc61"
+  },
+  {
+    "path": "src/AgentLang.Cli/bin/Release/net9.0/pl/FSharp.Core.resources.dll",
+    "bytes": 35632,
+    "sha256": "755bab9fbd85e5e4b4771870c9c4d655e91e3ce39cc1c2735fe0bc7cec6b84c3"
+  },
+  {
+    "path": "src/AgentLang.Cli/bin/Release/net9.0/ko/FSharp.Core.resources.dll",
+    "bytes": 36104,
+    "sha256": "0f3ef625e379577e3b60c15d8cc3759d3dc8840f99894282df1e702b4a166462"
+  },
+  {
+    "path": "src/AgentLang.Cli/bin/Release/net9.0/ja/FSharp.Core.resources.dll",
+    "bytes": 37160,
+    "sha256": "dd7f36036d906e991da5505b074ef889a603f449d3324750fda5f5445ba2854f"
+  },
+  {
+    "path": "src/AgentLang.Cli/bin/Release/net9.0/it/FSharp.Core.resources.dll",
+    "bytes": 34576,
+    "sha256": "61a0be9c6a2ed95f8e98493b17c54a55c68cef84e23a0d82114319e2c5f3c2cd"
+  },
+  {
+    "path": "src/AgentLang.Cli/bin/Release/net9.0/fr/FSharp.Core.resources.dll",
+    "bytes": 35128,
+    "sha256": "f38f2fd6bc4c4e233dd098a36b315a2bc87673cf2f07c6ba3daf71a3264f4a64"
+  },
+  {
+    "path": "src/AgentLang.Cli/bin/Release/net9.0/es/FSharp.Core.resources.dll",
+    "bytes": 34600,
+    "sha256": "636866649564c72eb763eb3942e021b52b1f9b3869d037aca48f73d4474353c5"
+  },
+  {
+    "path": "src/AgentLang.Cli/bin/Release/net9.0/de/FSharp.Core.resources.dll",
+    "bytes": 35592,
+    "sha256": "7419e4f5ceed9e03821686e865fed7d29c6217fdf5d3a46a2919a369c98c38ce"
+  },
+  {
+    "path": "src/AgentLang.Cli/bin/Release/net9.0/cs/FSharp.Core.resources.dll",
+    "bytes": 34600,
+    "sha256": "eb8bd755cfe0d39ce27615027fe22556e8b9dcb470f2b47a36f4bfbf3c31be64"
+  },
+  {
+    "path": "src/AgentLang.Cli/bin/Release/net9.0/FSharp.Core.dll",
+    "bytes": 2314000,
+    "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+  },
+  {
+    "path": "src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Core.xml",
+    "bytes": 32515,
+    "sha256": "27b998f11066707f4fdc98519298cc8637ae1fb926d5fc2d1e2c40a7ce620fb5"
+  },
+  {
+    "path": "src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Core.pdb",
+    "bytes": 558892,
+    "sha256": "ba03609cd6600a81413ca3d3e4184a88dcc1650713414f44d01bffe25b1529cd"
+  },
+  {
+    "path": "src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Core.dll",
+    "bytes": 2125312,
+    "sha256": "d35c689026e650a344a01bb4ba70c9be8c7e6d3a010de982abef8224b24a7f1b"
+  },
+  {
+    "path": "src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.runtimeconfig.json",
+    "bytes": 340,
+    "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+  },
+  {
+    "path": "src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.pdb",
+    "bytes": 10240,
+    "sha256": "05a6c0eb5e13571da80c999f0efecd1a21714ffa135250720f0263054c6d1bae"
+  },
+  {
+    "path": "src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.exe",
+    "bytes": 156160,
+    "sha256": "a0bdb478641129d2a94c35ccaa94c964ef1b02d729f3efeb35df22ba67d64ff6"
+  },
+  {
+    "path": "src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll",
+    "bytes": 38400,
+    "sha256": "bbfe7d079f568a431148298de86a3aa26304a160781c2756591be070735f274a"
+  },
+  {
+    "path": "src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.deps.json",
+    "bytes": 2903,
+    "sha256": "6382f6dc29bb8f827824839010e313b266e51a3f87a4fdb8c382931d2549e97e"
+  },
+  {
+    "path": "src/AgentLang.Core/bin/Release/net9.0/AgentLang.Core.xml",
+    "bytes": 32515,
+    "sha256": "27b998f11066707f4fdc98519298cc8637ae1fb926d5fc2d1e2c40a7ce620fb5"
+  },
+  {
+    "path": "src/AgentLang.Core/bin/Release/net9.0/AgentLang.Core.pdb",
+    "bytes": 558892,
+    "sha256": "ba03609cd6600a81413ca3d3e4184a88dcc1650713414f44d01bffe25b1529cd"
+  },
+  {
+    "path": "src/AgentLang.Core/bin/Release/net9.0/AgentLang.Core.dll",
+    "bytes": 2125312,
+    "sha256": "d35c689026e650a344a01bb4ba70c9be8c7e6d3a010de982abef8224b24a7f1b"
+  },
+  {
+    "path": "experiments/AgentLang.Business/bin/Release/net9.0/AgentLang.Business.pdb",
+    "bytes": 21704,
+    "sha256": "6cd85f3f4293b4d4c7ae71a9e685ea99a3ff3a74c46b91ea05284c2a5f09e232"
+  },
+  {
+    "path": "experiments/AgentLang.Business/bin/Release/net9.0/AgentLang.Business.xml",
+    "bytes": 355,
+    "sha256": "060ff74283ad20f2411b922e8c2f3d3d6282a2d752a3415afc5827350f1e0b54"
+  }
+]

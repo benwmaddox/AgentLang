@@ -1,0 +1,7 @@
+test product-id.parse/invalid {
+    match product-id::parse("invalid") {
+        ok id => { ProductId::value(id) }
+        error problem => { problem.code() }
+    }
+    => "INVALID_IDENTIFIER"
+}

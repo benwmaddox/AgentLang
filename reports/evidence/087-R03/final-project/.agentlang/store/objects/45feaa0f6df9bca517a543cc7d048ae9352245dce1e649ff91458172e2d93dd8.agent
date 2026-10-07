@@ -1,0 +1,7 @@
+test invoice.sum-lines/empty-is-zero {
+    match invoice::sum-lines(list::empty<InvoiceLine>()) {
+        ok total => { equals(total, Money::new(0)) }
+        error problem => { false }
+    }
+    => true
+}

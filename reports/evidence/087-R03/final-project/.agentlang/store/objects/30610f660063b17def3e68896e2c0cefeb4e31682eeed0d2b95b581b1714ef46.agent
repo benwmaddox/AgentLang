@@ -1,0 +1,7 @@
+example money.add/signed-minor-units {
+    match money::add(Money::new(250), Money::new(300)) {
+        ok total => { int::to-string(Money::value(total)) }
+        error problem => { problem.code() }
+    }
+    => "550"
+}

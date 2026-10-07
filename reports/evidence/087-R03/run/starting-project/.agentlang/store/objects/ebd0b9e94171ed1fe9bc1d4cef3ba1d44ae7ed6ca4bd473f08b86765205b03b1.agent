@@ -1,0 +1,31 @@
+test store.invoice/first-match-in-list-order {
+    let key = InvoiceId::new("00000000-0000-0000-0000-000000000001");
+    let first = invoice::new(
+        id = key,
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"),
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(10),
+        created-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"),
+        status = InvoiceStatus::new("open"));
+    let later = invoice::new(
+        id = key,
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"),
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(20),
+        created-at = Instant::new("2024-01-02T00:00:00.0000000+00:00"),
+        status = InvoiceStatus::new("open"));
+    let blank = store::empty(unit);
+    let input = store::new(
+        customers = blank.customers(),
+        products = blank.products(),
+        subscriptions = blank.subscriptions(),
+        invoices = list::append(list::singleton<Invoice>(first), later),
+        payments = blank.payments(),
+        email-outbox = blank.email-outbox(),
+        sent-emails = blank.sent-emails());
+    match store::invoice(key, input) {
+        some selected => { equals(selected.total(), Money::new(10)) }
+        none => { false }
+    }
+    => true
+}

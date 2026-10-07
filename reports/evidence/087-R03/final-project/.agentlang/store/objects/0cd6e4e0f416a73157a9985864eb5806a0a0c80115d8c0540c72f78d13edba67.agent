@@ -1,0 +1,13 @@
+example store.add-customer/appends-new-customer {
+    let customer = customer::new(
+        id = CustomerId::new("00000000-0000-0000-0000-000000000001"),
+        email = Email::new("new@example.com"),
+        kind = "new",
+        balance = Money::new(0),
+        created-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"));
+    match store::add-customer(customer, store::empty(unit)) {
+        ok updated => { equals(updated.customers().count(), 1) }
+        error problem => { false }
+    }
+    => true
+}

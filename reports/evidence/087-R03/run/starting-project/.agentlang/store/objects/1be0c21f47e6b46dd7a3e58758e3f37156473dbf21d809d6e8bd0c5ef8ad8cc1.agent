@@ -1,0 +1,12 @@
+test customer.create/blank-kind {
+    match customer::create(
+        CustomerId::new("00112233-4455-6677-8899-aabbccddeeff"),
+        Email::new("dev@example.com"),
+        " \t ",
+        Money::new(0),
+        Instant::new("2024-02-29T12:00:00.0000000+00:00")) {
+        ok value => { value.kind() }
+        error problem => { problem.code() }
+    }
+    => "INVALID_NAME"
+}

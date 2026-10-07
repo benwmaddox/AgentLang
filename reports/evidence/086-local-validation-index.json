@@ -1,0 +1,970 @@
+{
+  "schemaVersion": 1,
+  "archive": "086-local-validation",
+  "sourceRevision": "9a62bebe3520a5fc1cb590943c3d74ab77ca99c1",
+  "branch": "prototype",
+  "validator": {
+    "command": "pwsh -NoProfile -File scripts/Validate.ps1 -Configuration Debug -ReportPath .agentlang/reports/validation-local-9a62beb-debug.json",
+    "configuration": "Debug",
+    "exitCode": 0,
+    "dirtyAtStart": false,
+    "startedAt": "10/07/2026 11:14:50",
+    "completedAt": "10/07/2026 11:34:38",
+    "passed": true,
+    "checkCount": 37,
+    "passedChecks": 37,
+    "failedChecks": 0
+  },
+  "businessPolicyPreflight": {
+    "passed": true,
+    "checkCount": 98,
+    "independentOutcomes": 30,
+    "dirty": true
+  },
+  "runtimePreservation": {
+    "beforeSourcePath": ".agentlang/business-policy-retention-003/evidence/086-local-runtime-before.json",
+    "afterSourcePath": ".agentlang/business-policy-retention-003/evidence/086-local-runtime-after.json",
+    "fileCount": 30,
+    "bytesEach": 5828,
+    "byteIdentical": true
+  },
+  "ciBudgetRuns": [
+    {
+      "runId": "37641760451",
+      "headSha": "9a62bebe3520a5fc1cb590943c3d74ab77ca99c1",
+      "event": "push",
+      "conclusion": "failure",
+      "stepCount": 0,
+      "annotation": "The job was not started because an Actions budget is preventing further use."
+    },
+    {
+      "runId": "37641760633",
+      "headSha": "9a62bebe3520a5fc1cb590943c3d74ab77ca99c1",
+      "event": "push",
+      "conclusion": "failure",
+      "stepCount": 0,
+      "annotation": "The job was not started because an Actions budget is preventing further use."
+    }
+  ],
+  "publicationPolicy": {
+    "sourcePath": ".agentlang/business-policy-retention-003/evidence/086-publication-policy.json",
+    "observedAtUtc": "10/07/2026 15:26:51",
+    "requestedVisibility": "public",
+    "observedVisibility": "PUBLIC",
+    "visibilityConversionRetryExitCode": 0,
+    "requestedWorkflowChange": "remove push and pull_request; retain workflow_dispatch",
+    "workflowChangePublishedAtCapture": false,
+    "hostedDisableAttempt": "HTTP 500; subsequent workflow state was active"
+  },
+  "traceReferences": {
+    "totalReferences": 52,
+    "distinctResolvedPaths": 44,
+    "v1RunReferences": 25,
+    "v2TraceInventoryReferences": 8,
+    "v2AuditReferences": 18,
+    "parserReferences": 1,
+    "archivedTraceFiles": 43,
+    "missing": [
+      {
+        "sourceReport": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host.json",
+        "run": "inspection-negative-budget-rejected",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-39fae9ff1db84b399eddae42eb559235-inspection-negative-budget-rejected.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-negative-budget-rejected.jsonl",
+        "reason": "The referenced negative-budget session was rejected before child launch and produced no trace file."
+      }
+    ],
+    "links": [
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host.json",
+        "run": "language-write-session",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-39fae9ff1db84b399eddae42eb559235-language-write-session.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-language-write-session.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-language-write-session.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host.json",
+        "run": "language-reload-session",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-39fae9ff1db84b399eddae42eb559235-language-reload-session.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-language-reload-session.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-language-reload-session.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host.json",
+        "run": "language-write-zero-inspection-budget",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-39fae9ff1db84b399eddae42eb559235-language-write-zero-inspection-budget.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-language-write-zero-inspection-budget.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-language-write-zero-inspection-budget.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host.json",
+        "run": "malformed-denied",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-39fae9ff1db84b399eddae42eb559235-malformed-denied.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-malformed-denied.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-malformed-denied.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host.json",
+        "run": "oversized-request",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-39fae9ff1db84b399eddae42eb559235-oversized-request.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-oversized-request.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-oversized-request.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host.json",
+        "run": "timeout-partial-response",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-39fae9ff1db84b399eddae42eb559235-timeout-partial-response.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-timeout-partial-response.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-timeout-partial-response.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host.json",
+        "run": "large-write-no-reader",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-39fae9ff1db84b399eddae42eb559235-large-write-no-reader.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-large-write-no-reader.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-large-write-no-reader.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host.json",
+        "run": "oversized-response",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-39fae9ff1db84b399eddae42eb559235-oversized-response.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-oversized-response.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-oversized-response.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host.json",
+        "run": "invalid-runtime-json",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-39fae9ff1db84b399eddae42eb559235-invalid-runtime-json.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-invalid-runtime-json.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-invalid-runtime-json.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host.json",
+        "run": "child-exits-after-request",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-39fae9ff1db84b399eddae42eb559235-child-exits-after-request.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-child-exits-after-request.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-child-exits-after-request.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host.json",
+        "run": "conventional-profile-args",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-39fae9ff1db84b399eddae42eb559235-conventional-profile-args.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-conventional-profile-args.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-conventional-profile-args.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host.json",
+        "run": "inspection-under-budget",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-39fae9ff1db84b399eddae42eb559235-inspection-under-budget.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-under-budget.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-under-budget.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host.json",
+        "run": "inspection-equal-budget",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-39fae9ff1db84b399eddae42eb559235-inspection-equal-budget.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-equal-budget.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-equal-budget.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host.json",
+        "run": "inspection-cumulative-boundary",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-39fae9ff1db84b399eddae42eb559235-inspection-cumulative-boundary.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-cumulative-boundary.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-cumulative-boundary.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host.json",
+        "run": "inspection-zero-budget",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-39fae9ff1db84b399eddae42eb559235-inspection-zero-budget.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-zero-budget.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-zero-budget.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host.json",
+        "run": "inspection-positive-remaining-over-budget",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-39fae9ff1db84b399eddae42eb559235-inspection-positive-remaining-over-budget.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-positive-remaining-over-budget.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-positive-remaining-over-budget.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host.json",
+        "run": "inspection-runtime-diagnostic",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-39fae9ff1db84b399eddae42eb559235-inspection-runtime-diagnostic.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-runtime-diagnostic.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-runtime-diagnostic.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host.json",
+        "run": "inspection-utf8-crlf-boundary",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-39fae9ff1db84b399eddae42eb559235-inspection-utf8-crlf-boundary.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-utf8-crlf-boundary.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-utf8-crlf-boundary.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host.json",
+        "run": "inspection-fresh-session-reset",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-39fae9ff1db84b399eddae42eb559235-inspection-fresh-session-reset.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-fresh-session-reset.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-fresh-session-reset.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host.json",
+        "run": "noninspection-results-visible-over-budget",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-39fae9ff1db84b399eddae42eb559235-noninspection-results-visible-over-budget.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-noninspection-results-visible-over-budget.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-noninspection-results-visible-over-budget.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host.json",
+        "run": "inspection-profile-classifier",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-39fae9ff1db84b399eddae42eb559235-inspection-profile-classifier.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-profile-classifier.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-profile-classifier.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host.json",
+        "run": "conventional-profile-classifier",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-39fae9ff1db84b399eddae42eb559235-conventional-profile-classifier.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-conventional-profile-classifier.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-conventional-profile-classifier.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host.json",
+        "run": "terminal-control-accounting",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-39fae9ff1db84b399eddae42eb559235-terminal-control-accounting.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-terminal-control-accounting.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-terminal-control-accounting.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host.json",
+        "run": "inspection-negative-budget-rejected",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-39fae9ff1db84b399eddae42eb559235-inspection-negative-budget-rejected.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-negative-budget-rejected.jsonl",
+        "archivePath": null,
+        "status": "missing"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host.json",
+        "run": "valid-response-before-write-timeout",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-39fae9ff1db84b399eddae42eb559235-valid-response-before-write-timeout.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-valid-response-before-write-timeout.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-valid-response-before-write-timeout.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host-v2.json",
+        "run": "real-cli-write-close",
+        "sourceReference": ".agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-real-cli-write-close.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-real-cli-write-close.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-real-cli-write-close.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host-v2.json",
+        "run": "real-cli-reload-close",
+        "sourceReference": ".agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-real-cli-reload-close.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-real-cli-reload-close.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-real-cli-reload-close.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host-v2.json",
+        "run": "close-at-exchange-limit",
+        "sourceReference": ".agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-close-at-exchange-limit.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-close-at-exchange-limit.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-close-at-exchange-limit.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host-v2.json",
+        "run": "close-only-one-byte-response-cap",
+        "sourceReference": ".agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-close-only-one-byte-response-cap.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-close-only-one-byte-response-cap.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-close-only-one-byte-response-cap.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host-v2.json",
+        "run": "malformed-close-frames",
+        "sourceReference": ".agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-malformed-close-frames.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-malformed-close-frames.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-malformed-close-frames.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host-v2.json",
+        "run": "partial-lf-close",
+        "sourceReference": ".agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-partial-lf-close.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-partial-lf-close.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-partial-lf-close.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host-v2.json",
+        "run": "ordinary-input-eof",
+        "sourceReference": ".agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-ordinary-input-eof.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-ordinary-input-eof.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-ordinary-input-eof.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host-v2.json",
+        "run": "child-hang-on-close",
+        "sourceReference": ".agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-child-hang-on-close.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-child-hang-on-close.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-child-hang-on-close.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host-v2.json",
+        "run": "real-cli-write-trace",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-e192f94034704f7ba7304cc98b7b205a-real-cli-write-close.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-real-cli-write-close.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-real-cli-write-close.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host-v2.json",
+        "run": "close-at-limit-trace",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-e192f94034704f7ba7304cc98b7b205a-close-at-exchange-limit.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-close-at-exchange-limit.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-close-at-exchange-limit.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host-v2.json",
+        "run": "close-only-crlf-trace",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-e192f94034704f7ba7304cc98b7b205a-close-only-one-byte-response-cap.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-close-only-one-byte-response-cap.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-close-only-one-byte-response-cap.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host-v2.json",
+        "run": "malformed-then-valid-close-trace",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-e192f94034704f7ba7304cc98b7b205a-malformed-close-frames.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-malformed-close-frames.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-malformed-close-frames.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host-v2.json",
+        "run": "partial-close-trace",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-e192f94034704f7ba7304cc98b7b205a-partial-lf-close.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-partial-lf-close.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-partial-lf-close.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host-v2.json",
+        "run": "ordinary-eof-trace",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-e192f94034704f7ba7304cc98b7b205a-ordinary-input-eof.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-ordinary-input-eof.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-ordinary-input-eof.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host-v2.json",
+        "run": "hanging-child-trace",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-e192f94034704f7ba7304cc98b7b205a-child-hang-on-close.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-child-hang-on-close.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-child-hang-on-close.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host-v2.json",
+        "run": "mutation-source-baseline",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\trial-host-v2-e192f94034704f7ba7304cc98b7b205a-close-at-exchange-limit.jsonl",
+        "sourcePath": ".agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-close-at-exchange-limit.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-close-at-exchange-limit.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host-v2.json",
+        "run": "mutated-host-close-wire-hash",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a\\audit-mutations\\mutated-wire-hash.jsonl",
+        "sourcePath": ".agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/mutated-wire-hash.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/mutated-wire-hash.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host-v2.json",
+        "run": "duplicate-host-close-event",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a\\audit-mutations\\duplicate-host-close-event.jsonl",
+        "sourcePath": ".agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/duplicate-host-close-event.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/duplicate-host-close-event.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host-v2.json",
+        "run": "missing-host-close-event",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a\\audit-mutations\\missing-host-close-event.jsonl",
+        "sourcePath": ".agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/missing-host-close-event.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/missing-host-close-event.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host-v2.json",
+        "run": "missing-session-end-event",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a\\audit-mutations\\missing-session-end-event.jsonl",
+        "sourcePath": ".agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/missing-session-end-event.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/missing-session-end-event.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host-v2.json",
+        "run": "close-payload-over-configured-limit",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a\\audit-mutations\\close-payload-over-configured-limit.jsonl",
+        "sourcePath": ".agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/close-payload-over-configured-limit.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/close-payload-over-configured-limit.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host-v2.json",
+        "run": "max-exchanges-over-host-cap",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a\\audit-mutations\\max-exchanges-over-host-cap.jsonl",
+        "sourcePath": ".agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/max-exchanges-over-host-cap.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/max-exchanges-over-host-cap.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host-v2.json",
+        "run": "mutated-close-exchange-count",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a\\audit-mutations\\mutated-close-exchange-count.jsonl",
+        "sourcePath": ".agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/mutated-close-exchange-count.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/mutated-close-exchange-count.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host-v2.json",
+        "run": "uncertain-prior-exchange",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a\\audit-mutations\\uncertain-prior-exchange.jsonl",
+        "sourcePath": ".agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/uncertain-prior-exchange.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/uncertain-prior-exchange.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host-v2.json",
+        "run": "partial-observed-runtime-response",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a\\audit-mutations\\partial-observed-runtime-response.jsonl",
+        "sourcePath": ".agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/partial-observed-runtime-response.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/partial-observed-runtime-response.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host-v2.json",
+        "run": "cancelled-prior-history",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a\\audit-mutations\\cancelled-prior-history.jsonl",
+        "sourcePath": ".agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/cancelled-prior-history.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/cancelled-prior-history.jsonl",
+        "status": "captured"
+      },
+      {
+        "report": ".agentlang/reports/validation-local-9a62beb-debug.parser-limits.json",
+        "run": "parser-limit-probe",
+        "sourceReference": "D:\\code\\AgentLang\\.agentlang\\reports\\015-parser-probe-be180d7825ee4b09b3ed5afbe62d52bb.jsonl",
+        "sourcePath": ".agentlang/reports/015-parser-probe-be180d7825ee4b09b3ed5afbe62d52bb.jsonl",
+        "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/015-parser-probe-be180d7825ee4b09b3ed5afbe62d52bb.jsonl",
+        "status": "captured"
+      }
+    ]
+  },
+  "items": [
+    {
+      "sourcePath": ".agentlang/business-policy-retention-003/ci-9a62beb-budget/37641760451/annotations.json",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/business-policy-retention-003/ci-9a62beb-budget/37641760451/annotations.json",
+      "kind": "ci-budget-evidence",
+      "bytes": 341,
+      "sha256": "ee5ed20d8a56645de617f01b901fd627c4e83876c5d63265061d445def3a05e7"
+    },
+    {
+      "sourcePath": ".agentlang/business-policy-retention-003/ci-9a62beb-budget/37641760451/check.json",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/business-policy-retention-003/ci-9a62beb-budget/37641760451/check.json",
+      "kind": "ci-budget-evidence",
+      "bytes": 3059,
+      "sha256": "a1a6016c4be2812dd2b2f9a1dc5908d49407bc0b97870e4b0e32c71025ec565c"
+    },
+    {
+      "sourcePath": ".agentlang/business-policy-retention-003/ci-9a62beb-budget/37641760451/job.json",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/business-policy-retention-003/ci-9a62beb-budget/37641760451/job.json",
+      "kind": "ci-budget-evidence",
+      "bytes": 855,
+      "sha256": "d0128d0cccb3697753a23681bb9d9a0c6afd6a67a7d906d7711ab75f62b604a2"
+    },
+    {
+      "sourcePath": ".agentlang/business-policy-retention-003/ci-9a62beb-budget/37641760451/run.json",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/business-policy-retention-003/ci-9a62beb-budget/37641760451/run.json",
+      "kind": "ci-budget-evidence",
+      "bytes": 12207,
+      "sha256": "181e993540ef012b00c9e04d6b165d2fcc038295ef79d9ea2cf05150b7e4d88f"
+    },
+    {
+      "sourcePath": ".agentlang/business-policy-retention-003/ci-9a62beb-budget/37641760633/annotations.json",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/business-policy-retention-003/ci-9a62beb-budget/37641760633/annotations.json",
+      "kind": "ci-budget-evidence",
+      "bytes": 341,
+      "sha256": "ee5ed20d8a56645de617f01b901fd627c4e83876c5d63265061d445def3a05e7"
+    },
+    {
+      "sourcePath": ".agentlang/business-policy-retention-003/ci-9a62beb-budget/37641760633/check.json",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/business-policy-retention-003/ci-9a62beb-budget/37641760633/check.json",
+      "kind": "ci-budget-evidence",
+      "bytes": 3059,
+      "sha256": "be5cf9a7d548c717d1072de5839b6952bd4a6f770f57b5e743a5a565ce54fbdf"
+    },
+    {
+      "sourcePath": ".agentlang/business-policy-retention-003/ci-9a62beb-budget/37641760633/job.json",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/business-policy-retention-003/ci-9a62beb-budget/37641760633/job.json",
+      "kind": "ci-budget-evidence",
+      "bytes": 850,
+      "sha256": "4a023552a0a0a5df8223169ed1353dd66d23193805d7773be8a4150c2323f366"
+    },
+    {
+      "sourcePath": ".agentlang/business-policy-retention-003/ci-9a62beb-budget/37641760633/run.json",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/business-policy-retention-003/ci-9a62beb-budget/37641760633/run.json",
+      "kind": "ci-budget-evidence",
+      "bytes": 12202,
+      "sha256": "5baa778f444ab514c6fc575583b27a617e934fe36ac4a8708a103ba2fcd1a2fb"
+    },
+    {
+      "sourcePath": ".agentlang/business-policy-retention-003/evidence/086-local-runtime-after.json",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/business-policy-retention-003/evidence/086-local-runtime-after.json",
+      "kind": "runtime-inventory",
+      "bytes": 5828,
+      "sha256": "b0e30d37617af160c1e15162e2a572dd4c50ff14e34d111304d965ff9935fdbc"
+    },
+    {
+      "sourcePath": ".agentlang/business-policy-retention-003/evidence/086-local-runtime-before.json",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/business-policy-retention-003/evidence/086-local-runtime-before.json",
+      "kind": "runtime-inventory",
+      "bytes": 5828,
+      "sha256": "b0e30d37617af160c1e15162e2a572dd4c50ff14e34d111304d965ff9935fdbc"
+    },
+    {
+      "sourcePath": ".agentlang/business-policy-retention-003/evidence/086-publication-policy.json",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/business-policy-retention-003/evidence/086-publication-policy.json",
+      "kind": "publication-policy-snapshot",
+      "bytes": 619,
+      "sha256": "65eaf9cc4ee0443b320ace46465b6144cc14d11e8bc167cb58cd82d8f004e634"
+    },
+    {
+      "sourcePath": ".agentlang/reports/015-parser-probe-be180d7825ee4b09b3ed5afbe62d52bb.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/015-parser-probe-be180d7825ee4b09b3ed5afbe62d52bb.jsonl",
+      "kind": "parser-probe-trace",
+      "bytes": 194351,
+      "sha256": "655ce3d14e1e7b016b348508761501815e01164beb267b721e1a98d008b937d1"
+    },
+    {
+      "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-child-exits-after-request.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-child-exits-after-request.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 4566,
+      "sha256": "238c3b2226473e9e9f747decc503d6e113df70b68c67c80ca1b47b3711cf0472"
+    },
+    {
+      "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-conventional-profile-args.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-conventional-profile-args.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 3647,
+      "sha256": "d31489ee5e3a4b615d49564dc217963a60d78223328e4dcea008dd9388a5b18e"
+    },
+    {
+      "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-conventional-profile-classifier.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-conventional-profile-classifier.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 6626,
+      "sha256": "5aaa5fa839a83d65abf5506c7bf6e95cd35fc76fef1263dc154bb09418d8e3bb"
+    },
+    {
+      "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-cumulative-boundary.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-cumulative-boundary.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 14557,
+      "sha256": "34631ba8d35afbd63499a1c5aa34619296bcd3cf3918481b9d564ddd8a83e2d9"
+    },
+    {
+      "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-equal-budget.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-equal-budget.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 6966,
+      "sha256": "cf15228ac463d56db25174f4ac3e0d1bcfbd9b5c4e710a2ad15ae23860d278a4"
+    },
+    {
+      "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-fresh-session-reset.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-fresh-session-reset.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 6973,
+      "sha256": "91a8974ee6611c11e9516dccf659c10f6fdbf010602f2a4a1afda510f65f073c"
+    },
+    {
+      "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-positive-remaining-over-budget.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-positive-remaining-over-budget.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 8516,
+      "sha256": "ee5b39ad003ed972c6567683d5901cc115ca7253ed4639d6b8d67c8c4fae5077"
+    },
+    {
+      "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-profile-classifier.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-profile-classifier.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 11730,
+      "sha256": "0f9113aeb56db0c4018802ffab4664efff9a5154d0ce44bb655ba3df77c0ffb5"
+    },
+    {
+      "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-runtime-diagnostic.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-runtime-diagnostic.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 7821,
+      "sha256": "1421cefd58389fb2a37b630f9dbac7b5e3c6a246b8c44700262ca82cd4cb03e1"
+    },
+    {
+      "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-under-budget.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-under-budget.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 6966,
+      "sha256": "d9e81308c45dc3ab471942feb9eb2789fb706cb11ffcc69200b9fa2658cd0640"
+    },
+    {
+      "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-utf8-crlf-boundary.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-utf8-crlf-boundary.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 7162,
+      "sha256": "7da9fbdc6b6b882e184750f1e4d8adbd3ecb627ab66d53c2750434e080ca5d27"
+    },
+    {
+      "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-zero-budget.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-inspection-zero-budget.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 7945,
+      "sha256": "33e6502ae25717dfdd3cabf0a59c419cb7127f1c7a18fa00a6c91b7825f81ac7"
+    },
+    {
+      "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-invalid-runtime-json.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-invalid-runtime-json.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 4755,
+      "sha256": "bfc51ababf07cfc723191d9cad64863085aa9aa101ba9085beb707c003a3f766"
+    },
+    {
+      "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-language-reload-session.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-language-reload-session.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 10493,
+      "sha256": "da63c977ec808f30ff0eaf91c7a93a133e2d1737b82ba43bdf8d86c4139c5eff"
+    },
+    {
+      "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-language-write-session.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-language-write-session.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 13121,
+      "sha256": "8c6eb9d28166724b486e0b15d81e29172573b5d76a28b4ab22431f7cb60420b4"
+    },
+    {
+      "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-language-write-zero-inspection-budget.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-language-write-zero-inspection-budget.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 35178,
+      "sha256": "dccac8f51212c514fc4bc4c2596bd5422b107a834dae2d0831bece90c47ea4a5"
+    },
+    {
+      "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-large-write-no-reader.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-large-write-no-reader.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 838201,
+      "sha256": "90ae2a8796075d5aec4bb953b8cca24eb5a8fb65cd2fa6a735d37772c4d82a22"
+    },
+    {
+      "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-malformed-denied.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-malformed-denied.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 6496,
+      "sha256": "82a396b02095d07510f7a5d12015114b800cdd1a9632ea4de54a6dafaaaa5475"
+    },
+    {
+      "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-noninspection-results-visible-over-budget.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-noninspection-results-visible-over-budget.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 14820,
+      "sha256": "43b2f193040b68e559bc9742be6bbb13643c8e939346e63159e66f35e4f2fe7e"
+    },
+    {
+      "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-oversized-request.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-oversized-request.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 2228,
+      "sha256": "2ff6cd0115d1412e4670c617863acb199bb3e900b79555b872bc473e543a033e"
+    },
+    {
+      "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-oversized-response.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-oversized-response.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 4751,
+      "sha256": "f3a0793b4ac09ae66bfec7e87b0d02ca034ea3dc2cef40898b0108680256b0e5"
+    },
+    {
+      "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-terminal-control-accounting.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-terminal-control-accounting.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 7051,
+      "sha256": "afbde4994fe5484d71c8a3ada5c4dd36373a28ae07a0879cc0077c8700fd2cfb"
+    },
+    {
+      "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-timeout-partial-response.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-timeout-partial-response.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 4811,
+      "sha256": "fa2b042a0bcccce69b1654375a486f83e45d04df7d22c162d4515be55ff163a0"
+    },
+    {
+      "sourcePath": ".agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-valid-response-before-write-timeout.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-39fae9ff1db84b399eddae42eb559235-valid-response-before-write-timeout.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 842253,
+      "sha256": "11aed09a930c1f6cde58142e7245fd5549b04567cca6b09c90434760e0837dab"
+    },
+    {
+      "sourcePath": ".agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-child-hang-on-close.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-child-hang-on-close.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 2495,
+      "sha256": "d0a9ba0eac6aa0d921a04c93c5be3dc9e5d028c0cc99e0460d27b1d9af1563e0"
+    },
+    {
+      "sourcePath": ".agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-close-at-exchange-limit.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-close-at-exchange-limit.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 5538,
+      "sha256": "45e412aaa70bbad4924c8e551356be5e06e64fcdb6ee4fee91b87d2fd6fa69d3"
+    },
+    {
+      "sourcePath": ".agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-close-only-one-byte-response-cap.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-close-only-one-byte-response-cap.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 2389,
+      "sha256": "4ec6efda7256ca570f1d80ceee36139b758c59f9212820b27605cb12469ad6df"
+    },
+    {
+      "sourcePath": ".agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-malformed-close-frames.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-malformed-close-frames.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 7587,
+      "sha256": "a79c34662f72c53b268aec6f2084e24aaf6a151e8e8963c19b8fcfe0b6318565"
+    },
+    {
+      "sourcePath": ".agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-ordinary-input-eof.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-ordinary-input-eof.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 3120,
+      "sha256": "29ed660ce5e56b857aaf414c4f2d8517f94a2aeaa3e09831b035c40625c2ed96"
+    },
+    {
+      "sourcePath": ".agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-partial-lf-close.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-partial-lf-close.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 2259,
+      "sha256": "5e08649bc69eb45f5b1fae1b43b63f9d88f44c4871ac68ed465c69871f9f6b24"
+    },
+    {
+      "sourcePath": ".agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-real-cli-reload-close.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-real-cli-reload-close.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 10990,
+      "sha256": "04b0050276dfbe0763d06532634d555ccfa1f71d9f02ad268bc023f3a958b0ff"
+    },
+    {
+      "sourcePath": ".agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-real-cli-write-close.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/trial-host-v2-e192f94034704f7ba7304cc98b7b205a-real-cli-write-close.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 13540,
+      "sha256": "01b00fc7c201872dc177e27b59d393b30fdeda86dc90d6082410ccb13c4ef03f"
+    },
+    {
+      "sourcePath": ".agentlang/reports/validation-local-9a62beb-debug.business-policy-preflight.json",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/validation-local-9a62beb-debug.business-policy-preflight.json",
+      "kind": "local-validation-output",
+      "bytes": 14247863,
+      "sha256": "3583ac3da1bf7c28ffb7bc1edd26ca5779e3a763c0b596c23c3b40ec97053f4d"
+    },
+    {
+      "sourcePath": ".agentlang/reports/validation-local-9a62beb-debug.console.txt",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/validation-local-9a62beb-debug.console.txt",
+      "kind": "local-validation-output",
+      "bytes": 15710,
+      "sha256": "e56e78865b99d5aec57e1615e4201eab7fed9c009edba39d8e3d4786ab64c11d"
+    },
+    {
+      "sourcePath": ".agentlang/reports/validation-local-9a62beb-debug.early-agent-negative.json",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/validation-local-9a62beb-debug.early-agent-negative.json",
+      "kind": "local-validation-output",
+      "bytes": 98357,
+      "sha256": "eae2d9a4bfcd16129fb78a9823c212db254ca0ced40d3f48da96c6b44d603c57"
+    },
+    {
+      "sourcePath": ".agentlang/reports/validation-local-9a62beb-debug.flow-matched-fixtures.json",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/validation-local-9a62beb-debug.flow-matched-fixtures.json",
+      "kind": "local-validation-output",
+      "bytes": 222157,
+      "sha256": "78f00b11464080ec8a04da21e79f74cff571159938a5401e9ee86c01e12d116f"
+    },
+    {
+      "sourcePath": ".agentlang/reports/validation-local-9a62beb-debug.json",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/validation-local-9a62beb-debug.json",
+      "kind": "local-validation-output",
+      "bytes": 28158,
+      "sha256": "9f96bbc198d7a796946b3a60657b375a9461fddd1dc24707af25d60737f4e0a6"
+    },
+    {
+      "sourcePath": ".agentlang/reports/validation-local-9a62beb-debug.matched-fixtures.json",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/validation-local-9a62beb-debug.matched-fixtures.json",
+      "kind": "local-validation-output",
+      "bytes": 97065,
+      "sha256": "7ae35865a5bdf9f4524bb9561df43c81ac6163b5602b63090b1375a102af03c3"
+    },
+    {
+      "sourcePath": ".agentlang/reports/validation-local-9a62beb-debug.matched-snapshots.json",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/validation-local-9a62beb-debug.matched-snapshots.json",
+      "kind": "local-validation-output",
+      "bytes": 83138,
+      "sha256": "8bded47b8dced83d80890803618eb16ced2ca97acf9a0d25c054f247d82868d3"
+    },
+    {
+      "sourcePath": ".agentlang/reports/validation-local-9a62beb-debug.parser-limits.json",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/validation-local-9a62beb-debug.parser-limits.json",
+      "kind": "local-validation-output",
+      "bytes": 3186,
+      "sha256": "849c4ac29bd496296b14d5e12433e97a15dffca63be0ee9d2a16cb7634d8ff1e"
+    },
+    {
+      "sourcePath": ".agentlang/reports/validation-local-9a62beb-debug.projection.json",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/validation-local-9a62beb-debug.projection.json",
+      "kind": "local-validation-output",
+      "bytes": 112583,
+      "sha256": "b19a2b361b3c2293f1fb32d5c1638740846be443de8cc86bb2230edf8061c9fe"
+    },
+    {
+      "sourcePath": ".agentlang/reports/validation-local-9a62beb-debug.renewal-acceptance-gate.json",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/validation-local-9a62beb-debug.renewal-acceptance-gate.json",
+      "kind": "local-validation-output",
+      "bytes": 989363,
+      "sha256": "460d91a2d8d73be1c7187ee33c256e53ed40753ba6adeba19ee3c93e749c7f31"
+    },
+    {
+      "sourcePath": ".agentlang/reports/validation-local-9a62beb-debug.renewal-replay.json",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/validation-local-9a62beb-debug.renewal-replay.json",
+      "kind": "local-validation-output",
+      "bytes": 292961,
+      "sha256": "853db9791f965a966e88543e8fc6f15a2cc9f796dcdff75f07dc20695d45d2ec"
+    },
+    {
+      "sourcePath": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host-v2.json",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/validation-local-9a62beb-debug.subagent-host-v2.json",
+      "kind": "local-validation-output",
+      "bytes": 20878,
+      "sha256": "32a0eb584a67b8f884b33c4466161025c30c03697a46d8ed4ff28962c796060b"
+    },
+    {
+      "sourcePath": ".agentlang/reports/validation-local-9a62beb-debug.subagent-host.json",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/reports/validation-local-9a62beb-debug.subagent-host.json",
+      "kind": "local-validation-output",
+      "bytes": 334649,
+      "sha256": "19e5e58cc55f05989af63c884255cf74ce9ab8eade66ec9e44d86f16858ed7ae"
+    },
+    {
+      "sourcePath": ".agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/cancelled-prior-history.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/cancelled-prior-history.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 5359,
+      "sha256": "ac9b337a3124b59e0b303211fc1585a709d1e48c18a39d7d98210dbbb7552858"
+    },
+    {
+      "sourcePath": ".agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/close-payload-over-configured-limit.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/close-payload-over-configured-limit.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 5279,
+      "sha256": "c903482c4ece22fef4becd369ad7d3fdc303fbbc086cca32b46e7319b05340e4"
+    },
+    {
+      "sourcePath": ".agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/duplicate-host-close-event.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/duplicate-host-close-event.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 5616,
+      "sha256": "36971036fb2aef759369ad44c3da0222299a39101bd178e4ed34c29f68594349"
+    },
+    {
+      "sourcePath": ".agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/max-exchanges-over-host-cap.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/max-exchanges-over-host-cap.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 5285,
+      "sha256": "f977b179ccc7d9b07472f70dfa15791e93ca58a8bfefcb92a99dc437e616e968"
+    },
+    {
+      "sourcePath": ".agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/missing-host-close-event.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/missing-host-close-event.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 4950,
+      "sha256": "2dace32878a93fd15e7e6c1cebd9c7e2e162bba97a7451cfa06ec1096c7374d1"
+    },
+    {
+      "sourcePath": ".agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/missing-session-end-event.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/missing-session-end-event.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 4934,
+      "sha256": "a737d06b2b1e189a7dcb6a85becc347574b541fc0762b473e4becac206647e44"
+    },
+    {
+      "sourcePath": ".agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/mutated-close-exchange-count.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/mutated-close-exchange-count.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 5283,
+      "sha256": "b31d53df96d9065be24a8e0511741cf1f3350e91f00af2fc082d87414d62d383"
+    },
+    {
+      "sourcePath": ".agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/mutated-wire-hash.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/mutated-wire-hash.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 5283,
+      "sha256": "adac9253cbbcfc17c58f7127e97d7b09ec0c086f7cda48e60a673e3b4d3c5b13"
+    },
+    {
+      "sourcePath": ".agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/partial-observed-runtime-response.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/partial-observed-runtime-response.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 5721,
+      "sha256": "087caff56c7f3ac86444d10d5e89ea71824685e9d37f26ba90c5644050dec656"
+    },
+    {
+      "sourcePath": ".agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/uncertain-prior-exchange.jsonl",
+      "archivePath": "reports/evidence/086-local-validation/files/.agentlang/subagent-host-v2-verification-e192f94034704f7ba7304cc98b7b205a/audit-mutations/uncertain-prior-exchange.jsonl",
+      "kind": "raw-host-trace",
+      "bytes": 5256,
+      "sha256": "48aa0bc02983bd04db4846b6851309dbc1f6e40c90aeb75cd7ade56be40a190d"
+    }
+  ],
+  "totals": {
+    "itemCount": 67,
+    "bytes": 18764125
+  }
+}

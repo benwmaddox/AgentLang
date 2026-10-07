@@ -1,0 +1,3 @@
+test customer.premium?/trailing-space-is-preserved {
+    customer::premium?(customer::new(CustomerId::new("00000000-0000-0000-0000-000000000001"), Email::new("customer@example.com"), "premium ", Money::new(0), Instant::new("2000-01-01T00:00:00.0000000+00:00"))) => false
+}

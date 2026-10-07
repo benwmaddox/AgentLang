@@ -1,0 +1,70 @@
+test subscription.cancel/equal-start-preserves-order-and-other-fields {
+    let baseline = business::seed(unit);
+    let first = subscription::new(
+        id = SubscriptionId::new("50000000-0000-0000-0000-000000000009"),
+        customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        product-id = ProductId::new("20000000-0000-0000-0000-000000000001"),
+        term = "first",
+        started-at = Instant::new("2026-01-01T12:00:00.0000000+00:00"),
+        expires-at = Instant::new("2026-02-01T12:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("active"),
+        cancelled-at = option::none<Instant>());
+    let target-id = SubscriptionId::new("50000000-0000-0000-0000-000000000010");
+    let target = subscription::new(
+        id = target-id,
+        customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        product-id = ProductId::new("20000000-0000-0000-0000-000000000001"),
+        term = "target",
+        started-at = Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        expires-at = Instant::new("2026-02-01T12:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("active"),
+        cancelled-at = option::none<Instant>());
+    let last = subscription::new(
+        id = SubscriptionId::new("50000000-0000-0000-0000-000000000011"),
+        customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        product-id = ProductId::new("20000000-0000-0000-0000-000000000001"),
+        term = "last",
+        started-at = Instant::new("2026-01-03T12:00:00.0000000+00:00"),
+        expires-at = Instant::new("2026-02-01T12:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("active"),
+        cancelled-at = option::none<Instant>());
+    let original-subscriptions = list::append(
+        list::append(list::singleton<Subscription>(first), target),
+        last);
+    let initial = store::with-subscriptions(baseline, original-subscriptions);
+    let expected-target = subscription::new(
+        id = target-id,
+        customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        product-id = ProductId::new("20000000-0000-0000-0000-000000000001"),
+        term = "target",
+        started-at = Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        expires-at = Instant::new("2026-02-01T12:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("cancelled"),
+        cancelled-at = option::some<Instant>(Instant::new("2026-01-02T12:00:00.0000000+00:00")));
+    match subscription::cancel(
+        initial,
+        target-id,
+        Instant::new("2026-01-02T12:00:00.0000000+00:00")) {
+        ok updated => {
+            bool::and(
+                equals(
+                    updated.subscriptions(),
+                    list::append(
+                        list::append(list::singleton<Subscription>(first), expected-target),
+                        last)),
+                bool::and(
+                    equals(updated.customers(), initial.customers()),
+                    bool::and(
+                        equals(updated.products(), initial.products()),
+                        bool::and(
+                            equals(updated.invoices(), initial.invoices()),
+                            bool::and(
+                                equals(updated.payments(), initial.payments()),
+                                bool::and(
+                                    equals(updated.email-outbox(), initial.email-outbox()),
+                                    equals(updated.sent-emails(), initial.sent-emails())))))))
+        }
+        error problem => { false }
+    }
+    => true
+}

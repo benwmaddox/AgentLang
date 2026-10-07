@@ -1,0 +1,15 @@
+test subscription.start/duplicate-precedes-other-errors {
+    let initial = business::seed(unit);
+    match subscription::start(
+        initial,
+        SubscriptionId::new("30000000-0000-0000-0000-000000000001"),
+        CustomerId::new("90000000-0000-0000-0000-000000000001"),
+        ProductId::new("90000000-0000-0000-0000-000000000002"),
+        " \t ",
+        Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        Instant::new("2026-01-02T12:00:00.0000000+00:00")) {
+        ok updated => { "UNEXPECTED_SUCCESS" }
+        error problem => { problem.code() }
+    }
+    => "DUPLICATE_SUBSCRIPTION"
+}

@@ -1,0 +1,15 @@
+# Local validation and workflow controls
+
+**Scope:** captured validation and policy evidence for revision `9a62bebe3520a5fc1cb590943c3d74ab77ca99c1` on `prototype`. The exact-byte archive and source-path/hash map are in the [086 evidence index](evidence/086-local-validation-index.json).
+
+The recorded command was `pwsh -NoProfile -File scripts/Validate.ps1 -Configuration Debug -ReportPath .agentlang/reports/validation-local-9a62beb-debug.json`. Its top-level report records exit code 0, `passed: true`, and 37 checks with exit code 0. The attached business-policy preflight separately records 98 passing checks and 30 task outcomes; that preflight records `dirty: true`, so these artifacts do not support a claim that the whole checkout stayed clean throughout. The Debug report records `dirty: false` at its start. The source owner confirmed that workflow, PRD, and report edits occurred during the run while source code stayed unchanged.
+
+The before/after runtime inventories each list 30 files and are byte-identical at 5,828 bytes. This preserves the frozen Release runtime inventory; it does not assert a current Release validation. The passing Debug suite covers the implementation at the recorded revision and is not evidence that the planned `fn`, enum, or library-module checks have been implemented.
+
+Two captured GitHub Actions push runs target the same revision: `37641760451` and `37641760633`. Each has a failed job record, zero steps, and the annotation “The job was not started because an Actions budget is preventing further use.” These are budget-blocked runs, not failed test executions and not successful hosted validation.
+
+The publication snapshot records repository visibility as `PUBLIC` after a conversion retry exited 0. It also records the requested workflow change—remove automatic `push` and `pull_request` triggers while retaining `workflow_dispatch`—as unpublished at capture. A hosted workflow-disable attempt returned HTTP 500 and the subsequent observed workflow state was active. Therefore this report does not claim that automatic CI is disabled. The manual-only workflow change remains pending publication with this milestone; no remote state was changed or rechecked for this archive.
+
+The archive contains 67 files totaling 18,764,125 bytes: 13 Debug validation outputs (including the 14 MB preflight report), 43 available raw trace files, two runtime inventories, eight captured CI files, and the publication-policy snapshot. The V1, V2, and parser reports contain 52 trace references that resolve to 44 distinct paths; 43 trace files were captured and one negative-budget session has no trace file because its child was not launched. Standard output and error content is retained in the validation reports and console capture; the reports did not reference separate stdout/stderr files. Each archived byte stream was verified against its mapped source path by size and SHA-256.
+
+No build, test, remote command, staging, commit, or push was performed for this archive. `git diff --check` and Git trackability checks are recorded after the archive files and ignore/attribute rules were added.

@@ -1,0 +1,10 @@
+test invoice.line/nonpositive-quantity {
+    let cart = cartLine::new(
+        product-id = ProductId::new("90000000-0000-0000-0000-000000000001"),
+        quantity = 0);
+    match invoice::line(store::empty(unit), cart) {
+        ok line => { false }
+        error problem => { equals(problem.code(), "INVALID_QUANTITY") }
+    }
+    => true
+}

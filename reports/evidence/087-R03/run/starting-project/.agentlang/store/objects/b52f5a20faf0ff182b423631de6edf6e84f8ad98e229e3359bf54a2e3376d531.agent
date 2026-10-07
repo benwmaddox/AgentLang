@@ -1,0 +1,4 @@
+record ProductLookup {
+    field target: ProductId;
+    field found: Option<Product>;
+}

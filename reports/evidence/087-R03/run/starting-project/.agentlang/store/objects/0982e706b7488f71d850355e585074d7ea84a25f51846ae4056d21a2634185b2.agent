@@ -1,0 +1,3 @@
+type PaymentId : String {
+    validate business::id-valid?;
+}

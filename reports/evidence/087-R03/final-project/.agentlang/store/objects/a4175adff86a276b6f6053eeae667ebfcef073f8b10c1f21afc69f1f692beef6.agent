@@ -1,0 +1,18 @@
+test email.delivery-fold-step/later-message-appended {
+    let first = emailMessage::new(
+        to = Email::new("first@example.test"),
+        subject = "First",
+        body = "Body");
+    let later = emailMessage::new(
+        to = Email::new("later@example.test"),
+        subject = "Later",
+        body = "Body");
+    let state = emailDeliveryPlan::new(
+        first = option::some<EmailMessage>(first),
+        remaining = list::empty<EmailMessage>());
+    let next = email::delivery-fold-step(state, later);
+    bool::and(
+        equals(next.first(), option::some<EmailMessage>(first)),
+        equals(next.remaining(), list::singleton<EmailMessage>(later)))
+    => true
+}

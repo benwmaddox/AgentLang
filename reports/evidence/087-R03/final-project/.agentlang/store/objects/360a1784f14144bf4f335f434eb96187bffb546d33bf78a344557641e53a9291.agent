@@ -1,0 +1,9 @@
+word customer-id.parse(value: String) -> Result<CustomerId, BusinessError> {
+    effects none
+    doc "Parse any Guid.TryParse-compatible form and store canonical CustomerId text."
+    let parsed = string::guid-normalize(value);
+    match parsed {
+        ok canonical => { result::ok<CustomerId, BusinessError>(CustomerId::new(canonical)) }
+        error detail => { result::error<CustomerId, BusinessError>(businessError::new(code = "INVALID_IDENTIFIER", message = "CustomerId must be a GUID.")) }
+    }
+}

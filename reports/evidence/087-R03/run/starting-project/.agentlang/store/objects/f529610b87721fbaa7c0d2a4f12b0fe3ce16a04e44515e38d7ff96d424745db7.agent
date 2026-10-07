@@ -1,0 +1,10 @@
+test subscription.cancel/missing {
+    match subscription::cancel(
+        store::empty(unit),
+        SubscriptionId::new("90000000-0000-0000-0000-000000000001"),
+        Instant::new("2026-01-02T12:00:00.0000000+00:00")) {
+        ok updated => { "UNEXPECTED_SUCCESS" }
+        error problem => { problem.code() }
+    }
+    => "SUBSCRIPTION_NOT_FOUND"
+}

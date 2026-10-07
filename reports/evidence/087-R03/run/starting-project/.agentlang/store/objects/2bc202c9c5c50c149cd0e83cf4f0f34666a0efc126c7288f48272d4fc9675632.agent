@@ -1,0 +1,4 @@
+test invoice.status-valid?/paid {
+    invoice::status-valid?("paid")
+    => true
+}

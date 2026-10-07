@@ -1,0 +1,8 @@
+test email.apply-delivery-result/empty-outbox-precedes-provider-error {
+    let failure = businessError::new(code = "DECLINED", message = "mail rejected");
+    match email::apply-delivery-result(store::empty(unit), result::error<Unit, BusinessError>(failure)) {
+        error problem => { equals(problem.code(), "NO_PENDING_EMAIL") }
+        ok updated => { false }
+    }
+    => true
+}

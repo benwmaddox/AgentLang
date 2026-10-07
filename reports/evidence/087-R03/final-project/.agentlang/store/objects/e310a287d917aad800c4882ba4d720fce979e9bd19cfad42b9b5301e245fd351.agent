@@ -1,0 +1,3 @@
+record InvoiceTotalAccumulator {
+    field outcome: Result<Money, BusinessError>;
+}

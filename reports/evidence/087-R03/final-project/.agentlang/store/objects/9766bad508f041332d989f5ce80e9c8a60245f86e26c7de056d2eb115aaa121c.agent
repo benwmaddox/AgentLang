@@ -1,0 +1,22 @@
+test email.queue/rejects-blank-message-without-mutating-store {
+    let customer = customer::new(
+        id = CustomerId::new("00000000-0000-0000-0000-000000000001"),
+        email = Email::new("customer@example.test"),
+        kind = "test",
+        balance = Money::new(0),
+        created-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"));
+    let base = store::empty(unit);
+    let initial = store::new(
+        customers = list::singleton<Customer>(customer),
+        products = base.products(),
+        subscriptions = base.subscriptions(),
+        invoices = base.invoices(),
+        payments = base.payments(),
+        email-outbox = base.email-outbox(),
+        sent-emails = base.sent-emails());
+    match email::queue(initial, customer.id(), "   ", "Body") {
+        error problem => { bool::and(equals(problem.code(), "INVALID_EMAIL_MESSAGE"), equals(initial.email-outbox().count(), 0)) }
+        ok updated => { false }
+    }
+    => true
+}

@@ -1,0 +1,4 @@
+example business.seed/deterministic-baseline {
+    business::seed(unit).customers().count()
+    => 1
+}

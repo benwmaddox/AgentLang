@@ -1,0 +1,7 @@
+example product-id.parse/guid {
+    match product-id::parse("00112233-4455-6677-8899-aabbccddeeff") {
+        ok id => { ProductId::value(id) }
+        error problem => { problem.code() }
+    }
+    => "00112233-4455-6677-8899-aabbccddeeff"
+}

@@ -1,0 +1,22 @@
+test invoice.build-lines-step/appends-successful-line {
+    let initial = business::seed(unit);
+    let product-id = ProductId::new("20000000-0000-0000-0000-000000000001");
+    let accumulator = invoiceLinesAccumulator::new(
+        store = initial,
+        outcome = result::ok<List<InvoiceLine>, BusinessError>(list::empty<InvoiceLine>()));
+    let cart = cartLine::new(product-id = product-id, quantity = 2);
+    let updated = invoice::build-lines-step(accumulator, cart);
+    match updated.outcome() {
+        error problem => { false }
+        ok lines => {
+            let expected = invoiceLine::new(
+                product-id = product-id,
+                description = "Monthly plan",
+                quantity = 2,
+                unit-price = Money::new(199),
+                line-total = Money::new(398));
+            equals(lines, list::singleton<InvoiceLine>(expected))
+        }
+    }
+    => true
+}

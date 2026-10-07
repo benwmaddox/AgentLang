@@ -1,0 +1,15 @@
+test subscription.start/rejects-expiry-before-start {
+    let initial = business::seed(unit);
+    match subscription::start(
+        initial,
+        SubscriptionId::new("50000000-0000-0000-0000-000000000003"),
+        CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        ProductId::new("20000000-0000-0000-0000-000000000001"),
+        "monthly",
+        Instant::new("2026-01-03T12:00:00.0000000+00:00"),
+        Instant::new("2026-01-02T12:00:00.0000000+00:00")) {
+        ok updated => { "UNEXPECTED_SUCCESS" }
+        error problem => { problem.code() }
+    }
+    => "SUBSCRIPTION_EXPIRY_MUST_FOLLOW_START"
+}

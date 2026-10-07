@@ -1,0 +1,12 @@
+test invoice.create/rejects-empty-cart {
+    match invoice::create(
+        business::seed(unit),
+        InvoiceId::new("91000000-0000-0000-0000-000000000001"),
+        CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        list::empty<CartLine>(),
+        Instant::new("2026-01-04T00:00:00.0000000+00:00")) {
+        ok updated => { false }
+        error problem => { equals(problem.code(), "EMPTY_INVOICE") }
+    }
+    => true
+}

@@ -1,0 +1,16 @@
+test store.invoice-fold-step/no-match {
+    let key = InvoiceId::new("00000000-0000-0000-0000-000000000001");
+    let other = invoice::new(
+        id = InvoiceId::new("00000000-0000-0000-0000-000000000002"),
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"),
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(0),
+        created-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"),
+        status = InvoiceStatus::new("open"));
+    let initial = invoiceLookup::new(target = key, found = option::none<Invoice>());
+    match store::invoice-fold-step(initial, other).found() {
+        some selected => { false }
+        none => { true }
+    }
+    => true
+}

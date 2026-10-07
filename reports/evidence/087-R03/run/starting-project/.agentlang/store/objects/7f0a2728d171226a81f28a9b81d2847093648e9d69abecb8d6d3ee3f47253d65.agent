@@ -1,0 +1,29 @@
+test store.customer/first-match-in-list-order {
+    let key = CustomerId::new("00000000-0000-0000-0000-000000000001");
+    let first = customer::new(
+        id = key,
+        email = Email::new("first@example.com"),
+        kind = "first",
+        balance = Money::new(0),
+        created-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"));
+    let later = customer::new(
+        id = key,
+        email = Email::new("later@example.com"),
+        kind = "later",
+        balance = Money::new(0),
+        created-at = Instant::new("2024-01-02T00:00:00.0000000+00:00"));
+    let blank = store::empty(unit);
+    let input = store::new(
+        customers = list::append(list::singleton<Customer>(first), later),
+        products = blank.products(),
+        subscriptions = blank.subscriptions(),
+        invoices = blank.invoices(),
+        payments = blank.payments(),
+        email-outbox = blank.email-outbox(),
+        sent-emails = blank.sent-emails());
+    match store::customer(key, input) {
+        some selected => { equals(selected.kind(), "first") }
+        none => { false }
+    }
+    => true
+}
