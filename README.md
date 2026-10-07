@@ -15,6 +15,8 @@ after a source error. Both frontends execute the same verified semantic IR.
 Close-to-first-use is advisory lint, and unrestricted mutable globals are excluded.
 
 The decisions and scope live in [docs/PRD.md](docs/PRD.md) and [docs/DECISIONS.md](docs/DECISIONS.md).
+The [current roadmap](docs/ROADMAP.md) distinguishes implemented features,
+active agent validation and approved future work.
 
 The approved next syntax uses `fn`, plain record properties and `==`, with
 omitted effects meaning `none`. See the [revised customer example](docs/EXAMPLE-SYNTAX-MIGRATION.md).
