@@ -1,0 +1,626 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-retention-003",
+  "status": "reviewed-independent-policy-corpus",
+  "sequence": [
+    "S01",
+    "S07"
+  ],
+  "predecessorStudyId": "business-policy-001",
+  "predecessorSha256": "cbd6590d9e5deaa36de1a4972bf2056430add558597528d8fe816b8d96cbdeaf",
+  "oracle": {
+    "classification": "Ordinal raw Kind equality with premium; no trimming/case folding.",
+    "basisPoints": "1000 only for exact premium, otherwise0.",
+    "discount": "Premium: trunc_toward_zero(BigInteger(balanceMinor)*9/10); every other Kind returns unchanged signed Int64.",
+    "independence": "BigInteger arithmetic is host-side acceptance only. This new policy is not an existing operation in Business.fs."
+  },
+  "defaults": {
+    "customerId": "10000000-0000-0000-0000-000000000001",
+    "email": "ada@example.test",
+    "createdAt": "2026-01-01T12:00:00.0000000+00:00"
+  },
+  "tasks": [
+    {
+      "id": "S01",
+      "symbol": "customer.premium?",
+      "inputs": [
+        "Customer"
+      ],
+      "outputs": [
+        "Bool"
+      ],
+      "conventionalSymbol": "CustomerPolicies.isPremium",
+      "cases": [
+        {
+          "id": "kind-1",
+          "kind": "premium",
+          "balanceMinor": "1250",
+          "expected": {
+            "type": "Bool",
+            "value": true
+          }
+        },
+        {
+          "id": "kind-2",
+          "kind": "regular",
+          "balanceMinor": "1250",
+          "expected": {
+            "type": "Bool",
+            "value": false
+          }
+        },
+        {
+          "id": "kind-3",
+          "kind": "Premium",
+          "balanceMinor": "1250",
+          "expected": {
+            "type": "Bool",
+            "value": false
+          }
+        },
+        {
+          "id": "kind-4",
+          "kind": "PREMIUM",
+          "balanceMinor": "1250",
+          "expected": {
+            "type": "Bool",
+            "value": false
+          }
+        },
+        {
+          "id": "kind-5",
+          "kind": "premium ",
+          "balanceMinor": "1250",
+          "expected": {
+            "type": "Bool",
+            "value": false
+          }
+        },
+        {
+          "id": "kind-6",
+          "kind": " premium",
+          "balanceMinor": "1250",
+          "expected": {
+            "type": "Bool",
+            "value": false
+          }
+        },
+        {
+          "id": "kind-7",
+          "kind": "\tpremium",
+          "balanceMinor": "1250",
+          "expected": {
+            "type": "Bool",
+            "value": false
+          }
+        },
+        {
+          "id": "kind-8",
+          "kind": "premium\n",
+          "balanceMinor": "1250",
+          "expected": {
+            "type": "Bool",
+            "value": false
+          }
+        },
+        {
+          "id": "kind-9",
+          "kind": "",
+          "balanceMinor": "1250",
+          "expected": {
+            "type": "Bool",
+            "value": false
+          }
+        },
+        {
+          "id": "kind-10",
+          "kind": "prémi um",
+          "balanceMinor": "1250",
+          "expected": {
+            "type": "Bool",
+            "value": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "S07",
+      "symbol": "customer.discounted-balance",
+      "inputs": [
+        "Customer"
+      ],
+      "outputs": [
+        "Money"
+      ],
+      "conventionalSymbol": "CustomerPolicies.discountedBalance",
+      "cases": [
+        {
+          "id": "premium-1",
+          "kind": "premium",
+          "balanceMinor": "0",
+          "expected": {
+            "type": "Money",
+            "value": "0"
+          }
+        },
+        {
+          "id": "premium-2",
+          "kind": "premium",
+          "balanceMinor": "1",
+          "expected": {
+            "type": "Money",
+            "value": "0"
+          }
+        },
+        {
+          "id": "premium-3",
+          "kind": "premium",
+          "balanceMinor": "9",
+          "expected": {
+            "type": "Money",
+            "value": "8"
+          }
+        },
+        {
+          "id": "premium-4",
+          "kind": "premium",
+          "balanceMinor": "10",
+          "expected": {
+            "type": "Money",
+            "value": "9"
+          }
+        },
+        {
+          "id": "premium-5",
+          "kind": "premium",
+          "balanceMinor": "11",
+          "expected": {
+            "type": "Money",
+            "value": "9"
+          }
+        },
+        {
+          "id": "premium-6",
+          "kind": "premium",
+          "balanceMinor": "19",
+          "expected": {
+            "type": "Money",
+            "value": "17"
+          }
+        },
+        {
+          "id": "premium-7",
+          "kind": "premium",
+          "balanceMinor": "20",
+          "expected": {
+            "type": "Money",
+            "value": "18"
+          }
+        },
+        {
+          "id": "premium-8",
+          "kind": "premium",
+          "balanceMinor": "1050",
+          "expected": {
+            "type": "Money",
+            "value": "945"
+          }
+        },
+        {
+          "id": "premium-9",
+          "kind": "premium",
+          "balanceMinor": "-1",
+          "expected": {
+            "type": "Money",
+            "value": "0"
+          }
+        },
+        {
+          "id": "premium-10",
+          "kind": "premium",
+          "balanceMinor": "-9",
+          "expected": {
+            "type": "Money",
+            "value": "-8"
+          }
+        },
+        {
+          "id": "premium-11",
+          "kind": "premium",
+          "balanceMinor": "-10",
+          "expected": {
+            "type": "Money",
+            "value": "-9"
+          }
+        },
+        {
+          "id": "premium-12",
+          "kind": "premium",
+          "balanceMinor": "-11",
+          "expected": {
+            "type": "Money",
+            "value": "-9"
+          }
+        },
+        {
+          "id": "premium-13",
+          "kind": "premium",
+          "balanceMinor": "-19",
+          "expected": {
+            "type": "Money",
+            "value": "-17"
+          }
+        },
+        {
+          "id": "premium-14",
+          "kind": "premium",
+          "balanceMinor": "-1050",
+          "expected": {
+            "type": "Money",
+            "value": "-945"
+          }
+        },
+        {
+          "id": "premium-15",
+          "kind": "premium",
+          "balanceMinor": "9007199254740993",
+          "expected": {
+            "type": "Money",
+            "value": "8106479329266893"
+          }
+        },
+        {
+          "id": "premium-16",
+          "kind": "premium",
+          "balanceMinor": "-9007199254740993",
+          "expected": {
+            "type": "Money",
+            "value": "-8106479329266893"
+          }
+        },
+        {
+          "id": "premium-17",
+          "kind": "premium",
+          "balanceMinor": "9223372036854775807",
+          "expected": {
+            "type": "Money",
+            "value": "8301034833169298226"
+          }
+        },
+        {
+          "id": "premium-18",
+          "kind": "premium",
+          "balanceMinor": "-9223372036854775808",
+          "expected": {
+            "type": "Money",
+            "value": "-8301034833169298227"
+          }
+        },
+        {
+          "id": "nonpremium-1-1",
+          "kind": "regular",
+          "balanceMinor": "1",
+          "expected": {
+            "type": "Money",
+            "value": "1"
+          }
+        },
+        {
+          "id": "nonpremium-1-2",
+          "kind": "regular",
+          "balanceMinor": "-1050",
+          "expected": {
+            "type": "Money",
+            "value": "-1050"
+          }
+        },
+        {
+          "id": "nonpremium-1-3",
+          "kind": "regular",
+          "balanceMinor": "9223372036854775807",
+          "expected": {
+            "type": "Money",
+            "value": "9223372036854775807"
+          }
+        },
+        {
+          "id": "nonpremium-1-4",
+          "kind": "regular",
+          "balanceMinor": "-9223372036854775808",
+          "expected": {
+            "type": "Money",
+            "value": "-9223372036854775808"
+          }
+        },
+        {
+          "id": "nonpremium-2-1",
+          "kind": "Premium",
+          "balanceMinor": "1",
+          "expected": {
+            "type": "Money",
+            "value": "1"
+          }
+        },
+        {
+          "id": "nonpremium-2-2",
+          "kind": "Premium",
+          "balanceMinor": "-1050",
+          "expected": {
+            "type": "Money",
+            "value": "-1050"
+          }
+        },
+        {
+          "id": "nonpremium-2-3",
+          "kind": "Premium",
+          "balanceMinor": "9223372036854775807",
+          "expected": {
+            "type": "Money",
+            "value": "9223372036854775807"
+          }
+        },
+        {
+          "id": "nonpremium-2-4",
+          "kind": "Premium",
+          "balanceMinor": "-9223372036854775808",
+          "expected": {
+            "type": "Money",
+            "value": "-9223372036854775808"
+          }
+        },
+        {
+          "id": "nonpremium-3-1",
+          "kind": "PREMIUM",
+          "balanceMinor": "1",
+          "expected": {
+            "type": "Money",
+            "value": "1"
+          }
+        },
+        {
+          "id": "nonpremium-3-2",
+          "kind": "PREMIUM",
+          "balanceMinor": "-1050",
+          "expected": {
+            "type": "Money",
+            "value": "-1050"
+          }
+        },
+        {
+          "id": "nonpremium-3-3",
+          "kind": "PREMIUM",
+          "balanceMinor": "9223372036854775807",
+          "expected": {
+            "type": "Money",
+            "value": "9223372036854775807"
+          }
+        },
+        {
+          "id": "nonpremium-3-4",
+          "kind": "PREMIUM",
+          "balanceMinor": "-9223372036854775808",
+          "expected": {
+            "type": "Money",
+            "value": "-9223372036854775808"
+          }
+        },
+        {
+          "id": "nonpremium-4-1",
+          "kind": "premium ",
+          "balanceMinor": "1",
+          "expected": {
+            "type": "Money",
+            "value": "1"
+          }
+        },
+        {
+          "id": "nonpremium-4-2",
+          "kind": "premium ",
+          "balanceMinor": "-1050",
+          "expected": {
+            "type": "Money",
+            "value": "-1050"
+          }
+        },
+        {
+          "id": "nonpremium-4-3",
+          "kind": "premium ",
+          "balanceMinor": "9223372036854775807",
+          "expected": {
+            "type": "Money",
+            "value": "9223372036854775807"
+          }
+        },
+        {
+          "id": "nonpremium-4-4",
+          "kind": "premium ",
+          "balanceMinor": "-9223372036854775808",
+          "expected": {
+            "type": "Money",
+            "value": "-9223372036854775808"
+          }
+        },
+        {
+          "id": "nonpremium-5-1",
+          "kind": " premium",
+          "balanceMinor": "1",
+          "expected": {
+            "type": "Money",
+            "value": "1"
+          }
+        },
+        {
+          "id": "nonpremium-5-2",
+          "kind": " premium",
+          "balanceMinor": "-1050",
+          "expected": {
+            "type": "Money",
+            "value": "-1050"
+          }
+        },
+        {
+          "id": "nonpremium-5-3",
+          "kind": " premium",
+          "balanceMinor": "9223372036854775807",
+          "expected": {
+            "type": "Money",
+            "value": "9223372036854775807"
+          }
+        },
+        {
+          "id": "nonpremium-5-4",
+          "kind": " premium",
+          "balanceMinor": "-9223372036854775808",
+          "expected": {
+            "type": "Money",
+            "value": "-9223372036854775808"
+          }
+        },
+        {
+          "id": "nonpremium-6-1",
+          "kind": "\tpremium",
+          "balanceMinor": "1",
+          "expected": {
+            "type": "Money",
+            "value": "1"
+          }
+        },
+        {
+          "id": "nonpremium-6-2",
+          "kind": "\tpremium",
+          "balanceMinor": "-1050",
+          "expected": {
+            "type": "Money",
+            "value": "-1050"
+          }
+        },
+        {
+          "id": "nonpremium-6-3",
+          "kind": "\tpremium",
+          "balanceMinor": "9223372036854775807",
+          "expected": {
+            "type": "Money",
+            "value": "9223372036854775807"
+          }
+        },
+        {
+          "id": "nonpremium-6-4",
+          "kind": "\tpremium",
+          "balanceMinor": "-9223372036854775808",
+          "expected": {
+            "type": "Money",
+            "value": "-9223372036854775808"
+          }
+        },
+        {
+          "id": "nonpremium-7-1",
+          "kind": "premium\n",
+          "balanceMinor": "1",
+          "expected": {
+            "type": "Money",
+            "value": "1"
+          }
+        },
+        {
+          "id": "nonpremium-7-2",
+          "kind": "premium\n",
+          "balanceMinor": "-1050",
+          "expected": {
+            "type": "Money",
+            "value": "-1050"
+          }
+        },
+        {
+          "id": "nonpremium-7-3",
+          "kind": "premium\n",
+          "balanceMinor": "9223372036854775807",
+          "expected": {
+            "type": "Money",
+            "value": "9223372036854775807"
+          }
+        },
+        {
+          "id": "nonpremium-7-4",
+          "kind": "premium\n",
+          "balanceMinor": "-9223372036854775808",
+          "expected": {
+            "type": "Money",
+            "value": "-9223372036854775808"
+          }
+        },
+        {
+          "id": "nonpremium-8-1",
+          "kind": "",
+          "balanceMinor": "1",
+          "expected": {
+            "type": "Money",
+            "value": "1"
+          }
+        },
+        {
+          "id": "nonpremium-8-2",
+          "kind": "",
+          "balanceMinor": "-1050",
+          "expected": {
+            "type": "Money",
+            "value": "-1050"
+          }
+        },
+        {
+          "id": "nonpremium-8-3",
+          "kind": "",
+          "balanceMinor": "9223372036854775807",
+          "expected": {
+            "type": "Money",
+            "value": "9223372036854775807"
+          }
+        },
+        {
+          "id": "nonpremium-8-4",
+          "kind": "",
+          "balanceMinor": "-9223372036854775808",
+          "expected": {
+            "type": "Money",
+            "value": "-9223372036854775808"
+          }
+        },
+        {
+          "id": "nonpremium-9-1",
+          "kind": "prémi um",
+          "balanceMinor": "1",
+          "expected": {
+            "type": "Money",
+            "value": "1"
+          }
+        },
+        {
+          "id": "nonpremium-9-2",
+          "kind": "prémi um",
+          "balanceMinor": "-1050",
+          "expected": {
+            "type": "Money",
+            "value": "-1050"
+          }
+        },
+        {
+          "id": "nonpremium-9-3",
+          "kind": "prémi um",
+          "balanceMinor": "9223372036854775807",
+          "expected": {
+            "type": "Money",
+            "value": "9223372036854775807"
+          }
+        },
+        {
+          "id": "nonpremium-9-4",
+          "kind": "prémi um",
+          "balanceMinor": "-9223372036854775808",
+          "expected": {
+            "type": "Money",
+            "value": "-9223372036854775808"
+          }
+        }
+      ]
+    }
+  ]
+}
