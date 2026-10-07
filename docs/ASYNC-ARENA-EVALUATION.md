@@ -69,23 +69,39 @@ initialized before reads; stale bytes must not become observable. Specify any
 required sanitization on reuse/export or isolation boundaries and measure its
 cost. Do not assume clearing allocation cursors securely erases data.
 
-Use high/low watermarks with hysteresis for cached free capacity: crossing the
-high watermark initiates trimming toward the low watermark, with a bounded
-idle/decay policy. Retain a small working reserve, cap aggregate cached bytes,
-and handle unusually large chunks so one outlier does not permanently inflate
-every mailbox's reserve. Memory pressure or the process ceiling overrides a
-normal idle delay. Cached chunks count against the memory budget; returning
-them to a host allocator need not immediately reduce resident memory.
+The user's clarified watermarks describe two retained-capacity levels, separate
+from the live stack depth, which can grow and shrink repeatedly during a turn:
+
+- **High retention level:** keep capacity needed by a recent burst/peak for a
+  bounded period after usage falls, so subsequent work can reuse it immediately.
+- **Low retention level:** after the peak-hold period, trim safely unused excess
+  toward a smaller warm reserve kept while the mailbox remains active.
+- **Inactive mailbox:** release its unused reserve or return it to a bounded
+  shared pool. Long-lived state and live I/O still follow their own lifetimes.
+
+Do not trim backing storage on each stack pop or trigger reclamation merely
+because live usage crosses a level. Define how the recent peak, hold period,
+warm reserve and mailbox inactivity are determined before benchmarking. Values
+and retained capacity are separately accounted. A resettable bump arena may
+accumulate allocations until reset even if the operand stack has already shrunk;
+strict LIFO allocation and bump scratch remain distinct candidates.
+
+Cap aggregate retained capacity and handle unusually large chunks so one outlier
+does not permanently inflate every mailbox's reserve. Memory pressure or the
+process ceiling overrides a normal retention delay. Cached chunks count against
+the memory budget; returning them to a host allocator need not immediately
+reduce resident memory. Trimming never releases storage still needed by live
+values or outstanding I/O.
 
 Mailbox queue and pending-I/O watermarks govern admission/backpressure separately
-from free-chunk cache watermarks. Limits include payload bytes as well as item
+from these retained-capacity levels. Limits include payload bytes as well as item
 counts. Single-thread execution does not remove outstanding I/O references.
 Do not reuse storage until all valid users have relinquished it; quarantine
 awaiting buffers under a separately bounded owner if necessary.
 
 After the first lifetime-policy comparison, test backing-storage policies as a
 separate axis: immediate release, bounded reset-and-reuse, and bounded reuse
-with delayed trimming. Record thresholds/decay before execution. Include burst,
+with two-level timed retention. Record levels/hold periods before execution. Include burst,
 idle, large-outlier and sustained-overload phases; measure allocator calls,
 reset/sanitization/trim costs, cached bytes, whole-process memory and tail latency.
 Keep the language's visible lifetime semantics identical across these policies.

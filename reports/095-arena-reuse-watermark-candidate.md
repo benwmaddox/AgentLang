@@ -24,3 +24,18 @@ These are references, not adopted dependencies or AgentLang benchmark evidence.
 
 Validation: documentation links and local `git diff --check`. No runtime tests
 were run for this design-only addition.
+
+## User clarification: two retained-capacity levels
+
+The user clarified that high/low refer to capacity kept after live usage falls,
+rather than usage thresholds triggering trimming. Keep recent-peak capacity for
+a bounded period, then a smaller warm reserve for the active mailbox; release or
+pool unused reserve when it becomes inactive. Stack depth may change frequently
+without backing-storage deallocation. Updated the roadmap and experiment contract
+accordingly. Peak tracking, hold periods, reserve sizing and inactivity rules
+remain to be specified and measured; global memory limits still apply.
+
+This differs from the earlier Pipelines backpressure analogy: admission thresholds
+and arena capacity retention are separate policies. It does not assume every
+stack pop reclaims bump-allocated payloads. The clarification changes the research
+candidate, not the current managed interpreter's allocation behavior.
