@@ -80,3 +80,15 @@ the same as truncation. A proper discriminator such as 90% of 1 gives nearest
 business behavior. No production scratch replay or canonical acceptance repair
 is claimed by these checks. Passing focused controls and a reviewed result
 writer are still required before using any supplemental outcome.
+
+The revised focused runner subsequently passed locally:
+`pwsh -NoProfile -File scripts/Test-RetentionOutputSupplement.ps1` exited 0,
+reporting 20 controls, 17 rejection cases before the guarded action, and zero
+actual CLI calls. Tested scorer SHA-256:
+`710ccd4f21a8850ddd988947c63699b26b25b5ef7e24a2b2be75e944dfe90fef`;
+runner SHA-256:
+`b5d1594f1675d6121a3dd3d07eb9f41ec8089b5cd483bbac2ff1f6b39aee7deb`.
+Console: `.agentlang/business-policy-retention-003/evidence/090-root-focused-controls-710ccd4f21a8.console.txt`.
+These are synthetic focused controls, not the 54-case R04 behavior evaluation.
+Final source review and an immutable scratch replay remain required before a
+production supplemental result can be recorded.
