@@ -1,7 +1,17 @@
 # Matched vocabulary-retention preparation
 
-Status: implementation in progress. No model actors have been launched, no new
-study has been frozen and no acceptance or efficiency result is claimed.
+Status: corrected verifier awaiting genuine frozen acceptance. Canonical Flat
+and rich baselines are archived; the rejected reference and superseded source
+freeze are preserved. R01 slots are clear. No model actors have been launched
+and no efficiency result is claimed.
+
+The latest published revision, f3f4391, passed 37/37 CI checks on both branches
+and 63/63 candidate controls. Its genuine reference failed a verifier schema
+contract before independent behavior execution. The reviewed repair is not
+covered by those earlier results. Fresh committed source snapshots, a global
+freeze, candidate controls and a passing frozen reference are required before
+the 12 isolated agent cells. The execution notes below preserve earlier states
+and failures; they are not the current launch status.
 
 The prior goal turn made concrete progress: milestone 080 added explicit external
 trial termination, passed the clean-source 37-check release gate, saved reports
@@ -94,3 +104,13 @@ Clean normal R01 preparation on 5838095 then failed before pin/host/actor launch
 The full disposable normal-preparation checks now pass: Flat 26/26, rich 26/26, explicit evidence paths retained, and both existing-destination collisions rejected by the intended guard. They used dirty-source control copies with no model/host launch. Three preparation defects were corrected: absent actor copy, premature evidence-parameter clearing, and ineffective dictionary property sorting. Exact passing and preceding failed/control evidence is saved in evidence/081-clean-controls/normal-preparation and indexed by evidence/081-normal-preparation-controls-index.json. Independent source review covers final Prepare SHA42c63fb1. These harness defects delayed agent evaluation and must not be counted as agent-task failures. Corrected snapshots/global freeze and final clean candidate/reference checks still precede model trials.
 
 Corrected committed snapshots and a new clean global freeze now bind Prepare SHA42c63fb1 and all 23 source artifacts. The preserved original freeze remains evidence of the failed preparation attempt, not the active preregistration. Canonical baseline identities and the 8bff657 runtime bundle remain fixed. This preparation milestone is ready for private-repository publication; the final candidate inventory rerun, live frozen reference and 12 measured actor cells remain pending.
+
+Private main/prototype publication succeeded at f3f4391. The final clean candidate inventory passed 63/63 checks there. Genuine clean R01 preparation and freezing then succeeded (launchable=true, dirty=false), and the marked deterministic reference broker completed six requests, passed three own tests and durably committed its library word. Independent RequireFrozenPin verification rejected its starting-state/pin field contracts before any CLI case execution. Root also supplied a relative StartingProjectPath to a literal absolute-path comparison. These are harness/caller defects, not measured agent outcomes.
+
+The exact rejected reference, pin, starting/final trees, active freeze/snapshots, candidate report and diagnostics are byte-preserved under evidence/081-clean-controls/rejected-reference, indexed by evidence/081-rejected-reference-index.json. Cleanup used explicit host.close and passed the generic termination audit: six exchanges, host/runtime exit 0/0. Its coordinator explicitly records rejected verification; this is not an accepted reference or passing study audit. Canonical R01 slots are retained for read-only diagnosis until owned cleanup. Frozen positive controls and the 12 measured actors remain pending; the source schema is under comprehensive review. Both remote CI jobs were observed in progress, with no result claimed yet.
+
+Both published f3f4391 CI runs completed successfully: main 37604014543 and prototype 37604015110 each passed all 37 checks on clean source. Their downloaded reports/artifacts are byte-verified under evidence/081-clean-controls/ci-f3f4391 with index evidence/081-ci-f3f4391-index.json. They do not cover the positive frozen-verifier path and do not validate the later working verifier repair. That bounded repair is independently source-reviewed at SHA84b3d0a8; fresh frozen acceptance remains required.
+
+The closed rejected reference has now been superseded. All 76 archived evidence files were hash-checked, and the marked run, actor and source snapshot trees were moved to an ignored preservation directory after byte comparison. The old global freeze matched its archived launch bytes before being moved. R01 run and actor slots are absent; canonical flat/rich baselines were not regenerated. See [slot release evidence](evidence/081-rejected-reference-slot-release.json).
+
+The bounded runnable schema harness passed the saved starting-state control (14 checks, 12 starting and 12 actor rows), then failed while assembling another control because a result lacked a details property. The preceding missing-fixture failure and this non-result are preserved in evidence/081-verifier-schema-controls-initial-failed.json and evidence/081-verifier-schema-controls.json; exact harness bytes are archived under evidence/081-clean-controls/verifier-schema. Git/blob reads were stubbed and no runtime process ran. This does not validate genuine frozen acceptance; no further fixture harness expansion is planned before that operational run.

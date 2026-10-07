@@ -82,6 +82,60 @@ function Get-Field($Object, [string]$Name) {
     return $property.Value
 }
 
+function Get-JsonStringProperty([string]$Path, [string[]]$PropertyPath) {
+    $document = [System.Text.Json.JsonDocument]::Parse([IO.File]::ReadAllText($Path))
+    try {
+        $element = $document.RootElement
+        foreach ($name in $PropertyPath) {
+            if ($element.ValueKind -ne [System.Text.Json.JsonValueKind]::Object) {
+                return [ordered]@{ found=$false; valueKind=[string]$element.ValueKind; value=$null }
+            }
+            $nextElement = $null
+            $matches = 0
+            $exactName = $false
+            foreach ($property in $element.EnumerateObject()) {
+                if ([StringComparer]::OrdinalIgnoreCase.Equals($property.Name,$name)) {
+                    $matches++
+                    $nextElement = $property.Value
+                    $exactName = $property.Name -ceq $name
+                }
+            }
+            if ($matches -ne 1 -or -not $exactName) {
+                $kind = if ($matches -gt 1) { 'Duplicate' } elseif ($matches -eq 1) { 'NameMismatch' } else { 'Undefined' }
+                return [ordered]@{ found=$false; valueKind=$kind; value=$null }
+            }
+            $element = $nextElement
+        }
+        $value = if ($element.ValueKind -eq [System.Text.Json.JsonValueKind]::String) { $element.GetString() } else { $null }
+        return [ordered]@{ found=$true; valueKind=[string]$element.ValueKind; value=$value }
+    } finally {
+        $document.Dispose()
+    }
+}
+
+function Test-PinnedRepoRelativePath([string]$PinnedPath, [string]$ExpectedFullPath) {
+    $expectedFull = [IO.Path]::GetFullPath($ExpectedFullPath)
+    $expectedRelative = [IO.Path]::GetRelativePath($repo,$expectedFull).Replace('\','/')
+    $safe = -not [string]::IsNullOrWhiteSpace($PinnedPath) -and -not [IO.Path]::IsPathFullyQualified($PinnedPath) -and -not [IO.Path]::IsPathRooted($PinnedPath) -and $PinnedPath -notmatch '(^|/)\.\.(/|$)' -and $PinnedPath -notmatch '\\'
+    $resolved = $null
+    if ($safe) {
+        try {
+            $resolved = [IO.Path]::GetFullPath($PinnedPath,$repo)
+            $safe = Test-Within $resolved $repo
+        } catch {
+            $safe = $false
+            $resolved = $null
+        }
+    }
+    return [ordered]@{
+        passed=($safe -and $PinnedPath -ceq $expectedRelative -and $resolved -ieq $expectedFull)
+        expected=$expectedRelative
+        actual=$PinnedPath
+        resolvedExpected=$expectedFull
+        resolvedActual=$resolved
+    }
+}
+
 function Add-Check([string]$Name, [bool]$Condition, [object]$Details = $null) {
     $entry = [ordered]@{ name=$Name; passed=$Condition }
     if ($null -ne $Details) { $entry.details = $Details }
@@ -254,13 +308,17 @@ function Validate-FrozenPin([string]$StartPath,[string]$ActorPath,[string]$Runti
     $pin = Get-Content -LiteralPath $pinPath -Raw | ConvertFrom-Json -AsHashtable -Depth 100
     $pinHash = Get-Sha256 $pinPath
     $frozenPinInfo.sha256 = $pinHash
+    $preparedStateData = if ($null -ne $startingStateMetadata) { Get-Field $startingStateMetadata 'data' } else { $null }
+    $preparedStateAvailable = $null -ne $preparedStateData -and [bool]$startingStatePassed
+    Add-Check 'frozen pin has validated prepared-state metadata for state-bound fields' $preparedStateAvailable @{available=$preparedStateAvailable}
     $expectedIndex = [array]::IndexOf($sequence,$CurrentTask) + 1
     Add-Check 'frozen pin schema, study, arm, block, task, sequence, and run match' ([int]$pin.schemaVersion -eq 1 -and [string]$pin.studyId -ceq 'business-policy-retention-003' -and [string]$pin.arm -ceq $CurrentArm -and [string]$pin.block -ceq $CurrentBlock -and [string]$pin.taskId -ceq $CurrentTask -and [int]$pin.sequenceIndex -eq $expectedIndex -and [string]$pin.runId -ceq $CurrentRunId)
     Add-Check 'frozen pin is launchable and not a diagnostic control' ((Get-Field $pin 'launchable') -eq $true -and (Get-Field $pin 'controlOnly') -ne $true) @{launchable=(Get-Field $pin 'launchable');controlOnly=(Get-Field $pin 'controlOnly')}
     $pinnedActor = [string](Get-Field $pin 'projectPath')
     Add-Check 'frozen pin actor project path matches argument' ([IO.Path]::IsPathFullyQualified($pinnedActor) -and [IO.Path]::GetFullPath($pinnedActor) -ieq [IO.Path]::GetFullPath($ActorPath)) @{expected=$ActorPath;actual=$pinnedActor}
     $pinnedStart = [string](Get-Field $pin 'startingProjectPath')
-    Add-Check 'frozen pin starting project path matches argument' ([IO.Path]::IsPathFullyQualified($pinnedStart) -and [IO.Path]::GetFullPath($pinnedStart) -ieq [IO.Path]::GetFullPath($StartPath)) @{expected=$StartPath;actual=$pinnedStart}
+    $pinnedStartCheck = Test-PinnedRepoRelativePath $pinnedStart $StartPath
+    Add-Check 'frozen pin starting project path matches argument' ([bool]$pinnedStartCheck.passed) $pinnedStartCheck
 
     $statePath = Join-Path $runDirectory 'starting-state.json'
     $declaredStatePath = [string](Get-Field $pin 'startingStatePath')
@@ -292,6 +350,13 @@ function Validate-FrozenPin([string]$StartPath,[string]$ActorPath,[string]$Runti
     Add-Check 'global freeze manifest hash matches pin and committed source revision' ($globalFreezeSafe -and $globalFreezeHash -ceq ([string]$pin.globalFreezeSha256).ToLowerInvariant() -and $globalFreezeGitHash -ceq $globalFreezeHash) @{path=$globalFreezeRelative;expected=$pin.globalFreezeSha256;working=$globalFreezeHash;revision=$globalFreezeGitHash}
     if (-not $globalFreezeSafe) { throw 'Pinned global freeze manifest is missing or outside the repository.' }
     $globalFreeze = Get-Content -LiteralPath $globalFreezePath -Raw | ConvertFrom-Json -AsHashtable -Depth 100
+    $pinClockToken = Get-JsonStringProperty $pinPath @('clockValue')
+    $globalClockToken = Get-JsonStringProperty $globalFreezePath @('host','clockValue')
+    $expectedClockValue = '2000-01-01T00:00:00Z'
+    $pinClockIsExactString = $pinClockToken.found -and $pinClockToken.valueKind -ceq 'String' -and $pinClockToken.value -ceq $expectedClockValue
+    $globalClockIsExactString = $globalClockToken.found -and $globalClockToken.valueKind -ceq 'String' -and $globalClockToken.value -ceq $expectedClockValue
+    Add-Check 'frozen pin clock is the exact reviewed JSON string literal' $pinClockIsExactString @{valueKind=$pinClockToken.valueKind;value=$pinClockToken.value;expected=$expectedClockValue}
+    Add-Check 'global host clock is the exact reviewed JSON string literal' $globalClockIsExactString @{valueKind=$globalClockToken.valueKind;value=$globalClockToken.value;expected=$expectedClockValue}
     Add-Check 'global freeze manifest study and model match pinned protocol' ([int]$globalFreeze.schemaVersion -eq 1 -and [string]$globalFreeze.studyId -ceq 'business-policy-retention-003' -and [string]$globalFreeze.model -ceq 'gpt-6-luna' -and [string]$globalFreeze.reasoningEffort -ceq 'max' -and [string]$globalFreeze.forkTurns -ceq 'none' -and [string]$globalFreeze.profile -ceq 'agentlang')
 
     $expectedAllowedOperations = @('callers','commit','context','define','dependencies','describe','diff','effects','eval','example','examples','failed-tests','graph','help','history','ir','replace-word','search','search-dependency','search-output','search-type','source','task.begin','task.commit','task.log','task.status','test','test-all','tests','transitive-callers','transitive-dependencies','type-of','words') | Sort-Object -CaseSensitive
@@ -299,7 +364,7 @@ function Validate-FrozenPin([string]$StartPath,[string]$ActorPath,[string]$Runti
     $pinnedAllowed = @((Get-Field $pin 'allowedOperations') | ForEach-Object { [string]$_ } | Sort-Object -CaseSensitive)
     $globalAllowed = @((Get-Field $hostSettings 'allowedOperations') | ForEach-Object { [string]$_ } | Sort-Object -CaseSensitive)
     Add-Check 'frozen actor allowlist exactly matches the reviewed V2 help-enabled operation set' (($pinnedAllowed -join "`0") -ceq ($expectedAllowedOperations -join "`0") -and ($globalAllowed -join "`0") -ceq ($expectedAllowedOperations -join "`0")) $pinnedAllowed
-    Add-Check 'frozen model and raw protocol limits match global design' ([string](Get-Field $pin 'model') -ceq 'gpt-6-luna' -and [string](Get-Field $pin 'reasoningEffort') -ceq 'max' -and [string](Get-Field $pin 'forkTurns') -ceq 'none' -and [string](Get-Field $pin 'hostProtocolVersion') -ceq 'subagent-trial-host-v2' -and [int](Get-Field $pin 'maxExchanges') -eq 100 -and [int](Get-Field $pin 'maxRequestBytes') -eq 262144 -and [int](Get-Field $pin 'maxResponseBytes') -eq 524288 -and (Get-Field $pin 'maxInspectionResponseBytes') -eq $null -and [int](Get-Field $pin 'exchangeTimeoutMilliseconds') -eq 120000 -and (Get-Field $pin 'inspectionBudgetEnabled') -eq $false -and [string](Get-Field $pin 'inspectionClassifierVersion') -ceq 'trial-host-inspection-v1' -and [string](Get-Field $pin 'profile') -ceq 'agentlang' -and [string](Get-Field $pin 'clockValue') -ceq '2000-01-01T00:00:00Z' -and @(Get-Field $pin 'additionalCliArguments').Count -eq 0 -and @(Get-Field $pin 'capabilities').Count -eq 0) @{protocolVersion=(Get-Field $pin 'hostProtocolVersion');allowlist=$pinnedAllowed}
+    Add-Check 'frozen model and raw protocol limits match global design' ([string](Get-Field $pin 'model') -ceq 'gpt-6-luna' -and [string](Get-Field $pin 'reasoningEffort') -ceq 'max' -and [string](Get-Field $pin 'forkTurns') -ceq 'none' -and [string](Get-Field $pin 'hostProtocolVersion') -ceq 'subagent-trial-host-v2' -and [int](Get-Field $pin 'maxExchanges') -eq 100 -and [int](Get-Field $pin 'maxRequestBytes') -eq 262144 -and [int](Get-Field $pin 'maxResponseBytes') -eq 524288 -and (Get-Field $pin 'maxInspectionResponseBytes') -eq $null -and [int](Get-Field $pin 'exchangeTimeoutMilliseconds') -eq 120000 -and (Get-Field $pin 'inspectionBudgetEnabled') -eq $false -and [string](Get-Field $pin 'inspectionClassifierVersion') -ceq 'trial-host-inspection-v1' -and [string](Get-Field $pin 'profile') -ceq 'agentlang' -and $pinClockIsExactString -and @(Get-Field $pin 'additionalCliArguments').Count -eq 0 -and @(Get-Field $pin 'capabilities').Count -eq 0) @{protocolVersion=(Get-Field $pin 'hostProtocolVersion');allowlist=$pinnedAllowed;clockValue=$pinClockToken.value}
     $pinnedTransportControls = @((Get-Field $pin 'transportControls') | ForEach-Object { [string]$_ } | Sort-Object -CaseSensitive)
     $globalTransportControls = @((Get-Field $hostSettings 'transportControls') | ForEach-Object { [string]$_ } | Sort-Object -CaseSensitive)
     $hostPairOk = [string](Get-Field $hostSettings 'path') -ceq [string](Get-Field $pin 'hostPath') -and [string](Get-Field $hostSettings 'sha256') -ceq [string](Get-Field $pin 'hostSha256')
@@ -313,7 +378,7 @@ function Validate-FrozenPin([string]$StartPath,[string]$ActorPath,[string]$Runti
         [int](Get-Field $hostSettings 'exchangeTimeoutMilliseconds') -eq [int](Get-Field $pin 'exchangeTimeoutMilliseconds') -and
         (Get-CanonicalJson @((Get-Field $hostSettings 'additionalCliArguments'))) -ceq (Get-CanonicalJson @((Get-Field $pin 'additionalCliArguments'))) -and
         (Get-CanonicalJson @((Get-Field $hostSettings 'capabilities'))) -ceq (Get-CanonicalJson @((Get-Field $pin 'capabilities'))) -and
-        [string](Get-Field $hostSettings 'clockValue') -ceq [string](Get-Field $pin 'clockValue') -and
+        $globalClockIsExactString -and $pinClockIsExactString -and $globalClockToken.value -ceq $pinClockToken.value -and
         (Get-Field $hostSettings 'inspectionBudgetEnabled') -eq (Get-Field $pin 'inspectionBudgetEnabled') -and
         [string](Get-Field $hostSettings 'inspectionClassifierVersion') -ceq [string](Get-Field $pin 'inspectionClassifierVersion')
     Add-Check 'global host settings and per-run host pin match field by field' ($hostPairOk -and $hostFieldsOk) @{global=$hostSettings;pinHostPath=$pin.hostPath;pinHostSha256=$pin.hostSha256;pinTransportControls=$pinnedTransportControls}
@@ -359,16 +424,16 @@ function Validate-FrozenPin([string]$StartPath,[string]$ActorPath,[string]$Runti
     Add-Check 'global freeze task path and hash match per-run task pin' ($globalTask.Count -eq 1 -and [string](Get-Field $globalTask[0] 'path') -ceq [string]$pin.taskPath -and [string](Get-Field $globalTask[0] 'sha256') -ceq [string]$pin.taskSha256) $globalTask
     Add-Check 'global freeze source artifact inventory matches per-run pin' ((Get-CanonicalJson @((Get-Field $globalFreeze 'sourceArtifacts') | Sort-Object sourcePath)) -ceq (Get-CanonicalJson @((Get-Field $pin 'sourceArtifacts') | Sort-Object sourcePath)))
 
-    $startInventory = Get-FreezeInventory $StartPath
+    $startInventory = @(Get-FreezeInventory $StartPath)
     $pinnedStart = @(Get-Field $pin 'startingProjectFiles')
-    $stateProject = Get-Field (Get-Field $startingStateMetadata 'data') 'project'
+    $stateProject = if ($preparedStateAvailable) { Get-Field $preparedStateData 'project' } else { $null }
     $stateStartInventoryHash = [string](Get-Field $stateProject 'inventorySha256')
-    Add-Check 'frozen starting project files and tree hash match prepared state' ((Get-CanonicalJson @(Get-CanonicalInventoryRows $startInventory)) -ceq (Get-CanonicalJson @(Get-CanonicalInventoryRows $pinnedStart)) -and (Get-TreeHash $StartPath) -ceq ([string](Get-Field $pin 'startingProjectInventorySha256')).ToLowerInvariant() -and $stateStartInventoryHash -ceq ([string](Get-Field $pin 'startingProjectInventorySha256')).ToLowerInvariant()) @{files=$startInventory.Count;inventorySha256=(Get-TreeHash $StartPath)}
+    Add-Check 'frozen starting project files and tree hash match prepared state' ($preparedStateAvailable -and (Get-CanonicalJson @(Get-CanonicalInventoryRows $startInventory)) -ceq (Get-CanonicalJson @(Get-CanonicalInventoryRows $pinnedStart)) -and (Get-TreeHash $StartPath) -ceq ([string](Get-Field $pin 'startingProjectInventorySha256')).ToLowerInvariant() -and $stateStartInventoryHash -ceq ([string](Get-Field $pin 'startingProjectInventorySha256')).ToLowerInvariant()) @{files=@($startInventory).Count;inventorySha256=(Get-TreeHash $StartPath)}
     $pinnedActorFiles = @(Get-Field $pin 'actorProjectFiles')
-    $stateActor = Get-Field (Get-Field $startingStateMetadata 'data') 'actor'
+    $stateActor = if ($preparedStateAvailable) { Get-Field $preparedStateData 'actor' } else { $null }
     $stateActorFiles = @(Get-Field $stateActor 'files')
     $stateProjectFiles = @(Get-Field $stateProject 'files')
-    Add-Check 'frozen prelaunch actor inventory matches prepared state and immutable start' ((Get-CanonicalJson @(Get-CanonicalInventoryRows $pinnedActorFiles)) -ceq (Get-CanonicalJson @(Get-CanonicalInventoryRows $stateActorFiles)) -and (Get-CanonicalJson @(Get-CanonicalInventoryRows $stateActorFiles)) -ceq (Get-CanonicalJson @(Get-CanonicalInventoryRows $stateProjectFiles)) -and [string](Get-Field $stateActor 'inventorySha256') -ceq ([string](Get-Field $pin 'actorProjectInventorySha256')).ToLowerInvariant() -and [string](Get-Field $stateActor 'inventorySha256') -ceq $stateStartInventoryHash) @{files=$stateActorFiles.Count;inventorySha256=(Get-Field $stateActor 'inventorySha256');actorOutputInventoryCheckedSeparately=$true}
+    Add-Check 'frozen prelaunch actor inventory matches prepared state and immutable start' ($preparedStateAvailable -and (Get-CanonicalJson @(Get-CanonicalInventoryRows $pinnedActorFiles)) -ceq (Get-CanonicalJson @(Get-CanonicalInventoryRows $stateActorFiles)) -and (Get-CanonicalJson @(Get-CanonicalInventoryRows $stateActorFiles)) -ceq (Get-CanonicalJson @(Get-CanonicalInventoryRows $stateProjectFiles)) -and [string](Get-Field $stateActor 'inventorySha256') -ceq ([string](Get-Field $pin 'actorProjectInventorySha256')).ToLowerInvariant() -and [string](Get-Field $stateActor 'inventorySha256') -ceq $stateStartInventoryHash) @{files=@($stateActorFiles).Count;inventorySha256=(Get-Field $stateActor 'inventorySha256');actorOutputInventoryCheckedSeparately=$true}
 
     $runtimeRoots = Get-Field $pin 'runtimeRoots'
     $runtimeRootValues = @((Get-Field $runtimeRoots 'cliDllPath'),(Get-Field $runtimeRoots 'cliDirectoryPath'),(Get-Field $runtimeRoots 'businessDllPath'),(Get-Field $runtimeRoots 'businessDirectoryPath'))
@@ -378,9 +443,9 @@ function Validate-FrozenPin([string]$StartPath,[string]$ActorPath,[string]$Runti
     $businessDirectoryPath = Resolve-RepoPath ([string](Get-Field $runtimeRoots 'businessDirectoryPath'))
     $invalidRuntimeRoots = @($runtimeRootValues | Where-Object { [string]::IsNullOrWhiteSpace([string]$_) -or [IO.Path]::IsPathFullyQualified([string]$_) -or [string]$_ -match '(^|[\\/])\.\.([\\/]|$)' })
     $runtimePathsSafe = $invalidRuntimeRoots.Count -eq 0 -and (Test-Within $cliDllPath $repo) -and (Test-Within $cliDirectoryPath $repo) -and (Test-Within $businessDllPath $repo) -and (Test-Within $businessDirectoryPath $repo)
-    $stateRuntime = Get-Field (Get-Field $startingStateMetadata 'data') 'runtime'
+    $stateRuntime = if ($preparedStateAvailable) { Get-Field $preparedStateData 'runtime' } else { $null }
     $globalRuntime = Get-Field $globalFreeze 'runtime'
-    $runtimeRootMatches = $runtimePathsSafe -and (Test-Path -LiteralPath $cliDllPath -PathType Leaf) -and (Test-Path -LiteralPath $businessDllPath -PathType Leaf) -and [IO.Path]::GetFullPath($cliDllPath) -ieq [IO.Path]::GetFullPath($RuntimeCliPath) -and [IO.Path]::GetFullPath($cliDllPath) -ieq [IO.Path]::GetFullPath((Resolve-RepoPath ([string](Get-Field $stateRuntime 'cliPath')))) -and [IO.Path]::GetFullPath($businessDllPath) -ieq [IO.Path]::GetFullPath((Resolve-RepoPath ([string](Get-Field $stateRuntime 'businessPath')))) -and (Get-Sha256 $cliDllPath) -ceq ([string](Get-Field $stateRuntime 'cliSha256')).ToLowerInvariant() -and (Get-Sha256 $businessDllPath) -ceq ([string](Get-Field $stateRuntime 'businessSha256')).ToLowerInvariant() -and [string](Get-Field $globalRuntime 'cliDllPath') -ceq [string](Get-Field $runtimeRoots 'cliDllPath') -and [string](Get-Field $globalRuntime 'cliDirectoryPath') -ceq [string](Get-Field $runtimeRoots 'cliDirectoryPath') -and [string](Get-Field $globalRuntime 'businessDllPath') -ceq [string](Get-Field $runtimeRoots 'businessDllPath') -and [string](Get-Field $globalRuntime 'businessDirectoryPath') -ceq [string](Get-Field $runtimeRoots 'businessDirectoryPath')
+    $runtimeRootMatches = $preparedStateAvailable -and $runtimePathsSafe -and (Test-Path -LiteralPath $cliDllPath -PathType Leaf) -and (Test-Path -LiteralPath $businessDllPath -PathType Leaf) -and [IO.Path]::GetFullPath($cliDllPath) -ieq [IO.Path]::GetFullPath($RuntimeCliPath) -and [IO.Path]::GetFullPath($cliDllPath) -ieq [IO.Path]::GetFullPath((Resolve-RepoPath ([string](Get-Field $stateRuntime 'cliPath')))) -and [IO.Path]::GetFullPath($businessDllPath) -ieq [IO.Path]::GetFullPath((Resolve-RepoPath ([string](Get-Field $stateRuntime 'businessPath')))) -and (Get-Sha256 $cliDllPath) -ceq ([string](Get-Field $stateRuntime 'cliSha256')).ToLowerInvariant() -and (Get-Sha256 $businessDllPath) -ceq ([string](Get-Field $stateRuntime 'businessSha256')).ToLowerInvariant() -and [string](Get-Field $globalRuntime 'cliDllPath') -ceq [string](Get-Field $runtimeRoots 'cliDllPath') -and [string](Get-Field $globalRuntime 'cliDirectoryPath') -ceq [string](Get-Field $runtimeRoots 'cliDirectoryPath') -and [string](Get-Field $globalRuntime 'businessDllPath') -ceq [string](Get-Field $runtimeRoots 'businessDllPath') -and [string](Get-Field $globalRuntime 'businessDirectoryPath') -ceq [string](Get-Field $runtimeRoots 'businessDirectoryPath')
     Add-Check 'frozen CLI and Business runtime roots match prepared state' $runtimeRootMatches @{cliDll=$cliDllPath;businessDll=$businessDllPath;stateRuntime=$stateRuntime}
     $runtimeRows = [Collections.Generic.List[object]]::new()
     foreach ($runtime in @(@{name='cli';root=$cliDirectoryPath},@{name='business';root=$businessDirectoryPath})) {
@@ -479,16 +544,16 @@ function Validate-FrozenPin([string]$StartPath,[string]$ActorPath,[string]$Runti
     }
     Add-Check 'global flat and rich baseline archives match manifests and committed trees' ($baselineArchiveResults.Count -eq 2 -and @($baselineArchiveResults | Where-Object { -not $_.passed }).Count -eq 0) @($baselineArchiveResults)
 
-    $preparedState = Get-Field $startingStateMetadata 'data'
+    $preparedState = $preparedStateData
     $preparation = Get-Field $preparedState 'preparation'
     $baselineState = Get-Field $preparedState 'baseline'
     $expectedBaselineKind = if ($CurrentArm -ceq 'flat') { 'flat' } else { 'rich' }
     $archiveForState = @($baselineArchives | Where-Object { [string](Get-Field $_ 'kind') -ceq $expectedBaselineKind })
-    $baselineStateMatches = $archiveForState.Count -eq 1 -and [string](Get-Field $baselineState 'kind') -ceq $expectedBaselineKind -and [IO.Path]::GetFullPath((Resolve-RepoPath ([string](Get-Field $baselineState 'path')))) -ieq [IO.Path]::GetFullPath((Resolve-RepoPath ([string](Get-Field $archiveForState[0] 'projectPath')))) -and [string](Get-Field $baselineState 'inventorySha256') -ceq [string](Get-Field $archiveForState[0] 'inventorySha256') -and (Get-CanonicalJson @(Get-CanonicalInventoryRows (Get-Field $baselineState 'files'))) -ceq (Get-CanonicalJson @(Get-CanonicalInventoryRows (Get-Field $archiveForState[0] 'files')))
+    $baselineStateMatches = $preparedStateAvailable -and $archiveForState.Count -eq 1 -and [string](Get-Field $baselineState 'kind') -ceq $expectedBaselineKind -and [IO.Path]::GetFullPath((Resolve-RepoPath ([string](Get-Field $baselineState 'path')))) -ieq [IO.Path]::GetFullPath((Resolve-RepoPath ([string](Get-Field $archiveForState[0] 'projectPath')))) -and [string](Get-Field $baselineState 'inventorySha256') -ceq [string](Get-Field $archiveForState[0] 'inventorySha256') -and (Get-CanonicalJson @(Get-CanonicalInventoryRows (Get-Field $baselineState 'files'))) -ceq (Get-CanonicalJson @(Get-CanonicalInventoryRows (Get-Field $archiveForState[0] 'files')))
     Add-Check 'starting-state baseline archive and counts match global baseline pin' ($baselineStateMatches -and (Get-CanonicalJson (Get-Field $baselineState 'counts')) -ceq (Get-CanonicalJson (Get-Field $archiveForState[0] 'counts'))) @{expectedKind=$expectedBaselineKind;actualKind=(Get-Field $baselineState 'kind');counts=(Get-Field $baselineState 'counts')}
-    $preparationOk = [string](Get-Field $preparation 'sourceRevision') -ceq $pinnedRevision -and (Get-Field $preparation 'dirty') -eq $false -and [string](Get-Field $preparation 'scriptPath') -ceq [string]$pin.preparerPath -and [string](Get-Field $preparation 'scriptSha256') -ceq ([string]$pin.preparerSha256).ToLowerInvariant() -and [string](Get-Field $preparation 'bootstrapperPath') -ceq [string]$pin.bootstrapperPath -and [string](Get-Field $preparation 'bootstrapperSha256') -ceq ([string]$pin.bootstrapperSha256).ToLowerInvariant() -and [string](Get-Field $preparation 'oracleSha256') -ceq ([string]$pin.oracleSha256).ToLowerInvariant() -and [string](Get-Field $preparation 'primerSha256') -ceq ([string]$pin.primerSha256).ToLowerInvariant() -and [string](Get-Field $preparation 'designSha256') -ceq ([string]$pin.designSha256).ToLowerInvariant()
+    $preparationOk = $preparedStateAvailable -and [string](Get-Field $preparation 'sourceRevision') -ceq $pinnedRevision -and (Get-Field $preparation 'dirty') -eq $false -and [string](Get-Field $preparation 'scriptPath') -ceq [string]$pin.preparerPath -and [string](Get-Field $preparation 'scriptSha256') -ceq ([string]$pin.preparerSha256).ToLowerInvariant() -and [string](Get-Field $preparation 'bootstrapperPath') -ceq [string]$pin.bootstrapperPath -and [string](Get-Field $preparation 'bootstrapperSha256') -ceq ([string]$pin.bootstrapperSha256).ToLowerInvariant() -and [string](Get-Field $preparation 'oracleSha256') -ceq ([string]$pin.oracleSha256).ToLowerInvariant() -and [string](Get-Field $preparation 'primerSha256') -ceq ([string]$pin.primerSha256).ToLowerInvariant() -and [string](Get-Field $preparation 'designSha256') -ceq ([string]$pin.designSha256).ToLowerInvariant()
     Add-Check 'starting state was prepared by pinned clean study and bootstrapper sources' $preparationOk @{preparation=$preparation;sourceRevision=$pinnedRevision}
-    Add-Check 'pin prior acceptance and fallback outcome match prepared state' ((Get-CanonicalJson (Get-Field $pin 'previousAcceptance')) -ceq (Get-CanonicalJson (Get-Field $preparedState 'previousAcceptance')) -and [string](Get-Field $pin 'priorOutcome') -ceq [string](Get-Field $preparedState 'priorOutcome')) @{priorOutcome=(Get-Field $preparedState 'priorOutcome')}
+    Add-Check 'pin prior acceptance and fallback outcome match prepared state' ($preparedStateAvailable -and (Get-CanonicalJson (Get-Field $pin 'previousAcceptance')) -ceq (Get-CanonicalJson (Get-Field $preparedState 'previousAcceptance')) -and [string](Get-Field $pin 'priorOutcome') -ceq [string](Get-Field $preparedState 'priorOutcome')) @{priorOutcome=(Get-Field $preparedState 'priorOutcome')}
 
     $pinChecksPassed = $true
     for ($index=$pinCheckStart; $index -lt $metadataChecks.Count; $index++) { if (-not [bool]$metadataChecks[$index].passed) { $pinChecksPassed = $false } }
@@ -656,9 +721,22 @@ function Validate-StartingState([string]$StartPath,[string]$ActorPath,$Acceptanc
     $baseline = Get-Field $state 'baseline'
     $expectedBaselineKind = if ($CurrentArm -ceq 'flat') { 'flat' } else { 'rich' }
     $expectedBaselineRoot = "experiments/AgentLang.SubagentTrials/business-policy-retention-003/artifacts/baselines/$expectedBaselineKind"
+    $expectedBaselineProjectRelative = "$expectedBaselineRoot/project"
+    $expectedBaselineProjectFullPath = Resolve-RepoPath $expectedBaselineProjectRelative
     $baselinePath = [string](Get-Field $baseline 'path')
-    $baselinePathResolved = Resolve-RepoPath $baselinePath
-    $baselinePathMatches = $baselinePath -ceq ($expectedBaselineRoot + '/project') -and (Test-Within $baselinePathResolved $repo) -and (Test-Path -LiteralPath $baselinePathResolved -PathType Container)
+    $baselinePathResolved = $null
+    $baselinePathHasTraversal = $baselinePath -match '(^|[\\/])\.\.([\\/]|$)'
+    $baselinePathCanonical = $false
+    if (-not [string]::IsNullOrWhiteSpace($baselinePath) -and -not $baselinePathHasTraversal) {
+        if ([IO.Path]::IsPathFullyQualified($baselinePath)) {
+            $candidateBaselinePath = [IO.Path]::GetFullPath($baselinePath)
+            $baselinePathCanonical = $baselinePath.Replace('/','\') -ieq $candidateBaselinePath -and $candidateBaselinePath -ieq $expectedBaselineProjectFullPath
+        } elseif (-not [IO.Path]::IsPathRooted($baselinePath)) {
+            $baselinePathCanonical = $baselinePath -ceq $expectedBaselineProjectRelative
+        }
+        if ($baselinePathCanonical) { $baselinePathResolved = Resolve-RepoPath $baselinePath }
+    }
+    $baselinePathMatches = $baselinePathCanonical -and (Test-Within $baselinePathResolved $repo) -and (Test-Path -LiteralPath $baselinePathResolved -PathType Container)
     Add-Check 'starting-state selects the archived flat or rich baseline for its arm' ($baselinePathMatches -and [string](Get-Field $baseline 'kind') -ceq $expectedBaselineKind) @{expectedKind=$expectedBaselineKind;actualKind=(Get-Field $baseline 'kind');path=$baselinePath}
     $expectedManifestRelative = "$expectedBaselineRoot/manifest.json"
     $manifestRelative = [string](Get-Field $baseline 'manifestPath')
@@ -667,13 +745,14 @@ function Validate-StartingState([string]$StartPath,[string]$ActorPath,$Acceptanc
     $manifest = if ($manifestExists) { Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json -AsHashtable -Depth 100 } else { $null }
     $manifestHash = if ($manifestExists) { Get-Sha256 $manifestPath } else { $null }
     Add-Check 'starting-state baseline manifest matches archived baseline identity and hash' ($manifestRelative -ceq $expectedManifestRelative -and $manifestExists -and [string](Get-Field $manifest 'studyId') -ceq 'business-policy-retention-003' -and [string](Get-Field $manifest 'kind') -ceq $expectedBaselineKind -and $manifestHash -ceq ([string](Get-Field $baseline 'manifestSha256')).ToLowerInvariant()) @{manifestPath=$manifestRelative;expectedPath=$expectedManifestRelative;expected=(Get-Field $baseline 'manifestSha256');actual=$manifestHash}
-    $baselineInventory = if ($baselinePathMatches) { Get-FreezeInventory $baselinePathResolved } else { @() }
+    $baselineInventory = [object[]]@()
+    if ($baselinePathMatches) { $baselineInventory = @(Get-FreezeInventory $baselinePathResolved) }
     $baselineRows = @(Get-Field $baseline 'files')
     $baselineTreeHash = if ($baselinePathMatches) { Get-TreeHash $baselinePathResolved } else { $null }
     $manifestTreeAlias = [string](Get-Field $manifest 'treeSha256')
     $stateTreeAlias = [string](Get-Field $baseline 'treeSha256')
     $baselineInventoryMatches = $manifestExists -and (Get-CanonicalJson @(Get-CanonicalInventoryRows $baselineInventory)) -ceq (Get-CanonicalJson @(Get-CanonicalInventoryRows $baselineRows)) -and (Get-CanonicalJson @(Get-CanonicalInventoryRows $baselineInventory)) -ceq (Get-CanonicalJson @(Get-CanonicalInventoryRows (Get-Field $manifest 'files'))) -and $baselineTreeHash -ceq ([string](Get-Field $baseline 'inventorySha256')).ToLowerInvariant() -and $baselineTreeHash -ceq ([string](Get-Field $manifest 'inventorySha256')).ToLowerInvariant() -and ([string]::IsNullOrWhiteSpace($manifestTreeAlias) -or $manifestTreeAlias -ceq $baselineTreeHash) -and ([string]::IsNullOrWhiteSpace($stateTreeAlias) -or $stateTreeAlias -ceq $baselineTreeHash)
-    Add-Check 'starting-state baseline file inventory and tree hash match archived manifest' $baselineInventoryMatches @{files=$baselineInventory.Count;treeSha256=$baselineTreeHash}
+    Add-Check 'starting-state baseline file inventory and tree hash match archived manifest' $baselineInventoryMatches @{files=@($baselineInventory).Count;treeSha256=$baselineTreeHash}
     $expectedCounts = if ($expectedBaselineKind -ceq 'flat') { [ordered]@{words=0;types=6;tests=0} } else { [ordered]@{words=53;types=31;tests=151} }
     Add-Check 'archived baseline counts are the reviewed flat/rich counts' ((Get-CanonicalJson (Get-Field $baseline 'counts')) -ceq (Get-CanonicalJson $expectedCounts) -and (Get-CanonicalJson (Get-Field $manifest 'counts')) -ceq (Get-CanonicalJson $expectedCounts)) @{expected=$expectedCounts;state=(Get-Field $baseline 'counts');manifest=(Get-Field $manifest 'counts')}
     $sourceInputsExpected = if ($expectedBaselineKind -ceq 'flat') { @('experiments/AgentLang.SubagentTrials/business-policy-retention-003/artifacts/flat-customer.agent') } else { @('examples/business-values.agent','examples/business-store.agent','examples/business-state.agent','examples/business-subscriptions.agent','examples/business-invoices.agent','examples/business-payments-email.agent') }

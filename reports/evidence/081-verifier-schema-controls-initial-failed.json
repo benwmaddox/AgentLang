@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-retention-003",
+  "resultKind": "schema-only-verifier-controls",
+  "passed": false,
+  "verifiedAtUtc": "2026-10-07T10:43:03.2480093Z",
+  "verifierPath": "scripts/Verify-RetentionTrial.ps1",
+  "verifierSha256": "84b3d0a8c4aee192f28b3d553ee134b1dfd20879dcf3ed38b2c607b0bc313c2b",
+  "controlScriptPath": ".agentlang/business-policy-retention-003/evidence/081-verifier-schema-controls.ps1",
+  "controlScriptSha256": "84ad7c4cf4b9e86464ab244bfce3224a8cb5b2d686bbbe05aa0d6ee991ba0fef",
+  "checks": [
+    {
+      "name": "control harness execution",
+      "passed": false,
+      "details": "Cannot find path 'D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\runs\\R01\\prelaunch.json' because it does not exist."
+    }
+  ],
+  "externalGitInvocations": 0,
+  "runtimeProcessesStarted": 0,
+  "genuineSourceProvenanceVerified": false,
+  "limitation": "Control harness failed before proving all schema controls; Git blob reads are stubbed and no genuine acceptance is claimed."
+}

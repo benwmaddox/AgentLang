@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-retention-003",
+  "controlKind": "rejected-reference-slot-release",
+  "modelActorLaunched": false,
+  "archiveFilesVerified": 76,
+  "runSlotAbsent": true,
+  "actorSlotAbsent": true,
+  "preservedIgnoredRoot": ".agentlang/business-policy-retention-003/superseded-f3f4391",
+  "canonicalBaselinesUnchanged": true,
+  "timestampUtc": "2026-10-07T10:42:10.3181904Z"
+}

@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-retention-003",
+  "runId": "R01",
+  "controlKind": "deterministic-reference",
+  "modelActorLaunched": false,
+  "sourcePath": "scripts/Verify-RetentionPreflight.ps1",
+  "sourceSha256": "d1c40e9df0a4907fe17e20c188bccda6f283cf5ea0c7b21bf50a2359477cf05c",
+  "requestsPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\evidence\\081-reference-requests.jsonl",
+  "requestsSha256": "fbf4a11d38ccba4dd4f315937433a48a92e61379a89b6068737ee63c44851192",
+  "requests": 6,
+  "hostCloseIncluded": false,
+  "status": "prepared-not-executed"
+}

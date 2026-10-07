@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-retention-003",
+  "resultKind": "schema-only-verifier-controls",
+  "passed": false,
+  "verifiedAtUtc": "2026-10-07T10:48:58.9466252Z",
+  "verifierPath": "scripts/Verify-RetentionTrial.ps1",
+  "verifierSha256": "84b3d0a8c4aee192f28b3d553ee134b1dfd20879dcf3ed38b2c607b0bc313c2b",
+  "controlScriptPath": ".agentlang/business-policy-retention-003/evidence/081-verifier-schema-controls.ps1",
+  "controlScriptSha256": "a5dea9cfa9153b947f84d75fa084f08debe43e941def8bea0ae8d5883fc0ca82",
+  "checks": [
+    {
+      "name": "saved R01 starting-state positive fixture",
+      "passed": true,
+      "details": {
+        "projectFileCount": 12,
+        "checkCount": 14,
+        "failedChecks": [],
+        "actorFileCount": 12
+      }
+    },
+    {
+      "name": "control harness execution",
+      "passed": false,
+      "details": "The property 'details' cannot be found on this object. Verify that the property exists."
+    }
+  ],
+  "externalGitInvocations": 0,
+  "runtimeProcessesStarted": 0,
+  "genuineSourceProvenanceVerified": false,
+  "limitation": "Control harness failed before proving all schema controls; Git blob reads are stubbed and no genuine acceptance is claimed."
+}

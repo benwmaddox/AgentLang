@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-retention-003",
+  "runId": "R01",
+  "controlKind": "deterministic-reference",
+  "modelActorLaunched": false,
+  "referencePassed": false,
+  "events": [
+    {
+      "event": "verification-rejected",
+      "atUtc": "2026-10-07T10:12:15.1578282+00:00",
+      "acceptancePath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\runs\\R01\\acceptance.json",
+      "acceptanceSha256": "230b61ff1305d8d337fd99628080b6f1fe135ee0c5467b08bb27c11fe36b5285",
+      "acceptancePassed": false,
+      "reason": "Frozen starting-state, runtime, source, prompt, allowlist, or verifier provenance did not validate; no CLI evaluation is allowed."
+    },
+    {
+      "event": "close-requested",
+      "atUtc": "2026-10-07T10:12:15.1605297+00:00",
+      "acceptanceSha256": "230b61ff1305d8d337fd99628080b6f1fe135ee0c5467b08bb27c11fe36b5285",
+      "reason": "cleanup of rejected deterministic reference; not accepted study outcome"
+    }
+  ]
+}

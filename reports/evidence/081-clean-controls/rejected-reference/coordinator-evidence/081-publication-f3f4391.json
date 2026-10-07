@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "repo": "benwmaddox/AgentLang",
+  "isPrivate": true,
+  "publicationRevision": "f3f4391961bc6eeb0c2d0f8168428b43f653b9cf",
+  "branches": [
+    "main",
+    "prototype"
+  ],
+  "integration": "fast-forward main and atomic push both branches",
+  "remoteSource": "actual successful git push stdout",
+  "ciObservation": {
+    "mainOrPrototypeRuns": [
+      37604014543,
+      37604015110
+    ],
+    "status": "in_progress",
+    "conclusion": null,
+    "headSha": "f3f4391961bc6eeb0c2d0f8168428b43f653b9cf"
+  },
+  "finalCandidateStatus": "running",
+  "frozenReferenceStatus": "pending",
+  "modelActorLaunched": false
+}
