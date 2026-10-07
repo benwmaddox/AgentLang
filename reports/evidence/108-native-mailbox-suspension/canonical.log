@@ -1,0 +1,16 @@
+  Determining projects to restore...
+  Restored D:\code\AgentLang\src\AgentLang.Core\AgentLang.Core.fsproj (in 176 ms).
+  Restored D:\code\AgentLang\experiments\AgentLang.NativeMailbox\AgentLang.NativeMailbox.fsproj (in 176 ms).
+  Restored D:\code\AgentLang\src\AgentLang.Llvm\AgentLang.Llvm.fsproj (in 176 ms).
+  AgentLang.Core -> D:\code\AgentLang\.agentlang\native-mailbox\run-07ae397bc28e4790b23d76572b791b1c\build\bin\AgentLang.Core\debug\AgentLang.Core.dll
+  AgentLang.Llvm -> D:\code\AgentLang\.agentlang\native-mailbox\run-07ae397bc28e4790b23d76572b791b1c\build\bin\AgentLang.Llvm\debug\AgentLang.Llvm.dll
+  AgentLang.NativeMailbox -> D:\code\AgentLang\.agentlang\native-mailbox\run-07ae397bc28e4790b23d76572b791b1c\build\bin\AgentLang.NativeMailbox\debug\AgentLang.NativeMailbox.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:14.52
+Native mailbox experiment: passed; report=D:\code\AgentLang\.agentlang\native-mailbox\run-07ae397bc28e4790b23d76572b791b1c\result.json
+Mailbox suspension evidence: D:\code\AgentLang\.agentlang\native-mailbox\canonical-result.json
+Fresh build and native artifacts: D:\code\AgentLang\.agentlang\native-mailbox\run-07ae397bc28e4790b23d76572b791b1c

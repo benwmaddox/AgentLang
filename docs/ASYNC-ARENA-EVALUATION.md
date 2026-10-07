@@ -6,8 +6,9 @@ native ownership/memory comparison is complete in [report 104](../reports/104-na
 retained-only counterexample. [Report 106](../reports/106-native-record-ownership.md)
 validates the native invocation-scratch/retained-output boundary.
 [Report 107](../reports/107-native-state-reentry.md) adds typed retained state
-re-entry across native invocations. Mailbox suspension, actual async I/O,
-saturation and tail latency remain untested. See [the roadmap](ROADMAP.md).
+re-entry across native invocations. [Report 108](../reports/108-native-mailbox-suspension.md)
+validates host-driven suspension and scratch reuse with actual Flow/2 handlers.
+Production native dispatch, actual async I/O, saturation and tail latency remain untested. See [the roadmap](ROADMAP.md).
 
 ## Candidates
 

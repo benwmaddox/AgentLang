@@ -1,0 +1,95 @@
+{
+  "status": "passed bounded host-driven mailbox suspension",
+  "baseCommit": "23723a6d3996fa83d2da86b29a74039e31ac6b24",
+  "testedWorkingTree": true,
+  "command": "pwsh -NoProfile -File scripts/Verify-NativeMailboxSuspension.ps1 -EvidencePath .agentlang/native-mailbox/canonical-result.json",
+  "checks": 120,
+  "backends": [
+    "Core",
+    "O0",
+    "O2"
+  ],
+  "nativeDlls": 6,
+  "peImports": false,
+  "clrHeaders": false,
+  "frozenRuntimeFilesUnchanged": 10,
+  "host": ".NET experiment; generated handlers and arena operations native",
+  "researchConclusion": "Bounded ownership feasibility; no throughput, process-memory or agent-efficacy superiority claim",
+  "files": [
+    {
+      "path": "build.log",
+      "bytes": 868,
+      "sha256": "ff033774c3549df2132a5d77add58ad0e0550fda8940e4f25d68fbaecb1c1d48"
+    },
+    {
+      "path": "canonical.log",
+      "bytes": 1213,
+      "sha256": "cb09801b22246ed58a8e6e143b373c51514c1ee7aa48312d291d027519f74469"
+    },
+    {
+      "path": "emitted-ir.zip",
+      "bytes": 23328,
+      "sha256": "8301768e4d4df9443d3e4e81ddf8e57347dc7088c3c7f65e7af0c1eafb867cfd"
+    },
+    {
+      "path": "first-run-failed.json",
+      "bytes": 2468,
+      "sha256": "e1d9eebe819dc5c4f423befa52feb3d28d247d02b98235b135958231bb085605"
+    },
+    {
+      "path": "focused-run-002.json",
+      "bytes": 21919,
+      "sha256": "6bf37acc92e0fdcf04744461e3630d51dfef458cbe37c9a74784999003d89c1f"
+    },
+    {
+      "path": "focused-run-003.json",
+      "bytes": 22501,
+      "sha256": "59f484999d208cf1c907592c11fc05824cd5740922000e09945e0052481c8738"
+    },
+    {
+      "path": "frozen-runtime.json",
+      "bytes": 2758,
+      "sha256": "bf9841c2a26dc2c40b892adb132375ed98f68c65ff863cfbc24ea8ea139f05fc"
+    },
+    {
+      "path": "independent-checks.json",
+      "bytes": 511,
+      "sha256": "ad158d6da02d2b5690911a1d4592939cefedd95e8ef052ae3a2d7b7cdcdb6f62"
+    },
+    {
+      "path": "native-artifacts.json",
+      "bytes": 1449,
+      "sha256": "0c099693bf79b621cbafe3ebc3efaa7033ded5eea0521c0957e04f3e045e2701"
+    },
+    {
+      "path": "native-objects.json",
+      "bytes": 2985,
+      "sha256": "c5527fdb59cc4d2d76ddc9e64f4c8cc61a50947a8f78e3c576c82d96c90aa60b"
+    },
+    {
+      "path": "oracle.json",
+      "bytes": 1604,
+      "sha256": "086aeeb90635dce4cad1c8549fc31b02f4a3ff74ad5fa5477ed7ecc4170705bc"
+    },
+    {
+      "path": "result.json",
+      "bytes": 22501,
+      "sha256": "59f484999d208cf1c907592c11fc05824cd5740922000e09945e0052481c8738"
+    },
+    {
+      "path": "run.log",
+      "bytes": 135,
+      "sha256": "cdc87c36870d24e7c16e1fc43b88219d00372e3281a61d2e11c890378109df3a"
+    },
+    {
+      "path": "source-hashes.json",
+      "bytes": 949,
+      "sha256": "8a2aa224b005740d49f1b697fe6cbeeba29203310f66f64a5e19d1aeb827cdff"
+    },
+    {
+      "path": "source.zip",
+      "bytes": 14259,
+      "sha256": "925ea659f883b773aae059ff9b0965c534471f542f460efb115cc0f83a134894"
+    }
+  ]
+}

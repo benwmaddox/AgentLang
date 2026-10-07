@@ -1,0 +1,62 @@
+{
+  "frozenBeforeExecution": true,
+  "description": "Two explicit retained record roots: State(total:Int), Continuation(delta:Int). Resume computes total + delta / divisor with checked integer semantics.",
+  "initial": {
+    "B": 100,
+    "A": 10
+  },
+  "firstPendingDelta": {
+    "B": 3,
+    "A": 7
+  },
+  "firstCompletionDivisor": 1,
+  "firstCompleted": {
+    "B": 103,
+    "A": 17
+  },
+  "secondA": {
+    "completed": 19,
+    "delta": 5,
+    "divisor": 2
+  },
+  "failure": {
+    "effect": "pending owner and token unchanged; explicit same-token retry with divisor 1",
+    "divisor": 0
+  },
+  "nativeCapacity": {
+    "nodeDirectoryBytes": 32,
+    "arenaDescriptorBytes": 48,
+    "maxPerOwner": {
+      "payloadCapacity": 16,
+      "derivation": "16 payload + 2*32 node directory + 48 descriptor; transient old/new owners coexist during successful replacement",
+      "nodeCapacity": 2,
+      "backingBytes": 128
+    },
+    "begin": {
+      "scratchBytes": 16,
+      "liveRetainedBytes": 16,
+      "scratchNodes": 2,
+      "liveRetainedNodes": 2
+    },
+    "slotBytes": 8,
+    "initialize": {
+      "scratchBytes": 8,
+      "liveRetainedBytes": 8,
+      "scratchNodes": 1,
+      "liveRetainedNodes": 1
+    },
+    "pool": {
+      "payloadCapacity": 24,
+      "derivation": "24 payload + 3*32 node directory + 48 descriptor; excludes separate call workspace, root arrays and managed host",
+      "arenas": 1,
+      "nodeCapacity": 3,
+      "backingBytes": 168
+    },
+    "resume": {
+      "scratchBytes": 24,
+      "liveRetainedBytes": 8,
+      "scratchNodes": 3,
+      "liveRetainedNodes": 1
+    }
+  }
+}

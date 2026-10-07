@@ -6,7 +6,9 @@ records in invocation scratch arenas with independent retained outputs, includin
 first decoding after scratch reuse and compiled-DLL disposal. The managed
 interpreter still uses managed storage. [Report 107](../reports/107-native-state-reentry.md)
 adds typed retained-input re-entry without a managed graph round trip. Source-level
-regions and mailbox suspension lifetimes remain unimplemented. The separate
+regions and production native mailbox dispatch remain unimplemented.
+[Report 108](../reports/108-native-mailbox-suspension.md) validates a bounded
+host-driven suspension/reuse sequence with actual AgentLang handlers. The separate
 [report 104](../reports/104-native-arena-mailbox-feasibility.md) probe compares
 bounded native memory policies but does not execute AgentLang handlers.
 

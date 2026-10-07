@@ -1,0 +1,16 @@
+{
+  "passed": false,
+  "experiment": "Native handler mailbox suspension",
+  "handlerSource": "mailbox.flow",
+  "handlerSourceSha256": "de38e37346aba28f9f90636fa17a13feeabf86797a05e1facdd0a53430186d2c",
+  "sameVerifiedProgramInstance": false,
+  "resultRootShape": "State \u002B Continuation; resume returns State",
+  "independentExpected": {
+    "aAfterOverlap": 17,
+    "bAfterOverlap": 103,
+    "aFinal": 19
+  },
+  "checks": [],
+  "runs": [],
+  "failure": "AgentLang.LanguageException: LanguageException\n  { Code = \u0022FLOW_UNKNOWN_CALL\u0022\n    Message =\n     \u0022No word matches \u0027State.new\u0027. Flow AST path(s): FlowAstPath [BlockStatement 0; EvaluateExpression].\u0022\n    Word = Some \u0022mailbox.initialize\u0022\n    Span = Some { File = \u0022mailbox.flow\u0022\n                  Line = 14\n                  Column = 5\n                  Length = 24 }\n    Expected = []\n    Actual = [\u0022State.new\u0022] }\r\n   at AgentLang.FlowLowering.withFlowOwnerPath[a](FlowWordDefinition flowWord, FSharpFunc\u00602 action) in D:\\code\\AgentLang\\src\\AgentLang.Core\\FlowLowering.fs:line 1626\r\n   at AgentLang.FlowLowering.Pipe #11 stage #1 at line 2182@2182.Invoke(PreparedBatchChange item) in D:\\code\\AgentLang\\src\\AgentLang.Core\\FlowLowering.fs:line 2183\r\n   at Microsoft.FSharp.Collections.Internal.IEnumerator.map@128.DoMoveNext(b\u0026 curr) in D:\\a\\_work\\1\\s\\src\\FSharp.Core\\seq.fs:line 131\r\n   at Microsoft.FSharp.Collections.Internal.IEnumerator.MapEnumerator\u00601.System.Collections.IEnumerator.MoveNext() in D:\\a\\_work\\1\\s\\src\\FSharp.Core\\seq.fs:line 113\r\n   at Microsoft.FSharp.Collections.SeqModule.ToList[T](IEnumerable\u00601 source) in D:\\a\\_work\\1\\s\\src\\FSharp.Core\\seq.fs:line 1003\r\n   at AgentLang.FlowLowering.compileBatchWordsCore(Context context, FSharpList\u00601 changes, FSharpMap\u00602 sourceDocuments, FSharpList\u00601 retainedSources) in D:\\code\\AgentLang\\src\\AgentLang.Core\\FlowLowering.fs:line 2206\r\n   at AgentLang.FlowLowering.compileBatchWords(Context context, FSharpList\u00601 changes) in D:\\code\\AgentLang\\src\\AgentLang.Core\\FlowLowering.fs:line 2321\r\n   at AgentLang.NativeMailbox.Program.compileHandlers(String source) in D:\\code\\AgentLang\\experiments\\AgentLang.NativeMailbox\\Program.fs:line 127\r\n   at AgentLang.NativeMailbox.Program.main(String[] arguments) in D:\\code\\AgentLang\\experiments\\AgentLang.NativeMailbox\\Program.fs:line 519"
+}

@@ -1,0 +1,50 @@
+[
+  {
+    "path": "native\\O0\\begin\\agentlang-native.dll",
+    "sha256": "a9193a08c3181a47aeb37b67c29a2d122bfb806555af5ec38381a7df86429fc5",
+    "bytes": 23552,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "native\\O0\\initialize\\agentlang-native.dll",
+    "sha256": "7898e1d9324608e1982a22303e95b98c5e0144b795ff6a668987e18b3c8b26bc",
+    "bytes": 23552,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "native\\O0\\resume\\agentlang-native.dll",
+    "sha256": "fd1eb9ed5ae8743ca56cca49dbaaa6215869922c7ae5b0b11c500737d282a5ee",
+    "bytes": 25088,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "native\\O2\\begin\\agentlang-native.dll",
+    "sha256": "03f8f7f7c65276ca95c00a415cbbb3bc528e39b0d16a1397655cae0aee428b49",
+    "bytes": 17408,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "native\\O2\\initialize\\agentlang-native.dll",
+    "sha256": "d10edd5d63d26edd7b2f0dcf9fe6c5a1304de2791361e796e6e27c9773b37abf",
+    "bytes": 16896,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  },
+  {
+    "path": "native\\O2\\resume\\agentlang-native.dll",
+    "sha256": "4d038f0a744ca06437ed8ec0bd428dcc40f158de680b94830669f57380c3c632",
+    "bytes": 17920,
+    "imports": false,
+    "clr": false,
+    "runtimeSourceMatches": true
+  }
+]

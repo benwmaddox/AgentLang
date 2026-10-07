@@ -87,9 +87,13 @@ outputs and decoding after scratch/DLL disposal; see [report 106](../reports/106
 re-entry with 441 native assertions: retained results feed later invocations
 without managed graph decoding, preserving old state on failure. This currently
 copies the input graph and live outputs, and requires one verified program
-instance. Next demonstrate a single mailbox retaining opaque state across a
-deterministic suspend/resume boundary while returning scratch to a pool. Real
-async I/O, bounded pending work, cancellation, and throughput comparison follow.
+instance. [Report 108](../reports/108-native-mailbox-suspension.md) now passes 120
+checks for readable Flow/2 handlers suspending/resuming fixed mailboxes through
+one reusable scratch owner, using an explicit .NET experiment host. Next move
+bounded dispatch/pending state into the native runtime and define reproducible
+entry/type metadata for release execution. Real I/O, provider cancellation and a
+genuine whole-request lifetime alternative remain prerequisites for the fair
+throughput comparison; holding cleared scratch is not a valid substitute.
 
 Keep the semantic IR authoritative. Development backends add LLVM
 JIT while release builds use LLVM AOT plus a minimal runtime. Research arenas,

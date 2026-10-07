@@ -1,0 +1,26 @@
+[
+  {
+    "backend": "interpreter",
+    "optimization": "Core",
+    "outcomesMatch": true,
+    "ownersBalanced": true,
+    "scratchMatches": true,
+    "leasesMatch": true
+  },
+  {
+    "backend": "native",
+    "optimization": "O0",
+    "outcomesMatch": true,
+    "ownersBalanced": true,
+    "scratchMatches": true,
+    "leasesMatch": true
+  },
+  {
+    "backend": "native",
+    "optimization": "O2",
+    "outcomesMatch": true,
+    "ownersBalanced": true,
+    "scratchMatches": true,
+    "leasesMatch": true
+  }
+]

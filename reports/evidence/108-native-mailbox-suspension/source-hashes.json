@@ -1,0 +1,26 @@
+[
+  {
+    "path": "experiments/AgentLang.NativeMailbox/AgentLang.NativeMailbox.fsproj",
+    "sha256": "cf1728cd54bc812d84e364e1232e816e99e1b4531c290bc6781f2c05ef2de785"
+  },
+  {
+    "path": "experiments/AgentLang.NativeMailbox/MailboxHost.fs",
+    "sha256": "f7333274afc7aefac047d4534aa3913a7a83cc7b3f9dc6748cbccce0164d0405"
+  },
+  {
+    "path": "experiments/AgentLang.NativeMailbox/Program.fs",
+    "sha256": "c4c5a46b968e9b97067dd3d127a8a468a045892cf3d90d9618e25145a62144a3"
+  },
+  {
+    "path": "experiments/AgentLang.NativeMailbox/mailbox.flow",
+    "sha256": "31ac3af8a450fd0554f6fff5d386d1ae3e1b424df1417f810adae71a6875a9ab"
+  },
+  {
+    "path": "scripts/Verify-NativeMailboxSuspension.ps1",
+    "sha256": "5dda2aad206ead2f9a500712a90912c6c938c87d3ea67b1ef1b86d5c865aadd2"
+  },
+  {
+    "path": "reports/evidence/108-native-mailbox-suspension/oracle.json",
+    "sha256": "086aeeb90635dce4cad1c8549fc31b02f4a3ff74ad5fa5477ed7ecc4170705bc"
+  }
+]

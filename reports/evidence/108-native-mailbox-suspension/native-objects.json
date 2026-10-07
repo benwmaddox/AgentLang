@@ -1,0 +1,92 @@
+[
+  {
+    "path": "native/O0/begin/agentlang-arena-runtime.obj",
+    "bytes": 21801,
+    "sha256": "969bd61c560ee472b2b0e581465d0e92c7a4818928ad83d054225e7840280283"
+  },
+  {
+    "path": "native/O0/begin/agentlang-native.ll",
+    "bytes": 24149,
+    "sha256": "da0e3275d359156dd18b926026a01637b6782742f4b6cba3e86a42dd3d9c2f98"
+  },
+  {
+    "path": "native/O0/begin/agentlang-native.obj",
+    "bytes": 4015,
+    "sha256": "5c4eb2eaa5ecf8f943c216c778e6bbf460cef14e5f1e4bad75fd2f5c3551f519"
+  },
+  {
+    "path": "native/O0/initialize/agentlang-arena-runtime.obj",
+    "bytes": 21801,
+    "sha256": "969bd61c560ee472b2b0e581465d0e92c7a4818928ad83d054225e7840280283"
+  },
+  {
+    "path": "native/O0/initialize/agentlang-native.ll",
+    "bytes": 20968,
+    "sha256": "c1c401f97c30fb78adf2f8fdfac29a4d6aa4758a5f2c2f491e9900fa856bc87c"
+  },
+  {
+    "path": "native/O0/initialize/agentlang-native.obj",
+    "bytes": 3726,
+    "sha256": "fbe85771e108698a97d9c812a3f784dcce02846071ffee295fa3732f42fff779"
+  },
+  {
+    "path": "native/O0/resume/agentlang-arena-runtime.obj",
+    "bytes": 21801,
+    "sha256": "f6f35db17c0e092aa77329219c71c97875fa2c225ece67488828455a61c722b2"
+  },
+  {
+    "path": "native/O0/resume/agentlang-native.ll",
+    "bytes": 34931,
+    "sha256": "eac46d6ae086bcd06689f59eb034e83bfc96d510df23695501e5edb4eb091138"
+  },
+  {
+    "path": "native/O0/resume/agentlang-native.obj",
+    "bytes": 5808,
+    "sha256": "9c56fb9c80722a774fcfceed889cefdbecd84ebe56d83002768898cdb456ffa4"
+  },
+  {
+    "path": "native/O2/begin/agentlang-arena-runtime.obj",
+    "bytes": 14673,
+    "sha256": "48fc3aa3de1252157cade216fed977d2d7aa31a389f4f386fc1c3a4439ea6acc"
+  },
+  {
+    "path": "native/O2/begin/agentlang-native.ll",
+    "bytes": 24149,
+    "sha256": "da0e3275d359156dd18b926026a01637b6782742f4b6cba3e86a42dd3d9c2f98"
+  },
+  {
+    "path": "native/O2/begin/agentlang-native.obj",
+    "bytes": 2533,
+    "sha256": "642b98d375d7df678d48d33e9485cca183e1a3db1c11e942155b7f20e78135d8"
+  },
+  {
+    "path": "native/O2/initialize/agentlang-arena-runtime.obj",
+    "bytes": 14673,
+    "sha256": "48fc3aa3de1252157cade216fed977d2d7aa31a389f4f386fc1c3a4439ea6acc"
+  },
+  {
+    "path": "native/O2/initialize/agentlang-native.ll",
+    "bytes": 20968,
+    "sha256": "c1c401f97c30fb78adf2f8fdfac29a4d6aa4758a5f2c2f491e9900fa856bc87c"
+  },
+  {
+    "path": "native/O2/initialize/agentlang-native.obj",
+    "bytes": 2376,
+    "sha256": "0851b7089ec0e8d22a61adceb8e45891c95fa5a230180e408f4b0babb34c606a"
+  },
+  {
+    "path": "native/O2/resume/agentlang-arena-runtime.obj",
+    "bytes": 14673,
+    "sha256": "48fc3aa3de1252157cade216fed977d2d7aa31a389f4f386fc1c3a4439ea6acc"
+  },
+  {
+    "path": "native/O2/resume/agentlang-native.ll",
+    "bytes": 34931,
+    "sha256": "eac46d6ae086bcd06689f59eb034e83bfc96d510df23695501e5edb4eb091138"
+  },
+  {
+    "path": "native/O2/resume/agentlang-native.obj",
+    "bytes": 3281,
+    "sha256": "8277d97fbf2b702e224ab8d1e38b78ef593e9c95f4a48451f6bf26a8830e705b"
+  }
+]

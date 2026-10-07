@@ -282,3 +282,13 @@ The [business-language fixture](reports/075-business-language-transitions.md) no
 The [requirements ledger](docs/REQUIREMENTS.md) tracks the full PRD beyond this slice. [Milestone reports](reports/README.md) distinguish validation evidence from research results. Run `./scripts/Validate.ps1` for the same fresh Release build and checks used by CI.
 
 Use `--project .agentlang` to keep the prototype dictionary and task logs in the ignored project-local directory instead of the current working directory.
+
+## Native mailbox ownership demonstration
+
+Run `pwsh -NoProfile -File scripts/Verify-NativeMailboxSuspension.ps1` for the
+standalone source-backed mailbox experiment. It builds fresh isolated artifacts,
+runs Core/O0/O2 handlers, and checks retained-state retry and scratch reuse against
+an independent oracle. See [report 108](reports/108-native-mailbox-suspension.md)
+and [the Flow/2 handlers](experiments/AgentLang.NativeMailbox/mailbox.flow).
+This uses a .NET experiment host; it is not a server throughput benchmark or a
+compiler-free native mailbox runtime.

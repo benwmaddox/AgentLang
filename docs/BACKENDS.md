@@ -118,5 +118,7 @@ artifact. The F# host allocates backing buffers; generated code has no managed
 callbacks, OS allocation or arbitrary .NET access. Repeated graph validation can
 be quadratic, so this is conformance evidence, not a throughput claim. Records
 containing Float, String, containers, effects and recursive type graphs are still
-rejected before Clang. Mailboxes, suspension, JIT and standalone release packaging
-remain future work.
+rejected before Clang. [Report 108](../reports/108-native-mailbox-suspension.md)
+demonstrates source-defined handlers suspending/resuming through a .NET host
+with one reusable scratch owner. Production native dispatch, real I/O, JIT and
+standalone release packaging remain future work.
