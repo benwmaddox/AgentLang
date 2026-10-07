@@ -46,3 +46,18 @@ treated as native arena/mailbox evidence.
 The original research hypothesis and full PRD scope remain unchanged. A uniform
 rerun may still fail or show no benefit; this repair improves the evidence path
 and is not evidence for vocabulary retention by itself.
+
+## Independent draft review
+
+Root's read-only audit found that the first V4 frozen-reference draft still
+used canonical `runs/R01`, a normal launchable actor pin, and
+`frozen-actor-acceptance` for a deterministic reference. Requiring later cleanup
+would not satisfy the dedicated-control-slot requirement above. This draft is
+not launch-ready and no control result is counted as an actor outcome.
+
+The repair will give `M00` an explicit non-actor identity and separate control
+paths across Prepare, Freeze, Verify and Audit, preserving the real R01
+actor destination. The predecessor reject controls must also validate malformed
+inputs before the preparer's live baseline CLI gate, so zero-runtime rejection
+is demonstrated rather than inferred from a later failure. Both changes still
+require actual local controls and review before the source-freeze lifecycle.
