@@ -113,6 +113,38 @@ the same enforced memory limit and acceptable tail latency**. Failed, rejected
 and timed-out requests do not count as successful completions. A run outside
 its latency or error budget is not a qualifying throughput result.
 
+### Optional alternative: elastic mailbox pools by type
+
+The user suggested considering a minimum/maximum instance count per mailbox
+type, growing quickly with demand and retiring instances slowly after sustained
+idleness. This is a research alternative, not an adopted language requirement.
+Compare fixed capacity and elastic pools as a separate scheduling/capacity axis
+after the arena lifetime and idle-release policies are understood.
+
+Specify whether instances are interchangeable workers or distinct stateful
+identities. Stateless workers can share a pool; stateful mailboxes require a
+defined retained-state owner and routing identity when an activation retires.
+Scaling down must not discard mailbox static state, duplicate it into independent
+writers, or lose queued/in-flight work. Admission stops before safe draining and
+retirement. Pending operations and late completions retain defined destinations.
+
+Define per-type min/max counts, growth signals, downscale hold time, fairness,
+byte budgets and behavior at maximum capacity before benchmarking. Per-type
+counts do not replace global memory and pending-I/O limits. A minimum can be a
+warm activation target rather than a requirement to allocate every arena's full
+capacity in advance; make the chosen interpretation explicit.
+
+More mailboxes on one execution thread provide additional routing/pending-work
+capacity, not additional CPU execution parallelism. Whether that hides I/O waits
+and improves successful throughput must be measured. Keep whole-process versus
+per-mailbox single-thread scheduling fixed during each comparison.
+
+Record cold-start and retirement costs, active/idle counts by type, queue age,
+backpressure, retained state and whole-process memory. Include burst/idle cycles,
+hot stateful identities, late I/O and skewed demand between types. Compare with
+the simpler persistent-mailbox/idle-stack-release candidate without assuming
+elasticity is superior.
+
 Also record p50/p95/p99 latency, errors/timeouts/rejections, offered and admitted
 load, in-flight operations, queue depth/bytes, CPU use, continuation-copy bytes
 and time, arena used/reserved/peak bytes, and whole-process peak/resident memory.

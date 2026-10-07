@@ -91,6 +91,9 @@ state promptly, retain reusable
 capacity within the budget, and measure burst/idle/outlier behavior separately from the arena
 lifetime comparison. Long-lived state and outstanding I/O retain their own
 cleanup boundaries.
+An optional alternative is per-type min/max mailbox pools with fast growth and
+slow retirement. Research state identity/routing and safe draining separately;
+counts alone do not bound memory or add CPU parallelism to a single thread.
 
 No current interpreter result proves native footprint, throughput or arena
 safety. Require semantic conformance and measured memory, throughput and tail
