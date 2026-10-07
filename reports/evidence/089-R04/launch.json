@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-retention-003",
+  "runId": "R04",
+  "actor": "/root/retention003_r04",
+  "spawnTool": "collaboration.spawn_agent",
+  "model": "gpt-6-luna",
+  "reasoningEffort": "max",
+  "forkTurns": "none",
+  "modelActorLaunched": true,
+  "launchRevision": "ee335bcb6c3ec05d20c616f0bb8235c5abe30f2c",
+  "frozenPromptPath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\runs\\R04\\prompt.txt",
+  "frozenPromptSha256": "69f4d76ba1bc089716459a5537ce23a19ba253ae4b52fa906cfb5ec87bee88d3",
+  "prelaunchSha256": "16fa34e42b018adea8b2c1321e52887d760726c5c8a06daa088c9f45892fe5a3",
+  "messageSource": "Frozen public prompt transcribed into spawn request, with context paragraph inadvertently shortened; corrected immediately through collaboration.send_message. Native requests visible in conversation.",
+  "initialMessageExactFrozenPrompt": false,
+  "contextParagraphCorrectionSent": true,
+  "protocolDeviation": "Initial context paragraph omitted maxDepth/maxWords/maxUtf8Bytes descriptions and dictionary-name guidance. Exact frozen paragraph sent in a follow-up message; two-message delivery differs from frozen single-message design.",
+  "nativeUsageAvailable": false,
+  "coordinatorProvidedSolution": false
+}

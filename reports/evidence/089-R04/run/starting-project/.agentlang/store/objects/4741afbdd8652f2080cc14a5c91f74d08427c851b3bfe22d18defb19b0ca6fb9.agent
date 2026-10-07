@@ -1,0 +1,7 @@
+record Payment {
+    field id: PaymentId;
+    field invoice-id: InvoiceId;
+    field amount: Money;
+    field provider-reference: String;
+    field paid-at: Instant;
+}

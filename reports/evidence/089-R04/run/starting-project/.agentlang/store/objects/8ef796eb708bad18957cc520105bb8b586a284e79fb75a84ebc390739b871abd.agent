@@ -1,0 +1,24 @@
+test store.replace-invoice-step/preserves-items-after-first-match {
+    let first = invoice::new(
+        id = InvoiceId::new("00000000-0000-0000-0000-000000000001"),
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"),
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(20),
+        created-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"),
+        status = InvoiceStatus::new("open"));
+    let later = invoice::new(
+        id = InvoiceId::new("00000000-0000-0000-0000-000000000002"),
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"),
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(40),
+        created-at = Instant::new("2024-01-02T00:00:00.0000000+00:00"),
+        status = InvoiceStatus::new("open"));
+    let state = invoiceReplacement::new(
+        target = first.id(),
+        replacement = first,
+        replaced = true,
+        values = list::singleton<Invoice>(first));
+    let next = store::replace-invoice-step(state, later);
+    equals(next.values(), list::append(list::singleton<Invoice>(first), later))
+    => true
+}

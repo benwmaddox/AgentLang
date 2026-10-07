@@ -1,0 +1,7 @@
+test money.add/int64-overflow {
+    match money::add(Money::new(9223372036854775807), Money::new(1)) {
+        ok total => { int::to-string(Money::value(total)) }
+        error problem => { problem.code() }
+    }
+    => "MONEY_OVERFLOW"
+}

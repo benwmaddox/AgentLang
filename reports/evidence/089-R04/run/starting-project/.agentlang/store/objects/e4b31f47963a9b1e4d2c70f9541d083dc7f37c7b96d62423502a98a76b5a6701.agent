@@ -1,0 +1,24 @@
+test store.add-product/duplicate-code-and-input-unchanged {
+    let existing = product::new(
+        id = ProductId::new("00000000-0000-0000-0000-000000000001"),
+        name = "existing",
+        unit-price = Money::new(10));
+    let blank = store::empty(unit);
+    let initial = store::new(
+        customers = blank.customers(),
+        products = list::singleton<Product>(existing),
+        subscriptions = blank.subscriptions(),
+        invoices = blank.invoices(),
+        payments = blank.payments(),
+        email-outbox = blank.email-outbox(),
+        sent-emails = blank.sent-emails());
+    match store::add-product(existing, initial) {
+        ok updated => { false }
+        error problem => {
+            bool::and(
+                equals(problem.code(), "DUPLICATE_PRODUCT"),
+                equals(initial.products().count(), 1))
+        }
+    }
+    => true
+}

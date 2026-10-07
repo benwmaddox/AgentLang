@@ -1,0 +1,28 @@
+word email.apply-delivery-result(store: Store, outcome: Result<Unit, BusinessError>) -> Result<Store, BusinessError> {
+    effects none
+    doc "Apply one explicit delivery outcome to the first queued email; failures leave Store unchanged."
+    let plan = store.email-outbox().fold(
+        emailDeliveryPlan::new(first = option::none<EmailMessage>(), remaining = list::empty<EmailMessage>()),
+        email::delivery-fold-step);
+    match plan.first() {
+        none => {
+            result::error<Store, BusinessError>(businessError::new(
+                code = "NO_PENDING_EMAIL",
+                message = "There is no queued email to deliver."))
+        }
+        some message => {
+            match outcome {
+                error provider-error => {
+                    result::error<Store, BusinessError>(businessError::new(
+                        code = "EMAIL_PROVIDER_FAILURE",
+                        message = provider-error.message()))
+                }
+                ok delivered => {
+                    let sent = list::append(store.sent-emails(), message);
+                    let updated = store::with-email-state(store, plan.remaining(), sent);
+                    result::ok<Store, BusinessError>(updated)
+                }
+            }
+        }
+    }
+}

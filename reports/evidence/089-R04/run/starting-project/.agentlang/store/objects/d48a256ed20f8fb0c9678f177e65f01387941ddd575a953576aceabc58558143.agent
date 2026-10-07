@@ -1,0 +1,13 @@
+test payment.apply-result/invoice-not-found {
+    match payment::apply-result(
+        store::empty(unit),
+        PaymentId::new("00000000-0000-0000-0000-000000000001"),
+        InvoiceId::new("00000000-0000-0000-0000-000000000002"),
+        Money::new(1),
+        Instant::new("2024-01-02T00:00:00.0000000+00:00"),
+        result::error<PaymentReceipt, BusinessError>(businessError::new(code = "IGNORED", message = "ignored"))) {
+        error problem => { equals(problem.code(), "INVOICE_NOT_FOUND") }
+        ok updated => { false }
+    }
+    => true
+}

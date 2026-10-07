@@ -1,0 +1,19 @@
+word subscription.replace-step(state: SubscriptionReplacementState, candidate: Subscription) -> SubscriptionReplacementState {
+    effects none
+    doc "Copy subscriptions in order, replacing only the first item with the target ID."
+    let matches-target = equals(candidate.id(), state.target-id());
+    let replace-now = bool::and(bool::not(state.replaced()), matches-target);
+    if replace-now {
+        subscriptionReplacementState::new(
+            target-id = state.target-id(),
+            replacement = state.replacement(),
+            output = list::append(state.output(), state.replacement()),
+            replaced = true)
+    } else {
+        subscriptionReplacementState::new(
+            target-id = state.target-id(),
+            replacement = state.replacement(),
+            output = list::append(state.output(), candidate),
+            replaced = state.replaced())
+    }
+}

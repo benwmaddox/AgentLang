@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "studyId": "business-policy-retention-003",
+  "runId": "R04",
+  "modelActorLaunched": true,
+  "actor": "/root/retention003_r04",
+  "events": [
+    {
+      "event": "verification-completed",
+      "atUtc": "2026-10-07T20:09:08Z",
+      "timestampSource": "independent verifier finishedUtc",
+      "acceptancePath": "D:\\code\\AgentLang\\.agentlang\\business-policy-retention-003\\runs\\R04\\acceptance.json",
+      "acceptanceSha256": "0e6638878f89fe58c0859787f051652a6a6227e804192628cce75d80c71a5888",
+      "acceptancePassed": false,
+      "outcome": "harness-blocked-before-behavior",
+      "failure": "Frozen starting-state, runtime, source, prompt, allowlist, or verifier provenance did not validate; no CLI evaluation is allowed."
+    },
+    {
+      "event": "close-requested",
+      "atUtc": "2026-10-07 16:10:22 UTC",
+      "timestampSource": "clock tool immediately before actual collaboration.followup_task requesting actor-owned teardown",
+      "acceptanceSha256": "0e6638878f89fe58c0859787f051652a6a6227e804192628cce75d80c71a5888",
+      "outcome": "controlled teardown after harness-blocked independent review, not acceptance"
+    },
+    {
+      "event": "teardown-condition-overridden",
+      "atUtc": "2026-10-07 16:11:30 UTC",
+      "timestampSource": "clock tool immediately before actual collaboration.followup_task",
+      "outcome": "Explicit coordinator authorization of controlled teardown after blocked verification, without acceptance",
+      "protocolDeviation": true
+    }
+  ]
+}

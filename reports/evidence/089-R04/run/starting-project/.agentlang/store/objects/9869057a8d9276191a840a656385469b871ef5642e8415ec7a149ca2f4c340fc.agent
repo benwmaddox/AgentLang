@@ -1,0 +1,10 @@
+example subscription.cancel/cancels-existing {
+    match subscription::cancel(
+        business::seed(unit),
+        SubscriptionId::new("30000000-0000-0000-0000-000000000001"),
+        Instant::new("2026-01-02T12:00:00.0000000+00:00")) {
+        ok updated => { updated.subscriptions().count() }
+        error problem => { -1 }
+    }
+    => 1
+}

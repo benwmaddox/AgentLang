@@ -1,0 +1,9 @@
+word payment-id.parse(value: String) -> Result<PaymentId, BusinessError> {
+    effects none
+    doc "Parse any Guid.TryParse-compatible form and store canonical PaymentId text."
+    let parsed = string::guid-normalize(value);
+    match parsed {
+        ok canonical => { result::ok<PaymentId, BusinessError>(PaymentId::new(canonical)) }
+        error detail => { result::error<PaymentId, BusinessError>(businessError::new(code = "INVALID_IDENTIFIER", message = "PaymentId must be a GUID.")) }
+    }
+}

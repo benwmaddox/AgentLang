@@ -1,0 +1,4 @@
+record InvoiceLinesAccumulator {
+    field store: Store;
+    field outcome: Result<List<InvoiceLine>, BusinessError>;
+}

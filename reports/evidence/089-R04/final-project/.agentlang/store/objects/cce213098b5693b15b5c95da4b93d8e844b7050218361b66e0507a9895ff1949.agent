@@ -1,0 +1,25 @@
+word store.replace-invoice-step(accumulator: InvoiceReplacement, candidate: Invoice) -> InvoiceReplacement {
+    effects none
+    doc "Replace only the first invoice with the target ID while preserving list order."
+    if accumulator.replaced() {
+        invoiceReplacement::new(
+            target = accumulator.target(),
+            replacement = accumulator.replacement(),
+            replaced = true,
+            values = list::append(accumulator.values(), candidate))
+    } else {
+        if equals(candidate.id(), accumulator.target()) {
+            invoiceReplacement::new(
+                target = accumulator.target(),
+                replacement = accumulator.replacement(),
+                replaced = true,
+                values = list::append(accumulator.values(), accumulator.replacement()))
+        } else {
+            invoiceReplacement::new(
+                target = accumulator.target(),
+                replacement = accumulator.replacement(),
+                replaced = false,
+                values = list::append(accumulator.values(), candidate))
+        }
+    }
+}

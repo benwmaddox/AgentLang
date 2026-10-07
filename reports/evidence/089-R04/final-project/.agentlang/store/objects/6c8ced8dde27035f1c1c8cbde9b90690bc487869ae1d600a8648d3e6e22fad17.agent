@@ -1,0 +1,13 @@
+word email-message.create(to: Email, subject: String, body: String) -> Result<EmailMessage, BusinessError> {
+    effects none
+    doc "Create an email message after trimming its nonblank subject and body."
+    let normalized-subject = string::trim(subject);
+    let normalized-body = string::trim(body);
+    let subject-is-blank = equals(string::length(normalized-subject), 0);
+    let body-is-blank = equals(string::length(normalized-body), 0);
+    if bool::or(subject-is-blank, body-is-blank) {
+        result::error<EmailMessage, BusinessError>(businessError::new(code = "INVALID_EMAIL_MESSAGE", message = "Email subject and body must contain non-whitespace text."))
+    } else {
+        result::ok<EmailMessage, BusinessError>(emailMessage::new(to = to, subject = normalized-subject, body = normalized-body))
+    }
+}

@@ -1,0 +1,37 @@
+test email.queue/appends-trimmed-message-and-preserves-other-state {
+    let customer = customer::new(
+        id = CustomerId::new("00000000-0000-0000-0000-000000000001"),
+        email = Email::new("customer@example.test"),
+        kind = "test",
+        balance = Money::new(0),
+        created-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"));
+    let older = emailMessage::new(to = customer.email(), subject = "Older", body = "Older body");
+    let prior-sent = emailMessage::new(to = customer.email(), subject = "Sent", body = "Sent body");
+    let base = store::empty(unit);
+    let with-customer = store::new(
+        customers = list::singleton<Customer>(customer),
+        products = base.products(),
+        subscriptions = base.subscriptions(),
+        invoices = base.invoices(),
+        payments = base.payments(),
+        email-outbox = list::singleton<EmailMessage>(older),
+        sent-emails = list::singleton<EmailMessage>(prior-sent));
+    match email::queue(with-customer, customer.id(), "  New subject  ", "  New body  ") {
+        error problem => { false }
+        ok updated => {
+            let appended = emailMessage::new(to = customer.email(), subject = "New subject", body = "New body");
+            bool::and(
+                equals(updated.email-outbox(), list::append(list::singleton<EmailMessage>(older), appended)),
+                bool::and(
+                    equals(updated.sent-emails(), with-customer.sent-emails()),
+                    bool::and(
+                        equals(updated.customers(), with-customer.customers()),
+                        bool::and(
+                            equals(updated.products(), with-customer.products()),
+                            bool::and(
+                                equals(updated.subscriptions(), with-customer.subscriptions()),
+                                bool::and(equals(updated.invoices(), with-customer.invoices()), equals(updated.payments(), with-customer.payments())))))))
+        }
+    }
+    => true
+}

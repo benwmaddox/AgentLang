@@ -1,0 +1,22 @@
+word store.add-customer(customer: Customer, store: Store) -> Result<Store, BusinessError> {
+    effects none
+    doc "Append a customer when its ID is unused, or return DUPLICATE_CUSTOMER."
+    match store::customer(customer.id(), store) {
+        some existing => {
+            result::error<Store, BusinessError>(businessError::new(
+                code = "DUPLICATE_CUSTOMER",
+                message = "A customer with this identifier already exists."))
+        }
+        none => {
+            let updated = store::new(
+                customers = list::append(store.customers(), customer),
+                products = store.products(),
+                subscriptions = store.subscriptions(),
+                invoices = store.invoices(),
+                payments = store.payments(),
+                email-outbox = store.email-outbox(),
+                sent-emails = store.sent-emails());
+            result::ok<Store, BusinessError>(updated)
+        }
+    }
+}

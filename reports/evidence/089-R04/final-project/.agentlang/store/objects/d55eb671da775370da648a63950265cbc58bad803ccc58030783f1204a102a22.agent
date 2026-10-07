@@ -1,0 +1,22 @@
+test invoice.create/duplicate-precedes-customer-and-cart {
+    let initial = business::seed(unit);
+    let id = InvoiceId::new("91000000-0000-0000-0000-000000000001");
+    let existing = invoice::new(
+        id = id,
+        customer-id = CustomerId::new("90000000-0000-0000-0000-000000000001"),
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(0),
+        created-at = Instant::new("2026-01-03T00:00:00.0000000+00:00"),
+        status = InvoiceStatus::new("open"));
+    let with-invoice = store::with-invoices(initial, list::singleton<Invoice>(existing));
+    match invoice::create(
+        with-invoice,
+        id,
+        CustomerId::new("90000000-0000-0000-0000-000000000002"),
+        list::empty<CartLine>(),
+        Instant::new("2026-01-04T00:00:00.0000000+00:00")) {
+        ok updated => { false }
+        error problem => { equals(problem.code(), "DUPLICATE_INVOICE") }
+    }
+    => true
+}

@@ -1,0 +1,11 @@
+example store.add-product/appends-new-product {
+    let product = product::new(
+        id = ProductId::new("00000000-0000-0000-0000-000000000001"),
+        name = "new product",
+        unit-price = Money::new(50));
+    match store::add-product(product, store::empty(unit)) {
+        ok updated => { equals(updated.products().count(), 1) }
+        error problem => { false }
+    }
+    => true
+}

@@ -1,0 +1,15 @@
+test store.customer-fold-step/no-match {
+    let key = CustomerId::new("00000000-0000-0000-0000-000000000001");
+    let other = customer::new(
+        id = CustomerId::new("00000000-0000-0000-0000-000000000002"),
+        email = Email::new("other@example.com"),
+        kind = "other",
+        balance = Money::new(0),
+        created-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"));
+    let initial = customerLookup::new(target = key, found = option::none<Customer>());
+    match store::customer-fold-step(initial, other).found() {
+        some selected => { false }
+        none => { true }
+    }
+    => true
+}

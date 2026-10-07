@@ -1,0 +1,4 @@
+example store.with-payments/replaces-list {
+    store::with-payments(business::seed(unit), list::empty<Payment>()).payments().count()
+    => 0
+}

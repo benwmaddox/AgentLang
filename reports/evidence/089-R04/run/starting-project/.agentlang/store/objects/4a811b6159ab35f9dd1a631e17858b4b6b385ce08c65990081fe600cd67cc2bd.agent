@@ -1,0 +1,15 @@
+test invoice.create/line-error {
+    let cart = cartLine::new(
+        product-id = ProductId::new("90000000-0000-0000-0000-000000000001"),
+        quantity = 1);
+    match invoice::create(
+        business::seed(unit),
+        InvoiceId::new("91000000-0000-0000-0000-000000000001"),
+        CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        list::singleton<CartLine>(cart),
+        Instant::new("2026-01-04T00:00:00.0000000+00:00")) {
+        ok updated => { false }
+        error problem => { equals(problem.code(), "PRODUCT_NOT_FOUND") }
+    }
+    => true
+}

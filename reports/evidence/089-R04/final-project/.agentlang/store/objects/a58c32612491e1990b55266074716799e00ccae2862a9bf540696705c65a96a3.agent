@@ -1,0 +1,7 @@
+example email.queue/missing-customer {
+    match email::queue(store::empty(unit), CustomerId::new("00000000-0000-0000-0000-000000000001"), "Notice", "Body") {
+        error problem => { problem.code() }
+        ok updated => { "unexpected" }
+    }
+    => "CUSTOMER_NOT_FOUND"
+}

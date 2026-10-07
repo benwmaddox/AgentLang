@@ -1,0 +1,60 @@
+test business.seed/exact-baseline {
+    let baseline = business::seed(unit);
+    let customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001");
+    let product-id = ProductId::new("20000000-0000-0000-0000-000000000001");
+    let subscription-id = SubscriptionId::new("30000000-0000-0000-0000-000000000001");
+    let customer-is-exact = match store::customer(customer-id, baseline) {
+        some selected => {
+            bool::and(
+                equals(selected.email(), Email::new("ada@example.test")),
+                bool::and(
+                    equals(selected.kind(), "regular"),
+                    bool::and(
+                        equals(selected.balance(), Money::new(1250)),
+                        equals(selected.created-at(), Instant::new("2026-01-01T12:00:00.0000000+00:00")))))
+        }
+        none => { false }
+    };
+    let product-is-exact = match store::product(product-id, baseline) {
+        some selected => {
+            bool::and(
+                equals(selected.name(), "Monthly plan"),
+                equals(selected.unit-price(), Money::new(199)))
+        }
+        none => { false }
+    };
+    let subscription-is-exact = match store::subscription(subscription-id, baseline) {
+        some selected => {
+            bool::and(
+                equals(selected.customer-id(), customer-id),
+                bool::and(
+                    equals(selected.product-id(), product-id),
+                    bool::and(
+                        equals(selected.term(), "monthly"),
+                        bool::and(
+                            equals(selected.started-at(), Instant::new("2026-01-02T12:00:00.0000000+00:00")),
+                            bool::and(
+                                equals(selected.expires-at(), Instant::new("2026-02-01T12:00:00.0000000+00:00")),
+                                bool::and(
+                                    equals(selected.status(), SubscriptionStatus::new("active")),
+                                    equals(selected.cancelled-at(), option::none<Instant>())))))))
+        }
+        none => { false }
+    };
+    bool::and(
+        equals(baseline.customers().count(), 1),
+        bool::and(
+            equals(baseline.products().count(), 1),
+            bool::and(
+                equals(baseline.subscriptions().count(), 1),
+                bool::and(
+                    equals(baseline.invoices().count(), 0),
+                    bool::and(
+                        equals(baseline.payments().count(), 0),
+                        bool::and(
+                            equals(baseline.email-outbox().count(), 0),
+                            bool::and(
+                                equals(baseline.sent-emails().count(), 0),
+                                bool::and(customer-is-exact, bool::and(product-is-exact, subscription-is-exact)))))))))
+    => true
+}

@@ -1,0 +1,4 @@
+record EmailDeliveryPlan {
+    field first: Option<EmailMessage>;
+    field remaining: List<EmailMessage>;
+}

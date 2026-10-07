@@ -1,0 +1,12 @@
+word store.with-email-state(store: Store, outbox: List<EmailMessage>, sent: List<EmailMessage>) -> Store {
+    effects none
+    doc "Replace both email lists while preserving the five business entity lists."
+    store::new(
+        customers = store.customers(),
+        products = store.products(),
+        subscriptions = store.subscriptions(),
+        invoices = store.invoices(),
+        payments = store.payments(),
+        email-outbox = outbox,
+        sent-emails = sent)
+}

@@ -1,0 +1,33 @@
+word business.seed(value: Unit) -> Store {
+    effects none
+    doc "Create the deterministic baseline customer, product, and subscription."
+    let customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001");
+    let product-id = ProductId::new("20000000-0000-0000-0000-000000000001");
+    let customer = customer::new(
+        id = customer-id,
+        email = Email::new("ada@example.test"),
+        kind = "regular",
+        balance = Money::new(1250),
+        created-at = Instant::new("2026-01-01T12:00:00.0000000+00:00"));
+    let product = product::new(
+        id = product-id,
+        name = "Monthly plan",
+        unit-price = Money::new(199));
+    let subscription = subscription::new(
+        id = SubscriptionId::new("30000000-0000-0000-0000-000000000001"),
+        customer-id = customer-id,
+        product-id = product-id,
+        term = "monthly",
+        started-at = Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        expires-at = Instant::new("2026-02-01T12:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("active"),
+        cancelled-at = option::none<Instant>());
+    store::new(
+        customers = list::singleton<Customer>(customer),
+        products = list::singleton<Product>(product),
+        subscriptions = list::singleton<Subscription>(subscription),
+        invoices = list::empty<Invoice>(),
+        payments = list::empty<Payment>(),
+        email-outbox = list::empty<EmailMessage>(),
+        sent-emails = list::empty<EmailMessage>())
+}

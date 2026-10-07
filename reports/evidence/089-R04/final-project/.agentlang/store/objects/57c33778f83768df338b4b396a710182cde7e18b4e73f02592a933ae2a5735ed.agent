@@ -1,0 +1,22 @@
+example subscription.replace-list/replaces-target {
+    let target = subscription::new(
+        id = SubscriptionId::new("50000000-0000-0000-0000-000000000003"),
+        customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        product-id = ProductId::new("20000000-0000-0000-0000-000000000001"),
+        term = "target",
+        started-at = Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        expires-at = Instant::new("2026-02-01T12:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("active"),
+        cancelled-at = option::none<Instant>());
+    let replacement = subscription::new(
+        id = target.id(),
+        customer-id = target.customer-id(),
+        product-id = target.product-id(),
+        term = "replacement",
+        started-at = target.started-at(),
+        expires-at = target.expires-at(),
+        status = SubscriptionStatus::new("cancelled"),
+        cancelled-at = option::some<Instant>(Instant::new("2026-01-02T12:00:00.0000000+00:00")));
+    subscription::replace-list(list::singleton<Subscription>(target), target.id(), replacement).count()
+    => 1
+}

@@ -1,0 +1,5 @@
+word invoice.status-valid?(value: String) -> Bool {
+    effects none
+    doc "Accept only the open and paid invoice states."
+    bool::or(equals(value, "open"), equals(value, "paid"))
+}

@@ -1,0 +1,4 @@
+record CartLine {
+    field product-id: ProductId;
+    field quantity: Int;
+}

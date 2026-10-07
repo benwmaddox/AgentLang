@@ -1,0 +1,3 @@
+type SubscriptionStatus : String {
+    validate subscription::status-valid?;
+}

@@ -1,0 +1,16 @@
+word store.customer-fold-step(accumulator: CustomerLookup, candidate: Customer) -> CustomerLookup {
+    effects none
+    doc "Keep the first customer whose ID matches the lookup key."
+    match accumulator.found() {
+        some existing => { accumulator }
+        none => {
+            if equals(candidate.id(), accumulator.target()) {
+                customerLookup::new(
+                    target = accumulator.target(),
+                    found = option::some<Customer>(candidate))
+            } else {
+                accumulator
+            }
+        }
+    }
+}

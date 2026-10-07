@@ -1,0 +1,8 @@
+word invoice.build-lines(store: Store, cart: List<CartLine>) -> Result<List<InvoiceLine>, BusinessError> {
+    effects none
+    doc "Build cart lines in input order, returning the first line error or an empty list for an empty cart."
+    let initial = invoiceLinesAccumulator::new(
+        store = store,
+        outcome = result::ok<List<InvoiceLine>, BusinessError>(list::empty<InvoiceLine>()));
+    cart.fold(initial, invoice::build-lines-step).outcome()
+}

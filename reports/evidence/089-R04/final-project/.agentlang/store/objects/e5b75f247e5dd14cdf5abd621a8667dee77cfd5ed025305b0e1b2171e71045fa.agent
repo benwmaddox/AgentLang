@@ -1,0 +1,7 @@
+test customer-id.parse/invalid {
+    match customer-id::parse("not-a-guid") {
+        ok id => { CustomerId::value(id) }
+        error problem => { problem.code() }
+    }
+    => "INVALID_IDENTIFIER"
+}

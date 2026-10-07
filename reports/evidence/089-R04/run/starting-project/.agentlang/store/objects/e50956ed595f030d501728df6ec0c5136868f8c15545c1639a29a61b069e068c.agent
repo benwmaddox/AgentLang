@@ -1,0 +1,15 @@
+word money.multiply-by-quantity(amount: Money, quantity: Int) -> Result<Money, BusinessError> {
+    effects none
+    doc "Multiply signed minor units by a signed Int32 quantity with checked arithmetic."
+    let below-int32 = int::less-than(quantity, -2147483648);
+    let above-int32 = int::greater-than(quantity, 2147483647);
+    if bool::or(below-int32, above-int32) {
+        result::error<Money, BusinessError>(businessError::new(code = "INVALID_QUANTITY", message = "Quantity must fit the signed Int32 range."))
+    } else {
+        let product = int::multiply-checked(Money::value(amount), quantity);
+        match product {
+            ok value => { result::ok<Money, BusinessError>(Money::new(value)) }
+            error detail => { result::error<Money, BusinessError>(businessError::new(code = "MONEY_OVERFLOW", message = "The money operation exceeded the Int64 minor-unit range.")) }
+        }
+    }
+}

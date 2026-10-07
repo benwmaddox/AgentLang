@@ -1,0 +1,27 @@
+test payment.apply-result/provider-error-is-data {
+    let invoice = invoice::new(
+        id = InvoiceId::new("00000000-0000-0000-0000-000000000002"),
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"),
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(100),
+        created-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"),
+        status = InvoiceStatus::new("open"));
+    let initial = store::with-invoices(store::empty(unit), list::singleton<Invoice>(invoice));
+    match payment::apply-result(
+        initial,
+        PaymentId::new("00000000-0000-0000-0000-000000000001"),
+        invoice.id(),
+        Money::new(100),
+        Instant::new("2024-01-02T00:00:00.0000000+00:00"),
+        result::error<PaymentReceipt, BusinessError>(businessError::new(code = "DECLINED", message = "declined by deterministic fake"))) {
+        error problem => {
+            bool::and(
+                equals(problem.code(), "PAYMENT_PROVIDER_FAILURE"),
+                bool::and(
+                    equals(problem.message(), "declined by deterministic fake"),
+                    bool::and(equals(initial.invoices(), list::singleton<Invoice>(invoice)), equals(initial.payments().count(), 0))))
+        }
+        ok updated => { false }
+    }
+    => true
+}

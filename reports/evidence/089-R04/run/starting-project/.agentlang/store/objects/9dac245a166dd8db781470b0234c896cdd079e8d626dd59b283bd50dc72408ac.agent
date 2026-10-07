@@ -1,0 +1,4 @@
+example business.email-valid?/fixture-address {
+    business::email-valid?("dev.team@example.com")
+    => true
+}

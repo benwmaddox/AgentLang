@@ -1,0 +1,10 @@
+record Subscription {
+    field id: SubscriptionId;
+    field customer-id: CustomerId;
+    field product-id: ProductId;
+    field term: String;
+    field started-at: Instant;
+    field expires-at: Instant;
+    field status: SubscriptionStatus;
+    field cancelled-at: Option<Instant>;
+}

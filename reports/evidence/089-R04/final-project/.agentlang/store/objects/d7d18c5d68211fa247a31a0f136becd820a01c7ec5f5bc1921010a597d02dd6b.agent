@@ -1,0 +1,14 @@
+test invoice.build-lines/propagates-first-line-error {
+    let store = business::seed(unit);
+    let valid-id = ProductId::new("20000000-0000-0000-0000-000000000001");
+    let missing-id = ProductId::new("90000000-0000-0000-0000-000000000001");
+    let first = cartLine::new(product-id = valid-id, quantity = 1);
+    let bad = cartLine::new(product-id = missing-id, quantity = 1);
+    let later = cartLine::new(product-id = missing-id, quantity = 0);
+    let cart = list::append(list::append(list::singleton<CartLine>(first), bad), later);
+    match invoice::build-lines(store, cart) {
+        ok lines => { false }
+        error problem => { equals(problem.code(), "PRODUCT_NOT_FOUND") }
+    }
+    => true
+}

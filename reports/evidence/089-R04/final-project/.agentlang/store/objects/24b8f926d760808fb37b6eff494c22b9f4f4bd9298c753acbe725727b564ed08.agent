@@ -1,0 +1,17 @@
+test store.empty/initializes-all-collections {
+    let empty-store = store::empty(unit);
+    bool::and(
+        equals(empty-store.customers().count(), 0),
+        bool::and(
+            equals(empty-store.products().count(), 0),
+            bool::and(
+                equals(empty-store.subscriptions().count(), 0),
+                bool::and(
+                    equals(empty-store.invoices().count(), 0),
+                    bool::and(
+                        equals(empty-store.payments().count(), 0),
+                        bool::and(
+                            equals(empty-store.email-outbox().count(), 0),
+                            equals(empty-store.sent-emails().count(), 0)))))))
+    => true
+}

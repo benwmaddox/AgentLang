@@ -1,0 +1,4 @@
+test invoice.status-valid?/unknown {
+    invoice::status-valid?("void")
+    => false
+}

@@ -1,0 +1,7 @@
+test instant.normalize/invalid {
+    match instant::normalize("next Tuesday") {
+        ok timestamp => { Instant::value(timestamp) }
+        error problem => { problem.code() }
+    }
+    => "INVALID_INSTANT"
+}

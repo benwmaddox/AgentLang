@@ -1,0 +1,15 @@
+test subscription.start/rejects-missing-customer-first {
+    let initial = business::seed(unit);
+    match subscription::start(
+        initial,
+        SubscriptionId::new("50000000-0000-0000-0000-000000000005"),
+        CustomerId::new("90000000-0000-0000-0000-000000000001"),
+        ProductId::new("90000000-0000-0000-0000-000000000002"),
+        "monthly",
+        Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        Instant::new("2026-03-02T12:00:00.0000000+00:00")) {
+        ok updated => { "UNEXPECTED_SUCCESS" }
+        error problem => { problem.code() }
+    }
+    => "CUSTOMER_NOT_FOUND"
+}

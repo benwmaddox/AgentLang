@@ -1,0 +1,23 @@
+word email.queue(store: Store, customer-id: CustomerId, subject: String, body: String) -> Result<Store, BusinessError> {
+    effects none
+    doc "Queue a trimmed, validated email for an existing customer, preserving FIFO order."
+    match store::customer(customer-id, store) {
+        none => {
+            result::error<Store, BusinessError>(businessError::new(
+                code = "CUSTOMER_NOT_FOUND",
+                message = "The customer does not exist."))
+        }
+        some customer => {
+            match email-message::create(customer.email(), subject, body) {
+                error invalid-message => { result::error<Store, BusinessError>(invalid-message) }
+                ok message => {
+                    let updated = store::with-email-state(
+                        store,
+                        list::append(store.email-outbox(), message),
+                        store.sent-emails());
+                    result::ok<Store, BusinessError>(updated)
+                }
+            }
+        }
+    }
+}

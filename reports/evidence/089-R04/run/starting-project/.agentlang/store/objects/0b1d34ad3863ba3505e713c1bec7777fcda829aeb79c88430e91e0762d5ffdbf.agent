@@ -1,0 +1,6 @@
+record SubscriptionReplacementState {
+    field target-id: SubscriptionId;
+    field replacement: Subscription;
+    field output: List<Subscription>;
+    field replaced: Bool;
+}

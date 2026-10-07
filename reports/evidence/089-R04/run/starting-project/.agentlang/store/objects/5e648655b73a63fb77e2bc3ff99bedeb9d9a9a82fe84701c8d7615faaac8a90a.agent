@@ -1,0 +1,67 @@
+test store.add-product/adds-and-preserves-all-collections {
+    let new-product = product::new(
+        id = ProductId::new("00000000-0000-0000-0000-000000000001"),
+        name = "new product",
+        unit-price = Money::new(50));
+    let customer = customer::new(
+        id = CustomerId::new("00000000-0000-0000-0000-000000000002"),
+        email = Email::new("saved@example.com"),
+        kind = "saved",
+        balance = Money::new(0),
+        created-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"));
+    let product = product::new(
+        id = ProductId::new("00000000-0000-0000-0000-000000000003"),
+        name = "saved product",
+        unit-price = Money::new(25));
+    let subscription = subscription::new(
+        id = SubscriptionId::new("00000000-0000-0000-0000-000000000004"),
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000002"),
+        product-id = ProductId::new("00000000-0000-0000-0000-000000000003"),
+        term = "monthly",
+        started-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"),
+        expires-at = Instant::new("2024-02-01T00:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("active"),
+        cancelled-at = option::none<Instant>());
+    let invoice = invoice::new(
+        id = InvoiceId::new("00000000-0000-0000-0000-000000000005"),
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000002"),
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(25),
+        created-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"),
+        status = InvoiceStatus::new("open"));
+    let payment = payment::new(
+        id = PaymentId::new("00000000-0000-0000-0000-000000000006"),
+        invoice-id = InvoiceId::new("00000000-0000-0000-0000-000000000005"),
+        amount = Money::new(25),
+        provider-reference = "saved-payment",
+        paid-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"));
+    let email = emailMessage::new(
+        to = Email::new("saved@example.com"), subject = "saved", body = "saved body");
+    let initial = store::new(
+        customers = list::singleton<Customer>(customer),
+        products = list::singleton<Product>(product),
+        subscriptions = list::singleton<Subscription>(subscription),
+        invoices = list::singleton<Invoice>(invoice),
+        payments = list::singleton<Payment>(payment),
+        email-outbox = list::singleton<EmailMessage>(email),
+        sent-emails = list::singleton<EmailMessage>(email));
+    match store::add-product(new-product, initial) {
+        ok updated => {
+            bool::and(
+                equals(updated.customers(), initial.customers()),
+                bool::and(
+                    equals(updated.products(), list::append(initial.products(), new-product)),
+                    bool::and(
+                        equals(updated.subscriptions(), initial.subscriptions()),
+                        bool::and(
+                            equals(updated.invoices(), initial.invoices()),
+                            bool::and(
+                                equals(updated.payments(), initial.payments()),
+                                bool::and(
+                                    equals(updated.email-outbox(), initial.email-outbox()),
+                                    equals(updated.sent-emails(), initial.sent-emails())))))))
+        }
+        error problem => { false }
+    }
+    => true
+}

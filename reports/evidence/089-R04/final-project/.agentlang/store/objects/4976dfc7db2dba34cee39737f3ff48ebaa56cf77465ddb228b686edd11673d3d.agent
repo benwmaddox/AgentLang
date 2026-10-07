@@ -1,0 +1,16 @@
+word store.payment-fold-step(accumulator: PaymentLookup, candidate: Payment) -> PaymentLookup {
+    effects none
+    doc "Keep the first payment whose ID matches the lookup key."
+    match accumulator.found() {
+        some existing => { accumulator }
+        none => {
+            if equals(candidate.id(), accumulator.target()) {
+                paymentLookup::new(
+                    target = accumulator.target(),
+                    found = option::some<Payment>(candidate))
+            } else {
+                accumulator
+            }
+        }
+    }
+}

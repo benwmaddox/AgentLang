@@ -1,0 +1,8 @@
+record Invoice {
+    field id: InvoiceId;
+    field customer-id: CustomerId;
+    field lines: List<InvoiceLine>;
+    field total: Money;
+    field created-at: Instant;
+    field status: InvoiceStatus;
+}

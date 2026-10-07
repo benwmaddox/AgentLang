@@ -1,0 +1,7 @@
+test payment-receipt.create/keeps-signed-amount {
+    match payment-receipt::create("provider-ref-42", Money::new(-900)) {
+        ok value => { int::to-string(Money::value(value.amount())) }
+        error problem => { problem.code() }
+    }
+    => "-900"
+}

@@ -1,0 +1,16 @@
+word email.delivery-fold-step(accumulator: EmailDeliveryPlan, candidate: EmailMessage) -> EmailDeliveryPlan {
+    effects none
+    doc "Separate the first outbox message from the FIFO remainder."
+    match accumulator.first() {
+        some first => {
+            emailDeliveryPlan::new(
+                first = accumulator.first(),
+                remaining = list::append(accumulator.remaining(), candidate))
+        }
+        none => {
+            emailDeliveryPlan::new(
+                first = option::some<EmailMessage>(candidate),
+                remaining = accumulator.remaining())
+        }
+    }
+}

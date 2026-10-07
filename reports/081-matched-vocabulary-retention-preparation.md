@@ -1,17 +1,14 @@
 # Matched vocabulary-retention preparation
 
-Status: genuine corrected-public-contract preparation passed on clean d9c07fe.
-Candidate controls passed 63/63, reference acceptance passed 157 checks and
-10 cases, production trace audit passed 662/662, and frozen controls passed
-21/21. The actual written prompt contains the required public name/signature.
-All 123 exact reference/control files are archived; closed reference slots are
-free and canonical baselines unchanged. R01 (B1/Flat/S01) passed independent
-acceptance and integrity audit (report 083). R02 (B1/Flat/S07) passed integrity
-audit but failed independent behavior acceptance (report 084). R03
-(B1/Retained/S01) has now passed independent acceptance and integrity audit
-(report 087), bringing the completed count to three of twelve. No comparative
-retention effect is established; the accepted R03 output must be transferred to
-the same-block R04 S07 cell.
+Status: genuine corrected-public-contract preparation passed on clean d9c07fe. Candidate
+controls passed 63/63, reference acceptance passed 157 checks and 10 cases,
+production trace audit passed 662/662, and frozen controls passed 21/21. The
+written prompt contains the required public name/signature. Four of twelve fresh
+actors have run: R01 and R03 passed independent acceptance and integrity audit;
+R02 failed independent behavior acceptance; R04 (B1/Retained/S07) was blocked
+before behavior because the verifier rejected frozen provenance and the trace
+audit exited 1 without writing a report (reports 083, 084, 087, 089). R04 has no
+behavior outcome. No comparative retention effect is established.
 
 Published revisions f3f4391 and 5b0a367 passed 37/37 CI checks on both branches;
 their downloaded evidence is archived separately.

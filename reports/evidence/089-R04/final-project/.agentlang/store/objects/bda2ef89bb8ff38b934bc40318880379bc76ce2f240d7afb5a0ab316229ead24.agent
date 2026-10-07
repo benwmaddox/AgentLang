@@ -1,0 +1,43 @@
+test subscription.start/appends-active-subscription {
+    let initial = business::seed(unit);
+    let id = SubscriptionId::new("50000000-0000-0000-0000-000000000001");
+    let customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001");
+    let product-id = ProductId::new("20000000-0000-0000-0000-000000000001");
+    match subscription::start(
+        initial,
+        id,
+        customer-id,
+        product-id,
+        "  monthly  ",
+        Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        Instant::new("2026-03-02T12:00:00.0000000+00:00")) {
+        ok updated => {
+            match store::subscription(id, updated) {
+                some created => {
+                    bool::and(
+                        equals(created.term(), "monthly"),
+                        bool::and(
+                            equals(created.status(), SubscriptionStatus::new("active")),
+                            bool::and(
+                                equals(created.cancelled-at(), option::none<Instant>()),
+                                bool::and(
+                                    equals(updated.subscriptions().count(), 2),
+                                    bool::and(
+                                        equals(updated.customers(), initial.customers()),
+                                        bool::and(
+                                            equals(updated.products(), initial.products()),
+                                            bool::and(
+                                                equals(updated.invoices(), initial.invoices()),
+                                                bool::and(
+                                                    equals(updated.payments(), initial.payments()),
+                                                    bool::and(
+                                                        equals(updated.email-outbox(), initial.email-outbox()),
+                                                        equals(updated.sent-emails(), initial.sent-emails()))))))))))
+                }
+                none => { false }
+            }
+        }
+        error problem => { false }
+    }
+    => true
+}

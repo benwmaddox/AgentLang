@@ -1,0 +1,7 @@
+example store.with-email-state/replaces-lists {
+    store::with-email-state(
+        business::seed(unit),
+        list::empty<EmailMessage>(),
+        list::empty<EmailMessage>()).email-outbox().count()
+    => 0
+}

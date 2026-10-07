@@ -1,0 +1,11 @@
+test store.replace-invoice/empty-fold-identity {
+    let replacement = invoice::new(
+        id = InvoiceId::new("00000000-0000-0000-0000-000000000001"),
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"),
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(20),
+        created-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"),
+        status = InvoiceStatus::new("paid"));
+    store::replace-invoice(store::empty(unit), replacement).invoices().count()
+    => 0
+}

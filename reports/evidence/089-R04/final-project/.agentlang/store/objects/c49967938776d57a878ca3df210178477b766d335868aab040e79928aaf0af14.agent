@@ -1,0 +1,7 @@
+example payment-receipt.create/trimmed-reference {
+    match payment-receipt::create("  provider-ref-42  ", Money::new(900)) {
+        ok value => { value.reference() }
+        error problem => { problem.code() }
+    }
+    => "provider-ref-42"
+}

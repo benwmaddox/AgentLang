@@ -1,0 +1,7 @@
+example email.parse/accepted-address {
+    match email::parse("dev@example.com") {
+        ok address => { Email::value(address) }
+        error problem => { problem.code() }
+    }
+    => "dev@example.com"
+}

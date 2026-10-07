@@ -1,0 +1,9 @@
+word money.add(left: Money, right: Money) -> Result<Money, BusinessError> {
+    effects none
+    doc "Add signed minor-unit amounts with checked Int64 arithmetic."
+    let sum = int::add-checked(Money::value(left), Money::value(right));
+    match sum {
+        ok value => { result::ok<Money, BusinessError>(Money::new(value)) }
+        error detail => { result::error<Money, BusinessError>(businessError::new(code = "MONEY_OVERFLOW", message = "The money operation exceeded the Int64 minor-unit range.")) }
+    }
+}

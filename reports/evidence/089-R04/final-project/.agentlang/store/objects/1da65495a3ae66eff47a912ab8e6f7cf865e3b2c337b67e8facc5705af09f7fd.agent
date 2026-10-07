@@ -1,0 +1,7 @@
+test email.queue/missing-customer-precedes-message-validation {
+    match email::queue(store::empty(unit), CustomerId::new("00000000-0000-0000-0000-000000000001"), " ", " ") {
+        error problem => { equals(problem.code(), "CUSTOMER_NOT_FOUND") }
+        ok updated => { false }
+    }
+    => true
+}

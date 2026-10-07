@@ -1,0 +1,7 @@
+test subscription-id.parse/canonical {
+    match subscription-id::parse("00112233-4455-6677-8899-aabbccddeeff") {
+        ok id => { SubscriptionId::value(id) }
+        error problem => { problem.code() }
+    }
+    => "00112233-4455-6677-8899-aabbccddeeff"
+}

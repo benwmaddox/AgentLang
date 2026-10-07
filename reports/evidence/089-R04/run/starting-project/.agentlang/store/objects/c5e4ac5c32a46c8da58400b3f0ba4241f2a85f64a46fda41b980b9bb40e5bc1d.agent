@@ -1,0 +1,4 @@
+test business.email-valid?/rejected-empty-local-segment {
+    business::email-valid?("dev..team@example.com")
+    => false
+}

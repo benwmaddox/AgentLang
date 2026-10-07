@@ -1,0 +1,16 @@
+word store.product-fold-step(accumulator: ProductLookup, candidate: Product) -> ProductLookup {
+    effects none
+    doc "Keep the first product whose ID matches the lookup key."
+    match accumulator.found() {
+        some existing => { accumulator }
+        none => {
+            if equals(candidate.id(), accumulator.target()) {
+                productLookup::new(
+                    target = accumulator.target(),
+                    found = option::some<Product>(candidate))
+            } else {
+                accumulator
+            }
+        }
+    }
+}

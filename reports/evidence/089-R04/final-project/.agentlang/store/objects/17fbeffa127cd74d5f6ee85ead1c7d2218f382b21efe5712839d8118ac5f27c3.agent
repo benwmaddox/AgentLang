@@ -1,0 +1,5 @@
+word money.nonnegative?(amount: Money) -> Bool {
+    effects none
+    doc "Whether a signed minor-unit amount is zero or greater."
+    bool::not(int::less-than(Money::value(amount), 0))
+}

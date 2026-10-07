@@ -1,0 +1,6 @@
+record InvoiceReplacement {
+    field target: InvoiceId;
+    field replacement: Invoice;
+    field replaced: Bool;
+    field values: List<Invoice>;
+}

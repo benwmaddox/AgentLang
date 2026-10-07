@@ -1,0 +1,15 @@
+test invoice.build-lines-step/preserves-prior-error {
+    let problem = businessError::new(code = "EARLIER", message = "first error");
+    let initial = invoiceLinesAccumulator::new(
+        store = store::empty(unit),
+        outcome = result::error<List<InvoiceLine>, BusinessError>(problem));
+    let cart = cartLine::new(
+        product-id = ProductId::new("90000000-0000-0000-0000-000000000001"),
+        quantity = 1);
+    let updated = invoice::build-lines-step(initial, cart);
+    match updated.outcome() {
+        error actual => { equals(actual.code(), "EARLIER") }
+        ok lines => { false }
+    }
+    => true
+}

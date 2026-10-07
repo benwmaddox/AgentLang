@@ -1,0 +1,41 @@
+test store.with-invoices/replaces-existing-list {
+    let initial = business::seed(unit);
+    let old-invoice = invoice::new(
+        id = InvoiceId::new("41000000-0000-0000-0000-000000000000"),
+        customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(10),
+        created-at = Instant::new("2026-01-02T12:00:00.0000000+00:00"),
+        status = InvoiceStatus::new("open"));
+    let initial-with-old-invoice = store::with-invoices(initial, list::singleton<Invoice>(old-invoice));
+    let first = invoice::new(
+        id = InvoiceId::new("41000000-0000-0000-0000-000000000001"),
+        customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(20),
+        created-at = Instant::new("2026-01-03T12:00:00.0000000+00:00"),
+        status = InvoiceStatus::new("open"));
+    let second = invoice::new(
+        id = InvoiceId::new("41000000-0000-0000-0000-000000000002"),
+        customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(30),
+        created-at = Instant::new("2026-01-04T12:00:00.0000000+00:00"),
+        status = InvoiceStatus::new("open"));
+    let values = list::append(list::singleton<Invoice>(first), second);
+    let updated = store::with-invoices(initial-with-old-invoice, values);
+    bool::and(
+        equals(updated.invoices(), values),
+        bool::and(
+            equals(updated.customers(), initial-with-old-invoice.customers()),
+            bool::and(
+                equals(updated.products(), initial-with-old-invoice.products()),
+                bool::and(
+                    equals(updated.subscriptions(), initial-with-old-invoice.subscriptions()),
+                    bool::and(
+                        equals(updated.payments(), initial-with-old-invoice.payments()),
+                        bool::and(
+                            equals(updated.email-outbox(), initial-with-old-invoice.email-outbox()),
+                            equals(updated.sent-emails(), initial-with-old-invoice.sent-emails())))))))
+    => true
+}

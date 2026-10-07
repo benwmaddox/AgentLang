@@ -60,3 +60,8 @@ reports/evidence/087-R03-index.json -text whitespace=blank-at-eol,blank-at-eof,s
 reports/evidence/086-local-validation/** -text -whitespace
 reports/evidence/086-local-validation-index.json -text
 reports/evidence/086-local-validation-index.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+
+# Original R04 files and console captures preserve their exact bytes.
+reports/evidence/089-R04/** -text -whitespace
+reports/evidence/089-R04-index.json -text
+reports/evidence/089-R04-index.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

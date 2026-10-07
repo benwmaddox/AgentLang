@@ -1,0 +1,26 @@
+test email.apply-delivery-result/success-moves-only-first-message {
+    let first = emailMessage::new(to = Email::new("first@example.test"), subject = "First", body = "First body");
+    let later = emailMessage::new(to = Email::new("later@example.test"), subject = "Later", body = "Later body");
+    let prior-sent = emailMessage::new(to = Email::new("sent@example.test"), subject = "Sent", body = "Sent body");
+    let initial = store::with-email-state(
+        store::empty(unit),
+        list::append(list::singleton<EmailMessage>(first), later),
+        list::singleton<EmailMessage>(prior-sent));
+    match email::apply-delivery-result(initial, result::ok<Unit, BusinessError>(unit)) {
+        error problem => { false }
+        ok updated => {
+            bool::and(
+                equals(updated.email-outbox(), list::singleton<EmailMessage>(later)),
+                bool::and(
+                    equals(updated.sent-emails(), list::append(list::singleton<EmailMessage>(prior-sent), first)),
+                    bool::and(
+                        equals(updated.customers(), initial.customers()),
+                        bool::and(
+                            equals(updated.products(), initial.products()),
+                            bool::and(
+                                equals(updated.subscriptions(), initial.subscriptions()),
+                                bool::and(equals(updated.invoices(), initial.invoices()), equals(updated.payments(), initial.payments())))))))
+        }
+    }
+    => true
+}

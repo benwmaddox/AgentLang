@@ -1,0 +1,22 @@
+test payment.apply-result/duplicate-precedes-invalid-amount {
+    let id = PaymentId::new("00000000-0000-0000-0000-000000000001");
+    let payment = payment::new(
+        id = id,
+        invoice-id = InvoiceId::new("00000000-0000-0000-0000-000000000002"),
+        amount = Money::new(10),
+        provider-reference = "existing-ref",
+        paid-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"));
+    let base = store::empty(unit);
+    let initial = store::with-payments(base, list::singleton<Payment>(payment));
+    match payment::apply-result(
+        initial,
+        id,
+        InvoiceId::new("00000000-0000-0000-0000-000000000003"),
+        Money::new(0),
+        Instant::new("2024-01-02T00:00:00.0000000+00:00"),
+        result::error<PaymentReceipt, BusinessError>(businessError::new(code = "IGNORED", message = "ignored"))) {
+        error problem => { equals(problem.code(), "DUPLICATE_PAYMENT") }
+        ok updated => { false }
+    }
+    => true
+}

@@ -1,0 +1,4 @@
+test subscription.status-valid?/active {
+    subscription::status-valid?("active")
+    => true
+}

@@ -1,0 +1,7 @@
+test payment-id.parse/invalid {
+    match payment-id::parse("invalid") {
+        ok id => { PaymentId::value(id) }
+        error problem => { problem.code() }
+    }
+    => "INVALID_IDENTIFIER"
+}

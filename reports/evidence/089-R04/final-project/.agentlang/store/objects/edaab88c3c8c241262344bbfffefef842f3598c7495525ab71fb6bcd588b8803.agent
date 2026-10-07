@@ -1,0 +1,3 @@
+type Instant : String {
+    validate business::instant-valid?;
+}

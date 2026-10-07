@@ -1,0 +1,42 @@
+test store.replace-invoice/nonempty-fold-preserves-order-and-records {
+    let first = invoice::new(
+        id = InvoiceId::new("00000000-0000-0000-0000-000000000001"),
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"),
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(20),
+        created-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"),
+        status = InvoiceStatus::new("open"));
+    let second = invoice::new(
+        id = InvoiceId::new("00000000-0000-0000-0000-000000000002"),
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"),
+        lines = list::empty<InvoiceLine>(),
+        total = Money::new(40),
+        created-at = Instant::new("2024-01-02T00:00:00.0000000+00:00"),
+        status = InvoiceStatus::new("open"));
+    let replacement = invoice::new(
+        id = second.id(),
+        customer-id = second.customer-id(),
+        lines = second.lines(),
+        total = Money::new(40),
+        created-at = second.created-at(),
+        status = InvoiceStatus::new("paid"));
+    let base = store::empty(unit);
+    let initial = store::with-invoices(base, list::append(list::singleton<Invoice>(first), second));
+    let updated = store::replace-invoice(initial, replacement);
+    bool::and(
+        equals(updated.invoices().get(0), option::some<Invoice>(first)),
+        bool::and(
+            equals(updated.invoices().get(1), option::some<Invoice>(replacement)),
+            bool::and(
+                equals(updated.customers(), initial.customers()),
+                bool::and(
+                    equals(updated.products(), initial.products()),
+                    bool::and(
+                        equals(updated.subscriptions(), initial.subscriptions()),
+                        bool::and(
+                            equals(updated.payments(), initial.payments()),
+                            bool::and(
+                                equals(updated.email-outbox(), initial.email-outbox()),
+                                equals(updated.sent-emails(), initial.sent-emails()))))))))
+    => true
+}

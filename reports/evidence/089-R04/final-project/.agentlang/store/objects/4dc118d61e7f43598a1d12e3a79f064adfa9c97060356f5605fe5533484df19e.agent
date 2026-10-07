@@ -1,0 +1,7 @@
+test payment-receipt.create/blank-reference {
+    match payment-receipt::create(" \t ", Money::new(900)) {
+        ok value => { value.reference() }
+        error problem => { problem.code() }
+    }
+    => "INVALID_PROVIDER_RECEIPT"
+}

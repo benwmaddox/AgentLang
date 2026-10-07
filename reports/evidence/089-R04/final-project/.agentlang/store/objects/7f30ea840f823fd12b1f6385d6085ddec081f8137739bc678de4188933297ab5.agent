@@ -1,0 +1,19 @@
+word invoice.sum-lines-step(accumulator: InvoiceTotalAccumulator, line: InvoiceLine) -> InvoiceTotalAccumulator {
+    effects none
+    doc "Add one line total with checked arithmetic, preserving any earlier error."
+    match accumulator.outcome() {
+        error problem => { accumulator }
+        ok subtotal => {
+            match money::add(subtotal, line.line-total()) {
+                ok total => {
+                    invoiceTotalAccumulator::new(
+                        outcome = result::ok<Money, BusinessError>(total))
+                }
+                error problem => {
+                    invoiceTotalAccumulator::new(
+                        outcome = result::error<Money, BusinessError>(problem))
+                }
+            }
+        }
+    }
+}

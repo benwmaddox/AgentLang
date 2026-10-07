@@ -1,0 +1,26 @@
+test invoice.sum-lines/overflow-preserves-error {
+    let first = invoiceLine::new(
+        product-id = ProductId::new("90000000-0000-0000-0000-000000000001"),
+        description = "maximum",
+        quantity = 1,
+        unit-price = Money::new(9223372036854775807),
+        line-total = Money::new(9223372036854775807));
+    let second = invoiceLine::new(
+        product-id = ProductId::new("90000000-0000-0000-0000-000000000002"),
+        description = "one",
+        quantity = 1,
+        unit-price = Money::new(1),
+        line-total = Money::new(1));
+    let third = invoiceLine::new(
+        product-id = ProductId::new("90000000-0000-0000-0000-000000000003"),
+        description = "later",
+        quantity = 1,
+        unit-price = Money::new(5),
+        line-total = Money::new(5));
+    let lines = list::append(list::append(list::singleton<InvoiceLine>(first), second), third);
+    match invoice::sum-lines(lines) {
+        ok total => { false }
+        error problem => { equals(problem.code(), "MONEY_OVERFLOW") }
+    }
+    => true
+}

@@ -1,0 +1,7 @@
+example email.apply-delivery-result/empty-outbox {
+    match email::apply-delivery-result(store::empty(unit), result::ok<Unit, BusinessError>(unit)) {
+        error problem => { problem.code() }
+        ok updated => { "unexpected" }
+    }
+    => "NO_PENDING_EMAIL"
+}

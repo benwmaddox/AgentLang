@@ -1,0 +1,5 @@
+record EmailMessage {
+    field to: Email;
+    field subject: String;
+    field body: String;
+}

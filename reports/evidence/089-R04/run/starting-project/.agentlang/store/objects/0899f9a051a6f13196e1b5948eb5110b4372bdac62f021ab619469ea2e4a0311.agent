@@ -1,0 +1,8 @@
+test store.payment/empty-fold {
+    let key = PaymentId::new("00000000-0000-0000-0000-000000000001");
+    match store::payment(key, store::empty(unit)) {
+        some selected => { false }
+        none => { true }
+    }
+    => true
+}

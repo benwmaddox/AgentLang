@@ -1,0 +1,15 @@
+test invoice.sum-lines-step/checked-addition-overflow {
+    let initial = invoiceTotalAccumulator::new(
+        outcome = result::ok<Money, BusinessError>(Money::new(9223372036854775807)));
+    let line = invoiceLine::new(
+        product-id = ProductId::new("90000000-0000-0000-0000-000000000001"),
+        description = "line",
+        quantity = 1,
+        unit-price = Money::new(1),
+        line-total = Money::new(1));
+    match invoice::sum-lines-step(initial, line).outcome() {
+        ok total => { false }
+        error problem => { equals(problem.code(), "MONEY_OVERFLOW") }
+    }
+    => true
+}

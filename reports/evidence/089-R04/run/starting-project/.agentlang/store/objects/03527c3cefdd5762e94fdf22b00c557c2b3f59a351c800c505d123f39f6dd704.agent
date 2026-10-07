@@ -1,0 +1,4 @@
+example store.with-invoices/replaces-list {
+    store::with-invoices(business::seed(unit), list::empty<Invoice>()).invoices().count()
+    => 0
+}

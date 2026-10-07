@@ -1,0 +1,21 @@
+test store.payment-fold-step/preserves-first {
+    let key = PaymentId::new("00000000-0000-0000-0000-000000000001");
+    let first = payment::new(
+        id = key,
+        invoice-id = InvoiceId::new("00000000-0000-0000-0000-000000000003"),
+        amount = Money::new(10),
+        provider-reference = "first-ref",
+        paid-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"));
+    let later = payment::new(
+        id = key,
+        invoice-id = InvoiceId::new("00000000-0000-0000-0000-000000000003"),
+        amount = Money::new(20),
+        provider-reference = "later-ref",
+        paid-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"));
+    let initial = paymentLookup::new(target = key, found = option::some<Payment>(first));
+    match store::payment-fold-step(initial, later).found() {
+        some selected => { equals(selected.provider-reference(), "first-ref") }
+        none => { false }
+    }
+    => true
+}

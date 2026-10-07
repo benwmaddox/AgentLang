@@ -1,0 +1,4 @@
+example invoice.status-valid?/open-state {
+    invoice::status-valid?("open")
+    => true
+}

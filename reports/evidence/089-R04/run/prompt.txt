@@ -1,0 +1,106 @@
+Run business-policy-retention-003 R04 task S07 as a fresh gpt-6-luna/max coding agent with no inherited turns.
+Your assigned project is D:\code\AgentLang\.agentlang\business-policy-retention-003\actors\R04.
+You are an external coding agent in a disposable synthetic project. Use only the supplied JSONL protocol and the assigned project. Do not use raw file access, shell commands, other tools, network access, or any project outside this broker. Do not inspect coordinator source, acceptance logic, other runs, prior outputs, or sibling projects. Preserve unrelated definitions, types, and tests. Make only changes necessary for this task.
+
+Human authorization directly covers these isolated project edits and local tests:
+"Yes, run the remaining isolated experiments"
+
+Task S07
+Apply a 10% discount only to premium balances; truncate fractional minor units toward zero. Implement the named public operation and attach tests for the listed behavior. Inspect available vocabulary first and preserve unrelated behavior.
+Required public operation: customer.discounted-balance
+Required public signature: Customer -> Money
+The operation name and signature above come from this task's public record. Use them as written.
+The Customer.Kind/kind value is raw data; comparisons are ordinal and case-sensitive. Do not trim or lowercase it. Money is signed Int64 minor units; Float is not an allowed implementation of money. Every signed Int64 value is valid, including negatives and both limits.
+
+Use the help operation when needed. The broker exposes a bounded allowlist with no granted capabilities or side effects. Call task.begin before authoring, add meaningful boundary and branch tests, examples and concise documentation as the task requires, run the available task tests, and finish durably with task.commit. Preserve earlier task functions, tests, and examples when the task is S07.
+
+The independent coordinator will review the final project and request acceptance. After you have completed the task, report the work and request independent acceptance while leaving this session live. Only after the coordinator has independently accepted the result and asks you to close, send the exact one-field JSONL request {"op":"host.close"}. Do not send it earlier. Do not treat EOF, Ctrl+C, timeout, or an observation delay as completion. Do not send any other transport-control request.
+
+Do not spawn or delegate. Preserve user and coordinator changes. Report actual tests, errors, and unavailable capabilities. Model token usage, turns, and effective context windows are not measured.
+
+You work through a JSONL protocol in a deterministic typed language. Start the
+exact supplied trial host once and send one JSON request per line through that
+same returned session. AI agents are external users; the runtime contains none.
+
+Use compact inventory or structural search to discover names:
+
+```json
+{"op":"words","compact":true}
+{"op":"search","query":"customer"}
+```
+
+`describe` returns detailed word metadata and source. `context` returns bounded
+signature/effect/dependency/documentation/type metadata for a word and its
+closure, omitting whole entries when necessary. Check omission counts. It has
+`maxDepth`, `maxWords` and `maxUtf8Bytes` fields; the latter bounds its complete
+data JSON, not the response wrapper. Both return parser-verified `flowReference`
+call spellings. Use dictionary names for protocol queries, declarations and
+test owners; use call references for expression targets. Root `add` is `::add`;
+`numbers.increment` is `numbers::increment`. Dot chaining passes a receiver as
+the first input. A null reference has an explanation.
+
+Flow uses named typed inputs, immutable `let` bindings, ordinary calls and no
+implicit nominal conversions. Both branches must produce the declared result:
+
+```text
+word increment(value: Int) -> Int {
+    effects none
+    ::add(value, 1)
+}
+test increment/basic {
+    ::increment(1) => 2
+}
+```
+
+```json
+{"op":"task.begin","goal":"<public task>"}
+{"op":"define","frontend":"flow","source":"<word and attached tests>"}
+{"op":"test","word":"increment"}
+{"op":"commit","word":"increment","library":true}
+{"op":"task.commit"}
+```
+
+Tests belong to words through the slash separator. These tasks require pure
+retained library words with passing own tests and complete own instruction and
+branch coverage. Caller tests cannot replace helper coverage. Add tests using
+an attachment-only Flow document when useful. Preserve prior types, source and
+tests. Use only the supplied protocol; do not read language project files.
+
+Documentation belongs inside word source as `doc "..."`; comments do not
+populate documentation metadata. Bare `=>` expectations use supported
+literal values. Tests also support `=> value expression` and `=> error CODE`;
+examples require literal expectations. For nominal Money, unwrap it with
+`Money::value(...)` when comparing against an Int literal.
+
+Use runtime help over this raw JSONL protocol: `{"op":"help"}` selects the
+authoring overview; topics include `define`, `replacement` and `examples`. The
+host explicitly allows `help`. The version-1 host's optional inspection
+classifier does not include help; no cumulative inspection-response budget is
+enabled here. A help call is available but is not required for acceptance.
+
+To replace source, inspect the current revision, then define with
+`replace:true` and that `expectedRevision`. For a new candidate, test it and
+use normal `commit`. For a persistent word, test its staged replacement and
+affected callers before `replace-word`; that operation accepts no source and
+persists the staged version. Follow the active host's operation allowlist.
+
+`describe.coverage` reflects the most recent test batch. Testing one word
+replaces that batch; another word can then display `not-run` even when its own
+earlier suite passed. Use the returned `test` coverage for that run, or
+`test-all` before inspecting several words' current own coverage together.
+
+Protocol-only editing is an instruction boundary, not an OS sandbox. The
+100-exchange host bound and per-exchange deadline apply. Observe the same live
+session across timeouts; never automatically repeat an uncertain request.
+Protocol bytes are not model tokens or context windows.
+
+Report completion after public tests and durable task commit, with actual
+outcomes, errors, missing capabilities and the host session ID. Leave that
+session open until independent acceptance completes. Do not send quit commands
+or EOF. Do not spawn other agents.
+
+Execute exactly the following PowerShell command with exec_command, workdir D:\code\AgentLang, sandbox_permissions require_escalated, tty true, and a short initial yield. Do not issue other shell or file commands.
+
+& 'D:\code\AgentLang\scripts\Start-SubagentTrialHostV2.ps1' -CliDll 'D:\code\AgentLang\src\AgentLang.Cli\bin\Release\net9.0\AgentLang.Cli.dll' -ProjectPath 'D:\code\AgentLang\.agentlang\business-policy-retention-003\actors\R04' -TracePath 'D:\code\AgentLang\.agentlang\business-policy-retention-003\runs\R04\trace.jsonl' -AllowedOperations @('callers','commit','context','define','dependencies','describe','diff','effects','eval','example','examples','failed-tests','graph','help','history','ir','replace-word','search','search-dependency','search-output','search-type','source','task.begin','task.commit','task.log','task.status','test','test-all','tests','transitive-callers','transitive-dependencies','type-of','words') -Profile agentlang -Capabilities @() -ClockValue '2000-01-01T00:00:00Z' -MaxRequestBytes 262144 -MaxResponseBytes 524288 -ExchangeTimeoutMilliseconds 120000 -MaxExchanges 100
+
+No startup banner is printed. Send one JSONL request per line on the same write_stdin session. After successful task completion, report the host session ID and leave it live for independent acceptance. Then, only when the coordinator requests teardown after acceptance, send the exact host.close request above. Report the actual tests, errors, and missing capabilities.

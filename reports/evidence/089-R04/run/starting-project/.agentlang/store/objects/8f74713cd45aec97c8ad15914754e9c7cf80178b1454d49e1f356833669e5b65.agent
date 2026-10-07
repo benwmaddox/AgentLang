@@ -1,0 +1,73 @@
+test invoice.create/appends-in-order-and-preserves-other-lists {
+    let base = business::seed(unit);
+    let customer-id = CustomerId::new("10000000-0000-0000-0000-000000000001");
+    let product-id = ProductId::new("20000000-0000-0000-0000-000000000001");
+    let second-product-id = ProductId::new("93000000-0000-0000-0000-000000000001");
+    let second-product = product::new(
+        id = second-product-id,
+        name = "Notebook",
+        unit-price = Money::new(25));
+    let products = list::append(base.products(), second-product);
+    let existing-payment = payment::new(
+        id = PaymentId::new("93000000-0000-0000-0000-000000000002"),
+        invoice-id = InvoiceId::new("93000000-0000-0000-0000-000000000003"),
+        amount = Money::new(10),
+        provider-reference = "preserved-payment",
+        paid-at = Instant::new("2026-01-03T00:00:00.0000000+00:00"));
+    let outbox-message = emailMessage::new(
+        to = Email::new("pending@example.test"), subject = "pending", body = "queued");
+    let sent-message = emailMessage::new(
+        to = Email::new("sent@example.test"), subject = "sent", body = "delivered");
+    let initial = store::new(
+        customers = base.customers(),
+        products = products,
+        subscriptions = base.subscriptions(),
+        invoices = base.invoices(),
+        payments = list::singleton<Payment>(existing-payment),
+        email-outbox = list::singleton<EmailMessage>(outbox-message),
+        sent-emails = list::singleton<EmailMessage>(sent-message));
+    let first-cart-line = cartLine::new(product-id = product-id, quantity = 2);
+    let second-cart-line = cartLine::new(product-id = second-product-id, quantity = 1);
+    let cart = list::append(list::singleton<CartLine>(first-cart-line), second-cart-line);
+    let id = InvoiceId::new("93000000-0000-0000-0000-000000000004");
+    let created-at = Instant::new("2026-01-04T00:00:00.0000000+00:00");
+    let expected-first = invoiceLine::new(
+        product-id = product-id,
+        description = "Monthly plan",
+        quantity = 2,
+        unit-price = Money::new(199),
+        line-total = Money::new(398));
+    let expected-second = invoiceLine::new(
+        product-id = second-product-id,
+        description = "Notebook",
+        quantity = 1,
+        unit-price = Money::new(25),
+        line-total = Money::new(25));
+    let expected-lines = list::append(list::singleton<InvoiceLine>(expected-first), expected-second);
+    let expected-invoice = invoice::new(
+        id = id,
+        customer-id = customer-id,
+        lines = expected-lines,
+        total = Money::new(423),
+        created-at = created-at,
+        status = InvoiceStatus::new("open"));
+    match invoice::create(initial, id, customer-id, cart, created-at) {
+        error problem => { false }
+        ok updated => {
+            bool::and(
+                equals(updated.customers(), initial.customers()),
+                bool::and(
+                    equals(updated.products(), initial.products()),
+                    bool::and(
+                        equals(updated.subscriptions(), initial.subscriptions()),
+                        bool::and(
+                            equals(updated.invoices(), list::append(initial.invoices(), expected-invoice)),
+                            bool::and(
+                                equals(updated.payments(), initial.payments()),
+                                bool::and(
+                                    equals(updated.email-outbox(), initial.email-outbox()),
+                                    equals(updated.sent-emails(), initial.sent-emails())))))))
+        }
+    }
+    => true
+}

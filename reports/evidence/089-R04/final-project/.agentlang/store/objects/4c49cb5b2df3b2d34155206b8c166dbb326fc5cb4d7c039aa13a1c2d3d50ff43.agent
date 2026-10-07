@@ -1,0 +1,8 @@
+test store.product/empty-fold {
+    let key = ProductId::new("00000000-0000-0000-0000-000000000001");
+    match store::product(key, store::empty(unit)) {
+        some selected => { false }
+        none => { true }
+    }
+    => true
+}

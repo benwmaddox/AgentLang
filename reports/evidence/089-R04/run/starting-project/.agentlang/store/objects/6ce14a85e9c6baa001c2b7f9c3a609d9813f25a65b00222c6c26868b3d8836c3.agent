@@ -1,0 +1,7 @@
+test subscription-id.parse/invalid {
+    match subscription-id::parse("invalid") {
+        ok id => { SubscriptionId::value(id) }
+        error problem => { problem.code() }
+    }
+    => "INVALID_IDENTIFIER"
+}

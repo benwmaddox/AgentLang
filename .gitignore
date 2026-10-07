@@ -24,3 +24,6 @@ history/
 !reports/evidence/086-local-validation/
 !reports/evidence/086-local-validation/**
 !reports/evidence/086-local-validation-index.json
+
+# Preserve the original R04 run and actor, including ignored synthetic store and history.
+!reports/evidence/089-R04/**
