@@ -1,5 +1,15 @@
 [
   {
+    "path": "business-policy-preflight.zip",
+    "sha256": "5e852e76c03253261e3bd987f8eceabacd1a16a3d0b8a9edf5e90db05d500d04",
+    "bytes": 1232669
+  },
+  {
+    "path": "business-policy-summary.json",
+    "sha256": "3a3cf6ac60fe82977961fd8c8ae1cf543ec0fcf600636dfa37062b2bed97769e",
+    "bytes": 4692
+  },
+  {
     "path": "finite-coverage-plan.md",
     "sha256": "c3e4fe8010df0c5628b842ebe6609f2f54de096c84c5caa38f9bda50c42f6dc0",
     "bytes": 7185
@@ -18,6 +28,21 @@
     "path": "FlowTests.log",
     "sha256": "206b6cb5219ec29953075dd51414c9fdf435c58496660ccceedcd1c7e20e88f6",
     "bytes": 35
+  },
+  {
+    "path": "frozen-runtime.json",
+    "sha256": "bf9841c2a26dc2c40b892adb132375ed98f68c65ff863cfbc24ea8ea139f05fc",
+    "bytes": 2758
+  },
+  {
+    "path": "full-validation-initial.json",
+    "sha256": "e57f0c3f2250a3a67feb0177d0f99d11aedd2c6a6a7bf4881adee6a1ee7f7dfb",
+    "bytes": 27444
+  },
+  {
+    "path": "full-validation-initial.log",
+    "sha256": "271a9a7997a31dcbf9a6f1833480c00abedeb08bd005211336826048eed211d6",
+    "bytes": 15338
   },
   {
     "path": "ir-interpreter-tests.log",
@@ -50,8 +75,18 @@
     "bytes": 4221
   },
   {
+    "path": "validation-summary.json",
+    "sha256": "93724e13a4da99c2450be1ae04730054223110482f014e7fb1256eeb03b5b62a",
+    "bytes": 970
+  },
+  {
+    "path": "value-inspection-fix.log",
+    "sha256": "3b2bdfc44a095a8472b3bb98d82eb182461a150c44f798e64ef06964d349903a",
+    "bytes": 238
+  },
+  {
     "path": "verification-commands.txt",
-    "sha256": "da0b19f960f10b162743c253991653a1dbb8a84ef5fcd3f9c8d4d51406e9a691",
-    "bytes": 550
+    "sha256": "c277adcdaff3f8b4590cdb58a028248d5b584976968fe447fb66db122c1b3fa2",
+    "bytes": 695
   }
 ]

@@ -1,0 +1,41 @@
+{
+  "scope": "Closed enums only; effect assertions excluded",
+  "initialFullGate": {
+    "checks": 37,
+    "passed": 35,
+    "failed": [
+      "value-inspection-acceptance",
+      "flow-call-binding-probe"
+    ],
+    "evidence": "full-validation-initial.json"
+  },
+  "resolvedFailures": [
+    {
+      "name": "value-inspection-acceptance",
+      "passed": true,
+      "assertions": 48,
+      "productionCodeChanged": false,
+      "evidence": "value-inspection-fix.log"
+    },
+    {
+      "name": "flow-call-binding-probe",
+      "passed": true,
+      "assertions": 31,
+      "evidence": "flow-bindings-r2.log"
+    }
+  ],
+  "finalFocusedRuntime": {
+    "passed": true,
+    "groups": 27,
+    "assertions": 875,
+    "evidence": "FlowRuntimeTests.log"
+  },
+  "policyPreflight": {
+    "passed": true,
+    "checks": 98,
+    "outcomes": 30,
+    "evidence": "business-policy-summary.json"
+  },
+  "fullGateRepeatedAfterCorrections": false,
+  "allInitialFailuresResolved": true
+}

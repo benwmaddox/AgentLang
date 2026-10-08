@@ -1,0 +1,6 @@
+PASS nested values and snapshot schema
+PASS nominal distinction and ordering
+PASS lossless integer and float encoding
+PASS invalid host values and snapshots
+PASS deterministic limits
+AgentLang.ValueInspection.Tests: 48 assertions passed.

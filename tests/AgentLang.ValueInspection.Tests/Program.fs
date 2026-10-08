@@ -142,7 +142,11 @@ let private testNestedValuesAndSchema () =
          && stringField "value" (prop "value" speedValue) = "2.5")
 
     let enumNode = at 2 values
-    let enumType = ValueInspection.toData verified [ EnumValue("RenewalState", "pending") ] |> prop "values" |> at 0 |> prop "type"
+    let enumType =
+        ValueInspection.toData verified [ ListValue(TNamed "RenewalState", [ EnumValue("RenewalState", "pending") ]) ]
+        |> prop "values"
+        |> at 0
+        |> prop "elementType"
     check "enum values preserve nominal identity, selected case, and frozen case order"
         (stringField "kind" enumNode = "enum"
          && stringField "name" enumNode = "RenewalState"
@@ -247,7 +251,7 @@ let private testInvalidHostValuesAndSnapshots () =
     expectDiagnostic "enum values cannot forge a case outside the verified table" "VALUE_ENUM_CASE_INVALID" (fun () ->
         ValueInspection.toData verified [ EnumValue("RenewalState", "unknown") ] |> ignore)
     expectDiagnostic "enum values cannot forge another nominal type name" "VALUE_TYPE_MISMATCH" (fun () ->
-        ValueInspection.toData verified [ EnumValue("OtherState", "pending") ] |> ignore)
+        ValueInspection.toData verified [ ListValue(TNamed "RenewalState", [ EnumValue("OtherState", "pending") ]) ] |> ignore)
 
 let private testDeterministicLimits () =
     let verified = snapshot ()

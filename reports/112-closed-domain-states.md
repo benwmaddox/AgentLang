@@ -42,21 +42,56 @@ library gate remains a separate implementation step.
 
 ## Validation
 
-Local checkpoint; publication awaits the in-progress policy preflight.
+The full local Debug gate completed with **35 of 37 checks passing on its first
+run**. Its two failures were corrected and individually rerun; both pass. The
+report retains the failed initial run rather than presenting it as a single
+all-green full-gate invocation.
 
-Focused Debug results: Flow 1,071 assertions; Flow Runtime 27 groups / 875
-assertions; IR verifier 132; IR interpreter 58; Storage 16 groups / 368.
-The fresh full-solution build had zero warnings/errors. Its script-only
-call-binding probe initially failed because two compiler-context literals lacked
-the new enum catalog; after correction, the exact command passed 31 assertions.
-The native-mailbox adapter also received the empty catalog and built with fresh
-isolated dependencies with zero warnings/errors.
+- Fresh full-solution build: zero warnings and errors.
+- Flow: 1,071 assertions; final Flow Runtime: 27 groups / 875 assertions.
+- IR verifier: 132 assertions; IR interpreter: 58; LLVM: 443.
+- Storage: 16 groups / 368 assertions, including exact enum path encoding,
+  malformed indexes, Flow/1 rejection and unchanged authority after rejection.
+- Value inspection: **48 assertions after correction**. The new test had queried
+  a nonexistent nested `type` field on a root enum DTO; it now checks the schema
+  through a typed list's `elementType`. A negative nominal-name test now supplies
+  its expected type through that list. No runtime behavior was changed for this fix.
+- Script-only Flow call bindings: **31 assertions after correction**. Two context
+  literals needed `Enums = Map.empty`; the exact failed command then passed.
+- Native-mailbox adapter: a matching empty-catalog update, built with fresh
+  isolated dependencies, zero warnings/errors.
+- Existing business-language regression: 6,319 assertions, 110 attached tests,
+  27 examples, 36 words and 27 types persisted/reloaded. Historical fixtures were
+  not edited.
+- Deterministic policy preflight: **98 checks / 30 outcomes passed** across
+  growing, flat and conventional modes, including wrong-solution controls.
+- All ten frozen Release artifact hashes remained unchanged. Diff checks passed.
 
-The full gate is still running its final deterministic business-policy preflight.
-The final report will retain that run, its known corrected script failure, and
-the focused tail validation separately; it will not claim a single all-green
-full-gate invocation. The tail changes are a defensive document-shape check and
-library guard tests, covered by the final Flow Runtime run above.
+The full run used the working tree based on `5e7bcc7`; the implementation was
+locally checkpointed as `404a7a4` while the lengthy preflight was still executing
+its already-built Debug binaries. A final defensive document-shape check and
+additional library-guard tests were validated in fresh isolated Flow Runtime
+artifacts. The final inspection correction changes tests only. The broad gate
+was not repeated after these bounded corrections. The next effect-assertion
+implementation is outside this milestone and its validation.
+
+Reproduce the broad gate with:
+
+```powershell
+./scripts/Validate.ps1 -Configuration Debug -ReportPath .agentlang/enum-validation.json
+```
+
+The corrected script command was:
+
+```powershell
+dotnet fsi --exec --reference:src/AgentLang.Core/bin/Debug/net9.0/AgentLang.Core.dll scripts/Verify-FlowCallBindings.fsx
+```
+
+Focused fresh builds use isolated `--artifacts-path` directories to preserve
+frozen binaries. [The evidence index](evidence/112-closed-domain-states/index.json)
+records hashes for full and focused logs, independent reviews, a compact policy
+summary, and a ZIP retaining the exact 14 MB raw policy result. The pending
+finite-coverage plan is explicitly planning evidence, not delivered behavior.
 
 ## Next work
 
