@@ -1,0 +1,12 @@
+test invoice.queue-reminders-for-pair/same-id-second-sees-first-write {
+    invoice::queue-reminders-for-pair(
+        invoicePair::new(
+            first = invoice::new(
+                id = InvoiceId::new("pair-flow-same-id-retained-2"),
+                status = InvoiceStatus::new("open")),
+            second = invoice::new(
+                id = InvoiceId::new("pair-flow-same-id-retained-2"),
+                status = InvoiceStatus::new("open"))))
+    => value reminderPairResult::new(first = "queued", second = "queued")
+    effects { fs.read: 3; fs.write: 1; }
+}

@@ -41,7 +41,10 @@ The [versioned-help trial](reports/123-versioned-record-help.md) passed all ten
 independent cases and seven tests, with both functions library-qualified and no
 structured errors. The [efficacy assessment](reports/124-efficacy-assessment.md)
 finds demonstrated reuse and workable edits, but no established reliability
-advantage over F#. A matched comparison is the next research priority.
+advantage over F#. The [matched repair comparison](reports/125-matched-pair-repair.md)
+now records six fresh agents with 12/12 independent cases each. Both retained
+Flow agents and both F# agents reuse their prior helper; one Flow agent omits
+task finalization. Behavioral correctness and workflow completion are separate.
 
 The implementation targets .NET 9 and uses no external test framework or model API key.
 

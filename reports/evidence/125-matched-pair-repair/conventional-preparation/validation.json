@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "fixture": "pair-repair-001 conventional",
+  "sourcePlan": "conventional-preparation/source-plan.md",
+  "sourcePlanSha256": "C7CE959DD1E8FFD1638627ECB7BF048F1486167A13B8E941BE32D7993D952D2C",
+  "sourceProvenance": {
+    "acceptedReport": 111,
+    "acceptedActorProject": ".agentlang/reminder-flow2-001/actors/conventional",
+    "operationsSha256": "EAD0E00B3E60FD1FB385E0470E9B6A89A36F6FC6590E933ED858B9D62A0F67FF",
+    "operationsMatchesArchivedReport111": true,
+    "selfTestsSha256": "25DB663221BAF124681B2B70F2C764A737581ABBAA1D87311F3B98BF96ABF2B8",
+    "selfTestsMatchArchivedReport111": true,
+    "queueOnceSourcePreservedAsExactPrefix": true,
+    "inheritedTestsPreservedBeforePairTests": true,
+    "projectFileMatchesSeed": true
+  },
+  "targetFiles": [
+    {
+      "path": "starts/conventional/Domain.fs",
+      "sha256": "5FC59ABEFDA826C0D4B023E535F6C906DD22B03BC56D1185DB6BD67E35EE19B0"
+    },
+    {
+      "path": "starts/conventional/Operations.fs",
+      "sha256": "F25D48F46F56F3199974CB0948A84D0370F9E98BCF85FCB1855872CA3CC48DA0"
+    },
+    {
+      "path": "starts/conventional/SelfTests.fs",
+      "sha256": "BBE5AE102AD1046F3541835832E23B218F3F39FF0440F414006697764E999E3B"
+    },
+    {
+      "path": "starts/conventional/StatefulPilot.fsproj",
+      "sha256": "9435284D144A8723127E39ED5E3E3D3B7993E374612DE80ECD7828B31BBEB570"
+    }
+  ],
+  "validation": {
+    "buildCommand": "dotnet build .agentlang\\pair-repair-001\\starts\\conventional\\StatefulPilot.fsproj --configuration Release --nologo",
+    "buildExitCode": 0,
+    "buildWarnings": 0,
+    "buildErrors": 0,
+    "runCommand": "dotnet run --project .agentlang\\pair-repair-001\\starts\\conventional\\StatefulPilot.fsproj --configuration Release --no-launch-profile",
+    "runExitCode": 0,
+    "stdout": [
+      "Seed helper tests passed: 2",
+      "OWN_TESTS_PASSED=4",
+      "EXAMPLE_QUEUE_REMINDER=queued",
+      "PAIR_OWN_TESTS_PASSED=4"
+    ]
+  },
+  "seedBugExpectation": {
+    "firstIneligibleAndSecondOpen": {
+      "resultFirst": "not-open",
+      "resultSecond": "not-open",
+      "readCount": 0,
+      "writeCount": 0
+    },
+    "targetNeedsRepair": true
+  },
+  "pairTestAlignment": {
+    "count": 4,
+    "assertions": "return-values only",
+    "matchesResetFlowInputsAndOutputs": true,
+    "cases": [
+      {
+        "name": "exact-existing-markers",
+        "first": [
+          "pair-flow-existing-first",
+          "open"
+        ],
+        "second": [
+          "pair-flow-empty-second",
+          "open"
+        ],
+        "expected": [
+          "custom marker",
+          ""
+        ]
+      },
+      {
+        "name": "first-not-open-skips-open-second",
+        "first": [
+          "pair-flow-closed-first",
+          "Open"
+        ],
+        "second": [
+          "pair-flow-open-second",
+          "open"
+        ],
+        "expected": [
+          "not-open",
+          "not-open"
+        ]
+      },
+      {
+        "name": "second-not-open-after-first-queues",
+        "first": [
+          "pair-flow-open-first",
+          "open"
+        ],
+        "second": [
+          "pair-flow-closed-second",
+          "Open"
+        ],
+        "expected": [
+          "queued",
+          "not-open"
+        ]
+      },
+      {
+        "name": "two-open-missing",
+        "first": [
+          "pair-flow-missing-first",
+          "open"
+        ],
+        "second": [
+          "pair-flow-missing-second",
+          "open"
+        ],
+        "expected": [
+          "queued",
+          "queued"
+        ]
+      }
+    ]
+  }
+}

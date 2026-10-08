@@ -1,0 +1,10 @@
+{
+  "candidateMatchesPredeclaredMutation": true,
+  "candidateDiffsOnlyTargetBody": true,
+  "rejectedCandidateNotPersisted": true,
+  "inheritedHelperUnchanged": true,
+  "testsUnchanged": true,
+  "examplesUnchanged": true,
+  "revisionUnchanged": true,
+  "statusUnchanged": true
+}

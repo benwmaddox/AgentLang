@@ -1,0 +1,5696 @@
+{
+  "schemaVersion": 1,
+  "language": "flow",
+  "actorProject": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\controls\\flow-mutant-wrong-second-path-committed",
+  "actorProjectFile": null,
+  "oracle": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\oracle.json",
+  "oracleSha256": "aaf442410f21d1dbf425b7b45d4a1a55dd9a1f21269b58721433a0d9aa36aae9",
+  "runtimePin": {
+    "path": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\runtime\\runtime-pin.json",
+    "sha256": "af9bec61bebc2ee7d01443c4c2a9ae8372c2c39309dea4bddf4096b043285365",
+    "runtimeDirectory": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\runtime\\debug-artifacts",
+    "fileCount": 22,
+    "cliPath": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\runtime\\debug-artifacts\\AgentLang.Cli.dll",
+    "cliSha256": "da0a9677a7d9694b8b8e1d24d72f49cd8d7d4180f21a9077612a8d4b84373a02",
+    "runtimeFiles": [
+      {
+        "path": "AgentLang.Cli.deps.json",
+        "bytes": 2903,
+        "sha256": "6382f6dc29bb8f827824839010e313b266e51a3f87a4fdb8c382931d2549e97e"
+      },
+      {
+        "path": "tr/FSharp.Core.resources.dll",
+        "bytes": 34072,
+        "sha256": "6b0cba5139a86ee681909fdfcebac07c99afba3bfcff4fb8ab12b9c2112a0b31"
+      },
+      {
+        "path": "ru/FSharp.Core.resources.dll",
+        "bytes": 41232,
+        "sha256": "a1133f9ab7e661803d1af0c2489626bd53ac33a11dfe891f5a02f3186f2f5d78"
+      },
+      {
+        "path": "pt-BR/FSharp.Core.resources.dll",
+        "bytes": 34096,
+        "sha256": "a4bbbdaabf2003a5fdff5f5bc4143c3fd4a064f2681fc481f449d4558074dc61"
+      },
+      {
+        "path": "pl/FSharp.Core.resources.dll",
+        "bytes": 35632,
+        "sha256": "755bab9fbd85e5e4b4771870c9c4d655e91e3ce39cc1c2735fe0bc7cec6b84c3"
+      },
+      {
+        "path": "ko/FSharp.Core.resources.dll",
+        "bytes": 36104,
+        "sha256": "0f3ef625e379577e3b60c15d8cc3759d3dc8840f99894282df1e702b4a166462"
+      },
+      {
+        "path": "ja/FSharp.Core.resources.dll",
+        "bytes": 37160,
+        "sha256": "dd7f36036d906e991da5505b074ef889a603f449d3324750fda5f5445ba2854f"
+      },
+      {
+        "path": "it/FSharp.Core.resources.dll",
+        "bytes": 34576,
+        "sha256": "61a0be9c6a2ed95f8e98493b17c54a55c68cef84e23a0d82114319e2c5f3c2cd"
+      },
+      {
+        "path": "fr/FSharp.Core.resources.dll",
+        "bytes": 35128,
+        "sha256": "f38f2fd6bc4c4e233dd098a36b315a2bc87673cf2f07c6ba3daf71a3264f4a64"
+      },
+      {
+        "path": "es/FSharp.Core.resources.dll",
+        "bytes": 34600,
+        "sha256": "636866649564c72eb763eb3942e021b52b1f9b3869d037aca48f73d4474353c5"
+      },
+      {
+        "path": "de/FSharp.Core.resources.dll",
+        "bytes": 35592,
+        "sha256": "7419e4f5ceed9e03821686e865fed7d29c6217fdf5d3a46a2919a369c98c38ce"
+      },
+      {
+        "path": "cs/FSharp.Core.resources.dll",
+        "bytes": 34600,
+        "sha256": "eb8bd755cfe0d39ce27615027fe22556e8b9dcb470f2b47a36f4bfbf3c31be64"
+      },
+      {
+        "path": "FSharp.Core.dll",
+        "bytes": 2314000,
+        "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+      },
+      {
+        "path": "AgentLang.Core.xml",
+        "bytes": 37131,
+        "sha256": "09ac15a5f53b3d6fd39e721bb9e7eda22f7b2269a7676f95866f822c9bccbe7a"
+      },
+      {
+        "path": "AgentLang.Core.pdb",
+        "bytes": 902844,
+        "sha256": "ae6254707a274b3df5b6fbd7a680e34f04d049c523b1220e18149863a60c9441"
+      },
+      {
+        "path": "AgentLang.Core.dll",
+        "bytes": 2591232,
+        "sha256": "32ece1bdad77a8abcff9d81f0a6ebb913ac319706b8258f978fc0fca2814b214"
+      },
+      {
+        "path": "AgentLang.Cli.runtimeconfig.json",
+        "bytes": 268,
+        "sha256": "a45057885f807f4a337fdea3ccdfa64e1675d22a6d6a6fc7c7394fd44ba9eebe"
+      },
+      {
+        "path": "AgentLang.Cli.pdb",
+        "bytes": 12932,
+        "sha256": "633cd91e742620ecafa470b256853ed53da8736223a9783b1317ed2e358fe492"
+      },
+      {
+        "path": "AgentLang.Cli.exe",
+        "bytes": 156160,
+        "sha256": "8d85ca1f3b44e8715c0f230241deab3a2b02222c7428d4a5d3abe2b0a866822b"
+      },
+      {
+        "path": "AgentLang.Cli.dll",
+        "bytes": 43008,
+        "sha256": "da0a9677a7d9694b8b8e1d24d72f49cd8d7d4180f21a9077612a8d4b84373a02"
+      },
+      {
+        "path": "zh-Hans/FSharp.Core.resources.dll",
+        "bytes": 32552,
+        "sha256": "25f82f35a9234bcaab272921b0d50054ddb4a669d96c111907c9d31f5b18c121"
+      },
+      {
+        "path": "zh-Hant/FSharp.Core.resources.dll",
+        "bytes": 32032,
+        "sha256": "ac03ee7c4112c755705776c700033794586f980fe9476e6a13811a7153beabb8"
+      }
+    ]
+  },
+  "behavior": {
+    "passedCases": 6,
+    "totalCases": 12,
+    "failedChecks": 16,
+    "passed": false
+  },
+  "passed": false,
+  "failure": null,
+  "actorTests": [
+    {
+      "ok": true,
+      "kind": "test",
+      "text": "4/4 test(s) passed.",
+      "data": {
+        "results": [
+          {
+            "name": "exact-existing-markers",
+            "word": "invoice.queue-reminders-for-pair",
+            "passed": true,
+            "expectedKind": "value-expression",
+            "actualStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "custom marker"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "custom marker"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "expected": "ReminderPairResult { first = \"custom marker\", second = \"custom marker\" }",
+            "expectedType": "ReminderPairResult",
+            "expectedStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "custom marker"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "custom marker"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "actual": [
+              "ReminderPairResult { first = \"custom marker\", second = \"custom marker\" }"
+            ]
+          },
+          {
+            "name": "first-not-open-skips-open-second",
+            "word": "invoice.queue-reminders-for-pair",
+            "passed": true,
+            "expectedKind": "value-expression",
+            "actualStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "not-open"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "expected": "ReminderPairResult { first = \"not-open\", second = \"queued\" }",
+            "expectedType": "ReminderPairResult",
+            "expectedStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "not-open"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "actual": [
+              "ReminderPairResult { first = \"not-open\", second = \"queued\" }"
+            ]
+          },
+          {
+            "name": "second-not-open-after-first-queues",
+            "word": "invoice.queue-reminders-for-pair",
+            "passed": true,
+            "expectedKind": "value-expression",
+            "actualStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "not-open"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "expected": "ReminderPairResult { first = \"queued\", second = \"not-open\" }",
+            "expectedType": "ReminderPairResult",
+            "expectedStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "not-open"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "actual": [
+              "ReminderPairResult { first = \"queued\", second = \"not-open\" }"
+            ]
+          },
+          {
+            "name": "two-open-missing",
+            "word": "invoice.queue-reminders-for-pair",
+            "passed": true,
+            "expectedKind": "value-expression",
+            "actualStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "expected": "ReminderPairResult { first = \"queued\", second = \"queued\" }",
+            "expectedType": "ReminderPairResult",
+            "expectedStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "actual": [
+              "ReminderPairResult { first = \"queued\", second = \"queued\" }"
+            ]
+          }
+        ],
+        "coverage": {
+          "instructionsCovered": 49,
+          "instructionsTotal": 49,
+          "branchesCovered": 8,
+          "branchesTotal": 8,
+          "uncoveredInstructions": [],
+          "uncoveredBranchOutcomes": [],
+          "finiteCoverage": {
+            "targetInvocations": 4,
+            "inputs": [],
+            "returns": [
+              {
+                "position": 0,
+                "type": "ReminderPairResult",
+                "required": [],
+                "observed": [],
+                "missing": []
+              }
+            ],
+            "unsupported": [],
+            "missing": [],
+            "complete": true
+          }
+        }
+      }
+    },
+    {
+      "ok": true,
+      "kind": "test",
+      "text": "10/10 test(s) passed.",
+      "data": {
+        "results": [
+          {
+            "name": "existing-custom-marker",
+            "word": "invoice.queue-reminder-once",
+            "passed": true,
+            "expected": "\"custom reminder marker\"",
+            "actual": [
+              "\"custom reminder marker\""
+            ]
+          },
+          {
+            "name": "existing-queued-marker",
+            "word": "invoice.queue-reminder-once",
+            "passed": true,
+            "expected": "\"queued\"",
+            "actual": [
+              "\"queued\""
+            ]
+          },
+          {
+            "name": "missing-reminder",
+            "word": "invoice.queue-reminder-once",
+            "passed": true,
+            "expected": "\"queued\"",
+            "actual": [
+              "\"queued\""
+            ]
+          },
+          {
+            "name": "non-open-status",
+            "word": "invoice.queue-reminder-once",
+            "passed": true,
+            "expected": "\"not-open\"",
+            "actual": [
+              "\"not-open\""
+            ]
+          },
+          {
+            "name": "exact-existing-markers",
+            "word": "invoice.queue-reminders-for-pair",
+            "passed": true,
+            "expectedKind": "value-expression",
+            "actualStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "custom marker"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "custom marker"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "expected": "ReminderPairResult { first = \"custom marker\", second = \"custom marker\" }",
+            "expectedType": "ReminderPairResult",
+            "expectedStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "custom marker"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "custom marker"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "actual": [
+              "ReminderPairResult { first = \"custom marker\", second = \"custom marker\" }"
+            ]
+          },
+          {
+            "name": "first-not-open-skips-open-second",
+            "word": "invoice.queue-reminders-for-pair",
+            "passed": true,
+            "expectedKind": "value-expression",
+            "actualStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "not-open"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "expected": "ReminderPairResult { first = \"not-open\", second = \"queued\" }",
+            "expectedType": "ReminderPairResult",
+            "expectedStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "not-open"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "actual": [
+              "ReminderPairResult { first = \"not-open\", second = \"queued\" }"
+            ]
+          },
+          {
+            "name": "second-not-open-after-first-queues",
+            "word": "invoice.queue-reminders-for-pair",
+            "passed": true,
+            "expectedKind": "value-expression",
+            "actualStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "not-open"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "expected": "ReminderPairResult { first = \"queued\", second = \"not-open\" }",
+            "expectedType": "ReminderPairResult",
+            "expectedStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "not-open"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "actual": [
+              "ReminderPairResult { first = \"queued\", second = \"not-open\" }"
+            ]
+          },
+          {
+            "name": "two-open-missing",
+            "word": "invoice.queue-reminders-for-pair",
+            "passed": true,
+            "expectedKind": "value-expression",
+            "actualStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "expected": "ReminderPairResult { first = \"queued\", second = \"queued\" }",
+            "expectedType": "ReminderPairResult",
+            "expectedStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "actual": [
+              "ReminderPairResult { first = \"queued\", second = \"queued\" }"
+            ]
+          },
+          {
+            "name": "basic",
+            "word": "invoice.reminder-path",
+            "passed": true,
+            "expected": "\"outbox/invoice-reminders/INV-001\"",
+            "actual": [
+              "\"outbox/invoice-reminders/INV-001\""
+            ]
+          },
+          {
+            "name": "preserves-id-text",
+            "word": "invoice.reminder-path",
+            "passed": true,
+            "expected": "\"outbox/invoice-reminders/inv.alpha_2\"",
+            "actual": [
+              "\"outbox/invoice-reminders/inv.alpha_2\""
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "checks": [
+    {
+      "name": "oracle schema contains exactly 12 fixed cases",
+      "passed": true,
+      "details": "cases=12"
+    },
+    {
+      "name": "pinned Flow runtime has the exact 22 files and hashes",
+      "passed": true,
+      "details": "expected=22, actual=22"
+    },
+    {
+      "name": "pinned Flow CLI hash matches its manifest",
+      "passed": true,
+      "details": "actual=da0a9677a7d9694b8b8e1d24d72f49cd8d7d4180f21a9077612a8d4b84373a02 expected=da0a9677a7d9694b8b8e1d24d72f49cd8d7d4180f21a9077612a8d4b84373a02"
+    },
+    {
+      "name": "Flow actor-owned tests pass separately from behavior probes",
+      "passed": true,
+      "details": "target=4; all=10"
+    },
+    {
+      "name": "Flow initial state saved: distinct-open-missing",
+      "passed": true,
+      "details": "[]"
+    },
+    {
+      "name": "Flow initial state saved: closed-then-open",
+      "passed": true,
+      "details": "[]"
+    },
+    {
+      "name": "Flow initial state saved: open-then-closed",
+      "passed": true,
+      "details": "[]"
+    },
+    {
+      "name": "Flow initial state saved: same-id-missing",
+      "passed": true,
+      "details": "[]"
+    },
+    {
+      "name": "Flow initial state saved: same-id-existing",
+      "passed": true,
+      "details": "[]"
+    },
+    {
+      "name": "Flow initial state saved: distinct-existing-first",
+      "passed": true,
+      "details": "[]"
+    },
+    {
+      "name": "Flow initial state saved: empty-existing-first",
+      "passed": true,
+      "details": "[]"
+    },
+    {
+      "name": "Flow initial state saved: uppercase-then-open",
+      "passed": true,
+      "details": "[]"
+    },
+    {
+      "name": "Flow initial state saved: both-ineligible",
+      "passed": true,
+      "details": "[]"
+    },
+    {
+      "name": "Flow initial state saved: repeat-distinct",
+      "passed": true,
+      "details": "[]"
+    },
+    {
+      "name": "Flow initial state saved: read-denied",
+      "passed": true,
+      "details": "[]"
+    },
+    {
+      "name": "Flow initial state saved: write-denied",
+      "passed": true,
+      "details": "[]"
+    },
+    {
+      "name": "ordered pair results: distinct-open-missing",
+      "passed": true,
+      "details": "actual=[{\"first\":\"queued\",\"second\":\"queued\"}]"
+    },
+    {
+      "name": "complete virtual filesystem state: distinct-open-missing",
+      "passed": false,
+      "details": "actual={\"outbox/invoice-reminders/A\":\"queued\",\"unrelated\":\"keep\"}"
+    },
+    {
+      "name": "cumulative read count: distinct-open-missing",
+      "passed": false,
+      "details": "actual=3; expected=2"
+    },
+    {
+      "name": "cumulative write count: distinct-open-missing",
+      "passed": false,
+      "details": "actual=1; expected=2"
+    },
+    {
+      "name": "ordered pair results: closed-then-open",
+      "passed": true,
+      "details": "actual=[{\"first\":\"not-open\",\"second\":\"queued\"}]"
+    },
+    {
+      "name": "complete virtual filesystem state: closed-then-open",
+      "passed": false,
+      "details": "actual={\"outbox/invoice-reminders/A\":\"queued\",\"unrelated\":\"keep\"}"
+    },
+    {
+      "name": "cumulative read count: closed-then-open",
+      "passed": true,
+      "details": "actual=1; expected=1"
+    },
+    {
+      "name": "cumulative write count: closed-then-open",
+      "passed": true,
+      "details": "actual=1; expected=1"
+    },
+    {
+      "name": "ordered pair results: open-then-closed",
+      "passed": true,
+      "details": "actual=[{\"first\":\"queued\",\"second\":\"not-open\"}]"
+    },
+    {
+      "name": "complete virtual filesystem state: open-then-closed",
+      "passed": true,
+      "details": "actual={\"outbox/invoice-reminders/A\":\"queued\"}"
+    },
+    {
+      "name": "cumulative read count: open-then-closed",
+      "passed": true,
+      "details": "actual=1; expected=1"
+    },
+    {
+      "name": "cumulative write count: open-then-closed",
+      "passed": true,
+      "details": "actual=1; expected=1"
+    },
+    {
+      "name": "ordered pair results: same-id-missing",
+      "passed": true,
+      "details": "actual=[{\"first\":\"queued\",\"second\":\"queued\"}]"
+    },
+    {
+      "name": "complete virtual filesystem state: same-id-missing",
+      "passed": true,
+      "details": "actual={\"outbox/invoice-reminders/A\":\"queued\"}"
+    },
+    {
+      "name": "cumulative read count: same-id-missing",
+      "passed": true,
+      "details": "actual=3; expected=3"
+    },
+    {
+      "name": "cumulative write count: same-id-missing",
+      "passed": true,
+      "details": "actual=1; expected=1"
+    },
+    {
+      "name": "ordered pair results: same-id-existing",
+      "passed": true,
+      "details": "actual=[{\"first\":\"custom\",\"second\":\"custom\"}]"
+    },
+    {
+      "name": "complete virtual filesystem state: same-id-existing",
+      "passed": true,
+      "details": "actual={\"outbox/invoice-reminders/A\":\"custom\",\"unrelated\":\"keep\"}"
+    },
+    {
+      "name": "cumulative read count: same-id-existing",
+      "passed": true,
+      "details": "actual=4; expected=4"
+    },
+    {
+      "name": "cumulative write count: same-id-existing",
+      "passed": true,
+      "details": "actual=0; expected=0"
+    },
+    {
+      "name": "ordered pair results: distinct-existing-first",
+      "passed": false,
+      "details": "actual=[{\"first\":\"custom\",\"second\":\"custom\"}]"
+    },
+    {
+      "name": "complete virtual filesystem state: distinct-existing-first",
+      "passed": false,
+      "details": "actual={\"outbox/invoice-reminders/A\":\"custom\",\"unrelated\":\"keep\"}"
+    },
+    {
+      "name": "cumulative read count: distinct-existing-first",
+      "passed": false,
+      "details": "actual=4; expected=3"
+    },
+    {
+      "name": "cumulative write count: distinct-existing-first",
+      "passed": false,
+      "details": "actual=0; expected=1"
+    },
+    {
+      "name": "ordered pair results: empty-existing-first",
+      "passed": false,
+      "details": "actual=[{\"first\":\"\",\"second\":\"\"}]"
+    },
+    {
+      "name": "complete virtual filesystem state: empty-existing-first",
+      "passed": false,
+      "details": "actual={\"outbox/invoice-reminders/A\":\"\"}"
+    },
+    {
+      "name": "cumulative read count: empty-existing-first",
+      "passed": false,
+      "details": "actual=4; expected=3"
+    },
+    {
+      "name": "cumulative write count: empty-existing-first",
+      "passed": false,
+      "details": "actual=0; expected=1"
+    },
+    {
+      "name": "ordered pair results: uppercase-then-open",
+      "passed": true,
+      "details": "actual=[{\"first\":\"not-open\",\"second\":\"queued\"}]"
+    },
+    {
+      "name": "complete virtual filesystem state: uppercase-then-open",
+      "passed": false,
+      "details": "actual={\"outbox/invoice-reminders/A\":\"queued\"}"
+    },
+    {
+      "name": "cumulative read count: uppercase-then-open",
+      "passed": true,
+      "details": "actual=1; expected=1"
+    },
+    {
+      "name": "cumulative write count: uppercase-then-open",
+      "passed": true,
+      "details": "actual=1; expected=1"
+    },
+    {
+      "name": "ordered pair results: both-ineligible",
+      "passed": true,
+      "details": "actual=[{\"first\":\"not-open\",\"second\":\"not-open\"}]"
+    },
+    {
+      "name": "complete virtual filesystem state: both-ineligible",
+      "passed": true,
+      "details": "actual={\"outbox/invoice-reminders/A\":\"old\",\"unrelated\":\"keep\"}"
+    },
+    {
+      "name": "cumulative read count: both-ineligible",
+      "passed": true,
+      "details": "actual=0; expected=0"
+    },
+    {
+      "name": "cumulative write count: both-ineligible",
+      "passed": true,
+      "details": "actual=0; expected=0"
+    },
+    {
+      "name": "ordered pair results: repeat-distinct",
+      "passed": true,
+      "details": "actual=[{\"first\":\"queued\",\"second\":\"queued\"},{\"first\":\"queued\",\"second\":\"queued\"}]"
+    },
+    {
+      "name": "complete virtual filesystem state: repeat-distinct",
+      "passed": false,
+      "details": "actual={\"outbox/invoice-reminders/A\":\"queued\",\"unrelated\":\"keep\"}"
+    },
+    {
+      "name": "cumulative read count: repeat-distinct",
+      "passed": false,
+      "details": "actual=7; expected=6"
+    },
+    {
+      "name": "cumulative write count: repeat-distinct",
+      "passed": false,
+      "details": "actual=1; expected=2"
+    },
+    {
+      "name": "capability preflight error: read-denied",
+      "passed": true,
+      "details": "actual=CAPABILITY_DENIED; errors=[{\"ok\":false,\"kind\":\"error\",\"text\":\"CAPABILITY_DENIED: The expression requires effects not granted by the host.\",\"error\":{\"code\":\"CAPABILITY_DENIED\",\"message\":\"The expression requires effects not granted by the host.\",\"expected\":[\"fs.read\",\"fs.write\"],\"actual\":[\"fs.write\"]}},{\"ok\":true,\"kind\":\"task.status\",\"text\":\"Status for task-0003.\",\"data\":{\"task\":\"task-0003\",\"goal\":\"Pair scorer read-denied denied capability preflight\",\"active\":true,\"wordsInspected\":[],\"wordsUsed\":[],\"wordsCreated\":[],\"testsRun\":0,\"testsFailed\":0,\"effects\":{},\"errors\":[\"CAPABILITY_DENIED\"]}}]"
+    },
+    {
+      "name": "complete virtual filesystem state: read-denied",
+      "passed": true,
+      "details": "actual={\"unrelated\":\"keep\"}"
+    },
+    {
+      "name": "cumulative read count: read-denied",
+      "passed": true,
+      "details": "actual=0; expected=0"
+    },
+    {
+      "name": "cumulative write count: read-denied",
+      "passed": true,
+      "details": "actual=0; expected=0"
+    },
+    {
+      "name": "denied preflight leaves provider untouched: read-denied",
+      "passed": true,
+      "details": "reads=0; writes=0"
+    },
+    {
+      "name": "capability preflight error: write-denied",
+      "passed": true,
+      "details": "actual=CAPABILITY_DENIED; errors=[{\"ok\":false,\"kind\":\"error\",\"text\":\"CAPABILITY_DENIED: The expression requires effects not granted by the host.\",\"error\":{\"code\":\"CAPABILITY_DENIED\",\"message\":\"The expression requires effects not granted by the host.\",\"expected\":[\"fs.read\",\"fs.write\"],\"actual\":[\"fs.read\"]}},{\"ok\":true,\"kind\":\"task.status\",\"text\":\"Status for task-0003.\",\"data\":{\"task\":\"task-0003\",\"goal\":\"Pair scorer write-denied denied capability preflight\",\"active\":true,\"wordsInspected\":[],\"wordsUsed\":[],\"wordsCreated\":[],\"testsRun\":0,\"testsFailed\":0,\"effects\":{},\"errors\":[\"CAPABILITY_DENIED\"]}}]"
+    },
+    {
+      "name": "complete virtual filesystem state: write-denied",
+      "passed": true,
+      "details": "actual={\"unrelated\":\"keep\"}"
+    },
+    {
+      "name": "cumulative read count: write-denied",
+      "passed": true,
+      "details": "actual=0; expected=0"
+    },
+    {
+      "name": "cumulative write count: write-denied",
+      "passed": true,
+      "details": "actual=0; expected=0"
+    },
+    {
+      "name": "denied preflight leaves provider untouched: write-denied",
+      "passed": true,
+      "details": "reads=0; writes=0"
+    },
+    {
+      "name": "original actor input inventory is unchanged",
+      "passed": true,
+      "details": "before=53; after=53"
+    },
+    {
+      "name": "original actor source inventory is unchanged",
+      "passed": true,
+      "details": "bin/obj are excluded from the source-only comparison"
+    }
+  ],
+  "cases": [
+    {
+      "name": "distinct-open-missing",
+      "resultCalls": [
+        {
+          "first": "queued",
+          "second": "queued"
+        }
+      ],
+      "errorCode": null,
+      "errorRecords": [],
+      "reads": 3,
+      "writes": 1,
+      "state": {
+        "outbox/invoice-reminders/A": "queued",
+        "unrelated": "keep"
+      },
+      "resultSnapshotSaved": true,
+      "sessionResponses": [
+        {
+          "ok": true,
+          "kind": "snapshot.load",
+          "text": "Loaded committed snapshot 'initial'.",
+          "data": {
+            "name": "initial",
+            "manifestHash": "902977060ed9fdc0739cfb4e24f97434891b00e369e80f9627fbc5b30ecbbf81",
+            "virtualFiles": 1,
+            "clockValue": "2000-01-01T00:00:00Z"
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "ReminderPairResult { first = \"queued\", second = \"queued\" }",
+          "data": {
+            "stack": [
+              "ReminderPairResult { first = \"queued\", second = \"queued\" }"
+            ],
+            "stackTypes": [
+              "ReminderPairResult"
+            ],
+            "console": [],
+            "effects": {
+              "fs.read": 3,
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'result' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "result",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "initialSessionResponses": [
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "unit",
+          "data": {
+            "stack": [
+              "unit"
+            ],
+            "stackTypes": [
+              "Unit"
+            ],
+            "console": [],
+            "effects": {
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'initial' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "initial",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "parsedResults": [
+        {
+          "first": "queued",
+          "second": "queued"
+        }
+      ]
+    },
+    {
+      "name": "closed-then-open",
+      "resultCalls": [
+        {
+          "first": "not-open",
+          "second": "queued"
+        }
+      ],
+      "errorCode": null,
+      "errorRecords": [],
+      "reads": 1,
+      "writes": 1,
+      "state": {
+        "outbox/invoice-reminders/A": "queued",
+        "unrelated": "keep"
+      },
+      "resultSnapshotSaved": true,
+      "sessionResponses": [
+        {
+          "ok": true,
+          "kind": "snapshot.load",
+          "text": "Loaded committed snapshot 'initial'.",
+          "data": {
+            "name": "initial",
+            "manifestHash": "902977060ed9fdc0739cfb4e24f97434891b00e369e80f9627fbc5b30ecbbf81",
+            "virtualFiles": 1,
+            "clockValue": "2000-01-01T00:00:00Z"
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "ReminderPairResult { first = \"not-open\", second = \"queued\" }",
+          "data": {
+            "stack": [
+              "ReminderPairResult { first = \"not-open\", second = \"queued\" }"
+            ],
+            "stackTypes": [
+              "ReminderPairResult"
+            ],
+            "console": [],
+            "effects": {
+              "fs.read": 1,
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'result' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "result",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "initialSessionResponses": [
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "unit",
+          "data": {
+            "stack": [
+              "unit"
+            ],
+            "stackTypes": [
+              "Unit"
+            ],
+            "console": [],
+            "effects": {
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'initial' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "initial",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "parsedResults": [
+        {
+          "first": "not-open",
+          "second": "queued"
+        }
+      ]
+    },
+    {
+      "name": "open-then-closed",
+      "resultCalls": [
+        {
+          "first": "queued",
+          "second": "not-open"
+        }
+      ],
+      "errorCode": null,
+      "errorRecords": [],
+      "reads": 1,
+      "writes": 1,
+      "state": {
+        "outbox/invoice-reminders/A": "queued"
+      },
+      "resultSnapshotSaved": true,
+      "sessionResponses": [
+        {
+          "ok": true,
+          "kind": "snapshot.load",
+          "text": "Loaded committed snapshot 'initial'.",
+          "data": {
+            "name": "initial",
+            "manifestHash": "902977060ed9fdc0739cfb4e24f97434891b00e369e80f9627fbc5b30ecbbf81",
+            "virtualFiles": 0,
+            "clockValue": "2000-01-01T00:00:00Z"
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "ReminderPairResult { first = \"queued\", second = \"not-open\" }",
+          "data": {
+            "stack": [
+              "ReminderPairResult { first = \"queued\", second = \"not-open\" }"
+            ],
+            "stackTypes": [
+              "ReminderPairResult"
+            ],
+            "console": [],
+            "effects": {
+              "fs.read": 1,
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'result' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "result",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "initialSessionResponses": [
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'initial' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "initial",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "parsedResults": [
+        {
+          "first": "queued",
+          "second": "not-open"
+        }
+      ]
+    },
+    {
+      "name": "same-id-missing",
+      "resultCalls": [
+        {
+          "first": "queued",
+          "second": "queued"
+        }
+      ],
+      "errorCode": null,
+      "errorRecords": [],
+      "reads": 3,
+      "writes": 1,
+      "state": {
+        "outbox/invoice-reminders/A": "queued"
+      },
+      "resultSnapshotSaved": true,
+      "sessionResponses": [
+        {
+          "ok": true,
+          "kind": "snapshot.load",
+          "text": "Loaded committed snapshot 'initial'.",
+          "data": {
+            "name": "initial",
+            "manifestHash": "902977060ed9fdc0739cfb4e24f97434891b00e369e80f9627fbc5b30ecbbf81",
+            "virtualFiles": 0,
+            "clockValue": "2000-01-01T00:00:00Z"
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "ReminderPairResult { first = \"queued\", second = \"queued\" }",
+          "data": {
+            "stack": [
+              "ReminderPairResult { first = \"queued\", second = \"queued\" }"
+            ],
+            "stackTypes": [
+              "ReminderPairResult"
+            ],
+            "console": [],
+            "effects": {
+              "fs.read": 3,
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'result' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "result",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "initialSessionResponses": [
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'initial' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "initial",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "parsedResults": [
+        {
+          "first": "queued",
+          "second": "queued"
+        }
+      ]
+    },
+    {
+      "name": "same-id-existing",
+      "resultCalls": [
+        {
+          "first": "custom",
+          "second": "custom"
+        }
+      ],
+      "errorCode": null,
+      "errorRecords": [],
+      "reads": 4,
+      "writes": 0,
+      "state": {
+        "outbox/invoice-reminders/A": "custom",
+        "unrelated": "keep"
+      },
+      "resultSnapshotSaved": true,
+      "sessionResponses": [
+        {
+          "ok": true,
+          "kind": "snapshot.load",
+          "text": "Loaded committed snapshot 'initial'.",
+          "data": {
+            "name": "initial",
+            "manifestHash": "902977060ed9fdc0739cfb4e24f97434891b00e369e80f9627fbc5b30ecbbf81",
+            "virtualFiles": 2,
+            "clockValue": "2000-01-01T00:00:00Z"
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "ReminderPairResult { first = \"custom\", second = \"custom\" }",
+          "data": {
+            "stack": [
+              "ReminderPairResult { first = \"custom\", second = \"custom\" }"
+            ],
+            "stackTypes": [
+              "ReminderPairResult"
+            ],
+            "console": [],
+            "effects": {
+              "fs.read": 4
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'result' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "result",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "initialSessionResponses": [
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "unit",
+          "data": {
+            "stack": [
+              "unit"
+            ],
+            "stackTypes": [
+              "Unit"
+            ],
+            "console": [],
+            "effects": {
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "unit",
+          "data": {
+            "stack": [
+              "unit"
+            ],
+            "stackTypes": [
+              "Unit"
+            ],
+            "console": [],
+            "effects": {
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'initial' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "initial",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "parsedResults": [
+        {
+          "first": "custom",
+          "second": "custom"
+        }
+      ]
+    },
+    {
+      "name": "distinct-existing-first",
+      "resultCalls": [
+        {
+          "first": "custom",
+          "second": "custom"
+        }
+      ],
+      "errorCode": null,
+      "errorRecords": [],
+      "reads": 4,
+      "writes": 0,
+      "state": {
+        "outbox/invoice-reminders/A": "custom",
+        "unrelated": "keep"
+      },
+      "resultSnapshotSaved": true,
+      "sessionResponses": [
+        {
+          "ok": true,
+          "kind": "snapshot.load",
+          "text": "Loaded committed snapshot 'initial'.",
+          "data": {
+            "name": "initial",
+            "manifestHash": "902977060ed9fdc0739cfb4e24f97434891b00e369e80f9627fbc5b30ecbbf81",
+            "virtualFiles": 2,
+            "clockValue": "2000-01-01T00:00:00Z"
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "ReminderPairResult { first = \"custom\", second = \"custom\" }",
+          "data": {
+            "stack": [
+              "ReminderPairResult { first = \"custom\", second = \"custom\" }"
+            ],
+            "stackTypes": [
+              "ReminderPairResult"
+            ],
+            "console": [],
+            "effects": {
+              "fs.read": 4
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'result' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "result",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "initialSessionResponses": [
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "unit",
+          "data": {
+            "stack": [
+              "unit"
+            ],
+            "stackTypes": [
+              "Unit"
+            ],
+            "console": [],
+            "effects": {
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "unit",
+          "data": {
+            "stack": [
+              "unit"
+            ],
+            "stackTypes": [
+              "Unit"
+            ],
+            "console": [],
+            "effects": {
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'initial' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "initial",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "parsedResults": [
+        {
+          "first": "custom",
+          "second": "custom"
+        }
+      ]
+    },
+    {
+      "name": "empty-existing-first",
+      "resultCalls": [
+        {
+          "first": "",
+          "second": ""
+        }
+      ],
+      "errorCode": null,
+      "errorRecords": [],
+      "reads": 4,
+      "writes": 0,
+      "state": {
+        "outbox/invoice-reminders/A": ""
+      },
+      "resultSnapshotSaved": true,
+      "sessionResponses": [
+        {
+          "ok": true,
+          "kind": "snapshot.load",
+          "text": "Loaded committed snapshot 'initial'.",
+          "data": {
+            "name": "initial",
+            "manifestHash": "902977060ed9fdc0739cfb4e24f97434891b00e369e80f9627fbc5b30ecbbf81",
+            "virtualFiles": 1,
+            "clockValue": "2000-01-01T00:00:00Z"
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "ReminderPairResult { first = \"\", second = \"\" }",
+          "data": {
+            "stack": [
+              "ReminderPairResult { first = \"\", second = \"\" }"
+            ],
+            "stackTypes": [
+              "ReminderPairResult"
+            ],
+            "console": [],
+            "effects": {
+              "fs.read": 4
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'result' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "result",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "initialSessionResponses": [
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "unit",
+          "data": {
+            "stack": [
+              "unit"
+            ],
+            "stackTypes": [
+              "Unit"
+            ],
+            "console": [],
+            "effects": {
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'initial' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "initial",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "parsedResults": [
+        {
+          "first": "",
+          "second": ""
+        }
+      ]
+    },
+    {
+      "name": "uppercase-then-open",
+      "resultCalls": [
+        {
+          "first": "not-open",
+          "second": "queued"
+        }
+      ],
+      "errorCode": null,
+      "errorRecords": [],
+      "reads": 1,
+      "writes": 1,
+      "state": {
+        "outbox/invoice-reminders/A": "queued"
+      },
+      "resultSnapshotSaved": true,
+      "sessionResponses": [
+        {
+          "ok": true,
+          "kind": "snapshot.load",
+          "text": "Loaded committed snapshot 'initial'.",
+          "data": {
+            "name": "initial",
+            "manifestHash": "902977060ed9fdc0739cfb4e24f97434891b00e369e80f9627fbc5b30ecbbf81",
+            "virtualFiles": 0,
+            "clockValue": "2000-01-01T00:00:00Z"
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "ReminderPairResult { first = \"not-open\", second = \"queued\" }",
+          "data": {
+            "stack": [
+              "ReminderPairResult { first = \"not-open\", second = \"queued\" }"
+            ],
+            "stackTypes": [
+              "ReminderPairResult"
+            ],
+            "console": [],
+            "effects": {
+              "fs.read": 1,
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'result' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "result",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "initialSessionResponses": [
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'initial' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "initial",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "parsedResults": [
+        {
+          "first": "not-open",
+          "second": "queued"
+        }
+      ]
+    },
+    {
+      "name": "both-ineligible",
+      "resultCalls": [
+        {
+          "first": "not-open",
+          "second": "not-open"
+        }
+      ],
+      "errorCode": null,
+      "errorRecords": [],
+      "reads": 0,
+      "writes": 0,
+      "state": {
+        "outbox/invoice-reminders/A": "old",
+        "unrelated": "keep"
+      },
+      "resultSnapshotSaved": true,
+      "sessionResponses": [
+        {
+          "ok": true,
+          "kind": "snapshot.load",
+          "text": "Loaded committed snapshot 'initial'.",
+          "data": {
+            "name": "initial",
+            "manifestHash": "902977060ed9fdc0739cfb4e24f97434891b00e369e80f9627fbc5b30ecbbf81",
+            "virtualFiles": 2,
+            "clockValue": "2000-01-01T00:00:00Z"
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "ReminderPairResult { first = \"not-open\", second = \"not-open\" }",
+          "data": {
+            "stack": [
+              "ReminderPairResult { first = \"not-open\", second = \"not-open\" }"
+            ],
+            "stackTypes": [
+              "ReminderPairResult"
+            ],
+            "console": [],
+            "effects": {}
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'result' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "result",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "initialSessionResponses": [
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "unit",
+          "data": {
+            "stack": [
+              "unit"
+            ],
+            "stackTypes": [
+              "Unit"
+            ],
+            "console": [],
+            "effects": {
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "unit",
+          "data": {
+            "stack": [
+              "unit"
+            ],
+            "stackTypes": [
+              "Unit"
+            ],
+            "console": [],
+            "effects": {
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'initial' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "initial",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "parsedResults": [
+        {
+          "first": "not-open",
+          "second": "not-open"
+        }
+      ]
+    },
+    {
+      "name": "repeat-distinct",
+      "resultCalls": [
+        {
+          "first": "queued",
+          "second": "queued"
+        },
+        {
+          "first": "queued",
+          "second": "queued"
+        }
+      ],
+      "errorCode": null,
+      "errorRecords": [],
+      "reads": 7,
+      "writes": 1,
+      "state": {
+        "outbox/invoice-reminders/A": "queued",
+        "unrelated": "keep"
+      },
+      "resultSnapshotSaved": true,
+      "sessionResponses": [
+        {
+          "ok": true,
+          "kind": "snapshot.load",
+          "text": "Loaded committed snapshot 'initial'.",
+          "data": {
+            "name": "initial",
+            "manifestHash": "902977060ed9fdc0739cfb4e24f97434891b00e369e80f9627fbc5b30ecbbf81",
+            "virtualFiles": 1,
+            "clockValue": "2000-01-01T00:00:00Z"
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "ReminderPairResult { first = \"queued\", second = \"queued\" }",
+          "data": {
+            "stack": [
+              "ReminderPairResult { first = \"queued\", second = \"queued\" }"
+            ],
+            "stackTypes": [
+              "ReminderPairResult"
+            ],
+            "console": [],
+            "effects": {
+              "fs.read": 3,
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "ReminderPairResult { first = \"queued\", second = \"queued\" }",
+          "data": {
+            "stack": [
+              "ReminderPairResult { first = \"queued\", second = \"queued\" }"
+            ],
+            "stackTypes": [
+              "ReminderPairResult"
+            ],
+            "console": [],
+            "effects": {
+              "fs.read": 4
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'result' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "result",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "initialSessionResponses": [
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "unit",
+          "data": {
+            "stack": [
+              "unit"
+            ],
+            "stackTypes": [
+              "Unit"
+            ],
+            "console": [],
+            "effects": {
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'initial' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "initial",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "parsedResults": [
+        {
+          "first": "queued",
+          "second": "queued"
+        },
+        {
+          "first": "queued",
+          "second": "queued"
+        }
+      ]
+    },
+    {
+      "name": "read-denied",
+      "resultCalls": [],
+      "errorCode": "CAPABILITY_DENIED",
+      "errorRecords": [
+        {
+          "ok": false,
+          "kind": "error",
+          "text": "CAPABILITY_DENIED: The expression requires effects not granted by the host.",
+          "error": {
+            "code": "CAPABILITY_DENIED",
+            "message": "The expression requires effects not granted by the host.",
+            "expected": [
+              "fs.read",
+              "fs.write"
+            ],
+            "actual": [
+              "fs.write"
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "task.status",
+          "text": "Status for task-0003.",
+          "data": {
+            "task": "task-0003",
+            "goal": "Pair scorer read-denied denied capability preflight",
+            "active": true,
+            "wordsInspected": [],
+            "wordsUsed": [],
+            "wordsCreated": [],
+            "testsRun": 0,
+            "testsFailed": 0,
+            "effects": {},
+            "errors": [
+              "CAPABILITY_DENIED"
+            ]
+          }
+        }
+      ],
+      "reads": 0,
+      "writes": 0,
+      "state": {
+        "unrelated": "keep"
+      },
+      "resultSnapshotSaved": true,
+      "sessionResponses": [
+        {
+          "ok": true,
+          "kind": "snapshot.load",
+          "text": "Loaded committed snapshot 'initial'.",
+          "data": {
+            "name": "initial",
+            "manifestHash": "902977060ed9fdc0739cfb4e24f97434891b00e369e80f9627fbc5b30ecbbf81",
+            "virtualFiles": 1,
+            "clockValue": "2000-01-01T00:00:00Z"
+          }
+        },
+        {
+          "ok": true,
+          "kind": "task.begin",
+          "text": "Started task-0003.",
+          "data": {
+            "task": "task-0003",
+            "goal": "Pair scorer read-denied denied capability preflight",
+            "active": true,
+            "wordsInspected": [],
+            "wordsUsed": [],
+            "wordsCreated": [],
+            "testsRun": 0,
+            "testsFailed": 0,
+            "effects": {},
+            "errors": []
+          }
+        },
+        {
+          "ok": false,
+          "kind": "error",
+          "text": "CAPABILITY_DENIED: The expression requires effects not granted by the host.",
+          "error": {
+            "code": "CAPABILITY_DENIED",
+            "message": "The expression requires effects not granted by the host.",
+            "expected": [
+              "fs.read",
+              "fs.write"
+            ],
+            "actual": [
+              "fs.write"
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "task.status",
+          "text": "Status for task-0003.",
+          "data": {
+            "task": "task-0003",
+            "goal": "Pair scorer read-denied denied capability preflight",
+            "active": true,
+            "wordsInspected": [],
+            "wordsUsed": [],
+            "wordsCreated": [],
+            "testsRun": 0,
+            "testsFailed": 0,
+            "effects": {},
+            "errors": [
+              "CAPABILITY_DENIED"
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'result' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "result",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "initialSessionResponses": [
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "unit",
+          "data": {
+            "stack": [
+              "unit"
+            ],
+            "stackTypes": [
+              "Unit"
+            ],
+            "console": [],
+            "effects": {
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'initial' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "initial",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "parsedResults": []
+    },
+    {
+      "name": "write-denied",
+      "resultCalls": [],
+      "errorCode": "CAPABILITY_DENIED",
+      "errorRecords": [
+        {
+          "ok": false,
+          "kind": "error",
+          "text": "CAPABILITY_DENIED: The expression requires effects not granted by the host.",
+          "error": {
+            "code": "CAPABILITY_DENIED",
+            "message": "The expression requires effects not granted by the host.",
+            "expected": [
+              "fs.read",
+              "fs.write"
+            ],
+            "actual": [
+              "fs.read"
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "task.status",
+          "text": "Status for task-0003.",
+          "data": {
+            "task": "task-0003",
+            "goal": "Pair scorer write-denied denied capability preflight",
+            "active": true,
+            "wordsInspected": [],
+            "wordsUsed": [],
+            "wordsCreated": [],
+            "testsRun": 0,
+            "testsFailed": 0,
+            "effects": {},
+            "errors": [
+              "CAPABILITY_DENIED"
+            ]
+          }
+        }
+      ],
+      "reads": 0,
+      "writes": 0,
+      "state": {
+        "unrelated": "keep"
+      },
+      "resultSnapshotSaved": true,
+      "sessionResponses": [
+        {
+          "ok": true,
+          "kind": "snapshot.load",
+          "text": "Loaded committed snapshot 'initial'.",
+          "data": {
+            "name": "initial",
+            "manifestHash": "902977060ed9fdc0739cfb4e24f97434891b00e369e80f9627fbc5b30ecbbf81",
+            "virtualFiles": 1,
+            "clockValue": "2000-01-01T00:00:00Z"
+          }
+        },
+        {
+          "ok": true,
+          "kind": "task.begin",
+          "text": "Started task-0003.",
+          "data": {
+            "task": "task-0003",
+            "goal": "Pair scorer write-denied denied capability preflight",
+            "active": true,
+            "wordsInspected": [],
+            "wordsUsed": [],
+            "wordsCreated": [],
+            "testsRun": 0,
+            "testsFailed": 0,
+            "effects": {},
+            "errors": []
+          }
+        },
+        {
+          "ok": false,
+          "kind": "error",
+          "text": "CAPABILITY_DENIED: The expression requires effects not granted by the host.",
+          "error": {
+            "code": "CAPABILITY_DENIED",
+            "message": "The expression requires effects not granted by the host.",
+            "expected": [
+              "fs.read",
+              "fs.write"
+            ],
+            "actual": [
+              "fs.read"
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "task.status",
+          "text": "Status for task-0003.",
+          "data": {
+            "task": "task-0003",
+            "goal": "Pair scorer write-denied denied capability preflight",
+            "active": true,
+            "wordsInspected": [],
+            "wordsUsed": [],
+            "wordsCreated": [],
+            "testsRun": 0,
+            "testsFailed": 0,
+            "effects": {},
+            "errors": [
+              "CAPABILITY_DENIED"
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'result' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "result",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "initialSessionResponses": [
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "unit",
+          "data": {
+            "stack": [
+              "unit"
+            ],
+            "stackTypes": [
+              "Unit"
+            ],
+            "console": [],
+            "effects": {
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'initial' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "initial",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "parsedResults": []
+    }
+  ],
+  "processes": [
+    {
+      "purpose": "actor-owned target test and test-all",
+      "project": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-flow-d07fa8c99e3543f8b5f0386e47267e2c\\actor-tests",
+      "allow": [
+        "fs.read",
+        "fs.write"
+      ],
+      "requests": [
+        {
+          "word": "invoice.queue-reminders-for-pair",
+          "op": "test"
+        },
+        {
+          "op": "test-all"
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "test",
+          "text": "4/4 test(s) passed.",
+          "data": {
+            "results": [
+              {
+                "name": "exact-existing-markers",
+                "word": "invoice.queue-reminders-for-pair",
+                "passed": true,
+                "expectedKind": "value-expression",
+                "actualStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "record",
+                      "name": "ReminderPairResult",
+                      "typeKey": 4,
+                      "fields": [
+                        {
+                          "name": "first",
+                          "type": {
+                            "kind": "string"
+                          },
+                          "value": {
+                            "kind": "string",
+                            "value": "custom marker"
+                          }
+                        },
+                        {
+                          "name": "second",
+                          "type": {
+                            "kind": "string"
+                          },
+                          "value": {
+                            "kind": "string",
+                            "value": "custom marker"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "expected": "ReminderPairResult { first = \"custom marker\", second = \"custom marker\" }",
+                "expectedType": "ReminderPairResult",
+                "expectedStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "record",
+                      "name": "ReminderPairResult",
+                      "typeKey": 4,
+                      "fields": [
+                        {
+                          "name": "first",
+                          "type": {
+                            "kind": "string"
+                          },
+                          "value": {
+                            "kind": "string",
+                            "value": "custom marker"
+                          }
+                        },
+                        {
+                          "name": "second",
+                          "type": {
+                            "kind": "string"
+                          },
+                          "value": {
+                            "kind": "string",
+                            "value": "custom marker"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "actual": [
+                  "ReminderPairResult { first = \"custom marker\", second = \"custom marker\" }"
+                ]
+              },
+              {
+                "name": "first-not-open-skips-open-second",
+                "word": "invoice.queue-reminders-for-pair",
+                "passed": true,
+                "expectedKind": "value-expression",
+                "actualStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "record",
+                      "name": "ReminderPairResult",
+                      "typeKey": 4,
+                      "fields": [
+                        {
+                          "name": "first",
+                          "type": {
+                            "kind": "string"
+                          },
+                          "value": {
+                            "kind": "string",
+                            "value": "not-open"
+                          }
+                        },
+                        {
+                          "name": "second",
+                          "type": {
+                            "kind": "string"
+                          },
+                          "value": {
+                            "kind": "string",
+                            "value": "queued"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "expected": "ReminderPairResult { first = \"not-open\", second = \"queued\" }",
+                "expectedType": "ReminderPairResult",
+                "expectedStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "record",
+                      "name": "ReminderPairResult",
+                      "typeKey": 4,
+                      "fields": [
+                        {
+                          "name": "first",
+                          "type": {
+                            "kind": "string"
+                          },
+                          "value": {
+                            "kind": "string",
+                            "value": "not-open"
+                          }
+                        },
+                        {
+                          "name": "second",
+                          "type": {
+                            "kind": "string"
+                          },
+                          "value": {
+                            "kind": "string",
+                            "value": "queued"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "actual": [
+                  "ReminderPairResult { first = \"not-open\", second = \"queued\" }"
+                ]
+              },
+              {
+                "name": "second-not-open-after-first-queues",
+                "word": "invoice.queue-reminders-for-pair",
+                "passed": true,
+                "expectedKind": "value-expression",
+                "actualStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "record",
+                      "name": "ReminderPairResult",
+                      "typeKey": 4,
+                      "fields": [
+                        {
+                          "name": "first",
+                          "type": {
+                            "kind": "string"
+                          },
+                          "value": {
+                            "kind": "string",
+                            "value": "queued"
+                          }
+                        },
+                        {
+                          "name": "second",
+                          "type": {
+                            "kind": "string"
+                          },
+                          "value": {
+                            "kind": "string",
+                            "value": "not-open"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "expected": "ReminderPairResult { first = \"queued\", second = \"not-open\" }",
+                "expectedType": "ReminderPairResult",
+                "expectedStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "record",
+                      "name": "ReminderPairResult",
+                      "typeKey": 4,
+                      "fields": [
+                        {
+                          "name": "first",
+                          "type": {
+                            "kind": "string"
+                          },
+                          "value": {
+                            "kind": "string",
+                            "value": "queued"
+                          }
+                        },
+                        {
+                          "name": "second",
+                          "type": {
+                            "kind": "string"
+                          },
+                          "value": {
+                            "kind": "string",
+                            "value": "not-open"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "actual": [
+                  "ReminderPairResult { first = \"queued\", second = \"not-open\" }"
+                ]
+              },
+              {
+                "name": "two-open-missing",
+                "word": "invoice.queue-reminders-for-pair",
+                "passed": true,
+                "expectedKind": "value-expression",
+                "actualStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "record",
+                      "name": "ReminderPairResult",
+                      "typeKey": 4,
+                      "fields": [
+                        {
+                          "name": "first",
+                          "type": {
+                            "kind": "string"
+                          },
+                          "value": {
+                            "kind": "string",
+                            "value": "queued"
+                          }
+                        },
+                        {
+                          "name": "second",
+                          "type": {
+                            "kind": "string"
+                          },
+                          "value": {
+                            "kind": "string",
+                            "value": "queued"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "expected": "ReminderPairResult { first = \"queued\", second = \"queued\" }",
+                "expectedType": "ReminderPairResult",
+                "expectedStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "record",
+                      "name": "ReminderPairResult",
+                      "typeKey": 4,
+                      "fields": [
+                        {
+                          "name": "first",
+                          "type": {
+                            "kind": "string"
+                          },
+                          "value": {
+                            "kind": "string",
+                            "value": "queued"
+                          }
+                        },
+                        {
+                          "name": "second",
+                          "type": {
+                            "kind": "string"
+                          },
+                          "value": {
+                            "kind": "string",
+                            "value": "queued"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "actual": [
+                  "ReminderPairResult { first = \"queued\", second = \"queued\" }"
+                ]
+              }
+            ],
+            "coverage": {
+              "instructionsCovered": 49,
+              "instructionsTotal": 49,
+              "branchesCovered": 8,
+              "branchesTotal": 8,
+              "uncoveredInstructions": [],
+              "uncoveredBranchOutcomes": [],
+              "finiteCoverage": {
+                "targetInvocations": 4,
+                "inputs": [],
+                "returns": [
+                  {
+                    "position": 0,
+                    "type": "ReminderPairResult",
+                    "required": [],
+                    "observed": [],
+                    "missing": []
+                  }
+                ],
+                "unsupported": [],
+                "missing": [],
+                "complete": true
+              }
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "test",
+          "text": "10/10 test(s) passed.",
+          "data": {
+            "results": [
+              {
+                "name": "existing-custom-marker",
+                "word": "invoice.queue-reminder-once",
+                "passed": true,
+                "expected": "\"custom reminder marker\"",
+                "actual": [
+                  "\"custom reminder marker\""
+                ]
+              },
+              {
+                "name": "existing-queued-marker",
+                "word": "invoice.queue-reminder-once",
+                "passed": true,
+                "expected": "\"queued\"",
+                "actual": [
+                  "\"queued\""
+                ]
+              },
+              {
+                "name": "missing-reminder",
+                "word": "invoice.queue-reminder-once",
+                "passed": true,
+                "expected": "\"queued\"",
+                "actual": [
+                  "\"queued\""
+                ]
+              },
+              {
+                "name": "non-open-status",
+                "word": "invoice.queue-reminder-once",
+                "passed": true,
+                "expected": "\"not-open\"",
+                "actual": [
+                  "\"not-open\""
+                ]
+              },
+              {
+                "name": "exact-existing-markers",
+                "word": "invoice.queue-reminders-for-pair",
+                "passed": true,
+                "expectedKind": "value-expression",
+                "actualStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "record",
+                      "name": "ReminderPairResult",
+                      "typeKey": 4,
+                      "fields": [
+                        {
+                          "name": "first",
+                          "type": {
+                            "kind": "string"
+                          },
+                          "value": {
+                            "kind": "string",
+                            "value": "custom marker"
+                          }
+                        },
+                        {
+                          "name": "second",
+                          "type": {
+                            "kind": "string"
+                          },
+                          "value": {
+                            "kind": "string",
+                            "value": "custom marker"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "expected": "ReminderPairResult { first = \"custom marker\", second = \"custom marker\" }",
+                "expectedType": "ReminderPairResult",
+                "expectedStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "record",
+                      "name": "ReminderPairResult",
+                      "typeKey": 4,
+                      "fields": [
+                        {
+                          "name": "first",
+                          "type": {
+                            "kind": "string"
+                          },
+                          "value": {
+                            "kind": "string",
+                            "value": "custom marker"
+                          }
+                        },
+                        {
+                          "name": "second",
+                          "type": {
+                            "kind": "string"
+                          },
+                          "value": {
+                            "kind": "string",
+                            "value": "custom marker"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "actual": [
+                  "ReminderPairResult { first = \"custom marker\", second = \"custom marker\" }"
+                ]
+              },
+              {
+                "name": "first-not-open-skips-open-second",
+                "word": "invoice.queue-reminders-for-pair",
+                "passed": true,
+                "expectedKind": "value-expression",
+                "actualStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "record",
+                      "name": "ReminderPairResult",
+                      "typeKey": 4,
+                      "fields": [
+                        {
+                          "name": "first",
+                          "type": {
+                            "kind": "string"
+                          },
+                          "value": {
+                            "kind": "string",
+                            "value": "not-open"
+                          }
+                        },
+                        {
+                          "name": "second",
+                          "type": {
+                            "kind": "string"
+                          },
+                          "value": {
+                            "kind": "string",
+                            "value": "queued"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "expected": "ReminderPairResult { first = \"not-open\", second = \"queued\" }",
+                "expectedType": "ReminderPairResult",
+                "expectedStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "record",
+                      "name": "ReminderPairResult",
+                      "typeKey": 4,
+                      "fields": [
+                        {
+                          "name": "first",
+                          "type": {
+                            "kind": "string"
+                          },
+                          "value": {
+                            "kind": "string",
+                            "value": "not-open"
+                          }
+                        },
+                        {
+                          "name": "second",
+                          "type": {
+                            "kind": "string"
+                          },
+                          "value": {
+                            "kind": "string",
+                            "value": "queued"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "actual": [
+                  "ReminderPairResult { first = \"not-open\", second = \"queued\" }"
+                ]
+              },
+              {
+                "name": "second-not-open-after-first-queues",
+                "word": "invoice.queue-reminders-for-pair",
+                "passed": true,
+                "expectedKind": "value-expression",
+                "actualStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "record",
+                      "name": "ReminderPairResult",
+                      "typeKey": 4,
+                      "fields": [
+                        {
+                          "name": "first",
+                          "type": {
+                            "kind": "string"
+                          },
+                          "value": {
+                            "kind": "string",
+                            "value": "queued"
+                          }
+                        },
+                        {
+                          "name": "second",
+                          "type": {
+                            "kind": "string"
+                          },
+                          "value": {
+                            "kind": "string",
+                            "value": "not-open"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "expected": "ReminderPairResult { first = \"queued\", second = \"not-open\" }",
+                "expectedType": "ReminderPairResult",
+                "expectedStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "record",
+                      "name": "ReminderPairResult",
+                      "typeKey": 4,
+                      "fields": [
+                        {
+                          "name": "first",
+                          "type": {
+                            "kind": "string"
+                          },
+                          "value": {
+                            "kind": "string",
+                            "value": "queued"
+                          }
+                        },
+                        {
+                          "name": "second",
+                          "type": {
+                            "kind": "string"
+                          },
+                          "value": {
+                            "kind": "string",
+                            "value": "not-open"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "actual": [
+                  "ReminderPairResult { first = \"queued\", second = \"not-open\" }"
+                ]
+              },
+              {
+                "name": "two-open-missing",
+                "word": "invoice.queue-reminders-for-pair",
+                "passed": true,
+                "expectedKind": "value-expression",
+                "actualStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "record",
+                      "name": "ReminderPairResult",
+                      "typeKey": 4,
+                      "fields": [
+                        {
+                          "name": "first",
+                          "type": {
+                            "kind": "string"
+                          },
+                          "value": {
+                            "kind": "string",
+                            "value": "queued"
+                          }
+                        },
+                        {
+                          "name": "second",
+                          "type": {
+                            "kind": "string"
+                          },
+                          "value": {
+                            "kind": "string",
+                            "value": "queued"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "expected": "ReminderPairResult { first = \"queued\", second = \"queued\" }",
+                "expectedType": "ReminderPairResult",
+                "expectedStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "record",
+                      "name": "ReminderPairResult",
+                      "typeKey": 4,
+                      "fields": [
+                        {
+                          "name": "first",
+                          "type": {
+                            "kind": "string"
+                          },
+                          "value": {
+                            "kind": "string",
+                            "value": "queued"
+                          }
+                        },
+                        {
+                          "name": "second",
+                          "type": {
+                            "kind": "string"
+                          },
+                          "value": {
+                            "kind": "string",
+                            "value": "queued"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "actual": [
+                  "ReminderPairResult { first = \"queued\", second = \"queued\" }"
+                ]
+              },
+              {
+                "name": "basic",
+                "word": "invoice.reminder-path",
+                "passed": true,
+                "expected": "\"outbox/invoice-reminders/INV-001\"",
+                "actual": [
+                  "\"outbox/invoice-reminders/INV-001\""
+                ]
+              },
+              {
+                "name": "preserves-id-text",
+                "word": "invoice.reminder-path",
+                "passed": true,
+                "expected": "\"outbox/invoice-reminders/inv.alpha_2\"",
+                "actual": [
+                  "\"outbox/invoice-reminders/inv.alpha_2\""
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0,
+      "responseCountMatches": true
+    },
+    {
+      "purpose": "prime distinct-open-missing",
+      "project": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-flow-d07fa8c99e3543f8b5f0386e47267e2c\\distinct-open-missing",
+      "allow": [
+        "fs.read",
+        "fs.write"
+      ],
+      "requests": [
+        {
+          "code": "file::write(\"unrelated\", \"keep\")",
+          "op": "eval",
+          "frontend": "flow"
+        },
+        {
+          "name": "initial",
+          "op": "snapshot.save"
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "unit",
+          "data": {
+            "stack": [
+              "unit"
+            ],
+            "stackTypes": [
+              "Unit"
+            ],
+            "console": [],
+            "effects": {
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'initial' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "initial",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0,
+      "responseCountMatches": true
+    },
+    {
+      "purpose": "score distinct-open-missing",
+      "project": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-flow-d07fa8c99e3543f8b5f0386e47267e2c\\distinct-open-missing",
+      "allow": [
+        "fs.read",
+        "fs.write"
+      ],
+      "requests": [
+        {
+          "name": "initial",
+          "op": "snapshot.load"
+        },
+        {
+          "code": "invoice::queue-reminders-for-pair(invoicePair::new(first = invoice::new(id = InvoiceId::new(\"A\"), status = InvoiceStatus::new(\"open\")), second = invoice::new(id = InvoiceId::new(\"B\"), status = InvoiceStatus::new(\"open\"))))",
+          "op": "eval",
+          "frontend": "flow"
+        },
+        {
+          "name": "result",
+          "op": "snapshot.save"
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "snapshot.load",
+          "text": "Loaded committed snapshot 'initial'.",
+          "data": {
+            "name": "initial",
+            "manifestHash": "902977060ed9fdc0739cfb4e24f97434891b00e369e80f9627fbc5b30ecbbf81",
+            "virtualFiles": 1,
+            "clockValue": "2000-01-01T00:00:00Z"
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "ReminderPairResult { first = \"queued\", second = \"queued\" }",
+          "data": {
+            "stack": [
+              "ReminderPairResult { first = \"queued\", second = \"queued\" }"
+            ],
+            "stackTypes": [
+              "ReminderPairResult"
+            ],
+            "console": [],
+            "effects": {
+              "fs.read": 3,
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'result' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "result",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0,
+      "responseCountMatches": true
+    },
+    {
+      "purpose": "prime closed-then-open",
+      "project": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-flow-d07fa8c99e3543f8b5f0386e47267e2c\\closed-then-open",
+      "allow": [
+        "fs.read",
+        "fs.write"
+      ],
+      "requests": [
+        {
+          "code": "file::write(\"unrelated\", \"keep\")",
+          "op": "eval",
+          "frontend": "flow"
+        },
+        {
+          "name": "initial",
+          "op": "snapshot.save"
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "unit",
+          "data": {
+            "stack": [
+              "unit"
+            ],
+            "stackTypes": [
+              "Unit"
+            ],
+            "console": [],
+            "effects": {
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'initial' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "initial",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0,
+      "responseCountMatches": true
+    },
+    {
+      "purpose": "score closed-then-open",
+      "project": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-flow-d07fa8c99e3543f8b5f0386e47267e2c\\closed-then-open",
+      "allow": [
+        "fs.read",
+        "fs.write"
+      ],
+      "requests": [
+        {
+          "name": "initial",
+          "op": "snapshot.load"
+        },
+        {
+          "code": "invoice::queue-reminders-for-pair(invoicePair::new(first = invoice::new(id = InvoiceId::new(\"A\"), status = InvoiceStatus::new(\"closed\")), second = invoice::new(id = InvoiceId::new(\"B\"), status = InvoiceStatus::new(\"open\"))))",
+          "op": "eval",
+          "frontend": "flow"
+        },
+        {
+          "name": "result",
+          "op": "snapshot.save"
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "snapshot.load",
+          "text": "Loaded committed snapshot 'initial'.",
+          "data": {
+            "name": "initial",
+            "manifestHash": "902977060ed9fdc0739cfb4e24f97434891b00e369e80f9627fbc5b30ecbbf81",
+            "virtualFiles": 1,
+            "clockValue": "2000-01-01T00:00:00Z"
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "ReminderPairResult { first = \"not-open\", second = \"queued\" }",
+          "data": {
+            "stack": [
+              "ReminderPairResult { first = \"not-open\", second = \"queued\" }"
+            ],
+            "stackTypes": [
+              "ReminderPairResult"
+            ],
+            "console": [],
+            "effects": {
+              "fs.read": 1,
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'result' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "result",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0,
+      "responseCountMatches": true
+    },
+    {
+      "purpose": "prime open-then-closed",
+      "project": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-flow-d07fa8c99e3543f8b5f0386e47267e2c\\open-then-closed",
+      "allow": [
+        "fs.read",
+        "fs.write"
+      ],
+      "requests": [
+        {
+          "name": "initial",
+          "op": "snapshot.save"
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'initial' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "initial",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0,
+      "responseCountMatches": true
+    },
+    {
+      "purpose": "score open-then-closed",
+      "project": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-flow-d07fa8c99e3543f8b5f0386e47267e2c\\open-then-closed",
+      "allow": [
+        "fs.read",
+        "fs.write"
+      ],
+      "requests": [
+        {
+          "name": "initial",
+          "op": "snapshot.load"
+        },
+        {
+          "code": "invoice::queue-reminders-for-pair(invoicePair::new(first = invoice::new(id = InvoiceId::new(\"A\"), status = InvoiceStatus::new(\"open\")), second = invoice::new(id = InvoiceId::new(\"B\"), status = InvoiceStatus::new(\"Open\"))))",
+          "op": "eval",
+          "frontend": "flow"
+        },
+        {
+          "name": "result",
+          "op": "snapshot.save"
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "snapshot.load",
+          "text": "Loaded committed snapshot 'initial'.",
+          "data": {
+            "name": "initial",
+            "manifestHash": "902977060ed9fdc0739cfb4e24f97434891b00e369e80f9627fbc5b30ecbbf81",
+            "virtualFiles": 0,
+            "clockValue": "2000-01-01T00:00:00Z"
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "ReminderPairResult { first = \"queued\", second = \"not-open\" }",
+          "data": {
+            "stack": [
+              "ReminderPairResult { first = \"queued\", second = \"not-open\" }"
+            ],
+            "stackTypes": [
+              "ReminderPairResult"
+            ],
+            "console": [],
+            "effects": {
+              "fs.read": 1,
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'result' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "result",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0,
+      "responseCountMatches": true
+    },
+    {
+      "purpose": "prime same-id-missing",
+      "project": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-flow-d07fa8c99e3543f8b5f0386e47267e2c\\same-id-missing",
+      "allow": [
+        "fs.read",
+        "fs.write"
+      ],
+      "requests": [
+        {
+          "name": "initial",
+          "op": "snapshot.save"
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'initial' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "initial",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0,
+      "responseCountMatches": true
+    },
+    {
+      "purpose": "score same-id-missing",
+      "project": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-flow-d07fa8c99e3543f8b5f0386e47267e2c\\same-id-missing",
+      "allow": [
+        "fs.read",
+        "fs.write"
+      ],
+      "requests": [
+        {
+          "name": "initial",
+          "op": "snapshot.load"
+        },
+        {
+          "code": "invoice::queue-reminders-for-pair(invoicePair::new(first = invoice::new(id = InvoiceId::new(\"A\"), status = InvoiceStatus::new(\"open\")), second = invoice::new(id = InvoiceId::new(\"A\"), status = InvoiceStatus::new(\"open\"))))",
+          "op": "eval",
+          "frontend": "flow"
+        },
+        {
+          "name": "result",
+          "op": "snapshot.save"
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "snapshot.load",
+          "text": "Loaded committed snapshot 'initial'.",
+          "data": {
+            "name": "initial",
+            "manifestHash": "902977060ed9fdc0739cfb4e24f97434891b00e369e80f9627fbc5b30ecbbf81",
+            "virtualFiles": 0,
+            "clockValue": "2000-01-01T00:00:00Z"
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "ReminderPairResult { first = \"queued\", second = \"queued\" }",
+          "data": {
+            "stack": [
+              "ReminderPairResult { first = \"queued\", second = \"queued\" }"
+            ],
+            "stackTypes": [
+              "ReminderPairResult"
+            ],
+            "console": [],
+            "effects": {
+              "fs.read": 3,
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'result' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "result",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0,
+      "responseCountMatches": true
+    },
+    {
+      "purpose": "prime same-id-existing",
+      "project": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-flow-d07fa8c99e3543f8b5f0386e47267e2c\\same-id-existing",
+      "allow": [
+        "fs.read",
+        "fs.write"
+      ],
+      "requests": [
+        {
+          "code": "file::write(\"outbox/invoice-reminders/A\", \"custom\")",
+          "op": "eval",
+          "frontend": "flow"
+        },
+        {
+          "code": "file::write(\"unrelated\", \"keep\")",
+          "op": "eval",
+          "frontend": "flow"
+        },
+        {
+          "name": "initial",
+          "op": "snapshot.save"
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "unit",
+          "data": {
+            "stack": [
+              "unit"
+            ],
+            "stackTypes": [
+              "Unit"
+            ],
+            "console": [],
+            "effects": {
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "unit",
+          "data": {
+            "stack": [
+              "unit"
+            ],
+            "stackTypes": [
+              "Unit"
+            ],
+            "console": [],
+            "effects": {
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'initial' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "initial",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0,
+      "responseCountMatches": true
+    },
+    {
+      "purpose": "score same-id-existing",
+      "project": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-flow-d07fa8c99e3543f8b5f0386e47267e2c\\same-id-existing",
+      "allow": [
+        "fs.read",
+        "fs.write"
+      ],
+      "requests": [
+        {
+          "name": "initial",
+          "op": "snapshot.load"
+        },
+        {
+          "code": "invoice::queue-reminders-for-pair(invoicePair::new(first = invoice::new(id = InvoiceId::new(\"A\"), status = InvoiceStatus::new(\"open\")), second = invoice::new(id = InvoiceId::new(\"A\"), status = InvoiceStatus::new(\"open\"))))",
+          "op": "eval",
+          "frontend": "flow"
+        },
+        {
+          "name": "result",
+          "op": "snapshot.save"
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "snapshot.load",
+          "text": "Loaded committed snapshot 'initial'.",
+          "data": {
+            "name": "initial",
+            "manifestHash": "902977060ed9fdc0739cfb4e24f97434891b00e369e80f9627fbc5b30ecbbf81",
+            "virtualFiles": 2,
+            "clockValue": "2000-01-01T00:00:00Z"
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "ReminderPairResult { first = \"custom\", second = \"custom\" }",
+          "data": {
+            "stack": [
+              "ReminderPairResult { first = \"custom\", second = \"custom\" }"
+            ],
+            "stackTypes": [
+              "ReminderPairResult"
+            ],
+            "console": [],
+            "effects": {
+              "fs.read": 4
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'result' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "result",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0,
+      "responseCountMatches": true
+    },
+    {
+      "purpose": "prime distinct-existing-first",
+      "project": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-flow-d07fa8c99e3543f8b5f0386e47267e2c\\distinct-existing-first",
+      "allow": [
+        "fs.read",
+        "fs.write"
+      ],
+      "requests": [
+        {
+          "code": "file::write(\"outbox/invoice-reminders/A\", \"custom\")",
+          "op": "eval",
+          "frontend": "flow"
+        },
+        {
+          "code": "file::write(\"unrelated\", \"keep\")",
+          "op": "eval",
+          "frontend": "flow"
+        },
+        {
+          "name": "initial",
+          "op": "snapshot.save"
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "unit",
+          "data": {
+            "stack": [
+              "unit"
+            ],
+            "stackTypes": [
+              "Unit"
+            ],
+            "console": [],
+            "effects": {
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "unit",
+          "data": {
+            "stack": [
+              "unit"
+            ],
+            "stackTypes": [
+              "Unit"
+            ],
+            "console": [],
+            "effects": {
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'initial' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "initial",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0,
+      "responseCountMatches": true
+    },
+    {
+      "purpose": "score distinct-existing-first",
+      "project": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-flow-d07fa8c99e3543f8b5f0386e47267e2c\\distinct-existing-first",
+      "allow": [
+        "fs.read",
+        "fs.write"
+      ],
+      "requests": [
+        {
+          "name": "initial",
+          "op": "snapshot.load"
+        },
+        {
+          "code": "invoice::queue-reminders-for-pair(invoicePair::new(first = invoice::new(id = InvoiceId::new(\"A\"), status = InvoiceStatus::new(\"open\")), second = invoice::new(id = InvoiceId::new(\"B\"), status = InvoiceStatus::new(\"open\"))))",
+          "op": "eval",
+          "frontend": "flow"
+        },
+        {
+          "name": "result",
+          "op": "snapshot.save"
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "snapshot.load",
+          "text": "Loaded committed snapshot 'initial'.",
+          "data": {
+            "name": "initial",
+            "manifestHash": "902977060ed9fdc0739cfb4e24f97434891b00e369e80f9627fbc5b30ecbbf81",
+            "virtualFiles": 2,
+            "clockValue": "2000-01-01T00:00:00Z"
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "ReminderPairResult { first = \"custom\", second = \"custom\" }",
+          "data": {
+            "stack": [
+              "ReminderPairResult { first = \"custom\", second = \"custom\" }"
+            ],
+            "stackTypes": [
+              "ReminderPairResult"
+            ],
+            "console": [],
+            "effects": {
+              "fs.read": 4
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'result' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "result",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0,
+      "responseCountMatches": true
+    },
+    {
+      "purpose": "prime empty-existing-first",
+      "project": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-flow-d07fa8c99e3543f8b5f0386e47267e2c\\empty-existing-first",
+      "allow": [
+        "fs.read",
+        "fs.write"
+      ],
+      "requests": [
+        {
+          "code": "file::write(\"outbox/invoice-reminders/A\", \"\")",
+          "op": "eval",
+          "frontend": "flow"
+        },
+        {
+          "name": "initial",
+          "op": "snapshot.save"
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "unit",
+          "data": {
+            "stack": [
+              "unit"
+            ],
+            "stackTypes": [
+              "Unit"
+            ],
+            "console": [],
+            "effects": {
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'initial' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "initial",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0,
+      "responseCountMatches": true
+    },
+    {
+      "purpose": "score empty-existing-first",
+      "project": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-flow-d07fa8c99e3543f8b5f0386e47267e2c\\empty-existing-first",
+      "allow": [
+        "fs.read",
+        "fs.write"
+      ],
+      "requests": [
+        {
+          "name": "initial",
+          "op": "snapshot.load"
+        },
+        {
+          "code": "invoice::queue-reminders-for-pair(invoicePair::new(first = invoice::new(id = InvoiceId::new(\"A\"), status = InvoiceStatus::new(\"open\")), second = invoice::new(id = InvoiceId::new(\"B\"), status = InvoiceStatus::new(\"open\"))))",
+          "op": "eval",
+          "frontend": "flow"
+        },
+        {
+          "name": "result",
+          "op": "snapshot.save"
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "snapshot.load",
+          "text": "Loaded committed snapshot 'initial'.",
+          "data": {
+            "name": "initial",
+            "manifestHash": "902977060ed9fdc0739cfb4e24f97434891b00e369e80f9627fbc5b30ecbbf81",
+            "virtualFiles": 1,
+            "clockValue": "2000-01-01T00:00:00Z"
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "ReminderPairResult { first = \"\", second = \"\" }",
+          "data": {
+            "stack": [
+              "ReminderPairResult { first = \"\", second = \"\" }"
+            ],
+            "stackTypes": [
+              "ReminderPairResult"
+            ],
+            "console": [],
+            "effects": {
+              "fs.read": 4
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'result' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "result",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0,
+      "responseCountMatches": true
+    },
+    {
+      "purpose": "prime uppercase-then-open",
+      "project": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-flow-d07fa8c99e3543f8b5f0386e47267e2c\\uppercase-then-open",
+      "allow": [
+        "fs.read",
+        "fs.write"
+      ],
+      "requests": [
+        {
+          "name": "initial",
+          "op": "snapshot.save"
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'initial' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "initial",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0,
+      "responseCountMatches": true
+    },
+    {
+      "purpose": "score uppercase-then-open",
+      "project": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-flow-d07fa8c99e3543f8b5f0386e47267e2c\\uppercase-then-open",
+      "allow": [
+        "fs.read",
+        "fs.write"
+      ],
+      "requests": [
+        {
+          "name": "initial",
+          "op": "snapshot.load"
+        },
+        {
+          "code": "invoice::queue-reminders-for-pair(invoicePair::new(first = invoice::new(id = InvoiceId::new(\"A\"), status = InvoiceStatus::new(\"OPEN\")), second = invoice::new(id = InvoiceId::new(\"B\"), status = InvoiceStatus::new(\"open\"))))",
+          "op": "eval",
+          "frontend": "flow"
+        },
+        {
+          "name": "result",
+          "op": "snapshot.save"
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "snapshot.load",
+          "text": "Loaded committed snapshot 'initial'.",
+          "data": {
+            "name": "initial",
+            "manifestHash": "902977060ed9fdc0739cfb4e24f97434891b00e369e80f9627fbc5b30ecbbf81",
+            "virtualFiles": 0,
+            "clockValue": "2000-01-01T00:00:00Z"
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "ReminderPairResult { first = \"not-open\", second = \"queued\" }",
+          "data": {
+            "stack": [
+              "ReminderPairResult { first = \"not-open\", second = \"queued\" }"
+            ],
+            "stackTypes": [
+              "ReminderPairResult"
+            ],
+            "console": [],
+            "effects": {
+              "fs.read": 1,
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'result' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "result",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0,
+      "responseCountMatches": true
+    },
+    {
+      "purpose": "prime both-ineligible",
+      "project": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-flow-d07fa8c99e3543f8b5f0386e47267e2c\\both-ineligible",
+      "allow": [
+        "fs.read",
+        "fs.write"
+      ],
+      "requests": [
+        {
+          "code": "file::write(\"outbox/invoice-reminders/A\", \"old\")",
+          "op": "eval",
+          "frontend": "flow"
+        },
+        {
+          "code": "file::write(\"unrelated\", \"keep\")",
+          "op": "eval",
+          "frontend": "flow"
+        },
+        {
+          "name": "initial",
+          "op": "snapshot.save"
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "unit",
+          "data": {
+            "stack": [
+              "unit"
+            ],
+            "stackTypes": [
+              "Unit"
+            ],
+            "console": [],
+            "effects": {
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "unit",
+          "data": {
+            "stack": [
+              "unit"
+            ],
+            "stackTypes": [
+              "Unit"
+            ],
+            "console": [],
+            "effects": {
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'initial' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "initial",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0,
+      "responseCountMatches": true
+    },
+    {
+      "purpose": "score both-ineligible",
+      "project": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-flow-d07fa8c99e3543f8b5f0386e47267e2c\\both-ineligible",
+      "allow": [
+        "fs.read",
+        "fs.write"
+      ],
+      "requests": [
+        {
+          "name": "initial",
+          "op": "snapshot.load"
+        },
+        {
+          "code": "invoice::queue-reminders-for-pair(invoicePair::new(first = invoice::new(id = InvoiceId::new(\"A\"), status = InvoiceStatus::new(\"closed\")), second = invoice::new(id = InvoiceId::new(\"B\"), status = InvoiceStatus::new(\"paid\"))))",
+          "op": "eval",
+          "frontend": "flow"
+        },
+        {
+          "name": "result",
+          "op": "snapshot.save"
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "snapshot.load",
+          "text": "Loaded committed snapshot 'initial'.",
+          "data": {
+            "name": "initial",
+            "manifestHash": "902977060ed9fdc0739cfb4e24f97434891b00e369e80f9627fbc5b30ecbbf81",
+            "virtualFiles": 2,
+            "clockValue": "2000-01-01T00:00:00Z"
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "ReminderPairResult { first = \"not-open\", second = \"not-open\" }",
+          "data": {
+            "stack": [
+              "ReminderPairResult { first = \"not-open\", second = \"not-open\" }"
+            ],
+            "stackTypes": [
+              "ReminderPairResult"
+            ],
+            "console": [],
+            "effects": {}
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'result' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "result",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0,
+      "responseCountMatches": true
+    },
+    {
+      "purpose": "prime repeat-distinct",
+      "project": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-flow-d07fa8c99e3543f8b5f0386e47267e2c\\repeat-distinct",
+      "allow": [
+        "fs.read",
+        "fs.write"
+      ],
+      "requests": [
+        {
+          "code": "file::write(\"unrelated\", \"keep\")",
+          "op": "eval",
+          "frontend": "flow"
+        },
+        {
+          "name": "initial",
+          "op": "snapshot.save"
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "unit",
+          "data": {
+            "stack": [
+              "unit"
+            ],
+            "stackTypes": [
+              "Unit"
+            ],
+            "console": [],
+            "effects": {
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'initial' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "initial",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0,
+      "responseCountMatches": true
+    },
+    {
+      "purpose": "score repeat-distinct",
+      "project": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-flow-d07fa8c99e3543f8b5f0386e47267e2c\\repeat-distinct",
+      "allow": [
+        "fs.read",
+        "fs.write"
+      ],
+      "requests": [
+        {
+          "name": "initial",
+          "op": "snapshot.load"
+        },
+        {
+          "code": "invoice::queue-reminders-for-pair(invoicePair::new(first = invoice::new(id = InvoiceId::new(\"A\"), status = InvoiceStatus::new(\"open\")), second = invoice::new(id = InvoiceId::new(\"B\"), status = InvoiceStatus::new(\"open\"))))",
+          "op": "eval",
+          "frontend": "flow"
+        },
+        {
+          "code": "invoice::queue-reminders-for-pair(invoicePair::new(first = invoice::new(id = InvoiceId::new(\"A\"), status = InvoiceStatus::new(\"open\")), second = invoice::new(id = InvoiceId::new(\"B\"), status = InvoiceStatus::new(\"open\"))))",
+          "op": "eval",
+          "frontend": "flow"
+        },
+        {
+          "name": "result",
+          "op": "snapshot.save"
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "snapshot.load",
+          "text": "Loaded committed snapshot 'initial'.",
+          "data": {
+            "name": "initial",
+            "manifestHash": "902977060ed9fdc0739cfb4e24f97434891b00e369e80f9627fbc5b30ecbbf81",
+            "virtualFiles": 1,
+            "clockValue": "2000-01-01T00:00:00Z"
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "ReminderPairResult { first = \"queued\", second = \"queued\" }",
+          "data": {
+            "stack": [
+              "ReminderPairResult { first = \"queued\", second = \"queued\" }"
+            ],
+            "stackTypes": [
+              "ReminderPairResult"
+            ],
+            "console": [],
+            "effects": {
+              "fs.read": 3,
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "ReminderPairResult { first = \"queued\", second = \"queued\" }",
+          "data": {
+            "stack": [
+              "ReminderPairResult { first = \"queued\", second = \"queued\" }"
+            ],
+            "stackTypes": [
+              "ReminderPairResult"
+            ],
+            "console": [],
+            "effects": {
+              "fs.read": 4
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'result' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "result",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0,
+      "responseCountMatches": true
+    },
+    {
+      "purpose": "prime read-denied",
+      "project": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-flow-d07fa8c99e3543f8b5f0386e47267e2c\\read-denied",
+      "allow": [
+        "fs.read",
+        "fs.write"
+      ],
+      "requests": [
+        {
+          "code": "file::write(\"unrelated\", \"keep\")",
+          "op": "eval",
+          "frontend": "flow"
+        },
+        {
+          "name": "initial",
+          "op": "snapshot.save"
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "unit",
+          "data": {
+            "stack": [
+              "unit"
+            ],
+            "stackTypes": [
+              "Unit"
+            ],
+            "console": [],
+            "effects": {
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'initial' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "initial",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0,
+      "responseCountMatches": true
+    },
+    {
+      "purpose": "score read-denied",
+      "project": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-flow-d07fa8c99e3543f8b5f0386e47267e2c\\read-denied",
+      "allow": [
+        "fs.write"
+      ],
+      "requests": [
+        {
+          "name": "initial",
+          "op": "snapshot.load"
+        },
+        {
+          "goal": "Pair scorer read-denied denied capability preflight",
+          "op": "task.begin"
+        },
+        {
+          "code": "invoice::queue-reminders-for-pair(invoicePair::new(first = invoice::new(id = InvoiceId::new(\"A\"), status = InvoiceStatus::new(\"open\")), second = invoice::new(id = InvoiceId::new(\"B\"), status = InvoiceStatus::new(\"open\"))))",
+          "op": "eval",
+          "frontend": "flow"
+        },
+        {
+          "op": "task.status"
+        },
+        {
+          "name": "result",
+          "op": "snapshot.save"
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "snapshot.load",
+          "text": "Loaded committed snapshot 'initial'.",
+          "data": {
+            "name": "initial",
+            "manifestHash": "902977060ed9fdc0739cfb4e24f97434891b00e369e80f9627fbc5b30ecbbf81",
+            "virtualFiles": 1,
+            "clockValue": "2000-01-01T00:00:00Z"
+          }
+        },
+        {
+          "ok": true,
+          "kind": "task.begin",
+          "text": "Started task-0003.",
+          "data": {
+            "task": "task-0003",
+            "goal": "Pair scorer read-denied denied capability preflight",
+            "active": true,
+            "wordsInspected": [],
+            "wordsUsed": [],
+            "wordsCreated": [],
+            "testsRun": 0,
+            "testsFailed": 0,
+            "effects": {},
+            "errors": []
+          }
+        },
+        {
+          "ok": false,
+          "kind": "error",
+          "text": "CAPABILITY_DENIED: The expression requires effects not granted by the host.",
+          "error": {
+            "code": "CAPABILITY_DENIED",
+            "message": "The expression requires effects not granted by the host.",
+            "expected": [
+              "fs.read",
+              "fs.write"
+            ],
+            "actual": [
+              "fs.write"
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "task.status",
+          "text": "Status for task-0003.",
+          "data": {
+            "task": "task-0003",
+            "goal": "Pair scorer read-denied denied capability preflight",
+            "active": true,
+            "wordsInspected": [],
+            "wordsUsed": [],
+            "wordsCreated": [],
+            "testsRun": 0,
+            "testsFailed": 0,
+            "effects": {},
+            "errors": [
+              "CAPABILITY_DENIED"
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'result' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "result",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0,
+      "responseCountMatches": true
+    },
+    {
+      "purpose": "prime write-denied",
+      "project": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-flow-d07fa8c99e3543f8b5f0386e47267e2c\\write-denied",
+      "allow": [
+        "fs.read",
+        "fs.write"
+      ],
+      "requests": [
+        {
+          "code": "file::write(\"unrelated\", \"keep\")",
+          "op": "eval",
+          "frontend": "flow"
+        },
+        {
+          "name": "initial",
+          "op": "snapshot.save"
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "unit",
+          "data": {
+            "stack": [
+              "unit"
+            ],
+            "stackTypes": [
+              "Unit"
+            ],
+            "console": [],
+            "effects": {
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'initial' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "initial",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0,
+      "responseCountMatches": true
+    },
+    {
+      "purpose": "score write-denied",
+      "project": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-flow-d07fa8c99e3543f8b5f0386e47267e2c\\write-denied",
+      "allow": [
+        "fs.read"
+      ],
+      "requests": [
+        {
+          "name": "initial",
+          "op": "snapshot.load"
+        },
+        {
+          "goal": "Pair scorer write-denied denied capability preflight",
+          "op": "task.begin"
+        },
+        {
+          "code": "invoice::queue-reminders-for-pair(invoicePair::new(first = invoice::new(id = InvoiceId::new(\"A\"), status = InvoiceStatus::new(\"open\")), second = invoice::new(id = InvoiceId::new(\"B\"), status = InvoiceStatus::new(\"open\"))))",
+          "op": "eval",
+          "frontend": "flow"
+        },
+        {
+          "op": "task.status"
+        },
+        {
+          "name": "result",
+          "op": "snapshot.save"
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "snapshot.load",
+          "text": "Loaded committed snapshot 'initial'.",
+          "data": {
+            "name": "initial",
+            "manifestHash": "902977060ed9fdc0739cfb4e24f97434891b00e369e80f9627fbc5b30ecbbf81",
+            "virtualFiles": 1,
+            "clockValue": "2000-01-01T00:00:00Z"
+          }
+        },
+        {
+          "ok": true,
+          "kind": "task.begin",
+          "text": "Started task-0003.",
+          "data": {
+            "task": "task-0003",
+            "goal": "Pair scorer write-denied denied capability preflight",
+            "active": true,
+            "wordsInspected": [],
+            "wordsUsed": [],
+            "wordsCreated": [],
+            "testsRun": 0,
+            "testsFailed": 0,
+            "effects": {},
+            "errors": []
+          }
+        },
+        {
+          "ok": false,
+          "kind": "error",
+          "text": "CAPABILITY_DENIED: The expression requires effects not granted by the host.",
+          "error": {
+            "code": "CAPABILITY_DENIED",
+            "message": "The expression requires effects not granted by the host.",
+            "expected": [
+              "fs.read",
+              "fs.write"
+            ],
+            "actual": [
+              "fs.read"
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "task.status",
+          "text": "Status for task-0003.",
+          "data": {
+            "task": "task-0003",
+            "goal": "Pair scorer write-denied denied capability preflight",
+            "active": true,
+            "wordsInspected": [],
+            "wordsUsed": [],
+            "wordsCreated": [],
+            "testsRun": 0,
+            "testsFailed": 0,
+            "effects": {},
+            "errors": [
+              "CAPABILITY_DENIED"
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "snapshot.save",
+          "text": "Saved committed snapshot 'result' with 0 staged item(s) excluded.",
+          "data": {
+            "name": "result",
+            "excludedCandidates": []
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0,
+      "responseCountMatches": true
+    }
+  ],
+  "actorInventoryBefore": [
+    {
+      "path": "dictionary.agent",
+      "bytes": 6070,
+      "sha256": "eb6518d5c054e168788f83f586c3c5588a3b003746502f0c4bf1776cd6a69793"
+    },
+    {
+      "path": ".agentlang/store/objects/65e8afc9b5bb1bfca243faef92c9b31d75f9f8b5d3e492244085f4fb86a4d351.agent",
+      "bytes": 152,
+      "sha256": "65e8afc9b5bb1bfca243faef92c9b31d75f9f8b5d3e492244085f4fb86a4d351"
+    },
+    {
+      "path": ".agentlang/store/objects/66a9d0d506f9c11be050b075baef28b66e70f42507b1146000e5904d0ffd85d0.agent",
+      "bytes": 504,
+      "sha256": "66a9d0d506f9c11be050b075baef28b66e70f42507b1146000e5904d0ffd85d0"
+    },
+    {
+      "path": ".agentlang/store/objects/6af51409069f1231c4eb35864932d29bb686a6f88d99f8f8a62e2303a277f570.agent",
+      "bytes": 103,
+      "sha256": "6af51409069f1231c4eb35864932d29bb686a6f88d99f8f8a62e2303a277f570"
+    },
+    {
+      "path": ".agentlang/store/objects/6e0e04cebb0223a222e763d22855d3a48aa04e1ccbf84f3b39c30a9668d408c5.agent",
+      "bytes": 6202,
+      "sha256": "6e0e04cebb0223a222e763d22855d3a48aa04e1ccbf84f3b39c30a9668d408c5"
+    },
+    {
+      "path": ".agentlang/store/objects/703f97a26d496140a722582c6e3d70057e39d0c0e6ae3f798b0f306d76642be3.agent",
+      "bytes": 172,
+      "sha256": "703f97a26d496140a722582c6e3d70057e39d0c0e6ae3f798b0f306d76642be3"
+    },
+    {
+      "path": ".agentlang/store/objects/721017c4716646db897ac8429bcd891e6b2c60cc9b88dc63417f97f664b181aa.agent",
+      "bytes": 492,
+      "sha256": "721017c4716646db897ac8429bcd891e6b2c60cc9b88dc63417f97f664b181aa"
+    },
+    {
+      "path": ".agentlang/store/objects/7a4bc55bfb13521887c4162a1a2a4544aa961019c903a88d71916dd2dd0dd0f4.agent",
+      "bytes": 1072,
+      "sha256": "7a4bc55bfb13521887c4162a1a2a4544aa961019c903a88d71916dd2dd0dd0f4"
+    },
+    {
+      "path": ".agentlang/store/objects/7e09e2326170200dc878400bd3c351fa8d92a851d005823aca3cecc7b9f435fa.agent",
+      "bytes": 669,
+      "sha256": "7e09e2326170200dc878400bd3c351fa8d92a851d005823aca3cecc7b9f435fa"
+    },
+    {
+      "path": ".agentlang/store/objects/8e606ad519f1cd0d47fe413a2bfa4fc91d01cd53d1b2bec47817f790ddc7d594.agent",
+      "bytes": 27,
+      "sha256": "8e606ad519f1cd0d47fe413a2bfa4fc91d01cd53d1b2bec47817f790ddc7d594"
+    },
+    {
+      "path": ".agentlang/store/objects/9dbd47589c4ad8febc73bf9496ee2504a1b88932689bedfa4914d5620e60e7f8.agent",
+      "bytes": 290,
+      "sha256": "9dbd47589c4ad8febc73bf9496ee2504a1b88932689bedfa4914d5620e60e7f8"
+    },
+    {
+      "path": ".agentlang/store/objects/9ff7398262166b5b96b350ddc03358592e8c592ef76a8fe34f8cba5541191859.agent",
+      "bytes": 80,
+      "sha256": "9ff7398262166b5b96b350ddc03358592e8c592ef76a8fe34f8cba5541191859"
+    },
+    {
+      "path": ".agentlang/store/objects/a10884ce7d511aba9d78180d38ff469544d8b2e3e6baa4366d55743ee00ea569.agent",
+      "bytes": 1207,
+      "sha256": "a10884ce7d511aba9d78180d38ff469544d8b2e3e6baa4366d55743ee00ea569"
+    },
+    {
+      "path": ".agentlang/store/objects/a3054be4c49f1f238dbc682ea16693168eb8f35fdcd8c4a9bb5ee314c32eee13.agent",
+      "bytes": 682,
+      "sha256": "a3054be4c49f1f238dbc682ea16693168eb8f35fdcd8c4a9bb5ee314c32eee13"
+    },
+    {
+      "path": ".agentlang/store/objects/a588ef7d356f5a9d0e41c53976e9fd39f536165c0fa252b4a176720b88651ae5.agent",
+      "bytes": 202,
+      "sha256": "a588ef7d356f5a9d0e41c53976e9fd39f536165c0fa252b4a176720b88651ae5"
+    },
+    {
+      "path": ".agentlang/store/objects/b366a091cfa52fbc44c231920223775e3a2a871560ef351c1c2876ab54bed420.agent",
+      "bytes": 180,
+      "sha256": "b366a091cfa52fbc44c231920223775e3a2a871560ef351c1c2876ab54bed420"
+    },
+    {
+      "path": ".agentlang/store/objects/b656d29e11b2c6a71d0ad02999e3b7b6690bcea9a501ebe71ebe3186789d6e9c.agent",
+      "bytes": 929,
+      "sha256": "b656d29e11b2c6a71d0ad02999e3b7b6690bcea9a501ebe71ebe3186789d6e9c"
+    },
+    {
+      "path": ".agentlang/store/objects/b8052339535ea4d981e37d84c6ada14f9b86365dfb1ffddb0e43999db37786cb.agent",
+      "bytes": 2649,
+      "sha256": "b8052339535ea4d981e37d84c6ada14f9b86365dfb1ffddb0e43999db37786cb"
+    },
+    {
+      "path": ".agentlang/store/objects/c47a14b5cb86b9b370029edc05281850a463e876881f34caab5531ac6865f154.agent",
+      "bytes": 141,
+      "sha256": "c47a14b5cb86b9b370029edc05281850a463e876881f34caab5531ac6865f154"
+    },
+    {
+      "path": ".agentlang/store/objects/c8be4e828baf76085c19dd2b562a5ca6451a7bfce349aa5e8f8df2247d84f6b7.agent",
+      "bytes": 132,
+      "sha256": "c8be4e828baf76085c19dd2b562a5ca6451a7bfce349aa5e8f8df2247d84f6b7"
+    },
+    {
+      "path": ".agentlang/store/objects/d605d9116a52a451c36202f9095b8c87eae8fda766a977fbb63fe5ab927ead2c.agent",
+      "bytes": 258,
+      "sha256": "d605d9116a52a451c36202f9095b8c87eae8fda766a977fbb63fe5ab927ead2c"
+    },
+    {
+      "path": ".agentlang/store/objects/de7041045bf6d9e747b23a21926412acf9ad3a1a80f23e9512c106ca03c26d68.agent",
+      "bytes": 462,
+      "sha256": "de7041045bf6d9e747b23a21926412acf9ad3a1a80f23e9512c106ca03c26d68"
+    },
+    {
+      "path": ".agentlang/store/objects/e422c5529407bf62b9a3ab0ba15a0dd073b0cd5f1c2b7a5d3d80377bbfb762e4.agent",
+      "bytes": 1073,
+      "sha256": "e422c5529407bf62b9a3ab0ba15a0dd073b0cd5f1c2b7a5d3d80377bbfb762e4"
+    },
+    {
+      "path": ".agentlang/store/objects/eb6518d5c054e168788f83f586c3c5588a3b003746502f0c4bf1776cd6a69793.agent",
+      "bytes": 6070,
+      "sha256": "eb6518d5c054e168788f83f586c3c5588a3b003746502f0c4bf1776cd6a69793"
+    },
+    {
+      "path": ".agentlang/store/objects/65c046007d4f4b7d48b75a1df50d78d5a35d1ba88a53dce2be2d61f2d3dcbd6d.agent",
+      "bytes": 49,
+      "sha256": "65c046007d4f4b7d48b75a1df50d78d5a35d1ba88a53dce2be2d61f2d3dcbd6d"
+    },
+    {
+      "path": "history/task-0001.json",
+      "bytes": 535,
+      "sha256": "9af463a08e5f18956abe8ade3e33e1f9bf22cf5ee41de2e9e407cdbd9447b6cf"
+    },
+    {
+      "path": ".agentlang/store/objects/58426dad43d6dd3474aac7f5bf5790a147b192e93506be27adab813860788095.agent",
+      "bytes": 520,
+      "sha256": "58426dad43d6dd3474aac7f5bf5790a147b192e93506be27adab813860788095"
+    },
+    {
+      "path": ".agentlang/store/objects/43c229edb237793d0ac0f055966abc4893bd918ea2b527ed47d9ac08ce477ab2.agent",
+      "bytes": 210,
+      "sha256": "43c229edb237793d0ac0f055966abc4893bd918ea2b527ed47d9ac08ce477ab2"
+    },
+    {
+      "path": "flow-corrected-target.flow",
+      "bytes": 1073,
+      "sha256": "e422c5529407bf62b9a3ab0ba15a0dd073b0cd5f1c2b7a5d3d80377bbfb762e4"
+    },
+    {
+      "path": "flow-corrected-test.flow",
+      "bytes": 518,
+      "sha256": "18d4cbb10cdc29a6f79d51679db3c96e5f1731b16ddfef2da0a49904b6e7f374"
+    },
+    {
+      "path": "flow-mutant-test-existing.flow",
+      "bytes": 682,
+      "sha256": "a3054be4c49f1f238dbc682ea16693168eb8f35fdcd8c4a9bb5ee314c32eee13"
+    },
+    {
+      "path": "flow-mutant-test.flow",
+      "bytes": 525,
+      "sha256": "c93b7157af5f3e7322ebe08d2eb1456626e4393e268dfec613786aa443ed56ac"
+    },
+    {
+      "path": "flow-mutant.flow",
+      "bytes": 1072,
+      "sha256": "7a4bc55bfb13521887c4162a1a2a4544aa961019c903a88d71916dd2dd0dd0f4"
+    },
+    {
+      "path": "flow-replacement.json",
+      "bytes": 28888,
+      "sha256": "c09299cc5777570c9a551a774a52c29c491d481070a5fd99c32c2940f408cdfb"
+    },
+    {
+      "path": "mutation-commit-evidence.json",
+      "bytes": 26722,
+      "sha256": "3fb3711439332e7bb200c0a1d48fd9148833b569dee40fcbb440e6bd1a63048a"
+    },
+    {
+      "path": ".agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "4c7698005222b694b948965e8d72e3e1f29614be548182a6ee68a3ce1e68d072"
+    },
+    {
+      "path": ".agentlang/store/WRITE.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/store/manifests/18be761d37d08ce6fa3ea0d18dff0a11a6d8c632d11e3a2c8a3055d788629804.json",
+      "bytes": 4763,
+      "sha256": "18be761d37d08ce6fa3ea0d18dff0a11a6d8c632d11e3a2c8a3055d788629804"
+    },
+    {
+      "path": ".agentlang/store/manifests/2c7c90763f061da10e1d6b84fee9122dee16d8518d5d66d060aeb10818523a99.json",
+      "bytes": 376,
+      "sha256": "2c7c90763f061da10e1d6b84fee9122dee16d8518d5d66d060aeb10818523a99"
+    },
+    {
+      "path": ".agentlang/store/manifests/8825ab4e7e9091da913d02cc748102dd41961a6676c46b9da970f30d44625a26.json",
+      "bytes": 54442,
+      "sha256": "8825ab4e7e9091da913d02cc748102dd41961a6676c46b9da970f30d44625a26"
+    },
+    {
+      "path": ".agentlang/store/manifests/902977060ed9fdc0739cfb4e24f97434891b00e369e80f9627fbc5b30ecbbf81.json",
+      "bytes": 119247,
+      "sha256": "902977060ed9fdc0739cfb4e24f97434891b00e369e80f9627fbc5b30ecbbf81"
+    },
+    {
+      "path": ".agentlang/store/manifests/bb2b7de2665fcf9e525d9bec3a021f5d2dfb7e5d1139ee4832abcce83bb0cdbb.json",
+      "bytes": 86846,
+      "sha256": "bb2b7de2665fcf9e525d9bec3a021f5d2dfb7e5d1139ee4832abcce83bb0cdbb"
+    },
+    {
+      "path": ".agentlang/store/manifests/c74c84babaae42d6abc69d931a2fabf439770f2fdb61672fa7a1164a4b50ee10.json",
+      "bytes": 788,
+      "sha256": "c74c84babaae42d6abc69d931a2fabf439770f2fdb61672fa7a1164a4b50ee10"
+    },
+    {
+      "path": ".agentlang/store/manifests/c8d75a50e48e92a5f0fee1cfe79b2293ce9d585a958ab57053d1a75e78182a68.json",
+      "bytes": 18984,
+      "sha256": "c8d75a50e48e92a5f0fee1cfe79b2293ce9d585a958ab57053d1a75e78182a68"
+    },
+    {
+      "path": ".agentlang/store/manifests/dd1103a22280d244609a97798020c3af7565a866c8295066e16272575c8e2615.json",
+      "bytes": 585,
+      "sha256": "dd1103a22280d244609a97798020c3af7565a866c8295066e16272575c8e2615"
+    },
+    {
+      "path": ".agentlang/store/objects/09998dd01b28f7a31e831b2ff198157dd14e7a75e9bd43d0b30e851541be5d38.agent",
+      "bytes": 6058,
+      "sha256": "09998dd01b28f7a31e831b2ff198157dd14e7a75e9bd43d0b30e851541be5d38"
+    },
+    {
+      "path": ".agentlang/store/objects/18d4cbb10cdc29a6f79d51679db3c96e5f1731b16ddfef2da0a49904b6e7f374.agent",
+      "bytes": 518,
+      "sha256": "18d4cbb10cdc29a6f79d51679db3c96e5f1731b16ddfef2da0a49904b6e7f374"
+    },
+    {
+      "path": ".agentlang/store/objects/22ae677b4e86fa5418b719708df880c13766290928296d0d154f52b2777116ef.agent",
+      "bytes": 170,
+      "sha256": "22ae677b4e86fa5418b719708df880c13766290928296d0d154f52b2777116ef"
+    },
+    {
+      "path": ".agentlang/store/objects/232d7d45c13e46c17f81cba6474d1073c5fc674309f322834b373c58410ab272.agent",
+      "bytes": 75,
+      "sha256": "232d7d45c13e46c17f81cba6474d1073c5fc674309f322834b373c58410ab272"
+    },
+    {
+      "path": ".agentlang/store/objects/2516042d2b02d7e10b3cb0014699baf28fbb3d90b03b09faa4055a37252d1ee1.agent",
+      "bytes": 520,
+      "sha256": "2516042d2b02d7e10b3cb0014699baf28fbb3d90b03b09faa4055a37252d1ee1"
+    },
+    {
+      "path": ".agentlang/store/objects/2cda38473924693c02606465fb35778ad3504eba055db036f995ee6e57f9a6d3.agent",
+      "bytes": 76,
+      "sha256": "2cda38473924693c02606465fb35778ad3504eba055db036f995ee6e57f9a6d3"
+    },
+    {
+      "path": ".agentlang/store/objects/5286f8acecc161d3ec1167b305a12710563b9efb08ff861ba4a40fb328bf9d9d.agent",
+      "bytes": 31,
+      "sha256": "5286f8acecc161d3ec1167b305a12710563b9efb08ff861ba4a40fb328bf9d9d"
+    },
+    {
+      "path": "history/task-0002.json",
+      "bytes": 640,
+      "sha256": "936bb8eb6042c1de766e0ea15459c01c2763ff6ac80e482d9ffbaf952b317dc8"
+    }
+  ],
+  "actorInventoryAfter": [
+    {
+      "path": "dictionary.agent",
+      "bytes": 6070,
+      "sha256": "eb6518d5c054e168788f83f586c3c5588a3b003746502f0c4bf1776cd6a69793"
+    },
+    {
+      "path": ".agentlang/store/objects/65e8afc9b5bb1bfca243faef92c9b31d75f9f8b5d3e492244085f4fb86a4d351.agent",
+      "bytes": 152,
+      "sha256": "65e8afc9b5bb1bfca243faef92c9b31d75f9f8b5d3e492244085f4fb86a4d351"
+    },
+    {
+      "path": ".agentlang/store/objects/66a9d0d506f9c11be050b075baef28b66e70f42507b1146000e5904d0ffd85d0.agent",
+      "bytes": 504,
+      "sha256": "66a9d0d506f9c11be050b075baef28b66e70f42507b1146000e5904d0ffd85d0"
+    },
+    {
+      "path": ".agentlang/store/objects/6af51409069f1231c4eb35864932d29bb686a6f88d99f8f8a62e2303a277f570.agent",
+      "bytes": 103,
+      "sha256": "6af51409069f1231c4eb35864932d29bb686a6f88d99f8f8a62e2303a277f570"
+    },
+    {
+      "path": ".agentlang/store/objects/6e0e04cebb0223a222e763d22855d3a48aa04e1ccbf84f3b39c30a9668d408c5.agent",
+      "bytes": 6202,
+      "sha256": "6e0e04cebb0223a222e763d22855d3a48aa04e1ccbf84f3b39c30a9668d408c5"
+    },
+    {
+      "path": ".agentlang/store/objects/703f97a26d496140a722582c6e3d70057e39d0c0e6ae3f798b0f306d76642be3.agent",
+      "bytes": 172,
+      "sha256": "703f97a26d496140a722582c6e3d70057e39d0c0e6ae3f798b0f306d76642be3"
+    },
+    {
+      "path": ".agentlang/store/objects/721017c4716646db897ac8429bcd891e6b2c60cc9b88dc63417f97f664b181aa.agent",
+      "bytes": 492,
+      "sha256": "721017c4716646db897ac8429bcd891e6b2c60cc9b88dc63417f97f664b181aa"
+    },
+    {
+      "path": ".agentlang/store/objects/7a4bc55bfb13521887c4162a1a2a4544aa961019c903a88d71916dd2dd0dd0f4.agent",
+      "bytes": 1072,
+      "sha256": "7a4bc55bfb13521887c4162a1a2a4544aa961019c903a88d71916dd2dd0dd0f4"
+    },
+    {
+      "path": ".agentlang/store/objects/7e09e2326170200dc878400bd3c351fa8d92a851d005823aca3cecc7b9f435fa.agent",
+      "bytes": 669,
+      "sha256": "7e09e2326170200dc878400bd3c351fa8d92a851d005823aca3cecc7b9f435fa"
+    },
+    {
+      "path": ".agentlang/store/objects/8e606ad519f1cd0d47fe413a2bfa4fc91d01cd53d1b2bec47817f790ddc7d594.agent",
+      "bytes": 27,
+      "sha256": "8e606ad519f1cd0d47fe413a2bfa4fc91d01cd53d1b2bec47817f790ddc7d594"
+    },
+    {
+      "path": ".agentlang/store/objects/9dbd47589c4ad8febc73bf9496ee2504a1b88932689bedfa4914d5620e60e7f8.agent",
+      "bytes": 290,
+      "sha256": "9dbd47589c4ad8febc73bf9496ee2504a1b88932689bedfa4914d5620e60e7f8"
+    },
+    {
+      "path": ".agentlang/store/objects/9ff7398262166b5b96b350ddc03358592e8c592ef76a8fe34f8cba5541191859.agent",
+      "bytes": 80,
+      "sha256": "9ff7398262166b5b96b350ddc03358592e8c592ef76a8fe34f8cba5541191859"
+    },
+    {
+      "path": ".agentlang/store/objects/a10884ce7d511aba9d78180d38ff469544d8b2e3e6baa4366d55743ee00ea569.agent",
+      "bytes": 1207,
+      "sha256": "a10884ce7d511aba9d78180d38ff469544d8b2e3e6baa4366d55743ee00ea569"
+    },
+    {
+      "path": ".agentlang/store/objects/a3054be4c49f1f238dbc682ea16693168eb8f35fdcd8c4a9bb5ee314c32eee13.agent",
+      "bytes": 682,
+      "sha256": "a3054be4c49f1f238dbc682ea16693168eb8f35fdcd8c4a9bb5ee314c32eee13"
+    },
+    {
+      "path": ".agentlang/store/objects/a588ef7d356f5a9d0e41c53976e9fd39f536165c0fa252b4a176720b88651ae5.agent",
+      "bytes": 202,
+      "sha256": "a588ef7d356f5a9d0e41c53976e9fd39f536165c0fa252b4a176720b88651ae5"
+    },
+    {
+      "path": ".agentlang/store/objects/b366a091cfa52fbc44c231920223775e3a2a871560ef351c1c2876ab54bed420.agent",
+      "bytes": 180,
+      "sha256": "b366a091cfa52fbc44c231920223775e3a2a871560ef351c1c2876ab54bed420"
+    },
+    {
+      "path": ".agentlang/store/objects/b656d29e11b2c6a71d0ad02999e3b7b6690bcea9a501ebe71ebe3186789d6e9c.agent",
+      "bytes": 929,
+      "sha256": "b656d29e11b2c6a71d0ad02999e3b7b6690bcea9a501ebe71ebe3186789d6e9c"
+    },
+    {
+      "path": ".agentlang/store/objects/b8052339535ea4d981e37d84c6ada14f9b86365dfb1ffddb0e43999db37786cb.agent",
+      "bytes": 2649,
+      "sha256": "b8052339535ea4d981e37d84c6ada14f9b86365dfb1ffddb0e43999db37786cb"
+    },
+    {
+      "path": ".agentlang/store/objects/c47a14b5cb86b9b370029edc05281850a463e876881f34caab5531ac6865f154.agent",
+      "bytes": 141,
+      "sha256": "c47a14b5cb86b9b370029edc05281850a463e876881f34caab5531ac6865f154"
+    },
+    {
+      "path": ".agentlang/store/objects/c8be4e828baf76085c19dd2b562a5ca6451a7bfce349aa5e8f8df2247d84f6b7.agent",
+      "bytes": 132,
+      "sha256": "c8be4e828baf76085c19dd2b562a5ca6451a7bfce349aa5e8f8df2247d84f6b7"
+    },
+    {
+      "path": ".agentlang/store/objects/d605d9116a52a451c36202f9095b8c87eae8fda766a977fbb63fe5ab927ead2c.agent",
+      "bytes": 258,
+      "sha256": "d605d9116a52a451c36202f9095b8c87eae8fda766a977fbb63fe5ab927ead2c"
+    },
+    {
+      "path": ".agentlang/store/objects/de7041045bf6d9e747b23a21926412acf9ad3a1a80f23e9512c106ca03c26d68.agent",
+      "bytes": 462,
+      "sha256": "de7041045bf6d9e747b23a21926412acf9ad3a1a80f23e9512c106ca03c26d68"
+    },
+    {
+      "path": ".agentlang/store/objects/e422c5529407bf62b9a3ab0ba15a0dd073b0cd5f1c2b7a5d3d80377bbfb762e4.agent",
+      "bytes": 1073,
+      "sha256": "e422c5529407bf62b9a3ab0ba15a0dd073b0cd5f1c2b7a5d3d80377bbfb762e4"
+    },
+    {
+      "path": ".agentlang/store/objects/eb6518d5c054e168788f83f586c3c5588a3b003746502f0c4bf1776cd6a69793.agent",
+      "bytes": 6070,
+      "sha256": "eb6518d5c054e168788f83f586c3c5588a3b003746502f0c4bf1776cd6a69793"
+    },
+    {
+      "path": ".agentlang/store/objects/65c046007d4f4b7d48b75a1df50d78d5a35d1ba88a53dce2be2d61f2d3dcbd6d.agent",
+      "bytes": 49,
+      "sha256": "65c046007d4f4b7d48b75a1df50d78d5a35d1ba88a53dce2be2d61f2d3dcbd6d"
+    },
+    {
+      "path": "history/task-0001.json",
+      "bytes": 535,
+      "sha256": "9af463a08e5f18956abe8ade3e33e1f9bf22cf5ee41de2e9e407cdbd9447b6cf"
+    },
+    {
+      "path": ".agentlang/store/objects/58426dad43d6dd3474aac7f5bf5790a147b192e93506be27adab813860788095.agent",
+      "bytes": 520,
+      "sha256": "58426dad43d6dd3474aac7f5bf5790a147b192e93506be27adab813860788095"
+    },
+    {
+      "path": ".agentlang/store/objects/43c229edb237793d0ac0f055966abc4893bd918ea2b527ed47d9ac08ce477ab2.agent",
+      "bytes": 210,
+      "sha256": "43c229edb237793d0ac0f055966abc4893bd918ea2b527ed47d9ac08ce477ab2"
+    },
+    {
+      "path": "flow-corrected-target.flow",
+      "bytes": 1073,
+      "sha256": "e422c5529407bf62b9a3ab0ba15a0dd073b0cd5f1c2b7a5d3d80377bbfb762e4"
+    },
+    {
+      "path": "flow-corrected-test.flow",
+      "bytes": 518,
+      "sha256": "18d4cbb10cdc29a6f79d51679db3c96e5f1731b16ddfef2da0a49904b6e7f374"
+    },
+    {
+      "path": "flow-mutant-test-existing.flow",
+      "bytes": 682,
+      "sha256": "a3054be4c49f1f238dbc682ea16693168eb8f35fdcd8c4a9bb5ee314c32eee13"
+    },
+    {
+      "path": "flow-mutant-test.flow",
+      "bytes": 525,
+      "sha256": "c93b7157af5f3e7322ebe08d2eb1456626e4393e268dfec613786aa443ed56ac"
+    },
+    {
+      "path": "flow-mutant.flow",
+      "bytes": 1072,
+      "sha256": "7a4bc55bfb13521887c4162a1a2a4544aa961019c903a88d71916dd2dd0dd0f4"
+    },
+    {
+      "path": "flow-replacement.json",
+      "bytes": 28888,
+      "sha256": "c09299cc5777570c9a551a774a52c29c491d481070a5fd99c32c2940f408cdfb"
+    },
+    {
+      "path": "mutation-commit-evidence.json",
+      "bytes": 26722,
+      "sha256": "3fb3711439332e7bb200c0a1d48fd9148833b569dee40fcbb440e6bd1a63048a"
+    },
+    {
+      "path": ".agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "4c7698005222b694b948965e8d72e3e1f29614be548182a6ee68a3ce1e68d072"
+    },
+    {
+      "path": ".agentlang/store/WRITE.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/store/manifests/18be761d37d08ce6fa3ea0d18dff0a11a6d8c632d11e3a2c8a3055d788629804.json",
+      "bytes": 4763,
+      "sha256": "18be761d37d08ce6fa3ea0d18dff0a11a6d8c632d11e3a2c8a3055d788629804"
+    },
+    {
+      "path": ".agentlang/store/manifests/2c7c90763f061da10e1d6b84fee9122dee16d8518d5d66d060aeb10818523a99.json",
+      "bytes": 376,
+      "sha256": "2c7c90763f061da10e1d6b84fee9122dee16d8518d5d66d060aeb10818523a99"
+    },
+    {
+      "path": ".agentlang/store/manifests/8825ab4e7e9091da913d02cc748102dd41961a6676c46b9da970f30d44625a26.json",
+      "bytes": 54442,
+      "sha256": "8825ab4e7e9091da913d02cc748102dd41961a6676c46b9da970f30d44625a26"
+    },
+    {
+      "path": ".agentlang/store/manifests/902977060ed9fdc0739cfb4e24f97434891b00e369e80f9627fbc5b30ecbbf81.json",
+      "bytes": 119247,
+      "sha256": "902977060ed9fdc0739cfb4e24f97434891b00e369e80f9627fbc5b30ecbbf81"
+    },
+    {
+      "path": ".agentlang/store/manifests/bb2b7de2665fcf9e525d9bec3a021f5d2dfb7e5d1139ee4832abcce83bb0cdbb.json",
+      "bytes": 86846,
+      "sha256": "bb2b7de2665fcf9e525d9bec3a021f5d2dfb7e5d1139ee4832abcce83bb0cdbb"
+    },
+    {
+      "path": ".agentlang/store/manifests/c74c84babaae42d6abc69d931a2fabf439770f2fdb61672fa7a1164a4b50ee10.json",
+      "bytes": 788,
+      "sha256": "c74c84babaae42d6abc69d931a2fabf439770f2fdb61672fa7a1164a4b50ee10"
+    },
+    {
+      "path": ".agentlang/store/manifests/c8d75a50e48e92a5f0fee1cfe79b2293ce9d585a958ab57053d1a75e78182a68.json",
+      "bytes": 18984,
+      "sha256": "c8d75a50e48e92a5f0fee1cfe79b2293ce9d585a958ab57053d1a75e78182a68"
+    },
+    {
+      "path": ".agentlang/store/manifests/dd1103a22280d244609a97798020c3af7565a866c8295066e16272575c8e2615.json",
+      "bytes": 585,
+      "sha256": "dd1103a22280d244609a97798020c3af7565a866c8295066e16272575c8e2615"
+    },
+    {
+      "path": ".agentlang/store/objects/09998dd01b28f7a31e831b2ff198157dd14e7a75e9bd43d0b30e851541be5d38.agent",
+      "bytes": 6058,
+      "sha256": "09998dd01b28f7a31e831b2ff198157dd14e7a75e9bd43d0b30e851541be5d38"
+    },
+    {
+      "path": ".agentlang/store/objects/18d4cbb10cdc29a6f79d51679db3c96e5f1731b16ddfef2da0a49904b6e7f374.agent",
+      "bytes": 518,
+      "sha256": "18d4cbb10cdc29a6f79d51679db3c96e5f1731b16ddfef2da0a49904b6e7f374"
+    },
+    {
+      "path": ".agentlang/store/objects/22ae677b4e86fa5418b719708df880c13766290928296d0d154f52b2777116ef.agent",
+      "bytes": 170,
+      "sha256": "22ae677b4e86fa5418b719708df880c13766290928296d0d154f52b2777116ef"
+    },
+    {
+      "path": ".agentlang/store/objects/232d7d45c13e46c17f81cba6474d1073c5fc674309f322834b373c58410ab272.agent",
+      "bytes": 75,
+      "sha256": "232d7d45c13e46c17f81cba6474d1073c5fc674309f322834b373c58410ab272"
+    },
+    {
+      "path": ".agentlang/store/objects/2516042d2b02d7e10b3cb0014699baf28fbb3d90b03b09faa4055a37252d1ee1.agent",
+      "bytes": 520,
+      "sha256": "2516042d2b02d7e10b3cb0014699baf28fbb3d90b03b09faa4055a37252d1ee1"
+    },
+    {
+      "path": ".agentlang/store/objects/2cda38473924693c02606465fb35778ad3504eba055db036f995ee6e57f9a6d3.agent",
+      "bytes": 76,
+      "sha256": "2cda38473924693c02606465fb35778ad3504eba055db036f995ee6e57f9a6d3"
+    },
+    {
+      "path": ".agentlang/store/objects/5286f8acecc161d3ec1167b305a12710563b9efb08ff861ba4a40fb328bf9d9d.agent",
+      "bytes": 31,
+      "sha256": "5286f8acecc161d3ec1167b305a12710563b9efb08ff861ba4a40fb328bf9d9d"
+    },
+    {
+      "path": "history/task-0002.json",
+      "bytes": 640,
+      "sha256": "936bb8eb6042c1de766e0ea15459c01c2763ff6ac80e482d9ffbaf952b317dc8"
+    }
+  ],
+  "actorSourceInventoryBefore": [
+    {
+      "path": "dictionary.agent",
+      "bytes": 6070,
+      "sha256": "eb6518d5c054e168788f83f586c3c5588a3b003746502f0c4bf1776cd6a69793"
+    },
+    {
+      "path": ".agentlang/store/objects/65e8afc9b5bb1bfca243faef92c9b31d75f9f8b5d3e492244085f4fb86a4d351.agent",
+      "bytes": 152,
+      "sha256": "65e8afc9b5bb1bfca243faef92c9b31d75f9f8b5d3e492244085f4fb86a4d351"
+    },
+    {
+      "path": ".agentlang/store/objects/66a9d0d506f9c11be050b075baef28b66e70f42507b1146000e5904d0ffd85d0.agent",
+      "bytes": 504,
+      "sha256": "66a9d0d506f9c11be050b075baef28b66e70f42507b1146000e5904d0ffd85d0"
+    },
+    {
+      "path": ".agentlang/store/objects/6af51409069f1231c4eb35864932d29bb686a6f88d99f8f8a62e2303a277f570.agent",
+      "bytes": 103,
+      "sha256": "6af51409069f1231c4eb35864932d29bb686a6f88d99f8f8a62e2303a277f570"
+    },
+    {
+      "path": ".agentlang/store/objects/6e0e04cebb0223a222e763d22855d3a48aa04e1ccbf84f3b39c30a9668d408c5.agent",
+      "bytes": 6202,
+      "sha256": "6e0e04cebb0223a222e763d22855d3a48aa04e1ccbf84f3b39c30a9668d408c5"
+    },
+    {
+      "path": ".agentlang/store/objects/703f97a26d496140a722582c6e3d70057e39d0c0e6ae3f798b0f306d76642be3.agent",
+      "bytes": 172,
+      "sha256": "703f97a26d496140a722582c6e3d70057e39d0c0e6ae3f798b0f306d76642be3"
+    },
+    {
+      "path": ".agentlang/store/objects/721017c4716646db897ac8429bcd891e6b2c60cc9b88dc63417f97f664b181aa.agent",
+      "bytes": 492,
+      "sha256": "721017c4716646db897ac8429bcd891e6b2c60cc9b88dc63417f97f664b181aa"
+    },
+    {
+      "path": ".agentlang/store/objects/7a4bc55bfb13521887c4162a1a2a4544aa961019c903a88d71916dd2dd0dd0f4.agent",
+      "bytes": 1072,
+      "sha256": "7a4bc55bfb13521887c4162a1a2a4544aa961019c903a88d71916dd2dd0dd0f4"
+    },
+    {
+      "path": ".agentlang/store/objects/7e09e2326170200dc878400bd3c351fa8d92a851d005823aca3cecc7b9f435fa.agent",
+      "bytes": 669,
+      "sha256": "7e09e2326170200dc878400bd3c351fa8d92a851d005823aca3cecc7b9f435fa"
+    },
+    {
+      "path": ".agentlang/store/objects/8e606ad519f1cd0d47fe413a2bfa4fc91d01cd53d1b2bec47817f790ddc7d594.agent",
+      "bytes": 27,
+      "sha256": "8e606ad519f1cd0d47fe413a2bfa4fc91d01cd53d1b2bec47817f790ddc7d594"
+    },
+    {
+      "path": ".agentlang/store/objects/9dbd47589c4ad8febc73bf9496ee2504a1b88932689bedfa4914d5620e60e7f8.agent",
+      "bytes": 290,
+      "sha256": "9dbd47589c4ad8febc73bf9496ee2504a1b88932689bedfa4914d5620e60e7f8"
+    },
+    {
+      "path": ".agentlang/store/objects/9ff7398262166b5b96b350ddc03358592e8c592ef76a8fe34f8cba5541191859.agent",
+      "bytes": 80,
+      "sha256": "9ff7398262166b5b96b350ddc03358592e8c592ef76a8fe34f8cba5541191859"
+    },
+    {
+      "path": ".agentlang/store/objects/a10884ce7d511aba9d78180d38ff469544d8b2e3e6baa4366d55743ee00ea569.agent",
+      "bytes": 1207,
+      "sha256": "a10884ce7d511aba9d78180d38ff469544d8b2e3e6baa4366d55743ee00ea569"
+    },
+    {
+      "path": ".agentlang/store/objects/a3054be4c49f1f238dbc682ea16693168eb8f35fdcd8c4a9bb5ee314c32eee13.agent",
+      "bytes": 682,
+      "sha256": "a3054be4c49f1f238dbc682ea16693168eb8f35fdcd8c4a9bb5ee314c32eee13"
+    },
+    {
+      "path": ".agentlang/store/objects/a588ef7d356f5a9d0e41c53976e9fd39f536165c0fa252b4a176720b88651ae5.agent",
+      "bytes": 202,
+      "sha256": "a588ef7d356f5a9d0e41c53976e9fd39f536165c0fa252b4a176720b88651ae5"
+    },
+    {
+      "path": ".agentlang/store/objects/b366a091cfa52fbc44c231920223775e3a2a871560ef351c1c2876ab54bed420.agent",
+      "bytes": 180,
+      "sha256": "b366a091cfa52fbc44c231920223775e3a2a871560ef351c1c2876ab54bed420"
+    },
+    {
+      "path": ".agentlang/store/objects/b656d29e11b2c6a71d0ad02999e3b7b6690bcea9a501ebe71ebe3186789d6e9c.agent",
+      "bytes": 929,
+      "sha256": "b656d29e11b2c6a71d0ad02999e3b7b6690bcea9a501ebe71ebe3186789d6e9c"
+    },
+    {
+      "path": ".agentlang/store/objects/b8052339535ea4d981e37d84c6ada14f9b86365dfb1ffddb0e43999db37786cb.agent",
+      "bytes": 2649,
+      "sha256": "b8052339535ea4d981e37d84c6ada14f9b86365dfb1ffddb0e43999db37786cb"
+    },
+    {
+      "path": ".agentlang/store/objects/c47a14b5cb86b9b370029edc05281850a463e876881f34caab5531ac6865f154.agent",
+      "bytes": 141,
+      "sha256": "c47a14b5cb86b9b370029edc05281850a463e876881f34caab5531ac6865f154"
+    },
+    {
+      "path": ".agentlang/store/objects/c8be4e828baf76085c19dd2b562a5ca6451a7bfce349aa5e8f8df2247d84f6b7.agent",
+      "bytes": 132,
+      "sha256": "c8be4e828baf76085c19dd2b562a5ca6451a7bfce349aa5e8f8df2247d84f6b7"
+    },
+    {
+      "path": ".agentlang/store/objects/d605d9116a52a451c36202f9095b8c87eae8fda766a977fbb63fe5ab927ead2c.agent",
+      "bytes": 258,
+      "sha256": "d605d9116a52a451c36202f9095b8c87eae8fda766a977fbb63fe5ab927ead2c"
+    },
+    {
+      "path": ".agentlang/store/objects/de7041045bf6d9e747b23a21926412acf9ad3a1a80f23e9512c106ca03c26d68.agent",
+      "bytes": 462,
+      "sha256": "de7041045bf6d9e747b23a21926412acf9ad3a1a80f23e9512c106ca03c26d68"
+    },
+    {
+      "path": ".agentlang/store/objects/e422c5529407bf62b9a3ab0ba15a0dd073b0cd5f1c2b7a5d3d80377bbfb762e4.agent",
+      "bytes": 1073,
+      "sha256": "e422c5529407bf62b9a3ab0ba15a0dd073b0cd5f1c2b7a5d3d80377bbfb762e4"
+    },
+    {
+      "path": ".agentlang/store/objects/eb6518d5c054e168788f83f586c3c5588a3b003746502f0c4bf1776cd6a69793.agent",
+      "bytes": 6070,
+      "sha256": "eb6518d5c054e168788f83f586c3c5588a3b003746502f0c4bf1776cd6a69793"
+    },
+    {
+      "path": ".agentlang/store/objects/65c046007d4f4b7d48b75a1df50d78d5a35d1ba88a53dce2be2d61f2d3dcbd6d.agent",
+      "bytes": 49,
+      "sha256": "65c046007d4f4b7d48b75a1df50d78d5a35d1ba88a53dce2be2d61f2d3dcbd6d"
+    },
+    {
+      "path": "history/task-0001.json",
+      "bytes": 535,
+      "sha256": "9af463a08e5f18956abe8ade3e33e1f9bf22cf5ee41de2e9e407cdbd9447b6cf"
+    },
+    {
+      "path": ".agentlang/store/objects/58426dad43d6dd3474aac7f5bf5790a147b192e93506be27adab813860788095.agent",
+      "bytes": 520,
+      "sha256": "58426dad43d6dd3474aac7f5bf5790a147b192e93506be27adab813860788095"
+    },
+    {
+      "path": ".agentlang/store/objects/43c229edb237793d0ac0f055966abc4893bd918ea2b527ed47d9ac08ce477ab2.agent",
+      "bytes": 210,
+      "sha256": "43c229edb237793d0ac0f055966abc4893bd918ea2b527ed47d9ac08ce477ab2"
+    },
+    {
+      "path": "flow-corrected-target.flow",
+      "bytes": 1073,
+      "sha256": "e422c5529407bf62b9a3ab0ba15a0dd073b0cd5f1c2b7a5d3d80377bbfb762e4"
+    },
+    {
+      "path": "flow-corrected-test.flow",
+      "bytes": 518,
+      "sha256": "18d4cbb10cdc29a6f79d51679db3c96e5f1731b16ddfef2da0a49904b6e7f374"
+    },
+    {
+      "path": "flow-mutant-test-existing.flow",
+      "bytes": 682,
+      "sha256": "a3054be4c49f1f238dbc682ea16693168eb8f35fdcd8c4a9bb5ee314c32eee13"
+    },
+    {
+      "path": "flow-mutant-test.flow",
+      "bytes": 525,
+      "sha256": "c93b7157af5f3e7322ebe08d2eb1456626e4393e268dfec613786aa443ed56ac"
+    },
+    {
+      "path": "flow-mutant.flow",
+      "bytes": 1072,
+      "sha256": "7a4bc55bfb13521887c4162a1a2a4544aa961019c903a88d71916dd2dd0dd0f4"
+    },
+    {
+      "path": "flow-replacement.json",
+      "bytes": 28888,
+      "sha256": "c09299cc5777570c9a551a774a52c29c491d481070a5fd99c32c2940f408cdfb"
+    },
+    {
+      "path": "mutation-commit-evidence.json",
+      "bytes": 26722,
+      "sha256": "3fb3711439332e7bb200c0a1d48fd9148833b569dee40fcbb440e6bd1a63048a"
+    },
+    {
+      "path": ".agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "4c7698005222b694b948965e8d72e3e1f29614be548182a6ee68a3ce1e68d072"
+    },
+    {
+      "path": ".agentlang/store/WRITE.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/store/manifests/18be761d37d08ce6fa3ea0d18dff0a11a6d8c632d11e3a2c8a3055d788629804.json",
+      "bytes": 4763,
+      "sha256": "18be761d37d08ce6fa3ea0d18dff0a11a6d8c632d11e3a2c8a3055d788629804"
+    },
+    {
+      "path": ".agentlang/store/manifests/2c7c90763f061da10e1d6b84fee9122dee16d8518d5d66d060aeb10818523a99.json",
+      "bytes": 376,
+      "sha256": "2c7c90763f061da10e1d6b84fee9122dee16d8518d5d66d060aeb10818523a99"
+    },
+    {
+      "path": ".agentlang/store/manifests/8825ab4e7e9091da913d02cc748102dd41961a6676c46b9da970f30d44625a26.json",
+      "bytes": 54442,
+      "sha256": "8825ab4e7e9091da913d02cc748102dd41961a6676c46b9da970f30d44625a26"
+    },
+    {
+      "path": ".agentlang/store/manifests/902977060ed9fdc0739cfb4e24f97434891b00e369e80f9627fbc5b30ecbbf81.json",
+      "bytes": 119247,
+      "sha256": "902977060ed9fdc0739cfb4e24f97434891b00e369e80f9627fbc5b30ecbbf81"
+    },
+    {
+      "path": ".agentlang/store/manifests/bb2b7de2665fcf9e525d9bec3a021f5d2dfb7e5d1139ee4832abcce83bb0cdbb.json",
+      "bytes": 86846,
+      "sha256": "bb2b7de2665fcf9e525d9bec3a021f5d2dfb7e5d1139ee4832abcce83bb0cdbb"
+    },
+    {
+      "path": ".agentlang/store/manifests/c74c84babaae42d6abc69d931a2fabf439770f2fdb61672fa7a1164a4b50ee10.json",
+      "bytes": 788,
+      "sha256": "c74c84babaae42d6abc69d931a2fabf439770f2fdb61672fa7a1164a4b50ee10"
+    },
+    {
+      "path": ".agentlang/store/manifests/c8d75a50e48e92a5f0fee1cfe79b2293ce9d585a958ab57053d1a75e78182a68.json",
+      "bytes": 18984,
+      "sha256": "c8d75a50e48e92a5f0fee1cfe79b2293ce9d585a958ab57053d1a75e78182a68"
+    },
+    {
+      "path": ".agentlang/store/manifests/dd1103a22280d244609a97798020c3af7565a866c8295066e16272575c8e2615.json",
+      "bytes": 585,
+      "sha256": "dd1103a22280d244609a97798020c3af7565a866c8295066e16272575c8e2615"
+    },
+    {
+      "path": ".agentlang/store/objects/09998dd01b28f7a31e831b2ff198157dd14e7a75e9bd43d0b30e851541be5d38.agent",
+      "bytes": 6058,
+      "sha256": "09998dd01b28f7a31e831b2ff198157dd14e7a75e9bd43d0b30e851541be5d38"
+    },
+    {
+      "path": ".agentlang/store/objects/18d4cbb10cdc29a6f79d51679db3c96e5f1731b16ddfef2da0a49904b6e7f374.agent",
+      "bytes": 518,
+      "sha256": "18d4cbb10cdc29a6f79d51679db3c96e5f1731b16ddfef2da0a49904b6e7f374"
+    },
+    {
+      "path": ".agentlang/store/objects/22ae677b4e86fa5418b719708df880c13766290928296d0d154f52b2777116ef.agent",
+      "bytes": 170,
+      "sha256": "22ae677b4e86fa5418b719708df880c13766290928296d0d154f52b2777116ef"
+    },
+    {
+      "path": ".agentlang/store/objects/232d7d45c13e46c17f81cba6474d1073c5fc674309f322834b373c58410ab272.agent",
+      "bytes": 75,
+      "sha256": "232d7d45c13e46c17f81cba6474d1073c5fc674309f322834b373c58410ab272"
+    },
+    {
+      "path": ".agentlang/store/objects/2516042d2b02d7e10b3cb0014699baf28fbb3d90b03b09faa4055a37252d1ee1.agent",
+      "bytes": 520,
+      "sha256": "2516042d2b02d7e10b3cb0014699baf28fbb3d90b03b09faa4055a37252d1ee1"
+    },
+    {
+      "path": ".agentlang/store/objects/2cda38473924693c02606465fb35778ad3504eba055db036f995ee6e57f9a6d3.agent",
+      "bytes": 76,
+      "sha256": "2cda38473924693c02606465fb35778ad3504eba055db036f995ee6e57f9a6d3"
+    },
+    {
+      "path": ".agentlang/store/objects/5286f8acecc161d3ec1167b305a12710563b9efb08ff861ba4a40fb328bf9d9d.agent",
+      "bytes": 31,
+      "sha256": "5286f8acecc161d3ec1167b305a12710563b9efb08ff861ba4a40fb328bf9d9d"
+    },
+    {
+      "path": "history/task-0002.json",
+      "bytes": 640,
+      "sha256": "936bb8eb6042c1de766e0ea15459c01c2763ff6ac80e482d9ffbaf952b317dc8"
+    }
+  ],
+  "actorSourceInventoryAfter": [
+    {
+      "path": "dictionary.agent",
+      "bytes": 6070,
+      "sha256": "eb6518d5c054e168788f83f586c3c5588a3b003746502f0c4bf1776cd6a69793"
+    },
+    {
+      "path": ".agentlang/store/objects/65e8afc9b5bb1bfca243faef92c9b31d75f9f8b5d3e492244085f4fb86a4d351.agent",
+      "bytes": 152,
+      "sha256": "65e8afc9b5bb1bfca243faef92c9b31d75f9f8b5d3e492244085f4fb86a4d351"
+    },
+    {
+      "path": ".agentlang/store/objects/66a9d0d506f9c11be050b075baef28b66e70f42507b1146000e5904d0ffd85d0.agent",
+      "bytes": 504,
+      "sha256": "66a9d0d506f9c11be050b075baef28b66e70f42507b1146000e5904d0ffd85d0"
+    },
+    {
+      "path": ".agentlang/store/objects/6af51409069f1231c4eb35864932d29bb686a6f88d99f8f8a62e2303a277f570.agent",
+      "bytes": 103,
+      "sha256": "6af51409069f1231c4eb35864932d29bb686a6f88d99f8f8a62e2303a277f570"
+    },
+    {
+      "path": ".agentlang/store/objects/6e0e04cebb0223a222e763d22855d3a48aa04e1ccbf84f3b39c30a9668d408c5.agent",
+      "bytes": 6202,
+      "sha256": "6e0e04cebb0223a222e763d22855d3a48aa04e1ccbf84f3b39c30a9668d408c5"
+    },
+    {
+      "path": ".agentlang/store/objects/703f97a26d496140a722582c6e3d70057e39d0c0e6ae3f798b0f306d76642be3.agent",
+      "bytes": 172,
+      "sha256": "703f97a26d496140a722582c6e3d70057e39d0c0e6ae3f798b0f306d76642be3"
+    },
+    {
+      "path": ".agentlang/store/objects/721017c4716646db897ac8429bcd891e6b2c60cc9b88dc63417f97f664b181aa.agent",
+      "bytes": 492,
+      "sha256": "721017c4716646db897ac8429bcd891e6b2c60cc9b88dc63417f97f664b181aa"
+    },
+    {
+      "path": ".agentlang/store/objects/7a4bc55bfb13521887c4162a1a2a4544aa961019c903a88d71916dd2dd0dd0f4.agent",
+      "bytes": 1072,
+      "sha256": "7a4bc55bfb13521887c4162a1a2a4544aa961019c903a88d71916dd2dd0dd0f4"
+    },
+    {
+      "path": ".agentlang/store/objects/7e09e2326170200dc878400bd3c351fa8d92a851d005823aca3cecc7b9f435fa.agent",
+      "bytes": 669,
+      "sha256": "7e09e2326170200dc878400bd3c351fa8d92a851d005823aca3cecc7b9f435fa"
+    },
+    {
+      "path": ".agentlang/store/objects/8e606ad519f1cd0d47fe413a2bfa4fc91d01cd53d1b2bec47817f790ddc7d594.agent",
+      "bytes": 27,
+      "sha256": "8e606ad519f1cd0d47fe413a2bfa4fc91d01cd53d1b2bec47817f790ddc7d594"
+    },
+    {
+      "path": ".agentlang/store/objects/9dbd47589c4ad8febc73bf9496ee2504a1b88932689bedfa4914d5620e60e7f8.agent",
+      "bytes": 290,
+      "sha256": "9dbd47589c4ad8febc73bf9496ee2504a1b88932689bedfa4914d5620e60e7f8"
+    },
+    {
+      "path": ".agentlang/store/objects/9ff7398262166b5b96b350ddc03358592e8c592ef76a8fe34f8cba5541191859.agent",
+      "bytes": 80,
+      "sha256": "9ff7398262166b5b96b350ddc03358592e8c592ef76a8fe34f8cba5541191859"
+    },
+    {
+      "path": ".agentlang/store/objects/a10884ce7d511aba9d78180d38ff469544d8b2e3e6baa4366d55743ee00ea569.agent",
+      "bytes": 1207,
+      "sha256": "a10884ce7d511aba9d78180d38ff469544d8b2e3e6baa4366d55743ee00ea569"
+    },
+    {
+      "path": ".agentlang/store/objects/a3054be4c49f1f238dbc682ea16693168eb8f35fdcd8c4a9bb5ee314c32eee13.agent",
+      "bytes": 682,
+      "sha256": "a3054be4c49f1f238dbc682ea16693168eb8f35fdcd8c4a9bb5ee314c32eee13"
+    },
+    {
+      "path": ".agentlang/store/objects/a588ef7d356f5a9d0e41c53976e9fd39f536165c0fa252b4a176720b88651ae5.agent",
+      "bytes": 202,
+      "sha256": "a588ef7d356f5a9d0e41c53976e9fd39f536165c0fa252b4a176720b88651ae5"
+    },
+    {
+      "path": ".agentlang/store/objects/b366a091cfa52fbc44c231920223775e3a2a871560ef351c1c2876ab54bed420.agent",
+      "bytes": 180,
+      "sha256": "b366a091cfa52fbc44c231920223775e3a2a871560ef351c1c2876ab54bed420"
+    },
+    {
+      "path": ".agentlang/store/objects/b656d29e11b2c6a71d0ad02999e3b7b6690bcea9a501ebe71ebe3186789d6e9c.agent",
+      "bytes": 929,
+      "sha256": "b656d29e11b2c6a71d0ad02999e3b7b6690bcea9a501ebe71ebe3186789d6e9c"
+    },
+    {
+      "path": ".agentlang/store/objects/b8052339535ea4d981e37d84c6ada14f9b86365dfb1ffddb0e43999db37786cb.agent",
+      "bytes": 2649,
+      "sha256": "b8052339535ea4d981e37d84c6ada14f9b86365dfb1ffddb0e43999db37786cb"
+    },
+    {
+      "path": ".agentlang/store/objects/c47a14b5cb86b9b370029edc05281850a463e876881f34caab5531ac6865f154.agent",
+      "bytes": 141,
+      "sha256": "c47a14b5cb86b9b370029edc05281850a463e876881f34caab5531ac6865f154"
+    },
+    {
+      "path": ".agentlang/store/objects/c8be4e828baf76085c19dd2b562a5ca6451a7bfce349aa5e8f8df2247d84f6b7.agent",
+      "bytes": 132,
+      "sha256": "c8be4e828baf76085c19dd2b562a5ca6451a7bfce349aa5e8f8df2247d84f6b7"
+    },
+    {
+      "path": ".agentlang/store/objects/d605d9116a52a451c36202f9095b8c87eae8fda766a977fbb63fe5ab927ead2c.agent",
+      "bytes": 258,
+      "sha256": "d605d9116a52a451c36202f9095b8c87eae8fda766a977fbb63fe5ab927ead2c"
+    },
+    {
+      "path": ".agentlang/store/objects/de7041045bf6d9e747b23a21926412acf9ad3a1a80f23e9512c106ca03c26d68.agent",
+      "bytes": 462,
+      "sha256": "de7041045bf6d9e747b23a21926412acf9ad3a1a80f23e9512c106ca03c26d68"
+    },
+    {
+      "path": ".agentlang/store/objects/e422c5529407bf62b9a3ab0ba15a0dd073b0cd5f1c2b7a5d3d80377bbfb762e4.agent",
+      "bytes": 1073,
+      "sha256": "e422c5529407bf62b9a3ab0ba15a0dd073b0cd5f1c2b7a5d3d80377bbfb762e4"
+    },
+    {
+      "path": ".agentlang/store/objects/eb6518d5c054e168788f83f586c3c5588a3b003746502f0c4bf1776cd6a69793.agent",
+      "bytes": 6070,
+      "sha256": "eb6518d5c054e168788f83f586c3c5588a3b003746502f0c4bf1776cd6a69793"
+    },
+    {
+      "path": ".agentlang/store/objects/65c046007d4f4b7d48b75a1df50d78d5a35d1ba88a53dce2be2d61f2d3dcbd6d.agent",
+      "bytes": 49,
+      "sha256": "65c046007d4f4b7d48b75a1df50d78d5a35d1ba88a53dce2be2d61f2d3dcbd6d"
+    },
+    {
+      "path": "history/task-0001.json",
+      "bytes": 535,
+      "sha256": "9af463a08e5f18956abe8ade3e33e1f9bf22cf5ee41de2e9e407cdbd9447b6cf"
+    },
+    {
+      "path": ".agentlang/store/objects/58426dad43d6dd3474aac7f5bf5790a147b192e93506be27adab813860788095.agent",
+      "bytes": 520,
+      "sha256": "58426dad43d6dd3474aac7f5bf5790a147b192e93506be27adab813860788095"
+    },
+    {
+      "path": ".agentlang/store/objects/43c229edb237793d0ac0f055966abc4893bd918ea2b527ed47d9ac08ce477ab2.agent",
+      "bytes": 210,
+      "sha256": "43c229edb237793d0ac0f055966abc4893bd918ea2b527ed47d9ac08ce477ab2"
+    },
+    {
+      "path": "flow-corrected-target.flow",
+      "bytes": 1073,
+      "sha256": "e422c5529407bf62b9a3ab0ba15a0dd073b0cd5f1c2b7a5d3d80377bbfb762e4"
+    },
+    {
+      "path": "flow-corrected-test.flow",
+      "bytes": 518,
+      "sha256": "18d4cbb10cdc29a6f79d51679db3c96e5f1731b16ddfef2da0a49904b6e7f374"
+    },
+    {
+      "path": "flow-mutant-test-existing.flow",
+      "bytes": 682,
+      "sha256": "a3054be4c49f1f238dbc682ea16693168eb8f35fdcd8c4a9bb5ee314c32eee13"
+    },
+    {
+      "path": "flow-mutant-test.flow",
+      "bytes": 525,
+      "sha256": "c93b7157af5f3e7322ebe08d2eb1456626e4393e268dfec613786aa443ed56ac"
+    },
+    {
+      "path": "flow-mutant.flow",
+      "bytes": 1072,
+      "sha256": "7a4bc55bfb13521887c4162a1a2a4544aa961019c903a88d71916dd2dd0dd0f4"
+    },
+    {
+      "path": "flow-replacement.json",
+      "bytes": 28888,
+      "sha256": "c09299cc5777570c9a551a774a52c29c491d481070a5fd99c32c2940f408cdfb"
+    },
+    {
+      "path": "mutation-commit-evidence.json",
+      "bytes": 26722,
+      "sha256": "3fb3711439332e7bb200c0a1d48fd9148833b569dee40fcbb440e6bd1a63048a"
+    },
+    {
+      "path": ".agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "4c7698005222b694b948965e8d72e3e1f29614be548182a6ee68a3ce1e68d072"
+    },
+    {
+      "path": ".agentlang/store/WRITE.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".agentlang/store/manifests/18be761d37d08ce6fa3ea0d18dff0a11a6d8c632d11e3a2c8a3055d788629804.json",
+      "bytes": 4763,
+      "sha256": "18be761d37d08ce6fa3ea0d18dff0a11a6d8c632d11e3a2c8a3055d788629804"
+    },
+    {
+      "path": ".agentlang/store/manifests/2c7c90763f061da10e1d6b84fee9122dee16d8518d5d66d060aeb10818523a99.json",
+      "bytes": 376,
+      "sha256": "2c7c90763f061da10e1d6b84fee9122dee16d8518d5d66d060aeb10818523a99"
+    },
+    {
+      "path": ".agentlang/store/manifests/8825ab4e7e9091da913d02cc748102dd41961a6676c46b9da970f30d44625a26.json",
+      "bytes": 54442,
+      "sha256": "8825ab4e7e9091da913d02cc748102dd41961a6676c46b9da970f30d44625a26"
+    },
+    {
+      "path": ".agentlang/store/manifests/902977060ed9fdc0739cfb4e24f97434891b00e369e80f9627fbc5b30ecbbf81.json",
+      "bytes": 119247,
+      "sha256": "902977060ed9fdc0739cfb4e24f97434891b00e369e80f9627fbc5b30ecbbf81"
+    },
+    {
+      "path": ".agentlang/store/manifests/bb2b7de2665fcf9e525d9bec3a021f5d2dfb7e5d1139ee4832abcce83bb0cdbb.json",
+      "bytes": 86846,
+      "sha256": "bb2b7de2665fcf9e525d9bec3a021f5d2dfb7e5d1139ee4832abcce83bb0cdbb"
+    },
+    {
+      "path": ".agentlang/store/manifests/c74c84babaae42d6abc69d931a2fabf439770f2fdb61672fa7a1164a4b50ee10.json",
+      "bytes": 788,
+      "sha256": "c74c84babaae42d6abc69d931a2fabf439770f2fdb61672fa7a1164a4b50ee10"
+    },
+    {
+      "path": ".agentlang/store/manifests/c8d75a50e48e92a5f0fee1cfe79b2293ce9d585a958ab57053d1a75e78182a68.json",
+      "bytes": 18984,
+      "sha256": "c8d75a50e48e92a5f0fee1cfe79b2293ce9d585a958ab57053d1a75e78182a68"
+    },
+    {
+      "path": ".agentlang/store/manifests/dd1103a22280d244609a97798020c3af7565a866c8295066e16272575c8e2615.json",
+      "bytes": 585,
+      "sha256": "dd1103a22280d244609a97798020c3af7565a866c8295066e16272575c8e2615"
+    },
+    {
+      "path": ".agentlang/store/objects/09998dd01b28f7a31e831b2ff198157dd14e7a75e9bd43d0b30e851541be5d38.agent",
+      "bytes": 6058,
+      "sha256": "09998dd01b28f7a31e831b2ff198157dd14e7a75e9bd43d0b30e851541be5d38"
+    },
+    {
+      "path": ".agentlang/store/objects/18d4cbb10cdc29a6f79d51679db3c96e5f1731b16ddfef2da0a49904b6e7f374.agent",
+      "bytes": 518,
+      "sha256": "18d4cbb10cdc29a6f79d51679db3c96e5f1731b16ddfef2da0a49904b6e7f374"
+    },
+    {
+      "path": ".agentlang/store/objects/22ae677b4e86fa5418b719708df880c13766290928296d0d154f52b2777116ef.agent",
+      "bytes": 170,
+      "sha256": "22ae677b4e86fa5418b719708df880c13766290928296d0d154f52b2777116ef"
+    },
+    {
+      "path": ".agentlang/store/objects/232d7d45c13e46c17f81cba6474d1073c5fc674309f322834b373c58410ab272.agent",
+      "bytes": 75,
+      "sha256": "232d7d45c13e46c17f81cba6474d1073c5fc674309f322834b373c58410ab272"
+    },
+    {
+      "path": ".agentlang/store/objects/2516042d2b02d7e10b3cb0014699baf28fbb3d90b03b09faa4055a37252d1ee1.agent",
+      "bytes": 520,
+      "sha256": "2516042d2b02d7e10b3cb0014699baf28fbb3d90b03b09faa4055a37252d1ee1"
+    },
+    {
+      "path": ".agentlang/store/objects/2cda38473924693c02606465fb35778ad3504eba055db036f995ee6e57f9a6d3.agent",
+      "bytes": 76,
+      "sha256": "2cda38473924693c02606465fb35778ad3504eba055db036f995ee6e57f9a6d3"
+    },
+    {
+      "path": ".agentlang/store/objects/5286f8acecc161d3ec1167b305a12710563b9efb08ff861ba4a40fb328bf9d9d.agent",
+      "bytes": 31,
+      "sha256": "5286f8acecc161d3ec1167b305a12710563b9efb08ff861ba4a40fb328bf9d9d"
+    },
+    {
+      "path": "history/task-0002.json",
+      "bytes": 640,
+      "sha256": "936bb8eb6042c1de766e0ea15459c01c2763ff6ac80e482d9ffbaf952b317dc8"
+    }
+  ],
+  "actorUnchanged": true,
+  "limits": [
+    "Flow virtual filesystem state is read from the hash-verified state object in the result snapshot.",
+    "F# behavior is measured through the public provider/API in a fresh adapter process; runtime effect parity is not claimed."
+  ]
+}

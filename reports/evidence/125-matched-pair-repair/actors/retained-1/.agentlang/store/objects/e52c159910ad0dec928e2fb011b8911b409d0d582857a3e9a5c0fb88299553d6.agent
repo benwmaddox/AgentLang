@@ -1,0 +1,12 @@
+test invoice.queue-reminders-for-pair/same-identifier-observes-first-write {
+    invoice::queue-reminders-for-pair(
+        invoicePair::new(
+            first = invoice::new(
+                id = InvoiceId::new("pair-flow-same-missing"),
+                status = InvoiceStatus::new("open")),
+            second = invoice::new(
+                id = InvoiceId::new("pair-flow-same-missing"),
+                status = InvoiceStatus::new("open"))))
+    => value reminderPairResult::new(first = "queued", second = "queued")
+    effects { fs.read: 3; fs.write: 1; }
+}

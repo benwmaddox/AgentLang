@@ -1,0 +1,19 @@
+{
+  "requests": [
+    {
+      "op": "source",
+      "word": "invoice.queue-reminders-for-pair"
+    }
+  ],
+  "responses": [
+    {
+      "ok": true,
+      "kind": "source",
+      "text": "fn invoice.queue-reminders-for-pair(pair: InvoicePair) -> ReminderPairResult {\n    effects fs.read, fs.write\n    doc \"Queue each invoice reminder in pair order and return its exact marker.\"\n\n    let first-result = invoice::queue-reminder-once(pair.first);\n    let second-result = invoice::queue-reminder-once(pair.second);\n    reminderPairResult::new(first = first-result, second = second-result)\n}",
+      "data": "fn invoice.queue-reminders-for-pair(pair: InvoicePair) -> ReminderPairResult {\n    effects fs.read, fs.write\n    doc \"Queue each invoice reminder in pair order and return its exact marker.\"\n\n    let first-result = invoice::queue-reminder-once(pair.first);\n    let second-result = invoice::queue-reminder-once(pair.second);\n    reminderPairResult::new(first = first-result, second = second-result)\n}"
+    }
+  ],
+  "stdout": "{\"ok\":true,\"kind\":\"source\",\"text\":\"fn invoice.queue-reminders-for-pair(pair: InvoicePair) -\\u003E ReminderPairResult {\\n    effects fs.read, fs.write\\n    doc \\u0022Queue each invoice reminder in pair order and return its exact marker.\\u0022\\n\\n    let first-result = invoice::queue-reminder-once(pair.first);\\n    let second-result = invoice::queue-reminder-once(pair.second);\\n    reminderPairResult::new(first = first-result, second = second-result)\\n}\",\"data\":\"fn invoice.queue-reminders-for-pair(pair: InvoicePair) -\\u003E ReminderPairResult {\\n    effects fs.read, fs.write\\n    doc \\u0022Queue each invoice reminder in pair order and return its exact marker.\\u0022\\n\\n    let first-result = invoice::queue-reminder-once(pair.first);\\n    let second-result = invoice::queue-reminder-once(pair.second);\\n    reminderPairResult::new(first = first-result, second = second-result)\\n}\"}\r\n",
+  "stderr": "",
+  "exitCode": 0
+}

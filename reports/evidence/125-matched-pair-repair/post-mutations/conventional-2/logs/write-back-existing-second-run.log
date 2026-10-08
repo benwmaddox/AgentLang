@@ -1,0 +1,9 @@
+Seed helper tests passed: 2
+OWN_TESTS_PASSED=4
+EXAMPLE_QUEUE_REMINDER=queued
+Unhandled exception. System.Exception: Expected 0 but received 1
+   at Microsoft.FSharp.Core.PrintfModule.PrintFormatToStringThenFail@1448.Invoke(String message)
+   at AgentLang.StatefulPilot.SelfTests.assertEqual[a](a expected, a actual) in D:\code\AgentLang\.agentlang\pair-repair-001\post-mutations\conventional-2\write-back-existing-second\SelfTests.fs:line 6
+   at AgentLang.StatefulPilot.SelfTests.runPairExistingMarkersTest() in D:\code\AgentLang\.agentlang\pair-repair-001\post-mutations\conventional-2\write-back-existing-second\SelfTests.fs:line 117
+   at AgentLang.StatefulPilot.SelfTests.runPairTests() in D:\code\AgentLang\.agentlang\pair-repair-001\post-mutations\conventional-2\write-back-existing-second\SelfTests.fs:line 177
+   at AgentLang.StatefulPilot.SelfTests.main(String[] _arg1) in D:\code\AgentLang\.agentlang\pair-repair-001\post-mutations\conventional-2\write-back-existing-second\SelfTests.fs:line 188

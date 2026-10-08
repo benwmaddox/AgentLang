@@ -1,0 +1,364 @@
+{
+  "schemaVersion": 1,
+  "oracleSha256": "aaf442410f21d1dbf425b7b45d4a1a55dd9a1f21269b58721433a0d9aa36aae9",
+  "actors": [
+    {
+      "actor": "conventional-1",
+      "language": "fsharp",
+      "behaviorCases": {
+        "passedCases": 12,
+        "totalCases": 12,
+        "failedChecks": 0,
+        "passed": true
+      },
+      "scorerPassed": true,
+      "scorerOriginalUnchanged": true,
+      "targetOwnTests": 6,
+      "dictionaryOwnTests": null,
+      "priorSingleInvoiceHelperCallSites": 2,
+      "libraryMaturity": null,
+      "finalActorCoverage": null,
+      "requiredCompletionOperationObserved": true,
+      "completionOperations": [
+        {
+          "operation": "validate",
+          "ok": false,
+          "index": 19
+        },
+        {
+          "operation": "validate",
+          "ok": true,
+          "index": 22
+        }
+      ],
+      "brokerExit": {
+        "event": "session-end",
+        "finishedUtc": "2026-10-08T10:33:08.3208760+00:00",
+        "exchangeCount": 24,
+        "terminationKind": "host-close",
+        "hostExitCode": 0,
+        "runtimeExitCode": 0,
+        "runtimeStderrPrefixBytes": 0,
+        "runtimeStderrTotalBytes": 0,
+        "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "runtimeStderrCaptureTruncated": false
+      },
+      "exchanges": 24,
+      "structuredErrors": 3,
+      "requestPayloadBytes": 11042,
+      "responsePayloadBytes": 25132,
+      "sessionSeconds": 488.913261,
+      "orderEvidence": "Manual source inspection: first-result binding evaluates before second-result binding; return uses both. This is static source evidence, not a recorded provider-event sequence."
+    },
+    {
+      "actor": "conventional-2",
+      "language": "fsharp",
+      "behaviorCases": {
+        "passedCases": 12,
+        "totalCases": 12,
+        "failedChecks": 0,
+        "passed": true
+      },
+      "scorerPassed": true,
+      "scorerOriginalUnchanged": true,
+      "targetOwnTests": 5,
+      "dictionaryOwnTests": null,
+      "priorSingleInvoiceHelperCallSites": 2,
+      "libraryMaturity": null,
+      "finalActorCoverage": null,
+      "requiredCompletionOperationObserved": true,
+      "completionOperations": [
+        {
+          "operation": "validate",
+          "ok": true,
+          "index": 11
+        }
+      ],
+      "brokerExit": {
+        "event": "session-end",
+        "finishedUtc": "2026-10-08T10:37:37.2406406+00:00",
+        "exchangeCount": 11,
+        "terminationKind": "host-close",
+        "hostExitCode": 0,
+        "runtimeExitCode": 0,
+        "runtimeStderrPrefixBytes": 0,
+        "runtimeStderrTotalBytes": 0,
+        "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "runtimeStderrCaptureTruncated": false
+      },
+      "exchanges": 11,
+      "structuredErrors": 0,
+      "requestPayloadBytes": 8720,
+      "responsePayloadBytes": 21169,
+      "sessionSeconds": 221.120201,
+      "orderEvidence": "Manual source inspection: first-result binding evaluates before second-result binding; return uses both. This is static source evidence, not a recorded provider-event sequence."
+    },
+    {
+      "actor": "reset-1",
+      "language": "flow",
+      "behaviorCases": {
+        "passedCases": 12,
+        "totalCases": 12,
+        "failedChecks": 0,
+        "passed": true
+      },
+      "scorerPassed": true,
+      "scorerOriginalUnchanged": true,
+      "targetOwnTests": 7,
+      "dictionaryOwnTests": 9,
+      "priorSingleInvoiceHelperCallSites": 0,
+      "libraryMaturity": "library",
+      "finalActorCoverage": {
+        "branchesCovered": 8,
+        "branchesTotal": 8,
+        "finiteCoverage": {
+          "complete": true,
+          "inputs": [],
+          "missing": [],
+          "returns": [
+            {
+              "missing": [],
+              "observed": [],
+              "position": 0,
+              "required": [],
+              "type": "ReminderPairResult"
+            }
+          ],
+          "targetInvocations": 8,
+          "unsupported": []
+        },
+        "instructionsCovered": 49,
+        "instructionsTotal": 49,
+        "status": "current",
+        "uncoveredBranchOutcomes": [],
+        "uncoveredInstructions": []
+      },
+      "requiredCompletionOperationObserved": true,
+      "completionOperations": [
+        {
+          "operation": "task.commit",
+          "ok": true,
+          "index": 19
+        }
+      ],
+      "brokerExit": {
+        "event": "session-end",
+        "finishedUtc": "2026-10-08T10:31:37.7534469+00:00",
+        "exchangeCount": 19,
+        "terminationKind": "host-close",
+        "hostExitCode": 0,
+        "runtimeExitCode": 0,
+        "runtimeStderrPrefixBytes": 0,
+        "runtimeStderrTotalBytes": 0,
+        "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "runtimeStderrCaptureTruncated": false
+      },
+      "exchanges": 19,
+      "structuredErrors": 1,
+      "requestPayloadBytes": 7445,
+      "responsePayloadBytes": 75807,
+      "sessionSeconds": 400.768035,
+      "orderEvidence": "Manual source inspection: first-result binding evaluates before second-result binding; return uses both. This is static source evidence, not a recorded provider-event sequence."
+    },
+    {
+      "actor": "reset-2",
+      "language": "flow",
+      "behaviorCases": {
+        "passedCases": 12,
+        "totalCases": 12,
+        "failedChecks": 0,
+        "passed": true
+      },
+      "scorerPassed": true,
+      "scorerOriginalUnchanged": true,
+      "targetOwnTests": 6,
+      "dictionaryOwnTests": 8,
+      "priorSingleInvoiceHelperCallSites": 0,
+      "libraryMaturity": "library",
+      "finalActorCoverage": {
+        "branchesCovered": 8,
+        "branchesTotal": 8,
+        "finiteCoverage": {
+          "complete": true,
+          "inputs": [],
+          "missing": [],
+          "returns": [
+            {
+              "missing": [],
+              "observed": [],
+              "position": 0,
+              "required": [],
+              "type": "ReminderPairResult"
+            }
+          ],
+          "targetInvocations": 6,
+          "unsupported": []
+        },
+        "instructionsCovered": 49,
+        "instructionsTotal": 49,
+        "status": "current",
+        "uncoveredBranchOutcomes": [],
+        "uncoveredInstructions": []
+      },
+      "requiredCompletionOperationObserved": true,
+      "completionOperations": [
+        {
+          "operation": "task.commit",
+          "ok": true,
+          "index": 31
+        }
+      ],
+      "brokerExit": {
+        "event": "session-end",
+        "finishedUtc": "2026-10-08T10:41:33.9939443+00:00",
+        "exchangeCount": 31,
+        "terminationKind": "host-close",
+        "hostExitCode": 0,
+        "runtimeExitCode": 0,
+        "runtimeStderrPrefixBytes": 0,
+        "runtimeStderrTotalBytes": 0,
+        "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "runtimeStderrCaptureTruncated": false
+      },
+      "exchanges": 31,
+      "structuredErrors": 2,
+      "requestPayloadBytes": 4601,
+      "responsePayloadBytes": 80782,
+      "sessionSeconds": 548.016636,
+      "orderEvidence": "Manual source inspection: first-result binding evaluates before second-result binding; return uses both. This is static source evidence, not a recorded provider-event sequence."
+    },
+    {
+      "actor": "retained-1",
+      "language": "flow",
+      "behaviorCases": {
+        "passedCases": 12,
+        "totalCases": 12,
+        "failedChecks": 0,
+        "passed": true
+      },
+      "scorerPassed": true,
+      "scorerOriginalUnchanged": true,
+      "targetOwnTests": 7,
+      "dictionaryOwnTests": 13,
+      "priorSingleInvoiceHelperCallSites": 2,
+      "libraryMaturity": "library",
+      "finalActorCoverage": {
+        "branchesCovered": 0,
+        "branchesTotal": 0,
+        "finiteCoverage": {
+          "complete": true,
+          "inputs": [],
+          "missing": [],
+          "returns": [
+            {
+              "missing": [],
+              "observed": [],
+              "position": 0,
+              "required": [],
+              "type": "ReminderPairResult"
+            }
+          ],
+          "targetInvocations": 8,
+          "unsupported": []
+        },
+        "instructionsCovered": 11,
+        "instructionsTotal": 11,
+        "status": "current",
+        "uncoveredBranchOutcomes": [],
+        "uncoveredInstructions": []
+      },
+      "requiredCompletionOperationObserved": true,
+      "completionOperations": [
+        {
+          "operation": "task.commit",
+          "ok": true,
+          "index": 23
+        }
+      ],
+      "brokerExit": {
+        "event": "session-end",
+        "finishedUtc": "2026-10-08T10:40:54.6466361+00:00",
+        "exchangeCount": 23,
+        "terminationKind": "host-close",
+        "hostExitCode": 0,
+        "runtimeExitCode": 0,
+        "runtimeStderrPrefixBytes": 0,
+        "runtimeStderrTotalBytes": 0,
+        "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "runtimeStderrCaptureTruncated": false
+      },
+      "exchanges": 23,
+      "structuredErrors": 0,
+      "requestPayloadBytes": 5974,
+      "responsePayloadBytes": 85926,
+      "sessionSeconds": 960.370117,
+      "orderEvidence": "Manual source inspection: first-result binding evaluates before second-result binding; return uses both. This is static source evidence, not a recorded provider-event sequence."
+    },
+    {
+      "actor": "retained-2",
+      "language": "flow",
+      "behaviorCases": {
+        "passedCases": 12,
+        "totalCases": 12,
+        "failedChecks": 0,
+        "passed": true
+      },
+      "scorerPassed": true,
+      "scorerOriginalUnchanged": true,
+      "targetOwnTests": 6,
+      "dictionaryOwnTests": 12,
+      "priorSingleInvoiceHelperCallSites": 2,
+      "libraryMaturity": "library",
+      "finalActorCoverage": {
+        "branchesCovered": 0,
+        "branchesTotal": 0,
+        "finiteCoverage": {
+          "complete": true,
+          "inputs": [],
+          "missing": [],
+          "returns": [
+            {
+              "missing": [],
+              "observed": [],
+              "position": 0,
+              "required": [],
+              "type": "ReminderPairResult"
+            }
+          ],
+          "targetInvocations": 7,
+          "unsupported": []
+        },
+        "instructionsCovered": 11,
+        "instructionsTotal": 11,
+        "status": "current",
+        "uncoveredBranchOutcomes": [],
+        "uncoveredInstructions": []
+      },
+      "requiredCompletionOperationObserved": false,
+      "completionOperations": [],
+      "brokerExit": {
+        "event": "session-end",
+        "finishedUtc": "2026-10-08T10:43:17.3773800+00:00",
+        "exchangeCount": 28,
+        "terminationKind": "host-close",
+        "hostExitCode": 0,
+        "runtimeExitCode": 0,
+        "runtimeStderrPrefixBytes": 0,
+        "runtimeStderrTotalBytes": 0,
+        "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "runtimeStderrCaptureTruncated": false
+      },
+      "exchanges": 28,
+      "structuredErrors": 3,
+      "requestPayloadBytes": 6778,
+      "responsePayloadBytes": 62411,
+      "sessionSeconds": 275.789969,
+      "orderEvidence": "Manual source inspection: first-result binding evaluates before second-result binding; return uses both. This is static source evidence, not a recorded provider-event sequence."
+    }
+  ],
+  "notes": [
+    "Full scorer acceptance excludes actor protocol task finalization; retained-2 never called task.commit.",
+    "Per-actor scenario denominator is 12; repeated invocations and heterogeneous subchecks are not independent samples.",
+    "No provider model token usage is available."
+  ]
+}

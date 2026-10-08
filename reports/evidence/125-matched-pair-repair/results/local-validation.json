@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "checks": [
+    "Frozen inputs unchanged; final predispatch review uses its separately pinned dispatch hash.",
+    "Exact frozen runtime and both brokers unchanged.",
+    "Six final original inventories unchanged after all scoring/mutation work; all six12/12 and all12mutations detected.",
+    "Preservation, library maturity, report completeness and git diff whitespace checks pass."
+  ],
+  "scope": "Evidence/report milestone; no product source changes or full solution rerun.",
+  "scorerSha256": "989fdd936d149d2d72ba36d538c2c25ccc5c657236f500f26b8ea3daf3fe0114",
+  "oracleSha256": "aaf442410f21d1dbf425b7b45d4a1a55dd9a1f21269b58721433a0d9aa36aae9",
+  "limitations": [
+    "Final review was completed after initial freeze and pinned before dispatch.",
+    "Host execution used after sandbox launcher ACL failure."
+  ]
+}

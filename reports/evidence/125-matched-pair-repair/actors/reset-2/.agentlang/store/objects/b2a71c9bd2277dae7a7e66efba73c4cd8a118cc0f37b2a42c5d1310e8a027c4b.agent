@@ -1,0 +1,10 @@
+test invoice.queue-reminders-for-pair/first-not-open-skips-open-second {
+    invoice::queue-reminders-for-pair(
+        invoicePair::new(
+            first = invoice::new(id = InvoiceId::new("closed-first-regression"), status = InvoiceStatus::new("closed")),
+            second = invoice::new(id = InvoiceId::new("open-second-regression"), status = InvoiceStatus::new("open"))
+        )
+    )
+    => value reminderPairResult::new(first = "not-open", second = "queued")
+    effects { fs.read: 1; fs.write: 1; }
+}

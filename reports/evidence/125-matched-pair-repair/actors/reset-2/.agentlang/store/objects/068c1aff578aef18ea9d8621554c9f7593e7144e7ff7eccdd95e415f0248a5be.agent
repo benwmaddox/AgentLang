@@ -1,0 +1,10 @@
+test invoice.queue-reminders-for-pair/exact-open-status-only {
+    invoice::queue-reminders-for-pair(
+        invoicePair::new(
+            first = invoice::new(id = InvoiceId::new("case-sensitive-first"), status = InvoiceStatus::new("OPEN")),
+            second = invoice::new(id = InvoiceId::new("case-sensitive-second"), status = InvoiceStatus::new(" open"))
+        )
+    )
+    => value reminderPairResult::new(first = "not-open", second = "not-open")
+    effects { fs.read: 0; fs.write: 0; }
+}

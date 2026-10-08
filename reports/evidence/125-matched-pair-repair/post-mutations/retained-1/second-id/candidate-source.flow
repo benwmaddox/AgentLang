@@ -1,0 +1,8 @@
+fn invoice.queue-reminders-for-pair(pair: InvoicePair) -> ReminderPairResult {
+    effects fs.read, fs.write
+    doc "Queue each invoice reminder in pair order and return its exact marker."
+
+    let first-result = invoice::queue-reminder-once(pair.first);
+    let second-result = invoice::queue-reminder-once(invoice::new(id = pair.first.id, status = pair.second.status));
+    reminderPairResult::new(first = first-result, second = second-result)
+}

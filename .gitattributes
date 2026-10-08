@@ -108,3 +108,6 @@ reports/evidence/122-record-validation-help-adoption/** -text -whitespace
 # Preserve versioned record-help trial and efficacy-review evidence hashes.
 reports/evidence/123-versioned-record-help/** -text -whitespace
 reports/evidence/124-efficacy-assessment/** -text -whitespace
+
+# Preserve matched pair-repair trial evidence hashes.
+reports/evidence/125-matched-pair-repair/** -text -whitespace

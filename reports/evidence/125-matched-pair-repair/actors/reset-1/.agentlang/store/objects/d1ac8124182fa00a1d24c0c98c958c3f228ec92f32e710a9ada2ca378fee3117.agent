@@ -1,0 +1,11 @@
+test invoice.queue-reminders-for-pair/repeat-preserves-marker {
+    let pair = invoicePair::new(
+        first = invoice::new(id = InvoiceId::new("repeat-same"), status = InvoiceStatus::new("open")),
+        second = invoice::new(id = InvoiceId::new("repeat-same"), status = InvoiceStatus::new("open"))
+    );
+    let first-run = invoice::queue-reminders-for-pair(pair);
+    let second-run = invoice::queue-reminders-for-pair(pair);
+    second-run
+    => value reminderPairResult::new(first = "queued", second = "queued")
+    effects { fs.read: 7; fs.write: 1; }
+}

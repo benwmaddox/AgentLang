@@ -1,0 +1,46 @@
+{
+  "source": ".agentlang/stateful-conventional-001/broker-bin",
+  "copiedWithoutRebuild": true,
+  "files": [
+    {
+      "path": "AgentLang.Conventional.Cli.deps.json",
+      "sha256": "286C223538B469E3A5A6364BEBC0D68051682DB3C80CD6BB043DEF2B7B33EACE"
+    },
+    {
+      "path": "AgentLang.Conventional.Cli.dll",
+      "sha256": "53DDA8D8E3EB152BFC79D266D3CB22B5267EA98FD646FC1E3C0642BCE542D8D3"
+    },
+    {
+      "path": "AgentLang.Conventional.Cli.exe",
+      "sha256": "7B65714EA8E1D5EE03176358B7D24F9FA6BD4BDEBE53D79DBC83DFC39583CF7E"
+    },
+    {
+      "path": "AgentLang.Conventional.Cli.pdb",
+      "sha256": "9E44A189566421F1447E7D7FE4A1AAF4DB7CA45B75C644700F8687873B5F0E5C"
+    },
+    {
+      "path": "AgentLang.Conventional.Cli.runtimeconfig.json",
+      "sha256": "3C0BF772B95C93363A0A14E5DF78E4EC408C90F04CB7103205AF97B2D276FAB0"
+    },
+    {
+      "path": "AgentLang.Conventional.deps.json",
+      "sha256": "18981412CDDD0E64918A6BE7107E28264318EA732EDC3BC716DCE08A813A9896"
+    },
+    {
+      "path": "AgentLang.Conventional.dll",
+      "sha256": "1564EBF9C79CC4E23239490D08D6BA2CD65134CA8CC83599715C918E92A18EAE"
+    },
+    {
+      "path": "AgentLang.Conventional.pdb",
+      "sha256": "14CA44B7A01BB7242BBB84CDBBAD4326C4834770ED2C2C681B2DEF9CE9F47265"
+    },
+    {
+      "path": "AgentLang.Conventional.xml",
+      "sha256": "621B5C7C93C495C1DFC83279858DBB31ECD999F56D5237070BF05C59159B81EB"
+    },
+    {
+      "path": "FSharp.Core.dll",
+      "sha256": "BF72714C36DC21357A6530D59479E1D7FC5E6BC815A9AF9A872E5E41611C1E6F"
+    }
+  ]
+}

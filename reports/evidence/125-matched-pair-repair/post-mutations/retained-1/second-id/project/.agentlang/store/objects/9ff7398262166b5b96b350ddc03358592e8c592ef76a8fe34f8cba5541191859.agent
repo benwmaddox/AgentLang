@@ -1,0 +1,4 @@
+record ReminderPairResult {
+    field first: String;
+    field second: String;
+}

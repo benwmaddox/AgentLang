@@ -1,0 +1,56 @@
+{
+  "actor": "retained-2",
+  "target": "invoice.queue-reminders-for-pair",
+  "baselineRevision": 2,
+  "baselineStatus": "persistent",
+  "baselineTests": 6,
+  "baselineExamples": 1,
+  "originalActorInventoryUnchanged": true,
+  "originalActorFileCount": 44,
+  "mutations": [
+    {
+      "name": "second-id",
+      "expectedRevision": 2,
+      "defineAccepted": true,
+      "targetPassed": 4,
+      "targetTotal": 6,
+      "targetFailedTests": [
+        "exact-existing-markers",
+        "repeated-run-preserves-existing-markers"
+      ],
+      "testAllPassed": 10,
+      "testAllTotal": 12,
+      "replaceWordAccepted": false,
+      "replaceWordErrorCode": "COMMIT_TESTS_FAILED",
+      "oracleScorerRun": false,
+      "candidateMatchesPredeclaredMutation": false,
+      "committedSourceUnchangedAfterRejection": true,
+      "inheritedHelperUnchanged": true,
+      "testsUnchanged": true,
+      "examplesUnchanged": true,
+      "revisionUnchanged": true
+    },
+    {
+      "name": "same-content-write",
+      "expectedRevision": 2,
+      "defineAccepted": true,
+      "targetPassed": 4,
+      "targetTotal": 6,
+      "targetFailedTests": [
+        "repeated-run-preserves-existing-markers",
+        "same-id-second-sees-first-write"
+      ],
+      "testAllPassed": 10,
+      "testAllTotal": 12,
+      "replaceWordAccepted": false,
+      "replaceWordErrorCode": "COMMIT_TESTS_FAILED",
+      "oracleScorerRun": false,
+      "candidateMatchesPredeclaredMutation": false,
+      "committedSourceUnchangedAfterRejection": true,
+      "inheritedHelperUnchanged": true,
+      "testsUnchanged": true,
+      "examplesUnchanged": true,
+      "revisionUnchanged": true
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+record InvoicePair {
+    field first: Invoice;
+    field second: Invoice;
+}

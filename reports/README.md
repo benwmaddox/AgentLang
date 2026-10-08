@@ -8,6 +8,12 @@ Run `./scripts/Validate.ps1` from PowerShell to build the solution and run every
 
 Validation runs locally. The GitHub workflow is manual-only; milestone publication does not trigger a CI run. Human feedback and milestone conclusions belong in numbered Markdown reports here. Credentials must never appear in reports. Live provider traces can contain project information and should remain in the experiment's local output directory unless deliberately reviewed for publication.
 
+Latest comparison: [125 — Matched pair repair](125-matched-pair-repair.md) records
+six fresh agents, each passing 12/12 frozen independent cases. Retained Flow and
+F# actors reuse their existing helper; no reliability advantage is established.
+One retained actor skips task.commit, so behavior and workflow completion are
+reported separately.
+
 Current research assessment: [101 — Approach efficacy review](101-approach-efficacy-review.md)
 finds that discovery, typed composition and vocabulary reuse work, but comparative
 reliability superiority remains unproven. [102 — Guided defect repair](102-guided-defect-repair-comparison.md)

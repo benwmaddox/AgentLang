@@ -1,0 +1,11 @@
+test invoice.queue-reminders-for-pair/second-not-open-after-first-queues {
+    invoice::queue-reminders-for-pair(
+        invoicePair::new(
+            first = invoice::new(
+                id = InvoiceId::new("pair-flow-open-first"),
+                status = InvoiceStatus::new("open")),
+            second = invoice::new(
+                id = InvoiceId::new("pair-flow-closed-second"),
+                status = InvoiceStatus::new("Open"))))
+    => value reminderPairResult::new(first = "queued", second = "not-open")
+}

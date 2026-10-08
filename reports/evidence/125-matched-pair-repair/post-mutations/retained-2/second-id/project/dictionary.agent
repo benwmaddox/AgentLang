@@ -1,0 +1,186 @@
+// frontend: flow/1
+
+record Invoice {
+    field id: InvoiceId;
+    field status: InvoiceStatus;
+}
+
+// frontend: flow/2
+
+record InvoicePair {
+    field first: Invoice;
+    field second: Invoice;
+}
+
+// frontend: flow/2
+
+record ReminderPairResult {
+    field first: String;
+    field second: String;
+}
+
+// frontend: flow/1
+
+type InvoiceId : String {
+}
+
+// frontend: flow/1
+
+type InvoiceStatus : String {
+}
+
+// frontend: flow/2
+
+fn invoice.queue-reminder-once(invoice: Invoice) -> String {
+    effects fs.read, fs.write
+    doc "Queues a reminder once for an open invoice and preserves any existing reminder contents."
+
+    if InvoiceStatus::value(invoice.status) == "open" {
+        let path = invoice::reminder-path(invoice.id);
+        if file::exists?(path) {
+            file::read(path)
+        } else {
+            file::write(path, "queued");
+            "queued"
+        }
+    } else {
+        "not-open"
+    }
+}
+
+// frontend: flow/2
+
+fn invoice.queue-reminders-for-pair(pair: InvoicePair) -> ReminderPairResult {
+    effects fs.read, fs.write
+    doc "Queue each invoice reminder once, independently, in pair order, and return the exact markers."
+
+    let first-result = invoice::queue-reminder-once(pair.first);
+    let second-result = invoice::queue-reminder-once(pair.second);
+    reminderPairResult::new(first = first-result, second = second-result)
+}
+
+// frontend: flow/1
+
+word invoice.reminder-path(id: InvoiceId) -> String {
+    effects none
+    doc "Builds the fixed virtual reminder path for an invoice ID."
+    string::concat("outbox/invoice-reminders/", InvoiceId::value(id))
+}
+
+// frontend: flow/2
+
+test invoice.queue-reminder-once/existing-custom-marker {
+    file::write("outbox/invoice-reminders/r2-existing-custom", "custom reminder marker");
+    invoice::queue-reminder-once(invoice::new(InvoiceId::new("r2-existing-custom"), InvoiceStatus::new("open")))
+    => "custom reminder marker"
+}
+
+// frontend: flow/2
+
+test invoice.queue-reminder-once/existing-queued-marker {
+    file::write("outbox/invoice-reminders/r2-existing-queued", "queued");
+    invoice::queue-reminder-once(invoice::new(InvoiceId::new("r2-existing-queued"), InvoiceStatus::new("open")))
+    => "queued"
+}
+
+// frontend: flow/2
+
+test invoice.queue-reminder-once/missing-reminder {
+    invoice::queue-reminder-once(invoice::new(InvoiceId::new("r2-missing"), InvoiceStatus::new("open")))
+    => "queued"
+}
+
+// frontend: flow/2
+
+test invoice.queue-reminder-once/non-open-status {
+    invoice::queue-reminder-once(invoice::new(InvoiceId::new("r2-not-open"), InvoiceStatus::new("Open")))
+    => "not-open"
+}
+
+// frontend: flow/2
+
+test invoice.queue-reminders-for-pair/exact-existing-markers {
+    file::write("outbox/invoice-reminders/pair-flow-existing-first", "custom marker");
+    file::write("outbox/invoice-reminders/pair-flow-empty-second", "");
+    invoice::queue-reminders-for-pair(invoicePair::new(first = invoice::new(id = InvoiceId::new("pair-flow-existing-first"), status = InvoiceStatus::new("open")), second = invoice::new(id = InvoiceId::new("pair-flow-empty-second"), status = InvoiceStatus::new("open"))))
+    => value reminderPairResult::new(first = "custom marker", second = "")
+}
+
+// frontend: flow/2
+
+test invoice.queue-reminders-for-pair/first-not-open-skips-open-second {
+    invoice::queue-reminders-for-pair(invoicePair::new(first = invoice::new(id = InvoiceId::new("pair-flow-first-not-open-retained-2"), status = InvoiceStatus::new("Open")), second = invoice::new(id = InvoiceId::new("pair-flow-second-open-retained-2"), status = InvoiceStatus::new("open"))))
+    => value reminderPairResult::new(first = "not-open", second = "queued") effects { fs.read: 1; fs.write: 1; }
+}
+
+// frontend: flow/2
+
+test invoice.queue-reminders-for-pair/repeated-run-preserves-existing-markers {
+    file::write("outbox/invoice-reminders/pair-flow-repeat-first-retained-2", "custom marker");
+    file::write("outbox/invoice-reminders/pair-flow-repeat-second-retained-2", "");
+    let pair = invoicePair::new(first = invoice::new(id = InvoiceId::new("pair-flow-repeat-first-retained-2"), status = InvoiceStatus::new("open")), second = invoice::new(id = InvoiceId::new("pair-flow-repeat-second-retained-2"), status = InvoiceStatus::new("open")));
+    let first-run = invoice::queue-reminders-for-pair(pair);
+    let repeated-run = invoice::queue-reminders-for-pair(pair);
+    if first-run == repeated-run {
+        repeated-run
+    } else {
+        reminderPairResult::new(first = "changed", second = "changed")
+    }
+    => value reminderPairResult::new(first = "custom marker", second = "") effects { fs.read: 8; fs.write: 0; }
+}
+
+// frontend: flow/2
+
+test invoice.queue-reminders-for-pair/same-id-second-sees-first-write {
+    invoice::queue-reminders-for-pair(invoicePair::new(first = invoice::new(id = InvoiceId::new("pair-flow-same-id-retained-2"), status = InvoiceStatus::new("open")), second = invoice::new(id = InvoiceId::new("pair-flow-same-id-retained-2"), status = InvoiceStatus::new("open"))))
+    => value reminderPairResult::new(first = "queued", second = "queued") effects { fs.read: 3; fs.write: 1; }
+}
+
+// frontend: flow/2
+
+test invoice.queue-reminders-for-pair/second-not-open-after-first-queues {
+    invoice::queue-reminders-for-pair(invoicePair::new(first = invoice::new(id = InvoiceId::new("pair-flow-open-first"), status = InvoiceStatus::new("open")), second = invoice::new(id = InvoiceId::new("pair-flow-closed-second"), status = InvoiceStatus::new("Open"))))
+    => value reminderPairResult::new(first = "queued", second = "not-open")
+}
+
+// frontend: flow/2
+
+test invoice.queue-reminders-for-pair/two-open-missing {
+    invoice::queue-reminders-for-pair(invoicePair::new(first = invoice::new(id = InvoiceId::new("pair-flow-missing-first"), status = InvoiceStatus::new("open")), second = invoice::new(id = InvoiceId::new("pair-flow-missing-second"), status = InvoiceStatus::new("open"))))
+    => value reminderPairResult::new(first = "queued", second = "queued")
+}
+
+// frontend: flow/1
+
+test invoice.reminder-path/basic {
+    invoice::reminder-path(InvoiceId::new("INV-001"))
+    => "outbox/invoice-reminders/INV-001"
+}
+
+// frontend: flow/1
+
+test invoice.reminder-path/preserves-id-text {
+    invoice::reminder-path(InvoiceId::new("inv.alpha_2"))
+    => "outbox/invoice-reminders/inv.alpha_2"
+}
+
+// frontend: flow/2
+
+example invoice.queue-reminder-once/queues-missing-reminder {
+    invoice::queue-reminder-once(invoice::new(InvoiceId::new("r2-example"), InvoiceStatus::new("open")))
+    => "queued"
+}
+
+// frontend: flow/2
+
+example invoice.queue-reminders-for-pair/queues-second-in-order {
+    invoice::queue-reminders-for-pair(invoicePair::new(first = invoice::new(id = InvoiceId::new("pair-flow-example-first"), status = InvoiceStatus::new("open")), second = invoice::new(id = InvoiceId::new("pair-flow-example-second"), status = InvoiceStatus::new("open")))).second
+    => "queued"
+}
+
+// frontend: flow/1
+
+example invoice.reminder-path/standard-id {
+    invoice::reminder-path(InvoiceId::new("INV-001"))
+    => "outbox/invoice-reminders/INV-001"
+}

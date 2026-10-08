@@ -1,0 +1,11 @@
+example invoice.queue-reminders-for-pair/queues-second-in-order {
+    invoice::queue-reminders-for-pair(
+        invoicePair::new(
+            first = invoice::new(
+                id = InvoiceId::new("pair-flow-example-first"),
+                status = InvoiceStatus::new("open")),
+            second = invoice::new(
+                id = InvoiceId::new("pair-flow-example-second"),
+                status = InvoiceStatus::new("open")))).second
+    => "queued"
+}

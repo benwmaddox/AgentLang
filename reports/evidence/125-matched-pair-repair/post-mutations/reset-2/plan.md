@@ -1,0 +1,1 @@
+Test only two predeclared target-body mutations on copies of the closed reset-2 actor. Preserve all actor tests and metadata. Run define/test/test-all/replace-word. Gate rejection is detection; do not score unchanged committed source as a mutant. Score with the frozen oracle only if replacement succeeds. Verify original actor inventory unchanged.

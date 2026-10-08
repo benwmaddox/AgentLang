@@ -1,0 +1,20 @@
+{
+  "archiveFileCount": 949,
+  "archiveBytes": 9936194,
+  "allIndexedHashesMatch": true,
+  "reportLocalLinksExist": [
+    "124-efficacy-assessment.md",
+    "111-current-syntax-stateful-comparison.md",
+    "evidence/125-matched-pair-repair/oracle.json",
+    "evidence/125-matched-pair-repair/freeze.json",
+    "evidence/125-matched-pair-repair/results/outcomes.json",
+    "evidence/125-matched-pair-repair/results/preservation.json",
+    "evidence/125-matched-pair-repair/post-mutations",
+    "evidence/125-matched-pair-repair/index.json"
+  ],
+  "reviewResolution": {
+    "retained2Summary": "Original false-field summary retained; corrected summary uses existing candidateMatchesExactMutation=true; raw evidence unchanged.",
+    "evidenceLinks": "Packaged after draft review; all report evidence targets now exist."
+  },
+  "scope": "Report and frozen experimental evidence; no product/runtime code change."
+}

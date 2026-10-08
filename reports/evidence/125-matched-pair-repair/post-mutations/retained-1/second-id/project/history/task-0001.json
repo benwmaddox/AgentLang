@@ -1,0 +1,27 @@
+{
+  "task": "task-0001",
+  "goal": "Prepare immutable stateful reminder agent study seed",
+  "active": false,
+  "wordsInspected": [
+    "Invoice",
+    "InvoiceId",
+    "InvoiceStatus",
+    "invoice.reminder-path"
+  ],
+  "wordsUsed": [
+    "InvoiceId.new",
+    "InvoiceId.value",
+    "invoice.reminder-path",
+    "string.concat"
+  ],
+  "wordsCreated": [
+    "Invoice",
+    "InvoiceId",
+    "InvoiceStatus",
+    "invoice.reminder-path"
+  ],
+  "testsRun": 6,
+  "testsFailed": 0,
+  "effects": {},
+  "errors": []
+}

@@ -1,0 +1,2555 @@
+{
+  "source": "Exact broker payloads; bytes are not model tokens; full session duration includes idle and close.",
+  "providerUsage": null,
+  "actors": [
+    {
+      "actor": "conventional-1",
+      "traceSha256": "c3d02c1dcfc46288e46572f9b07533c60d87740bf35393593ea87dafd40a95e0",
+      "exchanges": 24,
+      "requestBytes": 11042,
+      "responseBytes": 25132,
+      "structuredErrors": [
+        {
+          "index": 8,
+          "operation": "patch",
+          "requestBytes": 3130,
+          "responseBytes": 219,
+          "ok": false,
+          "kind": "error",
+          "error": {
+            "code": "HASH_INVALID",
+            "message": "expectedSha256 must contain exactly 64 hexadecimal characters."
+          },
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 16,
+          "operation": "patch",
+          "requestBytes": 259,
+          "responseBytes": 219,
+          "ok": false,
+          "kind": "error",
+          "error": {
+            "code": "HASH_INVALID",
+            "message": "expectedSha256 must contain exactly 64 hexadecimal characters."
+          },
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 19,
+          "operation": "validate",
+          "requestBytes": 18,
+          "responseBytes": 997,
+          "ok": false,
+          "kind": "validation",
+          "error": {
+            "code": "VALIDATION_FAILED",
+            "message": "The configured dotnet command exited with code 1."
+          },
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        }
+      ],
+      "seconds": 488.913261,
+      "sessionStart": {
+        "event": "session-start",
+        "schemaVersion": 1,
+        "hostProtocolVersion": "subagent-trial-host-v2",
+        "transportControls": [
+          "host.close"
+        ],
+        "startedUtc": "2026-10-08T10:24:59.4076158+00:00",
+        "hostProcessId": 35908,
+        "runtimeProcessId": 46336,
+        "runtimeExecutable": "dotnet",
+        "processArchitecture": "x64",
+        "jobObjectLayout": {
+          "basicLimitInformationBytes": 64,
+          "basicLimitFlagsOffset": 16,
+          "ioCountersBytes": 48,
+          "extendedLimitInformationBytes": 144,
+          "extendedIoInfoOffset": 64,
+          "processMemoryLimitOffset": 112,
+          "jobMemoryLimitOffset": 120,
+          "peakProcessMemoryUsedOffset": 128,
+          "peakJobMemoryUsedOffset": 136
+        },
+        "cliDll": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\conventional-broker\\AgentLang.Conventional.Cli.dll",
+        "cliFiles": [
+          {
+            "name": "AgentLang.Conventional.Cli.deps.json",
+            "sha256": "286c223538b469e3a5a6364bebc0d68051682db3c80cd6bb043def2b7b33eace"
+          },
+          {
+            "name": "AgentLang.Conventional.Cli.dll",
+            "sha256": "53dda8d8e3eb152bfc79d266d3cb22b5267ea98fd646fc1e3c0642bce542d8d3"
+          },
+          {
+            "name": "AgentLang.Conventional.Cli.runtimeconfig.json",
+            "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+          },
+          {
+            "name": "AgentLang.Conventional.dll",
+            "sha256": "1564ebf9c79cc4e23239490d08d6ba2cd65134ca8cc83599715c918e92a18eae"
+          },
+          {
+            "name": "FSharp.Core.dll",
+            "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+          }
+        ],
+        "projectPath": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\actors\\conventional-1",
+        "profile": "conventional",
+        "allowedOperations": [
+          "inspect",
+          "patch",
+          "read",
+          "replace",
+          "search",
+          "validate"
+        ],
+        "additionalCliArguments": [
+          "--validation-project",
+          "StatefulPilot.fsproj"
+        ],
+        "capabilities": [],
+        "limits": {
+          "maxRequestBytes": 262144,
+          "maxResponseBytes": 524288,
+          "exchangeTimeoutMilliseconds": 120000,
+          "maxExchanges": 100
+        },
+        "cleanup": "Windows job object kill-on-close plus explicit process cleanup"
+      },
+      "sessionEnd": {
+        "event": "session-end",
+        "finishedUtc": "2026-10-08T10:33:08.3208760+00:00",
+        "exchangeCount": 24,
+        "terminationKind": "host-close",
+        "hostExitCode": 0,
+        "runtimeExitCode": 0,
+        "runtimeStderrPrefixBytes": 0,
+        "runtimeStderrTotalBytes": 0,
+        "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "runtimeStderrCaptureTruncated": false
+      },
+      "details": [
+        {
+          "index": 1,
+          "operation": "inspect",
+          "requestBytes": 40,
+          "responseBytes": 223,
+          "ok": true,
+          "kind": "inspect",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 2,
+          "operation": "read",
+          "requestBytes": 37,
+          "responseBytes": 2205,
+          "ok": true,
+          "kind": "read",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 3,
+          "operation": "inspect",
+          "requestBytes": 39,
+          "responseBytes": 222,
+          "ok": true,
+          "kind": "inspect",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 4,
+          "operation": "read",
+          "requestBytes": 36,
+          "responseBytes": 6975,
+          "ok": true,
+          "kind": "read",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 5,
+          "operation": "search",
+          "requestBytes": 44,
+          "responseBytes": 453,
+          "ok": true,
+          "kind": "search",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 6,
+          "operation": "patch",
+          "requestBytes": 1783,
+          "responseBytes": 192,
+          "ok": true,
+          "kind": "patch",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 7,
+          "operation": "patch",
+          "requestBytes": 1408,
+          "responseBytes": 191,
+          "ok": true,
+          "kind": "patch",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 8,
+          "operation": "patch",
+          "requestBytes": 3130,
+          "responseBytes": 219,
+          "ok": false,
+          "kind": "error",
+          "error": {
+            "code": "HASH_INVALID",
+            "message": "expectedSha256 must contain exactly 64 hexadecimal characters."
+          },
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 9,
+          "operation": "inspect",
+          "requestBytes": 39,
+          "responseBytes": 222,
+          "ok": true,
+          "kind": "inspect",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 10,
+          "operation": "inspect",
+          "requestBytes": 39,
+          "responseBytes": 222,
+          "ok": true,
+          "kind": "inspect",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 11,
+          "operation": "inspect",
+          "requestBytes": 39,
+          "responseBytes": 222,
+          "ok": true,
+          "kind": "inspect",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 12,
+          "operation": "inspect",
+          "requestBytes": 39,
+          "responseBytes": 222,
+          "ok": true,
+          "kind": "inspect",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 13,
+          "operation": "inspect",
+          "requestBytes": 39,
+          "responseBytes": 222,
+          "ok": true,
+          "kind": "inspect",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 14,
+          "operation": "inspect",
+          "requestBytes": 39,
+          "responseBytes": 222,
+          "ok": true,
+          "kind": "inspect",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 15,
+          "operation": "patch",
+          "requestBytes": 3124,
+          "responseBytes": 191,
+          "ok": true,
+          "kind": "patch",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 16,
+          "operation": "patch",
+          "requestBytes": 259,
+          "responseBytes": 219,
+          "ok": false,
+          "kind": "error",
+          "error": {
+            "code": "HASH_INVALID",
+            "message": "expectedSha256 must contain exactly 64 hexadecimal characters."
+          },
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 17,
+          "operation": "inspect",
+          "requestBytes": 39,
+          "responseBytes": 222,
+          "ok": true,
+          "kind": "inspect",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 18,
+          "operation": "patch",
+          "requestBytes": 258,
+          "responseBytes": 191,
+          "ok": true,
+          "kind": "patch",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 19,
+          "operation": "validate",
+          "requestBytes": 18,
+          "responseBytes": 997,
+          "ok": false,
+          "kind": "validation",
+          "error": {
+            "code": "VALIDATION_FAILED",
+            "message": "The configured dotnet command exited with code 1."
+          },
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 20,
+          "operation": "inspect",
+          "requestBytes": 39,
+          "responseBytes": 222,
+          "ok": true,
+          "kind": "inspect",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 21,
+          "operation": "patch",
+          "requestBytes": 463,
+          "responseBytes": 191,
+          "ok": true,
+          "kind": "patch",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 22,
+          "operation": "validate",
+          "requestBytes": 18,
+          "responseBytes": 452,
+          "ok": true,
+          "kind": "validation",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 23,
+          "operation": "read",
+          "requestBytes": 37,
+          "responseBytes": 1191,
+          "ok": true,
+          "kind": "read",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 24,
+          "operation": "read",
+          "requestBytes": 36,
+          "responseBytes": 9244,
+          "ok": true,
+          "kind": "read",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        }
+      ]
+    },
+    {
+      "actor": "conventional-2",
+      "traceSha256": "275a197a7a359a155cbb795cda292882d714a957b51cdffb2c6fda3bf47527f4",
+      "exchanges": 11,
+      "requestBytes": 8720,
+      "responseBytes": 21169,
+      "structuredErrors": [],
+      "seconds": 221.120201,
+      "sessionStart": {
+        "event": "session-start",
+        "schemaVersion": 1,
+        "hostProtocolVersion": "subagent-trial-host-v2",
+        "transportControls": [
+          "host.close"
+        ],
+        "startedUtc": "2026-10-08T10:33:56.1204392+00:00",
+        "hostProcessId": 27948,
+        "runtimeProcessId": 25116,
+        "runtimeExecutable": "dotnet",
+        "processArchitecture": "x64",
+        "jobObjectLayout": {
+          "basicLimitInformationBytes": 64,
+          "basicLimitFlagsOffset": 16,
+          "ioCountersBytes": 48,
+          "extendedLimitInformationBytes": 144,
+          "extendedIoInfoOffset": 64,
+          "processMemoryLimitOffset": 112,
+          "jobMemoryLimitOffset": 120,
+          "peakProcessMemoryUsedOffset": 128,
+          "peakJobMemoryUsedOffset": 136
+        },
+        "cliDll": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\conventional-broker\\AgentLang.Conventional.Cli.dll",
+        "cliFiles": [
+          {
+            "name": "AgentLang.Conventional.Cli.deps.json",
+            "sha256": "286c223538b469e3a5a6364bebc0d68051682db3c80cd6bb043def2b7b33eace"
+          },
+          {
+            "name": "AgentLang.Conventional.Cli.dll",
+            "sha256": "53dda8d8e3eb152bfc79d266d3cb22b5267ea98fd646fc1e3c0642bce542d8d3"
+          },
+          {
+            "name": "AgentLang.Conventional.Cli.runtimeconfig.json",
+            "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+          },
+          {
+            "name": "AgentLang.Conventional.dll",
+            "sha256": "1564ebf9c79cc4e23239490d08d6ba2cd65134ca8cc83599715c918e92a18eae"
+          },
+          {
+            "name": "FSharp.Core.dll",
+            "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+          }
+        ],
+        "projectPath": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\actors\\conventional-2",
+        "profile": "conventional",
+        "allowedOperations": [
+          "inspect",
+          "patch",
+          "read",
+          "replace",
+          "search",
+          "validate"
+        ],
+        "additionalCliArguments": [
+          "--validation-project",
+          "StatefulPilot.fsproj"
+        ],
+        "capabilities": [],
+        "limits": {
+          "maxRequestBytes": 262144,
+          "maxResponseBytes": 524288,
+          "exchangeTimeoutMilliseconds": 120000,
+          "maxExchanges": 100
+        },
+        "cleanup": "Windows job object kill-on-close plus explicit process cleanup"
+      },
+      "sessionEnd": {
+        "event": "session-end",
+        "finishedUtc": "2026-10-08T10:37:37.2406406+00:00",
+        "exchangeCount": 11,
+        "terminationKind": "host-close",
+        "hostExitCode": 0,
+        "runtimeExitCode": 0,
+        "runtimeStderrPrefixBytes": 0,
+        "runtimeStderrTotalBytes": 0,
+        "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "runtimeStderrCaptureTruncated": false
+      },
+      "details": [
+        {
+          "index": 1,
+          "operation": "inspect",
+          "requestBytes": 40,
+          "responseBytes": 223,
+          "ok": true,
+          "kind": "inspect",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 2,
+          "operation": "read",
+          "requestBytes": 37,
+          "responseBytes": 2205,
+          "ok": true,
+          "kind": "read",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 3,
+          "operation": "inspect",
+          "requestBytes": 39,
+          "responseBytes": 222,
+          "ok": true,
+          "kind": "inspect",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 4,
+          "operation": "read",
+          "requestBytes": 36,
+          "responseBytes": 6975,
+          "ok": true,
+          "kind": "read",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 5,
+          "operation": "patch",
+          "requestBytes": 1787,
+          "responseBytes": 192,
+          "ok": true,
+          "kind": "patch",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 6,
+          "operation": "patch",
+          "requestBytes": 1206,
+          "responseBytes": 191,
+          "ok": true,
+          "kind": "patch",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 7,
+          "operation": "patch",
+          "requestBytes": 1786,
+          "responseBytes": 191,
+          "ok": true,
+          "kind": "patch",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 8,
+          "operation": "patch",
+          "requestBytes": 3698,
+          "responseBytes": 191,
+          "ok": true,
+          "kind": "patch",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 9,
+          "operation": "read",
+          "requestBytes": 37,
+          "responseBytes": 1191,
+          "ok": true,
+          "kind": "read",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 10,
+          "operation": "read",
+          "requestBytes": 36,
+          "responseBytes": 9136,
+          "ok": true,
+          "kind": "read",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 11,
+          "operation": "validate",
+          "requestBytes": 18,
+          "responseBytes": 452,
+          "ok": true,
+          "kind": "validation",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        }
+      ]
+    },
+    {
+      "actor": "reset-1",
+      "traceSha256": "fd324c18589a77f718806d7f9e5af5a18b999cf3a33db14b3dff5dd410fb90d3",
+      "exchanges": 19,
+      "requestBytes": 7445,
+      "responseBytes": 75807,
+      "structuredErrors": [
+        {
+          "index": 12,
+          "operation": "define",
+          "requestBytes": 3333,
+          "responseBytes": 349,
+          "ok": false,
+          "kind": "error",
+          "error": {
+            "actual": [],
+            "code": "FLOW_EXPECTED_EXPRESSION",
+            "expected": [],
+            "message": "Token '=' cannot begin an expression.",
+            "span": {
+              "column": 5,
+              "file": "<flow-project>",
+              "length": 1,
+              "line": 41
+            }
+          },
+          "word": null,
+          "requestedSyntaxVersion": 2,
+          "returnedSyntaxVersion": null
+        }
+      ],
+      "seconds": 400.768035,
+      "sessionStart": {
+        "event": "session-start",
+        "schemaVersion": 1,
+        "hostProtocolVersion": "subagent-trial-host-v2",
+        "transportControls": [
+          "host.close"
+        ],
+        "startedUtc": "2026-10-08T10:24:56.9854111+00:00",
+        "hostProcessId": 24540,
+        "runtimeProcessId": 46888,
+        "runtimeExecutable": "dotnet",
+        "processArchitecture": "x64",
+        "jobObjectLayout": {
+          "basicLimitInformationBytes": 64,
+          "basicLimitFlagsOffset": 16,
+          "ioCountersBytes": 48,
+          "extendedLimitInformationBytes": 144,
+          "extendedIoInfoOffset": 64,
+          "processMemoryLimitOffset": 112,
+          "jobMemoryLimitOffset": 120,
+          "peakProcessMemoryUsedOffset": 128,
+          "peakJobMemoryUsedOffset": 136
+        },
+        "cliDll": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\runtime\\debug-artifacts\\AgentLang.Cli.dll",
+        "cliFiles": [
+          {
+            "name": "AgentLang.Cli.deps.json",
+            "sha256": "6382f6dc29bb8f827824839010e313b266e51a3f87a4fdb8c382931d2549e97e"
+          },
+          {
+            "name": "AgentLang.Cli.dll",
+            "sha256": "da0a9677a7d9694b8b8e1d24d72f49cd8d7d4180f21a9077612a8d4b84373a02"
+          },
+          {
+            "name": "AgentLang.Cli.runtimeconfig.json",
+            "sha256": "a45057885f807f4a337fdea3ccdfa64e1675d22a6d6a6fc7c7394fd44ba9eebe"
+          },
+          {
+            "name": "AgentLang.Core.dll",
+            "sha256": "32ece1bdad77a8abcff9d81f0a6ebb913ac319706b8258f978fc0fca2814b214"
+          },
+          {
+            "name": "FSharp.Core.dll",
+            "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+          }
+        ],
+        "projectPath": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\actors\\reset-1",
+        "profile": "agentlang",
+        "allowedOperations": [
+          "callers",
+          "commit",
+          "context",
+          "define",
+          "dependencies",
+          "describe",
+          "diff",
+          "discard",
+          "effects",
+          "eval",
+          "example",
+          "examples",
+          "failed-tests",
+          "graph",
+          "help",
+          "history",
+          "ir",
+          "replace-word",
+          "search",
+          "search-dependency",
+          "search-effect",
+          "search-output",
+          "search-type",
+          "source",
+          "stack",
+          "task.abort",
+          "task.begin",
+          "task.commit",
+          "task.log",
+          "task.status",
+          "test",
+          "test-all",
+          "tests",
+          "transitive-callers",
+          "transitive-dependencies",
+          "type-of",
+          "words"
+        ],
+        "additionalCliArguments": [],
+        "capabilities": [
+          "fs.read",
+          "fs.write"
+        ],
+        "limits": {
+          "maxRequestBytes": 262144,
+          "maxResponseBytes": 524288,
+          "exchangeTimeoutMilliseconds": 120000,
+          "maxExchanges": 100
+        },
+        "cleanup": "Windows job object kill-on-close plus explicit process cleanup"
+      },
+      "sessionEnd": {
+        "event": "session-end",
+        "finishedUtc": "2026-10-08T10:31:37.7534469+00:00",
+        "exchangeCount": 19,
+        "terminationKind": "host-close",
+        "hostExitCode": 0,
+        "runtimeExitCode": 0,
+        "runtimeStderrPrefixBytes": 0,
+        "runtimeStderrTotalBytes": 0,
+        "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "runtimeStderrCaptureTruncated": false
+      },
+      "details": [
+        {
+          "index": 1,
+          "operation": "task.begin",
+          "requestBytes": 20,
+          "responseBytes": 219,
+          "ok": true,
+          "kind": "task.begin",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 2,
+          "operation": "help",
+          "requestBytes": 49,
+          "responseBytes": 10164,
+          "ok": true,
+          "kind": "help",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": 2,
+          "returnedSyntaxVersion": 2
+        },
+        {
+          "index": 3,
+          "operation": "help",
+          "requestBytes": 52,
+          "responseBytes": 1973,
+          "ok": true,
+          "kind": "help",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": 2,
+          "returnedSyntaxVersion": 2
+        },
+        {
+          "index": 4,
+          "operation": "words",
+          "requestBytes": 15,
+          "responseBytes": 18030,
+          "ok": true,
+          "kind": "words",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 5,
+          "operation": "search",
+          "requestBytes": 34,
+          "responseBytes": 298,
+          "ok": true,
+          "kind": "search",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 6,
+          "operation": "describe",
+          "requestBytes": 60,
+          "responseBytes": 5626,
+          "ok": true,
+          "kind": "describe",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 7,
+          "operation": "source",
+          "requestBytes": 58,
+          "responseBytes": 2730,
+          "ok": true,
+          "kind": "source",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 8,
+          "operation": "help",
+          "requestBytes": 54,
+          "responseBytes": 3170,
+          "ok": true,
+          "kind": "help",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": 2,
+          "returnedSyntaxVersion": 2
+        },
+        {
+          "index": 9,
+          "operation": "tests",
+          "requestBytes": 57,
+          "responseBytes": 181,
+          "ok": true,
+          "kind": "tests",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 10,
+          "operation": "help",
+          "requestBytes": 51,
+          "responseBytes": 4564,
+          "ok": true,
+          "kind": "help",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": 2,
+          "returnedSyntaxVersion": 2
+        },
+        {
+          "index": 11,
+          "operation": "test",
+          "requestBytes": 56,
+          "responseBytes": 4174,
+          "ok": true,
+          "kind": "test",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 12,
+          "operation": "define",
+          "requestBytes": 3333,
+          "responseBytes": 349,
+          "ok": false,
+          "kind": "error",
+          "error": {
+            "actual": [],
+            "code": "FLOW_EXPECTED_EXPRESSION",
+            "expected": [],
+            "message": "Token '=' cannot begin an expression.",
+            "span": {
+              "column": 5,
+              "file": "<flow-project>",
+              "length": 1,
+              "line": 41
+            }
+          },
+          "word": null,
+          "requestedSyntaxVersion": 2,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 13,
+          "operation": "define",
+          "requestBytes": 3329,
+          "responseBytes": 523,
+          "ok": true,
+          "kind": "defined",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": 2,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 14,
+          "operation": "test",
+          "requestBytes": 56,
+          "responseBytes": 8483,
+          "ok": true,
+          "kind": "test",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 15,
+          "operation": "test-all",
+          "requestBytes": 18,
+          "responseBytes": 8509,
+          "ok": true,
+          "kind": "test",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 16,
+          "operation": "replace-word",
+          "requestBytes": 64,
+          "responseBytes": 608,
+          "ok": true,
+          "kind": "replace-word",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 17,
+          "operation": "describe",
+          "requestBytes": 60,
+          "responseBytes": 1819,
+          "ok": true,
+          "kind": "describe",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 18,
+          "operation": "source",
+          "requestBytes": 58,
+          "responseBytes": 2452,
+          "ok": true,
+          "kind": "source",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 19,
+          "operation": "task.commit",
+          "requestBytes": 21,
+          "responseBytes": 1935,
+          "ok": true,
+          "kind": "task.commit",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        }
+      ]
+    },
+    {
+      "actor": "reset-2",
+      "traceSha256": "de12a10afb3aa7a078d03cc82857cc3cfd6f3889e3684170fef3df418421dbdd",
+      "exchanges": 31,
+      "requestBytes": 4601,
+      "responseBytes": 80782,
+      "structuredErrors": [
+        {
+          "index": 17,
+          "operation": "describe",
+          "requestBytes": 39,
+          "responseBytes": 257,
+          "ok": false,
+          "kind": "error",
+          "error": {
+            "actual": [],
+            "code": "NAME_UNKNOWN_WORD",
+            "expected": [],
+            "message": "Word 'Invoice.new' is not defined.",
+            "word": "Invoice.new"
+          },
+          "word": "Invoice.new",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 18,
+          "operation": "eval",
+          "requestBytes": 139,
+          "responseBytes": 327,
+          "ok": false,
+          "kind": "error",
+          "error": {
+            "actual": [
+              "Invoice.new"
+            ],
+            "code": "FLOW_UNKNOWN_CALL",
+            "expected": [],
+            "message": "No word matches 'Invoice.new'.",
+            "span": {
+              "column": 1,
+              "file": "<flow-eval>",
+              "length": 75,
+              "line": 1
+            }
+          },
+          "word": null,
+          "requestedSyntaxVersion": 2,
+          "returnedSyntaxVersion": null
+        }
+      ],
+      "seconds": 548.016636,
+      "sessionStart": {
+        "event": "session-start",
+        "schemaVersion": 1,
+        "hostProtocolVersion": "subagent-trial-host-v2",
+        "transportControls": [
+          "host.close"
+        ],
+        "startedUtc": "2026-10-08T10:32:25.9773087+00:00",
+        "hostProcessId": 19976,
+        "runtimeProcessId": 49352,
+        "runtimeExecutable": "dotnet",
+        "processArchitecture": "x64",
+        "jobObjectLayout": {
+          "basicLimitInformationBytes": 64,
+          "basicLimitFlagsOffset": 16,
+          "ioCountersBytes": 48,
+          "extendedLimitInformationBytes": 144,
+          "extendedIoInfoOffset": 64,
+          "processMemoryLimitOffset": 112,
+          "jobMemoryLimitOffset": 120,
+          "peakProcessMemoryUsedOffset": 128,
+          "peakJobMemoryUsedOffset": 136
+        },
+        "cliDll": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\runtime\\debug-artifacts\\AgentLang.Cli.dll",
+        "cliFiles": [
+          {
+            "name": "AgentLang.Cli.deps.json",
+            "sha256": "6382f6dc29bb8f827824839010e313b266e51a3f87a4fdb8c382931d2549e97e"
+          },
+          {
+            "name": "AgentLang.Cli.dll",
+            "sha256": "da0a9677a7d9694b8b8e1d24d72f49cd8d7d4180f21a9077612a8d4b84373a02"
+          },
+          {
+            "name": "AgentLang.Cli.runtimeconfig.json",
+            "sha256": "a45057885f807f4a337fdea3ccdfa64e1675d22a6d6a6fc7c7394fd44ba9eebe"
+          },
+          {
+            "name": "AgentLang.Core.dll",
+            "sha256": "32ece1bdad77a8abcff9d81f0a6ebb913ac319706b8258f978fc0fca2814b214"
+          },
+          {
+            "name": "FSharp.Core.dll",
+            "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+          }
+        ],
+        "projectPath": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\actors\\reset-2",
+        "profile": "agentlang",
+        "allowedOperations": [
+          "callers",
+          "commit",
+          "context",
+          "define",
+          "dependencies",
+          "describe",
+          "diff",
+          "discard",
+          "effects",
+          "eval",
+          "example",
+          "examples",
+          "failed-tests",
+          "graph",
+          "help",
+          "history",
+          "ir",
+          "replace-word",
+          "search",
+          "search-dependency",
+          "search-effect",
+          "search-output",
+          "search-type",
+          "source",
+          "stack",
+          "task.abort",
+          "task.begin",
+          "task.commit",
+          "task.log",
+          "task.status",
+          "test",
+          "test-all",
+          "tests",
+          "transitive-callers",
+          "transitive-dependencies",
+          "type-of",
+          "words"
+        ],
+        "additionalCliArguments": [],
+        "capabilities": [
+          "fs.read",
+          "fs.write"
+        ],
+        "limits": {
+          "maxRequestBytes": 262144,
+          "maxResponseBytes": 524288,
+          "exchangeTimeoutMilliseconds": 120000,
+          "maxExchanges": 100
+        },
+        "cleanup": "Windows job object kill-on-close plus explicit process cleanup"
+      },
+      "sessionEnd": {
+        "event": "session-end",
+        "finishedUtc": "2026-10-08T10:41:33.9939443+00:00",
+        "exchangeCount": 31,
+        "terminationKind": "host-close",
+        "hostExitCode": 0,
+        "runtimeExitCode": 0,
+        "runtimeStderrPrefixBytes": 0,
+        "runtimeStderrTotalBytes": 0,
+        "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "runtimeStderrCaptureTruncated": false
+      },
+      "details": [
+        {
+          "index": 1,
+          "operation": "task.begin",
+          "requestBytes": 20,
+          "responseBytes": 219,
+          "ok": true,
+          "kind": "task.begin",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 2,
+          "operation": "help",
+          "requestBytes": 49,
+          "responseBytes": 10164,
+          "ok": true,
+          "kind": "help",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": 2,
+          "returnedSyntaxVersion": 2
+        },
+        {
+          "index": 3,
+          "operation": "help",
+          "requestBytes": 52,
+          "responseBytes": 1973,
+          "ok": true,
+          "kind": "help",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": 2,
+          "returnedSyntaxVersion": 2
+        },
+        {
+          "index": 4,
+          "operation": "words",
+          "requestBytes": 15,
+          "responseBytes": 18030,
+          "ok": true,
+          "kind": "words",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 5,
+          "operation": "help",
+          "requestBytes": 54,
+          "responseBytes": 3170,
+          "ok": true,
+          "kind": "help",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": 2,
+          "returnedSyntaxVersion": 2
+        },
+        {
+          "index": 6,
+          "operation": "help",
+          "requestBytes": 51,
+          "responseBytes": 4564,
+          "ok": true,
+          "kind": "help",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": 2,
+          "returnedSyntaxVersion": 2
+        },
+        {
+          "index": 7,
+          "operation": "search",
+          "requestBytes": 35,
+          "responseBytes": 198,
+          "ok": true,
+          "kind": "search",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 8,
+          "operation": "describe",
+          "requestBytes": 60,
+          "responseBytes": 5626,
+          "ok": true,
+          "kind": "describe",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 9,
+          "operation": "source",
+          "requestBytes": 58,
+          "responseBytes": 2730,
+          "ok": true,
+          "kind": "source",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 10,
+          "operation": "tests",
+          "requestBytes": 57,
+          "responseBytes": 181,
+          "ok": true,
+          "kind": "tests",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 11,
+          "operation": "source",
+          "requestBytes": 37,
+          "responseBytes": 204,
+          "ok": true,
+          "kind": "source",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 12,
+          "operation": "source",
+          "requestBytes": 33,
+          "responseBytes": 206,
+          "ok": true,
+          "kind": "source",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 13,
+          "operation": "source",
+          "requestBytes": 39,
+          "responseBytes": 110,
+          "ok": true,
+          "kind": "source",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 14,
+          "operation": "test",
+          "requestBytes": 56,
+          "responseBytes": 4174,
+          "ok": true,
+          "kind": "test",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 15,
+          "operation": "source",
+          "requestBytes": 44,
+          "responseBytes": 214,
+          "ok": true,
+          "kind": "source",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 16,
+          "operation": "source",
+          "requestBytes": 47,
+          "responseBytes": 526,
+          "ok": true,
+          "kind": "source",
+          "error": null,
+          "word": "invoice.reminder-path",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 17,
+          "operation": "describe",
+          "requestBytes": 39,
+          "responseBytes": 257,
+          "ok": false,
+          "kind": "error",
+          "error": {
+            "actual": [],
+            "code": "NAME_UNKNOWN_WORD",
+            "expected": [],
+            "message": "Word 'Invoice.new' is not defined.",
+            "word": "Invoice.new"
+          },
+          "word": "Invoice.new",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 18,
+          "operation": "eval",
+          "requestBytes": 139,
+          "responseBytes": 327,
+          "ok": false,
+          "kind": "error",
+          "error": {
+            "actual": [
+              "Invoice.new"
+            ],
+            "code": "FLOW_UNKNOWN_CALL",
+            "expected": [],
+            "message": "No word matches 'Invoice.new'.",
+            "span": {
+              "column": 1,
+              "file": "<flow-eval>",
+              "length": 75,
+              "line": 1
+            }
+          },
+          "word": null,
+          "requestedSyntaxVersion": 2,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 19,
+          "operation": "eval",
+          "requestBytes": 139,
+          "responseBytes": 275,
+          "ok": true,
+          "kind": "eval",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": 2,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 20,
+          "operation": "source",
+          "requestBytes": 94,
+          "responseBytes": 2730,
+          "ok": true,
+          "kind": "source",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 21,
+          "operation": "eval",
+          "requestBytes": 257,
+          "responseBytes": 519,
+          "ok": true,
+          "kind": "eval",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": 2,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 22,
+          "operation": "define",
+          "requestBytes": 2773,
+          "responseBytes": 475,
+          "ok": true,
+          "kind": "defined",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": 2,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 23,
+          "operation": "test",
+          "requestBytes": 56,
+          "responseBytes": 7161,
+          "ok": true,
+          "kind": "test",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 24,
+          "operation": "test-all",
+          "requestBytes": 18,
+          "responseBytes": 7187,
+          "ok": true,
+          "kind": "test",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 25,
+          "operation": "describe",
+          "requestBytes": 60,
+          "responseBytes": 1769,
+          "ok": true,
+          "kind": "describe",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 26,
+          "operation": "example",
+          "requestBytes": 59,
+          "responseBytes": 775,
+          "ok": true,
+          "kind": "example",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 27,
+          "operation": "replace-word",
+          "requestBytes": 64,
+          "responseBytes": 527,
+          "ok": true,
+          "kind": "replace-word",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 28,
+          "operation": "describe",
+          "requestBytes": 60,
+          "responseBytes": 1770,
+          "ok": true,
+          "kind": "describe",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 29,
+          "operation": "source",
+          "requestBytes": 58,
+          "responseBytes": 2442,
+          "ok": true,
+          "kind": "source",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 30,
+          "operation": "tests",
+          "requestBytes": 57,
+          "responseBytes": 242,
+          "ok": true,
+          "kind": "tests",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 31,
+          "operation": "task.commit",
+          "requestBytes": 21,
+          "responseBytes": 2037,
+          "ok": true,
+          "kind": "task.commit",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        }
+      ]
+    },
+    {
+      "actor": "retained-1",
+      "traceSha256": "c6fe80e10651d05ec2a7605ed41b1462d73d1d804fea28f857d87fd16e7770b2",
+      "exchanges": 23,
+      "requestBytes": 5974,
+      "responseBytes": 85926,
+      "structuredErrors": [],
+      "seconds": 960.370117,
+      "sessionStart": {
+        "event": "session-start",
+        "schemaVersion": 1,
+        "hostProtocolVersion": "subagent-trial-host-v2",
+        "transportControls": [
+          "host.close"
+        ],
+        "startedUtc": "2026-10-08T10:24:54.2765198+00:00",
+        "hostProcessId": 50700,
+        "runtimeProcessId": 40920,
+        "runtimeExecutable": "dotnet",
+        "processArchitecture": "x64",
+        "jobObjectLayout": {
+          "basicLimitInformationBytes": 64,
+          "basicLimitFlagsOffset": 16,
+          "ioCountersBytes": 48,
+          "extendedLimitInformationBytes": 144,
+          "extendedIoInfoOffset": 64,
+          "processMemoryLimitOffset": 112,
+          "jobMemoryLimitOffset": 120,
+          "peakProcessMemoryUsedOffset": 128,
+          "peakJobMemoryUsedOffset": 136
+        },
+        "cliDll": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\runtime\\debug-artifacts\\AgentLang.Cli.dll",
+        "cliFiles": [
+          {
+            "name": "AgentLang.Cli.deps.json",
+            "sha256": "6382f6dc29bb8f827824839010e313b266e51a3f87a4fdb8c382931d2549e97e"
+          },
+          {
+            "name": "AgentLang.Cli.dll",
+            "sha256": "da0a9677a7d9694b8b8e1d24d72f49cd8d7d4180f21a9077612a8d4b84373a02"
+          },
+          {
+            "name": "AgentLang.Cli.runtimeconfig.json",
+            "sha256": "a45057885f807f4a337fdea3ccdfa64e1675d22a6d6a6fc7c7394fd44ba9eebe"
+          },
+          {
+            "name": "AgentLang.Core.dll",
+            "sha256": "32ece1bdad77a8abcff9d81f0a6ebb913ac319706b8258f978fc0fca2814b214"
+          },
+          {
+            "name": "FSharp.Core.dll",
+            "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+          }
+        ],
+        "projectPath": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\actors\\retained-1",
+        "profile": "agentlang",
+        "allowedOperations": [
+          "callers",
+          "commit",
+          "context",
+          "define",
+          "dependencies",
+          "describe",
+          "diff",
+          "discard",
+          "effects",
+          "eval",
+          "example",
+          "examples",
+          "failed-tests",
+          "graph",
+          "help",
+          "history",
+          "ir",
+          "replace-word",
+          "search",
+          "search-dependency",
+          "search-effect",
+          "search-output",
+          "search-type",
+          "source",
+          "stack",
+          "task.abort",
+          "task.begin",
+          "task.commit",
+          "task.log",
+          "task.status",
+          "test",
+          "test-all",
+          "tests",
+          "transitive-callers",
+          "transitive-dependencies",
+          "type-of",
+          "words"
+        ],
+        "additionalCliArguments": [],
+        "capabilities": [
+          "fs.read",
+          "fs.write"
+        ],
+        "limits": {
+          "maxRequestBytes": 262144,
+          "maxResponseBytes": 524288,
+          "exchangeTimeoutMilliseconds": 120000,
+          "maxExchanges": 100
+        },
+        "cleanup": "Windows job object kill-on-close plus explicit process cleanup"
+      },
+      "sessionEnd": {
+        "event": "session-end",
+        "finishedUtc": "2026-10-08T10:40:54.6466361+00:00",
+        "exchangeCount": 23,
+        "terminationKind": "host-close",
+        "hostExitCode": 0,
+        "runtimeExitCode": 0,
+        "runtimeStderrPrefixBytes": 0,
+        "runtimeStderrTotalBytes": 0,
+        "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "runtimeStderrCaptureTruncated": false
+      },
+      "details": [
+        {
+          "index": 1,
+          "operation": "task.begin",
+          "requestBytes": 20,
+          "responseBytes": 219,
+          "ok": true,
+          "kind": "task.begin",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 2,
+          "operation": "help",
+          "requestBytes": 49,
+          "responseBytes": 10164,
+          "ok": true,
+          "kind": "help",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": 2,
+          "returnedSyntaxVersion": 2
+        },
+        {
+          "index": 3,
+          "operation": "words",
+          "requestBytes": 15,
+          "responseBytes": 18251,
+          "ok": true,
+          "kind": "words",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 4,
+          "operation": "help",
+          "requestBytes": 52,
+          "responseBytes": 1973,
+          "ok": true,
+          "kind": "help",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": 2,
+          "returnedSyntaxVersion": 2
+        },
+        {
+          "index": 5,
+          "operation": "search",
+          "requestBytes": 34,
+          "responseBytes": 328,
+          "ok": true,
+          "kind": "search",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 6,
+          "operation": "describe",
+          "requestBytes": 60,
+          "responseBytes": 5626,
+          "ok": true,
+          "kind": "describe",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 7,
+          "operation": "source",
+          "requestBytes": 58,
+          "responseBytes": 2730,
+          "ok": true,
+          "kind": "source",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 8,
+          "operation": "help",
+          "requestBytes": 51,
+          "responseBytes": 4564,
+          "ok": true,
+          "kind": "help",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": 2,
+          "returnedSyntaxVersion": 2
+        },
+        {
+          "index": 9,
+          "operation": "tests",
+          "requestBytes": 57,
+          "responseBytes": 181,
+          "ok": true,
+          "kind": "tests",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 10,
+          "operation": "help",
+          "requestBytes": 54,
+          "responseBytes": 3170,
+          "ok": true,
+          "kind": "help",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": 2,
+          "returnedSyntaxVersion": 2
+        },
+        {
+          "index": 11,
+          "operation": "history",
+          "requestBytes": 59,
+          "responseBytes": 4807,
+          "ok": true,
+          "kind": "history",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 12,
+          "operation": "source",
+          "requestBytes": 53,
+          "responseBytes": 1172,
+          "ok": true,
+          "kind": "source",
+          "error": null,
+          "word": "invoice.queue-reminder-once",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 13,
+          "operation": "test",
+          "requestBytes": 56,
+          "responseBytes": 4174,
+          "ok": true,
+          "kind": "test",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 14,
+          "operation": "define",
+          "requestBytes": 4903,
+          "responseBytes": 522,
+          "ok": true,
+          "kind": "defined",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": 2,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 15,
+          "operation": "test",
+          "requestBytes": 56,
+          "responseBytes": 9660,
+          "ok": true,
+          "kind": "test",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 16,
+          "operation": "test-all",
+          "requestBytes": 18,
+          "responseBytes": 10307,
+          "ok": true,
+          "kind": "test",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 17,
+          "operation": "describe",
+          "requestBytes": 60,
+          "responseBytes": 1747,
+          "ok": true,
+          "kind": "describe",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 18,
+          "operation": "example",
+          "requestBytes": 59,
+          "responseBytes": 775,
+          "ok": true,
+          "kind": "example",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 19,
+          "operation": "replace-word",
+          "requestBytes": 64,
+          "responseBytes": 607,
+          "ok": true,
+          "kind": "replace-word",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 20,
+          "operation": "source",
+          "requestBytes": 58,
+          "responseBytes": 888,
+          "ok": true,
+          "kind": "source",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 21,
+          "operation": "tests",
+          "requestBytes": 57,
+          "responseBytes": 289,
+          "ok": true,
+          "kind": "tests",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 22,
+          "operation": "describe",
+          "requestBytes": 60,
+          "responseBytes": 1748,
+          "ok": true,
+          "kind": "describe",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 23,
+          "operation": "task.commit",
+          "requestBytes": 21,
+          "responseBytes": 2024,
+          "ok": true,
+          "kind": "task.commit",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        }
+      ]
+    },
+    {
+      "actor": "retained-2",
+      "traceSha256": "3270dbb20693a64da80342737a46cf08fc1e0f7dc0051e4ec7782af97a101c1c",
+      "exchanges": 28,
+      "requestBytes": 6778,
+      "responseBytes": 62411,
+      "structuredErrors": [
+        {
+          "index": 9,
+          "operation": "describe",
+          "requestBytes": 39,
+          "responseBytes": 213,
+          "ok": false,
+          "kind": "error",
+          "error": {
+            "actual": [],
+            "code": "NAME_UNKNOWN_WORD",
+            "expected": [],
+            "message": "Word '' is not defined.",
+            "word": ""
+          },
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 19,
+          "operation": "define",
+          "requestBytes": 2759,
+          "responseBytes": 543,
+          "ok": false,
+          "kind": "error",
+          "error": {
+            "actual": [],
+            "code": "FLOW_EXPECTED_EXPRESSION",
+            "expected": [],
+            "message": "Token '=' cannot begin an expression.",
+            "span": {
+              "column": 5,
+              "file": "<flow:invoice.queue-reminders-for-pair/2>/test:98abf9af769c594869cadfa06f8ffb853cc1b3306ca1a25fc0c4399ef10a43d4",
+              "length": 1,
+              "line": 10
+            }
+          },
+          "word": null,
+          "requestedSyntaxVersion": 2,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 24,
+          "operation": "diff",
+          "requestBytes": 56,
+          "responseBytes": 312,
+          "ok": false,
+          "kind": "error",
+          "error": {
+            "actual": [
+              "-1",
+              "-1"
+            ],
+            "code": "HISTORY_REVISION_UNKNOWN",
+            "expected": [],
+            "message": "Requested word revision does not exist.",
+            "word": "invoice.queue-reminders-for-pair"
+          },
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        }
+      ],
+      "seconds": 275.789969,
+      "sessionStart": {
+        "event": "session-start",
+        "schemaVersion": 1,
+        "hostProtocolVersion": "subagent-trial-host-v2",
+        "transportControls": [
+          "host.close"
+        ],
+        "startedUtc": "2026-10-08T10:38:41.5874115+00:00",
+        "hostProcessId": 21580,
+        "runtimeProcessId": 52104,
+        "runtimeExecutable": "dotnet",
+        "processArchitecture": "x64",
+        "jobObjectLayout": {
+          "basicLimitInformationBytes": 64,
+          "basicLimitFlagsOffset": 16,
+          "ioCountersBytes": 48,
+          "extendedLimitInformationBytes": 144,
+          "extendedIoInfoOffset": 64,
+          "processMemoryLimitOffset": 112,
+          "jobMemoryLimitOffset": 120,
+          "peakProcessMemoryUsedOffset": 128,
+          "peakJobMemoryUsedOffset": 136
+        },
+        "cliDll": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\runtime\\debug-artifacts\\AgentLang.Cli.dll",
+        "cliFiles": [
+          {
+            "name": "AgentLang.Cli.deps.json",
+            "sha256": "6382f6dc29bb8f827824839010e313b266e51a3f87a4fdb8c382931d2549e97e"
+          },
+          {
+            "name": "AgentLang.Cli.dll",
+            "sha256": "da0a9677a7d9694b8b8e1d24d72f49cd8d7d4180f21a9077612a8d4b84373a02"
+          },
+          {
+            "name": "AgentLang.Cli.runtimeconfig.json",
+            "sha256": "a45057885f807f4a337fdea3ccdfa64e1675d22a6d6a6fc7c7394fd44ba9eebe"
+          },
+          {
+            "name": "AgentLang.Core.dll",
+            "sha256": "32ece1bdad77a8abcff9d81f0a6ebb913ac319706b8258f978fc0fca2814b214"
+          },
+          {
+            "name": "FSharp.Core.dll",
+            "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+          }
+        ],
+        "projectPath": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\actors\\retained-2",
+        "profile": "agentlang",
+        "allowedOperations": [
+          "callers",
+          "commit",
+          "context",
+          "define",
+          "dependencies",
+          "describe",
+          "diff",
+          "discard",
+          "effects",
+          "eval",
+          "example",
+          "examples",
+          "failed-tests",
+          "graph",
+          "help",
+          "history",
+          "ir",
+          "replace-word",
+          "search",
+          "search-dependency",
+          "search-effect",
+          "search-output",
+          "search-type",
+          "source",
+          "stack",
+          "task.abort",
+          "task.begin",
+          "task.commit",
+          "task.log",
+          "task.status",
+          "test",
+          "test-all",
+          "tests",
+          "transitive-dependencies",
+          "type-of",
+          "words"
+        ],
+        "additionalCliArguments": [],
+        "capabilities": [
+          "fs.read",
+          "fs.write"
+        ],
+        "limits": {
+          "maxRequestBytes": 262144,
+          "maxResponseBytes": 524288,
+          "exchangeTimeoutMilliseconds": 120000,
+          "maxExchanges": 100
+        },
+        "cleanup": "Windows job object kill-on-close plus explicit process cleanup"
+      },
+      "sessionEnd": {
+        "event": "session-end",
+        "finishedUtc": "2026-10-08T10:43:17.3773800+00:00",
+        "exchangeCount": 28,
+        "terminationKind": "host-close",
+        "hostExitCode": 0,
+        "runtimeExitCode": 0,
+        "runtimeStderrPrefixBytes": 0,
+        "runtimeStderrTotalBytes": 0,
+        "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "runtimeStderrCaptureTruncated": false
+      },
+      "details": [
+        {
+          "index": 1,
+          "operation": "task.begin",
+          "requestBytes": 20,
+          "responseBytes": 219,
+          "ok": true,
+          "kind": "task.begin",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 2,
+          "operation": "help",
+          "requestBytes": 49,
+          "responseBytes": 10164,
+          "ok": true,
+          "kind": "help",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": 2,
+          "returnedSyntaxVersion": 2
+        },
+        {
+          "index": 3,
+          "operation": "help",
+          "requestBytes": 52,
+          "responseBytes": 1973,
+          "ok": true,
+          "kind": "help",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": 2,
+          "returnedSyntaxVersion": 2
+        },
+        {
+          "index": 4,
+          "operation": "search",
+          "requestBytes": 34,
+          "responseBytes": 328,
+          "ok": true,
+          "kind": "search",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 5,
+          "operation": "describe",
+          "requestBytes": 60,
+          "responseBytes": 5626,
+          "ok": true,
+          "kind": "describe",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 6,
+          "operation": "source",
+          "requestBytes": 58,
+          "responseBytes": 2730,
+          "ok": true,
+          "kind": "source",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 7,
+          "operation": "help",
+          "requestBytes": 51,
+          "responseBytes": 4564,
+          "ok": true,
+          "kind": "help",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": 2,
+          "returnedSyntaxVersion": 2
+        },
+        {
+          "index": 8,
+          "operation": "tests",
+          "requestBytes": 57,
+          "responseBytes": 181,
+          "ok": true,
+          "kind": "tests",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 9,
+          "operation": "describe",
+          "requestBytes": 39,
+          "responseBytes": 213,
+          "ok": false,
+          "kind": "error",
+          "error": {
+            "actual": [],
+            "code": "NAME_UNKNOWN_WORD",
+            "expected": [],
+            "message": "Word '' is not defined.",
+            "word": ""
+          },
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 10,
+          "operation": "source",
+          "requestBytes": 37,
+          "responseBytes": 204,
+          "ok": true,
+          "kind": "source",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 11,
+          "operation": "source",
+          "requestBytes": 33,
+          "responseBytes": 206,
+          "ok": true,
+          "kind": "source",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 12,
+          "operation": "source",
+          "requestBytes": 44,
+          "responseBytes": 214,
+          "ok": true,
+          "kind": "source",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 13,
+          "operation": "test",
+          "requestBytes": 56,
+          "responseBytes": 4174,
+          "ok": true,
+          "kind": "test",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 14,
+          "operation": "source",
+          "requestBytes": 53,
+          "responseBytes": 1172,
+          "ok": true,
+          "kind": "source",
+          "error": null,
+          "word": "invoice.queue-reminder-once",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 15,
+          "operation": "help",
+          "requestBytes": 54,
+          "responseBytes": 3170,
+          "ok": true,
+          "kind": "help",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": 2,
+          "returnedSyntaxVersion": 2
+        },
+        {
+          "index": 16,
+          "operation": "source",
+          "requestBytes": 39,
+          "responseBytes": 110,
+          "ok": true,
+          "kind": "source",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 17,
+          "operation": "describe",
+          "requestBytes": 39,
+          "responseBytes": 820,
+          "ok": true,
+          "kind": "describe",
+          "error": null,
+          "word": "invoice.new",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 18,
+          "operation": "history",
+          "requestBytes": 59,
+          "responseBytes": 4807,
+          "ok": true,
+          "kind": "history",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 19,
+          "operation": "define",
+          "requestBytes": 2759,
+          "responseBytes": 543,
+          "ok": false,
+          "kind": "error",
+          "error": {
+            "actual": [],
+            "code": "FLOW_EXPECTED_EXPRESSION",
+            "expected": [],
+            "message": "Token '=' cannot begin an expression.",
+            "span": {
+              "column": 5,
+              "file": "<flow:invoice.queue-reminders-for-pair/2>/test:98abf9af769c594869cadfa06f8ffb853cc1b3306ca1a25fc0c4399ef10a43d4",
+              "length": 1,
+              "line": 10
+            }
+          },
+          "word": null,
+          "requestedSyntaxVersion": 2,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 20,
+          "operation": "define",
+          "requestBytes": 2756,
+          "responseBytes": 490,
+          "ok": true,
+          "kind": "defined",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": 2,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 21,
+          "operation": "test",
+          "requestBytes": 56,
+          "responseBytes": 7167,
+          "ok": true,
+          "kind": "test",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 22,
+          "operation": "test-all",
+          "requestBytes": 18,
+          "responseBytes": 7814,
+          "ok": true,
+          "kind": "test",
+          "error": null,
+          "word": null,
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 23,
+          "operation": "describe",
+          "requestBytes": 60,
+          "responseBytes": 1738,
+          "ok": true,
+          "kind": "describe",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 24,
+          "operation": "diff",
+          "requestBytes": 56,
+          "responseBytes": 312,
+          "ok": false,
+          "kind": "error",
+          "error": {
+            "actual": [
+              "-1",
+              "-1"
+            ],
+            "code": "HISTORY_REVISION_UNKNOWN",
+            "expected": [],
+            "message": "Requested word revision does not exist.",
+            "word": "invoice.queue-reminders-for-pair"
+          },
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 25,
+          "operation": "replace-word",
+          "requestBytes": 64,
+          "responseBytes": 542,
+          "ok": true,
+          "kind": "replace-word",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 26,
+          "operation": "source",
+          "requestBytes": 58,
+          "responseBytes": 934,
+          "ok": true,
+          "kind": "source",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 27,
+          "operation": "tests",
+          "requestBytes": 57,
+          "responseBytes": 257,
+          "ok": true,
+          "kind": "tests",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        },
+        {
+          "index": 28,
+          "operation": "describe",
+          "requestBytes": 60,
+          "responseBytes": 1739,
+          "ok": true,
+          "kind": "describe",
+          "error": null,
+          "word": "invoice.queue-reminders-for-pair",
+          "requestedSyntaxVersion": null,
+          "returnedSyntaxVersion": null
+        }
+      ]
+    }
+  ]
+}

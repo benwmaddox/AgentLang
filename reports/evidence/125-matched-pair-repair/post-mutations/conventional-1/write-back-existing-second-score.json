@@ -1,0 +1,1043 @@
+{
+  "schemaVersion": 1,
+  "language": "fsharp",
+  "actorProject": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\post-mutations\\conventional-1\\write-back-existing-second",
+  "actorProjectFile": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\post-mutations\\conventional-1\\write-back-existing-second\\StatefulPilot.fsproj",
+  "oracle": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\oracle.json",
+  "oracleSha256": "aaf442410f21d1dbf425b7b45d4a1a55dd9a1f21269b58721433a0d9aa36aae9",
+  "runtimePin": null,
+  "behavior": {
+    "passedCases": 9,
+    "totalCases": 12,
+    "failedChecks": 3,
+    "passed": false
+  },
+  "passed": false,
+  "failure": null,
+  "actorTests": {
+    "exitCode": -532462766,
+    "timedOut": false,
+    "launchError": null,
+    "stdout": "Seed helper tests passed: 2\r\nOWN_TESTS_PASSED=4\r\nEXAMPLE_QUEUE_REMINDER=queued\r\n",
+    "stderr": "Unhandled exception. System.Exception: Expected 1 but received 2\r\n   at Microsoft.FSharp.Core.PrintfModule.PrintFormatToStringThenFail@1448.Invoke(String message)\r\n   at AgentLang.StatefulPilot.SelfTests.assertEqual[a](a expected, a actual) in D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-fsharp-4497c63ad8214320a5572815e956b2d6\\actor-tests\\SelfTests.fs:line 6\r\n   at AgentLang.StatefulPilot.SelfTests.runPairDuplicateIdentifierTest() in D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-fsharp-4497c63ad8214320a5572815e956b2d6\\actor-tests\\SelfTests.fs:line 150\r\n   at AgentLang.StatefulPilot.SelfTests.runPairTests() in D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-fsharp-4497c63ad8214320a5572815e956b2d6\\actor-tests\\SelfTests.fs:line 177\r\n   at AgentLang.StatefulPilot.SelfTests.main(String[] _arg1) in D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-fsharp-4497c63ad8214320a5572815e956b2d6\\actor-tests\\SelfTests.fs:line 185\n"
+  },
+  "checks": [
+    {
+      "name": "oracle schema contains exactly 12 fixed cases",
+      "passed": true,
+      "details": "cases=12"
+    },
+    {
+      "name": "F# actor-owned tests exit successfully from a fresh copy",
+      "passed": false,
+      "details": "exit=-532462766; launch="
+    },
+    {
+      "name": "F# independent adapter builds against the copied typed API",
+      "passed": true,
+      "details": "exit=0; launch=; stderr="
+    },
+    {
+      "name": "ordered pair results: distinct-open-missing",
+      "passed": true,
+      "details": "actual=[{\"first\":\"queued\",\"second\":\"queued\"}]"
+    },
+    {
+      "name": "complete virtual filesystem state: distinct-open-missing",
+      "passed": true,
+      "details": "actual={\"outbox/invoice-reminders/A\":\"queued\",\"outbox/invoice-reminders/B\":\"queued\",\"unrelated\":\"keep\"}"
+    },
+    {
+      "name": "cumulative read count: distinct-open-missing",
+      "passed": true,
+      "details": "actual=2; expected=2"
+    },
+    {
+      "name": "cumulative write count: distinct-open-missing",
+      "passed": true,
+      "details": "actual=2; expected=2"
+    },
+    {
+      "name": "ordered pair results: closed-then-open",
+      "passed": true,
+      "details": "actual=[{\"first\":\"not-open\",\"second\":\"queued\"}]"
+    },
+    {
+      "name": "complete virtual filesystem state: closed-then-open",
+      "passed": true,
+      "details": "actual={\"outbox/invoice-reminders/B\":\"queued\",\"unrelated\":\"keep\"}"
+    },
+    {
+      "name": "cumulative read count: closed-then-open",
+      "passed": true,
+      "details": "actual=1; expected=1"
+    },
+    {
+      "name": "cumulative write count: closed-then-open",
+      "passed": true,
+      "details": "actual=1; expected=1"
+    },
+    {
+      "name": "ordered pair results: open-then-closed",
+      "passed": true,
+      "details": "actual=[{\"first\":\"queued\",\"second\":\"not-open\"}]"
+    },
+    {
+      "name": "complete virtual filesystem state: open-then-closed",
+      "passed": true,
+      "details": "actual={\"outbox/invoice-reminders/A\":\"queued\"}"
+    },
+    {
+      "name": "cumulative read count: open-then-closed",
+      "passed": true,
+      "details": "actual=1; expected=1"
+    },
+    {
+      "name": "cumulative write count: open-then-closed",
+      "passed": true,
+      "details": "actual=1; expected=1"
+    },
+    {
+      "name": "ordered pair results: same-id-missing",
+      "passed": true,
+      "details": "actual=[{\"first\":\"queued\",\"second\":\"queued\"}]"
+    },
+    {
+      "name": "complete virtual filesystem state: same-id-missing",
+      "passed": true,
+      "details": "actual={\"outbox/invoice-reminders/A\":\"queued\"}"
+    },
+    {
+      "name": "cumulative read count: same-id-missing",
+      "passed": true,
+      "details": "actual=3; expected=3"
+    },
+    {
+      "name": "cumulative write count: same-id-missing",
+      "passed": false,
+      "details": "actual=2; expected=1"
+    },
+    {
+      "name": "ordered pair results: same-id-existing",
+      "passed": true,
+      "details": "actual=[{\"first\":\"custom\",\"second\":\"custom\"}]"
+    },
+    {
+      "name": "complete virtual filesystem state: same-id-existing",
+      "passed": true,
+      "details": "actual={\"outbox/invoice-reminders/A\":\"custom\",\"unrelated\":\"keep\"}"
+    },
+    {
+      "name": "cumulative read count: same-id-existing",
+      "passed": true,
+      "details": "actual=4; expected=4"
+    },
+    {
+      "name": "cumulative write count: same-id-existing",
+      "passed": false,
+      "details": "actual=1; expected=0"
+    },
+    {
+      "name": "ordered pair results: distinct-existing-first",
+      "passed": true,
+      "details": "actual=[{\"first\":\"custom\",\"second\":\"queued\"}]"
+    },
+    {
+      "name": "complete virtual filesystem state: distinct-existing-first",
+      "passed": true,
+      "details": "actual={\"outbox/invoice-reminders/A\":\"custom\",\"outbox/invoice-reminders/B\":\"queued\",\"unrelated\":\"keep\"}"
+    },
+    {
+      "name": "cumulative read count: distinct-existing-first",
+      "passed": true,
+      "details": "actual=3; expected=3"
+    },
+    {
+      "name": "cumulative write count: distinct-existing-first",
+      "passed": true,
+      "details": "actual=1; expected=1"
+    },
+    {
+      "name": "ordered pair results: empty-existing-first",
+      "passed": true,
+      "details": "actual=[{\"first\":\"\",\"second\":\"queued\"}]"
+    },
+    {
+      "name": "complete virtual filesystem state: empty-existing-first",
+      "passed": true,
+      "details": "actual={\"outbox/invoice-reminders/A\":\"\",\"outbox/invoice-reminders/B\":\"queued\"}"
+    },
+    {
+      "name": "cumulative read count: empty-existing-first",
+      "passed": true,
+      "details": "actual=3; expected=3"
+    },
+    {
+      "name": "cumulative write count: empty-existing-first",
+      "passed": true,
+      "details": "actual=1; expected=1"
+    },
+    {
+      "name": "ordered pair results: uppercase-then-open",
+      "passed": true,
+      "details": "actual=[{\"first\":\"not-open\",\"second\":\"queued\"}]"
+    },
+    {
+      "name": "complete virtual filesystem state: uppercase-then-open",
+      "passed": true,
+      "details": "actual={\"outbox/invoice-reminders/B\":\"queued\"}"
+    },
+    {
+      "name": "cumulative read count: uppercase-then-open",
+      "passed": true,
+      "details": "actual=1; expected=1"
+    },
+    {
+      "name": "cumulative write count: uppercase-then-open",
+      "passed": true,
+      "details": "actual=1; expected=1"
+    },
+    {
+      "name": "ordered pair results: both-ineligible",
+      "passed": true,
+      "details": "actual=[{\"first\":\"not-open\",\"second\":\"not-open\"}]"
+    },
+    {
+      "name": "complete virtual filesystem state: both-ineligible",
+      "passed": true,
+      "details": "actual={\"outbox/invoice-reminders/A\":\"old\",\"unrelated\":\"keep\"}"
+    },
+    {
+      "name": "cumulative read count: both-ineligible",
+      "passed": true,
+      "details": "actual=0; expected=0"
+    },
+    {
+      "name": "cumulative write count: both-ineligible",
+      "passed": true,
+      "details": "actual=0; expected=0"
+    },
+    {
+      "name": "ordered pair results: repeat-distinct",
+      "passed": true,
+      "details": "actual=[{\"first\":\"queued\",\"second\":\"queued\"},{\"first\":\"queued\",\"second\":\"queued\"}]"
+    },
+    {
+      "name": "complete virtual filesystem state: repeat-distinct",
+      "passed": true,
+      "details": "actual={\"outbox/invoice-reminders/A\":\"queued\",\"outbox/invoice-reminders/B\":\"queued\",\"unrelated\":\"keep\"}"
+    },
+    {
+      "name": "cumulative read count: repeat-distinct",
+      "passed": true,
+      "details": "actual=6; expected=6"
+    },
+    {
+      "name": "cumulative write count: repeat-distinct",
+      "passed": false,
+      "details": "actual=3; expected=2"
+    },
+    {
+      "name": "capability preflight error: read-denied",
+      "passed": true,
+      "details": "actual=CAPABILITY_DENIED; errors=[{\"type\":\"InvalidOperationException\",\"message\":\"CAPABILITY_DENIED\"}]"
+    },
+    {
+      "name": "complete virtual filesystem state: read-denied",
+      "passed": true,
+      "details": "actual={\"unrelated\":\"keep\"}"
+    },
+    {
+      "name": "cumulative read count: read-denied",
+      "passed": true,
+      "details": "actual=0; expected=0"
+    },
+    {
+      "name": "cumulative write count: read-denied",
+      "passed": true,
+      "details": "actual=0; expected=0"
+    },
+    {
+      "name": "denied preflight leaves provider untouched: read-denied",
+      "passed": true,
+      "details": "reads=0; writes=0"
+    },
+    {
+      "name": "capability preflight error: write-denied",
+      "passed": true,
+      "details": "actual=CAPABILITY_DENIED; errors=[{\"type\":\"InvalidOperationException\",\"message\":\"CAPABILITY_DENIED\"}]"
+    },
+    {
+      "name": "complete virtual filesystem state: write-denied",
+      "passed": true,
+      "details": "actual={\"unrelated\":\"keep\"}"
+    },
+    {
+      "name": "cumulative read count: write-denied",
+      "passed": true,
+      "details": "actual=0; expected=0"
+    },
+    {
+      "name": "cumulative write count: write-denied",
+      "passed": true,
+      "details": "actual=0; expected=0"
+    },
+    {
+      "name": "denied preflight leaves provider untouched: write-denied",
+      "passed": true,
+      "details": "reads=0; writes=0"
+    },
+    {
+      "name": "original actor input inventory is unchanged",
+      "passed": true,
+      "details": "before=43; after=43"
+    },
+    {
+      "name": "original actor source inventory is unchanged",
+      "passed": true,
+      "details": "bin/obj are excluded from the source-only comparison"
+    }
+  ],
+  "cases": [
+    {
+      "name": "distinct-open-missing",
+      "resultCalls": [
+        {
+          "first": "queued",
+          "second": "queued"
+        }
+      ],
+      "errorRecords": [],
+      "errorCode": null,
+      "reads": 2,
+      "writes": 2,
+      "state": {
+        "outbox/invoice-reminders/A": "queued",
+        "outbox/invoice-reminders/B": "queued",
+        "unrelated": "keep"
+      }
+    },
+    {
+      "name": "closed-then-open",
+      "resultCalls": [
+        {
+          "first": "not-open",
+          "second": "queued"
+        }
+      ],
+      "errorRecords": [],
+      "errorCode": null,
+      "reads": 1,
+      "writes": 1,
+      "state": {
+        "outbox/invoice-reminders/B": "queued",
+        "unrelated": "keep"
+      }
+    },
+    {
+      "name": "open-then-closed",
+      "resultCalls": [
+        {
+          "first": "queued",
+          "second": "not-open"
+        }
+      ],
+      "errorRecords": [],
+      "errorCode": null,
+      "reads": 1,
+      "writes": 1,
+      "state": {
+        "outbox/invoice-reminders/A": "queued"
+      }
+    },
+    {
+      "name": "same-id-missing",
+      "resultCalls": [
+        {
+          "first": "queued",
+          "second": "queued"
+        }
+      ],
+      "errorRecords": [],
+      "errorCode": null,
+      "reads": 3,
+      "writes": 2,
+      "state": {
+        "outbox/invoice-reminders/A": "queued"
+      }
+    },
+    {
+      "name": "same-id-existing",
+      "resultCalls": [
+        {
+          "first": "custom",
+          "second": "custom"
+        }
+      ],
+      "errorRecords": [],
+      "errorCode": null,
+      "reads": 4,
+      "writes": 1,
+      "state": {
+        "outbox/invoice-reminders/A": "custom",
+        "unrelated": "keep"
+      }
+    },
+    {
+      "name": "distinct-existing-first",
+      "resultCalls": [
+        {
+          "first": "custom",
+          "second": "queued"
+        }
+      ],
+      "errorRecords": [],
+      "errorCode": null,
+      "reads": 3,
+      "writes": 1,
+      "state": {
+        "outbox/invoice-reminders/A": "custom",
+        "outbox/invoice-reminders/B": "queued",
+        "unrelated": "keep"
+      }
+    },
+    {
+      "name": "empty-existing-first",
+      "resultCalls": [
+        {
+          "first": "",
+          "second": "queued"
+        }
+      ],
+      "errorRecords": [],
+      "errorCode": null,
+      "reads": 3,
+      "writes": 1,
+      "state": {
+        "outbox/invoice-reminders/A": "",
+        "outbox/invoice-reminders/B": "queued"
+      }
+    },
+    {
+      "name": "uppercase-then-open",
+      "resultCalls": [
+        {
+          "first": "not-open",
+          "second": "queued"
+        }
+      ],
+      "errorRecords": [],
+      "errorCode": null,
+      "reads": 1,
+      "writes": 1,
+      "state": {
+        "outbox/invoice-reminders/B": "queued"
+      }
+    },
+    {
+      "name": "both-ineligible",
+      "resultCalls": [
+        {
+          "first": "not-open",
+          "second": "not-open"
+        }
+      ],
+      "errorRecords": [],
+      "errorCode": null,
+      "reads": 0,
+      "writes": 0,
+      "state": {
+        "outbox/invoice-reminders/A": "old",
+        "unrelated": "keep"
+      }
+    },
+    {
+      "name": "repeat-distinct",
+      "resultCalls": [
+        {
+          "first": "queued",
+          "second": "queued"
+        },
+        {
+          "first": "queued",
+          "second": "queued"
+        }
+      ],
+      "errorRecords": [],
+      "errorCode": null,
+      "reads": 6,
+      "writes": 3,
+      "state": {
+        "outbox/invoice-reminders/A": "queued",
+        "outbox/invoice-reminders/B": "queued",
+        "unrelated": "keep"
+      }
+    },
+    {
+      "name": "read-denied",
+      "resultCalls": [],
+      "errorRecords": [
+        {
+          "type": "InvalidOperationException",
+          "message": "CAPABILITY_DENIED"
+        }
+      ],
+      "errorCode": "CAPABILITY_DENIED",
+      "reads": 0,
+      "writes": 0,
+      "state": {
+        "unrelated": "keep"
+      }
+    },
+    {
+      "name": "write-denied",
+      "resultCalls": [],
+      "errorRecords": [
+        {
+          "type": "InvalidOperationException",
+          "message": "CAPABILITY_DENIED"
+        }
+      ],
+      "errorCode": "CAPABILITY_DENIED",
+      "reads": 0,
+      "writes": 0,
+      "state": {
+        "unrelated": "keep"
+      }
+    }
+  ],
+  "processes": [
+    {
+      "purpose": "actor-owned tests and example from a fresh copy",
+      "executable": "dotnet",
+      "arguments": [
+        "run",
+        "--project",
+        "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-fsharp-4497c63ad8214320a5572815e956b2d6\\actor-tests\\StatefulPilot.fsproj",
+        "--configuration",
+        "Release",
+        "--no-launch-profile"
+      ],
+      "workingDirectory": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-fsharp-4497c63ad8214320a5572815e956b2d6\\actor-tests",
+      "exitCode": -532462766,
+      "timedOut": false,
+      "launchError": null,
+      "stdout": "Seed helper tests passed: 2\r\nOWN_TESTS_PASSED=4\r\nEXAMPLE_QUEUE_REMINDER=queued\r\n",
+      "stderr": "Unhandled exception. System.Exception: Expected 1 but received 2\r\n   at Microsoft.FSharp.Core.PrintfModule.PrintFormatToStringThenFail@1448.Invoke(String message)\r\n   at AgentLang.StatefulPilot.SelfTests.assertEqual[a](a expected, a actual) in D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-fsharp-4497c63ad8214320a5572815e956b2d6\\actor-tests\\SelfTests.fs:line 6\r\n   at AgentLang.StatefulPilot.SelfTests.runPairDuplicateIdentifierTest() in D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-fsharp-4497c63ad8214320a5572815e956b2d6\\actor-tests\\SelfTests.fs:line 150\r\n   at AgentLang.StatefulPilot.SelfTests.runPairTests() in D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-fsharp-4497c63ad8214320a5572815e956b2d6\\actor-tests\\SelfTests.fs:line 177\r\n   at AgentLang.StatefulPilot.SelfTests.main(String[] _arg1) in D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-fsharp-4497c63ad8214320a5572815e956b2d6\\actor-tests\\SelfTests.fs:line 185\n"
+    },
+    {
+      "purpose": "fresh independent adapter build against copied F# actor",
+      "executable": "dotnet",
+      "arguments": [
+        "build",
+        "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-fsharp-4497c63ad8214320a5572815e956b2d6\\adapter\\PairAcceptance.fsproj",
+        "--configuration",
+        "Release",
+        "--nologo"
+      ],
+      "workingDirectory": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-fsharp-4497c63ad8214320a5572815e956b2d6\\adapter",
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "stdout": "  Determining projects to restore...\r\n  Restored D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-fsharp-4497c63ad8214320a5572815e956b2d6\\behavior-project\\StatefulPilot.fsproj (in 169 ms).\r\n  Restored D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-fsharp-4497c63ad8214320a5572815e956b2d6\\adapter\\PairAcceptance.fsproj (in 169 ms).\r\n  StatefulPilot -> D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-fsharp-4497c63ad8214320a5572815e956b2d6\\behavior-project\\bin\\Release\\net9.0\\StatefulPilot.dll\r\n  PairAcceptance -> D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-fsharp-4497c63ad8214320a5572815e956b2d6\\adapter\\bin\\Release\\net9.0\\PairAcceptance.dll\r\n\r\nBuild succeeded.\r\n    0 Warning(s)\r\n    0 Error(s)\r\n\r\nTime Elapsed 00:00:03.41\r\n",
+      "stderr": ""
+    },
+    {
+      "purpose": "independent pair behavior and provider probes",
+      "executable": "dotnet",
+      "arguments": [
+        "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-fsharp-4497c63ad8214320a5572815e956b2d6\\adapter\\bin\\Release\\net9.0\\PairAcceptance.dll",
+        "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\oracle.json"
+      ],
+      "workingDirectory": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\scoring\\.scratch-fsharp-4497c63ad8214320a5572815e956b2d6\\adapter",
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "stdout": "{\"cases\":[{\"name\":\"distinct-open-missing\",\"resultCalls\":[{\"first\":\"queued\",\"second\":\"queued\"}],\"errorRecords\":[],\"errorCode\":null,\"reads\":2,\"writes\":2,\"state\":{\"outbox/invoice-reminders/A\":\"queued\",\"outbox/invoice-reminders/B\":\"queued\",\"unrelated\":\"keep\"}},{\"name\":\"closed-then-open\",\"resultCalls\":[{\"first\":\"not-open\",\"second\":\"queued\"}],\"errorRecords\":[],\"errorCode\":null,\"reads\":1,\"writes\":1,\"state\":{\"outbox/invoice-reminders/B\":\"queued\",\"unrelated\":\"keep\"}},{\"name\":\"open-then-closed\",\"resultCalls\":[{\"first\":\"queued\",\"second\":\"not-open\"}],\"errorRecords\":[],\"errorCode\":null,\"reads\":1,\"writes\":1,\"state\":{\"outbox/invoice-reminders/A\":\"queued\"}},{\"name\":\"same-id-missing\",\"resultCalls\":[{\"first\":\"queued\",\"second\":\"queued\"}],\"errorRecords\":[],\"errorCode\":null,\"reads\":3,\"writes\":2,\"state\":{\"outbox/invoice-reminders/A\":\"queued\"}},{\"name\":\"same-id-existing\",\"resultCalls\":[{\"first\":\"custom\",\"second\":\"custom\"}],\"errorRecords\":[],\"errorCode\":null,\"reads\":4,\"writes\":1,\"state\":{\"outbox/invoice-reminders/A\":\"custom\",\"unrelated\":\"keep\"}},{\"name\":\"distinct-existing-first\",\"resultCalls\":[{\"first\":\"custom\",\"second\":\"queued\"}],\"errorRecords\":[],\"errorCode\":null,\"reads\":3,\"writes\":1,\"state\":{\"outbox/invoice-reminders/A\":\"custom\",\"outbox/invoice-reminders/B\":\"queued\",\"unrelated\":\"keep\"}},{\"name\":\"empty-existing-first\",\"resultCalls\":[{\"first\":\"\",\"second\":\"queued\"}],\"errorRecords\":[],\"errorCode\":null,\"reads\":3,\"writes\":1,\"state\":{\"outbox/invoice-reminders/A\":\"\",\"outbox/invoice-reminders/B\":\"queued\"}},{\"name\":\"uppercase-then-open\",\"resultCalls\":[{\"first\":\"not-open\",\"second\":\"queued\"}],\"errorRecords\":[],\"errorCode\":null,\"reads\":1,\"writes\":1,\"state\":{\"outbox/invoice-reminders/B\":\"queued\"}},{\"name\":\"both-ineligible\",\"resultCalls\":[{\"first\":\"not-open\",\"second\":\"not-open\"}],\"errorRecords\":[],\"errorCode\":null,\"reads\":0,\"writes\":0,\"state\":{\"outbox/invoice-reminders/A\":\"old\",\"unrelated\":\"keep\"}},{\"name\":\"repeat-distinct\",\"resultCalls\":[{\"first\":\"queued\",\"second\":\"queued\"},{\"first\":\"queued\",\"second\":\"queued\"}],\"errorRecords\":[],\"errorCode\":null,\"reads\":6,\"writes\":3,\"state\":{\"outbox/invoice-reminders/A\":\"queued\",\"outbox/invoice-reminders/B\":\"queued\",\"unrelated\":\"keep\"}},{\"name\":\"read-denied\",\"resultCalls\":[],\"errorRecords\":[{\"type\":\"InvalidOperationException\",\"message\":\"CAPABILITY_DENIED\"}],\"errorCode\":\"CAPABILITY_DENIED\",\"reads\":0,\"writes\":0,\"state\":{\"unrelated\":\"keep\"}},{\"name\":\"write-denied\",\"resultCalls\":[],\"errorRecords\":[{\"type\":\"InvalidOperationException\",\"message\":\"CAPABILITY_DENIED\"}],\"errorCode\":\"CAPABILITY_DENIED\",\"reads\":0,\"writes\":0,\"state\":{\"unrelated\":\"keep\"}}]}\r\n",
+      "stderr": ""
+    }
+  ],
+  "actorInventoryBefore": [
+    {
+      "path": "Domain.fs",
+      "bytes": 3074,
+      "sha256": "5fc59abefda826c0d4b023e535f6c906dd22b03bc56d1185db6bd67e35ee19b0"
+    },
+    {
+      "path": "obj/project.assets.json",
+      "bytes": 6440,
+      "sha256": "097667526966a1b6e8419fcba1ff098e020b43197227d5b39a463a2a3b45759c"
+    },
+    {
+      "path": "obj/project.nuget.cache",
+      "bytes": 375,
+      "sha256": "da26fbe22594f2642206c1bd064ea0f36a1edfa9d602c9bc17306c94c6d4ac28"
+    },
+    {
+      "path": "obj/StatefulPilot.fsproj.nuget.dgspec.json",
+      "bytes": 2711,
+      "sha256": "2849b90fc90395a1c67749c67b8bc054b006179f510826bdbc209182d32128db"
+    },
+    {
+      "path": "obj/StatefulPilot.fsproj.nuget.g.props",
+      "bytes": 1356,
+      "sha256": "819e07c2f1de23e6b616deb370e3837f90054a5d0b186ae0662be1cb7e077891"
+    },
+    {
+      "path": "obj/StatefulPilot.fsproj.nuget.g.targets",
+      "bytes": 150,
+      "sha256": "971cc9b535384849b5c661d776cd7a80833a416265e32e8968e06c367368b8b5"
+    },
+    {
+      "path": "obj/Release/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.fs",
+      "bytes": 191,
+      "sha256": "421fd34e0c637007cd36e24dad8c8417e7ea6cdec26214ade1fd69d2cf97c3a1"
+    },
+    {
+      "path": "obj/Release/net9.0/apphost.exe",
+      "bytes": 156160,
+      "sha256": "47654d42bada0be163e99357d999d3a3269746c10cae8e97192a6eb47e67427c"
+    },
+    {
+      "path": "obj/Release/net9.0/Stateful.138A1B00.Up2Date",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "bin/Release/net9.0/zh-Hant/FSharp.Core.resources.dll",
+      "bytes": 32032,
+      "sha256": "ac03ee7c4112c755705776c700033794586f980fe9476e6a13811a7153beabb8"
+    },
+    {
+      "path": "obj/Release/net9.0/StatefulPilot.AssemblyInfo.fs",
+      "bytes": 721,
+      "sha256": "de1021674ecb21a120427930f35b9d6a9034c19007386650caa766fd7b17990a"
+    },
+    {
+      "path": "obj/Release/net9.0/StatefulPilot.assets.cache",
+      "bytes": 4205,
+      "sha256": "b6763a68b734bc557f3e98f36342573bfd227153e432ef6dfba5b1455d4c92c1"
+    },
+    {
+      "path": "obj/Release/net9.0/StatefulPilot.dll",
+      "bytes": 28160,
+      "sha256": "19f5ccbbb00d06056ed2c3560440301f6b0de2df439ef72737354ee6403deb60"
+    },
+    {
+      "path": "obj/Release/net9.0/StatefulPilot.fsproj.AssemblyReference.cache",
+      "bytes": 435,
+      "sha256": "d71d5d1382258c0ff96bb7eff6842525cbea53307ea189ff6e02c59f3a6b94a3"
+    },
+    {
+      "path": "obj/Release/net9.0/StatefulPilot.fsproj.CoreCompileInputs.cache",
+      "bytes": 66,
+      "sha256": "6b632684980012815e4d226dc95f7161b4dac71535b30a6b208d119a80103f39"
+    },
+    {
+      "path": "obj/Release/net9.0/StatefulPilot.fsproj.FileListAbsolute.txt",
+      "bytes": 4512,
+      "sha256": "57fe023f4052cf87ca4ba37345b7fe596d24f88c1d7b2ff9429fbdca2b91cea4"
+    },
+    {
+      "path": "obj/Release/net9.0/StatefulPilot.genruntimeconfig.cache",
+      "bytes": 66,
+      "sha256": "508fcaf088ae9ed68e985c4a4f41613a686fa4cf923782b1f81640a45b9322d7"
+    },
+    {
+      "path": "obj/Release/net9.0/StatefulPilot.pdb",
+      "bytes": 9576,
+      "sha256": "ea6d25c388b467353692bf20061d8670d5a8236bc5f98a4d747d662750f0087f"
+    },
+    {
+      "path": "obj/Release/net9.0/StatefulPilot.sourcelink.json",
+      "bytes": 140,
+      "sha256": "00801a078bdade49aac80e7b2283a34cacfda780d069eb1491e40b5b5d353cb6"
+    },
+    {
+      "path": "obj/Release/net9.0/StatefulPilot.AssemblyInfoInputs.cache",
+      "bytes": 66,
+      "sha256": "c22f2330db97addd7d7d95cfdcfc74bf6e5dfba0c033e0536b63f82f42213865"
+    },
+    {
+      "path": "obj/Release/net9.0/ref/StatefulPilot.dll",
+      "bytes": 17408,
+      "sha256": "62b4f1bf9b372e1e3cfc9ad761a64dee5e26a921de275db260f3411a22e32bf4"
+    },
+    {
+      "path": "bin/Release/net9.0/zh-Hans/FSharp.Core.resources.dll",
+      "bytes": 32552,
+      "sha256": "25f82f35a9234bcaab272921b0d50054ddb4a669d96c111907c9d31f5b18c121"
+    },
+    {
+      "path": "bin/Release/net9.0/ru/FSharp.Core.resources.dll",
+      "bytes": 41232,
+      "sha256": "a1133f9ab7e661803d1af0c2489626bd53ac33a11dfe891f5a02f3186f2f5d78"
+    },
+    {
+      "path": "Operations.fs",
+      "bytes": 1392,
+      "sha256": "77f93182f78f1b891a7ae9b0a936b76040488e8128b6f525909c29063c519b3b"
+    },
+    {
+      "path": "SelfTests.fs",
+      "bytes": 7851,
+      "sha256": "e4991a68939d9115e34b2e46ca89f21c9800315fadb8932e39db1b5ce547e317"
+    },
+    {
+      "path": "StatefulPilot.fsproj",
+      "bytes": 360,
+      "sha256": "9435284d144a8723127e39ed5e3e3d3b7993e374612de80ecd7828b31bbeb570"
+    },
+    {
+      "path": "bin/Release/net9.0/FSharp.Core.dll",
+      "bytes": 2314000,
+      "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+    },
+    {
+      "path": "bin/Release/net9.0/StatefulPilot.deps.json",
+      "bytes": 2471,
+      "sha256": "8f2348ffaf4d846d764ed1ad27fada7685833f6257998fe135a848d9b01a0f23"
+    },
+    {
+      "path": "bin/Release/net9.0/StatefulPilot.dll",
+      "bytes": 28160,
+      "sha256": "19f5ccbbb00d06056ed2c3560440301f6b0de2df439ef72737354ee6403deb60"
+    },
+    {
+      "path": "bin/Release/net9.0/StatefulPilot.exe",
+      "bytes": 156160,
+      "sha256": "47654d42bada0be163e99357d999d3a3269746c10cae8e97192a6eb47e67427c"
+    },
+    {
+      "path": "bin/Release/net9.0/StatefulPilot.pdb",
+      "bytes": 9576,
+      "sha256": "ea6d25c388b467353692bf20061d8670d5a8236bc5f98a4d747d662750f0087f"
+    },
+    {
+      "path": "bin/Release/net9.0/tr/FSharp.Core.resources.dll",
+      "bytes": 34072,
+      "sha256": "6b0cba5139a86ee681909fdfcebac07c99afba3bfcff4fb8ab12b9c2112a0b31"
+    },
+    {
+      "path": "bin/Release/net9.0/StatefulPilot.runtimeconfig.json",
+      "bytes": 340,
+      "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+    },
+    {
+      "path": "bin/Release/net9.0/de/FSharp.Core.resources.dll",
+      "bytes": 35592,
+      "sha256": "7419e4f5ceed9e03821686e865fed7d29c6217fdf5d3a46a2919a369c98c38ce"
+    },
+    {
+      "path": "bin/Release/net9.0/es/FSharp.Core.resources.dll",
+      "bytes": 34600,
+      "sha256": "636866649564c72eb763eb3942e021b52b1f9b3869d037aca48f73d4474353c5"
+    },
+    {
+      "path": "bin/Release/net9.0/fr/FSharp.Core.resources.dll",
+      "bytes": 35128,
+      "sha256": "f38f2fd6bc4c4e233dd098a36b315a2bc87673cf2f07c6ba3daf71a3264f4a64"
+    },
+    {
+      "path": "bin/Release/net9.0/it/FSharp.Core.resources.dll",
+      "bytes": 34576,
+      "sha256": "61a0be9c6a2ed95f8e98493b17c54a55c68cef84e23a0d82114319e2c5f3c2cd"
+    },
+    {
+      "path": "bin/Release/net9.0/ja/FSharp.Core.resources.dll",
+      "bytes": 37160,
+      "sha256": "dd7f36036d906e991da5505b074ef889a603f449d3324750fda5f5445ba2854f"
+    },
+    {
+      "path": "bin/Release/net9.0/ko/FSharp.Core.resources.dll",
+      "bytes": 36104,
+      "sha256": "0f3ef625e379577e3b60c15d8cc3759d3dc8840f99894282df1e702b4a166462"
+    },
+    {
+      "path": "bin/Release/net9.0/pl/FSharp.Core.resources.dll",
+      "bytes": 35632,
+      "sha256": "755bab9fbd85e5e4b4771870c9c4d655e91e3ce39cc1c2735fe0bc7cec6b84c3"
+    },
+    {
+      "path": "bin/Release/net9.0/pt-BR/FSharp.Core.resources.dll",
+      "bytes": 34096,
+      "sha256": "a4bbbdaabf2003a5fdff5f5bc4143c3fd4a064f2681fc481f449d4558074dc61"
+    },
+    {
+      "path": "bin/Release/net9.0/cs/FSharp.Core.resources.dll",
+      "bytes": 34600,
+      "sha256": "eb8bd755cfe0d39ce27615027fe22556e8b9dcb470f2b47a36f4bfbf3c31be64"
+    },
+    {
+      "path": "obj/Release/net9.0/refint/StatefulPilot.dll",
+      "bytes": 17408,
+      "sha256": "62b4f1bf9b372e1e3cfc9ad761a64dee5e26a921de275db260f3411a22e32bf4"
+    }
+  ],
+  "actorInventoryAfter": [
+    {
+      "path": "Domain.fs",
+      "bytes": 3074,
+      "sha256": "5fc59abefda826c0d4b023e535f6c906dd22b03bc56d1185db6bd67e35ee19b0"
+    },
+    {
+      "path": "obj/project.assets.json",
+      "bytes": 6440,
+      "sha256": "097667526966a1b6e8419fcba1ff098e020b43197227d5b39a463a2a3b45759c"
+    },
+    {
+      "path": "obj/project.nuget.cache",
+      "bytes": 375,
+      "sha256": "da26fbe22594f2642206c1bd064ea0f36a1edfa9d602c9bc17306c94c6d4ac28"
+    },
+    {
+      "path": "obj/StatefulPilot.fsproj.nuget.dgspec.json",
+      "bytes": 2711,
+      "sha256": "2849b90fc90395a1c67749c67b8bc054b006179f510826bdbc209182d32128db"
+    },
+    {
+      "path": "obj/StatefulPilot.fsproj.nuget.g.props",
+      "bytes": 1356,
+      "sha256": "819e07c2f1de23e6b616deb370e3837f90054a5d0b186ae0662be1cb7e077891"
+    },
+    {
+      "path": "obj/StatefulPilot.fsproj.nuget.g.targets",
+      "bytes": 150,
+      "sha256": "971cc9b535384849b5c661d776cd7a80833a416265e32e8968e06c367368b8b5"
+    },
+    {
+      "path": "obj/Release/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.fs",
+      "bytes": 191,
+      "sha256": "421fd34e0c637007cd36e24dad8c8417e7ea6cdec26214ade1fd69d2cf97c3a1"
+    },
+    {
+      "path": "obj/Release/net9.0/apphost.exe",
+      "bytes": 156160,
+      "sha256": "47654d42bada0be163e99357d999d3a3269746c10cae8e97192a6eb47e67427c"
+    },
+    {
+      "path": "obj/Release/net9.0/Stateful.138A1B00.Up2Date",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "bin/Release/net9.0/zh-Hant/FSharp.Core.resources.dll",
+      "bytes": 32032,
+      "sha256": "ac03ee7c4112c755705776c700033794586f980fe9476e6a13811a7153beabb8"
+    },
+    {
+      "path": "obj/Release/net9.0/StatefulPilot.AssemblyInfo.fs",
+      "bytes": 721,
+      "sha256": "de1021674ecb21a120427930f35b9d6a9034c19007386650caa766fd7b17990a"
+    },
+    {
+      "path": "obj/Release/net9.0/StatefulPilot.assets.cache",
+      "bytes": 4205,
+      "sha256": "b6763a68b734bc557f3e98f36342573bfd227153e432ef6dfba5b1455d4c92c1"
+    },
+    {
+      "path": "obj/Release/net9.0/StatefulPilot.dll",
+      "bytes": 28160,
+      "sha256": "19f5ccbbb00d06056ed2c3560440301f6b0de2df439ef72737354ee6403deb60"
+    },
+    {
+      "path": "obj/Release/net9.0/StatefulPilot.fsproj.AssemblyReference.cache",
+      "bytes": 435,
+      "sha256": "d71d5d1382258c0ff96bb7eff6842525cbea53307ea189ff6e02c59f3a6b94a3"
+    },
+    {
+      "path": "obj/Release/net9.0/StatefulPilot.fsproj.CoreCompileInputs.cache",
+      "bytes": 66,
+      "sha256": "6b632684980012815e4d226dc95f7161b4dac71535b30a6b208d119a80103f39"
+    },
+    {
+      "path": "obj/Release/net9.0/StatefulPilot.fsproj.FileListAbsolute.txt",
+      "bytes": 4512,
+      "sha256": "57fe023f4052cf87ca4ba37345b7fe596d24f88c1d7b2ff9429fbdca2b91cea4"
+    },
+    {
+      "path": "obj/Release/net9.0/StatefulPilot.genruntimeconfig.cache",
+      "bytes": 66,
+      "sha256": "508fcaf088ae9ed68e985c4a4f41613a686fa4cf923782b1f81640a45b9322d7"
+    },
+    {
+      "path": "obj/Release/net9.0/StatefulPilot.pdb",
+      "bytes": 9576,
+      "sha256": "ea6d25c388b467353692bf20061d8670d5a8236bc5f98a4d747d662750f0087f"
+    },
+    {
+      "path": "obj/Release/net9.0/StatefulPilot.sourcelink.json",
+      "bytes": 140,
+      "sha256": "00801a078bdade49aac80e7b2283a34cacfda780d069eb1491e40b5b5d353cb6"
+    },
+    {
+      "path": "obj/Release/net9.0/StatefulPilot.AssemblyInfoInputs.cache",
+      "bytes": 66,
+      "sha256": "c22f2330db97addd7d7d95cfdcfc74bf6e5dfba0c033e0536b63f82f42213865"
+    },
+    {
+      "path": "obj/Release/net9.0/ref/StatefulPilot.dll",
+      "bytes": 17408,
+      "sha256": "62b4f1bf9b372e1e3cfc9ad761a64dee5e26a921de275db260f3411a22e32bf4"
+    },
+    {
+      "path": "bin/Release/net9.0/zh-Hans/FSharp.Core.resources.dll",
+      "bytes": 32552,
+      "sha256": "25f82f35a9234bcaab272921b0d50054ddb4a669d96c111907c9d31f5b18c121"
+    },
+    {
+      "path": "bin/Release/net9.0/ru/FSharp.Core.resources.dll",
+      "bytes": 41232,
+      "sha256": "a1133f9ab7e661803d1af0c2489626bd53ac33a11dfe891f5a02f3186f2f5d78"
+    },
+    {
+      "path": "Operations.fs",
+      "bytes": 1392,
+      "sha256": "77f93182f78f1b891a7ae9b0a936b76040488e8128b6f525909c29063c519b3b"
+    },
+    {
+      "path": "SelfTests.fs",
+      "bytes": 7851,
+      "sha256": "e4991a68939d9115e34b2e46ca89f21c9800315fadb8932e39db1b5ce547e317"
+    },
+    {
+      "path": "StatefulPilot.fsproj",
+      "bytes": 360,
+      "sha256": "9435284d144a8723127e39ed5e3e3d3b7993e374612de80ecd7828b31bbeb570"
+    },
+    {
+      "path": "bin/Release/net9.0/FSharp.Core.dll",
+      "bytes": 2314000,
+      "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+    },
+    {
+      "path": "bin/Release/net9.0/StatefulPilot.deps.json",
+      "bytes": 2471,
+      "sha256": "8f2348ffaf4d846d764ed1ad27fada7685833f6257998fe135a848d9b01a0f23"
+    },
+    {
+      "path": "bin/Release/net9.0/StatefulPilot.dll",
+      "bytes": 28160,
+      "sha256": "19f5ccbbb00d06056ed2c3560440301f6b0de2df439ef72737354ee6403deb60"
+    },
+    {
+      "path": "bin/Release/net9.0/StatefulPilot.exe",
+      "bytes": 156160,
+      "sha256": "47654d42bada0be163e99357d999d3a3269746c10cae8e97192a6eb47e67427c"
+    },
+    {
+      "path": "bin/Release/net9.0/StatefulPilot.pdb",
+      "bytes": 9576,
+      "sha256": "ea6d25c388b467353692bf20061d8670d5a8236bc5f98a4d747d662750f0087f"
+    },
+    {
+      "path": "bin/Release/net9.0/tr/FSharp.Core.resources.dll",
+      "bytes": 34072,
+      "sha256": "6b0cba5139a86ee681909fdfcebac07c99afba3bfcff4fb8ab12b9c2112a0b31"
+    },
+    {
+      "path": "bin/Release/net9.0/StatefulPilot.runtimeconfig.json",
+      "bytes": 340,
+      "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+    },
+    {
+      "path": "bin/Release/net9.0/de/FSharp.Core.resources.dll",
+      "bytes": 35592,
+      "sha256": "7419e4f5ceed9e03821686e865fed7d29c6217fdf5d3a46a2919a369c98c38ce"
+    },
+    {
+      "path": "bin/Release/net9.0/es/FSharp.Core.resources.dll",
+      "bytes": 34600,
+      "sha256": "636866649564c72eb763eb3942e021b52b1f9b3869d037aca48f73d4474353c5"
+    },
+    {
+      "path": "bin/Release/net9.0/fr/FSharp.Core.resources.dll",
+      "bytes": 35128,
+      "sha256": "f38f2fd6bc4c4e233dd098a36b315a2bc87673cf2f07c6ba3daf71a3264f4a64"
+    },
+    {
+      "path": "bin/Release/net9.0/it/FSharp.Core.resources.dll",
+      "bytes": 34576,
+      "sha256": "61a0be9c6a2ed95f8e98493b17c54a55c68cef84e23a0d82114319e2c5f3c2cd"
+    },
+    {
+      "path": "bin/Release/net9.0/ja/FSharp.Core.resources.dll",
+      "bytes": 37160,
+      "sha256": "dd7f36036d906e991da5505b074ef889a603f449d3324750fda5f5445ba2854f"
+    },
+    {
+      "path": "bin/Release/net9.0/ko/FSharp.Core.resources.dll",
+      "bytes": 36104,
+      "sha256": "0f3ef625e379577e3b60c15d8cc3759d3dc8840f99894282df1e702b4a166462"
+    },
+    {
+      "path": "bin/Release/net9.0/pl/FSharp.Core.resources.dll",
+      "bytes": 35632,
+      "sha256": "755bab9fbd85e5e4b4771870c9c4d655e91e3ce39cc1c2735fe0bc7cec6b84c3"
+    },
+    {
+      "path": "bin/Release/net9.0/pt-BR/FSharp.Core.resources.dll",
+      "bytes": 34096,
+      "sha256": "a4bbbdaabf2003a5fdff5f5bc4143c3fd4a064f2681fc481f449d4558074dc61"
+    },
+    {
+      "path": "bin/Release/net9.0/cs/FSharp.Core.resources.dll",
+      "bytes": 34600,
+      "sha256": "eb8bd755cfe0d39ce27615027fe22556e8b9dcb470f2b47a36f4bfbf3c31be64"
+    },
+    {
+      "path": "obj/Release/net9.0/refint/StatefulPilot.dll",
+      "bytes": 17408,
+      "sha256": "62b4f1bf9b372e1e3cfc9ad761a64dee5e26a921de275db260f3411a22e32bf4"
+    }
+  ],
+  "actorSourceInventoryBefore": [
+    {
+      "path": "Domain.fs",
+      "bytes": 3074,
+      "sha256": "5fc59abefda826c0d4b023e535f6c906dd22b03bc56d1185db6bd67e35ee19b0"
+    },
+    {
+      "path": "Operations.fs",
+      "bytes": 1392,
+      "sha256": "77f93182f78f1b891a7ae9b0a936b76040488e8128b6f525909c29063c519b3b"
+    },
+    {
+      "path": "SelfTests.fs",
+      "bytes": 7851,
+      "sha256": "e4991a68939d9115e34b2e46ca89f21c9800315fadb8932e39db1b5ce547e317"
+    },
+    {
+      "path": "StatefulPilot.fsproj",
+      "bytes": 360,
+      "sha256": "9435284d144a8723127e39ed5e3e3d3b7993e374612de80ecd7828b31bbeb570"
+    }
+  ],
+  "actorSourceInventoryAfter": [
+    {
+      "path": "Domain.fs",
+      "bytes": 3074,
+      "sha256": "5fc59abefda826c0d4b023e535f6c906dd22b03bc56d1185db6bd67e35ee19b0"
+    },
+    {
+      "path": "Operations.fs",
+      "bytes": 1392,
+      "sha256": "77f93182f78f1b891a7ae9b0a936b76040488e8128b6f525909c29063c519b3b"
+    },
+    {
+      "path": "SelfTests.fs",
+      "bytes": 7851,
+      "sha256": "e4991a68939d9115e34b2e46ca89f21c9800315fadb8932e39db1b5ce547e317"
+    },
+    {
+      "path": "StatefulPilot.fsproj",
+      "bytes": 360,
+      "sha256": "9435284d144a8723127e39ed5e3e3d3b7993e374612de80ecd7828b31bbeb570"
+    }
+  ],
+  "actorUnchanged": true,
+  "limits": [
+    "Flow virtual filesystem state is read from the hash-verified state object in the result snapshot.",
+    "F# behavior is measured through the public provider/API in a fresh adapter process; runtime effect parity is not claimed."
+  ]
+}

@@ -1,0 +1,1169 @@
+{
+  "actor": "reset-2",
+  "mutation": "redundant-second-write",
+  "requests": [
+    {
+      "op": "define",
+      "syntaxVersion": 2,
+      "frontend": "flow",
+      "replace": true,
+      "expectedRevision": 2,
+      "source": "fn invoice.queue-reminders-for-pair(pair: InvoicePair) -> ReminderPairResult {\n    effects fs.read, fs.write\n    doc \"Queue open invoice reminders in pair order and return their exact markers.\"\n\n    let first-result = if InvoiceStatus::value(pair.first.status) == \"open\" {\n    let first-path = invoice::reminder-path(pair.first.id);\n    if file::exists?(first-path) {\n        file::read(first-path)\n    } else {\n        file::write(first-path, \"queued\");\n        \"queued\"\n    }\n} else {\n    \"not-open\"\n};\n    let second-result = if InvoiceStatus::value(pair.second.status) == \"open\" {\n    let second-path = invoice::reminder-path(pair.second.id);\n    if file::exists?(second-path) {\n        let existing-marker = file::read(second-path);\n        file::write(second-path, existing-marker);\n        existing-marker\n    } else {\n        file::write(second-path, \"queued\");\n        \"queued\"\n    }\n} else {\n    \"not-open\"\n};\n    reminderPairResult::new(first = first-result, second = second-result)\n}"
+    },
+    {
+      "op": "test",
+      "word": "invoice.queue-reminders-for-pair"
+    },
+    {
+      "op": "test-all"
+    },
+    {
+      "op": "replace-word",
+      "word": "invoice.queue-reminders-for-pair"
+    }
+  ],
+  "responses": [
+    {
+      "ok": true,
+      "kind": "defined",
+      "text": "Flow definition, tests, examples, and retained source bindings validated and staged.",
+      "data": {
+        "frontend": "flow",
+        "name": "invoice.queue-reminders-for-pair",
+        "id": "word_536cf6c7fa5b4a1a83a1f1c422ac06e4",
+        "revision": 3,
+        "tests": [
+          "duplicate-id-observes-first-write",
+          "exact-existing-markers",
+          "exact-open-status-only",
+          "first-not-open-skips-open-second",
+          "second-not-open-after-first-queues",
+          "two-open-missing"
+        ],
+        "examples": [
+          "queues-second-in-order"
+        ]
+      }
+    },
+    {
+      "ok": true,
+      "kind": "test",
+      "text": "5/6 test(s) passed.",
+      "data": {
+        "results": [
+          {
+            "name": "duplicate-id-observes-first-write",
+            "word": "invoice.queue-reminders-for-pair",
+            "passed": false,
+            "expectedKind": "value-expression",
+            "actualStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "expected": "ReminderPairResult { first = \"queued\", second = \"queued\" }",
+            "expectedType": "ReminderPairResult",
+            "expectedStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "actual": [
+              "ReminderPairResult { first = \"queued\", second = \"queued\" }"
+            ],
+            "effectAssertion": {
+              "passed": false,
+              "expected": {
+                "clock.read": 0,
+                "console.write": 0,
+                "fs.read": 3,
+                "fs.write": 1
+              },
+              "actual": {
+                "clock.read": 0,
+                "console.write": 0,
+                "fs.read": 3,
+                "fs.write": 2
+              },
+              "targetInvocationCount": 1,
+              "span": {
+                "file": "<flow:invoice.queue-reminders-for-pair/3>/test:59b576c56e58c904c310822be295f72633edb592456cd8f1c798e79d1eb18dc8",
+                "line": 9,
+                "column": 5,
+                "length": 36
+              },
+              "error": {
+                "code": "TEST_EFFECT_ASSERTION_FAILED",
+                "message": "Target-scoped provider effect counts did not match the exact assertion."
+              }
+            },
+            "errorCode": "TEST_EFFECT_ASSERTION_FAILED",
+            "message": "Target-scoped provider effect counts did not match the exact assertion."
+          },
+          {
+            "name": "exact-existing-markers",
+            "word": "invoice.queue-reminders-for-pair",
+            "passed": true,
+            "expectedKind": "value-expression",
+            "actualStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "custom marker"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": ""
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "expected": "ReminderPairResult { first = \"custom marker\", second = \"\" }",
+            "expectedType": "ReminderPairResult",
+            "expectedStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "custom marker"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": ""
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "actual": [
+              "ReminderPairResult { first = \"custom marker\", second = \"\" }"
+            ]
+          },
+          {
+            "name": "exact-open-status-only",
+            "word": "invoice.queue-reminders-for-pair",
+            "passed": true,
+            "expectedKind": "value-expression",
+            "actualStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "not-open"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "not-open"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "expected": "ReminderPairResult { first = \"not-open\", second = \"not-open\" }",
+            "expectedType": "ReminderPairResult",
+            "expectedStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "not-open"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "not-open"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "actual": [
+              "ReminderPairResult { first = \"not-open\", second = \"not-open\" }"
+            ],
+            "effectAssertion": {
+              "passed": true,
+              "expected": {
+                "clock.read": 0,
+                "console.write": 0,
+                "fs.read": 0,
+                "fs.write": 0
+              },
+              "actual": {
+                "clock.read": 0,
+                "console.write": 0,
+                "fs.read": 0,
+                "fs.write": 0
+              },
+              "targetInvocationCount": 1,
+              "span": {
+                "file": "<flow:invoice.queue-reminders-for-pair/3>/test:068c1aff578aef18ea9d8621554c9f7593e7144e7ff7eccdd95e415f0248a5be",
+                "line": 9,
+                "column": 5,
+                "length": 36
+              }
+            }
+          },
+          {
+            "name": "first-not-open-skips-open-second",
+            "word": "invoice.queue-reminders-for-pair",
+            "passed": true,
+            "expectedKind": "value-expression",
+            "actualStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "not-open"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "expected": "ReminderPairResult { first = \"not-open\", second = \"queued\" }",
+            "expectedType": "ReminderPairResult",
+            "expectedStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "not-open"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "actual": [
+              "ReminderPairResult { first = \"not-open\", second = \"queued\" }"
+            ],
+            "effectAssertion": {
+              "passed": true,
+              "expected": {
+                "clock.read": 0,
+                "console.write": 0,
+                "fs.read": 1,
+                "fs.write": 1
+              },
+              "actual": {
+                "clock.read": 0,
+                "console.write": 0,
+                "fs.read": 1,
+                "fs.write": 1
+              },
+              "targetInvocationCount": 1,
+              "span": {
+                "file": "<flow:invoice.queue-reminders-for-pair/3>/test:b2a71c9bd2277dae7a7e66efba73c4cd8a118cc0f37b2a42c5d1310e8a027c4b",
+                "line": 9,
+                "column": 5,
+                "length": 36
+              }
+            }
+          },
+          {
+            "name": "second-not-open-after-first-queues",
+            "word": "invoice.queue-reminders-for-pair",
+            "passed": true,
+            "expectedKind": "value-expression",
+            "actualStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "not-open"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "expected": "ReminderPairResult { first = \"queued\", second = \"not-open\" }",
+            "expectedType": "ReminderPairResult",
+            "expectedStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "not-open"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "actual": [
+              "ReminderPairResult { first = \"queued\", second = \"not-open\" }"
+            ]
+          },
+          {
+            "name": "two-open-missing",
+            "word": "invoice.queue-reminders-for-pair",
+            "passed": true,
+            "expectedKind": "value-expression",
+            "actualStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "expected": "ReminderPairResult { first = \"queued\", second = \"queued\" }",
+            "expectedType": "ReminderPairResult",
+            "expectedStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "actual": [
+              "ReminderPairResult { first = \"queued\", second = \"queued\" }"
+            ]
+          }
+        ],
+        "coverage": {
+          "instructionsCovered": 54,
+          "instructionsTotal": 54,
+          "branchesCovered": 8,
+          "branchesTotal": 8,
+          "uncoveredInstructions": [],
+          "uncoveredBranchOutcomes": [],
+          "finiteCoverage": {
+            "targetInvocations": 5,
+            "inputs": [],
+            "returns": [
+              {
+                "position": 0,
+                "type": "ReminderPairResult",
+                "required": [],
+                "observed": [],
+                "missing": []
+              }
+            ],
+            "unsupported": [],
+            "missing": [],
+            "complete": true
+          }
+        }
+      }
+    },
+    {
+      "ok": true,
+      "kind": "test",
+      "text": "7/8 test(s) passed.",
+      "data": {
+        "results": [
+          {
+            "name": "duplicate-id-observes-first-write",
+            "word": "invoice.queue-reminders-for-pair",
+            "passed": false,
+            "expectedKind": "value-expression",
+            "actualStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "expected": "ReminderPairResult { first = \"queued\", second = \"queued\" }",
+            "expectedType": "ReminderPairResult",
+            "expectedStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "actual": [
+              "ReminderPairResult { first = \"queued\", second = \"queued\" }"
+            ],
+            "effectAssertion": {
+              "passed": false,
+              "expected": {
+                "clock.read": 0,
+                "console.write": 0,
+                "fs.read": 3,
+                "fs.write": 1
+              },
+              "actual": {
+                "clock.read": 0,
+                "console.write": 0,
+                "fs.read": 3,
+                "fs.write": 2
+              },
+              "targetInvocationCount": 1,
+              "span": {
+                "file": "<flow:invoice.queue-reminders-for-pair/3>/test:59b576c56e58c904c310822be295f72633edb592456cd8f1c798e79d1eb18dc8",
+                "line": 9,
+                "column": 5,
+                "length": 36
+              },
+              "error": {
+                "code": "TEST_EFFECT_ASSERTION_FAILED",
+                "message": "Target-scoped provider effect counts did not match the exact assertion."
+              }
+            },
+            "errorCode": "TEST_EFFECT_ASSERTION_FAILED",
+            "message": "Target-scoped provider effect counts did not match the exact assertion."
+          },
+          {
+            "name": "exact-existing-markers",
+            "word": "invoice.queue-reminders-for-pair",
+            "passed": true,
+            "expectedKind": "value-expression",
+            "actualStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "custom marker"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": ""
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "expected": "ReminderPairResult { first = \"custom marker\", second = \"\" }",
+            "expectedType": "ReminderPairResult",
+            "expectedStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "custom marker"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": ""
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "actual": [
+              "ReminderPairResult { first = \"custom marker\", second = \"\" }"
+            ]
+          },
+          {
+            "name": "exact-open-status-only",
+            "word": "invoice.queue-reminders-for-pair",
+            "passed": true,
+            "expectedKind": "value-expression",
+            "actualStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "not-open"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "not-open"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "expected": "ReminderPairResult { first = \"not-open\", second = \"not-open\" }",
+            "expectedType": "ReminderPairResult",
+            "expectedStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "not-open"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "not-open"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "actual": [
+              "ReminderPairResult { first = \"not-open\", second = \"not-open\" }"
+            ],
+            "effectAssertion": {
+              "passed": true,
+              "expected": {
+                "clock.read": 0,
+                "console.write": 0,
+                "fs.read": 0,
+                "fs.write": 0
+              },
+              "actual": {
+                "clock.read": 0,
+                "console.write": 0,
+                "fs.read": 0,
+                "fs.write": 0
+              },
+              "targetInvocationCount": 1,
+              "span": {
+                "file": "<flow:invoice.queue-reminders-for-pair/3>/test:068c1aff578aef18ea9d8621554c9f7593e7144e7ff7eccdd95e415f0248a5be",
+                "line": 9,
+                "column": 5,
+                "length": 36
+              }
+            }
+          },
+          {
+            "name": "first-not-open-skips-open-second",
+            "word": "invoice.queue-reminders-for-pair",
+            "passed": true,
+            "expectedKind": "value-expression",
+            "actualStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "not-open"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "expected": "ReminderPairResult { first = \"not-open\", second = \"queued\" }",
+            "expectedType": "ReminderPairResult",
+            "expectedStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "not-open"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "actual": [
+              "ReminderPairResult { first = \"not-open\", second = \"queued\" }"
+            ],
+            "effectAssertion": {
+              "passed": true,
+              "expected": {
+                "clock.read": 0,
+                "console.write": 0,
+                "fs.read": 1,
+                "fs.write": 1
+              },
+              "actual": {
+                "clock.read": 0,
+                "console.write": 0,
+                "fs.read": 1,
+                "fs.write": 1
+              },
+              "targetInvocationCount": 1,
+              "span": {
+                "file": "<flow:invoice.queue-reminders-for-pair/3>/test:b2a71c9bd2277dae7a7e66efba73c4cd8a118cc0f37b2a42c5d1310e8a027c4b",
+                "line": 9,
+                "column": 5,
+                "length": 36
+              }
+            }
+          },
+          {
+            "name": "second-not-open-after-first-queues",
+            "word": "invoice.queue-reminders-for-pair",
+            "passed": true,
+            "expectedKind": "value-expression",
+            "actualStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "not-open"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "expected": "ReminderPairResult { first = \"queued\", second = \"not-open\" }",
+            "expectedType": "ReminderPairResult",
+            "expectedStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "not-open"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "actual": [
+              "ReminderPairResult { first = \"queued\", second = \"not-open\" }"
+            ]
+          },
+          {
+            "name": "two-open-missing",
+            "word": "invoice.queue-reminders-for-pair",
+            "passed": true,
+            "expectedKind": "value-expression",
+            "actualStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "expected": "ReminderPairResult { first = \"queued\", second = \"queued\" }",
+            "expectedType": "ReminderPairResult",
+            "expectedStructured": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "record",
+                  "name": "ReminderPairResult",
+                  "typeKey": 4,
+                  "fields": [
+                    {
+                      "name": "first",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    },
+                    {
+                      "name": "second",
+                      "type": {
+                        "kind": "string"
+                      },
+                      "value": {
+                        "kind": "string",
+                        "value": "queued"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "actual": [
+              "ReminderPairResult { first = \"queued\", second = \"queued\" }"
+            ]
+          },
+          {
+            "name": "basic",
+            "word": "invoice.reminder-path",
+            "passed": true,
+            "expected": "\"outbox/invoice-reminders/INV-001\"",
+            "actual": [
+              "\"outbox/invoice-reminders/INV-001\""
+            ]
+          },
+          {
+            "name": "preserves-id-text",
+            "word": "invoice.reminder-path",
+            "passed": true,
+            "expected": "\"outbox/invoice-reminders/inv.alpha_2\"",
+            "actual": [
+              "\"outbox/invoice-reminders/inv.alpha_2\""
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "ok": false,
+      "kind": "error",
+      "text": "COMMIT_TESTS_FAILED: Candidate tests must pass against the proposed dictionary before commit.",
+      "error": {
+        "code": "COMMIT_TESTS_FAILED",
+        "message": "Candidate tests must pass against the proposed dictionary before commit.",
+        "expected": [],
+        "actual": [
+          "invoice.queue-reminders-for-pair/duplicate-id-observes-first-write"
+        ]
+      }
+    }
+  ],
+  "stderr": "",
+  "exitCode": 0,
+  "originalUnchanged": true
+}

@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "plan": "mutation-plan.md",
+  "sourceBaseline": "source-baseline.json",
+  "sourceActorUnchanged": true,
+  "mutations": [
+    {
+      "name": "wrong-second-id",
+      "project": ".agentlang/pair-repair-001/post-mutations/conventional-2/wrong-second-id",
+      "mutation": "Second invoice status is retained, but its reminder path uses the first invoice ID.",
+      "operationsSha256": "EAE4CB5694C715A9DD68752EFD656BD1F0D430A09FFB79E3BA5C3D0F38FF1526",
+      "unchangedSourceCopies": [
+        {
+          "path": "Domain.fs",
+          "sha256": "5FC59ABEFDA826C0D4B023E535F6C906DD22B03BC56D1185DB6BD67E35EE19B0",
+          "matchesActor": true
+        },
+        {
+          "path": "SelfTests.fs",
+          "sha256": "6D2572DFAC1ABF7B4757F09AC22467BFB61318D2BFDF8112614DEFA437A381FF",
+          "matchesActor": true
+        },
+        {
+          "path": "StatefulPilot.fsproj",
+          "sha256": "9435284D144A8723127E39ED5E3E3D3B7993E374612DE80ECD7828B31BBEB570",
+          "matchesActor": true
+        }
+      ],
+      "nonOperationsFilesMatchActor": true,
+      "localBuild": {
+        "command": "dotnet build .agentlang\\pair-repair-001\\post-mutations\\conventional-2\\wrong-second-id\\StatefulPilot.fsproj --configuration Release --nologo",
+        "exitCode": 0,
+        "outputLog": "logs/wrong-second-id-build.log",
+        "outputLogSha256": "8AFF740B0F958E784B2C1F31DC630E815E1F05B6D09EBB81A20720DE3E08C588"
+      },
+      "localSelfTests": {
+        "command": "dotnet run --project .agentlang\\pair-repair-001\\post-mutations\\conventional-2\\wrong-second-id\\StatefulPilot.fsproj --configuration Release --no-launch-profile",
+        "exitCode": -532462766,
+        "passed": false,
+        "detection": "Expected second=\"\" from the empty second marker; received the first marker because the second lookup reused the first invoice ID.",
+        "outputLog": "logs/wrong-second-id-run.log",
+        "outputLogSha256": "A511FEE018740C0C00EDB90A6B7DC56769CEDAC456DAFF8B7FAE1864C641A0A0"
+      },
+      "frozenScore": {
+        "command": "pwsh -NoProfile -File .agentlang\\pair-repair-001\\scoring\\score-pair.ps1 -Language fsharp -ActorProject .agentlang\\pair-repair-001\\post-mutations\\conventional-2\\wrong-second-id -OutputPath .agentlang\\pair-repair-001\\post-mutations\\conventional-2\\wrong-second-id-score.json",
+        "processExitCode": 0,
+        "behaviorPassedCases": 6,
+        "totalCases": 12,
+        "fullAcceptance": false,
+        "actorOwnedTestsExitCode": -532462766,
+        "actorUnchangedInScorer": true,
+        "failedCases": [
+          "closed-then-open",
+          "distinct-existing-first",
+          "distinct-open-missing",
+          "empty-existing-first",
+          "repeat-distinct",
+          "uppercase-then-open"
+        ],
+        "evidence": ".agentlang/pair-repair-001/post-mutations/conventional-2/wrong-second-id-score.json",
+        "evidenceSha256": "CD7D995F462422B596C110BD53F17D7E1025560DF1940628D548B2C9FF68041D",
+        "outputLog": "logs/wrong-second-id-scorer.log",
+        "outputLogSha256": "6C95289E4FF8B7BAB59A00108CF42F9589A2E76837FF9B6E991FD5E96515B502"
+      }
+    },
+    {
+      "name": "write-back-existing-second",
+      "project": ".agentlang/pair-repair-001/post-mutations/conventional-2/write-back-existing-second",
+      "mutation": "The second invoice existing marker is read, then written back unchanged exactly once.",
+      "operationsSha256": "77F93182F78F1B891A7AE9B0A936B76040488E8128B6F525909C29063C519B3B",
+      "unchangedSourceCopies": [
+        {
+          "path": "Domain.fs",
+          "sha256": "5FC59ABEFDA826C0D4B023E535F6C906DD22B03BC56D1185DB6BD67E35EE19B0",
+          "matchesActor": true
+        },
+        {
+          "path": "SelfTests.fs",
+          "sha256": "6D2572DFAC1ABF7B4757F09AC22467BFB61318D2BFDF8112614DEFA437A381FF",
+          "matchesActor": true
+        },
+        {
+          "path": "StatefulPilot.fsproj",
+          "sha256": "9435284D144A8723127E39ED5E3E3D3B7993E374612DE80ECD7828B31BBEB570",
+          "matchesActor": true
+        }
+      ],
+      "nonOperationsFilesMatchActor": true,
+      "localBuild": {
+        "command": "dotnet build .agentlang\\pair-repair-001\\post-mutations\\conventional-2\\write-back-existing-second\\StatefulPilot.fsproj --configuration Release --nologo",
+        "exitCode": 0,
+        "outputLog": "logs/write-back-existing-second-build.log",
+        "outputLogSha256": "9F22CA3A898AEB453C0B1040BF055BBB70F7989491CACC3AC2C952AF8269F693"
+      },
+      "localSelfTests": {
+        "command": "dotnet run --project .agentlang\\pair-repair-001\\post-mutations\\conventional-2\\write-back-existing-second\\StatefulPilot.fsproj --configuration Release --no-launch-profile",
+        "exitCode": -532462766,
+        "passed": false,
+        "detection": "Expected zero writes for the existing second marker; received one because the marker was rewritten unchanged.",
+        "outputLog": "logs/write-back-existing-second-run.log",
+        "outputLogSha256": "5417CF99133ACBAF8F404167D7EBB15A26F50DCD4D947DB334ECE565EBEABFAA"
+      },
+      "frozenScore": {
+        "command": "pwsh -NoProfile -File .agentlang\\pair-repair-001\\scoring\\score-pair.ps1 -Language fsharp -ActorProject .agentlang\\pair-repair-001\\post-mutations\\conventional-2\\write-back-existing-second -OutputPath .agentlang\\pair-repair-001\\post-mutations\\conventional-2\\write-back-existing-second-score.json",
+        "processExitCode": 0,
+        "behaviorPassedCases": 9,
+        "totalCases": 12,
+        "fullAcceptance": false,
+        "actorOwnedTestsExitCode": -532462766,
+        "actorUnchangedInScorer": true,
+        "failedCases": [
+          "repeat-distinct",
+          "same-id-existing",
+          "same-id-missing"
+        ],
+        "evidence": ".agentlang/pair-repair-001/post-mutations/conventional-2/write-back-existing-second-score.json",
+        "evidenceSha256": "9C0AE8E609BC676835F298C87BA234E23309677ACA267651424CB45D6F025D45",
+        "outputLog": "logs/write-back-existing-second-scorer.log",
+        "outputLogSha256": "94FE75016427D1B2DBF7985C952277FCDDAC5ADD1B212C39540B7078920D8271"
+      }
+    }
+  ]
+}

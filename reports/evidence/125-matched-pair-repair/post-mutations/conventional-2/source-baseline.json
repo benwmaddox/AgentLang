@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "actorProject": ".agentlang\\pair-repair-001\\actors\\conventional-2",
+  "actorFiles": [
+    {
+      "path": "Domain.fs",
+      "sha256": "5FC59ABEFDA826C0D4B023E535F6C906DD22B03BC56D1185DB6BD67E35EE19B0"
+    },
+    {
+      "path": "Operations.fs",
+      "sha256": "1D5A2905DB92BB5694282A2F7512D83B9AC9E52D8AB43134931403C5E897A8F9"
+    },
+    {
+      "path": "SelfTests.fs",
+      "sha256": "6D2572DFAC1ABF7B4757F09AC22467BFB61318D2BFDF8112614DEFA437A381FF"
+    },
+    {
+      "path": "StatefulPilot.fsproj",
+      "sha256": "9435284D144A8723127E39ED5E3E3D3B7993E374612DE80ECD7828B31BBEB570"
+    }
+  ],
+  "recordedActorScore": ".agentlang/pair-repair-001/results/conventional-2-score.json",
+  "recordedScoreSha256": "E884BD158B40D6F31BA25E1CD9784BD47B9EBA20D760332C0F1F30D80E030B5A",
+  "copies": [
+    "wrong-second-id",
+    "write-back-existing-second"
+  ]
+}

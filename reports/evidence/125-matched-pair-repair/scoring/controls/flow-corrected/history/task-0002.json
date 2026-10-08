@@ -1,0 +1,33 @@
+{
+  "task": "task-0002",
+  "goal": "",
+  "active": false,
+  "wordsInspected": [
+    "invoice.queue-reminder-once"
+  ],
+  "wordsUsed": [
+    "InvoiceId.new",
+    "InvoiceId.value",
+    "InvoiceStatus.new",
+    "InvoiceStatus.value",
+    "equals",
+    "file.exists?",
+    "file.read",
+    "file.write",
+    "invoice.id",
+    "invoice.new",
+    "invoice.queue-reminder-once",
+    "invoice.reminder-path",
+    "invoice.status",
+    "string.concat"
+  ],
+  "wordsCreated": [
+    "invoice.queue-reminder-once"
+  ],
+  "testsRun": 14,
+  "testsFailed": 0,
+  "effects": {},
+  "errors": [
+    "FLOW_SYNTAX_VERSION"
+  ]
+}

@@ -215,12 +215,22 @@ future trials.
 
 [Report 124](../reports/124-efficacy-assessment.md) consolidates efficacy evidence:
 reuse and workable edits are observed, but comparative reliability and context
-advantages remain unproven. Next prioritize a small replicated unfamiliar-rule
-repair/refactor comparison in current Flow/2 and conventional F#, with independent
-expectations and matched foundational/helper contracts. Keep retained versus
-reset helper availability explicit in the study design, without target/helper
-hints to actors. Reuse the existing harness; do not add more prerequisite
-features unless a concrete experiment blocker requires them. Provider-state,
+advantages remain unproven. [Report 125](../reports/125-matched-pair-repair.md)
+completes the small replicated pair-reminder repair comparison: six fresh agents
+(two per retained/reset/conventional condition) each pass 12/12 independent cases.
+Both retained Flow and conventional agents reuse their existing helper. One
+retained actor omits task.commit despite a correct persisted library revision;
+record workflow completion separately. The reset condition is compact, not
+reset-rich, and these small samples do not establish a reliability advantage.
+
+Resume the approved native-runtime work in section 3: bounded native mailbox
+dispatch/pending state, then the arena-lifetime comparison under matched limits.
+Do not gate that work on more easy repair variants. Future efficacy trials should
+use a held-out multi-function change with collateral-regression opportunities,
+independent expected values and unchanged controls. A bounded interface follow-up
+should make active-task status visible at close, distinguishing word publication
+from completed task logging. Reuse the existing harness; add no comparison
+prerequisites without a concrete blocker. Provider-state,
 module closure and scoped overrides remain approved work, not prerequisites to
 completing all future comparisons. Separately assess
 whether unchecked construction inputs need a distinct type or field-based

@@ -1,0 +1,20 @@
+{
+  "preparedUtc": "2026-10-08T10:24:13.874417+00:00",
+  "freezeSha256": "040025441756a7f7bbeb1bfba3f25a6e552685ed0e69485b870987f47fd85edb",
+  "finalReviewSha256": "4abbb2fc63371db8c7e94ad9c3245bbc81e7da974e6d3544c69d174043dd3bbe",
+  "finalReview": "No dispatch blocker; final review completed after initial freeze. No scorer/input changes.",
+  "round1": [
+    "retained-1",
+    "reset-1",
+    "conventional-1"
+  ],
+  "round2": [
+    "retained-2",
+    "reset-2",
+    "conventional-2"
+  ],
+  "model": "gpt-6-luna",
+  "reasoning": "max",
+  "history": "none",
+  "coordinatorHintsAfterDispatch": false
+}

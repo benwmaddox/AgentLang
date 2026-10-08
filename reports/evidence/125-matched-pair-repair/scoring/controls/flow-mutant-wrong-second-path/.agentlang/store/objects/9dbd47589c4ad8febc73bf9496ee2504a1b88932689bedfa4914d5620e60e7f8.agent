@@ -1,0 +1,4 @@
+test invoice.queue-reminder-once/existing-custom-marker {
+    file::write("outbox/invoice-reminders/r2-existing-custom", "custom reminder marker");
+    invoice::queue-reminder-once(invoice::new(InvoiceId::new("r2-existing-custom"), InvoiceStatus::new("open"))) => "custom reminder marker"
+}

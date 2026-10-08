@@ -1,0 +1,16 @@
+// frontend: flow/1
+
+record Invoice {
+    field id: InvoiceId;
+    field status: InvoiceStatus;
+}
+
+// frontend: flow/1
+
+type InvoiceId : String {
+}
+
+// frontend: flow/1
+
+type InvoiceStatus : String {
+}

@@ -1,0 +1,13 @@
+test invoice.queue-reminders-for-pair/exact-existing-markers {
+    file::write("outbox/invoice-reminders/pair-flow-existing-first", "custom marker");
+    file::write("outbox/invoice-reminders/pair-flow-empty-second", "");
+    invoice::queue-reminders-for-pair(
+        invoicePair::new(
+            first = invoice::new(
+                id = InvoiceId::new("pair-flow-existing-first"),
+                status = InvoiceStatus::new("open")),
+            second = invoice::new(
+                id = InvoiceId::new("pair-flow-empty-second"),
+                status = InvoiceStatus::new("open"))))
+    => value reminderPairResult::new(first = "custom marker", second = "custom marker")
+}

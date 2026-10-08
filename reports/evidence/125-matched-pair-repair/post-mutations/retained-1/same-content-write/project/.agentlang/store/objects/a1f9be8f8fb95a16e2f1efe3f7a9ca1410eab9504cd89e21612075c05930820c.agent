@@ -1,0 +1,12 @@
+test invoice.queue-reminders-for-pair/repeat-preserves-existing-marker {
+    let id = InvoiceId::new("pair-flow-repeat-marker");
+    file::write(invoice::reminder-path(id), "custom marker");
+    let pair = invoicePair::new(
+        first = invoice::new(id = id, status = InvoiceStatus::new("open")),
+        second = invoice::new(id = id, status = InvoiceStatus::new("open")));
+    let first-run = invoice::queue-reminders-for-pair(pair);
+    let second-run = invoice::queue-reminders-for-pair(pair);
+    reminderPairResult::new(first = first-run.first, second = second-run.second)
+    => value reminderPairResult::new(first = "custom marker", second = "custom marker")
+    effects { fs.read: 8; fs.write: 0; }
+}

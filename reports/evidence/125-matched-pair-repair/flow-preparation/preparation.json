@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "status": "prepared-and-reload-verified",
+  "fixtureRoot": ".agentlang/pair-repair-001",
+  "plan": ".agentlang/pair-repair-001/flow-preparation/plan.md",
+  "runtime": {
+    "source": ".agentlang/record-validation-help-adoption-002/runtime/debug-artifacts",
+    "copied": ".agentlang/pair-repair-001/runtime/debug-artifacts",
+    "pin": ".agentlang/pair-repair-001/runtime/runtime-pin.json",
+    "pinSha256": "af9bec61bebc2ee7d01443c4c2a9ae8372c2c39309dea4bddf4096b043285365",
+    "expectedRuntimeFileCount": 22,
+    "actualRuntimeFileCount": 22,
+    "allFileHashesAndSizesMatch": true
+  },
+  "sourceProjects": {
+    "retained": ".agentlang/pair-repair-001/starts/retained",
+    "retainedOrigin": ".agentlang/reminder-flow2-001/actors/flow",
+    "reset": ".agentlang/pair-repair-001/starts/reset",
+    "resetOrigin": ".agentlang/reminder-flow2-001/starts/flow",
+    "report111SourceRevision": "a47647198f8f0c20263672073a4d0e6290e0c990",
+    "resetSourceManifestSha256": "18be761d37d08ce6fa3ea0d18dff0a11a6d8c632d11e3a2c8a3055d788629804",
+    "retainedSourceManifestSha256": "c8d75a50e48e92a5f0fee1cfe79b2293ce9d585a958ab57053d1a75e78182a68",
+    "resetInitialAuthoredWordCount": 1,
+    "resetInitialTypeCount": 3,
+    "retainedSeededHelper": "invoice.queue-reminder-once"
+  },
+  "target": {
+    "name": "invoice.queue-reminders-for-pair",
+    "signature": "InvoicePair -> ReminderPairResult",
+    "types": [
+      "InvoicePair { first: Invoice; second: Invoice }",
+      "ReminderPairResult { first: String; second: String }"
+    ],
+    "effects": [
+      "fs.read",
+      "fs.write"
+    ],
+    "directDependencies": [
+      "invoice.reminder-path",
+      "file.exists?",
+      "file.read",
+      "file.write"
+    ],
+    "attachedTests": [
+      "two-open-missing",
+      "exact-existing-markers",
+      "second-not-open-after-first-queues",
+      "first-not-open-skips-open-second"
+    ],
+    "attachedExamples": [
+      "queues-second-in-order"
+    ],
+    "sourceIdenticalAcrossStarts": true,
+    "sourceUtf8Sha256": "a10884ce7d511aba9d78180d38ff469544d8b2e3e6baa4366d55743ee00ea569",
+    "qualification": {
+      "maturity": "library",
+      "testsPassed": 4,
+      "instructionsCovered": 53,
+      "instructionsTotal": 53,
+      "branchesCovered": 8,
+      "branchesTotal": 8
+    }
+  },
+  "freshReload": {
+    "reset": {
+      "trace": ".agentlang/pair-repair-001/flow-preparation/reset-reload.trace.jsonl",
+      "testAll": "6/6 passed",
+      "targetMaturity": "library",
+      "priorHelper": "NAME_UNKNOWN_WORD"
+    },
+    "retained": {
+      "trace": ".agentlang/pair-repair-001/flow-preparation/retained-reload.trace.jsonl",
+      "testAll": "10/10 passed",
+      "targetMaturity": "library",
+      "retainedHelper": "invoice.queue-reminder-once with 4 attached tests"
+    }
+  },
+  "startupFailures": [
+    {
+      "trace": ".agentlang/pair-repair-001/flow-preparation/reset-host.trace.jsonl",
+      "runtimeExitCode": 2,
+      "cause": "Frozen CLI rejects --frontend/--syntax-version in JSONL mode; no project mutation."
+    },
+    {
+      "trace": ".agentlang/pair-repair-001/flow-preparation/reset-host-probe-02.trace.jsonl",
+      "runtimeExitCode": 2,
+      "cause": "Same launch-argument issue; no project mutation."
+    }
+  ],
+  "brokerLaunch": "Start-SubagentTrialHostV2.ps1 with no AdditionalCliArguments; specify frontend=flow and syntaxVersion=2 on define/eval requests.",
+  "actorDispatched": false,
+  "expectedDefect": {
+    "trace": ".agentlang/pair-repair-001/flow-preparation/expected-defect.trace.jsonl",
+    "input": "first status Open; second status open",
+    "result": "ReminderPairResult { first = \"not-open\", second = \"not-open\" }",
+    "effects": {},
+    "interpretation": "The first-status false branch returns early and skips the open second invoice."
+  },
+  "successfulBrokerTraces": [
+    ".agentlang/pair-repair-001/flow-preparation/reset-host-v3.trace.jsonl",
+    ".agentlang/pair-repair-001/flow-preparation/retained-host.trace.jsonl",
+    ".agentlang/pair-repair-001/flow-preparation/reset-reload.trace.jsonl",
+    ".agentlang/pair-repair-001/flow-preparation/retained-reload.trace.jsonl",
+    ".agentlang/pair-repair-001/flow-preparation/expected-defect.trace.jsonl"
+  ]
+}

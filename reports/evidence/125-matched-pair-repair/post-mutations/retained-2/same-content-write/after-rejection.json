@@ -1,0 +1,152 @@
+{
+  "project": "D:\\code\\AgentLang\\.agentlang\\pair-repair-001\\post-mutations\\retained-2\\same-content-write\\project",
+  "requests": [
+    {
+      "op": "source",
+      "word": "invoice.queue-reminders-for-pair"
+    },
+    {
+      "op": "source",
+      "word": "invoice.queue-reminder-once"
+    },
+    {
+      "op": "source",
+      "type": "Invoice"
+    },
+    {
+      "op": "describe",
+      "word": "invoice.queue-reminders-for-pair"
+    }
+  ],
+  "responses": [
+    {
+      "ok": true,
+      "kind": "source",
+      "text": "fn invoice.queue-reminders-for-pair(pair: InvoicePair) -> ReminderPairResult {\n    effects fs.read, fs.write\n    doc \"Queue each invoice reminder once, independently, in pair order, and return the exact markers.\"\n\n    let first-result = invoice::queue-reminder-once(pair.first);\n    let second-result = invoice::queue-reminder-once(pair.second);\n    reminderPairResult::new(first = first-result, second = second-result)\n}",
+      "data": "fn invoice.queue-reminders-for-pair(pair: InvoicePair) -> ReminderPairResult {\n    effects fs.read, fs.write\n    doc \"Queue each invoice reminder once, independently, in pair order, and return the exact markers.\"\n\n    let first-result = invoice::queue-reminder-once(pair.first);\n    let second-result = invoice::queue-reminder-once(pair.second);\n    reminderPairResult::new(first = first-result, second = second-result)\n}"
+    },
+    {
+      "ok": true,
+      "kind": "source",
+      "text": "fn invoice.queue-reminder-once(invoice: Invoice) -> String {\n    effects fs.read, fs.write\n    doc \"Queues a reminder once for an open invoice and preserves any existing reminder contents.\"\n\n    if InvoiceStatus::value(invoice.status) == \"open\" {\n        let path = invoice::reminder-path(invoice.id);\n        if file::exists?(path) {\n            file::read(path)\n        } else {\n            file::write(path, \"queued\");\n            \"queued\"\n        }\n    } else {\n        \"not-open\"\n    }\n}",
+      "data": "fn invoice.queue-reminder-once(invoice: Invoice) -> String {\n    effects fs.read, fs.write\n    doc \"Queues a reminder once for an open invoice and preserves any existing reminder contents.\"\n\n    if InvoiceStatus::value(invoice.status) == \"open\" {\n        let path = invoice::reminder-path(invoice.id);\n        if file::exists?(path) {\n            file::read(path)\n        } else {\n            file::write(path, \"queued\");\n            \"queued\"\n        }\n    } else {\n        \"not-open\"\n    }\n}"
+    },
+    {
+      "ok": true,
+      "kind": "source",
+      "text": "record Invoice {\n    field id: InvoiceId;\n    field status: InvoiceStatus;\n}",
+      "data": "record Invoice {\n    field id: InvoiceId;\n    field status: InvoiceStatus;\n}"
+    },
+    {
+      "ok": true,
+      "kind": "describe",
+      "text": "Description for invoice.queue-reminders-for-pair.",
+      "data": {
+        "name": "invoice.queue-reminders-for-pair",
+        "flowReference": "invoice::queue-reminders-for-pair",
+        "flowReferenceUnavailableReason": null,
+        "inputs": [
+          "InvoicePair"
+        ],
+        "outputs": [
+          "ReminderPairResult"
+        ],
+        "parameters": [
+          {
+            "name": "pair",
+            "type": "InvoicePair"
+          }
+        ],
+        "effects": [
+          "fs.read",
+          "fs.write"
+        ],
+        "documentation": "Queue each invoice reminder once, independently, in pair order, and return the exact markers.",
+        "id": "word_95fa1cb0151e411d90bfd38514691ca0",
+        "dependencies": [
+          "invoice.queue-reminder-once",
+          "invoicePair.first",
+          "invoicePair.second",
+          "reminderPairResult.new"
+        ],
+        "transitiveDependencies": [
+          "InvoiceId.value",
+          "InvoiceStatus.value",
+          "equals",
+          "file.exists?",
+          "file.read",
+          "file.write",
+          "invoice.id",
+          "invoice.queue-reminder-once",
+          "invoice.reminder-path",
+          "invoice.status",
+          "invoicePair.first",
+          "invoicePair.second",
+          "reminderPairResult.new",
+          "string.concat"
+        ],
+        "callers": [],
+        "tests": [
+          "exact-existing-markers",
+          "first-not-open-skips-open-second",
+          "repeated-run-preserves-existing-markers",
+          "same-id-second-sees-first-write",
+          "second-not-open-after-first-queues",
+          "two-open-missing"
+        ],
+        "examples": [
+          "queues-second-in-order"
+        ],
+        "source": "<revision:invoice.queue-reminders-for-pair/2>",
+        "line": 1,
+        "kind": "word",
+        "status": "persistent",
+        "maturity": "library",
+        "deprecated": false,
+        "revision": 2,
+        "testCount": 6,
+        "exampleCount": 1,
+        "coverage": {
+          "instructionsCovered": 0,
+          "instructionsTotal": 11,
+          "branchesCovered": 0,
+          "branchesTotal": 0,
+          "uncoveredInstructions": [
+            "<revision:invoice.queue-reminders-for-pair/2>:5:24",
+            "<revision:invoice.queue-reminders-for-pair/2>:5:5",
+            "<revision:invoice.queue-reminders-for-pair/2>:5:53",
+            "<revision:invoice.queue-reminders-for-pair/2>:5:53",
+            "<revision:invoice.queue-reminders-for-pair/2>:6:25",
+            "<revision:invoice.queue-reminders-for-pair/2>:6:5",
+            "<revision:invoice.queue-reminders-for-pair/2>:6:54",
+            "<revision:invoice.queue-reminders-for-pair/2>:6:54",
+            "<revision:invoice.queue-reminders-for-pair/2>:7:37",
+            "<revision:invoice.queue-reminders-for-pair/2>:7:5",
+            "<revision:invoice.queue-reminders-for-pair/2>:7:60"
+          ],
+          "uncoveredBranchOutcomes": [],
+          "finiteCoverage": {
+            "targetInvocations": 0,
+            "inputs": [],
+            "returns": [
+              {
+                "position": 0,
+                "type": "ReminderPairResult",
+                "required": [],
+                "observed": [],
+                "missing": []
+              }
+            ],
+            "unsupported": [],
+            "missing": [],
+            "complete": false
+          },
+          "status": "not-run"
+        }
+      }
+    }
+  ],
+  "stdout": "{\"ok\":true,\"kind\":\"source\",\"text\":\"fn invoice.queue-reminders-for-pair(pair: InvoicePair) -\\u003E ReminderPairResult {\\n    effects fs.read, fs.write\\n    doc \\u0022Queue each invoice reminder once, independently, in pair order, and return the exact markers.\\u0022\\n\\n    let first-result = invoice::queue-reminder-once(pair.first);\\n    let second-result = invoice::queue-reminder-once(pair.second);\\n    reminderPairResult::new(first = first-result, second = second-result)\\n}\",\"data\":\"fn invoice.queue-reminders-for-pair(pair: InvoicePair) -\\u003E ReminderPairResult {\\n    effects fs.read, fs.write\\n    doc \\u0022Queue each invoice reminder once, independently, in pair order, and return the exact markers.\\u0022\\n\\n    let first-result = invoice::queue-reminder-once(pair.first);\\n    let second-result = invoice::queue-reminder-once(pair.second);\\n    reminderPairResult::new(first = first-result, second = second-result)\\n}\"}\r\n{\"ok\":true,\"kind\":\"source\",\"text\":\"fn invoice.queue-reminder-once(invoice: Invoice) -\\u003E String {\\n    effects fs.read, fs.write\\n    doc \\u0022Queues a reminder once for an open invoice and preserves any existing reminder contents.\\u0022\\n\\n    if InvoiceStatus::value(invoice.status) == \\u0022open\\u0022 {\\n        let path = invoice::reminder-path(invoice.id);\\n        if file::exists?(path) {\\n            file::read(path)\\n        } else {\\n            file::write(path, \\u0022queued\\u0022);\\n            \\u0022queued\\u0022\\n        }\\n    } else {\\n        \\u0022not-open\\u0022\\n    }\\n}\",\"data\":\"fn invoice.queue-reminder-once(invoice: Invoice) -\\u003E String {\\n    effects fs.read, fs.write\\n    doc \\u0022Queues a reminder once for an open invoice and preserves any existing reminder contents.\\u0022\\n\\n    if InvoiceStatus::value(invoice.status) == \\u0022open\\u0022 {\\n        let path = invoice::reminder-path(invoice.id);\\n        if file::exists?(path) {\\n            file::read(path)\\n        } else {\\n            file::write(path, \\u0022queued\\u0022);\\n            \\u0022queued\\u0022\\n        }\\n    } else {\\n        \\u0022not-open\\u0022\\n    }\\n}\"}\r\n{\"ok\":true,\"kind\":\"source\",\"text\":\"record Invoice {\\n    field id: InvoiceId;\\n    field status: InvoiceStatus;\\n}\",\"data\":\"record Invoice {\\n    field id: InvoiceId;\\n    field status: InvoiceStatus;\\n}\"}\r\n{\"ok\":true,\"kind\":\"describe\",\"text\":\"Description for invoice.queue-reminders-for-pair.\",\"data\":{\"name\":\"invoice.queue-reminders-for-pair\",\"flowReference\":\"invoice::queue-reminders-for-pair\",\"flowReferenceUnavailableReason\":null,\"inputs\":[\"InvoicePair\"],\"outputs\":[\"ReminderPairResult\"],\"parameters\":[{\"name\":\"pair\",\"type\":\"InvoicePair\"}],\"effects\":[\"fs.read\",\"fs.write\"],\"documentation\":\"Queue each invoice reminder once, independently, in pair order, and return the exact markers.\",\"id\":\"word_95fa1cb0151e411d90bfd38514691ca0\",\"dependencies\":[\"invoice.queue-reminder-once\",\"invoicePair.first\",\"invoicePair.second\",\"reminderPairResult.new\"],\"transitiveDependencies\":[\"InvoiceId.value\",\"InvoiceStatus.value\",\"equals\",\"file.exists?\",\"file.read\",\"file.write\",\"invoice.id\",\"invoice.queue-reminder-once\",\"invoice.reminder-path\",\"invoice.status\",\"invoicePair.first\",\"invoicePair.second\",\"reminderPairResult.new\",\"string.concat\"],\"callers\":[],\"tests\":[\"exact-existing-markers\",\"first-not-open-skips-open-second\",\"repeated-run-preserves-existing-markers\",\"same-id-second-sees-first-write\",\"second-not-open-after-first-queues\",\"two-open-missing\"],\"examples\":[\"queues-second-in-order\"],\"source\":\"\\u003Crevision:invoice.queue-reminders-for-pair/2\\u003E\",\"line\":1,\"kind\":\"word\",\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false,\"revision\":2,\"testCount\":6,\"exampleCount\":1,\"coverage\":{\"instructionsCovered\":0,\"instructionsTotal\":11,\"branchesCovered\":0,\"branchesTotal\":0,\"uncoveredInstructions\":[\"\\u003Crevision:invoice.queue-reminders-for-pair/2\\u003E:5:24\",\"\\u003Crevision:invoice.queue-reminders-for-pair/2\\u003E:5:5\",\"\\u003Crevision:invoice.queue-reminders-for-pair/2\\u003E:5:53\",\"\\u003Crevision:invoice.queue-reminders-for-pair/2\\u003E:5:53\",\"\\u003Crevision:invoice.queue-reminders-for-pair/2\\u003E:6:25\",\"\\u003Crevision:invoice.queue-reminders-for-pair/2\\u003E:6:5\",\"\\u003Crevision:invoice.queue-reminders-for-pair/2\\u003E:6:54\",\"\\u003Crevision:invoice.queue-reminders-for-pair/2\\u003E:6:54\",\"\\u003Crevision:invoice.queue-reminders-for-pair/2\\u003E:7:37\",\"\\u003Crevision:invoice.queue-reminders-for-pair/2\\u003E:7:5\",\"\\u003Crevision:invoice.queue-reminders-for-pair/2\\u003E:7:60\"],\"uncoveredBranchOutcomes\":[],\"finiteCoverage\":{\"targetInvocations\":0,\"inputs\":[],\"returns\":[{\"position\":0,\"type\":\"ReminderPairResult\",\"required\":[],\"observed\":[],\"missing\":[]}],\"unsupported\":[],\"missing\":[],\"complete\":false},\"status\":\"not-run\"}}}\r\n",
+  "stderr": "",
+  "exitCode": 0
+}

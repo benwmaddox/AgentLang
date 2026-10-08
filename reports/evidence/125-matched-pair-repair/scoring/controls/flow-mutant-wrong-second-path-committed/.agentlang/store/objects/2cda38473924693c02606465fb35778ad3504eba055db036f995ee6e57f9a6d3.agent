@@ -1,0 +1,4 @@
+record Invoice {
+    field id: InvoiceId;
+    field status: InvoiceStatus;
+}

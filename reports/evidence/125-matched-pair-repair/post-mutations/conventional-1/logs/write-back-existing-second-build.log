@@ -1,0 +1,9 @@
+  Determining projects to restore...
+  Restored D:\code\AgentLang\.agentlang\pair-repair-001\post-mutations\conventional-1\write-back-existing-second\StatefulPilot.fsproj (in 163 ms).
+  StatefulPilot -> D:\code\AgentLang\.agentlang\pair-repair-001\post-mutations\conventional-1\write-back-existing-second\bin\Release\net9.0\StatefulPilot.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.97

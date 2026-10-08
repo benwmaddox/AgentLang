@@ -1,0 +1,1084 @@
+{
+  "schemaVersion": 1,
+  "frozenUtc": "2026-10-08T10:22:57.919035+00:00",
+  "repositoryHead": "414bd6f72c61597547027011145a1f269d71d431",
+  "actorsNotDispatched": true,
+  "files": [
+    {
+      "path": "plan.md",
+      "sha256": "CCAB93FFA8ACEB4F02E04886F8AD2059E144526B89D33CC72C2CFD4366CA1B9F"
+    },
+    {
+      "path": "public-contract.md",
+      "sha256": "0D740E2B51BEADF32B5B6A5D52A7959780EDCB45741C4B26CBC6604BAC3A16E8"
+    },
+    {
+      "path": "oracle.json",
+      "sha256": "AAF442410F21D1DBF425B7B45D4A1A55DD9A1F21269B58721433A0D9AA36AAE9"
+    },
+    {
+      "path": "actor-starts.json",
+      "sha256": "5EAC953568AFCF041C703033FDF191087BF217F0A0ABE7F3515E493B09EEF9CA"
+    },
+    {
+      "path": "runtime/runtime-pin.json",
+      "sha256": "AF9BEC61BEBC2EE7D01443C4C2A9AE8372C2C39309DEA4BDDF4096B043285365"
+    },
+    {
+      "path": "conventional-broker-pin.json",
+      "sha256": "24DB7A0FBCACB5A594B09B3F2031ECF32748775BB51686BF26245F905DFE0DC1"
+    },
+    {
+      "path": "scoring/score-pair.ps1",
+      "sha256": "989FDD936D149D2D72BA36D538C2C25CCC5C657236F500F26B8EA3DAF3FE0114"
+    },
+    {
+      "path": "review.md",
+      "sha256": "D6DE8564CEBAE741D8320B2835A1F13E0923490AEEC0A6966899AAA987C3AA74"
+    },
+    {
+      "path": "prompts/conventional-1.md",
+      "sha256": "98CECB09922CCE12450DB3C2D627E597972596C789FB7D02B06D87CB474D1B1B"
+    },
+    {
+      "path": "prompts/conventional-2.md",
+      "sha256": "075D15B0447617B5C790A5B2B9F1B03F82F7F7532427C116FC7BE283CCED1400"
+    },
+    {
+      "path": "prompts/reset-1.md",
+      "sha256": "936E62F9C3ADF80EA5B73684538BB867CB7289F9CD62DC5A4603DA8659BEA4F7"
+    },
+    {
+      "path": "prompts/reset-2.md",
+      "sha256": "F829EFA18B4F7F4A8365DF1CB62F1A32897661A2E7F05F0C524A1CE6CB7FE596"
+    },
+    {
+      "path": "prompts/retained-1.md",
+      "sha256": "FBE8A48065B0EAEF32AB4D6DB70B8266D1A61B78103284E87BFD5F52B4AACE53"
+    },
+    {
+      "path": "prompts/retained-2.md",
+      "sha256": "DA13029E9E9FA42B53324010FC1A8CB48FA2624D57D426D53633C8963F9ABAE8"
+    }
+  ],
+  "actors": [
+    {
+      "actor": "retained-1",
+      "condition": "retained",
+      "source": ".agentlang/pair-repair-001/starts/retained",
+      "project": ".agentlang/pair-repair-001/actors/retained-1",
+      "files": [
+        {
+          "path": ".agentlang/store/CURRENT",
+          "bytes": 134,
+          "sha256": "5FC4957C90567D9FF9CB07F99667FA812894640085D167BDDAC30B389414F4F0"
+        },
+        {
+          "path": ".agentlang/store/manifests/18be761d37d08ce6fa3ea0d18dff0a11a6d8c632d11e3a2c8a3055d788629804.json",
+          "bytes": 4763,
+          "sha256": "18BE761D37D08CE6FA3EA0D18DFF0A11A6D8C632D11E3A2C8A3055D788629804"
+        },
+        {
+          "path": ".agentlang/store/manifests/2c7c90763f061da10e1d6b84fee9122dee16d8518d5d66d060aeb10818523a99.json",
+          "bytes": 376,
+          "sha256": "2C7C90763F061DA10E1D6B84FEE9122DEE16D8518D5D66D060AEB10818523A99"
+        },
+        {
+          "path": ".agentlang/store/manifests/8825ab4e7e9091da913d02cc748102dd41961a6676c46b9da970f30d44625a26.json",
+          "bytes": 54442,
+          "sha256": "8825AB4E7E9091DA913D02CC748102DD41961A6676C46B9DA970F30D44625A26"
+        },
+        {
+          "path": ".agentlang/store/manifests/c74c84babaae42d6abc69d931a2fabf439770f2fdb61672fa7a1164a4b50ee10.json",
+          "bytes": 788,
+          "sha256": "C74C84BABAAE42D6ABC69D931A2FABF439770F2FDB61672FA7A1164A4B50EE10"
+        },
+        {
+          "path": ".agentlang/store/manifests/c8d75a50e48e92a5f0fee1cfe79b2293ce9d585a958ab57053d1a75e78182a68.json",
+          "bytes": 18984,
+          "sha256": "C8D75A50E48E92A5F0FEE1CFE79B2293CE9D585A958AB57053D1A75E78182A68"
+        },
+        {
+          "path": ".agentlang/store/manifests/dd1103a22280d244609a97798020c3af7565a866c8295066e16272575c8e2615.json",
+          "bytes": 585,
+          "sha256": "DD1103A22280D244609A97798020C3AF7565A866C8295066E16272575C8E2615"
+        },
+        {
+          "path": ".agentlang/store/objects/22ae677b4e86fa5418b719708df880c13766290928296d0d154f52b2777116ef.agent",
+          "bytes": 170,
+          "sha256": "22AE677B4E86FA5418B719708DF880C13766290928296D0D154F52B2777116EF"
+        },
+        {
+          "path": ".agentlang/store/objects/232d7d45c13e46c17f81cba6474d1073c5fc674309f322834b373c58410ab272.agent",
+          "bytes": 75,
+          "sha256": "232D7D45C13E46C17F81CBA6474D1073C5FC674309F322834B373C58410AB272"
+        },
+        {
+          "path": ".agentlang/store/objects/2516042d2b02d7e10b3cb0014699baf28fbb3d90b03b09faa4055a37252d1ee1.agent",
+          "bytes": 520,
+          "sha256": "2516042D2B02D7E10B3CB0014699BAF28FBB3D90B03B09FAA4055A37252D1EE1"
+        },
+        {
+          "path": ".agentlang/store/objects/2cda38473924693c02606465fb35778ad3504eba055db036f995ee6e57f9a6d3.agent",
+          "bytes": 76,
+          "sha256": "2CDA38473924693C02606465FB35778AD3504EBA055DB036F995EE6E57F9A6D3"
+        },
+        {
+          "path": ".agentlang/store/objects/43c229edb237793d0ac0f055966abc4893bd918ea2b527ed47d9ac08ce477ab2.agent",
+          "bytes": 210,
+          "sha256": "43C229EDB237793D0AC0F055966ABC4893BD918EA2B527ED47D9AC08CE477AB2"
+        },
+        {
+          "path": ".agentlang/store/objects/5286f8acecc161d3ec1167b305a12710563b9efb08ff861ba4a40fb328bf9d9d.agent",
+          "bytes": 31,
+          "sha256": "5286F8ACECC161D3EC1167B305A12710563B9EFB08FF861BA4A40FB328BF9D9D"
+        },
+        {
+          "path": ".agentlang/store/objects/58426dad43d6dd3474aac7f5bf5790a147b192e93506be27adab813860788095.agent",
+          "bytes": 520,
+          "sha256": "58426DAD43D6DD3474AAC7F5BF5790A147B192E93506BE27ADAB813860788095"
+        },
+        {
+          "path": ".agentlang/store/objects/65c046007d4f4b7d48b75a1df50d78d5a35d1ba88a53dce2be2d61f2d3dcbd6d.agent",
+          "bytes": 49,
+          "sha256": "65C046007D4F4B7D48B75A1DF50D78D5A35D1BA88A53DCE2BE2D61F2D3DCBD6D"
+        },
+        {
+          "path": ".agentlang/store/objects/65e8afc9b5bb1bfca243faef92c9b31d75f9f8b5d3e492244085f4fb86a4d351.agent",
+          "bytes": 152,
+          "sha256": "65E8AFC9B5BB1BFCA243FAEF92C9B31D75F9F8B5D3E492244085F4FB86A4D351"
+        },
+        {
+          "path": ".agentlang/store/objects/66a9d0d506f9c11be050b075baef28b66e70f42507b1146000e5904d0ffd85d0.agent",
+          "bytes": 504,
+          "sha256": "66A9D0D506F9C11BE050B075BAEF28B66E70F42507B1146000E5904D0FFD85D0"
+        },
+        {
+          "path": ".agentlang/store/objects/6af51409069f1231c4eb35864932d29bb686a6f88d99f8f8a62e2303a277f570.agent",
+          "bytes": 103,
+          "sha256": "6AF51409069F1231C4EB35864932D29BB686A6F88D99F8F8A62E2303A277F570"
+        },
+        {
+          "path": ".agentlang/store/objects/6e0e04cebb0223a222e763d22855d3a48aa04e1ccbf84f3b39c30a9668d408c5.agent",
+          "bytes": 6202,
+          "sha256": "6E0E04CEBB0223A222E763D22855D3A48AA04E1CCBF84F3B39C30A9668D408C5"
+        },
+        {
+          "path": ".agentlang/store/objects/703f97a26d496140a722582c6e3d70057e39d0c0e6ae3f798b0f306d76642be3.agent",
+          "bytes": 172,
+          "sha256": "703F97A26D496140A722582C6E3D70057E39D0C0E6AE3F798B0F306D76642BE3"
+        },
+        {
+          "path": ".agentlang/store/objects/721017c4716646db897ac8429bcd891e6b2c60cc9b88dc63417f97f664b181aa.agent",
+          "bytes": 492,
+          "sha256": "721017C4716646DB897AC8429BCD891E6B2C60CC9B88DC63417F97F664B181AA"
+        },
+        {
+          "path": ".agentlang/store/objects/7e09e2326170200dc878400bd3c351fa8d92a851d005823aca3cecc7b9f435fa.agent",
+          "bytes": 669,
+          "sha256": "7E09E2326170200DC878400BD3C351FA8D92A851D005823ACA3CECC7B9F435FA"
+        },
+        {
+          "path": ".agentlang/store/objects/8e606ad519f1cd0d47fe413a2bfa4fc91d01cd53d1b2bec47817f790ddc7d594.agent",
+          "bytes": 27,
+          "sha256": "8E606AD519F1CD0D47FE413A2BFA4FC91D01CD53D1B2BEC47817F790DDC7D594"
+        },
+        {
+          "path": ".agentlang/store/objects/9dbd47589c4ad8febc73bf9496ee2504a1b88932689bedfa4914d5620e60e7f8.agent",
+          "bytes": 290,
+          "sha256": "9DBD47589C4AD8FEBC73BF9496EE2504A1B88932689BEDFA4914D5620E60E7F8"
+        },
+        {
+          "path": ".agentlang/store/objects/9ff7398262166b5b96b350ddc03358592e8c592ef76a8fe34f8cba5541191859.agent",
+          "bytes": 80,
+          "sha256": "9FF7398262166B5B96B350DDC03358592E8C592EF76A8FE34F8CBA5541191859"
+        },
+        {
+          "path": ".agentlang/store/objects/a10884ce7d511aba9d78180d38ff469544d8b2e3e6baa4366d55743ee00ea569.agent",
+          "bytes": 1207,
+          "sha256": "A10884CE7D511ABA9D78180D38FF469544D8B2E3E6BAA4366D55743EE00EA569"
+        },
+        {
+          "path": ".agentlang/store/objects/a588ef7d356f5a9d0e41c53976e9fd39f536165c0fa252b4a176720b88651ae5.agent",
+          "bytes": 202,
+          "sha256": "A588EF7D356F5A9D0E41C53976E9FD39F536165C0FA252B4A176720B88651AE5"
+        },
+        {
+          "path": ".agentlang/store/objects/b366a091cfa52fbc44c231920223775e3a2a871560ef351c1c2876ab54bed420.agent",
+          "bytes": 180,
+          "sha256": "B366A091CFA52FBC44C231920223775E3A2A871560EF351C1C2876AB54BED420"
+        },
+        {
+          "path": ".agentlang/store/objects/b656d29e11b2c6a71d0ad02999e3b7b6690bcea9a501ebe71ebe3186789d6e9c.agent",
+          "bytes": 929,
+          "sha256": "B656D29E11B2C6A71D0AD02999E3B7B6690BCEA9A501EBE71EBE3186789D6E9C"
+        },
+        {
+          "path": ".agentlang/store/objects/b8052339535ea4d981e37d84c6ada14f9b86365dfb1ffddb0e43999db37786cb.agent",
+          "bytes": 2649,
+          "sha256": "B8052339535EA4D981E37D84C6ADA14F9B86365DFB1FFDDB0E43999DB37786CB"
+        },
+        {
+          "path": ".agentlang/store/objects/c47a14b5cb86b9b370029edc05281850a463e876881f34caab5531ac6865f154.agent",
+          "bytes": 141,
+          "sha256": "C47A14B5CB86B9B370029EDC05281850A463E876881F34CAAB5531AC6865F154"
+        },
+        {
+          "path": ".agentlang/store/objects/c8be4e828baf76085c19dd2b562a5ca6451a7bfce349aa5e8f8df2247d84f6b7.agent",
+          "bytes": 132,
+          "sha256": "C8BE4E828BAF76085C19DD2B562A5CA6451A7BFCE349AA5E8F8DF2247D84F6B7"
+        },
+        {
+          "path": ".agentlang/store/objects/d605d9116a52a451c36202f9095b8c87eae8fda766a977fbb63fe5ab927ead2c.agent",
+          "bytes": 258,
+          "sha256": "D605D9116A52A451C36202F9095B8C87EAE8FDA766A977FBB63FE5AB927EAD2C"
+        },
+        {
+          "path": ".agentlang/store/objects/de7041045bf6d9e747b23a21926412acf9ad3a1a80f23e9512c106ca03c26d68.agent",
+          "bytes": 462,
+          "sha256": "DE7041045BF6D9E747B23A21926412ACF9AD3A1A80F23E9512C106CA03C26D68"
+        },
+        {
+          "path": ".agentlang/store/WRITE.lock",
+          "bytes": 0,
+          "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+        },
+        {
+          "path": "dictionary.agent",
+          "bytes": 6202,
+          "sha256": "6E0E04CEBB0223A222E763D22855D3A48AA04E1CCBF84F3B39C30A9668D408C5"
+        },
+        {
+          "path": "history/task-0001.json",
+          "bytes": 535,
+          "sha256": "9AF463A08E5F18956ABE8ADE3E33E1F9BF22CF5EE41DE2E9E407CDBD9447B6CF"
+        },
+        {
+          "path": "history/task-0002.json",
+          "bytes": 640,
+          "sha256": "936BB8EB6042C1DE766E0EA15459C01C2763FF6AC80E482D9FFBAF952B317DC8"
+        }
+      ]
+    },
+    {
+      "actor": "retained-2",
+      "condition": "retained",
+      "source": ".agentlang/pair-repair-001/starts/retained",
+      "project": ".agentlang/pair-repair-001/actors/retained-2",
+      "files": [
+        {
+          "path": ".agentlang/store/CURRENT",
+          "bytes": 134,
+          "sha256": "5FC4957C90567D9FF9CB07F99667FA812894640085D167BDDAC30B389414F4F0"
+        },
+        {
+          "path": ".agentlang/store/manifests/18be761d37d08ce6fa3ea0d18dff0a11a6d8c632d11e3a2c8a3055d788629804.json",
+          "bytes": 4763,
+          "sha256": "18BE761D37D08CE6FA3EA0D18DFF0A11A6D8C632D11E3A2C8A3055D788629804"
+        },
+        {
+          "path": ".agentlang/store/manifests/2c7c90763f061da10e1d6b84fee9122dee16d8518d5d66d060aeb10818523a99.json",
+          "bytes": 376,
+          "sha256": "2C7C90763F061DA10E1D6B84FEE9122DEE16D8518D5D66D060AEB10818523A99"
+        },
+        {
+          "path": ".agentlang/store/manifests/8825ab4e7e9091da913d02cc748102dd41961a6676c46b9da970f30d44625a26.json",
+          "bytes": 54442,
+          "sha256": "8825AB4E7E9091DA913D02CC748102DD41961A6676C46B9DA970F30D44625A26"
+        },
+        {
+          "path": ".agentlang/store/manifests/c74c84babaae42d6abc69d931a2fabf439770f2fdb61672fa7a1164a4b50ee10.json",
+          "bytes": 788,
+          "sha256": "C74C84BABAAE42D6ABC69D931A2FABF439770F2FDB61672FA7A1164A4B50EE10"
+        },
+        {
+          "path": ".agentlang/store/manifests/c8d75a50e48e92a5f0fee1cfe79b2293ce9d585a958ab57053d1a75e78182a68.json",
+          "bytes": 18984,
+          "sha256": "C8D75A50E48E92A5F0FEE1CFE79B2293CE9D585A958AB57053D1A75E78182A68"
+        },
+        {
+          "path": ".agentlang/store/manifests/dd1103a22280d244609a97798020c3af7565a866c8295066e16272575c8e2615.json",
+          "bytes": 585,
+          "sha256": "DD1103A22280D244609A97798020C3AF7565A866C8295066E16272575C8E2615"
+        },
+        {
+          "path": ".agentlang/store/objects/22ae677b4e86fa5418b719708df880c13766290928296d0d154f52b2777116ef.agent",
+          "bytes": 170,
+          "sha256": "22AE677B4E86FA5418B719708DF880C13766290928296D0D154F52B2777116EF"
+        },
+        {
+          "path": ".agentlang/store/objects/232d7d45c13e46c17f81cba6474d1073c5fc674309f322834b373c58410ab272.agent",
+          "bytes": 75,
+          "sha256": "232D7D45C13E46C17F81CBA6474D1073C5FC674309F322834B373C58410AB272"
+        },
+        {
+          "path": ".agentlang/store/objects/2516042d2b02d7e10b3cb0014699baf28fbb3d90b03b09faa4055a37252d1ee1.agent",
+          "bytes": 520,
+          "sha256": "2516042D2B02D7E10B3CB0014699BAF28FBB3D90B03B09FAA4055A37252D1EE1"
+        },
+        {
+          "path": ".agentlang/store/objects/2cda38473924693c02606465fb35778ad3504eba055db036f995ee6e57f9a6d3.agent",
+          "bytes": 76,
+          "sha256": "2CDA38473924693C02606465FB35778AD3504EBA055DB036F995EE6E57F9A6D3"
+        },
+        {
+          "path": ".agentlang/store/objects/43c229edb237793d0ac0f055966abc4893bd918ea2b527ed47d9ac08ce477ab2.agent",
+          "bytes": 210,
+          "sha256": "43C229EDB237793D0AC0F055966ABC4893BD918EA2B527ED47D9AC08CE477AB2"
+        },
+        {
+          "path": ".agentlang/store/objects/5286f8acecc161d3ec1167b305a12710563b9efb08ff861ba4a40fb328bf9d9d.agent",
+          "bytes": 31,
+          "sha256": "5286F8ACECC161D3EC1167B305A12710563B9EFB08FF861BA4A40FB328BF9D9D"
+        },
+        {
+          "path": ".agentlang/store/objects/58426dad43d6dd3474aac7f5bf5790a147b192e93506be27adab813860788095.agent",
+          "bytes": 520,
+          "sha256": "58426DAD43D6DD3474AAC7F5BF5790A147B192E93506BE27ADAB813860788095"
+        },
+        {
+          "path": ".agentlang/store/objects/65c046007d4f4b7d48b75a1df50d78d5a35d1ba88a53dce2be2d61f2d3dcbd6d.agent",
+          "bytes": 49,
+          "sha256": "65C046007D4F4B7D48B75A1DF50D78D5A35D1BA88A53DCE2BE2D61F2D3DCBD6D"
+        },
+        {
+          "path": ".agentlang/store/objects/65e8afc9b5bb1bfca243faef92c9b31d75f9f8b5d3e492244085f4fb86a4d351.agent",
+          "bytes": 152,
+          "sha256": "65E8AFC9B5BB1BFCA243FAEF92C9B31D75F9F8B5D3E492244085F4FB86A4D351"
+        },
+        {
+          "path": ".agentlang/store/objects/66a9d0d506f9c11be050b075baef28b66e70f42507b1146000e5904d0ffd85d0.agent",
+          "bytes": 504,
+          "sha256": "66A9D0D506F9C11BE050B075BAEF28B66E70F42507B1146000E5904D0FFD85D0"
+        },
+        {
+          "path": ".agentlang/store/objects/6af51409069f1231c4eb35864932d29bb686a6f88d99f8f8a62e2303a277f570.agent",
+          "bytes": 103,
+          "sha256": "6AF51409069F1231C4EB35864932D29BB686A6F88D99F8F8A62E2303A277F570"
+        },
+        {
+          "path": ".agentlang/store/objects/6e0e04cebb0223a222e763d22855d3a48aa04e1ccbf84f3b39c30a9668d408c5.agent",
+          "bytes": 6202,
+          "sha256": "6E0E04CEBB0223A222E763D22855D3A48AA04E1CCBF84F3B39C30A9668D408C5"
+        },
+        {
+          "path": ".agentlang/store/objects/703f97a26d496140a722582c6e3d70057e39d0c0e6ae3f798b0f306d76642be3.agent",
+          "bytes": 172,
+          "sha256": "703F97A26D496140A722582C6E3D70057E39D0C0E6AE3F798B0F306D76642BE3"
+        },
+        {
+          "path": ".agentlang/store/objects/721017c4716646db897ac8429bcd891e6b2c60cc9b88dc63417f97f664b181aa.agent",
+          "bytes": 492,
+          "sha256": "721017C4716646DB897AC8429BCD891E6B2C60CC9B88DC63417F97F664B181AA"
+        },
+        {
+          "path": ".agentlang/store/objects/7e09e2326170200dc878400bd3c351fa8d92a851d005823aca3cecc7b9f435fa.agent",
+          "bytes": 669,
+          "sha256": "7E09E2326170200DC878400BD3C351FA8D92A851D005823ACA3CECC7B9F435FA"
+        },
+        {
+          "path": ".agentlang/store/objects/8e606ad519f1cd0d47fe413a2bfa4fc91d01cd53d1b2bec47817f790ddc7d594.agent",
+          "bytes": 27,
+          "sha256": "8E606AD519F1CD0D47FE413A2BFA4FC91D01CD53D1B2BEC47817F790DDC7D594"
+        },
+        {
+          "path": ".agentlang/store/objects/9dbd47589c4ad8febc73bf9496ee2504a1b88932689bedfa4914d5620e60e7f8.agent",
+          "bytes": 290,
+          "sha256": "9DBD47589C4AD8FEBC73BF9496EE2504A1B88932689BEDFA4914D5620E60E7F8"
+        },
+        {
+          "path": ".agentlang/store/objects/9ff7398262166b5b96b350ddc03358592e8c592ef76a8fe34f8cba5541191859.agent",
+          "bytes": 80,
+          "sha256": "9FF7398262166B5B96B350DDC03358592E8C592EF76A8FE34F8CBA5541191859"
+        },
+        {
+          "path": ".agentlang/store/objects/a10884ce7d511aba9d78180d38ff469544d8b2e3e6baa4366d55743ee00ea569.agent",
+          "bytes": 1207,
+          "sha256": "A10884CE7D511ABA9D78180D38FF469544D8B2E3E6BAA4366D55743EE00EA569"
+        },
+        {
+          "path": ".agentlang/store/objects/a588ef7d356f5a9d0e41c53976e9fd39f536165c0fa252b4a176720b88651ae5.agent",
+          "bytes": 202,
+          "sha256": "A588EF7D356F5A9D0E41C53976E9FD39F536165C0FA252B4A176720B88651AE5"
+        },
+        {
+          "path": ".agentlang/store/objects/b366a091cfa52fbc44c231920223775e3a2a871560ef351c1c2876ab54bed420.agent",
+          "bytes": 180,
+          "sha256": "B366A091CFA52FBC44C231920223775E3A2A871560EF351C1C2876AB54BED420"
+        },
+        {
+          "path": ".agentlang/store/objects/b656d29e11b2c6a71d0ad02999e3b7b6690bcea9a501ebe71ebe3186789d6e9c.agent",
+          "bytes": 929,
+          "sha256": "B656D29E11B2C6A71D0AD02999E3B7B6690BCEA9A501EBE71EBE3186789D6E9C"
+        },
+        {
+          "path": ".agentlang/store/objects/b8052339535ea4d981e37d84c6ada14f9b86365dfb1ffddb0e43999db37786cb.agent",
+          "bytes": 2649,
+          "sha256": "B8052339535EA4D981E37D84C6ADA14F9B86365DFB1FFDDB0E43999DB37786CB"
+        },
+        {
+          "path": ".agentlang/store/objects/c47a14b5cb86b9b370029edc05281850a463e876881f34caab5531ac6865f154.agent",
+          "bytes": 141,
+          "sha256": "C47A14B5CB86B9B370029EDC05281850A463E876881F34CAAB5531AC6865F154"
+        },
+        {
+          "path": ".agentlang/store/objects/c8be4e828baf76085c19dd2b562a5ca6451a7bfce349aa5e8f8df2247d84f6b7.agent",
+          "bytes": 132,
+          "sha256": "C8BE4E828BAF76085C19DD2B562A5CA6451A7BFCE349AA5E8F8DF2247D84F6B7"
+        },
+        {
+          "path": ".agentlang/store/objects/d605d9116a52a451c36202f9095b8c87eae8fda766a977fbb63fe5ab927ead2c.agent",
+          "bytes": 258,
+          "sha256": "D605D9116A52A451C36202F9095B8C87EAE8FDA766A977FBB63FE5AB927EAD2C"
+        },
+        {
+          "path": ".agentlang/store/objects/de7041045bf6d9e747b23a21926412acf9ad3a1a80f23e9512c106ca03c26d68.agent",
+          "bytes": 462,
+          "sha256": "DE7041045BF6D9E747B23A21926412ACF9AD3A1A80F23E9512C106CA03C26D68"
+        },
+        {
+          "path": ".agentlang/store/WRITE.lock",
+          "bytes": 0,
+          "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+        },
+        {
+          "path": "dictionary.agent",
+          "bytes": 6202,
+          "sha256": "6E0E04CEBB0223A222E763D22855D3A48AA04E1CCBF84F3B39C30A9668D408C5"
+        },
+        {
+          "path": "history/task-0001.json",
+          "bytes": 535,
+          "sha256": "9AF463A08E5F18956ABE8ADE3E33E1F9BF22CF5EE41DE2E9E407CDBD9447B6CF"
+        },
+        {
+          "path": "history/task-0002.json",
+          "bytes": 640,
+          "sha256": "936BB8EB6042C1DE766E0EA15459C01C2763FF6AC80E482D9FFBAF952B317DC8"
+        }
+      ]
+    },
+    {
+      "actor": "reset-1",
+      "condition": "reset",
+      "source": ".agentlang/pair-repair-001/starts/reset",
+      "project": ".agentlang/pair-repair-001/actors/reset-1",
+      "files": [
+        {
+          "path": ".agentlang/store/CURRENT",
+          "bytes": 134,
+          "sha256": "AA14BC88A4D9D135B3BB72A1A9F4A1280EB853B09EED36A27B76D8133D56A8D3"
+        },
+        {
+          "path": ".agentlang/store/manifests/18be761d37d08ce6fa3ea0d18dff0a11a6d8c632d11e3a2c8a3055d788629804.json",
+          "bytes": 4763,
+          "sha256": "18BE761D37D08CE6FA3EA0D18DFF0A11A6D8C632D11E3A2C8A3055D788629804"
+        },
+        {
+          "path": ".agentlang/store/manifests/2c7c90763f061da10e1d6b84fee9122dee16d8518d5d66d060aeb10818523a99.json",
+          "bytes": 376,
+          "sha256": "2C7C90763F061DA10E1D6B84FEE9122DEE16D8518D5D66D060AEB10818523A99"
+        },
+        {
+          "path": ".agentlang/store/manifests/c3a587b41106282f3033fa5bd6487a10ffbd7a51935b91f7f2b6248785b5d8a4.json",
+          "bytes": 40221,
+          "sha256": "C3A587B41106282F3033FA5BD6487A10FFBD7A51935B91F7F2B6248785B5D8A4"
+        },
+        {
+          "path": ".agentlang/store/manifests/c74c84babaae42d6abc69d931a2fabf439770f2fdb61672fa7a1164a4b50ee10.json",
+          "bytes": 788,
+          "sha256": "C74C84BABAAE42D6ABC69D931A2FABF439770F2FDB61672FA7A1164A4B50EE10"
+        },
+        {
+          "path": ".agentlang/store/manifests/dd1103a22280d244609a97798020c3af7565a866c8295066e16272575c8e2615.json",
+          "bytes": 585,
+          "sha256": "DD1103A22280D244609A97798020C3AF7565A866C8295066E16272575C8E2615"
+        },
+        {
+          "path": ".agentlang/store/objects/232d7d45c13e46c17f81cba6474d1073c5fc674309f322834b373c58410ab272.agent",
+          "bytes": 75,
+          "sha256": "232D7D45C13E46C17F81CBA6474D1073C5FC674309F322834B373C58410AB272"
+        },
+        {
+          "path": ".agentlang/store/objects/2516042d2b02d7e10b3cb0014699baf28fbb3d90b03b09faa4055a37252d1ee1.agent",
+          "bytes": 520,
+          "sha256": "2516042D2B02D7E10B3CB0014699BAF28FBB3D90B03B09FAA4055A37252D1EE1"
+        },
+        {
+          "path": ".agentlang/store/objects/2cda38473924693c02606465fb35778ad3504eba055db036f995ee6e57f9a6d3.agent",
+          "bytes": 76,
+          "sha256": "2CDA38473924693C02606465FB35778AD3504EBA055DB036F995EE6E57F9A6D3"
+        },
+        {
+          "path": ".agentlang/store/objects/43c229edb237793d0ac0f055966abc4893bd918ea2b527ed47d9ac08ce477ab2.agent",
+          "bytes": 210,
+          "sha256": "43C229EDB237793D0AC0F055966ABC4893BD918EA2B527ED47D9AC08CE477AB2"
+        },
+        {
+          "path": ".agentlang/store/objects/5286f8acecc161d3ec1167b305a12710563b9efb08ff861ba4a40fb328bf9d9d.agent",
+          "bytes": 31,
+          "sha256": "5286F8ACECC161D3EC1167B305A12710563B9EFB08FF861BA4A40FB328BF9D9D"
+        },
+        {
+          "path": ".agentlang/store/objects/58426dad43d6dd3474aac7f5bf5790a147b192e93506be27adab813860788095.agent",
+          "bytes": 520,
+          "sha256": "58426DAD43D6DD3474AAC7F5BF5790A147B192E93506BE27ADAB813860788095"
+        },
+        {
+          "path": ".agentlang/store/objects/65c046007d4f4b7d48b75a1df50d78d5a35d1ba88a53dce2be2d61f2d3dcbd6d.agent",
+          "bytes": 49,
+          "sha256": "65C046007D4F4B7D48B75A1DF50D78D5A35D1BA88A53DCE2BE2D61F2D3DCBD6D"
+        },
+        {
+          "path": ".agentlang/store/objects/65e8afc9b5bb1bfca243faef92c9b31d75f9f8b5d3e492244085f4fb86a4d351.agent",
+          "bytes": 152,
+          "sha256": "65E8AFC9B5BB1BFCA243FAEF92C9B31D75F9F8B5D3E492244085F4FB86A4D351"
+        },
+        {
+          "path": ".agentlang/store/objects/66a9d0d506f9c11be050b075baef28b66e70f42507b1146000e5904d0ffd85d0.agent",
+          "bytes": 504,
+          "sha256": "66A9D0D506F9C11BE050B075BAEF28B66E70F42507B1146000E5904D0FFD85D0"
+        },
+        {
+          "path": ".agentlang/store/objects/6af51409069f1231c4eb35864932d29bb686a6f88d99f8f8a62e2303a277f570.agent",
+          "bytes": 103,
+          "sha256": "6AF51409069F1231C4EB35864932D29BB686A6F88D99F8F8A62E2303A277F570"
+        },
+        {
+          "path": ".agentlang/store/objects/7e09e2326170200dc878400bd3c351fa8d92a851d005823aca3cecc7b9f435fa.agent",
+          "bytes": 669,
+          "sha256": "7E09E2326170200DC878400BD3C351FA8D92A851D005823ACA3CECC7B9F435FA"
+        },
+        {
+          "path": ".agentlang/store/objects/8e606ad519f1cd0d47fe413a2bfa4fc91d01cd53d1b2bec47817f790ddc7d594.agent",
+          "bytes": 27,
+          "sha256": "8E606AD519F1CD0D47FE413A2BFA4FC91D01CD53D1B2BEC47817F790DDC7D594"
+        },
+        {
+          "path": ".agentlang/store/objects/9ff7398262166b5b96b350ddc03358592e8c592ef76a8fe34f8cba5541191859.agent",
+          "bytes": 80,
+          "sha256": "9FF7398262166B5B96B350DDC03358592E8C592EF76A8FE34F8CBA5541191859"
+        },
+        {
+          "path": ".agentlang/store/objects/a10884ce7d511aba9d78180d38ff469544d8b2e3e6baa4366d55743ee00ea569.agent",
+          "bytes": 1207,
+          "sha256": "A10884CE7D511ABA9D78180D38FF469544D8B2E3E6BAA4366D55743EE00EA569"
+        },
+        {
+          "path": ".agentlang/store/objects/a588ef7d356f5a9d0e41c53976e9fd39f536165c0fa252b4a176720b88651ae5.agent",
+          "bytes": 202,
+          "sha256": "A588EF7D356F5A9D0E41C53976E9FD39F536165C0FA252B4A176720B88651AE5"
+        },
+        {
+          "path": ".agentlang/store/objects/b656d29e11b2c6a71d0ad02999e3b7b6690bcea9a501ebe71ebe3186789d6e9c.agent",
+          "bytes": 929,
+          "sha256": "B656D29E11B2C6A71D0AD02999E3B7B6690BCEA9A501EBE71EBE3186789D6E9C"
+        },
+        {
+          "path": ".agentlang/store/objects/c47a14b5cb86b9b370029edc05281850a463e876881f34caab5531ac6865f154.agent",
+          "bytes": 141,
+          "sha256": "C47A14B5CB86B9B370029EDC05281850A463E876881F34CAAB5531AC6865F154"
+        },
+        {
+          "path": ".agentlang/store/objects/c8be4e828baf76085c19dd2b562a5ca6451a7bfce349aa5e8f8df2247d84f6b7.agent",
+          "bytes": 132,
+          "sha256": "C8BE4E828BAF76085C19DD2B562A5CA6451A7BFCE349AA5E8F8DF2247D84F6B7"
+        },
+        {
+          "path": ".agentlang/store/objects/d3a262684e9dc598c6ac2c32240d1b40ef55accb60ebac0e0a56f484b2599b1f.agent",
+          "bytes": 4482,
+          "sha256": "D3A262684E9DC598C6AC2C32240D1B40EF55ACCB60EBAC0E0A56F484B2599B1F"
+        },
+        {
+          "path": ".agentlang/store/objects/de7041045bf6d9e747b23a21926412acf9ad3a1a80f23e9512c106ca03c26d68.agent",
+          "bytes": 462,
+          "sha256": "DE7041045BF6D9E747B23A21926412ACF9AD3A1A80F23E9512C106CA03C26D68"
+        },
+        {
+          "path": ".agentlang/store/WRITE.lock",
+          "bytes": 0,
+          "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+        },
+        {
+          "path": "dictionary.agent",
+          "bytes": 4482,
+          "sha256": "D3A262684E9DC598C6AC2C32240D1B40EF55ACCB60EBAC0E0A56F484B2599B1F"
+        },
+        {
+          "path": "history/task-0001.json",
+          "bytes": 535,
+          "sha256": "9AF463A08E5F18956ABE8ADE3E33E1F9BF22CF5EE41DE2E9E407CDBD9447B6CF"
+        }
+      ]
+    },
+    {
+      "actor": "reset-2",
+      "condition": "reset",
+      "source": ".agentlang/pair-repair-001/starts/reset",
+      "project": ".agentlang/pair-repair-001/actors/reset-2",
+      "files": [
+        {
+          "path": ".agentlang/store/CURRENT",
+          "bytes": 134,
+          "sha256": "AA14BC88A4D9D135B3BB72A1A9F4A1280EB853B09EED36A27B76D8133D56A8D3"
+        },
+        {
+          "path": ".agentlang/store/manifests/18be761d37d08ce6fa3ea0d18dff0a11a6d8c632d11e3a2c8a3055d788629804.json",
+          "bytes": 4763,
+          "sha256": "18BE761D37D08CE6FA3EA0D18DFF0A11A6D8C632D11E3A2C8A3055D788629804"
+        },
+        {
+          "path": ".agentlang/store/manifests/2c7c90763f061da10e1d6b84fee9122dee16d8518d5d66d060aeb10818523a99.json",
+          "bytes": 376,
+          "sha256": "2C7C90763F061DA10E1D6B84FEE9122DEE16D8518D5D66D060AEB10818523A99"
+        },
+        {
+          "path": ".agentlang/store/manifests/c3a587b41106282f3033fa5bd6487a10ffbd7a51935b91f7f2b6248785b5d8a4.json",
+          "bytes": 40221,
+          "sha256": "C3A587B41106282F3033FA5BD6487A10FFBD7A51935B91F7F2B6248785B5D8A4"
+        },
+        {
+          "path": ".agentlang/store/manifests/c74c84babaae42d6abc69d931a2fabf439770f2fdb61672fa7a1164a4b50ee10.json",
+          "bytes": 788,
+          "sha256": "C74C84BABAAE42D6ABC69D931A2FABF439770F2FDB61672FA7A1164A4B50EE10"
+        },
+        {
+          "path": ".agentlang/store/manifests/dd1103a22280d244609a97798020c3af7565a866c8295066e16272575c8e2615.json",
+          "bytes": 585,
+          "sha256": "DD1103A22280D244609A97798020C3AF7565A866C8295066E16272575C8E2615"
+        },
+        {
+          "path": ".agentlang/store/objects/232d7d45c13e46c17f81cba6474d1073c5fc674309f322834b373c58410ab272.agent",
+          "bytes": 75,
+          "sha256": "232D7D45C13E46C17F81CBA6474D1073C5FC674309F322834B373C58410AB272"
+        },
+        {
+          "path": ".agentlang/store/objects/2516042d2b02d7e10b3cb0014699baf28fbb3d90b03b09faa4055a37252d1ee1.agent",
+          "bytes": 520,
+          "sha256": "2516042D2B02D7E10B3CB0014699BAF28FBB3D90B03B09FAA4055A37252D1EE1"
+        },
+        {
+          "path": ".agentlang/store/objects/2cda38473924693c02606465fb35778ad3504eba055db036f995ee6e57f9a6d3.agent",
+          "bytes": 76,
+          "sha256": "2CDA38473924693C02606465FB35778AD3504EBA055DB036F995EE6E57F9A6D3"
+        },
+        {
+          "path": ".agentlang/store/objects/43c229edb237793d0ac0f055966abc4893bd918ea2b527ed47d9ac08ce477ab2.agent",
+          "bytes": 210,
+          "sha256": "43C229EDB237793D0AC0F055966ABC4893BD918EA2B527ED47D9AC08CE477AB2"
+        },
+        {
+          "path": ".agentlang/store/objects/5286f8acecc161d3ec1167b305a12710563b9efb08ff861ba4a40fb328bf9d9d.agent",
+          "bytes": 31,
+          "sha256": "5286F8ACECC161D3EC1167B305A12710563B9EFB08FF861BA4A40FB328BF9D9D"
+        },
+        {
+          "path": ".agentlang/store/objects/58426dad43d6dd3474aac7f5bf5790a147b192e93506be27adab813860788095.agent",
+          "bytes": 520,
+          "sha256": "58426DAD43D6DD3474AAC7F5BF5790A147B192E93506BE27ADAB813860788095"
+        },
+        {
+          "path": ".agentlang/store/objects/65c046007d4f4b7d48b75a1df50d78d5a35d1ba88a53dce2be2d61f2d3dcbd6d.agent",
+          "bytes": 49,
+          "sha256": "65C046007D4F4B7D48B75A1DF50D78D5A35D1BA88A53DCE2BE2D61F2D3DCBD6D"
+        },
+        {
+          "path": ".agentlang/store/objects/65e8afc9b5bb1bfca243faef92c9b31d75f9f8b5d3e492244085f4fb86a4d351.agent",
+          "bytes": 152,
+          "sha256": "65E8AFC9B5BB1BFCA243FAEF92C9B31D75F9F8B5D3E492244085F4FB86A4D351"
+        },
+        {
+          "path": ".agentlang/store/objects/66a9d0d506f9c11be050b075baef28b66e70f42507b1146000e5904d0ffd85d0.agent",
+          "bytes": 504,
+          "sha256": "66A9D0D506F9C11BE050B075BAEF28B66E70F42507B1146000E5904D0FFD85D0"
+        },
+        {
+          "path": ".agentlang/store/objects/6af51409069f1231c4eb35864932d29bb686a6f88d99f8f8a62e2303a277f570.agent",
+          "bytes": 103,
+          "sha256": "6AF51409069F1231C4EB35864932D29BB686A6F88D99F8F8A62E2303A277F570"
+        },
+        {
+          "path": ".agentlang/store/objects/7e09e2326170200dc878400bd3c351fa8d92a851d005823aca3cecc7b9f435fa.agent",
+          "bytes": 669,
+          "sha256": "7E09E2326170200DC878400BD3C351FA8D92A851D005823ACA3CECC7B9F435FA"
+        },
+        {
+          "path": ".agentlang/store/objects/8e606ad519f1cd0d47fe413a2bfa4fc91d01cd53d1b2bec47817f790ddc7d594.agent",
+          "bytes": 27,
+          "sha256": "8E606AD519F1CD0D47FE413A2BFA4FC91D01CD53D1B2BEC47817F790DDC7D594"
+        },
+        {
+          "path": ".agentlang/store/objects/9ff7398262166b5b96b350ddc03358592e8c592ef76a8fe34f8cba5541191859.agent",
+          "bytes": 80,
+          "sha256": "9FF7398262166B5B96B350DDC03358592E8C592EF76A8FE34F8CBA5541191859"
+        },
+        {
+          "path": ".agentlang/store/objects/a10884ce7d511aba9d78180d38ff469544d8b2e3e6baa4366d55743ee00ea569.agent",
+          "bytes": 1207,
+          "sha256": "A10884CE7D511ABA9D78180D38FF469544D8B2E3E6BAA4366D55743EE00EA569"
+        },
+        {
+          "path": ".agentlang/store/objects/a588ef7d356f5a9d0e41c53976e9fd39f536165c0fa252b4a176720b88651ae5.agent",
+          "bytes": 202,
+          "sha256": "A588EF7D356F5A9D0E41C53976E9FD39F536165C0FA252B4A176720B88651AE5"
+        },
+        {
+          "path": ".agentlang/store/objects/b656d29e11b2c6a71d0ad02999e3b7b6690bcea9a501ebe71ebe3186789d6e9c.agent",
+          "bytes": 929,
+          "sha256": "B656D29E11B2C6A71D0AD02999E3B7B6690BCEA9A501EBE71EBE3186789D6E9C"
+        },
+        {
+          "path": ".agentlang/store/objects/c47a14b5cb86b9b370029edc05281850a463e876881f34caab5531ac6865f154.agent",
+          "bytes": 141,
+          "sha256": "C47A14B5CB86B9B370029EDC05281850A463E876881F34CAAB5531AC6865F154"
+        },
+        {
+          "path": ".agentlang/store/objects/c8be4e828baf76085c19dd2b562a5ca6451a7bfce349aa5e8f8df2247d84f6b7.agent",
+          "bytes": 132,
+          "sha256": "C8BE4E828BAF76085C19DD2B562A5CA6451A7BFCE349AA5E8F8DF2247D84F6B7"
+        },
+        {
+          "path": ".agentlang/store/objects/d3a262684e9dc598c6ac2c32240d1b40ef55accb60ebac0e0a56f484b2599b1f.agent",
+          "bytes": 4482,
+          "sha256": "D3A262684E9DC598C6AC2C32240D1B40EF55ACCB60EBAC0E0A56F484B2599B1F"
+        },
+        {
+          "path": ".agentlang/store/objects/de7041045bf6d9e747b23a21926412acf9ad3a1a80f23e9512c106ca03c26d68.agent",
+          "bytes": 462,
+          "sha256": "DE7041045BF6D9E747B23A21926412ACF9AD3A1A80F23E9512C106CA03C26D68"
+        },
+        {
+          "path": ".agentlang/store/WRITE.lock",
+          "bytes": 0,
+          "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+        },
+        {
+          "path": "dictionary.agent",
+          "bytes": 4482,
+          "sha256": "D3A262684E9DC598C6AC2C32240D1B40EF55ACCB60EBAC0E0A56F484B2599B1F"
+        },
+        {
+          "path": "history/task-0001.json",
+          "bytes": 535,
+          "sha256": "9AF463A08E5F18956ABE8ADE3E33E1F9BF22CF5EE41DE2E9E407CDBD9447B6CF"
+        }
+      ]
+    },
+    {
+      "actor": "conventional-1",
+      "condition": "conventional",
+      "source": ".agentlang/pair-repair-001/starts/conventional",
+      "project": ".agentlang/pair-repair-001/actors/conventional-1",
+      "files": [
+        {
+          "path": "Domain.fs",
+          "bytes": 3074,
+          "sha256": "5FC59ABEFDA826C0D4B023E535F6C906DD22B03BC56D1185DB6BD67E35EE19B0"
+        },
+        {
+          "path": "Operations.fs",
+          "bytes": 1738,
+          "sha256": "F25D48F46F56F3199974CB0948A84D0370F9E98BCF85FCB1855872CA3CC48DA0"
+        },
+        {
+          "path": "SelfTests.fs",
+          "bytes": 5862,
+          "sha256": "BBE5AE102AD1046F3541835832E23B218F3F39FF0440F414006697764E999E3B"
+        },
+        {
+          "path": "StatefulPilot.fsproj",
+          "bytes": 360,
+          "sha256": "9435284D144A8723127E39ED5E3E3D3B7993E374612DE80ECD7828B31BBEB570"
+        }
+      ]
+    },
+    {
+      "actor": "conventional-2",
+      "condition": "conventional",
+      "source": ".agentlang/pair-repair-001/starts/conventional",
+      "project": ".agentlang/pair-repair-001/actors/conventional-2",
+      "files": [
+        {
+          "path": "Domain.fs",
+          "bytes": 3074,
+          "sha256": "5FC59ABEFDA826C0D4B023E535F6C906DD22B03BC56D1185DB6BD67E35EE19B0"
+        },
+        {
+          "path": "Operations.fs",
+          "bytes": 1738,
+          "sha256": "F25D48F46F56F3199974CB0948A84D0370F9E98BCF85FCB1855872CA3CC48DA0"
+        },
+        {
+          "path": "SelfTests.fs",
+          "bytes": 5862,
+          "sha256": "BBE5AE102AD1046F3541835832E23B218F3F39FF0440F414006697764E999E3B"
+        },
+        {
+          "path": "StatefulPilot.fsproj",
+          "bytes": 360,
+          "sha256": "9435284D144A8723127E39ED5E3E3D3B7993E374612DE80ECD7828B31BBEB570"
+        }
+      ]
+    }
+  ],
+  "runtime": [
+    {
+      "path": "AgentLang.Cli.deps.json",
+      "bytes": 2903,
+      "sha256": "6382F6DC29BB8F827824839010E313B266E51A3F87A4FDB8C382931D2549E97E"
+    },
+    {
+      "path": "AgentLang.Cli.dll",
+      "bytes": 43008,
+      "sha256": "DA0A9677A7D9694B8B8E1D24D72F49CD8D7D4180F21A9077612A8D4B84373A02"
+    },
+    {
+      "path": "AgentLang.Cli.exe",
+      "bytes": 156160,
+      "sha256": "8D85CA1F3B44E8715C0F230241DEAB3A2B02222C7428D4A5D3ABE2B0A866822B"
+    },
+    {
+      "path": "AgentLang.Cli.pdb",
+      "bytes": 12932,
+      "sha256": "633CD91E742620ECAFA470B256853ED53DA8736223A9783B1317ED2E358FE492"
+    },
+    {
+      "path": "AgentLang.Cli.runtimeconfig.json",
+      "bytes": 268,
+      "sha256": "A45057885F807F4A337FDEA3CCDFA64E1675D22A6D6A6FC7C7394FD44BA9EEBE"
+    },
+    {
+      "path": "AgentLang.Core.dll",
+      "bytes": 2591232,
+      "sha256": "32ECE1BDAD77A8ABCFF9D81F0A6EBB913AC319706B8258F978FC0FCA2814B214"
+    },
+    {
+      "path": "AgentLang.Core.pdb",
+      "bytes": 902844,
+      "sha256": "AE6254707A274B3DF5B6FBD7A680E34F04D049C523B1220E18149863A60C9441"
+    },
+    {
+      "path": "AgentLang.Core.xml",
+      "bytes": 37131,
+      "sha256": "09AC15A5F53B3D6FD39E721BB9E7EDA22F7B2269A7676F95866F822C9BCCBE7A"
+    },
+    {
+      "path": "cs/FSharp.Core.resources.dll",
+      "bytes": 34600,
+      "sha256": "EB8BD755CFE0D39CE27615027FE22556E8B9DCB470F2B47A36F4BFBF3C31BE64"
+    },
+    {
+      "path": "de/FSharp.Core.resources.dll",
+      "bytes": 35592,
+      "sha256": "7419E4F5CEED9E03821686E865FED7D29C6217FDF5D3A46A2919A369C98C38CE"
+    },
+    {
+      "path": "es/FSharp.Core.resources.dll",
+      "bytes": 34600,
+      "sha256": "636866649564C72EB763EB3942E021B52B1F9B3869D037ACA48F73D4474353C5"
+    },
+    {
+      "path": "fr/FSharp.Core.resources.dll",
+      "bytes": 35128,
+      "sha256": "F38F2FD6BC4C4E233DD098A36B315A2BC87673CF2F07C6BA3DAF71A3264F4A64"
+    },
+    {
+      "path": "FSharp.Core.dll",
+      "bytes": 2314000,
+      "sha256": "BF72714C36DC21357A6530D59479E1D7FC5E6BC815A9AF9A872E5E41611C1E6F"
+    },
+    {
+      "path": "it/FSharp.Core.resources.dll",
+      "bytes": 34576,
+      "sha256": "61A0BE9C6A2ED95F8E98493B17C54A55C68CEF84E23A0D82114319E2C5F3C2CD"
+    },
+    {
+      "path": "ja/FSharp.Core.resources.dll",
+      "bytes": 37160,
+      "sha256": "DD7F36036D906E991DA5505B074EF889A603F449D3324750FDA5F5445BA2854F"
+    },
+    {
+      "path": "ko/FSharp.Core.resources.dll",
+      "bytes": 36104,
+      "sha256": "0F3EF625E379577E3B60C15D8CC3759D3DC8840F99894282DF1E702B4A166462"
+    },
+    {
+      "path": "pl/FSharp.Core.resources.dll",
+      "bytes": 35632,
+      "sha256": "755BAB9FBD85E5E4B4771870C9C4D655E91E3CE39CC1C2735FE0BC7CEC6B84C3"
+    },
+    {
+      "path": "pt-BR/FSharp.Core.resources.dll",
+      "bytes": 34096,
+      "sha256": "A4BBBDAABF2003A5FDFF5F5BC4143C3FD4A064F2681FC481F449D4558074DC61"
+    },
+    {
+      "path": "ru/FSharp.Core.resources.dll",
+      "bytes": 41232,
+      "sha256": "A1133F9AB7E661803D1AF0C2489626BD53AC33A11DFE891F5A02F3186F2F5D78"
+    },
+    {
+      "path": "tr/FSharp.Core.resources.dll",
+      "bytes": 34072,
+      "sha256": "6B0CBA5139A86EE681909FDFCEBAC07C99AFBA3BFCFF4FB8AB12B9C2112A0B31"
+    },
+    {
+      "path": "zh-Hans/FSharp.Core.resources.dll",
+      "bytes": 32552,
+      "sha256": "25F82F35A9234BCAAB272921B0D50054DDB4A669D96C111907C9D31F5B18C121"
+    },
+    {
+      "path": "zh-Hant/FSharp.Core.resources.dll",
+      "bytes": 32032,
+      "sha256": "AC03EE7C4112C755705776C700033794586F980FE9476E6A13811A7153BEABB8"
+    }
+  ],
+  "conventionalBroker": [
+    {
+      "path": "AgentLang.Conventional.Cli.deps.json",
+      "bytes": 2974,
+      "sha256": "286C223538B469E3A5A6364BEBC0D68051682DB3C80CD6BB043DEF2B7B33EACE"
+    },
+    {
+      "path": "AgentLang.Conventional.Cli.dll",
+      "bytes": 17920,
+      "sha256": "53DDA8D8E3EB152BFC79D266D3CB22B5267EA98FD646FC1E3C0642BCE542D8D3"
+    },
+    {
+      "path": "AgentLang.Conventional.Cli.exe",
+      "bytes": 156160,
+      "sha256": "7B65714EA8E1D5EE03176358B7D24F9FA6BD4BDEBE53D79DBC83DFC39583CF7E"
+    },
+    {
+      "path": "AgentLang.Conventional.Cli.pdb",
+      "bytes": 4820,
+      "sha256": "9E44A189566421F1447E7D7FE4A1AAF4DB7CA45B75C644700F8687873B5F0E5C"
+    },
+    {
+      "path": "AgentLang.Conventional.Cli.runtimeconfig.json",
+      "bytes": 340,
+      "sha256": "3C0BF772B95C93363A0A14E5DF78E4EC408C90F04CB7103205AF97B2D276FAB0"
+    },
+    {
+      "path": "AgentLang.Conventional.deps.json",
+      "bytes": 2498,
+      "sha256": "18981412CDDD0E64918A6BE7107E28264318EA732EDC3BC716DCE08A813A9896"
+    },
+    {
+      "path": "AgentLang.Conventional.dll",
+      "bytes": 53248,
+      "sha256": "1564EBF9C79CC4E23239490D08D6BA2CD65134CA8CC83599715C918E92A18EAE"
+    },
+    {
+      "path": "AgentLang.Conventional.pdb",
+      "bytes": 12844,
+      "sha256": "14CA44B7A01BB7242BBB84CDBBAD4326C4834770ED2C2C681B2DEF9CE9F47265"
+    },
+    {
+      "path": "AgentLang.Conventional.xml",
+      "bytes": 1055,
+      "sha256": "621B5C7C93C495C1DFC83279858DBB31ECD999F56D5237070BF05C59159B81EB"
+    },
+    {
+      "path": "FSharp.Core.dll",
+      "bytes": 2314000,
+      "sha256": "BF72714C36DC21357A6530D59479E1D7FC5E6BC815A9AF9A872E5E41611C1E6F"
+    }
+  ],
+  "host": {
+    "path": "scripts/Start-SubagentTrialHostV2.ps1",
+    "sha256": "6573321E8C0FC92926E43221AE10836FD5C62139E5FDB51CC34FF482FBC81F2B"
+  },
+  "controls": {
+    "scoring/score-flow-reset-reviewed-oracle.json": {
+      "sha256": "C29125F2F7CF1FD7949904BE94569230A31349EF30CA28E49058DCBE0349FB5F",
+      "behavior": {
+        "passedCases": 10,
+        "totalCases": 12,
+        "failedChecks": 8,
+        "passed": false
+      },
+      "passed": false
+    },
+    "scoring/score-flow-retained-reviewed-oracle.json": {
+      "sha256": "0222A1CA12BF70E0B836D114BE269F62D263E30A3AEC82EA1E63B14DEE695233",
+      "behavior": {
+        "passedCases": 10,
+        "totalCases": 12,
+        "failedChecks": 8,
+        "passed": false
+      },
+      "passed": false
+    },
+    "scoring/score-fsharp-seed-reviewed-oracle.json": {
+      "sha256": "1B7A3454A0EA7FFC2132C9F864A7DD18E4ADA1B8A667A5AFBA964CB0D44C2034",
+      "behavior": {
+        "passedCases": 10,
+        "totalCases": 12,
+        "failedChecks": 8,
+        "passed": false
+      },
+      "passed": false
+    },
+    "scoring/score-flow-corrected-reviewed-oracle.json": {
+      "sha256": "82CBE7976A2E5816D61114659FA5CF413F78E38E64FF08ADECBE4E36E301F237",
+      "behavior": {
+        "passedCases": 12,
+        "totalCases": 12,
+        "failedChecks": 0,
+        "passed": true
+      },
+      "passed": true
+    },
+    "scoring/score-fsharp-corrected-reviewed-oracle.json": {
+      "sha256": "407F7539B360FF50A89AA455C1E1DDE5B21B3333278AFA60DBE7C20352F07A08",
+      "behavior": {
+        "passedCases": 12,
+        "totalCases": 12,
+        "failedChecks": 0,
+        "passed": true
+      },
+      "passed": true
+    },
+    "scoring/score-flow-mutant-wrong-second-path-committed-reviewed-oracle.json": {
+      "sha256": "FCFA17293F2B8F47B0AF077AD5E347813B05AA5C279B8C2A32E195FB8985CDEB",
+      "behavior": {
+        "passedCases": 6,
+        "totalCases": 12,
+        "failedChecks": 16,
+        "passed": false
+      },
+      "passed": false
+    },
+    "scoring/score-fsharp-mutant-wrong-second-path-reviewed-oracle.json": {
+      "sha256": "C98D465506632F26DCC21C8D773F61137448CA93821985074C9252CC8C1CB681",
+      "behavior": {
+        "passedCases": 6,
+        "totalCases": 12,
+        "failedChecks": 16,
+        "passed": false
+      },
+      "passed": false
+    },
+    "scoring/score-flow-mutant-redundant-second-write-reviewed-oracle.json": {
+      "sha256": "C84AD7AE07E8A55F3020AD109B4CEBB19101FF188CEED78F580EB71E13D89766",
+      "behavior": {
+        "passedCases": 9,
+        "totalCases": 12,
+        "failedChecks": 3,
+        "passed": false
+      },
+      "passed": false
+    },
+    "scoring/score-fsharp-mutant-redundant-second-write-reviewed-oracle.json": {
+      "sha256": "8845F716BCF68F1477D6510D1E78D97E82F5DFCDFB67F06C30B69C3A9C8EACC9",
+      "behavior": {
+        "passedCases": 9,
+        "totalCases": 12,
+        "failedChecks": 3,
+        "passed": false
+      },
+      "passed": false
+    }
+  }
+}

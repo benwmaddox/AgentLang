@@ -1,0 +1,12 @@
+test invoice.queue-reminders-for-pair/both-not-open-no-provider-calls {
+    invoice::queue-reminders-for-pair(
+        invoicePair::new(
+            first = invoice::new(
+                id = InvoiceId::new("pair-flow-uppercase-first"),
+                status = InvoiceStatus::new("Open")),
+            second = invoice::new(
+                id = InvoiceId::new("pair-flow-spaced-second"),
+                status = InvoiceStatus::new(" open"))))
+    => value reminderPairResult::new(first = "not-open", second = "not-open")
+    effects { fs.read: 0; fs.write: 0; }
+}

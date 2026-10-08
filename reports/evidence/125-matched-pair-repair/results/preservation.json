@@ -1,0 +1,2328 @@
+[
+  {
+    "actor": "conventional-1",
+    "domainUnchanged": true,
+    "projectUnchanged": true,
+    "inheritedHelperUnchanged": true,
+    "inheritedTestsUnchanged": true,
+    "operationsSource": "namespace AgentLang.StatefulPilot\n\nmodule ReminderOperations =\n    /// Queues a reminder once, preserving any contents already stored at its path.\n    let queueOnce (files: IReminderFiles) (invoice: Invoice) : string =\n        match invoice.Status with\n        | InvoiceStatus \"open\" ->\n            let path = Invoice.reminderPath invoice.Id\n\n            if files.Exists path then\n                files.Read path\n            else\n                files.Write(path, \"queued\")\n                \"queued\"\n        | _ -> \"not-open\"\n\n    /// Processes both invoices independently in order, preserving existing reminder contents.\n    let queueRemindersForPair (files: IReminderFiles) (pair: InvoicePair) : ReminderPairResult =\n        let firstResult = queueOnce files pair.first\n        let secondResult = queueOnce files pair.second\n\n        { first = firstResult\n          second = secondResult }\n",
+    "targetSource": " independently in order, preserving existing reminder contents.\n    let queueRemindersForPair (files: IReminderFiles) (pair: InvoicePair) : ReminderPairResult =\n        let firstResult = queueOnce files pair.first\n        let secondResult = queueOnce files pair.second\n\n        { first = firstResult\n          second = secondResult }\n"
+  },
+  {
+    "actor": "conventional-2",
+    "domainUnchanged": true,
+    "projectUnchanged": true,
+    "inheritedHelperUnchanged": true,
+    "inheritedTestsUnchanged": true,
+    "operationsSource": "namespace AgentLang.StatefulPilot\n\nmodule ReminderOperations =\n    /// Queues a reminder once, preserving any contents already stored at its path.\n    let queueOnce (files: IReminderFiles) (invoice: Invoice) : string =\n        match invoice.Status with\n        | InvoiceStatus \"open\" ->\n            let path = Invoice.reminderPath invoice.Id\n\n            if files.Exists path then\n                files.Read path\n            else\n                files.Write(path, \"queued\")\n                \"queued\"\n        | _ -> \"not-open\"\n\n    /// Processes both invoices independently in order, preserving existing reminder contents.\n    let queueRemindersForPair (files: IReminderFiles) (pair: InvoicePair) : ReminderPairResult =\n        let firstResult = queueOnce files pair.first\n        let secondResult = queueOnce files pair.second\n\n        { first = firstResult\n          second = secondResult }\n",
+    "targetSource": " independently in order, preserving existing reminder contents.\n    let queueRemindersForPair (files: IReminderFiles) (pair: InvoicePair) : ReminderPairResult =\n        let firstResult = queueOnce files pair.first\n        let secondResult = queueOnce files pair.second\n\n        { first = firstResult\n          second = secondResult }\n"
+  },
+  {
+    "actor": "reset-1",
+    "typesUnchanged": true,
+    "inheritedWordsUnchanged": {
+      "invoice.reminder-path": true
+    },
+    "newWords": [],
+    "targetRevision": 2,
+    "maturity": "library",
+    "targetTests": 7,
+    "targetSource": "fn invoice.queue-reminders-for-pair(pair: InvoicePair) -> ReminderPairResult {\n    effects fs.read, fs.write\n    doc \"Queue reminders independently in pair order and return their exact markers.\"\n\n    let first-result =\n        if InvoiceStatus::value(pair.first.status) == \"open\" {\n            let first-path = invoice::reminder-path(pair.first.id);\n            if file::exists?(first-path) {\n                file::read(first-path)\n            } else {\n                file::write(first-path, \"queued\");\n                \"queued\"\n            }\n        } else {\n            \"not-open\"\n        };\n\n    let second-result =\n        if InvoiceStatus::value(pair.second.status) == \"open\" {\n            let second-path = invoice::reminder-path(pair.second.id);\n            if file::exists?(second-path) {\n                file::read(second-path)\n            } else {\n                file::write(second-path, \"queued\");\n                \"queued\"\n            }\n        } else {\n            \"not-open\"\n        };\n\n    reminderPairResult::new(first = first-result, second = second-result)\n}",
+    "targetCallBindings": [
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "4d32655a1f560b8e56df214f605b2ebbc70c2687e9875cec00c8937ee698e8b3"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifCondition"
+          }
+        ],
+        "form": {
+          "kind": "direct"
+        },
+        "requestedName": "equals",
+        "target": {
+          "kind": "primitive",
+          "identity": "equals"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "4d32655a1f560b8e56df214f605b2ebbc70c2687e9875cec00c8937ee698e8b3"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifCondition"
+          },
+          {
+            "segment": "equalityLeft"
+          }
+        ],
+        "form": {
+          "kind": "direct"
+        },
+        "requestedName": "InvoiceStatus.value",
+        "target": {
+          "kind": "generatedWord",
+          "identity": "generated_InvoiceStatus.value"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "4d32655a1f560b8e56df214f605b2ebbc70c2687e9875cec00c8937ee698e8b3"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifCondition"
+          },
+          {
+            "segment": "equalityLeft"
+          },
+          {
+            "segment": "callArgument",
+            "index": 0
+          }
+        ],
+        "form": {
+          "kind": "propertyAccess",
+          "field": "status"
+        },
+        "requestedName": "status",
+        "target": {
+          "kind": "generatedWord",
+          "identity": "generated_invoice.status"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "4d32655a1f560b8e56df214f605b2ebbc70c2687e9875cec00c8937ee698e8b3"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifCondition"
+          },
+          {
+            "segment": "equalityLeft"
+          },
+          {
+            "segment": "callArgument",
+            "index": 0
+          },
+          {
+            "segment": "propertyReceiver"
+          }
+        ],
+        "form": {
+          "kind": "propertyAccess",
+          "field": "first"
+        },
+        "requestedName": "first",
+        "target": {
+          "kind": "generatedWord",
+          "identity": "generated_invoicePair.first"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "4d32655a1f560b8e56df214f605b2ebbc70c2687e9875cec00c8937ee698e8b3"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifThenStatement",
+            "index": 0
+          },
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          }
+        ],
+        "form": {
+          "kind": "direct"
+        },
+        "requestedName": "invoice.reminder-path",
+        "target": {
+          "kind": "userWord",
+          "identity": "word_82156eb2a08042c0bee76c75374c4414"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "4d32655a1f560b8e56df214f605b2ebbc70c2687e9875cec00c8937ee698e8b3"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifThenStatement",
+            "index": 0
+          },
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "callArgument",
+            "index": 0
+          }
+        ],
+        "form": {
+          "kind": "propertyAccess",
+          "field": "id"
+        },
+        "requestedName": "id",
+        "target": {
+          "kind": "generatedWord",
+          "identity": "generated_invoice.id"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "4d32655a1f560b8e56df214f605b2ebbc70c2687e9875cec00c8937ee698e8b3"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifThenStatement",
+            "index": 0
+          },
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "callArgument",
+            "index": 0
+          },
+          {
+            "segment": "propertyReceiver"
+          }
+        ],
+        "form": {
+          "kind": "propertyAccess",
+          "field": "first"
+        },
+        "requestedName": "first",
+        "target": {
+          "kind": "generatedWord",
+          "identity": "generated_invoicePair.first"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "4d32655a1f560b8e56df214f605b2ebbc70c2687e9875cec00c8937ee698e8b3"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifThenStatement",
+            "index": 0
+          },
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "evaluateExpression"
+          },
+          {
+            "segment": "ifCondition"
+          }
+        ],
+        "form": {
+          "kind": "direct"
+        },
+        "requestedName": "file.exists?",
+        "target": {
+          "kind": "primitive",
+          "identity": "file.exists?"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "4d32655a1f560b8e56df214f605b2ebbc70c2687e9875cec00c8937ee698e8b3"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifThenStatement",
+            "index": 0
+          },
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "evaluateExpression"
+          },
+          {
+            "segment": "ifThenStatement",
+            "index": 0
+          },
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "evaluateExpression"
+          }
+        ],
+        "form": {
+          "kind": "direct"
+        },
+        "requestedName": "file.read",
+        "target": {
+          "kind": "primitive",
+          "identity": "file.read"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "4d32655a1f560b8e56df214f605b2ebbc70c2687e9875cec00c8937ee698e8b3"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifThenStatement",
+            "index": 0
+          },
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "evaluateExpression"
+          },
+          {
+            "segment": "ifElseStatement",
+            "index": 0
+          },
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "evaluateExpression"
+          }
+        ],
+        "form": {
+          "kind": "direct"
+        },
+        "requestedName": "file.write",
+        "target": {
+          "kind": "primitive",
+          "identity": "file.write"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "4d32655a1f560b8e56df214f605b2ebbc70c2687e9875cec00c8937ee698e8b3"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifCondition"
+          }
+        ],
+        "form": {
+          "kind": "direct"
+        },
+        "requestedName": "equals",
+        "target": {
+          "kind": "primitive",
+          "identity": "equals"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "4d32655a1f560b8e56df214f605b2ebbc70c2687e9875cec00c8937ee698e8b3"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifCondition"
+          },
+          {
+            "segment": "equalityLeft"
+          }
+        ],
+        "form": {
+          "kind": "direct"
+        },
+        "requestedName": "InvoiceStatus.value",
+        "target": {
+          "kind": "generatedWord",
+          "identity": "generated_InvoiceStatus.value"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "4d32655a1f560b8e56df214f605b2ebbc70c2687e9875cec00c8937ee698e8b3"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifCondition"
+          },
+          {
+            "segment": "equalityLeft"
+          },
+          {
+            "segment": "callArgument",
+            "index": 0
+          }
+        ],
+        "form": {
+          "kind": "propertyAccess",
+          "field": "status"
+        },
+        "requestedName": "status",
+        "target": {
+          "kind": "generatedWord",
+          "identity": "generated_invoice.status"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "4d32655a1f560b8e56df214f605b2ebbc70c2687e9875cec00c8937ee698e8b3"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifCondition"
+          },
+          {
+            "segment": "equalityLeft"
+          },
+          {
+            "segment": "callArgument",
+            "index": 0
+          },
+          {
+            "segment": "propertyReceiver"
+          }
+        ],
+        "form": {
+          "kind": "propertyAccess",
+          "field": "second"
+        },
+        "requestedName": "second",
+        "target": {
+          "kind": "generatedWord",
+          "identity": "generated_invoicePair.second"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "4d32655a1f560b8e56df214f605b2ebbc70c2687e9875cec00c8937ee698e8b3"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifThenStatement",
+            "index": 0
+          },
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          }
+        ],
+        "form": {
+          "kind": "direct"
+        },
+        "requestedName": "invoice.reminder-path",
+        "target": {
+          "kind": "userWord",
+          "identity": "word_82156eb2a08042c0bee76c75374c4414"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "4d32655a1f560b8e56df214f605b2ebbc70c2687e9875cec00c8937ee698e8b3"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifThenStatement",
+            "index": 0
+          },
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "callArgument",
+            "index": 0
+          }
+        ],
+        "form": {
+          "kind": "propertyAccess",
+          "field": "id"
+        },
+        "requestedName": "id",
+        "target": {
+          "kind": "generatedWord",
+          "identity": "generated_invoice.id"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "4d32655a1f560b8e56df214f605b2ebbc70c2687e9875cec00c8937ee698e8b3"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifThenStatement",
+            "index": 0
+          },
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "callArgument",
+            "index": 0
+          },
+          {
+            "segment": "propertyReceiver"
+          }
+        ],
+        "form": {
+          "kind": "propertyAccess",
+          "field": "second"
+        },
+        "requestedName": "second",
+        "target": {
+          "kind": "generatedWord",
+          "identity": "generated_invoicePair.second"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "4d32655a1f560b8e56df214f605b2ebbc70c2687e9875cec00c8937ee698e8b3"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifThenStatement",
+            "index": 0
+          },
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "evaluateExpression"
+          },
+          {
+            "segment": "ifCondition"
+          }
+        ],
+        "form": {
+          "kind": "direct"
+        },
+        "requestedName": "file.exists?",
+        "target": {
+          "kind": "primitive",
+          "identity": "file.exists?"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "4d32655a1f560b8e56df214f605b2ebbc70c2687e9875cec00c8937ee698e8b3"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifThenStatement",
+            "index": 0
+          },
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "evaluateExpression"
+          },
+          {
+            "segment": "ifThenStatement",
+            "index": 0
+          },
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "evaluateExpression"
+          }
+        ],
+        "form": {
+          "kind": "direct"
+        },
+        "requestedName": "file.read",
+        "target": {
+          "kind": "primitive",
+          "identity": "file.read"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "4d32655a1f560b8e56df214f605b2ebbc70c2687e9875cec00c8937ee698e8b3"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifThenStatement",
+            "index": 0
+          },
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "evaluateExpression"
+          },
+          {
+            "segment": "ifElseStatement",
+            "index": 0
+          },
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "evaluateExpression"
+          }
+        ],
+        "form": {
+          "kind": "direct"
+        },
+        "requestedName": "file.write",
+        "target": {
+          "kind": "primitive",
+          "identity": "file.write"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "4d32655a1f560b8e56df214f605b2ebbc70c2687e9875cec00c8937ee698e8b3"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 2
+          },
+          {
+            "segment": "evaluateExpression"
+          }
+        ],
+        "form": {
+          "kind": "direct"
+        },
+        "requestedName": "reminderPairResult.new",
+        "target": {
+          "kind": "generatedWord",
+          "identity": "generated_reminderPairResult.new"
+        }
+      }
+    ],
+    "finalActorDescription": {
+      "callers": [],
+      "coverage": {
+        "branchesCovered": 8,
+        "branchesTotal": 8,
+        "finiteCoverage": {
+          "complete": true,
+          "inputs": [],
+          "missing": [],
+          "returns": [
+            {
+              "missing": [],
+              "observed": [],
+              "position": 0,
+              "required": [],
+              "type": "ReminderPairResult"
+            }
+          ],
+          "targetInvocations": 8,
+          "unsupported": []
+        },
+        "instructionsCovered": 49,
+        "instructionsTotal": 49,
+        "status": "current",
+        "uncoveredBranchOutcomes": [],
+        "uncoveredInstructions": []
+      },
+      "dependencies": [
+        "InvoiceStatus.value",
+        "equals",
+        "file.exists?",
+        "file.read",
+        "file.write",
+        "invoice.id",
+        "invoice.reminder-path",
+        "invoice.status",
+        "invoicePair.first",
+        "invoicePair.second",
+        "reminderPairResult.new"
+      ],
+      "deprecated": false,
+      "documentation": "Queue reminders independently in pair order and return their exact markers.",
+      "effects": [
+        "fs.read",
+        "fs.write"
+      ],
+      "exampleCount": 1,
+      "examples": [
+        "queues-second-in-order"
+      ],
+      "flowReference": "invoice::queue-reminders-for-pair",
+      "flowReferenceUnavailableReason": null,
+      "id": "word_536cf6c7fa5b4a1a83a1f1c422ac06e4",
+      "inputs": [
+        "InvoicePair"
+      ],
+      "kind": "word",
+      "line": 1,
+      "maturity": "library",
+      "name": "invoice.queue-reminders-for-pair",
+      "outputs": [
+        "ReminderPairResult"
+      ],
+      "parameters": [
+        {
+          "name": "pair",
+          "type": "InvoicePair"
+        }
+      ],
+      "revision": 2,
+      "source": "<flow:invoice.queue-reminders-for-pair/2>",
+      "status": "persistent",
+      "testCount": 7,
+      "tests": [
+        "duplicate-id-second-reads-first-write",
+        "exact-existing-markers",
+        "first-not-open-skips-open-second",
+        "non-open-statuses-make-no-provider-calls",
+        "repeat-preserves-marker",
+        "second-not-open-after-first-queues",
+        "two-open-missing"
+      ],
+      "transitiveDependencies": [
+        "InvoiceId.value",
+        "InvoiceStatus.value",
+        "equals",
+        "file.exists?",
+        "file.read",
+        "file.write",
+        "invoice.id",
+        "invoice.reminder-path",
+        "invoice.status",
+        "invoicePair.first",
+        "invoicePair.second",
+        "reminderPairResult.new",
+        "string.concat"
+      ]
+    }
+  },
+  {
+    "actor": "reset-2",
+    "typesUnchanged": true,
+    "inheritedWordsUnchanged": {
+      "invoice.reminder-path": true
+    },
+    "newWords": [],
+    "targetRevision": 2,
+    "maturity": "library",
+    "targetTests": 6,
+    "targetSource": "fn invoice.queue-reminders-for-pair(pair: InvoicePair) -> ReminderPairResult {\n    effects fs.read, fs.write\n    doc \"Queue open invoice reminders in pair order and return their exact markers.\"\n\n    let first-result =\n        if InvoiceStatus::value(pair.first.status) == \"open\" {\n            let first-path = invoice::reminder-path(pair.first.id);\n            if file::exists?(first-path) {\n                file::read(first-path)\n            } else {\n                file::write(first-path, \"queued\");\n                \"queued\"\n            }\n        } else {\n            \"not-open\"\n        };\n    let second-result =\n        if InvoiceStatus::value(pair.second.status) == \"open\" {\n            let second-path = invoice::reminder-path(pair.second.id);\n            if file::exists?(second-path) {\n                file::read(second-path)\n            } else {\n                file::write(second-path, \"queued\");\n                \"queued\"\n            }\n        } else {\n            \"not-open\"\n        };\n    reminderPairResult::new(first = first-result, second = second-result)\n}",
+    "targetCallBindings": [
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "e422c5529407bf62b9a3ab0ba15a0dd073b0cd5f1c2b7a5d3d80377bbfb762e4"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifCondition"
+          }
+        ],
+        "form": {
+          "kind": "direct"
+        },
+        "requestedName": "equals",
+        "target": {
+          "kind": "primitive",
+          "identity": "equals"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "e422c5529407bf62b9a3ab0ba15a0dd073b0cd5f1c2b7a5d3d80377bbfb762e4"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifCondition"
+          },
+          {
+            "segment": "equalityLeft"
+          }
+        ],
+        "form": {
+          "kind": "direct"
+        },
+        "requestedName": "InvoiceStatus.value",
+        "target": {
+          "kind": "generatedWord",
+          "identity": "generated_InvoiceStatus.value"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "e422c5529407bf62b9a3ab0ba15a0dd073b0cd5f1c2b7a5d3d80377bbfb762e4"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifCondition"
+          },
+          {
+            "segment": "equalityLeft"
+          },
+          {
+            "segment": "callArgument",
+            "index": 0
+          }
+        ],
+        "form": {
+          "kind": "propertyAccess",
+          "field": "status"
+        },
+        "requestedName": "status",
+        "target": {
+          "kind": "generatedWord",
+          "identity": "generated_invoice.status"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "e422c5529407bf62b9a3ab0ba15a0dd073b0cd5f1c2b7a5d3d80377bbfb762e4"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifCondition"
+          },
+          {
+            "segment": "equalityLeft"
+          },
+          {
+            "segment": "callArgument",
+            "index": 0
+          },
+          {
+            "segment": "propertyReceiver"
+          }
+        ],
+        "form": {
+          "kind": "propertyAccess",
+          "field": "first"
+        },
+        "requestedName": "first",
+        "target": {
+          "kind": "generatedWord",
+          "identity": "generated_invoicePair.first"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "e422c5529407bf62b9a3ab0ba15a0dd073b0cd5f1c2b7a5d3d80377bbfb762e4"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifThenStatement",
+            "index": 0
+          },
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          }
+        ],
+        "form": {
+          "kind": "direct"
+        },
+        "requestedName": "invoice.reminder-path",
+        "target": {
+          "kind": "userWord",
+          "identity": "word_82156eb2a08042c0bee76c75374c4414"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "e422c5529407bf62b9a3ab0ba15a0dd073b0cd5f1c2b7a5d3d80377bbfb762e4"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifThenStatement",
+            "index": 0
+          },
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "callArgument",
+            "index": 0
+          }
+        ],
+        "form": {
+          "kind": "propertyAccess",
+          "field": "id"
+        },
+        "requestedName": "id",
+        "target": {
+          "kind": "generatedWord",
+          "identity": "generated_invoice.id"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "e422c5529407bf62b9a3ab0ba15a0dd073b0cd5f1c2b7a5d3d80377bbfb762e4"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifThenStatement",
+            "index": 0
+          },
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "callArgument",
+            "index": 0
+          },
+          {
+            "segment": "propertyReceiver"
+          }
+        ],
+        "form": {
+          "kind": "propertyAccess",
+          "field": "first"
+        },
+        "requestedName": "first",
+        "target": {
+          "kind": "generatedWord",
+          "identity": "generated_invoicePair.first"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "e422c5529407bf62b9a3ab0ba15a0dd073b0cd5f1c2b7a5d3d80377bbfb762e4"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifThenStatement",
+            "index": 0
+          },
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "evaluateExpression"
+          },
+          {
+            "segment": "ifCondition"
+          }
+        ],
+        "form": {
+          "kind": "direct"
+        },
+        "requestedName": "file.exists?",
+        "target": {
+          "kind": "primitive",
+          "identity": "file.exists?"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "e422c5529407bf62b9a3ab0ba15a0dd073b0cd5f1c2b7a5d3d80377bbfb762e4"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifThenStatement",
+            "index": 0
+          },
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "evaluateExpression"
+          },
+          {
+            "segment": "ifThenStatement",
+            "index": 0
+          },
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "evaluateExpression"
+          }
+        ],
+        "form": {
+          "kind": "direct"
+        },
+        "requestedName": "file.read",
+        "target": {
+          "kind": "primitive",
+          "identity": "file.read"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "e422c5529407bf62b9a3ab0ba15a0dd073b0cd5f1c2b7a5d3d80377bbfb762e4"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifThenStatement",
+            "index": 0
+          },
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "evaluateExpression"
+          },
+          {
+            "segment": "ifElseStatement",
+            "index": 0
+          },
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "evaluateExpression"
+          }
+        ],
+        "form": {
+          "kind": "direct"
+        },
+        "requestedName": "file.write",
+        "target": {
+          "kind": "primitive",
+          "identity": "file.write"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "e422c5529407bf62b9a3ab0ba15a0dd073b0cd5f1c2b7a5d3d80377bbfb762e4"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifCondition"
+          }
+        ],
+        "form": {
+          "kind": "direct"
+        },
+        "requestedName": "equals",
+        "target": {
+          "kind": "primitive",
+          "identity": "equals"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "e422c5529407bf62b9a3ab0ba15a0dd073b0cd5f1c2b7a5d3d80377bbfb762e4"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifCondition"
+          },
+          {
+            "segment": "equalityLeft"
+          }
+        ],
+        "form": {
+          "kind": "direct"
+        },
+        "requestedName": "InvoiceStatus.value",
+        "target": {
+          "kind": "generatedWord",
+          "identity": "generated_InvoiceStatus.value"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "e422c5529407bf62b9a3ab0ba15a0dd073b0cd5f1c2b7a5d3d80377bbfb762e4"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifCondition"
+          },
+          {
+            "segment": "equalityLeft"
+          },
+          {
+            "segment": "callArgument",
+            "index": 0
+          }
+        ],
+        "form": {
+          "kind": "propertyAccess",
+          "field": "status"
+        },
+        "requestedName": "status",
+        "target": {
+          "kind": "generatedWord",
+          "identity": "generated_invoice.status"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "e422c5529407bf62b9a3ab0ba15a0dd073b0cd5f1c2b7a5d3d80377bbfb762e4"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifCondition"
+          },
+          {
+            "segment": "equalityLeft"
+          },
+          {
+            "segment": "callArgument",
+            "index": 0
+          },
+          {
+            "segment": "propertyReceiver"
+          }
+        ],
+        "form": {
+          "kind": "propertyAccess",
+          "field": "second"
+        },
+        "requestedName": "second",
+        "target": {
+          "kind": "generatedWord",
+          "identity": "generated_invoicePair.second"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "e422c5529407bf62b9a3ab0ba15a0dd073b0cd5f1c2b7a5d3d80377bbfb762e4"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifThenStatement",
+            "index": 0
+          },
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          }
+        ],
+        "form": {
+          "kind": "direct"
+        },
+        "requestedName": "invoice.reminder-path",
+        "target": {
+          "kind": "userWord",
+          "identity": "word_82156eb2a08042c0bee76c75374c4414"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "e422c5529407bf62b9a3ab0ba15a0dd073b0cd5f1c2b7a5d3d80377bbfb762e4"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifThenStatement",
+            "index": 0
+          },
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "callArgument",
+            "index": 0
+          }
+        ],
+        "form": {
+          "kind": "propertyAccess",
+          "field": "id"
+        },
+        "requestedName": "id",
+        "target": {
+          "kind": "generatedWord",
+          "identity": "generated_invoice.id"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "e422c5529407bf62b9a3ab0ba15a0dd073b0cd5f1c2b7a5d3d80377bbfb762e4"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifThenStatement",
+            "index": 0
+          },
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "callArgument",
+            "index": 0
+          },
+          {
+            "segment": "propertyReceiver"
+          }
+        ],
+        "form": {
+          "kind": "propertyAccess",
+          "field": "second"
+        },
+        "requestedName": "second",
+        "target": {
+          "kind": "generatedWord",
+          "identity": "generated_invoicePair.second"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "e422c5529407bf62b9a3ab0ba15a0dd073b0cd5f1c2b7a5d3d80377bbfb762e4"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifThenStatement",
+            "index": 0
+          },
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "evaluateExpression"
+          },
+          {
+            "segment": "ifCondition"
+          }
+        ],
+        "form": {
+          "kind": "direct"
+        },
+        "requestedName": "file.exists?",
+        "target": {
+          "kind": "primitive",
+          "identity": "file.exists?"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "e422c5529407bf62b9a3ab0ba15a0dd073b0cd5f1c2b7a5d3d80377bbfb762e4"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifThenStatement",
+            "index": 0
+          },
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "evaluateExpression"
+          },
+          {
+            "segment": "ifThenStatement",
+            "index": 0
+          },
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "evaluateExpression"
+          }
+        ],
+        "form": {
+          "kind": "direct"
+        },
+        "requestedName": "file.read",
+        "target": {
+          "kind": "primitive",
+          "identity": "file.read"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "e422c5529407bf62b9a3ab0ba15a0dd073b0cd5f1c2b7a5d3d80377bbfb762e4"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "ifThenStatement",
+            "index": 0
+          },
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "evaluateExpression"
+          },
+          {
+            "segment": "ifElseStatement",
+            "index": 0
+          },
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "evaluateExpression"
+          }
+        ],
+        "form": {
+          "kind": "direct"
+        },
+        "requestedName": "file.write",
+        "target": {
+          "kind": "primitive",
+          "identity": "file.write"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "e422c5529407bf62b9a3ab0ba15a0dd073b0cd5f1c2b7a5d3d80377bbfb762e4"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 2
+          },
+          {
+            "segment": "evaluateExpression"
+          }
+        ],
+        "form": {
+          "kind": "direct"
+        },
+        "requestedName": "reminderPairResult.new",
+        "target": {
+          "kind": "generatedWord",
+          "identity": "generated_reminderPairResult.new"
+        }
+      }
+    ],
+    "finalActorDescription": {
+      "callers": [],
+      "coverage": {
+        "branchesCovered": 8,
+        "branchesTotal": 8,
+        "finiteCoverage": {
+          "complete": true,
+          "inputs": [],
+          "missing": [],
+          "returns": [
+            {
+              "missing": [],
+              "observed": [],
+              "position": 0,
+              "required": [],
+              "type": "ReminderPairResult"
+            }
+          ],
+          "targetInvocations": 6,
+          "unsupported": []
+        },
+        "instructionsCovered": 49,
+        "instructionsTotal": 49,
+        "status": "current",
+        "uncoveredBranchOutcomes": [],
+        "uncoveredInstructions": []
+      },
+      "dependencies": [
+        "InvoiceStatus.value",
+        "equals",
+        "file.exists?",
+        "file.read",
+        "file.write",
+        "invoice.id",
+        "invoice.reminder-path",
+        "invoice.status",
+        "invoicePair.first",
+        "invoicePair.second",
+        "reminderPairResult.new"
+      ],
+      "deprecated": false,
+      "documentation": "Queue open invoice reminders in pair order and return their exact markers.",
+      "effects": [
+        "fs.read",
+        "fs.write"
+      ],
+      "exampleCount": 1,
+      "examples": [
+        "queues-second-in-order"
+      ],
+      "flowReference": "invoice::queue-reminders-for-pair",
+      "flowReferenceUnavailableReason": null,
+      "id": "word_536cf6c7fa5b4a1a83a1f1c422ac06e4",
+      "inputs": [
+        "InvoicePair"
+      ],
+      "kind": "word",
+      "line": 1,
+      "maturity": "library",
+      "name": "invoice.queue-reminders-for-pair",
+      "outputs": [
+        "ReminderPairResult"
+      ],
+      "parameters": [
+        {
+          "name": "pair",
+          "type": "InvoicePair"
+        }
+      ],
+      "revision": 2,
+      "source": "<flow:invoice.queue-reminders-for-pair/2>",
+      "status": "persistent",
+      "testCount": 6,
+      "tests": [
+        "duplicate-id-observes-first-write",
+        "exact-existing-markers",
+        "exact-open-status-only",
+        "first-not-open-skips-open-second",
+        "second-not-open-after-first-queues",
+        "two-open-missing"
+      ],
+      "transitiveDependencies": [
+        "InvoiceId.value",
+        "InvoiceStatus.value",
+        "equals",
+        "file.exists?",
+        "file.read",
+        "file.write",
+        "invoice.id",
+        "invoice.reminder-path",
+        "invoice.status",
+        "invoicePair.first",
+        "invoicePair.second",
+        "reminderPairResult.new",
+        "string.concat"
+      ]
+    }
+  },
+  {
+    "actor": "retained-1",
+    "typesUnchanged": true,
+    "inheritedWordsUnchanged": {
+      "invoice.reminder-path": true,
+      "invoice.queue-reminder-once": true
+    },
+    "newWords": [],
+    "targetRevision": 2,
+    "maturity": "library",
+    "targetTests": 7,
+    "targetSource": "fn invoice.queue-reminders-for-pair(pair: InvoicePair) -> ReminderPairResult {\n    effects fs.read, fs.write\n    doc \"Queue each invoice reminder in pair order and return its exact marker.\"\n\n    let first-result = invoice::queue-reminder-once(pair.first);\n    let second-result = invoice::queue-reminder-once(pair.second);\n    reminderPairResult::new(first = first-result, second = second-result)\n}",
+    "targetCallBindings": [
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "8033b39d602f470c6c1db8de140ac78fee2ef757030528e224bb85fe82d76122"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          }
+        ],
+        "form": {
+          "kind": "direct"
+        },
+        "requestedName": "invoice.queue-reminder-once",
+        "target": {
+          "kind": "userWord",
+          "identity": "word_e06f6118daa44ef994220e63548714eb"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "8033b39d602f470c6c1db8de140ac78fee2ef757030528e224bb85fe82d76122"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "callArgument",
+            "index": 0
+          }
+        ],
+        "form": {
+          "kind": "propertyAccess",
+          "field": "first"
+        },
+        "requestedName": "first",
+        "target": {
+          "kind": "generatedWord",
+          "identity": "generated_invoicePair.first"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "8033b39d602f470c6c1db8de140ac78fee2ef757030528e224bb85fe82d76122"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "letInitializer"
+          }
+        ],
+        "form": {
+          "kind": "direct"
+        },
+        "requestedName": "invoice.queue-reminder-once",
+        "target": {
+          "kind": "userWord",
+          "identity": "word_e06f6118daa44ef994220e63548714eb"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "8033b39d602f470c6c1db8de140ac78fee2ef757030528e224bb85fe82d76122"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "callArgument",
+            "index": 0
+          }
+        ],
+        "form": {
+          "kind": "propertyAccess",
+          "field": "second"
+        },
+        "requestedName": "second",
+        "target": {
+          "kind": "generatedWord",
+          "identity": "generated_invoicePair.second"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "8033b39d602f470c6c1db8de140ac78fee2ef757030528e224bb85fe82d76122"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 2
+          },
+          {
+            "segment": "evaluateExpression"
+          }
+        ],
+        "form": {
+          "kind": "direct"
+        },
+        "requestedName": "reminderPairResult.new",
+        "target": {
+          "kind": "generatedWord",
+          "identity": "generated_reminderPairResult.new"
+        }
+      }
+    ],
+    "finalActorDescription": {
+      "callers": [],
+      "coverage": {
+        "branchesCovered": 0,
+        "branchesTotal": 0,
+        "finiteCoverage": {
+          "complete": true,
+          "inputs": [],
+          "missing": [],
+          "returns": [
+            {
+              "missing": [],
+              "observed": [],
+              "position": 0,
+              "required": [],
+              "type": "ReminderPairResult"
+            }
+          ],
+          "targetInvocations": 8,
+          "unsupported": []
+        },
+        "instructionsCovered": 11,
+        "instructionsTotal": 11,
+        "status": "current",
+        "uncoveredBranchOutcomes": [],
+        "uncoveredInstructions": []
+      },
+      "dependencies": [
+        "invoice.queue-reminder-once",
+        "invoicePair.first",
+        "invoicePair.second",
+        "reminderPairResult.new"
+      ],
+      "deprecated": false,
+      "documentation": "Queue each invoice reminder in pair order and return its exact marker.",
+      "effects": [
+        "fs.read",
+        "fs.write"
+      ],
+      "exampleCount": 1,
+      "examples": [
+        "queues-second-in-order"
+      ],
+      "flowReference": "invoice::queue-reminders-for-pair",
+      "flowReferenceUnavailableReason": null,
+      "id": "word_95fa1cb0151e411d90bfd38514691ca0",
+      "inputs": [
+        "InvoicePair"
+      ],
+      "kind": "word",
+      "line": 1,
+      "maturity": "library",
+      "name": "invoice.queue-reminders-for-pair",
+      "outputs": [
+        "ReminderPairResult"
+      ],
+      "parameters": [
+        {
+          "name": "pair",
+          "type": "InvoicePair"
+        }
+      ],
+      "revision": 2,
+      "source": "<flow:invoice.queue-reminders-for-pair/2>",
+      "status": "persistent",
+      "testCount": 7,
+      "tests": [
+        "both-not-open-no-provider-calls",
+        "exact-existing-markers",
+        "first-not-open-skips-open-second",
+        "repeat-preserves-existing-marker",
+        "same-identifier-observes-first-write",
+        "second-not-open-after-first-queues",
+        "two-open-missing"
+      ],
+      "transitiveDependencies": [
+        "InvoiceId.value",
+        "InvoiceStatus.value",
+        "equals",
+        "file.exists?",
+        "file.read",
+        "file.write",
+        "invoice.id",
+        "invoice.queue-reminder-once",
+        "invoice.reminder-path",
+        "invoice.status",
+        "invoicePair.first",
+        "invoicePair.second",
+        "reminderPairResult.new",
+        "string.concat"
+      ]
+    }
+  },
+  {
+    "actor": "retained-2",
+    "typesUnchanged": true,
+    "inheritedWordsUnchanged": {
+      "invoice.reminder-path": true,
+      "invoice.queue-reminder-once": true
+    },
+    "newWords": [],
+    "targetRevision": 2,
+    "maturity": "library",
+    "targetTests": 6,
+    "targetSource": "fn invoice.queue-reminders-for-pair(pair: InvoicePair) -> ReminderPairResult {\n    effects fs.read, fs.write\n    doc \"Queue each invoice reminder once, independently, in pair order, and return the exact markers.\"\n\n    let first-result = invoice::queue-reminder-once(pair.first);\n    let second-result = invoice::queue-reminder-once(pair.second);\n    reminderPairResult::new(first = first-result, second = second-result)\n}",
+    "targetCallBindings": [
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "bcd015f36288f164fadaded298e965f109bd2d0a60395e37b8bf34f77a96d2a7"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          }
+        ],
+        "form": {
+          "kind": "direct"
+        },
+        "requestedName": "invoice.queue-reminder-once",
+        "target": {
+          "kind": "userWord",
+          "identity": "word_e06f6118daa44ef994220e63548714eb"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "bcd015f36288f164fadaded298e965f109bd2d0a60395e37b8bf34f77a96d2a7"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 0
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "callArgument",
+            "index": 0
+          }
+        ],
+        "form": {
+          "kind": "propertyAccess",
+          "field": "first"
+        },
+        "requestedName": "first",
+        "target": {
+          "kind": "generatedWord",
+          "identity": "generated_invoicePair.first"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "bcd015f36288f164fadaded298e965f109bd2d0a60395e37b8bf34f77a96d2a7"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "letInitializer"
+          }
+        ],
+        "form": {
+          "kind": "direct"
+        },
+        "requestedName": "invoice.queue-reminder-once",
+        "target": {
+          "kind": "userWord",
+          "identity": "word_e06f6118daa44ef994220e63548714eb"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "bcd015f36288f164fadaded298e965f109bd2d0a60395e37b8bf34f77a96d2a7"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 1
+          },
+          {
+            "segment": "letInitializer"
+          },
+          {
+            "segment": "callArgument",
+            "index": 0
+          }
+        ],
+        "form": {
+          "kind": "propertyAccess",
+          "field": "second"
+        },
+        "requestedName": "second",
+        "target": {
+          "kind": "generatedWord",
+          "identity": "generated_invoicePair.second"
+        }
+      },
+      {
+        "source": {
+          "kind": "word-definition",
+          "hash": "bcd015f36288f164fadaded298e965f109bd2d0a60395e37b8bf34f77a96d2a7"
+        },
+        "caseName": null,
+        "bodyRole": "definition",
+        "path": [
+          {
+            "segment": "blockStatement",
+            "index": 2
+          },
+          {
+            "segment": "evaluateExpression"
+          }
+        ],
+        "form": {
+          "kind": "direct"
+        },
+        "requestedName": "reminderPairResult.new",
+        "target": {
+          "kind": "generatedWord",
+          "identity": "generated_reminderPairResult.new"
+        }
+      }
+    ],
+    "finalActorDescription": {
+      "callers": [],
+      "coverage": {
+        "branchesCovered": 0,
+        "branchesTotal": 0,
+        "finiteCoverage": {
+          "complete": true,
+          "inputs": [],
+          "missing": [],
+          "returns": [
+            {
+              "missing": [],
+              "observed": [],
+              "position": 0,
+              "required": [],
+              "type": "ReminderPairResult"
+            }
+          ],
+          "targetInvocations": 7,
+          "unsupported": []
+        },
+        "instructionsCovered": 11,
+        "instructionsTotal": 11,
+        "status": "current",
+        "uncoveredBranchOutcomes": [],
+        "uncoveredInstructions": []
+      },
+      "dependencies": [
+        "invoice.queue-reminder-once",
+        "invoicePair.first",
+        "invoicePair.second",
+        "reminderPairResult.new"
+      ],
+      "deprecated": false,
+      "documentation": "Queue each invoice reminder once, independently, in pair order, and return the exact markers.",
+      "effects": [
+        "fs.read",
+        "fs.write"
+      ],
+      "exampleCount": 1,
+      "examples": [
+        "queues-second-in-order"
+      ],
+      "flowReference": "invoice::queue-reminders-for-pair",
+      "flowReferenceUnavailableReason": null,
+      "id": "word_95fa1cb0151e411d90bfd38514691ca0",
+      "inputs": [
+        "InvoicePair"
+      ],
+      "kind": "word",
+      "line": 1,
+      "maturity": "library",
+      "name": "invoice.queue-reminders-for-pair",
+      "outputs": [
+        "ReminderPairResult"
+      ],
+      "parameters": [
+        {
+          "name": "pair",
+          "type": "InvoicePair"
+        }
+      ],
+      "revision": 2,
+      "source": "<flow:invoice.queue-reminders-for-pair/2>",
+      "status": "persistent",
+      "testCount": 6,
+      "tests": [
+        "exact-existing-markers",
+        "first-not-open-skips-open-second",
+        "repeated-run-preserves-existing-markers",
+        "same-id-second-sees-first-write",
+        "second-not-open-after-first-queues",
+        "two-open-missing"
+      ],
+      "transitiveDependencies": [
+        "InvoiceId.value",
+        "InvoiceStatus.value",
+        "equals",
+        "file.exists?",
+        "file.read",
+        "file.write",
+        "invoice.id",
+        "invoice.queue-reminder-once",
+        "invoice.reminder-path",
+        "invoice.status",
+        "invoicePair.first",
+        "invoicePair.second",
+        "reminderPairResult.new",
+        "string.concat"
+      ]
+    }
+  }
+]

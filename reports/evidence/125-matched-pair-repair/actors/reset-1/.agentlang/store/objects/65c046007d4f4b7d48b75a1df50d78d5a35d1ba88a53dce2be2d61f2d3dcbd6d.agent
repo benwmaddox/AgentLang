@@ -1,0 +1,4 @@
+// frontend: flow/1
+
+type InvoiceId : String {
+}

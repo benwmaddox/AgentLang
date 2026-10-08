@@ -1,0 +1,336 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Coordinator-only independently enumerated pair contract; fixed before actors",
+  "resultOrder": [
+    "first",
+    "second"
+  ],
+  "effectCounting": "Exists and Read each count fs.read; Write counts fs.write; counts cumulative across repeat",
+  "cases": [
+    {
+      "name": "distinct-open-missing",
+      "first": {
+        "id": "A",
+        "status": "open"
+      },
+      "second": {
+        "id": "B",
+        "status": "open"
+      },
+      "initial": {
+        "unrelated": "keep"
+      },
+      "allowRead": true,
+      "allowWrite": true,
+      "repeat": 1,
+      "expected": [
+        "queued",
+        "queued"
+      ],
+      "expectedState": {
+        "outbox/invoice-reminders/A": "queued",
+        "outbox/invoice-reminders/B": "queued",
+        "unrelated": "keep"
+      },
+      "reads": 2,
+      "writes": 2,
+      "expectedError": null
+    },
+    {
+      "name": "closed-then-open",
+      "first": {
+        "id": "A",
+        "status": "closed"
+      },
+      "second": {
+        "id": "B",
+        "status": "open"
+      },
+      "initial": {
+        "unrelated": "keep"
+      },
+      "allowRead": true,
+      "allowWrite": true,
+      "repeat": 1,
+      "expected": [
+        "not-open",
+        "queued"
+      ],
+      "expectedState": {
+        "outbox/invoice-reminders/B": "queued",
+        "unrelated": "keep"
+      },
+      "reads": 1,
+      "writes": 1,
+      "expectedError": null
+    },
+    {
+      "name": "open-then-closed",
+      "first": {
+        "id": "A",
+        "status": "open"
+      },
+      "second": {
+        "id": "B",
+        "status": "Open"
+      },
+      "initial": {},
+      "allowRead": true,
+      "allowWrite": true,
+      "repeat": 1,
+      "expected": [
+        "queued",
+        "not-open"
+      ],
+      "expectedState": {
+        "outbox/invoice-reminders/A": "queued"
+      },
+      "reads": 1,
+      "writes": 1,
+      "expectedError": null
+    },
+    {
+      "name": "same-id-missing",
+      "first": {
+        "id": "A",
+        "status": "open"
+      },
+      "second": {
+        "id": "A",
+        "status": "open"
+      },
+      "initial": {},
+      "allowRead": true,
+      "allowWrite": true,
+      "repeat": 1,
+      "expected": [
+        "queued",
+        "queued"
+      ],
+      "expectedState": {
+        "outbox/invoice-reminders/A": "queued"
+      },
+      "reads": 3,
+      "writes": 1,
+      "expectedError": null
+    },
+    {
+      "name": "same-id-existing",
+      "first": {
+        "id": "A",
+        "status": "open"
+      },
+      "second": {
+        "id": "A",
+        "status": "open"
+      },
+      "initial": {
+        "outbox/invoice-reminders/A": "custom",
+        "unrelated": "keep"
+      },
+      "allowRead": true,
+      "allowWrite": true,
+      "repeat": 1,
+      "expected": [
+        "custom",
+        "custom"
+      ],
+      "expectedState": {
+        "outbox/invoice-reminders/A": "custom",
+        "unrelated": "keep"
+      },
+      "reads": 4,
+      "writes": 0,
+      "expectedError": null
+    },
+    {
+      "name": "distinct-existing-first",
+      "first": {
+        "id": "A",
+        "status": "open"
+      },
+      "second": {
+        "id": "B",
+        "status": "open"
+      },
+      "initial": {
+        "outbox/invoice-reminders/A": "custom",
+        "unrelated": "keep"
+      },
+      "allowRead": true,
+      "allowWrite": true,
+      "repeat": 1,
+      "expected": [
+        "custom",
+        "queued"
+      ],
+      "expectedState": {
+        "outbox/invoice-reminders/A": "custom",
+        "outbox/invoice-reminders/B": "queued",
+        "unrelated": "keep"
+      },
+      "reads": 3,
+      "writes": 1,
+      "expectedError": null
+    },
+    {
+      "name": "empty-existing-first",
+      "first": {
+        "id": "A",
+        "status": "open"
+      },
+      "second": {
+        "id": "B",
+        "status": "open"
+      },
+      "initial": {
+        "outbox/invoice-reminders/A": ""
+      },
+      "allowRead": true,
+      "allowWrite": true,
+      "repeat": 1,
+      "expected": [
+        "",
+        "queued"
+      ],
+      "expectedState": {
+        "outbox/invoice-reminders/A": "",
+        "outbox/invoice-reminders/B": "queued"
+      },
+      "reads": 3,
+      "writes": 1,
+      "expectedError": null
+    },
+    {
+      "name": "uppercase-then-open",
+      "first": {
+        "id": "A",
+        "status": "OPEN"
+      },
+      "second": {
+        "id": "B",
+        "status": "open"
+      },
+      "initial": {},
+      "allowRead": true,
+      "allowWrite": true,
+      "repeat": 1,
+      "expected": [
+        "not-open",
+        "queued"
+      ],
+      "expectedState": {
+        "outbox/invoice-reminders/B": "queued"
+      },
+      "reads": 1,
+      "writes": 1,
+      "expectedError": null
+    },
+    {
+      "name": "both-ineligible",
+      "first": {
+        "id": "A",
+        "status": "closed"
+      },
+      "second": {
+        "id": "B",
+        "status": "paid"
+      },
+      "initial": {
+        "outbox/invoice-reminders/A": "old",
+        "unrelated": "keep"
+      },
+      "allowRead": true,
+      "allowWrite": true,
+      "repeat": 1,
+      "expected": [
+        "not-open",
+        "not-open"
+      ],
+      "expectedState": {
+        "outbox/invoice-reminders/A": "old",
+        "unrelated": "keep"
+      },
+      "reads": 0,
+      "writes": 0,
+      "expectedError": null
+    },
+    {
+      "name": "repeat-distinct",
+      "first": {
+        "id": "A",
+        "status": "open"
+      },
+      "second": {
+        "id": "B",
+        "status": "open"
+      },
+      "initial": {
+        "unrelated": "keep"
+      },
+      "allowRead": true,
+      "allowWrite": true,
+      "repeat": 2,
+      "expected": [
+        "queued",
+        "queued"
+      ],
+      "expectedState": {
+        "outbox/invoice-reminders/A": "queued",
+        "outbox/invoice-reminders/B": "queued",
+        "unrelated": "keep"
+      },
+      "reads": 6,
+      "writes": 2,
+      "expectedError": null
+    },
+    {
+      "name": "read-denied",
+      "first": {
+        "id": "A",
+        "status": "open"
+      },
+      "second": {
+        "id": "B",
+        "status": "open"
+      },
+      "initial": {
+        "unrelated": "keep"
+      },
+      "allowRead": false,
+      "allowWrite": true,
+      "repeat": 1,
+      "expected": null,
+      "expectedState": {
+        "unrelated": "keep"
+      },
+      "reads": 0,
+      "writes": 0,
+      "expectedError": "CAPABILITY_DENIED"
+    },
+    {
+      "name": "write-denied",
+      "first": {
+        "id": "A",
+        "status": "open"
+      },
+      "second": {
+        "id": "B",
+        "status": "open"
+      },
+      "initial": {
+        "unrelated": "keep"
+      },
+      "allowRead": true,
+      "allowWrite": false,
+      "repeat": 1,
+      "expected": null,
+      "expectedState": {
+        "unrelated": "keep"
+      },
+      "reads": 0,
+      "writes": 0,
+      "expectedError": "CAPABILITY_DENIED"
+    }
+  ]
+}

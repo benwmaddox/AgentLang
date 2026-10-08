@@ -1,0 +1,28 @@
+fn invoice.queue-reminders-for-pair(pair: InvoicePair) -> ReminderPairResult {
+    effects fs.read, fs.write
+    doc "Queue reminders independently in pair order and return their exact markers."
+
+    let first-result = if InvoiceStatus::value(pair.first.status) == "open" {
+    let first-path = invoice::reminder-path(pair.first.id);
+    if file::exists?(first-path) {
+        file::read(first-path)
+    } else {
+        file::write(first-path, "queued");
+        "queued"
+    }
+} else {
+    "not-open"
+};
+    let second-result = if InvoiceStatus::value(pair.second.status) == "open" {
+    let second-path = invoice::reminder-path(pair.first.id);
+    if file::exists?(second-path) {
+        file::read(second-path)
+    } else {
+        file::write(second-path, "queued");
+        "queued"
+    }
+} else {
+    "not-open"
+};
+    reminderPairResult::new(first = first-result, second = second-result)
+}

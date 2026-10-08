@@ -1,0 +1,20 @@
+test invoice.queue-reminders-for-pair/repeated-run-preserves-existing-markers {
+    file::write("outbox/invoice-reminders/pair-flow-repeat-first-retained-2", "custom marker");
+    file::write("outbox/invoice-reminders/pair-flow-repeat-second-retained-2", "");
+    let pair = invoicePair::new(
+        first = invoice::new(
+            id = InvoiceId::new("pair-flow-repeat-first-retained-2"),
+            status = InvoiceStatus::new("open")),
+        second = invoice::new(
+            id = InvoiceId::new("pair-flow-repeat-second-retained-2"),
+            status = InvoiceStatus::new("open")));
+    let first-run = invoice::queue-reminders-for-pair(pair);
+    let repeated-run = invoice::queue-reminders-for-pair(pair);
+    if first-run == repeated-run {
+        repeated-run
+    } else {
+        reminderPairResult::new(first = "changed", second = "changed")
+    }
+    => value reminderPairResult::new(first = "custom marker", second = "")
+    effects { fs.read: 8; fs.write: 0; }
+}

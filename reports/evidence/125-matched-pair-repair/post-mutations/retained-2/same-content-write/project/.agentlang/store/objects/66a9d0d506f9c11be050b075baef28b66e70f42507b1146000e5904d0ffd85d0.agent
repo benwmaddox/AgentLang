@@ -1,0 +1,11 @@
+test invoice.queue-reminders-for-pair/two-open-missing {
+    invoice::queue-reminders-for-pair(
+        invoicePair::new(
+            first = invoice::new(
+                id = InvoiceId::new("pair-flow-missing-first"),
+                status = InvoiceStatus::new("open")),
+            second = invoice::new(
+                id = InvoiceId::new("pair-flow-missing-second"),
+                status = InvoiceStatus::new("open"))))
+    => value reminderPairResult::new(first = "queued", second = "queued")
+}

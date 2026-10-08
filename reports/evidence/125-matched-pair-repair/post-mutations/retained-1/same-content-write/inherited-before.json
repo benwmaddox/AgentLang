@@ -1,0 +1,29 @@
+{
+  "requests": [
+    {
+      "op": "source",
+      "word": "invoice.queue-reminder-once"
+    },
+    {
+      "op": "source",
+      "type": "Invoice"
+    }
+  ],
+  "responses": [
+    {
+      "ok": true,
+      "kind": "source",
+      "text": "fn invoice.queue-reminder-once(invoice: Invoice) -> String {\n    effects fs.read, fs.write\n    doc \"Queues a reminder once for an open invoice and preserves any existing reminder contents.\"\n\n    if InvoiceStatus::value(invoice.status) == \"open\" {\n        let path = invoice::reminder-path(invoice.id);\n        if file::exists?(path) {\n            file::read(path)\n        } else {\n            file::write(path, \"queued\");\n            \"queued\"\n        }\n    } else {\n        \"not-open\"\n    }\n}",
+      "data": "fn invoice.queue-reminder-once(invoice: Invoice) -> String {\n    effects fs.read, fs.write\n    doc \"Queues a reminder once for an open invoice and preserves any existing reminder contents.\"\n\n    if InvoiceStatus::value(invoice.status) == \"open\" {\n        let path = invoice::reminder-path(invoice.id);\n        if file::exists?(path) {\n            file::read(path)\n        } else {\n            file::write(path, \"queued\");\n            \"queued\"\n        }\n    } else {\n        \"not-open\"\n    }\n}"
+    },
+    {
+      "ok": true,
+      "kind": "source",
+      "text": "record Invoice {\n    field id: InvoiceId;\n    field status: InvoiceStatus;\n}",
+      "data": "record Invoice {\n    field id: InvoiceId;\n    field status: InvoiceStatus;\n}"
+    }
+  ],
+  "stdout": "{\"ok\":true,\"kind\":\"source\",\"text\":\"fn invoice.queue-reminder-once(invoice: Invoice) -\\u003E String {\\n    effects fs.read, fs.write\\n    doc \\u0022Queues a reminder once for an open invoice and preserves any existing reminder contents.\\u0022\\n\\n    if InvoiceStatus::value(invoice.status) == \\u0022open\\u0022 {\\n        let path = invoice::reminder-path(invoice.id);\\n        if file::exists?(path) {\\n            file::read(path)\\n        } else {\\n            file::write(path, \\u0022queued\\u0022);\\n            \\u0022queued\\u0022\\n        }\\n    } else {\\n        \\u0022not-open\\u0022\\n    }\\n}\",\"data\":\"fn invoice.queue-reminder-once(invoice: Invoice) -\\u003E String {\\n    effects fs.read, fs.write\\n    doc \\u0022Queues a reminder once for an open invoice and preserves any existing reminder contents.\\u0022\\n\\n    if InvoiceStatus::value(invoice.status) == \\u0022open\\u0022 {\\n        let path = invoice::reminder-path(invoice.id);\\n        if file::exists?(path) {\\n            file::read(path)\\n        } else {\\n            file::write(path, \\u0022queued\\u0022);\\n            \\u0022queued\\u0022\\n        }\\n    } else {\\n        \\u0022not-open\\u0022\\n    }\\n}\"}\r\n{\"ok\":true,\"kind\":\"source\",\"text\":\"record Invoice {\\n    field id: InvoiceId;\\n    field status: InvoiceStatus;\\n}\",\"data\":\"record Invoice {\\n    field id: InvoiceId;\\n    field status: InvoiceStatus;\\n}\"}\r\n",
+  "stderr": "",
+  "exitCode": 0
+}

@@ -1,0 +1,10 @@
+test invoice.queue-reminders-for-pair/duplicate-id-observes-first-write {
+    invoice::queue-reminders-for-pair(
+        invoicePair::new(
+            first = invoice::new(id = InvoiceId::new("duplicate-id"), status = InvoiceStatus::new("open")),
+            second = invoice::new(id = InvoiceId::new("duplicate-id"), status = InvoiceStatus::new("open"))
+        )
+    )
+    => value reminderPairResult::new(first = "queued", second = "queued")
+    effects { fs.read: 3; fs.write: 1; }
+}
