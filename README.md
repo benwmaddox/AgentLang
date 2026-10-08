@@ -88,6 +88,12 @@ fresh LLVM modules and exercises native initialize/begin/resume calls with
 inline String payloads, retained byte banks and scratch reset. This is a
 correctness gate; it does not measure service throughput or agent efficacy.
 
+The focused [arena-policy comparison](reports/132-associated-arena-comparison.md)
+also passes at O0/O2. Run `pwsh -NoProfile -File scripts/Verify-OwningMailboxPolicy.ps1`
+to compare keeping actual scratch attached across suspension with returning it.
+Keeping scratch avoids intermediate state copies but pins pool slots while
+waiting. Real I/O and throughput comparisons remain pending.
+
 A separate Windows C11 arena/mailbox experiment compares per-turn and
 whole-request lifetimes. Run `pwsh -NoProfile -File scripts/Verify-NativeArenaMailbox.ps1`
 for its fresh native safety checks and fixed comparison. See

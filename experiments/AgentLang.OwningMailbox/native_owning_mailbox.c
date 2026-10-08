@@ -61,7 +61,35 @@ typedef struct direct_buffers {
   al_owning_stack_event events[DIRECT_TRACE_EVENTS];
 } direct_buffers;
 
-static named_check checks[192];
+typedef struct attached_snapshot {
+  const al_owning_stack_context *context_address;
+  al_owning_stack_context context;
+  uint32_t cursor_bytes;
+  uint32_t scratch_slot_index;
+  al_owning_bank_stack_slice roots[2];
+  uint8_t prefix[SMALL_BYTES * 4u];
+  uint8_t initialized[SMALL_BYTES / 2u];
+  uint8_t poisoned[SMALL_BYTES / 2u];
+} attached_snapshot;
+
+typedef struct policy_case_evidence {
+  al_mailbox_owning_stats stats;
+  al_mailbox_owning_storage_requirements requirements;
+  bank_snapshot final_states[3];
+  bank_snapshot simple_states[2];
+  uint32_t pending_a_cursor;
+  uint32_t pending_b_cursor;
+  uint32_t pending_a_slot;
+  uint32_t pending_b_slot;
+  al_owning_bank_stack_slice pending_a_roots[2];
+  al_owning_bank_stack_slice pending_b_roots[2];
+  uint32_t no_slot_result;
+  uint32_t no_slot_token_untouched;
+  uint32_t no_slot_counters_unchanged;
+  uint64_t admitted_c_token_sequence;
+} policy_case_evidence;
+
+static named_check checks[512];
 static size_t check_count;
 static unsigned int failure_count;
 static al_mailbox_owning_stats boundary_stats;
@@ -163,12 +191,12 @@ static int get_owning_stats(al_mailbox_runtime *runtime,
   return al_mailbox_get_owning_stats(runtime, stats) == AL_MAILBOX_OK;
 }
 
-static int create_runtime(const al_owning_mailbox_module *module,
-                          uint32_t mailbox_capacity,
-                          uint32_t scratch_capacity,
-                          uint32_t retained_capacity,
-                          uint32_t staging_capacity,
-                          runtime_fixture *fixture, int test_storage_rejection) {
+static int create_runtime_with_policy(
+    const al_owning_mailbox_module *module, uint32_t mailbox_capacity,
+    uint32_t scratch_capacity, uint32_t retained_capacity,
+    uint32_t staging_capacity, uint32_t scratch_slot_capacity,
+    uint32_t suspension_policy, runtime_fixture *fixture,
+    int test_storage_rejection) {
   al_mailbox_result result;
   al_mailbox_runtime *rejected = NULL;
   size_t allocation_bytes;
@@ -181,6 +209,8 @@ static int create_runtime(const al_owning_mailbox_module *module,
   fixture->config.scratch_byte_capacity = scratch_capacity;
   fixture->config.retained_byte_capacity = retained_capacity;
   fixture->config.text_staging_byte_capacity = staging_capacity;
+  fixture->config.scratch_slot_capacity = scratch_slot_capacity;
+  fixture->config.suspension_policy = suspension_policy;
   initialize_owning_requirements(&fixture->requirements);
   result = al_mailbox_get_owning_storage_requirements(
       module, &fixture->config, &fixture->requirements);
@@ -222,6 +252,18 @@ static int create_runtime(const al_owning_mailbox_module *module,
   return 0;
 }
 
+static int create_runtime(const al_owning_mailbox_module *module,
+                          uint32_t mailbox_capacity,
+                          uint32_t scratch_capacity,
+                          uint32_t retained_capacity,
+                          uint32_t staging_capacity,
+                          runtime_fixture *fixture, int test_storage_rejection) {
+  return create_runtime_with_policy(module, mailbox_capacity, scratch_capacity,
+                                    retained_capacity, staging_capacity, 1u,
+                                    AL_MAILBOX_OWNING_POLICY_RETURN, fixture,
+                                    test_storage_rejection);
+}
+
 static void dispose_runtime(runtime_fixture *fixture) {
   if (fixture == NULL)
     return;
@@ -243,6 +285,63 @@ static int get_view(al_mailbox_runtime *runtime, uint32_t mailbox_id,
   view->struct_size = (uint32_t)sizeof(*view);
   return al_mailbox_get_owning_state_view(runtime, mailbox_id, view) ==
          AL_MAILBOX_OK;
+}
+
+static int capture_attached_snapshot(al_mailbox_runtime *runtime,
+                                     uint32_t mailbox_id,
+                                     attached_snapshot *snapshot) {
+  al_mailbox_owning_state_view view;
+  uint32_t bitmap_bytes;
+  if (snapshot == NULL || !get_view(runtime, mailbox_id, &view) ||
+      view.pending == 0u || view.associated_context == NULL ||
+      view.associated_roots == NULL || view.associated_root_count != 2u ||
+      view.scratch_slot_index == UINT32_MAX)
+    return 0;
+  memset(snapshot, 0, sizeof(*snapshot));
+  snapshot->context_address = view.associated_context;
+  snapshot->context = *view.associated_context;
+  snapshot->cursor_bytes = view.associated_context->cursor_bytes;
+  snapshot->scratch_slot_index = view.scratch_slot_index;
+  if (snapshot->cursor_bytes > sizeof(snapshot->prefix))
+    return 0;
+  memcpy(snapshot->roots, view.associated_roots, sizeof(snapshot->roots));
+  memcpy(snapshot->prefix, view.associated_context->stack_data,
+         snapshot->cursor_bytes);
+  bitmap_bytes = snapshot->cursor_bytes / 8u +
+                 (snapshot->cursor_bytes % 8u != 0u ? 1u : 0u);
+  if (bitmap_bytes > sizeof(snapshot->initialized))
+    return 0;
+  memcpy(snapshot->initialized, view.associated_context->init_bitmap,
+         bitmap_bytes);
+  memcpy(snapshot->poisoned, view.associated_context->poison_bitmap,
+         bitmap_bytes);
+  return 1;
+}
+
+static int attached_snapshot_unchanged(al_mailbox_runtime *runtime,
+                                       uint32_t mailbox_id,
+                                       const attached_snapshot *snapshot) {
+  al_mailbox_owning_state_view view;
+  uint32_t bitmap_bytes;
+  return snapshot != NULL && get_view(runtime, mailbox_id, &view) &&
+         view.pending != 0u &&
+         view.associated_context == snapshot->context_address &&
+         view.associated_roots != NULL && view.associated_root_count == 2u &&
+         view.scratch_slot_index == snapshot->scratch_slot_index &&
+         view.associated_context->cursor_bytes == snapshot->cursor_bytes &&
+         memcmp(view.associated_context, &snapshot->context,
+                sizeof(snapshot->context)) == 0 &&
+         memcmp(view.associated_roots, snapshot->roots,
+                sizeof(snapshot->roots)) == 0 &&
+         memcmp(view.associated_context->stack_data, snapshot->prefix,
+                snapshot->cursor_bytes) == 0 &&
+         ((bitmap_bytes = snapshot->cursor_bytes / 8u +
+                          (snapshot->cursor_bytes % 8u != 0u ? 1u : 0u)),
+          bitmap_bytes <= sizeof(snapshot->initialized)) &&
+         memcmp(view.associated_context->init_bitmap, snapshot->initialized,
+                bitmap_bytes) == 0 &&
+         memcmp(view.associated_context->poison_bitmap, snapshot->poisoned,
+                bitmap_bytes) == 0;
 }
 
 static int snapshot_bank(al_mailbox_runtime *runtime, uint32_t mailbox_id,
@@ -390,7 +489,7 @@ static int initialize_module_module(const al_owning_mailbox_module *module) {
          resume->input_type_indexes[2] == EXPECTED_STRING_INDEX &&
          resume->output_type_indexes[0] == EXPECTED_STATE_INDEX &&
          initialize->execute != NULL && begin->execute != NULL &&
-         resume->execute != NULL;
+         resume->execute != NULL && module->associated_resume != NULL;
 }
 
 static int valid_module_roles(const al_owning_mailbox_module *module) {
@@ -436,6 +535,99 @@ static int outputs_invalidated(const al_owning_bank_stack_slice *outputs,
       return 0;
   }
   return 1;
+}
+
+static int setup_direct_pending(
+    const al_owning_mailbox_module *module, direct_buffers *buffers,
+    al_owning_bank_stack_slice roots[2], uint32_t *protected_cursor) {
+  static const uint16_t seed_units[] = {0x0073u};
+  static const uint16_t chunk_units[] = {0x0063u};
+  uint8_t seed[SMALL_BYTES];
+  uint8_t chunk[SMALL_BYTES];
+  uint8_t state_copy[SMALL_BYTES];
+  uint32_t seed_extent = encode_expected_string(
+      seed_units, (uint32_t)(sizeof(seed_units) / sizeof(seed_units[0])), seed,
+      (uint32_t)sizeof(seed));
+  uint32_t chunk_extent = encode_expected_string(
+      chunk_units, (uint32_t)(sizeof(chunk_units) / sizeof(chunk_units[0])),
+      chunk, (uint32_t)sizeof(chunk));
+  al_owning_external_slice input;
+  al_owning_external_slice begin_inputs[2];
+  al_owning_bank_stack_slice output;
+  al_owning_value_size state_size;
+  int32_t callback_status;
+  if (module == NULL || buffers == NULL || roots == NULL ||
+      protected_cursor == NULL || !setup_direct(buffers, DIRECT_CAPACITY))
+    return 0;
+  input.bytes = seed;
+  input.extent_bytes = seed_extent;
+  input.type_index = EXPECTED_STRING_INDEX;
+  fill_invalid_outputs(&output, 1u);
+  callback_status = module->entries[0].execute(
+      &buffers->context, &input, 1u, &output, 1u);
+  if (callback_status != 0 || output.type_index != EXPECTED_STATE_INDEX ||
+      al_owning_measure_value(&buffers->context, module->layout,
+                              output.type_index, output.source_offset_bytes,
+                              output.source_owner_end_bytes, 0u,
+                              &state_size) != 0 ||
+      state_size.extent_bytes > sizeof(state_copy))
+    return 0;
+  memcpy(state_copy, buffers->context.stack_data + output.source_offset_bytes,
+         state_size.extent_bytes);
+  /* The direct callback API starts an entry against a fresh arena. Preserve
+     the initialized State bytes externally, then model that fresh entry. */
+  al_owning_begin(&buffers->context);
+  if (buffers->context.status != AL_OWNING_STATUS_OK)
+    return 0;
+  begin_inputs[0].bytes = state_copy;
+  begin_inputs[0].extent_bytes = state_size.extent_bytes;
+  begin_inputs[0].type_index = EXPECTED_STATE_INDEX;
+  begin_inputs[1].bytes = chunk;
+  begin_inputs[1].extent_bytes = chunk_extent;
+  begin_inputs[1].type_index = EXPECTED_STRING_INDEX;
+  fill_invalid_outputs(roots, 2u);
+  callback_status = module->entries[1].execute(
+      &buffers->context, begin_inputs, 2u, roots, 2u);
+  *protected_cursor = buffers->context.cursor_bytes;
+  return callback_status == 0 && *protected_cursor == 48u &&
+         roots[0].type_index == EXPECTED_STATE_INDEX &&
+         roots[1].type_index == EXPECTED_CONTINUATION_INDEX &&
+         roots[0].source_offset_bytes == 0u &&
+         roots[1].source_offset_bytes == 32u;
+}
+
+static void capture_direct_prefix(const direct_buffers *buffers,
+                                  uint8_t prefix[SMALL_BYTES * 4u],
+                                  uint8_t initialized[SMALL_BYTES / 2u],
+                                  uint8_t poisoned[SMALL_BYTES / 2u],
+                                  uint32_t *cursor_bytes) {
+  uint32_t bitmap_bytes;
+  *cursor_bytes = buffers->context.cursor_bytes;
+  memset(prefix, 0, SMALL_BYTES * 4u);
+  memset(initialized, 0, SMALL_BYTES / 2u);
+  memset(poisoned, 0, SMALL_BYTES / 2u);
+  if (*cursor_bytes > SMALL_BYTES * 4u)
+    return;
+  bitmap_bytes = *cursor_bytes / 8u + (*cursor_bytes % 8u != 0u ? 1u : 0u);
+  if (bitmap_bytes > SMALL_BYTES / 2u)
+    return;
+  memcpy(prefix, buffers->context.stack_data, *cursor_bytes);
+  memcpy(initialized, buffers->context.init_bitmap, bitmap_bytes);
+  memcpy(poisoned, buffers->context.poison_bitmap, bitmap_bytes);
+}
+
+static int direct_prefix_unchanged(
+    const direct_buffers *buffers, const uint8_t prefix[SMALL_BYTES * 4u],
+    const uint8_t initialized[SMALL_BYTES / 2u],
+    const uint8_t poisoned[SMALL_BYTES / 2u], uint32_t cursor_bytes) {
+  uint32_t bitmap_bytes = cursor_bytes / 8u +
+                          (cursor_bytes % 8u != 0u ? 1u : 0u);
+  return cursor_bytes <= SMALL_BYTES * 4u &&
+         bitmap_bytes <= SMALL_BYTES / 2u &&
+         buffers->context.cursor_bytes == cursor_bytes &&
+         memcmp(buffers->context.stack_data, prefix, cursor_bytes) == 0 &&
+         memcmp(buffers->context.init_bitmap, initialized, bitmap_bytes) == 0 &&
+         memcmp(buffers->context.poison_bitmap, poisoned, bitmap_bytes) == 0;
 }
 
 static void run_direct_callback_preflight(
@@ -694,6 +886,157 @@ static void run_direct_callback_preflight(
             outputs_unchanged(outputs, before, 2u));
 }
 
+static void run_associated_callback_preflight(
+    const al_owning_mailbox_module *module) {
+  static const uint8_t empty_string[8] = {0u};
+  static const uint8_t truncated_string[8] = {2u, 0u, 0u, 0u,
+                                               0u, 0u, 0u, 0u};
+  direct_buffers buffers;
+  al_owning_bank_stack_slice roots[2];
+  al_owning_bank_stack_slice before_roots[2];
+  al_owning_bank_stack_slice outputs[2];
+  al_owning_bank_stack_slice before_outputs[2];
+  al_owning_external_slice completion;
+  uint8_t prefix[SMALL_BYTES * 4u];
+  uint8_t initialized[SMALL_BYTES / 2u];
+  uint8_t poisoned[SMALL_BYTES / 2u];
+  uint32_t protected_cursor;
+  uint32_t saved_cursor;
+  int32_t callback_status;
+
+  completion.bytes = empty_string;
+  completion.extent_bytes = sizeof(empty_string);
+  completion.type_index = EXPECTED_STRING_INDEX;
+
+  CHECK("associated callback direct fixture creates source-derived roots",
+        setup_direct_pending(module, &buffers, roots, &protected_cursor));
+  capture_direct_prefix(&buffers, prefix, initialized, poisoned,
+                        &saved_cursor);
+  fill_invalid_outputs(outputs, 2u);
+  memcpy(before_outputs, outputs, sizeof(outputs));
+  callback_status = module->associated_resume(
+      &buffers.context, roots, 2u, &completion, protected_cursor - 8u,
+      outputs, 1u);
+  CHECK("associated callback rejects a mismatched saved mark before writes",
+        callback_status != 0 &&
+            outputs_unchanged(outputs, before_outputs, 1u) &&
+            direct_prefix_unchanged(&buffers, prefix, initialized, poisoned,
+                                    saved_cursor));
+
+  CHECK("associated callback fixture resets before bad root count",
+        setup_direct_pending(module, &buffers, roots, &protected_cursor));
+  capture_direct_prefix(&buffers, prefix, initialized, poisoned,
+                        &saved_cursor);
+  fill_invalid_outputs(outputs, 2u);
+  memcpy(before_outputs, outputs, sizeof(outputs));
+  callback_status = module->associated_resume(
+      &buffers.context, roots, 1u, &completion, protected_cursor, outputs, 1u);
+  CHECK("associated callback rejects retained root count before writes",
+        callback_status != 0 &&
+            outputs_unchanged(outputs, before_outputs, 1u) &&
+            direct_prefix_unchanged(&buffers, prefix, initialized, poisoned,
+                                    saved_cursor));
+
+  CHECK("associated callback fixture resets before bad root type",
+        setup_direct_pending(module, &buffers, roots, &protected_cursor));
+  capture_direct_prefix(&buffers, prefix, initialized, poisoned,
+                        &saved_cursor);
+  roots[0].type_index = UINT32_MAX;
+  fill_invalid_outputs(outputs, 2u);
+  memcpy(before_outputs, outputs, sizeof(outputs));
+  callback_status = module->associated_resume(
+      &buffers.context, roots, 2u, &completion, protected_cursor, outputs, 1u);
+  CHECK("associated callback rejects an invalid retained type before writes",
+        callback_status != 0 &&
+            outputs_unchanged(outputs, before_outputs, 1u) &&
+            direct_prefix_unchanged(&buffers, prefix, initialized, poisoned,
+                                    saved_cursor));
+
+  CHECK("associated callback fixture resets before truncated owner bound",
+        setup_direct_pending(module, &buffers, roots, &protected_cursor));
+  capture_direct_prefix(&buffers, prefix, initialized, poisoned,
+                        &saved_cursor);
+  roots[0].source_owner_end_bytes = 8u;
+  fill_invalid_outputs(outputs, 2u);
+  callback_status = module->associated_resume(
+      &buffers.context, roots, 2u, &completion, protected_cursor, outputs, 1u);
+  CHECK("associated callback rejects a truncated retained owner after preflight",
+        callback_status != 0 && outputs_invalidated(outputs, 1u) &&
+            direct_prefix_unchanged(&buffers, prefix, initialized, poisoned,
+                                    saved_cursor));
+
+  CHECK("associated callback fixture resets before truncated completion",
+        setup_direct_pending(module, &buffers, roots, &protected_cursor));
+  capture_direct_prefix(&buffers, prefix, initialized, poisoned,
+                        &saved_cursor);
+  completion.bytes = truncated_string;
+  completion.extent_bytes = sizeof(truncated_string);
+  fill_invalid_outputs(outputs, 2u);
+  callback_status = module->associated_resume(
+      &buffers.context, roots, 2u, &completion, protected_cursor, outputs, 1u);
+  CHECK("associated callback rejects malformed bounded completion after invalidating output",
+        callback_status != 0 && outputs_invalidated(outputs, 1u) &&
+            direct_prefix_unchanged(&buffers, prefix, initialized, poisoned,
+                                    saved_cursor));
+  completion.bytes = empty_string;
+  completion.extent_bytes = sizeof(empty_string);
+
+  CHECK("associated callback fixture resets before pending-payload overlap",
+        setup_direct_pending(module, &buffers, roots, &protected_cursor));
+  capture_direct_prefix(&buffers, prefix, initialized, poisoned,
+                        &saved_cursor);
+  callback_status = module->associated_resume(
+      &buffers.context, roots, 2u, &completion, protected_cursor,
+      (al_owning_bank_stack_slice *)(void *)buffers.context.stack_data, 1u);
+  CHECK("associated callback rejects writable output overlapping protected payload",
+        callback_status != 0 &&
+            direct_prefix_unchanged(&buffers, prefix, initialized, poisoned,
+                                    saved_cursor));
+
+  CHECK("associated callback fixture resets before descriptor-table overlap",
+        setup_direct_pending(module, &buffers, roots, &protected_cursor));
+  capture_direct_prefix(&buffers, prefix, initialized, poisoned,
+                        &saved_cursor);
+  memcpy(before_roots, roots, sizeof(roots));
+  callback_status = module->associated_resume(
+      &buffers.context, roots, 2u, &completion, protected_cursor,
+      (al_owning_bank_stack_slice *)(void *)roots, 1u);
+  CHECK("associated callback rejects writable output overlapping retained descriptors",
+        callback_status != 0 &&
+            memcmp(roots, before_roots, sizeof(roots)) == 0 &&
+            direct_prefix_unchanged(&buffers, prefix, initialized, poisoned,
+                                    saved_cursor));
+
+  CHECK("associated callback fixture resets before module-metadata overlap",
+        setup_direct_pending(module, &buffers, roots, &protected_cursor));
+  capture_direct_prefix(&buffers, prefix, initialized, poisoned,
+                        &saved_cursor);
+  {
+    uint8_t module_before[sizeof(*module)];
+    DWORD original_protection = 0u;
+    DWORD ignored_protection = 0u;
+    BOOL protection_restored = FALSE;
+    memcpy(module_before, module, sizeof(module_before));
+    if (VirtualProtect((LPVOID)(uintptr_t)module, sizeof(*module),
+                       PAGE_READWRITE, &original_protection)) {
+      callback_status = module->associated_resume(
+          &buffers.context, roots, 2u, &completion, protected_cursor,
+          (al_owning_bank_stack_slice *)(uintptr_t)module, 1u);
+      protection_restored = VirtualProtect(
+          (LPVOID)(uintptr_t)module, sizeof(*module), original_protection,
+          &ignored_protection);
+      CHECK("associated callback rejects writable output overlapping module metadata",
+            callback_status != 0 && protection_restored != 0 &&
+                memcmp(module, module_before, sizeof(module_before)) == 0 &&
+                direct_prefix_unchanged(&buffers, prefix, initialized,
+                                        poisoned, saved_cursor));
+    } else {
+      CHECK("associated callback rejects writable output overlapping module metadata",
+            0);
+    }
+  }
+}
+
 static int capture_success_snapshot(al_mailbox_runtime *runtime,
                                     uint32_t mailbox_id,
                                     bank_snapshot *snapshot,
@@ -706,11 +1049,18 @@ static int capture_success_snapshot(al_mailbox_runtime *runtime,
 static int expected_stats_after_small_lifecycle(
     const al_mailbox_owning_stats *stats) {
   return stats->initialized_mailboxes == 2u && stats->pending_mailboxes == 0u &&
+         stats->scratch_slot_capacity == 1u &&
+         stats->suspension_policy == AL_MAILBOX_OWNING_POLICY_RETURN &&
+         stats->pinned_scratch_slots == 0u &&
+         stats->pinned_scratch_bytes == 0u &&
          stats->live_retained_bytes == 40u && stats->live_retained_roots == 2u &&
          stats->utf8_input_bytes == 13u && stats->utf16_staging_bytes == 80u &&
          stats->input_import_bytes == 152u &&
-          stats->publication_copy_bytes == 112u && stats->deep_copy_bytes == 184u &&
-          stats->move_bytes == 0u && stats->returned_output_descriptors == 8u &&
+         stats->publication_copy_bytes == 112u &&
+         stats->begin_publication_copy_bytes == 48u &&
+         stats->resume_root_import_bytes == 48u &&
+         stats->deep_copy_bytes == 184u && stats->move_bytes == 0u &&
+         stats->returned_output_descriptors == 8u &&
           stats->turn_reset_bytes > 0u && stats->scratch_high_water_bytes > 0u &&
          stats->handler_invocations == 6u && stats->handler_failures == 0u &&
          stats->scratch_lease_acquisitions == 6u &&
@@ -725,8 +1075,9 @@ static int assert_storage_arithmetic(const runtime_fixture *fixture) {
                                fixture->config.mailbox_capacity;
   uint64_t expected_bitmap = fixture->config.scratch_byte_capacity / 8u +
                              (fixture->config.scratch_byte_capacity % 8u != 0u);
-  uint64_t expected_scratch = fixture->config.scratch_byte_capacity +
-                              2u * expected_bitmap;
+  uint64_t expected_scratch =
+      (uint64_t)fixture->config.scratch_slot_capacity *
+      (fixture->config.scratch_byte_capacity + 2u * expected_bitmap);
   uint64_t accounted = fixture->requirements.retained_reserved_bytes +
                        fixture->requirements.scratch_reserved_bytes +
                        fixture->requirements.text_staging_reserved_bytes +
@@ -1275,6 +1626,519 @@ static void run_retained_capacity_failure(
   dispose_runtime(&fixture);
 }
 
+static int attached_string_root_matches(
+    const al_owning_stack_context *context, const al_owning_layout *layout,
+    const al_owning_bank_stack_slice *root, uint32_t expected_type_index,
+    uint32_t expected_offset, const uint16_t *units, uint32_t unit_count,
+    uint32_t protected_cursor) {
+  uint8_t expected[SMALL_BYTES];
+  uint32_t expected_extent;
+  al_owning_value_size measured;
+  if (context == NULL || layout == NULL || root == NULL ||
+      root->type_index != expected_type_index ||
+      root->reserved != 0u || root->source_offset_bytes != expected_offset ||
+      root->source_owner_end_bytes > protected_cursor ||
+      root->source_owner_end_bytes < root->source_offset_bytes ||
+      al_owning_measure_value((al_owning_stack_context *)(uintptr_t)context,
+                              layout, root->type_index,
+                              root->source_offset_bytes,
+                              root->source_owner_end_bytes, 0u, &measured) != 0)
+    return 0;
+  expected_extent = encode_expected_string(units, unit_count, expected,
+                                           (uint32_t)sizeof(expected));
+  if (expected_extent == 0u || measured.extent_bytes != expected_extent ||
+      expected_extent > root->source_owner_end_bytes - root->source_offset_bytes)
+    return 0;
+  return memcmp(context->stack_data + root->source_offset_bytes, expected,
+                expected_extent) == 0;
+}
+
+static int policy_storage_arithmetic(const runtime_fixture *fixture) {
+  uint64_t bank_bytes = (uint64_t)fixture->config.retained_byte_capacity +
+                        2u * sizeof(al_owning_bank_root);
+  uint64_t retained = bank_bytes * 2u * fixture->config.mailbox_capacity;
+  uint64_t bitmap_bytes = fixture->config.scratch_byte_capacity / 8u +
+                          (fixture->config.scratch_byte_capacity % 8u != 0u);
+  uint64_t scratch = fixture->config.scratch_slot_capacity *
+                     ((uint64_t)fixture->config.scratch_byte_capacity +
+                      2u * bitmap_bytes);
+  uint64_t accounted = fixture->requirements.retained_reserved_bytes +
+                       fixture->requirements.scratch_reserved_bytes +
+                       fixture->requirements.text_staging_reserved_bytes +
+                       fixture->requirements.controller_reserved_bytes;
+  return fixture->requirements.mailbox_capacity ==
+             fixture->config.mailbox_capacity &&
+         fixture->requirements.retained_reserved_bytes == retained &&
+         fixture->requirements.scratch_reserved_bytes == scratch &&
+         fixture->requirements.text_staging_reserved_bytes ==
+             fixture->config.text_staging_byte_capacity &&
+         fixture->requirements.controller_reserved_bytes > 0u &&
+         fixture->requirements.storage_bytes == accounted;
+}
+
+static void run_policy_small_lifecycle(
+    const al_owning_mailbox_module *module, uint32_t policy,
+    policy_case_evidence *evidence) {
+  static const uint8_t unicode_seed[] = {0x41u, 0xf0u, 0x9fu, 0x99u, 0x82u};
+  static const uint8_t delta[] = {0xceu, 0xb4u};
+  static const uint8_t nul_rocket[] = {0x00u, 0xf0u, 0x9fu, 0x9au, 0x80u};
+  static const uint8_t empty[] = "";
+  static const uint8_t byte_b[] = {0x42u};
+  static const uint16_t unicode_units[] = {0x0041u, 0xd83du, 0xde42u,
+                                            0x03b4u, 0x0000u, 0xd83du,
+                                            0xde80u};
+  static const uint16_t b_units[] = {0x0042u};
+  runtime_fixture fixture;
+  al_mailbox_token token_a;
+  al_mailbox_token token_b;
+  al_mailbox_call_info info;
+  al_mailbox_owning_state_view view_a;
+  al_mailbox_owning_state_view view_b;
+  al_mailbox_owning_stats pending_stats;
+  uint32_t expected_imports =
+      policy == AL_MAILBOX_OWNING_POLICY_RETURN ? 152u : 104u;
+  uint32_t expected_publication =
+      policy == AL_MAILBOX_OWNING_POLICY_RETURN ? 112u : 64u;
+  uint32_t expected_begin_publication =
+      policy == AL_MAILBOX_OWNING_POLICY_RETURN ? 48u : 0u;
+  uint32_t expected_resume_import =
+      policy == AL_MAILBOX_OWNING_POLICY_RETURN ? 48u : 0u;
+  uint32_t expected_leases =
+      policy == AL_MAILBOX_OWNING_POLICY_RETURN ? 6u : 4u;
+  memset(evidence, 0, sizeof(*evidence));
+  CHECK("policy simple pair creates equal two-slot reservation",
+        create_runtime_with_policy(module, 2u, 65536u, 16384u, 16384u, 2u,
+                                   policy, &fixture, 0));
+  if (fixture.runtime == NULL) {
+    dispose_runtime(&fixture);
+    return;
+  }
+  CHECK("policy simple pair backing bytes match bank and per-slot bitmap arithmetic",
+        policy_storage_arithmetic(&fixture));
+  initialize_call_info(&info);
+  CHECK("policy simple Unicode initialize succeeds",
+        al_mailbox_init_text(fixture.runtime, 0u, unicode_seed,
+                             sizeof(unicode_seed), &info) == AL_MAILBOX_OK);
+  initialize_call_info(&info);
+  CHECK("policy simple empty initialize succeeds",
+        al_mailbox_init_text(fixture.runtime, 1u, empty, 0u, &info) ==
+            AL_MAILBOX_OK);
+  initialize_call_info(&info);
+  CHECK("policy simple Unicode begin succeeds",
+        al_mailbox_begin_text(fixture.runtime, 0u, delta, sizeof(delta),
+                              &token_a, &info) == AL_MAILBOX_OK);
+  initialize_call_info(&info);
+  CHECK("policy simple empty begin succeeds",
+        al_mailbox_begin_text(fixture.runtime, 1u, empty, 0u, &token_b,
+                              &info) == AL_MAILBOX_OK);
+  CHECK("policy simple pair has two pending independent mailboxes",
+        get_view(fixture.runtime, 0u, &view_a) &&
+            get_view(fixture.runtime, 1u, &view_b) && view_a.pending == 1u &&
+            view_b.pending == 1u);
+  if (policy == AL_MAILBOX_OWNING_POLICY_KEEP_ASSOCIATED) {
+    CHECK("policy simple KEEP pins two actual scratch leases before resume",
+          get_owning_stats(fixture.runtime, &pending_stats) &&
+              pending_stats.pinned_scratch_slots == 2u &&
+              pending_stats.pinned_scratch_bytes == 131072u &&
+              pending_stats.outstanding_scratch_leases == 2u &&
+              pending_stats.scratch_lease_acquisitions == 4u &&
+              pending_stats.scratch_lease_returns == 2u);
+  } else {
+    CHECK("policy simple RETURN publishes roots and releases both scratch leases",
+          view_a.associated_context == NULL && view_b.associated_context == NULL &&
+              view_a.associated_root_count == 0u &&
+              view_b.associated_root_count == 0u &&
+              get_owning_stats(fixture.runtime, &pending_stats) &&
+              pending_stats.pinned_scratch_slots == 0u &&
+              pending_stats.outstanding_scratch_leases == 0u);
+  }
+  initialize_call_info(&info);
+  CHECK("policy simple Unicode resume succeeds",
+        al_mailbox_resume_text(fixture.runtime, 0u, &token_a, nul_rocket,
+                               sizeof(nul_rocket), &info) == AL_MAILBOX_OK);
+  initialize_call_info(&info);
+  CHECK("policy simple empty resume succeeds",
+        al_mailbox_resume_text(fixture.runtime, 1u, &token_b, byte_b,
+                               sizeof(byte_b), &info) == AL_MAILBOX_OK);
+  CHECK("paired policy Unicode result has exact source-derived UTF-16 bytes",
+        check_main_bank(fixture.runtime, 0u, 0u, 1u, unicode_units, 7u,
+                        NULL, 0u));
+  CHECK("paired policy empty result is exact B serialization",
+        check_main_bank(fixture.runtime, 1u, 0u, 1u, b_units, 1u, NULL, 0u));
+  CHECK("policy simple pair snapshots both published results",
+        snapshot_bank(fixture.runtime, 0u, &evidence->simple_states[0]) &&
+            snapshot_bank(fixture.runtime, 1u, &evidence->simple_states[1]));
+  CHECK("policy simple pair counters match independent Unicode and empty sums",
+        get_owning_stats(fixture.runtime, &evidence->stats) &&
+            evidence->stats.initialized_mailboxes == 2u &&
+            evidence->stats.pending_mailboxes == 0u &&
+            evidence->stats.scratch_slot_capacity == 2u &&
+            evidence->stats.suspension_policy == policy &&
+            evidence->stats.pinned_scratch_slots == 0u &&
+            evidence->stats.pinned_scratch_bytes == 0u &&
+            evidence->stats.utf8_input_bytes == 13u &&
+            evidence->stats.utf16_staging_bytes == 80u &&
+            evidence->stats.input_import_bytes == expected_imports &&
+            evidence->stats.publication_copy_bytes == expected_publication &&
+            evidence->stats.begin_publication_copy_bytes ==
+                expected_begin_publication &&
+            evidence->stats.resume_root_import_bytes == expected_resume_import &&
+            evidence->stats.deep_copy_bytes == 184u &&
+            evidence->stats.move_bytes == 0u &&
+            evidence->stats.returned_output_descriptors == 8u &&
+            evidence->stats.live_retained_bytes == 40u &&
+            evidence->stats.live_retained_roots == 2u &&
+            evidence->stats.handler_invocations == 6u &&
+            evidence->stats.handler_failures == 0u &&
+            evidence->stats.scratch_lease_acquisitions == expected_leases &&
+            evidence->stats.scratch_lease_returns == expected_leases &&
+            evidence->stats.outstanding_scratch_leases == 0u);
+  evidence->requirements = fixture.requirements;
+  dispose_runtime(&fixture);
+}
+
+static void run_policy_adversarial_case(
+    const al_owning_mailbox_module *module, uint32_t policy,
+    policy_case_evidence *evidence) {
+  static const uint8_t seed_a[] = {0x41u};
+  static const uint8_t seed_b[] = {0x42u};
+  static const uint8_t seed_c[] = {0x43u};
+  static const uint8_t chunk_a[] = {0x61u};
+  static const uint8_t chunk_b[] = {0x62u};
+  static const uint8_t chunk_c[] = {0x63u};
+  static const uint8_t fail_text[] = {0x46u, 0x41u, 0x49u, 0x4cu};
+  static const uint8_t long_text[] = "0123456789X";
+  static const uint8_t empty[] = "";
+  static const uint16_t units_a[] = {0x0041u, 0x0061u};
+  static const uint16_t units_b[] = {0x0042u, 0x0062u};
+  static const uint16_t units_c[] = {0x0043u, 0x0063u};
+  runtime_fixture fixture;
+  al_mailbox_token token_a;
+  al_mailbox_token token_b;
+  al_mailbox_token token_c;
+  al_mailbox_token token_c_before;
+  al_mailbox_call_info info;
+  al_mailbox_owning_state_view view_a;
+  al_mailbox_owning_state_view view_b;
+  al_mailbox_owning_state_view view_c;
+  al_mailbox_owning_stats before_no_slot;
+  al_mailbox_owning_stats after_no_slot;
+  al_mailbox_owning_stats pending_stats;
+  attached_snapshot pending_a;
+  attached_snapshot pending_b;
+  uint64_t bank_a_pending;
+  uint64_t bank_b_pending;
+  uint32_t expected_imports =
+      policy == AL_MAILBOX_OWNING_POLICY_RETURN ? 376u : 216u;
+  uint32_t expected_publication =
+      policy == AL_MAILBOX_OWNING_POLICY_RETURN ? 192u : 96u;
+  uint32_t expected_begin_publication =
+      policy == AL_MAILBOX_OWNING_POLICY_RETURN ? 96u : 0u;
+  uint32_t expected_resume_import =
+      policy == AL_MAILBOX_OWNING_POLICY_RETURN ? 160u : 0u;
+  uint32_t expected_leases =
+      policy == AL_MAILBOX_OWNING_POLICY_RETURN ? 11u : 6u;
+  al_mailbox_result result;
+  memset(evidence, 0, sizeof(*evidence));
+  memset(&token_a, 0, sizeof(token_a));
+  memset(&token_b, 0, sizeof(token_b));
+  memset(&token_c, 0xa5, sizeof(token_c));
+  CHECK("adversarial policy run uses identical two-slot reservation and 32-byte banks",
+        create_runtime_with_policy(module, 3u, 65536u, 32u, 16384u, 2u,
+                                   policy, &fixture, 0));
+  if (fixture.runtime == NULL) {
+    dispose_runtime(&fixture);
+    return;
+  }
+  CHECK("adversarial policy reservation matches source-derived component arithmetic",
+        policy_storage_arithmetic(&fixture) &&
+            fixture.requirements.scratch_reserved_bytes == 163840u &&
+            fixture.requirements.retained_reserved_bytes == 432u &&
+            fixture.requirements.text_staging_reserved_bytes == 16384u);
+  initialize_call_info(&info);
+  CHECK("adversarial A State initializes",
+        al_mailbox_init_text(fixture.runtime, 0u, seed_a, sizeof(seed_a),
+                             &info) == AL_MAILBOX_OK);
+  initialize_call_info(&info);
+  CHECK("adversarial B State initializes",
+        al_mailbox_init_text(fixture.runtime, 1u, seed_b, sizeof(seed_b),
+                             &info) == AL_MAILBOX_OK);
+  initialize_call_info(&info);
+  CHECK("adversarial C State initializes",
+        al_mailbox_init_text(fixture.runtime, 2u, seed_c, sizeof(seed_c),
+                             &info) == AL_MAILBOX_OK);
+
+  initialize_call_info(&info);
+  CHECK("A begin creates first pending operation group",
+        al_mailbox_begin_text(fixture.runtime, 0u, chunk_a, sizeof(chunk_a),
+                              &token_a, &info) == AL_MAILBOX_OK);
+  initialize_call_info(&info);
+  CHECK("B begin creates interleaved pending operation group",
+        al_mailbox_begin_text(fixture.runtime, 1u, chunk_b, sizeof(chunk_b),
+                              &token_b, &info) == AL_MAILBOX_OK);
+  CHECK("both policies retain the pre-begin bank State while pending begins are examined",
+        get_view(fixture.runtime, 0u, &view_a) &&
+            get_view(fixture.runtime, 1u, &view_b) && view_a.pending == 1u &&
+            view_b.pending == 1u);
+  bank_a_pending = bank_signature(fixture.runtime, 0u);
+  bank_b_pending = bank_signature(fixture.runtime, 1u);
+  if (policy == AL_MAILBOX_OWNING_POLICY_KEEP_ASSOCIATED) {
+    int captured_a = capture_attached_snapshot(fixture.runtime, 0u, &pending_a);
+    int captured_b = capture_attached_snapshot(fixture.runtime, 1u, &pending_b);
+    CHECK("KEEP A/B attach two distinct contexts with actual State and Continuation offsets",
+          captured_a && captured_b && pending_a.cursor_bytes == 48u &&
+              pending_b.cursor_bytes == 48u &&
+              pending_a.scratch_slot_index != pending_b.scratch_slot_index &&
+              attached_string_root_matches(
+                  pending_a.context_address, module->layout,
+                  &pending_a.roots[0],
+                  EXPECTED_STATE_INDEX, 0u, (const uint16_t[]){0x0041u}, 1u,
+                  pending_a.cursor_bytes) &&
+              attached_string_root_matches(
+                  pending_a.context_address, module->layout,
+                  &pending_a.roots[1],
+                  EXPECTED_CONTINUATION_INDEX, 32u,
+                  (const uint16_t[]){0x0061u}, 1u, pending_a.cursor_bytes) &&
+              attached_string_root_matches(
+                  pending_b.context_address, module->layout,
+                  &pending_b.roots[0],
+                  EXPECTED_STATE_INDEX, 0u, (const uint16_t[]){0x0042u}, 1u,
+                  pending_b.cursor_bytes) &&
+              attached_string_root_matches(
+                  pending_b.context_address, module->layout,
+                  &pending_b.roots[1],
+                  EXPECTED_CONTINUATION_INDEX, 32u,
+                  (const uint16_t[]){0x0062u}, 1u, pending_b.cursor_bytes));
+    evidence->pending_a_cursor = pending_a.cursor_bytes;
+    evidence->pending_b_cursor = pending_b.cursor_bytes;
+    evidence->pending_a_slot = pending_a.scratch_slot_index;
+    evidence->pending_b_slot = pending_b.scratch_slot_index;
+    memcpy(evidence->pending_a_roots, pending_a.roots,
+           sizeof(evidence->pending_a_roots));
+    memcpy(evidence->pending_b_roots, pending_b.roots,
+           sizeof(evidence->pending_b_roots));
+    CHECK("KEEP begin avoids mid-suspension copies and pins exactly two slots",
+          get_owning_stats(fixture.runtime, &pending_stats) &&
+              pending_stats.begin_publication_copy_bytes == 0u &&
+              pending_stats.resume_root_import_bytes == 0u &&
+              pending_stats.pinned_scratch_slots == 2u &&
+              pending_stats.pinned_scratch_bytes == 131072u &&
+              pending_stats.outstanding_scratch_leases == 2u);
+  } else {
+    CHECK("RETURN has no attached roots and publishes the two pending roots per mailbox",
+          view_a.associated_context == NULL && view_b.associated_context == NULL &&
+              view_a.associated_root_count == 0u &&
+              view_b.associated_root_count == 0u && view_a.bank->root_count == 2u &&
+              view_b.bank->root_count == 2u);
+  }
+
+  if (policy == AL_MAILBOX_OWNING_POLICY_KEEP_ASSOCIATED) {
+    memset(&token_c, 0xa5, sizeof(token_c));
+    token_c_before = token_c;
+#ifdef AL_MAILBOX_RUNTIME_TESTING
+    CHECK("KEEP test hook seeds token sequence before saturated-pool rejection",
+          al_mailbox_test_set_next_token_sequence(fixture.runtime, 77u) ==
+              AL_MAILBOX_OK);
+#else
+    CHECK("KEEP test hook is compiled for no-slot sequence validation", 0);
+#endif
+    CHECK("KEEP statistics snapshot before no-slot request",
+          get_owning_stats(fixture.runtime, &before_no_slot));
+    initialize_call_info(&info);
+    result = al_mailbox_begin_text(fixture.runtime, 2u, chunk_c, sizeof(chunk_c),
+                                   &token_c, &info);
+    evidence->no_slot_result = (uint32_t)result;
+    evidence->no_slot_token_untouched =
+        memcmp(&token_c, &token_c_before, sizeof(token_c)) == 0;
+    evidence->no_slot_counters_unchanged =
+        get_owning_stats(fixture.runtime, &after_no_slot) &&
+        after_no_slot.utf8_input_bytes == before_no_slot.utf8_input_bytes &&
+        after_no_slot.utf16_staging_bytes == before_no_slot.utf16_staging_bytes &&
+        after_no_slot.input_import_bytes == before_no_slot.input_import_bytes &&
+        after_no_slot.deep_copy_bytes == before_no_slot.deep_copy_bytes &&
+        after_no_slot.returned_output_descriptors ==
+            before_no_slot.returned_output_descriptors &&
+        after_no_slot.handler_invocations == before_no_slot.handler_invocations &&
+        after_no_slot.handler_failures == before_no_slot.handler_failures &&
+        after_no_slot.scratch_lease_acquisitions ==
+            before_no_slot.scratch_lease_acquisitions &&
+        after_no_slot.scratch_lease_returns == before_no_slot.scratch_lease_returns &&
+        after_no_slot.pinned_scratch_slots == before_no_slot.pinned_scratch_slots &&
+        after_no_slot.pinned_scratch_bytes == before_no_slot.pinned_scratch_bytes;
+    CHECK("KEEP rejects a third begin before staging, import, handler, or token mutation",
+          result == AL_MAILBOX_SCRATCH_CAPACITY &&
+              evidence->no_slot_token_untouched != 0u &&
+              evidence->no_slot_counters_unchanged != 0u &&
+              bank_signature(fixture.runtime, 0u) == bank_a_pending &&
+              bank_signature(fixture.runtime, 1u) == bank_b_pending &&
+              attached_snapshot_unchanged(fixture.runtime, 0u, &pending_a) &&
+              attached_snapshot_unchanged(fixture.runtime, 1u, &pending_b));
+  } else {
+    CHECK("RETURN policy has no pinned lease before third admission",
+          get_owning_stats(fixture.runtime, &pending_stats) &&
+              pending_stats.pinned_scratch_slots == 0u &&
+              pending_stats.outstanding_scratch_leases == 0u);
+#ifdef AL_MAILBOX_RUNTIME_TESTING
+    CHECK("RETURN test hook seeds token sequence before third admission",
+          al_mailbox_test_set_next_token_sequence(fixture.runtime, 77u) ==
+              AL_MAILBOX_OK);
+#else
+    CHECK("RETURN test hook is compiled for paired sequence validation", 0);
+#endif
+  }
+
+  if (policy == AL_MAILBOX_OWNING_POLICY_RETURN) {
+    initialize_call_info(&info);
+    result = al_mailbox_begin_text(fixture.runtime, 2u, chunk_c, sizeof(chunk_c),
+                                   &token_c, &info);
+    CHECK("RETURN admits C against the same configured pool and publishes its roots",
+          result == AL_MAILBOX_OK && token_c.opaque[1] == 77u &&
+              check_main_bank(fixture.runtime, 2u, 1u, 2u,
+                              (const uint16_t[]){0x0043u}, 1u,
+                              (const uint16_t[]){0x0063u}, 1u));
+  }
+  {
+    uint64_t signature = bank_signature(fixture.runtime, 0u);
+    initialize_call_info(&info);
+    result = al_mailbox_resume_text(fixture.runtime, 0u, &token_a, fail_text,
+                                    sizeof(fail_text), &info);
+    CHECK("A handler failure occurs after bounded suffix construction",
+          result == AL_MAILBOX_HANDLER_FAILURE &&
+              info.handler_status == AL_OWNING_STATUS_DIAGNOSTIC &&
+              info.error_metadata_id >= 0);
+    CHECK("A handler failure preserves active bank and pending token for retry",
+          bank_signature(fixture.runtime, 0u) == signature &&
+              get_view(fixture.runtime, 0u, &view_a) && view_a.pending == 1u);
+    if (policy == AL_MAILBOX_OWNING_POLICY_KEEP_ASSOCIATED)
+      CHECK("A failed KEEP resume rolls back only suffix and restores prefix metadata",
+            attached_snapshot_unchanged(fixture.runtime, 0u, &pending_a));
+  }
+
+  {
+    uint64_t signature = bank_signature(fixture.runtime, 1u);
+    initialize_call_info(&info);
+    result = al_mailbox_resume_text(fixture.runtime, 1u, &token_b, long_text,
+                                    (uint32_t)(sizeof(long_text) - 1u), &info);
+    CHECK("B handler completes but oversized State publication fails atomically",
+          result == AL_MAILBOX_RETAINED_CAPACITY &&
+              info.handler_status == AL_OWNING_STATUS_RETAINED_CAPACITY &&
+              bank_signature(fixture.runtime, 1u) == signature &&
+              get_view(fixture.runtime, 1u, &view_b) && view_b.pending == 1u);
+    if (policy == AL_MAILBOX_OWNING_POLICY_KEEP_ASSOCIATED)
+      CHECK("B bank-capacity failure restores the attached prefix and descriptor roots",
+            attached_snapshot_unchanged(fixture.runtime, 1u, &pending_b));
+  }
+
+  initialize_call_info(&info);
+  CHECK("B retries the same token with a small result after publication failure",
+        al_mailbox_resume_text(fixture.runtime, 1u, &token_b, empty, 0u,
+                               &info) == AL_MAILBOX_OK &&
+            check_main_bank(fixture.runtime, 1u, 0u, 1u, units_b, 2u, NULL,
+                            0u));
+
+  if (policy == AL_MAILBOX_OWNING_POLICY_KEEP_ASSOCIATED) {
+    initialize_call_info(&info);
+    result = al_mailbox_begin_text(fixture.runtime, 2u, chunk_c,
+                                   sizeof(chunk_c), &token_c, &info);
+    CHECK("C admission reuses B's returned physical scratch slot without consuming rejection sequence",
+          result == AL_MAILBOX_OK && token_c.opaque[1] == 77u &&
+              get_view(fixture.runtime, 2u, &view_c) &&
+              view_c.associated_context != NULL &&
+              view_c.scratch_slot_index == pending_b.scratch_slot_index &&
+              view_c.associated_context == pending_b.context_address &&
+              view_c.associated_context->cursor_bytes == 48u);
+  }
+  evidence->admitted_c_token_sequence = token_c.opaque[1];
+
+  initialize_call_info(&info);
+  CHECK("C resume completes independently after A/B failure and retry",
+        al_mailbox_resume_text(fixture.runtime, 2u, &token_c, empty, 0u,
+                               &info) == AL_MAILBOX_OK &&
+            check_main_bank(fixture.runtime, 2u, 0u, 1u, units_c, 2u, NULL,
+                            0u));
+  initialize_call_info(&info);
+  CHECK("A retries the same token after failure and reaches exact Aa bytes",
+        al_mailbox_resume_text(fixture.runtime, 0u, &token_a, empty, 0u,
+                               &info) == AL_MAILBOX_OK &&
+            check_main_bank(fixture.runtime, 0u, 0u, 1u, units_a, 2u, NULL,
+                            0u));
+  CHECK("all three policy-case states are captured after completion",
+        snapshot_bank(fixture.runtime, 0u, &evidence->final_states[0]) &&
+            snapshot_bank(fixture.runtime, 1u, &evidence->final_states[1]) &&
+            snapshot_bank(fixture.runtime, 2u, &evidence->final_states[2]));
+  CHECK("adversarial policy counters match independent source and copy extents",
+        get_owning_stats(fixture.runtime, &evidence->stats) &&
+            evidence->stats.initialized_mailboxes == 3u &&
+            evidence->stats.pending_mailboxes == 0u &&
+            evidence->stats.scratch_slot_capacity == 2u &&
+            evidence->stats.suspension_policy == policy &&
+            evidence->stats.pinned_scratch_slots == 0u &&
+            evidence->stats.pinned_scratch_bytes == 0u &&
+            evidence->stats.utf8_input_bytes == 21u &&
+            evidence->stats.utf16_staging_bytes == 168u &&
+            evidence->stats.input_import_bytes == expected_imports &&
+            evidence->stats.publication_copy_bytes == expected_publication &&
+            evidence->stats.begin_publication_copy_bytes ==
+                expected_begin_publication &&
+            evidence->stats.resume_root_import_bytes == expected_resume_import &&
+            evidence->stats.deep_copy_bytes == 416u &&
+            evidence->stats.move_bytes == 0u &&
+            evidence->stats.returned_output_descriptors == 13u &&
+            evidence->stats.live_retained_bytes == 48u &&
+            evidence->stats.live_retained_roots == 3u &&
+            evidence->stats.handler_invocations == 11u &&
+            evidence->stats.handler_failures == 2u &&
+            evidence->stats.scratch_lease_acquisitions == expected_leases &&
+            evidence->stats.scratch_lease_returns == expected_leases &&
+            evidence->stats.outstanding_scratch_leases == 0u);
+  evidence->requirements = fixture.requirements;
+  dispose_runtime(&fixture);
+}
+
+static void run_policy_comparison(
+    const al_owning_mailbox_module *module,
+    policy_case_evidence small_return[1],
+    policy_case_evidence small_keep[1],
+    policy_case_evidence adversity_return[1],
+    policy_case_evidence adversity_keep[1]) {
+  run_associated_callback_preflight(module);
+  run_policy_small_lifecycle(module, AL_MAILBOX_OWNING_POLICY_RETURN,
+                             small_return);
+  run_policy_small_lifecycle(module,
+                             AL_MAILBOX_OWNING_POLICY_KEEP_ASSOCIATED,
+                             small_keep);
+  run_policy_adversarial_case(module, AL_MAILBOX_OWNING_POLICY_RETURN,
+                              adversity_return);
+  run_policy_adversarial_case(module,
+                              AL_MAILBOX_OWNING_POLICY_KEEP_ASSOCIATED,
+                              adversity_keep);
+  CHECK("RETURN and KEEP use equal caller-reserved storage for Unicode and empty comparison",
+        small_return->requirements.storage_bytes ==
+            small_keep->requirements.storage_bytes &&
+            small_return->requirements.scratch_reserved_bytes ==
+                small_keep->requirements.scratch_reserved_bytes);
+  CHECK("RETURN and KEEP use equal caller-reserved storage for adversarial comparison",
+        adversity_return->requirements.storage_bytes ==
+            adversity_keep->requirements.storage_bytes &&
+            adversity_return->requirements.scratch_reserved_bytes ==
+                adversity_keep->requirements.scratch_reserved_bytes);
+  CHECK("paired policy Unicode and empty results are byte-identical",
+        memcmp(small_return->simple_states, small_keep->simple_states,
+               sizeof(small_return->simple_states)) == 0);
+  CHECK("paired policy adversarial final State bytes match for A, B, and C",
+        memcmp(adversity_return->final_states, adversity_keep->final_states,
+               sizeof(adversity_return->final_states)) == 0);
+  CHECK("KEEP no-slot rejection leaves token sentinel and admits sequence 77 later",
+        adversity_keep->no_slot_result == AL_MAILBOX_SCRATCH_CAPACITY &&
+            adversity_keep->no_slot_token_untouched != 0u &&
+            adversity_keep->no_slot_counters_unchanged != 0u &&
+            adversity_keep->admitted_c_token_sequence == 77u);
+  CHECK("RETURN exposes no pinned leases and admits the same seeded sequence",
+        adversity_return->no_slot_result == 0u &&
+            adversity_return->admitted_c_token_sequence == 77u &&
+            adversity_return->stats.pinned_scratch_bytes == 0u);
+}
+
 static void print_snapshot_json(const bank_snapshot *snapshot) {
   uint32_t index;
   printf("{\"pending\":%s,\"rootCount\":%u,\"usedBytes\":%u,\"roots\":[",
@@ -1292,14 +2156,18 @@ static void print_snapshot_json(const bank_snapshot *snapshot) {
 }
 
 static void print_stats_json(const al_mailbox_owning_stats *stats) {
-  printf("{\"mailboxCapacity\":%u,\"initializedMailboxes\":%u,\"pendingMailboxes\":%u,\"storageReservedBytes\":%" PRIu64 ",\"retainedReservedBytes\":%" PRIu64 ",\"scratchReservedBytes\":%" PRIu64 ",\"textStagingReservedBytes\":%" PRIu64 ",\"liveRetainedBytes\":%" PRIu64 ",\"liveRetainedRoots\":%" PRIu64 ",\"scratchHighWaterBytes\":%" PRIu64 ",\"utf8InputBytes\":%" PRIu64 ",\"utf16StagingBytes\":%" PRIu64 ",\"inputImportBytes\":%" PRIu64 ",\"publicationCopyBytes\":%" PRIu64 ",\"deepCopyBytes\":%" PRIu64 ",\"moveBytes\":%" PRIu64 ",\"returnedOutputDescriptors\":%" PRIu64 ",\"turnResetBytes\":%" PRIu64 ",\"handlerInvocations\":%" PRIu64 ",\"handlerFailures\":%" PRIu64 ",\"scratchLeaseAcquisitions\":%" PRIu64 ",\"scratchLeaseReturns\":%" PRIu64 ",\"outstandingScratchLeases\":%u}",
+  printf("{\"mailboxCapacity\":%u,\"initializedMailboxes\":%u,\"pendingMailboxes\":%u,\"scratchSlotCapacity\":%u,\"pinnedScratchSlots\":%u,\"suspensionPolicy\":%u,\"pinnedScratchBytes\":%" PRIu64 ",\"storageReservedBytes\":%" PRIu64 ",\"retainedReservedBytes\":%" PRIu64 ",\"scratchReservedBytes\":%" PRIu64 ",\"textStagingReservedBytes\":%" PRIu64 ",\"liveRetainedBytes\":%" PRIu64 ",\"liveRetainedRoots\":%" PRIu64 ",\"scratchHighWaterBytes\":%" PRIu64 ",\"utf8InputBytes\":%" PRIu64 ",\"utf16StagingBytes\":%" PRIu64 ",\"inputImportBytes\":%" PRIu64 ",\"publicationCopyBytes\":%" PRIu64 ",\"beginPublicationCopyBytes\":%" PRIu64 ",\"resumeRootImportBytes\":%" PRIu64 ",\"deepCopyBytes\":%" PRIu64 ",\"moveBytes\":%" PRIu64 ",\"returnedOutputDescriptors\":%" PRIu64 ",\"turnResetBytes\":%" PRIu64 ",\"handlerInvocations\":%" PRIu64 ",\"handlerFailures\":%" PRIu64 ",\"scratchLeaseAcquisitions\":%" PRIu64 ",\"scratchLeaseReturns\":%" PRIu64 ",\"outstandingScratchLeases\":%u}",
          stats->mailbox_capacity, stats->initialized_mailboxes,
-         stats->pending_mailboxes, stats->storage_reserved_bytes,
+         stats->pending_mailboxes, stats->scratch_slot_capacity,
+         stats->pinned_scratch_slots, stats->suspension_policy,
+         stats->pinned_scratch_bytes, stats->storage_reserved_bytes,
          stats->retained_reserved_bytes, stats->scratch_reserved_bytes,
          stats->text_staging_reserved_bytes, stats->live_retained_bytes,
          stats->live_retained_roots, stats->scratch_high_water_bytes,
          stats->utf8_input_bytes, stats->utf16_staging_bytes,
          stats->input_import_bytes, stats->publication_copy_bytes,
+         stats->begin_publication_copy_bytes,
+         stats->resume_root_import_bytes,
          stats->deep_copy_bytes, stats->move_bytes,
           stats->returned_output_descriptors, stats->turn_reset_bytes,
          stats->handler_invocations, stats->handler_failures,
@@ -1329,6 +2197,79 @@ static void print_checks_json(void) {
   printf("]");
 }
 
+static void print_stack_slice_json(
+    const al_owning_bank_stack_slice *slice) {
+  printf("{\"typeIndex\":%u,\"offsetBytes\":%u,\"sourceOwnerEndBytes\":%u,\"reserved\":%u}",
+         slice->type_index, slice->source_offset_bytes,
+         slice->source_owner_end_bytes, slice->reserved);
+}
+
+static void print_attached_pair_json(
+    const policy_case_evidence *evidence) {
+  printf("{\"a\":{\"cursorBytes\":%u,\"scratchSlotIndex\":%u,\"roots\":[",
+         evidence->pending_a_cursor, evidence->pending_a_slot);
+  print_stack_slice_json(&evidence->pending_a_roots[0]);
+  printf(",");
+  print_stack_slice_json(&evidence->pending_a_roots[1]);
+  printf("]},\"b\":{\"cursorBytes\":%u,\"scratchSlotIndex\":%u,\"roots\":[",
+         evidence->pending_b_cursor, evidence->pending_b_slot);
+  print_stack_slice_json(&evidence->pending_b_roots[0]);
+  printf(",");
+  print_stack_slice_json(&evidence->pending_b_roots[1]);
+  printf("]}}");
+}
+
+static void print_policy_case_json(const policy_case_evidence *evidence,
+                                   int include_small_states) {
+  uint32_t index;
+  printf("{\"stats\":");
+  print_stats_json(&evidence->stats);
+  printf(",\"storageRequirements\":");
+  print_requirements_json(&evidence->requirements);
+  if (include_small_states) {
+    printf(",\"finalStates\":[");
+    for (index = 0u; index < 2u; ++index) {
+      if (index != 0u)
+        printf(",");
+      print_snapshot_json(&evidence->simple_states[index]);
+    }
+    printf("]}");
+    return;
+  }
+  printf(",\"finalStates\":[");
+  for (index = 0u; index < 3u; ++index) {
+    if (index != 0u)
+      printf(",");
+    print_snapshot_json(&evidence->final_states[index]);
+  }
+  printf("],\"pendingAttachments\":");
+  print_attached_pair_json(evidence);
+  printf(",\"admission\":{\"noSlotResult\":%u,\"noSlotTokenUntouched\":%s,\"noSlotCountersUnchanged\":%s,\"admittedCTokenSequence\":%" PRIu64 "}}",
+         evidence->no_slot_result,
+         evidence->no_slot_token_untouched != 0u ? "true" : "false",
+         evidence->no_slot_counters_unchanged != 0u ? "true" : "false",
+         evidence->admitted_c_token_sequence);
+}
+
+static void print_policy_evidence_json(
+    const policy_case_evidence *small_return,
+    const policy_case_evidence *small_keep,
+    const policy_case_evidence *adversity_return,
+    const policy_case_evidence *adversity_keep) {
+  printf("{\"passed\":%s,\"failureCount\":%u,\"checks\":",
+         failure_count == 0u ? "true" : "false", failure_count);
+  print_checks_json();
+  printf(",\"pairedUnicodeEmpty\":{\"RETURN\":");
+  print_policy_case_json(small_return, 1);
+  printf(",\"KEEP_ASSOCIATED\":");
+  print_policy_case_json(small_keep, 1);
+  printf("},\"interleavedFailures\":{\"RETURN\":");
+  print_policy_case_json(adversity_return, 0);
+  printf(",\"KEEP_ASSOCIATED\":");
+  print_policy_case_json(adversity_keep, 0);
+  printf("}}\n");
+}
+
 int main(int argc, char **argv) {
   HMODULE library;
   al_owning_mailbox_module_fn get_module;
@@ -1337,8 +2278,14 @@ int main(int argc, char **argv) {
   al_mailbox_owning_stats main_stats;
   runtime_fixture main_fixture;
   int main_fixture_ready = 0;
-  if (argc != 2) {
-    fprintf(stderr, "Usage: native-owning-mailbox <owning-mailbox-module.dll>\n");
+  int policy_mode = argc == 3 && strcmp(argv[2], "--policy") == 0;
+  policy_case_evidence small_return;
+  policy_case_evidence small_keep;
+  policy_case_evidence adversity_return;
+  policy_case_evidence adversity_keep;
+  if (argc != 2 && !policy_mode) {
+    fprintf(stderr,
+            "Usage: native-owning-mailbox <owning-mailbox-module.dll> [--policy]\n");
     return 2;
   }
   memset(snapshots, 0, sizeof(snapshots));
@@ -1364,6 +2311,20 @@ int main(int argc, char **argv) {
         valid_module_roles(module));
   if (!valid_module_roles(module))
     goto done;
+
+  if (policy_mode) {
+    memset(&small_return, 0, sizeof(small_return));
+    memset(&small_keep, 0, sizeof(small_keep));
+    memset(&adversity_return, 0, sizeof(adversity_return));
+    memset(&adversity_keep, 0, sizeof(adversity_keep));
+    run_policy_comparison(module, &small_return, &small_keep,
+                          &adversity_return, &adversity_keep);
+    print_policy_evidence_json(&small_return, &small_keep, &adversity_return,
+                               &adversity_keep);
+    if (library != NULL)
+      FreeLibrary(library);
+    return failure_count == 0u ? 0 : 1;
+  }
 
   run_direct_callback_preflight(module);
   run_small_lifecycle(module, snapshots, &main_stats, &main_fixture);

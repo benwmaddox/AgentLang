@@ -156,13 +156,56 @@ static int32_t test_resume(al_owning_stack_context *context,
                            &outputs[0]);
 }
 
+static int32_t test_associated_resume(
+    al_owning_stack_context *context,
+    const al_owning_bank_stack_slice *retained_inputs,
+    uint32_t retained_count, const al_owning_external_slice *completion,
+    uint32_t protected_cursor_bytes, al_owning_bank_stack_slice *outputs,
+    uint32_t output_capacity) {
+  uint32_t units;
+  uint32_t state_offset;
+  int64_t state_value;
+  int64_t continuation_value;
+  int32_t status;
+  if (context == NULL || retained_inputs == NULL || retained_count != 2u ||
+      completion == NULL || outputs == NULL || output_capacity != 1u ||
+      context->cursor_bytes != protected_cursor_bytes ||
+      retained_inputs[0].type_index != 1u ||
+      retained_inputs[1].type_index != 2u ||
+      retained_inputs[0].source_offset_bytes + 8u >
+          retained_inputs[0].source_owner_end_bytes ||
+      retained_inputs[1].source_offset_bytes + 8u >
+          retained_inputs[1].source_owner_end_bytes ||
+      retained_inputs[0].source_owner_end_bytes > protected_cursor_bytes ||
+      retained_inputs[1].source_owner_end_bytes > protected_cursor_bytes)
+    return AL_OWNING_STATUS_INVALID_REQUEST;
+  status = test_import_text(context, completion, &units);
+  if (status != AL_OWNING_STATUS_OK)
+    return status;
+  if (test_fail_next_resume != 0u) {
+    test_fail_next_resume = 0u;
+    al_owning_set_failure(context, AL_OWNING_STATUS_DIAGNOSTIC, 77u, 0u,
+                          context->stack_capacity_bytes);
+    return AL_OWNING_STATUS_DIAGNOSTIC;
+  }
+  state_value = test_read_i64(
+      context->stack_data + retained_inputs[0].source_offset_bytes);
+  continuation_value = test_read_i64(
+      context->stack_data + retained_inputs[1].source_offset_bytes);
+  state_offset = context->cursor_bytes;
+  return test_write_record(context, 1u, TEST_STATE_TYPE_ID, state_offset,
+                           state_value + continuation_value + units,
+                           &outputs[0]);
+}
+
 static const al_owning_mailbox_module test_module = {
     AL_OWNING_MAILBOX_ABI_VERSION,
     sizeof(al_owning_mailbox_module),
     &test_layout,
     {{1u, 1u, {0u, 0u, 0u}, {1u, 0u}, test_initialize},
      {2u, 2u, {1u, 0u, 0u}, {1u, 2u}, test_begin},
-     {3u, 1u, {1u, 2u, 0u}, {1u, 0u}, test_resume}}};
+     {3u, 1u, {1u, 2u, 0u}, {1u, 0u}, test_resume}},
+    test_associated_resume};
 
 static void test_assert_active_bytes(al_mailbox_runtime *runtime,
                                     const uint8_t *expected,
@@ -178,11 +221,161 @@ static void test_assert_active_bytes(al_mailbox_runtime *runtime,
   assert(memcmp(view.bank->bytes, expected, expected_bytes) == 0);
 }
 
+static void test_keep_associated_policy(void) {
+  static _Alignas(8) uint8_t storage[65536];
+  al_mailbox_owning_config config = {
+      AL_MAILBOX_CONTROL_ABI_VERSION, sizeof(al_mailbox_owning_config),
+      3u, 72u, 256u, 37u, 2u,
+      AL_MAILBOX_OWNING_POLICY_KEEP_ASSOCIATED};
+  al_mailbox_owning_storage_requirements requirements;
+  al_mailbox_runtime *runtime = NULL;
+  al_mailbox_owning_state_view view0;
+  al_mailbox_owning_state_view view1;
+  al_mailbox_owning_state_view view2;
+  al_mailbox_owning_stats stats_before;
+  al_mailbox_owning_stats stats;
+  al_mailbox_call_info call_info;
+  al_mailbox_token token0;
+  al_mailbox_token token1;
+  al_mailbox_token token2;
+  al_owning_bank_stack_slice roots_before[2];
+  uint8_t prefix_before[72];
+  uint32_t protected_cursor;
+  const uint8_t initial[] = {'I'};
+  const uint8_t begin0[] = {'B', 'C'};
+  const uint8_t begin1[] = {'D'};
+  const uint8_t completion[] = {'Q'};
+  const uint8_t begin2[] = {'E'};
+  const uint8_t completion1[] = {'R'};
+
+  assert(al_mailbox_get_owning_storage_requirements(
+             &test_module, &config, &requirements) == AL_MAILBOX_OK);
+  assert(requirements.storage_bytes <= sizeof(storage));
+  assert(requirements.scratch_reserved_bytes == 2u * (72u + 2u * 9u));
+  assert(requirements.storage_bytes == requirements.retained_reserved_bytes +
+                                          requirements.scratch_reserved_bytes +
+                                          requirements.text_staging_reserved_bytes +
+                                          requirements.controller_reserved_bytes);
+  assert(al_mailbox_runtime_init_owning(
+             &test_module, &config, storage, sizeof(storage), &runtime) ==
+         AL_MAILBOX_OK);
+  assert(al_mailbox_init_text(runtime, 0u, initial, sizeof(initial),
+                              &call_info) == AL_MAILBOX_OK);
+  assert(al_mailbox_init_text(runtime, 1u, initial, sizeof(initial),
+                              &call_info) == AL_MAILBOX_OK);
+  assert(al_mailbox_init_text(runtime, 2u, initial, sizeof(initial),
+                              &call_info) == AL_MAILBOX_OK);
+
+  assert(al_mailbox_begin_text(runtime, 0u, begin0, sizeof(begin0), &token0,
+                               &call_info) == AL_MAILBOX_OK);
+  assert(al_mailbox_begin_text(runtime, 1u, begin1, sizeof(begin1), &token1,
+                               &call_info) == AL_MAILBOX_OK);
+  assert(al_mailbox_get_owning_state_view(runtime, 0u, &view0) ==
+         AL_MAILBOX_OK);
+  assert(al_mailbox_get_owning_state_view(runtime, 1u, &view1) ==
+         AL_MAILBOX_OK);
+  assert(view0.pending == 1u && view1.pending == 1u);
+  assert(view0.bank->root_count == 1u && view1.bank->root_count == 1u);
+  assert(test_read_i64(view0.bank->bytes) == 1 &&
+         test_read_i64(view1.bank->bytes) == 1);
+  assert(view0.associated_context != NULL && view1.associated_context != NULL);
+  assert(view0.associated_roots != NULL && view1.associated_roots != NULL);
+  assert(view0.associated_root_count == 2u &&
+         view1.associated_root_count == 2u);
+  assert(view0.scratch_slot_index != view1.scratch_slot_index);
+  assert(((uintptr_t)view0.associated_context->stack_data & 7u) == 0u);
+  assert(((uintptr_t)view1.associated_context->stack_data & 7u) == 0u);
+  assert(((uintptr_t)view1.associated_context->stack_data -
+          (uintptr_t)view0.associated_context->stack_data) % 8u == 0u);
+  assert(view0.associated_context->cursor_bytes <= 72u &&
+         view1.associated_context->cursor_bytes <= 72u);
+  assert(test_read_i64(view0.associated_context->stack_data +
+                       view0.associated_roots[0].source_offset_bytes) == 2);
+  assert(test_read_i64(view0.associated_context->stack_data +
+                       view0.associated_roots[1].source_offset_bytes) == 2);
+  assert(test_read_i64(view1.associated_context->stack_data +
+                       view1.associated_roots[0].source_offset_bytes) == 2);
+  assert(test_read_i64(view1.associated_context->stack_data +
+                       view1.associated_roots[1].source_offset_bytes) == 1);
+  protected_cursor = view0.associated_context->cursor_bytes;
+  assert(protected_cursor <= sizeof(prefix_before));
+  memcpy(prefix_before, view0.associated_context->stack_data,
+         protected_cursor);
+  memcpy(roots_before, view0.associated_roots, sizeof(roots_before));
+
+  assert(al_mailbox_get_owning_stats(runtime, &stats_before) == AL_MAILBOX_OK);
+  assert(stats_before.pinned_scratch_slots == 2u &&
+         stats_before.pinned_scratch_bytes == 144u &&
+         stats_before.outstanding_scratch_leases == 2u);
+  assert(stats_before.begin_publication_copy_bytes == 0u &&
+         stats_before.resume_root_import_bytes == 0u);
+  assert(al_mailbox_test_set_next_token_sequence(runtime, 77u) ==
+         AL_MAILBOX_OK);
+
+  token2.opaque[0] = UINT64_C(0x1111111111111111);
+  token2.opaque[1] = UINT64_C(0x2222222222222222);
+  token2.opaque[2] = UINT64_C(0x3333333333333333);
+  assert(al_mailbox_begin_text(runtime, 2u, begin2, sizeof(begin2), &token2,
+                               &call_info) == AL_MAILBOX_SCRATCH_CAPACITY);
+  assert(token2.opaque[0] == UINT64_C(0x1111111111111111) &&
+         token2.opaque[1] == UINT64_C(0x2222222222222222) &&
+         token2.opaque[2] == UINT64_C(0x3333333333333333));
+  assert(al_mailbox_get_owning_stats(runtime, &stats) == AL_MAILBOX_OK);
+  assert(stats.handler_invocations == stats_before.handler_invocations &&
+         stats.utf8_input_bytes == stats_before.utf8_input_bytes &&
+         stats.utf16_staging_bytes == stats_before.utf16_staging_bytes &&
+         stats.input_import_bytes == stats_before.input_import_bytes);
+
+  test_fail_next_resume = 1u;
+  assert(al_mailbox_resume_text(runtime, 0u, &token0, completion,
+                                sizeof(completion), &call_info) ==
+         AL_MAILBOX_HANDLER_FAILURE);
+  assert(call_info.handler_status == AL_OWNING_STATUS_DIAGNOSTIC);
+  assert(al_mailbox_get_owning_state_view(runtime, 0u, &view2) ==
+         AL_MAILBOX_OK);
+  assert(view2.pending == 1u && view2.associated_context ==
+                                    view0.associated_context);
+  assert(view2.associated_context->cursor_bytes == protected_cursor);
+  assert(memcmp(view2.associated_context->stack_data, prefix_before,
+                protected_cursor) == 0);
+  assert(memcmp(view2.associated_roots, roots_before, sizeof(roots_before)) ==
+         0);
+  assert(test_read_i64(view2.bank->bytes) == 1);
+
+  assert(al_mailbox_resume_text(runtime, 0u, &token0, completion,
+                                sizeof(completion), &call_info) == AL_MAILBOX_OK);
+  assert(al_mailbox_get_owning_state_view(runtime, 0u, &view2) ==
+         AL_MAILBOX_OK);
+  assert(view2.pending == 0u && view2.associated_context == NULL &&
+         test_read_i64(view2.bank->bytes) == 5);
+  assert(al_mailbox_get_owning_stats(runtime, &stats) == AL_MAILBOX_OK);
+  assert(stats.pinned_scratch_slots == 1u &&
+         stats.pinned_scratch_bytes == 72u &&
+         stats.outstanding_scratch_leases == 1u);
+
+  assert(al_mailbox_begin_text(runtime, 2u, begin2, sizeof(begin2), &token2,
+                               &call_info) == AL_MAILBOX_OK);
+  assert(token2.opaque[1] == 77u);
+  assert(al_mailbox_resume_text(runtime, 1u, &token1, completion1,
+                                sizeof(completion1), &call_info) ==
+         AL_MAILBOX_OK);
+  assert(al_mailbox_resume_text(runtime, 2u, &token2, completion1,
+                                sizeof(completion1), &call_info) ==
+         AL_MAILBOX_OK);
+  assert(al_mailbox_get_owning_stats(runtime, &stats) == AL_MAILBOX_OK);
+  assert(stats.pinned_scratch_slots == 0u &&
+         stats.pinned_scratch_bytes == 0u &&
+         stats.outstanding_scratch_leases == 0u &&
+         stats.begin_publication_copy_bytes == 0u &&
+         stats.resume_root_import_bytes == 0u);
+  assert(al_mailbox_dispose(runtime) == AL_MAILBOX_OK);
+}
+
 int main(void) {
   static _Alignas(8) uint8_t storage[65536];
   al_mailbox_owning_config config = {
       AL_MAILBOX_CONTROL_ABI_VERSION, sizeof(al_mailbox_owning_config),
-      1u, 32u, 1024u, 128u, {0u, 0u}};
+      1u, 32u, 1024u, 128u, 1u, AL_MAILBOX_OWNING_POLICY_RETURN};
   al_mailbox_owning_storage_requirements requirements;
   al_mailbox_runtime *runtime = NULL;
   al_mailbox_call_info call_info;
@@ -296,6 +489,7 @@ int main(void) {
   assert(stats.initialized_mailboxes == 0u && stats.live_retained_bytes == 0u &&
          stats.live_retained_roots == 0u && stats.pending_mailboxes == 0u);
   assert(al_mailbox_dispose(runtime) == AL_MAILBOX_OK);
+  test_keep_associated_policy();
   puts("owning_mailbox_test: passed");
   return 0;
 }

@@ -652,9 +652,14 @@ for local cleanup, optimization and capacity-error boundaries.
 The earlier native backend uses handles and shared record DAGs in invocation-wide
 arenas. The additional owning-stack backend now implements independent inline
 fixed-size records, variable-sized Strings/nested records and compiler-controlled
-cleanup; see [report 130](../reports/130-stable-arena-rewinds.md). Owning mailbox
-integration remains in progress; conformance does not establish the complete
-memory model or a footprint/throughput advantage. Report 130 replaces report
+cleanup; see [report 130](../reports/130-stable-arena-rewinds.md). The bounded owning
+mailbox integration passes native lifecycle and full local Release validation
+in [report 131](../reports/131-owning-native-mailboxes.md). The focused native
+keep-associated/return-at-suspension comparison passes in
+[report 132](../reports/132-associated-arena-comparison.md). Actual asynchronous
+I/O and the matched throughput/RAM comparison remain incomplete; conformance does
+not establish the complete memory model or a footprint/throughput advantage.
+Report 130 replaces report
 129's packed policy with stable arena payloads and compiler-proven rewinds;
 focused native acceptance and the full local Release gate pass.
 The measured packed implementation remains historical evidence, not a required

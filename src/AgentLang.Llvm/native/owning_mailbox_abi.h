@@ -42,10 +42,14 @@ typedef struct al_owning_external_slice {
 
 /* Entry order is fixed: initialize, begin, resume. The controller validates
  * exact counts and type indexes before dispatching; generated callbacks repeat
- * these checks before importing caller-owned slices. Output descriptors are
- * valid only on success: preflight failures leave them untouched, while the
- * callback initializes requested descriptors invalid after preflight and keeps
- * them invalid if later execution fails. */
+ * these checks before importing caller-owned slices. The associated resume
+ * callback accepts two retained in-arena roots and one borrowed completion
+ * String, while reusing the resume entry frame. Boundary-preflight failures
+ * leave output descriptors untouched. After successful preflight, callbacks
+ * initialize requested descriptors invalid and keep them invalid on later
+ * execution failure. An associated-resume failure may leave an appended arena
+ * suffix; the controller records status and releases only to its protected
+ * cursor. Successful callbacks leave their arena live for controller use. */
 typedef int32_t (*al_owning_mailbox_execute_fn)(
     al_owning_stack_context *context,
     const al_owning_external_slice *inputs, uint32_t input_count,
@@ -59,7 +63,14 @@ typedef struct al_owning_mailbox_entry {
   al_owning_mailbox_execute_fn execute;
 } al_owning_mailbox_entry;
 
-/* Immutable module-owned metadata. All three callbacks use the same layout and
+typedef int32_t (*al_owning_mailbox_associated_resume_fn)(
+    al_owning_stack_context *context,
+    const al_owning_bank_stack_slice *retained_inputs,
+    uint32_t retained_count, const al_owning_external_slice *completion,
+    uint32_t protected_cursor_bytes,
+    al_owning_bank_stack_slice *outputs, uint32_t output_capacity);
+
+/* Immutable module-owned metadata. All callbacks use the same layout and
  * deterministic type-index universe. The module lifetime must cover every
  * controller that calls an entry. */
 typedef struct al_owning_mailbox_module {
@@ -67,6 +78,7 @@ typedef struct al_owning_mailbox_module {
   uint32_t struct_size;
   const al_owning_layout *layout;
   al_owning_mailbox_entry entries[AL_OWNING_MAILBOX_ENTRY_COUNT];
+  al_owning_mailbox_associated_resume_fn associated_resume;
 } al_owning_mailbox_module;
 
 typedef const al_owning_mailbox_module *(*al_owning_mailbox_module_fn)(void);
@@ -103,12 +115,15 @@ AL_OWNING_MAILBOX_ASSERT(
     "mailbox output indexes offset");
 AL_OWNING_MAILBOX_ASSERT(offsetof(al_owning_mailbox_entry, execute) == 32,
                          "mailbox callback offset");
-AL_OWNING_MAILBOX_ASSERT(sizeof(al_owning_mailbox_module) == 136,
+AL_OWNING_MAILBOX_ASSERT(sizeof(al_owning_mailbox_module) == 144,
                          "mailbox module descriptor size");
 AL_OWNING_MAILBOX_ASSERT(offsetof(al_owning_mailbox_module, layout) == 8,
                          "mailbox layout pointer offset");
 AL_OWNING_MAILBOX_ASSERT(offsetof(al_owning_mailbox_module, entries) == 16,
                          "mailbox entries offset");
+AL_OWNING_MAILBOX_ASSERT(
+    offsetof(al_owning_mailbox_module, associated_resume) == 136,
+    "mailbox associated-resume callback offset");
 
 #undef AL_OWNING_MAILBOX_ASSERT
 

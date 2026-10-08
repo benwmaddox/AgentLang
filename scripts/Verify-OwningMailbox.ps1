@@ -252,6 +252,8 @@ function Compare-StatsToFixture($Stats, $Expected, [string]$Label) {
         utf16StagingBytes = 'utf16StagingBytes'
         inputImportBytes = 'inputImportBytes'
         publicationCopyBytes = 'publicationCopyBytes'
+        beginPublicationCopyBytes = 'beginPublicationCopyBytes'
+        resumeRootImportBytes = 'resumeRootImportBytes'
         deepCopyBytes = 'constructionAndDuplicationBytes'
         moveBytes = 'payloadMoveBytes'
         returnedOutputDescriptors = 'returnedOutputDescriptors'
@@ -319,6 +321,13 @@ function Check-NativeEvidence($Native, $Fixture, [string]$Optimization) {
         [uint64](Get-Field (Get-Field $Native 'storageRequirements') 'storageBytes') -eq [uint64](Get-Field $successStats 'storageReservedBytes') -and
         [uint64](Get-Field (Get-Field $Native 'storageRequirements') 'controllerReservedBytes') -gt 0) (Get-Field $Native 'storageRequirements')
     $storageConfig = Get-Field (Get-Field $Fixture 'storage') 'focusedRunnerConfiguration'
+    $expectedSlotCapacity = [uint64](Get-Field $storageConfig 'scratchSlotCapacity')
+    $expectedPolicy = [uint32](Get-Field $storageConfig 'suspensionPolicyId')
+    Add-Check "$Optimization milestone 131 regression uses one RETURN scratch slot" (
+        [uint64](Get-Field $successStats 'scratchSlotCapacity') -eq $expectedSlotCapacity -and
+        [uint32](Get-Field $successStats 'suspensionPolicy') -eq $expectedPolicy -and
+        [uint32](Get-Field $successStats 'pinnedScratchSlots') -eq 0 -and
+        [uint64](Get-Field $successStats 'pinnedScratchBytes') -eq 0) $successStats
     $retainedCapacity = [uint64](Get-Field $storageConfig 'retainedByteCapacityPerBank')
     $rootCapacity = [uint64](Get-Field $storageConfig 'bankRootCapacity')
     $rootBytes = [uint64](Get-Field $storageConfig 'owningBankRootBytes')
@@ -327,7 +336,7 @@ function Check-NativeEvidence($Native, $Fixture, [string]$Optimization) {
     $stagingCapacity = [uint64](Get-Field $storageConfig 'textStagingByteCapacity')
     $expectedRetained = ($retainedCapacity + $rootCapacity * $rootBytes) * 2 * $mailboxCapacity
     $bitmapBytes = [Math]::Ceiling($scratchCapacity / 8.0)
-    $expectedScratch = $scratchCapacity + 2 * $bitmapBytes
+    $expectedScratch = $expectedSlotCapacity * ($scratchCapacity + 2 * $bitmapBytes)
     $requirements = Get-Field $Native 'storageRequirements'
     Add-Check "$Optimization caller-storage components match independent bank and bitmap arithmetic" (
         [uint64](Get-Field $requirements 'retainedReservedBytes') -eq $expectedRetained -and
@@ -337,6 +346,7 @@ function Check-NativeEvidence($Native, $Fixture, [string]$Optimization) {
 
     $boundaryExpected = [ordered]@{
         utf8InputBytes = 10; utf16StagingBytes = 64; inputImportBytes = 64
+        beginPublicationCopyBytes = 0; resumeRootImportBytes = 0
         publicationCopyBytes = 64; constructionAndDuplicationBytes = 64
         payloadMoveBytes = 0; returnedOutputDescriptors = 4
     }
@@ -398,6 +408,21 @@ try {
             if ([string]::IsNullOrWhiteSpace($path) -or -not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "$optimization generated artifact is missing: $path" }
         }
         $manifest = Read-JsonFile $manifestPath
+        $moduleInfo = Get-Field $manifest 'moduleInfo'
+        $associatedResume = Get-Field $moduleInfo 'associatedResume'
+        $resumeEntry = @(Get-Field $moduleInfo 'entries' | Where-Object { [string](Get-Field $_ 'role') -ceq 'resume' })
+        $expectedAssociated = Get-Field $fixture 'associatedResume'
+        $associatedShapeMatches = $resumeEntry.Count -eq 1 -and
+            [string](Get-Field $associatedResume 'functionSymbol') -ceq [string](Get-Field $expectedAssociated 'functionSymbol') -and
+            [string](Get-Field $associatedResume 'entryFrameSymbol') -ceq [string](Get-Field $resumeEntry[0] 'entryFrameSymbol') -and
+            (@(Get-Field $associatedResume 'inputTypeIndexes') -join ',') -ceq (@(Get-Field $resumeEntry[0] 'inputTypeIndexes') -join ',') -and
+            (@(Get-Field $associatedResume 'outputTypeIndexes') -join ',') -ceq (@(Get-Field $resumeEntry[0] 'outputTypeIndexes') -join ',') -and
+            [int](Get-Field $associatedResume 'callbackMetadataBytes') -gt 0
+        Add-Check "$optimization manifest exposes associated resume on the existing resume frame" $associatedShapeMatches $associatedResume
+        Add-Check "$optimization manifest retains ABI v1 with the appended callback descriptor" (
+            [int](Get-Field $moduleInfo 'abiVersion') -eq [int](Get-Field $fixture 'moduleAbiVersion') -and
+            [int](Get-Field $fixture 'moduleStructSizeBytes') -eq 144 -and
+            [int](Get-Field $fixture 'associatedResumePointerOffsetBytes') -eq 136) ([ordered]@{ abiVersion = Get-Field $moduleInfo 'abiVersion'; moduleStructSizeBytes = Get-Field $fixture 'moduleStructSizeBytes'; associatedResumePointerOffsetBytes = Get-Field $fixture 'associatedResumePointerOffsetBytes' })
         $dlls = @(Get-ChildItem -LiteralPath $moduleDirectory -Recurse -File -Filter '*.dll')
         Add-Check "$optimization compiler output contains one generated module DLL" ($dlls.Count -eq 1 -and [IO.Path]::GetFullPath($dlls[0].FullName) -ceq [IO.Path]::GetFullPath($modulePath)) ([ordered]@{ count = $dlls.Count; modulePath = $modulePath })
         Add-Check "$optimization module roles share the verified program and three-entry surface" ((Get-Field $bootstrap 'sameVerifiedProgramInstance') -eq $true -and @(Get-Field $bootstrap 'entries').Count -eq 3)

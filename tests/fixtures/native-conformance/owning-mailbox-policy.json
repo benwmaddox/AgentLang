@@ -1,0 +1,234 @@
+{
+  "schemaVersion": 1,
+  "kind": "owning-mailbox-policy-comparison",
+  "frozenBeforeNativeExecution": false,
+  "frozenBeforeFinalNativeExecution": true,
+  "oracleProvenance": {
+    "sourceFixture": "experiments/AgentLang.OwningMailbox/owning-mailbox.flow",
+    "sourceFlowRevision": "milestone131 String mailbox",
+    "independentDerivation": "serialized extents and each Flow constructor/call boundary are summed from the source and the published ABI rules before running either native policy",
+    "policyRunIsNotPerformanceEvidence": true,
+    "historicalMilestone131FixtureRemainsControl": "tests/fixtures/native-conformance/owning-mailbox.json",
+    "initialFixtureVersionFrozenBeforeFirstRun": true,
+    "firstNativeRun": ".agentlang/owning-mailbox-002/policy-run-0ee4cb81069a4eaa8d8a6d5c2a9145e7",
+    "postExecutionFixtureCorrection": "Added the paired scenario's source-declared reservation (16 KiB retained capacity per bank) after the first run showed the verifier had incorrectly reused the separate adversarial scenario's 32-byte bank capacity. No expected native counters, final bytes, or policy deltas changed; this only makes each scenario's configured reservation explicit."
+  },
+  "module": {
+    "abiVersion": 1,
+    "structSizeBytes": 144,
+    "associatedResumePointerOffsetBytes": 136,
+    "associatedResumeSymbol": "agentlang_mailbox_resume_associated",
+    "associatedResumeFrameRole": "resume",
+    "associatedResumeInputTypeIndexes": [3, 2, 4],
+    "associatedResumeOutputTypeIndexes": [3],
+    "typeIndexes": {
+      "State": 3,
+      "Continuation": 2,
+      "String": 4
+    }
+  },
+  "serializedString": {
+    "encoding": "UTF-16LE",
+    "headerBytes": 8,
+    "payloadBytesFormula": "8 + 2*UTF16CodeUnits",
+    "extentBytesFormula": "align_up(payloadBytes, 8)",
+    "paddingBytesAreZero": true
+  },
+  "equalReservation": {
+    "mailboxCapacity": 3,
+    "scratchByteCapacityPerSlot": 65536,
+    "scratchSlotCapacity": 2,
+    "bitmapBytesPerBitmapPerSlot": 8192,
+    "scratchReservedBytes": 163840,
+    "retainedByteCapacityPerBank": 32,
+    "bankRootCapacity": 2,
+    "owningBankRootBytes": 20,
+    "retainedReservedBytes": 432,
+    "textStagingByteCapacity": 16384,
+    "suspensionPolicyIds": {
+      "RETURN": 0,
+      "KEEP_ASSOCIATED": 1
+    }
+  },
+  "pairedUnicodeEmpty": {
+    "callerReservation": {
+      "mailboxCapacity": 2,
+      "scratchByteCapacityPerSlot": 65536,
+      "scratchSlotCapacity": 2,
+      "bitmapBytesPerBitmapPerSlot": 8192,
+      "scratchReservedBytes": 163840,
+      "retainedByteCapacityPerBank": 16384,
+      "bankRootCapacity": 2,
+      "owningBankRootBytes": 20,
+      "textStagingByteCapacity": 16384,
+      "sourceCall": "experiments/AgentLang.OwningMailbox/native_owning_mailbox.c run_simple_policy_case"
+    },
+    "inputs": {
+      "unicodeSeedUtf8Hex": "41f09f9982",
+      "unicodeBeginUtf8Hex": "ceb4",
+      "unicodeResumeUtf8Hex": "00f09f9a80",
+      "emptySeedUtf8Hex": "",
+      "emptyBeginUtf8Hex": "",
+      "emptyResumeUtf8Hex": "42"
+    },
+    "finalStates": [
+      {
+        "type": "State",
+        "extentBytes": 24,
+        "payloadBytes": 22,
+        "serializedHex": "070000000000000041003dd842deb40300003dd880de0000"
+      },
+      {
+        "type": "State",
+        "extentBytes": 16,
+        "payloadBytes": 10,
+        "serializedHex": "01000000000000004200000000000000"
+      }
+    ],
+    "sourceDerivedTotals": {
+      "common": {
+        "utf8InputBytes": 13,
+        "utf16StagingBytes": 80,
+        "deepCopyBytes": 184,
+        "moveBytes": 0,
+        "returnedOutputDescriptors": 8,
+        "handlerInvocations": 6,
+        "handlerFailures": 0,
+        "finalLiveRetainedBytes": 40,
+        "finalLiveRetainedRoots": 2,
+        "pinnedScratchSlots": 0,
+        "pinnedScratchBytes": 0,
+        "outstandingScratchLeases": 0
+      },
+      "RETURN": {
+        "inputImportBytes": 152,
+        "publicationCopyBytes": 112,
+        "beginPublicationCopyBytes": 48,
+        "resumeRootImportBytes": 48,
+        "scratchLeaseAcquisitions": 6,
+        "scratchLeaseReturns": 6
+      },
+      "KEEP_ASSOCIATED": {
+        "inputImportBytes": 104,
+        "publicationCopyBytes": 64,
+        "beginPublicationCopyBytes": 0,
+        "resumeRootImportBytes": 0,
+        "scratchLeaseAcquisitions": 4,
+        "scratchLeaseReturns": 4
+      }
+    },
+    "derivation": {
+      "RETURNInputImports": "initial Strings 16+8; begin State/String pairs (16+16)+(8+8); resume State/Continuation/completion triples (16+16+16)+(8+8+16) = 152",
+      "KEEPInputImports": "initial Strings 16+8; begin State/String pairs 48; resume completion Strings 16+16 = 104",
+      "RETURNPublication": "initial State roots 16+8; begin root pairs 32+16; final State roots 24+16 = 112",
+      "KEEPPublication": "initial State roots 24 plus final State roots 40 = 64",
+      "constructionAndDuplication": "Unicode init16 + begin Continuation16 + resume literal16 + concat extents16 and24 + State24; empty init8 + begin Continuation8 + resume literal16 + concat extents8 and16 + State16 = 184"
+    }
+  },
+  "interleavedFailures": {
+    "initialStatesUtf8Hex": ["41", "42", "43"],
+    "beginChunksUtf8Hex": ["61", "62", "63"],
+    "failureCompletionUtf8Hex": "4641494c",
+    "retainedCapacityCompletionUtf8Hex": "3031323334353637383958",
+    "retainedCapacityCompletionCodeUnits": 11,
+    "retainedCapacityCompletionExtentBytes": 32,
+    "retainedCapacityFinalStateExtentBytes": 40,
+    "retryCompletionUtf8Hex": "",
+    "finalStates": [
+      {
+        "type": "State",
+        "extentBytes": 16,
+        "payloadBytes": 12,
+        "serializedHex": "02000000000000004100610000000000"
+      },
+      {
+        "type": "State",
+        "extentBytes": 16,
+        "payloadBytes": 12,
+        "serializedHex": "02000000000000004200620000000000"
+      },
+      {
+        "type": "State",
+        "extentBytes": 16,
+        "payloadBytes": 12,
+        "serializedHex": "02000000000000004300630000000000"
+      }
+    ],
+    "keepAssociatedPendingRoots": {
+      "cursorBytes": 48,
+      "roots": [
+        {
+          "type": "State",
+          "typeIndex": 3,
+          "offsetBytes": 0,
+          "extentBytes": 16,
+          "minimumOwnerEndBytes": 16
+        },
+        {
+          "type": "Continuation",
+          "typeIndex": 2,
+          "offsetBytes": 32,
+          "extentBytes": 16,
+          "minimumOwnerEndBytes": 48
+        }
+      ],
+      "ownerEndRule": "each sourceOwnerEndBytes must contain its measured serialized extent and be at most the protected cursor; equality with offset+extent is not required"
+    },
+    "admission": {
+      "keepNoSlotResult": 18,
+      "tokenOutputSentinelHex": "a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5",
+      "nextTokenSequenceSeed": 77,
+      "laterAdmittedTokenSequence": 77,
+      "noSlotLeavesTextStagingAndInputImportCountersUnchanged": true,
+      "scratchSlotReturnedByBIsReusedForC": true
+    },
+    "sourceDerivedTotals": {
+      "common": {
+        "utf8InputBytes": 21,
+        "utf16StagingBytes": 168,
+        "deepCopyBytes": 416,
+        "moveBytes": 0,
+        "returnedOutputDescriptors": 13,
+        "handlerInvocations": 11,
+        "handlerFailures": 2,
+        "finalLiveRetainedBytes": 48,
+        "finalLiveRetainedRoots": 3,
+        "pinnedScratchSlots": 0,
+        "pinnedScratchBytes": 0,
+        "outstandingScratchLeases": 0
+      },
+      "RETURN": {
+        "inputImportBytes": 376,
+        "publicationCopyBytes": 192,
+        "beginPublicationCopyBytes": 96,
+        "resumeRootImportBytes": 160,
+        "scratchLeaseAcquisitions": 11,
+        "scratchLeaseReturns": 11
+      },
+      "KEEP_ASSOCIATED": {
+        "inputImportBytes": 216,
+        "publicationCopyBytes": 96,
+        "beginPublicationCopyBytes": 0,
+        "resumeRootImportBytes": 0,
+        "scratchLeaseAcquisitions": 6,
+        "scratchLeaseReturns": 6
+      }
+    },
+    "derivation": {
+      "utf8InputBytes": "3 initial one-byte seeds + 3 one-byte begin chunks + FAIL(4) + long completion(11) + three empty retries/completions = 21",
+      "utf16StagingBytes": "three initial extents 48 + three begin extents 48 + completion extents (16+32+8+8+8) = 168; rejected no-slot C does not stage or count its chunk",
+      "RETURNInputImports": "initial String extents 48 + begin State/String pairs 96 + five resume State/Continuation pairs 160 + completion extents 72 = 376",
+      "KEEPInputImports": "initial String extents 48 + begin State/String pairs 96 + completion extents 72; attached roots are not reimported = 216",
+      "RETURNPublication": "three initialized State roots 48 + three begin State/Continuation pairs 96 + three completed State roots 48 = 192",
+      "KEEPPublication": "three initialized State roots 48 + three completed State roots 48; begin roots remain in their attached arenas = 96",
+      "deepCopyBytes": "three State constructions 48 + three Continuation constructions 48 + resume constructions: FAIL path literal16; long path literal16+concat16+concat40+State40; each of three empty completions literal16+concat16+concat16+State16; total 416",
+      "returnedOutputDescriptors": "3 init outputs + 6 begin outputs + one callback result from the B publication-failed turn + 3 successful retry/completion outputs = 13",
+      "failureOrder": "A handler failure with appended FAIL input/literal; B handler success followed by 32-byte-bank publication rejection of a 40-byte State; retry B and A with the same tokens, admit C, then complete all three"
+    }
+  },
+  "limitations": [
+    "This validates bounded ownership, retry and copy behavior only; it is not a throughput comparison or policy selection.",
+    "Caller-reserved storage is an explicit reservation, not a whole-process memory measurement.",
+    "KEEP holds at most the configured two scratch slots in this synchronous test; no provider I/O, cancellation or acknowledgement lease is exercised."
+  ]
+}

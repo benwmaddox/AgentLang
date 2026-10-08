@@ -123,3 +123,7 @@ reports/evidence/129-variable-owning-values/** -text -whitespace
 
 # Preserve stable-arena source snapshots and validation evidence byte hashes.
 reports/evidence/130-stable-arena-rewinds/** -text -whitespace
+
+# Preserve native owning-mailbox evidence and policy-comparison byte hashes.
+reports/evidence/131-owning-native-mailboxes/** -text -whitespace
+reports/evidence/132-associated-arena-comparison/** -text -whitespace

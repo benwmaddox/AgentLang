@@ -137,7 +137,9 @@ throughput comparison; holding cleared scratch is not a valid substitute.
 Memory priority clarification (2026-10-08): implement and test an owning value
 stack for most working data, with explicit retained mailbox state. Values own
 nested payloads; duplication creates independent values; moves transfer ownership;
-pops reclaim owned payload without surviving aliases. The stack must also
+logical drops end value lifetimes without surviving aliases. Physical space is
+reclaimed only at compiler-proven dead suffixes or operation-wide reset; dead
+interior bytes may remain until then. The stack must also
 provide actual payload locality: adjacent owning values and
 nested fields occupy nearby bytes, not merely nearby handles. Measure offsets,
 extents, padding/reservations and access-pattern performance separately.
@@ -180,8 +182,16 @@ the controller publishes the complete output set once into inactive retained
 storage before resetting scratch. The 180-check verifier and 122 native assertions
 per optimization level cover dynamic String request/response lifetimes and
 failure isolation. The 37-check full Release gate and 476-assertion LLVM suite
-also pass. Next compare
-both suspension policies with real bounded I/O. Native conformance does not
+also pass. The focused two-policy mechanism comparison now passes 234 verifier
+checks and 97 native assertions at each optimization level in
+[report 132](../reports/132-associated-arena-comparison.md): keeping the actual
+arena avoids intermediate publication/reimport, preserves failed-resume retry,
+and pins slots that returning scratch makes available to other mailboxes. Both
+policies use equal configured storage. Broader local validation also passes:
+35 owning-stack checks, 353 native-dispatch checks, all 37 Release checks and
+476 LLVM assertions. Next compare both policies with real bounded
+I/O, explicit provider release/cancellation acknowledgements, and matched F#
+workloads. Native conformance does not
 establish service throughput, process RAM or improved agent reliability.
 This is not an unresolved preference between packing and bulk reset; see the
 [simplicity review](OWNING-STACK-DESIGN-REVIEW.md#stable-arena-payloads-and-bulk-reset-selected-direction).

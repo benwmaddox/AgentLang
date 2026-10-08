@@ -11,6 +11,11 @@ extern "C" {
 
 enum { AL_MAILBOX_CONTROL_ABI_VERSION = 1u };
 
+enum {
+  AL_MAILBOX_OWNING_POLICY_RETURN = 0u,
+  AL_MAILBOX_OWNING_POLICY_KEEP_ASSOCIATED = 1u
+};
+
 typedef enum al_mailbox_result {
   AL_MAILBOX_OK = 0,
   AL_MAILBOX_INVALID_ARGUMENT = 1,
@@ -66,7 +71,8 @@ typedef struct al_mailbox_owning_config {
   uint32_t scratch_byte_capacity;
   uint32_t retained_byte_capacity;
   uint32_t text_staging_byte_capacity;
-  uint32_t reserved[2];
+  uint32_t scratch_slot_capacity;
+  uint32_t suspension_policy;
 } al_mailbox_owning_config;
 
 /* Passing NULL limits uses the physical retained capacities. A non-NULL
@@ -173,6 +179,13 @@ typedef struct al_mailbox_owning_stats {
   uint64_t scratch_lease_returns;
   uint32_t outstanding_scratch_leases;
   uint32_t reserved;
+  uint32_t scratch_slot_capacity;
+  uint32_t pinned_scratch_slots;
+  uint32_t suspension_policy;
+  uint32_t reserved1;
+  uint64_t pinned_scratch_bytes;
+  uint64_t begin_publication_copy_bytes;
+  uint64_t resume_root_import_bytes;
 } al_mailbox_owning_stats;
 
 /* Borrowed until the next mutating API call or disposal. roots[0] is State;
@@ -189,8 +202,9 @@ typedef struct al_mailbox_state_view {
   uint32_t reserved;
 } al_mailbox_state_view;
 
-/* The bank and its typed root table are borrowed until the next mutating API
- * call or disposal. */
+/* The bank and associated context/root descriptors are borrowed until the next
+ * mutating API call or disposal. During pending KEEP, bank is the previously
+ * committed State and associated_roots are the authoritative pending roots. */
 typedef struct al_mailbox_owning_state_view {
   uint32_t control_abi_version;
   uint32_t struct_size;
@@ -199,6 +213,10 @@ typedef struct al_mailbox_owning_state_view {
   uint32_t continuation_type_id;
   uint32_t pending;
   uint32_t reserved;
+  const al_owning_stack_context *associated_context;
+  const al_owning_bank_stack_slice *associated_roots;
+  uint32_t associated_root_count;
+  uint32_t scratch_slot_index;
 } al_mailbox_owning_state_view;
 
 al_mailbox_result al_mailbox_get_storage_requirements(
@@ -341,21 +359,57 @@ AL_MAILBOX_ASSERT(sizeof(al_mailbox_owning_config) == 32,
 AL_MAILBOX_ASSERT(offsetof(al_mailbox_owning_config,
                            text_staging_byte_capacity) == 20,
                   "owning text staging capacity offset");
+AL_MAILBOX_ASSERT(offsetof(al_mailbox_owning_config,
+                           scratch_slot_capacity) == 24,
+                  "owning scratch slot capacity offset");
+AL_MAILBOX_ASSERT(offsetof(al_mailbox_owning_config, suspension_policy) == 28,
+                  "owning suspension policy offset");
 AL_MAILBOX_ASSERT(sizeof(al_mailbox_owning_storage_requirements) == 56,
                   "owning storage requirements size");
 AL_MAILBOX_ASSERT(offsetof(al_mailbox_owning_storage_requirements,
                            storage_bytes) == 16,
                   "owning storage bytes offset");
-AL_MAILBOX_ASSERT(sizeof(al_mailbox_owning_stats) == 184,
+AL_MAILBOX_ASSERT(sizeof(al_mailbox_owning_stats) == 224,
                   "owning stats size");
 AL_MAILBOX_ASSERT(offsetof(al_mailbox_owning_stats, utf8_input_bytes) == 80,
                   "owning conversion stats offset");
 AL_MAILBOX_ASSERT(offsetof(al_mailbox_owning_stats, deep_copy_bytes) == 112,
                   "owning copy stats offset");
-AL_MAILBOX_ASSERT(sizeof(al_mailbox_owning_state_view) == 32,
+AL_MAILBOX_ASSERT(offsetof(al_mailbox_owning_stats, scratch_slot_capacity) ==
+                      184,
+                  "owning scratch slot stats offset");
+AL_MAILBOX_ASSERT(offsetof(al_mailbox_owning_stats, pinned_scratch_slots) ==
+                      188,
+                  "owning pinned scratch slots offset");
+AL_MAILBOX_ASSERT(offsetof(al_mailbox_owning_stats, suspension_policy) == 192,
+                  "owning suspension policy stats offset");
+AL_MAILBOX_ASSERT(offsetof(al_mailbox_owning_stats, reserved1) == 196,
+                  "owning stats reserved offset");
+AL_MAILBOX_ASSERT(offsetof(al_mailbox_owning_stats, pinned_scratch_bytes) ==
+                      200,
+                  "owning pinned scratch stats offset");
+AL_MAILBOX_ASSERT(offsetof(al_mailbox_owning_stats,
+                           begin_publication_copy_bytes) == 208,
+                  "owning begin publication offset");
+AL_MAILBOX_ASSERT(offsetof(al_mailbox_owning_stats,
+                           resume_root_import_bytes) == 216,
+                  "owning resume root import offset");
+AL_MAILBOX_ASSERT(sizeof(al_mailbox_owning_state_view) == 56,
                   "owning state view size");
 AL_MAILBOX_ASSERT(offsetof(al_mailbox_owning_state_view, bank) == 8,
                   "owning bank view offset");
+AL_MAILBOX_ASSERT(
+    offsetof(al_mailbox_owning_state_view, associated_context) == 32,
+    "owning associated context offset");
+AL_MAILBOX_ASSERT(
+    offsetof(al_mailbox_owning_state_view, associated_roots) == 40,
+    "owning associated roots offset");
+AL_MAILBOX_ASSERT(
+    offsetof(al_mailbox_owning_state_view, associated_root_count) == 48,
+    "owning associated root count offset");
+AL_MAILBOX_ASSERT(
+    offsetof(al_mailbox_owning_state_view, scratch_slot_index) == 52,
+    "owning scratch slot index offset");
 
 #undef AL_MAILBOX_ASSERT
 #undef AL_MAILBOX_ALIGNOF

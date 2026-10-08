@@ -145,6 +145,9 @@ type OwningMailboxCompiledModule internal
     member _.CallbackMetadataPerEntryBytes = callbackMetadataPerEntryBytes
     member _.BackendMetadataPeakBoundBytes = backendMetadataPeakBoundBytes
     member _.RuntimeLayoutScannerScratchBytes = runtimeLayoutScannerScratchBytes
+    member _.AssociatedResumeSymbol = "agentlang_mailbox_resume_associated"
+    member _.AssociatedResumeCallbackMetadataBytes =
+        callbackMetadataPerEntryBytes.TryFind "resume_associated" |> Option.defaultValue 0
     /// The generated DLL contains backend metadata only; controller storage is
     /// sized by the native mailbox API and is intentionally reported as absent.
     member _.ControllerReservedStorageBytes: int option = None
@@ -2237,6 +2240,7 @@ module OwningStackAot =
         writer.Line("declare void @al_owning_set_failure(ptr, i32, i32, i32, i32)")
         if mailboxMode then
             writer.Line("declare i32 @agentlang_owning_mailbox_preflight(ptr, ptr, i32, ptr, i32, i32, i32, i32, i32, ptr)")
+            writer.Line("declare i32 @agentlang_owning_mailbox_associated_preflight(ptr, ptr, i32, ptr, i32, ptr, i32, i32, i32, i32)")
         writer.Line("declare { i64, i1 } @llvm.sadd.with.overflow.i64(i64, i64)")
         writer.Line("declare { i64, i1 } @llvm.ssub.with.overflow.i64(i64, i64)")
         writer.Line("declare { i64, i1 } @llvm.smul.with.overflow.i64(i64, i64)")
@@ -3223,6 +3227,214 @@ module OwningStackAot =
             callback.Line("")
             role, callback.Text, explicitAllocaBoundBytes callback.Text
 
+        let emitAssociatedResumeCallback () =
+            let callback = OwningLlvmWriter()
+            let role = "resume_associated"
+            let callbackSymbol = "agentlang_mailbox_resume_associated"
+            let resumeBody = bodies[2]
+            let invalidError = addDiagnostic "OWNING_MAILBOX_ASSOCIATED_INVALID" "The associated-resume callback received invalid retained roots, completion input, or native metadata." resumeBody.BodyName None [] []
+            let capacityError = addDiagnostic "OWNING_MAILBOX_ASSOCIATED_CAPACITY" "The completion String does not fit after the protected owning-arena prefix." resumeBody.BodyName None [] []
+            let outputCapacityError = addDiagnostic "OWNING_MAILBOX_OUTPUT_CAPACITY" "The associated-resume output descriptor capacity is insufficient." resumeBody.BodyName None [] []
+            let measureError = addDiagnostic "OWNING_STACK_INPUT_INVALID" "The retained root or completion String does not match its verified serialized layout." resumeBody.BodyName None [] []
+            let importError = addDiagnostic "OWNING_STACK_INTERNAL" "The completion String could not be appended to the associated owning arena." resumeBody.BodyName None [] []
+            let frameError = addDiagnostic "RUNTIME_CALL_DEPTH" "Associated resume exceeded the 64 word call-depth limit." resumeBody.BodyName None [] []
+            let failure = callback.Label "associated.resume.failure"
+            let contextValid = callback.Label "associated.resume.context.valid"
+            let preflightReady = callback.Label "associated.resume.preflight.ready"
+            callback.Line($"define i32 @{callbackSymbol}(ptr %%ctx, ptr %%retained.inputs, i32 %%retained.count, ptr %%completion, i32 %%protected.cursor, ptr %%outputs, i32 %%output.capacity) {{")
+            callback.Line("entry:")
+            let contextNonNull = callback.Fresh "associated.resume.context.nonnull"
+            callback.Inst($"{contextNonNull} = icmp ne ptr %%ctx, null")
+            callback.Inst($"br i1 {contextNonNull}, label %%{contextValid}, label %%{failure}")
+            callback.Line($"{contextValid}:")
+            let preflightStatus = callback.Fresh "associated.resume.preflight.status"
+            callback.Inst(
+                $"{preflightStatus} = call i32 @agentlang_owning_mailbox_associated_preflight(ptr %%ctx, ptr %%retained.inputs, i32 %%retained.count, ptr %%completion, i32 %%protected.cursor, ptr %%outputs, i32 %%output.capacity, i32 {invalidError}, i32 {capacityError}, i32 {outputCapacityError})")
+            let preflightOkay = callback.Fresh "associated.resume.preflight.ok"
+            callback.Inst($"{preflightOkay} = icmp eq i32 {preflightStatus}, 0")
+            callback.Inst($"br i1 {preflightOkay}, label %%{preflightReady}, label %%{failure}")
+            callback.Line($"{preflightReady}:")
+
+            // Only the requested output descriptor is touched after boundary
+            // preflight has proven it is writable and disjoint from all inputs.
+            let outputPointer = callback.Fresh "associated.resume.output.descriptor"
+            callback.Inst($"{outputPointer} = getelementptr inbounds %%AlOwningMailboxOutputSlice, ptr %%outputs, i32 0")
+            for fieldIndex, fieldValue in [ 0, "4294967295"; 1, "0"; 2, "0"; 3, "0" ] do
+                let fieldPointer = callback.Fresh "associated.resume.output.field"
+                callback.Inst($"{fieldPointer} = getelementptr inbounds %%AlOwningMailboxOutputSlice, ptr {outputPointer}, i32 0, i32 {fieldIndex}")
+                callback.Inst($"store i32 {fieldValue}, ptr {fieldPointer}, align 4")
+
+            // A parked lease preserves all arena and cumulative metrics fields.
+            // Only the per-invocation step budget restarts for this callback.
+            let stepCountPointer = emitContextFieldPointer callback "%ctx" 10
+            callback.Inst($"store i32 0, ptr {stepCountPointer}, align 4")
+
+            let inputDescriptors = callback.Fresh "associated.resume.input.descriptors"
+            callback.Inst($"{inputDescriptors} = alloca [3 x %%AlOwningDescriptor], align 4")
+            let retainedTypes = [ resumeBody.BodyInputTypes[0]; resumeBody.BodyInputTypes[1] ]
+            for inputIndex, ty in retainedTypes |> List.indexed do
+                let slicePointer = callback.Fresh "associated.resume.retained.slice"
+                callback.Inst($"{slicePointer} = getelementptr inbounds %%AlOwningMailboxOutputSlice, ptr %%retained.inputs, i32 {inputIndex}")
+                let loadSliceField fieldIndex prefix =
+                    let fieldPointer = callback.Fresh prefix
+                    let value = callback.Fresh $"{prefix}.value"
+                    callback.Inst($"{fieldPointer} = getelementptr inbounds %%AlOwningMailboxOutputSlice, ptr {slicePointer}, i32 0, i32 {fieldIndex}")
+                    callback.Inst($"{value} = load i32, ptr {fieldPointer}, align 4")
+                    value
+                let sourceOffset = loadSliceField 1 "associated.resume.retained.offset.pointer"
+                let sourceOwnerEnd = loadSliceField 2 "associated.resume.retained.owner.end.pointer"
+                let valueSize = callback.Fresh "associated.resume.retained.value.size"
+                callback.Inst($"{valueSize} = alloca %%AlOwningValueSize, align 4")
+                let measureStatus = callback.Fresh "associated.resume.retained.measure.status"
+                callback.Inst(
+                    $"{measureStatus} = call i32 @al_owning_measure_value(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex ty}, i32 {sourceOffset}, i32 {sourceOwnerEnd}, i32 {measureError}, ptr {valueSize})")
+                emitStatusResult callback measureStatus failure
+                let payloadPointer = callback.Fresh "associated.resume.retained.payload.pointer"
+                let extentPointer = callback.Fresh "associated.resume.retained.extent.pointer"
+                let payloadBytes = callback.Fresh "associated.resume.retained.payload"
+                let extentBytes = callback.Fresh "associated.resume.retained.extent"
+                callback.Inst($"{payloadPointer} = getelementptr inbounds %%AlOwningValueSize, ptr {valueSize}, i32 0, i32 0")
+                callback.Inst($"{extentPointer} = getelementptr inbounds %%AlOwningValueSize, ptr {valueSize}, i32 0, i32 1")
+                callback.Inst($"{payloadBytes} = load i32, ptr {payloadPointer}, align 4")
+                callback.Inst($"{extentBytes} = load i32, ptr {extentPointer}, align 4")
+                let descriptor =
+                    { Type = ty
+                      Offset = sourceOffset
+                      Extent = extentBytes
+                      Payload = payloadBytes
+                      OwnerEnd = sourceOwnerEnd }
+                let descriptorPointer = emitDescriptorElementPointer callback inputDescriptors inputIndex
+                emitStoreDescriptor callback descriptorPointer descriptor
+                emitDescriptorTransfer callback descriptor failure
+
+            let completionPointerField = callback.Fresh "associated.resume.completion.bytes.pointer"
+            let completionBytes = callback.Fresh "associated.resume.completion.bytes"
+            callback.Inst($"{completionPointerField} = getelementptr inbounds %%AlOwningExternalSlice, ptr %%completion, i32 0, i32 0")
+            callback.Inst($"{completionBytes} = load ptr, ptr {completionPointerField}, align 8")
+            let completionExtentField = callback.Fresh "associated.resume.completion.extent.pointer"
+            let completionExtent = callback.Fresh "associated.resume.completion.extent"
+            callback.Inst($"{completionExtentField} = getelementptr inbounds %%AlOwningExternalSlice, ptr %%completion, i32 0, i32 1")
+            callback.Inst($"{completionExtent} = load i32, ptr {completionExtentField}, align 4")
+            let completionPayloadPointer = callback.Fresh "associated.resume.completion.payload.pointer"
+            let completionMeasuredExtentPointer = callback.Fresh "associated.resume.completion.measured.extent.pointer"
+            callback.Inst($"{completionPayloadPointer} = alloca i32, align 4")
+            callback.Inst($"{completionMeasuredExtentPointer} = alloca i32, align 4")
+            let completionTypeIndex = typeIndex IrString
+            let completionMeasureStatus = callback.Fresh "associated.resume.completion.measure.status"
+            callback.Inst(
+                $"{completionMeasureStatus} = call i32 @al_owning_measure_external_value(ptr %%ctx, ptr {layoutSymbol}, i32 {completionTypeIndex}, ptr {completionBytes}, i32 {completionExtent}, i32 0, i32 {measureError}, ptr {completionPayloadPointer}, ptr {completionMeasuredExtentPointer})")
+            emitStatusResult callback completionMeasureStatus failure
+            let measuredCompletionPayload = callback.Fresh "associated.resume.completion.payload"
+            let measuredCompletionExtent = callback.Fresh "associated.resume.completion.measured.extent"
+            callback.Inst($"{measuredCompletionPayload} = load i32, ptr {completionPayloadPointer}, align 4")
+            callback.Inst($"{measuredCompletionExtent} = load i32, ptr {completionMeasuredExtentPointer}, align 4")
+            let completionExtentMatches = callback.Fresh "associated.resume.completion.extent.matches"
+            let completionExtentOkay = callback.Label "associated.resume.completion.extent.ok"
+            callback.Inst($"{completionExtentMatches} = icmp eq i32 {measuredCompletionExtent}, {completionExtent}")
+            callback.Inst($"br i1 {completionExtentMatches}, label %%{completionExtentOkay}, label %%{failure}")
+            callback.Line($"{completionExtentOkay}:")
+
+            let appendStart = emitContextLoad callback "%ctx" 2
+            let appendEnd = emitOffset callback appendStart completionExtent
+            emitReserve callback appendEnd importError failure
+            let copyStatus = callback.Fresh "associated.resume.completion.copy.status"
+            callback.Inst(
+                $"{copyStatus} = call i32 @al_owning_copy_external_bounded(ptr %%ctx, i32 {appendStart}, ptr {completionBytes}, i32 {completionExtent}, i32 0, i32 {measuredCompletionPayload}, i32 {completionExtent}, i32 {typeId IrString}, i32 {importError})")
+            emitStatusResult callback copyStatus failure
+            let completionOwnerEnd = emitOffset callback appendStart completionExtent
+            let completionDescriptor =
+                { Type = IrString
+                  Offset = appendStart
+                  Extent = completionExtent
+                  Payload = measuredCompletionPayload
+                  OwnerEnd = completionOwnerEnd }
+            let completionDescriptorPointer = emitDescriptorElementPointer callback inputDescriptors 2
+            emitStoreDescriptor callback completionDescriptorPointer completionDescriptor
+            emitDescriptorTransfer callback completionDescriptor failure
+
+            let outputDescriptors = callback.Fresh "associated.resume.output.descriptors"
+            callback.Inst($"{outputDescriptors} = alloca [1 x %%AlOwningDescriptor], align 4")
+            let frameStatus = callback.Fresh "associated.resume.frame.status"
+            callback.Inst(
+                $"{frameStatus} = call i32 {entryFrameSymbols[2]}(ptr %%ctx, ptr {inputDescriptors}, ptr {outputDescriptors}, i32 {frameError})")
+            emitStatusResult callback frameStatus failure
+
+            let resultPointer = emitDescriptorElementPointer callback outputDescriptors 0
+            let result, actualType = emitLoadDescriptor callback resultPointer resumeBody.BodyOutputTypes[0]
+            let typeMatches = callback.Fresh "associated.resume.output.type.matches"
+            let typeOkay = callback.Label "associated.resume.output.type.ok"
+            callback.Inst($"{typeMatches} = icmp eq i32 {actualType}, {typeId result.Type}")
+            callback.Inst($"br i1 {typeMatches}, label %%{typeOkay}, label %%{failure}")
+            callback.Line($"{typeOkay}:")
+            emitDescriptorBounds callback result (Some(string (typeId result.Type))) failure
+
+            let outputInfo = typeInfo result.Type
+            let materializedResult =
+                if not outputInfo.IsDynamic && outputInfo.PayloadBytes = 0 then
+                    let needsToken = callback.Fresh "associated.resume.output.empty.needed"
+                    let createToken = callback.Label "associated.resume.output.empty.create"
+                    let keepValue = callback.Label "associated.resume.output.empty.keep"
+                    let join = callback.Label "associated.resume.output.empty.join"
+                    callback.Inst($"{needsToken} = icmp eq i32 {result.Extent}, 0")
+                    callback.Inst($"br i1 {needsToken}, label %%{createToken}, label %%{keepValue}")
+                    callback.Line($"{createToken}:")
+                    let tokenStart = emitContextLoad callback "%ctx" 2
+                    let tokenEnd = emitOffset callback tokenStart "8"
+                    emitReserve callback tokenEnd importError failure
+                    callback.Inst($"call void @al_owning_store_token(ptr %%ctx, i32 {tokenStart}, i32 {typeId result.Type})")
+                    emitRuntimeStatus callback "%ctx" failure
+                    let tokenPredecessor = callback.CurrentBlock
+                    callback.Inst($"br label %%{join}")
+                    callback.Line($"{keepValue}:")
+                    let keepPredecessor = callback.CurrentBlock
+                    callback.Inst($"br label %%{join}")
+                    callback.Line($"{join}:")
+                    let outputOffset = callback.Fresh "associated.resume.output.empty.offset"
+                    let outputExtent = callback.Fresh "associated.resume.output.empty.extent"
+                    let outputPayload = callback.Fresh "associated.resume.output.empty.payload"
+                    let outputOwnerEnd = callback.Fresh "associated.resume.output.empty.owner.end"
+                    callback.Inst($"{outputOffset} = phi i32 [ {tokenStart}, %%{tokenPredecessor} ], [ {result.Offset}, %%{keepPredecessor} ]")
+                    callback.Inst($"{outputExtent} = phi i32 [ 8, %%{tokenPredecessor} ], [ {result.Extent}, %%{keepPredecessor} ]")
+                    callback.Inst($"{outputPayload} = phi i32 [ 0, %%{tokenPredecessor} ], [ {result.Payload}, %%{keepPredecessor} ]")
+                    callback.Inst($"{outputOwnerEnd} = phi i32 [ {tokenEnd}, %%{tokenPredecessor} ], [ {result.OwnerEnd}, %%{keepPredecessor} ]")
+                    { result with Offset = outputOffset; Extent = outputExtent; Payload = outputPayload; OwnerEnd = outputOwnerEnd }
+                else
+                    result
+            emitDescriptorTransfer callback materializedResult failure
+            let outputType = resumeBody.BodyOutputTypes[0]
+            let outputTypeIndex = typeIndex outputType
+            let outputFields = [ string outputTypeIndex; materializedResult.Offset; materializedResult.OwnerEnd; "0" ]
+            for fieldIndex, fieldValue in List.indexed outputFields do
+                let fieldPointer = callback.Fresh "associated.resume.output.field"
+                callback.Inst($"{fieldPointer} = getelementptr inbounds %%AlOwningMailboxOutputSlice, ptr {outputPointer}, i32 0, i32 {fieldIndex}")
+                callback.Inst($"store i32 {fieldValue}, ptr {fieldPointer}, align 4")
+            callback.Inst("ret i32 0")
+
+            callback.Line($"{failure}:")
+            let failedContextIsNull = callback.Fresh "associated.resume.failure.context.null"
+            let failureHasContext = callback.Label "associated.resume.failure.has.context"
+            let failureNull = callback.Label "associated.resume.failure.null.context"
+            let failureStatusReady = callback.Label "associated.resume.failure.status.ready"
+            callback.Inst($"{failedContextIsNull} = icmp eq ptr %%ctx, null")
+            callback.Inst($"br i1 {failedContextIsNull}, label %%{failureNull}, label %%{failureHasContext}")
+            callback.Line($"{failureNull}:")
+            callback.Inst("ret i32 4")
+            callback.Line($"{failureHasContext}:")
+            let currentStatus = emitContextLoad callback "%ctx" 19
+            let statusAlreadySet = callback.Fresh "associated.resume.failure.status.set"
+            let setFallback = callback.Label "associated.resume.failure.set.fallback"
+            callback.Inst($"{statusAlreadySet} = icmp ne i32 {currentStatus}, 0")
+            callback.Inst($"br i1 {statusAlreadySet}, label %%{failureStatusReady}, label %%{setFallback}")
+            callback.Line($"{setFallback}:")
+            callback.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 4, i32 {invalidError}, i32 0, i32 0)")
+            callback.Inst($"br label %%{failureStatusReady}")
+            callback.Line($"{failureStatusReady}:")
+            let finalStatus = emitContextLoad callback "%ctx" 19
+            callback.Inst($"ret i32 {finalStatus}")
+            callback.Line("}")
+            callback.Line("")
+            role, callback.Text, explicitAllocaBoundBytes callback.Text
+
         let wrapper = OwningLlvmWriter()
         let wrapperFailure = wrapper.Label "entry.failure"
         let wrapperBodyFailure = wrapper.Label "entry.body.failure"
@@ -3450,6 +3662,11 @@ module OwningStackAot =
                 diagnosticRole <- None
                 mailboxCallbackTexts.Add((role, callbackText, allocaBytes))
                 writer.Line(callbackText)
+            diagnosticRole <- Some "resume_associated"
+            let associatedRole, associatedCallbackText, associatedAllocaBytes = emitAssociatedResumeCallback ()
+            diagnosticRole <- None
+            mailboxCallbackTexts.Add((associatedRole, associatedCallbackText, associatedAllocaBytes))
+            writer.Line(associatedCallbackText)
         let metadataPerFrameBytes = frameTexts |> Seq.map explicitAllocaBoundBytes |> Seq.fold max 0
         let wrapperMetadataBytes = explicitAllocaBoundBytes wrapper.Text
         let mailboxCallbackMetadataBytes = mailboxCallbackTexts |> Seq.map (fun (_, _, bytes) -> bytes) |> Seq.fold max 0
@@ -3554,6 +3771,7 @@ module OwningStackAot =
         append "extern const al_owning_layout agentlang_owning_mailbox_layout;"
         for entry in entries do
             append $"int32_t {entry.FunctionSymbol}(al_owning_stack_context *, const al_owning_external_slice *, uint32_t, al_owning_bank_stack_slice *, uint32_t);"
+        append "int32_t agentlang_mailbox_resume_associated(al_owning_stack_context *, const al_owning_bank_stack_slice *, uint32_t, const al_owning_external_slice *, uint32_t, al_owning_bank_stack_slice *, uint32_t);"
         append ""
         append "static const al_owning_mailbox_module al_owning_mailbox_descriptor = {"
         append "  AL_OWNING_MAILBOX_ABI_VERSION,"
@@ -3566,10 +3784,18 @@ module OwningStackAot =
             append $"      {{ {renderIndexArray 3 entry.InputTypeIndexes} }},"
             append $"      {{ {renderIndexArray 2 entry.OutputTypeIndexes} }},"
             append $"      &{entry.FunctionSymbol} }}{comma}"
-        append "  }"
+        append "  },"
+        append "  &agentlang_mailbox_resume_associated"
         append "};"
         append ""
         append "typedef struct al_owning_mailbox_span { uintptr_t begin; uintptr_t end; } al_owning_mailbox_span;"
+        append "static uint32_t al_owning_mailbox_read_u32(const uint8_t *bytes) {"
+        append "  uint32_t value;"
+        append "  uint8_t *value_bytes = (uint8_t *)&value;"
+        append "  uint32_t byte_index;"
+        append "  for (byte_index = 0u; byte_index < (uint32_t)sizeof(value); ++byte_index) value_bytes[byte_index] = bytes[byte_index];"
+        append "  return value;"
+        append "}"
         append ""
         append "static int al_owning_mailbox_make_span(const void *pointer, uint64_t byte_count, al_owning_mailbox_span *span) {"
         append "  uintptr_t begin = (uintptr_t)pointer;"
@@ -3614,7 +3840,7 @@ module OwningStackAot =
         append "  if (ctx->status != AL_OWNING_STATUS_OK) return 1;"
         append "  if (ctx->abi_version != AL_OWNING_STACK_ABI_VERSION || ctx->cursor_bytes != 0u || ctx->call_depth != 0u || ((uintptr_t)ctx % _Alignof(al_owning_stack_context)) != 0u)"
         append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, 0u);"
-        append "  if (module->abi_version != AL_OWNING_MAILBOX_ABI_VERSION || module->struct_size != sizeof(*module) || module->layout == 0 || entry_index >= AL_OWNING_MAILBOX_ENTRY_COUNT)"
+        append "  if (module->abi_version != AL_OWNING_MAILBOX_ABI_VERSION || module->struct_size != sizeof(*module) || module->layout == 0 || module->associated_resume != agentlang_mailbox_resume_associated || entry_index >= AL_OWNING_MAILBOX_ENTRY_COUNT)"
         append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, 0u);"
         append "  layout = module->layout;"
         append "  if (layout->abi_version != AL_OWNING_LAYOUT_ABI_VERSION || layout->type_count == 0u || layout->type_count > AL_OWNING_LAYOUT_MAX_TYPES || layout->types == 0 || layout->field_count > AL_OWNING_LAYOUT_MAX_FIELDS || (layout->field_count != 0u && layout->fields == 0))"
@@ -3688,6 +3914,90 @@ module OwningStackAot =
         append "  return 0;"
         append "}"
         append ""
+        append "int32_t agentlang_owning_mailbox_associated_preflight(al_owning_stack_context *ctx, const al_owning_bank_stack_slice *retained_inputs, uint32_t retained_count, const al_owning_external_slice *completion, uint32_t protected_cursor_bytes, al_owning_bank_stack_slice *outputs, uint32_t output_capacity, uint32_t invalid_error, uint32_t input_capacity_error, uint32_t output_capacity_error) {"
+        append "  al_owning_mailbox_span spans[16];"
+        append "  uint32_t span_count = 0u;"
+        append "  uint32_t index;"
+        append "  uint32_t required_bitmap_bytes;"
+        append "  uint64_t trace_bytes;"
+        append "  uint64_t type_bytes;"
+        append "  uint64_t field_bytes;"
+        append "  uint64_t completion_end;"
+        append "  uint32_t state_index;"
+        append "  uint32_t continuation_index;"
+        append "  uint32_t string_index;"
+        append "  const al_owning_mailbox_module *module = &al_owning_mailbox_descriptor;"
+        append "  const al_owning_mailbox_entry *resume;"
+        append "  const al_owning_layout *layout;"
+        append "  if (ctx == 0) return 1;"
+        append "  if (ctx->status != AL_OWNING_STATUS_OK) return 1;"
+        append "  if (ctx->abi_version != AL_OWNING_STACK_ABI_VERSION || protected_cursor_bytes == 0u || ctx->cursor_bytes != protected_cursor_bytes || ctx->call_depth != 0u || ((uintptr_t)ctx % _Alignof(al_owning_stack_context)) != 0u)"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, protected_cursor_bytes, ctx->cursor_bytes);"
+        append "  if (module->abi_version != AL_OWNING_MAILBOX_ABI_VERSION || module->struct_size != sizeof(*module) || module->layout == 0 || module->associated_resume != agentlang_mailbox_resume_associated)"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, 0u);"
+        append "  layout = module->layout;"
+        append "  if (layout->abi_version != AL_OWNING_LAYOUT_ABI_VERSION || layout->type_count == 0u || layout->type_count > AL_OWNING_LAYOUT_MAX_TYPES || layout->types == 0 || layout->field_count > AL_OWNING_LAYOUT_MAX_FIELDS || (layout->field_count != 0u && layout->fields == 0))"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, 0u);"
+        append "  if ((uint64_t)layout->type_count > UINT64_MAX / (uint64_t)sizeof(*layout->types) || (uint64_t)layout->field_count > UINT64_MAX / (uint64_t)sizeof(*layout->fields))"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, 0u);"
+        append "  type_bytes = (uint64_t)layout->type_count * (uint64_t)sizeof(*layout->types);"
+        append "  field_bytes = (uint64_t)layout->field_count * (uint64_t)sizeof(*layout->fields);"
+        append "  resume = &module->entries[2];"
+        append "  if (module->entries[0].execute != agentlang_mailbox_initialize || module->entries[0].input_count != 1u || module->entries[0].output_count != 1u || module->entries[1].execute != agentlang_mailbox_begin || module->entries[1].input_count != 2u || module->entries[1].output_count != 2u || resume->execute != agentlang_mailbox_resume || resume->input_count != 3u || resume->output_count != 1u)"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 3u, resume->input_count);"
+        append "  state_index = resume->input_type_indexes[0];"
+        append "  continuation_index = resume->input_type_indexes[1];"
+        append "  string_index = resume->input_type_indexes[2];"
+        append "  if (resume->output_type_indexes[0] != state_index || module->entries[0].input_type_indexes[0] != string_index || module->entries[0].output_type_indexes[0] != state_index || module->entries[1].input_type_indexes[0] != state_index || module->entries[1].input_type_indexes[1] != string_index || module->entries[1].output_type_indexes[0] != state_index || module->entries[1].output_type_indexes[1] != continuation_index || state_index >= layout->type_count || continuation_index >= layout->type_count || string_index >= layout->type_count)"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, 0u);"
+        append "  if (layout->types[state_index].type_id == 0u || layout->types[continuation_index].type_id == 0u || layout->types[string_index].type_id == 0u || layout->types[state_index].kind != AL_OWNING_TYPE_RECORD || layout->types[continuation_index].kind != AL_OWNING_TYPE_RECORD || layout->types[string_index].kind != AL_OWNING_TYPE_STRING)"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, 0u);"
+        append "  if (retained_count != 2u || output_capacity < 1u)"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, output_capacity < 1u ? output_capacity_error : invalid_error, retained_count == 2u ? 1u : 2u, retained_count == 2u ? output_capacity : retained_count);"
+        append "  if (retained_inputs == 0 || completion == 0 || outputs == 0 || ((uintptr_t)retained_inputs % _Alignof(uint32_t)) != 0u || ((uintptr_t)completion % _Alignof(al_owning_external_slice)) != 0u || ((uintptr_t)outputs % _Alignof(uint32_t)) != 0u)"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, 0u);"
+        append "  if (ctx->stack_capacity_bytes == 0u || ctx->stack_capacity_bytes > (uint32_t)INT32_MAX || ctx->cursor_bytes > ctx->stack_capacity_bytes || ctx->stack_data == 0 || ((uintptr_t)ctx->stack_data % _Alignof(uint64_t)) != 0u)"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, 0u);"
+        append "  required_bitmap_bytes = ctx->stack_capacity_bytes / 8u + (ctx->stack_capacity_bytes % 8u == 0u ? 0u : 1u);"
+        append "  if (ctx->init_bitmap_bytes < required_bitmap_bytes || ctx->init_bitmap == 0 || ctx->poison_bitmap == 0 || (ctx->trace_event_capacity != 0u && ctx->trace_events == 0))"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, required_bitmap_bytes, ctx->init_bitmap_bytes);"
+        append "  if ((uint64_t)ctx->trace_event_capacity > UINT64_MAX / (uint64_t)sizeof(al_owning_stack_event))"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, 0u);"
+        append "  trace_bytes = (uint64_t)ctx->trace_event_capacity * (uint64_t)sizeof(al_owning_stack_event);"
+        append "  if (!al_owning_mailbox_add_span(spans, &span_count, module, sizeof(*module)) ||"
+        append "      !al_owning_mailbox_add_span(spans, &span_count, layout, sizeof(*layout)) ||"
+        append "      !al_owning_mailbox_add_span(spans, &span_count, layout->types, type_bytes) ||"
+        append "      !al_owning_mailbox_add_span(spans, &span_count, layout->fields, field_bytes) ||"
+        append "      !al_owning_mailbox_add_span(spans, &span_count, ctx, sizeof(*ctx)) ||"
+        append "      !al_owning_mailbox_add_span(spans, &span_count, ctx->stack_data, ctx->stack_capacity_bytes) ||"
+        append "      !al_owning_mailbox_add_span(spans, &span_count, ctx->init_bitmap, ctx->init_bitmap_bytes) ||"
+        append "      !al_owning_mailbox_add_span(spans, &span_count, ctx->poison_bitmap, ctx->init_bitmap_bytes) ||"
+        append "      !al_owning_mailbox_add_span(spans, &span_count, ctx->trace_events, trace_bytes) ||"
+        append "      !al_owning_mailbox_add_span(spans, &span_count, retained_inputs, (uint64_t)retained_count * AL_OWNING_MAILBOX_OUTPUT_SLICE_BYTES) ||"
+        append "      !al_owning_mailbox_add_span(spans, &span_count, completion, sizeof(*completion)) ||"
+        append "      !al_owning_mailbox_add_span(spans, &span_count, outputs, (uint64_t)resume->output_count * AL_OWNING_MAILBOX_OUTPUT_SLICE_BYTES))"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, 0u);"
+        append "  for (index = 0u; index < retained_count; ++index) {"
+        append "    const uint8_t *slice_bytes = (const uint8_t *)retained_inputs + (uint64_t)index * AL_OWNING_MAILBOX_OUTPUT_SLICE_BYTES;"
+        append "    uint32_t type_index = al_owning_mailbox_read_u32(slice_bytes);"
+        append "    uint32_t source_offset_bytes = al_owning_mailbox_read_u32(slice_bytes + 4u);"
+        append "    uint32_t source_owner_end_bytes = al_owning_mailbox_read_u32(slice_bytes + 8u);"
+        append "    uint32_t reserved = al_owning_mailbox_read_u32(slice_bytes + 12u);"
+        append "    if (type_index != resume->input_type_indexes[index] || reserved != 0u || source_offset_bytes > source_owner_end_bytes || source_owner_end_bytes > protected_cursor_bytes)"
+        append "      return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, protected_cursor_bytes, source_owner_end_bytes);"
+        append "  }"
+        append "  if (completion->bytes == 0 || completion->extent_bytes == 0u || completion->type_index != string_index)"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, string_index, completion->type_index);"
+        append "  completion_end = (uint64_t)protected_cursor_bytes + (uint64_t)completion->extent_bytes;"
+        append "  if (completion_end > UINT32_MAX || completion_end > ctx->stack_capacity_bytes) {"
+        append "    uint32_t required = completion_end > UINT32_MAX ? UINT32_MAX : (uint32_t)completion_end;"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_STACK_CAPACITY, input_capacity_error, required, ctx->stack_capacity_bytes);"
+        append "  }"
+        append "  if (!al_owning_mailbox_add_span(spans, &span_count, completion->bytes, completion->extent_bytes))"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, 0u);"
+        append "  return 0;"
+        append "}"
+        append ""
         append "AL_OWNING_MAILBOX_EXPORT const al_owning_mailbox_module *agentlang_owning_mailbox_module(void) {"
         append "  return &al_owning_mailbox_descriptor;"
         append "}"
@@ -3733,8 +4043,8 @@ module OwningStackAot =
             encodeValues, decodeValues, readEvents, readMetrics, diagnosticForError)
 
     /// Compile the fixed initialize/begin/resume lifecycle into one immutable
-    /// owning module with a shared type-index layout and caller-owned mailbox
-    /// callback ABI.
+    /// owning module with a shared type-index layout, ordinary mailbox callbacks,
+    /// and a callback that resumes from two retained arena roots.
     let compileMailbox
         (toolchain: LlvmToolchain)
         optimization
@@ -3901,6 +4211,17 @@ module OwningStackAot =
                    diagnosticIds = entry.DiagnosticIds
                    frameSourcePath = entry.FrameSourcePath
                    sourceIrPath = entry.SourceIrPath |})
+        let associatedResumeMetadataBytes =
+            callbackMetadataPerEntryBytes.TryFind "resume_associated"
+            |> Option.defaultWith (fun () -> invalidOp "Associated-resume callback metadata bound is missing.")
+        let associatedResumeManifest =
+            let resume = entryMetadata[2]
+            {| functionSymbol = "agentlang_mailbox_resume_associated"
+               entryFrameSymbol = resume.EntryFrameSymbol
+               inputTypeIndexes = resume.InputTypeIndexes
+               outputTypeIndexes = resume.OutputTypeIndexes
+               diagnosticIds = diagnosticIdsFor "resume_associated"
+               callbackMetadataBytes = associatedResumeMetadataBytes |}
         let sourceHashManifest =
             sourceHashes
             |> List.sortBy fst
@@ -3911,6 +4232,7 @@ module OwningStackAot =
                optimization = optimizationName
                entryOrder = roles
                entries = entryManifest
+               associatedResume = associatedResumeManifest
                sharedLayout = layoutManifest
                diagnostics = diagnosticManifest
                sourceHashes = sourceHashManifest

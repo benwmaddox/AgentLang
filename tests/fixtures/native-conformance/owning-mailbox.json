@@ -27,6 +27,14 @@
   "sourceFixture": "experiments/AgentLang.OwningMailbox/owning-mailbox.flow",
   "abiHeader": "src/AgentLang.Llvm/native/owning_mailbox_abi.h",
   "moduleAbiVersion": 1,
+  "moduleStructSizeBytes": 144,
+  "associatedResumePointerOffsetBytes": 136,
+  "associatedResume": {
+    "functionSymbol": "agentlang_mailbox_resume_associated",
+    "entryFrameRole": "resume",
+    "inputTypeIndexes": [3, 2, 4],
+    "outputTypeIndexes": [3]
+  },
   "entryOrder": ["initialize", "begin", "resume"],
   "roles": {
     "initialize": { "inputs": ["String"], "outputs": ["State"] },
@@ -100,6 +108,8 @@
         "utf16StagingBytes": 16424,
         "inputImportBytes": 41056,
         "publicationCopyBytes": 24624,
+        "beginPublicationCopyBytes": 8216,
+        "resumeRootImportBytes": 16432,
         "constructionAndDuplicationBytes": 73880,
         "constructionDerivation": "initialize State 8200 + begin Continuation 16 + failed resume literal 16 + concat 8208 + concat 16400 + State 16400 + retry literal 16 + concat 8208 + concat 8208 + State 8208",
         "payloadMoveBytes": 0,
@@ -132,6 +142,8 @@
       "utf16StagingBytes": 80,
       "inputImportBytes": 152,
       "publicationCopyBytes": 112,
+      "beginPublicationCopyBytes": 48,
+      "resumeRootImportBytes": 48,
       "constructionAndDuplicationBytes": 184,
       "constructionDerivation": "Unicode initialize 16 + begin continuation 16 + resume FAIL literal 16 + concat extents 16 and 24 + State construction 24; empty initialize 8 + begin continuation 8 + resume FAIL literal 16 + empty concat 8 + concat-B 16 + State construction 16",
       "payloadMoveBytes": 0,
@@ -158,6 +170,9 @@
     "focusedRunnerConfiguration": {
       "mailboxCapacity": 2,
       "scratchByteCapacity": 65536,
+      "scratchSlotCapacity": 1,
+      "suspensionPolicy": "RETURN",
+      "suspensionPolicyId": 0,
       "retainedByteCapacityPerBank": 16384,
       "textStagingByteCapacity": 16384,
       "bankRootCapacity": 2,

@@ -11,7 +11,10 @@ validates host-driven suspension and scratch reuse with actual Flow/2 handlers.
 [Report 126](../reports/126-native-mailbox-dispatch.md) validates bounded standalone
 native dispatch of those handlers. The owning-value integration in
 [report 131](../reports/131-owning-native-mailboxes.md) passes its focused native
-lifecycle and full Release gates. Actual async I/O, saturation, production
+lifecycle and full Release gates. The focused owning-value policy comparison in
+[report 132](../reports/132-associated-arena-comparison.md) also passes O0/O2:
+KEEP avoids the suspension-boundary copies but pins pool slots, and both policies
+preserve exact results and failure/retry behavior. Actual async I/O, saturation, production
 throughput and tail latency remain untested. See [the roadmap](ROADMAP.md).
 
 [Midori research](MIDORI-RESEARCH.md) supplies architectural comparisons, not
@@ -119,15 +122,15 @@ comparison. Both sides must implement equivalent language behavior, scheduling,
 I/O, cancellation acknowledgements and admission limits. Neither policy may
 reuse memory while a provider still holds a reference.
 
-The next bounded mechanism check should retain the actual begin-result locations,
-resume from those values in the same arena, and import only the new completion
-message. Persistent mailbox state remains bank-owned between operation groups;
+The bounded mechanism check in report 132 retains the actual begin-result
+locations, resumes from those values in the same arena, and imports only the new
+completion message. Persistent mailbox state remains bank-owned between operation groups;
 successful completion publishes it once before releasing scratch. A failed resume
-or publication must preserve the pending prefix and token for retry. Verify the
-existing stable emitter's descriptor-only operations and compiler-proven saved
-marks before adding new ownership machinery. Two interleaved pending mailboxes
-need distinct attached scratch slots. This check needs no new source lifetime
-syntax and does not select a performance winner before real-I/O measurement.
+or publication preserves the pending prefix and token for retry. The stable
+emitter's descriptor-only operations and compiler-proven saved marks permit
+this without new ownership machinery. Two interleaved pending mailboxes use
+distinct attached scratch slots. The check adds no source lifetime syntax and
+does not select a performance winner before real-I/O measurement.
 
 Compare maximum sustained successful completions per second at the same enforced
 memory ceiling and acceptable tail latency. Also record live and reserved arena
@@ -141,6 +144,34 @@ is still required before selecting either memory policy.
 The working hypothesis is that releasing scratch before I/O waits permits more
 useful concurrent requests under a memory ceiling. Copying retained state and
 additional transitions may instead limit CPU throughput. Measure both outcomes.
+
+### Next bounded implementation
+
+Preserve report 132's fixtures and add one bounded steady-state fixture: latest
+response plus a fixed-width request count, with an independent state/output
+oracle. Its Begin handler must change State so cancellation tests can distinguish
+preserving Begin-produced State from incorrectly reverting to pre-Begin State.
+Use one native Windows host per policy with a single owner thread and bounded
+overlapped socket completions. Keep compiler/bootstrap work outside measured
+native processes. Compare a separate idiomatic F# process against the same
+loopback protocol and admission limits; shared provider/load tools may use .NET.
+Add no general scheduler framework or language syntax for this slice.
+
+The missing terminal-cancellation operation must run only after the provider
+acknowledges completion or cancellation. Preserve Begin-produced State, retire
+Continuation and invalidate the pending token. RETURN can retain its published
+State; KEEP must publish its attached State before releasing the slot. Check
+that State fits retained storage at admission so cancellation cannot strand an
+admitted operation. Test late completions, failed resumes, capacity rejection
+and full drain with actual sockets before collecting performance results.
+
+The current correctness runtime includes per-byte initialization/poison tracking
+and capacity-sized reset writes. Retain that safety configuration, but validate
+a release pointer-reset/reuse path against matching semantic tests before
+claiming competitive throughput. Measure native hosts without a CLR wrapper,
+and report process memory separately from arena reservations. Use externally
+scheduled arrivals, bounded queues/buffers and predeclared memory, latency and
+error limits; fewer copies alone do not select a winner.
 
 ### Refinement: suspend and resume the same mailbox
 
@@ -164,9 +195,12 @@ arena lifetime. Pooling may reuse the same physical chunk; old references must
 remain invalid. Define how cancellation, duplicate/late completion and code
 replacement interact with the stored resume location before implementation.
 
-Whether unrelated messages can execute in that mailbox during suspension is an
-open scheduling decision. Single-thread execution alone does not define ordering
-or protect invariants across intervening turns. Record the policy and test it.
+The current bounded controller permits one pending operation per mailbox and
+rejects another Begin for that mailbox as busy. Other mailboxes can execute if
+a scratch slot is available. It does not yet provide a general message queue.
+Allowing unrelated messages within a suspended mailbox would be a future
+scheduling change requiring explicit ordering and invariant tests; single-thread
+execution alone would not make those interleavings safe.
 
 Returning the stack arena to a pool at suspension differs from releasing its
 backing memory to the OS. The pool may retain unused chunks for reuse and release
@@ -174,8 +208,8 @@ them after inactivity, subject to aggregate limits. Ordinary completed turns may
 reuse assigned stack capacity under the idle-release candidate; async suspension
 explicitly hands capacity back to the pool. The standalone probe implements
 bounded pooling, but no idle-release policy. The compiled-handler controller
-validates scratch reuse; a real async provider and both lifetime policies remain
-to be integrated.
+now supports both lifetime policies; integration with a real async provider and
+provider-acknowledged cancellation remains outstanding.
 
 ## Safety prerequisites
 

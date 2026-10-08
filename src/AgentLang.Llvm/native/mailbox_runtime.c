@@ -10,6 +10,10 @@
 #define AL_MAILBOX_ALIGNMENT 8u
 #define AL_MAILBOX_PAYLOAD_ABI3 0u
 #define AL_MAILBOX_PAYLOAD_OWNING 1u
+#define AL_OWNING_SCRATCH_FREE 0u
+#define AL_OWNING_SCRATCH_CHECKED_OUT 1u
+#define AL_OWNING_SCRATCH_ATTACHED 2u
+#define AL_OWNING_NO_SCRATCH_SLOT UINT32_MAX
 
 typedef struct al_mailbox_bank {
   al_arena owner;
@@ -36,6 +40,23 @@ typedef struct al_mailbox_slot {
   } payload;
 } al_mailbox_slot;
 
+typedef struct al_owning_scratch_slot {
+  al_owning_stack_context context;
+  uint8_t *data;
+  uint8_t *init_bitmap;
+  uint8_t *poison_bitmap;
+  uint32_t state;
+  uint32_t owner_mailbox_id;
+} al_owning_scratch_slot;
+
+typedef struct al_owning_attachment {
+  uint32_t scratch_slot_index;
+  uint32_t protected_cursor_bytes;
+  uint32_t root_count;
+  uint32_t reserved;
+  al_owning_bank_stack_slice roots[AL_MAILBOX_MAX_ROOTS];
+} al_owning_attachment;
+
 typedef struct al_mailbox_layout {
   size_t total_bytes;
   size_t slots_offset;
@@ -56,6 +77,10 @@ typedef struct al_mailbox_layout {
 typedef struct al_owning_mailbox_layout {
   size_t total_bytes;
   size_t slots_offset;
+  size_t scratch_slots_offset;
+  size_t attachments_offset;
+  size_t scratch_backing_offset;
+  size_t scratch_slot_stride;
   size_t scratch_data_offset;
   size_t init_bitmap_offset;
   size_t poison_bitmap_offset;
@@ -91,10 +116,8 @@ struct al_mailbox_runtime {
   int64_t invocation_values[AL_MAILBOX_MAX_INPUTS];
   uint32_t invocation_type_ids[AL_MAILBOX_MAX_INPUTS];
   al_runtime_context context;
-  al_owning_stack_context owning_context;
-  uint8_t *owning_scratch_data;
-  uint8_t *owning_init_bitmap;
-  uint8_t *owning_poison_bitmap;
+  al_owning_scratch_slot *owning_scratch_slots;
+  al_owning_attachment *owning_attachments;
   uint8_t *owning_text_staging;
   al_owning_external_slice owning_inputs[AL_MAILBOX_MAX_INPUTS];
   al_owning_bank_stack_slice owning_outputs[AL_MAILBOX_MAX_ROOTS];
@@ -131,6 +154,8 @@ struct al_mailbox_runtime {
   uint64_t owning_move_bytes;
   uint64_t owning_returned_output_descriptors;
   uint64_t owning_turn_reset_bytes;
+  uint64_t owning_begin_publication_copy_bytes;
+  uint64_t owning_resume_root_import_bytes;
 };
 
 uint32_t al_mailbox_platform_current_thread_id(void);
@@ -517,7 +542,7 @@ static al_mailbox_result al_validate_owning_module(
       begin_entry->input_count != 2u || begin_entry->output_count != 2u ||
       resume_entry->input_count != 3u || resume_entry->output_count != 1u ||
       init_entry->execute == NULL || begin_entry->execute == NULL ||
-      resume_entry->execute == NULL)
+      resume_entry->execute == NULL || module->associated_resume == NULL)
     return AL_MAILBOX_INVALID_MODULE;
 
   for (index = 0u; index < AL_OWNING_MAILBOX_ENTRY_COUNT; ++index) {
@@ -579,8 +604,10 @@ static al_mailbox_result al_validate_owning_bindings(
       config->scratch_byte_capacity == 0u ||
       config->scratch_byte_capacity > (uint32_t)INT32_MAX ||
       config->retained_byte_capacity == 0u ||
-      config->text_staging_byte_capacity < 8u || config->reserved[0] != 0u ||
-      config->reserved[1] != 0u)
+      config->text_staging_byte_capacity < 8u ||
+      config->scratch_slot_capacity == 0u ||
+      config->scratch_slot_capacity > config->mailbox_capacity ||
+      config->suspension_policy > AL_MAILBOX_OWNING_POLICY_KEEP_ASSOCIATED)
     return AL_MAILBOX_INVALID_ARGUMENT;
   result = al_validate_owning_module(module, out_string_index, out_state_index,
                                      out_continuation_index);
@@ -594,12 +621,16 @@ static al_mailbox_result al_compute_owning_layout(
   uint64_t retained_bank_bytes;
   uint64_t retained_total_bytes;
   uint64_t scratch_bytes;
+  uint64_t scratch_per_slot_bytes;
   uint64_t text_bytes;
   uint64_t backing_bytes;
   size_t slot_bytes;
+  size_t scratch_slot_metadata_bytes;
+  size_t attachment_metadata_bytes;
   size_t root_bytes;
   size_t offset = 0u;
   size_t per_mailbox_offset = 0u;
+  size_t per_scratch_slot_offset = 0u;
   al_mailbox_result result;
 
   if (layout == NULL)
@@ -610,6 +641,12 @@ static al_mailbox_result al_compute_owning_layout(
     return result;
   if (!al_checked_array_bytes(config->mailbox_capacity, sizeof(al_mailbox_slot),
                               &slot_bytes) ||
+      !al_checked_array_bytes(config->scratch_slot_capacity,
+                              sizeof(al_owning_scratch_slot),
+                              &scratch_slot_metadata_bytes) ||
+      !al_checked_array_bytes(config->mailbox_capacity,
+                              sizeof(al_owning_attachment),
+                              &attachment_metadata_bytes) ||
       !al_checked_array_bytes(AL_MAILBOX_MAX_ROOTS,
                               sizeof(al_owning_bank_root), &root_bytes))
     return AL_MAILBOX_SIZE_OVERFLOW;
@@ -620,15 +657,40 @@ static al_mailbox_result al_compute_owning_layout(
                         AL_MAILBOX_ALIGNMENT, NULL) ||
       !al_append_region(&offset, slot_bytes, AL_MAILBOX_ALIGNMENT,
                         &layout->slots_offset) ||
-      !al_append_region(&offset, config->scratch_byte_capacity,
-                        AL_MAILBOX_ALIGNMENT, &layout->scratch_data_offset) ||
-      !al_append_region(&offset, layout->bitmap_bytes, AL_MAILBOX_ALIGNMENT,
-                        &layout->init_bitmap_offset) ||
-      !al_append_region(&offset, layout->bitmap_bytes, AL_MAILBOX_ALIGNMENT,
-                        &layout->poison_bitmap_offset) ||
+      !al_append_region(&offset, scratch_slot_metadata_bytes,
+                        AL_MAILBOX_ALIGNMENT, &layout->scratch_slots_offset) ||
+      !al_append_region(&offset, attachment_metadata_bytes,
+                        AL_MAILBOX_ALIGNMENT, &layout->attachments_offset) ||
       !al_append_region(&offset, config->text_staging_byte_capacity,
                         AL_MAILBOX_ALIGNMENT, &layout->text_staging_offset))
     return AL_MAILBOX_SIZE_OVERFLOW;
+
+  /* The text staging byte count is caller-selected and may not be aligned. */
+  if (!al_append_region(&offset, 0u, AL_MAILBOX_ALIGNMENT, NULL))
+    return AL_MAILBOX_SIZE_OVERFLOW;
+
+  if (!al_append_region(&per_scratch_slot_offset,
+                        config->scratch_byte_capacity, AL_MAILBOX_ALIGNMENT,
+                        &layout->scratch_data_offset) ||
+      !al_append_region(&per_scratch_slot_offset, layout->bitmap_bytes,
+                        AL_MAILBOX_ALIGNMENT, &layout->init_bitmap_offset) ||
+      !al_append_region(&per_scratch_slot_offset, layout->bitmap_bytes,
+                        AL_MAILBOX_ALIGNMENT,
+                        &layout->poison_bitmap_offset))
+    return AL_MAILBOX_SIZE_OVERFLOW;
+  /* Each repeated slot begins at the storage alignment, even when the final
+   * poison bitmap leaves an odd-sized tail (for example, a 72-byte arena). */
+  if (!al_append_region(&per_scratch_slot_offset, 0u, AL_MAILBOX_ALIGNMENT,
+                        NULL))
+    return AL_MAILBOX_SIZE_OVERFLOW;
+  layout->scratch_slot_stride = per_scratch_slot_offset;
+  layout->scratch_backing_offset = offset;
+  if (layout->scratch_slot_stride != 0u &&
+      (size_t)config->scratch_slot_capacity >
+          (SIZE_MAX - offset) / layout->scratch_slot_stride)
+    return AL_MAILBOX_SIZE_OVERFLOW;
+  offset += layout->scratch_slot_stride *
+            (size_t)config->scratch_slot_capacity;
 
   layout->bank_backing_offset = offset;
   for (uint32_t bank_index = 0u; bank_index < 2u; ++bank_index) {
@@ -655,7 +717,10 @@ static al_mailbox_result al_compute_owning_layout(
       !al_mul_u64(retained_bank_bytes, config->mailbox_capacity,
                   &retained_total_bytes) ||
       !al_add_u64(config->scratch_byte_capacity,
-                  (uint64_t)layout->bitmap_bytes * 2u, &scratch_bytes))
+                  (uint64_t)layout->bitmap_bytes * 2u,
+                  &scratch_per_slot_bytes) ||
+      !al_mul_u64(scratch_per_slot_bytes, config->scratch_slot_capacity,
+                  &scratch_bytes))
     return AL_MAILBOX_SIZE_OVERFLOW;
   text_bytes = config->text_staging_byte_capacity;
   if (!al_add_u64(retained_total_bytes, scratch_bytes, &backing_bytes) ||
@@ -927,7 +992,7 @@ static al_mailbox_result al_runtime_access(al_mailbox_runtime *runtime,
   if (!al_runtime_binding_valid(runtime)) {
     return AL_MAILBOX_INVALID_MODULE;
   }
-  if (runtime->busy != 0u || runtime->outstanding_scratch_leases != 0u) {
+  if (runtime->busy != 0u) {
     return AL_MAILBOX_BUSY;
   }
   return AL_MAILBOX_OK;
@@ -1800,20 +1865,47 @@ static al_mailbox_result al_runtime_init_owning_impl(
   runtime->owning_entries[2] = &module->entries[2];
   runtime->mailboxes =
       (al_mailbox_slot *)(void *)(base + layout.slots_offset);
-  runtime->owning_scratch_data = base + layout.scratch_data_offset;
-  runtime->owning_init_bitmap = base + layout.init_bitmap_offset;
-  runtime->owning_poison_bitmap = base + layout.poison_bitmap_offset;
+  runtime->owning_scratch_slots =
+      (al_owning_scratch_slot *)(void *)(base + layout.scratch_slots_offset);
+  runtime->owning_attachments = (al_owning_attachment *)(void *)(
+      base + layout.attachments_offset);
   runtime->owning_text_staging = base + layout.text_staging_offset;
-  runtime->owning_context.abi_version = AL_OWNING_STACK_ABI_VERSION;
-  runtime->owning_context.stack_capacity_bytes =
-      config->scratch_byte_capacity;
-  runtime->owning_context.init_bitmap_bytes = layout.bitmap_bytes;
-  runtime->owning_context.stack_data = runtime->owning_scratch_data;
-  runtime->owning_context.init_bitmap = runtime->owning_init_bitmap;
-  runtime->owning_context.poison_bitmap = runtime->owning_poison_bitmap;
-  runtime->owning_context.trace_events = NULL;
-  runtime->owning_context.trace_event_capacity = 0u;
-  al_owning_begin(&runtime->owning_context);
+
+  for (mailbox_id = 0u; mailbox_id < config->mailbox_capacity; ++mailbox_id) {
+    al_owning_attachment *attachment = &runtime->owning_attachments[mailbox_id];
+    attachment->scratch_slot_index = AL_OWNING_NO_SCRATCH_SLOT;
+    attachment->protected_cursor_bytes = 0u;
+    attachment->root_count = 0u;
+    attachment->reserved = 0u;
+    memset(attachment->roots, 0, sizeof(attachment->roots));
+  }
+  for (mailbox_id = 0u; mailbox_id < config->scratch_slot_capacity;
+       ++mailbox_id) {
+    al_owning_scratch_slot *scratch_slot =
+        &runtime->owning_scratch_slots[mailbox_id];
+    size_t scratch_base = layout.scratch_backing_offset +
+                          (size_t)mailbox_id * layout.scratch_slot_stride;
+    scratch_slot->data = base + scratch_base + layout.scratch_data_offset;
+    scratch_slot->init_bitmap =
+        base + scratch_base + layout.init_bitmap_offset;
+    scratch_slot->poison_bitmap =
+        base + scratch_base + layout.poison_bitmap_offset;
+    scratch_slot->state = AL_OWNING_SCRATCH_FREE;
+    scratch_slot->owner_mailbox_id = AL_OWNING_NO_SCRATCH_SLOT;
+    scratch_slot->context.abi_version = AL_OWNING_STACK_ABI_VERSION;
+    scratch_slot->context.stack_capacity_bytes =
+        config->scratch_byte_capacity;
+    scratch_slot->context.init_bitmap_bytes =
+        (uint32_t)layout.bitmap_bytes;
+    scratch_slot->context.stack_data = scratch_slot->data;
+    scratch_slot->context.init_bitmap = scratch_slot->init_bitmap;
+    scratch_slot->context.poison_bitmap = scratch_slot->poison_bitmap;
+    scratch_slot->context.trace_events = NULL;
+    scratch_slot->context.trace_event_capacity = 0u;
+    al_owning_begin(&scratch_slot->context);
+    memset(scratch_slot->data, AL_MAILBOX_POISON_BYTE,
+           config->scratch_byte_capacity);
+  }
 
   for (mailbox_id = 0u; mailbox_id < config->mailbox_capacity; ++mailbox_id) {
     al_mailbox_slot *slot = &runtime->mailboxes[mailbox_id];
@@ -1838,8 +1930,6 @@ static al_mailbox_result al_runtime_init_owning_impl(
     memset(bank1_bytes, AL_MAILBOX_POISON_BYTE,
            config->retained_byte_capacity);
   }
-  memset(runtime->owning_scratch_data, AL_MAILBOX_POISON_BYTE,
-         config->scratch_byte_capacity);
   memset(runtime->owning_text_staging, AL_MAILBOX_POISON_BYTE,
          config->text_staging_byte_capacity);
   *out_runtime = runtime;
@@ -1859,6 +1949,7 @@ static al_mailbox_result al_owning_bank_root_input(
     al_mailbox_runtime *runtime, const al_owning_byte_bank *bank,
     uint32_t root_index, uint32_t type_index,
     al_owning_external_slice *out_input) {
+  al_owning_stack_context scanner;
   const al_owning_bank_root *root;
   uint32_t payload_bytes;
   uint32_t extent_bytes;
@@ -1874,9 +1965,12 @@ static al_mailbox_result al_owning_bank_root_input(
       root->owner_end_bytes != root->offset_bytes + root->extent_bytes ||
       root->payload_bytes > root->extent_bytes)
     return AL_MAILBOX_INVALID_REFERENCE;
-  al_owning_begin(&runtime->owning_context);
+  memset(&scanner, 0, sizeof(scanner));
+  scanner.abi_version = AL_OWNING_STACK_ABI_VERSION;
+  scanner.status = AL_OWNING_STATUS_OK;
+  scanner.available_bytes = UINT32_MAX;
   if (al_owning_measure_external_value(
-          &runtime->owning_context, runtime->owning_module->layout,
+          &scanner, runtime->owning_module->layout,
           type_index, bank->bytes, bank->used_bytes, root->offset_bytes, 0u,
           &payload_bytes, &extent_bytes) != 0 ||
       payload_bytes != root->payload_bytes || extent_bytes != root->extent_bytes)
@@ -1890,12 +1984,16 @@ static al_mailbox_result al_owning_bank_root_input(
 static al_mailbox_result al_owning_validate_inputs(
     al_mailbox_runtime *runtime, const al_owning_mailbox_entry *entry,
     const al_owning_external_slice *inputs) {
+  al_owning_stack_context scanner;
   uint64_t total_bytes = 0u;
   uint32_t index;
   if (runtime == NULL || entry == NULL || inputs == NULL ||
       entry->input_count > AL_MAILBOX_MAX_INPUTS)
     return AL_MAILBOX_INVALID_ARGUMENT;
-  al_owning_begin(&runtime->owning_context);
+  memset(&scanner, 0, sizeof(scanner));
+  scanner.abi_version = AL_OWNING_STACK_ABI_VERSION;
+  scanner.status = AL_OWNING_STATUS_OK;
+  scanner.available_bytes = UINT32_MAX;
   for (index = 0u; index < entry->input_count; ++index) {
     uint32_t payload_bytes;
     uint32_t extent_bytes;
@@ -1909,7 +2007,7 @@ static al_mailbox_result al_owning_validate_inputs(
                  ? AL_MAILBOX_SCRATCH_CAPACITY
                  : AL_MAILBOX_INVALID_REFERENCE;
     if (al_owning_measure_external_value(
-            &runtime->owning_context, runtime->owning_module->layout,
+            &scanner, runtime->owning_module->layout,
             input->type_index, input->bytes, input->extent_bytes, 0u, 0u,
             &payload_bytes, &extent_bytes) != 0 ||
         extent_bytes != input->extent_bytes)
@@ -1936,11 +2034,17 @@ static al_mailbox_result al_owning_text_input_fits_scratch(
 }
 
 static uint32_t al_owning_context_storage_valid(
-    const al_mailbox_runtime *runtime) {
-  const al_owning_stack_context *context = &runtime->owning_context;
-  uint32_t bitmap_bytes =
-      runtime->owning_config.scratch_byte_capacity / 8u +
-      (runtime->owning_config.scratch_byte_capacity % 8u != 0u ? 1u : 0u);
+    const al_mailbox_runtime *runtime,
+    const al_owning_scratch_slot *scratch_slot) {
+  const al_owning_stack_context *context;
+  uint32_t bitmap_bytes;
+  if (runtime == NULL || scratch_slot == NULL)
+    return 0u;
+  context = &scratch_slot->context;
+  bitmap_bytes = runtime->owning_config.scratch_byte_capacity / 8u +
+                 (runtime->owning_config.scratch_byte_capacity % 8u != 0u
+                      ? 1u
+                      : 0u);
   return context->abi_version == AL_OWNING_STACK_ABI_VERSION &&
          context->stack_capacity_bytes ==
              runtime->owning_config.scratch_byte_capacity &&
@@ -1948,29 +2052,32 @@ static uint32_t al_owning_context_storage_valid(
          context->peak_cursor_bytes <= context->stack_capacity_bytes &&
          context->peak_cursor_bytes >= context->cursor_bytes &&
          context->init_bitmap_bytes == bitmap_bytes &&
-         context->stack_data == runtime->owning_scratch_data &&
-         context->init_bitmap == runtime->owning_init_bitmap &&
-         context->poison_bitmap == runtime->owning_poison_bitmap &&
+         context->stack_data == scratch_slot->data &&
+         context->init_bitmap == scratch_slot->init_bitmap &&
+         context->poison_bitmap == scratch_slot->poison_bitmap &&
          context->trace_events == NULL &&
          context->trace_event_capacity == 0u &&
          context->status <= AL_OWNING_STATUS_INTERNAL;
 }
 
 static void al_owning_context_restore_storage(
-    al_mailbox_runtime *runtime, uint32_t safe_cursor) {
-  al_owning_stack_context *context = &runtime->owning_context;
-  uint32_t bitmap_bytes =
-      runtime->owning_config.scratch_byte_capacity / 8u +
-      (runtime->owning_config.scratch_byte_capacity % 8u != 0u ? 1u : 0u);
+    const al_mailbox_runtime *runtime, al_owning_scratch_slot *scratch_slot,
+    uint32_t safe_cursor) {
+  al_owning_stack_context *context = &scratch_slot->context;
+  uint32_t bitmap_bytes = runtime->owning_config.scratch_byte_capacity / 8u +
+                          (runtime->owning_config.scratch_byte_capacity % 8u !=
+                                   0u
+                               ? 1u
+                               : 0u);
   context->abi_version = AL_OWNING_STACK_ABI_VERSION;
   context->stack_capacity_bytes =
       runtime->owning_config.scratch_byte_capacity;
   context->cursor_bytes = safe_cursor;
   context->peak_cursor_bytes = safe_cursor;
   context->init_bitmap_bytes = bitmap_bytes;
-  context->stack_data = runtime->owning_scratch_data;
-  context->init_bitmap = runtime->owning_init_bitmap;
-  context->poison_bitmap = runtime->owning_poison_bitmap;
+  context->stack_data = scratch_slot->data;
+  context->init_bitmap = scratch_slot->init_bitmap;
+  context->poison_bitmap = scratch_slot->poison_bitmap;
   context->trace_events = NULL;
   context->trace_event_capacity = 0u;
   context->trace_event_count = 0u;
@@ -1984,29 +2091,180 @@ static void al_owning_context_restore_storage(
   context->retained_copy_bytes = 0u;
 }
 
+static al_mailbox_result al_owning_scratch_slot_checkout(
+    al_mailbox_runtime *runtime, uint32_t mailbox_id,
+    uint32_t *out_slot_index) {
+  uint32_t index;
+  if (runtime == NULL || out_slot_index == NULL)
+    return AL_MAILBOX_INVALID_ARGUMENT;
+  if (runtime->outstanding_scratch_leases >=
+      runtime->owning_config.scratch_slot_capacity)
+    return AL_MAILBOX_SCRATCH_CAPACITY;
+  for (index = 0u; index < runtime->owning_config.scratch_slot_capacity;
+       ++index) {
+    al_owning_scratch_slot *scratch_slot = &runtime->owning_scratch_slots[index];
+    if (scratch_slot->state != AL_OWNING_SCRATCH_FREE)
+      continue;
+    scratch_slot->state = AL_OWNING_SCRATCH_CHECKED_OUT;
+    scratch_slot->owner_mailbox_id = mailbox_id;
+    memset(scratch_slot->data, AL_MAILBOX_POISON_BYTE,
+           runtime->owning_config.scratch_byte_capacity);
+    al_owning_begin(&scratch_slot->context);
+    ++runtime->outstanding_scratch_leases;
+    al_saturating_increment(&runtime->scratch_lease_acquisitions);
+    *out_slot_index = index;
+    return AL_MAILBOX_OK;
+  }
+  return AL_MAILBOX_SCRATCH_CAPACITY;
+}
+
+static uint32_t al_owning_scratch_slot_find_free(
+    const al_mailbox_runtime *runtime) {
+  uint32_t index;
+  if (runtime == NULL)
+    return AL_OWNING_NO_SCRATCH_SLOT;
+  for (index = 0u; index < runtime->owning_config.scratch_slot_capacity;
+       ++index) {
+    if (runtime->owning_scratch_slots[index].state ==
+        AL_OWNING_SCRATCH_FREE)
+      return index;
+  }
+  return AL_OWNING_NO_SCRATCH_SLOT;
+}
+
+static void al_owning_scratch_slot_release(al_mailbox_runtime *runtime,
+                                           uint32_t slot_index) {
+  al_owning_scratch_slot *scratch_slot;
+  uint32_t cursor_bytes;
+  if (runtime == NULL ||
+      slot_index >= runtime->owning_config.scratch_slot_capacity)
+    return;
+  scratch_slot = &runtime->owning_scratch_slots[slot_index];
+  if (scratch_slot->state == AL_OWNING_SCRATCH_FREE)
+    return;
+  cursor_bytes = scratch_slot->context.cursor_bytes;
+  if (cursor_bytes > runtime->owning_config.scratch_byte_capacity)
+    cursor_bytes = runtime->owning_config.scratch_byte_capacity;
+  al_saturating_add(&runtime->owning_turn_reset_bytes, cursor_bytes);
+  al_owning_release_to(&scratch_slot->context, 0u, 0u, 0u, 0u);
+  memset(scratch_slot->data, AL_MAILBOX_POISON_BYTE,
+         runtime->owning_config.scratch_byte_capacity);
+  al_owning_begin(&scratch_slot->context);
+  if (scratch_slot->owner_mailbox_id < runtime->config.mailbox_capacity) {
+    al_owning_attachment *attachment =
+        &runtime->owning_attachments[scratch_slot->owner_mailbox_id];
+    if (attachment->scratch_slot_index == slot_index) {
+      attachment->scratch_slot_index = AL_OWNING_NO_SCRATCH_SLOT;
+      attachment->protected_cursor_bytes = 0u;
+      attachment->root_count = 0u;
+      attachment->reserved = 0u;
+      memset(attachment->roots, 0, sizeof(attachment->roots));
+    }
+  }
+  scratch_slot->state = AL_OWNING_SCRATCH_FREE;
+  scratch_slot->owner_mailbox_id = AL_OWNING_NO_SCRATCH_SLOT;
+  if (runtime->outstanding_scratch_leases != 0u)
+    --runtime->outstanding_scratch_leases;
+  al_saturating_increment(&runtime->scratch_lease_returns);
+}
+
+static void al_owning_scratch_slot_attach(al_mailbox_runtime *runtime,
+                                          uint32_t slot_index) {
+  if (runtime != NULL &&
+      slot_index < runtime->owning_config.scratch_slot_capacity &&
+      runtime->owning_scratch_slots[slot_index].state ==
+          AL_OWNING_SCRATCH_CHECKED_OUT)
+    runtime->owning_scratch_slots[slot_index].state =
+        AL_OWNING_SCRATCH_ATTACHED;
+}
+
+static al_mailbox_result al_owning_turn_begin(al_mailbox_runtime *runtime) {
+  if (runtime == NULL || runtime->busy != 0u)
+    return AL_MAILBOX_BUSY;
+  runtime->busy = 1u;
+  al_saturating_increment(&runtime->handler_invocations);
+  return AL_MAILBOX_OK;
+}
+
+static void al_owning_turn_end(al_mailbox_runtime *runtime) {
+  if (runtime != NULL)
+    runtime->busy = 0u;
+}
+
+static uint64_t al_counter_delta(uint64_t after, uint64_t before) {
+  return after >= before ? after - before : UINT64_MAX;
+}
+
+static al_mailbox_result al_owning_validate_output_slices(
+    al_mailbox_runtime *runtime, const al_owning_mailbox_entry *entry,
+    al_owning_stack_context *context,
+    const al_owning_bank_stack_slice *outputs) {
+  uint32_t index;
+  for (index = 0u; index < entry->output_count; ++index) {
+    const al_owning_bank_stack_slice *output = &outputs[index];
+    al_owning_value_size measured;
+    if (output->type_index != entry->output_type_indexes[index] ||
+        output->reserved != 0u || output->source_offset_bytes > context->cursor_bytes ||
+        output->source_owner_end_bytes > context->cursor_bytes ||
+        output->source_offset_bytes >= output->source_owner_end_bytes ||
+        (output->source_offset_bytes & 7u) != 0u ||
+        al_owning_measure_value(
+            context, runtime->owning_module->layout, output->type_index,
+            output->source_offset_bytes, output->source_owner_end_bytes, 0u,
+            &measured) != 0 ||
+        measured.extent_bytes == 0u ||
+        measured.extent_bytes > output->source_owner_end_bytes -
+                                    output->source_offset_bytes)
+      return AL_MAILBOX_INVALID_REFERENCE;
+  }
+  return AL_MAILBOX_OK;
+}
+
+static void al_owning_record_context_deltas(
+    al_mailbox_runtime *runtime, const al_owning_stack_context *before,
+    const al_owning_stack_context *after) {
+  al_saturating_add(&runtime->owning_deep_copy_bytes,
+                    al_counter_delta(after->deep_copy_bytes,
+                                     before->deep_copy_bytes));
+  al_saturating_add(&runtime->owning_move_bytes,
+                    al_counter_delta(after->move_bytes, before->move_bytes));
+  al_saturating_add(&runtime->owning_input_import_bytes,
+                    al_counter_delta(after->input_copy_bytes,
+                                     before->input_copy_bytes));
+  if (after->peak_cursor_bytes > runtime->scratch_high_water_bytes)
+    runtime->scratch_high_water_bytes = after->peak_cursor_bytes;
+}
+
 static al_mailbox_result al_execute_owning_entry(
     al_mailbox_runtime *runtime, al_mailbox_slot *slot,
-    const al_owning_mailbox_entry *entry,
-    const al_owning_external_slice *inputs, al_mailbox_call_info *call_info) {
+    uint32_t scratch_slot_index, const al_owning_mailbox_entry *entry,
+    const al_owning_external_slice *inputs, uint32_t publish_outputs,
+    al_mailbox_call_info *call_info) {
   al_mailbox_result result;
   al_owning_bank_result bank_result;
   al_owning_byte_store *store;
-  uint32_t output_index;
-  int32_t handler_status;
-  uint32_t context_status;
-  uint32_t cursor_bytes;
-  uint32_t peak_cursor_bytes;
-  uint64_t deep_copy_bytes;
-  uint64_t move_bytes;
-  uint64_t input_copy_bytes;
-  uint64_t publication_bytes = 0u;
+  al_owning_scratch_slot *scratch_slot;
+  al_owning_stack_context *context;
+  al_owning_stack_context zero_context;
+  uint32_t handler_status;
   uint32_t context_storage_valid;
+  uint32_t callback_outputs_valid = 0u;
+  uint64_t publication_bytes = 0u;
+  uint64_t input_delta;
+  uint32_t transaction_open = 0u;
 
+  if (runtime == NULL || slot == NULL || entry == NULL ||
+      scratch_slot_index >= runtime->owning_config.scratch_slot_capacity ||
+      entry->output_count > AL_MAILBOX_MAX_ROOTS)
+    return AL_MAILBOX_INVALID_ARGUMENT;
+  scratch_slot = &runtime->owning_scratch_slots[scratch_slot_index];
+  if (scratch_slot->state != AL_OWNING_SCRATCH_CHECKED_OUT ||
+      scratch_slot->owner_mailbox_id >= runtime->config.mailbox_capacity)
+    return AL_MAILBOX_INVALID_REFERENCE;
   result = al_owning_validate_inputs(runtime, entry, inputs);
   if (result != AL_MAILBOX_OK)
     return result;
-  if (runtime->busy != 0u || runtime->outstanding_scratch_leases != 0u ||
-      entry->output_count > AL_MAILBOX_MAX_ROOTS || slot == NULL)
+  if (runtime->busy != 0u)
     return AL_MAILBOX_BUSY;
   {
     uint32_t scratch_generation;
@@ -2019,100 +2277,80 @@ static al_mailbox_result al_execute_owning_entry(
     (void)staging_generation;
   }
   store = &slot->payload.owning;
-  bank_result = al_owning_byte_store_begin(store);
-  if (bank_result != AL_OWNING_BANK_OK)
-    return al_map_owning_bank_result(bank_result);
-
-  memset(runtime->owning_scratch_data, AL_MAILBOX_POISON_BYTE,
-         runtime->owning_config.scratch_byte_capacity);
-  al_owning_begin(&runtime->owning_context);
-  memset(runtime->owning_outputs, 0xff, sizeof(runtime->owning_outputs));
-  result = al_scratch_lease_acquire(runtime);
+  if (publish_outputs != 0u) {
+    bank_result = al_owning_byte_store_begin(store);
+    if (bank_result != AL_OWNING_BANK_OK)
+      return al_map_owning_bank_result(bank_result);
+    transaction_open = 1u;
+  }
+  result = al_owning_turn_begin(runtime);
   if (result != AL_MAILBOX_OK) {
-    (void)al_owning_byte_store_abort(store);
+    if (transaction_open != 0u)
+      (void)al_owning_byte_store_abort(store);
     return result;
   }
-  handler_status = entry->execute(
-      &runtime->owning_context, inputs, entry->input_count,
-      runtime->owning_outputs, entry->output_count);
-  context_storage_valid = al_owning_context_storage_valid(runtime);
+  context = &scratch_slot->context;
+  memset(runtime->owning_outputs, 0xff, sizeof(runtime->owning_outputs));
+  handler_status = (uint32_t)entry->execute(
+      context, inputs, entry->input_count, runtime->owning_outputs,
+      entry->output_count);
+  context_storage_valid =
+      al_owning_context_storage_valid(runtime, scratch_slot);
   if (context_storage_valid == 0u) {
-    uint32_t safe_cursor = runtime->owning_context.cursor_bytes;
+    uint32_t safe_cursor = context->cursor_bytes;
     if (safe_cursor > runtime->owning_config.scratch_byte_capacity)
       safe_cursor = runtime->owning_config.scratch_byte_capacity;
-    al_owning_context_restore_storage(runtime, safe_cursor);
+    al_owning_context_restore_storage(runtime, scratch_slot, safe_cursor);
     handler_status = AL_OWNING_STATUS_INTERNAL;
   }
-  context_status = runtime->owning_context.status;
-  cursor_bytes = runtime->owning_context.cursor_bytes;
-  peak_cursor_bytes = runtime->owning_context.peak_cursor_bytes;
-  deep_copy_bytes = runtime->owning_context.deep_copy_bytes;
-  move_bytes = runtime->owning_context.move_bytes;
-  input_copy_bytes = runtime->owning_context.input_copy_bytes;
-  if (peak_cursor_bytes > runtime->scratch_high_water_bytes)
-    runtime->scratch_high_water_bytes = peak_cursor_bytes;
-
   if (call_info != NULL) {
-    call_info->handler_status = handler_status;
+    call_info->handler_status = (int32_t)handler_status;
     call_info->error_metadata_id =
-        context_status == AL_OWNING_STATUS_OK
-            ? -1
-            : (int32_t)runtime->owning_context.error_id;
+        context->status == AL_OWNING_STATUS_OK ? -1 : (int32_t)context->error_id;
     call_info->error_argument0 =
-        context_status == AL_OWNING_STATUS_OK
-            ? 0
-            : runtime->owning_context.required_bytes;
+        context->status == AL_OWNING_STATUS_OK ? 0 : context->required_bytes;
     call_info->error_argument1 =
-        context_status == AL_OWNING_STATUS_OK
-            ? 0
-            : runtime->owning_context.available_bytes;
-    call_info->steps_consumed = runtime->owning_context.steps_consumed;
-  }
-
-  if (context_storage_valid != 0u && handler_status == 0 &&
-      context_status == AL_OWNING_STATUS_OK) {
-    /* Count callback-returned outputs only; internal descriptor transfers are
-     * not observable here and are not included. */
-    al_saturating_add(&runtime->owning_returned_output_descriptors,
-                      entry->output_count);
+        context->status == AL_OWNING_STATUS_OK ? 0 : context->available_bytes;
+    call_info->steps_consumed = context->steps_consumed;
   }
 
   if (context_storage_valid == 0u) {
     result = AL_MAILBOX_INVALID_REFERENCE;
-  } else if (handler_status != 0 || context_status != AL_OWNING_STATUS_OK) {
+  } else if (handler_status != 0u || context->status != AL_OWNING_STATUS_OK) {
     result = al_map_owning_status(
-        context_status == AL_OWNING_STATUS_OK ? (uint32_t)handler_status
-                                              : context_status);
+        context->status == AL_OWNING_STATUS_OK ? handler_status
+                                               : context->status);
   } else {
-    result = AL_MAILBOX_OK;
-    for (output_index = 0u; output_index < entry->output_count; ++output_index) {
-      const al_owning_bank_stack_slice *output =
-          &runtime->owning_outputs[output_index];
-      if (output->type_index != entry->output_type_indexes[output_index] ||
-          output->reserved != 0u ||
-          output->source_offset_bytes > cursor_bytes ||
-          output->source_owner_end_bytes > cursor_bytes ||
-          output->source_offset_bytes > output->source_owner_end_bytes) {
-        result = AL_MAILBOX_INVALID_REFERENCE;
-        break;
+    result = al_owning_validate_output_slices(
+        runtime, entry, context, runtime->owning_outputs);
+    callback_outputs_valid = result == AL_MAILBOX_OK ? 1u : 0u;
+  }
+
+  if (callback_outputs_valid != 0u) {
+    /* Count callback-produced descriptors even if later publication fails. */
+    al_saturating_add(&runtime->owning_returned_output_descriptors,
+                      entry->output_count);
+  }
+
+  if (result == AL_MAILBOX_OK && publish_outputs != 0u) {
+    bank_result = al_owning_byte_store_stage_stack_values(
+        store, context, runtime->owning_module->layout,
+        runtime->owning_outputs, entry->output_count, 0u);
+    result = al_map_owning_bank_result(bank_result);
+    if (result == AL_MAILBOX_OK) {
+      bank_result = al_owning_byte_store_commit(store);
+      result = al_map_owning_bank_result(bank_result);
+      if (result == AL_MAILBOX_OK) {
+        publication_bytes =
+            al_owning_byte_store_last_committed_copy_bytes(store);
+        transaction_open = 0u;
       }
     }
   }
-  if (result == AL_MAILBOX_OK) {
-    bank_result = al_owning_byte_store_stage_stack_values(
-        store, &runtime->owning_context, runtime->owning_module->layout,
-        runtime->owning_outputs, entry->output_count, 0u);
-    result = al_map_owning_bank_result(bank_result);
-  }
-  if (result == AL_MAILBOX_OK) {
-    bank_result = al_owning_byte_store_commit(store);
-    result = al_map_owning_bank_result(bank_result);
-    if (result == AL_MAILBOX_OK)
-      publication_bytes =
-          al_owning_byte_store_last_committed_copy_bytes(store);
-  }
+
   if (result != AL_MAILBOX_OK) {
-    (void)al_owning_byte_store_abort(store);
+    if (transaction_open != 0u)
+      (void)al_owning_byte_store_abort(store);
     al_saturating_increment(&runtime->handler_failures);
     if (call_info != NULL && call_info->handler_status == 0) {
       call_info->handler_status =
@@ -2120,6 +2358,220 @@ static al_mailbox_result al_execute_owning_entry(
               ? AL_OWNING_STATUS_RETAINED_CAPACITY
               : AL_OWNING_STATUS_INVALID_REQUEST;
       call_info->error_metadata_id = -1;
+    }
+  } else {
+    if (publish_outputs != 0u) {
+      al_saturating_add(&runtime->owning_publication_copy_bytes,
+                        publication_bytes);
+      if (entry == runtime->owning_entries[1])
+        al_saturating_add(&runtime->owning_begin_publication_copy_bytes,
+                          publication_bytes);
+      {
+        uint32_t old_index = 1u - store->active_index;
+        al_owning_byte_bank *old_bank = &store->banks[old_index];
+        memset(store->storage_bytes[old_index], AL_MAILBOX_POISON_BYTE,
+               old_bank->byte_capacity);
+        memset(store->storage_roots[old_index], 0,
+               (size_t)old_bank->root_capacity * sizeof(al_owning_bank_root));
+        old_bank->used_bytes = 0u;
+        old_bank->root_count = 0u;
+      }
+    }
+  }
+
+  memset(&zero_context, 0, sizeof(zero_context));
+  al_owning_record_context_deltas(runtime, &zero_context, context);
+  input_delta = context->input_copy_bytes;
+  if (entry == runtime->owning_entries[2]) {
+    uint64_t root_bytes = (uint64_t)inputs[0].extent_bytes +
+                          (uint64_t)inputs[1].extent_bytes;
+    al_saturating_add(&runtime->owning_resume_root_import_bytes,
+                      input_delta < root_bytes ? input_delta : root_bytes);
+  }
+  al_owning_turn_end(runtime);
+  return result;
+}
+
+static al_mailbox_result al_owning_validate_attached_roots(
+    al_mailbox_runtime *runtime, al_owning_scratch_slot *scratch_slot,
+    const al_owning_attachment *attachment) {
+  al_owning_stack_context *context = &scratch_slot->context;
+  uint32_t expected_indexes[AL_MAILBOX_MAX_ROOTS] = {
+      runtime->owning_state_type_index,
+      runtime->owning_continuation_type_index};
+  uint32_t index;
+  for (index = 0u; index < AL_MAILBOX_MAX_ROOTS; ++index) {
+    const al_owning_bank_stack_slice *root = &attachment->roots[index];
+    al_owning_value_size measured;
+    if (root->type_index != expected_indexes[index] || root->reserved != 0u ||
+        root->source_offset_bytes >= root->source_owner_end_bytes ||
+        root->source_owner_end_bytes > attachment->protected_cursor_bytes ||
+        (root->source_offset_bytes & 7u) != 0u ||
+        al_owning_measure_value(context, runtime->owning_module->layout,
+                                root->type_index, root->source_offset_bytes,
+                                root->source_owner_end_bytes, 0u,
+                                &measured) != 0 ||
+        measured.extent_bytes == 0u ||
+        measured.extent_bytes > root->source_owner_end_bytes -
+                                    root->source_offset_bytes)
+      return AL_MAILBOX_INVALID_REFERENCE;
+  }
+  return AL_MAILBOX_OK;
+}
+
+static al_mailbox_result al_execute_owning_associated_resume(
+    al_mailbox_runtime *runtime, al_mailbox_slot *mailbox,
+    uint32_t mailbox_id, const al_owning_external_slice *completion,
+    al_mailbox_call_info *call_info) {
+  al_owning_scratch_slot *scratch_slot;
+  al_owning_attachment *attachment;
+  al_owning_stack_context *context;
+  al_owning_stack_context saved_context;
+  al_owning_byte_store *store;
+  al_owning_bank_result bank_result;
+  uint32_t scratch_index;
+  uint32_t protected_cursor;
+  uint32_t context_storage_valid;
+  int32_t handler_status;
+  uint32_t callback_outputs_valid = 0u;
+  uint32_t transaction_open = 0u;
+  uint32_t cursor_after;
+  uint64_t publication_bytes = 0u;
+  al_mailbox_result result;
+
+  if (runtime == NULL || mailbox == NULL || completion == NULL ||
+      mailbox_id >= runtime->config.mailbox_capacity)
+    return AL_MAILBOX_INVALID_ARGUMENT;
+  attachment = &runtime->owning_attachments[mailbox_id];
+  scratch_index = attachment->scratch_slot_index;
+  if (attachment->root_count != AL_MAILBOX_MAX_ROOTS ||
+      attachment->reserved != 0u ||
+      scratch_index >= runtime->owning_config.scratch_slot_capacity)
+    return AL_MAILBOX_STALE_TOKEN;
+  scratch_slot = &runtime->owning_scratch_slots[scratch_index];
+  if (scratch_slot->state != AL_OWNING_SCRATCH_ATTACHED ||
+      scratch_slot->owner_mailbox_id != mailbox_id)
+    return AL_MAILBOX_STALE_TOKEN;
+  context = &scratch_slot->context;
+  protected_cursor = attachment->protected_cursor_bytes;
+  if (!al_owning_context_storage_valid(runtime, scratch_slot) ||
+      context->cursor_bytes != protected_cursor || protected_cursor == 0u ||
+      context->status != AL_OWNING_STATUS_OK || context->call_depth != 0u ||
+      completion->bytes == NULL || completion->extent_bytes == 0u ||
+      completion->type_index != runtime->owning_string_type_index ||
+      !al_checked_span(completion->bytes, completion->extent_bytes))
+    return AL_MAILBOX_INVALID_REFERENCE;
+
+  saved_context = *context;
+  result = al_owning_validate_attached_roots(runtime, scratch_slot, attachment);
+  if (result != AL_MAILBOX_OK || context->status != AL_OWNING_STATUS_OK) {
+    *context = saved_context;
+    return result == AL_MAILBOX_OK ? AL_MAILBOX_INVALID_REFERENCE : result;
+  }
+  if ((uint64_t)protected_cursor + completion->extent_bytes >
+      runtime->owning_config.scratch_byte_capacity)
+    return AL_MAILBOX_SCRATCH_CAPACITY;
+  if (runtime->busy != 0u)
+    return AL_MAILBOX_BUSY;
+  {
+    uint32_t scratch_generation;
+    uint32_t staging_generation;
+    result = al_reserve_generation_pair(runtime, &scratch_generation,
+                                        &staging_generation);
+    if (result != AL_MAILBOX_OK)
+      return result;
+    (void)scratch_generation;
+    (void)staging_generation;
+  }
+
+  store = &mailbox->payload.owning;
+  bank_result = al_owning_byte_store_begin(store);
+  if (bank_result != AL_OWNING_BANK_OK)
+    return al_map_owning_bank_result(bank_result);
+  transaction_open = 1u;
+  result = al_owning_turn_begin(runtime);
+  if (result != AL_MAILBOX_OK) {
+    (void)al_owning_byte_store_abort(store);
+    return result;
+  }
+  memset(runtime->owning_outputs, 0xff, sizeof(runtime->owning_outputs));
+  handler_status = runtime->owning_module->associated_resume(
+      context, attachment->roots, attachment->root_count, completion,
+      protected_cursor, runtime->owning_outputs, 1u);
+  context_storage_valid =
+      al_owning_context_storage_valid(runtime, scratch_slot);
+  if (context_storage_valid == 0u) {
+    uint32_t safe_cursor = context->cursor_bytes;
+    if (safe_cursor > runtime->owning_config.scratch_byte_capacity)
+      safe_cursor = runtime->owning_config.scratch_byte_capacity;
+    al_owning_context_restore_storage(runtime, scratch_slot, safe_cursor);
+    handler_status = AL_OWNING_STATUS_INTERNAL;
+  }
+  cursor_after = context->cursor_bytes;
+  if (call_info != NULL) {
+    call_info->handler_status = handler_status;
+    call_info->error_metadata_id =
+        context->status == AL_OWNING_STATUS_OK ? -1 : (int32_t)context->error_id;
+    call_info->error_argument0 =
+        context->status == AL_OWNING_STATUS_OK ? 0 : context->required_bytes;
+    call_info->error_argument1 =
+        context->status == AL_OWNING_STATUS_OK ? 0 : context->available_bytes;
+    call_info->steps_consumed = context->steps_consumed;
+  }
+  if (context_storage_valid == 0u) {
+    result = AL_MAILBOX_INVALID_REFERENCE;
+  } else if (handler_status != 0 || context->status != AL_OWNING_STATUS_OK) {
+    result = al_map_owning_status(
+        context->status == AL_OWNING_STATUS_OK ? (uint32_t)handler_status
+                                               : context->status);
+  } else {
+    result = al_owning_validate_output_slices(
+        runtime, runtime->owning_entries[2], context,
+        runtime->owning_outputs);
+    callback_outputs_valid = result == AL_MAILBOX_OK ? 1u : 0u;
+  }
+  if (result == AL_MAILBOX_OK) {
+    bank_result = al_owning_byte_store_stage_stack_values(
+        store, context, runtime->owning_module->layout,
+        runtime->owning_outputs, 1u, 0u);
+    result = al_map_owning_bank_result(bank_result);
+    if (result == AL_MAILBOX_OK) {
+      bank_result = al_owning_byte_store_commit(store);
+      result = al_map_owning_bank_result(bank_result);
+      if (result == AL_MAILBOX_OK) {
+        publication_bytes =
+            al_owning_byte_store_last_committed_copy_bytes(store);
+        transaction_open = 0u;
+      }
+    }
+  }
+
+  if (context_storage_valid != 0u) {
+    al_owning_record_context_deltas(runtime, &saved_context, context);
+    if (context->peak_cursor_bytes > runtime->scratch_high_water_bytes)
+      runtime->scratch_high_water_bytes = context->peak_cursor_bytes;
+  }
+  if (callback_outputs_valid != 0u)
+    al_saturating_add(&runtime->owning_returned_output_descriptors, 1u);
+
+  if (result != AL_MAILBOX_OK) {
+    if (transaction_open != 0u)
+      (void)al_owning_byte_store_abort(store);
+    al_saturating_increment(&runtime->handler_failures);
+    if (call_info != NULL && call_info->handler_status == 0) {
+      call_info->handler_status =
+          result == AL_MAILBOX_RETAINED_CAPACITY
+              ? AL_OWNING_STATUS_RETAINED_CAPACITY
+              : (result == AL_MAILBOX_SCRATCH_CAPACITY
+                     ? AL_OWNING_STATUS_STACK_CAPACITY
+                     : AL_OWNING_STATUS_INVALID_REQUEST);
+      call_info->error_metadata_id = -1;
+    }
+    if (context_storage_valid != 0u && cursor_after >= protected_cursor) {
+      al_owning_release_to(context, protected_cursor, 0u, 0u, 0u);
+      *context = saved_context;
+    } else {
+      *context = saved_context;
     }
   } else {
     al_saturating_add(&runtime->owning_publication_copy_bytes,
@@ -2134,17 +2586,9 @@ static al_mailbox_result al_execute_owning_entry(
       old_bank->used_bytes = 0u;
       old_bank->root_count = 0u;
     }
+    al_owning_scratch_slot_release(runtime, scratch_index);
   }
-
-  al_saturating_add(&runtime->owning_deep_copy_bytes, deep_copy_bytes);
-  al_saturating_add(&runtime->owning_move_bytes, move_bytes);
-  al_saturating_add(&runtime->owning_input_import_bytes, input_copy_bytes);
-  al_saturating_add(&runtime->owning_turn_reset_bytes, cursor_bytes);
-  al_owning_release_to(&runtime->owning_context, 0u, 0u, 0u, 0u);
-  memset(runtime->owning_scratch_data, AL_MAILBOX_POISON_BYTE,
-         runtime->owning_config.scratch_byte_capacity);
-  al_owning_begin(&runtime->owning_context);
-  al_scratch_lease_release(runtime);
+  al_owning_turn_end(runtime);
   return result;
 }
 
@@ -2152,6 +2596,7 @@ static al_mailbox_result al_owning_stage_text_input(
     al_mailbox_runtime *runtime, const uint8_t *utf8, uint32_t byte_count,
     uint32_t payload_bytes, uint32_t extent_bytes,
     al_owning_external_slice *out_input) {
+  al_owning_stack_context scanner;
   al_mailbox_result result;
   uint32_t measured_payload;
   uint32_t measured_extent;
@@ -2159,9 +2604,12 @@ static al_mailbox_result al_owning_stage_text_input(
                                 runtime->owning_text_staging);
   if (result != AL_MAILBOX_OK)
     return result;
-  al_owning_begin(&runtime->owning_context);
+  memset(&scanner, 0, sizeof(scanner));
+  scanner.abi_version = AL_OWNING_STACK_ABI_VERSION;
+  scanner.status = AL_OWNING_STATUS_OK;
+  scanner.available_bytes = UINT32_MAX;
   if (al_owning_measure_external_value(
-          &runtime->owning_context, runtime->owning_module->layout,
+          &scanner, runtime->owning_module->layout,
           runtime->owning_string_type_index, runtime->owning_text_staging,
           extent_bytes, 0u, 0u, &measured_payload, &measured_extent) != 0 ||
       measured_payload != payload_bytes || measured_extent != extent_bytes)
@@ -2182,6 +2630,7 @@ al_mailbox_result al_mailbox_init_text(al_mailbox_runtime *runtime,
   uint32_t current_thread_id = al_mailbox_platform_current_thread_id();
   al_mailbox_result result;
   al_mailbox_slot *slot;
+  uint32_t scratch_slot_index;
   uint32_t payload_bytes;
   uint32_t extent_bytes;
   al_external_argument arguments[2] = {
@@ -2209,6 +2658,8 @@ al_mailbox_result al_mailbox_init_text(al_mailbox_runtime *runtime,
       &payload_bytes, &extent_bytes);
   if (result != AL_MAILBOX_OK)
     return result;
+  if (al_owning_scratch_slot_find_free(runtime) == AL_OWNING_NO_SCRATCH_SLOT)
+    return AL_MAILBOX_SCRATCH_CAPACITY;
   result = al_owning_text_input_fits_scratch(runtime, 0u, extent_bytes);
   if (result != AL_MAILBOX_OK)
     return result;
@@ -2217,8 +2668,14 @@ al_mailbox_result al_mailbox_init_text(al_mailbox_runtime *runtime,
                                       &runtime->owning_inputs[0]);
   if (result != AL_MAILBOX_OK)
     return result;
-  result = al_execute_owning_entry(runtime, slot, runtime->owning_entries[0],
-                                   runtime->owning_inputs, call_info);
+  result = al_owning_scratch_slot_checkout(runtime, mailbox_id,
+                                           &scratch_slot_index);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  result = al_execute_owning_entry(
+      runtime, slot, scratch_slot_index, runtime->owning_entries[0],
+      runtime->owning_inputs, 1u, call_info);
+  al_owning_scratch_slot_release(runtime, scratch_slot_index);
   if (result != AL_MAILBOX_OK)
     return result;
   al_mailbox_mark_initialized(slot);
@@ -2235,7 +2692,10 @@ al_mailbox_result al_mailbox_begin_text(al_mailbox_runtime *runtime,
   al_mailbox_result result;
   al_mailbox_slot *slot;
   const al_owning_byte_bank *active;
+  al_owning_attachment *attachment;
   al_mailbox_token token;
+  uint32_t scratch_slot_index;
+  uint32_t keep_associated;
   uint32_t payload_bytes;
   uint32_t extent_bytes;
   al_external_argument arguments[3] = {
@@ -2261,11 +2721,20 @@ al_mailbox_result al_mailbox_begin_text(al_mailbox_runtime *runtime,
   result = al_mailbox_begin_admission(runtime, slot);
   if (result != AL_MAILBOX_OK)
     return result;
+  attachment = &runtime->owning_attachments[mailbox_id];
+  if (attachment->scratch_slot_index != AL_OWNING_NO_SCRATCH_SLOT ||
+      attachment->root_count != 0u)
+    return AL_MAILBOX_INVALID_REFERENCE;
   result = al_owning_text_measure(
       utf8, byte_count, runtime->owning_config.text_staging_byte_capacity,
       &payload_bytes, &extent_bytes);
   if (result != AL_MAILBOX_OK)
     return result;
+  keep_associated = runtime->owning_config.suspension_policy ==
+                    AL_MAILBOX_OWNING_POLICY_KEEP_ASSOCIATED;
+  if (keep_associated != 0u &&
+      al_owning_scratch_slot_find_free(runtime) == AL_OWNING_NO_SCRATCH_SLOT)
+    return AL_MAILBOX_SCRATCH_CAPACITY;
   active = al_owning_byte_store_active(&slot->payload.owning);
   if (active == NULL || active->root_count != 1u)
     return AL_MAILBOX_INVALID_REFERENCE;
@@ -2282,12 +2751,32 @@ al_mailbox_result al_mailbox_begin_text(al_mailbox_runtime *runtime,
                                       &runtime->owning_inputs[1]);
   if (result != AL_MAILBOX_OK)
     return result;
-  al_make_token(&token, runtime->runtime_instance_id, mailbox_id,
-                runtime->next_token_sequence);
-  result = al_execute_owning_entry(runtime, slot, runtime->owning_entries[1],
-                                   runtime->owning_inputs, call_info);
+  result = al_owning_scratch_slot_checkout(runtime, mailbox_id,
+                                           &scratch_slot_index);
   if (result != AL_MAILBOX_OK)
     return result;
+  al_make_token(&token, runtime->runtime_instance_id, mailbox_id,
+                runtime->next_token_sequence);
+  result = al_execute_owning_entry(
+      runtime, slot, scratch_slot_index, runtime->owning_entries[1],
+      runtime->owning_inputs, keep_associated == 0u ? 1u : 0u, call_info);
+  if (result != AL_MAILBOX_OK) {
+    al_owning_scratch_slot_release(runtime, scratch_slot_index);
+    return result;
+  }
+  if (keep_associated != 0u) {
+    al_owning_scratch_slot *scratch_slot =
+        &runtime->owning_scratch_slots[scratch_slot_index];
+    attachment->scratch_slot_index = scratch_slot_index;
+    attachment->protected_cursor_bytes = scratch_slot->context.cursor_bytes;
+    attachment->root_count = AL_MAILBOX_MAX_ROOTS;
+    attachment->reserved = 0u;
+    memcpy(attachment->roots, runtime->owning_outputs,
+           sizeof(attachment->roots));
+    al_owning_scratch_slot_attach(runtime, scratch_slot_index);
+  } else {
+    al_owning_scratch_slot_release(runtime, scratch_slot_index);
+  }
   al_mailbox_commit_begin(runtime, slot, &token, out_token);
   return AL_MAILBOX_OK;
 }
@@ -2301,6 +2790,7 @@ al_mailbox_result al_mailbox_resume_text(
   al_mailbox_slot *slot;
   const al_owning_byte_bank *active;
   al_mailbox_token completed_token;
+  uint32_t scratch_slot_index;
   uint32_t payload_bytes;
   uint32_t extent_bytes;
   al_external_argument arguments[3] = {
@@ -2333,6 +2823,36 @@ al_mailbox_result al_mailbox_resume_text(
       &payload_bytes, &extent_bytes);
   if (result != AL_MAILBOX_OK)
     return result;
+  if (runtime->owning_config.suspension_policy ==
+      AL_MAILBOX_OWNING_POLICY_KEEP_ASSOCIATED) {
+    al_owning_attachment *attachment = &runtime->owning_attachments[mailbox_id];
+    uint32_t attached_index = attachment->scratch_slot_index;
+    al_owning_scratch_slot *scratch_slot;
+    if (attachment->root_count != AL_MAILBOX_MAX_ROOTS ||
+        attached_index >= runtime->owning_config.scratch_slot_capacity)
+      return AL_MAILBOX_STALE_TOKEN;
+    scratch_slot = &runtime->owning_scratch_slots[attached_index];
+    if (scratch_slot->state != AL_OWNING_SCRATCH_ATTACHED ||
+        scratch_slot->owner_mailbox_id != mailbox_id ||
+        scratch_slot->context.cursor_bytes !=
+            attachment->protected_cursor_bytes)
+      return AL_MAILBOX_STALE_TOKEN;
+    if ((uint64_t)attachment->protected_cursor_bytes + extent_bytes >
+        runtime->owning_config.scratch_byte_capacity)
+      return AL_MAILBOX_SCRATCH_CAPACITY;
+    result = al_owning_stage_text_input(runtime, utf8, byte_count,
+                                        payload_bytes, extent_bytes,
+                                        &runtime->owning_inputs[2]);
+    if (result != AL_MAILBOX_OK)
+      return result;
+    completed_token = slot->pending_token;
+    result = al_execute_owning_associated_resume(
+        runtime, slot, mailbox_id, &runtime->owning_inputs[2], call_info);
+    if (result != AL_MAILBOX_OK)
+      return result;
+    al_mailbox_commit_resume(slot, &completed_token);
+    return AL_MAILBOX_OK;
+  }
   active = al_owning_byte_store_active(&slot->payload.owning);
   if (active == NULL || active->root_count != 2u)
     return AL_MAILBOX_STALE_TOKEN;
@@ -2354,9 +2874,15 @@ al_mailbox_result al_mailbox_resume_text(
                                       &runtime->owning_inputs[2]);
   if (result != AL_MAILBOX_OK)
     return result;
+  result = al_owning_scratch_slot_checkout(runtime, mailbox_id,
+                                           &scratch_slot_index);
+  if (result != AL_MAILBOX_OK)
+    return result;
   completed_token = slot->pending_token;
-  result = al_execute_owning_entry(runtime, slot, runtime->owning_entries[2],
-                                   runtime->owning_inputs, call_info);
+  result = al_execute_owning_entry(
+      runtime, slot, scratch_slot_index, runtime->owning_entries[2],
+      runtime->owning_inputs, 1u, call_info);
+  al_owning_scratch_slot_release(runtime, scratch_slot_index);
   if (result != AL_MAILBOX_OK)
     return result;
   al_mailbox_commit_resume(slot, &completed_token);
@@ -2609,7 +3135,7 @@ al_mailbox_result al_mailbox_dispose(al_mailbox_runtime *runtime) {
   if (current_thread_id != runtime->owner_thread_id) {
     return AL_MAILBOX_WRONG_THREAD;
   }
-  if (runtime->busy != 0u || runtime->outstanding_scratch_leases != 0u) {
+  if (runtime->busy != 0u) {
     return AL_MAILBOX_BUSY;
   }
   if (runtime->disposed != 0u) {
@@ -2641,17 +3167,21 @@ al_mailbox_result al_mailbox_dispose(al_mailbox_runtime *runtime) {
     }
     slot->initialized = 0u;
     slot->pending = 0u;
-    slot->last_completed_valid = 0u;
+      slot->last_completed_valid = 0u;
     memset(&slot->pending_token, 0, sizeof(slot->pending_token));
     memset(&slot->last_completed_token, 0, sizeof(slot->last_completed_token));
   }
   if (runtime->payload_kind == AL_MAILBOX_PAYLOAD_OWNING) {
-    al_owning_release_to(&runtime->owning_context, 0u, 0u, 0u, 0u);
-    memset(runtime->owning_scratch_data, AL_MAILBOX_POISON_BYTE,
-           runtime->owning_config.scratch_byte_capacity);
+    uint32_t scratch_index;
+    for (scratch_index = 0u;
+         scratch_index < runtime->owning_config.scratch_slot_capacity;
+         ++scratch_index) {
+      if (runtime->owning_scratch_slots[scratch_index].state !=
+          AL_OWNING_SCRATCH_FREE)
+        al_owning_scratch_slot_release(runtime, scratch_index);
+    }
     memset(runtime->owning_text_staging, AL_MAILBOX_POISON_BYTE,
            runtime->owning_config.text_staging_byte_capacity);
-    al_owning_begin(&runtime->owning_context);
   } else {
     al_reset_scratch(runtime);
     al_reset_context(runtime);
@@ -2730,6 +3260,8 @@ al_mailbox_result al_mailbox_get_owning_stats(
   uint32_t mailbox_id;
   uint32_t initialized = 0u;
   uint32_t pending = 0u;
+  uint32_t pinned_slots = 0u;
+  uint32_t scratch_index;
   uint64_t live_bytes = 0u;
   uint64_t live_roots = 0u;
   if (stats == NULL || !al_pointer_aligned(stats, 8u))
@@ -2758,6 +3290,13 @@ al_mailbox_result al_mailbox_get_owning_stats(
     }
     if (slot->pending != 0u)
       ++pending;
+  }
+  for (scratch_index = 0u;
+       scratch_index < runtime->owning_config.scratch_slot_capacity;
+       ++scratch_index) {
+    if (runtime->owning_scratch_slots[scratch_index].state ==
+        AL_OWNING_SCRATCH_ATTACHED)
+      ++pinned_slots;
   }
   stats->control_abi_version = AL_MAILBOX_CONTROL_ABI_VERSION;
   stats->struct_size = (uint32_t)sizeof(*stats);
@@ -2788,6 +3327,17 @@ al_mailbox_result al_mailbox_get_owning_stats(
   stats->scratch_lease_returns = runtime->scratch_lease_returns;
   stats->outstanding_scratch_leases = runtime->outstanding_scratch_leases;
   stats->reserved = 0u;
+  stats->scratch_slot_capacity =
+      runtime->owning_config.scratch_slot_capacity;
+  stats->pinned_scratch_slots = pinned_slots;
+  stats->suspension_policy = runtime->owning_config.suspension_policy;
+  stats->reserved1 = 0u;
+  stats->pinned_scratch_bytes =
+      (uint64_t)pinned_slots * runtime->owning_config.scratch_byte_capacity;
+  stats->begin_publication_copy_bytes =
+      runtime->owning_begin_publication_copy_bytes;
+  stats->resume_root_import_bytes =
+      runtime->owning_resume_root_import_bytes;
   return AL_MAILBOX_OK;
 }
 
@@ -2821,6 +3371,25 @@ al_mailbox_result al_mailbox_get_owning_state_view(
   view->continuation_type_id = runtime->continuation_type_id;
   view->pending = slot->pending;
   view->reserved = 0u;
+  view->associated_context = NULL;
+  view->associated_roots = NULL;
+  view->associated_root_count = 0u;
+  view->scratch_slot_index = AL_OWNING_NO_SCRATCH_SLOT;
+  if (runtime->owning_config.suspension_policy ==
+          AL_MAILBOX_OWNING_POLICY_KEEP_ASSOCIATED &&
+      slot->pending != 0u) {
+    const al_owning_attachment *attachment =
+        &runtime->owning_attachments[mailbox_id];
+    if (attachment->scratch_slot_index <
+            runtime->owning_config.scratch_slot_capacity &&
+        attachment->root_count == AL_MAILBOX_MAX_ROOTS) {
+      view->associated_context =
+          &runtime->owning_scratch_slots[attachment->scratch_slot_index].context;
+      view->associated_roots = attachment->roots;
+      view->associated_root_count = attachment->root_count;
+      view->scratch_slot_index = attachment->scratch_slot_index;
+    }
+  }
   return view->bank == NULL ? AL_MAILBOX_INVALID_REFERENCE : AL_MAILBOX_OK;
 }
 
