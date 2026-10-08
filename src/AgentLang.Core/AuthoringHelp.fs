@@ -386,11 +386,23 @@ example tutorial.sign/negative { tutorial::sign(-2) => -1 }"""
                         else fields
                     { example with Fields = fields })
             { original with
-                Documentation = original.Documentation + " This help response is selected for Flow/2; write function declarations with `fn`."
+                Documentation =
+                    original.Documentation
+                    + " This help response is selected for Flow/2; write function declarations with `fn`."
+                    + (if topic = Topic.Examples then
+                           " Flow/2 tests may add `effects { fs.read: 2; fs.write: 0; }` after the value or error expectation. This asserts exact counts of provider calls made while the attached user word is active, including nested helpers; omitted categories are zero. The observable categories are fs.read, fs.write, clock.read, and console.write. Other effect categories are unsupported, and examples cannot use this test-only suffix."
+                       else "")
                 SourceExamples =
-                    match versionedSource, original.SourceExamples with
-                    | Some source, example :: _ -> [ { example with Source = source } ]
-                    | _ -> original.SourceExamples
+                    let examples =
+                        match versionedSource, original.SourceExamples with
+                        | Some source, example :: _ -> [ { example with Source = source } ]
+                        | _ -> original.SourceExamples
+                    if topic = Topic.Examples then
+                        examples
+                        @ [ { Name = "effect-count-test-v2"
+                              Description = "Flow/2 test with exact provider counts for the attached user word and its nested helper calls."
+                              Source = "test tutorial.queue/reads-once { tutorial::queue() => \"queued\" effects { fs.read: 2; fs.write: 0; } }" } ]
+                    else examples
                 RequestExamples = requestExamples }
 
     let content (topic: Topic) = contentForVersion 1 topic

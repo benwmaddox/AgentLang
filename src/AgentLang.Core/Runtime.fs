@@ -87,6 +87,13 @@ module Runtime =
           mutable Errors: string list
           mutable LogWarning: StorageError option }
 
+    type private EffectAssertionObservation =
+        { Span: SourceSpan
+          Expected: Map<string, int>
+          Actual: Map<string, int>
+          TargetInvocationCount: int
+          Error: Diagnostic option }
+
     type private TestCaseResult =
         { Name: string
           Word: string
@@ -95,6 +102,7 @@ module Runtime =
           Actual: Value list
           Expected: TestExpectation
           ExpectedValue: Value option
+          EffectAssertion: EffectAssertionObservation option
           Instructions: Set<SourceSiteId>
           BranchOutcomes: Set<SourceSiteId * string> }
 
@@ -104,6 +112,10 @@ module Runtime =
           mutable CoverageBranches: Set<SourceSiteId * string>
           mutable FileSystem: Map<string, string>
           mutable Effects: Map<string, int>
+          mutable TargetIdentity: (WordId * int) option
+          mutable TargetDepth: int
+          mutable TargetInvocationCount: int
+          mutable TargetEffects: Map<string, int>
           mutable Console: string list
           CoverageTarget: string option
           Isolated: bool }
@@ -570,6 +582,8 @@ module Runtime =
 
         let mutateEffect (trace: Trace) name =
             trace.Effects <- Map.change name (fun count -> Some(defaultArg count 0 + 1)) trace.Effects
+            if trace.TargetDepth > 0 then
+                trace.TargetEffects <- Map.change name (fun count -> Some(defaultArg count 0 + 1)) trace.TargetEffects
             // Test effects run against isolated virtual providers and are not task effects.
             if not trace.Isolated then log "effect" name
 
@@ -589,6 +603,10 @@ module Runtime =
               CoverageBranches = Set.empty
               FileSystem = fileSystem
               Effects = Map.empty
+              TargetIdentity = None
+              TargetDepth = 0
+              TargetInvocationCount = 0
+              TargetEffects = Map.empty
               Console = []
               CoverageTarget = coverageTarget
               Isolated = coverageTarget.IsSome }
@@ -1175,6 +1193,7 @@ module Runtime =
             let flowContext: FlowLowering.Context =
                 { FlowLowering.CompilerContext = baseCompilerContext
                   ParameterNames = Map.empty
+                  Flow2OwnerIds = Set.empty
                   SourceOrigins = Map.empty }
             let flowProject =
                 if Map.isEmpty state.FlowWords then None
@@ -1485,6 +1504,7 @@ module Runtime =
 
         let interpreterHost (snapshot: RuntimeSnapshot) (trace: Trace) (body: VerifiedIrBody option) =
             let source site = sourceSite snapshot body site
+            let userFunctionScopes = Stack<bool>()
             let definitionSpan (name: string) =
                 snapshot.Words.TryFind name |> Option.map (fun entry -> entry.Definition.Span)
             { PreflightEffects = fun effects word _ ->
@@ -1525,6 +1545,15 @@ module Runtime =
                       mutateEffect trace "console.write"
                       trace.Console <- trace.Console @ [ contents ]
                       EffectUnit
+              EnterUserFunction = fun functionId revision ->
+                  let isTarget = trace.TargetIdentity = Some(functionId, revision)
+                  let isInTarget = trace.TargetDepth > 0 || isTarget
+                  userFunctionScopes.Push isInTarget
+                  if isTarget then trace.TargetInvocationCount <- trace.TargetInvocationCount + 1
+                  if isInTarget then trace.TargetDepth <- trace.TargetDepth + 1
+                  fun () ->
+                      let wasInTarget = userFunctionScopes.Pop()
+                      if wasInTarget then trace.TargetDepth <- trace.TargetDepth - 1
               WordDefinitionSpan = definitionSpan
               PrimitiveDefinitionSpan = definitionSpan }
 
@@ -1996,6 +2025,16 @@ module Runtime =
 
         let toJsonValue value = jsonNode (Types.formatValue value)
 
+        let completeEffectCounts (counts: Map<string, int>) =
+            EffectCountAssertion.observableEffects
+            |> Set.fold (fun completed name -> Map.add name (counts.TryFind name |> Option.defaultValue 0) completed) Map.empty
+
+        let formatEffectCounts (counts: Map<string, int>) =
+            counts
+            |> Map.toList
+            |> List.map (fun (name, count) -> $"{name}:{count}")
+            |> String.concat ","
+
         let checkedByTest (snapshot: RuntimeSnapshot) (test: TestDefinition) =
             let sites, branches = coverageObligations snapshot test.Word
             let trace = createTrace (Some test.Word) Map.empty
@@ -2012,80 +2051,120 @@ module Runtime =
                   Actual = actual
                   Expected = test.Expected
                   ExpectedValue = expectedValue
+                  EffectAssertion = None
                   Instructions = trace.CoverageInstructions |> Set.intersect sites
                   BranchOutcomes = trace.CoverageBranches |> Set.intersect branches }
-            try
-                let stack = executeIRBody snapshot "<test>" trace body
-                match test.Expected with
-                | ExpectedValue literal ->
-                    let expected = Types.literalValue literal
-                    let passed = stack = [ expected ]
-                    let diagnostic =
-                        if passed then None
-                        else
-                            Some
-                                { Code = "TEST_ASSERTION_FAILED"
-                                  Message = "Actual value did not equal the expected literal."
-                                  Word = Some test.Word
-                                  Span = Some test.Span
-                                  Expected = [ Types.formatValue expected ]
-                                  Actual = stack |> List.map Types.formatValue }
-                    makeResult passed diagnostic stack (Some expected)
-                | ExpectedRuntimeError code ->
-                    let diagnostic =
-                        { Code = "TEST_EXPECTED_RUNTIME_ERROR"
-                          Message = $"Expected runtime error '{code}', but the test expression completed normally."
-                          Word = Some test.Word
-                          Span = Some test.Span
-                          Expected = [ code ]
-                          Actual = stack |> List.map Types.formatValue }
-                    makeResult false (Some diagnostic) stack None
-                | ExpectedExpression _ ->
-                    let expectedBody =
-                        snapshot.TestExpectationBodies.TryFind bodyKey
-                        |> Option.defaultWith (fun () ->
-                            error "IR_TEST_EXPECTATION_BODY_MISSING" "Compiled test expectation is absent from its exact executable snapshot." (Some test.Word) (Some test.Span) [] [ bodyKey ])
-                    let expectedTrace = { createTrace None Map.empty with Isolated = true }
-                    try
-                        let expectedStack = executeIRBody snapshot "<test-expectation>" expectedTrace expectedBody
-                        match expectedStack with
-                        | [ expectedValue ] ->
-                            let passed = stack = [ expectedValue ]
-                            let diagnostic =
-                                if passed then None
-                                else
-                                    Some
-                                        { Code = "TEST_ASSERTION_FAILED"
-                                          Message = "Actual value did not equal the value produced by the pure expectation expression."
-                                          Word = Some test.Word
-                                          Span = Some test.Span
-                                          Expected = [ Types.formatValue expectedValue ]
-                                          Actual = stack |> List.map Types.formatValue }
-                            makeResult passed diagnostic stack (Some expectedValue)
-                        | values ->
-                            let diagnostic =
-                                { Code = "TEST_EXPECTED_VALUE_STACK"
-                                  Message = "The verified value expectation returned an invalid stack shape."
-                                  Word = Some test.Word
-                                  Span = Some test.Span
-                                  Expected = [ "one value" ]
-                                  Actual = values |> List.map Types.formatValue }
-                            makeResult false (Some diagnostic) stack None
-                    with
-                    | LanguageException expectedDiagnostic ->
+            match test.EffectAssertion with
+            | Some _ ->
+                let targetIdentity =
+                    snapshot.State.WordIds.TryFind test.Word
+                    |> Option.map WordId
+                    |> Option.filter (fun identity -> snapshot.State.FlowWords.ContainsKey(wordIdText identity))
+                match targetIdentity, snapshot.Words.TryFind test.Word with
+                | Some identity, Some entry when entry.Builtin.IsNone && entry.Status <> Primitive ->
+                    trace.TargetIdentity <- Some(identity, entry.Revision)
+                | _ -> trace.TargetIdentity <- None
+            | None -> ()
+            let executionResult =
+                try
+                    let stack = executeIRBody snapshot "<test>" trace body
+                    match test.Expected with
+                    | ExpectedValue literal ->
+                        let expected = Types.literalValue literal
+                        let passed = stack = [ expected ]
                         let diagnostic =
-                            { Code = "TEST_EXPECTED_VALUE_RUNTIME_ERROR"
-                              Message = "The pure value expectation failed while being evaluated."
+                            if passed then None
+                            else
+                                Some
+                                    { Code = "TEST_ASSERTION_FAILED"
+                                      Message = "Actual value did not equal the expected literal."
+                                      Word = Some test.Word
+                                      Span = Some test.Span
+                                      Expected = [ Types.formatValue expected ]
+                                      Actual = stack |> List.map Types.formatValue }
+                        makeResult passed diagnostic stack (Some expected)
+                    | ExpectedRuntimeError code ->
+                        let diagnostic =
+                            { Code = "TEST_EXPECTED_RUNTIME_ERROR"
+                              Message = $"Expected runtime error '{code}', but the test expression completed normally."
                               Word = Some test.Word
-                              Span = expectedDiagnostic.Span |> Option.orElse (Some test.Span)
-                              Expected = [ "normal completion" ]
-                              Actual = [ expectedDiagnostic.Code ] }
+                              Span = Some test.Span
+                              Expected = [ code ]
+                              Actual = stack |> List.map Types.formatValue }
                         makeResult false (Some diagnostic) stack None
-            with
-            | LanguageException diagnostic ->
-                match test.Expected with
-                | ExpectedRuntimeError expectedCode when diagnostic.Code = expectedCode -> makeResult true None [] None
-                | _ -> makeResult false (Some diagnostic) [] None
+                    | ExpectedExpression _ ->
+                        let expectedBody =
+                            snapshot.TestExpectationBodies.TryFind bodyKey
+                            |> Option.defaultWith (fun () ->
+                                error "IR_TEST_EXPECTATION_BODY_MISSING" "Compiled test expectation is absent from its exact executable snapshot." (Some test.Word) (Some test.Span) [] [ bodyKey ])
+                        let expectedTrace = { createTrace None Map.empty with Isolated = true }
+                        try
+                            let expectedStack = executeIRBody snapshot "<test-expectation>" expectedTrace expectedBody
+                            match expectedStack with
+                            | [ expectedValue ] ->
+                                let passed = stack = [ expectedValue ]
+                                let diagnostic =
+                                    if passed then None
+                                    else
+                                        Some
+                                            { Code = "TEST_ASSERTION_FAILED"
+                                              Message = "Actual value did not equal the value produced by the pure expectation expression."
+                                              Word = Some test.Word
+                                              Span = Some test.Span
+                                              Expected = [ Types.formatValue expectedValue ]
+                                              Actual = stack |> List.map Types.formatValue }
+                                makeResult passed diagnostic stack (Some expectedValue)
+                            | values ->
+                                let diagnostic =
+                                    { Code = "TEST_EXPECTED_VALUE_STACK"
+                                      Message = "The verified value expectation returned an invalid stack shape."
+                                      Word = Some test.Word
+                                      Span = Some test.Span
+                                      Expected = [ "one value" ]
+                                      Actual = values |> List.map Types.formatValue }
+                                makeResult false (Some diagnostic) stack None
+                        with
+                        | LanguageException expectedDiagnostic ->
+                            let diagnostic =
+                                { Code = "TEST_EXPECTED_VALUE_RUNTIME_ERROR"
+                                  Message = "The pure value expectation failed while being evaluated."
+                                  Word = Some test.Word
+                                  Span = expectedDiagnostic.Span |> Option.orElse (Some test.Span)
+                                  Expected = [ "normal completion" ]
+                                  Actual = [ expectedDiagnostic.Code ] }
+                            makeResult false (Some diagnostic) stack None
+                with
+                | LanguageException diagnostic ->
+                    match test.Expected with
+                    | ExpectedRuntimeError expectedCode when diagnostic.Code = expectedCode -> makeResult true None [] None
+                    | _ -> makeResult false (Some diagnostic) [] None
+            match test.EffectAssertion with
+            | None -> executionResult
+            | Some assertion ->
+                let expected = completeEffectCounts assertion.Counts
+                let actual = completeEffectCounts trace.TargetEffects
+                let matched = trace.TargetInvocationCount > 0 && expected = actual
+                let effectError =
+                    if matched then None
+                    else
+                        Some
+                            { Code = "TEST_EFFECT_ASSERTION_FAILED"
+                              Message =
+                                if trace.TargetInvocationCount = 0 then "The effect-count assertion target was never invoked."
+                                else "Target-scoped provider effect counts did not match the exact assertion."
+                              Word = Some test.Word
+                              Span = Some assertion.Span
+                              Expected = [ "effects{" + formatEffectCounts expected + "}"; "target invocations>=1" ]
+                              Actual = [ "effects{" + formatEffectCounts actual + "}"; $"target invocations={trace.TargetInvocationCount}" ] }
+                { executionResult with
+                    Passed = executionResult.Passed && matched
+                    EffectAssertion =
+                        Some
+                            { Span = assertion.Span
+                              Expected = expected
+                              Actual = actual
+                              TargetInvocationCount = trace.TargetInvocationCount
+                              Error = effectError } }
 
         let resultJson (snapshot: RuntimeSnapshot) (result: TestCaseResult) =
             let node = JsonObject()
@@ -2118,7 +2197,36 @@ module Runtime =
                     addStructuredObservation "expectedStructured" [ value ]
                 | None -> node["expected"] <- jstr "value-expression"
             node["actual"] <- jsonNode (result.Actual |> List.map Types.formatValue)
-            match result.Error with
+            match result.EffectAssertion with
+            | Some observation ->
+                let effectNode = JsonObject()
+                effectNode["passed"] <- jbool observation.Error.IsNone
+                let countsNode (counts: Map<string, int>) =
+                    let values = JsonObject()
+                    for name, count in Map.toList counts do values[name] <- jint count
+                    values
+                effectNode["expected"] <- countsNode observation.Expected
+                effectNode["actual"] <- countsNode observation.Actual
+                effectNode["targetInvocationCount"] <- jint observation.TargetInvocationCount
+                let spanNode = JsonObject()
+                spanNode["file"] <- jstr observation.Span.File
+                spanNode["line"] <- jint observation.Span.Line
+                spanNode["column"] <- jint observation.Span.Column
+                spanNode["length"] <- jint observation.Span.Length
+                effectNode["span"] <- spanNode
+                match observation.Error with
+                | Some diagnostic ->
+                    let errorNode = JsonObject()
+                    errorNode["code"] <- jstr diagnostic.Code
+                    errorNode["message"] <- jstr diagnostic.Message
+                    effectNode["error"] <- errorNode
+                | None -> ()
+                node["effectAssertion"] <- effectNode
+            | None -> ()
+            let primaryError =
+                result.Error
+                |> Option.orElseWith (fun () -> result.EffectAssertion |> Option.bind (fun observation -> observation.Error))
+            match primaryError with
             | Some diagnostic -> node["errorCode"] <- jstr diagnostic.Code; node["message"] <- jstr diagnostic.Message
             | None -> ()
             node

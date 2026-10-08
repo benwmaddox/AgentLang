@@ -52,6 +52,7 @@ let context: FlowLowering.Context =
           Enums = Map.empty
           WordIds = primitiveIds }
       ParameterNames = Map.empty
+      Flow2OwnerIds = Set.empty
       SourceOrigins = Map.empty }
 
 let literal value = FlowExpression.Literal(LInt value, sourceSpan)
@@ -147,6 +148,7 @@ let host: IrInterpreterHost =
       RecordBranchOutcome = fun _ _ _ -> ()
       RecordUse = ignore
       InvokeEffect = fun effect -> failwithf "Unexpected effect in pure probe: %A" effect
+      EnterUserFunction = fun _ _ -> ignore
       WordDefinitionSpan = fun _ -> None
       PrimitiveDefinitionSpan = fun _ -> None }
 
@@ -222,6 +224,7 @@ let migrationContext: FlowLowering.Context =
           Enums = Map.empty
           WordIds = migrationWordIds }
       ParameterNames = Map.empty
+      Flow2OwnerIds = Set.empty
       SourceOrigins = Map.empty }
 
 let emptyBaseInventory: FlowLowering.FlowSourceInventory =

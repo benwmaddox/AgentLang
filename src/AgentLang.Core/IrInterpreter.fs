@@ -29,6 +29,9 @@ type IrInterpreterHost =
       RecordBranchOutcome: string -> SourceSiteId -> string -> unit
       RecordUse: string -> unit
       InvokeEffect: IrEffectCommand -> IrEffectResult
+      /// Called at verified user-function entry and returns the exact scope exit
+      /// action. The interpreter always invokes that action from a finally block.
+      EnterUserFunction: WordId -> int -> (unit -> unit)
       WordDefinitionSpan: string -> SourceSpan option
       PrimitiveDefinitionSpan: string -> SourceSpan option }
 
@@ -437,9 +440,13 @@ module IrInterpreter =
             if arguments.Length <> functionValue.InputTypes.Length then
                 fail "RUNTIME_INTERNAL_TYPE" $"'{functionValue.FunctionName}' received values outside its verified signature." (Some functionValue.FunctionName) None
                     (functionValue.InputTypes |> List.map (formatType program)) (runtimeTypeNames program arguments)
-            let locals = Map.empty
-            let stack, _ = executeBlock entryDepth functionValue.FunctionName functionValue.LocalNames functionValue.FunctionBody arguments locals
-            stack
+            let exitUserFunction = host.EnterUserFunction functionValue.FunctionId functionValue.FunctionRevision
+            try
+                let locals = Map.empty
+                let stack, _ = executeBlock entryDepth functionValue.FunctionName functionValue.LocalNames functionValue.FunctionBody arguments locals
+                stack
+            finally
+                exitUserFunction ()
 
         and executeGenerated (depth: int) (target: IrGeneratedTarget) (resolvedName: string) (arguments: RuntimeValue list) (site: SourceSiteId option) =
             if depth > maxCallDepth then

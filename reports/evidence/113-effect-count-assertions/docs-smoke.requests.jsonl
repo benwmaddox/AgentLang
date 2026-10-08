@@ -1,0 +1,2 @@
+{"op":"define","frontend":"flow","syntaxVersion":2,"source":"fn marker.read(path: String) -> String {\n    effects fs.read\n    doc \"Reads the stored marker contents.\"\n\n    file::read(path)\n}\n\ntest marker.read/existing {\n    file::write(\"example/marker\", \"held\");\n    marker::read(\"example/marker\")\n    => \"held\" effects { fs.read: 1; fs.write: 0; }\n}"}
+{"op":"test","word":"marker.read"}

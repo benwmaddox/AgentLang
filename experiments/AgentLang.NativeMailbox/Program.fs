@@ -121,6 +121,7 @@ let private compileHandlers (source: string) =
     let context: FlowLowering.Context =
         { CompilerContext = compilerContext
           ParameterNames = Map.empty
+          Flow2OwnerIds = Set.empty
           SourceOrigins = Map.empty }
     let changes: FlowLowering.FlowWordChange list =
         document.Words
@@ -156,6 +157,7 @@ let private interpreterBackend (handlers: HandlerBodies) =
           RecordBranchOutcome = fun _ _ _ -> ()
           RecordUse = ignore
           InvokeEffect = fun _ -> EffectUnit
+          EnterUserFunction = fun _ _ -> ignore
           WordDefinitionSpan = fun word -> wordSpans.TryFind word
           PrimitiveDefinitionSpan = fun word -> wordSpans.TryFind word }
     let execute executionName body owner arguments =

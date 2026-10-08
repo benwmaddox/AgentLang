@@ -1407,6 +1407,7 @@ end
               RecordBranchOutcome = fun _ site outcome -> branchOutcomes <- Set.add (site, outcome) branchOutcomes
               RecordUse = ignore
               InvokeEffect = fun _ -> EffectUnit
+              EnterUserFunction = fun _ _ -> ignore
               WordDefinitionSpan = fun _ -> None
               PrimitiveDefinitionSpan = fun _ -> None }
         let output = IrInterpreter.executeBody interpreterHost "same-span-body" collisionBody

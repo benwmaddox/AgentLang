@@ -1,0 +1,19 @@
+# Bounded effect-assertion implementation review (in-progress source)
+
+Read-only review at committed base `404a7a4` with current uncommitted `IrInterpreter.fs`/`Runtime.fs` changes. The implementation and tests were still being completed; no build or production edits were performed.
+
+## Hook and verdict
+
+No concrete semantic defect found in the reviewed hook/verdict path. `IrInterpreter.fs:408-444` checks the verified user target and revision after call preflight, then `executeFunction` gets an exit action and invokes it in `finally`. `Runtime.fs:1548-1557` compares `(WordId, revision)`, keeps target depth active through nested user helpers and callbacks, and counts each target entry. `mutateEffect` (`Runtime.fs:582-587`) increments target counts once per actual provider command while depth is positive. The per-host stack correctly restores an outer inactive scope after a target returns and an outer active scope after nested calls fault; repeated target invocations aggregate in one fresh test trace. Preflight failure before entry yields zero invocations and therefore fails an assertion even when all expected counts are zero.
+
+`checkedByTest` (`Runtime.fs:2038-2168`) first derives the existing value/runtime-error verdict, then compares normalized exact counts without throwing a new exception. Its `Passed` combines both verdicts. `resultJson` (`Runtime.fs:2200-2230`) keeps the original top-level value/error diagnostic when both fail and adds `effectAssertion.error`; when only effects fail it emits `TEST_EFFECT_ASSERTION_FAILED` at the top level. A `=> error CODE` cannot swallow an effect mismatch because the count comparison happens outside the `LanguageException` catch. Tests without an assertion still take the original response fields, with no `effectAssertion` key.
+
+`FlowLowering.fs:2549-2558` now rejects assertion-bearing generated/primitive/Stack owners by stable Flow-owner identity, and `FlowParser.fs:813-854` restricts keys to the four observable virtual-provider categories. The new callback only observes actual user-function execution; it does not change `PreflightEffects`, capability grants, or effect declarations. An effectful expectation remains rejected by `Compiler.fs:513` and runs in a separate trace if pure.
+
+## Remaining focused checks while wiring finishes
+
+- **Required runtime tests, currently not visible in the in-progress test diff:** wrong return plus extra write must retain top-level `TEST_ASSERTION_FAILED` and nested `effectAssertion.error.code=TEST_EFFECT_ASSERTION_FAILED`; expected runtime error plus count mismatch must fail with effect diagnostic, never pass; two target calls aggregate; nested helper and list callback provider effects are counted; helper/setup provider calls outside target are excluded; faulted target counts the attempted read and closes the scope; zero target calls fail even for `effects {}`; legacy no-suffix JSON remains unchanged. Replay the script-derived extra-write control through library replacement and verify failure blocks publication.
+- **Defensive owner check:** `FlowLowering.fs:2549-2558` proves a Flow owner identity but does not itself check that the owner's source version is 2. Normal `Runtime.fs` attachment routing enforces matching syntax versions, so this is not a current runtime bypass; a direct lowering API test using a Flow/2 assertion-bearing test against a Flow/1 owner would expose the difference. Add a local owner-version check if the standalone lowering API is expected to enforce the exact Flow/2 owner contract.
+- **Scope limit to document:** provider setup outside target is excluded. A genuine invocation of the target used as setup is necessarily counted by this contract; excluding it by intent would require a new explicit exercise marker. No such marker is needed to catch the extra-write control.
+
+This is a point-in-time review of the reviewed source, not a build/test attestation.

@@ -84,6 +84,21 @@ module TestExpectation =
             || (character >= '0' && character <= '9')
             || character = '_'))
 
+/// Exact counts for provider effects invoked while the test's user target is active.
+/// The span points to the authored `effects { ... }` annotation.
+type EffectCountAssertion =
+    { Counts: Map<string, int>
+      Span: SourceSpan }
+
+module EffectCountAssertion =
+    /// The first assertion slice counts the four provider categories that the
+    /// current virtual host actually observes.
+    let observableEffects = set [ "clock.read"; "console.write"; "fs.read"; "fs.write" ]
+
+    /// The interpreter's per-body step limit bounds how many provider calls one
+    /// authored test can make.
+    let maximumCount = 10_000
+
 type WordMaturity = ProjectWord | LibraryWord
 
 type RecordField =
@@ -126,6 +141,7 @@ type TestDefinition =
       Word: string
       Body: Expr list
       Expected: TestExpectation
+      EffectAssertion: EffectCountAssertion option
       SourceText: string
       Span: SourceSpan }
 

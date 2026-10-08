@@ -1,0 +1,2 @@
+dotnet run --project tests/AgentLang.Flow.Tests/AgentLang.Flow.Tests.fsproj -c Debug --artifacts-path .agentlang/effect-assertions-001/parser-test-artifacts
+dotnet run --project tests/AgentLang.IR.Interpreter.Tests/AgentLang.IR.Interpreter.Tests.fsproj -c Debug --artifacts-path .agentlang/effect-assertions-001/ir-artifacts

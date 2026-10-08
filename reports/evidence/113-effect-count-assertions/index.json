@@ -1,0 +1,77 @@
+[
+  {
+    "path": "adoption-oracle-review.md",
+    "sha256": "75920e0be9e165fdb861866a7b2a685a86104ab70c1ab05328344a3a0d6ded00",
+    "bytes": 5253
+  },
+  {
+    "path": "agent-check-plan.md",
+    "sha256": "818de6bddcacdf47024bf8955566b6389edf1fcf56c0376067c10abcfb65b599",
+    "bytes": 2377
+  },
+  {
+    "path": "core-build-context-slim.log",
+    "sha256": "b38247993be938aeca7e8be185f1396c348972ed9b56af5b510544bfca7fc872",
+    "bytes": 281
+  },
+  {
+    "path": "docs-smoke-launch-error.txt",
+    "sha256": "ff3787705a77b7daca9e5777b8f207e4da6c96788db2ef7a1dbd40a238cdf78d",
+    "bytes": 356
+  },
+  {
+    "path": "docs-smoke.requests.jsonl",
+    "sha256": "9132bb2a36562a7c8c70dfcc86ece1536764192a8f3230fbfd136e865623ad93",
+    "bytes": 408
+  },
+  {
+    "path": "docs-smoke.responses.jsonl",
+    "sha256": "4b38e61f21ffe5ae1e397916d6fcff96521d8568dd750b0cce9d6ea0b4bf93e6",
+    "bytes": 960
+  },
+  {
+    "path": "flow-call-bindings.log",
+    "sha256": "10036fd8e9d221966ce653bae1f9830fd47958fbac8772adb8392d9ee8ab2868",
+    "bytes": 290
+  },
+  {
+    "path": "flow-runtime-final.log",
+    "sha256": "72662a0c87a1793551c4994f73339a89602b73e9ed91742f5bdf8fd99b3aaff4",
+    "bytes": 54
+  },
+  {
+    "path": "implementation-review.md",
+    "sha256": "e507998ee7f8116dd902fabd35ec4de3c8f9c7b0eb2e04eeafcdf1e8a02c13dc",
+    "bytes": 3919
+  },
+  {
+    "path": "interpreter-tests.log",
+    "sha256": "364bb4cc0d10f8a5f610ac2a7bd5a94a5004ddce1ea5b183167722ac6dd1b0f7",
+    "bytes": 45
+  },
+  {
+    "path": "ir-tests.log",
+    "sha256": "13f7405bea3bb84b563491a38f4aaaf9e84be6b205d3a64eb556d36a1aea36c9",
+    "bytes": 594
+  },
+  {
+    "path": "native-mailbox-build.log",
+    "sha256": "2074632081f51a04ec89cb72342246f46de672ae9918e42113202e4afdd93392",
+    "bytes": 835
+  },
+  {
+    "path": "parser-tests.log",
+    "sha256": "c283f41daf271087f7714931153c81f9673e01adab3adc6ee6916946e7d59ca1",
+    "bytes": 35
+  },
+  {
+    "path": "review.md",
+    "sha256": "e9ce1a9e5d9fc05e5cd68cc9ae902064ade4a7a391485099f976f0d11143dd35",
+    "bytes": 5147
+  },
+  {
+    "path": "verification-commands.txt",
+    "sha256": "af1bc6cb4cf10b9f29c0e9a7245fc74c6222d3c60ed57f9bd33a32da21e4145c",
+    "bytes": 325
+  }
+]

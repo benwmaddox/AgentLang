@@ -622,7 +622,7 @@ module Parser =
                 elif content.StartsWith("test ", StringComparison.Ordinal) then
                     let finish = blockEnd file lines cursor
                     let name, word, body, expected, sourceText, sourceSpan = parseTestLike file lines cursor finish false
-                    tests.Add { Name = name; Word = word; Body = body; Expected = expected; SourceText = sourceText; Span = sourceSpan }
+                    tests.Add { Name = name; Word = word; Body = body; Expected = expected; EffectAssertion = None; SourceText = sourceText; Span = sourceSpan }
                     cursor <- finish + 1
                 elif content.StartsWith("example ", StringComparison.Ordinal) then
                     let finish = blockEnd file lines cursor

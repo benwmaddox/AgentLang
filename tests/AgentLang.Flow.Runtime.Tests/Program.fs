@@ -249,6 +249,11 @@ module Program =
         let examplesDocumentation = stringValue examplesHelp.["data"].["documentation"]
         for guidance in [ "=> <literal>"; "=> value <expression>"; "=> error CODE"; "test-all"; "nominal"; "literal expectations only" ] do
             check (examplesDocumentation.Contains(guidance, StringComparison.Ordinal)) $"examples help explains {guidance}"
+        check (not (examplesDocumentation.Contains("effect-count assertion", StringComparison.Ordinal))) "Flow/1 examples help does not advertise the Flow/2-only suffix"
+        check
+            (examplesHelp.["data"].["sourceExamples"].AsArray()
+             |> Seq.forall (fun item -> stringValue item.["name"] <> "effect-count-test-v2"))
+            "Flow/1 examples help has no Flow/2 effect-count source example"
         let valueExpectation =
             examplesHelp.["data"].["sourceExamples"].AsArray()
             |> Seq.find (fun item -> stringValue item.["name"] = "value-expression-test-expectation")
@@ -274,6 +279,18 @@ module Program =
         let runtimeErrorResult = testResults |> Seq.find (fun item -> stringValue item.["word"] = "tutorial.sign" && stringValue item.["name"] = "divide-by-zero")
         equal "RUNTIME_DIVIDE_BY_ZERO" (stringValue runtimeErrorResult.["expectedErrorCode"]) "help runtime-error expectation executes the real division error"
         check (boolValue runtimeErrorResult.["passed"]) "help runtime-error expectation passes only when the runtime error matches"
+        let examplesHelpV2 =
+            dispatch flow2HelpEngine "help" [ "topic", jstr "examples"; "syntaxVersion", jint 2 ]
+            |> expectOk "read Flow/2 effect-count testing help"
+        let examplesDocumentationV2 = stringValue examplesHelpV2.["data"].["documentation"]
+        for guidance in [ "Flow/2 tests"; "omitted categories are zero"; "fs.read"; "console.write"; "nested helpers" ] do
+            check (examplesDocumentationV2.Contains(guidance, StringComparison.Ordinal)) $"Flow/2 examples help explains {guidance}"
+        let effectCountHelp =
+            examplesHelpV2.["data"].["sourceExamples"].AsArray()
+            |> Seq.find (fun item -> stringValue item.["name"] = "effect-count-test-v2")
+        check
+            ((stringValue effectCountHelp.["source"]).Contains("effects { fs.read: 2; fs.write: 0; }", StringComparison.Ordinal))
+            "Flow/2 examples help includes valid count assertion syntax"
         let afterHelpCases = dispatch engine "describe" [ "word", jstr "tutorial.sign" ] |> expectOk "inspect help-provided test attachments"
         equal [ "divide-by-zero"; "negative"; "positive"; "value-expression"; "zero" ] (jsonArrayStrings afterHelpCases.["data"].["tests"]) "help examples attach to their existing tutorial word"
 
@@ -3222,6 +3239,215 @@ fn renewal.dependent(state: RenewalState) -> String {
         equal emailTypeSource (stringValue (sourceType snapshotReload "Email" |> expectOk "read Flow scalar source after snapshot restore" |> fun response -> response.["data"])) "snapshot restore retains exact authored Flow type bytes"
         assertStructuredFailure "snapshot-removed Flow type source" (sourceType snapshotReload "SnapshotOnly")
 
+    let private testEffectCountAssertions root =
+        let project = Path.Combine(root, "effect-count-assertions")
+        let engine = Runtime.Engine(project, Set.empty, "2041-02-03T04:05:06Z")
+        let source =
+            """fn marker.ensure(path: String) -> String {
+    effects fs.read, fs.write
+    if file::exists?(path) { file::read(path) } else { file::write(path, "queued"); "queued" }
+}
+
+fn marker.read(path: String) -> String {
+    effects fs.read, fs.write
+    marker::ensure(path)
+}
+
+fn marker.required(path: String) -> String {
+    effects fs.read
+    file::read(path)
+}
+
+fn marker.mutant(path: String) -> String {
+    effects fs.read, fs.write
+    file::write("extra", "noise")
+    file::read(path)
+}
+
+test marker.read/existing {
+    file::write("existing", "held")
+    marker::read("existing")
+    => "held" effects { fs.read: 2; fs.write: 0; }
+}
+
+test marker.read/missing {
+    marker::read("new")
+    => "queued" effects { fs.read: 1; fs.write: 1; }
+}
+
+test marker.read/repeated {
+    file::write("repeated", "held")
+    let first = marker::read("repeated")
+    marker::read("repeated")
+    => "held" effects { fs.read: 4; fs.write: 0; }
+}
+
+test marker.read/not-invoked {
+    "idle"
+    => "idle" effects {}
+}
+
+test marker.required/fault-counted {
+    marker::required("missing")
+    => error EFFECT_FILE_NOT_FOUND effects { fs.read: 1; }
+}
+
+test marker.required/error-does-not-hide-mismatch {
+    marker::required("missing")
+    => error EFFECT_FILE_NOT_FOUND effects {}
+}
+
+test marker.required/legacy-shape {
+    file::write("legacy", "held")
+    marker::required("legacy")
+    => "held"
+}
+
+test marker.mutant/value-and-effect-failures {
+    file::write("mutant", "held")
+    marker::mutant("mutant")
+    => "wrong" effects { fs.read: 1; fs.write: 0; }
+}"""
+        defineFlowProject engine source [ "syntaxVersion", jint 2 ]
+        |> expectOk "stage Flow/2 words and effect-count tests"
+        |> ignore
+
+        let testResult (runtime: Runtime.Engine) owner caseName =
+            let response = dispatch runtime "test" [ "word", jstr owner ] |> expectOk ("run " + owner + " effect-count tests")
+            response.["data"].["results"].AsArray()
+            |> Seq.find (fun item -> stringValue item.["name"] = caseName)
+            |> fun item -> item.AsObject()
+
+        let existing = testResult engine "marker.read" "existing"
+        check (boolValue existing.["passed"]) "existing marker assertion excludes setup write and includes nested helper reads"
+        let existingEffects = existing.["effectAssertion"]
+        equal 2 (existingEffects.["actual"].["fs.read"].GetValue<int>()) "existing marker read count includes exists? plus read"
+        equal 0 (existingEffects.["actual"].["fs.write"].GetValue<int>()) "setup write is outside the target scope"
+        equal 1 (existingEffects.["targetInvocationCount"].GetValue<int>()) "target invocation count is recorded"
+        check
+            (not (String.IsNullOrWhiteSpace(stringValue existingEffects.["span"].["file"]))
+             && existingEffects.["span"].["line"].GetValue<int>() > 0)
+            "effect assertion annotation span is structured"
+
+        let missing = testResult engine "marker.read" "missing"
+        check (boolValue missing.["passed"]) "missing marker assertion counts the attempted write and existence read"
+        equal 1 (missing.["effectAssertion"].["actual"].["fs.read"].GetValue<int>()) "missing marker performs one read-category provider call"
+        equal 1 (missing.["effectAssertion"].["actual"].["fs.write"].GetValue<int>()) "missing marker performs one write-category provider call"
+
+        let repeated = testResult engine "marker.read" "repeated"
+        check (boolValue repeated.["passed"]) "repeated target calls aggregate exact effects"
+        equal 4 (repeated.["effectAssertion"].["actual"].["fs.read"].GetValue<int>()) "two target calls each include nested helper exists/read pair"
+        equal 2 (repeated.["effectAssertion"].["targetInvocationCount"].GetValue<int>()) "target invocation count aggregates repeated calls"
+
+        let notInvoked = testResult engine "marker.read" "not-invoked"
+        check (not (boolValue notInvoked.["passed"])) "an empty exact map still requires the target to run"
+        equal "TEST_EFFECT_ASSERTION_FAILED" (stringValue notInvoked.["errorCode"]) "zero target invocations fail with the stable diagnostic"
+        equal 0 (notInvoked.["effectAssertion"].["targetInvocationCount"].GetValue<int>()) "zero-invocation result is observable"
+
+        let faultCounted = testResult engine "marker.required" "fault-counted"
+        check (boolValue faultCounted.["passed"]) "matching expected provider error passes with its attempted call counted"
+        equal 1 (faultCounted.["effectAssertion"].["actual"].["fs.read"].GetValue<int>()) "provider calls count before a missing-file error"
+
+        let errorMismatch = testResult engine "marker.required" "error-does-not-hide-mismatch"
+        check (not (boolValue errorMismatch.["passed"])) "an expected runtime error cannot swallow an effect-count mismatch"
+        equal "TEST_EFFECT_ASSERTION_FAILED" (stringValue errorMismatch.["errorCode"]) "effect mismatch stays primary when the expected error matched"
+        equal "TEST_EFFECT_ASSERTION_FAILED" (stringValue errorMismatch.["effectAssertion"].["error"].["code"]) "effect mismatch remains structured"
+        equal 1 (errorMismatch.["effectAssertion"].["actual"].["fs.read"].GetValue<int>()) "faulted call remains in the actual count map"
+
+        let legacy = testResult engine "marker.required" "legacy-shape"
+        check (boolValue legacy.["passed"]) "Flow/2 tests without a suffix retain return-value behavior"
+        check (not (legacy.ContainsKey "effectAssertion")) "tests without a suffix retain the legacy JSON shape"
+
+        let bothFailures = testResult engine "marker.mutant" "value-and-effect-failures"
+        check (not (boolValue bothFailures.["passed"])) "wrong return and extra write both fail"
+        equal "TEST_ASSERTION_FAILED" (stringValue bothFailures.["errorCode"]) "existing value diagnostic remains primary"
+        equal "TEST_EFFECT_ASSERTION_FAILED" (stringValue bothFailures.["effectAssertion"].["error"].["code"]) "effect failure is preserved beside the value diagnostic"
+        equal 1 (bothFailures.["effectAssertion"].["actual"].["fs.write"].GetValue<int>()) "extra write appears in structured actual counts"
+
+        let persistenceProject = Path.Combine(root, "effect-count-persist-rewrite")
+        let persistenceEngine = Runtime.Engine(persistenceProject, Set.empty, "2041-02-03T04:05:06Z")
+        let persistenceSource =
+            """fn persist.read(path: String) -> String {
+    effects fs.read
+    file::read(path)
+}
+
+test persist.read/exact-count {
+    file::write("persistent", "held")
+    persist::read("persistent")
+    => "held" effects { fs.read: 1; fs.write: 0; }
+}"""
+        defineFlowProject persistenceEngine persistenceSource [ "syntaxVersion", jint 2 ]
+        |> expectOk "stage durable Flow/2 effect assertion"
+        |> ignore
+        commit persistenceEngine "commit" "persist.read" [ "library", jbool true ]
+        |> expectOk "commit the annotated Flow/2 function"
+        |> ignore
+        let persistenceStore = Storage.create persistenceProject
+        let beforeRename = Storage.load persistenceStore |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let beforeManifest = beforeRename.Manifest |> Option.defaultWith (fun () -> failwith "effect assertion fixture did not create a manifest")
+        let beforeHead = beforeManifest.Words |> List.find (fun item -> item.CurrentName = "persist.read")
+        let beforeRevision = beforeManifest.Revisions |> List.find (fun item -> item.WordId = beforeHead.WordId && item.Revision = beforeHead.CurrentRevision)
+        let beforeTest = beforeRevision.Tests |> List.map (Storage.readSource persistenceStore >> Result.defaultWith (fun problem -> failwith problem.Message)) |> List.exactlyOne
+        check (beforeTest.Contains("effects { fs.read: 1; fs.write: 0; }", StringComparison.Ordinal)) "durable test source retains the exact assertion suffix"
+        let persistentId = getWordId persistenceEngine "persist.read"
+        dispatch persistenceEngine "rename" [ "word", jstr "persist.read"; "to", jstr "persist.load" ]
+        |> expectOk "rename the annotated Flow/2 owner"
+        |> ignore
+        equal persistentId (getWordId persistenceEngine "persist.load") "rename retains the stable owner identity"
+        let afterRename = Storage.load persistenceStore |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let afterManifest = afterRename.Manifest |> Option.defaultWith (fun () -> failwith "renamed effect assertion manifest is missing")
+        let afterHead = afterManifest.Words |> List.find (fun item -> item.CurrentName = "persist.load")
+        let afterRevision = afterManifest.Revisions |> List.find (fun item -> item.WordId = afterHead.WordId && item.Revision = afterHead.CurrentRevision)
+        let rewrittenTest = afterRevision.Tests |> List.map (Storage.readSource persistenceStore >> Result.defaultWith (fun problem -> failwith problem.Message)) |> List.exactlyOne
+        check (rewrittenTest.Contains("effects { fs.read: 1; fs.write: 0; }", StringComparison.Ordinal)) "rename preserves the exact effect assertion suffix"
+        let reloaded = Runtime.Engine(persistenceProject, Set.empty, "2041-02-03T04:05:06Z")
+        let reloadedPersistent = testResult reloaded "persist.load" "exact-count"
+        check (boolValue reloadedPersistent.["passed"]) "fresh reload reparses the renamed effect-count test"
+        equal 1 (reloadedPersistent.["effectAssertion"].["actual"].["fs.read"].GetValue<int>()) "renamed reload retains exact count behavior"
+
+        let gateSource suffix writeExtra =
+            let effects = if writeExtra then "fs.read, fs.write" else "fs.read"
+            let targetBody =
+                if writeExtra then "    file::write(\"extra\", \"noise\")\n    file::read(\"gate\")"
+                else "    file::read(\"gate\")"
+            "fn gate.read() -> String {\n"
+            + "    effects " + effects + "\n"
+            + targetBody + "\n}\n\n"
+            + "test gate.read/basic {\n"
+            + "    file::write(\"gate\", \"held\")\n"
+            + "    gate::read()\n"
+            + "    => \"held\"" + suffix + "\n}"
+
+        let runReplacementControl projectName withAssertion =
+            let replacementProject = Path.Combine(root, projectName)
+            let runtime = Runtime.Engine(replacementProject, Set.empty, "2041-02-03T04:05:06Z")
+            let suffix = if withAssertion then " effects { fs.read: 1; fs.write: 0; }" else ""
+            defineFlowProject runtime (gateSource suffix false) [ "syntaxVersion", jint 2 ]
+            |> expectOk "stage baseline Flow/2 library test"
+            |> ignore
+            commit runtime "commit" "gate.read" [ "library", jbool true ]
+            |> expectOk "publish baseline as a library word"
+            |> ignore
+            let before = Storage.load (Storage.create replacementProject) |> Result.defaultWith (fun problem -> failwith problem.Message)
+            defineFlowProject runtime (gateSource suffix true)
+                [ "syntaxVersion", jint 2; "replace", jbool true; "expectedRevision", jint 1 ]
+            |> expectOk "stage the extra-write replacement with its test source"
+            |> ignore
+            runtime, replacementProject, before
+
+        let control, controlProject, controlBefore = runReplacementControl "effect-count-old-control" false
+        let controlPublished = commit control "replace-word" "gate.read" [] |> expectOk "old return-only test permits the extra-write replacement"
+        check (jsonArrayStrings controlPublished.["data"] |> List.contains "gate.read/basic") "return-only replacement runs its attached test"
+        let controlAfter = Storage.load (Storage.create controlProject) |> Result.defaultWith (fun problem -> failwith problem.Message)
+        check (controlBefore.ManifestHash <> controlAfter.ManifestHash) "return-only control publishes the replacement despite the extra write"
+
+        let guarded, guardedProject, guardedBefore = runReplacementControl "effect-count-library-gate" true
+        let blocked = commit guarded "replace-word" "gate.read" [] |> expectError "COMMIT_TESTS_FAILED"
+        check (jsonArrayStrings blocked.["error"].["actual"] |> List.contains "gate.read/basic") "effect assertion failure blocks library replacement"
+        let guardedAfter = Storage.load (Storage.create guardedProject) |> Result.defaultWith (fun problem -> failwith problem.Message)
+        equal guardedBefore.ManifestHash guardedAfter.ManifestHash "failed effect assertion leaves library manifest unchanged"
+
     [<EntryPoint>]
     let main _ =
         let root = newRoot ()
@@ -3253,7 +3479,8 @@ fn renewal.dependent(state: RenewalState) -> String {
             testFlowStaticListFold root
             testFlowValidatorCannotBeRenamedAfterTypeCommit root
             testFlowProjectDocumentTypesCommitAndReload root
-            printfn $"Flow Runtime tests passed: 27 groups, {assertions} assertions."
+            testEffectCountAssertions root
+            printfn $"Flow Runtime tests passed: 28 groups, {assertions} assertions."
             0
         finally
             if Directory.Exists root then Directory.Delete(root, true)

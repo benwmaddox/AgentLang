@@ -234,6 +234,7 @@ let private loweringContextWith (records: Map<string, RecordDefinition>) (scalar
           Enums = Map.empty
           WordIds = ids }
       ParameterNames = parameters
+      Flow2OwnerIds = Set.empty
       SourceOrigins = Map.empty }
 
 let private loweringContext (words: WordEntry list) (parameters: Map<string, string list>) : FlowLowering.Context =
@@ -283,6 +284,7 @@ let private host (events: ResizeArray<string>) =
       InvokeEffect = function
           | WriteVirtualConsole(_, contents) -> events.Add(contents); EffectUnit
           | other -> failwithf "Unexpected effect command: %A" other
+      EnterUserFunction = fun _ _ -> ignore
       WordDefinitionSpan = fun _ -> None
       PrimitiveDefinitionSpan = fun _ -> None }
 
@@ -688,6 +690,150 @@ fn customer.has-email(value: Customer) -> Bool {
     | Ok [] -> check "FlowLint follows locals through property and equality nodes" true
     | Ok warnings -> failwithf "Flow/2 property/equality linter reported unexpected warnings: %A" warnings
     | Error problem -> failwith $"{problem.Code}: {problem.Message}"
+
+let private testEffectCountAssertionsFrontend () =
+    let parseTestV2 source =
+        match FlowParser.parseTestWithVersion 2 "<effect-assertion>" source with
+        | Ok definition -> definition
+        | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+
+    let source =
+        "test effect.owner/counts {\n"
+        + "    1\n"
+        + "    => 1 effects { fs.read: 2; fs.write: 0; clock.read: 0; console.write: 3; }\n"
+        + "}"
+    let parsed = parseTestV2 source
+    let expectedCounts =
+        Map.ofList [ "clock.read", 0; "console.write", 3; "fs.read", 2; "fs.write", 0 ]
+    let assertion = parsed.EffectAssertion |> Option.defaultWith (fun () -> failwith "Expected a parsed effect-count assertion.")
+    equal "Flow/2 effect assertions parse all four observable categories" expectedCounts assertion.Counts
+    let annotationStart = source.IndexOf("effects {", StringComparison.Ordinal)
+    let annotationEnd = source.IndexOf('}', annotationStart) + 1
+    let annotationLineStart = source.LastIndexOf('\n', annotationStart)
+    equal "effect assertion span covers the authored annotation"
+        (span "<effect-assertion>" 3 (annotationStart - annotationLineStart) (annotationEnd - annotationStart))
+        assertion.Span
+    let canonical = FlowSource.renderTest parsed
+    check "effect assertion renderer emits a canonical suffix"
+        (canonical.EndsWith("=> 1 effects { clock.read: 0; console.write: 3; fs.read: 2; fs.write: 0; }\n}", StringComparison.Ordinal))
+    equal "effect assertion parse/render round-trips canonically" canonical
+        (canonical |> parseTestV2 |> FlowSource.renderTest)
+    equal "effect assertion round-trip preserves exact category counts" expectedCounts
+        (canonical |> parseTestV2 |> fun definition -> definition.EffectAssertion.Value.Counts)
+
+    let emptyMap = parseTestV2 "test effect.owner/empty-map {\n    1\n    => 1 effects {}\n}"
+    let emptyCounts: Map<string, int> = Map.empty
+    equal "empty effect assertion map is accepted" (Some emptyCounts)
+        (emptyMap.EffectAssertion |> Option.map (fun value -> value.Counts))
+    equal "empty effect map renders and reparses" (FlowSource.renderTest emptyMap)
+        (emptyMap |> FlowSource.renderTest |> parseTestV2 |> FlowSource.renderTest)
+
+    let zeroCount = parseTestV2 "test effect.owner/zero {\n    1\n    => 1 effects { fs.read: 0; }\n}"
+    equal "zero is a valid explicit count" (Some(Map.ofList [ "fs.read", 0 ]))
+        (zeroCount.EffectAssertion |> Option.map (fun value -> value.Counts))
+
+    let withSuffix suffix =
+        "test effect.owner/invalid {\n    1\n    => 1 " + suffix + "\n}"
+    let expectV2Error label code suffix =
+        expectError label code (FlowParser.parseTestWithVersion 2 "<effect-assertion>" (withSuffix suffix)) |> ignore
+
+    expectV2Error "duplicate canonical effect keys are rejected" "FLOW_EFFECT_ASSERTION_DUPLICATE"
+        "effects { fs.read: 0; fs.read: 1; }"
+    expectV2Error "unknown effect keys are rejected" "FLOW_EFFECT_ASSERTION_UNSUPPORTED"
+        "effects { mystery.call: 0; }"
+    for effectName in [ "db.read"; "db.write"; "network.read"; "network.write"; "process.execute"; "random.read" ] do
+        expectV2Error ($"unobservable declared effect '{effectName}' is rejected") "FLOW_EFFECT_ASSERTION_UNSUPPORTED"
+            ($"effects {{ {effectName}: 0; }}")
+    expectV2Error "negative effect counts are rejected" "FLOW_EFFECT_ASSERTION_COUNT_INVALID"
+        "effects { fs.read: -1; }"
+    expectV2Error "effect counts above the published bound are rejected" "FLOW_EFFECT_ASSERTION_COUNT_INVALID"
+        ($"effects {{ fs.read: {EffectCountAssertion.maximumCount + 1}; }}")
+    expectV2Error "effect counts outside Int32 are rejected" "FLOW_EFFECT_ASSERTION_COUNT_INVALID"
+        "effects { fs.read: 2147483648; }"
+
+    let flow1WithAssertion = withSuffix "effects { fs.read: 0; }"
+    expectError "Flow/1 rejects the Flow/2-only effect suffix" "FLOW_EFFECT_ASSERTION_VERSION"
+        (FlowParser.parseTestWithVersion 1 "<effect-assertion-v1>" flow1WithAssertion) |> ignore
+    expectError "Flow/2 examples reject test-only effect suffixes" "FLOW_EFFECT_ASSERTION_TEST_ONLY"
+        (FlowParser.parseExampleWithVersion 2 "<effect-assertion-example>"
+            "example effect.owner/sample {\n    1\n    => 1 effects { fs.read: 0; }\n}") |> ignore
+
+    let flow2OwnerSource =
+        "fn effect.owner() -> Int {\n"
+        + "    effects none\n"
+        + "    1\n"
+        + "}"
+    let flow2Owner =
+        match FlowParser.parseWordWithVersion 2 "<effect-owner>" flow2OwnerSource with
+        | Ok definition -> definition
+        | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+    let compiledFlow2Owner =
+        FlowLowering.compileWord (loweringContext [] Map.empty) (WordId "flow-user-effect-owner") flow2Owner
+    let flowOwnerTest =
+        parseTestV2 "test effect.owner/accepted-flow-owner {\n    effect::owner()\n    => 1 effects { fs.read: 0; }\n}"
+    let loweredFlowOwnerTest = FlowLowering.lowerTest compiledFlow2Owner.Context flowOwnerTest
+    check "Flow/2 owner metadata is recorded by lowering"
+        (compiledFlow2Owner.Context.Flow2OwnerIds.Contains(WordId "flow-user-effect-owner"))
+    equal "assertions lower for an owner proven to be a user-authored Flow word"
+        (Some(Map.ofList [ "fs.read", 0 ]))
+        (loweredFlowOwnerTest.Definition.EffectAssertion |> Option.map (fun value -> value.Counts))
+
+    let flow2OwnerIdentity = WordId "flow-user-effect-owner"
+    let flow2OwnerRevision = compiledFlow2Owner.Context.CompilerContext.Words[flow2Owner.Name].Revision
+    let flow1OwnerRevision = flow2OwnerRevision + 1
+    let flow2OwnerStored = Storage.sourceObject StorageObjectKind.WordDefinition flow2OwnerSource
+    let flow2OwnerInventory: FlowLowering.FlowSourceInventory =
+        { ExpectedFlowOwnerIds = Set.singleton flow2OwnerIdentity
+          Sources =
+            [ { OwnerName = flow2Owner.Name
+                OwnerId = flow2OwnerIdentity
+                OwnerRevision = flow2OwnerRevision
+                SyntaxVersion = flow2Owner.SyntaxVersion
+                EffectsDeclared = flow2Owner.EffectsDeclared
+                Reference = flow2OwnerStored.Reference
+                SourceFile = flow2Owner.Span.File
+                Content = flow2OwnerSource } ] }
+    let flow1Replacement = authoredFlowSource flow2OwnerIdentity flow1OwnerRevision "word effect.owner() -> Int {\n    effects none\n    1\n}"
+    let replacedWithFlow1 =
+        FlowLowering.compileBatchFlowSources compiledFlow2Owner.Context flow2OwnerInventory
+            [ { RevisionIntent = FlowLowering.FlowWordRevisionIntent.Replace(flow2OwnerIdentity, flow2OwnerRevision, flow1OwnerRevision)
+                Source = flow1Replacement } ]
+    check "replacing a Flow/2 owner with Flow/1 clears its Flow/2 owner identity"
+        (not (replacedWithFlow1.Context.Flow2OwnerIds.Contains flow2OwnerIdentity))
+    expectLanguageError "a refreshed Flow/1 owner cannot retain a Flow/2 effect assertion" "FLOW_EFFECT_ASSERTION_TARGET_NOT_FLOW_WORD" (fun () ->
+        FlowLowering.lowerTest replacedWithFlow1.Context flowOwnerTest |> ignore)
+
+    let ownerTest owner =
+        parseTestV2 ("test " + owner + "/owner-contract {\n    1\n    => 1 effects { fs.read: 0; }\n}")
+    let generatedOwner = generatedEntry "effect.generated" (RecordConstructor "Record") [] [ TNamed "Record" ] Set.empty
+    let generatedContext = loweringContextWith Map.empty Map.empty [ generatedOwner ] Map.empty
+    expectLanguageError "generated owners cannot use effect assertions" "FLOW_EFFECT_ASSERTION_TARGET_NOT_FLOW_WORD" (fun () ->
+        FlowLowering.lowerTest generatedContext (ownerTest "effect.generated") |> ignore)
+    expectLanguageError "primitive owners cannot use effect assertions" "FLOW_EFFECT_ASSERTION_TARGET_NOT_FLOW_WORD" (fun () ->
+        FlowLowering.lowerTest (loweringContext [] Map.empty) (ownerTest "add") |> ignore)
+    let stackOwner = wordEntry "legacy.operate" [] [ TInt ] Set.empty [ Push(LInt 1L, sourceSpan) ]
+    expectLanguageError "Stack or otherwise non-Flow owners cannot use effect assertions" "FLOW_EFFECT_ASSERTION_TARGET_NOT_FLOW_WORD" (fun () ->
+        FlowLowering.lowerTest (loweringContext [ stackOwner ] Map.empty) (ownerTest "legacy.operate") |> ignore)
+
+    let legacyOwner =
+        parseWord
+            "word effect.owner() -> Int {\n    effects none\n    1\n}"
+    let compiledLegacyOwner =
+        FlowLowering.compileWord (loweringContext [] Map.empty) (WordId "flow1-effect-owner") legacyOwner
+    let legacyTestSource =
+        "test effect.owner/no-suffix {\n"
+        + "    effect::owner()\n"
+        + "    => 1\n"
+        + "}"
+    let legacyTest = parseTest legacyTestSource
+    check "legacy test with no suffix retains no effect assertion" legacyTest.EffectAssertion.IsNone
+    equal "legacy test without suffix keeps its existing rendered source" legacyTestSource (FlowSource.renderTest legacyTest)
+    let loweredLegacyTest = FlowLowering.lowerTest compiledLegacyOwner.Context legacyTest
+    check "legacy lowering keeps the effect assertion absent" loweredLegacyTest.Definition.EffectAssertion.IsNone
+    check "Flow/1 owner metadata is not misclassified as Flow/2"
+        (not (compiledLegacyOwner.Context.Flow2OwnerIds.Contains(WordId "flow1-effect-owner")))
+    expectLanguageError "Flow/1 owners cannot attach Flow/2 effect assertions" "FLOW_EFFECT_ASSERTION_TARGET_NOT_FLOW_WORD" (fun () ->
+        FlowLowering.lowerTest compiledLegacyOwner.Context (ownerTest "effect.owner") |> ignore)
 
 let private testFlow2PayloadFreeEnums () =
     let enumSource =
@@ -4085,6 +4231,7 @@ let private testFlowAttachmentCallBindings () =
           Word = "legacy.operate"
           Body = [ Push(LInt 4L, detachedSpan); Call("legacy.operate", detachedSpan) ]
           Expected = ExpectedValue(LInt 4L)
+          EffectAssertion = None
           SourceText = ""
           Span = detachedSpan }
     let detachedBody, detachedExpected =
@@ -4873,6 +5020,7 @@ let main _ =
     testParserLocationsAndQualification ()
     testIterativeAstDepthLimit ()
     testFlow2Frontend ()
+    testEffectCountAssertionsFrontend ()
     testFlow2PayloadFreeEnums ()
     testFlow2CheckedRatioPrimitive ()
     testSparseFlowSourceMarkerAllocation ()

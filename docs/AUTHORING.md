@@ -65,6 +65,8 @@ To assert a nominal Money result with a literal, unwrap it with
 `Money::value(...)` and compare an Int literal. A nominal constructor expectation
 must use the explicit `=> value` form, not a bare constructor after `=>`.
 Expectation-side calls do not contribute coverage of the tested word.
+Flow/2 tests can add [effect-count assertions](EFFECT-ASSERTIONS.md) to check
+target-scoped provider calls alongside returned values.
 
 External `tests` and `examples` arrays apply to a single-word define or
 replacement request. Multi-declaration documents require inline cases, as

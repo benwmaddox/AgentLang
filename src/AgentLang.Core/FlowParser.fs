@@ -810,6 +810,46 @@ module FlowParser =
         | Some token -> fail state.File token.Line token.Column token.Text.Length "FLOW_EXPECTATION_TRAILING" $"Unexpected content follows the Flow {kind} expectation."
         | None -> tokenError state "FLOW_INCOMPLETE_INPUT" $"Expected '}}' after the Flow {kind} expectation."
 
+    and private parseEffectCountAssertion state =
+        match current state with
+        | Some token when token.Text = "effects" ->
+            let startToken = consume state
+            if state.SyntaxVersion <> 2 then
+                fail state.File startToken.Line startToken.Column startToken.Text.Length "FLOW_EFFECT_ASSERTION_VERSION" "Provider effect-count assertions require Flow/2 test syntax."
+            expect state "{" |> ignore
+            let counts = ResizeArray<string * int>()
+            let names = HashSet<string>(StringComparer.Ordinal)
+            while peek state <> Some "}" && not (atEnd state) do
+                let nameStart = expectIdentifier state
+                let name =
+                    if accept state "." then
+                        let finalPart = expectIdentifier state
+                        nameStart.Text + "." + finalPart.Text
+                    else nameStart.Text
+                let nameSpan = sourceSpan state.File nameStart (previous state)
+                if not (EffectCountAssertion.observableEffects.Contains name) then
+                    fail state.File nameSpan.Line nameSpan.Column nameSpan.Length "FLOW_EFFECT_ASSERTION_UNSUPPORTED" $"Effect-count assertions cannot observe provider category '{name}'."
+                if not (names.Add name) then
+                    fail state.File nameSpan.Line nameSpan.Column nameSpan.Length "FLOW_EFFECT_ASSERTION_DUPLICATE" $"Effect-count assertion repeats provider category '{name}'."
+                expect state ":" |> ignore
+                let countToken =
+                    match current state with
+                    | Some value when value.Kind = Number -> consume state
+                    | Some value -> fail state.File value.Line value.Column value.Text.Length "FLOW_EFFECT_ASSERTION_COUNT_INVALID" "Effect counts must be nonnegative bounded integers."
+                    | None -> tokenError state "FLOW_INCOMPLETE_INPUT" "Expected an effect count before end of input."
+                let mutable count = 0
+                if not (Int32.TryParse(countToken.Text, NumberStyles.None, CultureInfo.InvariantCulture, &count))
+                   || count > EffectCountAssertion.maximumCount then
+                    fail state.File countToken.Line countToken.Column countToken.Text.Length "FLOW_EFFECT_ASSERTION_COUNT_INVALID" $"Effect counts must be integers between 0 and {EffectCountAssertion.maximumCount}."
+                counts.Add(name, count)
+                if not (accept state ";") && peek state <> Some "}" then
+                    tokenError state "FLOW_EFFECT_ASSERTION_SEPARATOR" "Separate effect-count entries with ';'."
+            let endToken = expect state "}"
+            Some
+                { Counts = Map.ofSeq counts
+                  Span = sourceSpan state.File startToken (Some endToken) }
+        | _ -> None
+
     and private parseTestState state =
         withDepth state (fun () ->
             let startToken, word, caseName, headerSpan = parseCaseHeader state "test"
@@ -839,12 +879,14 @@ module FlowParser =
             | FlowTestExpectation.Expression _ | FlowTestExpectation.RuntimeError _ when List.isEmpty body ->
                 fail state.File startToken.Line startToken.Column startToken.Text.Length "FLOW_EXPECTATION_BODY_EMPTY" "Runtime-error and value-expression tests require a nonempty actual body."
             | _ -> ()
+            let effectAssertion = parseEffectCountAssertion state
             let endToken = closeCase state "test"
             let definition =
                 { Word = word
                   CaseName = caseName
                   Body = body
                   Expected = expected
+                  EffectAssertion = effectAssertion
                   SourceText = sourceSlice state startToken endToken
                   Span = sourceSpan state.File startToken (Some endToken)
                   SyntaxVersion = state.SyntaxVersion
@@ -871,6 +913,10 @@ module FlowParser =
             let expected, expectedSpan = parseCaseExpectationLiteral state "example"
             if List.isEmpty body then
                 fail state.File startToken.Line startToken.Column startToken.Text.Length "FLOW_EXPECTATION_BODY_EMPTY" "A Flow example requires a nonempty actual body."
+            match current state with
+            | Some token when token.Text = "effects" ->
+                fail state.File token.Line token.Column token.Text.Length "FLOW_EFFECT_ASSERTION_TEST_ONLY" "Provider effect-count assertions are available only on tests."
+            | _ -> ()
             let endToken = closeCase state "example"
             let definition =
                 { Word = word

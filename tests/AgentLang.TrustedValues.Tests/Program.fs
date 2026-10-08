@@ -361,6 +361,7 @@ let private noOpHost effectCounter =
       InvokeEffect = fun _ ->
           effectCounter ()
           EffectUnit
+      EnterUserFunction = fun _ _ -> ignore
       WordDefinitionSpan = fun _ -> None
       PrimitiveDefinitionSpan = fun _ -> None }
 

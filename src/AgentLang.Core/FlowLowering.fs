@@ -12,6 +12,8 @@ module FlowLowering =
           /// Audited parameter names for words whose names are not carried by the
           /// legacy WordDefinition. Record constructor names derive from fields.
           ParameterNames: Map<string, string list>
+          /// Flow/2 identities proven by the same source inventory.
+          Flow2OwnerIds: Set<WordId>
           /// Transient private source markers already lowered into words in this context.
           SourceOrigins: Map<SourceSpan, SourceSpan> }
 
@@ -1821,6 +1823,7 @@ module FlowLowering =
         let nextContext =
             { CompilerContext = compilerContext
               ParameterNames = Map.add lowered.Definition.Name lowered.ParameterNames context.ParameterNames
+              Flow2OwnerIds = if flowWord.SyntaxVersion = 2 then Set.add wordId context.Flow2OwnerIds else Set.remove wordId context.Flow2OwnerIds
               SourceOrigins = combinedOrigins }
         let program = Compiler.compileIrProgramWithSourceOrigins compilerContext combinedOrigins
         let programData = VerifiedIrProgram.inspect program
@@ -1861,6 +1864,7 @@ module FlowLowering =
         let nextContext =
             { CompilerContext = compilerContext
               ParameterNames = Map.add lowered.Definition.Name lowered.ParameterNames context.ParameterNames
+              Flow2OwnerIds = if flowWord.SyntaxVersion = 2 then Set.add wordId context.Flow2OwnerIds else Set.remove wordId context.Flow2OwnerIds
               SourceOrigins = combinedOrigins }
         let program = Compiler.compileIrProgramWithSourceOrigins compilerContext combinedOrigins
         let callSites = reconcileCallEvents program lowered.Definition.Name wordId lowered.Definition.Revision artifacts.CallEvents
@@ -2367,9 +2371,18 @@ module FlowLowering =
         if not (Set.isEmpty missingFinalOrigins) then
             fail "IR_SOURCE_ORIGIN_MISSING" "Final batch words contain a private Flow marker without an authored source origin." None None
                 [ "one source origin per final marker" ] [ sprintf "missing marker count=%d" missingFinalOrigins.Count ]
+        let finalFlowOwnerIds =
+            Set.union
+                (retainedSources |> List.map (fun retained -> retained.Document.OwnerId) |> Set.ofList)
+                (sourceDocuments |> Map.toSeq |> Seq.map (fun (_, document) -> document.OwnerId) |> Set.ofSeq)
+        let finalFlow2OwnerIds =
+            Set.union
+                (retainedSources |> List.choose (fun retained -> if retained.Document.SyntaxVersion = 2 then Some retained.Document.OwnerId else None) |> Set.ofList)
+                (sourceDocuments |> Map.toSeq |> Seq.choose (fun (_, document) -> if document.SyntaxVersion = 2 then Some document.OwnerId else None) |> Set.ofSeq)
         let finalContext =
             { CompilerContext = finalCompilerContext
               ParameterNames = finalParameterNames
+              Flow2OwnerIds = finalFlow2OwnerIds
               SourceOrigins = retainedOrigins }
         // This is the single authoritative check of all real bodies. It sees
         // forward references, final effects, scalar validators and call cycles.
@@ -2532,6 +2545,18 @@ module FlowLowering =
         : FlowLoweredTest * FlowCallEvent list * FlowCallEvent list =
         FlowStructure.validateTestNesting flowTest
         requireAttachmentVersion "test" flowTest.Word flowTest.Span flowTest.SyntaxVersion
+        match flowTest.EffectAssertion with
+        | Some assertion ->
+            let ownerId = context.CompilerContext.WordIds.TryFind flowTest.Word
+            let isFlowUserOwner =
+                ownerId
+                |> Option.exists (fun identity ->
+                    context.Flow2OwnerIds.Contains identity
+                    && (context.CompilerContext.Words.TryFind flowTest.Word |> Option.exists (fun entry -> entry.Builtin.IsNone)))
+            if not isFlowUserOwner then
+                fail "FLOW_EFFECT_ASSERTION_TARGET_NOT_FLOW_WORD" "Effect-count assertions require an attached test on a user-authored Flow/2 word." (Some flowTest.Word) (Some assertion.Span)
+                    [ "user-authored Flow/2 word" ] [ "generated, primitive, Stack, Flow/1, or unknown owner" ]
+        | None -> ()
         let state = freshStateWith allocationOrigins (signatureCatalog context)
         rememberSpan state flowTest.Span
         rememberSpan state flowTest.HeaderSpan
@@ -2554,6 +2579,7 @@ module FlowLowering =
               Word = flowTest.Word
               Body = bodyFragment.Expressions
               Expected = expected
+              EffectAssertion = flowTest.EffectAssertion
               SourceText = flowTest.SourceText
               Span = flowTest.Span }
         let projection = makeProjection state
@@ -2895,6 +2921,11 @@ module FlowLowering =
                 [ "one or more word or attachment changes" ] []
 
         let baseFlowOwnerIds = wordInventory.ExpectedFlowOwnerIds
+        let baseFlow2OwnerIds =
+            wordInventory.Sources
+            |> List.choose (fun document -> if document.SyntaxVersion = 2 then Some document.OwnerId else None)
+            |> Set.ofList
+        let context = { context with Flow2OwnerIds = baseFlow2OwnerIds }
         let retainedAttachments = validateFlowAttachmentInventory context baseFlowOwnerIds attachmentInventory
         let baseDocuments =
             retainedAttachments

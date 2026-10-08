@@ -136,6 +136,7 @@ type FlowTestDefinition =
       CaseName: string
       Body: FlowStatement list
       Expected: FlowTestExpectation
+      EffectAssertion: EffectCountAssertion option
       SourceText: string
       Span: SourceSpan
       SyntaxVersion: int
@@ -423,6 +424,18 @@ module FlowStructure =
     let validateTestNesting (definition: FlowTestDefinition) =
         validateSyntaxVersion definition.SyntaxVersion (Some definition.Word) (Some definition.Span)
         validateCaseHeader "test" definition.Word definition.CaseName definition.HeaderSpan
+        match definition.EffectAssertion with
+        | Some assertion when definition.SyntaxVersion <> 2 ->
+            Diagnostics.raiseError "FLOW_EFFECT_ASSERTION_VERSION" "Provider effect-count assertions require Flow/2 test syntax." (Some definition.Word) (Some assertion.Span) [ "Flow/2" ] [ $"Flow/{definition.SyntaxVersion}" ]
+        | Some assertion ->
+            for KeyValue(name, count) in assertion.Counts do
+                if not (EffectCountAssertion.observableEffects.Contains name) then
+                    Diagnostics.raiseError "FLOW_EFFECT_ASSERTION_UNSUPPORTED" $"Effect-count assertions cannot observe provider category '{name}'." (Some definition.Word) (Some assertion.Span)
+                        (EffectCountAssertion.observableEffects |> Set.toList) [ name ]
+                if count < 0 || count > EffectCountAssertion.maximumCount then
+                    Diagnostics.raiseError "FLOW_EFFECT_ASSERTION_COUNT_INVALID" $"Effect count for '{name}' must be between 0 and {EffectCountAssertion.maximumCount}." (Some definition.Word) (Some assertion.Span)
+                        [ $"0..{EffectCountAssertion.maximumCount}" ] [ string count ]
+        | None -> ()
         let expressionRoots =
             match definition.Expected with
             | FlowTestExpectation.Expression expression -> [ expression ]
@@ -632,7 +645,17 @@ module FlowSource =
         let lines = ResizeArray<string>()
         lines.Add($"test {definition.Word}/{definition.CaseName} {{")
         renderStatements definition.SyntaxVersion 1 definition.Body |> List.iter lines.Add
-        lines.Add("    => " + renderExpectation definition.SyntaxVersion definition.Expected)
+        let suffix =
+            definition.EffectAssertion
+            |> Option.map (fun assertion ->
+                let counts =
+                    assertion.Counts
+                    |> Map.toList
+                    |> List.map (fun (name, count) -> $"{name}: {count};")
+                    |> String.concat " "
+                " effects {" + (if counts = "" then "" else " " + counts + " ") + "}")
+            |> Option.defaultValue ""
+        lines.Add("    => " + renderExpectation definition.SyntaxVersion definition.Expected + suffix)
         lines.Add("}")
         String.concat "\n" lines
 
