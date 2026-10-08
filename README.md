@@ -81,6 +81,13 @@ independent retained outputs. A bounded standalone native mailbox controller is
 validated in [report 126](reports/126-native-mailbox-dispatch.md). A general
 release packager, JIT backend and real async I/O remain future work.
 
+The owning-value mailbox integration is locally validated in
+[report 131](reports/131-owning-native-mailboxes.md). Its dedicated local gate,
+`pwsh -NoProfile -File scripts/Verify-OwningMailbox.ps1 -SerialBuild`, builds
+fresh LLVM modules and exercises native initialize/begin/resume calls with
+inline String payloads, retained byte banks and scratch reset. This is a
+correctness gate; it does not measure service throughput or agent efficacy.
+
 A separate Windows C11 arena/mailbox experiment compares per-turn and
 whole-request lifetimes. Run `pwsh -NoProfile -File scripts/Verify-NativeArenaMailbox.ps1`
 for its fresh native safety checks and fixed comparison. See

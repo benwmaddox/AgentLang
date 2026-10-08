@@ -173,7 +173,16 @@ capacity reuse. Measure metadata separately from payload traffic, and compare
 with report 129's frozen evidence. This implementation now passes focused native
 acceptance and the full local Release gate in
 [report 130](../reports/130-stable-arena-rewinds.md).
-Owning mailbox/async integration remains the next step.
+The owning mailbox bridge now passes focused O0/O2 integration in
+[report 131](../reports/131-owning-native-mailboxes.md). It keeps one native lifecycle
+controller. Generated entries return locations into live working storage;
+the controller publishes the complete output set once into inactive retained
+storage before resetting scratch. The 180-check verifier and 122 native assertions
+per optimization level cover dynamic String request/response lifetimes and
+failure isolation. The 37-check full Release gate and 476-assertion LLVM suite
+also pass. Next compare
+both suspension policies with real bounded I/O. Native conformance does not
+establish service throughput, process RAM or improved agent reliability.
 This is not an unresolved preference between packing and bulk reset; see the
 [simplicity review](OWNING-STACK-DESIGN-REVIEW.md#stable-arena-payloads-and-bulk-reset-selected-direction).
 Rewind placement requires compiler proof; uncertain lifetimes retain storage

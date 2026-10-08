@@ -23,6 +23,8 @@ $nativeSourcePaths = @(
     (Join-Path $nativeDirectory 'arena_runtime.c'),
     (Join-Path $nativeDirectory 'mailbox_runtime.c'),
     (Join-Path $nativeDirectory 'mailbox_runtime_windows.c'),
+    (Join-Path $nativeDirectory 'owning_stack_runtime.c'),
+    (Join-Path $nativeDirectory 'owning_bank.c'),
     $unitSourcePath
 )
 $moduleFixturePath = Join-Path $repo 'tests/fixtures/native-conformance/module-abi-v1.json'
@@ -41,6 +43,11 @@ $sourceInputPaths = @(
     (Join-Path $nativeDirectory 'mailbox_runtime.h'),
     (Join-Path $nativeDirectory 'mailbox_runtime.c'),
     (Join-Path $nativeDirectory 'mailbox_runtime_windows.c'),
+    (Join-Path $nativeDirectory 'owning_mailbox_abi.h'),
+    (Join-Path $nativeDirectory 'owning_stack_runtime.h'),
+    (Join-Path $nativeDirectory 'owning_stack_runtime.c'),
+    (Join-Path $nativeDirectory 'owning_bank.h'),
+    (Join-Path $nativeDirectory 'owning_bank.c'),
     $unitSourcePath,
     (Join-Path $repo 'src/AgentLang.Llvm/AgentLang.Llvm.fsproj'),
     (Join-Path $repo 'src/AgentLang.Llvm/LlvmAot.fs'),
@@ -399,7 +406,9 @@ try {
             $runnerSourcePath,
             (Join-Path $nativeDirectory 'arena_runtime.c'),
             (Join-Path $nativeDirectory 'mailbox_runtime.c'),
-            (Join-Path $nativeDirectory 'mailbox_runtime_windows.c')
+            (Join-Path $nativeDirectory 'mailbox_runtime_windows.c'),
+            (Join-Path $nativeDirectory 'owning_stack_runtime.c'),
+            (Join-Path $nativeDirectory 'owning_bank.c')
         )
         foreach ($nativeSource in $nativeSources) {
             if (-not (Test-Path -LiteralPath $nativeSource -PathType Leaf)) { throw "Native dispatch source is missing: $nativeSource" }
@@ -425,6 +434,8 @@ try {
             (Join-Path $nativeDirectory 'arena_runtime.c'),
             (Join-Path $nativeDirectory 'mailbox_runtime.c'),
             (Join-Path $nativeDirectory 'mailbox_runtime_windows.c'),
+            (Join-Path $nativeDirectory 'owning_stack_runtime.c'),
+            (Join-Path $nativeDirectory 'owning_bank.c'),
             $unitSourcePath
         )
         foreach ($unitSource in $unitSources) {

@@ -75,6 +75,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "AgentLang.Llvm", "src\Agent
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "AgentLang.Llvm.Tests", "tests\AgentLang.Llvm.Tests\AgentLang.Llvm.Tests.fsproj", "{272BB8D8-ABAD-4079-97CB-C5280975397C}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "AgentLang.OwningMailbox", "experiments\AgentLang.OwningMailbox\AgentLang.OwningMailbox.fsproj", "{6CD69F1F-686B-4EB8-B9FF-2578CEB6FD2A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -481,6 +483,18 @@ Global
 		{272BB8D8-ABAD-4079-97CB-C5280975397C}.Release|x64.Build.0 = Release|Any CPU
 		{272BB8D8-ABAD-4079-97CB-C5280975397C}.Release|x86.ActiveCfg = Release|Any CPU
 		{272BB8D8-ABAD-4079-97CB-C5280975397C}.Release|x86.Build.0 = Release|Any CPU
+		{6CD69F1F-686B-4EB8-B9FF-2578CEB6FD2A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6CD69F1F-686B-4EB8-B9FF-2578CEB6FD2A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6CD69F1F-686B-4EB8-B9FF-2578CEB6FD2A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6CD69F1F-686B-4EB8-B9FF-2578CEB6FD2A}.Debug|x64.Build.0 = Debug|Any CPU
+		{6CD69F1F-686B-4EB8-B9FF-2578CEB6FD2A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6CD69F1F-686B-4EB8-B9FF-2578CEB6FD2A}.Debug|x86.Build.0 = Debug|Any CPU
+		{6CD69F1F-686B-4EB8-B9FF-2578CEB6FD2A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6CD69F1F-686B-4EB8-B9FF-2578CEB6FD2A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6CD69F1F-686B-4EB8-B9FF-2578CEB6FD2A}.Release|x64.ActiveCfg = Release|Any CPU
+		{6CD69F1F-686B-4EB8-B9FF-2578CEB6FD2A}.Release|x64.Build.0 = Release|Any CPU
+		{6CD69F1F-686B-4EB8-B9FF-2578CEB6FD2A}.Release|x86.ActiveCfg = Release|Any CPU
+		{6CD69F1F-686B-4EB8-B9FF-2578CEB6FD2A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -519,5 +533,6 @@ Global
 		{220EC9B0-8133-45E1-9B0A-46B5E0D90ECB} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{48CFBE29-AF25-44DF-BC29-944C862F479D} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{272BB8D8-ABAD-4079-97CB-C5280975397C} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{6CD69F1F-686B-4EB8-B9FF-2578CEB6FD2A} = {8E1D1CCC-9289-C849-48CA-D7E099D02B6F}
 	EndGlobalSection
 EndGlobal

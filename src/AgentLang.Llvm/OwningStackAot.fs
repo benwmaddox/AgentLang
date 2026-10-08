@@ -6,6 +6,7 @@ open System.IO
 open System.Runtime.InteropServices
 open System.Security.Cryptography
 open System.Text
+open System.Text.Json
 open AgentLang
 
 [<Struct>]
@@ -84,6 +85,72 @@ type OwningStackExecutionResult =
       RetainedOutputBytes: byte array
       Layouts: OwningStackTypeLayout list
       LayoutEvents: OwningStackLayoutEvent list }
+
+type OwningMailboxEntryMetadata =
+    { Role: string
+      FunctionSymbol: string
+      EntryFrameSymbol: string
+      InputTypes: IrType list
+      OutputTypes: IrType list
+      InputTypeIndexes: uint32 list
+      OutputTypeIndexes: uint32 list
+      DiagnosticIds: int list
+      FrameSourcePath: string
+      SourceIrPath: string }
+
+type OwningMailboxDiagnosticInfo =
+    { Id: int
+      EntryRole: string option
+      Code: string
+      Message: string
+      Word: string option
+      File: string option
+      Line: int option
+      Column: int option
+      Length: int option
+      Expected: string list
+      Actual: string list }
+
+[<Sealed>]
+type OwningMailboxCompiledModule internal
+    (libraryPath: string,
+     llvmIrPath: string,
+     metadataSourcePath: string,
+     manifestPath: string,
+     runtimeDirectory: string,
+     llvmIr: string,
+     entries: OwningMailboxEntryMetadata list,
+     entryFrameIrPaths: string list,
+     entrySourceIrPaths: string list,
+     diagnostics: OwningMailboxDiagnosticInfo list,
+     layouts: OwningStackTypeLayout list,
+     backendMetadataPerFrameBytes: Map<string, int>,
+     callbackMetadataPerEntryBytes: Map<string, int>,
+     backendMetadataPeakBoundBytes: int64,
+     runtimeLayoutScannerScratchBytes: int,
+     preflightSpanTableBytes: int,
+     objectPaths: string list) =
+    member _.LibraryPath = libraryPath
+    member _.LlvmIrPath = llvmIrPath
+    member _.MetadataSourcePath = metadataSourcePath
+    member _.ManifestPath = manifestPath
+    member _.RuntimeDirectory = runtimeDirectory
+    member _.LlvmIr = llvmIr
+    member _.Entries = entries
+    member _.EntryFrameIrPaths = entryFrameIrPaths
+    member _.EntrySourceIrPaths = entrySourceIrPaths
+    member _.Diagnostics = diagnostics
+    member _.Layouts = layouts
+    member _.BackendMetadataPerFrameBytes = backendMetadataPerFrameBytes
+    member _.CallbackMetadataPerEntryBytes = callbackMetadataPerEntryBytes
+    member _.BackendMetadataPeakBoundBytes = backendMetadataPeakBoundBytes
+    member _.RuntimeLayoutScannerScratchBytes = runtimeLayoutScannerScratchBytes
+    /// The generated DLL contains backend metadata only; controller storage is
+    /// sized by the native mailbox API and is intentionally reported as absent.
+    member _.ControllerReservedStorageBytes: int option = None
+    /// Explicit local span table used by the generated C preflight helper.
+    member _.PreflightSpanTableBytes = preflightSpanTableBytes
+    member _.ObjectPaths = objectPaths
 
 [<Sealed>]
 type OwningStackCapacityException internal
@@ -170,13 +237,15 @@ type internal OwningTypeInfo =
 type internal OwningProgramInfo =
     { Program: IrProgram
       Body: IrExecutableBody
+      Bodies: IrExecutableBody list
       ReachableFunctions: IrFunction list
       TypeIds: Map<IrType, uint32>
       TypeInfos: Map<IrType, OwningTypeInfo>
       Layouts: OwningStackTypeLayout list }
 
 type internal OwningDiagnosticInfo =
-    { Diagnostic: Diagnostic }
+    { Diagnostic: Diagnostic
+      EntryRole: string option }
 
 type private OwningLocalSlotPlan =
     { OffsetBytes: int
@@ -465,13 +534,20 @@ module OwningStackAot =
 
     let private extent payload = max 8 payload
 
-    let private makeProgramInfo (verifiedBody: VerifiedIrBody) =
-        let checkedBody =
-            let sourceProgram = VerifiedIrBody.program verifiedBody
-            VerifiedIrProgram.requireBackendRegistry Compiler.primitiveIrCatalog sourceProgram
-            IrVerifier.verifyBody sourceProgram (VerifiedIrBody.inspect verifiedBody)
-        let program = VerifiedIrProgram.inspect (VerifiedIrBody.program checkedBody)
-        let body = VerifiedIrBody.inspect checkedBody
+    let private makeProgramInfoForBodies (verifiedBodies: VerifiedIrBody list) =
+        if List.isEmpty verifiedBodies then invalidArg (nameof verifiedBodies) "An owning module requires at least one verified body."
+        for verifiedBody in verifiedBodies do
+            if Object.ReferenceEquals(verifiedBody, null) then
+                invalidArg (nameof verifiedBodies) "Owning module bodies cannot be null."
+        let sourceProgram = VerifiedIrBody.program (List.head verifiedBodies)
+        for verifiedBody in verifiedBodies do
+            if not (Object.ReferenceEquals(sourceProgram, VerifiedIrBody.program verifiedBody)) then
+                invalidArg (nameof verifiedBodies) "All owning module bodies must share the exact same VerifiedIrProgram instance."
+        VerifiedIrProgram.requireBackendRegistry Compiler.primitiveIrCatalog sourceProgram
+        let checkedBodies = verifiedBodies |> List.map (fun body -> IrVerifier.verifyBody sourceProgram (VerifiedIrBody.inspect body))
+        let program = VerifiedIrProgram.inspect sourceProgram
+        let bodies = checkedBodies |> List.map VerifiedIrBody.inspect
+        let body = List.head bodies
 
         let requireEffectFree owner effects =
             if not (Set.isEmpty effects) then
@@ -633,8 +709,9 @@ module OwningStackAot =
                     (Some owner) span [ $"supported {operation} signature" ]
                     [ String.concat " " (call.InputTypes |> List.map IrTypes.format) + " -> " + String.concat " " (call.OutputTypes |> List.map IrTypes.format) ]
 
-        let sourceMap = Map.fold (fun merged site source -> Map.add site source merged)
-                            (VerifiedIrProgram.inspect (VerifiedIrBody.program checkedBody)).SourceMap body.BodySourceMap
+        let sourceMap =
+            bodies
+            |> List.fold (fun merged current -> Map.fold (fun currentMap site source -> Map.add site source currentMap) merged current.BodySourceMap) program.SourceMap
         let rec validateBlock owner (block: IrBlock) =
             block.EntryShape.StackTypes @ (block.EntryShape.LocalTypes |> Map.toList |> List.map snd) @ block.ExitShape.StackTypes @ (block.ExitShape.LocalTypes |> Map.toList |> List.map snd)
             |> List.iter (checkType owner)
@@ -699,10 +776,11 @@ module OwningStackAot =
                 | _ -> Diagnostics.raiseError "IR_OWNING_STACK_FIELD_TARGET" "GetRecordField is not bound to its verified matching record accessor." (Some owner) span [ sprintf "%A" (GetRecordFieldOperation(key, fieldIndex)) ] [ call.ResolvedName ]
             | _ -> Diagnostics.raiseError "IR_OWNING_STACK_FIELD_TARGET" "GetRecordField requires its verified generated record accessor target." (Some owner) span [ "generated record accessor" ] [ call.ResolvedName ]
 
-        requireEffectFree body.BodyName body.BodyDeclaredEffects
-        requireEffectFree body.BodyName body.BodyInferredEffects
-        body.BodyInputTypes @ body.BodyOutputTypes |> List.iter (checkType body.BodyName)
-        validateBlock body.BodyName body.BodyBlock
+        for current in bodies do
+            requireEffectFree current.BodyName current.BodyDeclaredEffects
+            requireEffectFree current.BodyName current.BodyInferredEffects
+            current.BodyInputTypes @ current.BodyOutputTypes |> List.iter (checkType current.BodyName)
+            validateBlock current.BodyName current.BodyBlock
 
         let reachable = HashSet<WordId>()
         let pending = Queue<IrFunction>()
@@ -727,7 +805,7 @@ module OwningStackAot =
             fn.InputTypes @ fn.OutputTypes |> List.iter (checkType fn.FunctionName)
             validateBlock fn.FunctionName fn.FunctionBody
             inspectCalls fn.FunctionName fn.FunctionBody
-        inspectCalls body.BodyName body.BodyBlock
+        for current in bodies do inspectCalls current.BodyName current.BodyBlock
         while pending.Count > 0 do checkFunction (pending.Dequeue())
         let typeInfos = typeInfos
         if typeInfos.Count > 4096 then
@@ -771,10 +849,14 @@ module OwningStackAot =
             |> List.choose (fun (id, fn) -> if reachable.Contains id then Some fn else None)
         { Program = program
           Body = body
+          Bodies = bodies
           ReachableFunctions = reachableFunctions
           TypeIds = typeIds
           TypeInfos = typeInfos
           Layouts = typeLayouts }
+
+    let private makeProgramInfo (verifiedBody: VerifiedIrBody) =
+        makeProgramInfoForBodies [ verifiedBody ]
 
     let private infoFor (info: OwningProgramInfo) ty =
         info.TypeInfos.TryFind ty
@@ -1214,7 +1296,7 @@ module OwningStackAot =
                   Span = span
                   Expected = expected
                   Actual = actual }
-            diagnostics.Add { Diagnostic = item }
+            diagnostics.Add { Diagnostic = item; EntryRole = None }
             uint32 diagnostics.Count
         let spanFor site = sourceMap.TryFind site |> Option.map (fun source -> source.SiteSpan)
         let functionSymbols =
@@ -1999,15 +2081,27 @@ module OwningStackAot =
 
         writer.Text, diagnostics.ToArray()
 
-    let private emitDynamicModule (info: OwningProgramInfo) (bodyAnalysis: ArenaLifetimeBodyAnalysis) (functionAnalyses: Map<WordId, ArenaLifetimeBodyAnalysis>) =
+    let private emitDynamicModule
+        (info: OwningProgramInfo)
+        (entryAnalyses: ArenaLifetimeBodyAnalysis list)
+        (functionAnalyses: Map<WordId, ArenaLifetimeBodyAnalysis>)
+        (mailboxMode: bool) =
         let body = info.Body
+        let bodies = info.Bodies
+        if bodies.Length <> entryAnalyses.Length then
+            invalidOp "Owning module entry bodies and lifetime analyses have different lengths."
+        if mailboxMode && bodies.Length <> 3 then
+            invalidOp "An owning mailbox module must contain exactly three entry bodies."
         let program = info.Program
         let sourceMap =
-            Map.fold (fun merged site source -> Map.add site source merged) program.SourceMap body.BodySourceMap
+            bodies
+            |> List.fold (fun merged current -> Map.fold (fun currentMap site source -> Map.add site source currentMap) merged current.BodySourceMap) program.SourceMap
         let diagnostics = ResizeArray<OwningDiagnosticInfo>()
+        let mutable diagnosticRole: string option = None
         let addDiagnostic code message word span expected actual =
             diagnostics.Add
-                { Diagnostic =
+                { EntryRole = diagnosticRole
+                  Diagnostic =
                     { Code = code
                       Message = message
                       Word = Some word
@@ -2027,9 +2121,14 @@ module OwningStackAot =
         let typeId ty = typeIdFor info.TypeIds ty
         let typeInfo ty = infoFor info ty
         let typeKind = function IrInt -> 1u | IrBool -> 2u | IrUnit -> 3u | IrNominal _ -> 4u | IrString -> 5u | ty -> invalidOp $"Unsupported dynamic descriptor type {IrTypes.format ty}."
+        let entryRoles = [ "initialize"; "begin"; "resume" ]
+        let entryFrameSymbols =
+            if mailboxMode then entryRoles |> List.map (fun role -> $"@agentlang_mailbox_{role}_frame")
+            else [ "@agentlang_entry_frame" ]
+        let layoutSymbol = if mailboxMode then "@agentlang_owning_mailbox_layout" else "@al_owning_layout"
 
         let allBlocks = ResizeArray<string * IrBlock>()
-        allBlocks.Add(body.BodyName, body.BodyBlock)
+        for current in bodies do allBlocks.Add(current.BodyName, current.BodyBlock)
         for fn in functions do allBlocks.Add(fn.FunctionName, fn.FunctionBody)
         let stringValues = ResizeArray<string>()
         let seenStrings = HashSet<string>(StringComparer.Ordinal)
@@ -2076,6 +2175,8 @@ module OwningStackAot =
         writer.Line("%AlOwningValueSize = type { i32, i32 }")
         writer.Line("%AlOwningFieldLocation = type { i32, i32, i32 }")
         writer.Line("%AlOwningDescriptor = type { i32, i32, i32, i32, i32 }")
+        writer.Line("%AlOwningExternalSlice = type { ptr, i32, i32 }")
+        writer.Line("%AlOwningMailboxOutputSlice = type { i32, i32, i32, i32 }")
 
         let fieldArraySize = max 1 descriptorFields.Count
         let renderedTypeDescriptors =
@@ -2095,7 +2196,8 @@ module OwningStackAot =
                 |> String.concat ", "
         writer.Line($"@al_owning_types = private constant [{typeInfos.Length} x %%AlOwningTypeDescriptor] [{renderedTypeDescriptors}], align 4")
         writer.Line($"@al_owning_fields = private constant [{fieldArraySize} x %%AlOwningFieldDescriptor] [{renderedFields}], align 4")
-        writer.Line($"@al_owning_layout = private constant %%AlOwningLayout {{ i32 1, ptr @al_owning_types, i32 {typeInfos.Length}, ptr @al_owning_fields, i32 {descriptorFields.Count} }}, align 8")
+        let layoutLinkage = if mailboxMode then "" else "private "
+        writer.Line($"{layoutSymbol} = {layoutLinkage}constant %%AlOwningLayout {{ i32 1, ptr @al_owning_types, i32 {typeInfos.Length}, ptr @al_owning_fields, i32 {descriptorFields.Count} }}, align 8")
         for value in stringValues do
             let bytes, _, _ = encodeLiteral value
             writer.Line($"{stringGlobal value} = private unnamed_addr constant [{bytes.Length} x i8] c\"{llvmByteString bytes}\", align 8")
@@ -2133,6 +2235,8 @@ module OwningStackAot =
         writer.Line("declare i32 @al_owning_equal(ptr, i32, i32, i32)")
         writer.Line("declare void @al_owning_publish(ptr, ptr, i32, i32, i32, i32)")
         writer.Line("declare void @al_owning_set_failure(ptr, i32, i32, i32, i32)")
+        if mailboxMode then
+            writer.Line("declare i32 @agentlang_owning_mailbox_preflight(ptr, ptr, i32, ptr, i32, i32, i32, i32, i32, ptr)")
         writer.Line("declare { i64, i1 } @llvm.sadd.with.overflow.i64(i64, i64)")
         writer.Line("declare { i64, i1 } @llvm.ssub.with.overflow.i64(i64, i64)")
         writer.Line("declare { i64, i1 } @llvm.smul.with.overflow.i64(i64, i64)")
@@ -2273,7 +2377,7 @@ module OwningStackAot =
             w.Inst($"{initStatus} = call i32 @al_owning_check_initialized(ptr %%ctx, i32 {entry.Offset}, i32 {entry.Extent})")
             emitStatusResult w initStatus failureLabel
 
-        let emitFrameFunction symbol owner (inputTypes: IrType list) (outputTypes: IrType list) (block: IrBlock) (analysis: ArenaLifetimeBodyAnalysis) =
+        let emitFrameFunction symbol owner (inputTypes: IrType list) (outputTypes: IrType list) (block: IrBlock) (analysis: ArenaLifetimeBodyAnalysis) (frameSourceMap: Map<SourceSiteId, IrSourceSite>) =
             let plan = buildDynamicFunctionPlan block
             let w = OwningLlvmWriter()
             let failBody = w.Label "frame.failure"
@@ -2445,7 +2549,7 @@ module OwningStackAot =
                     emitRuntimeStatus w "%ctx" failBody
                 let entryAt entries index = entries[index]
                 for instruction in current.Code do
-                    let instructionSpan = spanFor instruction.Site
+                    let instructionSpan = frameSourceMap.TryFind instruction.Site |> Option.map (fun source -> source.SiteSpan)
                     let stepId = addDiagnostic "RUNTIME_STEP_LIMIT" "Execution exceeded the 10,000 instruction limit." currentOwner instructionSpan [] []
                     let stepStatus = w.Fresh "step.status"
                     w.Inst($"{stepStatus} = call i32 @al_owning_charge_step(ptr %%ctx, i32 {stepId})")
@@ -2604,7 +2708,7 @@ module OwningStackAot =
                         w.Inst($"{location} = alloca %%AlOwningFieldLocation, align 4")
                         let locationError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to locate a verified dynamic record field." currentOwner instructionSpan [] []
                         let status = w.Fresh "field.location.status"
-                        w.Inst($"{status} = call i32 @al_owning_locate_field(ptr %%ctx, ptr @al_owning_layout, i32 {typeIndex parentType}, i32 {parentOffset}, i32 {parent.Extent}, i32 {fieldIndex}, i32 {locationError}, ptr {location})")
+                        w.Inst($"{status} = call i32 @al_owning_locate_field(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex parentType}, i32 {parentOffset}, i32 {parent.Extent}, i32 {fieldIndex}, i32 {locationError}, ptr {location})")
                         emitStatusResult w status failBody
                         let loadLocation index name =
                             let pointer = w.Fresh $"{name}.pointer"
@@ -2874,12 +2978,20 @@ module OwningStackAot =
             w.Text
 
         let frameTexts = ResizeArray<string>()
-        let entryFrame = emitFrameFunction "@agentlang_entry_frame" body.BodyName body.BodyInputTypes body.BodyOutputTypes body.BodyBlock bodyAnalysis
-        frameTexts.Add(entryFrame)
-        writer.Line(entryFrame)
+        let entryFrameTexts = ResizeArray<string * string>()
+        for index, (currentBody, analysis) in List.zip bodies entryAnalyses |> List.indexed do
+            let symbol = entryFrameSymbols[index]
+            diagnosticRole <- if mailboxMode then Some entryRoles[index] else None
+            let frameSourceMap =
+                Map.fold (fun merged site source -> Map.add site source merged) program.SourceMap currentBody.BodySourceMap
+            let entryFrame = emitFrameFunction symbol currentBody.BodyName currentBody.BodyInputTypes currentBody.BodyOutputTypes currentBody.BodyBlock analysis frameSourceMap
+            diagnosticRole <- None
+            frameTexts.Add(entryFrame)
+            entryFrameTexts.Add((symbol, entryFrame))
+            writer.Line(entryFrame)
         for fn in functions do
             let functionAnalysis = functionAnalyses.TryFind fn.FunctionId |> Option.defaultValue { ScopeExits = Map.empty; FunctionExit = { AllowRewind = false; Reason = "missing interprocedural proof" } }
-            let functionText = emitFrameFunction (symbolFor fn.FunctionId) fn.FunctionName fn.InputTypes fn.OutputTypes fn.FunctionBody functionAnalysis
+            let functionText = emitFrameFunction (symbolFor fn.FunctionId) fn.FunctionName fn.InputTypes fn.OutputTypes fn.FunctionBody functionAnalysis program.SourceMap
             frameTexts.Add(functionText)
             writer.Line(functionText)
 
@@ -2895,24 +3007,221 @@ module OwningStackAot =
                     let mutable alignment = 0
                     if not (Int32.TryParse(alignmentText, &alignment)) || alignment <= 0 then
                         invalidOp $"Unable to account for emitted LLVM alloca alignment '{alignmentText}'."
-                    let size =
-                        match typeName with
+                    let rec llvmTypeSize typeText =
+                        match typeText with
                         | "i1" -> 1L
                         | "i32" -> 4L
+                        | "i64" | "ptr" -> 8L
                         | "%AlOwningValueSize" -> 8L
                         | "%AlOwningFieldLocation" -> 12L
                         | "%AlOwningDescriptor" -> 20L
-                        | other when other.StartsWith("[", StringComparison.Ordinal) && other.EndsWith(" x %AlOwningDescriptor]", StringComparison.Ordinal) ->
-                            let countText = other.Substring(1, other.IndexOf(" x ", StringComparison.Ordinal) - 1)
+                        | "%AlOwningExternalSlice" | "%AlOwningMailboxOutputSlice" -> 16L
+                        | other when other.StartsWith("[", StringComparison.Ordinal) && other.EndsWith("]", StringComparison.Ordinal) ->
+                            let separator = other.IndexOf(" x ", StringComparison.Ordinal)
+                            if separator <= 1 then invalidOp $"Unable to account for emitted LLVM alloca type '{other}'."
+                            let countText = other.Substring(1, separator - 1)
                             let mutable count = 0L
                             if not (Int64.TryParse(countText, &count)) || count < 0L then
-                                invalidOp $"Unable to account for emitted LLVM descriptor array '{other}'."
-                            count * 20L
+                                invalidOp $"Unable to account for emitted LLVM array count '{other}'."
+                            Checked.(*) count (llvmTypeSize (other.Substring(separator + 3, other.Length - separator - 4)))
                         | other -> invalidOp $"Unable to account for emitted LLVM alloca type '{other}'."
+                    let size = llvmTypeSize typeName
                     let aligned = ((totalBytes + int64 alignment - 1L) / int64 alignment) * int64 alignment
                     totalBytes <- aligned + size
             if totalBytes > int64 Int32.MaxValue then invalidOp "Owning-stack backend metadata exceeds its reported bound."
             int totalBytes
+
+        let emitMailboxCallback index role (entryBody: IrExecutableBody) =
+            let callback = OwningLlvmWriter()
+            let callbackSymbol = $"agentlang_mailbox_{role}"
+            let callbackFrameSymbol = entryFrameSymbols[index]
+            let invalidError = addDiagnostic "OWNING_MAILBOX_INPUT_INVALID" $"The {role} mailbox callback received invalid native input or metadata." entryBody.BodyName None [] []
+            let capacityError = addDiagnostic "OWNING_MAILBOX_INPUT_CAPACITY" $"The {role} mailbox input values exceed the working arena capacity." entryBody.BodyName None [] []
+            let outputCapacityError = addDiagnostic "OWNING_MAILBOX_OUTPUT_CAPACITY" $"The {role} mailbox output descriptor capacity is insufficient." entryBody.BodyName None [] []
+            let measureError = addDiagnostic "OWNING_STACK_INPUT_INVALID" $"The {role} mailbox input does not match its verified serialized value layout." entryBody.BodyName None [] []
+            let importError = addDiagnostic "OWNING_STACK_INTERNAL" $"The {role} mailbox input could not be imported into its working arena." entryBody.BodyName None [] []
+            let frameError = addDiagnostic "RUNTIME_CALL_DEPTH" $"The {role} mailbox entry exceeded the 64 word call-depth limit." entryBody.BodyName None [] []
+            let inputCount = entryBody.BodyInputTypes.Length
+            let outputCount = entryBody.BodyOutputTypes.Length
+            if inputCount < 1 || inputCount > 3 || outputCount < 1 || outputCount > 2 then
+                invalidOp $"Mailbox role '{role}' has an unsupported input/output count."
+            let failure = callback.Label $"mailbox.{role}.failure"
+            let contextValid = callback.Label $"mailbox.{role}.context.valid"
+            let preflightReady = callback.Label $"mailbox.{role}.preflight.ready"
+            callback.Line($"define i32 @{callbackSymbol}(ptr %%ctx, ptr %%inputs, i32 %%input.count, ptr %%outputs, i32 %%output.capacity) {{")
+            callback.Line("entry:")
+            let contextNonNull = callback.Fresh "mailbox.context.nonnull"
+            callback.Inst($"{contextNonNull} = icmp ne ptr %%ctx, null")
+            callback.Inst($"br i1 {contextNonNull}, label %%{contextValid}, label %%{failure}")
+            callback.Line($"{contextValid}:")
+            let totalPointer = callback.Fresh "mailbox.input.total.pointer"
+            callback.Inst($"{totalPointer} = alloca i32, align 4")
+            let preflightStatus = callback.Fresh "mailbox.preflight.status"
+            callback.Inst(
+                $"{preflightStatus} = call i32 @agentlang_owning_mailbox_preflight(ptr %%ctx, ptr %%inputs, i32 %%input.count, ptr %%outputs, i32 %%output.capacity, i32 {index}, i32 {invalidError}, i32 {capacityError}, i32 {outputCapacityError}, ptr {totalPointer})")
+            let preflightOkay = callback.Fresh "mailbox.preflight.ok"
+            callback.Inst($"{preflightOkay} = icmp eq i32 {preflightStatus}, 0")
+            callback.Inst($"br i1 {preflightOkay}, label %%{preflightReady}, label %%{failure}")
+            callback.Line($"{preflightReady}:")
+
+            // Mark the output metadata invalid before any later operation can
+            // fail. The preflight helper has already proved it is writable and
+            // disjoint from all input and arena storage.
+            for outputIndex in 0 .. outputCount - 1 do
+                let outputPointer = callback.Fresh "mailbox.output.descriptor"
+                callback.Inst($"{outputPointer} = getelementptr inbounds %%AlOwningMailboxOutputSlice, ptr %%outputs, i32 {outputIndex}")
+                for fieldIndex, fieldValue in [ 0, "4294967295"; 1, "0"; 2, "0"; 3, "0" ] do
+                    let fieldPointer = callback.Fresh "mailbox.output.field"
+                    callback.Inst($"{fieldPointer} = getelementptr inbounds %%AlOwningMailboxOutputSlice, ptr {outputPointer}, i32 0, i32 {fieldIndex}")
+                    callback.Inst($"store i32 {fieldValue}, ptr {fieldPointer}, align 4")
+
+            let inputDescriptors = callback.Fresh "mailbox.input.descriptors"
+            callback.Inst($"{inputDescriptors} = alloca [{inputCount} x %%AlOwningDescriptor], align 4")
+            let inputEntries = ResizeArray<OwningDynamicStackEntry * string * string>()
+            let mutable inputOffset = "0"
+            for inputIndex, ty in entryBody.BodyInputTypes |> List.indexed do
+                let slicePointer = callback.Fresh "mailbox.input.slice"
+                callback.Inst($"{slicePointer} = getelementptr inbounds %%AlOwningExternalSlice, ptr %%inputs, i32 {inputIndex}")
+                let dataPointerField = callback.Fresh "mailbox.input.bytes.field"
+                callback.Inst($"{dataPointerField} = getelementptr inbounds %%AlOwningExternalSlice, ptr {slicePointer}, i32 0, i32 0")
+                let dataPointer = callback.Fresh "mailbox.input.bytes"
+                callback.Inst($"{dataPointer} = load ptr, ptr {dataPointerField}, align 8")
+                let extentPointer = callback.Fresh "mailbox.input.extent.field"
+                callback.Inst($"{extentPointer} = getelementptr inbounds %%AlOwningExternalSlice, ptr {slicePointer}, i32 0, i32 1")
+                let suppliedExtent = callback.Fresh "mailbox.input.extent"
+                callback.Inst($"{suppliedExtent} = load i32, ptr {extentPointer}, align 4")
+                let payloadPointer = callback.Fresh "mailbox.input.payload.pointer"
+                let measuredExtentPointer = callback.Fresh "mailbox.input.measured.extent.pointer"
+                callback.Inst($"{payloadPointer} = alloca i32, align 4")
+                callback.Inst($"{measuredExtentPointer} = alloca i32, align 4")
+                let measureStatus = callback.Fresh "mailbox.input.measure.status"
+                callback.Inst(
+                    $"{measureStatus} = call i32 @al_owning_measure_external_value(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex ty}, ptr {dataPointer}, i32 {suppliedExtent}, i32 0, i32 {measureError}, ptr {payloadPointer}, ptr {measuredExtentPointer})")
+                emitStatusResult callback measureStatus failure
+                let payload = callback.Fresh "mailbox.input.payload"
+                callback.Inst($"{payload} = load i32, ptr {payloadPointer}, align 4")
+                let measuredExtent = callback.Fresh "mailbox.input.measured.extent"
+                callback.Inst($"{measuredExtent} = load i32, ptr {measuredExtentPointer}, align 4")
+                let sameExtent = callback.Fresh "mailbox.input.extent.exact"
+                let extentOkay = callback.Label "mailbox.input.extent.ok"
+                let extentInvalid = callback.Label "mailbox.input.extent.invalid"
+                callback.Inst($"{sameExtent} = icmp eq i32 {measuredExtent}, {suppliedExtent}")
+                callback.Inst($"br i1 {sameExtent}, label %%{extentOkay}, label %%{extentInvalid}")
+                callback.Line($"{extentInvalid}:")
+                callback.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 4, i32 {measureError}, i32 {measuredExtent}, i32 {suppliedExtent})")
+                callback.Inst($"br label %%{failure}")
+                callback.Line($"{extentOkay}:")
+                let ownerEnd = emitOffset callback inputOffset suppliedExtent
+                let descriptor = { Type = ty; Offset = inputOffset; Extent = suppliedExtent; Payload = payload; OwnerEnd = ownerEnd }
+                let descriptorPointer = emitDescriptorElementPointer callback inputDescriptors inputIndex
+                emitStoreDescriptor callback descriptorPointer descriptor
+                inputEntries.Add((descriptor, dataPointer, suppliedExtent))
+                inputOffset <- ownerEnd
+
+            let reservedInputBytes = callback.Fresh "mailbox.input.total"
+            // The preflight result is the checked aggregate extent. The cursor
+            // starts at zero because the controller calls al_owning_begin once.
+            callback.Inst($"{reservedInputBytes} = load i32, ptr {totalPointer}, align 4")
+            let reserveStatus = callback.Fresh "mailbox.input.reserve.status"
+            callback.Inst($"{reserveStatus} = call i32 @al_owning_reserve_to(ptr %%ctx, i32 {reservedInputBytes}, i32 {importError})")
+            emitStatusResult callback reserveStatus failure
+            for descriptor, dataPointer, suppliedExtent in inputEntries do
+                let copyStatus = callback.Fresh "mailbox.input.copy.status"
+                callback.Inst(
+                    $"{copyStatus} = call i32 @al_owning_copy_external_bounded(ptr %%ctx, i32 {descriptor.Offset}, ptr {dataPointer}, i32 {suppliedExtent}, i32 0, i32 {descriptor.Payload}, i32 {descriptor.Extent}, i32 {typeId descriptor.Type}, i32 {importError})")
+                emitStatusResult callback copyStatus failure
+                emitDescriptorTransfer callback descriptor failure
+
+            let outputDescriptors = callback.Fresh "mailbox.output.descriptors"
+            callback.Inst($"{outputDescriptors} = alloca [{outputCount} x %%AlOwningDescriptor], align 4")
+            let frameStatus = callback.Fresh "mailbox.frame.status"
+            callback.Inst($"{frameStatus} = call i32 {callbackFrameSymbol}(ptr %%ctx, ptr {inputDescriptors}, ptr {outputDescriptors}, i32 {frameError})")
+            emitStatusResult callback frameStatus failure
+            let serializedOutputs = ResizeArray<OwningDynamicStackEntry * IrType>()
+            for outputIndex, outputType in entryBody.BodyOutputTypes |> List.indexed do
+                let descriptorPointer = emitDescriptorElementPointer callback outputDescriptors outputIndex
+                let result, actualType = emitLoadDescriptor callback descriptorPointer outputType
+                let typeMatches = callback.Fresh "mailbox.output.type.matches"
+                let typeOkay = callback.Label "mailbox.output.type.ok"
+                let typeInvalid = callback.Label "mailbox.output.type.invalid"
+                callback.Inst($"{typeMatches} = icmp eq i32 {actualType}, {typeId outputType}")
+                callback.Inst($"br i1 {typeMatches}, label %%{typeOkay}, label %%{typeInvalid}")
+                callback.Line($"{typeInvalid}:")
+                callback.Inst("call void @al_owning_set_failure(ptr %ctx, i32 5, i32 0, i32 0, i32 0)")
+                callback.Inst($"br label %%{failure}")
+                callback.Line($"{typeOkay}:")
+                emitDescriptorBounds callback result (Some(string (typeId outputType))) failure
+                let infoForOutput = typeInfo outputType
+                if not infoForOutput.IsDynamic && infoForOutput.PayloadBytes = 0 then
+                    let needsToken = callback.Fresh "mailbox.output.empty.token.needed"
+                    let createToken = callback.Label "mailbox.output.empty.token.create"
+                    let keepValue = callback.Label "mailbox.output.empty.token.keep"
+                    let tokenJoin = callback.Label "mailbox.output.empty.token.join"
+                    callback.Inst($"{needsToken} = icmp eq i32 {result.Extent}, 0")
+                    callback.Inst($"br i1 {needsToken}, label %%{createToken}, label %%{keepValue}")
+                    callback.Line($"{createToken}:")
+                    let tokenStart = emitContextLoad callback "%ctx" 2
+                    let tokenEnd = emitOffset callback tokenStart "8"
+                    emitReserve callback tokenEnd importError failure
+                    callback.Inst($"call void @al_owning_store_token(ptr %%ctx, i32 {tokenStart}, i32 {typeId outputType})")
+                    emitRuntimeStatus callback "%ctx" failure
+                    let tokenPredecessor = callback.CurrentBlock
+                    callback.Inst($"br label %%{tokenJoin}")
+                    callback.Line($"{keepValue}:")
+                    let keepPredecessor = callback.CurrentBlock
+                    callback.Inst($"br label %%{tokenJoin}")
+                    callback.Line($"{tokenJoin}:")
+                    let outputOffset = callback.Fresh "mailbox.output.empty.offset"
+                    let outputExtent = callback.Fresh "mailbox.output.empty.extent"
+                    let outputPayload = callback.Fresh "mailbox.output.empty.payload"
+                    let outputOwnerEnd = callback.Fresh "mailbox.output.empty.owner.end"
+                    callback.Inst($"{outputOffset} = phi i32 [ {tokenStart}, %%{tokenPredecessor} ], [ {result.Offset}, %%{keepPredecessor} ]")
+                    callback.Inst($"{outputExtent} = phi i32 [ 8, %%{tokenPredecessor} ], [ {result.Extent}, %%{keepPredecessor} ]")
+                    callback.Inst($"{outputPayload} = phi i32 [ 0, %%{tokenPredecessor} ], [ {result.Payload}, %%{keepPredecessor} ]")
+                    callback.Inst($"{outputOwnerEnd} = phi i32 [ {tokenEnd}, %%{tokenPredecessor} ], [ {result.OwnerEnd}, %%{keepPredecessor} ]")
+                    let materialized = { result with Offset = outputOffset; Extent = outputExtent; Payload = outputPayload; OwnerEnd = outputOwnerEnd }
+                    emitDescriptorTransfer callback materialized failure
+                    serializedOutputs.Add((materialized, outputType))
+                else
+                    emitDescriptorTransfer callback result failure
+                    serializedOutputs.Add((result, outputType))
+
+            // Only publish descriptor metadata after every result has passed
+            // type, owner-boundary, and Empty-materialization checks.
+            for outputIndex, (result, outputType) in serializedOutputs |> Seq.indexed do
+                let outputPointer = callback.Fresh "mailbox.output.descriptor"
+                callback.Inst($"{outputPointer} = getelementptr inbounds %%AlOwningMailboxOutputSlice, ptr %%outputs, i32 {outputIndex}")
+                let values = [ string (typeIndex outputType); result.Offset; result.OwnerEnd; "0" ]
+                for fieldIndex, value in List.indexed values do
+                    let fieldPointer = callback.Fresh "mailbox.output.field"
+                    callback.Inst($"{fieldPointer} = getelementptr inbounds %%AlOwningMailboxOutputSlice, ptr {outputPointer}, i32 0, i32 {fieldIndex}")
+                    callback.Inst($"store i32 {value}, ptr {fieldPointer}, align 4")
+            callback.Inst("ret i32 0")
+
+            callback.Line($"{failure}:")
+            let failedContextIsNull = callback.Fresh "mailbox.failure.context.null"
+            let failureHasContext = callback.Label "mailbox.failure.has.context"
+            let failureNull = callback.Label "mailbox.failure.null.context"
+            let failureStatusReady = callback.Label "mailbox.failure.status.ready"
+            callback.Inst($"{failedContextIsNull} = icmp eq ptr %%ctx, null")
+            callback.Inst($"br i1 {failedContextIsNull}, label %%{failureNull}, label %%{failureHasContext}")
+            callback.Line($"{failureNull}:")
+            callback.Inst("ret i32 4")
+            callback.Line($"{failureHasContext}:")
+            let currentStatus = emitContextLoad callback "%ctx" 19
+            let statusAlreadySet = callback.Fresh "mailbox.failure.status.set"
+            let setFallback = callback.Label "mailbox.failure.set.fallback"
+            callback.Inst($"{statusAlreadySet} = icmp ne i32 {currentStatus}, 0")
+            callback.Inst($"br i1 {statusAlreadySet}, label %%{failureStatusReady}, label %%{setFallback}")
+            callback.Line($"{setFallback}:")
+            callback.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 4, i32 {invalidError}, i32 0, i32 0)")
+            callback.Inst($"br label %%{failureStatusReady}")
+            callback.Line($"{failureStatusReady}:")
+            let finalStatus = emitContextLoad callback "%ctx" 19
+            callback.Inst($"ret i32 {finalStatus}")
+            callback.Line("}")
+            callback.Line("")
+            role, callback.Text, explicitAllocaBoundBytes callback.Text
 
         let wrapper = OwningLlvmWriter()
         let wrapperFailure = wrapper.Label "entry.failure"
@@ -2958,7 +3267,7 @@ module OwningStackAot =
             wrapper.Inst($"{measuredExtentPointer} = alloca i32, align 4")
             let errorId = addDiagnostic "OWNING_STACK_INPUT_INVALID" "Input bytes do not match the verified dynamic value layout." body.BodyName None [] []
             let status = wrapper.Fresh "input.measure.status"
-            wrapper.Inst($"{status} = call i32 @al_owning_measure_external_value(ptr %%ctx, ptr @al_owning_layout, i32 {typeIndex ty}, ptr {inputPointer}, i32 {hostExtent}, i32 0, i32 {errorId}, ptr {payloadPointer}, ptr {measuredExtentPointer})")
+            wrapper.Inst($"{status} = call i32 @al_owning_measure_external_value(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex ty}, ptr {inputPointer}, i32 {hostExtent}, i32 0, i32 {errorId}, ptr {payloadPointer}, ptr {measuredExtentPointer})")
             emitStatusResult wrapper status wrapperFailure
             let payloadBytes = wrapper.Fresh "input.measured.payload"
             let extentBytes = wrapper.Fresh "input.measured.extent"
@@ -3007,7 +3316,7 @@ module OwningStackAot =
                 array
         let bodyCall = wrapper.Fresh "entry.body.status"
         let entryCallError = addDiagnostic "RUNTIME_CALL_DEPTH" "Execution exceeded the 64 word call-depth limit." body.BodyName None [] []
-        wrapper.Inst($"{bodyCall} = call i32 @agentlang_entry_frame(ptr %%ctx, ptr {inputDescriptors}, ptr {outputDescriptors}, i32 {entryCallError})")
+        wrapper.Inst($"{bodyCall} = call i32 {entryFrameSymbols[0]}(ptr %%ctx, ptr {inputDescriptors}, ptr {outputDescriptors}, i32 {entryCallError})")
         let bodyOkay = wrapper.Fresh "entry.body.ok"
         wrapper.Inst($"{bodyOkay} = icmp eq i32 {bodyCall}, 0")
         wrapper.Inst($"br i1 {bodyOkay}, label %%{wrapperSuccess}, label %%{wrapperBodyFailure}")
@@ -3133,21 +3442,269 @@ module OwningStackAot =
         wrapper.Inst($"ret i32 {finalStatus}")
         wrapper.Line("}")
         writer.Line(wrapper.Text)
+        let mailboxCallbackTexts = ResizeArray<string * string * int>()
+        if mailboxMode then
+            for index, entryBody in bodies |> List.indexed do
+                diagnosticRole <- Some entryRoles[index]
+                let role, callbackText, allocaBytes = emitMailboxCallback index entryRoles[index] entryBody
+                diagnosticRole <- None
+                mailboxCallbackTexts.Add((role, callbackText, allocaBytes))
+                writer.Line(callbackText)
         let metadataPerFrameBytes = frameTexts |> Seq.map explicitAllocaBoundBytes |> Seq.fold max 0
         let wrapperMetadataBytes = explicitAllocaBoundBytes wrapper.Text
-        let metadataPeakBoundBytes = int64 metadataPerFrameBytes * 66L + int64 wrapperMetadataBytes
-        writer.Text, diagnostics.ToArray(), metadataPerFrameBytes, metadataPeakBoundBytes, 8192
+        let mailboxCallbackMetadataBytes = mailboxCallbackTexts |> Seq.map (fun (_, _, bytes) -> bytes) |> Seq.fold max 0
+        let topLevelMetadataBytes = max wrapperMetadataBytes mailboxCallbackMetadataBytes
+        let metadataPeakBoundBytes = int64 metadataPerFrameBytes * 66L + int64 topLevelMetadataBytes
+        let entryFrameAllocaBytes =
+            entryFrameTexts
+            |> Seq.mapi (fun index (_, text) -> entryRoles[index], explicitAllocaBoundBytes text)
+            |> Map.ofSeq
+        let mailboxCallbackAllocaBytes =
+            mailboxCallbackTexts
+            |> Seq.map (fun (role, _, bytes) -> role, bytes)
+            |> Map.ofSeq
+        let allFrameAllocaBytes =
+            let functionFrameBounds =
+                functions
+                |> List.map (fun fn -> $"function:{fn.FunctionName}", (frameTexts |> Seq.tryFind (fun text -> text.Contains($"define internal i32 {symbolFor fn.FunctionId}", StringComparison.Ordinal)) |> Option.map explicitAllocaBoundBytes |> Option.defaultValue 0))
+            (entryFrameAllocaBytes |> Map.toList) @ functionFrameBounds |> Map.ofList
+        writer.Text, diagnostics.ToArray(), metadataPerFrameBytes, metadataPeakBoundBytes, 8192, entryFrameTexts |> List.ofSeq, allFrameAllocaBytes, mailboxCallbackAllocaBytes
 
     let private emitModule (info: OwningProgramInfo) (bodyAnalysis: ArenaLifetimeBodyAnalysis) (functionAnalyses: Map<WordId, ArenaLifetimeBodyAnalysis>) =
         // Fixed and dynamic layouts both use explicit arena descriptors. The old
         // packed fixed emitter remains historical code and is never selected.
-        emitDynamicModule info bodyAnalysis functionAnalyses
+        let llvmIr, diagnostics, metadataPerFrameBytes, metadataPeakBoundBytes, scannerScratchBytes, _, _, _ =
+            emitDynamicModule info [ bodyAnalysis ] functionAnalyses false
+        llvmIr, diagnostics, metadataPerFrameBytes, metadataPeakBoundBytes, scannerScratchBytes
 
     let private writeEmbeddedResource (assembly: Reflection.Assembly) resourceName outputPath =
         use source = assembly.GetManifestResourceStream resourceName
         if isNull source then invalidOp $"Embedded native runtime resource '{resourceName}' was not found."
         use destination = File.Create outputPath
         source.CopyTo destination
+
+    let private mailboxSignatureText (body: IrExecutableBody) =
+        let render types = if List.isEmpty types then "[]" else types |> List.map IrTypes.format |> String.concat " "
+        $"{render body.BodyInputTypes} -> {render body.BodyOutputTypes}"
+
+    let private validateMailboxSignatures (info: OwningProgramInfo) =
+        let bodies = info.Bodies
+        if bodies.Length <> 3 then invalidOp "Mailbox role validation requires initialize, begin, and resume bodies."
+        let initialize, beginTurn, resume = bodies[0], bodies[1], bodies[2]
+        let stateType =
+            match initialize.BodyOutputTypes with
+            | [ IrNominal key ] -> IrNominal key
+            | _ ->
+                Diagnostics.raiseError "IR_OWNING_MAILBOX_ROLE_SIGNATURE"
+                    "The initialize entry must return one nominal State record."
+                    (Some initialize.BodyName) None [ "String -> State" ] [ mailboxSignatureText initialize ]
+        let continuationType =
+            match beginTurn.BodyOutputTypes with
+            | [ state; IrNominal key ] when state = stateType -> IrNominal key
+            | _ ->
+                Diagnostics.raiseError "IR_OWNING_MAILBOX_ROLE_SIGNATURE"
+                    "The begin entry must return the shared State and one nominal Continuation record."
+                    (Some beginTurn.BodyName) None [ "State String -> State Continuation" ] [ mailboxSignatureText beginTurn ]
+        let expected =
+            [ initialize, [ IrString ], [ stateType ]
+              beginTurn, [ stateType; IrString ], [ stateType; continuationType ]
+              resume, [ stateType; continuationType; IrString ], [ stateType ] ]
+        for body, inputs, outputs in expected do
+            if body.BodyInputTypes <> inputs || body.BodyOutputTypes <> outputs then
+                Diagnostics.raiseError "IR_OWNING_MAILBOX_ROLE_SIGNATURE"
+                    $"Mailbox entry '{body.BodyName}' does not match its fixed lifecycle signature."
+                    (Some body.BodyName) None
+                    [ mailboxSignatureText { body with BodyInputTypes = inputs; BodyOutputTypes = outputs } ]
+                    [ mailboxSignatureText body ]
+        let requireRecord role ty =
+            match ty with
+            | IrNominal key ->
+                match info.Program.NominalTypesByKey.TryFind key with
+                | Some(IrRecordDefinition _) -> ()
+                | _ ->
+                    Diagnostics.raiseError "IR_OWNING_MAILBOX_ROLE_TYPE"
+                        $"Mailbox {role} must use a nominal record type."
+                        (Some role) None [ "record type" ] [ IrTypes.format ty ]
+            | _ ->
+                Diagnostics.raiseError "IR_OWNING_MAILBOX_ROLE_TYPE"
+                    $"Mailbox {role} must use a nominal record type."
+                    (Some role) None [ "record type" ] [ IrTypes.format ty ]
+        requireRecord "State" stateType
+        requireRecord "Continuation" continuationType
+        for ty in [ stateType; continuationType; IrString ] do
+            if typeIdFor info.TypeIds ty = 0u || not (info.TypeInfos.ContainsKey ty) then
+                Diagnostics.raiseError "IR_OWNING_MAILBOX_ROLE_TYPE"
+                    "Mailbox role types must have nonzero type IDs and entries in the shared layout."
+                    None None [ "nonzero type ID and shared layout entry" ] [ IrTypes.format ty ]
+        stateType, continuationType
+
+    let private mailboxMetadataSource (entries: OwningMailboxEntryMetadata list) =
+        if entries.Length <> 3 then invalidArg (nameof entries) "Owning mailbox metadata requires exactly three entries."
+        let text = StringBuilder()
+        let append (value: string) = text.AppendLine(value) |> ignore
+        let renderIndexArray (length: int) (values: uint32 list) =
+            [ for index in 0 .. length - 1 do
+                  if index < values.Length then string values[index] + "u" else "0u" ]
+            |> String.concat ", "
+        append "#include <stddef.h>"
+        append "#include <stdint.h>"
+        append "#define AL_OWNING_MAILBOX_BUILD 1"
+        append "#include \"owning_mailbox_abi.h\""
+        append ""
+        append "extern const al_owning_layout agentlang_owning_mailbox_layout;"
+        for entry in entries do
+            append $"int32_t {entry.FunctionSymbol}(al_owning_stack_context *, const al_owning_external_slice *, uint32_t, al_owning_bank_stack_slice *, uint32_t);"
+        append ""
+        append "static const al_owning_mailbox_module al_owning_mailbox_descriptor = {"
+        append "  AL_OWNING_MAILBOX_ABI_VERSION,"
+        append "  (uint32_t)sizeof(al_owning_mailbox_module),"
+        append "  &agentlang_owning_mailbox_layout,"
+        append "  {"
+        for index, entry in entries |> List.indexed do
+            let comma = if index = entries.Length - 1 then "" else ","
+            append $"    {{ {entry.InputTypes.Length}u, {entry.OutputTypes.Length}u,"
+            append $"      {{ {renderIndexArray 3 entry.InputTypeIndexes} }},"
+            append $"      {{ {renderIndexArray 2 entry.OutputTypeIndexes} }},"
+            append $"      &{entry.FunctionSymbol} }}{comma}"
+        append "  }"
+        append "};"
+        append ""
+        append "typedef struct al_owning_mailbox_span { uintptr_t begin; uintptr_t end; } al_owning_mailbox_span;"
+        append ""
+        append "static int al_owning_mailbox_make_span(const void *pointer, uint64_t byte_count, al_owning_mailbox_span *span) {"
+        append "  uintptr_t begin = (uintptr_t)pointer;"
+        append "  if (byte_count != 0u && pointer == 0) return 0;"
+        append "  if (byte_count > (uint64_t)(UINTPTR_MAX - begin)) return 0;"
+        append "  span->begin = begin;"
+        append "  span->end = begin + (uintptr_t)byte_count;"
+        append "  return 1;"
+        append "}"
+        append ""
+        append "static int al_owning_mailbox_add_span(al_owning_mailbox_span *spans, uint32_t *count, const void *pointer, uint64_t byte_count) {"
+        append "  al_owning_mailbox_span candidate;"
+        append "  uint32_t index;"
+        append "  if (byte_count == 0u) return 1;"
+        append "  if (!al_owning_mailbox_make_span(pointer, byte_count, &candidate)) return 0;"
+        append "  for (index = 0u; index < *count; ++index) {"
+        append "    if (candidate.begin < spans[index].end && spans[index].begin < candidate.end) return 0;"
+        append "  }"
+        append "  if (*count >= 16u) return 0;"
+        append "  spans[(*count)++] = candidate;"
+        append "  return 1;"
+        append "}"
+        append ""
+        append "static int32_t al_owning_mailbox_preflight_fail(al_owning_stack_context *ctx, uint32_t status, uint32_t error_id, uint32_t required, uint32_t available) {"
+        append "  al_owning_set_failure(ctx, status, error_id, required, available);"
+        append "  return 1;"
+        append "}"
+        append ""
+        append "int32_t agentlang_owning_mailbox_preflight(al_owning_stack_context *ctx, const al_owning_external_slice *inputs, uint32_t input_count, al_owning_bank_stack_slice *outputs, uint32_t output_capacity, uint32_t entry_index, uint32_t invalid_error, uint32_t input_capacity_error, uint32_t output_capacity_error, uint32_t *out_input_bytes) {"
+        append "  al_owning_mailbox_span spans[16];"
+        append "  uint32_t span_count = 0u;"
+        append "  uint32_t index;"
+        append "  uint32_t required_bitmap_bytes;"
+        append "  uint64_t trace_bytes;"
+        append "  uint64_t type_bytes;"
+        append "  uint64_t field_bytes;"
+        append "  uint64_t total_input_bytes = 0u;"
+        append "  const al_owning_mailbox_module *module = &al_owning_mailbox_descriptor;"
+        append "  const al_owning_mailbox_entry *entry;"
+        append "  const al_owning_layout *layout;"
+        append "  if (ctx == 0) return 1;"
+        append "  if (ctx->status != AL_OWNING_STATUS_OK) return 1;"
+        append "  if (ctx->abi_version != AL_OWNING_STACK_ABI_VERSION || ctx->cursor_bytes != 0u || ctx->call_depth != 0u || ((uintptr_t)ctx % _Alignof(al_owning_stack_context)) != 0u)"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, 0u);"
+        append "  if (module->abi_version != AL_OWNING_MAILBOX_ABI_VERSION || module->struct_size != sizeof(*module) || module->layout == 0 || entry_index >= AL_OWNING_MAILBOX_ENTRY_COUNT)"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, 0u);"
+        append "  layout = module->layout;"
+        append "  if (layout->abi_version != AL_OWNING_LAYOUT_ABI_VERSION || layout->type_count == 0u || layout->type_count > AL_OWNING_LAYOUT_MAX_TYPES || layout->types == 0 || layout->field_count > AL_OWNING_LAYOUT_MAX_FIELDS || (layout->field_count != 0u && layout->fields == 0))"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, 0u);"
+        append "  if ((uint64_t)layout->type_count > UINT64_MAX / (uint64_t)sizeof(*layout->types) || (uint64_t)layout->field_count > UINT64_MAX / (uint64_t)sizeof(*layout->fields))"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, 0u);"
+        append "  type_bytes = (uint64_t)layout->type_count * (uint64_t)sizeof(*layout->types);"
+        append "  field_bytes = (uint64_t)layout->field_count * (uint64_t)sizeof(*layout->fields);"
+        append "  entry = &module->entries[entry_index];"
+        append "  if (entry->execute == 0 || entry->input_count != (entry_index == 0u ? 1u : entry_index == 1u ? 2u : 3u) || entry->output_count != (entry_index == 1u ? 2u : 1u) || input_count != entry->input_count)"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, entry->input_count, input_count);"
+        append "  if ((entry_index == 0u && entry->execute != agentlang_mailbox_initialize) || (entry_index == 1u && entry->execute != agentlang_mailbox_begin) || (entry_index == 2u && entry->execute != agentlang_mailbox_resume))"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, 0u);"
+        append "  if (output_capacity < entry->output_count)"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, output_capacity_error, entry->output_count, output_capacity);"
+        append "  if (entry_index == 0u) {"
+        append "    if (entry->input_type_indexes[0] != module->entries[1].input_type_indexes[1] || entry->input_type_indexes[0] != module->entries[2].input_type_indexes[2] || entry->output_type_indexes[0] != module->entries[1].input_type_indexes[0] || entry->input_type_indexes[0] >= layout->type_count || entry->output_type_indexes[0] >= layout->type_count || layout->types[entry->input_type_indexes[0]].kind != AL_OWNING_TYPE_STRING || layout->types[entry->output_type_indexes[0]].kind != AL_OWNING_TYPE_RECORD)"
+        append "      return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, 0u);"
+        append "  } else if (entry_index == 1u) {"
+        append "    if (entry->input_type_indexes[0] != module->entries[0].output_type_indexes[0] || entry->input_type_indexes[0] != entry->output_type_indexes[0] || entry->output_type_indexes[0] != module->entries[2].input_type_indexes[0] || entry->input_type_indexes[1] != module->entries[2].input_type_indexes[2] || entry->input_type_indexes[0] >= layout->type_count || entry->input_type_indexes[1] >= layout->type_count || entry->output_type_indexes[1] >= layout->type_count || layout->types[entry->input_type_indexes[0]].kind != AL_OWNING_TYPE_RECORD || layout->types[entry->input_type_indexes[1]].kind != AL_OWNING_TYPE_STRING || layout->types[entry->output_type_indexes[1]].kind != AL_OWNING_TYPE_RECORD)"
+        append "      return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, 0u);"
+        append "  } else {"
+        append "    if (entry->input_type_indexes[0] != module->entries[0].output_type_indexes[0] || entry->input_type_indexes[0] != module->entries[1].output_type_indexes[0] || entry->input_type_indexes[1] != module->entries[1].output_type_indexes[1] || entry->output_type_indexes[0] != entry->input_type_indexes[0] || entry->input_type_indexes[2] >= layout->type_count || entry->input_type_indexes[0] >= layout->type_count || entry->input_type_indexes[1] >= layout->type_count || layout->types[entry->input_type_indexes[0]].kind != AL_OWNING_TYPE_RECORD || layout->types[entry->input_type_indexes[1]].kind != AL_OWNING_TYPE_RECORD || layout->types[entry->input_type_indexes[2]].kind != AL_OWNING_TYPE_STRING)"
+        append "      return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, 0u);"
+        append "  }"
+        append "  for (index = 0u; index < entry->input_count; ++index) {"
+        append "    uint32_t type_index = entry->input_type_indexes[index];"
+        append "    if (type_index >= layout->type_count || layout->types[type_index].type_id == 0u)"
+        append "      return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, type_index, layout->type_count);"
+        append "  }"
+        append "  for (index = 0u; index < entry->output_count; ++index) {"
+        append "    uint32_t type_index = entry->output_type_indexes[index];"
+        append "    if (type_index >= layout->type_count || layout->types[type_index].type_id == 0u)"
+        append "      return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, type_index, layout->type_count);"
+        append "  }"
+        append "  if (inputs == 0 || outputs == 0 || out_input_bytes == 0 || ((uintptr_t)inputs % _Alignof(al_owning_external_slice)) != 0u || ((uintptr_t)outputs % _Alignof(uint32_t)) != 0u)"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, 0u);"
+        append "  if (ctx->stack_capacity_bytes == 0u || ctx->stack_data == 0)"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, 0u);"
+        append "  required_bitmap_bytes = ctx->stack_capacity_bytes / 8u + (ctx->stack_capacity_bytes % 8u == 0u ? 0u : 1u);"
+        append "  if (ctx->init_bitmap_bytes < required_bitmap_bytes || ctx->init_bitmap == 0 || ctx->poison_bitmap == 0 || (ctx->trace_event_capacity != 0u && ctx->trace_events == 0))"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, required_bitmap_bytes, ctx->init_bitmap_bytes);"
+        append "  trace_bytes = (uint64_t)ctx->trace_event_capacity * (uint64_t)sizeof(al_owning_stack_event);"
+        append "  if (!al_owning_mailbox_add_span(spans, &span_count, module, sizeof(*module)) ||"
+        append "      !al_owning_mailbox_add_span(spans, &span_count, layout, sizeof(*layout)) ||"
+        append "      !al_owning_mailbox_add_span(spans, &span_count, layout->types, type_bytes) ||"
+        append "      !al_owning_mailbox_add_span(spans, &span_count, layout->fields, field_bytes) ||"
+        append "      !al_owning_mailbox_add_span(spans, &span_count, ctx, sizeof(*ctx)) ||"
+        append "      !al_owning_mailbox_add_span(spans, &span_count, ctx->stack_data, ctx->stack_capacity_bytes) ||"
+        append "      !al_owning_mailbox_add_span(spans, &span_count, ctx->init_bitmap, ctx->init_bitmap_bytes) ||"
+        append "      !al_owning_mailbox_add_span(spans, &span_count, ctx->poison_bitmap, ctx->init_bitmap_bytes) ||"
+        append "      !al_owning_mailbox_add_span(spans, &span_count, ctx->trace_events, trace_bytes) ||"
+        append "      !al_owning_mailbox_add_span(spans, &span_count, inputs, (uint64_t)input_count * sizeof(*inputs)) ||"
+        append "      !al_owning_mailbox_add_span(spans, &span_count, outputs, (uint64_t)entry->output_count * AL_OWNING_MAILBOX_OUTPUT_SLICE_BYTES))"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, 0u);"
+        append "  for (index = 0u; index < input_count; ++index) {"
+        append "    const al_owning_external_slice *slice = &inputs[index];"
+        append "    if (slice->bytes == 0 || slice->extent_bytes == 0u || slice->type_index != entry->input_type_indexes[index] || slice->type_index >= layout->type_count)"
+        append "      return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, entry->input_type_indexes[index], slice->type_index);"
+        append "    if (UINT64_MAX - total_input_bytes < slice->extent_bytes)"
+        append "      return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, input_capacity_error, UINT32_MAX, ctx->stack_capacity_bytes);"
+        append "    total_input_bytes += slice->extent_bytes;"
+        append "    if (!al_owning_mailbox_add_span(spans, &span_count, slice->bytes, slice->extent_bytes))"
+        append "      return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_INVALID_REQUEST, invalid_error, 0u, 0u);"
+        append "  }"
+        append "  if (total_input_bytes > UINT32_MAX || total_input_bytes > ctx->stack_capacity_bytes) {"
+        append "    uint32_t required = total_input_bytes > UINT32_MAX ? UINT32_MAX : (uint32_t)total_input_bytes;"
+        append "    return al_owning_mailbox_preflight_fail(ctx, AL_OWNING_STATUS_STACK_CAPACITY, input_capacity_error, required, ctx->stack_capacity_bytes);"
+        append "  }"
+        append "  *out_input_bytes = (uint32_t)total_input_bytes;"
+        append "  return 0;"
+        append "}"
+        append ""
+        append "AL_OWNING_MAILBOX_EXPORT const al_owning_mailbox_module *agentlang_owning_mailbox_module(void) {"
+        append "  return &al_owning_mailbox_descriptor;"
+        append "}"
+        text.ToString()
+
+    let private mailboxVerifiedSource (role: string) (body: IrExecutableBody) =
+        let text = StringBuilder()
+        text.AppendLine($"role: {role}") |> ignore
+        text.AppendLine($"body: {body.BodyName}") |> ignore
+        text.AppendLine($"signature: {mailboxSignatureText body}") |> ignore
+        text.AppendLine("verified typed IR:") |> ignore
+        text.AppendLine(sprintf "%A" body.BodyBlock) |> ignore
+        text.AppendLine("source map:") |> ignore
+        for site, source in body.BodySourceMap |> Map.toList do
+            let siteName = sprintf "%A" site
+            text.AppendLine($"{siteName}: {source.SourceKind} at {source.SiteSpan.File}:{source.SiteSpan.Line}:{source.SiteSpan.Column}+{source.SiteSpan.Length}") |> ignore
+        text.ToString()
 
     /// Compile verified fixed-layout owning IR as a fresh x64 LLVM library.
     let compile (toolchain: LlvmToolchain) optimization outputDirectory (verifiedBody: VerifiedIrBody) =
@@ -3174,3 +3731,237 @@ module OwningStackAot =
         new OwningStackCompiledProgram(
             compiledPath, programInfo, diagnostics, llvmIr, metadataPerFrameBytes, metadataPeakBoundBytes, scannerScratchBytes,
             encodeValues, decodeValues, readEvents, readMetrics, diagnosticForError)
+
+    /// Compile the fixed initialize/begin/resume lifecycle into one immutable
+    /// owning module with a shared type-index layout and caller-owned mailbox
+    /// callback ABI.
+    let compileMailbox
+        (toolchain: LlvmToolchain)
+        optimization
+        outputDirectory
+        (verifiedInit: VerifiedIrBody)
+        (verifiedBegin: VerifiedIrBody)
+        (verifiedResume: VerifiedIrBody) =
+        if String.IsNullOrWhiteSpace outputDirectory then invalidArg (nameof outputDirectory) "Output directory must be nonempty."
+        let verifiedBodies = [ verifiedInit; verifiedBegin; verifiedResume ]
+        let programInfo = makeProgramInfoForBodies verifiedBodies
+        validateMailboxSignatures programInfo |> ignore
+        let checkedBodies =
+            verifiedBodies
+            |> List.map (fun verified -> IrVerifier.verifyBody (VerifiedIrBody.program verified) (VerifiedIrBody.inspect verified))
+        let entryAnalyses = checkedBodies |> List.map ArenaLifetime.analyzeBody
+        let functionAnalyses = ArenaLifetime.analyzeProgram (VerifiedIrBody.program verifiedInit)
+        let (llvmIr, internalDiagnostics, metadataPerFrameBytes, metadataPeakBoundBytes, scannerScratchBytes,
+             emittedEntryFrames, backendMetadataPerFrameBytes, callbackMetadataPerEntryBytes) =
+            emitDynamicModule programInfo entryAnalyses functionAnalyses true
+        let roles = [ "initialize"; "begin"; "resume" ]
+        if emittedEntryFrames.Length <> roles.Length then
+            invalidOp "Owning mailbox emitter did not produce exactly three entry frames."
+        let typeInfos = programInfo.TypeInfos |> Map.toList |> List.map snd |> List.sortBy (fun item -> item.TypeId)
+        let sharedTypeIndexes = typeInfos |> List.mapi (fun index item -> item.Type, uint32 index) |> Map.ofList
+        let typeIndex ty =
+            sharedTypeIndexes.TryFind ty
+            |> Option.defaultWith (fun () -> invalidOp $"Owning mailbox layout index missing for {IrTypes.format ty}.")
+        let diagnosticIdsFor role =
+            internalDiagnostics
+            |> Array.mapi (fun index info -> index + 1, info)
+            |> Array.choose (fun (id, info) -> if info.EntryRole = Some role then Some id else None)
+            |> Array.toList
+        let entryMetadata =
+            List.zip3 roles programInfo.Bodies emittedEntryFrames
+            |> List.map (fun (role, body, (frameSymbol, _)) ->
+                { Role = role
+                  FunctionSymbol = $"agentlang_mailbox_{role}"
+                  EntryFrameSymbol = frameSymbol.TrimStart('@')
+                  InputTypes = body.BodyInputTypes
+                  OutputTypes = body.BodyOutputTypes
+                  InputTypeIndexes = body.BodyInputTypes |> List.map typeIndex
+                  OutputTypeIndexes = body.BodyOutputTypes |> List.map typeIndex
+                  DiagnosticIds = diagnosticIdsFor role
+                  FrameSourcePath = Path.Combine("entries", $"{role}.frame.ll")
+                  SourceIrPath = Path.Combine("entries", $"{role}.verified-ir.txt") })
+        let metadataSource = mailboxMetadataSource entryMetadata
+        let fullDirectory = Path.GetFullPath outputDirectory
+        Directory.CreateDirectory fullDirectory |> ignore
+        let llvmIrPath = Path.Combine(fullDirectory, "owning-mailbox-native.ll")
+        let metadataSourcePath = Path.Combine(fullDirectory, "owning-mailbox-metadata.c")
+        let libraryPath = Path.Combine(fullDirectory, "owning-mailbox-native.dll")
+        let manifestPath = Path.Combine(fullDirectory, "owning-mailbox-module-manifest.json")
+        let entriesDirectory = Path.Combine(fullDirectory, "entries")
+        Directory.CreateDirectory entriesDirectory |> ignore
+        File.WriteAllText(llvmIrPath, llvmIr, UTF8Encoding(false))
+        File.WriteAllText(metadataSourcePath, metadataSource, UTF8Encoding(false))
+        let entryFrameIrPaths =
+            List.zip3 roles programInfo.Bodies emittedEntryFrames
+            |> List.map (fun (role, _, (_, frameText)) ->
+                let path = Path.Combine(entriesDirectory, $"{role}.frame.ll")
+                File.WriteAllText(path, frameText, UTF8Encoding(false))
+                path)
+        let entrySourceIrPaths =
+            List.zip roles programInfo.Bodies
+            |> List.map (fun (role, body) ->
+                let path = Path.Combine(entriesDirectory, $"{role}.verified-ir.txt")
+                File.WriteAllText(path, mailboxVerifiedSource role body, UTF8Encoding(false))
+                path)
+        let runtimeDirectory = Path.Combine(fullDirectory, "native-runtime")
+        Directory.CreateDirectory runtimeDirectory |> ignore
+        let assembly = typeof<OwningStackCompiledProgram>.Assembly
+        let runtimeHeaderPath = Path.Combine(runtimeDirectory, "owning_stack_runtime.h")
+        let runtimeSourcePath = Path.Combine(runtimeDirectory, "owning_stack_runtime.c")
+        let mailboxAbiHeaderPath = Path.Combine(runtimeDirectory, "owning_mailbox_abi.h")
+        writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stack_runtime.h" runtimeHeaderPath
+        writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stack_runtime.c" runtimeSourcePath
+        writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_mailbox_abi.h" mailboxAbiHeaderPath
+        let compiledPath, objectPaths =
+            LlvmToolchain.compileModuleLibrary toolchain optimization [ llvmIrPath ] metadataSourcePath runtimeSourcePath runtimeDirectory libraryPath
+        let hashText (value: string) =
+            SHA256.HashData(Encoding.UTF8.GetBytes value)
+            |> Convert.ToHexString
+            |> fun hex -> hex.ToLowerInvariant()
+        let hashFile path =
+            File.ReadAllBytes path
+            |> SHA256.HashData
+            |> Convert.ToHexString
+            |> fun hex -> hex.ToLowerInvariant()
+        let sourceHashes =
+            [ "owning-mailbox-native.ll", hashFile llvmIrPath
+              "owning-mailbox-metadata.c", hashFile metadataSourcePath
+              "native-runtime/owning_stack_runtime.c", hashFile runtimeSourcePath
+              "native-runtime/owning_stack_runtime.h", hashFile runtimeHeaderPath
+              "native-runtime/owning_mailbox_abi.h", hashFile mailboxAbiHeaderPath ]
+            @ (List.zip entryMetadata entryFrameIrPaths
+               |> List.map (fun (entry, path) -> entry.FrameSourcePath, hashFile path))
+            @ (List.zip entryMetadata entrySourceIrPaths
+               |> List.map (fun (entry, path) -> entry.SourceIrPath, hashFile path))
+        let optimizationName =
+            match optimization with
+            | LlvmOptimization.O0 -> "O0"
+            | LlvmOptimization.O2 -> "O2"
+        let layoutManifest =
+            programInfo.Layouts
+            |> List.map (fun item ->
+                let index = typeIndex item.Type
+                {| index = index
+                   typeId = typeIdFor programInfo.TypeIds item.Type
+                   kind =
+                    (match item.Type with
+                     | IrInt -> "Int"
+                     | IrBool -> "Bool"
+                     | IrUnit -> "Unit"
+                     | IrString -> "String"
+                     | IrNominal _ -> "Record"
+                     | other -> IrTypes.format other)
+                   name = item.TypeName
+                   payloadBytes = item.PayloadBytes
+                   extentBytes = item.ExtentBytes
+                   isDynamic = item.IsDynamic
+                   minimumPayloadBytes = item.MinimumPayloadBytes
+                   minimumExtentBytes = item.MinimumExtentBytes
+                   fields =
+                    item.Fields
+                    |> List.map (fun field ->
+                        {| name = field.FieldName
+                           typeName = IrTypes.format field.FieldType
+                           typeIndex = typeIndex field.FieldType
+                           typeId = typeIdFor programInfo.TypeIds field.FieldType
+                           offsetBytes = field.OffsetBytes
+                           payloadBytes = field.PayloadBytes
+                           extentBytes = field.ExtentBytes
+                           isOffsetDynamic = field.IsOffsetDynamic
+                           isDynamic = field.IsDynamic |}) |})
+        let diagnosticManifest =
+            internalDiagnostics
+            |> Array.mapi (fun index item ->
+                let diagnostic = item.Diagnostic
+                {| id = index + 1
+                   entryRole = item.EntryRole |> Option.defaultValue ""
+                   code = diagnostic.Code
+                   message = diagnostic.Message
+                   word = diagnostic.Word |> Option.defaultValue ""
+                   hasWord = diagnostic.Word.IsSome
+                   file = diagnostic.Span |> Option.map (fun span -> span.File) |> Option.defaultValue ""
+                   line = diagnostic.Span |> Option.map (fun span -> span.Line) |> Option.defaultValue 0
+                   column = diagnostic.Span |> Option.map (fun span -> span.Column) |> Option.defaultValue 0
+                   length = diagnostic.Span |> Option.map (fun span -> span.Length) |> Option.defaultValue 0
+                   expected = diagnostic.Expected
+                   actual = diagnostic.Actual |})
+            |> Array.toList
+        let entryManifest =
+            entryMetadata
+            |> List.map (fun entry ->
+                {| role = entry.Role
+                   functionSymbol = entry.FunctionSymbol
+                   entryFrameSymbol = entry.EntryFrameSymbol
+                   inputTypes = entry.InputTypes |> List.map (fun ty -> IrTypes.format ty)
+                   outputTypes = entry.OutputTypes |> List.map (fun ty -> IrTypes.format ty)
+                   inputTypeIds = entry.InputTypes |> List.map (typeIdFor programInfo.TypeIds)
+                   outputTypeIds = entry.OutputTypes |> List.map (typeIdFor programInfo.TypeIds)
+                   inputTypeIndexes = entry.InputTypeIndexes
+                   outputTypeIndexes = entry.OutputTypeIndexes
+                   diagnosticIds = entry.DiagnosticIds
+                   frameSourcePath = entry.FrameSourcePath
+                   sourceIrPath = entry.SourceIrPath |})
+        let sourceHashManifest =
+            sourceHashes
+            |> List.sortBy fst
+            |> List.map (fun (path, hash) -> {| path = path.Replace('\\', '/'); sha256 = hash |})
+        let manifestCore =
+            {| formatVersion = 1
+               abiVersion = 1
+               optimization = optimizationName
+               entryOrder = roles
+               entries = entryManifest
+               sharedLayout = layoutManifest
+               diagnostics = diagnosticManifest
+               sourceHashes = sourceHashManifest
+               backendMetadataPerFrameBytes = backendMetadataPerFrameBytes |> Map.toList |> List.map (fun (name, bytes) -> {| name = name; bytes = bytes |})
+               callbackMetadataPerEntryBytes = callbackMetadataPerEntryBytes |> Map.toList |> List.map (fun (name, bytes) -> {| name = name; bytes = bytes |})
+               backendMetadataPeakBoundBytes = metadataPeakBoundBytes
+               runtimeLayoutScannerScratchBytes = scannerScratchBytes
+               preflightSpanTableBytes = 16 * IntPtr.Size * 2
+               controllerReservedStorage = "caller-owned; excluded from module artifact" |}
+        let jsonOptions = JsonSerializerOptions(WriteIndented = true)
+        jsonOptions.PropertyNamingPolicy <- JsonNamingPolicy.CamelCase
+        let manifestCoreJson = JsonSerializer.Serialize(manifestCore, jsonOptions)
+        let fingerprint = hashText manifestCoreJson
+        let serializedManifest =
+            JsonSerializer.Serialize(
+                {| fingerprint = fingerprint
+                   moduleInfo = manifestCore
+                   librarySha256 = hashFile compiledPath |},
+                jsonOptions)
+        File.WriteAllText(manifestPath, serializedManifest, UTF8Encoding(false))
+        let publicDiagnostics =
+            internalDiagnostics
+            |> Array.mapi (fun index item ->
+                let diagnostic = item.Diagnostic
+                { Id = index + 1
+                  EntryRole = item.EntryRole
+                  Code = diagnostic.Code
+                  Message = diagnostic.Message
+                  Word = diagnostic.Word
+                  File = diagnostic.Span |> Option.map (fun span -> span.File)
+                  Line = diagnostic.Span |> Option.map (fun span -> span.Line)
+                  Column = diagnostic.Span |> Option.map (fun span -> span.Column)
+                  Length = diagnostic.Span |> Option.map (fun span -> span.Length)
+                  Expected = diagnostic.Expected
+                  Actual = diagnostic.Actual })
+            |> Array.toList
+        new OwningMailboxCompiledModule(
+            compiledPath,
+            llvmIrPath,
+            metadataSourcePath,
+            manifestPath,
+            runtimeDirectory,
+            llvmIr,
+            entryMetadata,
+            entryFrameIrPaths,
+            entrySourceIrPaths,
+            publicDiagnostics,
+            programInfo.Layouts,
+            backendMetadataPerFrameBytes,
+            callbackMetadataPerEntryBytes,
+            metadataPeakBoundBytes,
+            scannerScratchBytes,
+            16 * IntPtr.Size * 2,
+            objectPaths)

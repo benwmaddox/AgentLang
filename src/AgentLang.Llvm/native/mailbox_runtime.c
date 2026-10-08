@@ -8,6 +8,8 @@
 #define AL_MAILBOX_MAX_ROOTS 2u
 #define AL_MAILBOX_MAX_INPUTS 3u
 #define AL_MAILBOX_ALIGNMENT 8u
+#define AL_MAILBOX_PAYLOAD_ABI3 0u
+#define AL_MAILBOX_PAYLOAD_OWNING 1u
 
 typedef struct al_mailbox_bank {
   al_arena owner;
@@ -17,14 +19,21 @@ typedef struct al_mailbox_bank {
   uint32_t reserved;
 } al_mailbox_bank;
 
+typedef struct al_mailbox_graph_payload {
+  uint32_t active_bank;
+  al_mailbox_bank banks[2];
+} al_mailbox_graph_payload;
+
 typedef struct al_mailbox_slot {
   uint32_t initialized;
   uint32_t pending;
-  uint32_t active_bank;
   uint32_t last_completed_valid;
   al_mailbox_token pending_token;
   al_mailbox_token last_completed_token;
-  al_mailbox_bank banks[2];
+  union {
+    al_mailbox_graph_payload graph;
+    al_owning_byte_store owning;
+  } payload;
 } al_mailbox_slot;
 
 typedef struct al_mailbox_layout {
@@ -44,12 +53,35 @@ typedef struct al_mailbox_layout {
   uint64_t controller_reserved_bytes;
 } al_mailbox_layout;
 
+typedef struct al_owning_mailbox_layout {
+  size_t total_bytes;
+  size_t slots_offset;
+  size_t scratch_data_offset;
+  size_t init_bitmap_offset;
+  size_t poison_bitmap_offset;
+  size_t text_staging_offset;
+  size_t bank_backing_offset;
+  size_t bank_stride;
+  size_t bank_data_offset[2];
+  size_t bank_roots_offset[2];
+  size_t bitmap_bytes;
+  uint64_t retained_reserved_bytes;
+  uint64_t scratch_reserved_bytes;
+  uint64_t text_staging_reserved_bytes;
+  uint64_t controller_reserved_bytes;
+} al_owning_mailbox_layout;
+
 struct al_mailbox_runtime {
   uint64_t magic;
+  uint32_t payload_kind;
+  uint32_t owning_reserved;
   const al_module_desc *module;
+  const al_owning_mailbox_module *owning_module;
   const al_program_desc *program;
   const al_module_entry *entries[3];
+  const al_owning_mailbox_entry *owning_entries[3];
   al_mailbox_config config;
+  al_mailbox_owning_config owning_config;
   uint8_t fingerprint[AL_MODULE_FINGERPRINT_BYTES];
   al_mailbox_slot *mailboxes;
   al_arena scratch;
@@ -59,10 +91,20 @@ struct al_mailbox_runtime {
   int64_t invocation_values[AL_MAILBOX_MAX_INPUTS];
   uint32_t invocation_type_ids[AL_MAILBOX_MAX_INPUTS];
   al_runtime_context context;
+  al_owning_stack_context owning_context;
+  uint8_t *owning_scratch_data;
+  uint8_t *owning_init_bitmap;
+  uint8_t *owning_poison_bitmap;
+  uint8_t *owning_text_staging;
+  al_owning_external_slice owning_inputs[AL_MAILBOX_MAX_INPUTS];
+  al_owning_bank_stack_slice owning_outputs[AL_MAILBOX_MAX_ROOTS];
   uint32_t owner_thread_id;
   uint32_t state_type_id;
   uint32_t continuation_type_id;
   uint32_t int_type_id;
+  uint32_t owning_string_type_index;
+  uint32_t owning_state_type_index;
+  uint32_t owning_continuation_type_index;
   uint32_t workspace_capacity;
   uint32_t disposed;
   uint32_t busy;
@@ -81,6 +123,14 @@ struct al_mailbox_runtime {
   uint64_t handler_failures;
   uint64_t scratch_lease_acquisitions;
   uint64_t scratch_lease_returns;
+  uint64_t owning_utf8_input_bytes;
+  uint64_t owning_utf16_staging_bytes;
+  uint64_t owning_input_import_bytes;
+  uint64_t owning_publication_copy_bytes;
+  uint64_t owning_deep_copy_bytes;
+  uint64_t owning_move_bytes;
+  uint64_t owning_returned_output_descriptors;
+  uint64_t owning_turn_reset_bytes;
 };
 
 uint32_t al_mailbox_platform_current_thread_id(void);
@@ -402,6 +452,223 @@ static al_mailbox_result al_validate_bindings(
   return AL_MAILBOX_OK;
 }
 
+static al_mailbox_result al_validate_owning_module(
+    const al_owning_mailbox_module *module, uint32_t *out_string_index,
+    uint32_t *out_state_index, uint32_t *out_continuation_index) {
+  const al_owning_layout *layout;
+  const al_owning_mailbox_entry *init_entry;
+  const al_owning_mailbox_entry *begin_entry;
+  const al_owning_mailbox_entry *resume_entry;
+  uint32_t string_index;
+  uint32_t state_index;
+  uint32_t continuation_index;
+  uint32_t state_type_id;
+  uint32_t continuation_type_id;
+  uint32_t index;
+  size_t type_bytes;
+  size_t field_bytes;
+
+  if (module == NULL || !al_pointer_aligned(module, 8u) ||
+      module->abi_version != AL_OWNING_MAILBOX_ABI_VERSION ||
+      module->struct_size != sizeof(*module) || module->layout == NULL ||
+      !al_pointer_aligned(module->layout, 8u))
+    return AL_MAILBOX_INVALID_MODULE;
+  layout = module->layout;
+  if (layout->abi_version != AL_OWNING_LAYOUT_ABI_VERSION ||
+      layout->types == NULL || layout->type_count == 0u ||
+      layout->type_count > AL_OWNING_LAYOUT_MAX_TYPES ||
+      layout->field_count > AL_OWNING_LAYOUT_MAX_FIELDS ||
+      (layout->field_count != 0u && layout->fields == NULL) ||
+      !al_pointer_aligned(layout->types, 8u) ||
+      (layout->field_count != 0u && !al_pointer_aligned(layout->fields, 4u)) ||
+      !al_checked_array_bytes(layout->type_count,
+                              sizeof(al_owning_type_descriptor), &type_bytes) ||
+      !al_checked_array_bytes(layout->field_count,
+                              sizeof(al_owning_field_descriptor),
+                              &field_bytes) ||
+      !al_checked_span(layout->types, type_bytes) ||
+      !al_checked_span(layout->fields, field_bytes))
+    return AL_MAILBOX_INVALID_MODULE;
+
+  for (index = 0u; index < layout->type_count; ++index) {
+    const al_owning_type_descriptor *type = &layout->types[index];
+    uint32_t prior;
+    if (type->kind < AL_OWNING_TYPE_I64 || type->kind > AL_OWNING_TYPE_STRING ||
+        type->first_field > layout->field_count ||
+        type->field_count > layout->field_count - type->first_field)
+      return AL_MAILBOX_INVALID_MODULE;
+    for (prior = 0u; prior < index; ++prior) {
+      if (layout->types[prior].type_id == type->type_id)
+        return AL_MAILBOX_INVALID_MODULE;
+    }
+  }
+  for (index = 0u; index < layout->field_count; ++index) {
+    const al_owning_field_descriptor *field = &layout->fields[index];
+    if (field->child_type_index >= layout->type_count ||
+        (field->flags & ~AL_OWNING_FIELD_ZERO_WIDTH) != 0u ||
+        field->reserved != 0u)
+      return AL_MAILBOX_INVALID_MODULE;
+  }
+
+  init_entry = &module->entries[0];
+  begin_entry = &module->entries[1];
+  resume_entry = &module->entries[2];
+  if (init_entry->input_count != 1u || init_entry->output_count != 1u ||
+      begin_entry->input_count != 2u || begin_entry->output_count != 2u ||
+      resume_entry->input_count != 3u || resume_entry->output_count != 1u ||
+      init_entry->execute == NULL || begin_entry->execute == NULL ||
+      resume_entry->execute == NULL)
+    return AL_MAILBOX_INVALID_MODULE;
+
+  for (index = 0u; index < AL_OWNING_MAILBOX_ENTRY_COUNT; ++index) {
+    const al_owning_mailbox_entry *entry = &module->entries[index];
+    uint32_t type_index;
+    for (type_index = 0u; type_index < entry->input_count; ++type_index) {
+      if (entry->input_type_indexes[type_index] >= layout->type_count)
+        return AL_MAILBOX_INVALID_MODULE;
+    }
+    for (type_index = 0u; type_index < entry->output_count; ++type_index) {
+      if (entry->output_type_indexes[type_index] >= layout->type_count)
+        return AL_MAILBOX_INVALID_MODULE;
+    }
+  }
+
+  string_index = init_entry->input_type_indexes[0];
+  state_index = init_entry->output_type_indexes[0];
+  continuation_index = begin_entry->output_type_indexes[1];
+  state_type_id = layout->types[state_index].type_id;
+  continuation_type_id = layout->types[continuation_index].type_id;
+  if (state_type_id == 0u || continuation_type_id == 0u ||
+      state_type_id == continuation_type_id ||
+      layout->types[string_index].kind != AL_OWNING_TYPE_STRING ||
+      layout->types[state_index].kind != AL_OWNING_TYPE_RECORD ||
+      layout->types[continuation_index].kind != AL_OWNING_TYPE_RECORD ||
+      layout->types[begin_entry->input_type_indexes[0]].type_id !=
+          state_type_id ||
+      layout->types[begin_entry->input_type_indexes[1]].type_id !=
+          layout->types[string_index].type_id ||
+      layout->types[begin_entry->output_type_indexes[0]].type_id !=
+          state_type_id ||
+      layout->types[resume_entry->input_type_indexes[0]].type_id !=
+          state_type_id ||
+      layout->types[resume_entry->input_type_indexes[1]].type_id !=
+          continuation_type_id ||
+      layout->types[resume_entry->input_type_indexes[2]].type_id !=
+          layout->types[string_index].type_id ||
+      layout->types[resume_entry->output_type_indexes[0]].type_id !=
+          state_type_id)
+    return AL_MAILBOX_INVALID_MODULE;
+
+  if (out_string_index != NULL)
+    *out_string_index = string_index;
+  if (out_state_index != NULL)
+    *out_state_index = state_index;
+  if (out_continuation_index != NULL)
+    *out_continuation_index = continuation_index;
+  return AL_MAILBOX_OK;
+}
+
+static al_mailbox_result al_validate_owning_bindings(
+    const al_owning_mailbox_module *module,
+    const al_mailbox_owning_config *config, uint32_t *out_string_index,
+    uint32_t *out_state_index, uint32_t *out_continuation_index) {
+  al_mailbox_result result;
+  if (config == NULL || !al_pointer_aligned(config, 4u) ||
+      config->control_abi_version != AL_MAILBOX_CONTROL_ABI_VERSION ||
+      config->struct_size != sizeof(*config) || config->mailbox_capacity == 0u ||
+      config->scratch_byte_capacity == 0u ||
+      config->scratch_byte_capacity > (uint32_t)INT32_MAX ||
+      config->retained_byte_capacity == 0u ||
+      config->text_staging_byte_capacity < 8u || config->reserved[0] != 0u ||
+      config->reserved[1] != 0u)
+    return AL_MAILBOX_INVALID_ARGUMENT;
+  result = al_validate_owning_module(module, out_string_index, out_state_index,
+                                     out_continuation_index);
+  return result;
+}
+
+static al_mailbox_result al_compute_owning_layout(
+    const al_owning_mailbox_module *module,
+    const al_mailbox_owning_config *config,
+    al_owning_mailbox_layout *layout) {
+  uint64_t retained_bank_bytes;
+  uint64_t retained_total_bytes;
+  uint64_t scratch_bytes;
+  uint64_t text_bytes;
+  uint64_t backing_bytes;
+  size_t slot_bytes;
+  size_t root_bytes;
+  size_t offset = 0u;
+  size_t per_mailbox_offset = 0u;
+  al_mailbox_result result;
+
+  if (layout == NULL)
+    return AL_MAILBOX_INVALID_ARGUMENT;
+  memset(layout, 0, sizeof(*layout));
+  result = al_validate_owning_bindings(module, config, NULL, NULL, NULL);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  if (!al_checked_array_bytes(config->mailbox_capacity, sizeof(al_mailbox_slot),
+                              &slot_bytes) ||
+      !al_checked_array_bytes(AL_MAILBOX_MAX_ROOTS,
+                              sizeof(al_owning_bank_root), &root_bytes))
+    return AL_MAILBOX_SIZE_OVERFLOW;
+  layout->bitmap_bytes =
+      config->scratch_byte_capacity / 8u +
+      (config->scratch_byte_capacity % 8u != 0u ? 1u : 0u);
+  if (!al_append_region(&offset, sizeof(al_mailbox_runtime),
+                        AL_MAILBOX_ALIGNMENT, NULL) ||
+      !al_append_region(&offset, slot_bytes, AL_MAILBOX_ALIGNMENT,
+                        &layout->slots_offset) ||
+      !al_append_region(&offset, config->scratch_byte_capacity,
+                        AL_MAILBOX_ALIGNMENT, &layout->scratch_data_offset) ||
+      !al_append_region(&offset, layout->bitmap_bytes, AL_MAILBOX_ALIGNMENT,
+                        &layout->init_bitmap_offset) ||
+      !al_append_region(&offset, layout->bitmap_bytes, AL_MAILBOX_ALIGNMENT,
+                        &layout->poison_bitmap_offset) ||
+      !al_append_region(&offset, config->text_staging_byte_capacity,
+                        AL_MAILBOX_ALIGNMENT, &layout->text_staging_offset))
+    return AL_MAILBOX_SIZE_OVERFLOW;
+
+  layout->bank_backing_offset = offset;
+  for (uint32_t bank_index = 0u; bank_index < 2u; ++bank_index) {
+    if (!al_append_region(&per_mailbox_offset,
+                          config->retained_byte_capacity,
+                          AL_MAILBOX_ALIGNMENT,
+                          &layout->bank_data_offset[bank_index]) ||
+        !al_append_region(&per_mailbox_offset, root_bytes,
+                          AL_MAILBOX_ALIGNMENT,
+                          &layout->bank_roots_offset[bank_index]))
+      return AL_MAILBOX_SIZE_OVERFLOW;
+  }
+  layout->bank_stride = per_mailbox_offset;
+  if (layout->bank_stride != 0u &&
+      (size_t)config->mailbox_capacity >
+          (SIZE_MAX - offset) / layout->bank_stride)
+    return AL_MAILBOX_SIZE_OVERFLOW;
+  offset += layout->bank_stride * (size_t)config->mailbox_capacity;
+  layout->total_bytes = offset;
+
+  if (!al_add_u64(config->retained_byte_capacity, root_bytes,
+                  &retained_bank_bytes) ||
+      !al_mul_u64(retained_bank_bytes, 2u, &retained_bank_bytes) ||
+      !al_mul_u64(retained_bank_bytes, config->mailbox_capacity,
+                  &retained_total_bytes) ||
+      !al_add_u64(config->scratch_byte_capacity,
+                  (uint64_t)layout->bitmap_bytes * 2u, &scratch_bytes))
+    return AL_MAILBOX_SIZE_OVERFLOW;
+  text_bytes = config->text_staging_byte_capacity;
+  if (!al_add_u64(retained_total_bytes, scratch_bytes, &backing_bytes) ||
+      !al_add_u64(backing_bytes, text_bytes, &backing_bytes) ||
+      backing_bytes > layout->total_bytes)
+    return AL_MAILBOX_SIZE_OVERFLOW;
+  layout->retained_reserved_bytes = retained_total_bytes;
+  layout->scratch_reserved_bytes = scratch_bytes;
+  layout->text_staging_reserved_bytes = text_bytes;
+  layout->controller_reserved_bytes = layout->total_bytes - backing_bytes;
+  return AL_MAILBOX_OK;
+}
+
 static al_mailbox_result al_compute_layout(const al_module_desc *module,
                                            const al_mailbox_config *config,
                                            al_mailbox_layout *layout) {
@@ -573,9 +840,54 @@ static uint32_t al_storage_overlaps_module(const void *storage,
   return 0u;
 }
 
+static uint32_t al_storage_overlaps_owning_module(
+    const void *storage, uint64_t storage_bytes,
+    const al_owning_mailbox_module *module) {
+  const al_owning_layout *layout;
+  size_t type_bytes;
+  size_t field_bytes;
+  if (module == NULL || module->layout == NULL)
+    return 1u;
+  layout = module->layout;
+  if (!al_checked_array_bytes(layout->type_count,
+                              sizeof(al_owning_type_descriptor), &type_bytes) ||
+      !al_checked_array_bytes(layout->field_count,
+                              sizeof(al_owning_field_descriptor),
+                              &field_bytes) ||
+      al_span_overlaps(storage, storage_bytes, module, sizeof(*module)) ||
+      al_span_overlaps(storage, storage_bytes, layout, sizeof(*layout)) ||
+      al_span_overlaps(storage, storage_bytes, layout->types, type_bytes) ||
+      al_span_overlaps(storage, storage_bytes, layout->fields, field_bytes))
+    return 1u;
+  return 0u;
+}
+
 static uint32_t al_runtime_binding_valid(const al_mailbox_runtime *runtime) {
   uint32_t index;
-  if (runtime == NULL || runtime->magic != AL_MAILBOX_RUNTIME_MAGIC ||
+  if (runtime == NULL || runtime->magic != AL_MAILBOX_RUNTIME_MAGIC)
+    return 0u;
+  if (runtime->payload_kind == AL_MAILBOX_PAYLOAD_OWNING) {
+    uint32_t string_index;
+    uint32_t state_index;
+    uint32_t continuation_index;
+    if (runtime->owning_module == NULL || runtime->module != NULL ||
+        runtime->program != NULL ||
+        al_validate_owning_module(runtime->owning_module, &string_index,
+                                  &state_index, &continuation_index) !=
+            AL_MAILBOX_OK ||
+        string_index != runtime->owning_string_type_index ||
+        state_index != runtime->owning_state_type_index ||
+        continuation_index != runtime->owning_continuation_type_index)
+      return 0u;
+    for (index = 0u; index < AL_OWNING_MAILBOX_ENTRY_COUNT; ++index) {
+      if (runtime->owning_entries[index] !=
+              &runtime->owning_module->entries[index] ||
+          runtime->owning_entries[index]->execute == NULL)
+        return 0u;
+    }
+    return 1u;
+  }
+  if (runtime->payload_kind != AL_MAILBOX_PAYLOAD_ABI3 ||
       runtime->module == NULL ||
       runtime->module->abi_version != AL_MODULE_ABI_VERSION ||
       runtime->module->struct_size != sizeof(al_module_desc) ||
@@ -647,8 +959,13 @@ al_runtime_external_arguments_valid(const al_mailbox_runtime *runtime,
         al_span_overlaps(argument->pointer, argument->byte_count, runtime,
                          runtime->storage_reserved_bytes) ||
         (argument->is_output != 0u &&
-         al_storage_overlaps_module(argument->pointer, argument->byte_count,
-                                    runtime->module))) {
+         ((runtime->payload_kind == AL_MAILBOX_PAYLOAD_ABI3 &&
+           al_storage_overlaps_module(argument->pointer,
+                                      argument->byte_count, runtime->module)) ||
+          (runtime->payload_kind == AL_MAILBOX_PAYLOAD_OWNING &&
+           al_storage_overlaps_owning_module(
+               argument->pointer, argument->byte_count,
+               runtime->owning_module))))) {
       return 0u;
     }
     for (prior = 0u; prior < index; ++prior) {
@@ -769,6 +1086,92 @@ static void al_saturating_increment(uint64_t *value) {
   }
 }
 
+static void al_saturating_add(uint64_t *value, uint64_t amount) {
+  if (value != NULL) {
+    *value = amount > UINT64_MAX - *value ? UINT64_MAX : *value + amount;
+  }
+}
+
+static al_mailbox_result al_reserve_generation_pair(
+    al_mailbox_runtime *runtime, uint32_t *out_scratch_generation,
+    uint32_t *out_staging_generation) {
+  if (runtime == NULL || out_scratch_generation == NULL ||
+      out_staging_generation == NULL)
+    return AL_MAILBOX_INVALID_ARGUMENT;
+  if (runtime->next_generation == 0u ||
+      runtime->next_generation > (uint64_t)UINT32_MAX - 1u)
+    return AL_MAILBOX_GENERATION_EXHAUSTED;
+  *out_scratch_generation = (uint32_t)runtime->next_generation;
+  *out_staging_generation = *out_scratch_generation + 1u;
+  runtime->next_generation += 2u;
+  return AL_MAILBOX_OK;
+}
+
+static al_mailbox_result al_mailbox_begin_admission(
+    const al_mailbox_runtime *runtime, const al_mailbox_slot *slot) {
+  if (runtime == NULL || slot == NULL)
+    return AL_MAILBOX_INVALID_ARGUMENT;
+  if (slot->initialized == 0u)
+    return AL_MAILBOX_NOT_INITIALIZED;
+  if (slot->pending != 0u)
+    return AL_MAILBOX_BUSY;
+  if (runtime->sequence_exhausted != 0u ||
+      runtime->next_token_sequence == 0u)
+    return AL_MAILBOX_TOKEN_EXHAUSTED;
+  return AL_MAILBOX_OK;
+}
+
+static al_mailbox_result al_scratch_lease_acquire(
+    al_mailbox_runtime *runtime) {
+  if (runtime == NULL || runtime->busy != 0u ||
+      runtime->outstanding_scratch_leases != 0u)
+    return AL_MAILBOX_BUSY;
+  runtime->busy = 1u;
+  runtime->outstanding_scratch_leases = 1u;
+  al_saturating_increment(&runtime->scratch_lease_acquisitions);
+  al_saturating_increment(&runtime->handler_invocations);
+  return AL_MAILBOX_OK;
+}
+
+static void al_scratch_lease_release(al_mailbox_runtime *runtime) {
+  if (runtime == NULL)
+    return;
+  runtime->outstanding_scratch_leases = 0u;
+  al_saturating_increment(&runtime->scratch_lease_returns);
+  runtime->busy = 0u;
+}
+
+static void al_mailbox_commit_begin(al_mailbox_runtime *runtime,
+                                    al_mailbox_slot *slot,
+                                    const al_mailbox_token *token,
+                                    al_mailbox_token *out_token) {
+  slot->pending = 1u;
+  slot->pending_token = *token;
+  *out_token = *token;
+  if (runtime->next_token_sequence == UINT64_MAX) {
+    runtime->next_token_sequence = 0u;
+    runtime->sequence_exhausted = 1u;
+  } else {
+    ++runtime->next_token_sequence;
+  }
+}
+
+static void al_mailbox_commit_resume(al_mailbox_slot *slot,
+                                     const al_mailbox_token *completed_token) {
+  slot->pending = 0u;
+  slot->last_completed_token = *completed_token;
+  slot->last_completed_valid = 1u;
+  memset(&slot->pending_token, 0, sizeof(slot->pending_token));
+}
+
+static void al_mailbox_mark_initialized(al_mailbox_slot *slot) {
+  slot->pending = 0u;
+  slot->initialized = 1u;
+  memset(&slot->pending_token, 0, sizeof(slot->pending_token));
+  memset(&slot->last_completed_token, 0, sizeof(slot->last_completed_token));
+  slot->last_completed_valid = 0u;
+}
+
 static al_mailbox_result
 al_validate_output_roots(const al_mailbox_runtime *runtime,
                          const al_mailbox_bank *bank,
@@ -841,13 +1244,10 @@ al_execute_entry(al_mailbox_runtime *runtime, al_mailbox_slot *slot,
     return AL_MAILBOX_INVALID_ARGUMENT;
   }
 
-  if (runtime->next_generation == 0u ||
-      runtime->next_generation > (uint64_t)UINT32_MAX - 1u) {
-    return AL_MAILBOX_GENERATION_EXHAUSTED;
-  }
-  scratch_generation = (uint32_t)runtime->next_generation;
-  staging_generation = scratch_generation + 1u;
-  runtime->next_generation += 2u;
+  result = al_reserve_generation_pair(runtime, &scratch_generation,
+                                      &staging_generation);
+  if (result != AL_MAILBOX_OK)
+    return result;
 
   al_clear_bank(runtime, output_bank, 1u);
   output_bank->owner.generation = staging_generation;
@@ -873,10 +1273,9 @@ al_execute_entry(al_mailbox_runtime *runtime, al_mailbox_slot *slot,
   runtime->context.input_root_type_ids = runtime->invocation_type_ids;
   runtime->context.input_root_count = entry->input_count;
 
-  runtime->busy = 1u;
-  runtime->outstanding_scratch_leases = 1u;
-  al_saturating_increment(&runtime->scratch_lease_acquisitions);
-  al_saturating_increment(&runtime->handler_invocations);
+  result = al_scratch_lease_acquire(runtime);
+  if (result != AL_MAILBOX_OK)
+    return result;
   entry->execute(&runtime->context, output_bank->roots, entry->output_count,
                  &handler_status);
   if (runtime->scratch.used > runtime->scratch_high_water_bytes) {
@@ -912,9 +1311,7 @@ al_execute_entry(al_mailbox_runtime *runtime, al_mailbox_slot *slot,
 
   al_reset_scratch(runtime);
   al_reset_context(runtime);
-  runtime->outstanding_scratch_leases = 0u;
-  al_saturating_increment(&runtime->scratch_lease_returns);
-  runtime->busy = 0u;
+  al_scratch_lease_release(runtime);
   (void)slot;
   return result;
 }
@@ -1020,6 +1417,7 @@ static al_mailbox_result al_runtime_init_impl(const al_module_desc *module,
   memset(base, 0, layout.total_bytes);
   runtime = (al_mailbox_runtime *)(void *)base;
   runtime->magic = AL_MAILBOX_RUNTIME_MAGIC;
+  runtime->payload_kind = AL_MAILBOX_PAYLOAD_ABI3;
   runtime->module = module;
   runtime->program = module->program;
   runtime->config = *config;
@@ -1061,7 +1459,7 @@ static al_mailbox_result al_runtime_init_impl(const al_module_desc *module,
     size_t mailbox_base = layout.bank_backing_offset + i * layout.bank_stride;
     uint32_t bank_index;
     for (bank_index = 0u; bank_index < 2u; ++bank_index) {
-      al_mailbox_bank *bank = &slot->banks[bank_index];
+      al_mailbox_bank *bank = &slot->payload.graph.banks[bank_index];
       bank->owner.data =
           base + mailbox_base + layout.bank_data_offset[bank_index];
       bank->owner.byte_capacity = config->retained_byte_capacity;
@@ -1077,6 +1475,891 @@ static al_mailbox_result al_runtime_init_impl(const al_module_desc *module,
   }
   al_reset_scratch(runtime);
   *out_runtime = runtime;
+  return AL_MAILBOX_OK;
+}
+
+static al_mailbox_result al_map_owning_status(uint32_t status) {
+  switch (status) {
+  case AL_OWNING_STATUS_OK:
+    return AL_MAILBOX_OK;
+  case AL_OWNING_STATUS_STACK_CAPACITY:
+    return AL_MAILBOX_SCRATCH_CAPACITY;
+  case AL_OWNING_STATUS_RETAINED_CAPACITY:
+    return AL_MAILBOX_RETAINED_CAPACITY;
+  case AL_OWNING_STATUS_INVALID_REQUEST:
+    return AL_MAILBOX_INVALID_REFERENCE;
+  case AL_OWNING_STATUS_DIAGNOSTIC:
+  case AL_OWNING_STATUS_INTERNAL:
+  default:
+    return AL_MAILBOX_HANDLER_FAILURE;
+  }
+}
+
+static al_mailbox_result al_map_owning_bank_result(
+    al_owning_bank_result result) {
+  switch (result) {
+  case AL_OWNING_BANK_OK:
+    return AL_MAILBOX_OK;
+  case AL_OWNING_BANK_ROOT_CAPACITY:
+  case AL_OWNING_BANK_BYTE_CAPACITY:
+    return AL_MAILBOX_RETAINED_CAPACITY;
+  case AL_OWNING_BANK_OVERFLOW:
+    return AL_MAILBOX_SIZE_OVERFLOW;
+  case AL_OWNING_BANK_INVALID_STORAGE:
+    return AL_MAILBOX_INVALID_STORAGE;
+  case AL_OWNING_BANK_BUSY:
+  case AL_OWNING_BANK_NO_TRANSACTION:
+    return AL_MAILBOX_BUSY;
+  case AL_OWNING_BANK_INVALID_ARGUMENT:
+  case AL_OWNING_BANK_INVALID_VALUE:
+  case AL_OWNING_BANK_OVERLAP:
+  default:
+    return AL_MAILBOX_INVALID_REFERENCE;
+  }
+}
+
+static al_mailbox_result al_owning_text_measure(
+    const uint8_t *utf8, uint32_t byte_count, uint32_t staging_capacity,
+    uint32_t *out_payload_bytes, uint32_t *out_extent_bytes) {
+  uint64_t units = 0u;
+  uint32_t index = 0u;
+  uint64_t payload;
+  uint64_t extent;
+  if ((byte_count != 0u && utf8 == NULL) || out_payload_bytes == NULL ||
+      out_extent_bytes == NULL ||
+      (utf8 != NULL && !al_checked_span(utf8, byte_count)))
+    return AL_MAILBOX_INVALID_ARGUMENT;
+  while (index < byte_count) {
+    uint32_t scalar;
+    uint32_t width;
+    uint8_t first = utf8[index];
+    if (first <= 0x7fu) {
+      scalar = first;
+      width = 1u;
+    } else if (first >= 0xc2u && first <= 0xdfu) {
+      if (byte_count - index < 2u || (utf8[index + 1u] & 0xc0u) != 0x80u)
+        return AL_MAILBOX_INVALID_TEXT_ENCODING;
+      scalar = ((uint32_t)(first & 0x1fu) << 6u) |
+               (uint32_t)(utf8[index + 1u] & 0x3fu);
+      width = 2u;
+    } else if (first >= 0xe0u && first <= 0xefu) {
+      uint8_t second;
+      if (byte_count - index < 3u)
+        return AL_MAILBOX_INVALID_TEXT_ENCODING;
+      second = utf8[index + 1u];
+      if ((second & 0xc0u) != 0x80u ||
+          (utf8[index + 2u] & 0xc0u) != 0x80u ||
+          (first == 0xe0u && second < 0xa0u) ||
+          (first == 0xedu && second > 0x9fu))
+        return AL_MAILBOX_INVALID_TEXT_ENCODING;
+      scalar = ((uint32_t)(first & 0x0fu) << 12u) |
+               ((uint32_t)(second & 0x3fu) << 6u) |
+               (uint32_t)(utf8[index + 2u] & 0x3fu);
+      width = 3u;
+    } else if (first >= 0xf0u && first <= 0xf4u) {
+      uint8_t second;
+      if (byte_count - index < 4u)
+        return AL_MAILBOX_INVALID_TEXT_ENCODING;
+      second = utf8[index + 1u];
+      if ((second & 0xc0u) != 0x80u ||
+          (utf8[index + 2u] & 0xc0u) != 0x80u ||
+          (utf8[index + 3u] & 0xc0u) != 0x80u ||
+          (first == 0xf0u && second < 0x90u) ||
+          (first == 0xf4u && second > 0x8fu))
+        return AL_MAILBOX_INVALID_TEXT_ENCODING;
+      scalar = ((uint32_t)(first & 0x07u) << 18u) |
+               ((uint32_t)(second & 0x3fu) << 12u) |
+               ((uint32_t)(utf8[index + 2u] & 0x3fu) << 6u) |
+               (uint32_t)(utf8[index + 3u] & 0x3fu);
+      width = 4u;
+    } else {
+      return AL_MAILBOX_INVALID_TEXT_ENCODING;
+    }
+    units += scalar > 0xffffu ? 2u : 1u;
+    if (units > ((uint64_t)INT32_MAX - 8u) / 2u)
+      return AL_MAILBOX_TEXT_CAPACITY;
+    index += width;
+  }
+  payload = 8u + units * 2u;
+  extent = (payload + 7u) & ~UINT64_C(7);
+  if (extent > staging_capacity || extent > UINT32_MAX)
+    return AL_MAILBOX_TEXT_CAPACITY;
+  *out_payload_bytes = (uint32_t)payload;
+  *out_extent_bytes = (uint32_t)extent;
+  return AL_MAILBOX_OK;
+}
+
+static void al_owning_write_u16(uint8_t *destination, uint16_t value) {
+  destination[0] = (uint8_t)value;
+  destination[1] = (uint8_t)(value >> 8u);
+}
+
+static void al_owning_write_u32(uint8_t *destination, uint32_t value) {
+  destination[0] = (uint8_t)value;
+  destination[1] = (uint8_t)(value >> 8u);
+  destination[2] = (uint8_t)(value >> 16u);
+  destination[3] = (uint8_t)(value >> 24u);
+}
+
+static al_mailbox_result al_owning_text_write(
+    const uint8_t *utf8, uint32_t byte_count, uint32_t payload_bytes,
+    uint32_t extent_bytes, uint8_t *destination) {
+  uint32_t source_index = 0u;
+  uint32_t output_index = 8u;
+  if (destination == NULL || payload_bytes < 8u || extent_bytes < payload_bytes ||
+      ((payload_bytes - 8u) & 1u) != 0u)
+    return AL_MAILBOX_INVALID_ARGUMENT;
+  memset(destination, 0, extent_bytes);
+  al_owning_write_u32(destination, (payload_bytes - 8u) / 2u);
+  while (source_index < byte_count) {
+    uint32_t scalar;
+    uint32_t width;
+    uint8_t first = utf8[source_index];
+    uint32_t output_width;
+    if (first <= 0x7fu) {
+      scalar = first;
+      width = 1u;
+    } else if (first >= 0xc2u && first <= 0xdfu) {
+      if (byte_count - source_index < 2u ||
+          (utf8[source_index + 1u] & 0xc0u) != 0x80u)
+        return AL_MAILBOX_INVALID_TEXT_ENCODING;
+      scalar = ((uint32_t)(first & 0x1fu) << 6u) |
+               (uint32_t)(utf8[source_index + 1u] & 0x3fu);
+      width = 2u;
+    } else if (first >= 0xe0u && first <= 0xefu) {
+      uint8_t second;
+      if (byte_count - source_index < 3u)
+        return AL_MAILBOX_INVALID_TEXT_ENCODING;
+      second = utf8[source_index + 1u];
+      if ((second & 0xc0u) != 0x80u ||
+          (utf8[source_index + 2u] & 0xc0u) != 0x80u ||
+          (first == 0xe0u && second < 0xa0u) ||
+          (first == 0xedu && second > 0x9fu))
+        return AL_MAILBOX_INVALID_TEXT_ENCODING;
+      scalar = ((uint32_t)(first & 0x0fu) << 12u) |
+               ((uint32_t)(utf8[source_index + 1u] & 0x3fu) << 6u) |
+               (uint32_t)(utf8[source_index + 2u] & 0x3fu);
+      width = 3u;
+    } else if (first >= 0xf0u && first <= 0xf4u) {
+      uint8_t second;
+      if (byte_count - source_index < 4u)
+        return AL_MAILBOX_INVALID_TEXT_ENCODING;
+      second = utf8[source_index + 1u];
+      if ((second & 0xc0u) != 0x80u ||
+          (utf8[source_index + 2u] & 0xc0u) != 0x80u ||
+          (utf8[source_index + 3u] & 0xc0u) != 0x80u ||
+          (first == 0xf0u && second < 0x90u) ||
+          (first == 0xf4u && second > 0x8fu))
+        return AL_MAILBOX_INVALID_TEXT_ENCODING;
+      scalar = ((uint32_t)(first & 0x07u) << 18u) |
+               ((uint32_t)(utf8[source_index + 1u] & 0x3fu) << 12u) |
+               ((uint32_t)(utf8[source_index + 2u] & 0x3fu) << 6u) |
+               (uint32_t)(utf8[source_index + 3u] & 0x3fu);
+      width = 4u;
+    } else {
+      return AL_MAILBOX_INVALID_TEXT_ENCODING;
+    }
+    output_width = scalar > 0xffffu ? 4u : 2u;
+    if (output_index > payload_bytes ||
+        output_width > payload_bytes - output_index)
+      return AL_MAILBOX_INVALID_TEXT_ENCODING;
+    if (scalar <= 0xffffu) {
+      al_owning_write_u16(destination + output_index, (uint16_t)scalar);
+      output_index += 2u;
+    } else {
+      uint32_t adjusted = scalar - 0x10000u;
+      al_owning_write_u16(destination + output_index,
+                          (uint16_t)(0xd800u + (adjusted >> 10u)));
+      al_owning_write_u16(destination + output_index + 2u,
+                          (uint16_t)(0xdc00u + (adjusted & 0x3ffu)));
+      output_index += 4u;
+    }
+    source_index += width;
+  }
+  return output_index == payload_bytes ? AL_MAILBOX_OK
+                                       : AL_MAILBOX_INVALID_TEXT_ENCODING;
+}
+
+al_mailbox_result al_mailbox_get_owning_storage_requirements(
+    const al_owning_mailbox_module *module,
+    const al_mailbox_owning_config *config,
+    al_mailbox_owning_storage_requirements *requirements) {
+  al_owning_mailbox_layout layout;
+  al_mailbox_result result;
+  if (requirements == NULL || !al_pointer_aligned(requirements, 8u))
+    return AL_MAILBOX_INVALID_ARGUMENT;
+  result = al_compute_owning_layout(module, config, &layout);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  if (al_span_overlaps(requirements, sizeof(*requirements), config,
+                       sizeof(*config)) ||
+      al_storage_overlaps_owning_module(requirements, sizeof(*requirements),
+                                        module))
+    return AL_MAILBOX_INVALID_ARGUMENT;
+  requirements->control_abi_version = AL_MAILBOX_CONTROL_ABI_VERSION;
+  requirements->struct_size = (uint32_t)sizeof(*requirements);
+  requirements->storage_alignment = AL_MAILBOX_ALIGNMENT;
+  requirements->mailbox_capacity = config->mailbox_capacity;
+  requirements->storage_bytes = (uint64_t)layout.total_bytes;
+  requirements->retained_reserved_bytes = layout.retained_reserved_bytes;
+  requirements->scratch_reserved_bytes = layout.scratch_reserved_bytes;
+  requirements->text_staging_reserved_bytes =
+      layout.text_staging_reserved_bytes;
+  requirements->controller_reserved_bytes =
+      layout.controller_reserved_bytes;
+  return AL_MAILBOX_OK;
+}
+
+static al_mailbox_result al_runtime_init_owning_impl(
+    const al_owning_mailbox_module *module,
+    const al_mailbox_owning_config *config, void *storage,
+    uint64_t storage_bytes, al_mailbox_runtime **out_runtime,
+    uint32_t owner_thread_id) {
+  al_owning_mailbox_layout layout;
+  al_mailbox_owning_storage_requirements requirements;
+  al_mailbox_runtime *runtime;
+  uint8_t *base;
+  uint64_t instance_id;
+  uint32_t string_index;
+  uint32_t state_index;
+  uint32_t continuation_index;
+  uint32_t mailbox_id;
+  al_mailbox_result result;
+  if (out_runtime == NULL || !al_pointer_aligned(out_runtime, 8u) ||
+      !al_checked_span(out_runtime, sizeof(*out_runtime)) ||
+      owner_thread_id == 0u || config == NULL ||
+      !al_checked_span(config, sizeof(*config)) ||
+      al_span_overlaps(out_runtime, sizeof(*out_runtime), config,
+                       sizeof(*config)))
+    return AL_MAILBOX_INVALID_ARGUMENT;
+  result = al_compute_owning_layout(module, config, &layout);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  result = al_validate_owning_module(module, &string_index, &state_index,
+                                     &continuation_index);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  requirements.control_abi_version = AL_MAILBOX_CONTROL_ABI_VERSION;
+  requirements.struct_size = (uint32_t)sizeof(requirements);
+  requirements.storage_alignment = AL_MAILBOX_ALIGNMENT;
+  requirements.mailbox_capacity = config->mailbox_capacity;
+  requirements.storage_bytes = (uint64_t)layout.total_bytes;
+  requirements.retained_reserved_bytes = layout.retained_reserved_bytes;
+  requirements.scratch_reserved_bytes = layout.scratch_reserved_bytes;
+  requirements.text_staging_reserved_bytes =
+      layout.text_staging_reserved_bytes;
+  requirements.controller_reserved_bytes = layout.controller_reserved_bytes;
+  if (al_span_overlaps(out_runtime, sizeof(*out_runtime), storage,
+                       requirements.storage_bytes) ||
+      al_span_overlaps(out_runtime, sizeof(*out_runtime), module,
+                       sizeof(*module)) ||
+      al_storage_overlaps_owning_module(out_runtime, sizeof(*out_runtime),
+                                        module))
+    return AL_MAILBOX_INVALID_ARGUMENT;
+  *out_runtime = NULL;
+  if (storage == NULL || !al_pointer_aligned(storage, AL_MAILBOX_ALIGNMENT) ||
+      storage_bytes < requirements.storage_bytes ||
+      !al_checked_span(storage, storage_bytes) ||
+      al_span_overlaps(storage, requirements.storage_bytes, config,
+                       sizeof(*config)) ||
+      al_span_overlaps(storage, requirements.storage_bytes, out_runtime,
+                       sizeof(*out_runtime)) ||
+      al_storage_overlaps_owning_module(storage, requirements.storage_bytes,
+                                        module))
+    return AL_MAILBOX_INVALID_STORAGE;
+  if (al_mailbox_platform_next_instance_id(&instance_id) == 0)
+    return AL_MAILBOX_INSTANCE_EXHAUSTED;
+
+  base = (uint8_t *)storage;
+  memset(base, 0, layout.total_bytes);
+  runtime = (al_mailbox_runtime *)(void *)base;
+  runtime->magic = AL_MAILBOX_RUNTIME_MAGIC;
+  runtime->payload_kind = AL_MAILBOX_PAYLOAD_OWNING;
+  runtime->owning_module = module;
+  runtime->owning_config = *config;
+  runtime->config.control_abi_version = AL_MAILBOX_CONTROL_ABI_VERSION;
+  runtime->config.struct_size = (uint32_t)sizeof(runtime->config);
+  runtime->config.mailbox_capacity = config->mailbox_capacity;
+  runtime->config.scratch_byte_capacity = config->scratch_byte_capacity;
+  runtime->config.retained_byte_capacity = config->retained_byte_capacity;
+  runtime->owner_thread_id = owner_thread_id;
+  runtime->runtime_instance_id = instance_id;
+  runtime->next_token_sequence = 1u;
+  runtime->next_generation = 1u;
+  runtime->storage_reserved_bytes = requirements.storage_bytes;
+  runtime->retained_reserved_bytes = requirements.retained_reserved_bytes;
+  runtime->scratch_reserved_bytes = requirements.scratch_reserved_bytes;
+  runtime->owning_string_type_index = string_index;
+  runtime->owning_state_type_index = state_index;
+  runtime->owning_continuation_type_index = continuation_index;
+  runtime->state_type_id = module->layout->types[state_index].type_id;
+  runtime->continuation_type_id =
+      module->layout->types[continuation_index].type_id;
+  runtime->owning_entries[0] = &module->entries[0];
+  runtime->owning_entries[1] = &module->entries[1];
+  runtime->owning_entries[2] = &module->entries[2];
+  runtime->mailboxes =
+      (al_mailbox_slot *)(void *)(base + layout.slots_offset);
+  runtime->owning_scratch_data = base + layout.scratch_data_offset;
+  runtime->owning_init_bitmap = base + layout.init_bitmap_offset;
+  runtime->owning_poison_bitmap = base + layout.poison_bitmap_offset;
+  runtime->owning_text_staging = base + layout.text_staging_offset;
+  runtime->owning_context.abi_version = AL_OWNING_STACK_ABI_VERSION;
+  runtime->owning_context.stack_capacity_bytes =
+      config->scratch_byte_capacity;
+  runtime->owning_context.init_bitmap_bytes = layout.bitmap_bytes;
+  runtime->owning_context.stack_data = runtime->owning_scratch_data;
+  runtime->owning_context.init_bitmap = runtime->owning_init_bitmap;
+  runtime->owning_context.poison_bitmap = runtime->owning_poison_bitmap;
+  runtime->owning_context.trace_events = NULL;
+  runtime->owning_context.trace_event_capacity = 0u;
+  al_owning_begin(&runtime->owning_context);
+
+  for (mailbox_id = 0u; mailbox_id < config->mailbox_capacity; ++mailbox_id) {
+    al_mailbox_slot *slot = &runtime->mailboxes[mailbox_id];
+    size_t mailbox_base =
+        layout.bank_backing_offset + (size_t)mailbox_id * layout.bank_stride;
+    uint8_t *bank0_bytes = base + mailbox_base + layout.bank_data_offset[0];
+    uint8_t *bank1_bytes = base + mailbox_base + layout.bank_data_offset[1];
+    al_owning_bank_root *bank0_roots =
+        (al_owning_bank_root *)(void *)(base + mailbox_base +
+                                        layout.bank_roots_offset[0]);
+    al_owning_bank_root *bank1_roots =
+        (al_owning_bank_root *)(void *)(base + mailbox_base +
+                                        layout.bank_roots_offset[1]);
+    al_owning_bank_result bank_result = al_owning_byte_store_init(
+        &slot->payload.owning, bank0_bytes, config->retained_byte_capacity,
+        bank0_roots, AL_MAILBOX_MAX_ROOTS, bank1_bytes,
+        config->retained_byte_capacity, bank1_roots, AL_MAILBOX_MAX_ROOTS);
+    if (bank_result != AL_OWNING_BANK_OK)
+      return al_map_owning_bank_result(bank_result);
+    memset(bank0_bytes, AL_MAILBOX_POISON_BYTE,
+           config->retained_byte_capacity);
+    memset(bank1_bytes, AL_MAILBOX_POISON_BYTE,
+           config->retained_byte_capacity);
+  }
+  memset(runtime->owning_scratch_data, AL_MAILBOX_POISON_BYTE,
+         config->scratch_byte_capacity);
+  memset(runtime->owning_text_staging, AL_MAILBOX_POISON_BYTE,
+         config->text_staging_byte_capacity);
+  *out_runtime = runtime;
+  return AL_MAILBOX_OK;
+}
+
+al_mailbox_result al_mailbox_runtime_init_owning(
+    const al_owning_mailbox_module *module,
+    const al_mailbox_owning_config *config, void *storage,
+    uint64_t storage_bytes, al_mailbox_runtime **out_runtime) {
+  return al_runtime_init_owning_impl(
+      module, config, storage, storage_bytes, out_runtime,
+      al_mailbox_platform_current_thread_id());
+}
+
+static al_mailbox_result al_owning_bank_root_input(
+    al_mailbox_runtime *runtime, const al_owning_byte_bank *bank,
+    uint32_t root_index, uint32_t type_index,
+    al_owning_external_slice *out_input) {
+  const al_owning_bank_root *root;
+  uint32_t payload_bytes;
+  uint32_t extent_bytes;
+  if (bank == NULL || out_input == NULL || bank->bytes == NULL ||
+      bank->roots == NULL || root_index >= bank->root_count ||
+      type_index >= runtime->owning_module->layout->type_count ||
+      !al_checked_span(bank->bytes, bank->byte_capacity))
+    return AL_MAILBOX_INVALID_REFERENCE;
+  root = &bank->roots[root_index];
+  if (root->type_id != runtime->owning_module->layout->types[type_index].type_id ||
+      root->extent_bytes == 0u || root->offset_bytes > bank->used_bytes ||
+      root->extent_bytes > bank->used_bytes - root->offset_bytes ||
+      root->owner_end_bytes != root->offset_bytes + root->extent_bytes ||
+      root->payload_bytes > root->extent_bytes)
+    return AL_MAILBOX_INVALID_REFERENCE;
+  al_owning_begin(&runtime->owning_context);
+  if (al_owning_measure_external_value(
+          &runtime->owning_context, runtime->owning_module->layout,
+          type_index, bank->bytes, bank->used_bytes, root->offset_bytes, 0u,
+          &payload_bytes, &extent_bytes) != 0 ||
+      payload_bytes != root->payload_bytes || extent_bytes != root->extent_bytes)
+    return AL_MAILBOX_INVALID_REFERENCE;
+  out_input->bytes = bank->bytes + root->offset_bytes;
+  out_input->extent_bytes = root->extent_bytes;
+  out_input->type_index = type_index;
+  return AL_MAILBOX_OK;
+}
+
+static al_mailbox_result al_owning_validate_inputs(
+    al_mailbox_runtime *runtime, const al_owning_mailbox_entry *entry,
+    const al_owning_external_slice *inputs) {
+  uint64_t total_bytes = 0u;
+  uint32_t index;
+  if (runtime == NULL || entry == NULL || inputs == NULL ||
+      entry->input_count > AL_MAILBOX_MAX_INPUTS)
+    return AL_MAILBOX_INVALID_ARGUMENT;
+  al_owning_begin(&runtime->owning_context);
+  for (index = 0u; index < entry->input_count; ++index) {
+    uint32_t payload_bytes;
+    uint32_t extent_bytes;
+    const al_owning_external_slice *input = &inputs[index];
+    if (input->bytes == NULL || input->extent_bytes == 0u ||
+        input->type_index != entry->input_type_indexes[index] ||
+        !al_checked_span(input->bytes, input->extent_bytes) ||
+        !al_add_u64(total_bytes, input->extent_bytes, &total_bytes) ||
+        total_bytes > runtime->owning_config.scratch_byte_capacity)
+      return total_bytes > runtime->owning_config.scratch_byte_capacity
+                 ? AL_MAILBOX_SCRATCH_CAPACITY
+                 : AL_MAILBOX_INVALID_REFERENCE;
+    if (al_owning_measure_external_value(
+            &runtime->owning_context, runtime->owning_module->layout,
+            input->type_index, input->bytes, input->extent_bytes, 0u, 0u,
+            &payload_bytes, &extent_bytes) != 0 ||
+        extent_bytes != input->extent_bytes)
+      return AL_MAILBOX_INVALID_REFERENCE;
+  }
+  return AL_MAILBOX_OK;
+}
+
+static al_mailbox_result al_owning_text_input_fits_scratch(
+    const al_mailbox_runtime *runtime, uint32_t root_input_count,
+    uint32_t text_extent_bytes) {
+  uint64_t total_bytes = text_extent_bytes;
+  uint32_t index;
+  if (runtime == NULL || root_input_count > AL_MAILBOX_MAX_ROOTS)
+    return AL_MAILBOX_INVALID_ARGUMENT;
+  for (index = 0u; index < root_input_count; ++index) {
+    if (!al_add_u64(total_bytes, runtime->owning_inputs[index].extent_bytes,
+                    &total_bytes))
+      return AL_MAILBOX_SIZE_OVERFLOW;
+  }
+  return total_bytes > runtime->owning_config.scratch_byte_capacity
+             ? AL_MAILBOX_SCRATCH_CAPACITY
+             : AL_MAILBOX_OK;
+}
+
+static uint32_t al_owning_context_storage_valid(
+    const al_mailbox_runtime *runtime) {
+  const al_owning_stack_context *context = &runtime->owning_context;
+  uint32_t bitmap_bytes =
+      runtime->owning_config.scratch_byte_capacity / 8u +
+      (runtime->owning_config.scratch_byte_capacity % 8u != 0u ? 1u : 0u);
+  return context->abi_version == AL_OWNING_STACK_ABI_VERSION &&
+         context->stack_capacity_bytes ==
+             runtime->owning_config.scratch_byte_capacity &&
+         context->cursor_bytes <= context->stack_capacity_bytes &&
+         context->peak_cursor_bytes <= context->stack_capacity_bytes &&
+         context->peak_cursor_bytes >= context->cursor_bytes &&
+         context->init_bitmap_bytes == bitmap_bytes &&
+         context->stack_data == runtime->owning_scratch_data &&
+         context->init_bitmap == runtime->owning_init_bitmap &&
+         context->poison_bitmap == runtime->owning_poison_bitmap &&
+         context->trace_events == NULL &&
+         context->trace_event_capacity == 0u &&
+         context->status <= AL_OWNING_STATUS_INTERNAL;
+}
+
+static void al_owning_context_restore_storage(
+    al_mailbox_runtime *runtime, uint32_t safe_cursor) {
+  al_owning_stack_context *context = &runtime->owning_context;
+  uint32_t bitmap_bytes =
+      runtime->owning_config.scratch_byte_capacity / 8u +
+      (runtime->owning_config.scratch_byte_capacity % 8u != 0u ? 1u : 0u);
+  context->abi_version = AL_OWNING_STACK_ABI_VERSION;
+  context->stack_capacity_bytes =
+      runtime->owning_config.scratch_byte_capacity;
+  context->cursor_bytes = safe_cursor;
+  context->peak_cursor_bytes = safe_cursor;
+  context->init_bitmap_bytes = bitmap_bytes;
+  context->stack_data = runtime->owning_scratch_data;
+  context->init_bitmap = runtime->owning_init_bitmap;
+  context->poison_bitmap = runtime->owning_poison_bitmap;
+  context->trace_events = NULL;
+  context->trace_event_capacity = 0u;
+  context->trace_event_count = 0u;
+  context->status = AL_OWNING_STATUS_INTERNAL;
+  context->error_id = 0u;
+  context->required_bytes = 0u;
+  context->available_bytes = context->stack_capacity_bytes;
+  context->deep_copy_bytes = 0u;
+  context->move_bytes = 0u;
+  context->input_copy_bytes = 0u;
+  context->retained_copy_bytes = 0u;
+}
+
+static al_mailbox_result al_execute_owning_entry(
+    al_mailbox_runtime *runtime, al_mailbox_slot *slot,
+    const al_owning_mailbox_entry *entry,
+    const al_owning_external_slice *inputs, al_mailbox_call_info *call_info) {
+  al_mailbox_result result;
+  al_owning_bank_result bank_result;
+  al_owning_byte_store *store;
+  uint32_t output_index;
+  int32_t handler_status;
+  uint32_t context_status;
+  uint32_t cursor_bytes;
+  uint32_t peak_cursor_bytes;
+  uint64_t deep_copy_bytes;
+  uint64_t move_bytes;
+  uint64_t input_copy_bytes;
+  uint64_t publication_bytes = 0u;
+  uint32_t context_storage_valid;
+
+  result = al_owning_validate_inputs(runtime, entry, inputs);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  if (runtime->busy != 0u || runtime->outstanding_scratch_leases != 0u ||
+      entry->output_count > AL_MAILBOX_MAX_ROOTS || slot == NULL)
+    return AL_MAILBOX_BUSY;
+  {
+    uint32_t scratch_generation;
+    uint32_t staging_generation;
+    result = al_reserve_generation_pair(runtime, &scratch_generation,
+                                        &staging_generation);
+    if (result != AL_MAILBOX_OK)
+      return result;
+    (void)scratch_generation;
+    (void)staging_generation;
+  }
+  store = &slot->payload.owning;
+  bank_result = al_owning_byte_store_begin(store);
+  if (bank_result != AL_OWNING_BANK_OK)
+    return al_map_owning_bank_result(bank_result);
+
+  memset(runtime->owning_scratch_data, AL_MAILBOX_POISON_BYTE,
+         runtime->owning_config.scratch_byte_capacity);
+  al_owning_begin(&runtime->owning_context);
+  memset(runtime->owning_outputs, 0xff, sizeof(runtime->owning_outputs));
+  result = al_scratch_lease_acquire(runtime);
+  if (result != AL_MAILBOX_OK) {
+    (void)al_owning_byte_store_abort(store);
+    return result;
+  }
+  handler_status = entry->execute(
+      &runtime->owning_context, inputs, entry->input_count,
+      runtime->owning_outputs, entry->output_count);
+  context_storage_valid = al_owning_context_storage_valid(runtime);
+  if (context_storage_valid == 0u) {
+    uint32_t safe_cursor = runtime->owning_context.cursor_bytes;
+    if (safe_cursor > runtime->owning_config.scratch_byte_capacity)
+      safe_cursor = runtime->owning_config.scratch_byte_capacity;
+    al_owning_context_restore_storage(runtime, safe_cursor);
+    handler_status = AL_OWNING_STATUS_INTERNAL;
+  }
+  context_status = runtime->owning_context.status;
+  cursor_bytes = runtime->owning_context.cursor_bytes;
+  peak_cursor_bytes = runtime->owning_context.peak_cursor_bytes;
+  deep_copy_bytes = runtime->owning_context.deep_copy_bytes;
+  move_bytes = runtime->owning_context.move_bytes;
+  input_copy_bytes = runtime->owning_context.input_copy_bytes;
+  if (peak_cursor_bytes > runtime->scratch_high_water_bytes)
+    runtime->scratch_high_water_bytes = peak_cursor_bytes;
+
+  if (call_info != NULL) {
+    call_info->handler_status = handler_status;
+    call_info->error_metadata_id =
+        context_status == AL_OWNING_STATUS_OK
+            ? -1
+            : (int32_t)runtime->owning_context.error_id;
+    call_info->error_argument0 =
+        context_status == AL_OWNING_STATUS_OK
+            ? 0
+            : runtime->owning_context.required_bytes;
+    call_info->error_argument1 =
+        context_status == AL_OWNING_STATUS_OK
+            ? 0
+            : runtime->owning_context.available_bytes;
+    call_info->steps_consumed = runtime->owning_context.steps_consumed;
+  }
+
+  if (context_storage_valid != 0u && handler_status == 0 &&
+      context_status == AL_OWNING_STATUS_OK) {
+    /* Count callback-returned outputs only; internal descriptor transfers are
+     * not observable here and are not included. */
+    al_saturating_add(&runtime->owning_returned_output_descriptors,
+                      entry->output_count);
+  }
+
+  if (context_storage_valid == 0u) {
+    result = AL_MAILBOX_INVALID_REFERENCE;
+  } else if (handler_status != 0 || context_status != AL_OWNING_STATUS_OK) {
+    result = al_map_owning_status(
+        context_status == AL_OWNING_STATUS_OK ? (uint32_t)handler_status
+                                              : context_status);
+  } else {
+    result = AL_MAILBOX_OK;
+    for (output_index = 0u; output_index < entry->output_count; ++output_index) {
+      const al_owning_bank_stack_slice *output =
+          &runtime->owning_outputs[output_index];
+      if (output->type_index != entry->output_type_indexes[output_index] ||
+          output->reserved != 0u ||
+          output->source_offset_bytes > cursor_bytes ||
+          output->source_owner_end_bytes > cursor_bytes ||
+          output->source_offset_bytes > output->source_owner_end_bytes) {
+        result = AL_MAILBOX_INVALID_REFERENCE;
+        break;
+      }
+    }
+  }
+  if (result == AL_MAILBOX_OK) {
+    bank_result = al_owning_byte_store_stage_stack_values(
+        store, &runtime->owning_context, runtime->owning_module->layout,
+        runtime->owning_outputs, entry->output_count, 0u);
+    result = al_map_owning_bank_result(bank_result);
+  }
+  if (result == AL_MAILBOX_OK) {
+    bank_result = al_owning_byte_store_commit(store);
+    result = al_map_owning_bank_result(bank_result);
+    if (result == AL_MAILBOX_OK)
+      publication_bytes =
+          al_owning_byte_store_last_committed_copy_bytes(store);
+  }
+  if (result != AL_MAILBOX_OK) {
+    (void)al_owning_byte_store_abort(store);
+    al_saturating_increment(&runtime->handler_failures);
+    if (call_info != NULL && call_info->handler_status == 0) {
+      call_info->handler_status =
+          result == AL_MAILBOX_RETAINED_CAPACITY
+              ? AL_OWNING_STATUS_RETAINED_CAPACITY
+              : AL_OWNING_STATUS_INVALID_REQUEST;
+      call_info->error_metadata_id = -1;
+    }
+  } else {
+    al_saturating_add(&runtime->owning_publication_copy_bytes,
+                      publication_bytes);
+    {
+      uint32_t old_index = 1u - store->active_index;
+      al_owning_byte_bank *old_bank = &store->banks[old_index];
+      memset(store->storage_bytes[old_index], AL_MAILBOX_POISON_BYTE,
+             old_bank->byte_capacity);
+      memset(store->storage_roots[old_index], 0,
+             (size_t)old_bank->root_capacity * sizeof(al_owning_bank_root));
+      old_bank->used_bytes = 0u;
+      old_bank->root_count = 0u;
+    }
+  }
+
+  al_saturating_add(&runtime->owning_deep_copy_bytes, deep_copy_bytes);
+  al_saturating_add(&runtime->owning_move_bytes, move_bytes);
+  al_saturating_add(&runtime->owning_input_import_bytes, input_copy_bytes);
+  al_saturating_add(&runtime->owning_turn_reset_bytes, cursor_bytes);
+  al_owning_release_to(&runtime->owning_context, 0u, 0u, 0u, 0u);
+  memset(runtime->owning_scratch_data, AL_MAILBOX_POISON_BYTE,
+         runtime->owning_config.scratch_byte_capacity);
+  al_owning_begin(&runtime->owning_context);
+  al_scratch_lease_release(runtime);
+  return result;
+}
+
+static al_mailbox_result al_owning_stage_text_input(
+    al_mailbox_runtime *runtime, const uint8_t *utf8, uint32_t byte_count,
+    uint32_t payload_bytes, uint32_t extent_bytes,
+    al_owning_external_slice *out_input) {
+  al_mailbox_result result;
+  uint32_t measured_payload;
+  uint32_t measured_extent;
+  result = al_owning_text_write(utf8, byte_count, payload_bytes, extent_bytes,
+                                runtime->owning_text_staging);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  al_owning_begin(&runtime->owning_context);
+  if (al_owning_measure_external_value(
+          &runtime->owning_context, runtime->owning_module->layout,
+          runtime->owning_string_type_index, runtime->owning_text_staging,
+          extent_bytes, 0u, 0u, &measured_payload, &measured_extent) != 0 ||
+      measured_payload != payload_bytes || measured_extent != extent_bytes)
+    return AL_MAILBOX_INVALID_TEXT_ENCODING;
+  out_input->bytes = runtime->owning_text_staging;
+  out_input->extent_bytes = extent_bytes;
+  out_input->type_index = runtime->owning_string_type_index;
+  al_saturating_add(&runtime->owning_utf8_input_bytes, byte_count);
+  al_saturating_add(&runtime->owning_utf16_staging_bytes, extent_bytes);
+  return AL_MAILBOX_OK;
+}
+
+al_mailbox_result al_mailbox_init_text(al_mailbox_runtime *runtime,
+                                       uint32_t mailbox_id,
+                                       const uint8_t *utf8,
+                                       uint32_t byte_count,
+                                       al_mailbox_call_info *call_info) {
+  uint32_t current_thread_id = al_mailbox_platform_current_thread_id();
+  al_mailbox_result result;
+  al_mailbox_slot *slot;
+  uint32_t payload_bytes;
+  uint32_t extent_bytes;
+  al_external_argument arguments[2] = {
+      {utf8, byte_count, 0u},
+      {call_info, call_info == NULL ? 0u : sizeof(*call_info), 1u}};
+  if (!al_call_info_valid(call_info))
+    return AL_MAILBOX_INVALID_ARGUMENT;
+  result = al_runtime_access(runtime, current_thread_id, 0u);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  if (runtime->payload_kind != AL_MAILBOX_PAYLOAD_OWNING)
+    return AL_MAILBOX_INVALID_MODULE;
+  if (!al_runtime_external_arguments_valid(
+          runtime, arguments,
+          (uint32_t)(sizeof(arguments) / sizeof(arguments[0]))))
+    return AL_MAILBOX_INVALID_ARGUMENT;
+  result = al_mailbox_at(runtime, mailbox_id, &slot);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  al_call_info_reset(call_info);
+  if (slot->initialized != 0u)
+    return AL_MAILBOX_ALREADY_INITIALIZED;
+  result = al_owning_text_measure(
+      utf8, byte_count, runtime->owning_config.text_staging_byte_capacity,
+      &payload_bytes, &extent_bytes);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  result = al_owning_text_input_fits_scratch(runtime, 0u, extent_bytes);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  result = al_owning_stage_text_input(runtime, utf8, byte_count,
+                                      payload_bytes, extent_bytes,
+                                      &runtime->owning_inputs[0]);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  result = al_execute_owning_entry(runtime, slot, runtime->owning_entries[0],
+                                   runtime->owning_inputs, call_info);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  al_mailbox_mark_initialized(slot);
+  return AL_MAILBOX_OK;
+}
+
+al_mailbox_result al_mailbox_begin_text(al_mailbox_runtime *runtime,
+                                        uint32_t mailbox_id,
+                                        const uint8_t *utf8,
+                                        uint32_t byte_count,
+                                        al_mailbox_token *out_token,
+                                        al_mailbox_call_info *call_info) {
+  uint32_t current_thread_id = al_mailbox_platform_current_thread_id();
+  al_mailbox_result result;
+  al_mailbox_slot *slot;
+  const al_owning_byte_bank *active;
+  al_mailbox_token token;
+  uint32_t payload_bytes;
+  uint32_t extent_bytes;
+  al_external_argument arguments[3] = {
+      {utf8, byte_count, 0u},
+      {out_token, out_token == NULL ? 0u : sizeof(*out_token), 1u},
+      {call_info, call_info == NULL ? 0u : sizeof(*call_info), 1u}};
+  if (out_token == NULL || !al_pointer_aligned(out_token, 8u) ||
+      !al_call_info_valid(call_info))
+    return AL_MAILBOX_INVALID_ARGUMENT;
+  result = al_runtime_access(runtime, current_thread_id, 0u);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  if (runtime->payload_kind != AL_MAILBOX_PAYLOAD_OWNING)
+    return AL_MAILBOX_INVALID_MODULE;
+  if (!al_runtime_external_arguments_valid(
+          runtime, arguments,
+          (uint32_t)(sizeof(arguments) / sizeof(arguments[0]))))
+    return AL_MAILBOX_INVALID_ARGUMENT;
+  result = al_mailbox_at(runtime, mailbox_id, &slot);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  al_call_info_reset(call_info);
+  result = al_mailbox_begin_admission(runtime, slot);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  result = al_owning_text_measure(
+      utf8, byte_count, runtime->owning_config.text_staging_byte_capacity,
+      &payload_bytes, &extent_bytes);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  active = al_owning_byte_store_active(&slot->payload.owning);
+  if (active == NULL || active->root_count != 1u)
+    return AL_MAILBOX_INVALID_REFERENCE;
+  result = al_owning_bank_root_input(
+      runtime, active, 0u, runtime->owning_state_type_index,
+      &runtime->owning_inputs[0]);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  result = al_owning_text_input_fits_scratch(runtime, 1u, extent_bytes);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  result = al_owning_stage_text_input(runtime, utf8, byte_count,
+                                      payload_bytes, extent_bytes,
+                                      &runtime->owning_inputs[1]);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  al_make_token(&token, runtime->runtime_instance_id, mailbox_id,
+                runtime->next_token_sequence);
+  result = al_execute_owning_entry(runtime, slot, runtime->owning_entries[1],
+                                   runtime->owning_inputs, call_info);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  al_mailbox_commit_begin(runtime, slot, &token, out_token);
+  return AL_MAILBOX_OK;
+}
+
+al_mailbox_result al_mailbox_resume_text(
+    al_mailbox_runtime *runtime, uint32_t mailbox_id,
+    const al_mailbox_token *token, const uint8_t *utf8, uint32_t byte_count,
+    al_mailbox_call_info *call_info) {
+  uint32_t current_thread_id = al_mailbox_platform_current_thread_id();
+  al_mailbox_result result;
+  al_mailbox_slot *slot;
+  const al_owning_byte_bank *active;
+  al_mailbox_token completed_token;
+  uint32_t payload_bytes;
+  uint32_t extent_bytes;
+  al_external_argument arguments[3] = {
+      {token, token == NULL ? 0u : sizeof(*token), 0u},
+      {utf8, byte_count, 0u},
+      {call_info, call_info == NULL ? 0u : sizeof(*call_info), 1u}};
+  if (token == NULL || !al_pointer_aligned(token, 8u) ||
+      !al_call_info_valid(call_info))
+    return AL_MAILBOX_INVALID_ARGUMENT;
+  result = al_runtime_access(runtime, current_thread_id, 0u);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  if (runtime->payload_kind != AL_MAILBOX_PAYLOAD_OWNING)
+    return AL_MAILBOX_INVALID_MODULE;
+  if (!al_runtime_external_arguments_valid(
+          runtime, arguments,
+          (uint32_t)(sizeof(arguments) / sizeof(arguments[0]))))
+    return AL_MAILBOX_INVALID_ARGUMENT;
+  result = al_mailbox_at(runtime, mailbox_id, &slot);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  al_call_info_reset(call_info);
+  if (slot->initialized == 0u)
+    return AL_MAILBOX_NOT_INITIALIZED;
+  result = al_validate_token(runtime, mailbox_id, slot, token);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  result = al_owning_text_measure(
+      utf8, byte_count, runtime->owning_config.text_staging_byte_capacity,
+      &payload_bytes, &extent_bytes);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  active = al_owning_byte_store_active(&slot->payload.owning);
+  if (active == NULL || active->root_count != 2u)
+    return AL_MAILBOX_STALE_TOKEN;
+  result = al_owning_bank_root_input(
+      runtime, active, 0u, runtime->owning_state_type_index,
+      &runtime->owning_inputs[0]);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  result = al_owning_bank_root_input(
+      runtime, active, 1u, runtime->owning_continuation_type_index,
+      &runtime->owning_inputs[1]);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  result = al_owning_text_input_fits_scratch(runtime, 2u, extent_bytes);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  result = al_owning_stage_text_input(runtime, utf8, byte_count,
+                                      payload_bytes, extent_bytes,
+                                      &runtime->owning_inputs[2]);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  completed_token = slot->pending_token;
+  result = al_execute_owning_entry(runtime, slot, runtime->owning_entries[2],
+                                   runtime->owning_inputs, call_info);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  al_mailbox_commit_resume(slot, &completed_token);
   return AL_MAILBOX_OK;
 }
 
@@ -1140,6 +2423,9 @@ al_mailbox_result al_mailbox_init_mailbox(al_mailbox_runtime *runtime,
   if (result != AL_MAILBOX_OK) {
     return result;
   }
+  if (runtime->payload_kind != AL_MAILBOX_PAYLOAD_ABI3) {
+    return AL_MAILBOX_INVALID_MODULE;
+  }
   if (!al_runtime_external_arguments_valid(
           runtime, arguments,
           (uint32_t)(sizeof(arguments) / sizeof(arguments[0])))) {
@@ -1159,18 +2445,14 @@ al_mailbox_result al_mailbox_init_mailbox(al_mailbox_runtime *runtime,
     return result;
   }
   inputs[0] = seed;
-  output_bank = &slot->banks[0];
+  output_bank = &slot->payload.graph.banks[0];
   result = al_execute_entry(runtime, slot, NULL, output_bank,
                             runtime->entries[0], inputs, limits, call_info);
   if (result != AL_MAILBOX_OK) {
     return result;
   }
-  slot->active_bank = 0u;
-  slot->pending = 0u;
-  slot->initialized = 1u;
-  memset(&slot->pending_token, 0, sizeof(slot->pending_token));
-  memset(&slot->last_completed_token, 0, sizeof(slot->last_completed_token));
-  slot->last_completed_valid = 0u;
+  slot->payload.graph.active_bank = 0u;
+  al_mailbox_mark_initialized(slot);
   return AL_MAILBOX_OK;
 }
 
@@ -1199,6 +2481,9 @@ al_mailbox_result al_mailbox_begin(al_mailbox_runtime *runtime,
   if (result != AL_MAILBOX_OK) {
     return result;
   }
+  if (runtime->payload_kind != AL_MAILBOX_PAYLOAD_ABI3) {
+    return AL_MAILBOX_INVALID_MODULE;
+  }
   if (!al_runtime_external_arguments_valid(
           runtime, arguments,
           (uint32_t)(sizeof(arguments) / sizeof(arguments[0])))) {
@@ -1209,28 +2494,24 @@ al_mailbox_result al_mailbox_begin(al_mailbox_runtime *runtime,
     return result;
   }
   al_call_info_reset(call_info);
-  if (slot->initialized == 0u) {
-    return AL_MAILBOX_NOT_INITIALIZED;
-  }
-  if (slot->pending != 0u) {
-    return AL_MAILBOX_BUSY;
-  }
-  if (runtime->sequence_exhausted != 0u || runtime->next_token_sequence == 0u) {
-    return AL_MAILBOX_TOKEN_EXHAUSTED;
+  result = al_mailbox_begin_admission(runtime, slot);
+  if (result != AL_MAILBOX_OK) {
+    return result;
   }
   result =
       al_effective_limits(runtime, limits, &(uint32_t){0u}, &(uint32_t){0u});
   if (result != AL_MAILBOX_OK) {
     return result;
   }
-  active = &slot->banks[slot->active_bank];
+  active = &slot->payload.graph.banks[slot->payload.graph.active_bank];
   if (active->root_count != 1u ||
       active->root_type_ids[0] != runtime->state_type_id) {
     return AL_MAILBOX_INVALID_REFERENCE;
   }
   inputs[0] = active->roots[0];
   inputs[1] = message;
-  output_bank = &slot->banks[1u - slot->active_bank];
+  output_bank =
+      &slot->payload.graph.banks[1u - slot->payload.graph.active_bank];
   result = al_execute_entry(runtime, slot, active, output_bank,
                             runtime->entries[1], inputs, limits, call_info);
   if (result != AL_MAILBOX_OK) {
@@ -1239,17 +2520,9 @@ al_mailbox_result al_mailbox_begin(al_mailbox_runtime *runtime,
 
   al_make_token(&token, runtime->runtime_instance_id, mailbox_id,
                 runtime->next_token_sequence);
-  slot->active_bank = 1u - slot->active_bank;
+  slot->payload.graph.active_bank = 1u - slot->payload.graph.active_bank;
   al_clear_bank(runtime, active, 1u);
-  slot->pending = 1u;
-  slot->pending_token = token;
-  *out_token = token;
-  if (runtime->next_token_sequence == UINT64_MAX) {
-    runtime->next_token_sequence = 0u;
-    runtime->sequence_exhausted = 1u;
-  } else {
-    ++runtime->next_token_sequence;
-  }
+  al_mailbox_commit_begin(runtime, slot, &token, out_token);
   return AL_MAILBOX_OK;
 }
 
@@ -1279,6 +2552,9 @@ al_mailbox_result al_mailbox_resume(al_mailbox_runtime *runtime,
   if (result != AL_MAILBOX_OK) {
     return result;
   }
+  if (runtime->payload_kind != AL_MAILBOX_PAYLOAD_ABI3) {
+    return AL_MAILBOX_INVALID_MODULE;
+  }
   if (!al_runtime_external_arguments_valid(
           runtime, arguments,
           (uint32_t)(sizeof(arguments) / sizeof(arguments[0])))) {
@@ -1301,7 +2577,7 @@ al_mailbox_result al_mailbox_resume(al_mailbox_runtime *runtime,
   if (result != AL_MAILBOX_OK) {
     return result;
   }
-  active = &slot->banks[slot->active_bank];
+  active = &slot->payload.graph.banks[slot->payload.graph.active_bank];
   if (slot->pending == 0u || active->root_count != 2u ||
       active->root_type_ids[0] != runtime->state_type_id ||
       active->root_type_ids[1] != runtime->continuation_type_id) {
@@ -1310,19 +2586,17 @@ al_mailbox_result al_mailbox_resume(al_mailbox_runtime *runtime,
   inputs[0] = active->roots[0];
   inputs[1] = active->roots[1];
   inputs[2] = message;
-  output_bank = &slot->banks[1u - slot->active_bank];
+  output_bank =
+      &slot->payload.graph.banks[1u - slot->payload.graph.active_bank];
   completed_token = slot->pending_token;
   result = al_execute_entry(runtime, slot, active, output_bank,
                             runtime->entries[2], inputs, limits, call_info);
   if (result != AL_MAILBOX_OK) {
     return result;
   }
-  slot->active_bank = 1u - slot->active_bank;
+  slot->payload.graph.active_bank = 1u - slot->payload.graph.active_bank;
   al_clear_bank(runtime, active, 1u);
-  slot->pending = 0u;
-  slot->last_completed_token = completed_token;
-  slot->last_completed_valid = 1u;
-  memset(&slot->pending_token, 0, sizeof(slot->pending_token));
+  al_mailbox_commit_resume(slot, &completed_token);
   return AL_MAILBOX_OK;
 }
 
@@ -1344,17 +2618,44 @@ al_mailbox_result al_mailbox_dispose(al_mailbox_runtime *runtime) {
   for (mailbox_id = 0u; mailbox_id < runtime->config.mailbox_capacity;
        ++mailbox_id) {
     al_mailbox_slot *slot = &runtime->mailboxes[mailbox_id];
-    al_clear_bank(runtime, &slot->banks[0], 1u);
-    al_clear_bank(runtime, &slot->banks[1], 1u);
+    if (runtime->payload_kind == AL_MAILBOX_PAYLOAD_OWNING) {
+      al_owning_byte_store *store = &slot->payload.owning;
+      uint32_t bank_index;
+      for (bank_index = 0u; bank_index < 2u; ++bank_index) {
+        al_owning_byte_bank *bank = &store->banks[bank_index];
+        memset(store->storage_bytes[bank_index], AL_MAILBOX_POISON_BYTE,
+               bank->byte_capacity);
+        memset(store->storage_roots[bank_index], 0,
+               (size_t)bank->root_capacity * sizeof(al_owning_bank_root));
+        bank->used_bytes = 0u;
+        bank->root_count = 0u;
+      }
+      store->active_index = 0u;
+      store->transaction_open = 0u;
+      store->transaction_ready = 0u;
+      store->last_committed_copy_bytes = 0u;
+    } else {
+      al_clear_bank(runtime, &slot->payload.graph.banks[0], 1u);
+      al_clear_bank(runtime, &slot->payload.graph.banks[1], 1u);
+      slot->payload.graph.active_bank = 0u;
+    }
     slot->initialized = 0u;
     slot->pending = 0u;
-    slot->active_bank = 0u;
     slot->last_completed_valid = 0u;
     memset(&slot->pending_token, 0, sizeof(slot->pending_token));
     memset(&slot->last_completed_token, 0, sizeof(slot->last_completed_token));
   }
-  al_reset_scratch(runtime);
-  al_reset_context(runtime);
+  if (runtime->payload_kind == AL_MAILBOX_PAYLOAD_OWNING) {
+    al_owning_release_to(&runtime->owning_context, 0u, 0u, 0u, 0u);
+    memset(runtime->owning_scratch_data, AL_MAILBOX_POISON_BYTE,
+           runtime->owning_config.scratch_byte_capacity);
+    memset(runtime->owning_text_staging, AL_MAILBOX_POISON_BYTE,
+           runtime->owning_config.text_staging_byte_capacity);
+    al_owning_begin(&runtime->owning_context);
+  } else {
+    al_reset_scratch(runtime);
+    al_reset_context(runtime);
+  }
   runtime->disposed = 1u;
   return AL_MAILBOX_OK;
 }
@@ -1376,6 +2677,9 @@ al_mailbox_result al_mailbox_get_stats(al_mailbox_runtime *runtime,
   if (result != AL_MAILBOX_OK) {
     return result;
   }
+  if (runtime->payload_kind != AL_MAILBOX_PAYLOAD_ABI3) {
+    return AL_MAILBOX_INVALID_MODULE;
+  }
   {
     const al_external_argument argument = {stats, sizeof(*stats), 1u};
     if (!al_runtime_external_arguments_valid(runtime, &argument, 1u)) {
@@ -1386,7 +2690,8 @@ al_mailbox_result al_mailbox_get_stats(al_mailbox_runtime *runtime,
        ++mailbox_id) {
     const al_mailbox_slot *slot = &runtime->mailboxes[mailbox_id];
     if (slot->initialized != 0u) {
-      const al_arena *owner = &slot->banks[slot->active_bank].owner;
+      const al_arena *owner =
+          &slot->payload.graph.banks[slot->payload.graph.active_bank].owner;
       ++initialized;
       live_bytes += owner->used;
       live_nodes += owner->node_count;
@@ -1418,6 +2723,107 @@ al_mailbox_result al_mailbox_get_stats(al_mailbox_runtime *runtime,
   return AL_MAILBOX_OK;
 }
 
+al_mailbox_result al_mailbox_get_owning_stats(
+    al_mailbox_runtime *runtime, al_mailbox_owning_stats *stats) {
+  uint32_t current_thread_id = al_mailbox_platform_current_thread_id();
+  al_mailbox_result result;
+  uint32_t mailbox_id;
+  uint32_t initialized = 0u;
+  uint32_t pending = 0u;
+  uint64_t live_bytes = 0u;
+  uint64_t live_roots = 0u;
+  if (stats == NULL || !al_pointer_aligned(stats, 8u))
+    return AL_MAILBOX_INVALID_ARGUMENT;
+  result = al_runtime_access(runtime, current_thread_id, 1u);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  if (runtime->payload_kind != AL_MAILBOX_PAYLOAD_OWNING)
+    return AL_MAILBOX_INVALID_MODULE;
+  {
+    const al_external_argument argument = {stats, sizeof(*stats), 1u};
+    if (!al_runtime_external_arguments_valid(runtime, &argument, 1u))
+      return AL_MAILBOX_INVALID_ARGUMENT;
+  }
+  for (mailbox_id = 0u; mailbox_id < runtime->config.mailbox_capacity;
+       ++mailbox_id) {
+    const al_mailbox_slot *slot = &runtime->mailboxes[mailbox_id];
+    if (slot->initialized != 0u) {
+      const al_owning_byte_bank *bank =
+          al_owning_byte_store_active(&slot->payload.owning);
+      ++initialized;
+      if (bank != NULL) {
+        al_saturating_add(&live_bytes, bank->used_bytes);
+        al_saturating_add(&live_roots, bank->root_count);
+      }
+    }
+    if (slot->pending != 0u)
+      ++pending;
+  }
+  stats->control_abi_version = AL_MAILBOX_CONTROL_ABI_VERSION;
+  stats->struct_size = (uint32_t)sizeof(*stats);
+  stats->mailbox_capacity = runtime->config.mailbox_capacity;
+  stats->initialized_mailboxes = initialized;
+  stats->pending_mailboxes = pending;
+  stats->reserved0 = 0u;
+  stats->storage_reserved_bytes = runtime->storage_reserved_bytes;
+  stats->retained_reserved_bytes = runtime->retained_reserved_bytes;
+  stats->scratch_reserved_bytes = runtime->scratch_reserved_bytes;
+  stats->text_staging_reserved_bytes =
+      runtime->owning_config.text_staging_byte_capacity;
+  stats->live_retained_bytes = live_bytes;
+  stats->live_retained_roots = live_roots;
+  stats->scratch_high_water_bytes = runtime->scratch_high_water_bytes;
+  stats->utf8_input_bytes = runtime->owning_utf8_input_bytes;
+  stats->utf16_staging_bytes = runtime->owning_utf16_staging_bytes;
+  stats->input_import_bytes = runtime->owning_input_import_bytes;
+  stats->publication_copy_bytes = runtime->owning_publication_copy_bytes;
+  stats->deep_copy_bytes = runtime->owning_deep_copy_bytes;
+  stats->move_bytes = runtime->owning_move_bytes;
+  stats->returned_output_descriptors =
+      runtime->owning_returned_output_descriptors;
+  stats->turn_reset_bytes = runtime->owning_turn_reset_bytes;
+  stats->handler_invocations = runtime->handler_invocations;
+  stats->handler_failures = runtime->handler_failures;
+  stats->scratch_lease_acquisitions = runtime->scratch_lease_acquisitions;
+  stats->scratch_lease_returns = runtime->scratch_lease_returns;
+  stats->outstanding_scratch_leases = runtime->outstanding_scratch_leases;
+  stats->reserved = 0u;
+  return AL_MAILBOX_OK;
+}
+
+al_mailbox_result al_mailbox_get_owning_state_view(
+    al_mailbox_runtime *runtime, uint32_t mailbox_id,
+    al_mailbox_owning_state_view *view) {
+  uint32_t current_thread_id = al_mailbox_platform_current_thread_id();
+  al_mailbox_slot *slot;
+  al_mailbox_result result;
+  if (view == NULL || !al_pointer_aligned(view, 8u))
+    return AL_MAILBOX_INVALID_ARGUMENT;
+  result = al_runtime_access(runtime, current_thread_id, 0u);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  if (runtime->payload_kind != AL_MAILBOX_PAYLOAD_OWNING)
+    return AL_MAILBOX_INVALID_MODULE;
+  {
+    const al_external_argument argument = {view, sizeof(*view), 1u};
+    if (!al_runtime_external_arguments_valid(runtime, &argument, 1u))
+      return AL_MAILBOX_INVALID_ARGUMENT;
+  }
+  result = al_mailbox_at(runtime, mailbox_id, &slot);
+  if (result != AL_MAILBOX_OK)
+    return result;
+  if (slot->initialized == 0u)
+    return AL_MAILBOX_NOT_INITIALIZED;
+  view->control_abi_version = AL_MAILBOX_CONTROL_ABI_VERSION;
+  view->struct_size = (uint32_t)sizeof(*view);
+  view->bank = al_owning_byte_store_active(&slot->payload.owning);
+  view->state_type_id = runtime->state_type_id;
+  view->continuation_type_id = runtime->continuation_type_id;
+  view->pending = slot->pending;
+  view->reserved = 0u;
+  return view->bank == NULL ? AL_MAILBOX_INVALID_REFERENCE : AL_MAILBOX_OK;
+}
+
 al_mailbox_result al_mailbox_get_state_view(al_mailbox_runtime *runtime,
                                             uint32_t mailbox_id,
                                             al_mailbox_state_view *view) {
@@ -1433,6 +2839,9 @@ al_mailbox_result al_mailbox_get_state_view(al_mailbox_runtime *runtime,
   if (result != AL_MAILBOX_OK) {
     return result;
   }
+  if (runtime->payload_kind != AL_MAILBOX_PAYLOAD_ABI3) {
+    return AL_MAILBOX_INVALID_MODULE;
+  }
   {
     const al_external_argument argument = {view, sizeof(*view), 1u};
     if (!al_runtime_external_arguments_valid(runtime, &argument, 1u)) {
@@ -1446,7 +2855,7 @@ al_mailbox_result al_mailbox_get_state_view(al_mailbox_runtime *runtime,
   if (slot->initialized == 0u) {
     return AL_MAILBOX_NOT_INITIALIZED;
   }
-  active = &slot->banks[slot->active_bank];
+  active = &slot->payload.graph.banks[slot->payload.graph.active_bank];
   view->control_abi_version = AL_MAILBOX_CONTROL_ABI_VERSION;
   view->struct_size = (uint32_t)sizeof(*view);
   view->owner = &active->owner;

@@ -9,7 +9,9 @@ validates the native invocation-scratch/retained-output boundary.
 re-entry across native invocations. [Report 108](../reports/108-native-mailbox-suspension.md)
 validates host-driven suspension and scratch reuse with actual Flow/2 handlers.
 [Report 126](../reports/126-native-mailbox-dispatch.md) validates bounded standalone
-native dispatch of those handlers. Actual async I/O, saturation, production
+native dispatch of those handlers. The owning-value integration in
+[report 131](../reports/131-owning-native-mailboxes.md) passes its focused native
+lifecycle and full Release gates. Actual async I/O, saturation, production
 throughput and tail latency remain untested. See [the roadmap](ROADMAP.md).
 
 [Midori research](MIDORI-RESEARCH.md) supplies architectural comparisons, not
@@ -107,7 +109,7 @@ of its arena-backed program-data stack/scratch, not whether the mailbox survives
 
 | Policy | While async work is pending | On resumption/completion |
 | --- | --- | --- |
-| Keep associated | Keep the mailbox's actual stack/scratch arena and surviving graph associated with that mailbox; do not return it to the shared pool. | Resume from the retained working data; reset/return the arena only when the request or declared operation group and all provider references have safely finished. |
+| Keep associated | Keep the mailbox's actual stack/scratch arena and live owning values associated with that mailbox; do not return it to the shared pool. | Resume from the retained working data; reset/return the arena only when the request or declared operation group and all provider references have safely finished. |
 | Return at suspension | Move the required state, continuation and provider buffers to explicit retained owners, then return scratch to a bounded pool. | Reacquire scratch for the same mailbox, resume, and release it again at the next safe boundary. |
 
 The keep-associated implementation must retain real working data and avoid
@@ -116,6 +118,16 @@ already-reset arena while still performing all promotion copies would bias the
 comparison. Both sides must implement equivalent language behavior, scheduling,
 I/O, cancellation acknowledgements and admission limits. Neither policy may
 reuse memory while a provider still holds a reference.
+
+The next bounded mechanism check should retain the actual begin-result locations,
+resume from those values in the same arena, and import only the new completion
+message. Persistent mailbox state remains bank-owned between operation groups;
+successful completion publishes it once before releasing scratch. A failed resume
+or publication must preserve the pending prefix and token for retry. Verify the
+existing stable emitter's descriptor-only operations and compiler-proven saved
+marks before adding new ownership machinery. Two interleaved pending mailboxes
+need distinct attached scratch slots. This check needs no new source lifetime
+syntax and does not select a performance winner before real-I/O measurement.
 
 Compare maximum sustained successful completions per second at the same enforced
 memory ceiling and acceptable tail latency. Also record live and reserved arena

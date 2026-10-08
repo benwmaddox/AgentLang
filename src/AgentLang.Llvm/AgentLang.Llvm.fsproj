@@ -20,6 +20,7 @@
     <EmbeddedResource Include="native\module_abi.h" LogicalName="AgentLang.Llvm.native.module_abi.h" />
     <EmbeddedResource Include="native\owning_stack_runtime.h" LogicalName="AgentLang.Llvm.native.owning_stack_runtime.h" />
     <EmbeddedResource Include="native\owning_stack_runtime.c" LogicalName="AgentLang.Llvm.native.owning_stack_runtime.c" />
+    <EmbeddedResource Include="native\owning_mailbox_abi.h" LogicalName="AgentLang.Llvm.native.owning_mailbox_abi.h" />
   </ItemGroup>
 
   <ItemGroup>

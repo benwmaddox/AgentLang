@@ -1,0 +1,184 @@
+{
+  "schemaVersion": 1,
+  "kind": "owning-native-mailbox",
+  "frozenBeforeNativeExecution": false,
+  "oracleProvenance": {
+    "originalFixtureWasFrozenBeforeFirstNativeExecution": true,
+    "firstNativeExecutionEvidence": ".agentlang/owning-mailbox-001/integration-run-2f5096b886cf4008a2109e17fea89898/integration-evidence.json",
+    "postExecutionCorrections": [
+      {
+        "case": "truncated serialized input",
+        "correction": "A bounded nonempty descriptor span passes preflight; content measurement then fails after the requested output slot is set to the invalid sentinel. The unused slot remains unchanged and no arena bytes are imported."
+      },
+      {
+        "case": "stale token",
+        "correction": "Retain the first token across a second completed lifecycle, then test it while a third token is pending. The immediately last-completed token is the separate duplicate-token case. The mailbox starts this sequence at B; each completed y/r cycle appends yr, so the second completion and third pending state are Byryr."
+      },
+      {
+        "case": "scratch failure continuation root",
+        "correction": "The begin call receives only UTF-8 c, so its continuation is the one-code-unit string c; the state root remains s."
+      },
+      {
+        "case": "large request returned output descriptors",
+        "correction": "Count callback-returned descriptors before publication: initialize 1 + begin 2 + bank-commit-failed resume 1 + retry resume 1 = 5, including the successful callback output whose bank commit fails."
+      }
+    ]
+  },
+  "sourceFixture": "experiments/AgentLang.OwningMailbox/owning-mailbox.flow",
+  "abiHeader": "src/AgentLang.Llvm/native/owning_mailbox_abi.h",
+  "moduleAbiVersion": 1,
+  "entryOrder": ["initialize", "begin", "resume"],
+  "roles": {
+    "initialize": { "inputs": ["String"], "outputs": ["State"] },
+    "begin": { "inputs": ["State", "String"], "outputs": ["State", "Continuation"] },
+    "resume": { "inputs": ["State", "Continuation", "String"], "outputs": ["State"] },
+    "sharedNominalTypes": ["State", "Continuation"]
+  },
+  "sourceDerivedTypeIds": {
+    "typeIdRule": "Int=1, Bool=2, Unit=3, nominal records sorted by source type name start at 4, String follows all nominal records",
+    "nominalRecordOrder": ["Continuation", "State"],
+    "typeIds": { "Continuation": 4, "State": 5, "String": 6 },
+    "layoutIndexRule": "the module assigns dense zero-based indices by TypeId order over descriptors reachable from role signatures, verified operations, transitively called functions, and nested record fields; unused Unit is omitted",
+    "reachableDescriptorOrder": ["Int", "Bool", "Continuation", "State", "String"],
+    "typeIndexes": { "Continuation": 2, "State": 3, "String": 4 }
+  },
+  "serializedString": {
+    "encoding": "UTF-16LE",
+    "headerBytes": 8,
+    "codeUnitCountOffset": 0,
+    "reservedHeaderBytes": 4,
+    "extentAlignmentBytes": 8,
+    "payloadBytesFormula": "8 + 2*UTF16CodeUnits",
+    "extentBytesFormula": "align_up(payloadBytes, 8)",
+    "paddingBytesAreZero": true
+  },
+  "lifecycle": {
+    "mailboxCount": 2,
+    "unicode": {
+      "mailbox": 0,
+      "initializeUtf8Hex": "41f09f9982",
+      "initializeValue": "A🙂",
+      "initializeCodeUnitsHex": "0041d83dde42",
+      "initializeRoot": { "type": "State", "extentBytes": 16, "serializedHex": "030000000000000041003dd842de0000" },
+      "beginUtf8Hex": "ceb4",
+      "beginValue": "δ",
+      "beginCodeUnitsHex": "03b4",
+      "beginRoots": [
+        { "type": "State", "extentBytes": 16, "serializedHex": "030000000000000041003dd842de0000" },
+        { "type": "Continuation", "extentBytes": 16, "serializedHex": "0100000000000000b403000000000000" }
+      ],
+      "resumeUtf8Hex": "00f09f9a80",
+      "resumeValue": "\u0000🚀",
+      "resumeExpectedValue": "A🙂δ\u0000🚀",
+      "resumeExpectedCodeUnitsHex": "0041d83dde4203b40000d83dde80",
+      "resumeRoot": { "type": "State", "extentBytes": 24, "serializedHex": "070000000000000041003dd842deb40300003dd880de0000" }
+    },
+    "empty": {
+      "mailbox": 1,
+      "initializeUtf8Hex": "",
+      "initializeValue": "",
+      "initializeRoot": { "type": "State", "extentBytes": 8, "serializedHex": "0000000000000000" },
+      "beginUtf8Hex": "",
+      "beginRoots": [
+        { "type": "State", "extentBytes": 8, "serializedHex": "0000000000000000" },
+        { "type": "Continuation", "extentBytes": 8, "serializedHex": "0000000000000000" }
+      ],
+      "resumeUtf8Hex": "42",
+      "resumeExpectedValue": "B",
+      "resumeRoot": { "type": "State", "extentBytes": 16, "serializedHex": "01000000000000004200000000000000" }
+    },
+    "largeRequest": {
+      "mailbox": 0,
+      "utf8PatternByte": "41",
+      "utf8ByteCount": 4096,
+      "utf16CodeUnits": 4096,
+      "canonicalRootExtentBytes": 8200,
+      "minimumStackInputBytes": 8200,
+      "minimumBankOutputBytesForInitialize": 8200,
+      "sourceDerivedStats": {
+        "utf8InputBytes": 8193,
+        "utf16StagingBytes": 16424,
+        "inputImportBytes": 41056,
+        "publicationCopyBytes": 24624,
+        "constructionAndDuplicationBytes": 73880,
+        "constructionDerivation": "initialize State 8200 + begin Continuation 16 + failed resume literal 16 + concat 8208 + concat 16400 + State 16400 + retry literal 16 + concat 8208 + concat 8208 + State 8208",
+        "payloadMoveBytes": 0,
+        "returnedOutputDescriptors": 5
+      },
+      "purpose": "proves the controller accepts a request of at least four KiB and publishes a self-contained root"
+    }
+  },
+  "utf8Boundaries": [
+    { "utf8Hex": "41", "utf16CodeUnitsHex": "0041", "extentBytes": 16, "typeId": 5 },
+    { "utf8Hex": "dfbf", "utf16CodeUnitsHex": "07ff", "extentBytes": 16, "typeId": 5 },
+    { "utf8Hex": "ee8080", "utf16CodeUnitsHex": "e000", "extentBytes": 16, "typeId": 5 },
+    { "utf8Hex": "f48fbfbf", "utf16CodeUnitsHex": "dbffdfff", "extentBytes": 16, "typeId": 5 }
+  ],
+  "copyAccounting": {
+    "publishedPayloadBytes": "sum of committed root extents for that turn",
+    "publicationCopiesPerSuccess": 1,
+    "utf8Conversion": "reported separately from scratch imports and publication",
+    "scratchInputImport": "complete serialized input extents copied once into working arena",
+    "constructionOrDuplication": "reported separately from imports/publication; counters count full copied extents including headers and padding",
+    "sourceDerivedUnicodeConstructionBytes": {
+      "initialize": 16,
+      "begin": 16,
+      "resume": 80,
+      "resumeDerivation": "FAIL comparison literal extent 16 + concat(seed, chunk) extent 16 + concat(previous, message) extent 24 + State field construction extent 24",
+      "payloadMoveBytes": 0
+    },
+    "sourceDerivedSmallLifecycleTotals": {
+      "utf8InputBytes": 13,
+      "utf16StagingBytes": 80,
+      "inputImportBytes": 152,
+      "publicationCopyBytes": 112,
+      "constructionAndDuplicationBytes": 184,
+      "constructionDerivation": "Unicode initialize 16 + begin continuation 16 + resume FAIL literal 16 + concat extents 16 and 24 + State construction 24; empty initialize 8 + begin continuation 8 + resume FAIL literal 16 + empty concat 8 + concat-B 16 + State construction 16",
+      "payloadMoveBytes": 0,
+      "returnedOutputDescriptors": 8
+    },
+    "descriptorTransfer": "metadata only; does not count as payload movement",
+    "turnResetBytes": "the final scratch cursor span cleared after each callback; excludes any compiler-approved nested scope rewind",
+    "uniqueLivePayload": "only reported when implementation can count aliases truthfully"
+  },
+  "requiredFailures": {
+    "invalidUtf8": [
+      { "name": "overlong sequence", "utf8Hex": "c0af" },
+      { "name": "truncated multibyte sequence", "utf8Hex": "f09f92" },
+      { "name": "surrogate code point", "utf8Hex": "eda080" },
+      { "name": "above U+10FFFF", "utf8Hex": "f4908080" },
+      { "name": "lone continuation", "utf8Hex": "80" }
+    ],
+    "handlerFailureInputUtf8Hex": "4641494c",
+    "preserveOnFailure": ["active bank bytes and roots", "pending token", "token sequence", "pending state"],
+    "tokenRejections": ["cross-runtime", "wrong mailbox owner", "stale", "duplicate"],
+    "directCallbackPreflight": ["bad count", "bad type index", "out-of-range type index", "zero extent", "truncated extent", "aggregate stack capacity", "source overlap with working storage", "input/output descriptor-table overlap", "output overlap with module metadata", "overflowing source pointer span", "out-of-range role type index before layout dereference"]
+  },
+  "storage": {
+    "focusedRunnerConfiguration": {
+      "mailboxCapacity": 2,
+      "scratchByteCapacity": 65536,
+      "retainedByteCapacityPerBank": 16384,
+      "textStagingByteCapacity": 16384,
+      "bankRootCapacity": 2,
+      "owningBankRootBytes": 20
+    },
+    "oneWorkingArenaPerRuntime": true,
+    "twoPublicationBanksPerMailbox": true,
+    "minimumLargeRequestBytes": 4096,
+    "callerStorageOnlyDuringTurn": true,
+    "noManagedRuntimeOrHeapAllocationDuringNativeTurn": true,
+    "nativeAllocationAudit": {
+      "generatedModuleDllsHaveNoAllocatorImports": true,
+      "freshOwningRuntimeObjectsAuditDirectUndefinedAllocatorSymbols": ["O0", "O2"],
+      "objectSources": ["arena_runtime.c", "mailbox_runtime.c", "mailbox_runtime_windows.c", "owning_stack_runtime.c", "owning_bank.c"],
+      "runnerExecutableImports": "Windows CRT startup and console allocator imports are recorded as harness overhead; they do not establish per-turn allocation behavior.",
+      "harnessSourceReview": "VirtualAlloc reserves caller storage before handler calls; printf/fprintf serialize results after test routines return. The static audit checks direct allocator references in generated module/product objects, excludes harness setup, and is not a process-wide allocation measurement."
+    },
+    "reservedStorageIsNotWholeProcessMemory": true
+  },
+  "limitations": [
+    "No real provider I/O, cancellation lease, throughput comparison, or final memory-policy claim.",
+    "Caller-reserved controller storage is reported separately from native stack frames and process memory."
+  ]
+}

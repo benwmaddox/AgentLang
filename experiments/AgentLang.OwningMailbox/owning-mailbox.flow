@@ -1,0 +1,36 @@
+record State {
+    field transcript: String;
+}
+
+record Continuation {
+    field chunk: String;
+}
+
+fn mailbox.initialize(seed: String) -> State {
+    effects none
+    doc "Creates one retained state value from caller-provided UTF-8 text."
+
+    state::new(transcript = seed)
+}
+
+fn mailbox.begin(state: State, chunk: String) -> (State, Continuation) {
+    effects none
+    doc "Suspends with the state root and a continuation containing new text."
+
+    let continuation = continuation::new(chunk = chunk);
+    return (state, continuation)
+}
+
+fn mailbox.resume(state: State, continuation: Continuation, message: String) -> State {
+    effects none
+    doc "Appends completion text to both retained roots."
+
+    let guard = if message == "FAIL" {
+        divide(1, 0)
+    } else {
+        0
+    };
+    let withChunk = string::concat(state.transcript, continuation.chunk);
+    let transcript = string::concat(withChunk, message);
+    state::new(transcript = transcript)
+}
