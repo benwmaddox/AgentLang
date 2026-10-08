@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "source": "Actual spawn_agent message argument as recorded in the coordinator tool call; archived in normalized UTF-8 form.",
+  "frozenPromptPath": "experiments/AgentLang.SubagentTrials/r09-discovery-001/seed-dispatch/seed-prompt.md",
+  "frozenPromptSha256": "007a55de299f4ec8e2d7fc1ec50a8b552af4915550261bc5ed96706d0bfdbdd8",
+  "frozenNormalizedContentSha256": "fd92efe5e209dc56cf3a2af97be1f6d9c3f6c742548a6153a93677aaf0c90379",
+  "actualPromptPath": "experiments/AgentLang.SubagentTrials/r09-discovery-001/seed-dispatch/dispatched-prompt.md",
+  "actualPromptSha256": "7ad181e65bd8cfd0322e57322f2c652c116d47b93c6428540e99ca3d3367bbca",
+  "actualNormalizedContentSha256": "7ad181e65bd8cfd0322e57322f2c652c116d47b93c6428540e99ca3d3367bbca",
+  "normalizedOnly": true,
+  "sameContent": false,
+  "differences": [
+    {
+      "kind": "allowed-operation omission",
+      "expected": "transitive-callers present in frozen allowlist",
+      "actual": "transitive-callers omitted from spawned message and actual host allowlist",
+      "impact": "read-only inspection operation only; no seed task requirement or data input changed"
+    }
+  ],
+  "expectedOperations": [
+    "transitive-callers"
+  ],
+  "actualOperations": []
+}

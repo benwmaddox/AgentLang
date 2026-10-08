@@ -45,6 +45,11 @@ advantage over F#. The [matched repair comparison](reports/125-matched-pair-repa
 now records six fresh agents with 12/12 independent cases each. Both retained
 Flow agents and both F# agents reuse their prior helper; one Flow agent omits
 task finalization. Behavioral correctness and workflow completion are separate.
+The [R09-inspired seed trial](reports/134-r09-discovery-study.md) adds an
+agent-created checked customer payment total: 13/13 hidden cases, 163/163 attached
+tests and completed task finalization. Its two functions are library-qualified;
+prompt-delivery and property-style deviations are recorded. The subsequent
+multi-function reuse comparison is still pending.
 
 The implementation targets .NET 9 and uses no external test framework or model API key.
 

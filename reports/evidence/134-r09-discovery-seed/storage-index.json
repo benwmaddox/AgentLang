@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "study": "r09-discovery-001",
+  "milestone": "seed-only accepted",
+  "createdUtc": "2026-10-08T22:31:24.8496384Z",
+  "archivePath": "reports/evidence/134-r09-discovery-seed/134-r09-discovery-seed.zip",
+  "archiveBytes": 15478529,
+  "archiveSha256": "7129e1adf07340fd312db802df75d5c2f086c2d6b38ac6ae46940243bee75283",
+  "zipSha256Sidecar": "reports/evidence/134-r09-discovery-seed/zip.sha256",
+  "archiveEntryCount": 7317,
+  "payloadEntryCount": 7316,
+  "payloadManifestPath": "reports/evidence/134-r09-discovery-seed/payload-sha256-manifest.json",
+  "payloadManifestSha256": "4b008b6485b37edac6298fc47d696aec70babf07853802897459e600edf9a352",
+  "payloadManifestBytes": 2430174,
+  "verification": {
+    "verifiedPayloadEntries": 7316,
+    "archiveManifestEntrySha256": "4b008b6485b37edac6298fc47d696aec70babf07853802897459e600edf9a352",
+    "archiveManifestSha256": "4b008b6485b37edac6298fc47d696aec70babf07853802897459e600edf9a352",
+    "missingEntries": 0,
+    "extraEntries": 0,
+    "hashOrLengthMismatches": 0,
+    "verifiedUtc": "2026-10-08T22:31:24.8505173Z"
+  },
+  "payload": {
+    "uncompressedBytes": 179469062,
+    "excludedCompiledOrCacheFiles": true,
+    "runtimeBinaryPayloadIncluded": false,
+    "runtimeHashManifest": "runtime/runtime-22-hash-manifest.json",
+    "runtimePinnedFileCount": 22,
+    "runtimeSourceSnapshotFileCount": 25,
+    "sourceIntegrityBefore": "reports/evidence/134-r09-discovery-seed/source-integrity-before.json",
+    "sourceIntegrityAfter": "reports/evidence/134-r09-discovery-seed/source-integrity-after.json",
+    "sourceIntegrityFilesExpected": 351,
+    "sourceIntegrityBeforeMatched": 351,
+    "sourceIntegrityAfterMatched": 351,
+    "frozenInputHashesUnchanged": true
+  },
+  "sourceGroups": [
+    "seed project, trace, input freeze, final score, acceptance reports, final actor response",
+    "base-001 failed and base-002 initialized projects and initializer/fresh reload evidence",
+    "control projects/reports and all completed scorer attempts including rejected attempts",
+    "reference fixture output, final build/run logs, provenance limitation note",
+    "frozen R09 plan/oracle/reference/scoring/seed-task/seed-dispatch sources",
+    "runtime/host source snapshots and 22-runtime/25-source hash pin",
+    "report 125 matched-pair report as broker protocol reference"
+  ],
+  "exclusions": [
+    "active conventional and flow-start project directories",
+    "in-progress comparison directories and scoring",
+    "compiled runtime/reference binaries and .pdb/.dll/.exe outputs",
+    "any bin, obj, artifacts, .vs, node_modules, cache, nupkg, or binlog paths"
+  ],
+  "provenanceLimitations": [
+    "The frozen seed input-freeze.json retains its original prepared-awaiting-root-approval label; dispatch/final status is recorded separately.",
+    "Actual dispatched prompt differs from frozen prompt by omission of read-only transitive-callers allowlist entry; both prompts and diff are archived.",
+    "Reference build provenance says raw stdout/stderr from the first two failed build attempts were overwritten and are unavailable; this archive preserves the provenance note and final successful build logs only."
+  ]
+}

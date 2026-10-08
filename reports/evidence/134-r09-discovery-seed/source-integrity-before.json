@@ -1,0 +1,2469 @@
+{
+  "schemaVersion": 1,
+  "capturedUtc": "2026-10-08T22:28:02.8757506Z",
+  "sourceRoot": "D:/code/AgentLang",
+  "freezePath": ".agentlang/r09-discovery-001/seed/input-freeze.json",
+  "freezeSha256": "f7270150a36fbaac0cfb05aa6f0671eb366ae349229757bffbbcd2d12203d155",
+  "expectedFileCount": 351,
+  "matchedCount": 351,
+  "mismatchCount": 0,
+  "files": [
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/692dcb77f7d66dd1ca701f7c0d8a3ccb1424299ec48b5efc21a3b2447430f7a3.agent",
+      "expectedSha256": "692dcb77f7d66dd1ca701f7c0d8a3ccb1424299ec48b5efc21a3b2447430f7a3",
+      "actualSha256": "692dcb77f7d66dd1ca701f7c0d8a3ccb1424299ec48b5efc21a3b2447430f7a3",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/fixtures/business-subscriptions.agent",
+      "expectedSha256": "0e45843a418006ed7332fcd6c0e8a8e81c8f8169a2459e20d28b5d5ecc3a405b",
+      "actualSha256": "0e45843a418006ed7332fcd6c0e8a8e81c8f8169a2459e20d28b5d5ecc3a405b",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/fa74c5f8de16c503b8c8ded9341377f6bef7c4f3116fc46b43f35cc2b28e1276.agent",
+      "expectedSha256": "fa74c5f8de16c503b8c8ded9341377f6bef7c4f3116fc46b43f35cc2b28e1276",
+      "actualSha256": "fa74c5f8de16c503b8c8ded9341377f6bef7c4f3116fc46b43f35cc2b28e1276",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/93a364e87eba012c84e3611a2c8cb187809e66599a1885e36603378b94858210.agent",
+      "expectedSha256": "93a364e87eba012c84e3611a2c8cb187809e66599a1885e36603378b94858210",
+      "actualSha256": "93a364e87eba012c84e3611a2c8cb187809e66599a1885e36603378b94858210",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/reference-evidence/reference-fixtures.json",
+      "expectedSha256": "0f5526841ee1cb6517bea530b5f5861a5a92f8e706fe41190c5dee175bc542ff",
+      "actualSha256": "0f5526841ee1cb6517bea530b5f5861a5a92f8e706fe41190c5dee175bc542ff",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/7f6413c9ab2502462806aea4c0e137992849814a9b124276e8a63f23ff655e99.agent",
+      "expectedSha256": "7f6413c9ab2502462806aea4c0e137992849814a9b124276e8a63f23ff655e99",
+      "actualSha256": "7f6413c9ab2502462806aea4c0e137992849814a9b124276e8a63f23ff655e99",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/0e237c3f7792fc434350fbb262df62981432717948bcf0b088b850488c71c107.agent",
+      "expectedSha256": "0e237c3f7792fc434350fbb262df62981432717948bcf0b088b850488c71c107",
+      "actualSha256": "0e237c3f7792fc434350fbb262df62981432717948bcf0b088b850488c71c107",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/7f30ea840f823fd12b1f6385d6085ddec081f8137739bc678de4188933297ab5.agent",
+      "expectedSha256": "7f30ea840f823fd12b1f6385d6085ddec081f8137739bc678de4188933297ab5",
+      "actualSha256": "7f30ea840f823fd12b1f6385d6085ddec081f8137739bc678de4188933297ab5",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/2f291a8b8aa7723eb9f47ddd57e99afd6612561acb77c9518af49f3a6861114b.agent",
+      "expectedSha256": "2f291a8b8aa7723eb9f47ddd57e99afd6612561acb77c9518af49f3a6861114b",
+      "actualSha256": "2f291a8b8aa7723eb9f47ddd57e99afd6612561acb77c9518af49f3a6861114b",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/4be5ec1d0116776b58b4b5ded98585021201c1254a04a6337d5591b9791db36a.agent",
+      "expectedSha256": "4be5ec1d0116776b58b4b5ded98585021201c1254a04a6337d5591b9791db36a",
+      "actualSha256": "4be5ec1d0116776b58b4b5ded98585021201c1254a04a6337d5591b9791db36a",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/2acbb0916158207f12ce651d09c7b30b8f454d31da027e35416476db17f4746f.agent",
+      "expectedSha256": "2acbb0916158207f12ce651d09c7b30b8f454d31da027e35416476db17f4746f",
+      "actualSha256": "2acbb0916158207f12ce651d09c7b30b8f454d31da027e35416476db17f4746f",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14.agent",
+      "expectedSha256": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14",
+      "actualSha256": "9205049dee2763019ae19453914670f030e6377d0212954b931ce1563c38ac14",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/227e83c089fb27a20f6de51619a3bb1aeb4cbcf2ddabcd529865be8941a3bd7a.agent",
+      "expectedSha256": "227e83c089fb27a20f6de51619a3bb1aeb4cbcf2ddabcd529865be8941a3bd7a",
+      "actualSha256": "227e83c089fb27a20f6de51619a3bb1aeb4cbcf2ddabcd529865be8941a3bd7a",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/7b9166e88e627ad683c9333b7fc041deb1c98a1194190be25b88efab5ee9d383.agent",
+      "expectedSha256": "7b9166e88e627ad683c9333b7fc041deb1c98a1194190be25b88efab5ee9d383",
+      "actualSha256": "7b9166e88e627ad683c9333b7fc041deb1c98a1194190be25b88efab5ee9d383",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/8edf9ff274911f2737e5c9ddafa3a7f26a509f84b38f9effd316b1c698efc6d2.agent",
+      "expectedSha256": "8edf9ff274911f2737e5c9ddafa3a7f26a509f84b38f9effd316b1c698efc6d2",
+      "actualSha256": "8edf9ff274911f2737e5c9ddafa3a7f26a509f84b38f9effd316b1c698efc6d2",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/e6a24fa82f7f3ca563bf91031f258e8783d995a1c60c618e6545bb2e720f1bcd.agent",
+      "expectedSha256": "e6a24fa82f7f3ca563bf91031f258e8783d995a1c60c618e6545bb2e720f1bcd",
+      "actualSha256": "e6a24fa82f7f3ca563bf91031f258e8783d995a1c60c618e6545bb2e720f1bcd",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "src/AgentLang.Core/Protocol.fs",
+      "expectedSha256": "d1dfb67c82760aa5b6663162c31f1dfce70441275c073fd344a13a00e34f27e5",
+      "actualSha256": "d1dfb67c82760aa5b6663162c31f1dfce70441275c073fd344a13a00e34f27e5",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "D:/code/AgentLang/.agentlang/r09-discovery-001/runtime-artifacts/bin/AgentLang.Cli/release/AgentLang.Cli.pdb",
+      "expectedSha256": "42cc1c5f7e1e6572f97545b9b429a8a8540d554db0bb9e60d4273a4f1e511b16",
+      "actualSha256": "42cc1c5f7e1e6572f97545b9b429a8a8540d554db0bb9e60d4273a4f1e511b16",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/8ef796eb708bad18957cc520105bb8b586a284e79fb75a84ebc390739b871abd.agent",
+      "expectedSha256": "8ef796eb708bad18957cc520105bb8b586a284e79fb75a84ebc390739b871abd",
+      "actualSha256": "8ef796eb708bad18957cc520105bb8b586a284e79fb75a84ebc390739b871abd",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/2c0ede2be8b069e69c170c5a55ecaf64476385d0f03b4738a65686c64470c748.agent",
+      "expectedSha256": "2c0ede2be8b069e69c170c5a55ecaf64476385d0f03b4738a65686c64470c748",
+      "actualSha256": "2c0ede2be8b069e69c170c5a55ecaf64476385d0f03b4738a65686c64470c748",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/76599e9e532bf4be5fabf3cf2ab7887843d617d38612ad2c8a519b0a7643daf3.agent",
+      "expectedSha256": "76599e9e532bf4be5fabf3cf2ab7887843d617d38612ad2c8a519b0a7643daf3",
+      "actualSha256": "76599e9e532bf4be5fabf3cf2ab7887843d617d38612ad2c8a519b0a7643daf3",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/49dc91ec0eadcb62cf2495945d2a95d96b6b23f17720cd6c7fa44b9b93ed6ace.agent",
+      "expectedSha256": "49dc91ec0eadcb62cf2495945d2a95d96b6b23f17720cd6c7fa44b9b93ed6ace",
+      "actualSha256": "49dc91ec0eadcb62cf2495945d2a95d96b6b23f17720cd6c7fa44b9b93ed6ace",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/645fd6ad5139df4915529985dbe627f178d8e80f445174d40cb55050e6eb8998.agent",
+      "expectedSha256": "645fd6ad5139df4915529985dbe627f178d8e80f445174d40cb55050e6eb8998",
+      "actualSha256": "645fd6ad5139df4915529985dbe627f178d8e80f445174d40cb55050e6eb8998",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/87bd5b6363894e1067b5e213cc3de7bd8373edcf76bc829457906a9a37cf309a.agent",
+      "expectedSha256": "87bd5b6363894e1067b5e213cc3de7bd8373edcf76bc829457906a9a37cf309a",
+      "actualSha256": "87bd5b6363894e1067b5e213cc3de7bd8373edcf76bc829457906a9a37cf309a",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/manifests/148d9d7c8458f241519a109a1cba1d27fb31749772188b11f7eb4f13a6148ccf.json",
+      "expectedSha256": "148d9d7c8458f241519a109a1cba1d27fb31749772188b11f7eb4f13a6148ccf",
+      "actualSha256": "148d9d7c8458f241519a109a1cba1d27fb31749772188b11f7eb4f13a6148ccf",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/f752076c190a0c4aee7949b40357be04ce033507d6dc88ed90acb16a0604432c.agent",
+      "expectedSha256": "f752076c190a0c4aee7949b40357be04ce033507d6dc88ed90acb16a0604432c",
+      "actualSha256": "f752076c190a0c4aee7949b40357be04ce033507d6dc88ed90acb16a0604432c",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/f9c753ef731a70ac2759c0c19c21d46df24a50d5588ed2778f62b106101f2885.agent",
+      "expectedSha256": "f9c753ef731a70ac2759c0c19c21d46df24a50d5588ed2778f62b106101f2885",
+      "actualSha256": "f9c753ef731a70ac2759c0c19c21d46df24a50d5588ed2778f62b106101f2885",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/8714b3beac8ed73e0cf5e185b003e46731b7bed480399d4b344db3495d95571e.agent",
+      "expectedSha256": "8714b3beac8ed73e0cf5e185b003e46731b7bed480399d4b344db3495d95571e",
+      "actualSha256": "8714b3beac8ed73e0cf5e185b003e46731b7bed480399d4b344db3495d95571e",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/24bd5fa8419260c40256d9b28bfbb43091d3d224375a56c20edcbbd110036a41.agent",
+      "expectedSha256": "24bd5fa8419260c40256d9b28bfbb43091d3d224375a56c20edcbbd110036a41",
+      "actualSha256": "24bd5fa8419260c40256d9b28bfbb43091d3d224375a56c20edcbbd110036a41",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/1975aaa0fe65b15feb27e788fb96f14a869db2ed3538cf095d30480724e286e3.agent",
+      "expectedSha256": "1975aaa0fe65b15feb27e788fb96f14a869db2ed3538cf095d30480724e286e3",
+      "actualSha256": "1975aaa0fe65b15feb27e788fb96f14a869db2ed3538cf095d30480724e286e3",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "D:/code/AgentLang/.agentlang/r09-discovery-001/runtime-artifacts/bin/AgentLang.Cli/release/cs/FSharp.Core.resources.dll",
+      "expectedSha256": "eb8bd755cfe0d39ce27615027fe22556e8b9dcb470f2b47a36f4bfbf3c31be64",
+      "actualSha256": "eb8bd755cfe0d39ce27615027fe22556e8b9dcb470f2b47a36f4bfbf3c31be64",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "src/AgentLang.Core/VocabularyAnalysis.fs",
+      "expectedSha256": "0be80d5bc6f5774151cc054e2c4225297c4bbfcb8d09d5f91b447f4d295bd826",
+      "actualSha256": "0be80d5bc6f5774151cc054e2c4225297c4bbfcb8d09d5f91b447f4d295bd826",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/edaab88c3c8c241262344bbfffefef842f3598c7495525ab71fb6bcd588b8803.agent",
+      "expectedSha256": "edaab88c3c8c241262344bbfffefef842f3598c7495525ab71fb6bcd588b8803",
+      "actualSha256": "edaab88c3c8c241262344bbfffefef842f3598c7495525ab71fb6bcd588b8803",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/24b8f926d760808fb37b6eff494c22b9f4f4bd9298c753acbe725727b564ed08.agent",
+      "expectedSha256": "24b8f926d760808fb37b6eff494c22b9f4f4bd9298c753acbe725727b564ed08",
+      "actualSha256": "24b8f926d760808fb37b6eff494c22b9f4f4bd9298c753acbe725727b564ed08",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "src/AgentLang.Cli/AgentLang.Cli.fsproj",
+      "expectedSha256": "098af580cdf940c858376efa126e7105e181370b58540878040ee07f57063a0a",
+      "actualSha256": "098af580cdf940c858376efa126e7105e181370b58540878040ee07f57063a0a",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/1da65495a3ae66eff47a912ab8e6f7cf865e3b2c337b67e8facc5705af09f7fd.agent",
+      "expectedSha256": "1da65495a3ae66eff47a912ab8e6f7cf865e3b2c337b67e8facc5705af09f7fd",
+      "actualSha256": "1da65495a3ae66eff47a912ab8e6f7cf865e3b2c337b67e8facc5705af09f7fd",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/4a2a3a025f70e3b2d293fe0af90b1f231865d7eeefbac76151d4da66271d9c05.agent",
+      "expectedSha256": "4a2a3a025f70e3b2d293fe0af90b1f231865d7eeefbac76151d4da66271d9c05",
+      "actualSha256": "4a2a3a025f70e3b2d293fe0af90b1f231865d7eeefbac76151d4da66271d9c05",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/eb3d67bc68b10bd4605de483f164b833ce87d634d1a86eff50adbeb7d7de0bc8.agent",
+      "expectedSha256": "eb3d67bc68b10bd4605de483f164b833ce87d634d1a86eff50adbeb7d7de0bc8",
+      "actualSha256": "eb3d67bc68b10bd4605de483f164b833ce87d634d1a86eff50adbeb7d7de0bc8",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/0982e706b7488f71d850355e585074d7ea84a25f51846ae4056d21a2634185b2.agent",
+      "expectedSha256": "0982e706b7488f71d850355e585074d7ea84a25f51846ae4056d21a2634185b2",
+      "actualSha256": "0982e706b7488f71d850355e585074d7ea84a25f51846ae4056d21a2634185b2",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/11316c23ed0797ab23f5902832bb71517ecc8daf6fbb7f09557dc8c2d772238e.agent",
+      "expectedSha256": "11316c23ed0797ab23f5902832bb71517ecc8daf6fbb7f09557dc8c2d772238e",
+      "actualSha256": "11316c23ed0797ab23f5902832bb71517ecc8daf6fbb7f09557dc8c2d772238e",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/d5cb255df7ad45d2b5bd8318c23b21fef6d6404959758e1d6ad7ec841acd2945.agent",
+      "expectedSha256": "d5cb255df7ad45d2b5bd8318c23b21fef6d6404959758e1d6ad7ec841acd2945",
+      "actualSha256": "d5cb255df7ad45d2b5bd8318c23b21fef6d6404959758e1d6ad7ec841acd2945",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/5afd70aabc19f233592e9b742ac901a4ca4cfcb59cc1ac6da04291df385cb795.agent",
+      "expectedSha256": "5afd70aabc19f233592e9b742ac901a4ca4cfcb59cc1ac6da04291df385cb795",
+      "actualSha256": "5afd70aabc19f233592e9b742ac901a4ca4cfcb59cc1ac6da04291df385cb795",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/4fd3e250905016369a37e2f80090b705fe61756c94ea227524e440a4e52e50c4.agent",
+      "expectedSha256": "4fd3e250905016369a37e2f80090b705fe61756c94ea227524e440a4e52e50c4",
+      "actualSha256": "4fd3e250905016369a37e2f80090b705fe61756c94ea227524e440a4e52e50c4",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/50aa2e46319f85f1a6b466bf09b1bf75be3a90eb495a60ea374184f2c07a8e39.agent",
+      "expectedSha256": "50aa2e46319f85f1a6b466bf09b1bf75be3a90eb495a60ea374184f2c07a8e39",
+      "actualSha256": "50aa2e46319f85f1a6b466bf09b1bf75be3a90eb495a60ea374184f2c07a8e39",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/b8e5a826c3bb06e9b20429f7028e622644400f250c1d71d3fb2a9a1571a900a6.agent",
+      "expectedSha256": "b8e5a826c3bb06e9b20429f7028e622644400f250c1d71d3fb2a9a1571a900a6",
+      "actualSha256": "b8e5a826c3bb06e9b20429f7028e622644400f250c1d71d3fb2a9a1571a900a6",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/0f7d3b4c6c0f16d85a4037e0e1e6c7a783d1b5377a14e2d2782de27dc8fb9c98.agent",
+      "expectedSha256": "0f7d3b4c6c0f16d85a4037e0e1e6c7a783d1b5377a14e2d2782de27dc8fb9c98",
+      "actualSha256": "0f7d3b4c6c0f16d85a4037e0e1e6c7a783d1b5377a14e2d2782de27dc8fb9c98",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/f969fed3610fdcb96296480cf89daf05e646c6ec0f30eebfe5cceb52277e4640.agent",
+      "expectedSha256": "f969fed3610fdcb96296480cf89daf05e646c6ec0f30eebfe5cceb52277e4640",
+      "actualSha256": "f969fed3610fdcb96296480cf89daf05e646c6ec0f30eebfe5cceb52277e4640",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/163c98215fd369e1a57589884df1ff992e8f6527bd51719500e7f5734f2e9627.agent",
+      "expectedSha256": "163c98215fd369e1a57589884df1ff992e8f6527bd51719500e7f5734f2e9627",
+      "actualSha256": "163c98215fd369e1a57589884df1ff992e8f6527bd51719500e7f5734f2e9627",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/ebd0b9e94171ed1fe9bc1d4cef3ba1d44ae7ed6ca4bd473f08b86765205b03b1.agent",
+      "expectedSha256": "ebd0b9e94171ed1fe9bc1d4cef3ba1d44ae7ed6ca4bd473f08b86765205b03b1",
+      "actualSha256": "ebd0b9e94171ed1fe9bc1d4cef3ba1d44ae7ed6ca4bd473f08b86765205b03b1",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/91abfaebc0867540d7496de949687ba9510d88520f738db98159c61ba4a8689e.agent",
+      "expectedSha256": "91abfaebc0867540d7496de949687ba9510d88520f738db98159c61ba4a8689e",
+      "actualSha256": "91abfaebc0867540d7496de949687ba9510d88520f738db98159c61ba4a8689e",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/0b1d34ad3863ba3505e713c1bec7777fcda829aeb79c88430e91e0762d5ffdbf.agent",
+      "expectedSha256": "0b1d34ad3863ba3505e713c1bec7777fcda829aeb79c88430e91e0762d5ffdbf",
+      "actualSha256": "0b1d34ad3863ba3505e713c1bec7777fcda829aeb79c88430e91e0762d5ffdbf",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/dictionary.agent",
+      "expectedSha256": "4be5ec1d0116776b58b4b5ded98585021201c1254a04a6337d5591b9791db36a",
+      "actualSha256": "4be5ec1d0116776b58b4b5ded98585021201c1254a04a6337d5591b9791db36a",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/64732ed3ecb0eaca7b9c7886e0f2becbe36a649261670bde4bcdf47552b90fe1.agent",
+      "expectedSha256": "64732ed3ecb0eaca7b9c7886e0f2becbe36a649261670bde4bcdf47552b90fe1",
+      "actualSha256": "64732ed3ecb0eaca7b9c7886e0f2becbe36a649261670bde4bcdf47552b90fe1",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/4c84949c3bf672e5b454eb2b5cd591f0719e47797b4a883650b6a9d279a834a6.agent",
+      "expectedSha256": "4c84949c3bf672e5b454eb2b5cd591f0719e47797b4a883650b6a9d279a834a6",
+      "actualSha256": "4c84949c3bf672e5b454eb2b5cd591f0719e47797b4a883650b6a9d279a834a6",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "D:/code/AgentLang/.agentlang/r09-discovery-001/runtime-artifacts/bin/AgentLang.Cli/release/AgentLang.Core.pdb",
+      "expectedSha256": "146da2143c27c93f2f0cdc0708376dc6fac71d33d7eb18777bb74100b62809b5",
+      "actualSha256": "146da2143c27c93f2f0cdc0708376dc6fac71d33d7eb18777bb74100b62809b5",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/759532a36f7d09c35eca82b356dcfd506d3034235d276655044b665439efbdab.agent",
+      "expectedSha256": "759532a36f7d09c35eca82b356dcfd506d3034235d276655044b665439efbdab",
+      "actualSha256": "759532a36f7d09c35eca82b356dcfd506d3034235d276655044b665439efbdab",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/ecf87c48f3bd5f51a76098f9c50745f52ce4c28c1c7eac6aaa6cc6f6f0f64d54.agent",
+      "expectedSha256": "ecf87c48f3bd5f51a76098f9c50745f52ce4c28c1c7eac6aaa6cc6f6f0f64d54",
+      "actualSha256": "ecf87c48f3bd5f51a76098f9c50745f52ce4c28c1c7eac6aaa6cc6f6f0f64d54",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "src/AgentLang.Core/Compiler.fs",
+      "expectedSha256": "22d5f12ca4f68b199314db04b6f49658516e85765ba989e14c0aca3960929486",
+      "actualSha256": "22d5f12ca4f68b199314db04b6f49658516e85765ba989e14c0aca3960929486",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/b48215e972c9cf9ee8dd64746a3747744f0d175460c4b2c91ea76fc7ce49d2a3.agent",
+      "expectedSha256": "b48215e972c9cf9ee8dd64746a3747744f0d175460c4b2c91ea76fc7ce49d2a3",
+      "actualSha256": "b48215e972c9cf9ee8dd64746a3747744f0d175460c4b2c91ea76fc7ce49d2a3",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/9c31470cd219ca0af6f192c678582bb813e860e127058b0a32a49b39c363303b.agent",
+      "expectedSha256": "9c31470cd219ca0af6f192c678582bb813e860e127058b0a32a49b39c363303b",
+      "actualSha256": "9c31470cd219ca0af6f192c678582bb813e860e127058b0a32a49b39c363303b",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/14a4eb29cd2fe0a482199607275532fe06c8bb1149cd5cd6210f4257ce463f9b.agent",
+      "expectedSha256": "14a4eb29cd2fe0a482199607275532fe06c8bb1149cd5cd6210f4257ce463f9b",
+      "actualSha256": "14a4eb29cd2fe0a482199607275532fe06c8bb1149cd5cd6210f4257ce463f9b",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/2eff9fbabb4b21effb5e43afd6d1d0da6f90072a169120100960f774575546bd.agent",
+      "expectedSha256": "2eff9fbabb4b21effb5e43afd6d1d0da6f90072a169120100960f774575546bd",
+      "actualSha256": "2eff9fbabb4b21effb5e43afd6d1d0da6f90072a169120100960f774575546bd",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/6c3bff75c51044cc3155ecb287f11809b456b972e88d1e0a88ec64f884e5cdad.agent",
+      "expectedSha256": "6c3bff75c51044cc3155ecb287f11809b456b972e88d1e0a88ec64f884e5cdad",
+      "actualSha256": "6c3bff75c51044cc3155ecb287f11809b456b972e88d1e0a88ec64f884e5cdad",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/9daaa8d15d44a9bec37c9dda057b87ac19c5704bd0d56fad95ce3f9760e9f6e7.agent",
+      "expectedSha256": "9daaa8d15d44a9bec37c9dda057b87ac19c5704bd0d56fad95ce3f9760e9f6e7",
+      "actualSha256": "9daaa8d15d44a9bec37c9dda057b87ac19c5704bd0d56fad95ce3f9760e9f6e7",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/d48a256ed20f8fb0c9678f177e65f01387941ddd575a953576aceabc58558143.agent",
+      "expectedSha256": "d48a256ed20f8fb0c9678f177e65f01387941ddd575a953576aceabc58558143",
+      "actualSha256": "d48a256ed20f8fb0c9678f177e65f01387941ddd575a953576aceabc58558143",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/c4d51237898db7546e0c8f9b76a9947e79ae56a19a02e154eff0be41968d2970.agent",
+      "expectedSha256": "c4d51237898db7546e0c8f9b76a9947e79ae56a19a02e154eff0be41968d2970",
+      "actualSha256": "c4d51237898db7546e0c8f9b76a9947e79ae56a19a02e154eff0be41968d2970",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/4a811b6159ab35f9dd1a631e17858b4b6b385ce08c65990081fe600cd67cc2bd.agent",
+      "expectedSha256": "4a811b6159ab35f9dd1a631e17858b4b6b385ce08c65990081fe600cd67cc2bd",
+      "actualSha256": "4a811b6159ab35f9dd1a631e17858b4b6b385ce08c65990081fe600cd67cc2bd",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/fixtures/business-payments-email.agent",
+      "expectedSha256": "455bb038269fc499c69e0cd0338e76c9f4c5ed064f6a7c2ba125bdc9bb8503e4",
+      "actualSha256": "455bb038269fc499c69e0cd0338e76c9f4c5ed064f6a7c2ba125bdc9bb8503e4",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/r09-discovery-001/oracle.json",
+      "expectedSha256": "9b2c25003f59449437808d8e0381680886b5c4ffb1edfb4aa7225d7c1c48f9bd",
+      "actualSha256": "9b2c25003f59449437808d8e0381680886b5c4ffb1edfb4aa7225d7c1c48f9bd",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/5ee11e7c67e60ecc28413f7e7beefd44a918007bd7f790ff58d8bd7804a018a0.agent",
+      "expectedSha256": "5ee11e7c67e60ecc28413f7e7beefd44a918007bd7f790ff58d8bd7804a018a0",
+      "actualSha256": "5ee11e7c67e60ecc28413f7e7beefd44a918007bd7f790ff58d8bd7804a018a0",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/37952ecdab1348359fcca2f303d6de275f5991736f43aa3e574a2cf5a4141a2c.agent",
+      "expectedSha256": "37952ecdab1348359fcca2f303d6de275f5991736f43aa3e574a2cf5a4141a2c",
+      "actualSha256": "37952ecdab1348359fcca2f303d6de275f5991736f43aa3e574a2cf5a4141a2c",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/d9a207d00e2f132415b6d592064278d1522073bf93bb51e4b66e807f3c7f79b3.agent",
+      "expectedSha256": "d9a207d00e2f132415b6d592064278d1522073bf93bb51e4b66e807f3c7f79b3",
+      "actualSha256": "d9a207d00e2f132415b6d592064278d1522073bf93bb51e4b66e807f3c7f79b3",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/bc5f02f49196cad34d5a483bbfd1c427a8cc84cbf549847da80a6ffb43906edc.agent",
+      "expectedSha256": "bc5f02f49196cad34d5a483bbfd1c427a8cc84cbf549847da80a6ffb43906edc",
+      "actualSha256": "bc5f02f49196cad34d5a483bbfd1c427a8cc84cbf549847da80a6ffb43906edc",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/4aed272471f79135fe32c0f5355b7db09049b767b0e7caa6176e9f8e61cbd1e6.agent",
+      "expectedSha256": "4aed272471f79135fe32c0f5355b7db09049b767b0e7caa6176e9f8e61cbd1e6",
+      "actualSha256": "4aed272471f79135fe32c0f5355b7db09049b767b0e7caa6176e9f8e61cbd1e6",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/6c8ced8dde27035f1c1c8cbde9b90690bc487869ae1d600a8648d3e6e22fad17.agent",
+      "expectedSha256": "6c8ced8dde27035f1c1c8cbde9b90690bc487869ae1d600a8648d3e6e22fad17",
+      "actualSha256": "6c8ced8dde27035f1c1c8cbde9b90690bc487869ae1d600a8648d3e6e22fad17",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/f6f996909d73f042ff41b08bf231d4f8f61aa860740b72058c7a6ad3e1032401.agent",
+      "expectedSha256": "f6f996909d73f042ff41b08bf231d4f8f61aa860740b72058c7a6ad3e1032401",
+      "actualSha256": "f6f996909d73f042ff41b08bf231d4f8f61aa860740b72058c7a6ad3e1032401",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/39bd2bec04fb8e806881c7822b6bc2652778abb9b188a121c63634ca8a9de905.agent",
+      "expectedSha256": "39bd2bec04fb8e806881c7822b6bc2652778abb9b188a121c63634ca8a9de905",
+      "actualSha256": "39bd2bec04fb8e806881c7822b6bc2652778abb9b188a121c63634ca8a9de905",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/c5e4ac5c32a46c8da58400b3f0ba4241f2a85f64a46fda41b980b9bb40e5bc1d.agent",
+      "expectedSha256": "c5e4ac5c32a46c8da58400b3f0ba4241f2a85f64a46fda41b980b9bb40e5bc1d",
+      "actualSha256": "c5e4ac5c32a46c8da58400b3f0ba4241f2a85f64a46fda41b980b9bb40e5bc1d",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/a80905f8de5cb125915feaf1d32a923b79687ce225afe39a0e259794c30696e4.agent",
+      "expectedSha256": "a80905f8de5cb125915feaf1d32a923b79687ce225afe39a0e259794c30696e4",
+      "actualSha256": "a80905f8de5cb125915feaf1d32a923b79687ce225afe39a0e259794c30696e4",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/3250ea627d0f48c9b55bd2260cbd8d9b5348b90937d70ad46f5614da50839f3f.agent",
+      "expectedSha256": "3250ea627d0f48c9b55bd2260cbd8d9b5348b90937d70ad46f5614da50839f3f",
+      "actualSha256": "3250ea627d0f48c9b55bd2260cbd8d9b5348b90937d70ad46f5614da50839f3f",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "D:/code/AgentLang/.agentlang/r09-discovery-001/runtime-artifacts/bin/AgentLang.Cli/release/zh-Hant/FSharp.Core.resources.dll",
+      "expectedSha256": "ac03ee7c4112c755705776c700033794586f980fe9476e6a13811a7153beabb8",
+      "actualSha256": "ac03ee7c4112c755705776c700033794586f980fe9476e6a13811a7153beabb8",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/1be0c21f47e6b46dd7a3e58758e3f37156473dbf21d809d6e8bd0c5ef8ad8cc1.agent",
+      "expectedSha256": "1be0c21f47e6b46dd7a3e58758e3f37156473dbf21d809d6e8bd0c5ef8ad8cc1",
+      "actualSha256": "1be0c21f47e6b46dd7a3e58758e3f37156473dbf21d809d6e8bd0c5ef8ad8cc1",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/904b12f77bd0f8242c0575d547599e9a5d2b9dce74e80e5eac29d63d6e5dbf0f.agent",
+      "expectedSha256": "904b12f77bd0f8242c0575d547599e9a5d2b9dce74e80e5eac29d63d6e5dbf0f",
+      "actualSha256": "904b12f77bd0f8242c0575d547599e9a5d2b9dce74e80e5eac29d63d6e5dbf0f",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/5f83aa591d83b6a9dfc62543f8d8a0e00e0f79d6ee86a40511e8592034ed8140.agent",
+      "expectedSha256": "5f83aa591d83b6a9dfc62543f8d8a0e00e0f79d6ee86a40511e8592034ed8140",
+      "actualSha256": "5f83aa591d83b6a9dfc62543f8d8a0e00e0f79d6ee86a40511e8592034ed8140",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/96d9d01453d9a1c94d57609802488d7f6452f461fb3c02afa8dd93a5141f38f7.agent",
+      "expectedSha256": "96d9d01453d9a1c94d57609802488d7f6452f461fb3c02afa8dd93a5141f38f7",
+      "actualSha256": "96d9d01453d9a1c94d57609802488d7f6452f461fb3c02afa8dd93a5141f38f7",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/4dc118d61e7f43598a1d12e3a79f064adfa9c97060356f5605fe5533484df19e.agent",
+      "expectedSha256": "4dc118d61e7f43598a1d12e3a79f064adfa9c97060356f5605fe5533484df19e",
+      "actualSha256": "4dc118d61e7f43598a1d12e3a79f064adfa9c97060356f5605fe5533484df19e",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/135a270e4700c69c80dbfdca7cac32c3f84612117f64cbb8b6134bd3ba2d564d.agent",
+      "expectedSha256": "135a270e4700c69c80dbfdca7cac32c3f84612117f64cbb8b6134bd3ba2d564d",
+      "actualSha256": "135a270e4700c69c80dbfdca7cac32c3f84612117f64cbb8b6134bd3ba2d564d",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "D:/code/AgentLang/.agentlang/r09-discovery-001/runtime-artifacts/bin/AgentLang.Cli/release/AgentLang.Cli.dll",
+      "expectedSha256": "f72fcec04af4a7b4e147d28c2b459102e440ac5a33fc42f3ac8e90d889bbc781",
+      "actualSha256": "f72fcec04af4a7b4e147d28c2b459102e440ac5a33fc42f3ac8e90d889bbc781",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/904bf0ace50e8b14f65788707f4e43bced877ad709b6abc33ddfb5cc1fe9a121.agent",
+      "expectedSha256": "904bf0ace50e8b14f65788707f4e43bced877ad709b6abc33ddfb5cc1fe9a121",
+      "actualSha256": "904bf0ace50e8b14f65788707f4e43bced877ad709b6abc33ddfb5cc1fe9a121",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/CURRENT",
+      "expectedSha256": "283034a1da4d8b17316089198936ef6b039d105a9444a084e55b967e696dd13c",
+      "actualSha256": "283034a1da4d8b17316089198936ef6b039d105a9444a084e55b967e696dd13c",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/d0f5ba86c4a5c183067183768723f736ba9cda82a7e0cddfe57525086c211c2e.agent",
+      "expectedSha256": "d0f5ba86c4a5c183067183768723f736ba9cda82a7e0cddfe57525086c211c2e",
+      "actualSha256": "d0f5ba86c4a5c183067183768723f736ba9cda82a7e0cddfe57525086c211c2e",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/4f4006055d7a0de368b242eb296b35e230bf436fad7be7fff2858dbe4304b391.agent",
+      "expectedSha256": "4f4006055d7a0de368b242eb296b35e230bf436fad7be7fff2858dbe4304b391",
+      "actualSha256": "4f4006055d7a0de368b242eb296b35e230bf436fad7be7fff2858dbe4304b391",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/fixtures/business-state.agent",
+      "expectedSha256": "d301d24143c31e84269aceaec7f85e4b6aeeb44e1156e6e03a53febc1ed41cc9",
+      "actualSha256": "d301d24143c31e84269aceaec7f85e4b6aeeb44e1156e6e03a53febc1ed41cc9",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/3bad68dfd887a84d87e8daac42f03eabf42204de5640a9ee0a9b3d4a59298f34.agent",
+      "expectedSha256": "3bad68dfd887a84d87e8daac42f03eabf42204de5640a9ee0a9b3d4a59298f34",
+      "actualSha256": "3bad68dfd887a84d87e8daac42f03eabf42204de5640a9ee0a9b3d4a59298f34",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/90ae427d7a5cc8421366a55c4a38794f842b9f39659e9f283feed9e17c7ab18f.agent",
+      "expectedSha256": "90ae427d7a5cc8421366a55c4a38794f842b9f39659e9f283feed9e17c7ab18f",
+      "actualSha256": "90ae427d7a5cc8421366a55c4a38794f842b9f39659e9f283feed9e17c7ab18f",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/db9439ba04a28fba071ce8c8dc751dba50f8a46613fcb6b3e3a450ed77c4af02.agent",
+      "expectedSha256": "db9439ba04a28fba071ce8c8dc751dba50f8a46613fcb6b3e3a450ed77c4af02",
+      "actualSha256": "db9439ba04a28fba071ce8c8dc751dba50f8a46613fcb6b3e3a450ed77c4af02",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "src/AgentLang.Core/Source.fs",
+      "expectedSha256": "f661d907d27be0627197e20cc0b008bbd562b7b14a33c0dd9a6ffd17c092f9fc",
+      "actualSha256": "f661d907d27be0627197e20cc0b008bbd562b7b14a33c0dd9a6ffd17c092f9fc",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/4741afbdd8652f2080cc14a5c91f74d08427c851b3bfe22d18defb19b0ca6fb9.agent",
+      "expectedSha256": "4741afbdd8652f2080cc14a5c91f74d08427c851b3bfe22d18defb19b0ca6fb9",
+      "actualSha256": "4741afbdd8652f2080cc14a5c91f74d08427c851b3bfe22d18defb19b0ca6fb9",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/360a1784f14144bf4f335f434eb96187bffb546d33bf78a344557641e53a9291.agent",
+      "expectedSha256": "360a1784f14144bf4f335f434eb96187bffb546d33bf78a344557641e53a9291",
+      "actualSha256": "360a1784f14144bf4f335f434eb96187bffb546d33bf78a344557641e53a9291",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/b20804dd3539a45552de471329c06f6261fbdeca1ce00b0cc88d5b976caa9b5e.agent",
+      "expectedSha256": "b20804dd3539a45552de471329c06f6261fbdeca1ce00b0cc88d5b976caa9b5e",
+      "actualSha256": "b20804dd3539a45552de471329c06f6261fbdeca1ce00b0cc88d5b976caa9b5e",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/e50956ed595f030d501728df6ec0c5136868f8c15545c1639a29a61b069e068c.agent",
+      "expectedSha256": "e50956ed595f030d501728df6ec0c5136868f8c15545c1639a29a61b069e068c",
+      "actualSha256": "e50956ed595f030d501728df6ec0c5136868f8c15545c1639a29a61b069e068c",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/5b468d3ece2d0a3cc15942a182e12ff296cce19c79134ab6fd996ced666b1450.agent",
+      "expectedSha256": "5b468d3ece2d0a3cc15942a182e12ff296cce19c79134ab6fd996ced666b1450",
+      "actualSha256": "5b468d3ece2d0a3cc15942a182e12ff296cce19c79134ab6fd996ced666b1450",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/588b99d4b8334806ff04ab622fd3b652731f13bf5764fa24f4c5628129eac2ee.agent",
+      "expectedSha256": "588b99d4b8334806ff04ab622fd3b652731f13bf5764fa24f4c5628129eac2ee",
+      "actualSha256": "588b99d4b8334806ff04ab622fd3b652731f13bf5764fa24f4c5628129eac2ee",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/r09-discovery-001/scoring/README.md",
+      "expectedSha256": "9933db736fe3b758aef08c9badcae0ea7fa61ff626f3106293fd7840c7683300",
+      "actualSha256": "9933db736fe3b758aef08c9badcae0ea7fa61ff626f3106293fd7840c7683300",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/60f760836a22a75680e6bf966c2b5ea2d8be652658528143963384660a80cfc8.agent",
+      "expectedSha256": "60f760836a22a75680e6bf966c2b5ea2d8be652658528143963384660a80cfc8",
+      "actualSha256": "60f760836a22a75680e6bf966c2b5ea2d8be652658528143963384660a80cfc8",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/f35654f98b577135917b6b581fbb7e11b216a0ec2ca860b07fe2cf4b053e555d.agent",
+      "expectedSha256": "f35654f98b577135917b6b581fbb7e11b216a0ec2ca860b07fe2cf4b053e555d",
+      "actualSha256": "f35654f98b577135917b6b581fbb7e11b216a0ec2ca860b07fe2cf4b053e555d",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "D:/code/AgentLang/.agentlang/r09-discovery-001/runtime-artifacts/bin/AgentLang.Cli/release/zh-Hans/FSharp.Core.resources.dll",
+      "expectedSha256": "25f82f35a9234bcaab272921b0d50054ddb4a669d96c111907c9d31f5b18c121",
+      "actualSha256": "25f82f35a9234bcaab272921b0d50054ddb4a669d96c111907c9d31f5b18c121",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "src/AgentLang.Core/FlowRewrite.fs",
+      "expectedSha256": "c71db651c17d9413d6a68d93633a52247991a26a3eb653fe188bd63af1869a96",
+      "actualSha256": "c71db651c17d9413d6a68d93633a52247991a26a3eb653fe188bd63af1869a96",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/9666ba375503238d77e730e4df0b6855a1dce0758d6715d6ecbfad05043f8675.agent",
+      "expectedSha256": "9666ba375503238d77e730e4df0b6855a1dce0758d6715d6ecbfad05043f8675",
+      "actualSha256": "9666ba375503238d77e730e4df0b6855a1dce0758d6715d6ecbfad05043f8675",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/198361b760e7883be3a48b995dea58092f5d82e7325016daa51d9680e269e5be.agent",
+      "expectedSha256": "198361b760e7883be3a48b995dea58092f5d82e7325016daa51d9680e269e5be",
+      "actualSha256": "198361b760e7883be3a48b995dea58092f5d82e7325016daa51d9680e269e5be",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/d3959a247d746cfd045d01a37e1e8670e73d5c92dc5d43a2d2e01f511cae6473.agent",
+      "expectedSha256": "d3959a247d746cfd045d01a37e1e8670e73d5c92dc5d43a2d2e01f511cae6473",
+      "actualSha256": "d3959a247d746cfd045d01a37e1e8670e73d5c92dc5d43a2d2e01f511cae6473",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/d1967f2826e0dc5724875c6602ccfcbb18026a53804a497d09562102c94e0eef.agent",
+      "expectedSha256": "d1967f2826e0dc5724875c6602ccfcbb18026a53804a497d09562102c94e0eef",
+      "actualSha256": "d1967f2826e0dc5724875c6602ccfcbb18026a53804a497d09562102c94e0eef",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/8f74713cd45aec97c8ad15914754e9c7cf80178b1454d49e1f356833669e5b65.agent",
+      "expectedSha256": "8f74713cd45aec97c8ad15914754e9c7cf80178b1454d49e1f356833669e5b65",
+      "actualSha256": "8f74713cd45aec97c8ad15914754e9c7cf80178b1454d49e1f356833669e5b65",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/a621cb8c6a65f0129500ea6ab419922282582ad7fed9bcc1846192672cdc692b.agent",
+      "expectedSha256": "a621cb8c6a65f0129500ea6ab419922282582ad7fed9bcc1846192672cdc692b",
+      "actualSha256": "a621cb8c6a65f0129500ea6ab419922282582ad7fed9bcc1846192672cdc692b",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/5ebfa87bcb9bbb8b0e18beae8f4ae084e8ed229d479fb64559cabefb2a0921c2.agent",
+      "expectedSha256": "5ebfa87bcb9bbb8b0e18beae8f4ae084e8ed229d479fb64559cabefb2a0921c2",
+      "actualSha256": "5ebfa87bcb9bbb8b0e18beae8f4ae084e8ed229d479fb64559cabefb2a0921c2",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/33f64f3b0da17e6b3fb33e41894290771e537c93c75dfd6defc75cfad06aebba.agent",
+      "expectedSha256": "33f64f3b0da17e6b3fb33e41894290771e537c93c75dfd6defc75cfad06aebba",
+      "actualSha256": "33f64f3b0da17e6b3fb33e41894290771e537c93c75dfd6defc75cfad06aebba",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "D:/code/AgentLang/.agentlang/r09-discovery-001/runtime-artifacts/bin/AgentLang.Cli/release/ko/FSharp.Core.resources.dll",
+      "expectedSha256": "0f3ef625e379577e3b60c15d8cc3759d3dc8840f99894282df1e702b4a166462",
+      "actualSha256": "0f3ef625e379577e3b60c15d8cc3759d3dc8840f99894282df1e702b4a166462",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/635759eeea3110542bfa7c9d67db2bcf49639697ca681912e8b9259d1fb367c8.agent",
+      "expectedSha256": "635759eeea3110542bfa7c9d67db2bcf49639697ca681912e8b9259d1fb367c8",
+      "actualSha256": "635759eeea3110542bfa7c9d67db2bcf49639697ca681912e8b9259d1fb367c8",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/f5205f56b92c25f7011a4cefdbfec4e4e887f6beec163c4af90940a2e5bb27fc.agent",
+      "expectedSha256": "f5205f56b92c25f7011a4cefdbfec4e4e887f6beec163c4af90940a2e5bb27fc",
+      "actualSha256": "f5205f56b92c25f7011a4cefdbfec4e4e887f6beec163c4af90940a2e5bb27fc",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/0fe78d96ba4fbf66489301d1aac86e395d4f6f46b274211267eeb07d3b4c0c0a.agent",
+      "expectedSha256": "0fe78d96ba4fbf66489301d1aac86e395d4f6f46b274211267eeb07d3b4c0c0a",
+      "actualSha256": "0fe78d96ba4fbf66489301d1aac86e395d4f6f46b274211267eeb07d3b4c0c0a",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/r09-discovery-001/seed-dispatch/seed-prompt.md",
+      "expectedSha256": "007a55de299f4ec8e2d7fc1ec50a8b552af4915550261bc5ed96706d0bfdbdd8",
+      "actualSha256": "007a55de299f4ec8e2d7fc1ec50a8b552af4915550261bc5ed96706d0bfdbdd8",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/2b7bb219aaeb504d1a620d9c973aed82caadfad55e9e77f6fd0420fc9c731dc9.agent",
+      "expectedSha256": "2b7bb219aaeb504d1a620d9c973aed82caadfad55e9e77f6fd0420fc9c731dc9",
+      "actualSha256": "2b7bb219aaeb504d1a620d9c973aed82caadfad55e9e77f6fd0420fc9c731dc9",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/f529610b87721fbaa7c0d2a4f12b0fe3ce16a04e44515e38d7ff96d424745db7.agent",
+      "expectedSha256": "f529610b87721fbaa7c0d2a4f12b0fe3ce16a04e44515e38d7ff96d424745db7",
+      "actualSha256": "f529610b87721fbaa7c0d2a4f12b0fe3ce16a04e44515e38d7ff96d424745db7",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "D:/code/AgentLang/.agentlang/r09-discovery-001/runtime-artifacts/bin/AgentLang.Cli/release/fr/FSharp.Core.resources.dll",
+      "expectedSha256": "f38f2fd6bc4c4e233dd098a36b315a2bc87673cf2f07c6ba3daf71a3264f4a64",
+      "actualSha256": "f38f2fd6bc4c4e233dd098a36b315a2bc87673cf2f07c6ba3daf71a3264f4a64",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "src/AgentLang.Core/FlowParser.fs",
+      "expectedSha256": "6f0461fd29d689607190618880efdfdfaf8378af665ec7d68b0793767029408d",
+      "actualSha256": "6f0461fd29d689607190618880efdfdfaf8378af665ec7d68b0793767029408d",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/2bc202c9c5c50c149cd0e83cf4f0f34666a0efc126c7288f48272d4fc9675632.agent",
+      "expectedSha256": "2bc202c9c5c50c149cd0e83cf4f0f34666a0efc126c7288f48272d4fc9675632",
+      "actualSha256": "2bc202c9c5c50c149cd0e83cf4f0f34666a0efc126c7288f48272d4fc9675632",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/60a3b027a56b724cc50bb7abf9a05aff763aa1b203bada11c00434e6728cf17f.agent",
+      "expectedSha256": "60a3b027a56b724cc50bb7abf9a05aff763aa1b203bada11c00434e6728cf17f",
+      "actualSha256": "60a3b027a56b724cc50bb7abf9a05aff763aa1b203bada11c00434e6728cf17f",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/96ffc0eea728ff2a9f2158c4f6f235686c46f66ce7347aa6bd5af64cf805a729.agent",
+      "expectedSha256": "96ffc0eea728ff2a9f2158c4f6f235686c46f66ce7347aa6bd5af64cf805a729",
+      "actualSha256": "96ffc0eea728ff2a9f2158c4f6f235686c46f66ce7347aa6bd5af64cf805a729",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/0899f9a051a6f13196e1b5948eb5110b4372bdac62f021ab619469ea2e4a0311.agent",
+      "expectedSha256": "0899f9a051a6f13196e1b5948eb5110b4372bdac62f021ab619469ea2e4a0311",
+      "actualSha256": "0899f9a051a6f13196e1b5948eb5110b4372bdac62f021ab619469ea2e4a0311",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/34f52c8b3e9526a4392588f21346c9bb5cde620cbcad78575899af63bc4618cd.agent",
+      "expectedSha256": "34f52c8b3e9526a4392588f21346c9bb5cde620cbcad78575899af63bc4618cd",
+      "actualSha256": "34f52c8b3e9526a4392588f21346c9bb5cde620cbcad78575899af63bc4618cd",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/f5cb889c4157cdc4d42838524b756f7404234aabcb1fdcf521d4d02f2bfb8b83.agent",
+      "expectedSha256": "f5cb889c4157cdc4d42838524b756f7404234aabcb1fdcf521d4d02f2bfb8b83",
+      "actualSha256": "f5cb889c4157cdc4d42838524b756f7404234aabcb1fdcf521d4d02f2bfb8b83",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/9fa7e6291a96942fc7128f70f687107bb118962206589451f25797f9f771b290.agent",
+      "expectedSha256": "9fa7e6291a96942fc7128f70f687107bb118962206589451f25797f9f771b290",
+      "actualSha256": "9fa7e6291a96942fc7128f70f687107bb118962206589451f25797f9f771b290",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/a58c32612491e1990b55266074716799e00ccae2862a9bf540696705c65a96a3.agent",
+      "expectedSha256": "a58c32612491e1990b55266074716799e00ccae2862a9bf540696705c65a96a3",
+      "actualSha256": "a58c32612491e1990b55266074716799e00ccae2862a9bf540696705c65a96a3",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/r09-discovery-001/plan.md",
+      "expectedSha256": "89ce0b3e67674a8b8c9a3c9344d63ec55dbad98e1f27841290056a855ffb67d0",
+      "actualSha256": "89ce0b3e67674a8b8c9a3c9344d63ec55dbad98e1f27841290056a855ffb67d0",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/e933ff4c9787da78d4e4fca703a47254eb39d7c7f31acd72fb3c9c39e0d8ff59.agent",
+      "expectedSha256": "e933ff4c9787da78d4e4fca703a47254eb39d7c7f31acd72fb3c9c39e0d8ff59",
+      "actualSha256": "e933ff4c9787da78d4e4fca703a47254eb39d7c7f31acd72fb3c9c39e0d8ff59",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/e94756193cdddbb05fa10c331690358a365d388dd149b6f5e52bfda1f236aba0.agent",
+      "expectedSha256": "e94756193cdddbb05fa10c331690358a365d388dd149b6f5e52bfda1f236aba0",
+      "actualSha256": "e94756193cdddbb05fa10c331690358a365d388dd149b6f5e52bfda1f236aba0",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/733838002e5e448cd7baa4eb0fc7dc6c9334515e0d370fe50ddc06af87b84da1.agent",
+      "expectedSha256": "733838002e5e448cd7baa4eb0fc7dc6c9334515e0d370fe50ddc06af87b84da1",
+      "actualSha256": "733838002e5e448cd7baa4eb0fc7dc6c9334515e0d370fe50ddc06af87b84da1",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/2714b9b363afe68d7881e63b3feebe5e51b769950efb7af69f0bda95af033d4e.agent",
+      "expectedSha256": "2714b9b363afe68d7881e63b3feebe5e51b769950efb7af69f0bda95af033d4e",
+      "actualSha256": "2714b9b363afe68d7881e63b3feebe5e51b769950efb7af69f0bda95af033d4e",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/741bff723aae28aafaae9513381e348d28c6cb969dbeff0e32f57924f414bbaa.agent",
+      "expectedSha256": "741bff723aae28aafaae9513381e348d28c6cb969dbeff0e32f57924f414bbaa",
+      "actualSha256": "741bff723aae28aafaae9513381e348d28c6cb969dbeff0e32f57924f414bbaa",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/6dc9d615bab04318f241c39e1c74c817e5a758ab811cdaeec5c23b3732be69d8.agent",
+      "expectedSha256": "6dc9d615bab04318f241c39e1c74c817e5a758ab811cdaeec5c23b3732be69d8",
+      "actualSha256": "6dc9d615bab04318f241c39e1c74c817e5a758ab811cdaeec5c23b3732be69d8",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/c4b2614fb44bc08cf3784fff67b3e1b4e500e59029d3a107acc196a49c000438.agent",
+      "expectedSha256": "c4b2614fb44bc08cf3784fff67b3e1b4e500e59029d3a107acc196a49c000438",
+      "actualSha256": "c4b2614fb44bc08cf3784fff67b3e1b4e500e59029d3a107acc196a49c000438",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "src/AgentLang.Core/FlowLowering.fs",
+      "expectedSha256": "1d9c6871408b33b9d0a7eff51ee3f354093409234fc10c1e07f33a1655c1292c",
+      "actualSha256": "1d9c6871408b33b9d0a7eff51ee3f354093409234fc10c1e07f33a1655c1292c",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "src/AgentLang.Core/Parser.fs",
+      "expectedSha256": "996140b145d04314da8ae9755e926323ff71852d36a49383f75b0941aa304521",
+      "actualSha256": "996140b145d04314da8ae9755e926323ff71852d36a49383f75b0941aa304521",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/9b9eb70622532d2320a1b15f9175692b12ae4698db8d6a8289eb715ea8190537.agent",
+      "expectedSha256": "9b9eb70622532d2320a1b15f9175692b12ae4698db8d6a8289eb715ea8190537",
+      "actualSha256": "9b9eb70622532d2320a1b15f9175692b12ae4698db8d6a8289eb715ea8190537",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/b85d40b7d203c65179ada4eb2f109ed9cfb5f58cd8e6d3b1adc618fa64578a62.agent",
+      "expectedSha256": "b85d40b7d203c65179ada4eb2f109ed9cfb5f58cd8e6d3b1adc618fa64578a62",
+      "actualSha256": "b85d40b7d203c65179ada4eb2f109ed9cfb5f58cd8e6d3b1adc618fa64578a62",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/4471c3c7188bfaedf17b084958c1191e54aca4e85d17bdeac0d17b8781a41390.agent",
+      "expectedSha256": "4471c3c7188bfaedf17b084958c1191e54aca4e85d17bdeac0d17b8781a41390",
+      "actualSha256": "4471c3c7188bfaedf17b084958c1191e54aca4e85d17bdeac0d17b8781a41390",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/48e5834b13c4395bc89aa602a7e9f306ecca194e85ffb81efa3e4a276259020f.agent",
+      "expectedSha256": "48e5834b13c4395bc89aa602a7e9f306ecca194e85ffb81efa3e4a276259020f",
+      "actualSha256": "48e5834b13c4395bc89aa602a7e9f306ecca194e85ffb81efa3e4a276259020f",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "D:/code/AgentLang/.agentlang/r09-discovery-001/runtime-artifacts/bin/AgentLang.Cli/release/AgentLang.Cli.exe",
+      "expectedSha256": "df124e8ae628a82f18d41709426ce796671c6f397f23e05208e1502bde8ddbdf",
+      "actualSha256": "df124e8ae628a82f18d41709426ce796671c6f397f23e05208e1502bde8ddbdf",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/aea76dfb80f0f0bc236f715e1f12455814990083d387c14761f94c43f1b49822.agent",
+      "expectedSha256": "aea76dfb80f0f0bc236f715e1f12455814990083d387c14761f94c43f1b49822",
+      "actualSha256": "aea76dfb80f0f0bc236f715e1f12455814990083d387c14761f94c43f1b49822",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/d4d67f203e9f9b3f1b0d537c0c83b38b7b65e63c535203114e8825f58e176844.agent",
+      "expectedSha256": "d4d67f203e9f9b3f1b0d537c0c83b38b7b65e63c535203114e8825f58e176844",
+      "actualSha256": "d4d67f203e9f9b3f1b0d537c0c83b38b7b65e63c535203114e8825f58e176844",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/d7d18c5d68211fa247a31a0f136becd820a01c7ec5f5bc1921010a597d02dd6b.agent",
+      "expectedSha256": "d7d18c5d68211fa247a31a0f136becd820a01c7ec5f5bc1921010a597d02dd6b",
+      "actualSha256": "d7d18c5d68211fa247a31a0f136becd820a01c7ec5f5bc1921010a597d02dd6b",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/f59b73d80a1230fb4a3467f1ff6e2b5f29dee55609679c73d19f0b5a2aac1fbb.agent",
+      "expectedSha256": "f59b73d80a1230fb4a3467f1ff6e2b5f29dee55609679c73d19f0b5a2aac1fbb",
+      "actualSha256": "f59b73d80a1230fb4a3467f1ff6e2b5f29dee55609679c73d19f0b5a2aac1fbb",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/53d7daaf3bfe92c743e421a2e42de8208949ca57749565ec6006d4d56c22d5ed.agent",
+      "expectedSha256": "53d7daaf3bfe92c743e421a2e42de8208949ca57749565ec6006d4d56c22d5ed",
+      "actualSha256": "53d7daaf3bfe92c743e421a2e42de8208949ca57749565ec6006d4d56c22d5ed",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/dbf9ffd9df5d699167b9e853ed371e1cd16db7948c6062da917bc68b35a1f7f6.agent",
+      "expectedSha256": "dbf9ffd9df5d699167b9e853ed371e1cd16db7948c6062da917bc68b35a1f7f6",
+      "actualSha256": "dbf9ffd9df5d699167b9e853ed371e1cd16db7948c6062da917bc68b35a1f7f6",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/b09bc128ee89b3f93c8ccbc5ee0ba6d864cdaa407a17801a15883e77cd424354.agent",
+      "expectedSha256": "b09bc128ee89b3f93c8ccbc5ee0ba6d864cdaa407a17801a15883e77cd424354",
+      "actualSha256": "b09bc128ee89b3f93c8ccbc5ee0ba6d864cdaa407a17801a15883e77cd424354",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "src/AgentLang.Core/FiniteCoverage.fs",
+      "expectedSha256": "cb3f072280035d004bcd573648e6da5b1b396c8ab6d0c2760cbf243793695e3c",
+      "actualSha256": "cb3f072280035d004bcd573648e6da5b1b396c8ab6d0c2760cbf243793695e3c",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/cadd9092003d1a27279ed5a3f24b55faede66966687dc76939d9a75ec2248122.agent",
+      "expectedSha256": "cadd9092003d1a27279ed5a3f24b55faede66966687dc76939d9a75ec2248122",
+      "actualSha256": "cadd9092003d1a27279ed5a3f24b55faede66966687dc76939d9a75ec2248122",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/c574fa0a3e582870c8b08f1170d5921a29cbf15c9a37a337dd83098d99a5d6d6.agent",
+      "expectedSha256": "c574fa0a3e582870c8b08f1170d5921a29cbf15c9a37a337dd83098d99a5d6d6",
+      "actualSha256": "c574fa0a3e582870c8b08f1170d5921a29cbf15c9a37a337dd83098d99a5d6d6",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/819519d6e466b258d9ebfef6cc316106f7fc04b0715e037cda77c2eac398d006.agent",
+      "expectedSha256": "819519d6e466b258d9ebfef6cc316106f7fc04b0715e037cda77c2eac398d006",
+      "actualSha256": "819519d6e466b258d9ebfef6cc316106f7fc04b0715e037cda77c2eac398d006",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/r09-discovery-001/scoring/score-seed.ps1",
+      "expectedSha256": "0a43fddce9d51a376530b6ffad276f9eb6b17ca6e64e9a45783762982e1a29c3",
+      "actualSha256": "0a43fddce9d51a376530b6ffad276f9eb6b17ca6e64e9a45783762982e1a29c3",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/e60dad974b04b01328b51380e160c84ae7ba142966421d354f69c5369ddc0ab6.agent",
+      "expectedSha256": "e60dad974b04b01328b51380e160c84ae7ba142966421d354f69c5369ddc0ab6",
+      "actualSha256": "e60dad974b04b01328b51380e160c84ae7ba142966421d354f69c5369ddc0ab6",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/1195f615a9602ee48297b5d53c167861a3e5ba180b5b08d3f3bb414f07687082.agent",
+      "expectedSha256": "1195f615a9602ee48297b5d53c167861a3e5ba180b5b08d3f3bb414f07687082",
+      "actualSha256": "1195f615a9602ee48297b5d53c167861a3e5ba180b5b08d3f3bb414f07687082",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/d959b2f4d055702758a54b591054fc28ac8d6737b33c07707ce62eca869ea781.agent",
+      "expectedSha256": "d959b2f4d055702758a54b591054fc28ac8d6737b33c07707ce62eca869ea781",
+      "actualSha256": "d959b2f4d055702758a54b591054fc28ac8d6737b33c07707ce62eca869ea781",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/6c1f41cb010faf20b943331634253845087e8a680fac519ecb4166381efa7fbf.agent",
+      "expectedSha256": "6c1f41cb010faf20b943331634253845087e8a680fac519ecb4166381efa7fbf",
+      "actualSha256": "6c1f41cb010faf20b943331634253845087e8a680fac519ecb4166381efa7fbf",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/b042d726d8912e481b4c344e5ba3045434ee789b152d00fce0eb58173d5583e4.agent",
+      "expectedSha256": "b042d726d8912e481b4c344e5ba3045434ee789b152d00fce0eb58173d5583e4",
+      "actualSha256": "b042d726d8912e481b4c344e5ba3045434ee789b152d00fce0eb58173d5583e4",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/dff8b93e2e7258418a7dd269251d1cc36549ca3044f8396ae84871a9bbc07f85.agent",
+      "expectedSha256": "dff8b93e2e7258418a7dd269251d1cc36549ca3044f8396ae84871a9bbc07f85",
+      "actualSha256": "dff8b93e2e7258418a7dd269251d1cc36549ca3044f8396ae84871a9bbc07f85",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/1c40b1eff867815f644cd00a2f15b6b53c7904f02c2bdeafa51a12fd89e3e6a5.agent",
+      "expectedSha256": "1c40b1eff867815f644cd00a2f15b6b53c7904f02c2bdeafa51a12fd89e3e6a5",
+      "actualSha256": "1c40b1eff867815f644cd00a2f15b6b53c7904f02c2bdeafa51a12fd89e3e6a5",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/9766bad508f041332d989f5ce80e9c8a60245f86e26c7de056d2eb115aaa121c.agent",
+      "expectedSha256": "9766bad508f041332d989f5ce80e9c8a60245f86e26c7de056d2eb115aaa121c",
+      "actualSha256": "9766bad508f041332d989f5ce80e9c8a60245f86e26c7de056d2eb115aaa121c",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/ead01569074f2e721e1550c4ecca1cd83d0e36e44ee51d2a407877f892773593.agent",
+      "expectedSha256": "ead01569074f2e721e1550c4ecca1cd83d0e36e44ee51d2a407877f892773593",
+      "actualSha256": "ead01569074f2e721e1550c4ecca1cd83d0e36e44ee51d2a407877f892773593",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/b776bab5dc9fd9ca2b5b9447596d991b8ecd8ea8701d548ceea410b367deefca.agent",
+      "expectedSha256": "b776bab5dc9fd9ca2b5b9447596d991b8ecd8ea8701d548ceea410b367deefca",
+      "actualSha256": "b776bab5dc9fd9ca2b5b9447596d991b8ecd8ea8701d548ceea410b367deefca",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/22d48a4fa029048c95993d93f0c6b7468e113dcc88bcde0cfa4db11a9eceb200.agent",
+      "expectedSha256": "22d48a4fa029048c95993d93f0c6b7468e113dcc88bcde0cfa4db11a9eceb200",
+      "actualSha256": "22d48a4fa029048c95993d93f0c6b7468e113dcc88bcde0cfa4db11a9eceb200",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/e6fee24d967b77b4adaac01f447aa39ff1396051f8c77830af3f71a2d1daba11.agent",
+      "expectedSha256": "e6fee24d967b77b4adaac01f447aa39ff1396051f8c77830af3f71a2d1daba11",
+      "actualSha256": "e6fee24d967b77b4adaac01f447aa39ff1396051f8c77830af3f71a2d1daba11",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/354cf411dd3cd85efc59bec2afbaa523978427bb2bd17d4db50438ac8d6b6886.agent",
+      "expectedSha256": "354cf411dd3cd85efc59bec2afbaa523978427bb2bd17d4db50438ac8d6b6886",
+      "actualSha256": "354cf411dd3cd85efc59bec2afbaa523978427bb2bd17d4db50438ac8d6b6886",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "src/AgentLang.Core/FlowLint.fs",
+      "expectedSha256": "5ba6a10171f4d67cff6f43d32ddce8b9e7aa33eb3f97d407aee3bcd76bfb5ccf",
+      "actualSha256": "5ba6a10171f4d67cff6f43d32ddce8b9e7aa33eb3f97d407aee3bcd76bfb5ccf",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/dc10f3c74a4256dabac93bfd1b058d3423c806f30bc68a1adf949061d5ae0c84.agent",
+      "expectedSha256": "dc10f3c74a4256dabac93bfd1b058d3423c806f30bc68a1adf949061d5ae0c84",
+      "actualSha256": "dc10f3c74a4256dabac93bfd1b058d3423c806f30bc68a1adf949061d5ae0c84",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/d11418ce54c60e5360b8d1e743ddd6af9dc9358021835c41d5e90af73c5ce24e.agent",
+      "expectedSha256": "d11418ce54c60e5360b8d1e743ddd6af9dc9358021835c41d5e90af73c5ce24e",
+      "actualSha256": "d11418ce54c60e5360b8d1e743ddd6af9dc9358021835c41d5e90af73c5ce24e",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/b52f5a20faf0ff182b423631de6edf6e84f8ad98e229e3359bf54a2e3376d531.agent",
+      "expectedSha256": "b52f5a20faf0ff182b423631de6edf6e84f8ad98e229e3359bf54a2e3376d531",
+      "actualSha256": "b52f5a20faf0ff182b423631de6edf6e84f8ad98e229e3359bf54a2e3376d531",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/d31a09f56718cb177271d74409331b140286096ae7d34c0d91798f53d7cbef6c.agent",
+      "expectedSha256": "d31a09f56718cb177271d74409331b140286096ae7d34c0d91798f53d7cbef6c",
+      "actualSha256": "d31a09f56718cb177271d74409331b140286096ae7d34c0d91798f53d7cbef6c",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "scripts/Start-SubagentTrialHostV2.ps1",
+      "expectedSha256": "6573321e8c0fc92926e43221ae10836fd5c62139e5fdb51cc34ff482fbc81f2b",
+      "actualSha256": "6573321e8c0fc92926e43221ae10836fd5c62139e5fdb51cc34ff482fbc81f2b",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "D:/code/AgentLang/.agentlang/r09-discovery-001/runtime-artifacts/bin/AgentLang.Cli/release/it/FSharp.Core.resources.dll",
+      "expectedSha256": "61a0be9c6a2ed95f8e98493b17c54a55c68cef84e23a0d82114319e2c5f3c2cd",
+      "actualSha256": "61a0be9c6a2ed95f8e98493b17c54a55c68cef84e23a0d82114319e2c5f3c2cd",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "src/AgentLang.Core/Discovery.fs",
+      "expectedSha256": "e79746a41666d11acf928c201e054a4f7cccc0c2d04de3c95bd72db406624842",
+      "actualSha256": "e79746a41666d11acf928c201e054a4f7cccc0c2d04de3c95bd72db406624842",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/a3a6ceaab8a532d967490357960da445e988a980dd4e7e86efc220b970225eaa.agent",
+      "expectedSha256": "a3a6ceaab8a532d967490357960da445e988a980dd4e7e86efc220b970225eaa",
+      "actualSha256": "a3a6ceaab8a532d967490357960da445e988a980dd4e7e86efc220b970225eaa",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/c49967938776d57a878ca3df210178477b766d335868aab040e79928aaf0af14.agent",
+      "expectedSha256": "c49967938776d57a878ca3df210178477b766d335868aab040e79928aaf0af14",
+      "actualSha256": "c49967938776d57a878ca3df210178477b766d335868aab040e79928aaf0af14",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/d2ba176a9a240b8aeedc07a02ea45d921a0a5b3000269ec0b28f283d07a1539b.agent",
+      "expectedSha256": "d2ba176a9a240b8aeedc07a02ea45d921a0a5b3000269ec0b28f283d07a1539b",
+      "actualSha256": "d2ba176a9a240b8aeedc07a02ea45d921a0a5b3000269ec0b28f283d07a1539b",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/98df084e91b233d3ffcbfa6e528eff0d50b1a5eae9ced3414de8f778f22a133c.agent",
+      "expectedSha256": "98df084e91b233d3ffcbfa6e528eff0d50b1a5eae9ced3414de8f778f22a133c",
+      "actualSha256": "98df084e91b233d3ffcbfa6e528eff0d50b1a5eae9ced3414de8f778f22a133c",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/a65b6cfae0e485deaef669ac54e383fbb98e4efce7f2eb4313e92f0796f8e93e.agent",
+      "expectedSha256": "a65b6cfae0e485deaef669ac54e383fbb98e4efce7f2eb4313e92f0796f8e93e",
+      "actualSha256": "a65b6cfae0e485deaef669ac54e383fbb98e4efce7f2eb4313e92f0796f8e93e",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/b5ff21415853e50ea0b9f2a9503905e9cdeb3cacce125e2394a214bb2f199cf7.agent",
+      "expectedSha256": "b5ff21415853e50ea0b9f2a9503905e9cdeb3cacce125e2394a214bb2f199cf7",
+      "actualSha256": "b5ff21415853e50ea0b9f2a9503905e9cdeb3cacce125e2394a214bb2f199cf7",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/f8081d93e9d919f569373a99c139a62841cb4ce7d43c2627e484b2279863bb4d.agent",
+      "expectedSha256": "f8081d93e9d919f569373a99c139a62841cb4ce7d43c2627e484b2279863bb4d",
+      "actualSha256": "f8081d93e9d919f569373a99c139a62841cb4ce7d43c2627e484b2279863bb4d",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/a8865562aed10a1fe6a90e755047a1e0e0da6a348775070f1ccf6e43125946fa.agent",
+      "expectedSha256": "a8865562aed10a1fe6a90e755047a1e0e0da6a348775070f1ccf6e43125946fa",
+      "actualSha256": "a8865562aed10a1fe6a90e755047a1e0e0da6a348775070f1ccf6e43125946fa",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "src/AgentLang.Core/IrInterpreter.fs",
+      "expectedSha256": "f223a37384ac014bef6c48dc920f034aba530761dcc441c46bba30f2151aa24a",
+      "actualSha256": "f223a37384ac014bef6c48dc920f034aba530761dcc441c46bba30f2151aa24a",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "D:/code/AgentLang/.agentlang/r09-discovery-001/runtime-artifacts/bin/AgentLang.Cli/release/FSharp.Core.dll",
+      "expectedSha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f",
+      "actualSha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/c378a68488ec34753b0c0221416c78112fb599ea9592e710e50dbe3775106b42.agent",
+      "expectedSha256": "c378a68488ec34753b0c0221416c78112fb599ea9592e710e50dbe3775106b42",
+      "actualSha256": "c378a68488ec34753b0c0221416c78112fb599ea9592e710e50dbe3775106b42",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/ce5dc6d9341b70eb7812bbe4b57c08f4c36a8d7dff73be677c195d2ef1086aae.agent",
+      "expectedSha256": "ce5dc6d9341b70eb7812bbe4b57c08f4c36a8d7dff73be677c195d2ef1086aae",
+      "actualSha256": "ce5dc6d9341b70eb7812bbe4b57c08f4c36a8d7dff73be677c195d2ef1086aae",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/c8a6fea61010126038a8b73def2b59af38009c0b90562f0d4e9e5c1913a15dc8.agent",
+      "expectedSha256": "c8a6fea61010126038a8b73def2b59af38009c0b90562f0d4e9e5c1913a15dc8",
+      "actualSha256": "c8a6fea61010126038a8b73def2b59af38009c0b90562f0d4e9e5c1913a15dc8",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/cb659b1eb96d55a4e6bffee9ed147a3bf214c512ae4a13eda814cd7fea6c8808.agent",
+      "expectedSha256": "cb659b1eb96d55a4e6bffee9ed147a3bf214c512ae4a13eda814cd7fea6c8808",
+      "actualSha256": "cb659b1eb96d55a4e6bffee9ed147a3bf214c512ae4a13eda814cd7fea6c8808",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "src/AgentLang.Core/ValueInspection.fs",
+      "expectedSha256": "cf323570d8898de919bea520aa290645f2c722b988da91a7879b9ef893a7a645",
+      "actualSha256": "cf323570d8898de919bea520aa290645f2c722b988da91a7879b9ef893a7a645",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/87152bbfdc31afeffe534a59cfa75a7bdf60c8dddcb08ada75b272b4fff95d89.agent",
+      "expectedSha256": "87152bbfdc31afeffe534a59cfa75a7bdf60c8dddcb08ada75b272b4fff95d89",
+      "actualSha256": "87152bbfdc31afeffe534a59cfa75a7bdf60c8dddcb08ada75b272b4fff95d89",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "src/AgentLang.Core/Storage.fs",
+      "expectedSha256": "34cd5205294e5afab4aeb3fcbc8a4d70e685412f60eea287a8a42dd95c25ba09",
+      "actualSha256": "34cd5205294e5afab4aeb3fcbc8a4d70e685412f60eea287a8a42dd95c25ba09",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/517f54976a9a2b95641a18c24819f2ed1c53b3f39073a710e05d92639a364774.agent",
+      "expectedSha256": "517f54976a9a2b95641a18c24819f2ed1c53b3f39073a710e05d92639a364774",
+      "actualSha256": "517f54976a9a2b95641a18c24819f2ed1c53b3f39073a710e05d92639a364774",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/0d0c660a0b4dbca3e84903f3a19978183f2a2862ff7690d15a24f021d8c657cb.agent",
+      "expectedSha256": "0d0c660a0b4dbca3e84903f3a19978183f2a2862ff7690d15a24f021d8c657cb",
+      "actualSha256": "0d0c660a0b4dbca3e84903f3a19978183f2a2862ff7690d15a24f021d8c657cb",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/5b3e097e0c6996478f713ce6075857a40fd2c91d75fe9a0b622956bd2ff310ba.agent",
+      "expectedSha256": "5b3e097e0c6996478f713ce6075857a40fd2c91d75fe9a0b622956bd2ff310ba",
+      "actualSha256": "5b3e097e0c6996478f713ce6075857a40fd2c91d75fe9a0b622956bd2ff310ba",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "experiments/AgentLang.SubagentTrials/r09-discovery-001/seed-task.md",
+      "expectedSha256": "124d97f91439eb23be094fe65d42cd5fcecb97c1b4f82efd186ba3be0c3e2ff7",
+      "actualSha256": "124d97f91439eb23be094fe65d42cd5fcecb97c1b4f82efd186ba3be0c3e2ff7",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/076af3c4cc42d3bba03543f382e0b9eee0657cfdc45365e7e9f1f7b290e0579a.agent",
+      "expectedSha256": "076af3c4cc42d3bba03543f382e0b9eee0657cfdc45365e7e9f1f7b290e0579a",
+      "actualSha256": "076af3c4cc42d3bba03543f382e0b9eee0657cfdc45365e7e9f1f7b290e0579a",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "D:/code/AgentLang/.agentlang/r09-discovery-001/runtime-artifacts/bin/AgentLang.Cli/release/ru/FSharp.Core.resources.dll",
+      "expectedSha256": "a1133f9ab7e661803d1af0c2489626bd53ac33a11dfe891f5a02f3186f2f5d78",
+      "actualSha256": "a1133f9ab7e661803d1af0c2489626bd53ac33a11dfe891f5a02f3186f2f5d78",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/de1ea6e42f358e7dcdff17a83bc8c5fdbab6baa50d95aeb54a16c03a008e5806.agent",
+      "expectedSha256": "de1ea6e42f358e7dcdff17a83bc8c5fdbab6baa50d95aeb54a16c03a008e5806",
+      "actualSha256": "de1ea6e42f358e7dcdff17a83bc8c5fdbab6baa50d95aeb54a16c03a008e5806",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "D:/code/AgentLang/.agentlang/r09-discovery-001/runtime-artifacts/bin/AgentLang.Cli/release/AgentLang.Core.dll",
+      "expectedSha256": "207f99cddc3c5700dff354154b74b58f16262f20929f580741f34130d9be126e",
+      "actualSha256": "207f99cddc3c5700dff354154b74b58f16262f20929f580741f34130d9be126e",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "D:/code/AgentLang/.agentlang/r09-discovery-001/runtime-artifacts/bin/AgentLang.Cli/release/tr/FSharp.Core.resources.dll",
+      "expectedSha256": "6b0cba5139a86ee681909fdfcebac07c99afba3bfcff4fb8ab12b9c2112a0b31",
+      "actualSha256": "6b0cba5139a86ee681909fdfcebac07c99afba3bfcff4fb8ab12b9c2112a0b31",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/3c2c08d5964f5c55cb63bb5631d34f30a2eec9717373de61bb2998d1c7149eee.agent",
+      "expectedSha256": "3c2c08d5964f5c55cb63bb5631d34f30a2eec9717373de61bb2998d1c7149eee",
+      "actualSha256": "3c2c08d5964f5c55cb63bb5631d34f30a2eec9717373de61bb2998d1c7149eee",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/21df0faf4f7d19872e15cc481a4e3c0379a1b6e53d4304ae2e62ed44535a275f.agent",
+      "expectedSha256": "21df0faf4f7d19872e15cc481a4e3c0379a1b6e53d4304ae2e62ed44535a275f",
+      "actualSha256": "21df0faf4f7d19872e15cc481a4e3c0379a1b6e53d4304ae2e62ed44535a275f",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/bfd1fb8d156dcacfec186591dd64b4fe633bcba9cc2c54239d7961ae8713046f.agent",
+      "expectedSha256": "bfd1fb8d156dcacfec186591dd64b4fe633bcba9cc2c54239d7961ae8713046f",
+      "actualSha256": "bfd1fb8d156dcacfec186591dd64b4fe633bcba9cc2c54239d7961ae8713046f",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/3a5f5915be3d2b3c3adcb1b396002c87a1f99a501301c028c2c71d9473fa4b5a.agent",
+      "expectedSha256": "3a5f5915be3d2b3c3adcb1b396002c87a1f99a501301c028c2c71d9473fa4b5a",
+      "actualSha256": "3a5f5915be3d2b3c3adcb1b396002c87a1f99a501301c028c2c71d9473fa4b5a",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/3c1d447d623e93de604f3d30c8cbc1b4b6e5c32dbea26a427c0e3206fefab409.agent",
+      "expectedSha256": "3c1d447d623e93de604f3d30c8cbc1b4b6e5c32dbea26a427c0e3206fefab409",
+      "actualSha256": "3c1d447d623e93de604f3d30c8cbc1b4b6e5c32dbea26a427c0e3206fefab409",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/fixtures/business-values.agent",
+      "expectedSha256": "fe8227ce0c38ff6e193a74292a5b1d0ed0ac3e3869f0fe8feaf56eca62f30cbd",
+      "actualSha256": "fe8227ce0c38ff6e193a74292a5b1d0ed0ac3e3869f0fe8feaf56eca62f30cbd",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/5d3e3cc926891c16fdfbc030149d195188cc97c0e005814e55c7ab2e1c32e6c1.agent",
+      "expectedSha256": "5d3e3cc926891c16fdfbc030149d195188cc97c0e005814e55c7ab2e1c32e6c1",
+      "actualSha256": "5d3e3cc926891c16fdfbc030149d195188cc97c0e005814e55c7ab2e1c32e6c1",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/runtime-pin.json",
+      "expectedSha256": "33c7cdc265098fcb3df060a96a3bf8415f458e0abac9d4ba5ac69194c51966af",
+      "actualSha256": "33c7cdc265098fcb3df060a96a3bf8415f458e0abac9d4ba5ac69194c51966af",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/4976dfc7db2dba34cee39737f3ff48ebaa56cf77465ddb228b686edd11673d3d.agent",
+      "expectedSha256": "4976dfc7db2dba34cee39737f3ff48ebaa56cf77465ddb228b686edd11673d3d",
+      "actualSha256": "4976dfc7db2dba34cee39737f3ff48ebaa56cf77465ddb228b686edd11673d3d",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/89984dd27902e88f31e1a29ea54420ec3267bb68fed4c7a5ceb55537c148758a.agent",
+      "expectedSha256": "89984dd27902e88f31e1a29ea54420ec3267bb68fed4c7a5ceb55537c148758a",
+      "actualSha256": "89984dd27902e88f31e1a29ea54420ec3267bb68fed4c7a5ceb55537c148758a",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/907ce95adcbd815c0450311da6c4d46cc70ad91b235ae0700706841a8a454cab.agent",
+      "expectedSha256": "907ce95adcbd815c0450311da6c4d46cc70ad91b235ae0700706841a8a454cab",
+      "actualSha256": "907ce95adcbd815c0450311da6c4d46cc70ad91b235ae0700706841a8a454cab",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/e1a42ee3f012d8c13bbc44d0bd88ea0f59359f8c728219d35e0b6762588d73a0.agent",
+      "expectedSha256": "e1a42ee3f012d8c13bbc44d0bd88ea0f59359f8c728219d35e0b6762588d73a0",
+      "actualSha256": "e1a42ee3f012d8c13bbc44d0bd88ea0f59359f8c728219d35e0b6762588d73a0",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/83daad5ff8397641715e7bf735ed055ec1d83677d82b0432e517fe7bb4355d58.agent",
+      "expectedSha256": "83daad5ff8397641715e7bf735ed055ec1d83677d82b0432e517fe7bb4355d58",
+      "actualSha256": "83daad5ff8397641715e7bf735ed055ec1d83677d82b0432e517fe7bb4355d58",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/f68335af16b2067a3e18dba42efc30ac7db49df7eaf8b159928c5315f84996eb.agent",
+      "expectedSha256": "f68335af16b2067a3e18dba42efc30ac7db49df7eaf8b159928c5315f84996eb",
+      "actualSha256": "f68335af16b2067a3e18dba42efc30ac7db49df7eaf8b159928c5315f84996eb",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/7f0a2728d171226a81f28a9b81d2847093648e9d69abecb8d6d3ee3f47253d65.agent",
+      "expectedSha256": "7f0a2728d171226a81f28a9b81d2847093648e9d69abecb8d6d3ee3f47253d65",
+      "actualSha256": "7f0a2728d171226a81f28a9b81d2847093648e9d69abecb8d6d3ee3f47253d65",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "D:/code/AgentLang/.agentlang/r09-discovery-001/runtime-artifacts/bin/AgentLang.Cli/release/pt-BR/FSharp.Core.resources.dll",
+      "expectedSha256": "a4bbbdaabf2003a5fdff5f5bc4143c3fd4a064f2681fc481f449d4558074dc61",
+      "actualSha256": "a4bbbdaabf2003a5fdff5f5bc4143c3fd4a064f2681fc481f449d4558074dc61",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "src/AgentLang.Core/TypedIR.fs",
+      "expectedSha256": "e564bcb0785ea7c71030848934ae9cc6af331d5a74add3d87ff0f51cc0152dc1",
+      "actualSha256": "e564bcb0785ea7c71030848934ae9cc6af331d5a74add3d87ff0f51cc0152dc1",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/cedb492eca186a76a5af2626469faf8aa5bb675a6a0efac5b94cedfddfc5870f.agent",
+      "expectedSha256": "cedb492eca186a76a5af2626469faf8aa5bb675a6a0efac5b94cedfddfc5870f",
+      "actualSha256": "cedb492eca186a76a5af2626469faf8aa5bb675a6a0efac5b94cedfddfc5870f",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/825e12cad29ead2263df9862560f1b66f0b8d5bcd8699ba576d7a5282a7bbf20.agent",
+      "expectedSha256": "825e12cad29ead2263df9862560f1b66f0b8d5bcd8699ba576d7a5282a7bbf20",
+      "actualSha256": "825e12cad29ead2263df9862560f1b66f0b8d5bcd8699ba576d7a5282a7bbf20",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "D:/code/AgentLang/.agentlang/r09-discovery-001/runtime-artifacts/bin/AgentLang.Cli/release/pl/FSharp.Core.resources.dll",
+      "expectedSha256": "755bab9fbd85e5e4b4771870c9c4d655e91e3ce39cc1c2735fe0bc7cec6b84c3",
+      "actualSha256": "755bab9fbd85e5e4b4771870c9c4d655e91e3ce39cc1c2735fe0bc7cec6b84c3",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "src/AgentLang.Core/FlowPersistence.fs",
+      "expectedSha256": "71f842004d040bff9d9c830e10fb394fef4c55c827a6ccbb3cfb1c427869e793",
+      "actualSha256": "71f842004d040bff9d9c830e10fb394fef4c55c827a6ccbb3cfb1c427869e793",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/17fbeffa127cd74d5f6ee85ead1c7d2218f382b21efe5712839d8118ac5f27c3.agent",
+      "expectedSha256": "17fbeffa127cd74d5f6ee85ead1c7d2218f382b21efe5712839d8118ac5f27c3",
+      "actualSha256": "17fbeffa127cd74d5f6ee85ead1c7d2218f382b21efe5712839d8118ac5f27c3",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "src/AgentLang.Core/IrFormatting.fs",
+      "expectedSha256": "9f219735b931f4503ec0f8e5a217630b2fc8a38b8fb84931a17c5959316ecdb7",
+      "actualSha256": "9f219735b931f4503ec0f8e5a217630b2fc8a38b8fb84931a17c5959316ecdb7",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/31477cd8004242a3303486218ca48c21bba7d89e8fcf518709d39f7634eb5550.agent",
+      "expectedSha256": "31477cd8004242a3303486218ca48c21bba7d89e8fcf518709d39f7634eb5550",
+      "actualSha256": "31477cd8004242a3303486218ca48c21bba7d89e8fcf518709d39f7634eb5550",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/1dd65701b2068928aa2f5502f26c7417fcbae17d3253ae39b55f99de56b619bc.agent",
+      "expectedSha256": "1dd65701b2068928aa2f5502f26c7417fcbae17d3253ae39b55f99de56b619bc",
+      "actualSha256": "1dd65701b2068928aa2f5502f26c7417fcbae17d3253ae39b55f99de56b619bc",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17.agent",
+      "expectedSha256": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17",
+      "actualSha256": "e9c669678c8a9e69d6f7708c504417c7fbd5930cc242d84bece74e3f51c38c17",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/manifests/8066cd5647f476adc7c734d3d8626c3507ded9d0fcc83cf0d738fb432492d2d5.json",
+      "expectedSha256": "8066cd5647f476adc7c734d3d8626c3507ded9d0fcc83cf0d738fb432492d2d5",
+      "actualSha256": "8066cd5647f476adc7c734d3d8626c3507ded9d0fcc83cf0d738fb432492d2d5",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/3beea2345d0829c3f50a665835b0cfd9280e859dad7e1bf7625a3544c2d33761.agent",
+      "expectedSha256": "3beea2345d0829c3f50a665835b0cfd9280e859dad7e1bf7625a3544c2d33761",
+      "actualSha256": "3beea2345d0829c3f50a665835b0cfd9280e859dad7e1bf7625a3544c2d33761",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/dbb06e3459ce10d6d0531562a8f58235ee73ef09db72b3b92f4789fa0099ad02.agent",
+      "expectedSha256": "dbb06e3459ce10d6d0531562a8f58235ee73ef09db72b3b92f4789fa0099ad02",
+      "actualSha256": "dbb06e3459ce10d6d0531562a8f58235ee73ef09db72b3b92f4789fa0099ad02",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/91addd9202ef2b9efdf92c7170a4f223a7b3f217d79dd8096fbec9f0a1ce58d8.agent",
+      "expectedSha256": "91addd9202ef2b9efdf92c7170a4f223a7b3f217d79dd8096fbec9f0a1ce58d8",
+      "actualSha256": "91addd9202ef2b9efdf92c7170a4f223a7b3f217d79dd8096fbec9f0a1ce58d8",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "src/AgentLang.Core/AgentLang.Core.fsproj",
+      "expectedSha256": "4948705084736ac21769ce20741fbf1c442b24ce1c6e6f217610f7ff5c3ce9aa",
+      "actualSha256": "4948705084736ac21769ce20741fbf1c442b24ce1c6e6f217610f7ff5c3ce9aa",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/328640f53791298db9dfa6f7f98267bbce80973c186e681300b35c4bdb4ce153.agent",
+      "expectedSha256": "328640f53791298db9dfa6f7f98267bbce80973c186e681300b35c4bdb4ce153",
+      "actualSha256": "328640f53791298db9dfa6f7f98267bbce80973c186e681300b35c4bdb4ce153",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "D:/code/AgentLang/.agentlang/r09-discovery-001/runtime-artifacts/bin/AgentLang.Cli/release/es/FSharp.Core.resources.dll",
+      "expectedSha256": "636866649564c72eb763eb3942e021b52b1f9b3869d037aca48f73d4474353c5",
+      "actualSha256": "636866649564c72eb763eb3942e021b52b1f9b3869d037aca48f73d4474353c5",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/8840cc90df842ebf0553391ad023e280d4748165ab640712af9ca8077279dd02.agent",
+      "expectedSha256": "8840cc90df842ebf0553391ad023e280d4748165ab640712af9ca8077279dd02",
+      "actualSha256": "8840cc90df842ebf0553391ad023e280d4748165ab640712af9ca8077279dd02",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/5e648655b73a63fb77e2bc3ff99bedeb9d9a9a82fe84701c8d7615faaac8a90a.agent",
+      "expectedSha256": "5e648655b73a63fb77e2bc3ff99bedeb9d9a9a82fe84701c8d7615faaac8a90a",
+      "actualSha256": "5e648655b73a63fb77e2bc3ff99bedeb9d9a9a82fe84701c8d7615faaac8a90a",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/0d8115f6308c7f4223d58131273757d5a8c07cb8a6ed19de37cbde8f38006218.agent",
+      "expectedSha256": "0d8115f6308c7f4223d58131273757d5a8c07cb8a6ed19de37cbde8f38006218",
+      "actualSha256": "0d8115f6308c7f4223d58131273757d5a8c07cb8a6ed19de37cbde8f38006218",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/cce213098b5693b15b5c95da4b93d8e844b7050218361b66e0507a9895ff1949.agent",
+      "expectedSha256": "cce213098b5693b15b5c95da4b93d8e844b7050218361b66e0507a9895ff1949",
+      "actualSha256": "cce213098b5693b15b5c95da4b93d8e844b7050218361b66e0507a9895ff1949",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/7f101031c6c9b345a3425b6b29e57f2496c6ced0ed1d4305870fc945612d45cb.agent",
+      "expectedSha256": "7f101031c6c9b345a3425b6b29e57f2496c6ced0ed1d4305870fc945612d45cb",
+      "actualSha256": "7f101031c6c9b345a3425b6b29e57f2496c6ced0ed1d4305870fc945612d45cb",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "D:/code/AgentLang/.agentlang/r09-discovery-001/runtime-artifacts/bin/AgentLang.Cli/release/AgentLang.Cli.runtimeconfig.json",
+      "expectedSha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0",
+      "actualSha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/1ae00a7dc25f1a9ad2b2355f6d85dfce95025d16d1879cf8508111242233e93b.agent",
+      "expectedSha256": "1ae00a7dc25f1a9ad2b2355f6d85dfce95025d16d1879cf8508111242233e93b",
+      "actualSha256": "1ae00a7dc25f1a9ad2b2355f6d85dfce95025d16d1879cf8508111242233e93b",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/fixtures/business-store.agent",
+      "expectedSha256": "37fefda4c504d4dd894004a4f6e3a58893b0171d674c21f8feb8d5e47f1858e1",
+      "actualSha256": "37fefda4c504d4dd894004a4f6e3a58893b0171d674c21f8feb8d5e47f1858e1",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/45feaa0f6df9bca517a543cc7d048ae9352245dce1e649ff91458172e2d93dd8.agent",
+      "expectedSha256": "45feaa0f6df9bca517a543cc7d048ae9352245dce1e649ff91458172e2d93dd8",
+      "actualSha256": "45feaa0f6df9bca517a543cc7d048ae9352245dce1e649ff91458172e2d93dd8",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/279a408dd4617da862bbb348b24a915ffd728bad8d9f688891194284e644ffae.agent",
+      "expectedSha256": "279a408dd4617da862bbb348b24a915ffd728bad8d9f688891194284e644ffae",
+      "actualSha256": "279a408dd4617da862bbb348b24a915ffd728bad8d9f688891194284e644ffae",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/1a6239e047979761cdabe69d7c4328a9e9e13f4053320255b592b3da73b03ece.agent",
+      "expectedSha256": "1a6239e047979761cdabe69d7c4328a9e9e13f4053320255b592b3da73b03ece",
+      "actualSha256": "1a6239e047979761cdabe69d7c4328a9e9e13f4053320255b592b3da73b03ece",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/bd7b0e2f4e43f59cb9f456b94f631cddd3e7f7f0620ab764e9d1a98ce5779399.agent",
+      "expectedSha256": "bd7b0e2f4e43f59cb9f456b94f631cddd3e7f7f0620ab764e9d1a98ce5779399",
+      "actualSha256": "bd7b0e2f4e43f59cb9f456b94f631cddd3e7f7f0620ab764e9d1a98ce5779399",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/9869057a8d9276191a840a656385469b871ef5642e8415ec7a149ca2f4c340fc.agent",
+      "expectedSha256": "9869057a8d9276191a840a656385469b871ef5642e8415ec7a149ca2f4c340fc",
+      "actualSha256": "9869057a8d9276191a840a656385469b871ef5642e8415ec7a149ca2f4c340fc",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/07b31e3d2d6f40f8c01c3b88d870e14391337f88d85fe29907b42e03de2e0b12.agent",
+      "expectedSha256": "07b31e3d2d6f40f8c01c3b88d870e14391337f88d85fe29907b42e03de2e0b12",
+      "actualSha256": "07b31e3d2d6f40f8c01c3b88d870e14391337f88d85fe29907b42e03de2e0b12",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/3ffbe9bf73daad19d7a6af85f7b8eeb49a8f3f192b65d8902e43a499f365e383.agent",
+      "expectedSha256": "3ffbe9bf73daad19d7a6af85f7b8eeb49a8f3f192b65d8902e43a499f365e383",
+      "actualSha256": "3ffbe9bf73daad19d7a6af85f7b8eeb49a8f3f192b65d8902e43a499f365e383",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/ea0fa8567ebd53a88a92545f07c263b44afb798f37f2ce6a42c2e361662cd7c7.agent",
+      "expectedSha256": "ea0fa8567ebd53a88a92545f07c263b44afb798f37f2ce6a42c2e361662cd7c7",
+      "actualSha256": "ea0fa8567ebd53a88a92545f07c263b44afb798f37f2ce6a42c2e361662cd7c7",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/b8719358a0902606b6be39921e0424d7502f3aa065ad12962f8fce7f76e7c059.agent",
+      "expectedSha256": "b8719358a0902606b6be39921e0424d7502f3aa065ad12962f8fce7f76e7c059",
+      "actualSha256": "b8719358a0902606b6be39921e0424d7502f3aa065ad12962f8fce7f76e7c059",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/WRITE.lock",
+      "expectedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "actualSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/c2a2cc857639a3a504ecdf5d93c6f3a69abcb61f4ad0f9df034a4fc72ccd2414.agent",
+      "expectedSha256": "c2a2cc857639a3a504ecdf5d93c6f3a69abcb61f4ad0f9df034a4fc72ccd2414",
+      "actualSha256": "c2a2cc857639a3a504ecdf5d93c6f3a69abcb61f4ad0f9df034a4fc72ccd2414",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/e5c611c6a31787a28814f2305bd6009d4667bea263020028e2b23691f16ce60a.agent",
+      "expectedSha256": "e5c611c6a31787a28814f2305bd6009d4667bea263020028e2b23691f16ce60a",
+      "actualSha256": "e5c611c6a31787a28814f2305bd6009d4667bea263020028e2b23691f16ce60a",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/dcc1b89625224dc93aade435e00acfe1687ad2dfdee62ab06f48edf678647ce4.agent",
+      "expectedSha256": "dcc1b89625224dc93aade435e00acfe1687ad2dfdee62ab06f48edf678647ce4",
+      "actualSha256": "dcc1b89625224dc93aade435e00acfe1687ad2dfdee62ab06f48edf678647ce4",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/ea49702da9002116413862e494607bd8c5b3e766054afb9ab29480449299f1ba.agent",
+      "expectedSha256": "ea49702da9002116413862e494607bd8c5b3e766054afb9ab29480449299f1ba",
+      "actualSha256": "ea49702da9002116413862e494607bd8c5b3e766054afb9ab29480449299f1ba",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/f408f4810f271abf6276c64635dfe21d6f7b03667fe6f9ca395f32d736003cdc.agent",
+      "expectedSha256": "f408f4810f271abf6276c64635dfe21d6f7b03667fe6f9ca395f32d736003cdc",
+      "actualSha256": "f408f4810f271abf6276c64635dfe21d6f7b03667fe6f9ca395f32d736003cdc",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "src/AgentLang.Core/TrustedValues.fs",
+      "expectedSha256": "c26edc9681c879c5f0a410274901d6e1cfc3c515f7628f139235747daad57659",
+      "actualSha256": "c26edc9681c879c5f0a410274901d6e1cfc3c515f7628f139235747daad57659",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "src/AgentLang.Cli/Program.fs",
+      "expectedSha256": "94c4320c442f071c4c11191a1b4314fb72ba4ed7c18f20c4ae7da1d21c71bd2d",
+      "actualSha256": "94c4320c442f071c4c11191a1b4314fb72ba4ed7c18f20c4ae7da1d21c71bd2d",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/1078c72dada0481296057ae22390b0df363fcad9bc6099196fccddecd44d31c8.agent",
+      "expectedSha256": "1078c72dada0481296057ae22390b0df363fcad9bc6099196fccddecd44d31c8",
+      "actualSha256": "1078c72dada0481296057ae22390b0df363fcad9bc6099196fccddecd44d31c8",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/11ba8e07d0eb1468bc76a357a64863746f68c69ac787cc2bb73415110528cc3b.agent",
+      "expectedSha256": "11ba8e07d0eb1468bc76a357a64863746f68c69ac787cc2bb73415110528cc3b",
+      "actualSha256": "11ba8e07d0eb1468bc76a357a64863746f68c69ac787cc2bb73415110528cc3b",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/b83707c38c4bb70f70b01a51bbdc3c44278807e709bfb2c9b08a63142d6d33ab.agent",
+      "expectedSha256": "b83707c38c4bb70f70b01a51bbdc3c44278807e709bfb2c9b08a63142d6d33ab",
+      "actualSha256": "b83707c38c4bb70f70b01a51bbdc3c44278807e709bfb2c9b08a63142d6d33ab",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "D:/code/AgentLang/.agentlang/r09-discovery-001/runtime-artifacts/bin/AgentLang.Cli/release/ja/FSharp.Core.resources.dll",
+      "expectedSha256": "dd7f36036d906e991da5505b074ef889a603f449d3324750fda5f5445ba2854f",
+      "actualSha256": "dd7f36036d906e991da5505b074ef889a603f449d3324750fda5f5445ba2854f",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/ab8ff9795c1518352bd57d46a4bf045279cd2c3471a87a56ecd1346c0a1c4ee2.agent",
+      "expectedSha256": "ab8ff9795c1518352bd57d46a4bf045279cd2c3471a87a56ecd1346c0a1c4ee2",
+      "actualSha256": "ab8ff9795c1518352bd57d46a4bf045279cd2c3471a87a56ecd1346c0a1c4ee2",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/5aefc2a15d11963dedc697d1942fe391097d4fb83c9a2ba6c0e08a0e5e11b690.agent",
+      "expectedSha256": "5aefc2a15d11963dedc697d1942fe391097d4fb83c9a2ba6c0e08a0e5e11b690",
+      "actualSha256": "5aefc2a15d11963dedc697d1942fe391097d4fb83c9a2ba6c0e08a0e5e11b690",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/f155a5e82d58b9f63ac37574553cf8b047a7defa91ee97fcee323780c54aab06.agent",
+      "expectedSha256": "f155a5e82d58b9f63ac37574553cf8b047a7defa91ee97fcee323780c54aab06",
+      "actualSha256": "f155a5e82d58b9f63ac37574553cf8b047a7defa91ee97fcee323780c54aab06",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/26ef6b79488a9fe7576f28c60a74e06c770604f32617dacf65db8810335501c8.agent",
+      "expectedSha256": "26ef6b79488a9fe7576f28c60a74e06c770604f32617dacf65db8810335501c8",
+      "actualSha256": "26ef6b79488a9fe7576f28c60a74e06c770604f32617dacf65db8810335501c8",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/55373a49cfa4fb84bd59172b69748a1a270eb974a5abd165f1d8ae4b249d8efb.agent",
+      "expectedSha256": "55373a49cfa4fb84bd59172b69748a1a270eb974a5abd165f1d8ae4b249d8efb",
+      "actualSha256": "55373a49cfa4fb84bd59172b69748a1a270eb974a5abd165f1d8ae4b249d8efb",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/782758a7baab01c2abd05e0bd6a4a3fdfe6799b26d1629ea927d7d806b83ddce.agent",
+      "expectedSha256": "782758a7baab01c2abd05e0bd6a4a3fdfe6799b26d1629ea927d7d806b83ddce",
+      "actualSha256": "782758a7baab01c2abd05e0bd6a4a3fdfe6799b26d1629ea927d7d806b83ddce",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "src/AgentLang.Core/Runtime.fs",
+      "expectedSha256": "f5bab04a89b8cd6c268e75e0bb9b265112843a81e388920af0942d9c783079d9",
+      "actualSha256": "f5bab04a89b8cd6c268e75e0bb9b265112843a81e388920af0942d9c783079d9",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "D:/code/AgentLang/.agentlang/r09-discovery-001/runtime-artifacts/bin/AgentLang.Cli/release/AgentLang.Core.xml",
+      "expectedSha256": "09ac15a5f53b3d6fd39e721bb9e7eda22f7b2269a7676f95866f822c9bccbe7a",
+      "actualSha256": "09ac15a5f53b3d6fd39e721bb9e7eda22f7b2269a7676f95866f822c9bccbe7a",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/fixtures/business-invoices.agent",
+      "expectedSha256": "a08b3e87e69c5983d35ec35059c3881067294b65b4e79e992e81dbf101ab338c",
+      "actualSha256": "a08b3e87e69c5983d35ec35059c3881067294b65b4e79e992e81dbf101ab338c",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/57c33778f83768df338b4b396a710182cde7e18b4e73f02592a933ae2a5735ed.agent",
+      "expectedSha256": "57c33778f83768df338b4b396a710182cde7e18b4e73f02592a933ae2a5735ed",
+      "actualSha256": "57c33778f83768df338b4b396a710182cde7e18b4e73f02592a933ae2a5735ed",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/e4b31f47963a9b1e4d2c70f9541d083dc7f37c7b96d62423502a98a76b5a6701.agent",
+      "expectedSha256": "e4b31f47963a9b1e4d2c70f9541d083dc7f37c7b96d62423502a98a76b5a6701",
+      "actualSha256": "e4b31f47963a9b1e4d2c70f9541d083dc7f37c7b96d62423502a98a76b5a6701",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/8f9c66f690d6a3ea37fdf43e832c70ccea56819becf3f55546f65570917dfe96.agent",
+      "expectedSha256": "8f9c66f690d6a3ea37fdf43e832c70ccea56819becf3f55546f65570917dfe96",
+      "actualSha256": "8f9c66f690d6a3ea37fdf43e832c70ccea56819becf3f55546f65570917dfe96",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/e310a287d917aad800c4882ba4d720fce979e9bd19cfad42b9b5301e245fd351.agent",
+      "expectedSha256": "e310a287d917aad800c4882ba4d720fce979e9bd19cfad42b9b5301e245fd351",
+      "actualSha256": "e310a287d917aad800c4882ba4d720fce979e9bd19cfad42b9b5301e245fd351",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/d91704fdddeb6768bfd0c5ae17334e7155336c407c87129b33b04bed6a139d1f.agent",
+      "expectedSha256": "d91704fdddeb6768bfd0c5ae17334e7155336c407c87129b33b04bed6a139d1f",
+      "actualSha256": "d91704fdddeb6768bfd0c5ae17334e7155336c407c87129b33b04bed6a139d1f",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/1218f11dd6442923e0674c04ee66a099decfc1ecd0750f3c29f2b399c13deae7.agent",
+      "expectedSha256": "1218f11dd6442923e0674c04ee66a099decfc1ecd0750f3c29f2b399c13deae7",
+      "actualSha256": "1218f11dd6442923e0674c04ee66a099decfc1ecd0750f3c29f2b399c13deae7",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/a077f1d34d312e28c7e2abb572c5da19c4584233b7d3af980ea280d47e0dd44a.agent",
+      "expectedSha256": "a077f1d34d312e28c7e2abb572c5da19c4584233b7d3af980ea280d47e0dd44a",
+      "actualSha256": "a077f1d34d312e28c7e2abb572c5da19c4584233b7d3af980ea280d47e0dd44a",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/27c7247e4de5dc0c22cfa83bb9ba61ab855b3e286eda59026467f060c3f79531.agent",
+      "expectedSha256": "27c7247e4de5dc0c22cfa83bb9ba61ab855b3e286eda59026467f060c3f79531",
+      "actualSha256": "27c7247e4de5dc0c22cfa83bb9ba61ab855b3e286eda59026467f060c3f79531",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/f85c95b4cc3f46143998f80542c54eab04abab8ce5f491afebbb80abe055d603.agent",
+      "expectedSha256": "f85c95b4cc3f46143998f80542c54eab04abab8ce5f491afebbb80abe055d603",
+      "actualSha256": "f85c95b4cc3f46143998f80542c54eab04abab8ce5f491afebbb80abe055d603",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/db0d7fb64b01f0157c322312f0e4145687df983ee661f82447bfb8e6f0079347.agent",
+      "expectedSha256": "db0d7fb64b01f0157c322312f0e4145687df983ee661f82447bfb8e6f0079347",
+      "actualSha256": "db0d7fb64b01f0157c322312f0e4145687df983ee661f82447bfb8e6f0079347",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/9dac245a166dd8db781470b0234c896cdd079e8d626dd59b283bd50dc72408ac.agent",
+      "expectedSha256": "9dac245a166dd8db781470b0234c896cdd079e8d626dd59b283bd50dc72408ac",
+      "actualSha256": "9dac245a166dd8db781470b0234c896cdd079e8d626dd59b283bd50dc72408ac",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/3bb558edd7241eabb42d5c2d75ade3cc7d184f5d13748265cf0bb21816168b67.agent",
+      "expectedSha256": "3bb558edd7241eabb42d5c2d75ade3cc7d184f5d13748265cf0bb21816168b67",
+      "actualSha256": "3bb558edd7241eabb42d5c2d75ade3cc7d184f5d13748265cf0bb21816168b67",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/b8ebaaa33ccf5474d0851c8a4394cbe272b38f81c629ee7a58a3991bf3b14797.agent",
+      "expectedSha256": "b8ebaaa33ccf5474d0851c8a4394cbe272b38f81c629ee7a58a3991bf3b14797",
+      "actualSha256": "b8ebaaa33ccf5474d0851c8a4394cbe272b38f81c629ee7a58a3991bf3b14797",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/ca5067e6812595a2efdf518879c67835a3894448c56197e1fcd15529d65acf97.agent",
+      "expectedSha256": "ca5067e6812595a2efdf518879c67835a3894448c56197e1fcd15529d65acf97",
+      "actualSha256": "ca5067e6812595a2efdf518879c67835a3894448c56197e1fcd15529d65acf97",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/88fe654c4560cb4c891080e01c29cae9ea160abf69c9cc50a251ed81bb99b071.agent",
+      "expectedSha256": "88fe654c4560cb4c891080e01c29cae9ea160abf69c9cc50a251ed81bb99b071",
+      "actualSha256": "88fe654c4560cb4c891080e01c29cae9ea160abf69c9cc50a251ed81bb99b071",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/0cd6e4e0f416a73157a9985864eb5806a0a0c80115d8c0540c72f78d13edba67.agent",
+      "expectedSha256": "0cd6e4e0f416a73157a9985864eb5806a0a0c80115d8c0540c72f78d13edba67",
+      "actualSha256": "0cd6e4e0f416a73157a9985864eb5806a0a0c80115d8c0540c72f78d13edba67",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/4aa1ebec9430f3b4304eb6fc3cf6e8358a8fb2db611e5f8f2d42181679f82bb1.agent",
+      "expectedSha256": "4aa1ebec9430f3b4304eb6fc3cf6e8358a8fb2db611e5f8f2d42181679f82bb1",
+      "actualSha256": "4aa1ebec9430f3b4304eb6fc3cf6e8358a8fb2db611e5f8f2d42181679f82bb1",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/702d974afa7c8f20129d98b04c861ccae0be250032bbf5e95d5cb26b6aae3cd0.agent",
+      "expectedSha256": "702d974afa7c8f20129d98b04c861ccae0be250032bbf5e95d5cb26b6aae3cd0",
+      "actualSha256": "702d974afa7c8f20129d98b04c861ccae0be250032bbf5e95d5cb26b6aae3cd0",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/bb1cf5a1f4cbb47295d9ff8123725963381f101fc58cbd52f398935a381fe7b7.agent",
+      "expectedSha256": "bb1cf5a1f4cbb47295d9ff8123725963381f101fc58cbd52f398935a381fe7b7",
+      "actualSha256": "bb1cf5a1f4cbb47295d9ff8123725963381f101fc58cbd52f398935a381fe7b7",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/2d2b8f65fabf0a5d3cea850936cad0f85d05a7acc4957c9a7bcdf845322e4bbd.agent",
+      "expectedSha256": "2d2b8f65fabf0a5d3cea850936cad0f85d05a7acc4957c9a7bcdf845322e4bbd",
+      "actualSha256": "2d2b8f65fabf0a5d3cea850936cad0f85d05a7acc4957c9a7bcdf845322e4bbd",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/17259cdb232ef822930b9d07f89c652af5d8501dcc87c4a11425676e15d793bb.agent",
+      "expectedSha256": "17259cdb232ef822930b9d07f89c652af5d8501dcc87c4a11425676e15d793bb",
+      "actualSha256": "17259cdb232ef822930b9d07f89c652af5d8501dcc87c4a11425676e15d793bb",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/cc9c09ef7a92526617f8966536992986a8b01f138724638dd2524e155b308168.agent",
+      "expectedSha256": "cc9c09ef7a92526617f8966536992986a8b01f138724638dd2524e155b308168",
+      "actualSha256": "cc9c09ef7a92526617f8966536992986a8b01f138724638dd2524e155b308168",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/3c4a18bcdc1c00822c42f1d256a80dc7a762499f4ae663e18cb3e066b01cb4f5.agent",
+      "expectedSha256": "3c4a18bcdc1c00822c42f1d256a80dc7a762499f4ae663e18cb3e066b01cb4f5",
+      "actualSha256": "3c4a18bcdc1c00822c42f1d256a80dc7a762499f4ae663e18cb3e066b01cb4f5",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/d93b479d61b12691cb368da2eacfbea675f2ee57a16271d84f83d41b1233f2b1.agent",
+      "expectedSha256": "d93b479d61b12691cb368da2eacfbea675f2ee57a16271d84f83d41b1233f2b1",
+      "actualSha256": "d93b479d61b12691cb368da2eacfbea675f2ee57a16271d84f83d41b1233f2b1",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/25c8210559d058619a1a4f78561d5c4327ad499bc303e24c95deb1813b5594d1.agent",
+      "expectedSha256": "25c8210559d058619a1a4f78561d5c4327ad499bc303e24c95deb1813b5594d1",
+      "actualSha256": "25c8210559d058619a1a4f78561d5c4327ad499bc303e24c95deb1813b5594d1",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/f4893b6fcc7995d460923d435d3bd3ecaf8d5480dcc9d11b7e408f1ef83e8064.agent",
+      "expectedSha256": "f4893b6fcc7995d460923d435d3bd3ecaf8d5480dcc9d11b7e408f1ef83e8064",
+      "actualSha256": "f4893b6fcc7995d460923d435d3bd3ecaf8d5480dcc9d11b7e408f1ef83e8064",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/032b897be97046bd3ab83da2b9e7759deb412cbb69227f59cdb75239912ffaa6.agent",
+      "expectedSha256": "032b897be97046bd3ab83da2b9e7759deb412cbb69227f59cdb75239912ffaa6",
+      "actualSha256": "032b897be97046bd3ab83da2b9e7759deb412cbb69227f59cdb75239912ffaa6",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/4c49cb5b2df3b2d34155206b8c166dbb326fc5cb4d7c039aa13a1c2d3d50ff43.agent",
+      "expectedSha256": "4c49cb5b2df3b2d34155206b8c166dbb326fc5cb4d7c039aa13a1c2d3d50ff43",
+      "actualSha256": "4c49cb5b2df3b2d34155206b8c166dbb326fc5cb4d7c039aa13a1c2d3d50ff43",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/b1d167905fe2abd339f13219c892dc063ab2c072f7183f8efb4d8aed1e079e04.agent",
+      "expectedSha256": "b1d167905fe2abd339f13219c892dc063ab2c072f7183f8efb4d8aed1e079e04",
+      "actualSha256": "b1d167905fe2abd339f13219c892dc063ab2c072f7183f8efb4d8aed1e079e04",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/53bf508f7e284f617f50c77dfb22b9fd1420493b996f834eb187297ca51a1644.agent",
+      "expectedSha256": "53bf508f7e284f617f50c77dfb22b9fd1420493b996f834eb187297ca51a1644",
+      "actualSha256": "53bf508f7e284f617f50c77dfb22b9fd1420493b996f834eb187297ca51a1644",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/3c99057ed5b316e375b8e6cd90b5b504a099b2dad3b17dd8c334ac92f0976453.agent",
+      "expectedSha256": "3c99057ed5b316e375b8e6cd90b5b504a099b2dad3b17dd8c334ac92f0976453",
+      "actualSha256": "3c99057ed5b316e375b8e6cd90b5b504a099b2dad3b17dd8c334ac92f0976453",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/6defd11c427d6c9f07b7ca7de8643e6364d4863f977b5f1fafebde8b230fb702.agent",
+      "expectedSha256": "6defd11c427d6c9f07b7ca7de8643e6364d4863f977b5f1fafebde8b230fb702",
+      "actualSha256": "6defd11c427d6c9f07b7ca7de8643e6364d4863f977b5f1fafebde8b230fb702",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/10e6fb073f2545dad9ca82bde2298da61100bbcd509c70ad7622ff77e6e90da0.agent",
+      "expectedSha256": "10e6fb073f2545dad9ca82bde2298da61100bbcd509c70ad7622ff77e6e90da0",
+      "actualSha256": "10e6fb073f2545dad9ca82bde2298da61100bbcd509c70ad7622ff77e6e90da0",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/7d574f30e80bef8fd4f3ae737a4f758cca122bac5e6ae67fa4af77b6966da7fa.agent",
+      "expectedSha256": "7d574f30e80bef8fd4f3ae737a4f758cca122bac5e6ae67fa4af77b6966da7fa",
+      "actualSha256": "7d574f30e80bef8fd4f3ae737a4f758cca122bac5e6ae67fa4af77b6966da7fa",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/e5b75f247e5dd14cdf5abd621a8667dee77cfd5ed025305b0e1b2171e71045fa.agent",
+      "expectedSha256": "e5b75f247e5dd14cdf5abd621a8667dee77cfd5ed025305b0e1b2171e71045fa",
+      "actualSha256": "e5b75f247e5dd14cdf5abd621a8667dee77cfd5ed025305b0e1b2171e71045fa",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/206a1c723783dba183a9818c0fe7ebd31ea04efccc23e3b2ca8b04b1283cbbc3.agent",
+      "expectedSha256": "206a1c723783dba183a9818c0fe7ebd31ea04efccc23e3b2ca8b04b1283cbbc3",
+      "actualSha256": "206a1c723783dba183a9818c0fe7ebd31ea04efccc23e3b2ca8b04b1283cbbc3",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/3f5803f2caf88019482cf2dbbaa0e16afe16df9f05cad4e06c16a985cfd848a4.agent",
+      "expectedSha256": "3f5803f2caf88019482cf2dbbaa0e16afe16df9f05cad4e06c16a985cfd848a4",
+      "actualSha256": "3f5803f2caf88019482cf2dbbaa0e16afe16df9f05cad4e06c16a985cfd848a4",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/d4785fc7e953f7a48ce6345e6dc6b1892e1b73aa41ec7f469a5b0a16198cb4a2.agent",
+      "expectedSha256": "d4785fc7e953f7a48ce6345e6dc6b1892e1b73aa41ec7f469a5b0a16198cb4a2",
+      "actualSha256": "d4785fc7e953f7a48ce6345e6dc6b1892e1b73aa41ec7f469a5b0a16198cb4a2",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "src/AgentLang.Core/FlowSyntax.fs",
+      "expectedSha256": "9ccff37dbc15983831b7f0120774c7878047ff1e8302fe0dd73aedd33cff72fc",
+      "actualSha256": "9ccff37dbc15983831b7f0120774c7878047ff1e8302fe0dd73aedd33cff72fc",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/196e05d6ae353392d71c3ad8cec5688b2a784fb15168dd31ba1bcb800bf4e8b8.agent",
+      "expectedSha256": "196e05d6ae353392d71c3ad8cec5688b2a784fb15168dd31ba1bcb800bf4e8b8",
+      "actualSha256": "196e05d6ae353392d71c3ad8cec5688b2a784fb15168dd31ba1bcb800bf4e8b8",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/cbd528fa910bd2627760fb46cc8fda4627de287d6b5eae07b7394530490c1f58.agent",
+      "expectedSha256": "cbd528fa910bd2627760fb46cc8fda4627de287d6b5eae07b7394530490c1f58",
+      "actualSha256": "cbd528fa910bd2627760fb46cc8fda4627de287d6b5eae07b7394530490c1f58",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/e8be455631f3350d58f25e9be1c18e378960baa98efc57dac22456c4f56715af.agent",
+      "expectedSha256": "e8be455631f3350d58f25e9be1c18e378960baa98efc57dac22456c4f56715af",
+      "actualSha256": "e8be455631f3350d58f25e9be1c18e378960baa98efc57dac22456c4f56715af",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/6b014f9b3995fe8864e9a280c880a0cacf121f5c5b811ba8c32b7f7923b9564b.agent",
+      "expectedSha256": "6b014f9b3995fe8864e9a280c880a0cacf121f5c5b811ba8c32b7f7923b9564b",
+      "actualSha256": "6b014f9b3995fe8864e9a280c880a0cacf121f5c5b811ba8c32b7f7923b9564b",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "D:/code/AgentLang/.agentlang/r09-discovery-001/runtime-artifacts/bin/AgentLang.Cli/release/de/FSharp.Core.resources.dll",
+      "expectedSha256": "7419e4f5ceed9e03821686e865fed7d29c6217fdf5d3a46a2919a369c98c38ce",
+      "actualSha256": "7419e4f5ceed9e03821686e865fed7d29c6217fdf5d3a46a2919a369c98c38ce",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "src/AgentLang.Core/AuthoringHelp.fs",
+      "expectedSha256": "3ff07fa9aebd1e26907fa91a5189b09ddb9e7c41554c27ee333b834d46532316",
+      "actualSha256": "3ff07fa9aebd1e26907fa91a5189b09ddb9e7c41554c27ee333b834d46532316",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/f4c324688b7a8c2343f79994e8c549878eee81ef4bd1cc443889aecbe9c654b7.agent",
+      "expectedSha256": "f4c324688b7a8c2343f79994e8c549878eee81ef4bd1cc443889aecbe9c654b7",
+      "actualSha256": "f4c324688b7a8c2343f79994e8c549878eee81ef4bd1cc443889aecbe9c654b7",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/abca6d780d35ee536c8c4063e4343220115ae7de09f8486f89d66213128a140c.agent",
+      "expectedSha256": "abca6d780d35ee536c8c4063e4343220115ae7de09f8486f89d66213128a140c",
+      "actualSha256": "abca6d780d35ee536c8c4063e4343220115ae7de09f8486f89d66213128a140c",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/b1590a3a63b1e1a85ca9c89f3e19512c74cf4e8e692ca896da41c4ede61dc7ed.agent",
+      "expectedSha256": "b1590a3a63b1e1a85ca9c89f3e19512c74cf4e8e692ca896da41c4ede61dc7ed",
+      "actualSha256": "b1590a3a63b1e1a85ca9c89f3e19512c74cf4e8e692ca896da41c4ede61dc7ed",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/6ada1b4ec172f2c843cccbcaed809fe7a579f848116f78ea4c4f2c1a31a4ed27.agent",
+      "expectedSha256": "6ada1b4ec172f2c843cccbcaed809fe7a579f848116f78ea4c4f2c1a31a4ed27",
+      "actualSha256": "6ada1b4ec172f2c843cccbcaed809fe7a579f848116f78ea4c4f2c1a31a4ed27",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/38a2e076681f96f0e55ad5c05701e27bad6d4047e18c413b2fd754afb1e0279f.agent",
+      "expectedSha256": "38a2e076681f96f0e55ad5c05701e27bad6d4047e18c413b2fd754afb1e0279f",
+      "actualSha256": "38a2e076681f96f0e55ad5c05701e27bad6d4047e18c413b2fd754afb1e0279f",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/1109faccfd0cf5c0059d495e34e681bfc75ee10da3c1f8eff8c16875dcd68a14.agent",
+      "expectedSha256": "1109faccfd0cf5c0059d495e34e681bfc75ee10da3c1f8eff8c16875dcd68a14",
+      "actualSha256": "1109faccfd0cf5c0059d495e34e681bfc75ee10da3c1f8eff8c16875dcd68a14",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "D:/code/AgentLang/.agentlang/r09-discovery-001/runtime-artifacts/bin/AgentLang.Cli/release/AgentLang.Cli.deps.json",
+      "expectedSha256": "6382f6dc29bb8f827824839010e313b266e51a3f87a4fdb8c382931d2549e97e",
+      "actualSha256": "6382f6dc29bb8f827824839010e313b266e51a3f87a4fdb8c382931d2549e97e",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/c1dfba4a448c4c6ab589dfae316d104e3998d6ce89869f6823fa7b5b22163af0.agent",
+      "expectedSha256": "c1dfba4a448c4c6ab589dfae316d104e3998d6ce89869f6823fa7b5b22163af0",
+      "actualSha256": "c1dfba4a448c4c6ab589dfae316d104e3998d6ce89869f6823fa7b5b22163af0",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/8cf390217130b5bd41ced4b52f296c4c891fef8b59b4f8d448d8d9df1eaad64a.agent",
+      "expectedSha256": "8cf390217130b5bd41ced4b52f296c4c891fef8b59b4f8d448d8d9df1eaad64a",
+      "actualSha256": "8cf390217130b5bd41ced4b52f296c4c891fef8b59b4f8d448d8d9df1eaad64a",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/815f4439f5180d648266092ec36431decefe169e8fe810ed5ed5269243f01a6d.agent",
+      "expectedSha256": "815f4439f5180d648266092ec36431decefe169e8fe810ed5ed5269243f01a6d",
+      "actualSha256": "815f4439f5180d648266092ec36431decefe169e8fe810ed5ed5269243f01a6d",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/887bf0e451a6648fef277e4d84fa301bbc6fa1e74a20ce7cef9637427539c60e.agent",
+      "expectedSha256": "887bf0e451a6648fef277e4d84fa301bbc6fa1e74a20ce7cef9637427539c60e",
+      "actualSha256": "887bf0e451a6648fef277e4d84fa301bbc6fa1e74a20ce7cef9637427539c60e",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/bda2ef89bb8ff38b934bc40318880379bc76ce2f240d7afb5a0ab316229ead24.agent",
+      "expectedSha256": "bda2ef89bb8ff38b934bc40318880379bc76ce2f240d7afb5a0ab316229ead24",
+      "actualSha256": "bda2ef89bb8ff38b934bc40318880379bc76ce2f240d7afb5a0ab316229ead24",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/30610f660063b17def3e68896e2c0cefeb4e31682eeed0d2b95b581b1714ef46.agent",
+      "expectedSha256": "30610f660063b17def3e68896e2c0cefeb4e31682eeed0d2b95b581b1714ef46",
+      "actualSha256": "30610f660063b17def3e68896e2c0cefeb4e31682eeed0d2b95b581b1714ef46",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/0fe776d68e429af8cd0b0d0e7b63f101d0b43ece670d3a7a3db2f3e4134847ea.agent",
+      "expectedSha256": "0fe776d68e429af8cd0b0d0e7b63f101d0b43ece670d3a7a3db2f3e4134847ea",
+      "actualSha256": "0fe776d68e429af8cd0b0d0e7b63f101d0b43ece670d3a7a3db2f3e4134847ea",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/d55eb671da775370da648a63950265cbc58bad803ccc58030783f1204a102a22.agent",
+      "expectedSha256": "d55eb671da775370da648a63950265cbc58bad803ccc58030783f1204a102a22",
+      "actualSha256": "d55eb671da775370da648a63950265cbc58bad803ccc58030783f1204a102a22",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "src/AgentLang.Core/Core.fs",
+      "expectedSha256": "57fe2d9512afa26fc920c06a8b4558bdf965157e27a2bd35ceda64dfabb85428",
+      "actualSha256": "57fe2d9512afa26fc920c06a8b4558bdf965157e27a2bd35ceda64dfabb85428",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/a62e3f492a9bb1c392989bf5a27a3f950a0432727fc3a93949826477017ebd30.agent",
+      "expectedSha256": "a62e3f492a9bb1c392989bf5a27a3f950a0432727fc3a93949826477017ebd30",
+      "actualSha256": "a62e3f492a9bb1c392989bf5a27a3f950a0432727fc3a93949826477017ebd30",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/f976ddacccc954d998f79ad8418545f84d6811ba10dc285434eae95eea65d63b.agent",
+      "expectedSha256": "f976ddacccc954d998f79ad8418545f84d6811ba10dc285434eae95eea65d63b",
+      "actualSha256": "f976ddacccc954d998f79ad8418545f84d6811ba10dc285434eae95eea65d63b",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/bf15e7a768fcab562e0c2522b9b048f8f46d4ff3269664da3ff1bd6a267c4300.agent",
+      "expectedSha256": "bf15e7a768fcab562e0c2522b9b048f8f46d4ff3269664da3ff1bd6a267c4300",
+      "actualSha256": "bf15e7a768fcab562e0c2522b9b048f8f46d4ff3269664da3ff1bd6a267c4300",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/da6321b1f12035fc7f3f8bf88a060d51041c1983f76149f8ffd6e4bf0c6f7c8f.agent",
+      "expectedSha256": "da6321b1f12035fc7f3f8bf88a060d51041c1983f76149f8ffd6e4bf0c6f7c8f",
+      "actualSha256": "da6321b1f12035fc7f3f8bf88a060d51041c1983f76149f8ffd6e4bf0c6f7c8f",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/b129cd727b52970a3bbae63293e890ddc5571355cb8615339141be6d00ae9542.agent",
+      "expectedSha256": "b129cd727b52970a3bbae63293e890ddc5571355cb8615339141be6d00ae9542",
+      "actualSha256": "b129cd727b52970a3bbae63293e890ddc5571355cb8615339141be6d00ae9542",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/ec2f8596760afde7406915e2343c6397cdaafc7092f12db5b349bb9907b75f06.agent",
+      "expectedSha256": "ec2f8596760afde7406915e2343c6397cdaafc7092f12db5b349bb9907b75f06",
+      "actualSha256": "ec2f8596760afde7406915e2343c6397cdaafc7092f12db5b349bb9907b75f06",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/6ce14a85e9c6baa001c2b7f9c3a609d9813f25a65b00222c6c26868b3d8836c3.agent",
+      "expectedSha256": "6ce14a85e9c6baa001c2b7f9c3a609d9813f25a65b00222c6c26868b3d8836c3",
+      "actualSha256": "6ce14a85e9c6baa001c2b7f9c3a609d9813f25a65b00222c6c26868b3d8836c3",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/c1f46e9ea8e65a79ebc36e063b3848150ed7a85f6a879d078d82429a8433dcdb.agent",
+      "expectedSha256": "c1f46e9ea8e65a79ebc36e063b3848150ed7a85f6a879d078d82429a8433dcdb",
+      "actualSha256": "c1f46e9ea8e65a79ebc36e063b3848150ed7a85f6a879d078d82429a8433dcdb",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/333a731076f32b83f24eef50d4e3d5f3a193444c1c6dc743f7daf6c3931a83f4.agent",
+      "expectedSha256": "333a731076f32b83f24eef50d4e3d5f3a193444c1c6dc743f7daf6c3931a83f4",
+      "actualSha256": "333a731076f32b83f24eef50d4e3d5f3a193444c1c6dc743f7daf6c3931a83f4",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/03527c3cefdd5762e94fdf22b00c557c2b3f59a351c800c505d123f39f6dd704.agent",
+      "expectedSha256": "03527c3cefdd5762e94fdf22b00c557c2b3f59a351c800c505d123f39f6dd704",
+      "actualSha256": "03527c3cefdd5762e94fdf22b00c557c2b3f59a351c800c505d123f39f6dd704",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/a4175adff86a276b6f6053eeae667ebfcef073f8b10c1f21afc69f1f692beef6.agent",
+      "expectedSha256": "a4175adff86a276b6f6053eeae667ebfcef073f8b10c1f21afc69f1f692beef6",
+      "actualSha256": "a4175adff86a276b6f6053eeae667ebfcef073f8b10c1f21afc69f1f692beef6",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": ".agentlang/r09-discovery-001/base/runs/base-002/project/.agentlang/store/objects/956572489244e63255230643fb6b438a99ed5527327904555bdf85f0bb066864.agent",
+      "expectedSha256": "956572489244e63255230643fb6b438a99ed5527327904555bdf85f0bb066864",
+      "actualSha256": "956572489244e63255230643fb6b438a99ed5527327904555bdf85f0bb066864",
+      "exists": true,
+      "matches": true
+    }
+  ]
+}

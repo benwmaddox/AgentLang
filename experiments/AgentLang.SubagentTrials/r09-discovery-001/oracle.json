@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "status": "draft-before-seed-dispatch",
+  "description": "Independent expected totals/counts for R09. Decimal amounts are strings to preserve Int64 precision. Each invoice recipe creates one product and invoice, then exactly one full payment iff paid is true. Symbolic IDs require a frozen deterministic GUID mapping in both adapters.",
+  "contract": {
+    "knownCustomerWithoutPayments": "ok 0",
+    "unknownCustomer": "CUSTOMER_NOT_FOUND",
+    "overflow": "MONEY_OVERFLOW",
+    "errorComparison": "stable error code; messages excluded from cross-language comparison",
+    "accountCustomer": "complete original customer value must be returned unchanged",
+    "store": "complete store projection unchanged before and after each invocation",
+    "invoiceRecipe": "one distinct product per invoice, quantity 1, matching positive price/total/payment",
+    "additionalState": "start one subscription for c1 using the first product; queue two distinct messages then successfully deliver the first, leaving the second pending. Exact dates/text and GUID mapping are frozen in adapter metadata before dispatch.",
+    "unknownCustomerPrecedence": "lookup the queried customer before aggregation; an unrelated overflow must not replace CUSTOMER_NOT_FOUND",
+    "paymentOrder": "adapters assign ordered unique payment IDs in invoice recipe order and verify payment enumeration preserves that order; sticky-overflow visits max, then 1, then 10",
+    "metricsCountOrder": ["customers", "products", "subscriptions", "invoices", "payments", "pendingEmails", "sentEmails"]
+  },
+  "cases": [
+    {
+      "id": "owned-and-foreign",
+      "customers": ["c1", "c2"], "query": "c1",
+      "invoices": [
+        {"id":"i1","owner":"c1","amount":"250","paid":true},
+        {"id":"i2","owner":"c2","amount":"900","paid":true},
+        {"id":"i3","owner":"c1","amount":"125","paid":true}
+      ],
+      "expected": {"direct":{"ok":"375"},"account":{"ok":"375"},"metrics":{"ok":"1275","counts":[2,3,0,3,3,0,0]}}
+    },
+    {
+      "id": "known-no-invoices",
+      "customers": ["c1"], "query": "c1", "invoices": [],
+      "expected": {"direct":{"ok":"0"},"account":{"ok":"0"},"metrics":{"ok":"0","counts":[1,0,0,0,0,0,0]}}
+    },
+    {
+      "id": "known-unpaid-invoice",
+      "customers": ["c1"], "query": "c1",
+      "invoices": [{"id":"i1","owner":"c1","amount":"500","paid":false}],
+      "expected": {"direct":{"ok":"0"},"account":{"ok":"0"},"metrics":{"ok":"0","counts":[1,1,0,1,0,0,0]}}
+    },
+    {
+      "id": "only-foreign-payment",
+      "customers": ["c1", "c2"], "query": "c1",
+      "invoices": [{"id":"i1","owner":"c2","amount":"99","paid":true}],
+      "expected": {"direct":{"ok":"0"},"account":{"ok":"0"},"metrics":{"ok":"99","counts":[2,1,0,1,1,0,0]}}
+    },
+    {
+      "id": "preserve-customer-and-metrics",
+      "customers": ["c1", "c2"], "query": "c1",
+      "customerOverrides": {"c1":{"email":"custom@example.test","kind":"premium","balance":"17","createdAt":"2001-02-03T00:00:00.0000000Z"}},
+      "invoices": [
+        {"id":"i1","owner":"c1","amount":"17","paid":true},
+        {"id":"i2","owner":"c2","amount":"23","paid":true},
+        {"id":"i3","owner":"c1","amount":"40","paid":false}
+      ],
+      "extraState":{"subscriptions":1,"pendingEmails":1,"sentEmails":1},
+      "expected": {"direct":{"ok":"17"},"account":{"ok":"17"},"metrics":{"ok":"40","counts":[2,3,1,3,2,1,1]}}
+    },
+    {
+      "id": "unknown-customer",
+      "customers": ["c1"], "query": "c9",
+      "invoices": [{"id":"i1","owner":"c1","amount":"8","paid":true}],
+      "expected": {"direct":{"error":"CUSTOMER_NOT_FOUND"},"account":{"error":"CUSTOMER_NOT_FOUND"},"metrics":{"ok":"8","counts":[1,1,0,1,1,0,0]}}
+    },
+    {
+      "id": "maximum-single-payment",
+      "customers": ["c1"], "query": "c1",
+      "invoices": [{"id":"i1","owner":"c1","amount":"9223372036854775807","paid":true}],
+      "expected": {"direct":{"ok":"9223372036854775807"},"account":{"ok":"9223372036854775807"},"metrics":{"ok":"9223372036854775807","counts":[1,1,0,1,1,0,0]}}
+    },
+    {
+      "id": "one-customer-overflow",
+      "customers": ["c1"], "query": "c1",
+      "invoices": [
+        {"id":"i1","owner":"c1","amount":"9223372036854775807","paid":true},
+        {"id":"i2","owner":"c1","amount":"1","paid":true}
+      ],
+      "expected": {"direct":{"error":"MONEY_OVERFLOW"},"account":{"error":"MONEY_OVERFLOW"},"metrics":{"error":"MONEY_OVERFLOW"}}
+    },
+    {
+      "id": "foreign-overflow-isolated-from-account",
+      "customers": ["c1", "c2"], "query": "c1",
+      "invoices": [
+        {"id":"i1","owner":"c2","amount":"9223372036854775807","paid":true},
+        {"id":"i2","owner":"c1","amount":"7","paid":true},
+        {"id":"i3","owner":"c2","amount":"1","paid":true}
+      ],
+      "expected": {"direct":{"ok":"7"},"account":{"ok":"7"},"metrics":{"error":"MONEY_OVERFLOW"}}
+    },
+    {
+      "id": "dashboard-only-overflow",
+      "customers": ["c1", "c2"], "query": "c1",
+      "invoices": [
+        {"id":"i1","owner":"c1","amount":"9223372036854775807","paid":true},
+        {"id":"i2","owner":"c2","amount":"1","paid":true}
+      ],
+      "expected": {"direct":{"ok":"9223372036854775807"},"account":{"ok":"9223372036854775807"},"metrics":{"error":"MONEY_OVERFLOW"}}
+    },
+    {
+      "id": "overflow-remains-sticky",
+      "customers": ["c1"], "query": "c1",
+      "invoices": [
+        {"id":"i1","owner":"c1","amount":"9223372036854775807","paid":true},
+        {"id":"i2","owner":"c1","amount":"1","paid":true},
+        {"id":"i3","owner":"c1","amount":"10","paid":true}
+      ],
+      "expected": {"direct":{"error":"MONEY_OVERFLOW"},"account":{"error":"MONEY_OVERFLOW"},"metrics":{"error":"MONEY_OVERFLOW"}}
+    },
+    {
+      "id": "unknown-customer-before-overflow",
+      "customers": ["c1"], "query": "c9",
+      "invoices": [
+        {"id":"i1","owner":"c1","amount":"9223372036854775807","paid":true},
+        {"id":"i2","owner":"c1","amount":"1","paid":true}
+      ],
+      "expected": {"direct":{"error":"CUSTOMER_NOT_FOUND"},"account":{"error":"CUSTOMER_NOT_FOUND"},"metrics":{"error":"MONEY_OVERFLOW"}}
+    },
+    {
+      "id": "empty-store",
+      "customers": [], "query": "c9", "invoices": [],
+      "expected": {"direct":{"error":"CUSTOMER_NOT_FOUND"},"account":{"error":"CUSTOMER_NOT_FOUND"},"metrics":{"ok":"0","counts":[0,0,0,0,0,0,0]}}
+    }
+  ]
+}

@@ -80,6 +80,15 @@ Next actions:
    this small repair. Native storage conformance is separate evidence and must
    not be reported as improved agent efficacy.
 
+5. The R09-inspired payment-summary study has an accepted agent-created seed
+   ([report 134](../reports/134-r09-discovery-study.md)): thirteen hidden cases,
+   163 attached tests, two library functions and explicit task finalization pass.
+   Preserve the documented prompt-delivery and property-style deviations.
+   Next compare refactoring two initially correct duplicated summaries using
+   retained vocabulary, the same rich foundation without that seed, and F# with
+   an equivalent helper. Accept any correctly shared helper name; measure actual
+   seed reuse separately. Freeze starts and scoring before comparison dispatch.
+
 Acceptance is an evidence-backed review of the declared conditions, including
 their limitations. Completing a language feature or passing actor-written tests
 alone is not acceptance of the research hypothesis.

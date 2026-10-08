@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "study": "r09-discovery-001",
+  "phase": "seed-only",
+  "spawnedUtc": "2026-10-08T22:01:32.8126957Z",
+  "rootApprovalRecorded": true,
+  "participant": {
+    "canonicalTaskName": "/root/r09_seed_dispatch/r09_seed_actor",
+    "model": "gpt-6-luna",
+    "reasoning": "max",
+    "forkTurns": "none",
+    "statusAtCapture": "running",
+    "statusAtFinal": "completed"
+  },
+  "prompt": {
+    "path": "experiments/AgentLang.SubagentTrials/r09-discovery-001/seed-dispatch/seed-prompt.md",
+    "sha256": "007a55de299f4ec8e2d7fc1ec50a8b552af4915550261bc5ed96706d0bfdbdd8",
+    "bytes": 4447
+  },
+  "inputFreeze": {
+    "path": ".agentlang/r09-discovery-001/seed/input-freeze.json",
+    "sha256": "f7270150a36fbaac0cfb05aa6f0671eb366ae349229757bffbbcd2d12203d155",
+    "status": "prepared-awaiting-root-approval"
+  },
+  "projectPath": ".agentlang/r09-discovery-001/seed/project",
+  "brokerTracePath": ".agentlang/r09-discovery-001/seed/actor.trace.jsonl",
+  "noCoordinatorOrOracleContext": true,
+  "dispatchCount": 1,
+  "spawnedUtcMeaning": "Dispatch record captured after spawn_agent returned; this is not the exact participant creation time.",
+  "dispatchRecordCapturedUtc": "2026-10-08T22:01:32.8126957Z",
+  "hostLaunchObserved": true,
+  "hostSession": {
+    "startedUtc": "2026-10-08T18:01:27.1212646-04:00",
+    "hostProcessId": 7780,
+    "runtimeProcessId": 25484,
+    "protocol": "subagent-trial-host-v2",
+    "cliDll": "D:\\code\\AgentLang\\.agentlang\\r09-discovery-001\\runtime-artifacts\\bin\\AgentLang.Cli\\release\\AgentLang.Cli.dll",
+    "execSessionHandle": 86831,
+    "sessionHandleEvidence": "participant message: Broker launched once; exec_command returned session_id 86831. I am continuing on that session.",
+    "sessionHandleVerification": "Parent-side terminal poll was attempted after actor close but returned Unknown process id 86831 across agent namespaces; use captured trace host-close/session-end (0/0) as terminal evidence."
+  },
+  "promptDeliveryAudit": {
+    "frozenPromptPath": "experiments/AgentLang.SubagentTrials/r09-discovery-001/seed-dispatch/seed-prompt.md",
+    "frozenPromptSha256": "007a55de299f4ec8e2d7fc1ec50a8b552af4915550261bc5ed96706d0bfdbdd8",
+    "inputFreezeCurrentSha256": "f7270150a36fbaac0cfb05aa6f0671eb366ae349229757bffbbcd2d12203d155",
+    "sessionStartAllowedOperations": [
+      "callers",
+      "commit",
+      "context",
+      "define",
+      "dependencies",
+      "describe",
+      "diff",
+      "discard",
+      "effects",
+      "eval",
+      "example",
+      "examples",
+      "failed-tests",
+      "graph",
+      "help",
+      "history",
+      "ir",
+      "replace-word",
+      "search",
+      "search-dependency",
+      "search-effect",
+      "search-output",
+      "search-type",
+      "source",
+      "stack",
+      "task.abort",
+      "task.begin",
+      "task.commit",
+      "task.log",
+      "task.status",
+      "test",
+      "test-all",
+      "tests",
+      "transitive-dependencies",
+      "type-of",
+      "words"
+    ],
+    "missingAllowedOperations": [
+      "transitive-callers"
+    ],
+    "actualPromptPath": "experiments/AgentLang.SubagentTrials/r09-discovery-001/seed-dispatch/dispatched-prompt.md",
+    "actualPromptSha256": "7ad181e65bd8cfd0322e57322f2c652c116d47b93c6428540e99ca3d3367bbca",
+    "promptMismatch": true,
+    "deviation": "Spawned message omitted transitive-callers from the allowed-operation string. The frozen prompt includes it. Only a read-only inspection operation differed; public task and data inputs are unchanged."
+  },
+  "coordinatorAdministrativeMessage": {
+    "text": "Administrative evidence request only: when convenient, please report the exec_command session_id returned by your original broker launch so I can confirm its live/closed status. Keep using the existing session; do not restart. Continue the task without any other guidance.",
+    "purpose": "record the existing exec session handle for eventual terminal verification",
+    "taskContentGuidance": false,
+    "receivedResponse": "Broker launched once; exec_command returned session_id 86831. I am continuing on that session."
+  },
+  "finalization": {
+    "capturedUtc": "2026-10-08T22:23:04.3744178Z",
+    "tracePath": ".agentlang/r09-discovery-001/seed/actor.trace.jsonl",
+    "traceSha256": "fa36175d8edc39d15298984f883cf26424246acd06111b09094460499e9ad7c3",
+    "exchangeCount": 56,
+    "termination": "host-close",
+    "hostExitCode": 0,
+    "runtimeExitCode": 0,
+    "scorePath": ".agentlang/r09-discovery-001/seed/score-final.json",
+    "scoreSha256": "e5f277a352faa06baddf3fb161d9f9412a69069cde99af2e190c76ae532ee694",
+    "scoreStatus": "passed",
+    "scoreCasesPassed": 13,
+    "scoreCaseCount": 13,
+    "coordinatorSessionHandleObservation": "Parent-side write_stdin returned Unknown process id 86831 because the actor exec session is in a separate agent namespace; trace records clean host-close and 0/0 exit codes."
+  }
+}
