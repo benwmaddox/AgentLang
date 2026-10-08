@@ -79,16 +79,33 @@ let private host preflight charge invoke recordUse =
       RecordBranchOutcome = fun _ _ _ -> ()
       RecordUse = recordUse
       InvokeEffect = invoke
-      EnterUserFunction = fun _ _ -> ignore
+      EnterUserFunction = fun _ _ _ -> fun () -> ()
+      ReturnUserFunction = fun _ _ _ -> ()
       WordDefinitionSpan = fun _ -> None
       PrimitiveDefinitionSpan = fun _ -> None }
 
 let private noOpHost () =
     host (fun _ _ _ -> ()) (fun _ _ -> ()) (fun _ -> EffectUnit) ignore
 
-let private recordFunctionHook (events: ResizeArray<string * WordId * int>) wordId revision =
-    events.Add(("enter", wordId, revision))
-    fun () -> events.Add(("exit", wordId, revision))
+type private UserFunctionHookEvent =
+    { Phase: string
+      WordId: WordId
+      Revision: int
+      Values: Value list option }
+
+let private hookEvent phase wordId revision values =
+    { Phase = phase
+      WordId = wordId
+      Revision = revision
+      Values = values }
+
+let private recordingHost (events: ResizeArray<UserFunctionHookEvent>) =
+    { noOpHost () with
+        EnterUserFunction = fun wordId revision decodeArguments ->
+            events.Add(hookEvent "enter" wordId revision (Some(decodeArguments())))
+            fun () -> events.Add(hookEvent "exit" wordId revision None)
+        ReturnUserFunction = fun wordId revision decodeResults ->
+            events.Add(hookEvent "return" wordId revision (Some(decodeResults()))) }
 
 let private compileBody context name initialStack expressions =
     let program = Compiler.compileIrProgram context
@@ -147,20 +164,49 @@ let private testPublicBoundaryAndEmptyEntryOnly () =
 
 let private testVerifiedUserFunctionHooks () =
     let source = span "function-hook.agent"
-    let revisionedBase = wordEntry "hook.revisioned" [] [] Set.empty [] None
+    let revisionedBase =
+        wordEntry "hook.revisioned" [ TInt ] [ TInt ] Set.empty
+            [ Push(LInt 1L, source); Call("add", source) ] None
     let revisioned =
         { revisionedBase with
             Revision = 7
             Definition = { revisionedBase.Definition with Revision = 7 } }
     let revisionedContext = contextWith Map.empty [ revisioned ]
-    let _, revisionedBody = compileBody revisionedContext "function-hook-revision" [] [ Call("hook.revisioned", source) ]
-    let revisionEvents = ResizeArray<string * WordId * int>()
-    let revisionHost = { noOpHost () with EnterUserFunction = recordFunctionHook revisionEvents }
-    check "a verified direct user call preserves its result" (IrInterpreter.executeBody revisionHost "function-hook-revision" revisionedBody = [])
-    check "user-function entry and exit receive the exact verified WordId and revision"
+    let _, revisionedBody =
+        compileBody revisionedContext "function-hook-revision" []
+            [ Push(LInt 41L, source); Call("hook.revisioned", source) ]
+    let revisionEvents = ResizeArray<UserFunctionHookEvent>()
+    let revisionHost = recordingHost revisionEvents
+    check "a verified direct user call preserves its result"
+        (IrInterpreter.executeBody revisionHost "function-hook-revision" revisionedBody = [ IntValue 42L ])
+    let revisionedId = WordId "user-hook.revisioned"
+    check "entry decodes the exact verified target identity, revision, and actual arguments"
         (List.ofSeq revisionEvents =
-            [ "enter", WordId "user-hook.revisioned", 7
-              "exit", WordId "user-hook.revisioned", 7 ])
+            [ hookEvent "enter" revisionedId 7 (Some [ IntValue 41L ])
+              hookEvent "return" revisionedId 7 (Some [ IntValue 42L ])
+              hookEvent "exit" revisionedId 7 None ])
+
+    let deferredObservations = ResizeArray<string * WordId * int * (unit -> Value list)>()
+    let deferredHost =
+        { noOpHost () with
+            EnterUserFunction = fun wordId revision decodeArguments ->
+                deferredObservations.Add(("entry", wordId, revision, decodeArguments))
+                fun () -> ()
+            ReturnUserFunction = fun wordId revision decodeResults ->
+                deferredObservations.Add(("return", wordId, revision, decodeResults)) }
+    check "a no-op hook host can ignore both deferred decoders"
+        (IrInterpreter.executeBody deferredHost "function-hook-revision" revisionedBody = [ IntValue 42L ])
+    check "the standard no-op host preserves user execution without requesting observation"
+        (IrInterpreter.executeBody (noOpHost ()) "function-hook-revision" revisionedBody = [ IntValue 42L ])
+    check "ignored hooks retain separate deferred argument and return decoders"
+        ((deferredObservations |> Seq.map (fun (phase, wordId, revision, _) -> phase, wordId, revision) |> List.ofSeq) =
+            [ "entry", revisionedId, 7; "return", revisionedId, 7 ])
+    let _, _, _, decodeArguments = deferredObservations[0]
+    let _, _, _, decodeResults = deferredObservations[1]
+    check "a retained entry decoder yields the exact arguments when explicitly forced"
+        (decodeArguments() = [ IntValue 41L ])
+    check "a retained return decoder yields normal outputs when explicitly forced"
+        (decodeResults() = [ IntValue 42L ])
 
     let callback =
         wordEntry "hook.callback" [ TInt ] [ TUnit ] Set.empty
@@ -176,51 +222,57 @@ let private testVerifiedUserFunctionHooks () =
     let outer = wordEntry "hook.outer" [] [ TUnit ] Set.empty [ Call("hook.nested", source) ] None
     let nestedContext = contextWith Map.empty [ callback; nested; outer ]
     let _, nestedBody = compileBody nestedContext "function-hook-nested" [] [ Call("hook.outer", source) ]
-    let nestedEvents = ResizeArray<string * WordId * int>()
-    let nestedHost = { noOpHost () with EnterUserFunction = recordFunctionHook nestedEvents }
+    let nestedEvents = ResizeArray<UserFunctionHookEvent>()
+    let nestedHost = recordingHost nestedEvents
     check "nested user calls and list callbacks complete through the same interpreter entry path"
         (IrInterpreter.executeBody nestedHost "function-hook-nested" nestedBody = [ UnitValue ])
-    check "nested and callback function scopes enter and exit in call order"
+    let callbackId = WordId "user-hook.callback"
+    let nestedId = WordId "user-hook.nested"
+    let outerId = WordId "user-hook.outer"
+    let unitResult = Some [ UnitValue ]
+    check "nested and callback hooks preserve target identity, arguments, outputs, and scope order"
         (List.ofSeq nestedEvents =
-            [ "enter", WordId "user-hook.outer", 1
-              "enter", WordId "user-hook.nested", 1
-              "enter", WordId "user-hook.callback", 1
-              "exit", WordId "user-hook.callback", 1
-              "enter", WordId "user-hook.callback", 1
-              "exit", WordId "user-hook.callback", 1
-              "exit", WordId "user-hook.nested", 1
-              "exit", WordId "user-hook.outer", 1 ])
+            [ hookEvent "enter" outerId 1 (Some [])
+              hookEvent "enter" nestedId 1 (Some [])
+              hookEvent "enter" callbackId 1 (Some [ IntValue 1L ])
+              hookEvent "return" callbackId 1 unitResult
+              hookEvent "exit" callbackId 1 None
+              hookEvent "enter" callbackId 1 (Some [ IntValue 2L ])
+              hookEvent "return" callbackId 1 unitResult
+              hookEvent "exit" callbackId 1 None
+              hookEvent "return" nestedId 1 unitResult
+              hookEvent "exit" nestedId 1 None
+              hookEvent "return" outerId 1 unitResult
+              hookEvent "exit" outerId 1 None ])
 
     let providerFault =
         wordEntry "hook.provider-fault" [] [ TUnit ] (Set.singleton "console.write")
             [ Push(LString "provider failure", source); Call("console.write", source) ] None
     let providerContext = contextWith Map.empty [ providerFault ]
     let _, providerBody = compileBody providerContext "function-hook-provider-fault" [] [ Call("hook.provider-fault", source) ]
-    let providerEvents = ResizeArray<string * WordId * int>()
+    let providerEvents = ResizeArray<UserFunctionHookEvent>()
     let providerHost =
-        { noOpHost () with
-            EnterUserFunction = recordFunctionHook providerEvents
+        { recordingHost providerEvents with
             InvokeEffect = fun _ -> Diagnostics.raiseError "TEST_PROVIDER_FAILURE" "Provider failed." None None [] [] }
     expectDiagnostic "a provider exception propagates from the user function" "TEST_PROVIDER_FAILURE" (fun () ->
         IrInterpreter.executeBody providerHost "function-hook-provider-fault" providerBody |> ignore)
-    check "user-function exit runs after a provider exception"
+    check "provider faults exit the user scope without reporting a normal return"
         (List.ofSeq providerEvents =
-            [ "enter", WordId "user-hook.provider-fault", 1
-              "exit", WordId "user-hook.provider-fault", 1 ])
+            [ hookEvent "enter" (WordId "user-hook.provider-fault") 1 (Some [])
+              hookEvent "exit" (WordId "user-hook.provider-fault") 1 None ])
 
     let runtimeFault =
         wordEntry "hook.runtime-fault" [] [ TInt ] Set.empty
             [ Push(LInt 1L, source); Push(LInt 0L, source); Call("divide", source) ] None
     let runtimeContext = contextWith Map.empty [ runtimeFault ]
     let _, runtimeBody = compileBody runtimeContext "function-hook-runtime-fault" [] [ Call("hook.runtime-fault", source) ]
-    let runtimeEvents = ResizeArray<string * WordId * int>()
-    let runtimeHost = { noOpHost () with EnterUserFunction = recordFunctionHook runtimeEvents }
+    let runtimeEvents = ResizeArray<UserFunctionHookEvent>()
     expectDiagnostic "a runtime exception propagates from the user function" "RUNTIME_DIVIDE_BY_ZERO" (fun () ->
-        IrInterpreter.executeBody runtimeHost "function-hook-runtime-fault" runtimeBody |> ignore)
-    check "user-function exit runs after a runtime exception"
+        IrInterpreter.executeBody (recordingHost runtimeEvents) "function-hook-runtime-fault" runtimeBody |> ignore)
+    check "runtime faults exit the user scope without reporting a normal return"
         (List.ofSeq runtimeEvents =
-            [ "enter", WordId "user-hook.runtime-fault", 1
-              "exit", WordId "user-hook.runtime-fault", 1 ])
+            [ hookEvent "enter" (WordId "user-hook.runtime-fault") 1 (Some [])
+              hookEvent "exit" (WordId "user-hook.runtime-fault") 1 None ])
 
     let fuelExpressions =
         [ for _ in 1 .. 5_000 do
@@ -229,35 +281,35 @@ let private testVerifiedUserFunctionHooks () =
     let fuelTarget = wordEntry "hook.fuel-fault" [] [] Set.empty fuelExpressions None
     let fuelContext = contextWith Map.empty [ fuelTarget ]
     let _, fuelBody = compileBody fuelContext "function-hook-fuel-fault" [] [ Call("hook.fuel-fault", source) ]
-    let fuelEvents = ResizeArray<string * WordId * int>()
-    let fuelHost = { noOpHost () with EnterUserFunction = recordFunctionHook fuelEvents }
+    let fuelEvents = ResizeArray<UserFunctionHookEvent>()
     expectDiagnostic "interpreter fuel exhaustion propagates from the user function" "RUNTIME_STEP_LIMIT" (fun () ->
-        IrInterpreter.executeBody fuelHost "function-hook-fuel-fault" fuelBody |> ignore)
-    check "user-function exit runs after interpreter fuel exhaustion"
+        IrInterpreter.executeBody (recordingHost fuelEvents) "function-hook-fuel-fault" fuelBody |> ignore)
+    check "fuel exhaustion exits the user scope without reporting a normal return"
         (List.ofSeq fuelEvents =
-            [ "enter", WordId "user-hook.fuel-fault", 1
-              "exit", WordId "user-hook.fuel-fault", 1 ])
+            [ hookEvent "enter" (WordId "user-hook.fuel-fault") 1 (Some [])
+              hookEvent "exit" (WordId "user-hook.fuel-fault") 1 None ])
 
     let deniedTarget =
         wordEntry "hook.denied" [] [ TUnit ] (Set.singleton "console.write")
             [ Push(LString "denied", source); Call("console.write", source) ] None
     let deniedContext = contextWith Map.empty [ deniedTarget ]
     let _, deniedBody = compileBody deniedContext "function-hook-denied" [] [ Call("hook.denied", source) ]
-    let deniedEvents = ResizeArray<string * WordId * int>()
+    let deniedEvents = ResizeArray<UserFunctionHookEvent>()
     let mutable preflightCount = 0
     let mutable providerCount = 0
     let deniedHost =
-        { noOpHost () with
+        { recordingHost deniedEvents with
             PreflightEffects = fun effects word _ ->
                 preflightCount <- preflightCount + 1
                 if preflightCount = 2 && not (Set.isEmpty effects) then
                     Diagnostics.raiseError "CAPABILITY_DENIED" "Target effects denied before entry." word None [] (IrEffects.names effects)
-            EnterUserFunction = recordFunctionHook deniedEvents
             InvokeEffect = fun _ -> providerCount <- providerCount + 1; EffectUnit }
     expectDiagnostic "a denied user-target preflight propagates before function entry" "CAPABILITY_DENIED" (fun () ->
         IrInterpreter.executeBody deniedHost "function-hook-denied" deniedBody |> ignore)
-    check "target preflight denial happens after body preflight but before provider invocation" (preflightCount = 2 && providerCount = 0)
-    check "a user function denied by preflight never enters or exits" (deniedEvents.Count = 0)
+    check "target preflight denial happens after body preflight but before provider invocation"
+        (preflightCount = 2 && providerCount = 0)
+    check "a user function denied by preflight never enters or returns"
+        (deniedEvents.Count = 0)
 
 let private testOpaqueTypedInterpreterReentry () =
     let source = span "typed-reentry.agent"

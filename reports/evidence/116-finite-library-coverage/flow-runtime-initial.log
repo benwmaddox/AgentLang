@@ -1,0 +1,5 @@
+Unhandled exception. System.Exception: CLI assembly exists for the AgentLang.Flow.Runtime.Tests integration-test build
+   at AgentLang.Flow.Runtime.Tests.Program.check(Boolean condition, String message) in D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\Program.fs:line 16
+   at AgentLang.Flow.Runtime.Tests.Program.cliEval(String project, String code) in D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\Program.fs:line 129
+   at AgentLang.Flow.Runtime.Tests.Program.testExplicitFrontendAndDurableReload(String root) in D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\Program.fs:line 606
+   at AgentLang.Flow.Runtime.Tests.Program.main(String[] _arg1) in D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\Program.fs:line 3459

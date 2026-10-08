@@ -1,0 +1,13 @@
+  Determining projects to restore...
+  Restored D:\code\AgentLang\src\AgentLang.Llvm\AgentLang.Llvm.fsproj (in 486 ms).
+  Restored D:\code\AgentLang\experiments\AgentLang.NativeMailbox\AgentLang.NativeMailbox.fsproj (in 486 ms).
+  Restored D:\code\AgentLang\src\AgentLang.Core\AgentLang.Core.fsproj (in 486 ms).
+  AgentLang.Core -> D:\code\AgentLang\.agentlang\finite-coverage-001\native-adapter-artifacts\bin\AgentLang.Core\debug\AgentLang.Core.dll
+  AgentLang.Llvm -> D:\code\AgentLang\.agentlang\finite-coverage-001\native-adapter-artifacts\bin\AgentLang.Llvm\debug\AgentLang.Llvm.dll
+  AgentLang.NativeMailbox -> D:\code\AgentLang\.agentlang\finite-coverage-001\native-adapter-artifacts\bin\AgentLang.NativeMailbox\debug\AgentLang.NativeMailbox.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:15.50

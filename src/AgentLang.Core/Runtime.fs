@@ -103,6 +103,9 @@ module Runtime =
           Expected: TestExpectation
           ExpectedValue: Value option
           EffectAssertion: EffectAssertionObservation option
+          TargetInputs: Value list list
+          TargetReturns: Value list list
+          TargetInvocationCount: int
           Instructions: Set<SourceSiteId>
           BranchOutcomes: Set<SourceSiteId * string> }
 
@@ -115,6 +118,8 @@ module Runtime =
           mutable TargetIdentity: (WordId * int) option
           mutable TargetDepth: int
           mutable TargetInvocationCount: int
+          mutable TargetInputs: Value list list
+          mutable TargetReturns: Value list list
           mutable TargetEffects: Map<string, int>
           mutable Console: string list
           CoverageTarget: string option
@@ -410,6 +415,7 @@ module Runtime =
         let mutable activeTask: TaskSession option = None
         let mutable previousTaskLog: JsonObject option = None
         let mutable taskCounter = 0
+        let mutable pendingLoadedSnapshot: RuntimeSnapshot option = None
 
         let userWords (state: DictionaryState) = state.Words |> Map.filter (fun _ value -> value.Builtin.IsNone)
         let recordDefinitions (state: DictionaryState) = state.Records |> Map.map (fun _ value -> value.Definition)
@@ -490,12 +496,64 @@ module Runtime =
             Map.fold (fun found name value ->
                 if value.Builtin.IsNone then Map.add name value found else found) withGenerated state.Words
 
-        let rejectEnumLibraryQualification (state: DictionaryState) (words: Map<string, WordEntry>) (wordName: string) =
+        let enumReferencesInOwnDefinition (state: DictionaryState) (words: Map<string, WordEntry>) (item: WordEntry) =
+            let referencesInType (typeValue: LangType) =
+                let rec visit = function
+                    | TNamed name when state.Enums.ContainsKey name -> Set.singleton name
+                    | TNamed name ->
+                        match state.Records.TryFind name, state.Scalars.TryFind name with
+                        | Some record, _ -> record.Definition.Fields |> List.map (fun field -> visit field.Type) |> Set.unionMany
+                        | None, Some scalar -> visit scalar.Definition.BaseType
+                        | _ -> Set.empty
+                    | TList nested | TOption nested -> visit nested
+                    | TResult(okType, errorType) -> Set.union (visit okType) (visit errorType)
+                    | _ -> Set.empty
+                visit typeValue
+            let signatures = item.Definition.Inputs @ item.Definition.Outputs |> List.map referencesInType |> Set.unionMany
+            let bodyTypes = expressionTypeReferences item.Definition.Body |> Set.toList |> List.map (TNamed >> referencesInType) |> Set.unionMany
+            let calledEnumConstructor =
+                item.Definition.Body
+                |> Compiler.dependencies
+                |> Set.toList
+                |> List.choose (fun dependency ->
+                    match words.TryFind dependency with
+                    | Some { Builtin = Some(EnumCaseConstructor(enumName, _)) } -> Some enumName
+                    | _ -> None)
+                |> Set.ofList
+            let rec hasEnumMatch expressions =
+                expressions
+                |> List.exists (function
+                    | MatchEnum _ -> true
+                    | If(thenBranch, elseBranch, _)
+                    | MatchOption(_, thenBranch, elseBranch, _) -> hasEnumMatch thenBranch || hasEnumMatch elseBranch
+                    | MatchResult(_, _, okBranch, errorBranch, _) -> hasEnumMatch okBranch || hasEnumMatch errorBranch
+                    | Scope(body, _) -> hasEnumMatch body
+                    | _ -> false)
+            let matchMarker = if hasEnumMatch item.Definition.Body then Set.singleton "<enum match>" else Set.empty
+            Set.unionMany [ signatures; bodyTypes; calledEnumConstructor; matchMarker ]
+
+        let rejectUncheckedEnumHelpers (state: DictionaryState) (words: Map<string, WordEntry>) (wordName: string) =
             match words.TryFind wordName with
-            | Some item when item.Maturity = LibraryWord ->
-                let references = enumReferencesForWord state words wordName
-                if not references.IsEmpty then
-                    error "LIBRARY_FINITE_COVERAGE_UNSUPPORTED" $"Library qualification of '{wordName}' is blocked until finite enum coverage is implemented." (Some wordName) (Some item.Definition.Span) [ "no enum-bearing signatures, bodies, or dependencies" ] (Set.toList references)
+            | Some item when item.Maturity = LibraryWord && item.Builtin.IsNone ->
+                let pending = Compiler.dependencies item.Definition.Body |> Set.toList
+                let rec visit (seen: Set<string>) (pending: string list) =
+                    match pending with
+                    | [] -> None
+                    | name :: rest when seen.Contains name -> visit seen rest
+                    | name :: rest ->
+                        match words.TryFind name with
+                        | Some dependency when dependency.Builtin.IsNone ->
+                            let seen = Set.add name seen
+                            let dependencyEnums = enumReferencesInOwnDefinition state words dependency
+                            if not dependencyEnums.IsEmpty && dependency.Maturity <> LibraryWord then
+                                Some(name, dependencyEnums)
+                            else visit seen (rest @ (Compiler.dependencies dependency.Definition.Body |> Set.toList))
+                        | _ -> visit (Set.add name seen) rest
+                match visit Set.empty pending with
+                | Some(name, references) ->
+                    error "LIBRARY_FINITE_DOMAIN_UNSUPPORTED" $"Library word '{wordName}' reaches enum implementation '{name}' before that helper has independently qualified finite coverage." (Some wordName) (Some item.Definition.Span)
+                        [ "enum-bearing helper committed as a library word with its own complete tests" ] (name :: Set.toList references)
+                | None -> ()
             | _ -> ()
 
         let wordIdentity (state: DictionaryState) (item: WordEntry) =
@@ -606,6 +664,8 @@ module Runtime =
               TargetIdentity = None
               TargetDepth = 0
               TargetInvocationCount = 0
+              TargetInputs = []
+              TargetReturns = []
               TargetEffects = Map.empty
               Console = []
               CoverageTarget = coverageTarget
@@ -1502,9 +1562,79 @@ module Runtime =
                         |> Set.ofList
                     obligations.CoveredSites, branchKeys
 
+        let finiteCoverageEvidence (snapshot: RuntimeSnapshot) (word: string) (results: TestCaseResult list) =
+            let entry =
+                snapshot.Words.TryFind word
+                |> Option.defaultWith (fun () -> error "NAME_UNKNOWN_WORD" $"Word '{word}' is not defined." (Some word) None [] [])
+            let identity = WordId(wordIdentity snapshot.State entry)
+            let program = VerifiedIrProgram.inspect snapshot.Program
+            let functionValue =
+                program.FunctionsById.TryFind identity
+                |> Option.defaultWith (fun () -> error "LIBRARY_COVERAGE_TARGET_MISSING" $"Library target '{word}' is absent from the verified program." (Some word) (Some entry.Definition.Span) [ "verified user function" ] [])
+            if functionValue.FunctionRevision <> entry.Revision then
+                error "LIBRARY_COVERAGE_REVISION_MISMATCH" $"Library target '{word}' revision differs from the verified test snapshot." (Some word) (Some entry.Definition.Span) [ string entry.Revision ] [ string functionValue.FunctionRevision ]
+            let passedOwn = results |> List.filter (fun result -> result.Word = word && result.Passed)
+            let inputObservations = passedOwn |> List.collect (fun result -> result.TargetInputs)
+            let returnObservations = passedOwn |> List.collect (fun result -> result.TargetReturns)
+            let invocationCount = passedOwn |> List.sumBy (fun result -> result.TargetInvocationCount)
+            invocationCount, FiniteCoverage.analyze program functionValue inputObservations returnObservations
+
+        let finiteCoverageJson snapshot word results =
+            let invocationCount, report = finiteCoverageEvidence snapshot word results
+            let positionJson position =
+                let node = JsonObject()
+                node["position"] <- jint position.Position
+                node["type"] <- jstr position.TypeName
+                node["required"] <- jsonNode position.Required
+                node["observed"] <- jsonNode position.Observed
+                node["missing"] <- jsonNode position.Missing
+                node
+            let node = JsonObject()
+            node["targetInvocations"] <- jint invocationCount
+            node["inputs"] <- jsonNode (report.Inputs |> List.map positionJson)
+            node["returns"] <- jsonNode (report.Returns |> List.map positionJson)
+            node["unsupported"] <- jsonNode report.Unsupported
+            node["missing"] <- jsonNode (FiniteCoverage.missing report)
+            node["complete"] <- jbool (invocationCount > 0 && report.Unsupported.IsEmpty && (FiniteCoverage.missing report).IsEmpty)
+            node
+
+        let requireFiniteLibraryCoverage snapshot word results =
+            let invocationCount, report = finiteCoverageEvidence snapshot word results
+            if not report.Unsupported.IsEmpty then
+                error "LIBRARY_FINITE_DOMAIN_UNSUPPORTED" $"Library word '{word}' uses a finite domain that cannot be proven within the bounded coverage model." (Some word) None
+                    [ "all declared finite domains proven within 4096 values" ] report.Unsupported
+            if invocationCount = 0 then
+                error "LIBRARY_FINITE_COVERAGE_INCOMPLETE" $"Library word '{word}' requires at least one passing attached test that invokes this exact function revision." (Some word) None
+                    [ "at least one actual target invocation in a passing own test" ] [ "targetInvocations=0" ]
+            let missing = FiniteCoverage.missing report
+            if not missing.IsEmpty then
+                let observed =
+                    [ yield! report.Inputs |> List.collect (fun position -> position.Observed |> List.map (fun label -> $"input[{position.Position}] {position.TypeName}: {label}"))
+                      yield! report.Returns |> List.collect (fun position -> position.Observed |> List.map (fun label -> $"return[{position.Position}] {position.TypeName}: {label}")) ]
+                error "LIBRARY_FINITE_COVERAGE_INCOMPLETE" $"Library word '{word}' has uncovered finite input or return values." (Some word) None missing observed
+
+        let requireLibraryCoverage snapshot word results =
+            let requiredInstructions, requiredBranches = coverageObligations snapshot word
+            let coveredInstructions = results |> List.filter (fun result -> result.Passed && result.Word = word) |> List.fold (fun found test -> Set.union found test.Instructions) Set.empty
+            let coveredBranches = results |> List.filter (fun result -> result.Passed && result.Word = word) |> List.fold (fun found test -> Set.union found test.BranchOutcomes) Set.empty
+            let uncovered = Set.difference requiredInstructions coveredInstructions
+            let missingBranches = Set.difference requiredBranches coveredBranches
+            let ownTests = results |> List.filter (fun test -> test.Word = word && test.Passed)
+            if not (Set.isEmpty uncovered && Set.isEmpty missingBranches && not (List.isEmpty ownTests)) then
+                error "LIBRARY_COVERAGE_INCOMPLETE" $"Library word '{word}' requires every instruction, case, and declared iteration outcome to be exercised by its own passing attached tests." (Some word) None [] (coverageGapLabels snapshot uncovered missingBranches)
+            requireFiniteLibraryCoverage snapshot word ownTests
+
         let interpreterHost (snapshot: RuntimeSnapshot) (trace: Trace) (body: VerifiedIrBody option) =
             let source site = sourceSite snapshot body site
             let userFunctionScopes = Stack<bool>()
+            let finiteObservationPlan =
+                match trace.TargetIdentity with
+                | Some(functionId, revision) ->
+                    let program = VerifiedIrProgram.inspect snapshot.Program
+                    match program.FunctionsById.TryFind functionId with
+                    | Some functionValue when functionValue.FunctionRevision = revision -> Some(FiniteCoverage.observationPlan program functionValue)
+                    | _ -> None
+                | None -> None
             let definitionSpan (name: string) =
                 snapshot.Words.TryFind name |> Option.map (fun entry -> entry.Definition.Span)
             { PreflightEffects = fun effects word _ ->
@@ -1545,15 +1675,21 @@ module Runtime =
                       mutateEffect trace "console.write"
                       trace.Console <- trace.Console @ [ contents ]
                       EffectUnit
-              EnterUserFunction = fun functionId revision ->
+              EnterUserFunction = fun functionId revision decodeArguments ->
                   let isTarget = trace.TargetIdentity = Some(functionId, revision)
                   let isInTarget = trace.TargetDepth > 0 || isTarget
                   userFunctionScopes.Push isInTarget
-                  if isTarget then trace.TargetInvocationCount <- trace.TargetInvocationCount + 1
+                  if isTarget then
+                      trace.TargetInvocationCount <- trace.TargetInvocationCount + 1
+                      if finiteObservationPlan |> Option.exists fst then
+                          trace.TargetInputs <- decodeArguments () :: trace.TargetInputs
                   if isInTarget then trace.TargetDepth <- trace.TargetDepth + 1
                   fun () ->
                       let wasInTarget = userFunctionScopes.Pop()
                       if wasInTarget then trace.TargetDepth <- trace.TargetDepth - 1
+              ReturnUserFunction = fun functionId revision decodeResults ->
+                  if trace.TargetIdentity = Some(functionId, revision) && (finiteObservationPlan |> Option.exists snd) then
+                      trace.TargetReturns <- decodeResults () :: trace.TargetReturns
               WordDefinitionSpan = definitionSpan
               PrimitiveDefinitionSpan = definitionSpan }
 
@@ -2007,21 +2143,19 @@ module Runtime =
 
         let loadProject () =
             match store with
-            | None -> compileRuntimeSnapshot data |> activateRuntimeSnapshot
+            | None -> pendingLoadedSnapshot <- Some(compileRuntimeSnapshot data)
             | Some projectStore ->
                 match Storage.load projectStore with
                 | Error storageError -> raiseStorageError storageError
                 | Ok loaded ->
                     let proposed = validateStoredProject projectStore loaded.Manifest loaded.ManifestHash loaded.ProjectSource
                     let executable = compileRuntimeSnapshot proposed
-                    activateRuntimeSnapshot executable
+                    pendingLoadedSnapshot <- Some executable
                     storageGeneration <- loaded.Generation
                     storageAuthority <- loaded.Authority
                     currentManifest <- loaded.Manifest
                     currentManifestHash <- loaded.ManifestHash
                     lastExportWarning <- loaded.ExportWarning
-
-        do loadProject ()
 
         let toJsonValue value = jsonNode (Types.formatValue value)
 
@@ -2052,19 +2186,16 @@ module Runtime =
                   Expected = test.Expected
                   ExpectedValue = expectedValue
                   EffectAssertion = None
+                  TargetInputs = trace.TargetInputs
+                  TargetReturns = trace.TargetReturns
+                  TargetInvocationCount = trace.TargetInvocationCount
                   Instructions = trace.CoverageInstructions |> Set.intersect sites
                   BranchOutcomes = trace.CoverageBranches |> Set.intersect branches }
-            match test.EffectAssertion with
-            | Some _ ->
-                let targetIdentity =
-                    snapshot.State.WordIds.TryFind test.Word
-                    |> Option.map WordId
-                    |> Option.filter (fun identity -> snapshot.State.FlowWords.ContainsKey(wordIdText identity))
-                match targetIdentity, snapshot.Words.TryFind test.Word with
-                | Some identity, Some entry when entry.Builtin.IsNone && entry.Status <> Primitive ->
-                    trace.TargetIdentity <- Some(identity, entry.Revision)
-                | _ -> trace.TargetIdentity <- None
-            | None -> ()
+            let targetIdentity = snapshot.State.WordIds.TryFind test.Word |> Option.map WordId
+            match targetIdentity, snapshot.Words.TryFind test.Word with
+            | Some identity, Some entry when entry.Builtin.IsNone && entry.Status <> Primitive ->
+                trace.TargetIdentity <- Some(identity, entry.Revision)
+            | _ -> trace.TargetIdentity <- None
             let executionResult =
                 try
                     let stack = executeIRBody snapshot "<test>" trace body
@@ -2136,7 +2267,9 @@ module Runtime =
                 with
                 | LanguageException diagnostic ->
                     match test.Expected with
-                    | ExpectedRuntimeError expectedCode when diagnostic.Code = expectedCode -> makeResult true None [] None
+                    | ExpectedRuntimeError expectedCode when diagnostic.Code = expectedCode ->
+                        let result = makeResult true None [] None
+                        { result with TargetReturns = [] }
                     | _ -> makeResult false (Some diagnostic) [] None
             match test.EffectAssertion with
             | None -> executionResult
@@ -2240,6 +2373,30 @@ module Runtime =
                 |> List.sortBy (fun test -> test.Word, test.Name)
             tests |> List.map (checkedByTest snapshot)
 
+        let requalifyDurableLibraries (snapshot: RuntimeSnapshot) =
+            snapshot.State.Words
+            |> Map.toList
+            |> List.filter (fun (_, entry) -> entry.Builtin.IsNone && entry.Status = Persistent && entry.Maturity = LibraryWord)
+            |> List.sortBy fst
+            |> List.iter (fun (name, _) ->
+                rejectUncheckedEnumHelpers snapshot.State snapshot.Words name
+                let tests = runTestsFor snapshot (Some name)
+                preflightStructuredTestResults snapshot.Program tests
+                let failed = tests |> List.filter (fun result -> not result.Passed)
+                if not failed.IsEmpty then
+                    error "LIBRARY_REQUALIFICATION_FAILED" $"Durable library word '{name}' failed one or more current attached tests during load." (Some name) None
+                        [ "all attached tests pass against the loaded dictionary" ] (failed |> List.map (fun result -> result.Name))
+                requireLibraryCoverage snapshot name tests)
+
+        do
+            loadProject ()
+            let snapshot =
+                pendingLoadedSnapshot
+                |> Option.defaultWith (fun () -> error "RUNTIME_SNAPSHOT_UNAVAILABLE" "Project loading did not produce an executable snapshot." None None [] [])
+            requalifyDurableLibraries snapshot
+            activateRuntimeSnapshot snapshot
+            pendingLoadedSnapshot <- None
+
         let runExamplesFor (snapshot: RuntimeSnapshot) target caseName =
             let examples =
                 snapshot.State.Examples
@@ -2295,6 +2452,11 @@ module Runtime =
             node["branchesTotal"] <- jint requiredBranches.Count
             node["uncoveredInstructions"] <- jsonNode (uncoveredInstructions |> Set.toList |> List.map (instructionCoverageLabel snapshot) |> List.sort)
             node["uncoveredBranchOutcomes"] <- jsonNode (uncoveredBranches |> Set.toList |> List.map (branchCoverageLabel snapshot) |> List.sort)
+            let isUserFunction =
+                snapshot.Words.TryFind word
+                |> Option.exists (fun entry -> entry.Builtin.IsNone && entry.Status <> Primitive)
+            if isUserFunction then
+                node["finiteCoverage"] <- finiteCoverageJson snapshot word results
             node
 
         let requireProjectPath () =
@@ -2649,7 +2811,7 @@ module Runtime =
             let executable = compileRuntimeSnapshot proposed
             for definition in parsed.Words do
                 if old.Words.TryFind definition.Name |> Option.exists (fun prior -> prior.Maturity = LibraryWord) then
-                    rejectEnumLibraryQualification executable.State executable.Words definition.Name
+                    rejectUncheckedEnumHelpers executable.State executable.Words definition.Name
             let frozen = frozenValidatorWords old (effectiveWords old)
             let changed = parsed.Words |> List.map (fun word -> word.Name) |> Set.ofList
             let conflict = Set.intersect frozen changed
@@ -2893,7 +3055,7 @@ module Runtime =
                     Enums = proposedEnums
                     Replacements = data.Replacements |> Map.filter (fun name _ -> not (selectedWords.Contains name)) }
             for name in selectedWords do
-                rejectEnumLibraryQualification proposed (effectiveWords proposed) name
+                rejectUncheckedEnumHelpers proposed (effectiveWords proposed) name
             compileRuntimeSnapshot proposed |> ignore
             for name in selectedWords do
                 let candidate = candidateWords[name]
@@ -2956,16 +3118,13 @@ module Runtime =
                 let names = failed |> List.map (fun value -> $"{value.Word}/{value.Name}")
                 error "COMMIT_TESTS_FAILED" "Candidate tests must pass against the proposed dictionary before commit." None None [] names
             for name in selectedWords do
-                let candidate = candidateWords[name]
                 if proposedWords[name].Maturity = LibraryWord then
                     let result = results |> List.filter (fun test -> test.Word = name)
-                    let requiredInstructions, requiredBranches = coverageObligations durableSnapshot name
-                    let coveredInstructions = result |> List.fold (fun found test -> Set.union found test.Instructions) Set.empty
-                    let coveredBranches = result |> List.fold (fun found test -> Set.union found test.BranchOutcomes) Set.empty
-                    let uncovered = Set.difference requiredInstructions coveredInstructions
-                    let missingBranches = Set.difference requiredBranches coveredBranches
-                    if not (Set.isEmpty uncovered && Set.isEmpty missingBranches && not (List.isEmpty result)) then
-                        error "LIBRARY_COVERAGE_INCOMPLETE" $"Library word '{name}' requires every instruction, case, and declared iteration outcome to be exercised by its own attached tests." (Some name) None [] (coverageGapLabels durableSnapshot uncovered missingBranches)
+                    requireLibraryCoverage durableSnapshot name result
+            for caller in callers do
+                if not (selectedWords.Contains caller)
+                   && (durableProposed.Words.TryFind caller |> Option.exists (fun entry -> entry.Maturity = LibraryWord)) then
+                    requireLibraryCoverage durableSnapshot caller (results |> List.filter (fun test -> test.Word = caller))
             let history =
                 selectedWords
                 |> Set.fold (fun (found: Map<string, WordDefinition list>) name ->
@@ -3678,7 +3837,7 @@ module Runtime =
                     Replacements = replacementBackups }
             let executable = compileRuntimeSnapshot proposed
             if maturity = LibraryWord then
-                rejectEnumLibraryQualification executable.State executable.Words parsedWord.Name
+                rejectUncheckedEnumHelpers executable.State executable.Words parsedWord.Name
             let frozen = frozenValidatorWords old (effectiveWords old)
             if frozen.Contains parsedWord.Name then
                 error "TYPE_VALIDATOR_FROZEN" $"Cannot replace validator dependency '{parsedWord.Name}' while a scalar type is persistent." (Some parsedWord.Name) (Some parsedWord.Span) [] [ parsedWord.Name ]
@@ -4593,7 +4752,7 @@ module Runtime =
                                 |> Set.ofList
                             let changedWordNames = Set.union changedStackOwnerNames changedFlowOwnerNames
                             for name in changedWordNames do
-                                rejectEnumLibraryQualification executable.State executable.Words name
+                                rejectUncheckedEnumHelpers executable.State executable.Words name
                             let testOwnersToRun = Set.union changedWordNames changedStackAttachmentOwners
                             let results =
                                 testOwnersToRun
@@ -4612,13 +4771,7 @@ module Runtime =
                                 match executable.Words.TryFind name with
                                 | Some candidate when candidate.Maturity = LibraryWord ->
                                     let ownTests = results |> List.filter (fun test -> test.Word = name)
-                                    let requiredInstructions, requiredBranches = coverageObligations executable name
-                                    let coveredInstructions = ownTests |> List.fold (fun found test -> Set.union found test.Instructions) Set.empty
-                                    let coveredBranches = ownTests |> List.fold (fun found test -> Set.union found test.BranchOutcomes) Set.empty
-                                    let uncovered = Set.difference requiredInstructions coveredInstructions
-                                    let missingBranches = Set.difference requiredBranches coveredBranches
-                                    if not (Set.isEmpty uncovered && Set.isEmpty missingBranches && not (List.isEmpty ownTests)) then
-                                        error "LIBRARY_COVERAGE_INCOMPLETE" $"Renamed library word '{name}' requires complete attached test coverage." (Some name) None [] (coverageGapLabels executable uncovered missingBranches)
+                                    requireLibraryCoverage executable name ownTests
                                 | _ -> ()
                             let history =
                                 changedWordNames
@@ -4742,14 +4895,8 @@ module Runtime =
                             let failed = tests |> List.filter (fun result -> not result.Passed)
                             if not (List.isEmpty failed) then error "DEPRECATE_TESTS_FAILED" "The word's attached tests must pass before deprecation." (Some name) None [] (failed |> List.map (fun result -> result.Name))
                             if item.Maturity = LibraryWord then
-                                rejectEnumLibraryQualification testSnapshot.State testSnapshot.Words name
-                                let requiredInstructions, requiredBranches = coverageObligations testSnapshot name
-                                let coveredInstructions = tests |> List.fold (fun found test -> Set.union found test.Instructions) Set.empty
-                                let coveredBranches = tests |> List.fold (fun found test -> Set.union found test.BranchOutcomes) Set.empty
-                                let uncovered = Set.difference requiredInstructions coveredInstructions
-                                let missingBranches = Set.difference requiredBranches coveredBranches
-                                if not (Set.isEmpty uncovered && Set.isEmpty missingBranches && not (List.isEmpty tests)) then
-                                    error "LIBRARY_COVERAGE_INCOMPLETE" $"Library word '{name}' requires complete attached test coverage before deprecation." (Some name) None [] (coverageGapLabels testSnapshot uncovered missingBranches)
+                                rejectUncheckedEnumHelpers testSnapshot.State testSnapshot.Words name
+                                requireLibraryCoverage testSnapshot name tests
                             let history =
                                 let previous = data.History.TryFind name |> Option.defaultValue []
                                 Map.add name (previous @ [ testSnapshot.State.Words[name].Definition ]) testSnapshot.State.History
@@ -4995,6 +5142,12 @@ module Runtime =
                                     | Ok source -> source
                                 let proposed = validateStoredProject projectStore (Some snapshot.Manifest) (Some snapshot.ManifestHash) (Some projectSource)
                                 let executable = compileRuntimeSnapshot proposed
+                                let previousClock = fixedClock
+                                fixedClock <- defaultArg snapshot.ClockValue "2000-01-01T00:00:00Z"
+                                try
+                                    requalifyDurableLibraries executable
+                                finally
+                                    fixedClock <- previousClock
                                 match Storage.restoreSnapshot projectStore storageGeneration snapshot with
                                 | Error storageError -> raiseStorageError storageError
                                 | Ok restored ->

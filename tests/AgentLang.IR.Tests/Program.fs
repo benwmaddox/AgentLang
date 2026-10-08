@@ -58,7 +58,8 @@ let private noOpIrHost () : IrInterpreterHost =
       RecordBranchOutcome = fun _ _ _ -> ()
       RecordUse = ignore
       InvokeEffect = fun _ -> EffectUnit
-      EnterUserFunction = fun _ _ -> ignore
+      EnterUserFunction = fun _ _ _ -> fun () -> ()
+      ReturnUserFunction = fun _ _ _ -> ()
       WordDefinitionSpan = fun _ -> None
       PrimitiveDefinitionSpan = fun _ -> None }
 
@@ -757,6 +758,279 @@ let private testClosedEnumVerification () =
     let underdeclaredEffect = { effectFunction with FunctionDeclaredEffects = noEffects }
     expectDiagnostic "enum-match arm effects must be declared by the function" "IR_UNDECLARED_EFFECT" (fun () ->
         verify effectCatalog { effectProgram with FunctionsById = Map.add effectWord underdeclaredEffect effectProgram.FunctionsById })
+
+let private verifiedFiniteFixture catalog nominalTypes signatureTypes =
+    let owner = WordId "finite-coverage-identity"
+    let identity = functionWithCode owner 1 signatureTypes signatureTypes noEffects noEffects Map.empty []
+    let candidate = program [ owner, identity ] [] nominalTypes [] [ owner, coverage owner [] [] ]
+    let verified = IrVerifier.verify catalog candidate
+    let inspected = VerifiedIrProgram.inspect verified
+    inspected, inspected.FunctionsById[owner]
+
+let private finitePosition name positions index =
+    match positions |> List.tryFind (fun position -> position.Position = index) with
+    | Some position -> position
+    | None -> failwith $"{name}: missing finite coverage position {index}"
+
+let private expectFiniteLabels name expected actual =
+    check name ((Set.ofList expected) = (Set.ofList actual) && List.length expected = List.length actual)
+
+let private testFiniteCoverageClosedDomains () =
+    let flagsKey = ProgramTypeKey 0
+    let flagsType = IrNominal flagsKey
+    let flagsDefinition =
+        flagsKey,
+        IrRecordDefinition
+            { TypeKey = flagsKey
+              TypeName = "Flags"
+              RecordFields =
+                [ { FieldIndex = 0; FieldName = "left"; FieldType = IrBool }
+                  { FieldIndex = 1; FieldName = "right"; FieldType = IrBool } ] }
+    let boolOption = IrOption IrBool
+    let boolUnitResult = IrResult(IrBool, IrUnit)
+    let types = [ IrBool; IrUnit; boolOption; boolUnitResult; flagsType ]
+    let inspected, owner = verifiedFiniteFixture Map.empty [ flagsDefinition ] types
+    let flags left right = RecordValue("Flags", Map.ofList [ "left", BoolValue left; "right", BoolValue right ])
+    let option value = OptionValue(TBool, value)
+    let result value = ResultValue(TBool, TUnit, value)
+    let rows =
+        [ [ BoolValue false; UnitValue; option None; result (Ok(BoolValue false)); flags false false ]
+          [ BoolValue true; UnitValue; option (Some(BoolValue false)); result (Ok(BoolValue true)); flags false true ]
+          [ BoolValue false; UnitValue; option (Some(BoolValue true)); result (Error UnitValue); flags true false ]
+          [ BoolValue true; UnitValue; option None; result (Error UnitValue); flags true true ] ]
+    let report = FiniteCoverage.analyze inspected owner (List.take 2 rows) rows
+    let boolInput = finitePosition "Bool input" report.Inputs 0
+    expectFiniteLabels "a Bool input requires both declared values" [ "false"; "true" ] boolInput.Required
+    expectFiniteLabels "both Bool input values were observed" [ "false"; "true" ] boolInput.Observed
+    check "Bool input has no missing finite values" boolInput.Missing.IsEmpty
+
+    let boolReturn = finitePosition "Bool return" report.Returns 0
+    let unitReturn = finitePosition "Unit return" report.Returns 1
+    let optionReturn = finitePosition "Option Bool return" report.Returns 2
+    let resultReturn = finitePosition "Result Bool Unit return" report.Returns 3
+    let flagsReturn = finitePosition "finite record return" report.Returns 4
+    expectFiniteLabels "Bool return domain is explicitly false and true" [ "false"; "true" ] boolReturn.Required
+    expectFiniteLabels "Unit return domain contains its one value" [ "unit" ] unitReturn.Required
+    expectFiniteLabels "Option Bool includes none and each Some payload" [ "none"; "some(false)"; "some(true)" ] optionReturn.Required
+    expectFiniteLabels "Result Bool Unit includes both Ok payloads and Error Unit" [ "ok(false)"; "ok(true)"; "error(unit)" ] resultReturn.Required
+    expectFiniteLabels "two Bool fields require all four record values"
+        [ "Flags{left=false, right=false}"; "Flags{left=false, right=true}"; "Flags{left=true, right=false}"; "Flags{left=true, right=true}" ] flagsReturn.Required
+    for position in report.Returns do check $"return position {position.Position} is fully observed" position.Missing.IsEmpty
+    check "fully finite closed domains have no unsupported entries" report.Unsupported.IsEmpty
+
+let private testFiniteCoverageIndependentInputsAndNominality () =
+    let firstKey = ProgramTypeKey 0
+    let secondKey = ProgramTypeKey 1
+    let firstType = IrNominal firstKey
+    let secondType = IrNominal secondKey
+    let enumDefinition key name =
+        key,
+        IrEnumDefinition
+            { TypeKey = key
+              TypeName = name
+              Cases = [ "ready"; "done" ] }
+    let enums = [ enumDefinition firstKey "SignalA"; enumDefinition secondKey "SignalB" ]
+
+    let signature = [ IrBool; IrBool; firstType ]
+    let inspected, owner = verifiedFiniteFixture Map.empty enums signature
+    let independentRows =
+        [ [ BoolValue false; BoolValue false; EnumValue("SignalA", "ready") ]
+          [ BoolValue true; BoolValue true; EnumValue("SignalA", "done") ] ]
+    let report = FiniteCoverage.analyze inspected owner independentRows []
+    for index in 0..1 do
+        let parameter = finitePosition "independent Bool parameter" report.Inputs index
+        expectFiniteLabels $"Bool parameter {index} requires only its own two values" [ "false"; "true" ] parameter.Required
+        expectFiniteLabels $"Bool parameter {index} observes both values without Cartesian input combinations" [ "false"; "true" ] parameter.Observed
+        check $"Bool parameter {index} has no missing values despite correlated test rows" parameter.Missing.IsEmpty
+    let enumInput = finitePosition "enum input" report.Inputs 2
+    expectFiniteLabels "enum parameter requires both declared cases" [ "SignalA.done"; "SignalA.ready" ] enumInput.Required
+    check "enum parameter has each declared case" enumInput.Missing.IsEmpty
+
+    let nominalSignature = [ firstType; secondType ]
+    let nominalProgram, nominalOwner = verifiedFiniteFixture Map.empty enums nominalSignature
+    let wrongNominalRows =
+        [ [ EnumValue("SignalA", "ready"); EnumValue("SignalA", "ready") ]
+          [ EnumValue("SignalA", "done"); EnumValue("SignalA", "done") ] ]
+    let nominalReport = FiniteCoverage.analyze nominalProgram nominalOwner wrongNominalRows []
+    let firstParameter = finitePosition "first enum identity" nominalReport.Inputs 0
+    let secondParameter = finitePosition "second enum identity" nominalReport.Inputs 1
+    expectFiniteLabels "first nominal enum has its own same-named case labels" [ "SignalA.done"; "SignalA.ready" ] firstParameter.Required
+    check "first nominal enum receives only its own cases" firstParameter.Missing.IsEmpty
+    expectFiniteLabels "second nominal enum retains distinct obligations despite overlapping case names" [ "SignalB.done"; "SignalB.ready" ] secondParameter.Required
+    check "same-label cases from a different nominal key cannot credit this enum" (secondParameter.Observed.IsEmpty && secondParameter.Required |> List.forall (fun required -> List.contains required secondParameter.Missing))
+
+let private testFiniteCoverageOpenAndNestedRecords () =
+    let flagsKey = ProgramTypeKey 0
+    let mixedKey = ProgramTypeKey 1
+    let outerKey = ProgramTypeKey 2
+    let flagsType = IrNominal flagsKey
+    let mixedType = IrNominal mixedKey
+    let outerType = IrNominal outerKey
+    let flagsDefinition =
+        flagsKey,
+        IrRecordDefinition
+            { TypeKey = flagsKey
+              TypeName = "Flags"
+              RecordFields =
+                [ { FieldIndex = 0; FieldName = "left"; FieldType = IrBool }
+                  { FieldIndex = 1; FieldName = "right"; FieldType = IrBool } ] }
+    let mixedDefinition =
+        mixedKey,
+        IrRecordDefinition
+            { TypeKey = mixedKey
+              TypeName = "Mixed"
+              RecordFields =
+                [ { FieldIndex = 0; FieldName = "active"; FieldType = IrBool }
+                  { FieldIndex = 1; FieldName = "visible"; FieldType = IrBool }
+                  { FieldIndex = 2; FieldName = "attempts"; FieldType = IrInt } ] }
+    let outerDefinition =
+        outerKey,
+        IrRecordDefinition
+            { TypeKey = outerKey
+              TypeName = "Outer"
+              RecordFields =
+                [ { FieldIndex = 0; FieldName = "flags"; FieldType = flagsType }
+                  { FieldIndex = 1; FieldName = "name"; FieldType = IrString } ] }
+    let inspected, owner = verifiedFiniteFixture Map.empty [ flagsDefinition; mixedDefinition; outerDefinition ] [ mixedType; outerType ]
+    let flags left right = RecordValue("Flags", Map.ofList [ "left", BoolValue left; "right", BoolValue right ])
+    let mixed active visible attempts =
+        RecordValue("Mixed", Map.ofList [ "active", BoolValue active; "visible", BoolValue visible; "attempts", IntValue attempts ])
+    let outer left right name = RecordValue("Outer", Map.ofList [ "flags", flags left right; "name", StringValue name ])
+    let rows =
+        [ [ mixed false false 1L; outer false false "a" ]
+          [ mixed true false 2L; outer false true "b" ]
+          [ mixed false true 3L; outer true false "c" ]
+          [ mixed true true 4L; outer true true "d" ] ]
+    let report = FiniteCoverage.analyze inspected owner [] rows
+    let mixedReturn = finitePosition "mixed finite/open record" report.Returns 0
+    expectFiniteLabels "each Bool projection is covered independently in a record with an open Int field"
+        [ "$.active: false"; "$.active: true"; "$.visible: false"; "$.visible: true" ] mixedReturn.Required
+    check "finite projections of mixed record are covered" mixedReturn.Missing.IsEmpty
+    let outerReturn = finitePosition "nested finite record in open record" report.Returns 1
+    expectFiniteLabels "nested finite record retains all four values while outer String stays open"
+        [ "$.flags: Flags{left=false, right=false}"; "$.flags: Flags{left=false, right=true}"; "$.flags: Flags{left=true, right=false}"; "$.flags: Flags{left=true, right=true}" ] outerReturn.Required
+    check "each nested finite record value was observed" outerReturn.Missing.IsEmpty
+    check "open record fields do not make the whole type unsupported" report.Unsupported.IsEmpty
+
+let private testFiniteCoverageUnsupportedAndBoundedDomains () =
+    let validatorId, validatorContract = primitiveContract "finite.bool.valid?" [ PatternBool ] [ PatternBool ] noEffects
+    let validator = resolved (PrimitiveTarget validatorId) "finite.bool.valid?" [ IrBool ] [ IrBool ] noEffects
+    let refinedKey = ProgramTypeKey 0
+    let refinedType = IrNominal refinedKey
+    let refinedDefinition =
+        refinedKey,
+        IrScalarDefinition
+            { TypeKey = refinedKey
+              TypeName = "RefinedFlag"
+              BaseType = IrBool
+              ValidatorCall = Some validator }
+    let refinedProgram, refinedOwner =
+        verifiedFiniteFixture (Map.ofList [ validatorId, validatorContract ]) [ refinedDefinition ] [ refinedType ]
+    let refinedReport = FiniteCoverage.analyze refinedProgram refinedOwner [] []
+    check "a refined finite-base scalar is explicitly unsupported" (refinedReport.Unsupported |> List.exists (fun issue -> issue.Contains("refined scalar RefinedFlag")))
+    check "unsupported refined scalar does not report an enumerable return domain" refinedReport.Returns.IsEmpty
+
+    let textValidatorId, textValidatorContract = primitiveContract "finite.text.valid?" [ PatternString ] [ PatternBool ] noEffects
+    let countValidatorId, countValidatorContract = primitiveContract "finite.count.valid?" [ PatternInt ] [ PatternBool ] noEffects
+    let textValidator = resolved (PrimitiveTarget textValidatorId) "finite.text.valid?" [ IrString ] [ IrBool ] noEffects
+    let countValidator = resolved (PrimitiveTarget countValidatorId) "finite.count.valid?" [ IrInt ] [ IrBool ] noEffects
+    let textKey = ProgramTypeKey 0
+    let countKey = ProgramTypeKey 1
+    let textType = IrNominal textKey
+    let countType = IrNominal countKey
+    let refinedText =
+        textKey,
+        IrScalarDefinition
+            { TypeKey = textKey
+              TypeName = "CustomerId"
+              BaseType = IrString
+              ValidatorCall = Some textValidator }
+    let refinedCount =
+        countKey,
+        IrScalarDefinition
+            { TypeKey = countKey
+              TypeName = "OrderCount"
+              BaseType = IrInt
+              ValidatorCall = Some countValidator }
+    let openResultType = IrResult(textType, IrBool)
+    let openCatalog = Map.ofList [ textValidatorId, textValidatorContract; countValidatorId, countValidatorContract ]
+    let openProgram, openOwner =
+        verifiedFiniteFixture openCatalog [ refinedText; refinedCount ] [ textType; countType; openResultType ]
+    let resultValue payload = ResultValue(TNamed "CustomerId", TBool, payload)
+    let openRows =
+        [ [ NamedValue("CustomerId", StringValue "acct-1")
+            NamedValue("OrderCount", IntValue 3L)
+            resultValue (Ok(NamedValue("CustomerId", StringValue "acct-1"))) ]
+          [ NamedValue("CustomerId", StringValue "acct-2")
+            NamedValue("OrderCount", IntValue 8L)
+            resultValue (Error(BoolValue false)) ]
+          [ NamedValue("CustomerId", StringValue "acct-3")
+            NamedValue("OrderCount", IntValue 13L)
+            resultValue (Error(BoolValue true)) ] ]
+    let openReport = FiniteCoverage.analyze openProgram openOwner [] openRows
+    let textReturn = finitePosition "refined String return" openReport.Returns 0
+    let countReturn = finitePosition "refined Int return" openReport.Returns 1
+    expectFiniteLabels "a refined String keeps its payload domain open" [] textReturn.Required
+    expectFiniteLabels "a refined Int keeps its payload domain open" [] countReturn.Required
+    let resultReturn = finitePosition "Result of refined String and Bool" openReport.Returns 2
+    expectFiniteLabels "Result with open refined String still requires both tags and finite Bool error values"
+        [ "ok"; "error"; "$.error: false"; "$.error: true" ] resultReturn.Required
+    check "Result open payload and both finite error values were observed" resultReturn.Missing.IsEmpty
+    check "refined open scalar payloads do not make the composite unsupported" openReport.Unsupported.IsEmpty
+
+    let cycleKey = ProgramTypeKey 0
+    let cycleType = IrNominal cycleKey
+    let cycleDefinition =
+        cycleKey,
+        IrRecordDefinition
+            { TypeKey = cycleKey
+              TypeName = "Cycle"
+              RecordFields = [ { FieldIndex = 0; FieldName = "next"; FieldType = IrOption cycleType } ] }
+    let cycleProgram, cycleOwner = verifiedFiniteFixture Map.empty [ cycleDefinition ] [ cycleType ]
+    let cycleReport = FiniteCoverage.analyze cycleProgram cycleOwner [] []
+    check "recursive record expansion terminates with an explicit unsupported result"
+        (cycleReport.Unsupported |> List.exists (fun issue -> issue.Contains("recursive nominal type Cycle")))
+    check "recursive record does not return a partial finite domain" cycleReport.Returns.IsEmpty
+
+    let record key name fieldCount =
+        key,
+        IrRecordDefinition
+            { TypeKey = key
+              TypeName = name
+              RecordFields =
+                [ for index in 0 .. fieldCount - 1 ->
+                    { FieldIndex = index
+                      FieldName = $"flag{index}"
+                      FieldType = IrBool } ] }
+    let atLimitKey = ProgramTypeKey 0
+    let overLimitKey = ProgramTypeKey 1
+    let atLimitProgram, atLimitOwner =
+        verifiedFiniteFixture Map.empty [ record atLimitKey "AtLimit" 12 ] [ IrNominal atLimitKey ]
+    let atLimitReport = FiniteCoverage.analyze atLimitProgram atLimitOwner [] []
+    let atLimit = finitePosition "4,096-value finite record" atLimitReport.Returns 0
+    check "the documented 4,096-value limit is accepted exactly" (atLimit.Required.Length = 4096 && atLimitReport.Unsupported.IsEmpty)
+
+    let overLimitProgram, overLimitOwner =
+        verifiedFiniteFixture Map.empty [ record overLimitKey "OverLimit" 13 ] [ IrNominal overLimitKey ]
+    let overLimitReport = FiniteCoverage.analyze overLimitProgram overLimitOwner [] []
+    check "a finite product above 4,096 values is explicitly unsupported"
+        (overLimitReport.Unsupported |> List.exists (fun issue -> issue.Contains("OverLimit") && issue.Contains("4096")))
+    check "oversized finite products do not expose a partial domain" overLimitReport.Returns.IsEmpty
+
+let private testFiniteCoverageRejectsMalformedGenericMetadata () =
+    let types = [ IrOption IrBool; IrResult(IrBool, IrUnit) ]
+    let inspected, owner = verifiedFiniteFixture Map.empty [] types
+    let malformedOption = OptionValue(TString, Some(BoolValue true))
+    let malformedResult = ResultValue(TString, TUnit, Ok(BoolValue true))
+    let report = FiniteCoverage.analyze inspected owner [] [ [ malformedOption; malformedResult ] ]
+    let optionReturn = finitePosition "Option generic metadata" report.Returns 0
+    let resultReturn = finitePosition "Result generic metadata" report.Returns 1
+    expectFiniteLabels "Option expected domain remains none and both Some values" [ "none"; "some(false)"; "some(true)" ] optionReturn.Required
+    expectFiniteLabels "Result expected domain remains both Ok values and Error Unit" [ "ok(false)"; "ok(true)"; "error(unit)" ] resultReturn.Required
+    check "malformed Option type metadata contributes no observed finite value"
+        (optionReturn.Observed.IsEmpty && optionReturn.Required |> List.forall (fun required -> List.contains required optionReturn.Missing))
+    check "malformed Result type metadata contributes no observed finite value"
+        (resultReturn.Observed.IsEmpty && resultReturn.Required |> List.forall (fun required -> List.contains required resultReturn.Missing))
 
 let private testGeneratedRecordAndScalarOperations () =
     let customerKey = ProgramTypeKey 0
@@ -1530,6 +1804,11 @@ let private tests =
       "closed synthetic source classifications", testClosedSyntheticSourceKinds
       "Option and Result payload scope", testOptionAndResultCaseLocals
       "closed enum verifier invariants", testClosedEnumVerification
+      "finite Bool, Unit, Option, Result, and finite record domains", testFiniteCoverageClosedDomains
+      "finite independent inputs and nominal enum identity", testFiniteCoverageIndependentInputsAndNominality
+      "finite coverage projections in open and nested records", testFiniteCoverageOpenAndNestedRecords
+      "finite unsupported and bounded domains", testFiniteCoverageUnsupportedAndBoundedDomains
+      "finite coverage rejects malformed generic metadata", testFiniteCoverageRejectsMalformedGenericMetadata
       "generated record and scalar operations", testGeneratedRecordAndScalarOperations
       "static callbacks and effects", testStaticCallbacksAndEffects
       "typed list fold verification", testListFoldVerification

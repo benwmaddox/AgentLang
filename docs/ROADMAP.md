@@ -1,6 +1,6 @@
 # Current delivery roadmap
 
-Updated 2026-10-07. This is a delivery order and status map, not a replacement
+Updated 2026-10-08. This is a delivery order and status map, not a replacement
 for the [PRD](PRD.md). Reliable agent edits, discovery and reuse of accumulated
 typed vocabulary remain the primary research question. Runtime performance and
 development cost are separate measurements.
@@ -158,9 +158,16 @@ checkpoint. Track delivered and pending requirements explicitly in its report.
 Report 110 delivers the arithmetic slice: exact checked ratios and an authored
 total Money scaler using validated unit basis points. [Report 112](../reports/112-closed-domain-states.md)
 delivers payload-free Flow/2 enums with verified exhaustive matching and durable
-source for project functions. Enum-bearing library qualification is explicitly
-blocked until finite input/output coverage is enforced; native enum support is
-also pending. Use new fixtures and preserve historical research inputs.
+source for project functions. The finite library qualification implementation
+is validated locally: it checks direct Bool/enum inputs per
+parameter, finite return values with open-composite projections, and actual
+target invocation from passing own tests. It rejects unprovable or over-4096
+domains and requalifies durable libraries on load and named snapshot restore.
+Enum-bearing authored helpers must qualify independently before a library can
+reach them. All 37 full local Debug checks pass; see
+[the finite coverage contract](FINITE-COVERAGE.md) and [report 116](../reports/116-finite-library-coverage.md).
+Native enum execution is still pending. Use new fixtures and preserve historical
+research inputs.
 Cross-field record construction and decision/executor stateful properties follow.
 Report 111's extra-write control passed full library coverage but violated the
 IO contract. Make provider-state and effect-count assertions straightforward in
@@ -176,14 +183,13 @@ blocked library replacement. This establishes bounded usability, not comparative
 reliability or a causal estimate from two actors. Keep help examples version-matched
 in future trials. Explicit provider-state assertions remain pending.
 
-Implement the approved module boundaries and stricter qualification rules:
+Implement the remaining approved module boundaries and dependency-closure rules:
 cross-module authored calls require library qualification; library functions
 call only qualified authored library functions or trusted/generated operations.
-Add exhaustive matching for every function, finite return-value coverage and
-per-parameter Bool/enum coverage alongside own-function branch coverage.
-Qualification must survive reload correctly and become invalid when its bound
-dependency contracts change. Deterministic injectable effects retain capability
-and declared-effect enforcement.
+Qualification must become invalid when its bound dependency contracts change.
+These broader rules are distinct from the finite input/return gate now under
+validation. Deterministic injectable effects retain capability and declared-effect
+enforcement.
 Add test-local typed dictionary overrides as well: nested calls can see a scoped
 replacement of an IO or ordinary function, then automatic cleanup restores the
 original even on failure or cancellation. Keep persistent bindings intact and

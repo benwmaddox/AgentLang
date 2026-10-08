@@ -887,7 +887,7 @@ module Program =
             FlowParser.parseDocument "<business-foundation>" source
             |> Result.defaultWith (fun diagnostic -> failwith (Diagnostics.render diagnostic))
         equal 32 document.Words.Length "fixture authors exactly 32 business words"
-        equal 83 document.Tests.Length "fixture attaches 83 business tests"
+        equal 85 document.Tests.Length "fixture attaches 85 business tests"
         equal 27 document.Examples.Length "fixture attaches 27 business examples"
         equal 16 document.Records.Length "fixture defines 16 records including fold helper states"
         equal 10 document.Scalars.Length "fixture defines 10 nominal scalar types"

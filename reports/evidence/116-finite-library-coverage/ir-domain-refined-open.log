@@ -1,0 +1,22 @@
+PASS closed effect vocabulary
+PASS concrete primitive specializations
+PASS closed container constructors
+PASS structured branches and coverage
+PASS closed synthetic source classifications
+PASS Option and Result payload scope
+PASS closed enum verifier invariants
+PASS finite Bool, Unit, Option, Result, and finite record domains
+PASS finite independent inputs and nominal enum identity
+PASS finite coverage projections in open and nested records
+PASS finite unsupported and bounded domains
+PASS finite coverage rejects malformed generic metadata
+PASS generated record and scalar operations
+PASS static callbacks and effects
+PASS typed list fold verification
+PASS identity and call-graph guards
+PASS flat verifier stack safety
+PASS compiler lowering and detached bodies
+PASS attached Flow source origins
+PASS compiler snapshot identity
+AgentLang.IR.Tests: 179 assertions passed.
+Exit code: 0

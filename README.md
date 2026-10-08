@@ -25,12 +25,15 @@ CLI. Omitted version selectors retain Flow/1 for compatibility with existing
 clients. Stored source always retains its declared frontend version.
 
 Flow/2 also supports [closed nominal enums](docs/CLOSED-ENUMS.md) and exhaustive
-matching in project functions. Enum-bearing library qualification and native enum
-execution remain unavailable until their respective checks and backend are implemented.
+matching in project functions. Finite input and return qualification for library
+functions is implemented and validated locally;
+native enum execution remains unavailable.
 
 [Authoring through the runtime](docs/AUTHORING.md) explains inline documentation,
 attached tests/examples, library coverage and revision-checked replacements.
-Use JSONL `help` or REPL `:help TOPIC` for the corresponding inspectable contracts.
+Use JSONL help with the same syntaxVersion as your source—for example,
+`{"op":"help","topic":"examples","syntaxVersion":2}`—or REPL :help TOPIC for
+the corresponding inspectable contracts.
 
 The implementation targets .NET 9 and uses no external test framework or model API key.
 
@@ -114,8 +117,11 @@ At its prompt, stage the Flow example, test it and commit reusable vocabulary:
 ~~~
 
 A word commit requires passing attached tests. Library commits additionally
-require every own-body executable instruction and supported branch outcome to
-be exercised. Selected dependencies and types commit with their callers.
+require every own-body executable instruction and supported branch outcome,
+finite values for each direct Bool/enum parameter and supported finite return
+domain, and an actual invocation of that function revision in its own passing
+tests. See the [finite coverage contract](docs/FINITE-COVERAGE.md). Selected
+dependencies and types commit with their callers.
 Start a fresh process to reuse the vocabulary:
 
 ~~~powershell
@@ -226,11 +232,15 @@ Stack explicitly for historical direct generated-owner cases.
 ## Tests, temporary words and discovery
 
 Project words require at least one passing attached test. Library words add
-complete actual own-body instruction and supported control-flow coverage.
-Expected expressions cannot satisfy tested-word coverage. Coverage shows a path
-was exercised; meaningful assertions and boundary cases establish behavior.
-See [testing policy](docs/TESTING.md). Downstream project words can focus on
-integration rather than repeat all library coverage.
+complete actual own-body instruction and supported control-flow coverage,
+per-parameter finite input coverage, and finite return coverage. The target
+revision must actually run in its own passing tests; expected expressions and
+failed tests supply no qualifying evidence. Unsupported finite domains fail
+qualification instead of being treated as covered. These checks show execution
+and finite alternatives, while meaningful assertions and boundary cases still
+establish behavior. See the [finite coverage contract](docs/FINITE-COVERAGE.md)
+and [testing policy](docs/TESTING.md). Downstream project words can focus on
+integration rather than repeat all library qualification.
 
 Temporary describes dictionary lifetime; library describes quality. A temporary
 word can be tried and discarded, or promoted for tested persistence. A local

@@ -891,18 +891,18 @@ module Program =
             | FlowAstPath.FlowAstPath path ->
                 { binding with Path = FlowAstPath.FlowAstPath(path |> List.map (function | FlowAstPathSegment.EnumCaseStatement(0, statement) -> FlowAstPathSegment.EnumCaseStatement(0, statement + 1) | segment -> segment)) })
 
-    let private testEnumLibraryQualificationGuard root =
+    let private testEnumFiniteLibraryCoverage root =
         let enumAndHelpers =
             "enum RenewalState { case pending; case renewed; case cancelled; }\n\n"
             + "record StateEnvelope { field maybe: Option<List<RenewalState>>; }\n\n"
-            + "fn internal.match-state(value: Int) -> Int {\n"
-            + "    match RenewalState::pending() { pending => { value } renewed => { value } cancelled => { value } }\n"
+            + "fn internal.match-state(state: RenewalState) -> Int {\n"
+            + "    match state { pending => { 1 } renewed => { 2 } cancelled => { 3 } }\n"
             + "}\n\n"
             + "fn internal.record-state(value: StateEnvelope) -> Int {\n"
             + "    0\n"
             + "}\n\n"
-            + "fn public.delegate(value: Int) -> Int {\n"
-            + "    internal::match-state(value)\n"
+            + "fn public.delegate(state: RenewalState) -> Int {\n"
+            + "    internal::match-state(state)\n"
             + "}\n\n"
             + "fn public.container-use(value: Int) -> Int {\n"
             + "    option::some<List<RenewalState>>(list::empty<RenewalState>());\n"
@@ -922,14 +922,33 @@ module Program =
             + "test public.pure/basic {\n"
             + "    public::pure(7)\n"
             + "    => 7\n"
-            + "}"
+            + "}\n\n"
+            + "test internal.match-state/pending { internal::match-state(RenewalState::pending()) => 1 }\n"
+            + "test internal.match-state/renewed { internal::match-state(RenewalState::renewed()) => 2 }\n"
+            + "test internal.match-state/cancelled { internal::match-state(RenewalState::cancelled()) => 3 }\n"
+            + "test public.delegate/pending { public::delegate(RenewalState::pending()) => 1 }\n"
+            + "test public.delegate/renewed { public::delegate(RenewalState::renewed()) => 2 }\n"
+            + "test public.delegate/cancelled { public::delegate(RenewalState::cancelled()) => 3 }\n"
+            + "test public.container-use/basic { public::container-use(8) => 8 }\n"
+            + "test public.construct-use/basic { public::construct-use(9) => 9 }"
         let project = Path.Combine(root, "enum-library-qualification")
         let engine = Runtime.Engine(project, Set.empty)
         defineFlowProject engine enumAndHelpers [ "syntaxVersion", jint 2 ] |> expectOk "stage enum-bearing helper and primitive-signature library candidates" |> ignore
-        for name in [ "public.delegate"; "public.container-use"; "public.record-use"; "public.construct-use" ] do
-            commit engine "commit" name [ "library", jbool true ]
-            |> expectError "LIBRARY_FINITE_COVERAGE_UNSUPPORTED"
-            |> ignore
+        commit engine "commit" "internal.match-state" [ "library", jbool true ]
+        |> expectOk "qualify an enum-taking match after tests cover every input and match arm"
+        |> ignore
+        commit engine "commit" "public.delegate" [ "library", jbool true ]
+        |> expectOk "qualify an enum caller after its independently qualified helper"
+        |> ignore
+        commit engine "commit" "public.container-use" [ "library", jbool true ]
+        |> expectOk "qualify a function whose local generic type mentions an enum"
+        |> ignore
+        commit engine "commit" "public.construct-use" [ "library", jbool true ]
+        |> expectOk "qualify a function that constructs and discards an enum value"
+        |> ignore
+        commit engine "commit" "public.record-use" [ "library", jbool true ]
+        |> expectError "LIBRARY_FINITE_DOMAIN_UNSUPPORTED"
+        |> ignore
 
         commit engine "commit" "public.pure" [ "library", jbool true ]
         |> expectOk "qualify an enum-free word beside an unrelated enum declaration"
@@ -939,8 +958,8 @@ module Program =
         let store = Storage.load (Storage.create project) |> Result.defaultWith (fun problem -> failwith problem.Message)
         let beforeReplacement = store.Manifest |> Option.defaultWith (fun () -> failwith "enum-free qualification should publish a manifest")
         let beforeReplacementHash = store.ManifestHash
-        equal [ "public.pure" ] (beforeReplacement.Words |> List.map (fun item -> item.CurrentName)) "rejected enum-bearing words do not enter the library manifest"
-        for name in [ "public.delegate"; "public.container-use"; "public.record-use"; "public.construct-use" ] do
+        equal [ "internal.match-state"; "public.construct-use"; "public.container-use"; "public.delegate"; "public.pure" ] (beforeReplacement.Words |> List.map (fun item -> item.CurrentName) |> List.sort) "supported finite enum and local enum-use words persist while the unchecked helper caller does not"
+        for name in [ "public.record-use" ] do
             check ((findWord (dispatch engine "words" [] |> expectOk "inspect candidates after enum library rejection") name).["status"].GetValue<string>() = "candidate") $"rejected library candidate {name} remains staged atomically"
 
         let currentRevision =
@@ -953,11 +972,15 @@ module Program =
             + "}"
         let enumReplacementTest = "test public.pure/basic { public::pure(7) => 7 }"
         defineFlow engine enumReplacement [ enumReplacementTest ] [] [ "replace", jbool true; "expectedRevision", jint currentRevision; "syntaxVersion", jint 2 ]
-        |> expectError "LIBRARY_FINITE_COVERAGE_UNSUPPORTED"
+        |> expectOk "stage a direct enum match replacement before evaluating its test evidence"
         |> ignore
-        equal beforeReplacementHash (Storage.load (Storage.create project) |> Result.defaultWith (fun problem -> failwith problem.Message)).ManifestHash "enum-bearing replacement refusal leaves the committed library manifest unchanged"
-        equal currentRevision (dispatch engine "describe" [ "word", jstr "public.pure" ] |> expectOk "inspect library after rejected replacement" |> fun response -> response.["data"].["revision"].GetValue<int>()) "enum-bearing replacement refusal leaves the prior library revision staged"
-        equal "7" (evalFlow engine "public::pure(7)" |> expectOk "evaluate the original library word after rejected replacement" |> fun response -> stringValue response.["data"].["stack"].[0]) "rejected enum-bearing replacement leaves the prior library body executable"
+        commit engine "replace-word" "public.pure" []
+        |> expectError "LIBRARY_COVERAGE_INCOMPLETE"
+        |> ignore
+        equal beforeReplacementHash (Storage.load (Storage.create project) |> Result.defaultWith (fun problem -> failwith problem.Message)).ManifestHash "incompletely covered enum replacement leaves the committed library manifest unchanged"
+        let durableAfterReplacement = Storage.load (Storage.create project) |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let durablePure = durableAfterReplacement.Manifest |> Option.defaultWith (fun () -> failwith "library manifest is missing") |> _.Words |> List.find (fun item -> item.CurrentName = "public.pure")
+        equal currentRevision durablePure.CurrentRevision "failed enum replacement does not advance the durable library revision"
 
         let discardProject = Path.Combine(root, "enum-discard-dependency")
         let discardEngine = Runtime.Engine(discardProject, Set.empty)
@@ -2083,6 +2106,84 @@ fn renewal.dependent(state: RenewalState) -> String {
         let complete = Storage.load (Storage.create completeProject) |> Result.defaultWith (fun problem -> failwith problem.Message)
         check complete.Manifest.IsSome "actual execution of both branches permits the Flow library commit"
 
+    let private testFiniteCoverageInvocationAndNormalReturns root =
+        let identitySource =
+            "word coverage.identity : Int -> Int\n"
+            + "    effects none\n"
+            + "end\n\n"
+            + "test coverage.identity/unrelated\n"
+            + "    5\n"
+            + "    => 5\n"
+            + "end"
+        let unrelatedProject = Path.Combine(root, "finite-coverage-unrelated-test")
+        let unrelatedEngine = Runtime.Engine(unrelatedProject, Set.empty)
+        defineStack unrelatedEngine identitySource [] |> expectOk "define a zero-instruction Int identity and an unrelated passing owner test" |> ignore
+        let uninvoked = commit unrelatedEngine "commit" "coverage.identity" [ "library", jbool true ] |> expectError "LIBRARY_FINITE_COVERAGE_INCOMPLETE"
+        equal [ "targetInvocations=0" ] (jsonArrayStrings uninvoked.["error"].["actual"]) "a branchless open-domain identity still requires an actual target invocation"
+
+        let invokedProject = Path.Combine(root, "finite-coverage-identity-invoked")
+        let invokedEngine = Runtime.Engine(invokedProject, Set.empty)
+        let invokedSource =
+            "word coverage.identity : Int -> Int\n"
+            + "    effects none\n"
+            + "end\n\n"
+            + "test coverage.identity/identity\n"
+            + "    5 coverage.identity\n"
+            + "    => 5\n"
+            + "end"
+        defineStack invokedEngine invokedSource [] |> expectOk "define the identity with a passing actual target call" |> ignore
+        commit invokedEngine "commit" "coverage.identity" [ "library", jbool true ]
+        |> expectOk "qualify a no-obligation identity after its exact revision was invoked"
+        |> ignore
+
+        let boolProject = Path.Combine(root, "finite-coverage-error-return")
+        let boolEngine = Runtime.Engine(boolProject, Set.empty)
+        let boolWord =
+            "fn coverage.bool-result(value: Bool) -> Bool {\n"
+            + "    if value { true } else { false }\n"
+            + "}"
+        let boolTests =
+            [ "test coverage.bool-result/true { coverage::bool-result(true) => true }"
+              "test coverage.bool-result/error-after-normal { coverage::bool-result(false); ::divide(1, 0) => error RUNTIME_DIVIDE_BY_ZERO }" ]
+        let boolSource = boolWord + "\n\n" + String.concat "\n" boolTests
+        defineFlowProject boolEngine boolSource [ "syntaxVersion", jint 2 ] |> expectOk "define Bool function with normal and expected-error test paths" |> ignore
+        let returnGap = commit boolEngine "commit" "coverage.bool-result" [ "library", jbool true ] |> expectError "LIBRARY_FINITE_COVERAGE_INCOMPLETE"
+        let missingReturn = jsonArrayStrings returnGap.["error"].["expected"]
+        check (missingReturn |> List.contains "return[0] Bool: false") "a passing expected-runtime-error test covers its Bool input but contributes no normal-return false value"
+
+        let refinedProject = Path.Combine(root, "finite-coverage-refined-string-result")
+        let refinedEngine = Runtime.Engine(refinedProject, Set.empty)
+        let refinedSource =
+            "type Email : String { validate email::valid?; }\n\n"
+            + "fn email.valid?(value: String) -> Bool { string::contains(value, \"@\") }\n\n"
+            + "fn email.parse(value: String) -> Result<Email, String> {\n"
+            + "    if string::contains(value, \"@\") {\n"
+            + "        result::ok<Email, String>(Email::new(value))\n"
+            + "    } else {\n"
+            + "        result::error<Email, String>(\"invalid\")\n"
+            + "    }\n"
+            + "}\n\n"
+            + "test email.valid?/valid { email::valid?(\"a@b\") => true }\n"
+            + "test email.valid?/invalid { email::valid?(\"missing\") => false }\n"
+            + "test email.parse/ok { email::parse(\"a@b\") => value result::ok<Email, String>(Email::new(\"a@b\")) }\n"
+            + "test email.parse/error { email::parse(\"missing\") => value result::error<Email, String>(\"invalid\") }"
+        defineFlowProject refinedEngine refinedSource [ "syntaxVersion", jint 2 ]
+        |> expectOk "stage refined String Result parser and its valid/error cases"
+        |> ignore
+        commit refinedEngine "commit" "email.valid?" [ "library", jbool true ]
+        |> expectOk "qualify the Bool validator with both return values"
+        |> ignore
+        commit refinedEngine "commit" "Email" [] |> expectOk "commit refined String scalar and validator closure" |> ignore
+        commit refinedEngine "commit" "email.parse" [ "library", jbool true ]
+        |> expectOk "qualify refined String Result parser after observing both Result tags"
+        |> ignore
+        let finiteResult =
+            dispatch refinedEngine "describe" [ "word", jstr "email.parse" ]
+            |> expectOk "inspect refined String Result coverage"
+            |> fun response -> response.["data"].["coverage"].["finiteCoverage"]
+        check (boolValue finiteResult.["complete"]) "refined String Result library reports complete finite coverage"
+        equal [ "error"; "ok" ] (jsonArrayStrings finiteResult.["returns"].[0].["required"]) "open refined String payload preserves both finite Result variant obligations"
+
     let private testFlowMaintenanceRenameDeprecateAndRestore root =
         let project = Path.Combine(root, "flow-maintenance-mixed-rename")
         let capabilities = Set.ofList [ "console.write" ]
@@ -2722,26 +2823,17 @@ fn renewal.dependent(state: RenewalState) -> String {
         |> expectOk "commit Flow library with actual own-site coverage of both clock comparison branches"
         |> ignore
         assertAllPassed 2 (dispatch libraryEngine "test" [ "word", jstr "coverage.branch" ] |> expectOk "verify both coverage fixture tests pass before mutation")
-        let libraryId = getWordId libraryEngine "coverage.branch"
         let libraryStore = Storage.create libraryProject
-        let beforeLibraryRename = Storage.load libraryStore |> Result.defaultWith (fun problem -> failwith problem.Message)
-        let beforeLibraryRevision = beforeLibraryRename.Manifest.Value.Revisions |> List.find (fun item -> item.Name = "coverage.branch")
+        let beforeChangedClockReload = Storage.load libraryStore |> Result.defaultWith (fun problem -> failwith problem.Message)
         let beforeLibraryExport = File.ReadAllBytes(Path.Combine(libraryProject, "dictionary.agent"))
-        let changedClockLibrary = Runtime.Engine(libraryProject, capabilities, changedClock)
-        assertAllPassed 2 (dispatch changedClockLibrary "test" [ "word", jstr "coverage.branch" ] |> expectOk "both tests still pass after the fixed clock changes")
-        let rejectedRename = dispatch changedClockLibrary "rename" [ "word", jstr "coverage.branch"; "to", jstr "coverage.conditional"; "actor", jstr "client" ]
-        expectError "LIBRARY_COVERAGE_INCOMPLETE" rejectedRename |> ignore
-        let afterLibraryRename = Storage.load libraryStore |> Result.defaultWith (fun problem -> failwith problem.Message)
-        equal beforeLibraryRename.ManifestHash afterLibraryRename.ManifestHash "library rename without actual branch coverage leaves authority unchanged"
-        check (beforeLibraryExport.AsSpan().SequenceEqual(File.ReadAllBytes(Path.Combine(libraryProject, "dictionary.agent")).AsSpan())) "library coverage rejection leaves exact export bytes unchanged"
-        equal libraryId (getWordId changedClockLibrary "coverage.branch") "library coverage rejection leaves stable owner active under its original name"
-        equal beforeLibraryRevision (afterLibraryRename.Manifest.Value.Revisions |> List.find (fun item -> item.Name = "coverage.branch")) "library coverage rejection leaves source refs and revision unchanged"
-        expectError "NAME_UNKNOWN_WORD" (dispatch changedClockLibrary "describe" [ "word", jstr "coverage.conditional" ]) |> ignore
-        equal "1" (stringValue (evalFlow changedClockLibrary "coverage::branch(\"not-the-clock\")" |> expectOk "old library remains callable after refused rename" |> fun response -> response.["data"].["stack"].[0])) "failed coverage gate leaves the live library body executable"
-        let beforeLibraryDeprecate = Storage.load libraryStore |> Result.defaultWith (fun problem -> failwith problem.Message)
-        expectError "LIBRARY_COVERAGE_INCOMPLETE" (dispatch changedClockLibrary "deprecate" [ "word", jstr "coverage.branch"; "actor", jstr "client" ])
-        |> ignore
-        equal beforeLibraryDeprecate.ManifestHash (Storage.load libraryStore |> Result.defaultWith (fun problem -> failwith problem.Message)).ManifestHash "library deprecation also requires current actual branch coverage"
+        try
+            Runtime.Engine(libraryProject, capabilities, changedClock) |> ignore
+            failwith "durable library with stale finite branch evidence loaded under a changed clock"
+        with
+        | LanguageException diagnostic -> equal "LIBRARY_COVERAGE_INCOMPLETE" diagnostic.Code "durable library reload requalifies actual branch coverage under the current provider"
+        let afterChangedClockReload = Storage.load libraryStore |> Result.defaultWith (fun problem -> failwith problem.Message)
+        equal beforeChangedClockReload.ManifestHash afterChangedClockReload.ManifestHash "failed durable library requalification leaves storage authority unchanged"
+        check (beforeLibraryExport.AsSpan().SequenceEqual(File.ReadAllBytes(Path.Combine(libraryProject, "dictionary.agent")).AsSpan())) "failed durable library requalification leaves export bytes unchanged"
 
     let private testFlowStaticListFold root =
         let project = Path.Combine(root, "flow-static-list-fold")
@@ -3460,7 +3552,7 @@ test persist.read/exact-count {
             testExplicitFrontendCannotFallBack root
             testFlow2FormatDefinePersistReloadAndRewrite root
             testFlow2EnumsPersistReloadAndBindings root
-            testEnumLibraryQualificationGuard root
+            testEnumFiniteLibraryCoverage root
             testDescribeFlowReferences root
             testGeneratedRecordCasesPersistBesideFlow root
             testStackGeneratedCasesSurviveV1Manifest root
@@ -3473,6 +3565,7 @@ test persist.read/exact-count {
             testPersistedBindingsAreVerified root
             testRetainedDotBindingAcrossReplacement root
             testExpectationCoverageIsNotActualCoverage root
+            testFiniteCoverageInvocationAndNormalReturns root
             testFlowMaintenanceRenameDeprecateAndRestore root
             testFlowMaintenanceRejectsUntouchedRebind root
             testFlowMaintenanceFailureAndLibraryCoverage root
@@ -3480,7 +3573,7 @@ test persist.read/exact-count {
             testFlowValidatorCannotBeRenamedAfterTypeCommit root
             testFlowProjectDocumentTypesCommitAndReload root
             testEffectCountAssertions root
-            printfn $"Flow Runtime tests passed: 28 groups, {assertions} assertions."
+            printfn $"Flow Runtime tests passed: 29 groups, {assertions} assertions."
             0
         finally
             if Directory.Exists root then Directory.Delete(root, true)

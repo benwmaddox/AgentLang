@@ -83,13 +83,24 @@ existing attachments requires the replacement revision checks.
 {"op":"task.commit"}
 ```
 
-Library persistence requires passing attached own tests and complete supported
-own instruction/branch coverage. Documentation and examples are separate
-metadata; the runtime library gate does not itself require them. Experiments
-may explicitly require and independently check them. Coverage establishes that
-a path ran, not that the operation satisfies every boundary or domain rule.
-The latest test batch replaces current coverage; use `test-all` before inspecting
-several words together. Run examples explicitly as an additional check.
+Library persistence requires passing attached own tests, complete supported
+own instruction/branch coverage, finite input and return evidence, and at least
+one actual call to that exact function revision from its own passing tests.
+Each direct Bool or enum input position is tracked independently. Return
+positions require every value in a proven finite domain, including inhabitable
+Option/Result cases and combinations inside a finite record. For open composites,
+the gate checks applicable finite fields and tags without multiplying unrelated
+positions or projections together. Int, Float and String are open domains and
+are not exhaustively enumerated. Refined finite domains that cannot be proven
+complete, and finite domains exceeding the bound, block library qualification. Full details are in the
+[finite coverage contract](FINITE-COVERAGE.md).
+
+Documentation and examples remain separate metadata; the runtime library gate
+does not itself require them. Experiments may explicitly require and
+independently check them. Coverage establishes execution and enumerated cases,
+not that the operation satisfies every boundary or domain rule. The latest test
+batch replaces current coverage; use `test-all` before inspecting several words
+together. Run examples explicitly as an additional check.
 
 ## Replacing a definition
 

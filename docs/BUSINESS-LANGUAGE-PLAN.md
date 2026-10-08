@@ -338,3 +338,10 @@ behavior checks. This is partial task-adapter/evaluation progress; broader match
 business tasks, the complete 60-task suite, actual model usage and controlled
 context/cost results remain pending. The next shortest path is metadata and
 replacement discoverability, followed by fresh focused trials.
+
+The later finite-coverage milestone adds three reachable cancelled-subscription tests
+(154 total) and keeps the email fold helper and its caller at project maturity:
+the helper always populates an Option field and cannot honestly cover none.
+The remaining 51 functions qualify as libraries. All 37 full local Debug checks pass;
+see [report 116](../reports/116-finite-library-coverage.md). Frozen study inputs
+and the historical counts above are unchanged.

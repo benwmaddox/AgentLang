@@ -284,7 +284,8 @@ let private host (events: ResizeArray<string>) =
       InvokeEffect = function
           | WriteVirtualConsole(_, contents) -> events.Add(contents); EffectUnit
           | other -> failwithf "Unexpected effect command: %A" other
-      EnterUserFunction = fun _ _ -> ignore
+      EnterUserFunction = fun _ _ _ -> fun () -> ()
+      ReturnUserFunction = fun _ _ _ -> ()
       WordDefinitionSpan = fun _ -> None
       PrimitiveDefinitionSpan = fun _ -> None }
 

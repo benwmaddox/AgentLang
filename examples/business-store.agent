@@ -338,6 +338,26 @@ test store.subscription-fold-step/match {
     => true
 }
 
+test store.subscription-fold-step/matched-cancelled-subscription-preserves-time {
+    let key = SubscriptionId::new("00000000-0000-0000-0000-000000000001");
+    let cancelled-at = Instant::new("2024-01-15T12:00:00.0000000+00:00");
+    let item = subscription::new(
+        id = key,
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"),
+        product-id = ProductId::new("00000000-0000-0000-0000-000000000004"),
+        term = "monthly",
+        started-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"),
+        expires-at = Instant::new("2024-02-01T00:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("cancelled"),
+        cancelled-at = option::some<Instant>(cancelled-at));
+    let initial = subscriptionLookup::new(target = key, found = option::none<Subscription>());
+    match store::subscription-fold-step(initial, item).found() {
+        some selected => { equals(selected, item) }
+        none => { false }
+    }
+    => true
+}
+
 test store.subscription-fold-step/preserves-first {
     let key = SubscriptionId::new("00000000-0000-0000-0000-000000000001");
     let first = subscription::new(
@@ -604,6 +624,34 @@ test store.subscription/first-match-in-list-order {
         sent-emails = blank.sent-emails());
     match store::subscription(key, input) {
         some selected => { equals(selected.term(), "first") }
+        none => { false }
+    }
+    => true
+}
+
+test store.subscription/cancelled-subscription-preserves-cancellation-time {
+    let key = SubscriptionId::new("00000000-0000-0000-0000-000000000001");
+    let cancelled-at = Instant::new("2024-01-15T12:00:00.0000000+00:00");
+    let cancelled = subscription::new(
+        id = key,
+        customer-id = CustomerId::new("00000000-0000-0000-0000-000000000003"),
+        product-id = ProductId::new("00000000-0000-0000-0000-000000000004"),
+        term = "first",
+        started-at = Instant::new("2024-01-01T00:00:00.0000000+00:00"),
+        expires-at = Instant::new("2024-02-01T00:00:00.0000000+00:00"),
+        status = SubscriptionStatus::new("cancelled"),
+        cancelled-at = option::some<Instant>(cancelled-at));
+    let blank = store::empty(unit);
+    let input = store::new(
+        customers = blank.customers(),
+        products = blank.products(),
+        subscriptions = list::singleton<Subscription>(cancelled),
+        invoices = blank.invoices(),
+        payments = blank.payments(),
+        email-outbox = blank.email-outbox(),
+        sent-emails = blank.sent-emails());
+    match store::subscription(key, input) {
+        some selected => { equals(selected, cancelled) }
         none => { false }
     }
     => true

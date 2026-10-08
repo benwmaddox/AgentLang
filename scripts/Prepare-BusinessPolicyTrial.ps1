@@ -134,6 +134,78 @@ function Write-JsonFile([string]$Path, [object]$Value) {
     [System.IO.File]::WriteAllText($Path, $json + [Environment]::NewLine, $encoding)
 }
 
+function Invoke-FlowOwnedSourceExtractor([string[]]$Paths, [string[]]$Owners, [string]$RuntimeDll, [string]$SeedRoot) {
+    $extractorPath = Join-Path $script:RepoRoot 'scripts/Extract-FlowOwnedSource.fsx'
+    $corePath = Join-Path (Split-Path -Parent (Get-FullPath $RuntimeDll)) 'AgentLang.Core.dll'
+    if (-not (Test-Path -LiteralPath $extractorPath -PathType Leaf) -or -not (Test-Path -LiteralPath $corePath -PathType Leaf)) {
+        throw "Flow source extraction requires '$extractorPath' and the pinned sibling Core assembly '$corePath'."
+    }
+
+    $requestPath = Join-Path $SeedRoot 'project-only-source-request.json'
+    $outputPath = Join-Path $SeedRoot 'project-only-source.json'
+    Write-JsonFile $requestPath ([pscustomobject]@{ paths = @($Paths | ForEach-Object { Get-FullPath $_ }); owners = $Owners })
+    $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
+    $startInfo.FileName = 'dotnet'
+    $startInfo.UseShellExecute = $false
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    $startInfo.ArgumentList.Add('fsi')
+    $startInfo.ArgumentList.Add('--quiet')
+    $startInfo.ArgumentList.Add('--exec')
+    $startInfo.ArgumentList.Add("--reference:$corePath")
+    $startInfo.ArgumentList.Add($extractorPath)
+    $startInfo.Environment['AGENTLANG_FLOW_SOURCE_REQUEST'] = $requestPath
+
+    $process = [System.Diagnostics.Process]::new()
+    $process.StartInfo = $startInfo
+    if (-not $process.Start()) {
+        throw 'Could not start the .NET F# Interactive source extractor.'
+    }
+    $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+    $stderrTask = $process.StandardError.ReadToEndAsync()
+    try {
+        if (-not $process.WaitForExit(60000)) {
+            $process.Kill($true)
+            throw 'F# Interactive source extraction exceeded 60 seconds.'
+        }
+        $stdout = $stdoutTask.GetAwaiter().GetResult()
+        $stderr = $stderrTask.GetAwaiter().GetResult()
+        if ($process.ExitCode -ne 0) {
+            throw "F# Interactive source extraction failed ($($process.ExitCode)). stdout: $stdout stderr: $stderr"
+        }
+    }
+    finally {
+        if (-not $process.HasExited) {
+            $process.Kill($true)
+        }
+        $process.Dispose()
+    }
+    if ([string]::IsNullOrWhiteSpace($stdout)) {
+        throw "F# Interactive source extraction produced no JSON output. stderr: $stderr"
+    }
+    [System.IO.File]::WriteAllText($outputPath, $stdout, [System.Text.UTF8Encoding]::new($false))
+    try {
+        $result = ConvertFrom-Json -InputObject $stdout -Depth 100
+    }
+    catch {
+        throw "F# Interactive source extraction did not emit valid JSON. stdout: $stdout stderr: $stderr"
+    }
+    $sourceBytes = [System.Text.UTF8Encoding]::new($false).GetBytes([string]$result.source)
+    $sourceHash = [System.Convert]::ToHexString([System.Security.Cryptography.SHA256]::HashData($sourceBytes)).ToLowerInvariant()
+    if ($sourceHash -cne $result.sourceSha256) {
+        throw 'F# Interactive source extraction output hash does not match its exact source text.'
+    }
+    return [pscustomobject]@{
+        source = [string]$result.source
+        sourceSha256 = [string]$result.sourceSha256
+        words = @($result.words | ForEach-Object { [string]$_ })
+        tests = @($result.tests | ForEach-Object { [string]$_ })
+        examples = @($result.examples | ForEach-Object { [string]$_ })
+        requestPath = $requestPath
+        outputPath = $outputPath
+    }
+}
+
 function Copy-ProjectTree([string]$Source, [string]$Destination) {
     if (Test-Path -LiteralPath $Destination) {
         throw "Fresh destination already exists: $Destination"
@@ -250,6 +322,33 @@ function Get-FlowNames([string[]]$Paths, [string]$Pattern, [int]$Capture = 1) {
     return @($values)
 }
 
+function Get-SeedCount([object]$Counts, [string]$Name) {
+    $property = $Counts.PSObject.Properties[$Name]
+    if ($null -eq $property) {
+        return 0
+    }
+    return [int]$property.Value
+}
+
+function Assert-WordInventory([object]$Response, [string[]]$ExpectedNames, [string]$ExpectedStatus, [string[]]$LibraryNames, [string]$Label) {
+    $expectedNames = @($ExpectedNames | Sort-Object -Unique)
+    if ($expectedNames.Count -ne $ExpectedNames.Count) {
+        throw "$Label expected-word inventory contains duplicate names."
+    }
+    foreach ($name in $ExpectedNames) {
+        $entries = @($Response.data.words | Where-Object { $_.name -ceq $name })
+        if ($entries.Count -ne 1 -or $entries[0].status -cne $ExpectedStatus) {
+            throw "$Label expected '$name' to have status '$ExpectedStatus'."
+        }
+        if ($ExpectedStatus -ceq 'persistent') {
+            $expectedMaturity = if ($LibraryNames -ccontains $name) { 'library' } else { 'project' }
+            if ($entries[0].maturity -cne $expectedMaturity) {
+                throw "$Label expected '$name' to have maturity '$expectedMaturity'."
+            }
+        }
+    }
+}
+
 function Test-ExistingSeed([string]$SeedRoot, [string]$Mode, [object[]]$ExpectedInputs, [string]$CliPath, [string]$BusinessPath) {
     $statePath = Join-Path $SeedRoot 'seed-state.json'
     $projectPath = Join-Path $SeedRoot 'project'
@@ -259,6 +358,25 @@ function Test-ExistingSeed([string]$SeedRoot, [string]$Mode, [object[]]$Expected
     $state = Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json -Depth 100
     if ($state.schemaVersion -ne 1 -or $state.mode -ne $Mode) {
         throw "Seed '$SeedRoot' has an unsupported or mismatched seed manifest."
+    }
+    if ($Mode -eq 'growing') {
+        $expectedCounts = [ordered]@{
+            authoredWords = 53
+            types = 31
+            tests = 154
+            examples = 44
+            libraryWords = 51
+            projectWords = 2
+        }
+        foreach ($countName in $expectedCounts.Keys) {
+            if ((Get-SeedCount $state.counts $countName) -ne $expectedCounts[$countName]) {
+                throw "Seed '$SeedRoot' has a stale or incomplete '$countName' count; regenerate it from current source inputs."
+            }
+        }
+        $sourceExtractionProperty = $state.PSObject.Properties['sourceExtraction']
+        if ($null -eq $sourceExtractionProperty -or $null -eq $sourceExtractionProperty.Value -or $sourceExtractionProperty.Value.sourceSha256 -notmatch '^[0-9a-f]{64}$') {
+            throw "Seed '$SeedRoot' lacks a valid parsed-source extraction record."
+        }
     }
     if ($state.runtime.cliSha256 -ne (Get-Sha256 $CliPath) -or $state.runtime.businessSha256 -ne (Get-Sha256 $BusinessPath)) {
         throw "Seed '$SeedRoot' was prepared with different pinned runtime inputs."
@@ -284,8 +402,85 @@ function Initialize-LanguageSeed([string]$Mode, [string]$SeedRoot, [string[]]$In
         return (Test-ExistingSeed $SeedRoot $Mode $sourceInputs $CliPath $BusinessPath)
     }
 
+    $wordNames = @()
+    $typeNames = @()
+    $testNames = @()
+    $exampleNames = @()
+    $projectNames = @('email.delivery-fold-step', 'email.apply-delivery-result')
+    $libraryNames = @()
+    if ($Growing) {
+        $wordNames = Get-FlowNames $InputPaths '^\s*word\s+([A-Za-z0-9_.?!-]+)\s*\('
+        $typeNames = Get-FlowNames $InputPaths '^\s*(?:type|record)\s+([A-Za-z][A-Za-z0-9_]*)\b'
+        $testNames = Get-FlowNames $InputPaths '^\s*test\s+([A-Za-z0-9_./?!-]+)\s*\{'
+        $exampleNames = Get-FlowNames $InputPaths '^\s*example\s+([A-Za-z0-9_./?!-]+)\s*\{'
+        if ($sourceInputs.Count -ne 6) {
+            throw 'Growing seed must comprise exactly the six frozen business Flow documents.'
+        }
+        if ($wordNames.Count -ne 53 -or $typeNames.Count -ne 31 -or $testNames.Count -ne 154 -or $exampleNames.Count -ne 44) {
+            throw "Growing source inventory drifted: expected 53 words, 31 types, 154 tests, and 44 examples; found $($wordNames.Count), $($typeNames.Count), $($testNames.Count), and $($exampleNames.Count)."
+        }
+        if (@($wordNames | Sort-Object -Unique).Count -ne 53 -or @($typeNames | Sort-Object -Unique).Count -ne 31) {
+            throw 'Growing source inventory contains duplicate word or type names.'
+        }
+        foreach ($name in $projectNames) {
+            if (@($wordNames | Where-Object { $_ -ceq $name }).Count -ne 1) {
+                throw "Growing seed must contain exactly one project-only function named '$name'."
+            }
+        }
+        $libraryNames = @($wordNames | Where-Object { $projectNames -cnotcontains $_ })
+        if ($libraryNames.Count -ne 51) {
+            throw "Growing seed expected 51 library functions after maturity split; found $($libraryNames.Count)."
+        }
+        $forbiddenWords = @($wordNames | Where-Object { $_ -match '^customer\.(premium\?|discount-basis-points|discounted-balance)$' })
+        if ($forbiddenWords.Count -gt 0) {
+            throw 'The Growing foundation contains a task-specific policy word.'
+        }
+    }
+
     $script:createdPaths.Add($SeedRoot)
     [System.IO.Directory]::CreateDirectory($SeedRoot) | Out-Null
+    $projectOnlySource = $null
+    if ($Growing) {
+        $projectOnlySource = Invoke-FlowOwnedSourceExtractor $InputPaths $projectNames $CliPath $SeedRoot
+        $actualOwners = @($projectOnlySource.words | Sort-Object -CaseSensitive)
+        $expectedOwners = @($projectNames | Sort-Object -CaseSensitive)
+        if (($actualOwners -join "`n") -cne ($expectedOwners -join "`n")) {
+            throw 'Parsed project-only source does not contain exactly the two maturity exceptions.'
+        }
+
+        $expectedProjectTests = [System.Collections.Generic.List[string]]::new()
+        foreach ($testName in $testNames) {
+            foreach ($owner in $projectNames) {
+                if ($testName.StartsWith($owner + '/', [StringComparison]::Ordinal)) {
+                    $expectedProjectTests.Add($testName)
+                    break
+                }
+            }
+        }
+        $actualProjectTests = @($projectOnlySource.tests | Sort-Object -CaseSensitive)
+        $expectedProjectTestsSorted = @($expectedProjectTests | Sort-Object -CaseSensitive)
+        if (($actualProjectTests -join "`n") -cne ($expectedProjectTestsSorted -join "`n")) {
+            throw 'Parsed project-only test attachments differ from the current source inventory.'
+        }
+
+        $expectedProjectExamples = [System.Collections.Generic.List[string]]::new()
+        foreach ($exampleName in $exampleNames) {
+            foreach ($owner in $projectNames) {
+                if ($exampleName.StartsWith($owner + '/', [StringComparison]::Ordinal)) {
+                    $expectedProjectExamples.Add($exampleName)
+                    break
+                }
+            }
+        }
+        $actualProjectExamples = @($projectOnlySource.examples | Sort-Object -CaseSensitive)
+        $expectedProjectExamplesSorted = @($expectedProjectExamples | Sort-Object -CaseSensitive)
+        if (($actualProjectExamples -join "`n") -cne ($expectedProjectExamplesSorted -join "`n")) {
+            throw 'Parsed project-only example attachments differ from the current source inventory.'
+        }
+        if ((154 - $projectOnlySource.tests.Count) -ne 149) {
+            throw "Expected the project-only functions to own five of the 154 seed tests; found $($projectOnlySource.tests.Count)."
+        }
+    }
     $projectPath = Join-Path $SeedRoot 'project'
     [System.IO.Directory]::CreateDirectory($projectPath) | Out-Null
     $fixtureDirectory = Join-Path $projectPath 'fixtures'
@@ -301,45 +496,113 @@ function Initialize-LanguageSeed([string]$Mode, [string]$SeedRoot, [string[]]$In
             source = [System.IO.File]::ReadAllText($inputPath)
         })
     }
+    $initialTestsIndex = $requests.Count
     $requests.Add([ordered]@{ op = 'test-all' })
-    $requests.Add([ordered]@{ op = 'commit'; library = $true })
+    if ($Growing) {
+        $beforeDiscardWordsIndex = $requests.Count
+        $requests.Add([ordered]@{ op = 'words' })
+        $discardCallerIndex = $requests.Count
+        $requests.Add([ordered]@{ op = 'discard'; word = 'email.apply-delivery-result' })
+        $discardHelperIndex = $requests.Count
+        $requests.Add([ordered]@{ op = 'discard'; word = 'email.delivery-fold-step' })
+        $remainingTestsIndex = $requests.Count
+        $requests.Add([ordered]@{ op = 'test-all' })
+        $remainingWordsIndex = $requests.Count
+        $requests.Add([ordered]@{ op = 'words' })
+        $libraryCommitIndex = $requests.Count
+        $requests.Add([ordered]@{ op = 'commit'; library = $true })
+        $libraryWordsIndex = $requests.Count
+        $requests.Add([ordered]@{ op = 'words' })
+        $restoreSourceIndex = $requests.Count
+        $requests.Add([ordered]@{ op = 'define'; frontend = 'flow'; source = $projectOnlySource.source })
+        $restoredTestsIndex = $requests.Count
+        $requests.Add([ordered]@{ op = 'test-all' })
+        $projectCommitIndex = $requests.Count
+        $requests.Add([ordered]@{ op = 'commit-word'; word = 'email.apply-delivery-result'; library = $false })
+        $finalWordsIndex = $requests.Count
+        $requests.Add([ordered]@{ op = 'words' })
+    }
+    else {
+        $libraryCommitIndex = $requests.Count
+        $requests.Add([ordered]@{ op = 'commit'; library = $true })
+    }
     $responses = Invoke-AgentJsonl $projectPath $requests.ToArray() $CliPath
     if ($Growing) {
-        Assert-TestResults $responses[$InputPaths.Count] 151 'Growing seed test-all'
-        if ($sourceInputs.Count -ne 6) {
-            throw 'Growing seed must comprise exactly the six frozen business Flow documents.'
+        Assert-TestResults $responses[$initialTestsIndex] 154 'Growing full-source seed test-all'
+        Assert-WordInventory $responses[$beforeDiscardWordsIndex] $wordNames 'candidate' @() 'Growing full staged-word inventory'
+        if ($responses[$discardCallerIndex].kind -cne 'discard' -or $responses[$discardHelperIndex].kind -cne 'discard') {
+            throw 'Expected to discard the two finite-domain project-only functions before the aggregate library commit.'
         }
-        $wordNames = Get-FlowNames $InputPaths '^\s*word\s+([A-Za-z0-9_.?!-]+)\s*\('
-        $typeNames = Get-FlowNames $InputPaths '^\s*(?:type|record)\s+([A-Za-z][A-Za-z0-9_]*)\b'
-        $testNames = Get-FlowNames $InputPaths '^\s*test\s+([A-Za-z0-9_./?!-]+)\s*\{'
-        if ($wordNames.Count -ne 53 -or $typeNames.Count -ne 31 -or $testNames.Count -ne 151) {
-            throw "Growing source inventory drifted: expected 53 words, 31 types, 151 tests; found $($wordNames.Count), $($typeNames.Count), $($testNames.Count)."
+        Assert-TestResults $responses[$remainingTestsIndex] 149 'Growing library-only test-all after project-only discard'
+        Assert-WordInventory $responses[$remainingWordsIndex] $libraryNames 'candidate' @() 'Growing library-only staged-word inventory'
+        if ($responses[$libraryCommitIndex].kind -cne 'commit') {
+            throw 'Expected one aggregate commit for the complete library-eligible vocabulary.'
         }
-        $forbiddenWords = @($wordNames | Where-Object { $_ -match '^customer\.(premium\?|discount-basis-points|discounted-balance)$' })
-        if ($forbiddenWords.Count -gt 0) {
-            throw 'The Growing foundation contains a task-specific policy word.'
+        Assert-WordInventory $responses[$libraryWordsIndex] $libraryNames 'persistent' $libraryNames 'Growing aggregate library commit'
+        if ($responses[$restoreSourceIndex].kind -cne 'defined') {
+            throw 'Expected the parsed project-only source declarations and attachments to be restored as candidates.'
         }
+        Assert-TestResults $responses[$restoredTestsIndex] 154 'Growing restored full-source test-all'
+        if ($responses[$projectCommitIndex].kind -cne 'commit') {
+            throw 'Expected the two finite-domain project-only functions to commit together as project vocabulary.'
+        }
+        Assert-WordInventory $responses[$finalWordsIndex] ($libraryNames + $projectNames) 'persistent' $libraryNames 'Growing final seed inventory'
     }
-    $commitResponse = $responses[$responses.Count - 1]
-    if ($commitResponse.kind -ne 'commit') {
-        throw "Expected one aggregate library commit, received '$($commitResponse.kind)'."
+    else {
+        if ($responses[$libraryCommitIndex].kind -ne 'commit') {
+            throw 'Expected the language seed aggregate commit to succeed.'
+        }
     }
 
     $verifyRequests = [System.Collections.Generic.List[object]]::new()
     $verifyRequests.Add([ordered]@{ op = 'words' })
     $verifyRequests.Add([ordered]@{ op = 'test-all' })
-    $allTypes = Get-FlowNames $InputPaths '^\s*(?:type|record)\s+([A-Za-z][A-Za-z0-9_]*)\b'
+    $allTypes = if ($Growing) { $typeNames } else { Get-FlowNames $InputPaths '^\s*(?:type|record)\s+([A-Za-z][A-Za-z0-9_]*)\b' }
+    $describeIndexes = @{}
+    if ($Growing) {
+        foreach ($wordName in $wordNames) {
+            $describeIndexes[$wordName] = $verifyRequests.Count
+            $verifyRequests.Add([ordered]@{ op = 'describe'; word = $wordName })
+        }
+    }
+    $typeSourceIndexes = @{}
     foreach ($typeName in $allTypes) {
+        $typeSourceIndexes[$typeName] = $verifyRequests.Count
         $verifyRequests.Add([ordered]@{ op = 'source'; type = $typeName })
     }
     $freshResponses = Invoke-AgentJsonl $projectPath $verifyRequests.ToArray() $CliPath
     if ($Growing) {
-        Assert-TestResults $freshResponses[1] 151 'Growing fresh-process test-all'
+        Assert-TestResults $freshResponses[1] 154 'Growing fresh-process test-all'
+        Assert-WordInventory $freshResponses[0] ($libraryNames + $projectNames) 'persistent' $libraryNames 'Growing fresh-process inventory'
         $inventory = @($freshResponses[0].data.words)
         foreach ($wordName in $wordNames) {
             $entries = @($inventory | Where-Object { $_.name -ceq $wordName })
-            if ($entries.Count -ne 1 -or $entries[0].status -ne 'persistent' -or $entries[0].maturity -ne 'library') {
-                throw "Authored word '$wordName' did not persist as a library word."
+            if ($entries.Count -ne 1 -or $entries[0].status -cne 'persistent') {
+                throw "Authored word '$wordName' did not persist in the fresh process."
+            }
+            $description = $freshResponses[$describeIndexes[$wordName]].data
+            if ($description.kind -cne 'word') {
+                throw "Source declaration '$wordName' did not persist as an authored function."
+            }
+            $expectedTests = @($testNames | Where-Object { $_.StartsWith($wordName + '/', [StringComparison]::Ordinal) } | ForEach-Object { $_.Substring($wordName.Length + 1) } | Sort-Object -CaseSensitive)
+            $actualTests = @($description.tests | ForEach-Object { [string]$_ } | Sort-Object -CaseSensitive)
+            if (($actualTests -join "`n") -cne ($expectedTests -join "`n")) {
+                throw "Fresh process attached tests for '$wordName' differ from the frozen source inventory."
+            }
+            $expectedExamples = @($exampleNames | Where-Object { $_.StartsWith($wordName + '/', [StringComparison]::Ordinal) } | ForEach-Object { $_.Substring($wordName.Length + 1) } | Sort-Object -CaseSensitive)
+            $actualExamples = @($description.examples | ForEach-Object { [string]$_ } | Sort-Object -CaseSensitive)
+            if (($actualExamples -join "`n") -cne ($expectedExamples -join "`n")) {
+                throw "Fresh process attached examples for '$wordName' differ from the frozen source inventory."
+            }
+        }
+        $durableTests = @($wordNames | ForEach-Object { $freshResponses[$describeIndexes[$_]].data.testCount } | Measure-Object -Sum).Sum
+        $durableExamples = @($wordNames | ForEach-Object { $freshResponses[$describeIndexes[$_]].data.exampleCount } | Measure-Object -Sum).Sum
+        if ($durableTests -ne 154 -or $durableExamples -ne 44) {
+            throw "Fresh process metadata inventory drifted: expected 154 tests and 44 examples; found $durableTests and $durableExamples."
+        }
+        foreach ($typeName in $allTypes) {
+            if ($freshResponses[$typeSourceIndexes[$typeName]].kind -cne 'source') {
+                throw "Fresh process could not inspect persisted type '$typeName'."
             }
         }
     }
@@ -355,6 +618,17 @@ function Initialize-LanguageSeed([string]$Mode, [string]$SeedRoot, [string[]]$In
         schemaVersion = 1
         mode = $Mode
         sourceInputs = $sourceInputs
+        sourceExtraction = if ($Growing) {
+            [pscustomobject]@{
+                parser = 'AgentLang.Core.FlowParser.parseDocumentWithVersion'
+                owners = @($projectNames)
+                sourceSha256 = $projectOnlySource.sourceSha256
+                words = @($projectOnlySource.words)
+                tests = @($projectOnlySource.tests)
+                examples = @($projectOnlySource.examples)
+            }
+        }
+        else { $null }
         runtime = $runtime
         project = [pscustomobject]@{
             files = $projectInventory
@@ -362,7 +636,10 @@ function Initialize-LanguageSeed([string]$Mode, [string]$SeedRoot, [string[]]$In
         counts = [pscustomobject]@{
             authoredWords = if ($Growing) { 53 } else { 0 }
             types = if ($Growing) { 31 } else { $allTypes.Count }
-            tests = if ($Growing) { 151 } else { 0 }
+            tests = if ($Growing) { 154 } else { 0 }
+            examples = if ($Growing) { 44 } else { 0 }
+            libraryWords = if ($Growing) { 51 } else { 0 }
+            projectWords = if ($Growing) { 2 } else { 0 }
         }
     }
     Write-JsonFile (Join-Path $SeedRoot 'seed-state.json') $state
@@ -440,6 +717,9 @@ function Initialize-ConventionalSeed([string]$SeedRoot, [string[]]$TemplatePaths
             authoredWords = 0
             types = 0
             tests = 7
+            examples = 0
+            libraryWords = 0
+            projectWords = 0
         }
     }
     Write-JsonFile (Join-Path $SeedRoot 'seed-state.json') $state
@@ -660,6 +940,9 @@ record Customer {
         authoredWordCount = $seedState.counts.authoredWords
         typeCount = $seedState.counts.types
         testCount = $seedState.counts.tests
+        exampleCount = Get-SeedCount $seedState.counts 'examples'
+        libraryWordCount = Get-SeedCount $seedState.counts 'libraryWords'
+        projectWordCount = Get-SeedCount $seedState.counts 'projectWords'
     } | ConvertTo-Json -Depth 20
 }
 finally {

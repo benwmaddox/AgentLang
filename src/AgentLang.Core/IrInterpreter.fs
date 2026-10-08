@@ -29,9 +29,13 @@ type IrInterpreterHost =
       RecordBranchOutcome: string -> SourceSiteId -> string -> unit
       RecordUse: string -> unit
       InvokeEffect: IrEffectCommand -> IrEffectResult
-      /// Called at verified user-function entry and returns the exact scope exit
-      /// action. The interpreter always invokes that action from a finally block.
-      EnterUserFunction: WordId -> int -> (unit -> unit)
+      /// Called at verified user-function entry with a deferred snapshot of the
+      /// actual input values. The host may ignore the decoder. The returned scope
+      /// exit action is always called from a finally block.
+      EnterUserFunction: WordId -> int -> (unit -> Value list) -> (unit -> unit)
+      /// Called only after a verified user function returns normally. Output
+      /// decoding is deferred so hosts without observation do not allocate it.
+      ReturnUserFunction: WordId -> int -> (unit -> Value list) -> unit
       WordDefinitionSpan: string -> SourceSpan option
       PrimitiveDefinitionSpan: string -> SourceSpan option }
 
@@ -199,6 +203,45 @@ module IrInterpreter =
 
     let private runtimeTypeNames (program: IrProgram) values =
         values |> List.map (runtimeValueType >> formatType program)
+
+    let private decodeRuntimeValue (program: IrProgram) =
+        let rec fromRuntimeValue = function
+            | RuntimeInt value -> IntValue value
+            | RuntimeFloat value -> FloatValue value
+            | RuntimeBool value -> BoolValue value
+            | RuntimeString value -> StringValue value
+            | RuntimeUnit -> UnitValue
+            | RuntimeList(itemType, values) -> ListValue(toLangType itemType, List.map fromRuntimeValue values)
+            | RuntimeOption(itemType, value) -> OptionValue(toLangType itemType, Option.map fromRuntimeValue value)
+            | RuntimeResult(okType, errorType, value) ->
+                ResultValue(toLangType okType, toLangType errorType, Result.map fromRuntimeValue value |> Result.mapError fromRuntimeValue)
+            | RuntimeRecord(key, values) ->
+                match program.NominalTypesByKey.TryFind key with
+                | Some(IrRecordDefinition definition) ->
+                    let fields = definition.RecordFields |> List.sortBy (fun field -> field.FieldIndex)
+                    if fields.Length <> values.Length then
+                        fail "IR_BACKEND_RECORD_LAYOUT" "Runtime record field count differs from its verified nominal layout." (Some definition.TypeName) None [ string fields.Length ] [ string values.Length ]
+                    RecordValue(definition.TypeName, List.zip fields values |> List.map (fun (field, value) -> field.FieldName, fromRuntimeValue value) |> Map.ofList)
+                | _ -> fail "IR_BACKEND_RECORD_LAYOUT" "Record value refers to a non-record nominal type." None None [ "record" ] [ typeName program key ]
+            | RuntimeScalar(key, value) ->
+                match program.NominalTypesByKey.TryFind key with
+                | Some(IrScalarDefinition definition) -> NamedValue(definition.TypeName, fromRuntimeValue value)
+                | _ -> fail "IR_BACKEND_SCALAR_LAYOUT" "Scalar value refers to a non-scalar nominal type." None None [ "scalar" ] [ typeName program key ]
+            | RuntimeEnum(key, caseIndex) ->
+                match program.NominalTypesByKey.TryFind key with
+                | Some(IrEnumDefinition definition) when caseIndex >= 0 && caseIndex < definition.Cases.Length -> EnumValue(definition.TypeName, definition.Cases[caseIndex])
+                | _ -> fail "IR_BACKEND_ENUM_LAYOUT" "Enum value refers to a non-enum nominal type or case index." None None [ "valid enum type and case" ] [ typeName program key; string caseIndex ]
+        and toLangType = function
+            | IrInt -> TInt
+            | IrFloat -> TFloat
+            | IrBool -> TBool
+            | IrString -> TString
+            | IrUnit -> TUnit
+            | IrList item -> TList(toLangType item)
+            | IrOption item -> TOption(toLangType item)
+            | IrResult(okType, errorType) -> TResult(toLangType okType, toLangType errorType)
+            | IrNominal key -> TNamed(typeName program key)
+        fromRuntimeValue
 
     let private requireBackendRegistry (verified: VerifiedIrProgram) =
         VerifiedIrProgram.requireBackendRegistry Compiler.primitiveIrCatalog verified
@@ -408,6 +451,8 @@ module IrInterpreter =
             if chargedSteps > maxSteps then
                 fail "RUNTIME_STEP_LIMIT" "Execution exceeded the 10,000 instruction limit." (Some currentWord) (sourceSpan site) [] []
 
+        let decodeValue = decodeRuntimeValue program
+
         let rec invokeResolved (depth: int) (call: IrResolvedCall) (arguments: RuntimeValue list) (site: SourceSiteId option) =
             if depth > maxCallDepth then
                 fail "RUNTIME_CALL_DEPTH" "Execution exceeded the 64 word call-depth limit." (Some call.ResolvedName) (host.WordDefinitionSpan call.ResolvedName) [] []
@@ -440,10 +485,15 @@ module IrInterpreter =
             if arguments.Length <> functionValue.InputTypes.Length then
                 fail "RUNTIME_INTERNAL_TYPE" $"'{functionValue.FunctionName}' received values outside its verified signature." (Some functionValue.FunctionName) None
                     (functionValue.InputTypes |> List.map (formatType program)) (runtimeTypeNames program arguments)
-            let exitUserFunction = host.EnterUserFunction functionValue.FunctionId functionValue.FunctionRevision
+            let exitUserFunction =
+                host.EnterUserFunction
+                    functionValue.FunctionId
+                    functionValue.FunctionRevision
+                    (fun () -> arguments |> List.map decodeValue)
             try
                 let locals = Map.empty
                 let stack, _ = executeBlock entryDepth functionValue.FunctionName functionValue.LocalNames functionValue.FunctionBody arguments locals
+                host.ReturnUserFunction functionValue.FunctionId functionValue.FunctionRevision (fun () -> stack |> List.map decodeValue)
                 stack
             finally
                 exitUserFunction ()
@@ -852,46 +902,10 @@ module IrInterpreter =
         let result, _ = executeBlock 0 executionName body.BodyLocalNames body.BodyBlock initialStack Map.empty
         checkRuntimeValueRoots executionName None result
 
-        let rec fromRuntimeValue = function
-            | RuntimeInt value -> IntValue value
-            | RuntimeFloat value -> FloatValue value
-            | RuntimeBool value -> BoolValue value
-            | RuntimeString value -> StringValue value
-            | RuntimeUnit -> UnitValue
-            | RuntimeList(itemType, values) -> ListValue(toLangType itemType, List.map fromRuntimeValue values)
-            | RuntimeOption(itemType, value) -> OptionValue(toLangType itemType, Option.map fromRuntimeValue value)
-            | RuntimeResult(okType, errorType, value) ->
-                ResultValue(toLangType okType, toLangType errorType, Result.map fromRuntimeValue value |> Result.mapError fromRuntimeValue)
-            | RuntimeRecord(key, values) ->
-                match program.NominalTypesByKey.TryFind key with
-                | Some(IrRecordDefinition definition) ->
-                    let fields = definition.RecordFields |> List.sortBy (fun field -> field.FieldIndex)
-                    if fields.Length <> values.Length then
-                        fail "IR_BACKEND_RECORD_LAYOUT" "Runtime record field count differs from its verified nominal layout." (Some definition.TypeName) None [ string fields.Length ] [ string values.Length ]
-                    RecordValue(definition.TypeName, List.zip fields values |> List.map (fun (field, value) -> field.FieldName, fromRuntimeValue value) |> Map.ofList)
-                | _ -> fail "IR_BACKEND_RECORD_LAYOUT" "Record value refers to a non-record nominal type." None None [ "record" ] [ typeName program key ]
-            | RuntimeScalar(key, value) ->
-                match program.NominalTypesByKey.TryFind key with
-                | Some(IrScalarDefinition definition) -> NamedValue(definition.TypeName, fromRuntimeValue value)
-                | _ -> fail "IR_BACKEND_SCALAR_LAYOUT" "Scalar value refers to a non-scalar nominal type." None None [ "scalar" ] [ typeName program key ]
-            | RuntimeEnum(key, caseIndex) ->
-                match program.NominalTypesByKey.TryFind key with
-                | Some(IrEnumDefinition definition) when caseIndex >= 0 && caseIndex < definition.Cases.Length -> EnumValue(definition.TypeName, definition.Cases[caseIndex])
-                | _ -> fail "IR_BACKEND_ENUM_LAYOUT" "Enum value refers to a non-enum nominal type or case index." None None [ "valid enum type and case" ] [ typeName program key; string caseIndex ]
-        and toLangType = function
-            | IrInt -> TInt
-            | IrFloat -> TFloat
-            | IrBool -> TBool
-            | IrString -> TString
-            | IrUnit -> TUnit
-            | IrList item -> TList(toLangType item)
-            | IrOption item -> TOption(toLangType item)
-            | IrResult(okType, errorType) -> TResult(toLangType okType, toLangType errorType)
-            | IrNominal key -> TNamed(typeName program key)
         new IrInterpreterResult(
             verifiedProgram,
             result |> List.toArray,
-            fromRuntimeValue)
+            decodeValue)
 
     /// Compatibility entry point for callers that only execute zero-input
     /// bodies and immediately observe public Values.

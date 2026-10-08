@@ -19,6 +19,7 @@
     <Compile Include="FlowPersistence.fs" />
     <Compile Include="FlowRewrite.fs" />
     <Compile Include="IrFormatting.fs" />
+    <Compile Include="FiniteCoverage.fs" />
     <Compile Include="IrInterpreter.fs" />
     <Compile Include="ValueInspection.fs" />
     <Compile Include="Source.fs" />

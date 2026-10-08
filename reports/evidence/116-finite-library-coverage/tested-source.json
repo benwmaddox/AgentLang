@@ -1,0 +1,86 @@
+[
+  {
+    "path": "examples/business-store.agent",
+    "sha256": "37fefda4c504d4dd894004a4f6e3a58893b0171d674c21f8feb8d5e47f1858e1"
+  },
+  {
+    "path": "examples/business-subscriptions.agent",
+    "sha256": "0e45843a418006ed7332fcd6c0e8a8e81c8f8169a2459e20d28b5d5ecc3a405b"
+  },
+  {
+    "path": "experiments/AgentLang.NativeMailbox/Program.fs",
+    "sha256": "9fdaab0f5b37e127b9bf3832e1c4fc826dcdd31ea8198c76ef49318b7bb89ce6"
+  },
+  {
+    "path": "scripts/Extract-FlowOwnedSource.fsx",
+    "sha256": "c1417dcf6ea37b5b70aa1890ee8c684e18dfdefa842ff10ee219e2c0c0c5dd6d"
+  },
+  {
+    "path": "scripts/Prepare-BusinessPolicyTrial.ps1",
+    "sha256": "302f08a1068074eaec13c255f511bfcbd968ce1d75c7f0f12e7e09db57d6250f"
+  },
+  {
+    "path": "scripts/Verify-EarlyAgentNegativeControls.ps1",
+    "sha256": "af015557210d8cfb9621328a0129e738b294f49b32581c9eed793327673c5581"
+  },
+  {
+    "path": "scripts/Verify-FlowCallBindings.fsx",
+    "sha256": "7823a327a74d575b4b7dc644377605757c88bf5f7d2835101a93d8ea2afee771"
+  },
+  {
+    "path": "src/AgentLang.Core/AgentLang.Core.fsproj",
+    "sha256": "4948705084736ac21769ce20741fbf1c442b24ce1c6e6f217610f7ff5c3ce9aa"
+  },
+  {
+    "path": "src/AgentLang.Core/AuthoringHelp.fs",
+    "sha256": "1335a88d42648889c5c52cb093705e982783c99a326c696a5803b11a622a2f28"
+  },
+  {
+    "path": "src/AgentLang.Core/FiniteCoverage.fs",
+    "sha256": "113b578bd7176c73b6035db7b6a7abbb0432110ddedc7470649d59b178c8c625"
+  },
+  {
+    "path": "src/AgentLang.Core/IrInterpreter.fs",
+    "sha256": "e4185e6b3e0c56f55f725e411ef9c59cf661d5c7ed14c3a5cff8789118ca16c3"
+  },
+  {
+    "path": "src/AgentLang.Core/Runtime.fs",
+    "sha256": "909d3496f2ee6ca747e3ab5ea0e6906d6945aa989d7c4a36f3eaa098a02b0f36"
+  },
+  {
+    "path": "tests/AgentLang.Acceptance/Program.fs",
+    "sha256": "1e63e50056751c94a50e77a333124a9a6cee92cc458272acc197f3f9081215fe"
+  },
+  {
+    "path": "tests/AgentLang.Business.Language.Tests/Program.fs",
+    "sha256": "01ab0c2c086d11cba71e1fb0f1308f8bec30c43f2294f4faccf63a59721ab13e"
+  },
+  {
+    "path": "tests/AgentLang.Business.Transitions.Tests/Program.fs",
+    "sha256": "57e27e3bb702f815c115320a4e8438e803f1974a0c05db3373be2d566f1da101"
+  },
+  {
+    "path": "tests/AgentLang.Flow.Runtime.Tests/Program.fs",
+    "sha256": "c7b503c8f287f2c3dd5b391c6ecc0c131a53ffe4f232f21c5532c003f70e39ab"
+  },
+  {
+    "path": "tests/AgentLang.Flow.Tests/Program.fs",
+    "sha256": "2c75125bcbc0498fa7174055df71bb0125474947314e34d44ca39f14c62a034b"
+  },
+  {
+    "path": "tests/AgentLang.IR.Interpreter.Tests/Program.fs",
+    "sha256": "811e1d51db3ce55fa77bad4d11e38c8822fc0ae5742ec0e65a12b8f6420dba59"
+  },
+  {
+    "path": "tests/AgentLang.IR.Tests/Program.fs",
+    "sha256": "86cff1b83c6dd17ecb5ead94531bce319f922f1a5d90e7f2fbc62c3572ba86aa"
+  },
+  {
+    "path": "tests/AgentLang.Llvm.Tests/Program.fs",
+    "sha256": "6d8c451ccbf56708cd7d38e879c2ec0d9566dde51b21f93f3bb2a2592b3f6b0d"
+  },
+  {
+    "path": "tests/AgentLang.TrustedValues.Tests/Program.fs",
+    "sha256": "1a13de8eb029cd8a68369f7d6f846d3a3f2ae6e5f7abd9ce7a9bd04784c424a4"
+  }
+]

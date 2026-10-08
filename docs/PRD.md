@@ -305,7 +305,7 @@ A commit must:
 5. Run all attached tests in isolated deterministic providers and satisfy the selected quality gate.
 6. Persist the complete accepted change atomically, or leave persistent state unchanged.
 
-The initial API may commit one word at a time. If so, dependencies must be committed first; a multiword task commit must use dependency order and an atomic boundary. A project word requires at least one attached passing test. A library word additionally requires complete instruction and conditional-branch coverage. Temporary downstream logic can be evaluated without meeting the library gate. The benchmark harness supplies independent acceptance tests.
+The initial API may commit one word at a time. If so, dependencies must be committed first; a multiword task commit must use dependency order and an atomic boundary. A project word requires at least one attached passing test. A library word additionally requires complete instruction and branch coverage, the finite input/return coverage specified above, and qualified authored dependencies. Temporary downstream logic can be evaluated without meeting the library gate. The benchmark harness supplies independent acceptance tests.
 
 Records and their generated words are one change boundary. Refined types and their constructors, unwrappers, and validation dependencies are another. Schema changes must not silently reinterpret existing values or invalidate callers. Until migrations exist, incompatible changes should be rejected.
 
@@ -320,11 +320,11 @@ Two quality levels are required:
 | Level | Intended use | Commit requirement |
 | --- | --- | --- |
 | Project | Downstream application composition | At least one attached test, all attached tests pass |
-| Library | Reusable vocabulary relied on across tasks | Project requirements plus 100% executable instruction coverage and both outcomes of every conditional |
+| Library | Reusable vocabulary relied on across tasks | Project requirements plus complete executable instruction/branch coverage, finite input/return coverage, and qualified authored dependencies |
 
 Coverage is computed from runtime execution of the current compiled word by its attached tests. Give instructions and branches stable identifiers within a revision and map them to source spans. Report executed/total instructions, observed/total branch outcomes, and uncovered source locations. Synthetic bookkeeping such as Return is excluded from the executable-instruction denominator. Do not count coverage from unrelated prior interactive executions. Reset measurement when source or dependencies change.
 
-The initial library gate applies to the word's own implementation; dependency quality is exposed separately. It must not be presented as whole-system coverage. A library word's use of lower-quality dependencies is visible to the developer and agent. Tests run with virtual providers; successful test coverage must not grant production effect permissions.
+Coverage applies to the function's own implementation and its own attached tests; it must not be presented as whole-system coverage. The required dependency rule separately permits library functions to call only qualified authored library functions or trusted/generated operations. Earlier implementation milestones exposed lower-quality dependencies without enforcing this rule; that behavior is not the target contract. Tests run with virtual providers; successful test coverage must not grant production effect permissions.
 
 Branch coverage requires both true and false outcomes at every conditional, including an omitted else. It does not require every possible combination of branches, prove correctness, or substitute for boundary and invalid-input tests. The first language supports conditionals; any future looping, pattern matching, or short-circuit operator needs an explicit coverage rule before qualifying for library use. A word with no branches still requires at least one passing test and complete executable-instruction coverage.
 

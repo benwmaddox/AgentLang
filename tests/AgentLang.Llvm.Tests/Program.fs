@@ -169,7 +169,8 @@ let private noOpHost () : IrInterpreterHost =
       RecordBranchOutcome = fun _ _ _ -> ()
       RecordUse = ignore
       InvokeEffect = fun _ -> EffectUnit
-      EnterUserFunction = fun _ _ -> ignore
+      EnterUserFunction = fun _ _ _ -> fun () -> ()
+      ReturnUserFunction = fun _ _ _ -> ()
       WordDefinitionSpan = fun _ -> None
       PrimitiveDefinitionSpan = fun _ -> None }
 

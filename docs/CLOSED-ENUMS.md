@@ -43,11 +43,15 @@ Interpreter coverage records the actual named match outcomes. Durable Flow/2
 source and call bindings retain constructors and calls nested inside match arms.
 Flow/1 does not accept the new declarations or enum-specific binding paths.
 
-Library qualification involving enums is deliberately unavailable until the
-required finite input/output coverage is implemented. The diagnostic is
-`LIBRARY_FINITE_COVERAGE_UNSUPPORTED`; checking includes reachable helpers and
-nested types. Passing every match arm alone does not establish the full library
-contract. Enum-free code remains eligible under its existing rules.
+Library qualification now checks each direct enum input parameter for every
+declared case and checks supported finite return domains, in addition to the
+function's own instruction and branch coverage. An enum-bearing authored helper
+reached by a library function must itself be independently qualified as a
+library function; a wrapper cannot inherit that evidence. Unprovable or
+oversized finite domains fail closed with `LIBRARY_FINITE_DOMAIN_UNSUPPORTED`,
+and missing cases fail with `LIBRARY_FINITE_COVERAGE_INCOMPLETE`. See the
+[finite coverage contract](FINITE-COVERAGE.md). All 37 local validation checks pass; passing every match arm alone does not establish the complete
+library contract.
 
 LLVM execution of enums is not implemented in this slice and fails with
 `IR_LLVM_ENUM_UNSUPPORTED`.

@@ -1067,7 +1067,7 @@ word conformance.failed-delivery-input(seed: Store) -> Store {
         totalWords <- names.Length
         totalTypes <- typeNames.Length
 
-        let idsBefore = wordIds engine names
+        let mutable idsBefore = wordIds engine names
         let wordSourcesBefore = names |> List.map (fun name -> name, sourceForWord engine name)
         let typeSourcesBefore = typeNames |> List.map (fun name -> name, sourceForType engine name)
         let testsBefore =
@@ -1088,16 +1088,196 @@ word conformance.failed-delivery-input(seed: Store) -> Store {
         totalExamples <- examplesRun
         runResultTests engine document.Tests.Length |> ignore
 
-        let committed =
-            dispatch engine "commit" [ "library", jbool true ]
-            |> expectOk "commit all authored transition words and types at library maturity"
-        check (committed.ContainsKey "data") "aggregate library/type commit returns confirmation"
+        let projectOnlyWords = Set.ofList [ "email.delivery-fold-step"; "email.apply-delivery-result" ]
+        let authoredNames = Set.ofList names
+        let finiteAudit =
+            names
+            |> List.map (fun name ->
+                let finite =
+                    dispatch engine "describe" [ "word", jstr name ]
+                    |> expectOk $"describe finite coverage for {name} after test-all"
+                    |> fun response -> response.["data"].["coverage"].["finiteCoverage"]
+                let missing = jsonStrings finite.["missing"]
+                let unsupported = jsonStrings finite.["unsupported"]
+                let complete = boolValue finite.["complete"]
+                name, complete, missing, unsupported)
+        equal names.Length finiteAudit.Length "finite coverage was audited for every authored transition function"
+        let incompleteFinite = finiteAudit |> List.filter (fun (_, complete, _, unsupported) -> not complete || not (List.isEmpty unsupported))
+        for name, _, missing, unsupported in incompleteFinite do
+            printfn "FINITE AUDIT INCOMPLETE %s missing=[%s] unsupported=[%s]" name (String.concat "; " missing) (String.concat "; " unsupported)
+        for name, complete, missing, unsupported in finiteAudit do
+            if name = "email.delivery-fold-step" then
+                equal false complete "the delivery fold is deliberately not library-qualified"
+                equal [ "return[0] EmailDeliveryPlan: $.first: none" ] missing
+                    "the delivery fold's only finite gap is the unreachable none state"
+                equal [] unsupported "the delivery fold has no unsupported finite domain"
+            else
+                equal true complete $"{name} has complete finite observations"
+                equal [] missing $"{name} has no missing finite observations"
+                equal [] unsupported $"{name} has no unsupported finite domains"
+
+        let dependencyMap =
+            names
+            |> List.map (fun name ->
+                let direct =
+                    dispatch engine "dependencies" [ "word", jstr name ]
+                    |> expectOk $"query direct dependencies of {name} before maturity promotion"
+                    |> fun response -> jsonStrings response.["data"].["dependencies"]
+                name, Set.ofList direct)
+            |> Map.ofList
+        let mutable projectClosure = Set.singleton "email.delivery-fold-step"
+        let mutable projectClosureChanged = true
+        while projectClosureChanged do
+            let before = projectClosure
+            for name in names do
+                if not (projectClosure.Contains name)
+                   && not (Set.isEmpty (Set.intersect dependencyMap[name] projectClosure)) then
+                    projectClosure <- Set.add name projectClosure
+            projectClosureChanged <- before <> projectClosure
+        equal projectOnlyWords projectClosure "only the delivery fold and its authored callers remain project maturity"
+
+        let callerResponse =
+            dispatch engine "transitive-callers" [ "word", jstr "email.delivery-fold-step" ]
+            |> expectOk "inspect delivery-fold-step callers before maturity promotion"
+        let authoredDeliveryCallers =
+            jsonStrings callerResponse.["data"].["callers"]
+            |> List.filter authoredNames.Contains
+            |> List.sort
+        equal [ "email.apply-delivery-result" ] authoredDeliveryCallers
+            "delivery-fold-step has exactly one authored transitive caller"
+
+        let statusBeforeRejectedPromotion =
+            dispatch engine "storage.status" []
+            |> expectOk "capture durable status before finite-coverage rejection"
+            |> fun response -> response.["data"].ToJsonString()
+        let rejectedPromotion =
+            dispatch engine "commit" [ "word", jstr "email.delivery-fold-step"; "library", jbool true ]
+            |> expectError "reject the delivery fold's unreachable empty-first return"
+        equal "LIBRARY_FINITE_COVERAGE_INCOMPLETE" (stringValue rejectedPromotion.["error"].["code"])
+            "email.delivery-fold-step remains project maturity because its declared output is wider than its reachable range"
+        equal "email.delivery-fold-step" (stringValue rejectedPromotion.["error"].["word"])
+            "finite coverage rejection identifies the exact helper"
+        equal [ "return[0] EmailDeliveryPlan: $.first: none" ] (jsonStrings rejectedPromotion.["error"].["expected"])
+            "finite coverage rejection names the single unreachable Option case"
+        let statusAfterRejectedPromotion =
+            dispatch engine "storage.status" []
+            |> expectOk "inspect durable status after finite-coverage rejection"
+            |> fun response -> response.["data"].ToJsonString()
+        equal statusBeforeRejectedPromotion statusAfterRejectedPromotion
+            "rejected finite coverage promotion leaves durable storage unchanged"
+
+        let validatorWords = document.Scalars |> List.choose _.Validator |> Set.ofList
+        check (Set.isSubset validatorWords authoredNames) "all scalar validators are included in the authored word inventory"
+
+        let projectWords =
+            document.Words
+            |> List.filter (fun word -> projectOnlyWords.Contains word.Name)
+        let projectTestSources =
+            document.Tests
+            |> List.filter (fun test -> projectOnlyWords.Contains test.Word)
+            |> List.map _.SourceText
+        let projectExampleSources =
+            document.Examples
+            |> List.filter (fun example -> projectOnlyWords.Contains example.Word)
+            |> List.map _.SourceText
+        let projectSource =
+            [ projectWords |> List.map _.SourceText
+              projectTestSources
+              projectExampleSources ]
+            |> List.concat
+            |> String.concat (Environment.NewLine + Environment.NewLine)
+
+        let mutable pendingTemporaryWords = temporaryNames
+        while not pendingTemporaryWords.IsEmpty do
+            let removable =
+                pendingTemporaryWords
+                |> Set.filter (fun name ->
+                    let callers =
+                        dispatch engine "callers" [ "word", jstr name ]
+                        |> expectOk $"inspect temporary callers of {name} before cleanup"
+                        |> fun response -> jsonStrings response.["data"]
+                    callers |> List.forall (pendingTemporaryWords.Contains >> not))
+            if removable.IsEmpty then
+                let cycleNames = pendingTemporaryWords |> Set.toList |> String.concat ", "
+                failwith $"Temporary probe dependency cycle prevents cleanup: {cycleNames}"
+            for name in removable do
+                dispatch engine "discard" [ "word", jstr name ]
+                |> expectOk $"discard completed temporary probe {name} before library qualification"
+                |> ignore
+                pendingTemporaryWords <- Set.remove name pendingTemporaryWords
+
+        for name in [ "email.apply-delivery-result"; "email.delivery-fold-step" ] do
+            dispatch engine "discard" [ "word", jstr name ]
+            |> expectOk $"discard {name} temporarily to isolate its test metadata from library qualification"
+            |> ignore
+
+        let beforeLibraryCommit =
+            dispatch engine "words" []
+            |> expectOk "inspect authored candidates after removing the project-only delivery path"
+            |> fun response -> response.["data"].["words"].AsArray()
+        for name in names do
+            if projectOnlyWords.Contains name then
+                check (beforeLibraryCommit |> Seq.forall (fun row -> stringValue row.["name"] <> name))
+                    $"{name} is absent while all library-ready candidates are committed"
+            else
+                let entry = beforeLibraryCommit |> Seq.find (fun row -> stringValue row.["name"] = name)
+                equal "candidate" (stringValue entry.["status"]) $"{name} remains a candidate for global library qualification"
+
+        // A named commit also pulls in candidate dependencies and test metadata
+        // at project maturity. Remove this path and its owned metadata so one
+        // aggregate commit can qualify every other candidate as library code.
+        dispatch engine "commit" [ "library", jbool true ]
+        |> expectOk "commit all remaining business words and types at library maturity"
+        |> ignore
+
+        let libraryInventory =
+            dispatch engine "words" []
+            |> expectOk "inspect the library-qualified vocabulary before restoring the project-only delivery path"
+            |> fun response -> response.["data"].["words"].AsArray()
+        for name in names |> List.filter (fun item -> not (projectOnlyWords.Contains item)) do
+            let entry = libraryInventory |> Seq.find (fun row -> stringValue row.["name"] = name)
+            equal "persistent" (stringValue entry.["status"]) $"{name} is persistent after global library qualification"
+            equal "library" (stringValue entry.["maturity"]) $"{name} has library maturity after global qualification"
+        for name in projectOnlyWords do
+            check (libraryInventory |> Seq.forall (fun row -> stringValue row.["name"] <> name))
+                $"{name} was withheld from the aggregate library commit"
+
+        let restoredProjectPath =
+            dispatch engine "define" [ "frontend", jstr "flow"; "source", jstr projectSource ]
+            |> expectOk "restore exact source and attachments for the two project-maturity delivery words"
+        equal projectWords.Length (restoredProjectPath.["data"].["words"].AsArray().Count)
+            "both project-only word definitions are restored"
+        let restoredNames = wordIds engine names
+        idsBefore <- restoredNames
+        equal names.Length restoredNames.Length "all original function names are restored before project commit"
+        for name, source in wordSourcesBefore do
+            if projectOnlyWords.Contains name then
+                equal source (sourceForWord engine name) $"exact source is restored for {name}"
+        for name, expectedCases in testsBefore do
+            if projectOnlyWords.Contains name then
+                let actualCases = dispatch engine "tests" [ "word", jstr name ] |> expectOk $"query restored tests for {name}" |> fun response -> jsonStrings response.["data"]
+                equal expectedCases actualCases $"test identities are restored for {name}"
+        for name, expectedCases in examplesBefore do
+            if projectOnlyWords.Contains name then
+                let actualCases = dispatch engine "examples" [ "word", jstr name ] |> expectOk $"query restored examples for {name}" |> fun response -> jsonStrings response.["data"]
+                equal expectedCases actualCases $"example identities are restored for {name}"
+        runResultTests engine document.Tests.Length |> ignore
+        let restoredExamples = names |> List.sumBy (runExamplesForWord engine)
+        equal document.Examples.Length restoredExamples "all exact examples pass after project-only source restoration"
+        totalExamples <- restoredExamples
+
+        let committedProjectPath =
+            dispatch engine "commit" [ "word", jstr "email.apply-delivery-result" ]
+            |> expectOk "persist the delivery path and its finite-incomplete fold helper at project maturity"
+        check (committedProjectPath.ContainsKey "data") "project-maturity transition commit returns confirmation"
+        runResultTests engine document.Tests.Length |> ignore
 
         let publishedWords = dispatch engine "words" [] |> expectOk "inspect library words" |> fun response -> response.["data"].["words"].AsArray()
         for name in names do
             let entry = publishedWords |> Seq.find (fun row -> stringValue row.["name"] = name)
             equal "persistent" (stringValue entry.["status"]) $"{name} persisted"
-            equal "library" (stringValue entry.["maturity"]) $"{name} reached library maturity"
+            let expectedMaturity = if projectOnlyWords.Contains name then "project" else "library"
+            equal expectedMaturity (stringValue entry.["maturity"]) $"{name} has its declared maturity"
             let description = dispatch engine "describe" [ "word", jstr name ] |> expectOk $"describe committed word {name}"
             let coverage = description.["data"].["coverage"]
             equal "current" (stringValue coverage.["status"]) $"{name} has current test coverage"
@@ -1117,6 +1297,10 @@ word conformance.failed-delivery-input(seed: Store) -> Store {
             equal expectedCases actualCases $"example names reload for {name}"
 
         let freshWordEntries = dispatch fresh "words" [] |> expectOk "inspect fresh persistent dictionary" |> fun response -> response.["data"].["words"].AsArray()
+        for name in names do
+            let entry = freshWordEntries |> Seq.find (fun row -> stringValue row.["name"] = name)
+            let expectedMaturity = if projectOnlyWords.Contains name then "project" else "library"
+            equal expectedMaturity (stringValue entry.["maturity"]) $"{name} retains its declared maturity after reload"
         for name in temporaryNames do
             check (freshWordEntries |> Seq.forall (fun row -> stringValue row.["name"] <> name)) $"temporary probe {name} does not persist"
             let history = dispatch fresh "history" [ "word", jstr name ] |> expectError $"query history for temporary probe {name}"
@@ -1214,7 +1398,7 @@ word conformance.failed-delivery-input(seed: Store) -> Store {
         check (not (List.isEmpty document.Examples)) "joined fixture includes examples"
         equal 53 document.Words.Length "all expected authored business words are present"
         equal 31 (document.Records.Length + document.Scalars.Length) "all expected nominal business types are present"
-        equal 151 document.Tests.Length "all expected attached business test cases are present"
+        equal 154 document.Tests.Length "all expected attached business test cases are present"
         equal 44 document.Examples.Length "all expected business examples are present"
 
         let projectPath = Path.Combine(Path.GetTempPath(), $"agentlang-business-transitions-{Guid.NewGuid():N}")

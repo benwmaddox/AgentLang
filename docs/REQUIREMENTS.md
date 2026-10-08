@@ -167,6 +167,8 @@ data; real provider invocation, matched business-task adapters and the full
 controlled evaluation are still pending. The next priority is fresh external
 agent tasks on this retained vocabulary, before memory/backend research.
 
+The locally validated finite-coverage milestone adds three reachable cancelled-subscription cases (154 source tests total). Its growing seed retains 51 library functions and two project functions: the email fold helper cannot return its declared empty alternative, and its caller remains project-level too. See [report 116](../reports/116-finite-library-coverage.md). Historical checkpoint and frozen-trial counts above remain unchanged.
+
 Historical external-agent workflow evidence: [report 054](../reports/054-flow-renewal-agent-control.md)
 records a separate inherited-history Luna/max control that created one tested
 library word by composing a retained domain word. Fresh-process acceptance

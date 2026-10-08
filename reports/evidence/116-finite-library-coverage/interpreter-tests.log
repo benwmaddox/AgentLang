@@ -1,0 +1,3 @@
+COMMAND: dotnet run --project tests/AgentLang.IR.Interpreter.Tests/AgentLang.IR.Interpreter.Tests.fsproj --configuration Debug --artifacts-path .agentlang/finite-coverage-001/ir-interpreter-artifacts
+IR Interpreter tests passed (76 assertions).
+EXIT_CODE: 0

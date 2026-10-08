@@ -1,0 +1,9 @@
+PASS fixture tests and examples
+PASS deterministic seed, full-state projection, and strong types
+PASS subscription start, cancel, and error precedence
+PASS invoice lines, totals, and creation
+PASS payment and email transition contracts
+PASS stateful renewal, billing, payment, and FIFO retry
+FINITE AUDIT INCOMPLETE email.delivery-fold-step missing=[return[0] EmailDeliveryPlan: $.first: none] unsupported=[]
+PASS dependency graph, effects, library coverage, and reload
+PASS 7 groups, 4304 assertions; 154 tests and 44 examples per run; 53 words and 31 types persisted and reloaded.
