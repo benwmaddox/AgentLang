@@ -598,6 +598,12 @@ At request or
 processing completion, reset to the arena's initial position or return its
 backing to a pool after dependent results and pending I/O have been handled.
 Scope exit is an opportunity for safe rewind, not an instruction to compact.
+Rewind safety must be proved by the compiler and the pointer update injected at
+the proved boundary. If analysis is uncertain, retain the allocations and allow
+the stack to grow within its capacity until a later proved cleanup boundary.
+Do not decide rewind safety through runtime liveness checks or root scans.
+Runtime-sized offsets and normal bounds/capacity checks remain permitted; they
+do not decide whether a value is still needed.
 
 Ordinary binding, read-only local access, same-arena calls and returns should
 transfer compiler-managed locations or ownership without copying full payloads.

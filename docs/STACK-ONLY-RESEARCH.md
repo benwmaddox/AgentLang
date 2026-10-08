@@ -28,6 +28,11 @@ The user intends values, not references to independently lived language objects.
 Payloads normally stay where constructed within a processing arena. Leave
 interior dead bytes in place; rewind only a dead suffix or completed region:
 
+The compiler must prove when a rewind is safe and inject the pointer update.
+If provenance or escape analysis is uncertain, retain the data until a later
+proved boundary. Do not use runtime liveness scans or reference counts to
+decide. A runtime-sized saved mark is compatible with this static decision.
+
 - An independent clone owns its complete nested payload. Ordinary immutable reuse
   may share its arena location internally without an observable reference feature.
 - Logical ownership transfer need not physically relocate bytes. Reset must never

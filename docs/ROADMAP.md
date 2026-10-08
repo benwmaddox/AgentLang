@@ -173,6 +173,9 @@ capacity reuse. Measure metadata separately from payload traffic, and compare
 with report 129's frozen evidence. This is the next implementation step, not an
 unresolved preference between packing and bulk reset; see the
 [simplicity review](OWNING-STACK-DESIGN-REVIEW.md#stable-arena-payloads-and-bulk-reset-selected-direction).
+Rewind placement requires compiler proof; uncertain lifetimes retain storage
+until a later proved boundary. Runtime liveness decisions are excluded. Follow
+the [stable arena lowering contract](STABLE-ARENA-LOWERING.md).
 Final byte encoding remains an experimental choice; shared-graph regions are comparison
 controls, not replacements for the owning-value goal. Keep the actual
 keep-associated versus return-at-suspension async comparison as the subsequent

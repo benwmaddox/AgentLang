@@ -147,6 +147,13 @@ lifetime annotations. Compare live/occupied/dead extent, metadata traffic,
 payload copying, capacity and execution time with this frozen baseline. This
 report validates an experimental implementation, not the selected final policy.
 
+The subsequent clarification requires compiler-proven early scope rewinds and
+full request reset/pool return. Escaping results retain temporary bytes beneath
+them; uncertain lifetime analysis omits the rewind. Runtime liveness checks are
+not the decision mechanism. The planned replacement is specified in the
+[stable arena lowering contract](../docs/STABLE-ARENA-LOWERING.md); this report's
+tests do not validate that replacement.
+
 The latest matched external-agent evidence remains
 [report 125](125-matched-pair-repair.md): reuse works, but no reliability lead over
 F# is established. Native owning-mailbox integration, real async I/O, matched

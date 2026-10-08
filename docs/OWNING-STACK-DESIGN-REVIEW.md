@@ -163,6 +163,11 @@ Only a proven dead suffix may rewind early. Never compact survivors
 merely to reach the mark. At processing/request completion, reset the full
 working arena or return it to a pool once no live output or I/O depends on it.
 Test both early scope reuse and whole-processing reuse explicitly.
+The compiler must prove each rewind safe and emit it at the appropriate point.
+If proof is unavailable, retain the data; do not defer the lifetime decision to
+a runtime root scan or liveness check. Runtime offsets may still implement a
+statically authorized rewind for variable-sized data. See the
+[lowering contract](STABLE-ARENA-LOWERING.md).
 
 Replace the emitter's contiguous operand-payload suffix assumption with bounded
 compiler-managed location metadata over nearby arena payloads. Binding and
