@@ -18,6 +18,12 @@ actors: all repair the unnamed target to 54/54 independent cases. Vocabulary is
 preserved in the language conditions; F# also completes two existing placeholders.
 Fixture differences and one actor per condition preclude a superiority claim.
 
+[111 — Current-syntax stateful comparison](111-current-syntax-stateful-comparison.md)
+records passing Flow/2 and F# reminder implementations. A scripted extra-write
+mutation passes the language's own tests and full coverage gate but fails the
+independent effect checks, supporting explicit state/effect assertions alongside
+coverage. This does not establish comparative superiority.
+
 The current structural correctness checkpoint is
 [110 — Explicit arithmetic and domain contracts](110-structural-correctness.md):
 checked rational scaling and a validated bounded-rate library, with independent

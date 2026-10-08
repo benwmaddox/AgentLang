@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "kind": "external-agent-observation",
+  "model": "gpt-6-luna",
+  "reasoning": "max",
+  "runtimeRevision": "91fe813984c4fb4f5834bc4c61ba2bbb81ff8ec2",
+  "flow": {
+    "passed": true,
+    "verifierChecks": 126,
+    "brokerExchanges": 22,
+    "attachedTests": 4,
+    "seedTests": 2,
+    "examples": 1,
+    "ownInstructions": "20/20",
+    "ownBranchOutcomes": "4/4",
+    "errors": [
+      "DISCOVERY_INVALID_ARGUMENT",
+      "FLOW_SYNTAX_VERSION"
+    ],
+    "hostClosed": true
+  },
+  "conventional": {
+    "passed": true,
+    "verifierChecks": 34,
+    "brokerExchanges": 8,
+    "ownTests": 4,
+    "seedTests": 2,
+    "examples": 1,
+    "errors": [
+      "HASH_INVALID"
+    ],
+    "hostClosed": true
+  },
+  "infrastructureOnlyFlowAttempt": "logs/flow-actor.trace.jsonl",
+  "sharedDenominator": false,
+  "controlledTokenOrLatencyComparison": false,
+  "coverageFinding": "Flow own tests assert returned strings; F# own tests additionally assert provider counts and stored state. Both independent suites pass."
+}

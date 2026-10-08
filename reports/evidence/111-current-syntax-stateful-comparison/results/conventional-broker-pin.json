@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "sourceRevisionFromPriorFreeze": "20388a3faa781f8318af3c503a794108e8e63776",
+  "priorPreparedRuntimeFileCount": 23,
+  "allFilesMatchPriorFreeze": true,
+  "mismatches": [],
+  "cliDll": "D:\\code\\AgentLang\\.agentlang\\stateful-conventional-001\\broker-bin\\AgentLang.Conventional.Cli.dll",
+  "cliSha256": "53dda8d8e3eb152bfc79d266d3cb22b5267ea98fd646fc1e3c0642bce542d8d3",
+  "priorHostScriptSha256": "d3b60698ef29cc6e7d9b42f37d9a298a311f409cb3f85112ca2a5dccf6148c4d",
+  "currentV2HostScript": "D:\\code\\AgentLang\\scripts\\Start-SubagentTrialHostV2.ps1",
+  "currentV2HostSha256": "6573321e8c0fc92926e43221ae10836fd5c62139e5fdb51cc34ff482fbc81f2b",
+  "runtimeFiles": [
+    {
+      "path": "AgentLang.Conventional.Cli.deps.json",
+      "bytes": 2974,
+      "sha256": "286c223538b469e3a5a6364bebc0d68051682db3c80cd6bb043def2b7b33eace",
+      "matchesPriorPin": true
+    },
+    {
+      "path": "AgentLang.Conventional.Cli.dll",
+      "bytes": 17920,
+      "sha256": "53dda8d8e3eb152bfc79d266d3cb22b5267ea98fd646fc1e3c0642bce542d8d3",
+      "matchesPriorPin": true
+    },
+    {
+      "path": "AgentLang.Conventional.Cli.exe",
+      "bytes": 156160,
+      "sha256": "7b65714ea8e1d5ee03176358b7d24f9fa6bd4bdebe53d79dbc83dfc39583cf7e",
+      "matchesPriorPin": true
+    },
+    {
+      "path": "AgentLang.Conventional.Cli.pdb",
+      "bytes": 4820,
+      "sha256": "9e44a189566421f1447e7d7fe4a1aaf4db7ca45b75c644700f8687873b5f0e5c",
+      "matchesPriorPin": true
+    },
+    {
+      "path": "AgentLang.Conventional.Cli.runtimeconfig.json",
+      "bytes": 340,
+      "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0",
+      "matchesPriorPin": true
+    },
+    {
+      "path": "AgentLang.Conventional.deps.json",
+      "bytes": 2498,
+      "sha256": "18981412cddd0e64918a6be7107e28264318ea732edc3bc716dce08a813a9896",
+      "matchesPriorPin": true
+    },
+    {
+      "path": "AgentLang.Conventional.dll",
+      "bytes": 53248,
+      "sha256": "1564ebf9c79cc4e23239490d08d6ba2cd65134ca8cc83599715c918e92a18eae",
+      "matchesPriorPin": true
+    },
+    {
+      "path": "AgentLang.Conventional.pdb",
+      "bytes": 12844,
+      "sha256": "14ca44b7a01bb7242bbb84cdbbad4326c4834770ed2c2c681b2def9ce9f47265",
+      "matchesPriorPin": true
+    },
+    {
+      "path": "AgentLang.Conventional.xml",
+      "bytes": 1055,
+      "sha256": "621b5c7c93c495c1dfc83279858dbb31ecd999f56d5237070bf05c59159b81eb",
+      "matchesPriorPin": true
+    },
+    {
+      "path": "cs\\FSharp.Core.resources.dll",
+      "bytes": 34600,
+      "sha256": "eb8bd755cfe0d39ce27615027fe22556e8b9dcb470f2b47a36f4bfbf3c31be64",
+      "matchesPriorPin": true
+    },
+    {
+      "path": "de\\FSharp.Core.resources.dll",
+      "bytes": 35592,
+      "sha256": "7419e4f5ceed9e03821686e865fed7d29c6217fdf5d3a46a2919a369c98c38ce",
+      "matchesPriorPin": true
+    },
+    {
+      "path": "es\\FSharp.Core.resources.dll",
+      "bytes": 34600,
+      "sha256": "636866649564c72eb763eb3942e021b52b1f9b3869d037aca48f73d4474353c5",
+      "matchesPriorPin": true
+    },
+    {
+      "path": "fr\\FSharp.Core.resources.dll",
+      "bytes": 35128,
+      "sha256": "f38f2fd6bc4c4e233dd098a36b315a2bc87673cf2f07c6ba3daf71a3264f4a64",
+      "matchesPriorPin": true
+    },
+    {
+      "path": "FSharp.Core.dll",
+      "bytes": 2314000,
+      "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f",
+      "matchesPriorPin": true
+    },
+    {
+      "path": "it\\FSharp.Core.resources.dll",
+      "bytes": 34576,
+      "sha256": "61a0be9c6a2ed95f8e98493b17c54a55c68cef84e23a0d82114319e2c5f3c2cd",
+      "matchesPriorPin": true
+    },
+    {
+      "path": "ja\\FSharp.Core.resources.dll",
+      "bytes": 37160,
+      "sha256": "dd7f36036d906e991da5505b074ef889a603f449d3324750fda5f5445ba2854f",
+      "matchesPriorPin": true
+    },
+    {
+      "path": "ko\\FSharp.Core.resources.dll",
+      "bytes": 36104,
+      "sha256": "0f3ef625e379577e3b60c15d8cc3759d3dc8840f99894282df1e702b4a166462",
+      "matchesPriorPin": true
+    },
+    {
+      "path": "pl\\FSharp.Core.resources.dll",
+      "bytes": 35632,
+      "sha256": "755bab9fbd85e5e4b4771870c9c4d655e91e3ce39cc1c2735fe0bc7cec6b84c3",
+      "matchesPriorPin": true
+    },
+    {
+      "path": "pt-BR\\FSharp.Core.resources.dll",
+      "bytes": 34096,
+      "sha256": "a4bbbdaabf2003a5fdff5f5bc4143c3fd4a064f2681fc481f449d4558074dc61",
+      "matchesPriorPin": true
+    },
+    {
+      "path": "ru\\FSharp.Core.resources.dll",
+      "bytes": 41232,
+      "sha256": "a1133f9ab7e661803d1af0c2489626bd53ac33a11dfe891f5a02f3186f2f5d78",
+      "matchesPriorPin": true
+    },
+    {
+      "path": "tr\\FSharp.Core.resources.dll",
+      "bytes": 34072,
+      "sha256": "6b0cba5139a86ee681909fdfcebac07c99afba3bfcff4fb8ab12b9c2112a0b31",
+      "matchesPriorPin": true
+    },
+    {
+      "path": "zh-Hans\\FSharp.Core.resources.dll",
+      "bytes": 32552,
+      "sha256": "25f82f35a9234bcaab272921b0d50054ddb4a669d96c111907c9d31f5b18c121",
+      "matchesPriorPin": true
+    },
+    {
+      "path": "zh-Hant\\FSharp.Core.resources.dll",
+      "bytes": 32032,
+      "sha256": "ac03ee7c4112c755705776c700033794586f980fe9476e6a13811a7153beabb8",
+      "matchesPriorPin": true
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "original071": {
+    "path": "D:\\code\\AgentLang\\reports\\evidence\\071-verify-stateful-trial.ps1",
+    "sha256": "c3fe0e33d1ac1f04248c1952082191a8d564085015cafe8781f0824a1b8091a8"
+  },
+  "local071": {
+    "path": "D:\\code\\AgentLang\\.agentlang\\reminder-flow2-001\\verifiers\\071-verify-stateful-trial.ps1",
+    "sha256": "6812d2503d7eb2228622e62cc1f7ee49fd13d8ca5fefa3d3c462a2b8276752be"
+  },
+  "original072": {
+    "path": "D:\\code\\AgentLang\\reports\\evidence\\072-verify-conventional-stateful.ps1",
+    "sha256": "d9fb0f6fa7eb5295238756b3a80b02db8c0230fbedffe37ec3ac4927343c8a65"
+  },
+  "local072": {
+    "path": "D:\\code\\AgentLang\\.agentlang\\reminder-flow2-001\\verifiers\\072-verify-conventional-stateful.ps1",
+    "sha256": "c1a26c99e4eba7074372d781a475bafb17d317b8b2c75d1196054dff829cec14"
+  },
+  "adaptation": "Path parameters and trial-local scratch placement changed. Flow adds one persisted Flow/2 sourceFormat observation. Existing acceptance assertions otherwise retained."
+}

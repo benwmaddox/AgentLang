@@ -161,6 +161,9 @@ slice is payload-free closed enums with verified exhaustive matching, durable
 source and explicit finite-coverage qualification. Use new fixtures. Enums must
 not be advertised as library-ready before their required coverage is enforced.
 Cross-field record construction and decision/executor stateful properties follow.
+Report 111's extra-write control passed full library coverage but violated the
+IO contract. Make provider-state and effect-count assertions straightforward in
+authored tests, and require that control to fail under the stronger tests.
 
 Implement the approved module boundaries and stricter qualification rules:
 cross-module authored calls require library qualification; library functions

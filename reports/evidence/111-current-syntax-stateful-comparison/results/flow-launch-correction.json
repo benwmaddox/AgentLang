@@ -1,0 +1,19 @@
+{
+  "actor": "reminder_flow_actor",
+  "hostExitCode": 3,
+  "runtimeExitCode": 2,
+  "reportedOuterProcessExitCode": 1,
+  "requests": [
+    "help",
+    "words"
+  ],
+  "projectUnchanged": true,
+  "independentReproductionExitCode": 2,
+  "stderr": "--frontend selects human REPL and --eval syntax; JSONL requests must select their own frontend.\r\n",
+  "corrections": [
+    "Remove incompatible interactive CLI flags; every authoring request retains frontend/syntaxVersion",
+    "Allow help as advertised in primer"
+  ],
+  "replacementPromptSha256": "782f9db52f41c19c57fb368c7ae23b0a489eba40adbbf4d96439a1730decddf0",
+  "replacementUsesFreshActor": true
+}

@@ -1,0 +1,74 @@
+[
+  {
+    "index": 1,
+    "operation": "read",
+    "outcome": "forwarded",
+    "ok": true,
+    "errorCode": null,
+    "requestBytes": 33,
+    "responseBytes": 2792
+  },
+  {
+    "index": 2,
+    "operation": "read",
+    "outcome": "forwarded",
+    "ok": true,
+    "errorCode": null,
+    "requestBytes": 37,
+    "responseBytes": 409
+  },
+  {
+    "index": 3,
+    "operation": "read",
+    "outcome": "forwarded",
+    "ok": true,
+    "errorCode": null,
+    "requestBytes": 36,
+    "responseBytes": 1156
+  },
+  {
+    "index": 4,
+    "operation": "read",
+    "outcome": "forwarded",
+    "ok": true,
+    "errorCode": null,
+    "requestBytes": 44,
+    "responseBytes": 806
+  },
+  {
+    "index": 5,
+    "operation": "patch",
+    "outcome": "forwarded",
+    "ok": false,
+    "errorCode": "HASH_INVALID",
+    "requestBytes": 870,
+    "responseBytes": 219
+  },
+  {
+    "index": 6,
+    "operation": "patch",
+    "outcome": "forwarded",
+    "ok": true,
+    "errorCode": null,
+    "requestBytes": 869,
+    "responseBytes": 192
+  },
+  {
+    "index": 7,
+    "operation": "patch",
+    "outcome": "forwarded",
+    "ok": true,
+    "errorCode": null,
+    "requestBytes": 3537,
+    "responseBytes": 191
+  },
+  {
+    "index": 8,
+    "operation": "validate",
+    "outcome": "forwarded",
+    "ok": true,
+    "errorCode": null,
+    "requestBytes": 18,
+    "responseBytes": 425
+  }
+]

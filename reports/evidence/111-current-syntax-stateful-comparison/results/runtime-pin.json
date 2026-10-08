@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "sourceRevision": "91fe813984c4fb4f5834bc4c61ba2bbb81ff8ec2",
+  "branch": "prototype",
+  "builtAtUtc": "2026-10-08T00:26:54.9117099Z",
+  "command": "dotnet build src/AgentLang.Cli/AgentLang.Cli.fsproj -c Release --artifacts-path .agentlang/reminder-flow2-001/runtime",
+  "trackedSourceStatus": [],
+  "changedCliOrCoreSources": [],
+  "buildLog": "D:\\code\\AgentLang\\.agentlang\\reminder-flow2-001\\logs\\flow2-build.log",
+  "cliDll": "D:\\code\\AgentLang\\.agentlang\\reminder-flow2-001\\runtime\\bin\\AgentLang.Cli\\release\\AgentLang.Cli.dll",
+  "cliSha256": "781c9d92b3c35ad04922e2300690728d8a688bbac804a506f30edde2a2e0aed5",
+  "runtimeFileCount": 22,
+  "runtimeFiles": [
+    {
+      "path": "AgentLang.Cli.deps.json",
+      "bytes": 2903,
+      "sha256": "6382f6dc29bb8f827824839010e313b266e51a3f87a4fdb8c382931d2549e97e"
+    },
+    {
+      "path": "AgentLang.Cli.dll",
+      "bytes": 40448,
+      "sha256": "781c9d92b3c35ad04922e2300690728d8a688bbac804a506f30edde2a2e0aed5"
+    },
+    {
+      "path": "AgentLang.Cli.exe",
+      "bytes": 156160,
+      "sha256": "fff1a644b3031b8e77397730d607d72c6716d1a691dc5588abfb771cfaab4fe2"
+    },
+    {
+      "path": "AgentLang.Cli.pdb",
+      "bytes": 10688,
+      "sha256": "79f34397f0842b2ff69f4308f0171d8bff7928cdbea45b063370a74638e42334"
+    },
+    {
+      "path": "AgentLang.Cli.runtimeconfig.json",
+      "bytes": 340,
+      "sha256": "3c0bf772b95c93363a0a14e5df78e4ec408c90f04cb7103205af97b2d276fab0"
+    },
+    {
+      "path": "AgentLang.Core.dll",
+      "bytes": 2175488,
+      "sha256": "c14444486b7dd0b5d99f67977fc8cfed51b739f91205df6468f67e64dcb80a51"
+    },
+    {
+      "path": "AgentLang.Core.pdb",
+      "bytes": 570580,
+      "sha256": "0b90cc36c2456ab6c43b309732bfeb34df3faee47c72c6c65dbd8458f739b04f"
+    },
+    {
+      "path": "AgentLang.Core.xml",
+      "bytes": 34227,
+      "sha256": "0a1ae6b74db780ba44751c1aa2e36641a21ce60ac7952b3c1dcfc332e3c6be03"
+    },
+    {
+      "path": "cs/FSharp.Core.resources.dll",
+      "bytes": 34600,
+      "sha256": "eb8bd755cfe0d39ce27615027fe22556e8b9dcb470f2b47a36f4bfbf3c31be64"
+    },
+    {
+      "path": "de/FSharp.Core.resources.dll",
+      "bytes": 35592,
+      "sha256": "7419e4f5ceed9e03821686e865fed7d29c6217fdf5d3a46a2919a369c98c38ce"
+    },
+    {
+      "path": "es/FSharp.Core.resources.dll",
+      "bytes": 34600,
+      "sha256": "636866649564c72eb763eb3942e021b52b1f9b3869d037aca48f73d4474353c5"
+    },
+    {
+      "path": "fr/FSharp.Core.resources.dll",
+      "bytes": 35128,
+      "sha256": "f38f2fd6bc4c4e233dd098a36b315a2bc87673cf2f07c6ba3daf71a3264f4a64"
+    },
+    {
+      "path": "FSharp.Core.dll",
+      "bytes": 2314000,
+      "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+    },
+    {
+      "path": "it/FSharp.Core.resources.dll",
+      "bytes": 34576,
+      "sha256": "61a0be9c6a2ed95f8e98493b17c54a55c68cef84e23a0d82114319e2c5f3c2cd"
+    },
+    {
+      "path": "ja/FSharp.Core.resources.dll",
+      "bytes": 37160,
+      "sha256": "dd7f36036d906e991da5505b074ef889a603f449d3324750fda5f5445ba2854f"
+    },
+    {
+      "path": "ko/FSharp.Core.resources.dll",
+      "bytes": 36104,
+      "sha256": "0f3ef625e379577e3b60c15d8cc3759d3dc8840f99894282df1e702b4a166462"
+    },
+    {
+      "path": "pl/FSharp.Core.resources.dll",
+      "bytes": 35632,
+      "sha256": "755bab9fbd85e5e4b4771870c9c4d655e91e3ce39cc1c2735fe0bc7cec6b84c3"
+    },
+    {
+      "path": "pt-BR/FSharp.Core.resources.dll",
+      "bytes": 34096,
+      "sha256": "a4bbbdaabf2003a5fdff5f5bc4143c3fd4a064f2681fc481f449d4558074dc61"
+    },
+    {
+      "path": "ru/FSharp.Core.resources.dll",
+      "bytes": 41232,
+      "sha256": "a1133f9ab7e661803d1af0c2489626bd53ac33a11dfe891f5a02f3186f2f5d78"
+    },
+    {
+      "path": "tr/FSharp.Core.resources.dll",
+      "bytes": 34072,
+      "sha256": "6b0cba5139a86ee681909fdfcebac07c99afba3bfcff4fb8ab12b9c2112a0b31"
+    },
+    {
+      "path": "zh-Hans/FSharp.Core.resources.dll",
+      "bytes": 32552,
+      "sha256": "25f82f35a9234bcaab272921b0d50054ddb4a669d96c111907c9d31f5b18c121"
+    },
+    {
+      "path": "zh-Hant/FSharp.Core.resources.dll",
+      "bytes": 32032,
+      "sha256": "ac03ee7c4112c755705776c700033794586f980fe9476e6a13811a7153beabb8"
+    }
+  ],
+  "runtimeTarget": "net9.0"
+}
