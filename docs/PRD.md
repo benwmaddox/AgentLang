@@ -1,6 +1,6 @@
 # AgentLang: Agent-Oriented Extensible Language Prototype
 
-- Status: prototype specification, refined 2026-10-07
+- Status: prototype specification, refined 2026-10-08
 - Current prototype implementation: F# on .NET; implementation language is not a product constraint
 - Primary user: an AI coding agent
 - Secondary user: a developer inspecting and controlling that agent
@@ -9,9 +9,17 @@ Implementation-language decision: prioritize correctness, maintainability and
 measured runtime behavior over retaining any particular host language. Keep the
 existing F# compiler/frontends while they serve those goals; choose the native
 runtime implementation independently when allocation, mailboxes and platform
-integration need it. Preserve the language semantics and versioned IR/ABI
-contracts across any implementation-language change. A rewrite requires a
+integration need it. Keep the interpreter and native backends consistent with
+the current semantic IR across any implementation-language change. A rewrite requires a
 concrete benefit; it is not a prerequisite for LLVM-generated native output.
+
+Prototype change policy: breaking changes are expected while testing the design.
+Do not maintain old syntax, APIs, layouts, fixtures or compatibility adapters
+solely for backwards compatibility. Prefer one current design and update its
+compiler, runtime, examples and tests together. Version markers are optional
+diagnostic aids, not release commitments. Preserve frozen experiment evidence
+and historical reports so prior conclusions remain auditable; that does not
+require keeping old implementations in the current runtime.
 ## Purpose and hypothesis
 
 AgentLang tests whether a small, inspectable programming environment can retain project understanding as executable vocabulary. An agent discovers existing operations, creates and tests a reusable word, uses it to complete a task, and leaves it available to a later agent.
@@ -19,6 +27,51 @@ AgentLang tests whether a small, inspectable programming environment can retain 
 The primary hypothesis is that accumulated, discoverable, strongly typed vocabulary helps fresh AI coding agents make reliable changes, find established behavior, catch violations before committing, and recover from errors. Forth/Lisp-style vocabulary growth is valuable when later builders can discover and safely compose project concepts. Lower token, turn and interaction costs are secondary benefits to measure. Conventional F# is a strong correctness baseline; the experiment tests definition-level change boundaries, discoverability and reusable behavioral contracts as well as static checking. Implementing a language is an enabling step, not evidence for the hypothesis.
 
 The environment favors agent comprehension, explicit behavior, deterministic introspection, and testability over syntax terseness, compiler sophistication, and throughput. Named words are the primary unit of development. Plain source files remain the durable representation; agents interact through definition-level commands.
+
+### Product targets and comparison roles
+
+User clarification, 2026-10-08: aim for data modeling and structural correctness
+close to F#, with source syntax more familiar to developers of C-family
+languages. Strong nominal/refined types, typed records, explicit alternatives,
+exhaustive matching and validated construction should make invalid states hard
+to express. Track implemented versus planned checks; test coverage complements
+static guarantees and does not replace them. Do not claim general F# parity from
+a small benchmark or from the compiler being implemented in F#.
+
+F# is also the primary application-performance baseline. The intended outcome
+is higher sustained successful throughput with at most a modest increase in
+whole-process RAM, at comparable tail latency and correctness. Lower RAM is
+welcome but is not required to win; minimum memory at the expense of useful
+throughput is not the objective. Define the acceptable memory increase for a
+workload before measuring; no percentage is selected yet. Compare throughput
+and memory together, including equal-memory controls and a predeclared modest
+extra-memory allowance. Native C/Rust comparisons remain useful diagnostics,
+not a replacement for this F# product baseline.
+
+Erlang/OTP is the isolation reference: aim toward independently owned mailbox
+state, explicit message transfer, bounded queues and work, and contained
+message/handler failures. Full OTP equivalence, distributed infrastructure and
+its entire supervision ecosystem are not prerequisites. State precisely what
+each implemented boundary contains; mailbox ownership alone does not establish
+protection against native-runtime faults or rollback of external effects.
+
+For now, arenas are the general allocation model for language-managed dynamic
+values, not an optimization limited to request handlers. The owning data stack
+can live in an arena; longer-lived values need appropriate retained storage,
+rather than an implicit fallback to independently allocated heap objects or GC.
+This does not require every value to share one arena or lifetime. Fixed/static
+mailbox state and host/provider allocations remain explicit boundaries. The
+current managed interpreter is not evidence that this native allocation model
+has been fully implemented.
+
+The first evaluation workload is request/response processing, such as a web
+application, with frequent bulk cleanup at compiler/runtime-controlled
+boundaries. Retained mailbox state, responses still being sent and pending-I/O
+data have separate explicit lifetimes. Compare keeping request working storage
+through an await against retaining necessary values and returning scratch at
+suspension. Resetting an arena permits reuse of its backing; it need not free
+that backing to the OS. Do not reset while live responses or providers still
+need its data. This workload focus does not require adding a web framework now.
 
 AI coding agents are external users and builders of programs, not language entities or runtime internals. The parser, compiler, dictionary, interpreter, tests, and capability enforcement operate deterministically without an LLM or API credential. A developer or ordinary script can use the same interfaces. Task sessions are transactions and observability records, not autonomous agents. Any model integration belongs to a separate optional experiment harness that consumes the public command protocol; the runtime must not depend on that harness or expose built-in AI behavior.
 
@@ -527,23 +580,36 @@ mailbox allocation model. Compare native footprint, peak/reserved memory and
 startup on equivalent workloads separately from agent-edit reliability.
 
 
-Memory intent clarified 2026-10-08: the preferred model is an **owning value-based
-program-data stack** for most working data, not a stack of references into a
-separately lived object graph. Each stack value owns its complete nested payload.
-Popping/destroying it reclaims that owned payload without leaving orphaned storage
-or a surviving alias to reclaimed bytes. Duplication produces independent values;
-returning or retaining data moves ownership or performs a bounded value copy
-before the source is removed. Subsequent use after a move must reject. Named
-locals must obey the same ownership semantics rather than hide extra roots.
+Memory intent clarified 2026-10-08: use an **owning value-based program-data
+stack backed by arenas**, with rare physical copying or movement. Working
+payloads normally remain where constructed throughout a processing lifetime.
+Logical consumption or scope exit does not require immediate byte reclamation:
+leave interior dead space until a safe suffix or processing-region reset.
+Reclaim by rewinding the bump pointer when the mailbox no longer needs that
+region's current data. Retain backing capacity for reuse according to pool policy.
+Eager compaction on local removal is not the intended allocation policy.
 
-The stack may be arena-backed. Explicit longer-lived mailbox/static state remains
-separate and owns its stored values. Do not substitute a tracing collector,
-reference-counted object heap, shared record graph, or whole-turn bump arena for
-this intended lifetime behavior. Compiler copy elision/moves are permitted only
-when they preserve independent value semantics and the specified reclamation
-boundaries. No RPN syntax or exact byte encoding is mandated. Evaluate
-nested records/lists/text, return placement, branch joins, copying/compaction and
-capacity failures through the authoritative semantic IR before general rollout.
+Cleanup has two levels. At lexical scope exit, use a saved arena mark and
+compiler-checked liveness to rewind a dead suffix without moving survivors.
+An escaping result prevents rewinding through its bytes; retain the necessary
+prefix, including dead temporary bytes beneath that result, until the enclosing
+region or full arena can reset. Do not relocate the result to recover that space.
+At request or
+processing completion, reset to the arena's initial position or return its
+backing to a pool after dependent results and pending I/O have been handled.
+Scope exit is an opportunity for safe rewind, not an instruction to compact.
+
+Ordinary binding, read-only local access, same-arena calls and returns should
+transfer compiler-managed locations or ownership without copying full payloads.
+Internal location descriptors are allowed; they do not introduce source-level
+borrowed references, an independently allocated object graph, or reference
+counting. Immutable value semantics and reset safety remain mandatory. A region
+cannot reset while a surviving binding, result, pending I/O operation or retained
+state depends on its bytes. Independent duplication and transfer across retained
+lifetime boundaries may copy; account for these explicitly. Function boundaries
+alone must not force payload relocation. No RPN syntax or manual popping is
+required. Evaluate nested values, branch joins, lifetime escape, failure isolation
+and bounded capacity through the authoritative semantic IR before rollout.
 
 Physical locality is part of this requirement, informed by the user's Stasislang
 experience: neighboring data-stack values must have nearby actual payloads, and
@@ -564,10 +630,16 @@ region/borrow annotations or storage-specific collection syntax simply to make
 the allocator implementable. See the [simplicity review](OWNING-STACK-DESIGN-REVIEW.md)
 for local cleanup, optimization and capacity-error boundaries.
 
-The current native backend uses handles and shared record DAGs in invocation-wide
-arenas. It is validated groundwork, not implementation of this owning-stack model.
-The alternative region/whole-turn designs remain comparison controls, not silent
-replacements for the clarified intent. See [owning value-stack semantics](STACK-ONLY-RESEARCH.md#preferred-semantics-owning-values).
+The earlier native backend uses handles and shared record DAGs in invocation-wide
+arenas. The additional owning-stack backend now implements independent inline
+fixed-size records, variable-sized Strings/nested records and compiler-controlled
+cleanup; see [report 129](../reports/129-variable-owning-values.md). Owning mailbox
+integration remains in progress; conformance does not establish the complete
+memory model or a footprint/throughput advantage. Its packed policy performs
+substantial copying and does not satisfy the clarified rare-movement objective.
+Replace that placement policy with stable arena payloads and bulk reset; retain
+the measured packed implementation as historical evidence, not a required second
+production policy. See [owning value-stack semantics](STACK-ONLY-RESEARCH.md#preferred-semantics-owning-values).
 
 Compare keeping the same mailbox's actual stack/scratch associated across async
 work until safe completion against returning it to a bounded pool at suspension

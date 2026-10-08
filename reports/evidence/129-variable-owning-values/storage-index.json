@@ -1,0 +1,65 @@
+{
+  "scope": "Raw C storage fix and negative control only; integrated acceptance is recorded in owning-stack-002-final/index.json",
+  "files": [
+    {
+      "source": "src/AgentLang.Llvm/native/owning_stack_runtime.c",
+      "archive": "storage/owning_stack_runtime.c",
+      "sha256": "238BF036CDAB0323BE8E7EE5B67E983A3FF1434F7F0F8B4E6597DB5126D3E458"
+    },
+    {
+      "source": "src/AgentLang.Llvm/native/owning_stack_runtime.h",
+      "archive": "storage/owning_stack_runtime.h",
+      "sha256": "2BE81527EE0A912B7363F24B439363D7C57641D05C93F83BBB72CC0ACB7138CE"
+    },
+    {
+      "source": "src/AgentLang.Llvm/native/owning_stack_runtime_test.c",
+      "archive": "storage/owning_stack_runtime_test.c",
+      "sha256": "DB59090B6F0F12951B3DAA1020EB53B3E1A22EDF70CC614A04B8CCB6B75C2554"
+    },
+    {
+      "source": ".agentlang/owning-stack-002/storage-tests/validation.json",
+      "archive": "storage/validation.json",
+      "sha256": "823CE8399611870A443B22C733C21485F43D3C0130CAC471C50ADE24EBD3E616"
+    },
+    {
+      "source": ".agentlang/owning-stack-002/gap-regression-control/frozen-test.c",
+      "archive": "negative-control/frozen-test.c",
+      "sha256": "DB59090B6F0F12951B3DAA1020EB53B3E1A22EDF70CC614A04B8CCB6B75C2554"
+    },
+    {
+      "source": ".agentlang/owning-stack-002/gap-regression-control/old-range-runtime.c",
+      "archive": "negative-control/old-range-runtime.c",
+      "sha256": "A441CB9C5F42EE19D6962D25DEFD159352FC0BDC9C9B50562BCE0DBF7F1F9814"
+    },
+    {
+      "source": ".agentlang/owning-stack-002/gap-regression-control/owning_stack_runtime.h",
+      "archive": "negative-control/owning_stack_runtime.h",
+      "sha256": "2BE81527EE0A912B7363F24B439363D7C57641D05C93F83BBB72CC0ACB7138CE"
+    },
+    {
+      "source": ".agentlang/owning-stack-002/gap-regression-control/evidence.json",
+      "archive": "negative-control/evidence.json",
+      "sha256": "8B2929BBF66D8655783AA6F0CC61A0B1179FD2DE7964CB1DDF9E18ECCED91D78"
+    },
+    {
+      "source": ".agentlang/owning-stack-002/gap-regression-control/result.txt",
+      "archive": "negative-control/result.txt",
+      "sha256": "36895CA671BEA9C46B8EC0B76C923C87F7E6FB6338D0CB036EBB86107015EF85"
+    },
+    {
+      "source": ".agentlang\\owning-stack-002\\verification-56655720d337496a9e199dfff2597786\\owning-stack-native-storage-tests-O0.stdout.txt",
+      "archive": "storage/owning-stack-native-storage-tests-O0.stdout.txt",
+      "sha256": "A1B325DDB6AED79DFC50DB9C4AAB4DEE194996A30186C87BF16E1C096FB4D5E4"
+    },
+    {
+      "source": ".agentlang\\owning-stack-002\\verification-56655720d337496a9e199dfff2597786\\owning-stack-native-storage-tests-O2.stdout.txt",
+      "archive": "storage/owning-stack-native-storage-tests-O2.stdout.txt",
+      "sha256": "A1B325DDB6AED79DFC50DB9C4AAB4DEE194996A30186C87BF16E1C096FB4D5E4"
+    },
+    {
+      "source": ".agentlang\\owning-stack-002\\verification-56655720d337496a9e199dfff2597786\\owning-stack-ubsan-trap-run.stdout.txt",
+      "archive": "storage/owning-stack-ubsan-trap-run.stdout.txt",
+      "sha256": "A1B325DDB6AED79DFC50DB9C4AAB4DEE194996A30186C87BF16E1C096FB4D5E4"
+    }
+  ]
+}

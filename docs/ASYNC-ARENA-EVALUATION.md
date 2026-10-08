@@ -16,6 +16,43 @@ throughput and tail latency remain untested. See [the roadmap](ROADMAP.md).
 AgentLang performance evidence. Include bounded outstanding work, explicit
 suspension, copy costs and retained-state interleaving in this evaluation.
 
+## Product baseline and request/response workload
+
+The primary runtime comparison is an equivalent idiomatic F# service, preserving
+the same data contracts, request results, I/O behavior and admission limits.
+The target is higher sustained successful throughput with comparable tail
+latency and correctness, while allowing a modest whole-process RAM increase.
+Before results, specify the allowed increase for the selected workload; it is
+not yet a fixed percentage. Report both an equal-memory comparison and the
+predeclared extra-memory point, plus the throughput/memory tradeoff. Do not infer
+a win from throughput measured with unbounded queues or a silently larger budget.
+
+Arenas are the general allocation model for language-managed dynamic values
+for now. Request/response handlers are the first evaluation workload, not an
+exceptional arena-only part of an otherwise general-heap language. Distinguish
+working arenas, retained lifetimes, fixed/static state and host/provider storage;
+do not assume one arena or one reset boundary for all values.
+
+Start with request/response handlers and short-lived arena-backed owning values.
+Exercise frequent cleanup on success, failure, cancellation and suspension.
+Retain mailbox state separately; responses still being sent and pending provider
+operations must keep valid owned storage until completion or acknowledged
+cancellation. An async boundary is not permission to discard live data. Compare
+the existing keep-associated and return-at-suspension candidates on those same
+handlers. Arena reset/reuse and releasing backing to the OS are distinct events.
+
+Keep deployment mode, warmup and instrumentation explicit: the interpreter is
+not the final performance target, and development JIT and release AOT results
+must be identified separately. Include F# runtime/GC and provider memory in the
+whole-process measurements, just as AgentLang includes pools, metadata, retained
+state and native/provider allocations.
+
+Use Erlang/OTP to assess isolation and failure-containment behavior separately
+from this performance result. Test that one handler's error, exhausted budget
+or cancellation does not corrupt another mailbox's state. Document native-host
+faults, external effects and other limits that are not contained; full OTP
+supervision and distributed operation are not initial requirements.
+
 ## Candidates
 
 ### Compiler-guided sizing

@@ -1,0 +1,8 @@
+{
+  "kind": "literal-fixture-structural-audit",
+  "cases": 7,
+  "checks": 28,
+  "passed": true,
+  "scope": "Input/output byte extents, count/header/scalar field positions and trailing result; not native implementation validation",
+  "fixtureSha256": "B812D423FC6792A9D976AECEC1F01335FB1627A0735F0823F5D10C35E63D0A64"
+}

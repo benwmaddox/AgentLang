@@ -88,17 +88,16 @@ The user confirmed compiler-controlled cleanup and explicitly dropped references
 into older stack data. Keep independent owning values and named access; no
 older-stack view/reference feature is planned.
 
-Use scope as the understandable lifetime rule for named values. Consumed operand
-temporaries are released automatically; scope exit cleans up local owners on
-success and error paths. Results acquire caller-owned storage before callee
-cleanup. Earlier last-use cleanup can be an optimization, not manual stack
-position bookkeeping required of authors.
+Use scope as the understandable logical lifetime rule for named values. Scope
+exit ends bindings, but need not release interior bytes. Results normally stay
+in the shared processing arena across returns. Only reset a suffix or region
+after every dependent value is dead or transferred to an appropriate lifetime.
+Earlier last-use cleanup is an optimization, not manual stack bookkeeping.
 
 Reclaiming an owning extent makes its bytes reusable; it need not return arena
 backing to the OS. A bump-pointer rewind applies to a dead suffix or complete
 frame. An older dead value below live younger values cannot be removed by a
-single rewind; the compiler must reuse storage, delay the rewind or perform
-accounted compaction/transfer. Report live payload separately from reserved
+single rewind; retain those dead bytes until a safe bulk reset. Report live payload separately from reserved
 frame slots and pooled capacity. This distinction is necessary for a truthful
 account of automatic popping.
 
@@ -119,3 +118,66 @@ ownership concepts. Rewinding a dead suffix can be cheap; moving/copying large
 inline values, non-LIFO deaths, reservations and external resource cleanup still
 cost work. Compare measured workloads, not a generic claim that our scheme is
 faster than Rust or that ordinary Rust always invokes a heap allocator.
+
+## Variable-size implementation boundary
+
+The next native slice uses String inside acyclic records without changing source
+syntax or semantic IR. The experimental encoding is an eight-byte header
+(little-endian u32 code-unit count and u32 reserved zero), UTF-16LE code-unit
+bytes, then zero padding to eight-byte alignment. This preserves the interpreter's
+existing code-unit semantics, including NUL and isolated surrogates. It is a
+backend encoding, not a new source-level Unicode restriction.
+
+Exact fixed sizes remain available for fixed types. String-bearing types instead
+expose dynamic size markers and minimum sizes; fields after a dynamic field have
+runtime offsets. Never present a minimum or one observed value as an exact type
+size. Native operations must validate headers, bounds and padding before using
+the computed range.
+
+Report 129 validated a packed implementation in bounded storage. Clearing locals
+shifted younger owners, and local loads copied complete payloads. It preserved
+caller output on failure and measured live payload, occupied extent, configured
+capacity, metadata, host staging and copied/moved bytes. Those results remain
+useful conformance evidence, but the placement policy is superseded below.
+
+## Stable arena payloads and bulk reset: selected direction
+
+The current dynamic candidate uses bump allocation but also moves surviving
+values when local storage is packed. Field projection can move the selected
+field to the consumed parent's base before rewinding. Neither operation should
+be described simply as a pointer rewind: both can copy bytes proportional to
+the surviving data. This is not a source-language requirement or a selected
+release memory policy.
+
+The user clarified that copying/movement should be rare, and the normal cleanup
+operation should change the bump pointer when the mailbox no longer needs the
+current data. This selects stable payload placement and bulk reset. Merely
+batching compaction at function exit is insufficient: ordinary local reads,
+arguments and returns must also avoid copying payloads within the same arena.
+Function scope is not automatically an allocation-region boundary.
+
+Support compiler-checked scope marks: a dead-only nested scope should rewind to
+its saved mark immediately. If a result survives, preserve its bytes and the
+temporary bytes beneath it until the enclosing region or full arena can reset.
+Only a proven dead suffix may rewind early. Never compact survivors
+merely to reach the mark. At processing/request completion, reset the full
+working arena or return it to a pool once no live output or I/O depends on it.
+Test both early scope reuse and whole-processing reuse explicitly.
+
+Replace the emitter's contiguous operand-payload suffix assumption with bounded
+compiler-managed location metadata over nearby arena payloads. Binding and
+projection can then describe existing immutable bytes for the same processing
+lifetime. This is a backend representation, not a source reference feature.
+Before resetting storage, prove no live result or pending operation depends on
+it. Nested field containment and no independently scattered object heap remain
+requirements. Immutable reuse is different from an independent payload clone.
+
+Acceptance uses the same verified programs and variable-size inputs as report
+129, plus repeated processing resets and lifetime-escape checks. Require zero
+payload movement for local cleanup and ordinary same-arena binding/call/return;
+count metadata traffic separately. Record any necessary construction, independent
+duplication, host staging and retained-state transfers. Verify nested scope
+shadowing, returned subvalues, errors, capacity failures and unchanged retained
+output. Compare occupied/live/dead bytes, copy/move bytes, capacity and execution
+time against frozen report 129 evidence. Dead bytes may accumulate within a
+processing region, but repeated completed regions must return to baseline.

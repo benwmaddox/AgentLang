@@ -5,6 +5,23 @@ for the [PRD](PRD.md). Reliable agent edits, discovery and reuse of accumulated
 typed vocabulary remain the primary research question. Runtime performance and
 development cost are separate measurements.
 
+Product target clarification: approach F# in data/structural correctness with
+C-family source familiarity; use F# as the primary throughput/RAM baseline.
+Higher throughput may justify a modest, predeclared whole-process memory
+increase. Use Erlang/OTP as an isolation reference without requiring the full
+OTP feature set. Arenas are the general allocation model for language-managed
+dynamic values for now. Request/response processing is the first evaluation
+workload, with frequent cleanup and separately retained mailbox/I/O state.
+Choose arena lifetimes, placement and reuse policies against those product
+goals; minimum RAM alone is not the success criterion.
+See the [PRD comparison roles](PRD.md#product-targets-and-comparison-roles) and
+[runtime evaluation](ASYNC-ARENA-EVALUATION.md#product-baseline-and-requestresponse-workload).
+
+This remains a prototype: breaking changes are expected. Favor one current
+design over compatibility layers and routine version proliferation. Update
+affected code, examples and tests together; retain historical experiment
+evidence without requiring the current runtime to support old contracts.
+
 Priority update: an efficacy report comes first; efficient LLVM execution with
 interpreter/JIT/AOT and a chosen memory design comes second. See
 [report 101](../reports/101-approach-efficacy-review.md). Flow/2 is complete (report 100), and the guided repair comparison (report 102)
@@ -51,6 +68,17 @@ Next actions:
    bounded research should use an unfamiliar rule/refactor, current Flow/2,
    equivalent implemented helper topology and independent expected values.
    Avoid repeatedly retesting this one pricing defect or expanding the harness.
+
+4. The subsequent stateful matched-pair repair is complete
+   ([report 125](../reports/125-matched-pair-repair.md)): six fresh agents each
+   pass twelve independent scenarios. Both retained Flow agents and both F#
+   agents reuse the existing helper, and all six final test suites detect the
+   two planned regressions. One Flow agent omits task finalization. This supports
+   discoverable reuse and enforced publication gates, but still establishes no
+   comparative reliability advantage. Further agent trials should target an
+   unresolved failure mode or harder vocabulary discovery, rather than repeat
+   this small repair. Native storage conformance is separate evidence and must
+   not be reported as improved agent efficacy.
 
 Acceptance is an evidence-backed review of the declared conditions, including
 their limitations. Completing a language feature or passing actor-written tests
@@ -124,7 +152,28 @@ failures. Working-stack extent stays at 288 bytes across one/eight repetitions,
 but fixed reservation and diagnostic overhead prevent a total-memory advantage
 claim. This stage alone does not
 satisfy the variable-size requirement or select the final representation.
-Exact byte encoding/source syntax remain open; shared-graph regions are comparison
+The variable-sized slice is complete in
+[report 129](../reports/129-variable-owning-values.md): 796 comparison checks and
+the 37-check local Release gate pass. Inline Strings inside acyclic records
+preserve UTF-16 code units, including isolated surrogates, with dynamic sizes
+and field offsets exposed explicitly. Independent bytes, packed locals, dynamic
+returns, failure cleanup and capacity boundaries are checked at O0/O2. The ABI3
+control still covers fixed records only. Direct concat peaks at 80 bytes;
+the wrapped user-function path peaks at 144 because of extra frames/local loads.
+These are conformance counters, not a throughput or process-memory win.
+The user subsequently clarified that rare movement and bulk pointer reset are
+the intended behavior. Replace eager packing with stable arena payloads and
+bounded location metadata. Ordinary bindings, read-only loads, same-arena calls
+and returns should not copy payloads; function boundaries alone do not require
+region resets. Leave interior dead space until a safe suffix or processing-region
+reset. Require saved scope marks and compiler-checked early suffix rewind;
+escaping results must prevent unsafe rewind. At request completion, reset the
+whole arena or return it to the pool. Verify reset safety, unchanged retained output on failure and repeated-turn
+capacity reuse. Measure metadata separately from payload traffic, and compare
+with report 129's frozen evidence. This is the next implementation step, not an
+unresolved preference between packing and bulk reset; see the
+[simplicity review](OWNING-STACK-DESIGN-REVIEW.md#stable-arena-payloads-and-bulk-reset-selected-direction).
+Final byte encoding remains an experimental choice; shared-graph regions are comparison
 controls, not replacements for the owning-value goal. Keep the actual
 keep-associated versus return-at-suspension async comparison as the subsequent
 throughput decision; mailboxes alone are not the memory differentiator.

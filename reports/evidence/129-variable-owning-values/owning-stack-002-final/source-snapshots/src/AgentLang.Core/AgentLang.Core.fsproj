@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Core.fs" />
+    <Compile Include="TrustedValues.fs" />
+    <Compile Include="FlowSyntax.fs" />
+    <Compile Include="FlowLint.fs" />
+    <Compile Include="Storage.fs" />
+    <Compile Include="Parser.fs" />
+    <Compile Include="FlowParser.fs" />
+    <Compile Include="TypedIR.fs" />
+    <Compile Include="Compiler.fs" />
+    <Compile Include="FlowLowering.fs" />
+    <Compile Include="FlowPersistence.fs" />
+    <Compile Include="FlowRewrite.fs" />
+    <Compile Include="IrFormatting.fs" />
+    <Compile Include="FiniteCoverage.fs" />
+    <Compile Include="IrInterpreter.fs" />
+    <Compile Include="ValueInspection.fs" />
+    <Compile Include="Source.fs" />
+    <Compile Include="Discovery.fs" />
+    <Compile Include="VocabularyAnalysis.fs" />
+    <Compile Include="AuthoringHelp.fs" />
+    <Compile Include="Runtime.fs" />
+    <Compile Include="Protocol.fs" />
+  </ItemGroup>
+
+</Project>

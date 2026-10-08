@@ -7,14 +7,14 @@ $ErrorActionPreference = 'Stop'
 
 $repo = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $runId = [Guid]::NewGuid().ToString('N')
-$runDirectory = Join-Path $repo ".agentlang/owning-stack-001/verification-$runId"
+$runDirectory = Join-Path $repo ".agentlang/owning-stack-002/verification-$runId"
 $buildDirectory = Join-Path $runDirectory 'dotnet-artifacts'
 $nativeDirectory = Join-Path $runDirectory 'native'
 $nativeOutputDirectory = Join-Path $runDirectory 'native-output'
-$clangTempDirectory = Join-Path $runDirectory 'compiler-temp'
+$repoTempDirectory = Join-Path $runDirectory 'compiler-temp'
 $evidencePath = Join-Path $runDirectory 'verification-evidence.json'
 $runnerProject = Join-Path $repo 'experiments/AgentLang.NativeValueStack/AgentLang.NativeValueStack.fsproj'
-$fixturePath = Join-Path $repo 'tests/fixtures/native-conformance/native-value-stack-v1.json'
+$fixturePath = Join-Path $repo 'tests/fixtures/native-conformance/native-value-stack.json'
 $nativeSourceDirectory = Join-Path $repo 'src/AgentLang.Llvm/native'
 $nativeTestSource = Join-Path $nativeSourceDirectory 'owning_stack_runtime_test.c'
 $nativeRuntimeSource = Join-Path $nativeSourceDirectory 'owning_stack_runtime.c'
@@ -49,7 +49,7 @@ $sourceInputPaths += @(
     ForEach-Object { [IO.Path]::GetFullPath($_.FullName) }
 )
 $report = [ordered]@{
-    schemaVersion = 1
+    schemaVersion = 2
     kind = 'native-owning-value-stack-verification'
     runId = $runId
     startedUtc = [DateTime]::UtcNow.ToString('O')
@@ -129,8 +129,8 @@ function Invoke-CapturedProcess {
     $startInfo.CreateNoWindow = $true
     $startInfo.RedirectStandardOutput = $true
     $startInfo.RedirectStandardError = $true
-    $startInfo.Environment['TMP'] = $clangTempDirectory
-    $startInfo.Environment['TEMP'] = $clangTempDirectory
+    $startInfo.Environment['TMP'] = $repoTempDirectory
+    $startInfo.Environment['TEMP'] = $repoTempDirectory
     foreach ($argument in $Arguments) { [void]$startInfo.ArgumentList.Add([string]$argument) }
     $process = [Diagnostics.Process]::new()
     $process.StartInfo = $startInfo
@@ -195,7 +195,7 @@ try {
     New-Item -ItemType Directory -Path $buildDirectory -Force | Out-Null
     New-Item -ItemType Directory -Path $nativeDirectory -Force | Out-Null
     New-Item -ItemType Directory -Path $nativeOutputDirectory -Force | Out-Null
-    New-Item -ItemType Directory -Path $clangTempDirectory -Force | Out-Null
+    New-Item -ItemType Directory -Path $repoTempDirectory -Force | Out-Null
 
     $report.sourceInputHashesBefore = @(Get-SourceHashes)
     $dotnet = Resolve-Executable 'AGENTLANG_DOTNET' '' 'dotnet'
@@ -237,20 +237,43 @@ try {
             $nativeTestMetrics.status -ceq 'pass' -and
             $nativeTestMetrics.cases -eq $storageOracle.cases -and
             $nativeTestMetrics.checks -eq $storageOracle.checks -and
+            $nativeTestMetrics.fixed_baseline.suite -ceq $storageOracle.fixedBaseline.suite -and
+            $nativeTestMetrics.fixed_baseline.cases -eq $storageOracle.fixedBaseline.cases -and
+            $nativeTestMetrics.fixed_baseline.checks -eq $storageOracle.fixedBaseline.checks -and
+            $nativeTestMetrics.fixed_baseline.peak_operand_bytes -eq $storageOracle.fixedBaseline.peakOperandBytes -and
+            $nativeTestMetrics.fixed_baseline.peak_local_bytes -eq $storageOracle.fixedBaseline.peakLocalBytes -and
+            $nativeTestMetrics.fixed_baseline.peak_cursor_bytes -eq $storageOracle.fixedBaseline.peakCursorBytes -and
+            $nativeTestMetrics.fixed_baseline.max_stack_capacity_bytes -eq $storageOracle.fixedBaseline.maxStackCapacityBytes -and
+            $nativeTestMetrics.dynamic_cases.cases -eq $storageOracle.dynamicCases.cases -and
+            $nativeTestMetrics.dynamic_cases.checks -eq $storageOracle.dynamicCases.checks -and
             $nativeTestMetrics.abi.event_size_bytes -eq $storageOracle.abi.eventSizeBytes -and
             $nativeTestMetrics.abi.event_checksum_offset_bytes -eq $storageOracle.abi.eventChecksumOffsetBytes -and
             $nativeTestMetrics.abi.context_size_bytes -eq $storageOracle.abi.contextSizeBytes -and
             (ConvertTo-Json -InputObject $nativeTestMetrics.abi.context_offsets_bytes -Depth 20 -Compress) -ceq (ConvertTo-Json -InputObject $storageOracle.abi.contextOffsetsBytes -Depth 20 -Compress) -and
-            $nativeTestMetrics.payload.peak_operand_bytes -eq $storageOracle.payload.peakOperandBytes -and
-            $nativeTestMetrics.payload.peak_local_bytes -eq $storageOracle.payload.peakLocalBytes -and
-            $nativeTestMetrics.reserved.max_stack_capacity_bytes -eq $storageOracle.reserved.maxStackCapacityBytes -and
-            $nativeTestMetrics.reserved.peak_cursor_bytes -eq $storageOracle.reserved.peakCursorBytes -and
-            $nativeTestMetrics.reserved.peak_local_reserved_bytes -eq $storageOracle.reserved.peakLocalReservedBytes -and
+            $nativeTestMetrics.abi.layout_abi_version -eq $storageOracle.abi.layoutAbiVersion -and
+            $nativeTestMetrics.abi.layout_size_bytes -eq $storageOracle.abi.layoutSizeBytes -and
+            (ConvertTo-Json -InputObject $nativeTestMetrics.abi.layout_offsets_bytes -Depth 20 -Compress) -ceq (ConvertTo-Json -InputObject $storageOracle.abi.layoutOffsetsBytes -Depth 20 -Compress) -and
+            $nativeTestMetrics.abi.type_descriptor_size_bytes -eq $storageOracle.abi.typeDescriptorSizeBytes -and
+            $nativeTestMetrics.abi.field_descriptor_size_bytes -eq $storageOracle.abi.fieldDescriptorSizeBytes -and
+            $nativeTestMetrics.abi.value_size_bytes -eq $storageOracle.abi.valueSizeBytes -and
+            $nativeTestMetrics.abi.field_location_size_bytes -eq $storageOracle.abi.fieldLocationSizeBytes -and
+            $nativeTestMetrics.payload.all_cases_peak_operand_bytes -eq $storageOracle.payload.allCasesPeakOperandBytes -and
+            $nativeTestMetrics.payload.all_cases_peak_local_bytes -eq $storageOracle.payload.allCasesPeakLocalBytes -and
+            $nativeTestMetrics.payload.fixed_peak_operand_bytes -eq $storageOracle.payload.fixedPeakOperandBytes -and
+            $nativeTestMetrics.payload.fixed_peak_local_bytes -eq $storageOracle.payload.fixedPeakLocalBytes -and
+            $nativeTestMetrics.reserved.all_cases_max_stack_capacity_bytes -eq $storageOracle.reserved.allCasesMaxStackCapacityBytes -and
+            $nativeTestMetrics.reserved.all_cases_peak_cursor_bytes -eq $storageOracle.reserved.allCasesPeakCursorBytes -and
+            $nativeTestMetrics.reserved.all_cases_peak_local_reserved_bytes -eq $storageOracle.reserved.allCasesPeakLocalReservedBytes -and
+            $nativeTestMetrics.reserved.fixed_peak_cursor_bytes -eq $storageOracle.reserved.fixedPeakCursorBytes -and
             $nativeTestMetrics.metadata.bitmap_bytes_each -eq $storageOracle.metadata.bitmapBytesEach -and
             $nativeTestMetrics.metadata.bitmap_total_bytes -eq $storageOracle.metadata.bitmapTotalBytes -and
             $nativeTestMetrics.metadata.trace_event_count -eq $storageOracle.metadata.traceEventCount -and
             $nativeTestMetrics.metadata.trace_event_capacity -eq $storageOracle.metadata.traceEventCapacity -and
-            $nativeTestMetrics.metadata.trace_bytes -eq $storageOracle.metadata.traceBytes
+            $nativeTestMetrics.metadata.trace_bytes -eq $storageOracle.metadata.traceBytes -and
+            $nativeTestMetrics.metadata.layout_validation_memo_table_bytes -eq $storageOracle.metadata.layoutValidationMemoTableBytes -and
+            $nativeTestMetrics.metadata.layout_max_types -eq $storageOracle.metadata.layoutMaxTypes -and
+            $nativeTestMetrics.metadata.layout_max_fields -eq $storageOracle.metadata.layoutMaxFields -and
+            $nativeTestMetrics.metadata.layout_max_depth -eq $storageOracle.metadata.layoutMaxDepth
         Add-Check "$optimizationName native storage measurements match the independent fixture" $metricsPassed ([ordered]@{ expected = $storageOracle; actual = $nativeTestMetrics })
         $nativeRun['metrics'] = $nativeTestMetrics
     }
@@ -296,6 +319,7 @@ try {
     $ubsanTrapMetrics = $trapJsonLine[0] | ConvertFrom-Json -AsHashtable -Depth 50 -ErrorAction Stop
     $trapMetricsPass = $ubsanTrapMetrics.suite -ceq $storageOracle.suite -and $ubsanTrapMetrics.status -ceq 'pass' -and $ubsanTrapMetrics.cases -eq $storageOracle.cases -and $ubsanTrapMetrics.checks -eq $storageOracle.checks
     Add-Check 'trap-mode UBSan result matches the storage fixture' $trapMetricsPass $ubsanTrapMetrics
+    Add-Check 'trap-mode UBSan output matches O0/O2 ABI and byte categories' ((ConvertTo-Json -InputObject $ubsanTrapMetrics -Depth 50 -Compress) -ceq $o0Metrics)
     $report.ubsan = [ordered]@{ normalRuntime = $ubsanNormal; trapVariant = [ordered]@{ build = $ubsanTrapBuild; run = $ubsanTrapRun; metrics = $ubsanTrapMetrics } }
 
     $experimentEvidencePath = Join-Path $runDirectory 'native-value-stack-evidence.json'
@@ -303,11 +327,13 @@ try {
         $runnerAssembly, $fixturePath, $nativeOutputDirectory, $experimentEvidencePath
     ) $repo
     $report.experimentRun = $experiment
-    Require-ProcessSuccess $experiment 'interpreter, ABI3 O0/O2, and owning-stack O0/O2 experiment passed'
+    Require-ProcessSuccess $experiment 'fixed interpreter/ABI3/owning controls and String interpreter/owning O0/O2 experiment passed'
     Add-Check 'experiment evidence file exists' (Test-Path -LiteralPath $experimentEvidencePath -PathType Leaf) $experimentEvidencePath
     $experimentEvidence = Read-JsonFile $experimentEvidencePath
     Add-Check 'experiment evidence reports success' ([bool]$experimentEvidence.passed) ([ordered]@{ failureCount = $experimentEvidence.failureCount; failure = $experimentEvidence.failure })
-    Add-Check 'experiment used one compiler-authorized program instance' ([bool]$experimentEvidence.sameVerifiedProgramInstance) $experimentEvidence.backendScope
+    Add-Check 'fixed three-way controls share one compiler-authorized program instance' ([bool]$experimentEvidence.fixedControlVerifiedProgramInstance) $experimentEvidence.backendScope
+    Add-Check 'String interpreter and owning O0/O2 share one compiler-authorized program instance' ([bool]$experimentEvidence.stringVerifiedProgramInstance -and $experimentEvidence.stringBackendScope -match 'ABI3 String parity is unavailable') $experimentEvidence.stringBackendScope
+    Add-Check 'String comparison records nested runtime Value input and no ABI3 String claim' ($experimentEvidence.stringBackendScope -match 'runtime Value input' -and $experimentEvidence.stringBackendScope -match 'ABI3 String parity is unavailable') $experimentEvidence.stringBackendScope
     Add-Check 'two-turn retained publication boundary is accurately scoped' ($experimentEvidence.turnBoundaryScope -match 'not a persistent native controller') $experimentEvidence.turnBoundaryScope
     Add-Check 'fixture declares no final memory-policy or throughput conclusion' (@($experimentEvidence.limitations | Where-Object { $_ -match 'No final memory-policy|throughput' }).Count -ge 1) $experimentEvidence.limitations
 

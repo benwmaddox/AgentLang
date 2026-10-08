@@ -1,10 +1,10 @@
 # Research: no language heap, program data stack only
 
 Status: user-requested research and implementation direction, clarified
-2026-10-08. The preferred semantics are an owning value stack for most working
-data. Physical representation, copy/move lowering and source details still need
-validation. Report126's shared record DAGs and whole-invocation scratch do not
-implement this ownership model.
+2026-10-08. The preferred model is immutable owning values in nearby arena
+storage, with rare payload movement and compiler-controlled bulk reset.
+Logical stack consumption need not immediately reclaim individual bytes.
+Report 129's eager packing is measured evidence, not the intended final policy.
 
 ## Question and boundary
 
@@ -18,34 +18,34 @@ does not by itself violate the proposed language model. Distinguish absence of a
 language object heap from absence of every physical host allocation. Report host
 metadata/compiler/provider allocations separately rather than hiding them.
 
-Keep this distinct from general arena-only allocation: an arena can contain
-arbitrarily connected values with a common lifetime without enforcing a stack.
-The strict candidate must specify what pushing, consuming, duplicating,
-returning and retaining a compound value do to both data and storage.
+Arenas are the general allocation rule. Specify what pushing, consuming,
+duplicating, returning and retaining a compound value do to logical values and
+physical storage separately. Ending a binding does not require compacting bytes.
 
 ## Preferred semantics: owning values
 
-The user explicitly intends values, not references to independently lived language
-objects. Each stack entry owns its entire nested payload. Removing that entry
-reclaims the payload; no other surviving entry/local/container may point into it.
-This changes the earlier open alias/region discussion into a stronger default:
+The user intends values, not references to independently lived language objects.
+Payloads normally stay where constructed within a processing arena. Leave
+interior dead bytes in place; rewind only a dead suffix or completed region:
 
-- A duplicate is an independent value, including nested text/list/record payloads.
-- A move transfers ownership and invalidates the old location. Copy elision must
-  preserve the same observable values and reclamation boundaries.
-- Returned results occupy caller-owned stack storage before callee storage is
-  reclaimed, by a checked move, copy or equivalent layout-preserving transfer.
+- An independent clone owns its complete nested payload. Ordinary immutable reuse
+  may share its arena location internally without an observable reference feature.
+- Logical ownership transfer need not physically relocate bytes. Reset must never
+  invalidate a surviving value or pending provider operation.
+- Returned results normally remain in the same processing arena as their caller;
+  a function return is not automatically an allocation boundary.
 - Retained mailbox state, queued messages and exported results own their values;
   they cannot retain pointers into a popped stack value.
-- Named locals occupy owning locations too. Reading/reusing a local must not
-  introduce a hidden shared heap or reference-counting lifetime scheme.
+- Named locals use bounded location metadata. Reading/reusing a local must not
+  copy its payload merely to satisfy a contiguous operand-stack representation,
+  or introduce a hidden shared heap or reference-counting lifetime scheme.
 - Capacity failure must not partially move a value, publish half a result, leak
   owned payload, or invalidate the previous mailbox state.
 
-Internal offsets or pointers may describe payload within its own representation;
-they cannot create independently lived shared objects or survive the owner's
-removal. An implementation optimization is acceptable only if it preserves these
-contracts. Opaque external-resource capabilities have a separate resource-cleanup
+Internal offsets may describe immutable payloads for their processing lifetime;
+they cannot survive reset or create independently lived shared heap objects.
+Only cross-lifetime retention requires transfer into an appropriate owned region.
+Opaque external-resource capabilities have a separate resource-cleanup
 contract; releasing value bytes alone does not acknowledge pending provider I/O.
 
 ### Physical locality
@@ -67,21 +67,20 @@ from correctness and total-memory accounting.
 
 Test scalars and variable-sized nested values, duplication, moves, returning a
 non-topmost result, early errors, branch joins and repeated work under a fixed
-capacity. After each pop/rewind assert exact live storage and validity of surviving
+capacity. After each logical pop or physical rewind assert live storage and validity of surviving
 independent values. Poison/reuse freed storage to expose dangling aliases. Include
 large value copies and transformations: report costs rather than selecting only
 cheap scalar examples. Source notation and final physical layout remain open.
 
 ## Candidates to compare
 
-1. The preferred owning LIFO value stack, optionally arena-backed. Compound values own their
-   nested payload; duplication creates an independent value; an optimization must preserve the
-   owning-value and reclamation contracts above.
-   No arbitrary references into storage that can be popped/reset independently.
-2. A stack of typed values backed by one processing arena. Popping values need
-   not reclaim individual payloads; reclaim together at a phase boundary.
-3. Nested processing arenas with explicit retained results. This relaxes strict
-   stack-only retention and must be reported as a different candidate.
+1. Historical packed owning LIFO storage (report 129), retained as a measured
+   control. Its eager copying/compaction is superseded by the user's clarification.
+2. Preferred: typed values backed by a processing arena, with nearby payloads
+   and bounded location metadata. Logical popping need not reclaim individual
+   bytes; reclaim together at a safe boundary. No source borrowed references.
+3. Nested processing arenas with explicit retained results, where analysis proves
+   a useful safe boundary. Do not introduce one arena or copy per function call.
 4. Sequential mailbox processing with a declared, bounded retained-data layout
    outside processing arenas, and an arena-backed data stack for all transient
    language values. This is the user's proposed static-data alternative, using

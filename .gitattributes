@@ -117,3 +117,6 @@ reports/evidence/126-native-mailbox-dispatch/** -text -whitespace
 
 # Preserve owning-stack source snapshots, logs, and compressed evidence hashes.
 reports/evidence/128-owning-value-stack/** -text -whitespace
+
+# Preserve variable-size owning-value source and validation evidence hashes.
+reports/evidence/129-variable-owning-values/** -text -whitespace

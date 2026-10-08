@@ -1,0 +1,515 @@
+record Leaf {
+    field value: Int;
+}
+
+record Envelope {
+    field leaf: Leaf;
+    field tag: Int;
+}
+
+record State {
+    field count: Int;
+    field last: Envelope;
+}
+
+fn mailbox.make-envelope(value: Int, tag: Int) -> Envelope {
+    effects none
+    let nestedLeaf = leaf::new(value = value);
+    envelope::new(leaf = nestedLeaf, tag = tag)
+}
+
+fn mailbox.exercise(value: Int) -> Int {
+    effects none
+    let (left, right) = dup(mailbox::make-envelope(value, add(value, 100)));
+    let left_value = left.leaf.value;
+    let right_value = right.leaf.value;
+    add(left_value, right_value)
+}
+
+fn mailbox.initialize() -> State {
+    effects none
+    let last = mailbox::make-envelope(5, 70);
+    state::new(count = 10, last = last)
+}
+
+fn mailbox.branch(value: Int, choose_left: Bool) -> Envelope {
+    effects none
+    let selected = if choose_left {
+        mailbox::make-envelope(value, 700)
+    } else {
+        mailbox::make-envelope(add(value, 1), 800)
+    };
+    selected
+}
+
+fn mailbox.unit-value() -> Unit {
+    effects none
+    unit
+}
+
+fn mailbox.empty-value() -> Empty {
+    effects none
+    empty::new()
+}
+
+fn mailbox.scoped-width(value: Int) -> Envelope {
+    effects none
+    let held = mailbox::make-envelope(value, 700);
+    let observed = if equals(value, 0) {
+        let narrow = leaf::new(value = value);
+        narrow.value
+    } else {
+        let wide = state::new(count = value, last = mailbox::make-envelope(value, 800));
+        wide.count
+    };
+    envelope::new(leaf = held.leaf, tag = add(held.tag, observed))
+}
+
+fn mailbox.fail-after-allocation(state: State, value: Int) -> Int {
+    effects none
+    let scratch = mailbox::make-envelope(value, add(value, 1));
+    divide(1, 0)
+}
+
+record TextLeaf {
+    field text: String;
+    field codeUnits: Int;
+}
+
+record TextEnvelope {
+    field leaf: TextLeaf;
+    field tag: Int;
+}
+
+record TextState {
+    field count: Int;
+    field last: TextEnvelope;
+}
+
+record TextMixed {
+    field marker: Empty;
+    field text: String;
+    field sentinel: Int;
+}
+
+fn mailbox.transform-text-envelope(previous: TextEnvelope) -> TextEnvelope {
+    effects none
+    let (left, right) = dup(previous);
+    let leftText = string::concat(left.leaf.text, "!");
+    let rightText = string::concat(right.leaf.text, "?");
+    let combined = string::concat(leftText, rightText);
+    let codeUnits = string::length(left.leaf.text);
+    let nextLeaf = textLeaf::new(text = combined, codeUnits = codeUnits);
+    textEnvelope::new(leaf = nextLeaf, tag = add(previous.tag, 1))
+}
+
+fn mailbox.transform-text-envelope-with-length(previous: TextEnvelope) -> (TextEnvelope, Int) {
+    effects none
+    let next = mailbox::transform-text-envelope(previous);
+    let outputLength = string::length(next.leaf.text);
+    return (next, outputLength)
+}
+
+fn mailbox.turn-text(state: TextState) -> (TextState, Int) {
+    effects none
+    let (next, outputLength) = mailbox::transform-text-envelope-with-length(state.last);
+    let nextState = textState::new(count = add(state.count, 1), last = next);
+    return (nextState, outputLength)
+}
+
+fn mailbox.identity-string(value: String) -> String {
+    effects none
+    value
+}
+
+fn mailbox.join-strings(left: String, right: String) -> String {
+    effects none
+    string::concat(left, right)
+}
+
+fn mailbox.make-text-mixed(text: String, sentinel: Int) -> TextMixed {
+    effects none
+    let marker = empty::new();
+    textMixed::new(marker = marker, text = text, sentinel = sentinel)
+}
+
+fn mailbox.project-text-mixed(value: TextMixed) -> (String, Int) {
+    effects none
+    let text = value.text;
+    let sentinel = value.sentinel;
+    return (text, sentinel)
+}
+
+fn mailbox.project-text-mixed-marker(value: TextMixed) -> Empty {
+    effects none
+    value.marker
+}
+
+fn mailbox.choose-text-envelope(left: TextEnvelope, right: TextEnvelope, chooseLeft: Bool) -> (TextEnvelope, Int) {
+    effects none
+    let selected = if chooseLeft { left } else { right };
+    let outputLength = string::length(selected.leaf.text);
+    return (selected, outputLength)
+}
+
+fn mailbox.fail-after-text-allocation(state: TextState) -> Int {
+    effects none
+    let scratch = string::concat(state.last.leaf.text, "!");
+    divide(1, 0)
+}
+
+
+fn mailbox.turn-1(state: State, value: Int) -> State {
+    effects none
+    let returned = mailbox::make-envelope(value, add(value, 1000));
+    mailbox::exercise(value);
+    let observed = returned.leaf.value;
+    let increment = if equals(observed, value) { 1 } else { 2 };
+    state::new(count = add(state.count, increment), last = returned)
+}
+
+fn mailbox.turn-8(state: State, value: Int) -> State {
+    effects none
+    let returned = mailbox::make-envelope(value, add(value, 1000));
+    mailbox::exercise(value);
+    mailbox::exercise(value);
+    mailbox::exercise(value);
+    mailbox::exercise(value);
+    mailbox::exercise(value);
+    mailbox::exercise(value);
+    mailbox::exercise(value);
+    mailbox::exercise(value);
+    let observed = returned.leaf.value;
+    let increment = if equals(observed, value) { 1 } else { 2 };
+    state::new(count = add(state.count, increment), last = returned)
+}
+
+fn mailbox.depth-0(value: Int) -> Int {
+    effects none
+    value
+}
+
+fn mailbox.depth-1(value: Int) -> Int {
+    effects none
+    mailbox::depth-0(value)
+}
+
+fn mailbox.depth-2(value: Int) -> Int {
+    effects none
+    mailbox::depth-1(value)
+}
+
+fn mailbox.depth-3(value: Int) -> Int {
+    effects none
+    mailbox::depth-2(value)
+}
+
+fn mailbox.depth-4(value: Int) -> Int {
+    effects none
+    mailbox::depth-3(value)
+}
+
+fn mailbox.depth-5(value: Int) -> Int {
+    effects none
+    mailbox::depth-4(value)
+}
+
+fn mailbox.depth-6(value: Int) -> Int {
+    effects none
+    mailbox::depth-5(value)
+}
+
+fn mailbox.depth-7(value: Int) -> Int {
+    effects none
+    mailbox::depth-6(value)
+}
+
+fn mailbox.depth-8(value: Int) -> Int {
+    effects none
+    mailbox::depth-7(value)
+}
+
+fn mailbox.depth-9(value: Int) -> Int {
+    effects none
+    mailbox::depth-8(value)
+}
+
+fn mailbox.depth-10(value: Int) -> Int {
+    effects none
+    mailbox::depth-9(value)
+}
+
+fn mailbox.depth-11(value: Int) -> Int {
+    effects none
+    mailbox::depth-10(value)
+}
+
+fn mailbox.depth-12(value: Int) -> Int {
+    effects none
+    mailbox::depth-11(value)
+}
+
+fn mailbox.depth-13(value: Int) -> Int {
+    effects none
+    mailbox::depth-12(value)
+}
+
+fn mailbox.depth-14(value: Int) -> Int {
+    effects none
+    mailbox::depth-13(value)
+}
+
+fn mailbox.depth-15(value: Int) -> Int {
+    effects none
+    mailbox::depth-14(value)
+}
+
+fn mailbox.depth-16(value: Int) -> Int {
+    effects none
+    mailbox::depth-15(value)
+}
+
+fn mailbox.depth-17(value: Int) -> Int {
+    effects none
+    mailbox::depth-16(value)
+}
+
+fn mailbox.depth-18(value: Int) -> Int {
+    effects none
+    mailbox::depth-17(value)
+}
+
+fn mailbox.depth-19(value: Int) -> Int {
+    effects none
+    mailbox::depth-18(value)
+}
+
+fn mailbox.depth-20(value: Int) -> Int {
+    effects none
+    mailbox::depth-19(value)
+}
+
+fn mailbox.depth-21(value: Int) -> Int {
+    effects none
+    mailbox::depth-20(value)
+}
+
+fn mailbox.depth-22(value: Int) -> Int {
+    effects none
+    mailbox::depth-21(value)
+}
+
+fn mailbox.depth-23(value: Int) -> Int {
+    effects none
+    mailbox::depth-22(value)
+}
+
+fn mailbox.depth-24(value: Int) -> Int {
+    effects none
+    mailbox::depth-23(value)
+}
+
+fn mailbox.depth-25(value: Int) -> Int {
+    effects none
+    mailbox::depth-24(value)
+}
+
+fn mailbox.depth-26(value: Int) -> Int {
+    effects none
+    mailbox::depth-25(value)
+}
+
+fn mailbox.depth-27(value: Int) -> Int {
+    effects none
+    mailbox::depth-26(value)
+}
+
+fn mailbox.depth-28(value: Int) -> Int {
+    effects none
+    mailbox::depth-27(value)
+}
+
+fn mailbox.depth-29(value: Int) -> Int {
+    effects none
+    mailbox::depth-28(value)
+}
+
+fn mailbox.depth-30(value: Int) -> Int {
+    effects none
+    mailbox::depth-29(value)
+}
+
+fn mailbox.depth-31(value: Int) -> Int {
+    effects none
+    mailbox::depth-30(value)
+}
+
+fn mailbox.depth-32(value: Int) -> Int {
+    effects none
+    mailbox::depth-31(value)
+}
+
+fn mailbox.depth-33(value: Int) -> Int {
+    effects none
+    mailbox::depth-32(value)
+}
+
+fn mailbox.depth-34(value: Int) -> Int {
+    effects none
+    mailbox::depth-33(value)
+}
+
+fn mailbox.depth-35(value: Int) -> Int {
+    effects none
+    mailbox::depth-34(value)
+}
+
+fn mailbox.depth-36(value: Int) -> Int {
+    effects none
+    mailbox::depth-35(value)
+}
+
+fn mailbox.depth-37(value: Int) -> Int {
+    effects none
+    mailbox::depth-36(value)
+}
+
+fn mailbox.depth-38(value: Int) -> Int {
+    effects none
+    mailbox::depth-37(value)
+}
+
+fn mailbox.depth-39(value: Int) -> Int {
+    effects none
+    mailbox::depth-38(value)
+}
+
+fn mailbox.depth-40(value: Int) -> Int {
+    effects none
+    mailbox::depth-39(value)
+}
+
+fn mailbox.depth-41(value: Int) -> Int {
+    effects none
+    mailbox::depth-40(value)
+}
+
+fn mailbox.depth-42(value: Int) -> Int {
+    effects none
+    mailbox::depth-41(value)
+}
+
+fn mailbox.depth-43(value: Int) -> Int {
+    effects none
+    mailbox::depth-42(value)
+}
+
+fn mailbox.depth-44(value: Int) -> Int {
+    effects none
+    mailbox::depth-43(value)
+}
+
+fn mailbox.depth-45(value: Int) -> Int {
+    effects none
+    mailbox::depth-44(value)
+}
+
+fn mailbox.depth-46(value: Int) -> Int {
+    effects none
+    mailbox::depth-45(value)
+}
+
+fn mailbox.depth-47(value: Int) -> Int {
+    effects none
+    mailbox::depth-46(value)
+}
+
+fn mailbox.depth-48(value: Int) -> Int {
+    effects none
+    mailbox::depth-47(value)
+}
+
+fn mailbox.depth-49(value: Int) -> Int {
+    effects none
+    mailbox::depth-48(value)
+}
+
+fn mailbox.depth-50(value: Int) -> Int {
+    effects none
+    mailbox::depth-49(value)
+}
+
+fn mailbox.depth-51(value: Int) -> Int {
+    effects none
+    mailbox::depth-50(value)
+}
+
+fn mailbox.depth-52(value: Int) -> Int {
+    effects none
+    mailbox::depth-51(value)
+}
+
+fn mailbox.depth-53(value: Int) -> Int {
+    effects none
+    mailbox::depth-52(value)
+}
+
+fn mailbox.depth-54(value: Int) -> Int {
+    effects none
+    mailbox::depth-53(value)
+}
+
+fn mailbox.depth-55(value: Int) -> Int {
+    effects none
+    mailbox::depth-54(value)
+}
+
+fn mailbox.depth-56(value: Int) -> Int {
+    effects none
+    mailbox::depth-55(value)
+}
+
+fn mailbox.depth-57(value: Int) -> Int {
+    effects none
+    mailbox::depth-56(value)
+}
+
+fn mailbox.depth-58(value: Int) -> Int {
+    effects none
+    mailbox::depth-57(value)
+}
+
+fn mailbox.depth-59(value: Int) -> Int {
+    effects none
+    mailbox::depth-58(value)
+}
+
+fn mailbox.depth-60(value: Int) -> Int {
+    effects none
+    mailbox::depth-59(value)
+}
+
+fn mailbox.depth-61(value: Int) -> Int {
+    effects none
+    mailbox::depth-60(value)
+}
+
+fn mailbox.depth-62(value: Int) -> Int {
+    effects none
+    mailbox::depth-61(value)
+}
+
+fn mailbox.depth-63(value: Int) -> Int {
+    effects none
+    mailbox::depth-62(value)
+}
+
+fn mailbox.depth-64(value: Int) -> Int {
+    effects none
+    mailbox::depth-63(value)
+}
+
+fn mailbox.depth-65(value: Int) -> Int {
+    effects none
+    mailbox::depth-64(value)
+}

@@ -21,12 +21,37 @@ type private EntryBodies =
       UnitValue: VerifiedIrBody
       UnitDrop: VerifiedIrBody
       EmptyValue: VerifiedIrBody
+      EmptyIdentity: VerifiedIrBody
       ScopedWidth: VerifiedIrBody
       ScopeShadow: VerifiedIrBody
       Depth64: VerifiedIrBody
       Depth65: VerifiedIrBody
       DirectDupDrop: VerifiedIrBody
       FailAfterAllocation: VerifiedIrBody }
+
+type private StringEntryBodies =
+    { Program: VerifiedIrProgram
+      CompilerContext: Compiler.IrLoweringContext
+      SourceOrigins: Map<SourceSpan, SourceSpan>
+      TurnText: VerifiedIrBody
+      IdentityString: VerifiedIrBody
+      JoinStrings: VerifiedIrBody
+      DirectConcat: VerifiedIrBody
+      MixedConstruct: VerifiedIrBody
+      MixedProjectTextAndSentinel: VerifiedIrBody
+      MixedProjectEmptyMarker: VerifiedIrBody
+      DynamicBranch: VerifiedIrBody
+      FailAfterTextAllocation: VerifiedIrBody
+      DirectDupDrop: VerifiedIrBody
+      ScopeShadow: VerifiedIrBody
+      ZeroOutputUserCall: VerifiedIrBody }
+
+type private LayoutDepthCase =
+    { Program: VerifiedIrProgram
+      Body: VerifiedIrBody
+      RecordLevels: int
+      LayoutLevels: int
+      TopTypeName: string }
 
 let private span file column =
     { File = file
@@ -92,7 +117,7 @@ let private depthChainSource maxDepth =
 }}""")
     |> String.concat "\n\n"
 
-let private compileEntries (source: string) =
+let private compileFlowProgram (source: string) =
     let document =
         match FlowParser.parseDocumentWithVersion 2 "value-stack.flow" source with
         | Ok parsed -> parsed
@@ -138,6 +163,10 @@ let private compileEntries (source: string) =
             { FlowLowering.FlowWordChange.Definition = definition
               RevisionIntent = FlowLowering.FlowWordRevisionIntent.Add(WordId("native-value-stack-source-" + definition.Name), 1) })
     let compiled = FlowLowering.compileBatchWords context changes
+    compiled
+
+let private compileEntries (source: string) =
+    let compiled = compileFlowProgram source
     let compileEntry entryName target inputTypes =
         Compiler.compileIrBodyAgainstProgramWithSourceOrigins
             compiled.Context.CompilerContext
@@ -165,6 +194,14 @@ let private compileEntries (source: string) =
                   Push(LInt 123L, span "<native-value-stack-unit-drop>" 3) ]
                 compiled.Context.SourceOrigins
           EmptyValue = compileEntry "mailbox.empty-value.entry" "mailbox.empty-value" []
+          EmptyIdentity =
+            Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+                compiled.Context.CompilerContext
+                compiled.Program
+                "native-value-stack-empty-record-identity"
+                [ TNamed "Empty" ]
+                []
+                compiled.Context.SourceOrigins
           ScopedWidth = compileEntry "mailbox.scoped-width.entry" "mailbox.scoped-width" [ TInt ]
           Depth64 = compileEntry "mailbox.depth-64.entry" "mailbox.depth-64" [ TInt ]
           Depth65 = compileEntry "mailbox.depth-65.entry" "mailbox.depth-65" [ TInt ]
@@ -200,12 +237,245 @@ let private compileEntries (source: string) =
                 compiled.Context.SourceOrigins
           FailAfterAllocation = compileEntry "mailbox.fail-after-allocation.entry" "mailbox.fail-after-allocation" [ TNamed "State"; TInt ] }
     let bodies =
-        [ entries.Initialize; entries.TurnOne; entries.TurnEight; entries.Branch; entries.UnitValue; entries.UnitDrop; entries.EmptyValue; entries.ScopedWidth; entries.Depth64; entries.Depth65; entries.ScopeShadow; entries.DirectDupDrop; entries.FailAfterAllocation ]
+        [ entries.Initialize; entries.TurnOne; entries.TurnEight; entries.Branch; entries.UnitValue; entries.UnitDrop; entries.EmptyValue; entries.EmptyIdentity; entries.ScopedWidth; entries.Depth64; entries.Depth65; entries.ScopeShadow; entries.DirectDupDrop; entries.FailAfterAllocation ]
     if not (VerifiedIrProgram.isBackendExecutable entries.Program) then
         invalidOp "Flow lowering did not produce a backend-authorized VerifiedIrProgram."
     if bodies |> List.exists (fun body -> not (Object.ReferenceEquals(VerifiedIrBody.program body, entries.Program))) then
         invalidOp "Every comparison body must share the exact VerifiedIrProgram instance."
     entries
+
+let private compileStringEntries (source: string) =
+    let flowCompiled = compileFlowProgram source
+    let helperSpan = span "<native-value-stack-zero-output-helper>" 1
+    let discardDefinition: WordDefinition =
+        { Name = "mailbox.discard-text-envelope"
+          Inputs = [ TNamed "TextEnvelope" ]
+          Outputs = []
+          Effects = Set.empty
+          Maturity = LibraryWord
+          Revision = 1
+          Documentation = "Compiler-minted no-output helper used by the owning-stack return conformance case."
+          Body = [ Call("drop", helperSpan) ]
+          SourceText = "compiler-minted zero-output helper"
+          Span = helperSpan }
+    let discardEntry: WordEntry =
+        { Definition = discardDefinition
+          Builtin = None
+          Status = Persistent
+          Maturity = LibraryWord
+          Revision = 1 }
+    let discardName = discardDefinition.Name
+    let compilerContext =
+        { flowCompiled.Context.CompilerContext with
+            Words = Map.add discardName discardEntry flowCompiled.Context.CompilerContext.Words
+            WordIds = Map.add discardName (WordId "native-value-stack-string-discard-text-envelope") flowCompiled.Context.CompilerContext.WordIds }
+    let verifiedProgram = Compiler.compileIrProgramWithSourceOrigins compilerContext flowCompiled.Context.SourceOrigins
+    let compiled =
+        { flowCompiled with
+            Program = verifiedProgram
+            Context = { flowCompiled.Context with CompilerContext = compilerContext } }
+    let compileEntry entryName target inputTypes =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+            compiled.Context.CompilerContext
+            compiled.Program
+            entryName
+            inputTypes
+            [ Call(target, span ("<" + entryName + ">") 1) ]
+            compiled.Context.SourceOrigins
+    let stringSpan name column = span ("<native-value-stack-string-" + name + ">") column
+    let entries =
+        { Program = compiled.Program
+          CompilerContext = compiled.Context.CompilerContext
+          SourceOrigins = compiled.Context.SourceOrigins
+          TurnText = compileEntry "mailbox.turn-text.entry" "mailbox.turn-text" [ TNamed "TextState" ]
+          IdentityString = compileEntry "mailbox.identity-string.entry" "mailbox.identity-string" [ TString ]
+          JoinStrings = compileEntry "mailbox.join-strings.entry" "mailbox.join-strings" [ TString; TString ]
+          DirectConcat =
+            Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+                compiled.Context.CompilerContext
+                compiled.Program
+                "native-value-stack-direct-string-concat-capacity"
+                [ TString; TString ]
+                [ Call("string.concat", stringSpan "direct-string-concat-capacity" 1) ]
+                compiled.Context.SourceOrigins
+          MixedConstruct = compileEntry "mailbox.make-text-mixed.entry" "mailbox.make-text-mixed" [ TString; TInt ]
+          MixedProjectTextAndSentinel = compileEntry "mailbox.project-text-mixed.entry" "mailbox.project-text-mixed" [ TNamed "TextMixed" ]
+          MixedProjectEmptyMarker = compileEntry "mailbox.project-text-mixed-marker.entry" "mailbox.project-text-mixed-marker" [ TNamed "TextMixed" ]
+          DynamicBranch = compileEntry "mailbox.choose-text-envelope.entry" "mailbox.choose-text-envelope" [ TNamed "TextEnvelope"; TNamed "TextEnvelope"; TBool ]
+          FailAfterTextAllocation = compileEntry "mailbox.fail-after-text-allocation.entry" "mailbox.fail-after-text-allocation" [ TNamed "TextState" ]
+          DirectDupDrop =
+            Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+                compiled.Context.CompilerContext
+                compiled.Program
+                "native-value-stack-string-direct-dup-drop"
+                [ TNamed "TextEnvelope" ]
+                [ Call("dup", stringSpan "direct-dup-drop" 1)
+                  Call("drop", stringSpan "direct-dup-drop" 2) ]
+                compiled.Context.SourceOrigins
+          ScopeShadow =
+            Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+                compiled.Context.CompilerContext
+                compiled.Program
+                "native-value-stack-string-scope-shadow"
+                [ TNamed "TextEnvelope"; TNamed "TextEnvelope" ]
+                [ Call("swap", stringSpan "scope-shadow" 1)
+                  Let("shadow", stringSpan "scope-shadow" 2)
+                  Scope(
+                    [ Let("shadow", stringSpan "scope-shadow" 3) ],
+                    stringSpan "scope-shadow" 4)
+                  Load("shadow", stringSpan "scope-shadow" 5) ]
+                compiled.Context.SourceOrigins
+          ZeroOutputUserCall =
+            Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+                compiled.Context.CompilerContext
+                compiled.Program
+                "native-value-stack-string-zero-output-user-call"
+                [ TNamed "TextEnvelope" ]
+                [ Call("mailbox.discard-text-envelope", stringSpan "zero-output-user-call" 1) ]
+                compiled.Context.SourceOrigins }
+    let bodies =
+        [ entries.TurnText
+          entries.IdentityString
+          entries.JoinStrings
+          entries.DirectConcat
+          entries.MixedConstruct
+          entries.MixedProjectTextAndSentinel
+          entries.MixedProjectEmptyMarker
+          entries.DynamicBranch
+          entries.FailAfterTextAllocation
+          entries.DirectDupDrop
+          entries.ScopeShadow
+          entries.ZeroOutputUserCall ]
+    if not (VerifiedIrProgram.isBackendExecutable entries.Program) then
+        invalidOp "Flow lowering did not produce a backend-authorized String VerifiedIrProgram."
+    if bodies |> List.exists (fun body -> not (Object.ReferenceEquals(VerifiedIrBody.program body, entries.Program))) then
+        invalidOp "Every String comparison body must share the exact VerifiedIrProgram instance."
+    entries
+
+let private compileTextStateFactory (entries: StringEntryBodies) (caseName: string) (value: Value) =
+    let count, tag, codeUnits, text =
+        match value with
+        | RecordValue("TextState", state) ->
+            match state["count"], state["last"] with
+            | IntValue count, RecordValue("TextEnvelope", envelope) ->
+                match envelope["tag"], envelope["leaf"] with
+                | IntValue tag, RecordValue("TextLeaf", leaf) ->
+                    match leaf["text"], leaf["codeUnits"] with
+                    | StringValue text, IntValue codeUnits -> count, tag, codeUnits, text
+                    | _ -> invalidOp "TextState fixture factory requires StringValue and IntValue leaf fields."
+                | _ -> invalidOp "TextState fixture factory requires an Int tag and TextLeaf."
+            | _ -> invalidOp "TextState fixture factory requires an Int count and TextEnvelope."
+        | _ -> invalidOp "TextState fixture factory requires a TextState Value."
+    let site name column = span ($"<native-value-stack-string-{caseName}-{name}>") column
+    Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+        entries.CompilerContext
+        entries.Program
+        ($"native-value-stack-string-input-{caseName}")
+        []
+        [ Push(LInt count, site "input-state-count" 1)
+          Push(LString text, site "input-string" 2)
+          Push(LInt codeUnits, site "input-code-units" 3)
+          Call("textLeaf.new", site "input-leaf" 4)
+          Push(LInt tag, site "input-tag" 5)
+          Call("textEnvelope.new", site "input-envelope" 6)
+          Call("textState.new", site "input-state" 7) ]
+        entries.SourceOrigins
+
+let private compileTextEnvelopePairFactory (entries: StringEntryBodies) (caseName: string) (first: Value) (second: Value) =
+    let envelopeParts = function
+        | RecordValue("TextEnvelope", envelope) ->
+            match envelope["tag"], envelope["leaf"] with
+            | IntValue tag, RecordValue("TextLeaf", leaf) ->
+                match leaf["text"], leaf["codeUnits"] with
+                | StringValue text, IntValue codeUnits -> tag, codeUnits, text
+                | _ -> invalidOp "TextEnvelope fixture factory requires StringValue and IntValue leaf fields."
+            | _ -> invalidOp "TextEnvelope fixture factory requires an Int tag and TextLeaf."
+        | _ -> invalidOp "TextEnvelope fixture factory requires TextEnvelope Values."
+    let firstTag, firstLength, firstText = envelopeParts first
+    let secondTag, secondLength, secondText = envelopeParts second
+    let site name column = span ($"<native-value-stack-string-{caseName}-{name}>") column
+    let expressions =
+        [ Push(LString firstText, site "first-text" 1)
+          Push(LInt firstLength, site "first-length" 2)
+          Call("textLeaf.new", site "first-leaf" 3)
+          Push(LInt firstTag, site "first-tag" 4)
+          Call("textEnvelope.new", site "first-envelope" 5)
+          Push(LString secondText, site "second-text" 6)
+          Push(LInt secondLength, site "second-length" 7)
+          Call("textLeaf.new", site "second-leaf" 8)
+          Push(LInt secondTag, site "second-tag" 9)
+          Call("textEnvelope.new", site "second-envelope" 10) ]
+    Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+        entries.CompilerContext
+        entries.Program
+        ($"native-value-stack-string-envelope-pair-{caseName}")
+        []
+        expressions
+        entries.SourceOrigins
+
+let private compileStringPairFactory (entries: StringEntryBodies) (caseName: string) (left: string) (right: string) =
+    let site name column = span ($"<native-value-stack-string-{caseName}-{name}>") column
+    Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+        entries.CompilerContext
+        entries.Program
+        ($"native-value-stack-string-pair-{caseName}")
+        []
+        [ Push(LString left, site "left" 1); Push(LString right, site "right" 2) ]
+        entries.SourceOrigins
+
+let private compileStringFactory (entries: StringEntryBodies) (caseName: string) (value: string) =
+    let site = span ($"<native-value-stack-string-{caseName}-literal>") 1
+    Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+        entries.CompilerContext
+        entries.Program
+        ($"native-value-stack-string-value-{caseName}")
+        []
+        [ Push(LString value, site) ]
+        entries.SourceOrigins
+
+let private compileTextMixedInputFactory (entries: StringEntryBodies) (caseName: string) (text: string) (sentinel: int64) =
+    let site name column = span ($"<native-value-stack-mixed-{caseName}-{name}>") column
+    Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+        entries.CompilerContext
+        entries.Program
+        ($"native-value-stack-mixed-input-{caseName}")
+        []
+        [ Push(LString text, site "text" 1); Push(LInt sentinel, site "sentinel" 2) ]
+        entries.SourceOrigins
+
+let private compileLayoutDepthCase recordLevels =
+    let recordSource =
+        [ 0 .. recordLevels - 1 ]
+        |> List.map (fun depth ->
+            let name = $"DepthNode{depth}"
+            let field = if depth = 0 then "field value: Int;" else $"field next: DepthNode{depth - 1};"
+            $"record {name} {{ {field} }}")
+        |> String.concat "\n"
+    let topType = $"DepthNode{recordLevels - 1}"
+    let functionSource = $"""fn mailbox.layout-depth(value: {topType}) -> {topType} {{
+    effects none
+    value
+}}"""
+    let compiled = compileFlowProgram (String.concat "\n\n" [ recordSource; functionSource ])
+    let body =
+        Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+            compiled.Context.CompilerContext
+            compiled.Program
+            $"native-value-stack-layout-depth-{recordLevels}"
+            [ TNamed topType ]
+            [ Call("mailbox.layout-depth", span ($"<layout-depth-{recordLevels}>") 1) ]
+            compiled.Context.SourceOrigins
+    { Program = compiled.Program
+      Body = body
+      RecordLevels = recordLevels
+      LayoutLevels = recordLevels + 1
+      TopTypeName = topType }
+
+let private layoutDepthValue (layoutCase: LayoutDepthCase) =
+    let mutable value = RecordValue("DepthNode0", Map.ofList [ "value", IntValue 42L ])
+    for depth in 1 .. layoutCase.RecordLevels - 1 do
+        value <- RecordValue($"DepthNode{depth}", Map.ofList [ "next", value ])
+    value
 
 let private noOpHost (sources: NativeDiagnosticSources) : IrInterpreterHost =
     { PreflightEffects = fun _ _ _ -> ()
@@ -238,6 +508,10 @@ let private int64Property target name =
     if isNull value then invalidOp $"Expected metric property '{name}' on {target.GetType().FullName}."
     Convert.ToInt64(value, CultureInfo.InvariantCulture)
 
+let private optionalInt64 target name =
+    let value = getProperty target name
+    if isNull value then -1L else Convert.ToInt64(value, CultureInfo.InvariantCulture)
+
 let private jsonNode (options: JsonSerializerOptions) (value: obj) =
     JsonNode.Parse(JsonSerializer.Serialize(value, options))
 
@@ -257,6 +531,117 @@ let private bytesFromInt64s (values: int64 list) =
 let private bytesHex (bytes: byte array) = Convert.ToHexString(bytes).ToLowerInvariant()
 
 let private bytesFromHex (value: string) = Convert.FromHexString value
+
+let private codeUnitsHexFromString (value: string) =
+    let bytes = Array.zeroCreate<byte> (value.Length * 2)
+    for index in 0 .. value.Length - 1 do
+        let codeUnit = uint16 value[index]
+        bytes[index * 2] <- byte (codeUnit &&& 0x00ffus)
+        bytes[index * 2 + 1] <- byte (codeUnit >>> 8)
+    bytesHex bytes
+
+let rec private codeUnitSafeValueData (value: Value) : obj =
+    let nested = codeUnitSafeValueData
+    match value with
+    | IntValue number -> jsonObject [ "type", box "Int"; "value", box number ]
+    | FloatValue number -> jsonObject [ "type", box "Float"; "value", box number ]
+    | BoolValue boolean -> jsonObject [ "type", box "Bool"; "value", box boolean ]
+    | StringValue text ->
+        jsonObject [
+            "type", box "String"
+            "codeUnitCount", box text.Length
+            "codeUnitsHex", box (codeUnitsHexFromString text) ]
+    | UnitValue -> jsonObject [ "type", box "Unit" ]
+    | ListValue(elementType, items) ->
+        jsonObject [
+            "type", box "List"
+            "elementType", box (sprintf "%A" elementType)
+            "items", box (items |> List.map nested) ]
+    | OptionValue(elementType, item) ->
+        jsonObject [
+            "type", box "Option"
+            "elementType", box (sprintf "%A" elementType)
+            "value", box (item |> Option.map nested) ]
+    | ResultValue(okType, errorType, result) ->
+        match result with
+        | Ok item -> jsonObject [ "type", box "Result"; "okType", box (sprintf "%A" okType); "errorType", box (sprintf "%A" errorType); "ok", box (nested item) ]
+        | Error item -> jsonObject [ "type", box "Result"; "okType", box (sprintf "%A" okType); "errorType", box (sprintf "%A" errorType); "error", box (nested item) ]
+    | RecordValue(name, fields) ->
+        jsonObject [
+            "type", box "Record"
+            "name", box name
+            "fields", box (fields |> Map.toList |> List.map (fun (fieldName, fieldValue) -> jsonObject [ "name", box fieldName; "value", nested fieldValue ])) ]
+    | EnumValue(name, variant) -> jsonObject [ "type", box "Enum"; "name", box name; "variant", box variant ]
+    | NamedValue(name, inner) -> jsonObject [ "type", box "Named"; "name", box name; "value", nested inner ]
+
+let private codeUnitSafeValuesData values = values |> List.map codeUnitSafeValueData
+
+let private codeUnitSafeValuesJson values = JsonSerializer.Serialize(codeUnitSafeValuesData values)
+
+let private codeUnitsFromHex (hex: string) =
+    let bytes = bytesFromHex hex
+    if bytes.Length % 2 <> 0 then invalidArg (nameof hex) "UTF-16 code-unit hex must contain complete little-endian code units."
+    Array.init (bytes.Length / 2) (fun index -> char (uint16 bytes[index * 2] ||| (uint16 bytes[index * 2 + 1] <<< 8)))
+
+let private stringFromCodeUnitsHex (hex: string) =
+    String(codeUnitsFromHex hex)
+
+let private stringBytesFromCodeUnitsHex (hex: string) =
+    let data = bytesFromHex hex
+    if data.Length % 2 <> 0 then invalidArg (nameof hex) "UTF-16 code-unit hex must contain complete little-endian code units."
+    let count = uint32 (data.Length / 2)
+    let payloadBytes = 8 + data.Length
+    let extentBytes = (payloadBytes + 7) / 8 * 8
+    let result = Array.zeroCreate<byte> extentBytes
+    let countBytes = BitConverter.GetBytes(count)
+    Array.Copy(countBytes, 0, result, 0, 4)
+    Array.Copy(data, 0, result, 8, data.Length)
+    result
+
+let private textStateBytes count tag codeUnits stringCodeUnitsHex =
+    Array.concat [
+        bytesFromInt64s [ int64 count ]
+        stringBytesFromCodeUnitsHex stringCodeUnitsHex
+        bytesFromInt64s [ int64 codeUnits; int64 tag ] ]
+
+let private textStateValue count tag codeUnits text =
+    RecordValue("TextState", Map.ofList [
+        "count", IntValue(int64 count)
+        "last", RecordValue("TextEnvelope", Map.ofList [
+            "leaf", RecordValue("TextLeaf", Map.ofList [
+                "text", StringValue text
+                "codeUnits", IntValue(int64 codeUnits) ])
+            "tag", IntValue(int64 tag) ]) ])
+
+let private textEnvelopeValue tag text codeUnits =
+    RecordValue("TextEnvelope", Map.ofList [
+        "leaf", RecordValue("TextLeaf", Map.ofList [
+            "text", StringValue text
+            "codeUnits", IntValue(int64 codeUnits) ])
+        "tag", IntValue(int64 tag) ])
+
+let private textStateFromCase (caseElement: JsonElement) =
+    let mutable inputProperty = Unchecked.defaultof<JsonElement>
+    let input = if caseElement.TryGetProperty("input", &inputProperty) then inputProperty else caseElement
+    let codeUnitsHex = caseElement.GetProperty("inputCodeUnitsHex").GetString()
+    let mutable countProperty = Unchecked.defaultof<JsonElement>
+    let mutable tagProperty = Unchecked.defaultof<JsonElement>
+    let mutable codeUnitsProperty = Unchecked.defaultof<JsonElement>
+    let count = if input.TryGetProperty("count", &countProperty) then countProperty.GetInt64() else 10L
+    let tag = if input.TryGetProperty("tag", &tagProperty) then tagProperty.GetInt64() else 70L
+    let codeUnits = if input.TryGetProperty("codeUnits", &codeUnitsProperty) then codeUnitsProperty.GetInt64() else caseElement.GetProperty("inputCodeUnitCount").GetInt64()
+    textStateValue count tag codeUnits (stringFromCodeUnitsHex codeUnitsHex)
+
+let private textExpectedOutputs (caseElement: JsonElement) =
+    let expected = caseElement.GetProperty("expectedOutputs").EnumerateArray() |> Seq.toArray
+    let state = expected[0]
+    let codeUnitsHex = caseElement.GetProperty("outputCodeUnitsHex").GetString()
+    [ textStateValue
+          (state.GetProperty("count").GetInt64())
+          (state.GetProperty("tag").GetInt64())
+          (state.GetProperty("codeUnits").GetInt64())
+          (stringFromCodeUnitsHex codeUnitsHex)
+      IntValue(expected[1].GetProperty("value").GetInt64()) ]
 
 let private layoutTypeNames = [ "Leaf"; "Envelope"; "State"; "Empty" ]
 
@@ -321,12 +706,125 @@ let private validateTypeLayouts (fixture: JsonElement) (typeNames: string list) 
         |> List.toArray
     checks.ToArray(), failures.ToArray(), summary
 
+let private validateDynamicTypeLayouts (typeNames: string list) (fixture: JsonElement) (layouts: OwningStackTypeLayout list) =
+    let oracle = fixture.GetProperty("stringWorkload").GetProperty("dynamicLayoutOracle")
+    let checks = ResizeArray<obj>()
+    let failures = ResizeArray<string>()
+    for typeName in typeNames do
+        let expectedPayload = oracle.GetProperty("minimumPayloadBytes").GetProperty(typeName).GetInt32()
+        let expectedExtent = oracle.GetProperty("minimumExtentBytes").GetProperty(typeName).GetInt32()
+        match layouts |> List.tryFind (fun layout -> String.Equals(layout.TypeName, typeName, StringComparison.Ordinal)) with
+        | None ->
+            checks.Add(box (jsonObject [ "type", box typeName; "present", box false ]))
+            failures.Add($"Missing dynamic type layout for {typeName}.")
+        | Some layout ->
+            let dynamic = Convert.ToBoolean(getProperty (box layout) "IsDynamic", CultureInfo.InvariantCulture)
+            let minimumPayload = int64Property (box layout) "MinimumPayloadBytes"
+            let minimumExtent = int64Property (box layout) "MinimumExtentBytes"
+            let payload = int64 layout.PayloadBytes
+            let extent = int64 layout.ExtentBytes
+            let passed = dynamic && payload = -1L && extent = -1L && minimumPayload = int64 expectedPayload && minimumExtent = int64 expectedExtent
+            checks.Add(box (jsonObject [
+                "type", box typeName
+                "isDynamic", box dynamic
+                "payloadBytes", box payload
+                "extentBytes", box extent
+                "expectedMinimumPayloadBytes", box expectedPayload
+                "actualMinimumPayloadBytes", box minimumPayload
+                "expectedMinimumExtentBytes", box expectedExtent
+                "actualMinimumExtentBytes", box minimumExtent ]))
+            if not passed then failures.Add($"{typeName} must expose dynamic sizes (-1) and minimum payload/extent {expectedPayload}/{expectedExtent}.")
+    let expectedFields =
+        oracle.GetProperty("fields").EnumerateObject()
+        |> Seq.filter (fun property ->
+            let separator = property.Name.IndexOf('.')
+            separator > 0 && List.contains (property.Name.Substring(0, separator)) typeNames)
+    for property in expectedFields do
+        let key = property.Name
+        let separator = key.IndexOf('.')
+        let typeName = key.Substring(0, separator)
+        let fieldName = key.Substring(separator + 1)
+        let expected = property.Value
+        match layouts |> List.tryFind (fun layout -> layout.TypeName = typeName) with
+        | None -> failures.Add($"Field oracle owner {typeName} has no type layout.")
+        | Some owner ->
+            match owner.Fields |> List.tryFind (fun field -> field.FieldName = fieldName) with
+            | None -> failures.Add($"Missing dynamic field layout for {key}.")
+            | Some field ->
+                let expectedDynamic = expected.GetProperty("isDynamic").GetBoolean()
+                let expectedOffsetDynamic = expected.GetProperty("isOffsetDynamic").GetBoolean()
+                let expectedMinimumOffset =
+                    if expectedOffsetDynamic then expected.GetProperty("minimumOffsetBytes").GetInt32()
+                    else
+                        let mutable minimumOffset = Unchecked.defaultof<JsonElement>
+                        if expected.TryGetProperty("minimumOffsetBytes", &minimumOffset) then minimumOffset.GetInt32()
+                        else expected.GetProperty("offsetBytes").GetInt32()
+                let expectedOffset = if expectedOffsetDynamic then -1 else expectedMinimumOffset
+                let expectedMinimumPayload =
+                    if expectedDynamic then expected.GetProperty("minimumPayloadBytes").GetInt32()
+                    else expected.GetProperty("payloadBytes").GetInt32()
+                let expectedMinimumExtent =
+                    if expectedDynamic then expected.GetProperty("minimumExtentBytes").GetInt32()
+                    else expected.GetProperty("extentBytes").GetInt32()
+                let dynamic = Convert.ToBoolean(getProperty (box field) "IsDynamic", CultureInfo.InvariantCulture)
+                let offsetDynamic = Convert.ToBoolean(getProperty (box field) "IsOffsetDynamic", CultureInfo.InvariantCulture)
+                let minimumPayload = int64Property (box field) "MinimumPayloadBytes"
+                let minimumExtent = int64Property (box field) "MinimumExtentBytes"
+                let expectedPayload = if expectedDynamic then -1 else expected.GetProperty("payloadBytes").GetInt32()
+                let expectedExtent = if expectedDynamic then -1 else expected.GetProperty("extentBytes").GetInt32()
+                let passed =
+                    dynamic = expectedDynamic
+                    && offsetDynamic = expectedOffsetDynamic
+                    && field.OffsetBytes = expectedOffset
+                    && field.PayloadBytes = expectedPayload
+                    && field.ExtentBytes = expectedExtent
+                    && minimumPayload = int64 expectedMinimumPayload
+                    && minimumExtent = int64 expectedMinimumExtent
+                checks.Add(box (jsonObject [
+                    "field", box key
+                    "isDynamic", box dynamic
+                    "expectedIsDynamic", box expectedDynamic
+                    "isOffsetDynamic", box offsetDynamic
+                    "expectedIsOffsetDynamic", box expectedOffsetDynamic
+                    "offsetBytes", box field.OffsetBytes
+                    "expectedOffsetBytes", box expectedOffset
+                    "payloadBytes", box field.PayloadBytes
+                    "extentBytes", box field.ExtentBytes
+                    "minimumPayloadBytes", box minimumPayload
+                    "minimumExtentBytes", box minimumExtent ]))
+                if not passed then failures.Add($"{key} dynamic metadata does not match the independent layout oracle.")
+    let summary =
+        layouts
+        |> List.filter (fun layout -> List.contains layout.TypeName typeNames)
+        |> List.map (fun layout ->
+            box (jsonObject [
+                "type", box layout.TypeName
+                "isDynamic", box (getProperty (box layout) "IsDynamic")
+                "payloadBytes", box layout.PayloadBytes
+                "extentBytes", box layout.ExtentBytes
+                "minimumPayloadBytes", box (getProperty (box layout) "MinimumPayloadBytes")
+                "minimumExtentBytes", box (getProperty (box layout) "MinimumExtentBytes")
+                "fields", box (layout.Fields |> List.map (fun field -> jsonObject [
+                    "name", box field.FieldName
+                    "isDynamic", box (getProperty (box field) "IsDynamic")
+                    "isOffsetDynamic", box (getProperty (box field) "IsOffsetDynamic")
+                    "offsetBytes", box field.OffsetBytes
+                    "payloadBytes", box field.PayloadBytes
+                    "extentBytes", box field.ExtentBytes
+                    "minimumPayloadBytes", box (getProperty (box field) "MinimumPayloadBytes")
+                    "minimumExtentBytes", box (getProperty (box field) "MinimumExtentBytes") ])) ]))
+        |> List.toArray
+    checks.ToArray(), failures.ToArray(), summary
+
 let private layoutEventKind (event: OwningStackLayoutEvent) =
     if event.Kind = "duplicate" then 2L
     elif event.Kind = "drop" then 3L
     elif event.Kind = "call-input-move" then 8L
     elif event.Kind = "call-return-move" then 9L
     elif event.Kind = "retained-copy" then 10L
+    elif event.Kind = "local-compact" then 14L
+    elif event.Kind = "string-concat-left" then 15L
+    elif event.Kind = "string-concat-right" then 16L
     elif event.Kind = "allocate" then 1L
     else -1L
 
@@ -339,6 +837,21 @@ let private layoutEventRanges (events: OwningStackLayoutEvent list) =
            Payload = int64 event.PayloadBytes
            SourceOffset = event.SourceOffsetBytes |> Option.map int64 |> Option.defaultValue -1L
            SourceExtent = event.SourceExtentBytes |> Option.map int64 |> Option.defaultValue -1L |})
+    |> List.toArray
+
+let private layoutEventDetails (events: OwningStackLayoutEvent list) =
+    events
+    |> List.map (fun event ->
+        jsonObject [
+            "kind", box event.Kind
+            "kindCode", box (layoutEventKind event)
+            "typeId", box event.TypeId
+            "offsetBytes", box event.OffsetBytes
+            "extentBytes", box event.ExtentBytes
+            "payloadBytes", box event.PayloadBytes
+            "sourceOffsetBytes", box (event.SourceOffsetBytes |> Option.map box |> Option.defaultValue null)
+            "sourceExtentBytes", box (event.SourceExtentBytes |> Option.map box |> Option.defaultValue null)
+            "checksum", box (event.Checksum |> Option.map box |> Option.defaultValue null) ])
     |> List.toArray
 
 let private envelopeFromJson (element: JsonElement) =
@@ -408,6 +921,52 @@ let private inspectScopeShadow (program: VerifiedIrProgram) (verifiedBody: Verif
                 "afterScopeType", box (typeName restoredType) ]
         | _ -> false, jsonObject [ "slotFound", box true; "scopeBlockFound", box scopeBlock.IsSome; "expectedTypeKeysFound", box (typeKey "Envelope" |> Option.isSome && typeKey "Leaf" |> Option.isSome) ]
 
+let private inspectDynamicScopeShadow (program: VerifiedIrProgram) (verifiedBody: VerifiedIrBody) =
+    let programData = VerifiedIrProgram.inspect program
+    let body = VerifiedIrBody.inspect verifiedBody
+    let slot =
+        body.BodyLocalNames
+        |> Map.toSeq
+        |> Seq.tryPick (fun (slot, name) -> if name = "shadow" then Some slot else None)
+    let envelopeKey =
+        programData.NominalTypesByKey
+        |> Map.toSeq
+        |> Seq.tryPick (fun (key, definition) ->
+            match definition with
+            | IrRecordDefinition record when record.TypeName = "TextEnvelope" -> Some key
+            | _ -> None)
+    match slot, envelopeKey with
+    | Some shadowSlot, Some key ->
+        let scopeBlock =
+            body.BodyBlock.Code
+            |> List.tryPick (fun instruction -> match instruction.Operation with | IrOperation.Scope inner -> Some inner | _ -> None)
+        match scopeBlock with
+        | Some inner ->
+            let entryType = inner.EntryShape.LocalTypes.TryFind shadowSlot
+            let innerType = inner.ExitShape.LocalTypes.TryFind shadowSlot
+            let restoredType = body.BodyBlock.ExitShape.LocalTypes.TryFind shadowSlot
+            let innerStoreUsesSlot = inner.Code |> List.exists (fun instruction -> match instruction.Operation with | IrOperation.StoreLocal slot -> slot = shadowSlot | _ -> false)
+            let outerStoreUsesSlot = body.BodyBlock.Code |> List.exists (fun instruction -> match instruction.Operation with | IrOperation.StoreLocal slot -> slot = shadowSlot | _ -> false)
+            let expectedType = Some(IrNominal key)
+            let passed =
+                innerStoreUsesSlot
+                && outerStoreUsesSlot
+                && entryType = expectedType
+                && innerType = expectedType
+                && restoredType = expectedType
+            passed, jsonObject [
+                "slotFound", box true
+                "slot", box (sprintf "%A" shadowSlot)
+                "outerStoreUsesSameSlot", box outerStoreUsesSlot
+                "innerStoreUsesSameSlot", box innerStoreUsesSlot
+                "scopeEntryType", box "TextEnvelope"
+                "scopeInnerExitType", box "TextEnvelope"
+                "afterScopeType", box "TextEnvelope"
+                "sameLogicalSlot", box (innerStoreUsesSlot && outerStoreUsesSlot)
+                "widthsAreRuntimeDependent", box true ]
+        | None -> false, jsonObject [ "slotFound", box true; "scopeBlockFound", box false ]
+    | _ -> false, jsonObject [ "slotFound", box slot.IsSome; "textEnvelopeTypeFound", box envelopeKey.IsSome ]
+
 let private diagnosticCode (error: exn) =
     match error with
     | LanguageException diagnostic -> diagnostic.Code
@@ -415,6 +974,14 @@ let private diagnosticCode (error: exn) =
         match getProperty error "Diagnostic" with
         | null -> ""
         | diagnostic -> getProperty diagnostic "Code" |> string
+
+let private exceptionCode (error: exn) =
+    let diagnostic = diagnosticCode error
+    if not (String.IsNullOrWhiteSpace diagnostic) then diagnostic
+    else
+        match getProperty error "Code" with
+        | null -> ""
+        | code -> string code
 
 let private resourceExceptionDetails (error: exn) =
     jsonObject [
@@ -493,6 +1060,8 @@ let private runInterpreterChain
         use emptyResult = IrInterpreter.executeBodyWithInputs interpreterHost "mailbox.empty-value" entries.EmptyValue None []
         let emptyValues = emptyResult.Decode()
         recordCheck checks failures "interpreter/empty-record-zero-field-value" (emptyValues = emptyExpected) (ValueInspection.toJson entries.Program emptyValues)
+        use emptyIdentity = IrInterpreter.executeBodyWithInputs interpreterHost "native-value-stack-empty-record-identity" entries.EmptyIdentity (Some emptyResult) [ IrEntryArgument.RetainedRoot 0 ]
+        recordCheck checks failures "interpreter/empty-record-zero-token-identity" (emptyIdentity.Decode() = emptyExpected) (ValueInspection.toJson entries.Program (emptyIdentity.Decode()))
         fixedCaseReports.Add(box (jsonObject [ "case", box "empty-record"; "values", jsonNode options (ValueInspection.toData entries.Program emptyValues) ]))
         let scopedCases = fixture.GetProperty("scopedWidthCases").EnumerateArray() |> Seq.toArray
         for index, scopedCase in scopedCases |> Array.indexed do
@@ -638,6 +1207,7 @@ let private runNativeChain
         use unitProgram = compile "unit-value" entries.UnitValue
         use unitDropProgram = compile "unit-drop" entries.UnitDrop
         use emptyProgram = compile "empty-value" entries.EmptyValue
+        use emptyIdentityProgram = compile "empty-identity" entries.EmptyIdentity
         use scopedProgram = compile "scoped-width" entries.ScopedWidth
         use scopeShadowProgram = compile "scope-shadow" entries.ScopeShadow
         use depth64Program = compile "depth-64" entries.Depth64
@@ -657,6 +1227,15 @@ let private runNativeChain
         let emptyExpected = expectedValues (fixedCases.GetProperty("emptyRecord").GetProperty("expected"))
         recordCheck checks failures $"abi3/{optimization}/empty-record-zero-field-value" (emptyValues = emptyExpected) (ValueInspection.toJson entries.Program emptyValues)
         fixedCaseReports.Add(box (jsonObject [ "case", box "empty-record"; "values", jsonNode options (ValueInspection.toData entries.Program emptyValues); "abi3RetainedBytes", box emptyResult.RetainedByteCount; "abi3RetainedNodes", box emptyResult.RetainedNodeCount ]))
+        use emptyIdentityResult = emptyIdentityProgram.ExecuteRetainedWithInputs("native-value-stack-empty-record-identity", Some emptyResult, [ IrEntryArgument.RetainedRoot 0 ], options = nativeOptions 8 1 8 1)
+        let emptyIdentityValues = emptyIdentityResult.Decode()
+        let abi3EmptyBytes = fixedCases.GetProperty("emptyRecord").GetProperty("abi3RetainedBytes").GetInt32()
+        let abi3EmptyNodes = fixedCases.GetProperty("emptyRecord").GetProperty("abi3RetainedNodes").GetInt32()
+        recordCheck checks failures $"abi3/{optimization}/empty-record-zero-width-identity" (emptyIdentityValues = emptyExpected && emptyIdentityResult.RetainedByteCount = abi3EmptyBytes && emptyIdentityResult.RetainedNodeCount = abi3EmptyNodes) (jsonObject [
+            "values", box (ValueInspection.toJson entries.Program emptyIdentityValues)
+            "retainedBytes", box emptyIdentityResult.RetainedByteCount
+            "retainedNodes", box emptyIdentityResult.RetainedNodeCount
+            "note", box "ABI3 encodes a zero-width Empty value as one retained node and zero retained bytes; the owning candidate separately uses an eight-byte token extent." ])
         for index, scopedCase in fixture.GetProperty("scopedWidthCases").EnumerateArray() |> Seq.indexed do
             let input = scopedCase.GetProperty("input").GetInt64()
             let expected = expectedValues (scopedCase.GetProperty("expected"))
@@ -712,6 +1291,9 @@ let private metricSummary (metrics: obj) =
         "reservedLocalBytes", box (int64Property metrics "ReservedLocalBytes")
         "inputBytes", box (int64Property metrics "InputBytes")
         "inputCopyBytes", box (int64Property metrics "InputCopyBytes")
+        "hostInputStagingBytes", box (int64Property metrics "HostInputStagingBytes")
+        "hostEncodedInputBytes", box (int64Property metrics "HostEncodedInputBytes")
+        "hostInputExtentTableBytes", box (int64Property metrics "HostInputExtentTableBytes")
         "retainedCapacityBytes", box (int64Property metrics "RetainedCapacityBytes")
         "hostRetainedStagingBytes", box (int64Property metrics "HostRetainedStagingBytes")
         "hostRetainedCommitBytes", box (int64Property metrics "HostRetainedCommitBytes")
@@ -727,6 +1309,8 @@ let private metricSummary (metrics: obj) =
         "traceEventCapacity", box (int64Property metrics "TraceEventCapacity")
         "traceEventTruncated", box (boolean "TraceTruncated")
         "instrumentationReservedBytes", box (int64Property metrics "InstrumentationReservedBytes")
+        "backendMetadataPerFrameBytes", box (int64Property metrics "BackendMetadataPerFrameBytes")
+        "backendMetadataPeakBoundBytes", box (int64Property metrics "BackendMetadataPeakBoundBytes")
         "finalCursorBytes", box (int64Property metrics "FinalCursorBytes")
         "finalLiveStackBytes", box (int64Property metrics "FinalLiveStackBytes") ]
 
@@ -871,13 +1455,17 @@ let private runOwningStackChain
         let finalLive = int64Property (getProperty error "Metrics") "FinalLiveStackBytes"
         let finalCursor = int64Property (getProperty error "Metrics") "FinalCursorBytes"
         let unchanged = stackFailureBuffer = stackFailureBefore
-        let passed = code = "OWNING_STACK_CAPACITY" && boundary = "program-data-stack" && finalLive = 0L && finalCursor = 0L && unchanged
-        recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/stack-capacity-buffer-atomicity" passed (jsonObject [
+        let required = int64Property error "RequiredBytes"
+        let available = int64Property error "AvailableBytes"
+        let passed = code = "OWNING_STACK_CAPACITY" && boundary = "host-input-encoding" && required = 32L && available = 1L && finalLive = 0L && finalCursor = 0L && unchanged
+        recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/host-input-encoding-capacity-buffer-atomicity" passed (jsonObject [
             "exception", box (resourceExceptionDetails error)
+            "requiredInputBytes", box required
+            "availableStackCapacityBytes", box available
             "finalLiveStackBytes", box finalLive
             "finalCursorBytes", box finalCursor
             "callerBuffer", bufferCheckDetails stackFailureBefore stackFailureBuffer ])
-    | None -> recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/stack-capacity-buffer-atomicity" false "One-byte program stack capacity unexpectedly succeeded."
+    | None -> recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/host-input-encoding-capacity-buffer-atomicity" false "One-byte stack capacity unexpectedly accepted the 32-byte host input encoding."
     let diagnosticBuffer = Array.copy oldRetainedState
     let diagnosticBefore = Array.copy diagnosticBuffer
     let diagnostic, diagnosticMetrics =
@@ -1026,6 +1614,7 @@ let private runOwningStackChain
         use unitProgram = compile "unit-value" entries.UnitValue
         use unitDropProgram = compile "unit-drop" entries.UnitDrop
         use emptyProgram = compile "empty-value" entries.EmptyValue
+        use emptyIdentityProgram = compile "empty-identity" entries.EmptyIdentity
         use scopedProgram = compile "scoped-width" entries.ScopedWidth
         use scopeShadowProgram = compile "scope-shadow" entries.ScopeShadow
         use depth64Program = compile "depth-64" entries.Depth64
@@ -1093,6 +1682,22 @@ let private runOwningStackChain
             "retainedBytes", box (bytesHex emptyOutput)
             "metrics", box (jsonNode options (metricSummary (box emptyResult.Metrics))) ])
         fixedCaseReports.Add(box (jsonObject [ "case", box "empty-record"; "values", jsonNode options (ValueInspection.toData entries.Program emptyResult.Values); "retainedBytes", box (bytesHex emptyOutput); "metrics", jsonNode options (metricSummary (box emptyResult.Metrics)) ]))
+        let emptyIdentityOutput = Array.create 8 0xA5uy
+        let emptyIdentityResult = emptyIdentityProgram.ExecuteInto([ RecordValue("Empty", Map.empty) ], stackCapacity, emptyIdentityOutput)
+        let emptyIdentityMetrics = box emptyIdentityResult.Metrics
+        let emptyIdentityPassed =
+            emptyIdentityResult.Values = emptyExpected
+            && emptyIdentityOutput = emptyExpectedBytes
+            && emptyIdentityResult.RetainedBytesWritten = 8
+            && int64Property emptyIdentityMetrics "InputBytes" = 8L
+            && int64Property emptyIdentityMetrics "InputCopyBytes" = 8L
+        recordCheck checks failures $"owning-stack/{optimization}/empty-record-value-input-and-zero-token-decode" emptyIdentityPassed (jsonObject [
+            "values", box (ValueInspection.toJson entries.Program emptyIdentityResult.Values)
+            "inputBytes", box (int64Property emptyIdentityMetrics "InputBytes")
+            "inputCopyBytes", box (int64Property emptyIdentityMetrics "InputCopyBytes")
+            "retainedBytes", box (bytesHex emptyIdentityOutput)
+            "metrics", box (jsonNode options (metricSummary emptyIdentityMetrics)) ])
+        checkTraceUsable checks failures $"owning-stack/{optimization}/empty-record-identity-trace-complete" emptyIdentityResult.Metrics emptyIdentityResult.LayoutEvents |> ignore
         checkTraceUsable checks failures $"owning-stack/{optimization}/unit-trace-complete" unitResult.Metrics unitResult.LayoutEvents |> ignore
         checkTraceUsable checks failures $"owning-stack/{optimization}/empty-record-trace-complete" emptyResult.Metrics emptyResult.LayoutEvents |> ignore
         for index, scopedCase in fixture.GetProperty("scopedWidthCases").EnumerateArray() |> Seq.indexed do
@@ -1243,6 +1848,1126 @@ let private runOwningStackChain
         "failureAfterAllocation", box diagnostic
         "failureAfterAllocationMetrics", (if isNull diagnosticMetrics then null else jsonNode options (metricSummary diagnosticMetrics)) ]
 
+let private textStateMetadata (value: Value) =
+    match value with
+    | RecordValue("TextState", state) ->
+        match state["count"], state["last"] with
+        | IntValue count, RecordValue("TextEnvelope", envelope) ->
+            match envelope["tag"], envelope["leaf"] with
+            | IntValue tag, RecordValue("TextLeaf", leaf) ->
+                match leaf["text"], leaf["codeUnits"] with
+                | StringValue text, IntValue codeUnits -> count, tag, codeUnits, text
+                | _ -> invalidOp "TextState value contains invalid TextLeaf field values."
+            | _ -> invalidOp "TextState value contains an invalid TextEnvelope."
+        | _ -> invalidOp "TextState value contains invalid count or last fields."
+    | _ -> invalidOp "Expected a TextState value."
+
+let private textEnvelopeFromState (value: Value) =
+    match value with
+    | RecordValue("TextState", state) -> state["last"]
+    | _ -> invalidOp "Expected a TextState value."
+
+let private textEnvelopeBytes (tag: int64) (codeUnits: int64) stringCodeUnitsHex =
+    Array.concat [ stringBytesFromCodeUnitsHex stringCodeUnitsHex; bytesFromInt64s [ codeUnits; tag ] ]
+
+let private runStringWorkload
+    (checks: ResizeArray<obj>)
+    (failures: ResizeArray<string>)
+    (options: JsonSerializerOptions)
+    (fixture: JsonElement)
+    (entries: StringEntryBodies)
+    (artifactRoot: string)
+    (optimization: LlvmOptimization)
+    (optimizationName: string) =
+    let workload = fixture.GetProperty("stringWorkload")
+    let eventTypeIdOracle = workload.GetProperty("dynamicLayoutOracle").GetProperty("eventTypeIds")
+    let nominalTypeIds =
+        VerifiedIrProgram.inspect entries.Program
+        |> fun program -> program.NominalTypesByKey
+        |> Map.toList
+        |> List.mapi (fun index (_, definition) ->
+            let typeName =
+                match definition with
+                | IrRecordDefinition record -> record.TypeName
+                | IrScalarDefinition scalar -> scalar.TypeName
+                | IrEnumDefinition enum -> enum.TypeName
+            typeName, uint32 (index + 4))
+        |> Map.ofList
+    let stringTypeId = uint32 (nominalTypeIds.Count + 4)
+    let textEnvelopeTypeId =
+        nominalTypeIds.TryFind "TextEnvelope"
+        |> Option.defaultWith (fun () -> invalidOp "Verified String program is missing TextEnvelope's nominal type ID.")
+    let emptyTypeId =
+        nominalTypeIds.TryFind "Empty"
+        |> Option.defaultWith (fun () -> invalidOp "Verified String program is missing Empty's nominal type ID.")
+    let textMixedTypeId =
+        nominalTypeIds.TryFind "TextMixed"
+        |> Option.defaultWith (fun () -> invalidOp "Verified String program is missing TextMixed's nominal type ID.")
+    let intTypeId = 1u
+    let expectedStringTypeId = eventTypeIdOracle.GetProperty("String").GetUInt32()
+    let expectedTextEnvelopeTypeId = eventTypeIdOracle.GetProperty("TextEnvelope").GetUInt32()
+    let expectedEmptyTypeId = eventTypeIdOracle.GetProperty("Empty").GetUInt32()
+    let expectedTextMixedTypeId = eventTypeIdOracle.GetProperty("TextMixed").GetUInt32()
+    let expectedIntTypeId = eventTypeIdOracle.GetProperty("Int").GetUInt32()
+    let eventTypeIdsMatch =
+        stringTypeId = expectedStringTypeId
+        && textEnvelopeTypeId = expectedTextEnvelopeTypeId
+        && emptyTypeId = expectedEmptyTypeId
+        && textMixedTypeId = expectedTextMixedTypeId
+        && intTypeId = expectedIntTypeId
+    recordCheck checks failures "oracle/String/runtime-event-type-ids" eventTypeIdsMatch (jsonObject [
+        "verifiedProgramNominalTypeCount", box nominalTypeIds.Count
+        "expectedStringTypeId", box expectedStringTypeId
+        "actualStringTypeId", box stringTypeId
+        "expectedTextEnvelopeTypeId", box expectedTextEnvelopeTypeId
+        "actualTextEnvelopeTypeId", box textEnvelopeTypeId
+        "expectedEmptyTypeId", box expectedEmptyTypeId
+        "actualEmptyTypeId", box emptyTypeId
+        "expectedTextMixedTypeId", box expectedTextMixedTypeId
+        "actualTextMixedTypeId", box textMixedTypeId
+        "expectedIntTypeId", box expectedIntTypeId
+        "actualIntTypeId", box intTypeId ])
+    let mainCases = workload.GetProperty("mainCases").EnumerateArray() |> Seq.toArray
+    let edgeCases = workload.GetProperty("nestedEdgeCases").EnumerateArray() |> Seq.toArray
+    let cases = Array.append mainCases edgeCases
+    let interpreterHost = noOpHost (NativeDiagnosticSources.fromLoweringContext entries.CompilerContext)
+    let compiledInputBodies =
+        cases
+        |> Array.map (fun caseElement ->
+            let name = caseElement.GetProperty("name").GetString()
+            let inputValue = textStateFromCase caseElement
+            name, (inputValue, compileTextStateFactory entries name inputValue))
+        |> Map.ofArray
+    let interpreterReports = ResizeArray<obj>()
+    for caseElement in cases do
+        let name = caseElement.GetProperty("name").GetString()
+        let inputValue, inputFactory =
+            match compiledInputBodies[name] with
+            | value, body -> value, body
+        let expectedValues = textExpectedOutputs caseElement
+        use inputOwner = IrInterpreter.executeBodyWithInputs interpreterHost ("string-input-" + name) inputFactory None []
+        use actual = IrInterpreter.executeBodyWithInputs interpreterHost "mailbox.turn-text" entries.TurnText (Some inputOwner) [ IrEntryArgument.RetainedRoot 0 ]
+        let inputCount, inputTag, inputCodeUnits, _ = textStateMetadata inputValue
+        let inputHex = caseElement.GetProperty("inputCodeUnitsHex").GetString()
+        let output = expectedValues[0]
+        let outputCount, outputTag, outputCodeUnits, _ = textStateMetadata output
+        let outputHex = caseElement.GetProperty("outputCodeUnitsHex").GetString()
+        let inputOracle = textStateBytes inputCount inputTag inputCodeUnits inputHex
+        let outputStateOracle = textStateBytes outputCount outputTag outputCodeUnits outputHex
+        let expectedOutputLength = match expectedValues[1] with | IntValue value -> value | _ -> invalidOp "String fixture length output must be Int."
+        let expectedRetained = Array.concat [ outputStateOracle; bytesFromInt64s [ expectedOutputLength ] ]
+        let fixtureInputBytes = bytesFromHex (caseElement.GetProperty("inputStateBytesHex").GetString())
+        let fixtureOutputBytes = bytesFromHex (caseElement.GetProperty("retainedBytesHex").GetString())
+        let values = actual.Decode()
+        recordCheck checks failures $"interpreter/String/{name}/same-verified-body-output" (values = expectedValues) (codeUnitSafeValuesJson values)
+        recordCheck checks failures $"oracle/String/{name}/input-inline-UTF16-bytes" (inputOracle = fixtureInputBytes) (jsonObject [
+            "oracleHex", box (bytesHex inputOracle)
+            "fixtureHex", box (bytesHex fixtureInputBytes)
+            "codeUnitCount", box inputCodeUnits ])
+        recordCheck checks failures $"oracle/String/{name}/output-inline-UTF16-bytes" (expectedRetained = fixtureOutputBytes) (jsonObject [
+            "oracleHex", box (bytesHex expectedRetained)
+            "fixtureHex", box (bytesHex fixtureOutputBytes)
+            "outputCodeUnitCount", box (caseElement.GetProperty("outputCodeUnitCount").GetInt32()) ])
+        interpreterReports.Add(box (jsonObject [
+            "case", box name
+            "inputValue", jsonNode options (codeUnitSafeValuesData [ inputValue ])
+            "values", jsonNode options (codeUnitSafeValuesData values)
+            "inputStateBytes", box (bytesHex fixtureInputBytes)
+            "retainedBytes", box (bytesHex fixtureOutputBytes) ]))
+
+    let toolchain = LlvmToolchain.discover ()
+    let compile name body =
+        OwningStackAot.compile toolchain optimization (Path.Combine(artifactRoot, "owning-stack", "strings", optimizationName, name)) body
+    use turnProgram = compile "turn-text" entries.TurnText
+    use identityProgram = compile "identity-string" entries.IdentityString
+    use joinProgram = compile "join-strings" entries.JoinStrings
+    use directConcatProgram = compile "direct-concat-capacity" entries.DirectConcat
+    use mixedConstructProgram = compile "mixed-record-construct" entries.MixedConstruct
+    use mixedProjectProgram = compile "mixed-record-project-text-and-sentinel" entries.MixedProjectTextAndSentinel
+    use mixedProjectEmptyProgram = compile "mixed-record-project-empty-marker" entries.MixedProjectEmptyMarker
+    use dynamicBranchProgram = compile "dynamic-record-branch-join" entries.DynamicBranch
+    use duplicateProgram = compile "text-envelope-dup-drop" entries.DirectDupDrop
+    use scopeProgram = compile "text-envelope-scope-shadow" entries.ScopeShadow
+    use zeroOutputProgram = compile "zero-output-user-call" entries.ZeroOutputUserCall
+    use failProgram = compile "fail-after-text-allocation" entries.FailAfterTextAllocation
+    let owningReports = ResizeArray<obj>()
+    let metricsByCase = Dictionary<string, OwningStackMetrics>(StringComparer.Ordinal)
+    let mutable dynamicLayouts = []
+    let mutable layoutSchemaVersion = -1L
+    let stateCapacity = 4096
+    for caseElement in cases do
+        let name = caseElement.GetProperty("name").GetString()
+        let inputValue, _ = compiledInputBodies[name]
+        let expectedValues = textExpectedOutputs caseElement
+        let outputBytes = bytesFromHex (caseElement.GetProperty("retainedBytesHex").GetString())
+        let callerOutput = Array.create outputBytes.Length 0xA5uy
+        let result = turnProgram.ExecuteInto([ inputValue ], stateCapacity, callerOutput)
+        let actualValues = getProperty (box result) "Values" :?> Value list
+        let metrics = stackMetrics (box result) :?> OwningStackMetrics
+        let events = getProperty (box result) "LayoutEvents" :?> OwningStackLayoutEvent list
+        if name = mainCases[0].GetProperty("name").GetString() then
+            dynamicLayouts <- getProperty (box result) "Layouts" :?> OwningStackTypeLayout list
+            layoutSchemaVersion <- int64Property (box result) "LayoutSchemaVersion"
+        metricsByCase.Add(name, metrics)
+        recordCheck checks failures $"owning-stack/{optimizationName}/String/{name}/same-verified-body-output" (actualValues = expectedValues) (codeUnitSafeValuesJson actualValues)
+        recordCheck checks failures $"owning-stack/{optimizationName}/String/{name}/caller-retained-bytes" (callerOutput = outputBytes && (getProperty (box result) "RetainedOutputBytes" :?> byte array) = outputBytes) (bufferCheckDetails outputBytes callerOutput)
+        let inputStateExtent = caseElement.GetProperty("inputStateBytes").GetInt32()
+        let outputStateExtent = outputBytes.Length - 8
+        let returnedLength = int64FromBytesLittleEndian outputBytes outputStateExtent
+        let expectedLength = match expectedValues[1] with | IntValue value -> value | _ -> invalidOp "String fixture length output must be Int."
+        let multiOutputPass = result.RetainedBytesWritten = outputBytes.Length && returnedLength = expectedLength && outputStateExtent + 8 = outputBytes.Length && (name <> "long-bmp-astral" || outputStateExtent > inputStateExtent)
+        recordCheck checks failures $"owning-stack/{optimizationName}/String/{name}/multi-output-range-and-growth" multiOutputPass (jsonObject [
+            "inputStateExtentBytes", box inputStateExtent
+            "outputStateExtentBytes", box outputStateExtent
+            "retainedBytesWritten", box result.RetainedBytesWritten
+            "secondOutputAtByteOffset", box outputStateExtent
+            "secondOutputValue", box returnedLength ])
+        let inputValueBytes = bytesFromHex (caseElement.GetProperty("inputStateBytesHex").GetString())
+        let inputBytes = int64Property metrics "InputBytes"
+        let inputCopyBytes = int64Property metrics "InputCopyBytes"
+        let hostEncodedInputBytes = int64Property metrics "HostEncodedInputBytes"
+        let exactInputCopy = inputBytes = int64 inputValueBytes.Length && inputCopyBytes = int64 inputValueBytes.Length && hostEncodedInputBytes = int64 inputValueBytes.Length
+        recordCheck checks failures $"owning-stack/{optimizationName}/String/{name}/dynamic-value-input-marshaling" exactInputCopy (jsonObject [
+            "oracleInputBytes", box inputValueBytes.Length
+            "inputBytes", box inputBytes
+            "inputCopyBytes", box inputCopyBytes
+            "hostEncodedInputBytes", box hostEncodedInputBytes ])
+        let inputCount = caseElement.GetProperty("inputCodeUnitCount").GetInt32()
+        let outputCount = caseElement.GetProperty("outputCodeUnitCount").GetInt32()
+        let inputStringExtent = caseElement.GetProperty("inputStringExtentBytes").GetInt32()
+        let outputStringExtent = caseElement.GetProperty("outputStringExtentBytes").GetInt32()
+        let fieldExtractEvents = events |> List.filter (fun event -> event.Kind = "field-extract")
+        let stringFieldExtractEvents = fieldExtractEvents |> List.filter (fun event -> event.TypeId = stringTypeId)
+        let inputStringPayload = 8 + 2 * inputCount
+        let outputStringPayload = 8 + 2 * outputCount
+        let align8 bytes = ((bytes + 7) / 8) * 8
+        let inputStringExtentFromOracle = align8 inputStringPayload
+        let outputStringExtentFromOracle = align8 outputStringPayload
+        let inputStringEvent =
+            inputStringExtent = inputStringExtentFromOracle
+            && (stringFieldExtractEvents |> List.exists (fun event -> event.PayloadBytes = inputStringPayload && event.ExtentBytes = inputStringExtent))
+        let outputStringEvent =
+            outputStringExtent = outputStringExtentFromOracle
+            && (stringFieldExtractEvents |> List.exists (fun event -> event.PayloadBytes = outputStringPayload && event.ExtentBytes = outputStringExtent))
+        recordCheck checks failures $"owning-stack/{optimizationName}/String/{name}/runtime-string-field-extents" (inputStringEvent && outputStringEvent) (jsonObject [
+            "stringTypeId", box stringTypeId
+            "inputStringPayloadBytes", box inputStringPayload
+            "inputStringExtentBytes", box inputStringExtent
+            "inputStringExtentFromIndependentFormula", box inputStringExtentFromOracle
+            "inputInstanceFieldEventFound", box inputStringEvent
+            "outputStringPayloadBytes", box outputStringPayload
+            "outputStringExtentBytes", box outputStringExtent
+            "outputStringExtentFromIndependentFormula", box outputStringExtentFromOracle
+            "outputInstanceFieldEventFound", box outputStringEvent
+            "stringFieldExtractEvents", box (layoutEventDetails stringFieldExtractEvents) ])
+        let concatEventPairs =
+            let indexedEvents = events |> List.indexed |> List.toArray
+            if indexedEvents.Length < 2 then
+                [||]
+            else
+                [| for index in 0 .. indexedEvents.Length - 2 do
+                       let _, left = indexedEvents[index]
+                       let _, right = indexedEvents[index + 1]
+                       if left.Kind = "string-concat-left"
+                          && right.Kind = "string-concat-right"
+                          && left.TypeId = stringTypeId
+                          && right.TypeId = stringTypeId then
+                           yield left, right |]
+        let outputStringDataBytes = 2 * outputCount
+        let outputConcatSpansMatch =
+            concatEventPairs
+            |> Array.exists (fun (left, right) ->
+                left.OffsetBytes >= 8
+                && left.ExtentBytes > 0
+                && right.ExtentBytes > 0
+                && left.PayloadBytes = left.ExtentBytes
+                && right.PayloadBytes = right.ExtentBytes
+                && left.SourceExtentBytes = Some left.ExtentBytes
+                && right.SourceExtentBytes = Some right.ExtentBytes
+                && right.OffsetBytes = left.OffsetBytes + left.ExtentBytes
+                && left.ExtentBytes + right.ExtentBytes = outputStringDataBytes)
+        recordCheck checks failures $"owning-stack/{optimizationName}/String/{name}/runtime-string-concat-output-spans" outputConcatSpansMatch (jsonObject [
+            "stringTypeId", box stringTypeId
+            "expectedOutputCodeUnitDataBytes", box outputStringDataBytes
+            "concatSourceSpans", box (concatEventPairs |> Array.collect (fun (left, right) -> [| left; right |]) |> Array.toList |> layoutEventDetails) ])
+        let textLeafExtent = inputStringExtent + 8
+        let expectedTagOffsetWithinEnvelope = caseElement.GetProperty("inputTagOffsetWithinEnvelopeBytes").GetInt32()
+        let tagOffsetOracleMatches = textLeafExtent = expectedTagOffsetWithinEnvelope
+        let expectedEnvelopePayload = inputStringPayload + 16
+        let expectedEnvelopeExtent = align8 expectedEnvelopePayload
+        let indexedEvents = events |> List.indexed |> List.toArray
+        let rangeOverlaps leftStart leftExtent rightStart rightExtent =
+            leftExtent > 0
+            && rightExtent > 0
+            && int64 leftStart < int64 rightStart + int64 rightExtent
+            && int64 rightStart < int64 leftStart + int64 leftExtent
+        let mutationRanges event =
+            let destination = [ event.OffsetBytes, event.ExtentBytes ]
+            let source =
+                match event.SourceOffsetBytes, event.SourceExtentBytes with
+                | Some offset, Some extent -> [ offset, extent ]
+                | _ -> []
+            match event.Kind with
+            | "allocate" | "duplicate" | "local-load" | "drop" | "scope-clear" | "string-concat-left" | "string-concat-right" -> destination
+            | "local-store" | "record-build" | "field-extract" | "call-input-move" | "call-return-move" | "local-compact" -> destination @ source
+            | _ -> []
+        let tagCandidates =
+            indexedEvents
+            |> Array.choose (fun (tagIndex, event) ->
+                let isTagField =
+                    event.Kind = "field-extract"
+                    && event.TypeId = intTypeId
+                    && event.ExtentBytes = 8
+                    && event.PayloadBytes = 8
+                    && event.SourceExtentBytes = Some 8
+                    && event.SourceOffsetBytes = Some(event.OffsetBytes + expectedTagOffsetWithinEnvelope)
+                if not isTagField then
+                    None
+                else
+                    let parentLoads =
+                        indexedEvents
+                        |> Array.filter (fun (loadIndex, load) ->
+                            loadIndex < tagIndex
+                            && load.Kind = "local-load"
+                            && load.TypeId = textEnvelopeTypeId
+                            && load.OffsetBytes = event.OffsetBytes
+                            && load.ExtentBytes = expectedEnvelopeExtent
+                            && load.PayloadBytes = expectedEnvelopePayload)
+                    if parentLoads.Length = 0 then
+                        None
+                    else
+                        let parentLoadIndex, parentLoad = parentLoads[parentLoads.Length - 1]
+                        let invalidatingEvents =
+                            indexedEvents
+                            |> Array.choose (fun (index, intervening) ->
+                                if index <= parentLoadIndex || index >= tagIndex then
+                                    None
+                                else
+                                    let mutatesOwner =
+                                        mutationRanges intervening
+                                        |> List.exists (fun (offset, extent) -> rangeOverlaps offset extent event.OffsetBytes expectedEnvelopeExtent)
+                                    if mutatesOwner then Some(index, intervening) else None)
+                        Some(tagIndex, event, parentLoadIndex, parentLoad, invalidatingEvents))
+        let validTagCandidates = tagCandidates |> Array.filter (fun (_, _, _, _, invalidating) -> invalidating.Length = 0)
+        let dynamicTagFound = tagOffsetOracleMatches && validTagCandidates.Length > 0
+        let tagEvidence =
+            validTagCandidates
+            |> Array.map (fun (tagIndex, tagEvent, loadIndex, loadEvent, _) ->
+                jsonObject [
+                    "tagExtractionIndex", box tagIndex
+                    "parentLoadIndex", box loadIndex
+                    "parentLoad", box (layoutEventDetails [ loadEvent ])
+                    "tagExtraction", box (layoutEventDetails [ tagEvent ]) ])
+        let rejectedTagEvidence =
+            tagCandidates
+            |> Array.filter (fun (_, _, _, _, invalidating) -> invalidating.Length > 0)
+            |> Array.map (fun (_, _, _, _, invalidating) ->
+                invalidating
+                |> Array.map (fun (index, event) -> jsonObject [ "index", box index; "event", box (layoutEventDetails [ event ]) ]))
+        recordCheck checks failures $"owning-stack/{optimizationName}/String/{name}/runtime-nested-dynamic-tag-offset" dynamicTagFound (jsonObject [
+            "textEnvelopeTypeId", box textEnvelopeTypeId
+            "intTypeId", box intTypeId
+            "stringExtentBytes", box inputStringExtent
+            "expectedTextLeafExtentBytes", box textLeafExtent
+            "expectedTagOffsetWithinEnvelopeBytes", box expectedTagOffsetWithinEnvelope
+            "tagOffsetOracleMatchesIndependentLiteral", box tagOffsetOracleMatches
+            "expectedEnvelopePayloadBytes", box expectedEnvelopePayload
+            "expectedEnvelopeExtentBytes", box expectedEnvelopeExtent
+            "correlatedParentAndTagEvents", box tagEvidence
+            "tagCandidatesRejectedForInterveningOwnerMutation", box rejectedTagEvidence ])
+        checkTraceUsable checks failures $"owning-stack/{optimizationName}/String/{name}/trace-complete" metrics events |> ignore
+        owningReports.Add(box (jsonObject [
+            "case", box name
+            "values", jsonNode options (codeUnitSafeValuesData actualValues)
+            "inputBytes", box (bytesHex inputValueBytes)
+            "retainedBytes", box (bytesHex outputBytes)
+            "metrics", jsonNode options (metricSummary metrics)
+            "layoutEvents", jsonNode options (layoutEventDetails events) ]))
+
+    recordCheck checks failures $"owning-stack/{optimizationName}/String/layout-schema-v2" (layoutSchemaVersion = 2L) (jsonObject [ "expected", box 2; "actual", box layoutSchemaVersion ])
+    let dynamicLayoutChecks, dynamicLayoutFailures, dynamicLayoutSummary =
+        validateDynamicTypeLayouts [ "String"; "TextLeaf"; "TextEnvelope"; "TextState" ] fixture dynamicLayouts
+    for details in dynamicLayoutChecks do checks.Add details
+    for failure in dynamicLayoutFailures do failures.Add($"owning-stack/{optimizationName}/String/dynamic-layout: {failure}")
+    recordCheck checks failures $"owning-stack/{optimizationName}/String/dynamic-layout-contract" (dynamicLayoutFailures.Length = 0) (jsonNode options dynamicLayoutSummary)
+
+    let roundTripReports = ResizeArray<obj>()
+    for roundTrip in workload.GetProperty("directValueStringRoundTrips").EnumerateArray() do
+        let name = roundTrip.GetProperty("name").GetString()
+        let codeUnitsHex = roundTrip.GetProperty("inputCodeUnitsHex").GetString()
+        let value = StringValue(stringFromCodeUnitsHex codeUnitsHex)
+        let expectedBytes = bytesFromHex (roundTrip.GetProperty("stringBytesHex").GetString())
+        let independentBytes = stringBytesFromCodeUnitsHex codeUnitsHex
+        recordCheck checks failures $"oracle/String/{name}/direct-value-string-buffer" (independentBytes = expectedBytes && expectedBytes.Length = roundTrip.GetProperty("extentBytes").GetInt32()) (jsonObject [
+            "codeUnitCount", box (roundTrip.GetProperty("inputCodeUnitCount").GetInt32())
+            "oracleHex", box (bytesHex independentBytes)
+            "fixtureHex", box (bytesHex expectedBytes)
+            "extentBytes", box expectedBytes.Length ])
+        let factory = compileStringFactory entries ("roundtrip-" + name) (stringFromCodeUnitsHex codeUnitsHex)
+        use interpreterOwner = IrInterpreter.executeBodyWithInputs interpreterHost ("string-roundtrip-input-" + name) factory None []
+        use interpreterResult = IrInterpreter.executeBodyWithInputs interpreterHost "mailbox.identity-string" entries.IdentityString (Some interpreterOwner) [ IrEntryArgument.RetainedRoot 0 ]
+        let interpreterValues = interpreterResult.Decode()
+        recordCheck checks failures $"interpreter/String/{name}/direct-value-roundtrip" (interpreterValues = [ value ]) (codeUnitSafeValuesJson interpreterValues)
+        let callerOutput = Array.create expectedBytes.Length 0xA5uy
+        let result = identityProgram.ExecuteInto([ value ], stateCapacity, callerOutput)
+        let resultValues = getProperty (box result) "Values" :?> Value list
+        let metrics = stackMetrics (box result)
+        let inputBytes = int64Property metrics "InputBytes"
+        let encodedBytes = int64Property metrics "HostEncodedInputBytes"
+        let passed =
+            resultValues = [ value ]
+            && callerOutput = expectedBytes
+            && (getProperty (box result) "RetainedOutputBytes" :?> byte array) = expectedBytes
+            && int64Property metrics "RetainedCopyBytes" = int64 expectedBytes.Length
+            && inputBytes = int64 expectedBytes.Length
+            && encodedBytes = int64 expectedBytes.Length
+        recordCheck checks failures $"owning-stack/{optimizationName}/String/{name}/direct-value-roundtrip" passed (jsonObject [
+            "values", box (codeUnitSafeValuesJson resultValues)
+            "retainedBytes", box (bytesHex callerOutput)
+            "inputBytes", box inputBytes
+            "hostEncodedInputBytes", box encodedBytes
+            "metrics", box (jsonNode options (metricSummary metrics)) ])
+        checkTraceUsable checks failures $"owning-stack/{optimizationName}/String/{name}/direct-roundtrip-trace-complete" metrics result.LayoutEvents |> ignore
+        roundTripReports.Add(box (jsonObject [ "case", box name; "bytes", box (bytesHex callerOutput); "metrics", box (jsonNode options (metricSummary metrics)) ]))
+
+    let mixedOracle = workload.GetProperty("mixedDynamicRecord")
+    let mixedCodeUnitsHex = mixedOracle.GetProperty("inputCodeUnitsHex").GetString()
+    let mixedText = stringFromCodeUnitsHex mixedCodeUnitsHex
+    let mixedSentinel = mixedOracle.GetProperty("sentinel").GetInt64()
+    let mixedEmpty = RecordValue("Empty", Map.empty)
+    let mixedValue = RecordValue("TextMixed", Map.ofList [
+        "marker", mixedEmpty
+        "text", StringValue mixedText
+        "sentinel", IntValue mixedSentinel ])
+    let mixedCodeUnitCount = mixedOracle.GetProperty("inputCodeUnitCount").GetInt32()
+    let mixedStringBytes = stringBytesFromCodeUnitsHex mixedCodeUnitsHex
+    let mixedStringPayloadBytes = 8 + 2 * mixedCodeUnitCount
+    let mixedStringExtentBytes = ((mixedStringPayloadBytes + 7) / 8) * 8
+    let mixedRecordPayloadBytes = mixedStringPayloadBytes + 8
+    let mixedExpectedRecordPayloadBytes = 16 + 2 * mixedCodeUnitCount
+    let mixedExpectedRecordExtentBytes = mixedStringExtentBytes + 8
+    let mixedRecordBytes = Array.concat [ mixedStringBytes; bytesFromInt64s [ mixedSentinel ] ]
+    let mixedFixtureStringBytes = bytesFromHex (mixedOracle.GetProperty("inputStringBytesHex").GetString())
+    let mixedFixtureRecordBytes = bytesFromHex (mixedOracle.GetProperty("recordBytesHex").GetString())
+    let mixedFixtureTextAndSentinelBytes = bytesFromHex (mixedOracle.GetProperty("projectedTextAndSentinelBytesHex").GetString())
+    let mixedEmptyTokenBytes = bytesFromHex (mixedOracle.GetProperty("projectedEmptyTokenBytesHex").GetString())
+    let mixedOraclePassed =
+        mixedStringBytes = mixedFixtureStringBytes
+        && mixedRecordBytes = mixedFixtureRecordBytes
+        && mixedFixtureRecordBytes = mixedFixtureTextAndSentinelBytes
+        && mixedStringBytes.Length = mixedOracle.GetProperty("inputStringExtentBytes").GetInt32()
+        && mixedStringExtentBytes = mixedStringBytes.Length
+        && mixedRecordPayloadBytes = mixedExpectedRecordPayloadBytes
+        && mixedOracle.GetProperty("recordPayloadBytes").GetInt32() = mixedExpectedRecordPayloadBytes
+        && mixedRecordBytes.Length = mixedExpectedRecordExtentBytes
+        && mixedOracle.GetProperty("recordExtentBytes").GetInt32() = mixedExpectedRecordExtentBytes
+        && mixedOracle.GetProperty("textOffsetBytes").GetInt32() = 0
+        && mixedOracle.GetProperty("sentinelOffsetBytes").GetInt32() = mixedStringExtentBytes
+        && int64 mixedRecordBytes.Length = int64 (mixedOracle.GetProperty("nestedEmptyExtentBytes").GetInt32() + mixedStringBytes.Length + 8)
+        && mixedEmptyTokenBytes = Array.zeroCreate<byte> 8
+    recordCheck checks failures "oracle/String/mixed-empty-string-int-record/independent-inline-bytes" mixedOraclePassed (jsonObject [
+        "inputStringBytes", box (bytesHex mixedStringBytes)
+        "fixtureStringBytes", box (bytesHex mixedFixtureStringBytes)
+        "nestedEmptyBytes", box (mixedOracle.GetProperty("nestedEmptyExtentBytes").GetInt32())
+        "recordPayloadBytes", box mixedExpectedRecordPayloadBytes
+        "fixtureRecordPayloadBytes", box (mixedOracle.GetProperty("recordPayloadBytes").GetInt32())
+        "recordExtentBytes", box mixedExpectedRecordExtentBytes
+        "stringBytes", box mixedStringBytes.Length
+        "sentinelOffsetBytes", box mixedStringBytes.Length
+        "sentinelBytes", box (bytesHex (bytesFromInt64s [ mixedSentinel ]))
+        "recordBytes", box (bytesHex mixedRecordBytes)
+        "fixtureRecordBytes", box (bytesHex mixedFixtureRecordBytes)
+        "projectedEmptyTokenBytes", box (bytesHex mixedEmptyTokenBytes) ])
+    let mixedInputFactory = compileTextMixedInputFactory entries "empty-string-int" mixedText mixedSentinel
+    use mixedInterpreterInput = IrInterpreter.executeBodyWithInputs interpreterHost "mixed-empty-string-int-inputs" mixedInputFactory None []
+    use mixedInterpreterConstruct =
+        IrInterpreter.executeBodyWithInputs
+            interpreterHost
+            "mailbox.make-text-mixed"
+            entries.MixedConstruct
+            (Some mixedInterpreterInput)
+            [ IrEntryArgument.RetainedRoot 0; IrEntryArgument.RetainedRoot 1 ]
+    let mixedConstructInterpreterValues = mixedInterpreterConstruct.Decode()
+    recordCheck checks failures "interpreter/String/mixed-empty-string-int-record/construction" (mixedConstructInterpreterValues = [ mixedValue ]) (codeUnitSafeValuesJson mixedConstructInterpreterValues)
+    use mixedInterpreterProjection =
+        IrInterpreter.executeBodyWithInputs
+            interpreterHost
+            "mailbox.project-text-mixed"
+            entries.MixedProjectTextAndSentinel
+            (Some mixedInterpreterConstruct)
+            [ IrEntryArgument.RetainedRoot 0 ]
+    use mixedInterpreterEmptyProjection =
+        IrInterpreter.executeBodyWithInputs
+            interpreterHost
+            "mailbox.project-text-mixed-marker"
+            entries.MixedProjectEmptyMarker
+            (Some mixedInterpreterConstruct)
+            [ IrEntryArgument.RetainedRoot 0 ]
+    let mixedProjectionValues = mixedInterpreterProjection.Decode()
+    let mixedEmptyProjectionValues = mixedInterpreterEmptyProjection.Decode()
+    recordCheck checks failures "interpreter/String/mixed-empty-string-int-record/projection-order" (mixedProjectionValues = [ StringValue mixedText; IntValue mixedSentinel ]) (codeUnitSafeValuesJson mixedProjectionValues)
+    recordCheck checks failures "interpreter/String/mixed-empty-string-int-record/empty-projection" (mixedEmptyProjectionValues = [ mixedEmpty ]) (codeUnitSafeValuesJson mixedEmptyProjectionValues)
+
+    let mixedRecordOutput = Array.create mixedRecordBytes.Length 0xA5uy
+    let mixedConstructResult = mixedConstructProgram.ExecuteInto([ StringValue mixedText; IntValue mixedSentinel ], stateCapacity, mixedRecordOutput)
+    let mixedConstructMetrics = stackMetrics (box mixedConstructResult)
+    let mixedConstructEvents = mixedConstructResult.LayoutEvents
+    let mixedAllocateEvents = mixedConstructEvents |> List.filter (fun event -> event.Kind = "allocate")
+    let mixedRecordBuildEvents = mixedConstructEvents |> List.filter (fun event -> event.Kind = "record-build")
+    let mixedRecordBuild = mixedRecordBuildEvents |> List.exists (fun event -> event.TypeId = textMixedTypeId && event.PayloadBytes = mixedExpectedRecordPayloadBytes && event.ExtentBytes = mixedExpectedRecordExtentBytes)
+    let mixedStringAllocate = mixedAllocateEvents |> List.exists (fun event -> event.TypeId = stringTypeId && event.PayloadBytes = mixedStringPayloadBytes && event.ExtentBytes = mixedStringExtentBytes)
+    let mixedEmptyTokenAllocate = mixedAllocateEvents |> List.exists (fun event -> event.TypeId = emptyTypeId && event.PayloadBytes = 0 && event.ExtentBytes = 8)
+    let mixedConstructPassed =
+        mixedConstructResult.Values = [ mixedValue ]
+        && mixedRecordOutput = mixedRecordBytes
+        && mixedConstructResult.RetainedBytesWritten = mixedRecordBytes.Length
+        && int64Property mixedConstructMetrics "HostEncodedInputBytes" = int64 (mixedStringBytes.Length + 8)
+        && mixedRecordBuild
+        && mixedStringAllocate
+        && mixedEmptyTokenAllocate
+    recordCheck checks failures $"owning-stack/{optimizationName}/String/mixed-empty-string-int-record/construction-and-inline-nesting" mixedConstructPassed (jsonObject [
+        "values", box (codeUnitSafeValuesJson mixedConstructResult.Values)
+        "expectedRecordBytes", box (bytesHex mixedRecordBytes)
+        "actualRecordBytes", box (bytesHex mixedRecordOutput)
+        "retainedBytesWritten", box mixedConstructResult.RetainedBytesWritten
+        "expectedRecordPayloadBytes", box mixedExpectedRecordPayloadBytes
+        "expectedRecordExtentBytes", box mixedExpectedRecordExtentBytes
+        "stringAllocateFound", box mixedStringAllocate
+        "mixedRecordBuildFound", box mixedRecordBuild
+        "mixedRecordBuildEvents", box (layoutEventDetails mixedRecordBuildEvents)
+        "standaloneEmptyTokenAllocateFound", box mixedEmptyTokenAllocate
+        "metrics", box (jsonNode options (metricSummary mixedConstructMetrics))
+        "events", box (layoutEventDetails mixedConstructEvents) ])
+
+    let mixedLayouts = mixedConstructResult.Layouts
+    let mixedDynamicLayoutChecks, mixedDynamicLayoutFailures, mixedDynamicLayoutSummary =
+        validateDynamicTypeLayouts [ "TextMixed" ] fixture mixedLayouts
+    for details in mixedDynamicLayoutChecks do checks.Add details
+    for failure in mixedDynamicLayoutFailures do failures.Add($"owning-stack/{optimizationName}/String/mixed-empty-string-int-record/dynamic-layout: {failure}")
+    recordCheck checks failures $"owning-stack/{optimizationName}/String/mixed-empty-string-int-record/dynamic-layout-contract" (mixedDynamicLayoutFailures.Length = 0) (jsonNode options mixedDynamicLayoutSummary)
+    let mixedLayoutCheck =
+        match mixedLayouts |> List.tryFind (fun layout -> layout.TypeName = "TextMixed") with
+        | None -> false, jsonObject [ "found", box false; "type", box "TextMixed" ]
+        | Some layout ->
+            let findField name = layout.Fields |> List.tryFind (fun field -> field.FieldName = name)
+            let markerField = findField "marker"
+            let textField = findField "text"
+            let sentinelField = findField "sentinel"
+            let emptyLayout = mixedLayouts |> List.tryFind (fun item -> item.TypeName = "Empty")
+            let mixedLayoutOracle = workload.GetProperty("dynamicLayoutOracle")
+            let passed =
+                layout.IsDynamic
+                && layout.PayloadBytes = -1
+                && layout.ExtentBytes = -1
+                && layout.MinimumPayloadBytes = mixedLayoutOracle.GetProperty("minimumPayloadBytes").GetProperty("TextMixed").GetInt32()
+                && layout.MinimumExtentBytes = mixedLayoutOracle.GetProperty("minimumExtentBytes").GetProperty("TextMixed").GetInt32()
+                && (match markerField with Some field -> not field.IsDynamic && not field.IsOffsetDynamic && field.OffsetBytes = 0 && field.PayloadBytes = 0 && field.ExtentBytes = 0 | None -> false)
+                && (match textField with Some field -> field.IsDynamic && not field.IsOffsetDynamic && field.OffsetBytes = 0 && field.MinimumPayloadBytes = 8 && field.MinimumExtentBytes = 8 | None -> false)
+                && (match sentinelField with Some field -> not field.IsDynamic && field.IsOffsetDynamic && field.OffsetBytes = -1 && field.MinimumPayloadBytes = 8 && field.MinimumExtentBytes = 8 && field.PayloadBytes = 8 && field.ExtentBytes = 8 | None -> false)
+                && (match emptyLayout with Some empty -> not empty.IsDynamic && empty.PayloadBytes = 0 && empty.ExtentBytes = 8 && empty.MinimumPayloadBytes = 0 && empty.MinimumExtentBytes = 8 | None -> false)
+            passed, jsonObject [
+                "found", box true
+                "isDynamic", box layout.IsDynamic
+                "payloadBytes", box layout.PayloadBytes
+                "extentBytes", box layout.ExtentBytes
+                "minimumPayloadBytes", box layout.MinimumPayloadBytes
+                "minimumExtentBytes", box layout.MinimumExtentBytes
+                "fields", box (layout.Fields |> List.map (fun field -> jsonObject [ "name", box field.FieldName; "offsetBytes", box field.OffsetBytes; "isOffsetDynamic", box field.IsOffsetDynamic; "isDynamic", box field.IsDynamic; "payloadBytes", box field.PayloadBytes; "extentBytes", box field.ExtentBytes; "minimumPayloadBytes", box field.MinimumPayloadBytes; "minimumExtentBytes", box field.MinimumExtentBytes ]))
+                "emptyLayout", box (match emptyLayout with Some empty -> jsonObject [ "payloadBytes", box empty.PayloadBytes; "extentBytes", box empty.ExtentBytes ] | None -> null) ]
+    let mixedLayoutPassed, mixedLayoutDetails = mixedLayoutCheck
+    recordCheck checks failures $"owning-stack/{optimizationName}/String/mixed-empty-string-int-record/dynamic-layout-with-zero-width-field" mixedLayoutPassed mixedLayoutDetails
+
+    let mixedProjectionOutput = Array.create mixedFixtureTextAndSentinelBytes.Length 0xA5uy
+    let mixedProjectionResult = mixedProjectProgram.ExecuteInto([ mixedValue ], stateCapacity, mixedProjectionOutput)
+    let mixedProjectionMetrics = stackMetrics (box mixedProjectionResult)
+    let mixedProjectionPassed =
+        mixedProjectionResult.Values = [ StringValue mixedText; IntValue mixedSentinel ]
+        && mixedProjectionOutput = mixedFixtureTextAndSentinelBytes
+        && mixedProjectionResult.RetainedBytesWritten = mixedFixtureTextAndSentinelBytes.Length
+    recordCheck checks failures $"owning-stack/{optimizationName}/String/mixed-empty-string-int-record/project-string-and-following-sentinel" mixedProjectionPassed (jsonObject [
+        "values", box (codeUnitSafeValuesJson mixedProjectionResult.Values)
+        "expectedProjectionBytes", box (bytesHex mixedFixtureTextAndSentinelBytes)
+        "actualProjectionBytes", box (bytesHex mixedProjectionOutput)
+        "sentinelExpectedOffsetBytes", box (mixedStringBytes.Length)
+        "sentinelExpectedValue", box mixedSentinel
+        "metrics", box (jsonNode options (metricSummary mixedProjectionMetrics))
+        "events", box (layoutEventDetails mixedProjectionResult.LayoutEvents) ])
+    let mixedEmptyProjectionOutput = Array.create mixedEmptyTokenBytes.Length 0xA5uy
+    let mixedEmptyProjectionResult = mixedProjectEmptyProgram.ExecuteInto([ mixedValue ], stateCapacity, mixedEmptyProjectionOutput)
+    let mixedEmptyProjectionPassed =
+        mixedEmptyProjectionResult.Values = [ mixedEmpty ]
+        && mixedEmptyProjectionOutput = mixedEmptyTokenBytes
+        && mixedEmptyProjectionResult.RetainedBytesWritten = 8
+    recordCheck checks failures $"owning-stack/{optimizationName}/String/mixed-empty-string-int-record/project-empty-as-standalone-token" mixedEmptyProjectionPassed (jsonObject [
+        "values", box (codeUnitSafeValuesJson mixedEmptyProjectionResult.Values)
+        "expectedTokenBytes", box (bytesHex mixedEmptyTokenBytes)
+        "actualTokenBytes", box (bytesHex mixedEmptyProjectionOutput)
+        "retainedBytesWritten", box mixedEmptyProjectionResult.RetainedBytesWritten
+        "metrics", box (jsonNode options (metricSummary (box mixedEmptyProjectionResult.Metrics)))
+        "events", box (layoutEventDetails mixedEmptyProjectionResult.LayoutEvents) ])
+
+    let shortBranchState, _ = compiledInputBodies["short-ascii"]
+    let longBranchState, _ = compiledInputBodies["long-bmp-astral"]
+    let shortBranchEnvelope = textEnvelopeFromState shortBranchState
+    let longBranchEnvelope = textEnvelopeFromState longBranchState
+    let branchInputFactory = compileTextEnvelopePairFactory entries "dynamic-branch-join" shortBranchEnvelope longBranchEnvelope
+    use branchInputOwner = IrInterpreter.executeBodyWithInputs interpreterHost "dynamic-branch-join-inputs" branchInputFactory None []
+    let dynamicBranchReports = ResizeArray<obj>()
+    for branchCase in workload.GetProperty("dynamicBranchCases").EnumerateArray() do
+        let branchName = branchCase.GetProperty("name").GetString()
+        let chooseLeft = branchCase.GetProperty("chooseLeft").GetBoolean()
+        let selectedCaseName = branchCase.GetProperty("selectedMainCase").GetString()
+        let selectedEnvelope = if chooseLeft then shortBranchEnvelope else longBranchEnvelope
+        let selectedCase = mainCases |> Array.find (fun item -> item.GetProperty("name").GetString() = selectedCaseName)
+        let selectedCodeUnitsHex = selectedCase.GetProperty("inputCodeUnitsHex").GetString()
+        let selectedCodeUnitCount = selectedCase.GetProperty("inputCodeUnitCount").GetInt32()
+        let selectedInput = selectedCase.GetProperty("input")
+        let selectedTag = selectedInput.GetProperty("tag").GetInt64()
+        let expectedLength = branchCase.GetProperty("expectedLengthOutput").GetInt64()
+        let expectedEnvelopeBytes = textEnvelopeBytes selectedTag (int64 selectedCodeUnitCount) selectedCodeUnitsHex
+        let expectedBranchBytes = Array.concat [ expectedEnvelopeBytes; bytesFromInt64s [ expectedLength ] ]
+        let fixtureBranchBytes = bytesFromHex (branchCase.GetProperty("expectedRetainedBytesHex").GetString())
+        let expectedEnvelopeExtent = branchCase.GetProperty("expectedSelectedEnvelopeExtentBytes").GetInt32()
+        let fixtureOraclePassed =
+            expectedEnvelopeBytes.Length = expectedEnvelopeExtent
+            && expectedBranchBytes = fixtureBranchBytes
+            && fixtureBranchBytes.Length = branchCase.GetProperty("expectedRetainedBytes").GetInt32()
+            && expectedLength = int64 selectedCodeUnitCount
+        recordCheck checks failures $"oracle/String/{branchName}/dynamic-branch-retained-bytes" fixtureOraclePassed (jsonObject [
+            "selectedEnvelopeBytes", box (bytesHex expectedEnvelopeBytes)
+            "selectedEnvelopeExtentBytes", box expectedEnvelopeBytes.Length
+            "lengthOutput", box expectedLength
+            "oracleRetainedBytes", box (bytesHex expectedBranchBytes)
+            "fixtureRetainedBytes", box (bytesHex fixtureBranchBytes) ])
+        use branchInterpreterResult =
+            IrInterpreter.executeBodyWithInputs
+                interpreterHost
+                "mailbox.choose-text-envelope"
+                entries.DynamicBranch
+                (Some branchInputOwner)
+                [ IrEntryArgument.RetainedRoot 0; IrEntryArgument.RetainedRoot 1; IrEntryArgument.BoolArgument chooseLeft ]
+        let branchInterpreterValues = branchInterpreterResult.Decode()
+        let expectedBranchValues = [ selectedEnvelope; IntValue expectedLength ]
+        recordCheck checks failures $"interpreter/String/{branchName}/phi-value-and-following-read" (branchInterpreterValues = expectedBranchValues) (codeUnitSafeValuesJson branchInterpreterValues)
+        let branchOutput = Array.create fixtureBranchBytes.Length 0xA5uy
+        let branchResult = dynamicBranchProgram.ExecuteInto([ shortBranchEnvelope; longBranchEnvelope; BoolValue chooseLeft ], stateCapacity, branchOutput)
+        let branchValues = branchResult.Values
+        let branchMetrics = stackMetrics (box branchResult)
+        let returnedSecondOutput = int64FromBytesLittleEndian branchOutput expectedEnvelopeExtent
+        let branchPassed =
+            branchValues = expectedBranchValues
+            && branchOutput = fixtureBranchBytes
+            && branchResult.RetainedBytesWritten = fixtureBranchBytes.Length
+            && returnedSecondOutput = expectedLength
+            && fixtureBranchBytes.Length - expectedEnvelopeExtent = 8
+        recordCheck checks failures $"owning-stack/{optimizationName}/String/{branchName}/phi-layout-and-multi-output-return" branchPassed (jsonObject [
+            "chooseLeft", box chooseLeft
+            "selectedCase", box selectedCaseName
+            "values", box (codeUnitSafeValuesJson branchValues)
+            "expectedEnvelopeExtentBytes", box expectedEnvelopeExtent
+            "secondOutputOffsetBytes", box expectedEnvelopeExtent
+            "secondOutputValue", box returnedSecondOutput
+            "expectedRetainedBytes", box (bytesHex fixtureBranchBytes)
+            "actualRetainedBytes", box (bytesHex branchOutput)
+            "retainedBytesWritten", box branchResult.RetainedBytesWritten
+            "metrics", box (jsonNode options (metricSummary branchMetrics))
+            "events", box (layoutEventDetails branchResult.LayoutEvents) ])
+        checkTraceUsable checks failures $"owning-stack/{optimizationName}/String/{branchName}/trace-complete" branchMetrics branchResult.LayoutEvents |> ignore
+        dynamicBranchReports.Add(box (jsonObject [
+            "case", box branchName
+            "selectedCase", box selectedCaseName
+            "expectedBytes", box (bytesHex fixtureBranchBytes)
+            "actualBytes", box (bytesHex branchOutput)
+            "metrics", box (jsonNode options (metricSummary branchMetrics))
+            "events", box (layoutEventDetails branchResult.LayoutEvents) ]))
+
+    let joined = workload.GetProperty("joinedSurrogatePair")
+    let leftHex = joined.GetProperty("leftCodeUnitHex").GetString()
+    let rightHex = joined.GetProperty("rightCodeUnitHex").GetString()
+    let joinedHex = joined.GetProperty("expectedCodeUnitsHex").GetString()
+    let leftValue = stringFromCodeUnitsHex leftHex
+    let rightValue = stringFromCodeUnitsHex rightHex
+    let joinedValue = StringValue(stringFromCodeUnitsHex joinedHex)
+    let joinedBytes = bytesFromHex (joined.GetProperty("expectedStringBytesHex").GetString())
+    let joinedOracle = stringBytesFromCodeUnitsHex joinedHex
+    recordCheck checks failures $"oracle/String/joined-surrogate-pair/raw-code-units" (joinedOracle = joinedBytes && joinedBytes.Length = joined.GetProperty("expectedExtentBytes").GetInt32()) (jsonObject [
+        "oracleHex", box (bytesHex joinedOracle)
+        "fixtureHex", box (bytesHex joinedBytes)
+        "codeUnitCount", box (joined.GetProperty("expectedCodeUnitCount").GetInt32()) ])
+    let pairFactory = compileStringPairFactory entries "joined-surrogate-pair" leftValue rightValue
+    use pairOwner = IrInterpreter.executeBodyWithInputs interpreterHost "joined-surrogate-pair-input" pairFactory None []
+    use joinedInterpreterResult = IrInterpreter.executeBodyWithInputs interpreterHost "mailbox.join-strings" entries.JoinStrings (Some pairOwner) [ IrEntryArgument.RetainedRoot 0; IrEntryArgument.RetainedRoot 1 ]
+    use directConcatInterpreterResult = IrInterpreter.executeBodyWithInputs interpreterHost "native-value-stack-direct-string-concat-capacity" entries.DirectConcat (Some pairOwner) [ IrEntryArgument.RetainedRoot 0; IrEntryArgument.RetainedRoot 1 ]
+    let joinedInterpreterValues = joinedInterpreterResult.Decode()
+    let directConcatInterpreterValues = directConcatInterpreterResult.Decode()
+    recordCheck checks failures $"interpreter/String/joined-surrogate-pair/concat-preserves-code-units" (joinedInterpreterValues = [ joinedValue ]) (codeUnitSafeValuesJson joinedInterpreterValues)
+    recordCheck checks failures $"interpreter/String/direct-concat-capacity/same-verified-body" (directConcatInterpreterValues = [ joinedValue ]) (codeUnitSafeValuesJson directConcatInterpreterValues)
+    let joinedOutput = Array.create joinedBytes.Length 0xA5uy
+    let joinedResult = joinProgram.ExecuteInto([ StringValue leftValue; StringValue rightValue ], stateCapacity, joinedOutput)
+    let joinedValues = getProperty (box joinedResult) "Values" :?> Value list
+    let joinedMetrics = stackMetrics (box joinedResult)
+    recordCheck checks failures $"owning-stack/{optimizationName}/String/joined-surrogate-pair/two-dynamic-inputs" (joinedValues = [ joinedValue ] && joinedOutput = joinedBytes && (getProperty (box joinedResult) "RetainedOutputBytes" :?> byte array) = joinedBytes && int64Property joinedMetrics "InputBytes" = 32L) (jsonObject [
+        "values", box (codeUnitSafeValuesJson joinedValues)
+        "leftCodeUnitHex", box leftHex
+        "rightCodeUnitHex", box rightHex
+        "resultBytes", box (bytesHex joinedOutput)
+        "metrics", box (jsonNode options (metricSummary joinedMetrics))
+        "layoutEvents", box (layoutEventDetails joinedResult.LayoutEvents) ])
+    let concatEvents = joinedResult.LayoutEvents |> List.filter (fun event -> event.Kind = "string-concat-left" || event.Kind = "string-concat-right")
+    let concatRangesPass =
+        concatEvents.Length = 2
+        && (concatEvents |> List.forall (fun event -> event.ExtentBytes = 2 && event.PayloadBytes = 2 && event.SourceExtentBytes = Some 2))
+        && (concatEvents |> List.map (fun event -> event.OffsetBytes) |> Set.ofList |> Set.count = 2)
+    recordCheck checks failures $"owning-stack/{optimizationName}/String/joined-surrogate-pair/concat-source-ranges" concatRangesPass (jsonObject [
+        "expectedCopiedCodeUnitBytesPerInput", box 2
+        "events", box (layoutEventDetails concatEvents) ])
+    checkTraceUsable checks failures $"owning-stack/{optimizationName}/String/joined-surrogate-pair/trace-complete" joinedMetrics joinedResult.LayoutEvents |> ignore
+
+    let independentCapacityOracle = workload.GetProperty("capacityCases").GetProperty("programStack").GetProperty("independentDynamicConcat")
+    let scheduledExtents = independentCapacityOracle.GetProperty("inputStringExtentsBytes").EnumerateArray() |> Seq.map (fun item -> item.GetInt32()) |> Seq.toList
+    let scheduledInputBytes = scheduledExtents |> List.sum
+    let scheduledEntryFrameBytes = independentCapacityOracle.GetProperty("entryFrameInputBytes").GetInt32()
+    let stagedConcatExtent = independentCapacityOracle.GetProperty("concatOutputExtentBytes").GetInt32()
+    let requiredStackBytes = independentCapacityOracle.GetProperty("requiredStackCapacityBytes").GetInt32()
+    let oneByteBelowCapacity = independentCapacityOracle.GetProperty("oneByteBelowAvailableBytes").GetInt32()
+    let wrappedJoinArgumentCopyBytes = scheduledInputBytes
+    let wrappedJoinExpectedPeakBytes = scheduledInputBytes + 3 * scheduledEntryFrameBytes + stagedConcatExtent
+    let wrappedJoinFixturePeakBytes = independentCapacityOracle.GetProperty("wrappedUserCallExpectedPeakBytes").GetInt32()
+    let wrappedScheduleOwners = [
+        "wrapper-left-input"; "wrapper-right-input"
+        "entry-frame-left-input-copy"; "entry-frame-right-input-copy"
+        "user-call-left-input-copy"; "user-call-right-input-copy"
+        "left-LoadLocal-operand-copy"; "right-LoadLocal-operand-copy"
+        "concat-result-scratch" ]
+    let wrappedScheduleExtents = [
+        scheduledExtents[0]; scheduledExtents[1]
+        scheduledExtents[0]; scheduledExtents[1]
+        scheduledExtents[0]; scheduledExtents[1]
+        scheduledExtents[0]; scheduledExtents[1]
+        stagedConcatExtent ]
+    let wrappedScheduleStarts = wrappedScheduleExtents |> List.scan (+) 0 |> List.take wrappedScheduleExtents.Length
+    let expectedWrappedSchedule = List.map3 (fun owner start extent -> owner, start, extent) wrappedScheduleOwners wrappedScheduleStarts wrappedScheduleExtents
+    let fixtureWrappedSchedule =
+        independentCapacityOracle.GetProperty("wrappedUserCallSchedule").EnumerateArray()
+        |> Seq.map (fun item -> item.GetProperty("owner").GetString(), item.GetProperty("startBytes").GetInt32(), item.GetProperty("extentBytes").GetInt32())
+        |> Seq.toList
+    let wrappedSchedulePeakBytes = List.last wrappedScheduleStarts + List.last wrappedScheduleExtents
+    let wrappedSchedulePass = expectedWrappedSchedule = fixtureWrappedSchedule && wrappedSchedulePeakBytes = wrappedJoinExpectedPeakBytes
+    let wrappedJoinObservedPeakBytes = int64Property joinedMetrics "ReservedStackBytes"
+    recordCheck checks failures $"owning-stack/{optimizationName}/String/wrapped-user-call-observed-stack-span" (wrappedSchedulePass && wrappedJoinExpectedPeakBytes = wrappedJoinFixturePeakBytes && wrappedJoinObservedPeakBytes = int64 wrappedJoinFixturePeakBytes) (jsonObject [
+        "hostInputBytes", box scheduledInputBytes
+        "entryFrameCopyBytes", box scheduledEntryFrameBytes
+        "userCallFrameCopyBytes", box scheduledEntryFrameBytes
+        "userCallLocalArgumentCopyBytes", box wrappedJoinArgumentCopyBytes
+        "concatScratchBytes", box stagedConcatExtent
+        "fixtureWrappedSchedule", box (JsonNode.Parse(independentCapacityOracle.GetProperty("wrappedUserCallSchedule").GetRawText()))
+        "expectedStackSpanBytes", box wrappedJoinExpectedPeakBytes
+        "fixtureExpectedStackSpanBytes", box wrappedJoinFixturePeakBytes
+        "observedReservedStackBytes", box wrappedJoinObservedPeakBytes ])
+    let independentSchedulePass =
+        scheduledExtents = [ 16; 16 ]
+        && scheduledInputBytes = independentCapacityOracle.GetProperty("inputStackBytes").GetInt32()
+        && scheduledEntryFrameBytes = scheduledInputBytes
+        && requiredStackBytes = scheduledInputBytes + scheduledEntryFrameBytes + stagedConcatExtent
+        && oneByteBelowCapacity = requiredStackBytes - 1
+        && joinedBytes.Length = stagedConcatExtent
+        && int64Property joinedMetrics "InputBytes" = int64 scheduledInputBytes
+    recordCheck checks failures $"owning-stack/{optimizationName}/String/independent-concat-capacity-schedule" independentSchedulePass (jsonObject [
+        "leftInputExtentBytes", box scheduledExtents[0]
+        "rightInputExtentBytes", box scheduledExtents[1]
+        "inputOwnerBytes", box scheduledInputBytes
+        "entryFrameInputCopyBytes", box scheduledEntryFrameBytes
+        "concatStagingExtentBytes", box stagedConcatExtent
+        "independentlyRequiredStackCapacityBytes", box requiredStackBytes
+        "oneByteBelowAvailableBytes", box oneByteBelowCapacity
+        "schedule", box (JsonNode.Parse(independentCapacityOracle.GetProperty("schedule").GetRawText())) ])
+    let exactCapacityFailureOutput = Array.create joinedBytes.Length 0xA5uy
+    let exactCapacityFailureBefore = Array.copy exactCapacityFailureOutput
+    let exactCapacityFailureCode, exactCapacityFailureMetrics, exactCapacityFailureRequired, exactCapacityFailureAvailable, exactCapacityFailureBoundary =
+        try
+            directConcatProgram.ExecuteInto([ StringValue leftValue; StringValue rightValue ], oneByteBelowCapacity, exactCapacityFailureOutput) |> ignore
+            "unexpected-success", null, -1L, -1L, ""
+        with error ->
+            exceptionCode error,
+            getProperty error "Metrics",
+            optionalInt64 error "RequiredBytes",
+            optionalInt64 error "AvailableBytes",
+            (getProperty error "Boundary" |> string)
+    let exactCapacityFailurePassed =
+        exactCapacityFailureCode = "OWNING_STACK_CAPACITY"
+        && exactCapacityFailureBoundary = "program-data-stack"
+        && exactCapacityFailureRequired = int64 requiredStackBytes
+        && exactCapacityFailureAvailable = int64 oneByteBelowCapacity
+        && not (isNull exactCapacityFailureMetrics)
+        && int64Property exactCapacityFailureMetrics "InputBytes" = int64 scheduledInputBytes
+        && int64Property exactCapacityFailureMetrics "InputCopyBytes" = int64 scheduledInputBytes
+        && int64Property exactCapacityFailureMetrics "TraceEventCount" > 0L
+        && not (Convert.ToBoolean(getProperty exactCapacityFailureMetrics "TraceTruncated", CultureInfo.InvariantCulture))
+        && int64Property exactCapacityFailureMetrics "FinalCursorBytes" = 0L
+        && int64Property exactCapacityFailureMetrics "FinalLiveStackBytes" = 0L
+        && exactCapacityFailureOutput = exactCapacityFailureBefore
+    recordCheck checks failures $"owning-stack/{optimizationName}/String/independent-concat-capacity-one-byte-short" exactCapacityFailurePassed (jsonObject [
+        "code", box exactCapacityFailureCode
+        "boundary", box exactCapacityFailureBoundary
+        "independentlyExpectedRequiredBytes", box requiredStackBytes
+        "actualRequiredBytes", box exactCapacityFailureRequired
+        "independentlyExpectedAvailableBytes", box oneByteBelowCapacity
+        "actualAvailableBytes", box exactCapacityFailureAvailable
+        "inputCopyBytesBeforeFailure", box (if isNull exactCapacityFailureMetrics then -1L else int64Property exactCapacityFailureMetrics "InputCopyBytes")
+        "callerBufferUnchanged", box (bufferCheckDetails exactCapacityFailureBefore exactCapacityFailureOutput)
+        "metrics", if isNull exactCapacityFailureMetrics then null else jsonNode options (metricSummary exactCapacityFailureMetrics) ])
+    let exactCapacityOutput = Array.create joinedBytes.Length 0xA5uy
+    let exactCapacityResult = directConcatProgram.ExecuteInto([ StringValue leftValue; StringValue rightValue ], requiredStackBytes, exactCapacityOutput)
+    let exactCapacityResultMetrics = stackMetrics (box exactCapacityResult)
+    let exactCapacitySuccessPassed =
+        exactCapacityResult.Values = [ joinedValue ]
+        && exactCapacityOutput = joinedBytes
+        && exactCapacityResult.RetainedBytesWritten = joinedBytes.Length
+        && int64Property exactCapacityResultMetrics "InputCopyBytes" = int64 scheduledInputBytes
+        && int64Property exactCapacityResultMetrics "ReservedStackBytes" = int64 requiredStackBytes
+    recordCheck checks failures $"owning-stack/{optimizationName}/String/independent-concat-capacity-exact-boundary-succeeds" exactCapacitySuccessPassed (jsonObject [
+        "capacityBytes", box requiredStackBytes
+        "outputBytes", box (bytesHex exactCapacityOutput)
+        "reservedStackBytes", box (int64Property exactCapacityResultMetrics "ReservedStackBytes")
+        "metrics", jsonNode options (metricSummary exactCapacityResultMetrics) ])
+
+    let shortCase = mainCases |> Array.find (fun element -> element.GetProperty("name").GetString() = "short-ascii")
+    let longCase = mainCases |> Array.find (fun element -> element.GetProperty("name").GetString() = "long-bmp-astral")
+    let shortState, _ = compiledInputBodies["short-ascii"]
+    let longState, _ = compiledInputBodies["long-bmp-astral"]
+    let shortEnvelope = textEnvelopeFromState shortState
+    let longEnvelope = textEnvelopeFromState longState
+    let shortEnvelopeHex = shortCase.GetProperty("inputCodeUnitsHex").GetString()
+    let longEnvelopeHex = longCase.GetProperty("inputCodeUnitsHex").GetString()
+    let envelopeParts = function
+        | RecordValue("TextEnvelope", fields) ->
+            match fields["tag"], fields["leaf"] with
+            | IntValue tag, RecordValue("TextLeaf", leaf) ->
+                match leaf["text"], leaf["codeUnits"] with
+                | StringValue text, IntValue codeUnits -> tag, codeUnits, text
+                | _ -> invalidOp "TextEnvelope requires StringValue/IntValue leaf fields."
+            | _ -> invalidOp "TextEnvelope requires an Int tag and TextLeaf."
+        | _ -> invalidOp "Expected TextEnvelope."
+    let shortTag, shortCodeUnits, shortText = envelopeParts shortEnvelope
+    let longTag, longCodeUnits, longText = envelopeParts longEnvelope
+    let scopePairs = [
+        "short-outer-long-inner", shortEnvelope, longEnvelope, shortEnvelopeHex, shortTag, shortCodeUnits, shortText
+        "long-outer-short-inner", longEnvelope, shortEnvelope, longEnvelopeHex, longTag, longCodeUnits, longText ]
+    let scopeReports = ResizeArray<obj>()
+    for caseName, outerValue, innerValue, outerHex, outerTag, outerCodeUnits, outerText in scopePairs do
+        let pairInputFactory = compileTextEnvelopePairFactory entries caseName outerValue innerValue
+        use scopeInputOwner = IrInterpreter.executeBodyWithInputs interpreterHost ("scope-input-" + caseName) pairInputFactory None []
+        use scopeInterpreterResult = IrInterpreter.executeBodyWithInputs interpreterHost "native-value-stack-string-scope-shadow" entries.ScopeShadow (Some scopeInputOwner) [ IrEntryArgument.RetainedRoot 0; IrEntryArgument.RetainedRoot 1 ]
+        recordCheck checks failures $"interpreter/String/scope-shadow/{caseName}" (scopeInterpreterResult.Decode() = [ outerValue ]) (codeUnitSafeValuesJson (scopeInterpreterResult.Decode()))
+        let expectedEnvelopeBytes = textEnvelopeBytes outerTag outerCodeUnits outerHex
+        let scopeOutput = Array.create expectedEnvelopeBytes.Length 0xA5uy
+        let scopeResult = scopeProgram.ExecuteInto([ outerValue; innerValue ], stateCapacity, scopeOutput)
+        let scopeMetrics = stackMetrics (box scopeResult)
+        let scopeValuePass = scopeResult.Values = [ outerValue ] && scopeOutput = expectedEnvelopeBytes
+        let cleanupPass = int64Property scopeMetrics "FinalLiveStackBytes" = 0L && int64Property scopeMetrics "FinalCursorBytes" = 0L
+        recordCheck checks failures $"owning-stack/{optimizationName}/String/scope-shadow/{caseName}/outer-restore" scopeValuePass (jsonObject [
+            "values", box (codeUnitSafeValuesJson scopeResult.Values)
+            "expectedOuterBytes", box (bytesHex expectedEnvelopeBytes)
+            "actualOuterBytes", box (bytesHex scopeOutput) ])
+        recordCheck checks failures $"owning-stack/{optimizationName}/String/scope-shadow/{caseName}/cleanup-and-local-categories" (cleanupPass && int64Property scopeMetrics "ReservedLocalBytes" >= int64Property scopeMetrics "PeakLiveLocalBytes") (jsonObject [
+            "reservedLocalBytes", box (int64Property scopeMetrics "ReservedLocalBytes")
+            "peakLiveLocalBytes", box (int64Property scopeMetrics "PeakLiveLocalBytes")
+            "backendMetadataPerFrameBytes", box (int64Property scopeMetrics "BackendMetadataPerFrameBytes")
+            "backendMetadataPeakBoundBytes", box (int64Property scopeMetrics "BackendMetadataPeakBoundBytes")
+            "finalCursorBytes", box (int64Property scopeMetrics "FinalCursorBytes")
+            "finalLiveStackBytes", box (int64Property scopeMetrics "FinalLiveStackBytes")
+            "metrics", box (jsonNode options (metricSummary scopeMetrics)) ])
+        checkTraceUsable checks failures $"owning-stack/{optimizationName}/String/scope-shadow/{caseName}/trace-complete" scopeMetrics scopeResult.LayoutEvents |> ignore
+        scopeReports.Add(box (jsonObject [
+            "case", box caseName
+            "outerCodeUnits", box (outerText.Length)
+            "outerValueBytes", box (bytesHex expectedEnvelopeBytes)
+            "metrics", box (jsonNode options (metricSummary scopeMetrics))
+            "events", box (layoutEventDetails scopeResult.LayoutEvents) ]))
+
+    let duplicateInputFactory = compileTextEnvelopePairFactory entries "duplicate-long" longEnvelope longEnvelope
+    use duplicateInputOwner = IrInterpreter.executeBodyWithInputs interpreterHost "duplicate-long-input" duplicateInputFactory None []
+    use duplicateInterpreterResult = IrInterpreter.executeBodyWithInputs interpreterHost "native-value-stack-string-direct-dup-drop" entries.DirectDupDrop (Some duplicateInputOwner) [ IrEntryArgument.RetainedRoot 0 ]
+    recordCheck checks failures "interpreter/String/direct-dup-drop-preserves-survivor" (duplicateInterpreterResult.Decode() = [ longEnvelope ]) (codeUnitSafeValuesJson (duplicateInterpreterResult.Decode()))
+    let duplicateExpectedBytes = textEnvelopeBytes longTag longCodeUnits longEnvelopeHex
+    let duplicateOutput = Array.create duplicateExpectedBytes.Length 0xA5uy
+    let duplicateResult = duplicateProgram.ExecuteInto([ longEnvelope ], stateCapacity, duplicateOutput)
+    let duplicateEvents = duplicateResult.LayoutEvents
+    let duplicateCopyEvents = duplicateEvents |> List.filter (fun event -> event.Kind = "duplicate")
+    let duplicateDropEvents = duplicateEvents |> List.filter (fun event -> event.Kind = "drop")
+    let duplicatePhysicalPass =
+        duplicateCopyEvents.Length = 1
+        && (duplicateCopyEvents |> List.forall (fun event ->
+            match event.SourceOffsetBytes with
+            | Some source ->
+                let sourceExtent = defaultArg event.SourceExtentBytes event.ExtentBytes
+                let destinationStart, destinationEnd = int64 event.OffsetBytes, int64 event.OffsetBytes + int64 event.ExtentBytes
+                let sourceStart, sourceEnd = int64 source, int64 source + int64 sourceExtent
+                destinationEnd <= sourceStart || sourceEnd <= destinationStart
+            | None -> false))
+        && (duplicateDropEvents |> List.exists (fun drop -> duplicateCopyEvents |> List.exists (fun duplicate -> drop.OffsetBytes = duplicate.OffsetBytes && drop.ExtentBytes = duplicate.ExtentBytes)))
+        && duplicateResult.Values = [ longEnvelope ]
+        && duplicateOutput = duplicateExpectedBytes
+    recordCheck checks failures $"owning-stack/{optimizationName}/String/direct-dup-drop-disjoint-and-survivor" duplicatePhysicalPass (jsonObject [
+        "expectedEnvelopeBytes", box (bytesHex duplicateExpectedBytes)
+        "actualEnvelopeBytes", box (bytesHex duplicateOutput)
+        "copyEvents", box (layoutEventDetails duplicateCopyEvents)
+        "dropEvents", box (layoutEventDetails duplicateDropEvents)
+        "metrics", box (jsonNode options (metricSummary (box duplicateResult.Metrics))) ])
+    checkTraceUsable checks failures $"owning-stack/{optimizationName}/String/direct-dup-drop/trace-complete" duplicateResult.Metrics duplicateEvents |> ignore
+
+    let zeroEnvelope = shortEnvelope
+    let zeroFactory = compileTextEnvelopePairFactory entries "zero-output" zeroEnvelope zeroEnvelope
+    use zeroInputOwner = IrInterpreter.executeBodyWithInputs interpreterHost "zero-output-input" zeroFactory None []
+    use zeroInterpreterResult = IrInterpreter.executeBodyWithInputs interpreterHost "native-value-stack-string-zero-output-user-call" entries.ZeroOutputUserCall (Some zeroInputOwner) [ IrEntryArgument.RetainedRoot 0 ]
+    recordCheck checks failures "interpreter/String/zero-output-user-call" (zeroInterpreterResult.Decode() = []) (codeUnitSafeValuesJson (zeroInterpreterResult.Decode()))
+    let zeroBuffer = Array.create 32 0xA5uy
+    let zeroBefore = Array.copy zeroBuffer
+    let zeroResult = zeroOutputProgram.ExecuteInto([ zeroEnvelope ], stateCapacity, zeroBuffer)
+    let zeroMetrics = box zeroResult.Metrics
+    let zeroPassed = zeroResult.Values = [] && zeroResult.RetainedBytesWritten = 0 && zeroBuffer = zeroBefore && int64Property zeroMetrics "FinalCursorBytes" = 0L && int64Property zeroMetrics "FinalLiveStackBytes" = 0L
+    recordCheck checks failures $"owning-stack/{optimizationName}/String/zero-output-user-call-return" zeroPassed (jsonObject [
+        "values", box []
+        "retainedBytesWritten", box zeroResult.RetainedBytesWritten
+        "callerBufferUnchanged", box (bufferCheckDetails zeroBefore zeroBuffer)
+        "metrics", box (jsonNode options (metricSummary zeroMetrics))
+        "events", box (layoutEventDetails zeroResult.LayoutEvents) ])
+    checkTraceUsable checks failures $"owning-stack/{optimizationName}/String/zero-output-user-call/trace-complete" zeroResult.Metrics zeroResult.LayoutEvents |> ignore
+
+    let inputOwnerForFailure = compileTextStateFactory entries "failure-after-allocation" longState
+    use failureInputOwner = IrInterpreter.executeBodyWithInputs interpreterHost "text-failure-input" inputOwnerForFailure None []
+    let interpreterFailureCode =
+        try
+            use _unexpected = IrInterpreter.executeBodyWithInputs interpreterHost "mailbox.fail-after-text-allocation" entries.FailAfterTextAllocation (Some failureInputOwner) [ IrEntryArgument.RetainedRoot 0 ]
+            "unexpected-success"
+        with error -> diagnosticCode error
+    recordCheck checks failures "interpreter/String/failure-after-concat" (interpreterFailureCode = "RUNTIME_DIVIDE_BY_ZERO" && failureInputOwner.Decode() = [ longState ]) interpreterFailureCode
+    let failureBuffer = Array.create 80 0xA5uy
+    let failureBefore = Array.copy failureBuffer
+    let nativeFailure, nativeFailureMetrics =
+        try
+            failProgram.ExecuteInto([ longState ], stateCapacity, failureBuffer) |> ignore
+            "unexpected-success", null
+        with error -> diagnosticCode error, getProperty error "Metrics"
+    let nativeFailurePassed =
+        nativeFailure = "RUNTIME_DIVIDE_BY_ZERO"
+        && not (isNull nativeFailureMetrics)
+        && int64Property nativeFailureMetrics "DeepCopyBytes" > 0L
+        && int64Property nativeFailureMetrics "FinalCursorBytes" = 0L
+        && int64Property nativeFailureMetrics "FinalLiveStackBytes" = 0L
+        && failureBuffer = failureBefore
+    recordCheck checks failures $"owning-stack/{optimizationName}/String/failure-after-concat-unwinds-and-does-not-publish" nativeFailurePassed (jsonObject [
+        "diagnosticCode", box nativeFailure
+        "callerBufferUnchanged", box (bufferCheckDetails failureBefore failureBuffer)
+        "metrics", if isNull nativeFailureMetrics then null else jsonNode options (metricSummary nativeFailureMetrics) ])
+
+    let retainedFailureReports = ResizeArray<obj>()
+    for caseElement in mainCases do
+        let name = caseElement.GetProperty("name").GetString()
+        let inputValue, _ = compiledInputBodies[name]
+        let expectedBytes = bytesFromHex (caseElement.GetProperty("retainedBytesHex").GetString())
+        let sentinel = Array.create expectedBytes.Length 0xA5uy
+        let old = Array.copy sentinel
+        let available = expectedBytes.Length - 1
+        let failureCode, failureMetrics, required, actualAvailable, boundary =
+            try
+                turnProgram.ExecuteInto([ inputValue ], stateCapacity, sentinel, available) |> ignore
+                "unexpected-success", null, -1L, -1L, ""
+            with error ->
+                exceptionCode error,
+                getProperty error "Metrics",
+                optionalInt64 error "RequiredBytes",
+                optionalInt64 error "AvailableBytes",
+                (getProperty error "Boundary" |> string)
+        let passed = failureCode = "OWNING_RETAINED_CAPACITY" && boundary = "retained-output" && required = int64 expectedBytes.Length && actualAvailable = int64 available && sentinel = old && not (isNull failureMetrics) && int64Property failureMetrics "FinalCursorBytes" = 0L && int64Property failureMetrics "FinalLiveStackBytes" = 0L
+        recordCheck checks failures $"owning-stack/{optimizationName}/String/{name}/retained-capacity-atomicity" passed (jsonObject [
+            "code", box failureCode
+            "boundary", box boundary
+            "requiredBytes", box required
+            "availableBytes", box actualAvailable
+            "oldCallerBytesUnchanged", box (sentinel = old)
+            "metrics", if isNull failureMetrics then null else jsonNode options (metricSummary failureMetrics) ])
+        retainedFailureReports.Add(box (jsonObject [ "case", box name; "requiredBytes", box required; "availableBytes", box actualAvailable; "bufferUnchanged", box (sentinel = old) ]))
+
+    let longMetrics = metricsByCase["long-bmp-astral"]
+    let highWater = int64Property (box longMetrics) "ReservedStackBytes" + int64Property (box longMetrics) "ReservedLocalBytes"
+    let upperCapacity = int (max 0L (highWater - 1L))
+    let mutable selectedStackFailure = None
+    for available in upperCapacity .. -1 .. 0 do
+        if selectedStackFailure.IsNone then
+            let attemptOutput = Array.create 80 0xA5uy
+            let attemptBefore = Array.copy attemptOutput
+            try
+                turnProgram.ExecuteInto([ longState ], available, attemptOutput) |> ignore
+            with error ->
+                if exceptionCode error = "OWNING_STACK_CAPACITY" then
+                    let metrics = getProperty error "Metrics"
+                    let deepCopy = if isNull metrics then 0L else int64Property metrics "DeepCopyBytes"
+                    let frameReturns = if isNull metrics then 0L else int64Property metrics "FrameReturnCount"
+                    let traceCount = if isNull metrics then 0L else int64Property metrics "TraceEventCount"
+                    if deepCopy > 0L && frameReturns > 0L && traceCount > 0L then
+                        selectedStackFailure <- Some(error, metrics, available, deepCopy, frameReturns, traceCount, attemptOutput, attemptBefore)
+    match selectedStackFailure with
+    | None -> recordCheck checks failures $"owning-stack/{optimizationName}/String/program-stack-capacity-after-concat" false (jsonObject [
+        "searchUpperCapacityBytes", box upperCapacity
+        "successfulStackAndLocalHighWaterBytes", box highWater
+        "reason", box "No one-byte-under or lower stack capacity reached a capacity error after concat/copy events." ])
+    | Some(error, metrics, available, deepCopy, frameReturns, traceCount, attemptOutput, attemptBefore) ->
+        let capacityPassed =
+            exceptionCode error = "OWNING_STACK_CAPACITY"
+            && (getProperty error "Boundary" |> string) = "program-data-stack"
+            && deepCopy > 0L
+            && frameReturns > 0L
+            && traceCount > 0L
+            && int64Property metrics "FinalCursorBytes" = 0L
+            && int64Property metrics "FinalLiveStackBytes" = 0L
+            && attemptOutput = attemptBefore
+        recordCheck checks failures $"owning-stack/{optimizationName}/String/program-stack-capacity-after-concat" capacityPassed (jsonObject [
+            "capacityBytes", box available
+            "requiredBytes", box (getProperty error "RequiredBytes")
+            "availableBytes", box (getProperty error "AvailableBytes")
+            "deepCopyBytesBeforeFailure", box deepCopy
+            "helperFrameReturnsBeforeFailure", box frameReturns
+            "traceEventCountBeforeFailure", box traceCount
+            "callerBufferUnchanged", box (bufferCheckDetails attemptBefore attemptOutput)
+            "metrics", box (jsonNode options (metricSummary metrics)) ])
+
+    let stackFailureSummary: obj =
+        match selectedStackFailure with
+        | Some(error, metrics, available, deepCopy, frameReturns, traceCount, attemptOutput, attemptBefore) ->
+            box (jsonObject [
+                "availableBytes", box available
+                "requiredBytes", box (getProperty error "RequiredBytes")
+                "deepCopyBytesBeforeFailure", box deepCopy
+                "helperFrameReturnsBeforeFailure", box frameReturns
+                "traceEventCountBeforeFailure", box traceCount
+                "callerBufferUnchanged", box (attemptOutput = attemptBefore)
+                "metrics", jsonNode options (metricSummary metrics) ])
+        | None -> null
+    jsonObject [
+        "backend", box $"inline-owning-stack-strings/{optimizationName}"
+        "sameVerifiedProgramInstance", box true
+        "layoutSchemaVersion", box layoutSchemaVersion
+        "dynamicTypeLayouts", jsonNode options dynamicLayoutSummary
+        "interpreterCases", box (interpreterReports.ToArray())
+        "owningCases", box (owningReports.ToArray())
+        "directValueStringRoundTrips", box (roundTripReports.ToArray())
+        "joinedSurrogatePair", jsonObject [
+            "expectedBytes", box (bytesHex joinedBytes)
+            "actualBytes", box (bytesHex joinedOutput)
+            "metrics", jsonNode options (metricSummary joinedMetrics)
+            "concatSourceEvents", jsonNode options (layoutEventDetails concatEvents) ]
+        "mixedEmptyStringIntRecord", jsonObject [
+            "expectedRecordBytes", box (bytesHex mixedRecordBytes)
+            "actualRecordBytes", box (bytesHex mixedRecordOutput)
+            "projectedStringAndSentinelBytes", box (bytesHex mixedProjectionOutput)
+            "projectedEmptyTokenBytes", box (bytesHex mixedEmptyProjectionOutput)
+            "layout", box mixedLayoutDetails
+            "constructMetrics", box (jsonNode options (metricSummary mixedConstructMetrics))
+            "projectionMetrics", box (jsonNode options (metricSummary mixedProjectionMetrics))
+            "emptyProjectionMetrics", box (jsonNode options (metricSummary (box mixedEmptyProjectionResult.Metrics)))
+            "constructEvents", box (jsonNode options (layoutEventDetails mixedConstructEvents))
+            "projectionEvents", box (jsonNode options (layoutEventDetails mixedProjectionResult.LayoutEvents))
+            "emptyProjectionEvents", box (jsonNode options (layoutEventDetails mixedEmptyProjectionResult.LayoutEvents)) ]
+        "dynamicBranchJoins", box (dynamicBranchReports.ToArray())
+        "independentDynamicConcatCapacity", jsonObject [
+            "requiredStackCapacityBytes", box requiredStackBytes
+            "oneByteBelowAvailableBytes", box oneByteBelowCapacity
+            "failureCode", box exactCapacityFailureCode
+            "failureRequiredBytes", box exactCapacityFailureRequired
+            "failureAvailableBytes", box exactCapacityFailureAvailable
+            "failureCallerBufferUnchanged", box (exactCapacityFailureOutput = exactCapacityFailureBefore)
+            "exactBoundarySucceeded", box exactCapacitySuccessPassed
+            "exactBoundaryOutput", box (bytesHex exactCapacityOutput)
+            "failureMetrics", if isNull exactCapacityFailureMetrics then null else jsonNode options (metricSummary exactCapacityFailureMetrics)
+            "successMetrics", jsonNode options (metricSummary exactCapacityResultMetrics) ]
+        "directDupDrop", jsonObject [
+            "values", box (jsonNode options (codeUnitSafeValuesData duplicateResult.Values))
+            "bytes", box (bytesHex duplicateOutput)
+            "copyEvents", box (jsonNode options (layoutEventDetails duplicateCopyEvents))
+            "dropEvents", box (jsonNode options (layoutEventDetails duplicateDropEvents))
+            "metrics", box (jsonNode options (metricSummary (box duplicateResult.Metrics))) ]
+        "scopeShadowCases", box (scopeReports.ToArray())
+        "zeroOutputUserCall", jsonObject [
+            "values", box (codeUnitSafeValuesJson zeroResult.Values)
+            "retainedBytesWritten", box zeroResult.RetainedBytesWritten
+            "metrics", jsonNode options (metricSummary zeroMetrics) ]
+        "failureAfterConcat", jsonObject [
+            "interpreterDiagnostic", box interpreterFailureCode
+            "owningDiagnostic", box nativeFailure
+            "metrics", if isNull nativeFailureMetrics then null else jsonNode options (metricSummary nativeFailureMetrics) ]
+        "retainedCapacityFailures", box (retainedFailureReports.ToArray())
+        "programStackCapacityFailure", stackFailureSummary ]
+
+let private runLayoutDepthCases
+    (checks: ResizeArray<obj>)
+    (failures: ResizeArray<string>)
+    (options: JsonSerializerOptions)
+    (fixture: JsonElement)
+    (artifactRoot: string)
+    (optimization: LlvmOptimization)
+    (optimizationName: string) =
+    let boundary = fixture.GetProperty("stringWorkload").GetProperty("layoutDepthBoundary")
+    let acceptedLayoutLevels = boundary.GetProperty("maximumAcceptedLayoutLevels").GetInt32()
+    let acceptedRecordLevels = boundary.GetProperty("acceptedAcyclicRecordLevels").GetInt32()
+    let acceptedTopType = boundary.GetProperty("acceptedTopType").GetString()
+    let rejectedLayoutLevels = boundary.GetProperty("rejectedLayoutLevels").GetInt32()
+    let rejectedRecordLevels = boundary.GetProperty("rejectedAcyclicRecordLevels").GetInt32()
+    let rejectedTopType = boundary.GetProperty("rejectedTopType").GetString()
+    let expectedDiagnostic = boundary.GetProperty("diagnosticCode").GetString()
+    let supported = compileLayoutDepthCase acceptedRecordLevels
+    let tooDeep = compileLayoutDepthCase rejectedRecordLevels
+    let fixtureGeometryPassed =
+        acceptedLayoutLevels = supported.LayoutLevels
+        && rejectedLayoutLevels = tooDeep.LayoutLevels
+        && supported.TopTypeName = acceptedTopType
+        && tooDeep.TopTypeName = rejectedTopType
+        && boundary.GetProperty("rootLevelIs").GetInt32() = 1
+    let toolchain = LlvmToolchain.discover ()
+    use supportedProgram = OwningStackAot.compile toolchain optimization (Path.Combine(artifactRoot, "owning-stack", "layout-depth", optimizationName, $"layout-{acceptedLayoutLevels}")) supported.Body
+    let inputValue = layoutDepthValue supported
+    let output = Array.create 8 0xA5uy
+    let result = supportedProgram.ExecuteInto([ inputValue ], 4096, output)
+    let expected = bytesFromInt64s [ 42L ]
+    let layoutCount = result.Layouts |> List.length
+    let supportedPassed = fixtureGeometryPassed && result.Values = [ inputValue ] && output = expected && result.RetainedOutputBytes = expected
+    recordCheck checks failures $"owning-stack/{optimizationName}/layout-depth/{acceptedLayoutLevels}-layout-levels-accepted" supportedPassed (jsonObject [
+        "rootLevelIsOne", box (boundary.GetProperty("rootLevelIs").GetInt32() = 1)
+        "recordLevels", box supported.RecordLevels
+        "layoutLevelsIncludingScalarLeaf", box supported.LayoutLevels
+        "topType", box supported.TopTypeName
+        "typeLayoutCount", box layoutCount
+        "fixtureGeometryPassed", box fixtureGeometryPassed
+        "outputValueCount", box result.Values.Length
+        "outputMatchesDeepInput", box (result.Values = [ inputValue ])
+        "expectedRawBytes", box (bytesHex expected)
+        "actualRawBytes", box (bytesHex output)
+        "metrics", jsonNode options (metricSummary (box result.Metrics)) ])
+    checkTraceUsable checks failures $"owning-stack/{optimizationName}/layout-depth/{acceptedLayoutLevels}-level-trace-complete" result.Metrics result.LayoutEvents |> ignore
+    let rejectedCode, rejectedException =
+        try
+            use _unexpected = OwningStackAot.compile toolchain optimization (Path.Combine(artifactRoot, "owning-stack", "layout-depth", optimizationName, $"layout-{rejectedLayoutLevels}")) tooDeep.Body
+            "unexpected-success", null
+        with error -> diagnosticCode error, error
+    let rejectedPassed = fixtureGeometryPassed && rejectedCode = expectedDiagnostic
+    recordCheck checks failures $"owning-stack/{optimizationName}/layout-depth/{rejectedLayoutLevels}-layout-levels-rejected-before-native-entry" rejectedPassed (jsonObject [
+        "recordLevels", box tooDeep.RecordLevels
+        "layoutLevelsIncludingScalarLeaf", box tooDeep.LayoutLevels
+        "topType", box tooDeep.TopTypeName
+        "diagnosticCode", box rejectedCode
+        "expectedDiagnosticCode", box expectedDiagnostic
+        "fixtureGeometryPassed", box fixtureGeometryPassed
+        "diagnostic", if isNull rejectedException then null else box (rejectedException.ToString()) ])
+    jsonObject [
+        "optimization", box optimizationName
+        "acceptedLayoutLevels", box acceptedLayoutLevels
+        "acceptedRecordLevels", box acceptedRecordLevels
+        "acceptedTypeLayoutCount", box layoutCount
+        "acceptedMetrics", jsonNode options (metricSummary (box result.Metrics))
+        "rejectedLayoutLevels", box rejectedLayoutLevels
+        "rejectedRecordLevels", box rejectedRecordLevels
+        "rejectedDiagnosticCode", box rejectedCode ]
+
 [<EntryPoint>]
 let main argv =
     let reportPath =
@@ -1263,28 +2988,38 @@ let main argv =
         let sourceHash = hashFile sourcePath
         use fixtureDocument = JsonDocument.Parse(File.ReadAllText fixturePath)
         let fixture = fixtureDocument.RootElement
+        if fixture.GetProperty("schemaVersion").GetInt32() <> 2 then
+            invalidOp "The current native-value-stack fixture must use schemaVersion 2."
         let expectedSourceHash = fixture.GetProperty("source").GetProperty("sha256").GetString()
         recordCheck checks failures "fixture/source-hash" (String.Equals(sourceHash, expectedSourceHash, StringComparison.Ordinal)) (jsonObject [ "expected", box expectedSourceHash; "actual", box sourceHash ])
         let repetitions = fixture.GetProperty("repetitions").EnumerateArray() |> Seq.map (fun item -> item.GetInt32()) |> Seq.toArray
         if repetitions <> [| 1; 8 |] then invalidOp "The independent fixture must retain repetition counts 1 and 8."
         let generatedTurns = repetitions |> Array.map turnSource
         let depthSource = depthChainSource 65
-        let expandedSource = String.concat "\n\n" [ source; String.concat "\n\n" generatedTurns; depthSource ]
+        let stringRecordMarker = "record TextLeaf {"
+        let stringRecordStart = source.IndexOf(stringRecordMarker, StringComparison.Ordinal)
+        if stringRecordStart < 0 then invalidOp "The source fixture no longer contains the String workload boundary marker."
+        let fixedSource = source.Substring(0, stringRecordStart)
+        let expandedFixedSource = String.concat "\n\n" [ fixedSource; String.concat "\n\n" generatedTurns; depthSource ]
+        let expandedStringSource = String.concat "\n\n" [ source; String.concat "\n\n" generatedTurns; depthSource ]
         Directory.CreateDirectory(Path.GetDirectoryName reportPath) |> ignore
         Directory.CreateDirectory artifactsRoot |> ignore
-        File.WriteAllText(Path.Combine(Path.GetDirectoryName reportPath, "expanded-source.flow"), expandedSource, UTF8Encoding(false))
+        File.WriteAllText(Path.Combine(Path.GetDirectoryName reportPath, "expanded-fixed-source.flow"), expandedFixedSource, UTF8Encoding(false))
+        File.WriteAllText(Path.Combine(Path.GetDirectoryName reportPath, "expanded-string-source.flow"), expandedStringSource, UTF8Encoding(false))
         let turnHashes =
             repetitions
             |> Array.mapi (fun index count -> box (jsonObject [ "repetitions", box count; "sha256", box (hashText generatedTurns[index]) ]))
-        addCommonEntryReports report sourceHash expandedSource turnHashes
+        addCommonEntryReports report sourceHash expandedFixedSource turnHashes
+        report["stringExpandedSourceSha256"] <- box (hashText expandedStringSource)
         report["depthChain"] <- box (jsonObject [ "maxDepth", box 65; "sourceSha256", box (hashText depthSource); "shape", box "Static acyclic function chain; chain-64 enters 65 user bodies (depth 0 through 64), chain-65 enters 66 and crosses the language boundary." ])
         report["fixturePath"] <- box fixturePathFromRepo
-        let entries = compileEntries expandedSource
+        let entries = compileEntries expandedFixedSource
         let scopeShadowPassed, scopeShadowDetails = inspectScopeShadow entries.Program entries.ScopeShadow
         recordCheck checks failures "verified-ir/scope-shadow-same-local-slot-width-restore" scopeShadowPassed scopeShadowDetails
         report["scopeShadowIr"] <- scopeShadowDetails
         report["sameVerifiedProgramInstance"] <- box true
-        report["backendScope"] <- box "The same VerifiedIrBody objects are executed by the interpreter, ABI3 control, and inline owning-stack candidate."
+        report["fixedControlVerifiedProgramInstance"] <- box true
+        report["backendScope"] <- box "Within fixed controls, the same VerifiedIrBody objects are executed by interpreter, existing ABI3 LLVM sharedgraph, and inline owning-stack LLVM. ABI3 receives only the fixed nominal types."
         report["turnBoundaryScope"] <- box "Each owning-stack invocation publishes fixed State bytes into a caller-owned output buffer. Turn 2 is fed from an independent decode of turn 1's raw retained bytes through the Value input API; this validates publication and round-trip semantics across the host boundary, not a persistent native controller."
         report["limitations"] <- fixture.GetProperty("limits").EnumerateArray() |> Seq.map (fun value -> box (value.GetString())) |> Seq.toArray
         let optimizationPairs = [| LlvmOptimization.O0, "O0"; LlvmOptimization.O2, "O2" |]
@@ -1327,6 +3062,19 @@ let main argv =
                     "frameReturnGrowth", box frameDelta ]))
         report["runs"] <- runReports.ToArray()
         report["candidateRepetitionComparisons"] <- repetitionComparisons.ToArray()
+        let stringEntries = compileStringEntries expandedStringSource
+        let dynamicScopeShadowPassed, dynamicScopeShadowDetails = inspectDynamicScopeShadow stringEntries.Program stringEntries.ScopeShadow
+        recordCheck checks failures "verified-ir/dynamic-scope-shadow-same-local-slot" dynamicScopeShadowPassed dynamicScopeShadowDetails
+        report["stringScopeShadowIr"] <- dynamicScopeShadowDetails
+        report["stringVerifiedProgramInstance"] <- box true
+        report["stringBackendScope"] <- box "String cases share one compiler-authorized VerifiedIrProgram and exact VerifiedIrBody between interpreter and owning LLVM O0/O2. ABI3 String parity is unavailable because its closed native type registry rejects String and string.concat; fixed controls remain the three-way comparison. Interpreter fixture inputs are produced by compiler-verified literal factory bodies because its entry API accepts only Int/Bool/Unit arguments, while owning execution receives each varying nested TextState as a runtime Value input."
+        let stringRuns = ResizeArray<obj>()
+        let layoutDepthRuns = ResizeArray<obj>()
+        for optimization, optimizationName in optimizationPairs do
+            stringRuns.Add(box (runStringWorkload checks failures options fixture stringEntries artifactsRoot optimization optimizationName))
+            layoutDepthRuns.Add(box (runLayoutDepthCases checks failures options fixture artifactsRoot optimization optimizationName))
+        report["stringRuns"] <- stringRuns.ToArray()
+        report["layoutDepthRuns"] <- layoutDepthRuns.ToArray()
     with error ->
         let exceptionDetails =
             [ "Diagnostic"; "Metrics"; "RequiredBytes"; "AvailableBytes"; "Boundary" ]

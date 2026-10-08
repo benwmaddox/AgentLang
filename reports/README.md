@@ -8,6 +8,11 @@ Run `./scripts/Validate.ps1` from PowerShell to build the solution and run every
 
 Validation runs locally. The GitHub workflow is manual-only; milestone publication does not trigger a CI run. Human feedback and milestone conclusions belong in numbered Markdown reports here. Credentials must never appear in reports. Live provider traces can contain project information and should remain in the experiment's local output directory unless deliberately reviewed for publication.
 
+Prototype APIs, layouts and fixtures may change incompatibly. Keep one current
+design where practical rather than maintaining parallel versions. Preserve
+historical evidence for reproducibility; this is not a backwards-compatibility
+promise for the current implementation.
+
 On hosts where parallel MSBuild restore fails, `Validate.ps1 -SerialBuild` uses
 one build worker without omitting acceptance checks. If NuGet's vulnerability
 service is unavailable, `-SkipPackageAudit` explicitly disables that network
@@ -17,16 +22,18 @@ exact build arguments. `Verify-NativeDispatch.ps1` accepts the same options.
 
 Latest design research: [127 — Midori and Goose comparisons](127-memory-design-comparisons.md)
 records external architectural references and hypotheses for memory experiments.
-It is a documentation-only checkpoint; the owning-value implementation remains
-in progress and no external benchmark claim is treated as an AgentLang result.
+It is a documentation-only checkpoint preceding the native results below;
+no external benchmark claim is treated as an AgentLang result.
 
-Latest owning-memory checkpoint: [128 — Owning value-stack comparison](128-owning-value-stack.md)
-passes 462 cross-backend checks, 189 C storage assertions per configuration, and
-the 37-check local Release gate. Fixed-size nested values are stored inline with
-independent ownership and frame cleanup. Working extent stays at 288 bytes across
-one/eight repetitions; high fixed overhead and diagnostic instrumentation prevent
-a total-memory or throughput advantage claim. Variable-sized values, native
-owning mailbox integration, async, and JIT remain pending.
+Latest owning-memory checkpoint: [129 — Variable-sized owning values](129-variable-owning-values.md)
+passes 796 comparison checks, 29 verifier checks, 453 C storage assertions per
+configuration, and the 37-check local Release gate. Strings and nested records
+preserve independent inline ownership at LLVM O0/O2. Direct concat peaks at
+80 bytes versus 144 through the tested user-function wrapper; copying and
+instrumentation prevent a total-memory or throughput advantage claim. Packed
+locals conflict with the user's clarified rare-movement intent; stable arena
+payloads and bulk reset are the next implementation step. Native owning
+mailbox integration, real async I/O, and JIT remain pending.
 
 Previous native checkpoint: [126 — Standalone native mailbox dispatch](126-native-mailbox-dispatch.md)
 moves bounded turns and arena ownership out of the managed host. The native

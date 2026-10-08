@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="NativeAbi.fs" />
+    <Compile Include="NativeValues.fs" />
+    <Compile Include="NativeValueMetrics.fs" />
+    <Compile Include="LlvmToolchain.fs" />
+    <Compile Include="LlvmAot.fs" />
+    <Compile Include="OwningStackAot.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="native\arena_runtime.h" LogicalName="AgentLang.Llvm.native.arena_runtime.h" />
+    <EmbeddedResource Include="native\arena_runtime.c" LogicalName="AgentLang.Llvm.native.arena_runtime.c" />
+    <EmbeddedResource Include="native\module_abi.h" LogicalName="AgentLang.Llvm.native.module_abi.h" />
+    <EmbeddedResource Include="native\owning_stack_runtime.h" LogicalName="AgentLang.Llvm.native.owning_stack_runtime.h" />
+    <EmbeddedResource Include="native\owning_stack_runtime.c" LogicalName="AgentLang.Llvm.native.owning_stack_runtime.c" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AgentLang.Core\AgentLang.Core.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="AgentLang.Llvm.Tests" />
+  </ItemGroup>
+</Project>

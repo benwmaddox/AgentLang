@@ -1,0 +1,28 @@
+{
+  "purpose": "Old move-range expression must fail new live-gap regression",
+  "optimization": "O0",
+  "expectedExitCode": 1,
+  "actualExitCode": 1,
+  "files": [
+    {
+      "path": "frozen-test.c",
+      "sha256": "DB59090B6F0F12951B3DAA1020EB53B3E1A22EDF70CC614A04B8CCB6B75C2554"
+    },
+    {
+      "path": "owning_stack_runtime.h",
+      "sha256": "2BE81527EE0A912B7363F24B439363D7C57641D05C93F83BBB72CC0ACB7138CE"
+    },
+    {
+      "path": "old-range-runtime.c",
+      "sha256": "A441CB9C5F42EE19D6962D25DEFD159352FC0BDC9C9B50562BCE0DBF7F1F9814"
+    },
+    {
+      "path": "old-range-control.exe",
+      "sha256": "2D21E41E9D8408547CEC55AAA50DA17BA0D207B28EF059D04EBEF49688F68C13"
+    },
+    {
+      "path": "result.txt",
+      "sha256": "36895CA671BEA9C46B8EC0B76C923C87F7E6FB6338D0CB036EBB86107015EF85"
+    }
+  ]
+}

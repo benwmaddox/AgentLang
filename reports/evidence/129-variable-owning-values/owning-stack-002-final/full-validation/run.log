@@ -1,0 +1,270 @@
+build (exit 0)
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  AgentLang.Core -> D:\code\AgentLang\src\AgentLang.Core\bin\Release\net9.0\AgentLang.Core.dll
+  AgentLang.Cli -> D:\code\AgentLang\src\AgentLang.Cli\bin\Release\net9.0\AgentLang.Cli.dll
+  AgentLang.Acceptance -> D:\code\AgentLang\tests\AgentLang.Acceptance\bin\Release\net9.0\AgentLang.Acceptance.dll
+  AgentLang.Benchmarks -> D:\code\AgentLang\experiments\AgentLang.Benchmarks\bin\Release\net9.0\AgentLang.Benchmarks.dll
+  AgentLang.Business -> D:\code\AgentLang\experiments\AgentLang.Business\bin\Release\net9.0\AgentLang.Business.dll
+  AgentLang.Harness.Tests -> D:\code\AgentLang\tests\AgentLang.Harness.Tests\bin\Release\net9.0\AgentLang.Harness.Tests.dll
+  AgentLang.Business.Tests -> D:\code\AgentLang\tests\AgentLang.Business.Tests\bin\Release\net9.0\AgentLang.Business.Tests.dll
+  AgentLang.Conventional -> D:\code\AgentLang\experiments\AgentLang.Conventional\bin\Release\net9.0\AgentLang.Conventional.dll
+  AgentLang.Conventional.Tests -> D:\code\AgentLang\tests\AgentLang.Conventional.Tests\bin\Release\net9.0\AgentLang.Conventional.Tests.dll
+  AgentLang.Source.Tests -> D:\code\AgentLang\tests\AgentLang.Source.Tests\bin\Release\net9.0\AgentLang.Source.Tests.dll
+  AgentLang.Storage.Tests -> D:\code\AgentLang\tests\AgentLang.Storage.Tests\bin\Release\net9.0\AgentLang.Storage.Tests.dll
+  AgentLang.Discovery.Tests -> D:\code\AgentLang\tests\AgentLang.Discovery.Tests\bin\Release\net9.0\AgentLang.Discovery.Tests.dll
+  AgentLang.IR.Tests -> D:\code\AgentLang\tests\AgentLang.IR.Tests\bin\Release\net9.0\AgentLang.IR.Tests.dll
+  AgentLang.Vocabulary.Tests -> D:\code\AgentLang\tests\AgentLang.Vocabulary.Tests\bin\Release\net9.0\AgentLang.Vocabulary.Tests.dll
+  AgentLang.IR.Formatting.Tests -> D:\code\AgentLang\tests\AgentLang.IR.Formatting.Tests\bin\Release\net9.0\AgentLang.IR.Formatting.Tests.dll
+  AgentLang.IR.Interpreter.Tests -> D:\code\AgentLang\tests\AgentLang.IR.Interpreter.Tests\bin\Release\net9.0\AgentLang.IR.Interpreter.Tests.dll
+  AgentLang.TaskBank.Tests -> D:\code\AgentLang\tests\AgentLang.TaskBank.Tests\bin\Release\net9.0\AgentLang.TaskBank.Tests.dll
+  AgentLang.Business.Contracts -> D:\code\AgentLang\experiments\AgentLang.Business.Contracts\bin\Release\net9.0\AgentLang.Business.Contracts.dll
+  AgentLang.Business.Contracts.Tests -> D:\code\AgentLang\tests\AgentLang.Business.Contracts.Tests\bin\Release\net9.0\AgentLang.Business.Contracts.Tests.dll
+  AgentLang.ValueInspection.Tests -> D:\code\AgentLang\tests\AgentLang.ValueInspection.Tests\bin\Release\net9.0\AgentLang.ValueInspection.Tests.dll
+  AgentLang.Conventional.Cli -> D:\code\AgentLang\experiments\AgentLang.Conventional.Cli\bin\Release\net9.0\AgentLang.Conventional.Cli.dll
+  MatchedRenewal -> D:\code\AgentLang\experiments\AgentLang.SubagentTrials\matched-renewal-001\fixtures\conventional\bin\Release\net9.0\MatchedRenewal.dll
+  AgentLang.Conventional.Cli.Tests -> D:\code\AgentLang\tests\AgentLang.Conventional.Cli.Tests\bin\Release\net9.0\AgentLang.Conventional.Cli.Tests.dll
+  AgentLang.Flow.Tests -> D:\code\AgentLang\tests\AgentLang.Flow.Tests\bin\Release\net9.0\AgentLang.Flow.Tests.dll
+  AgentLang.Flow.Lint.Tests -> D:\code\AgentLang\tests\AgentLang.Flow.Lint.Tests\bin\Release\net9.0\AgentLang.Flow.Lint.Tests.dll
+  AgentLang.Flow.Runtime.Tests -> D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\bin\Release\net9.0\AgentLang.Flow.Runtime.Tests.dll
+  AgentLang.Cli.Tests -> D:\code\AgentLang\tests\AgentLang.Cli.Tests\bin\Release\net9.0\AgentLang.Cli.Tests.dll
+  MatchedRenewal.Flow -> D:\code\AgentLang\experiments\AgentLang.SubagentTrials\matched-renewal-001\fixtures\flow\conventional\bin\Release\net9.0\MatchedRenewal.Flow.dll
+  AgentLang.TrustedValues.Tests -> D:\code\AgentLang\tests\AgentLang.TrustedValues.Tests\bin\Release\net9.0\AgentLang.TrustedValues.Tests.dll
+  AgentLang.Business.Language.Tests -> D:\code\AgentLang\tests\AgentLang.Business.Language.Tests\bin\Release\net9.0\AgentLang.Business.Language.Tests.dll
+  AgentLang.Business.Transitions.Tests -> D:\code\AgentLang\tests\AgentLang.Business.Transitions.Tests\bin\Release\net9.0\AgentLang.Business.Transitions.Tests.dll
+  AgentLang.Llvm -> D:\code\AgentLang\src\AgentLang.Llvm\bin\Release\net9.0\AgentLang.Llvm.dll
+  AgentLang.Llvm.Tests -> D:\code\AgentLang\tests\AgentLang.Llvm.Tests\bin\Release\net9.0\AgentLang.Llvm.Tests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:01:14.60
+language-acceptance (exit 0)
+PASS JSON-lines protocol and eval
+PASS checked numeric boundaries
+PASS effects and capability boundary
+PASS Customer records, locals, and branches
+PASS test-gated project commits
+PASS candidate dependency persistence
+PASS selected metadata dependency closure
+PASS temporary metadata dependency rejection
+PASS temporary session isolation
+PASS scoped replacement and discard
+PASS scoped test metadata persistence
+PASS replacement caller tests gate durable updates
+PASS stable word identity lifecycle
+PASS runtime error test expectations
+PASS typed value-expression expectations
+PASS expectation-only dependency persistence
+PASS expected-expression rename and coverage isolation
+PASS strict structured eval and publication
+PASS nominal and refined types
+PASS validator rejection
+PASS type-only commit
+PASS frozen validator replacement
+PASS raw source-site coverage identity
+PASS library coverage gate
+PASS task abort rollback
+PASS task commit temporary cleanup
+PASS task logs survive reload
+PASS task log failures remain truthful warnings
+PASS named snapshot restores project and providers
+PASS semantic rename and deprecation
+PASS typed containers and syntax metadata
+PASS container library coverage
+PASS live bounded Discovery commands
+PASS compact word inventory
+PASS verified IR runtime snapshots and formatter
+All 35 acceptance groups passed (632 assertions).
+harness-acceptance (exit 0)
+PASS: 249 harness assertions
+business-acceptance (exit 0)
+PASS nominal identifiers and Email policy
+PASS checked minor-unit arithmetic and price invariants
+PASS immutable store and lookup
+PASS subscription lifecycle
+PASS invoice totals and validation
+PASS payment provider boundary and receipt
+PASS email outbox and provider isolation
+Business reference: 7 groups, 113 assertions
+business-contracts-acceptance (exit 0)
+PASS deterministic baseline and canonical hash
+PASS strict versioned document parsing
+PASS identifiers, email policy, and normalization
+PASS exact money, time, and quantity representations
+PASS complete wire round-trip
+PASS immutable Store projection and identity ledger
+PASS fragment expansion and unsupported fields
+PASS 7 groups, 69 assertions
+trusted-values-acceptance (exit 0)
+PASS GUID normalization and canonical storage
+PASS Email validation against the conventional fixture
+PASS checked Int64 arithmetic against BigInteger and Money
+PASS exact ratio scaling against an independent BigInteger oracle
+PASS instant parsing against the immutable contract
+PASS canonical UTC comparison and day arithmetic
+PASS primitive metadata and typed IR execution
+PASS typed IR runtime and failure boundaries
+Trusted values tests: 8 groups, 3206 assertions
+business-language-acceptance (exit 0)
+PASS fixture and authored cases
+PASS nominal identifiers, Email, and normalized instants against oracle
+PASS Money checked arithmetic and signed Int32 quantity against oracle
+PASS constructor validation, trimming precedence, and public-record boundary
+PASS Store empty, multi-add, duplicate rejection, lookup order, and nominal rejection
+PASS library/type commit, source and metadata persistence, and fresh reload
+PASS Flow/2 Money ratio wrapper, independent oracle, and fresh reload
+PASS 7 groups, 6325 assertions; 112 attached tests; 27 examples; 36 words and 27 types persisted and reloaded.
+business-transitions-acceptance (exit 0)
+PASS fixture tests and examples
+PASS deterministic seed, full-state projection, and strong types
+PASS subscription start, cancel, and error precedence
+PASS invoice lines, totals, and creation
+PASS payment and email transition contracts
+PASS stateful renewal, billing, payment, and FIFO retry
+FINITE AUDIT INCOMPLETE email.delivery-fold-step missing=[return[0] EmailDeliveryPlan: $.first: none] unsupported=[]
+PASS dependency graph, effects, library coverage, and reload
+PASS Flow/2 populated delivery extension and independent FIFO oracle
+PASS Flow/2 validated record lookup and Bool path coverage
+PASS 9 groups, 5479 assertions; baseline: 154 tests and 44 examples per run, 53 words and 31 types; populated delivery extension: 7 tests, 3 examples, 2 words, and 1 types; validated lookup extension: 3 tests, 2 examples, 1 words, and 1 types.
+value-inspection-acceptance (exit 0)
+PASS nested values and snapshot schema
+PASS nominal distinction and ordering
+PASS lossless integer and float encoding
+PASS invalid host values and snapshots
+PASS deterministic limits
+AgentLang.ValueInspection.Tests: 48 assertions passed.
+source-acceptance (exit 0)
+All source tests passed (101 assertions).
+flow-acceptance (exit 0)
+Flow tests passed: 1110 assertions
+flow-lint-acceptance (exit 0)
+AgentLang.Flow.Lint.Tests: 68 assertions passed.
+flow-runtime-acceptance (exit 0)
+Flow Runtime tests passed: 30 groups, 1023 assertions.
+cli-acceptance (exit 0)
+PASS CLI frontend selection and protocol authority
+PASS compact and full words CLI requests
+PASS Flow parser-driven interactive buffering
+PASS Flow incomplete EOF and malformed recovery
+PASS runtime help topics match protocol and recover from malformed input
+PASS Flow file definition, CAS, and stable source identity
+PASS Flow type source inspection and durable reload
+PASS migrated Flow examples and fresh-process durability
+PASS explicit Stack REPL retains end blocks
+PASS Flow/2 CLI selection, properties, temporary functions and reload
+PASS Flow/2 human formatting is an explicit nonmutating operation
+PASS 11 groups, 145 assertions
+storage-acceptance (exit 0)
+Storage tests passed: 16 groups, 370 assertions.
+conventional-acceptance (exit 0)
+PASS: 167 conventional tool assertions
+conventional-cli-acceptance (exit 0)
+PASS default and custom exact limits
+PASS excess mutation rejected before dispatch
+PASS top-level and nested patch JSONL recovery
+PASS patch respects the request limit
+PASS malformed lines consume request budget
+PASS default 100 request boundary
+PASS invalid startup is rejected before dispatch
+PASS 7 groups, 322 assertions
+discovery-acceptance (exit 0)
+AgentLang.Discovery.Tests: 106 assertions passed.
+ir-acceptance (exit 0)
+PASS closed effect vocabulary
+PASS concrete primitive specializations
+PASS list.tail primitive contract
+PASS closed container constructors
+PASS structured branches and coverage
+PASS closed synthetic source classifications
+PASS Option and Result payload scope
+PASS closed enum verifier invariants
+PASS finite Bool, Unit, Option, Result, and finite record domains
+PASS finite independent inputs and nominal enum identity
+PASS finite coverage projections in open and nested records
+PASS finite unsupported and bounded domains
+PASS finite coverage rejects malformed generic metadata
+PASS generated record and scalar operations
+PASS static callbacks and effects
+PASS typed list fold verification
+PASS identity and call-graph guards
+PASS flat verifier stack safety
+PASS compiler lowering and detached bodies
+PASS attached Flow source origins
+PASS compiler snapshot identity
+AgentLang.IR.Tests: 191 assertions passed.
+ir-formatting-acceptance (exit 0)
+PASS verified authored function and branches
+PASS callbacks locals and nominal closure
+PASS generated and primitive documents
+PASS structured lookup errors
+PASS protocol depth guard
+AgentLang.IR.Formatting.Tests: 44 assertions passed.
+ir-interpreter-acceptance (exit 0)
+IR Interpreter tests passed (93 assertions).
+vocabulary-acceptance (exit 0)
+AgentLang.Vocabulary.Tests: 36 assertions passed.
+task-bank-acceptance (exit 0)
+Task-bank validator passed: 2114 assertions, 60 tasks, 180 proposed vectors (minimum 3 / maximum 3 cases per task).
+flow-call-binding-probe (exit 0)
+Core checkpoint: D:\code\AgentLang\src\AgentLang.Core\bin\Release\net9.0\AgentLang.Core.dll
+Core LastWriteTimeUtc: 10/8/2026 2:23:40 PM
+Core SHA256: 7bf1200a323b132edcc9670dde92aa24f05691e0f08fbb1b21ef583379905e38
+Flow call-binding probe passed 31 assertions.
+fresh-process-projection (exit 0)
+Persistence projection verification passed. Evidence: D:\code\AgentLang\.agentlang\owning-stack-002\full-validation\validation.projection.json
+matched-renewal-fixtures (exit 0)
+70 matched fixture checks passed. Evidence: D:\code\AgentLang\.agentlang\owning-stack-002\full-validation\validation.matched-fixtures.json
+flow-matched-renewal-fixtures (exit 0)
+129 Flow matched fixture checks passed. Evidence: D:\code\AgentLang\.agentlang\owning-stack-002\full-validation\validation.flow-matched-fixtures.json
+matched-renewal-snapshots (exit 0)
+26 frozen snapshot checks passed. Evidence: D:\code\AgentLang\.agentlang\owning-stack-002\full-validation\validation.matched-snapshots.json
+flow-renewal-acceptance-gate (exit 0)
+70 renewal acceptance regression checks passed. Evidence: D:\code\AgentLang\.agentlang\owning-stack-002\full-validation\validation.renewal-acceptance-gate.json
+flow-renewal-replay (exit 0)
+45 Flow renewal replay checks passed. Evidence: D:\code\AgentLang\.agentlang\owning-stack-002\full-validation\validation.renewal-replay.json
+early-agent-negative-controls (exit 0)
+5 wrong library solutions rejected: 2 at finite-value library qualification and 3 by independent result acceptance. Evidence: D:\code\AgentLang\.agentlang\owning-stack-002\full-validation\validation.early-agent-negative.json
+subagent-trial-host (exit 0)
+Verification passed: 33 checks. Evidence: D:\code\AgentLang\.agentlang\owning-stack-002\full-validation\validation.subagent-host.json
+subagent-trial-host-v2 (exit 0)
+V2 focused verification passed: 29 checks. Evidence: D:\code\AgentLang\.agentlang\owning-stack-002\full-validation\validation.subagent-host-v2.json
+parser-process-limits (exit 0)
+D:\code\AgentLang\.agentlang\owning-stack-002\full-validation\validation.parser-limits.json
+[{"name":"bounded host exited cleanly","passed":true},{"name":"exactly three responses","passed":true},{"name":"deep type rejected structurally","passed":true},{"name":"deep block rejected structurally","passed":true},{"name":"process remains usable after errors","passed":true}]
+business-policy-preflight (exit 0)
+growing/correct/S01: independent passed=True, expected=True
+growing/correct/S06: independent passed=True, expected=True
+growing/correct/S07: independent passed=True, expected=True
+growing/noop/S01: independent passed=False, expected=False
+growing/noop/S06: independent passed=False, expected=False
+growing/noop/S07: independent passed=False, expected=False
+growing/wrong-trim/S01: independent passed=False, expected=False
+growing/wrong-rate/S06: independent passed=False, expected=False
+growing/wrong-rounding/S07: independent passed=False, expected=False
+growing/wrong-overflow/S07: independent passed=False, expected=False
+flat/correct/S01: independent passed=True, expected=True
+flat/correct/S06: independent passed=True, expected=True
+flat/correct/S07: independent passed=True, expected=True
+flat/noop/S01: independent passed=False, expected=False
+flat/noop/S06: independent passed=False, expected=False
+flat/noop/S07: independent passed=False, expected=False
+flat/wrong-trim/S01: independent passed=False, expected=False
+flat/wrong-rate/S06: independent passed=False, expected=False
+flat/wrong-rounding/S07: independent passed=False, expected=False
+flat/wrong-overflow/S07: independent passed=False, expected=False
+conventional/correct/S01: independent passed=True, expected=True
+conventional/correct/S06: independent passed=True, expected=True
+conventional/correct/S07: independent passed=True, expected=True
+conventional/noop/S01: independent passed=False, expected=False
+conventional/noop/S06: independent passed=False, expected=False
+conventional/noop/S07: independent passed=False, expected=False
+conventional/wrong-trim/S01: independent passed=False, expected=False
+conventional/wrong-rate/S06: independent passed=False, expected=False
+conventional/wrong-rounding/S07: independent passed=False, expected=False
+conventional/wrong-overflow/S07: independent passed=False, expected=False
+Business policy preflight passes 98 checks across 30 independent outcomes.
+diff-whitespace (exit 0)
+staged-diff-whitespace (exit 0)
+Saved validation evidence: D:\code\AgentLang\.agentlang\owning-stack-002\full-validation\validation.json

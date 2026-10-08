@@ -1,0 +1,157 @@
+{
+  "suite": "owning_stack_runtime_storage_v2",
+  "validated_at": "2026-10-08T11:27:27-04:00",
+  "compiler": {
+    "path": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\Llvm\\x64\\bin\\clang.exe",
+    "version": "clang version 19.1.5",
+    "target": "x86_64-pc-windows-msvc"
+  },
+  "commands": [
+    "clang -std=c11 -Wall -Wextra -Werror -O0 src/AgentLang.Llvm/native/owning_stack_runtime_test.c src/AgentLang.Llvm/native/owning_stack_runtime.c -o .agentlang/owning-stack-002/storage-tests/storage-o0.exe",
+    "clang -std=c11 -Wall -Wextra -Werror -O2 src/AgentLang.Llvm/native/owning_stack_runtime_test.c src/AgentLang.Llvm/native/owning_stack_runtime.c -o .agentlang/owning-stack-002/storage-tests/storage-o2.exe",
+    "clang -std=c11 -Wall -Wextra -Werror -O2 -fsanitize=undefined -fsanitize-trap=undefined src/AgentLang.Llvm/native/owning_stack_runtime_test.c src/AgentLang.Llvm/native/owning_stack_runtime.c -o .agentlang/owning-stack-002/storage-tests/storage-ubsan-trap.exe"
+  ],
+  "results": {
+    "o0": {
+      "exit_code": 0,
+      "status": "pass",
+      "cases": 36,
+      "checks": 453,
+      "dynamic_cases": 20,
+      "dynamic_checks": 264
+    },
+    "o2": {
+      "exit_code": 0,
+      "status": "pass",
+      "cases": 36,
+      "checks": 453,
+      "dynamic_cases": 20,
+      "dynamic_checks": 264
+    },
+    "ubsan_trap": {
+      "exit_code": 0,
+      "status": "pass",
+      "cases": 36,
+      "checks": 453,
+      "dynamic_cases": 20,
+      "dynamic_checks": 264,
+      "flags": [
+        "-fsanitize=undefined",
+        "-fsanitize-trap=undefined"
+      ]
+    }
+  },
+  "metrics": {
+    "fixed_baseline": {
+      "cases": 16,
+      "checks": 189,
+      "peak_operand_bytes": 48,
+      "peak_local_bytes": 16,
+      "peak_cursor_bytes": 56,
+      "max_stack_capacity_bytes": 64
+    },
+    "dynamic_cases": {
+      "cases": 20,
+      "checks": 264
+    },
+    "all_cases_peak_operand_bytes": 128,
+    "all_cases_peak_local_bytes": 42,
+    "all_cases_max_stack_capacity_bytes": 128,
+    "all_cases_peak_cursor_bytes": 128,
+    "all_cases_peak_local_reserved_bytes": 48,
+    "bitmap_bytes_each": 16,
+    "bitmap_total_bytes": 32,
+    "trace_event_count": 32,
+    "trace_event_capacity": 32,
+    "trace_bytes": 1280,
+    "layout_validation_memo_table_bytes": 8192,
+    "layout_max_types": 4096,
+    "layout_max_fields": 65536,
+    "layout_max_depth": 64
+  },
+  "source_sha256": {
+    "src/AgentLang.Llvm/native/owning_stack_runtime.c": "238BF036CDAB0323BE8E7EE5B67E983A3FF1434F7F0F8B4E6597DB5126D3E458",
+    "src/AgentLang.Llvm/native/owning_stack_runtime.h": "2BE81527EE0A912B7363F24B439363D7C57641D05C93F83BBB72CC0ACB7138CE",
+    "src/AgentLang.Llvm/native/owning_stack_runtime_test.c": "DB59090B6F0F12951B3DAA1020EB53B3E1A22EDF70CC614A04B8CCB6B75C2554"
+  },
+  "executable_sha256": {
+    "storage-o0.exe": "CFAFBE01E616E4B7D74533F87EC3A6E6AB1BF39C4DD699EDDB03D714B7ACC45D",
+    "storage-o2.exe": "BD729F2B35DE00DD199FAD07FE0446F7A035AC274A7B97A3B29A02612874164B",
+    "storage-ubsan-trap.exe": "AEFC4948D71310776F59072686CAD2632C57197487C588E36D1169B91176289A"
+  },
+  "freestanding_link_validation": {
+    "compiler_flags": [
+      "--target=x86_64-pc-windows-msvc",
+      "-std=c11",
+      "-ffreestanding",
+      "-fno-builtin",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-O0/-O2",
+      "-c"
+    ],
+    "nm_check": "llvm-nm --undefined-only",
+    "link_flags": [
+      "/dll",
+      "/noentry",
+      "/nodefaultlib",
+      "/machine:x64"
+    ],
+    "static_runtime": "MSVC 14.44.35207 libcmt.lib",
+    "o0": {
+      "undefined_symbols": [
+        "__chkstk"
+      ],
+      "memset_reference": false,
+      "dll_link": "pass",
+      "object_sha256": "D2C6E081A0212EFBBB414BB165CA67DB542EB33A547478130F5DC8AFC19646E0",
+      "dll_sha256": "7B1FDD82B351000CC55F3D9ACCBA06CB6D748133CD0430230AC5A43AB6DAA04E"
+    },
+    "o2": {
+      "undefined_symbols": [
+        "__chkstk"
+      ],
+      "memset_reference": false,
+      "dll_link": "pass",
+      "object_sha256": "1D3D025A3CE8F83BB0ED4CA97705647E74B56D3AC04A3EE380ADFBDB4AA9D600",
+      "dll_sha256": "BD37BA8882F7B2AEBAB378062DFF7608AC51E4EE2610694158A597D70463537C"
+    },
+    "combined_module_source": ".agentlang/owning-stack-002/smoke-run/native-output/owning-stack/O0/initialize/owning-stack-native.ll",
+    "combined_module_source_sha256": "DE289A87CBE8358DBC0738802FEF81D3987F1919BFB7C7C81819F79936E0F389",
+    "combined_module_source_note": "Freshly compiled from the smoke-run LLVM IR at O0 and O2; linked with matching fresh runtime objects.",
+    "combined_o0": {
+      "module_object_sha256": "558D151A45CBE74220ABE1403A8E44671CE5AD10C96C4BA771080A42613F3238",
+      "module_unresolved_symbols": "al_owning_* exports only",
+      "dll_link": "pass",
+      "combined_dll_sha256": "9B671514F7F9B0A2CA81EB50F4E1660445F8A0CFD5C0C8D2B5697A9B3ADB18B6"
+    },
+    "combined_o2": {
+      "module_object_sha256": "22D52DD306D3B8B998476ACC6A970FE205D9DFB635D8AEB8B8A000E317F317F4",
+      "module_unresolved_symbols": "al_owning_* exports only",
+      "dll_link": "pass",
+      "combined_dll_sha256": "B7EA624048CDE62FD811E763C6CFC8CC783D765F60C54ECEE11361964698B5CA"
+    },
+    "runtime_compile_commands": [
+      "clang --target=x86_64-pc-windows-msvc -std=c11 -ffreestanding -fno-builtin -Wall -Wextra -Werror -O0 -c src/AgentLang.Llvm/native/owning_stack_runtime.c -I src/AgentLang.Llvm/native -o .agentlang/owning-stack-002/storage-tests/runtime-freestanding-O0.obj",
+      "clang --target=x86_64-pc-windows-msvc -std=c11 -ffreestanding -fno-builtin -Wall -Wextra -Werror -O2 -c src/AgentLang.Llvm/native/owning_stack_runtime.c -I src/AgentLang.Llvm/native -o .agentlang/owning-stack-002/storage-tests/runtime-freestanding-O2.obj"
+    ],
+    "runtime_standalone_link_commands": [
+      "lld-link /dll /noentry /nodefaultlib /machine:x64 /out:.agentlang/owning-stack-002/storage-tests/runtime-freestanding-O0.dll .agentlang/owning-stack-002/storage-tests/runtime-freestanding-O0.obj \"C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC\\14.44.35207\\lib\\x64\\libcmt.lib\"",
+      "lld-link /dll /noentry /nodefaultlib /machine:x64 /out:.agentlang/owning-stack-002/storage-tests/runtime-freestanding-O2.dll .agentlang/owning-stack-002/storage-tests/runtime-freestanding-O2.obj \"C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC\\14.44.35207\\lib\\x64\\libcmt.lib\""
+    ],
+    "combined_link_commands": [
+      "clang --target=x86_64-pc-windows-msvc -x ir -c .agentlang/owning-stack-002/smoke-run/native-output/owning-stack/O0/initialize/owning-stack-native.ll -O0 -o .agentlang/owning-stack-002/storage-tests/module-fresh-ir-O0.obj",
+      "lld-link /dll /noentry /nodefaultlib /machine:x64 /out:.agentlang/owning-stack-002/storage-tests/combined-freestanding-O0.dll .agentlang/owning-stack-002/storage-tests/module-fresh-ir-O0.obj .agentlang/owning-stack-002/storage-tests/runtime-freestanding-O0.obj \"C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC\\14.44.35207\\lib\\x64\\libcmt.lib\"",
+      "clang --target=x86_64-pc-windows-msvc -x ir -c .agentlang/owning-stack-002/smoke-run/native-output/owning-stack/O0/initialize/owning-stack-native.ll -O2 -o .agentlang/owning-stack-002/storage-tests/module-fresh-ir-O2.obj",
+      "lld-link /dll /noentry /nodefaultlib /machine:x64 /out:.agentlang/owning-stack-002/storage-tests/combined-freestanding-O2.dll .agentlang/owning-stack-002/storage-tests/module-fresh-ir-O2.obj .agentlang/owning-stack-002/storage-tests/runtime-freestanding-O2.obj \"C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC\\14.44.35207\\lib\\x64\\libcmt.lib\""
+    ]
+  },
+  "gap_poison_mutation_control": {
+    "mutated_runtime_sha256": "A441CB9C5F42EE19D6962D25DEFD159352FC0BDC9C9B50562BCE0DBF7F1F9814",
+    "test_sha256": "DB59090B6F0F12951B3DAA1020EB53B3E1A22EDF70CC614A04B8CCB6B75C2554",
+    "expected_result": "fail on disjoint left-move gap bytes with the old min(destination_end,source_end) clearing rule",
+    "exit_code": 1,
+    "evidence_directory": ".agentlang/owning-stack-002/gap-regression-control"
+  }
+}

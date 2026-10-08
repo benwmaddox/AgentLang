@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "archive": "reports/evidence/129-variable-owning-values/owning-stack-002-final",
+  "purpose": "Final variable-sized owning-stack validation and source snapshot",
+  "run": {
+    "runId": "d6b52498c0ca46a08ae5b309c28a6f40",
+    "startedUtc": "2026-10-08T15:57:52.578191Z",
+    "completedUtc": "2026-10-08T15:59:01.6450646Z",
+    "verifierPassed": true,
+    "verifierChecks": {
+      "passed": 29,
+      "total": 29
+    },
+    "sourceInputsStable": true,
+    "sourceInputCount": 39,
+    "sourceHashIndex": "source-input-hashes.json",
+    "comparisonChecks": {
+      "passed": 796,
+      "total": 796
+    },
+    "fullValidationPassed": true,
+    "fullValidationChecks": {
+      "passed": 37,
+      "total": 37
+    },
+    "legacyRegressionAssertions": 476,
+    "nativeStorage": {
+      "suite": "owning_stack_runtime_storage_v2",
+      "cases": 36,
+      "checks": 453,
+      "fixedBaselineCases": 16,
+      "fixedBaselineChecks": 189,
+      "dynamicCases": 20,
+      "dynamicChecks": 264,
+      "variants": [
+        "O0",
+        "O2",
+        "UBSan-trap"
+      ]
+    },
+    "normalUbsan": {
+      "outcome": "link-unavailable",
+      "limitation": "The MSVC-target standalone UBSan runtime failed to link Windows symbolizer/runtime imports; the trap sanitizer is validated separately."
+    },
+    "performanceClaim": "None; this archive records correctness, storage, and validation evidence only."
+  },
+  "toolchain": {
+    "dotnet": {
+      "path": "C:\\Program Files\\dotnet\\dotnet.exe",
+      "sha256": "65f08e5f087ef76325a019b13159ddedac551bb23827ae552f806a818acbee78"
+    },
+    "clang": {
+      "path": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\Llvm\\x64\\bin\\clang.exe",
+      "sha256": "c5d3d309c036d1666d50500e87be514dc9916adc427e7aec267c95178bec14ff"
+    }
+  },
+  "contents": {
+    "sourceSnapshots": 39,
+    "verifierRunFiles": 22,
+    "generatedLlFiles": 82,
+    "fullValidationFiles": 13,
+    "legacyRegressionLogs": 2,
+    "planningReviewFiles": 8,
+    "payloadFiles": 166,
+    "payloadUncompressedBytes": 31484584,
+    "manifest": "manifest.json",
+    "sourceInputHashes": "source-input-hashes.json",
+    "fullValidationReports": "full-validation/",
+    "generatedIr": "generated-ir/",
+    "reviewNotes": [
+      "plan.md",
+      "implementation-plan.md",
+      "comparison-plan.md",
+      "region-comparison-plan.md",
+      "contract-review.md",
+      "trace-review.md",
+      "fixture-structural-audit.json",
+      "foundation-build.log"
+    ]
+  },
+  "limits": [
+    "Normal UBSan runtime did not link on the MSVC target; UBSan trap mode passed separately.",
+    "No performance or throughput comparison is claimed.",
+    "This archive excludes generated binaries, compiler temporary directories, and unrelated or failed verification runs."
+  ],
+  "manifestSha256": "c7175f85f8d638b83e0691050a56d994bf18e568dbe8864705f744e75ed8b9bf",
+  "sourceInputHashesSha256": "011cab6297380a0a7d91a7b92ef656654a199cc213838db28bc97cf45274c567"
+}

@@ -1,0 +1,1 @@
+FAIL D:\code\AgentLang\.agentlang\owning-stack-002\gap-regression-control\frozen-test.c:1469: memcmp(ctx->stack_data, expected_destination, 32u) == 0 && memcmp(ctx->stack_data + 32u, expected_gap, 32u) == 0 && memcmp(ctx->stack_data + 64u, poisoned, 32u) == 0 && memcmp(ctx->stack_data + 96u, expected_tail, 32u) == 0
