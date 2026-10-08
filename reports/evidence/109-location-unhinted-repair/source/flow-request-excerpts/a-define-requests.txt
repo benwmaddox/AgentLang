@@ -1,0 +1,121 @@
+EXTRACTED FROM SUCCESSFUL DEFINE REQUESTS IN THE PRESERVED TRACE.
+Request metadata only; this is not an independent stored-source readback.
+
+--- event=18; expectedRevision=; responseRevision=2; sourceSha256=9067b88be009133193af416c04b7b328872b669a45f6168a0a952cb243237dfa ---
+test customer.discounted-balance/positive-rounding {
+    let customer = customer::new(
+        id = CustomerId::new("10000000-0000-0000-0000-000000000001"),
+        email = Email::new("ada@example.test"),
+        kind = "premium",
+        balance = Money::new(1001),
+        created-at = Instant::new("2026-01-01T12:00:00.0000000+00:00"));
+    Money::value(customer::discounted-balance(customer)) => 900
+}
+
+test customer.discounted-balance/negative-rounding {
+    let customer = customer::new(
+        id = CustomerId::new("10000000-0000-0000-0000-000000000002"),
+        email = Email::new("ada@example.test"),
+        kind = "premium",
+        balance = Money::new(-1001),
+        created-at = Instant::new("2026-01-01T12:00:00.0000000+00:00"));
+    Money::value(customer::discounted-balance(customer)) => -900
+}
+
+test customer.discounted-balance/premium-int64-max {
+    let customer = customer::new(
+        id = CustomerId::new("10000000-0000-0000-0000-000000000003"),
+        email = Email::new("ada@example.test"),
+        kind = "premium",
+        balance = Money::new(9223372036854775807),
+        created-at = Instant::new("2026-01-01T12:00:00.0000000+00:00"));
+    Money::value(customer::discounted-balance(customer)) => 8301034831768417226
+}
+
+test customer.discounted-balance/premium-int64-min {
+    let customer = customer::new(
+        id = CustomerId::new("10000000-0000-0000-0000-000000000004"),
+        email = Email::new("ada@example.test"),
+        kind = "premium",
+        balance = Money::new(-9223372036854775808),
+        created-at = Instant::new("2026-01-01T12:00:00.0000000+00:00"));
+    Money::value(customer::discounted-balance(customer)) => -8301034831768417227
+}
+
+test customer.discounted-balance/premium-case-sensitive {
+    let customer = customer::new(
+        id = CustomerId::new("10000000-0000-0000-0000-000000000005"),
+        email = Email::new("ada@example.test"),
+        kind = "Premium",
+        balance = Money::new(1001),
+        created-at = Instant::new("2026-01-01T12:00:00.0000000+00:00"));
+    Money::value(customer::discounted-balance(customer)) => 1001
+}
+
+test customer.discounted-balance/premium-no-normalization {
+    let customer = customer::new(
+        id = CustomerId::new("10000000-0000-0000-0000-000000000006"),
+        email = Email::new("ada@example.test"),
+        kind = " premium",
+        balance = Money::new(-1001),
+        created-at = Instant::new("2026-01-01T12:00:00.0000000+00:00"));
+    Money::value(customer::discounted-balance(customer)) => -1001
+}
+
+--- event=20; expectedRevision=2; responseRevision=3; sourceSha256=e5be8990f5eb8358176495de927df9f27d61d6361e519efdfbc6ad79e3721b6b ---
+word customer.discounted-balance(customer: Customer) -> Money {
+    effects none
+    doc "For customers whose raw kind is exactly premium, returns 90 percent of the signed balance with the final fractional minor unit truncated toward zero; other kinds keep their balance."
+    let balance = customer::balance(customer);
+    if customer::premium?(customer) {
+        let minor-units = Money::value(balance);
+        let tens = ::divide(minor-units, 10);
+        let remainder = ::subtract(minor-units, ::multiply(tens, 10));
+        let whole-percent = ::multiply(tens, 9);
+        let remainder-percent = ::divide(::multiply(remainder, 9), 10);
+        Money::new(::add(whole-percent, remainder-percent))
+    } else {
+        balance
+    }
+}
+
+--- event=25; expectedRevision=3; responseRevision=4; sourceSha256=ef1a4974f367bfa4b9bcb0fa6764fca14a37bc3a97fa3125e571a44df118c3fa ---
+test customer.discounted-balance/premium-positive-fraction {
+    let customer = customer::new(
+        id = CustomerId::new("10000000-0000-0000-0000-000000000101"),
+        email = Email::new("ada@example.test"),
+        kind = "premium",
+        balance = Money::new(1059),
+        created-at = Instant::new("2026-01-01T12:00:00.0000000+00:00"));
+    Money::value(customer::discounted-balance(customer)) => 953
+}
+
+test customer.discounted-balance/premium-negative-fraction {
+    let customer = customer::new(
+        id = CustomerId::new("10000000-0000-0000-0000-000000000102"),
+        email = Email::new("ada@example.test"),
+        kind = "premium",
+        balance = Money::new(-1059),
+        created-at = Instant::new("2026-01-01T12:00:00.0000000+00:00"));
+    Money::value(customer::discounted-balance(customer)) => -953
+}
+
+test customer.discounted-balance/premium-int64-max {
+    let customer = customer::new(
+        id = CustomerId::new("10000000-0000-0000-0000-000000000103"),
+        email = Email::new("ada@example.test"),
+        kind = "premium",
+        balance = Money::new(9223372036854775807),
+        created-at = Instant::new("2026-01-01T12:00:00.0000000+00:00"));
+    Money::value(customer::discounted-balance(customer)) => 8301034833169298226
+}
+
+test customer.discounted-balance/premium-int64-min {
+    let customer = customer::new(
+        id = CustomerId::new("10000000-0000-0000-0000-000000000104"),
+        email = Email::new("ada@example.test"),
+        kind = "premium",
+        balance = Money::new(-9223372036854775808),
+        created-at = Instant::new("2026-01-01T12:00:00.0000000+00:00"));
+    Money::value(customer::discounted-balance(customer)) => -8301034833169298227
+}

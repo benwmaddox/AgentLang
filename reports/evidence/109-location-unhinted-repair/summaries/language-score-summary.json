@@ -1,0 +1,38 @@
+[
+  {
+    "actor": "a",
+    "stage": "before",
+    "behaviorPassed": false,
+    "cases": 54,
+    "passed": 42,
+    "preservation": true,
+    "metadataPassed": false
+  },
+  {
+    "actor": "a",
+    "stage": "after",
+    "behaviorPassed": true,
+    "cases": 54,
+    "passed": 54,
+    "preservation": true,
+    "metadataPassed": false
+  },
+  {
+    "actor": "b",
+    "stage": "before",
+    "behaviorPassed": false,
+    "cases": 54,
+    "passed": 42,
+    "preservation": true,
+    "metadataPassed": false
+  },
+  {
+    "actor": "b",
+    "stage": "after",
+    "behaviorPassed": true,
+    "cases": 54,
+    "passed": 54,
+    "preservation": true,
+    "metadataPassed": false
+  }
+]

@@ -1,0 +1,20 @@
+[
+  {
+    "actor": "a",
+    "condition": "retained",
+    "archive": "reports/evidence/102-defect-repair/starts-retained.zip",
+    "sha256": "27c6910433d42d0b75e810ef823dd6c7afab329cb099fd95e08f1dc5f61fa211"
+  },
+  {
+    "actor": "b",
+    "condition": "reset",
+    "archive": "reports/evidence/102-defect-repair/starts-reset.zip",
+    "sha256": "af651a1019208451f921749efd2200e8137786adeec594d7fce13e98d54c25ac"
+  },
+  {
+    "actor": "c",
+    "condition": "conventional",
+    "archive": "reports/evidence/102-defect-repair/starts-conventional.zip",
+    "sha256": "b07711c2296fcc9093b90391e772743fcb206c449ac8370951fe17939ba41ce4"
+  }
+]

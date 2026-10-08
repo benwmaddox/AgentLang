@@ -1,0 +1,19 @@
+Conventional independent read-only audit (native_record_plan, 2026-10-07)
+
+Before 42/54; after 54/54 distinct independent cases. Build/test/probe exit 0.
+Own tests increased from 3 to 26, plus 7 unchanged seed checks.
+Only Operations.fs and SelfTests.fs differ. Domain.fs, Program.fs, project,
+and pinned Business DLL hashes are unchanged; original seed-test body unchanged.
+
+q=balance/10000, r=balance%10000, q*9000+r*9000/10000 implements
+trunc(balance*9/10) with bounded intermediates across signed Int64.
+Raw kind matching is ordinal and exact.
+
+Strict unrelated-operation preservation is unmet: isPremium and
+ discountBasisPoints changed from throwing placeholders to working public
+functions and are now used by the target. This is observable behavior expansion,
+not evidence of incorrect pricing. The 54-case S07 oracle and seven seed checks
+do not independently assess the S01/S06 helper interfaces. Actor-authored helper
+checks are not independent acceptance.
+
+No actor contact, other-arm inspection, builds, or test runs in this audit.

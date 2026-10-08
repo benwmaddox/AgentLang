@@ -44,6 +44,14 @@ Next actions:
    repaired study is deferred by the user's instruction to compare sooner;
    its prior freeze requirements still apply if that study is resumed.
 
+3. The location-unhinted repair comparison is complete ([report 109](../reports/109-location-unhinted-repair.md)):
+   all three fresh actors pass 54/54 target cases. Both language conditions
+   preserve vocabulary; F# also fills two unfinished pricing helpers. This
+   supports discovery/repair feasibility, not comparative superiority. Next
+   bounded research should use an unfamiliar rule/refactor, current Flow/2,
+   equivalent implemented helper topology and independent expected values.
+   Avoid repeatedly retesting this one pricing defect or expanding the harness.
+
 Acceptance is an evidence-backed review of the declared conditions, including
 their limitations. Completing a language feature or passing actor-written tests
 alone is not acceptance of the research hypothesis.

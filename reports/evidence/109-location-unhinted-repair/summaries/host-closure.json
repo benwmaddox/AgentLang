@@ -1,0 +1,15 @@
+{
+  "b": {
+    "limitation": "No terminal exit code recorded; do not claim clean shutdown",
+    "traceSessionEnd": false,
+    "processCheck": "Win32_Process found no matching dotnet/pwsh host command after excluding observer",
+    "actorCloseResult": "Unknown process id on Ctrl+C and same-handle poll",
+    "session": 4837
+  },
+  "a": {
+    "traceHostExit": 0,
+    "traceRuntimeExit": 0,
+    "actorReportedExit": 0,
+    "session": 97617
+  }
+}

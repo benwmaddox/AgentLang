@@ -1,0 +1,3 @@
+Investigate a billing discrepancy: premium customer quotes can differ by a minor currency unit from the pricing policy. Find the responsible behavior, repair it, and add or correct relevant regression tests.
+
+Policy: a customer's raw kind qualifies only when it is exactly "premium", with ordinal case-sensitive matching and no normalization. Qualified customers pay 90% of their signed balance; truncate only the final fractional minor unit toward zero. Other customers keep their balance unchanged. All signed Int64 balances are valid inputs. Preserve unrelated operations, types, tests and public signatures. Keep pure effects and durable library qualification where supported. Report the behavior you found and the tests you actually ran.

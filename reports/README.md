@@ -13,6 +13,10 @@ finds that discovery, typed composition and vocabulary reuse work, but comparati
 reliability superiority remains unproven. [102 — Guided defect repair](102-guided-defect-repair-comparison.md)
 records successful repairs in retained, reset and conventional F# conditions;
 it does not establish blind defect discovery or a correctness advantage.
+[109 — Location-unhinted repair](109-location-unhinted-repair.md) adds three fresh
+actors: all repair the unnamed target to 54/54 independent cases. Vocabulary is
+preserved in the language conditions; F# also completes two existing placeholders.
+Fixture differences and one actor per condition preclude a superiority claim.
 
 The latest ownership demonstration is [108 — Native handler mailbox suspension](108-native-mailbox-suspension.md):
 120 checks across Core/O0/O2, with readable Flow/2 handlers and opaque retained

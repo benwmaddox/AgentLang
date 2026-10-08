@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "archives": [
+    {
+      "path": "source/starts-a.zip",
+      "bytes": 407109,
+      "sha256": "499c11bcc367659f4881bc4468531a4794c177d35e40c5d7bd2d9b899316eca7",
+      "entries": 307,
+      "entriesVerified": true
+    },
+    {
+      "path": "source/finals-a.zip",
+      "bytes": 487686,
+      "sha256": "d0bc4641739280467b721a67ecd662117cb4704e50c77ca6b8dc5abcff69962e",
+      "entries": 319,
+      "entriesVerified": true
+    },
+    {
+      "path": "source/starts-b.zip",
+      "bytes": 329932,
+      "sha256": "9cc65baed34aea78a593c8201587f2518245991d8e3a79caa7c35ef16ff89dae",
+      "entries": 296,
+      "entriesVerified": true
+    },
+    {
+      "path": "source/finals-b.zip",
+      "bytes": 407116,
+      "sha256": "af4f77b708c1c0e17fbde5878a24195d56172f45bab1149cfc9f438be19b3258",
+      "entries": 306,
+      "entriesVerified": true
+    },
+    {
+      "path": "source/starts-c.zip",
+      "bytes": 55547,
+      "sha256": "ace58d2261d48dd5791ae1d68bfe2ec479c5cd8ac26a1d0d2ad29288a9be0190",
+      "entries": 6,
+      "entriesVerified": true
+    },
+    {
+      "path": "source/finals-c.zip",
+      "bytes": 55979,
+      "sha256": "5aa3e9f97c27b84026557ebf844879a83b130667d91924f2675fa2ecada81fb0",
+      "entries": 6,
+      "entriesVerified": true
+    },
+    {
+      "path": "raw-evidence.zip",
+      "bytes": 1641241,
+      "sha256": "1eb40fcc4b1d1d958729d3bc7b4a2c60511f2e859ff5d2b6d7a0ae8f73c3bb70",
+      "entries": 645,
+      "entriesVerified": true
+    }
+  ],
+  "archiveCount": 7,
+  "archiveEntriesVerified": 1885,
+  "allEntryHashesMatch": true,
+  "archiveEntryManifest": "archive-entry-hashes.json",
+  "hiddenStorageCounts": [
+    {
+      "archive": "source/starts-a.zip",
+      "hiddenAgentlangEntries": 299
+    },
+    {
+      "archive": "source/finals-a.zip",
+      "hiddenAgentlangEntries": 310
+    },
+    {
+      "archive": "source/starts-b.zip",
+      "hiddenAgentlangEntries": 289
+    },
+    {
+      "archive": "source/finals-b.zip",
+      "hiddenAgentlangEntries": 298
+    }
+  ],
+  "conventionalBinObjEntries": 0,
+  "packageTextFilesScanned": 36,
+  "packageCredentialPatternMatches": 0,
+  "trialTextFilesScanned": 1900,
+  "trialCredentialPatternMatches": 0,
+  "priorScorerPathsAndHashesVerifiedAgainst102Index": true,
+  "packageFileHashesVerifiedAfterIndexRefresh": true,
+  "generatedIndexFilesUtf8LfNoBom": true,
+  "fileCountExcludingIndex": 42,
+  "indexExcludesItself": true
+}

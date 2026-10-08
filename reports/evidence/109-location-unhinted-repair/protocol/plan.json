@@ -1,0 +1,39 @@
+{
+  "kind": "location-unhinted-repair",
+  "baseCommit": "fc0e8f6c7abd0fe65d4524ce1928904092990604",
+  "createdUtc": "2026-10-07T23:58:08.5530824+00:00",
+  "model": "gpt-6-luna",
+  "reasoning": "max",
+  "freshActors": true,
+  "mapping": [
+    {
+      "actor": "a",
+      "condition": "retained",
+      "archive": "reports/evidence/102-defect-repair/starts-retained.zip",
+      "sha256": "27c6910433d42d0b75e810ef823dd6c7afab329cb099fd95e08f1dc5f61fa211"
+    },
+    {
+      "actor": "b",
+      "condition": "reset",
+      "archive": "reports/evidence/102-defect-repair/starts-reset.zip",
+      "sha256": "af651a1019208451f921749efd2200e8137786adeec594d7fce13e98d54c25ac"
+    },
+    {
+      "actor": "c",
+      "condition": "conventional",
+      "archive": "reports/evidence/102-defect-repair/starts-conventional.zip",
+      "sha256": "b07711c2296fcc9093b90391e772743fcb206c449ac8370951fe17939ba41ce4"
+    }
+  ],
+  "task": "Investigate a billing discrepancy: premium customer quotes can differ by a minor currency unit from the pricing policy. Find the responsible behavior, repair it, and add or correct relevant regression tests.\n\nPolicy: a customer's raw kind qualifies only when it is exactly \"premium\", with ordinal case-sensitive matching and no normalization. Qualified customers pay 90% of their signed balance; truncate only the final fractional minor unit toward zero. Other customers keep their balance unchanged. All signed Int64 balances are valid inputs. Preserve unrelated operations, types, tests and public signatures. Keep pure effects and durable library qualification where supported. Report the behavior you found and the tests you actually ran.",
+  "syntax": "frozen Flow/1",
+  "maxLanguageExchanges": 100,
+  "acceptance": "existing54casebehavior; unrelatedpreservation; own tests/library qualification; compare separatelyfromfullstudymetadata",
+  "limitations": [
+    "one actor per condition",
+    "pricing specification supplied; not blind defect discovery",
+    "instructional access isolation",
+    "no controlled token/latency measurement",
+    "not a Flow2 comparison"
+  ]
+}

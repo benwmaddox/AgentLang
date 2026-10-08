@@ -1,0 +1,302 @@
+[
+  {
+    "index": 1,
+    "op": "words",
+    "word": null,
+    "name": null,
+    "ok": true,
+    "text": "224 word(s).",
+    "tests": 0,
+    "failed": 0
+  },
+  {
+    "index": 2,
+    "op": "task.begin",
+    "word": null,
+    "name": null,
+    "ok": true,
+    "text": "Started task-0001.",
+    "tests": 0,
+    "failed": 0
+  },
+  {
+    "index": 3,
+    "op": "describe",
+    "word": "customer.discounted-balance",
+    "name": null,
+    "ok": true,
+    "text": "Description for customer.discounted-balance.",
+    "tests": 0,
+    "failed": 0
+  },
+  {
+    "index": 4,
+    "op": "source",
+    "word": "customer.discounted-balance",
+    "name": null,
+    "ok": true,
+    "text": "word customer.discounted-balance(customer: Customer) -> Money {\n    effects none\n    doc \"For raw kind exactly premium, subtracts one tenth of the balance truncated toward zero; other kinds keep their balance.\"\n    let balance = customer::balance(customer);\n    if ::equals(customer::kind(customer), \"premium\") {\n        let minor-units = Money::value(balance);\n        let discount = ::divide(minor-units, 10);\n        Money::new(::subtract(minor-units, discount))\n    } else {\n        balance\n    }\n}",
+    "tests": 0,
+    "failed": 0
+  },
+  {
+    "index": 5,
+    "op": "tests",
+    "word": "customer.discounted-balance",
+    "name": null,
+    "ok": true,
+    "text": "3 attached test(s).",
+    "tests": 0,
+    "failed": 0
+  },
+  {
+    "index": 6,
+    "op": "help",
+    "word": null,
+    "name": null,
+    "ok": true,
+    "text": "Define Flow source",
+    "tests": 0,
+    "failed": 0
+  },
+  {
+    "index": 7,
+    "op": "help",
+    "word": null,
+    "name": null,
+    "ok": true,
+    "text": "Replace a word",
+    "tests": 0,
+    "failed": 0
+  },
+  {
+    "index": 8,
+    "op": "context",
+    "word": "customer.discounted-balance",
+    "name": null,
+    "ok": true,
+    "text": "Budgeted context for 'customer.discounted-balance'.",
+    "tests": 0,
+    "failed": 0
+  },
+  {
+    "index": 9,
+    "op": "describe",
+    "word": "divide",
+    "name": null,
+    "ok": true,
+    "text": "Description for divide.",
+    "tests": 0,
+    "failed": 0
+  },
+  {
+    "index": 10,
+    "op": "describe",
+    "word": "multiply",
+    "name": null,
+    "ok": true,
+    "text": "Description for multiply.",
+    "tests": 0,
+    "failed": 0
+  },
+  {
+    "index": 11,
+    "op": "describe",
+    "word": "int.multiply-checked",
+    "name": null,
+    "ok": true,
+    "text": "Description for int.multiply-checked.",
+    "tests": 0,
+    "failed": 0
+  },
+  {
+    "index": 12,
+    "op": "describe",
+    "word": "subtract",
+    "name": null,
+    "ok": true,
+    "text": "Description for subtract.",
+    "tests": 0,
+    "failed": 0
+  },
+  {
+    "index": 13,
+    "op": "describe",
+    "word": "add",
+    "name": null,
+    "ok": true,
+    "text": "Description for add.",
+    "tests": 0,
+    "failed": 0
+  },
+  {
+    "index": 14,
+    "op": "describe",
+    "word": "customer.new",
+    "name": null,
+    "ok": true,
+    "text": "Description for customer.new.",
+    "tests": 0,
+    "failed": 0
+  },
+  {
+    "index": 15,
+    "op": "source",
+    "word": "customer.new",
+    "name": null,
+    "ok": true,
+    "text": "record Customer {\r\n    field id: CustomerId;\r\n    field email: Email;\r\n    field kind: String;\r\n    field balance: Money;\r\n    field created-at: Instant;\r\n}",
+    "tests": 0,
+    "failed": 0
+  },
+  {
+    "index": 16,
+    "op": "describe",
+    "word": "customer.create",
+    "name": null,
+    "ok": true,
+    "text": "Description for customer.create.",
+    "tests": 0,
+    "failed": 0
+  },
+  {
+    "index": 17,
+    "op": "describe",
+    "word": "CustomerId.new",
+    "name": null,
+    "ok": true,
+    "text": "Description for CustomerId.new.",
+    "tests": 0,
+    "failed": 0
+  },
+  {
+    "index": 18,
+    "op": "describe",
+    "word": "Email.new",
+    "name": null,
+    "ok": true,
+    "text": "Description for Email.new.",
+    "tests": 0,
+    "failed": 0
+  },
+  {
+    "index": 19,
+    "op": "describe",
+    "word": "Instant.new",
+    "name": null,
+    "ok": true,
+    "text": "Description for Instant.new.",
+    "tests": 0,
+    "failed": 0
+  },
+  {
+    "index": 20,
+    "op": "describe",
+    "word": "business.seed",
+    "name": null,
+    "ok": true,
+    "text": "Description for business.seed.",
+    "tests": 0,
+    "failed": 0
+  },
+  {
+    "index": 21,
+    "op": "source",
+    "word": "business.seed",
+    "name": null,
+    "ok": true,
+    "text": "word business.seed(value: Unit) -> Store {\n    effects none\n    doc \"Create the deterministic baseline customer, product, and subscription.\"\n    let customer-id = CustomerId::new(\"10000000-0000-0000-0000-000000000001\");\n    let product-id = ProductId::new(\"20000000-0000-0000-0000-000000000001\");\n    let customer = customer::new(\n        id = customer-id,\n        email = Email::new(\"ada@example.test\"),\n        kind = \"regular\",\n        balance = Money::new(1250),\n        created-at = Instant::new(\"2026-01-01T12:00:00.0000000+00:00\"));\n    let product = product::new(\n        id = product-id,\n        name = \"Monthly plan\",\n        unit-price = Money::new(199));\n    let subscription = subscription::new(\n        id = SubscriptionId::new(\"30000000-0000-0000-0000-000000000001\"),\n        customer-id = customer-id,\n        product-id = product-id,\n        term = \"monthly\",\n        started-at = Instant::new(\"2026-01-02T12:00:00.0000000+00:00\"),\n        expires-at = Instant::new(\"2026-02-01T12:00:00.0000000+00:00\"),\n        status = SubscriptionStatus::new(\"active\"),\n        cancelled-at = option::none<Instant>());\n    store::new(\n        customers = list::singleton<Customer>(customer),\n        products = list::singleton<Product>(product),\n        subscriptions = list::singleton<Subscription>(subscription),\n        invoices = list::empty<Invoice>(),\n        payments = list::empty<Payment>(),\n        email-outbox = list::empty<EmailMessage>(),\n        sent-emails = list::empty<EmailMessage>())\n}",
+    "tests": 0,
+    "failed": 0
+  },
+  {
+    "index": 22,
+    "op": "test",
+    "word": "customer.discounted-balance",
+    "name": null,
+    "ok": true,
+    "text": "3/3 test(s) passed.",
+    "tests": 3,
+    "failed": 0
+  },
+  {
+    "index": 23,
+    "op": "define",
+    "word": null,
+    "name": null,
+    "ok": true,
+    "text": "Flow definition, tests, examples, and retained source bindings validated and staged.",
+    "tests": 0,
+    "failed": 0
+  },
+  {
+    "index": 24,
+    "op": "test",
+    "word": "customer.discounted-balance",
+    "name": null,
+    "ok": true,
+    "text": "5/7 test(s) passed.",
+    "tests": 7,
+    "failed": 2
+  },
+  {
+    "index": 25,
+    "op": "describe",
+    "word": "customer.discounted-balance",
+    "name": null,
+    "ok": true,
+    "text": "Description for customer.discounted-balance.",
+    "tests": 0,
+    "failed": 0
+  },
+  {
+    "index": 26,
+    "op": "define",
+    "word": null,
+    "name": null,
+    "ok": true,
+    "text": "Flow definition, tests, examples, and retained source bindings validated and staged.",
+    "tests": 0,
+    "failed": 0
+  },
+  {
+    "index": 27,
+    "op": "test",
+    "word": "customer.discounted-balance",
+    "name": null,
+    "ok": true,
+    "text": "7/7 test(s) passed.",
+    "tests": 7,
+    "failed": 0
+  },
+  {
+    "index": 28,
+    "op": "replace-word",
+    "word": "customer.discounted-balance",
+    "name": null,
+    "ok": true,
+    "text": "Replacement of 'customer.discounted-balance' passed caller checks and was committed.",
+    "tests": 0,
+    "failed": 0
+  },
+  {
+    "index": 29,
+    "op": "task.commit",
+    "word": null,
+    "name": null,
+    "ok": true,
+    "text": "Task committed and temporary words were cleared. The task log was saved.",
+    "tests": 0,
+    "failed": 0
+  },
+  {
+    "index": 30,
+    "op": "test",
+    "word": "customer.discounted-balance",
+    "name": null,
+    "ok": true,
+    "text": "7/7 test(s) passed.",
+    "tests": 7,
+    "failed": 0
+  }
+]

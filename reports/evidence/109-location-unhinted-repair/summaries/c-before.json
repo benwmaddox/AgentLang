@@ -1,0 +1,377 @@
+{
+  "label": "location-unhinted-conventional-before",
+  "project": "D:\\code\\AgentLang\\.agentlang\\location-unhinted-001\\starts\\c",
+  "buildExit": 0,
+  "build": [
+    "  Determining projects to restore...",
+    "  Restored D:\\code\\AgentLang\\.agentlang\\location-unhinted-001\\starts\\c\\BusinessPolicy.fsproj (in 189 ms).",
+    "  BusinessPolicy -> D:\\code\\AgentLang\\.agentlang\\repair-comparison-001\\build-location-unhinted-conventional-before\\bin\\BusinessPolicy\\release\\BusinessPolicy.dll",
+    "",
+    "Build succeeded.",
+    "    0 Warning(s)",
+    "    0 Error(s)",
+    "",
+    "Time Elapsed 00:00:02.33"
+  ],
+  "testExit": 0,
+  "testOutput": [
+    "Seed checks passed: 7",
+    "Own checks passed: 3"
+  ],
+  "probeExit": 0,
+  "expectedCount": 54,
+  "actualCount": 54,
+  "passedCount": 42,
+  "cases": [
+    {
+      "id": "premium-1",
+      "expected": "0",
+      "actual": "0",
+      "passed": true
+    },
+    {
+      "id": "premium-2",
+      "expected": "0",
+      "actual": "1",
+      "passed": false
+    },
+    {
+      "id": "premium-3",
+      "expected": "8",
+      "actual": "9",
+      "passed": false
+    },
+    {
+      "id": "premium-4",
+      "expected": "9",
+      "actual": "9",
+      "passed": true
+    },
+    {
+      "id": "premium-5",
+      "expected": "9",
+      "actual": "10",
+      "passed": false
+    },
+    {
+      "id": "premium-6",
+      "expected": "17",
+      "actual": "18",
+      "passed": false
+    },
+    {
+      "id": "premium-7",
+      "expected": "18",
+      "actual": "18",
+      "passed": true
+    },
+    {
+      "id": "premium-8",
+      "expected": "945",
+      "actual": "945",
+      "passed": true
+    },
+    {
+      "id": "premium-9",
+      "expected": "0",
+      "actual": "-1",
+      "passed": false
+    },
+    {
+      "id": "premium-10",
+      "expected": "-8",
+      "actual": "-9",
+      "passed": false
+    },
+    {
+      "id": "premium-11",
+      "expected": "-9",
+      "actual": "-9",
+      "passed": true
+    },
+    {
+      "id": "premium-12",
+      "expected": "-9",
+      "actual": "-10",
+      "passed": false
+    },
+    {
+      "id": "premium-13",
+      "expected": "-17",
+      "actual": "-18",
+      "passed": false
+    },
+    {
+      "id": "premium-14",
+      "expected": "-945",
+      "actual": "-945",
+      "passed": true
+    },
+    {
+      "id": "premium-15",
+      "expected": "8106479329266893",
+      "actual": "8106479329266894",
+      "passed": false
+    },
+    {
+      "id": "premium-16",
+      "expected": "-8106479329266893",
+      "actual": "-8106479329266894",
+      "passed": false
+    },
+    {
+      "id": "premium-17",
+      "expected": "8301034833169298226",
+      "actual": "8301034833169298227",
+      "passed": false
+    },
+    {
+      "id": "premium-18",
+      "expected": "-8301034833169298227",
+      "actual": "-8301034833169298228",
+      "passed": false
+    },
+    {
+      "id": "nonpremium-1-1",
+      "expected": "1",
+      "actual": "1",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-1-2",
+      "expected": "-1050",
+      "actual": "-1050",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-1-3",
+      "expected": "9223372036854775807",
+      "actual": "9223372036854775807",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-1-4",
+      "expected": "-9223372036854775808",
+      "actual": "-9223372036854775808",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-2-1",
+      "expected": "1",
+      "actual": "1",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-2-2",
+      "expected": "-1050",
+      "actual": "-1050",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-2-3",
+      "expected": "9223372036854775807",
+      "actual": "9223372036854775807",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-2-4",
+      "expected": "-9223372036854775808",
+      "actual": "-9223372036854775808",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-3-1",
+      "expected": "1",
+      "actual": "1",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-3-2",
+      "expected": "-1050",
+      "actual": "-1050",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-3-3",
+      "expected": "9223372036854775807",
+      "actual": "9223372036854775807",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-3-4",
+      "expected": "-9223372036854775808",
+      "actual": "-9223372036854775808",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-4-1",
+      "expected": "1",
+      "actual": "1",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-4-2",
+      "expected": "-1050",
+      "actual": "-1050",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-4-3",
+      "expected": "9223372036854775807",
+      "actual": "9223372036854775807",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-4-4",
+      "expected": "-9223372036854775808",
+      "actual": "-9223372036854775808",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-5-1",
+      "expected": "1",
+      "actual": "1",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-5-2",
+      "expected": "-1050",
+      "actual": "-1050",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-5-3",
+      "expected": "9223372036854775807",
+      "actual": "9223372036854775807",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-5-4",
+      "expected": "-9223372036854775808",
+      "actual": "-9223372036854775808",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-6-1",
+      "expected": "1",
+      "actual": "1",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-6-2",
+      "expected": "-1050",
+      "actual": "-1050",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-6-3",
+      "expected": "9223372036854775807",
+      "actual": "9223372036854775807",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-6-4",
+      "expected": "-9223372036854775808",
+      "actual": "-9223372036854775808",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-7-1",
+      "expected": "1",
+      "actual": "1",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-7-2",
+      "expected": "-1050",
+      "actual": "-1050",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-7-3",
+      "expected": "9223372036854775807",
+      "actual": "9223372036854775807",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-7-4",
+      "expected": "-9223372036854775808",
+      "actual": "-9223372036854775808",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-8-1",
+      "expected": "1",
+      "actual": "1",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-8-2",
+      "expected": "-1050",
+      "actual": "-1050",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-8-3",
+      "expected": "9223372036854775807",
+      "actual": "9223372036854775807",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-8-4",
+      "expected": "-9223372036854775808",
+      "actual": "-9223372036854775808",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-9-1",
+      "expected": "1",
+      "actual": "1",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-9-2",
+      "expected": "-1050",
+      "actual": "-1050",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-9-3",
+      "expected": "9223372036854775807",
+      "actual": "9223372036854775807",
+      "passed": true
+    },
+    {
+      "id": "nonpremium-9-4",
+      "expected": "-9223372036854775808",
+      "actual": "-9223372036854775808",
+      "passed": true
+    }
+  ],
+  "projectFiles": [
+    {
+      "path": "BusinessPolicy.fsproj",
+      "sha256": "ce2978afdd5ccadb638425c1b25a428e8334c65b983689d8526e7c082412c650"
+    },
+    {
+      "path": "Domain.fs",
+      "sha256": "564012a232c9f2f162a87109c8e6926d0d6352dd8222b3d9be5cfb466d7fca85"
+    },
+    {
+      "path": "Operations.fs",
+      "sha256": "94fcffb57cc67d8471a778e84913fbec2a9c611e3f72df23e0cc35d76c2e8447"
+    },
+    {
+      "path": "Program.fs",
+      "sha256": "b9e5a7257aada4cb6564be3a3dce35ffff0a672cf4b5c29838a27c0327b0f04f"
+    },
+    {
+      "path": "SelfTests.fs",
+      "sha256": "93ae97c88b662f7b9a9f7fa0ba9e1c57e2f5bb262f8d4b099722799bb4b994bf"
+    },
+    {
+      "path": "lib\\AgentLang.Business.dll",
+      "sha256": "41f0b6f0f44ac73f0b899090dc7dcd3f3d56129176b172ceca96cba9e638a13d"
+    }
+  ]
+}

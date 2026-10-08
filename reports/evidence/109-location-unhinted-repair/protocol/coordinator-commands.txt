@@ -1,0 +1,19 @@
+Coordinator-reported command invocations, not a shell transcript.
+
+Retained after:
+pwsh -NoProfile -File scripts/Verify-RetentionTrial.ps1 -Arm retained -Block B1 -TaskId S07 -RunId R04 -ProjectPath .agentlang/location-unhinted-001/actors/a -StartingProjectPath .agentlang/quick-comparison-001/starts/retained -CliDll src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll -EvidencePath .agentlang/location-unhinted-001/results/a-after.json
+Before used ProjectPath .agentlang/location-unhinted-001/starts/a and EvidencePath .agentlang/location-unhinted-001/results/a-before.json.
+
+Reset-rich after:
+pwsh -NoProfile -File scripts/Verify-RetentionTrial.ps1 -Arm reset-rich -Block B1 -TaskId S07 -RunId R06 -ProjectPath .agentlang/location-unhinted-001/actors/b -StartingProjectPath .agentlang/quick-comparison-001/starts/reset -CliDll src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll -EvidencePath .agentlang/location-unhinted-001/results/b-after.json
+Before used ProjectPath .agentlang/location-unhinted-001/starts/b and EvidencePath .agentlang/location-unhinted-001/results/b-before.json.
+
+Conventional after:
+pwsh -NoProfile -File reports/evidence/102-defect-repair/score-conventional.ps1 -Project D:\code\AgentLang\.agentlang\location-unhinted-001\actors\c -Label location-unhinted-conventional-after
+Before used Project D:\code\AgentLang\.agentlang\location-unhinted-001\starts\c and Label location-unhinted-conventional-before. Result JSON files were copied from .agentlang/repair-comparison-001 to results/c-after.json and results/c-before.json.
+
+Fresh-copy regressions copied all actor hidden files into regressions/a and regressions/b, then piped the literal request {"op":"test-all"} to:
+dotnet src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll --project <full-regression-copy> --jsonl
+Summaries report 166/166 retained and 158/158 reset-rich, with zero failed checks.
+
+Both language after-score process exits were 1 because full-study metadata checks remained false; the behavior oracle passed 54/54 in each.

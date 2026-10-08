@@ -1,0 +1,39 @@
+{
+  "priorIndexPath": "reports/evidence/102-defect-repair/index.json",
+  "priorIndexSha256": "2ed374fb14a22ef01f8e1d8772eada8a04cd5262146f90ddb317664ba489fc08",
+  "priorSourceRevision": "313599d",
+  "scorerInputPathInScript": "D:\\code\\AgentLang\\.agentlang\\quick-comparison-001\\results\\conventional-probe-input.json",
+  "scorerOutputRootInScript": "D:\\code\\AgentLang\\.agentlang\\repair-comparison-001",
+  "artifacts": [
+    {
+      "path": "reports/evidence/102-defect-repair/score-conventional.ps1",
+      "bytes": 1938,
+      "sha256": "3930eebcbdf6109b07342b69a87736cddb9a99595cbc6c216bfbf7be362832ac"
+    },
+    {
+      "path": "reports/evidence/102-defect-repair/independent-arithmetic.json",
+      "bytes": 9937,
+      "sha256": "0740fb19eaeb0cc9f65bfa400f2a5af66ccdd51341b55977771aacdeff7e78c1"
+    },
+    {
+      "path": "reports/evidence/102-defect-repair/conventional-before-score.json",
+      "bytes": 8654,
+      "sha256": "432d30cbfbed174704e96e8d8d26c860fb8a6d7b5d1cca7ba88ea423a57fd31d"
+    },
+    {
+      "path": "reports/evidence/102-defect-repair/conventional-after-score.json",
+      "bytes": 8637,
+      "sha256": "004ec6306f463730a30a8b83d0e2d5c5289d83489c4b5d30939af8348e03bc60"
+    },
+    {
+      "path": "reports/evidence/102-defect-repair/starts-conventional.zip",
+      "bytes": 55547,
+      "sha256": "b07711c2296fcc9093b90391e772743fcb206c449ac8370951fe17939ba41ce4"
+    },
+    {
+      "path": "reports/evidence/102-defect-repair/actors-conventional.zip",
+      "bytes": 55842,
+      "sha256": "1743979d764fffb2ee75516f23af2863fdac7a8c9b6e5895c445ad22ab063b5d"
+    }
+  ]
+}

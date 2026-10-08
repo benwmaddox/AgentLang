@@ -1,0 +1,50 @@
+{
+  "interpretation": "Successful define request source fields, in trace order; not a stored-source readback.",
+  "requests": [
+    {
+      "arm": "a",
+      "tracePath": ".agentlang/location-unhinted-001/traces/a.jsonl",
+      "eventIndex": 18,
+      "expectedRevision": null,
+      "responseRevision": 2,
+      "sourceBytes": 2523,
+      "sourceSha256": "9067b88be009133193af416c04b7b328872b669a45f6168a0a952cb243237dfa"
+    },
+    {
+      "arm": "a",
+      "tracePath": ".agentlang/location-unhinted-001/traces/a.jsonl",
+      "eventIndex": 20,
+      "expectedRevision": 2,
+      "responseRevision": 3,
+      "sourceBytes": 741,
+      "sourceSha256": "e5be8990f5eb8358176495de927df9f27d61d6361e519efdfbc6ad79e3721b6b"
+    },
+    {
+      "arm": "a",
+      "tracePath": ".agentlang/location-unhinted-001/traces/a.jsonl",
+      "eventIndex": 25,
+      "expectedRevision": 3,
+      "responseRevision": 4,
+      "sourceBytes": 1708,
+      "sourceSha256": "ef1a4974f367bfa4b9bcb0fa6764fca14a37bc3a97fa3125e571a44df118c3fa"
+    },
+    {
+      "arm": "b",
+      "tracePath": ".agentlang/location-unhinted-001/traces/b.jsonl",
+      "eventIndex": 23,
+      "expectedRevision": 1,
+      "responseRevision": 2,
+      "sourceBytes": 3155,
+      "sourceSha256": "59eeab3d33ef32ac32ba6efeb4bb945a75b847be01d307ecce8209db4c133c40"
+    },
+    {
+      "arm": "b",
+      "tracePath": ".agentlang/location-unhinted-001/traces/b.jsonl",
+      "eventIndex": 26,
+      "expectedRevision": 2,
+      "responseRevision": 3,
+      "sourceBytes": 844,
+      "sourceSha256": "0069396e34715deed5f2919208452ee0acb0bb1c98f965d487a658e6f7e46b6d"
+    }
+  ]
+}

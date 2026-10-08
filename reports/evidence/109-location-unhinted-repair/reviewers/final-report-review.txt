@@ -1,0 +1,15 @@
+Final read-only report109 review.
+
+Reviewed reports/109-location-unhinted-repair.md, reports/README.md and docs/ROADMAP.md against the completed language/conventional scores, retained/reset reviews, protocol findings and closure evidence. No edits to reports or evidence, no actor contact, builds or retests.
+
+Confirmed counts: all arms 42/54 before ->54/54 after. Retained 9/9 own, 166/166 fresh regression, 29 protocol exchanges, coverage34/34 instructions and2/2 branches; reset7/7 own,158/158 regression,30 exchanges,coverage36/36 and2/2. Conventional26own plus7seedchecks; build/test/probeexit0. b-after now reports behaviorPassed=true,54cases, preservation unchanged=true for53priorwords31types; retained preservation54/31. Full-study metadata remains separate and false, appropriately qualified in the report.
+
+Confirmed source distinctions: retained corrects original +/-1059 cases while rewriting fixture details; reset retains names but replaces inputs with +/-11. The report states this accurately. Retained first failed batch includes defective behavior plus wrong new boundary expectations; second failed batch uses correct implementation and fails only expectations. Reset failures are only its new boundary expectations. Language final arithmetic is bounded and correct across Int64. Conventional fills two formerly throwing public helpers; strict unrelated-operation preservation is unmet and the54caseoracle does not independently validate those helpers. Report correctly avoids calling this a language reliability win.
+
+Confirmed limitations: location-unhinted rather than unspecified/blind defect discovery; instructional isolation, one actor percondition, tool/fixture asymmetry, no controlledtoken/latency claim; frozenFlow1 notFlow2/native performance. Resethost shutdown remains unverified because no session-endrecord; report reflectsclosureevidence. ReportsREADME/ROADMAP accurately summarize findings and retain non-superiority qualification.
+
+Actionable correction: the sentence asserting that F# initially needed a missing System import before passing is not supported by the preserved conventional score logs, review or trial evidence inspected. The final source adds openSystem, but this alone does not establish an earlier failedbuild. Remove this recovery claim unless a raw buildfailure/actorreport is preserved, or clearly attribute it to actorreported rather than independently observed evidence.
+
+Related correction: Raw failed attempts are retained is too broad if it includes that conventional buildattempt. Narrow to raw failed language testresponses, or archive the conventional failedattempt evidence before making the broad statement.
+
+No other material overclaim, missinglimit or count discrepancy found within this boundedreview.

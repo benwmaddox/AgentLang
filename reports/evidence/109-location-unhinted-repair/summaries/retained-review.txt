@@ -1,0 +1,17 @@
+Read-only retained-arm audit for trial 109.
+
+Scope: traces/a.jsonl, results/a-after.json, results/a-regression-summary.json, starts/a and actors/a source, public task/plan and report109. No actor contact, reset-arm inspection, builds, test runs or project mutations.
+
+Behavior: the retained output passes all 54 independent cases. behaviorPassed=true; metadataPassed=false reflects full-study pins and attached-example requirements, not a behavior failure. The fresh-copy coordinator regression reports exit 0 and 166/166 tests passing.
+
+Final implementation: Customer -> Money, pure effects, persistent library status. It retains the customer.premium? dependency and uses tens=balance/10, remainder=balance-tens*10, result=tens*9+(remainder*9)/10. Signed division truncates toward zero; remainder has the balance sign and magnitude below 10, so this gives truncation of the final 90% balance. Intermediates stay within Int64 throughout the signed range. The predicate supplies exact raw ordinal premium matching.
+
+Preservation: scorer checks confirm all 54 pre-existing user words and 31 nominal types retain identity, signature, status and source. The existing premium predicate remains a dependency. This preservation baseline excludes the planted target added after that baseline; it should not be described as the repaired target being unchanged.
+
+Tests: original premium-positive-fraction and premium-negative-fraction names and +/-1059 inputs remain, with expectations corrected from +/-954 to +/-953. Their customer fixture details were rewritten. The regular-unchanged test remains. Six added tests produce a final nine-test target suite, with 34/34 instructions and 2/2 branch outcomes covered.
+
+Recovery: exchange19's 5/9 batch precedes implementation repair. The old formula returns +/-901 for +/-1001, violating the new +/-900 expectations. Its two boundary failures also contain incorrectly authored expected literals. Exchange20 installs the correct quotient/remainder implementation. Exchange21's 5/9 failures then come only from stale original +/-954 expectations and the two incorrect new boundary literals; actual outputs are correct. Exchange25 corrects those four expectations/fixtures, without another implementation change. Exchange26 passes 9/9; exchange28 passes 166/166; exchange29 commits the task. All 29 protocol responses are successful, including responses containing failed tests.
+
+Discovery: words exchange2 is followed by describe/source of the target and source of the existing predicate. tests exchange8 returns only three test names. After the failed replacement batch, replacement help exchange23 and searching the test name exchange24 (zero matches) precede rewriting the cases. This supports limited observed test-source discovery friction, not a conclusion that the runtime lacks test-source inspection.
+
+Interpretation: successful location-unhinted repair in one fresh retained actor. Structural coverage also qualified incorrect earlier behavior, so it does not replace the independent pricing oracle. No comparative reliability, token-efficiency or latency superiority follows from this single run.
