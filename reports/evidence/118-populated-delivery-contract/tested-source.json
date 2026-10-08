@@ -1,0 +1,41 @@
+{
+  "baseRevision": "c825e3e3ec01a7e47674fcea6af854ff0ab30d5b",
+  "files": [
+    {
+      "path": "src/AgentLang.Core/Compiler.fs",
+      "sha256": "5cf5c0a4013f7fd831d2ed78e090bd21ee4a80869f152e278683d4a9415f41f1"
+    },
+    {
+      "path": "src/AgentLang.Core/IrInterpreter.fs",
+      "sha256": "4b58a7ec768bbb84faf57742fa28925b71a14ad3b5e3d649cb705fdd58a80ea9"
+    },
+    {
+      "path": "tests/AgentLang.IR.Tests/Program.fs",
+      "sha256": "264476f3c057df7eccc2a1b11fd78241ef912b71e7cc5f256d007d0e2d15bc48"
+    },
+    {
+      "path": "tests/AgentLang.IR.Interpreter.Tests/Program.fs",
+      "sha256": "6add94bc1fea3a03fade1911e02dcb15d0377154abe9fed487f134db21574ad3"
+    },
+    {
+      "path": "tests/AgentLang.Flow.Runtime.Tests/Program.fs",
+      "sha256": "17a4ed9768ee29f62ceec250288da56c5438692a8178b3d45c5a443da0abd409"
+    },
+    {
+      "path": "tests/AgentLang.Llvm.Tests/Program.fs",
+      "sha256": "20da58284ecf813cee0128a2c052d5e4da059672ad10eca7afdd0f35dd04651e"
+    },
+    {
+      "path": "tests/AgentLang.Business.Transitions.Tests/Program.fs",
+      "sha256": "2175bf34452cf18655db5712deb4d01185588bf338867a8e98b4a98a3739238e"
+    },
+    {
+      "path": "examples/business-populated-delivery.agent",
+      "sha256": "c5f70137d8fd8e3e916639857fdc745b3642e4f12d5370db4cc1be346c1aef17"
+    },
+    {
+      "path": "docs/CONTAINERS.md",
+      "sha256": "b55355655c9cb412845a7388f79bca17438120581e5a6a8b5d5881e009d8962e"
+    }
+  ]
+}

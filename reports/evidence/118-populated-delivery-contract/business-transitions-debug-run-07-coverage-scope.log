@@ -1,0 +1,14 @@
+PASS fixture tests and examples
+PASS deterministic seed, full-state projection, and strong types
+PASS subscription start, cancel, and error precedence
+PASS invoice lines, totals, and creation
+PASS payment and email transition contracts
+PASS stateful renewal, billing, payment, and FIFO retry
+FINITE AUDIT INCOMPLETE email.delivery-fold-step missing=[return[0] EmailDeliveryPlan: $.first: none] unsupported=[]
+PASS dependency graph, effects, library coverage, and reload
+FAIL after 7 groups and 5383 assertions: System.Exception: reloaded email.apply-delivery-result-populated has current coverage: expected current, got not-run
+   at AgentLang.Business.Transitions.Tests.Program.equal[a,b](a expected, a actual, b message) in D:\code\AgentLang\tests\AgentLang.Business.Transitions.Tests\Program.fs:line 38
+   at AgentLang.Business.Transitions.Tests.Program.testPopulatedDeliveryExtension(Engine engine, String projectPath, String root) in D:\code\AgentLang\tests\AgentLang.Business.Transitions.Tests\Program.fs:line 1608
+   at AgentLang.Business.Transitions.Tests.Program.main@1720-7.Invoke(Unit unitVar0) in D:\code\AgentLang\tests\AgentLang.Business.Transitions.Tests\Program.fs:line 1722
+   at AgentLang.Business.Transitions.Tests.Program.runGroup(String name, FSharpFunc`2 action) in D:\code\AgentLang\tests\AgentLang.Business.Transitions.Tests\Program.fs:line 151
+   at AgentLang.Business.Transitions.Tests.Program.main(String[] argv) in D:\code\AgentLang\tests\AgentLang.Business.Transitions.Tests\Program.fs:line 1720

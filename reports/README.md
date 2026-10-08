@@ -54,6 +54,15 @@ behavior cases pass; its tests reject both frozen Boolean mutants. A scripted
 three-row control still accepts one mutant, and the actor adds one redundant
 test. This supports bounded usability, not comparative reliability superiority.
 
+[118 — Populated delivery contracts](118-populated-delivery-contract.md) adds a
+typed interpreter `list.tail` and a separately loaded Flow/2 delivery extension
+whose plan requires a real FIFO head. The focused business-transition run passed
+8 groups and 5,382 assertions, preserving the 53-word / 31-type baseline; the
+repository-wide Debug gate passes all 37 checks, and the separate LLVM suite
+passes 444 assertions. This is not an agent or native
+performance result. General cross-field validators and provider-state
+assertions remain pending.
+
 The latest ownership demonstration is [108 — Native handler mailbox suspension](108-native-mailbox-suspension.md):
 120 checks across Core/O0/O2, with readable Flow/2 handlers and opaque retained
 state across scratch reuse. Scheduling is still a .NET experiment host; no

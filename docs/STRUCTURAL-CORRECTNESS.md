@@ -60,6 +60,14 @@ This does not require a general dependent-type or proof system. Prefer small pur
 predicates and explicit construction boundaries. Existing raw wrappers without
 validation retain their documented semantics until deliberately migrated.
 
+Report 118 records a narrow populated-state application: a Flow/2 delivery plan
+builder returns a plan after a nonempty FIFO list yields a concrete head, and
+its `first` field is `EmailMessage` rather than `Option<EmailMessage>`. The
+transition derives that plan from its own Store. This removes an unreachable
+empty-head alternative for this contract; it does not validate arbitrary
+cross-field record invariants or close other public record-construction paths.
+Those broader checks remain pending.
+
 ## Properties and independent expectations
 
 Add deterministic property and metamorphic checks beside example tests. Initial
@@ -83,9 +91,10 @@ must include attempted provider calls that fault; repeated target invocations
 aggregate, and the target must actually run. Preserve pure expectations and
 existing tests without the optional assertion. The extra-write control must fail
 under the stronger tests. Report 113 implements this optional Flow/2 assertion
-facility, including persisted tests and library replacement enforcement. Agent
-adoption remains a separate empirical check; provider-state assertions and
-finite-value library coverage remain pending.
+facility, including persisted tests and library replacement enforcement. Reports
+114-115 record bounded agent adoption checks. Report 116 implements finite-value
+library coverage, and report 117 tests its adoption. Provider-state assertions
+and general cross-field construction invariants remain pending.
 
 ## Delivery and evidence
 

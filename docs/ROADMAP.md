@@ -175,6 +175,15 @@ Boolean interaction bug. Evaluate bounded Cartesian coverage separately; no new
 policy is adopted from this single trial. For the next structural slice, use
 explicit populated-state contracts where presence is guaranteed, then test
 legal state transitions without weakening unreachable-alternative diagnostics.
+[Report 118](../reports/118-populated-delivery-contract.md) implements one such
+narrow slice: an interpreter `list.tail` and a separately loaded Flow/2 delivery
+extension use a required `EmailMessage` head inside a populated plan. The focused
+Business Transitions runner passed 8 groups / 5,382 assertions, with the original
+53 words, 31 types, 154 tests and 44 examples preserved. The extension adds 2
+words, 1 type, 7 tests and 3 examples, plus 15 reload checks. All 37 full Debug
+checks and 444 separate LLVM assertions pass; no agent-adoption or native List
+claim is made. General
+cross-field record validation and provider-state assertions remain pending.
 Native enum execution is still pending. Use new fixtures and preserve historical
 research inputs.
 Cross-field record construction and decision/executor stateful properties follow.

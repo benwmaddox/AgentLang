@@ -89,3 +89,6 @@ reports/evidence/115-versioned-help-adoption/** -text -whitespace
 
 # Preserve finite-coverage trial input and raw evidence hashes.
 reports/evidence/117-finite-coverage-adoption/** -text -whitespace
+
+# Preserve populated delivery validation evidence hashes.
+reports/evidence/118-populated-delivery-contract/** -text -whitespace

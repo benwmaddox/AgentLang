@@ -1043,6 +1043,18 @@ fn renewal.dependent(state: RenewalState) -> String {
         equal "Float" (stringValue floatResult.["data"].["stackTypes"].[0]) "described primitive Float reference keeps its Float type"
         equal "3.75" (stringValue floatResult.["data"].["stack"].[0]) "described primitive Float reference computes its value"
 
+        let tailDescription = describe "list.tail"
+        equal "primitive" (stringValue tailDescription.["kind"]) "list.tail is exposed as a dictionary primitive"
+        equal [ "List<a>" ] (jsonArrayStrings tailDescription.["inputs"]) "list.tail discovery reports its generic list input"
+        equal [ "List<a>" ] (jsonArrayStrings tailDescription.["outputs"]) "list.tail discovery reports the same generic list output"
+        check ((stringValue tailDescription.["documentation"]).Contains("empty lists remain empty", StringComparison.Ordinal))
+            "list.tail discovery documents its empty-list behavior"
+        let tailReference = flowReference "list.tail"
+        equal "list::tail" tailReference "list.tail has a deterministic Flow reference"
+        let tailEmpty = evalFlow engine $"{tailReference}(list::empty<Int>())" |> expectOk "evaluate typed empty-list tail"
+        equal "List<Int>" (stringValue tailEmpty.["data"].["stackTypes"].[0]) "list.tail preserves the element type of an empty list"
+        equal "[]" (stringValue tailEmpty.["data"].["stack"].[0]) "list.tail returns an empty list for an empty input"
+
         let scalarSource =
             "type Email : String { }\n\n"
             + "word local.shadow(advance: Int) -> Int {\n"

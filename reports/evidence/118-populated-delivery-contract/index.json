@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "report": "118-populated-delivery-contract",
+  "baseRevision": "c825e3e3ec01a7e47674fcea6af854ff0ab30d5b",
+  "testedWorkingTree": true,
+  "files": [
+    {
+      "path": "business-transitions-debug-final.log",
+      "bytes": 722,
+      "sha256": "0b96cbb07a0aa37a8fb007596d942c06999fbbc33018a77d4b47a478e1efb7e5"
+    },
+    {
+      "path": "business-transitions-debug-run-01-parse.log",
+      "bytes": 737,
+      "sha256": "c30a9836118e48001af22232093a13d5e91d704d1bc5a0e6f5f60bf23562ee6b"
+    },
+    {
+      "path": "business-transitions-debug-run-02-branch-types.log",
+      "bytes": 817,
+      "sha256": "76d7e6370be51ef252853312551dd73226553297fe523b59b028069a4b5977fb"
+    },
+    {
+      "path": "business-transitions-debug-run-03-required-head.log",
+      "bytes": 1510,
+      "sha256": "e2fb9b2454a53b23bcecffe21eba8f9b5930254c2069fd9e623611d7eb790f4e"
+    },
+    {
+      "path": "business-transitions-debug-run-04-flow1-probe.log",
+      "bytes": 2241,
+      "sha256": "b1fc955b2c87f9433bc0d3634161ea4ed33be87c32a407ba5229511c301abb74"
+    },
+    {
+      "path": "business-transitions-debug-run-05-flow2-eval.log",
+      "bytes": 2094,
+      "sha256": "f16beda34cfd180ae7e94766250e651a1b2e6a4a3fa161abd956a7ed6bc69ee1"
+    },
+    {
+      "path": "business-transitions-debug-run-06-flow2-eval.log",
+      "bytes": 1539,
+      "sha256": "5a2c97e8ba77cd3bc7e4eff87bddfba291addd6049598dab1088cb9dbb9eb0c7"
+    },
+    {
+      "path": "business-transitions-debug-run-07-coverage-scope.log",
+      "bytes": 1539,
+      "sha256": "e1b73d8ca4c9226aac4c854986f56d72e2228e410d0b61825e81103c07b89723"
+    },
+    {
+      "path": "business-transitions-evidence.json",
+      "bytes": 1331,
+      "sha256": "65f47d6807b5ff189f59165d2946ee08a94eb50c3286cb3102311dc36fed7b4c"
+    },
+    {
+      "path": "construction-investigation.md",
+      "bytes": 1855,
+      "sha256": "c84da9708dc07dd018dfe914e9a2e273e3d0e5ddcfd7cc7e8598f769f6c09c80"
+    },
+    {
+      "path": "frozen-runtime.json",
+      "bytes": 2820,
+      "sha256": "cbc201e46ec70ba4cdc712a9a1dd084c71b3ee18ca0bd44ee9f3cd0375146d70"
+    },
+    {
+      "path": "full-validation-auxiliary.zip",
+      "bytes": 1443941,
+      "sha256": "af2d010711e65196e6a1e53891b3205acfb2e863c16dd27b2a08240d31601464"
+    },
+    {
+      "path": "full-validation.json",
+      "bytes": 29185,
+      "sha256": "62272a529c0217977b2254f18de63010553b794862bb80fcbc708aaa9a24c174"
+    },
+    {
+      "path": "full-validation.log",
+      "bytes": 16590,
+      "sha256": "5f562efc08a1bde416a9055ac588f434ec4f8aab97e83054d30829a63d84239b"
+    },
+    {
+      "path": "implementation-review.md",
+      "bytes": 3013,
+      "sha256": "f6b4ef912e636cdb50f2c9e683db2024b21bbbe8a0daa7f1990c71d81267e386"
+    },
+    {
+      "path": "llvm-debug.log",
+      "bytes": 711,
+      "sha256": "1be03885254db5db909575e168f64aeb86d379510865f8b92081379bcb1ce28f"
+    },
+    {
+      "path": "next-record-validator-plan.md",
+      "bytes": 6178,
+      "sha256": "4869cd3bf6b7a065fbf6b2ad04c2df49634753b5732ff4711cc5f18971a0a6de"
+    },
+    {
+      "path": "plan.md",
+      "bytes": 2611,
+      "sha256": "d059e84b4808a1231b621b4acf6e43bcd0d7d3db7bb14ffb335281225a014b2d"
+    },
+    {
+      "path": "tested-source.json",
+      "bytes": 1491,
+      "sha256": "9b63018de1410c8ebb7ea660b6e794056b78990a6b9cf9abab1f3b69756ad99e"
+    }
+  ]
+}

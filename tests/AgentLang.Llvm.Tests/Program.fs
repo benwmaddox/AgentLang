@@ -2020,6 +2020,17 @@ let private testRejectsEffectsAndUnsupportedUntakenBranches () =
     check "unsupported IR in an untaken branch is rejected before code generation" (
         operationError.Code = "IR_LLVM_UNSUPPORTED_OPERATION" && operationError.Span = Some(span "unsupported.agent" 3))
 
+    let listContext = contextWith []
+    let listProgram = Compiler.compileIrProgram listContext
+    let listTailSpan = span "unsupported-list-tail.agent" 1
+    let listTailBody =
+        Compiler.compileIrBodyAgainstProgram listContext listProgram "unsupported-list-tail" [ TList TInt ]
+            [ Call("list.tail", listTailSpan) ]
+    let listTailError = errorOf (fun () -> LlvmAot.emit listTailBody |> ignore)
+    check "LLVM keeps list.tail outside its supported native type slice with an explicit diagnostic" (
+        listTailError.Code = "IR_LLVM_UNSUPPORTED_TYPE"
+        && (listTailError.Actual |> List.exists (fun actual -> actual.Contains("List<Int>", StringComparison.Ordinal))))
+
 let private testCatalogTrustBoundary () =
     let model =
         { NominalTypesByKey = Map.empty

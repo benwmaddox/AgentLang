@@ -89,6 +89,7 @@ module Compiler =
         | "int.to-string" -> [ TInt ], [ TString ]
         | "float.to-string" -> [ TFloat ], [ TString ]
         | "list.count" -> [ TList a ], [ TInt ]
+        | "list.tail" -> [ TList a ], [ TList a ]
         | "list.append" -> [ TList a; a ], [ TList a ]
         | "list.concat" -> [ TList a; TList a ], [ TList a ]
         | "list.get" -> [ TList a; TInt ], [ TOption a ]
@@ -123,7 +124,7 @@ module Compiler =
               "instant.parse-utc"; "instant.is-canonical-utc?"; "instant.before?"; "instant.add-days"
               "string.concat"; "string.contains"; "string.starts-with"; "string.ends-with"
               "string.length"; "string.trim"; "string.to-lower"; "string.to-upper"; "int.abs"; "int.min"; "int.max"; "int.to-float"; "float.to-int"
-              "float.round"; "int.to-string"; "float.to-string"; "list.count"; "list.append"; "list.concat"; "list.get"; "list.is-empty?"
+              "float.round"; "int.to-string"; "float.to-string"; "list.count"; "list.tail"; "list.append"; "list.concat"; "list.get"; "list.is-empty?"
               "dup"; "drop"; "swap"; "file.read"; "file.write"; "file.exists?"; "clock.now"; "console.write" ]
         names
         |> List.map (fun name ->
@@ -148,6 +149,7 @@ module Compiler =
                     | "instant.before?" -> "Compares two canonical UTC O-format instants; equality is false and invalid operands raise RUNTIME_INVALID_INSTANT."
                     | "instant.add-days" -> "Adds an integral Int64 day count to a canonical UTC O-format instant; invalid input returns INVALID_INSTANT and range failures return INSTANT_RANGE."
                     | "list.count" -> "Returns the number of elements in List<T>; the closed List<T> parameter is inferred from the input."
+                    | "list.tail" -> "Returns List<T> without its first element; empty lists remain empty, the element type and order are preserved, and the input is unchanged."
                     | "list.append" -> "Appends one value with exactly the element type T to List<T>."
                     | "list.concat" -> "Concatenates two lists with the same exact element type T."
                     | "list.get" -> "Returns Option<T>; out-of-range indices produce a typed none."

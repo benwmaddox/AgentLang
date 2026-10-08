@@ -244,6 +244,20 @@ let private testPrimitiveSpecializations () =
         primitiveContract "bad-polymorphic" [ PatternInt ] [ PatternVariable 2 ] noEffects
     expectDiagnostic "primitive contract cannot invent an output type" "IR_PRIMITIVE_CONTRACT_VARIABLE" (fun () -> verify (Map.ofList [ unboundOutputId, unboundOutput ]) executable)
 
+let private testListTailPrimitiveContract () =
+    let primitive = PrimitiveId "list.tail"
+    let contract = Compiler.primitiveIrCatalog[primitive]
+    check "list.tail has one shared generic element variable in its list input and output"
+        (contract.InputPatterns = [ PatternList(PatternVariable 0) ]
+         && contract.OutputPatterns = [ PatternList(PatternVariable 0) ]
+         && contract.PrimitiveEffects = noEffects)
+    let definition = Compiler.primitives["list.tail"].Definition
+    check "list.tail is a dictionary primitive with an exact List<a> signature"
+        (definition.Inputs = [ TList(TVar "a") ] && definition.Outputs = [ TList(TVar "a") ])
+    check "list.tail discovery text documents empty and non-mutating semantics"
+        (definition.Documentation.Contains("empty lists remain empty", StringComparison.Ordinal)
+         && definition.Documentation.Contains("input is unchanged", StringComparison.Ordinal))
+
 let private testClosedContainerConstructors () =
     let noneWord = WordId "none-int"
     let emptyWord = WordId "empty-nested"
@@ -1799,6 +1813,7 @@ let private testCompilerSnapshotIdentity () =
 let private tests =
     [ "closed effect vocabulary", testClosedEffects
       "concrete primitive specializations", testPrimitiveSpecializations
+      "list.tail primitive contract", testListTailPrimitiveContract
       "closed container constructors", testClosedContainerConstructors
       "structured branches and coverage", testStructuredBranchesAndCoverage
       "closed synthetic source classifications", testClosedSyntheticSourceKinds

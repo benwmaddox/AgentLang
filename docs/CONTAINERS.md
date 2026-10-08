@@ -20,7 +20,7 @@ option::some<Email>(Email::new("dev@example.com"))
 result::ok<Int, String>(7)
 ```
 
-`list.count`, `list.append`, `list.concat`, `list.get`, and `list.is-empty?` are trusted dictionary words. `list.get` returns a typed `Option<T>`; an out-of-range index keeps the list element type. Concatenation requires both lists to have the same exact element type. Every list is capped at 10,000 values. An append or concatenation that exceeds this limit reports `RUNTIME_VALUE_LIMIT` before allocating the result.
+`list.count`, `list.tail`, `list.append`, `list.concat`, `list.get`, and `list.is-empty?` are trusted dictionary words. `list.tail` returns the same `List<T>` without its first element; an empty input remains empty. It preserves the element type, order, and duplicates, and does not change the input. `list.get` returns a typed `Option<T>`; an out-of-range index keeps the list element type. Concatenation requires both lists to have the same exact element type. Every list is capped at 10,000 values. An append or concatenation that exceeds this limit reports `RUNTIME_VALUE_LIMIT` before allocating the result.
 
 The higher-order forms take one statically named word. They do not evaluate arbitrary quotations or dynamically selected callbacks:
 

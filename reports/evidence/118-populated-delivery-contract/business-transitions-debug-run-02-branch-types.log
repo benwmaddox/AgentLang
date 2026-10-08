@@ -1,0 +1,11 @@
+Command: dotnet run --project tests/AgentLang.Business.Transitions.Tests/AgentLang.Business.Transitions.Tests.fsproj --configuration Debug
+
+PASS fixture tests and examples
+PASS deterministic seed, full-state projection, and strong types
+PASS subscription start, cancel, and error precedence
+PASS invoice lines, totals, and creation
+PASS payment and email transition contracts
+PASS stateful renewal, billing, payment, and FIFO retry
+FINITE AUDIT INCOMPLETE email.delivery-fold-step missing=[return[0] EmailDeliveryPlan: $.first: none] unsupported=[]
+PASS dependency graph, effects, library coverage, and reload
+FAIL after 7 groups and 4308 assertions: FLOW_MATCH_BRANCH_TYPE in example email.apply-delivery-result-populated/success-singleton: Result match cases must produce the same output vector in the same order.

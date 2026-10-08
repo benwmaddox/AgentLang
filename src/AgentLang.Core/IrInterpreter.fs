@@ -134,7 +134,7 @@ module IrInterpreter =
             "string.length"; "string.trim"; "string.to-lower"; "string.to-upper"
             "int.abs"; "int.min"; "int.max"; "int.to-float"; "float.to-int"; "float.round"
             "int.to-string"; "float.to-string"
-            "list.count"; "list.append"; "list.concat"; "list.get"; "list.is-empty?"
+            "list.count"; "list.tail"; "list.append"; "list.concat"; "list.get"; "list.is-empty?"
             "dup"; "drop"; "swap"
             "file.read"; "file.write"; "file.exists?"; "clock.now"; "console.write"
         ]
@@ -639,6 +639,8 @@ module IrInterpreter =
             | "int.to-string", [ RuntimeInt value ] -> [ RuntimeString(string value) ]
             | "float.to-string", [ RuntimeFloat value ] -> [ RuntimeString(value.ToString("G", CultureInfo.InvariantCulture)) ]
             | "list.count", [ RuntimeList(_, values) ] -> [ RuntimeInt(int64 values.Length) ]
+            | "list.tail", [ RuntimeList(itemType, []) ] -> [ RuntimeList(itemType, []) ]
+            | "list.tail", [ RuntimeList(itemType, _ :: values) ] -> [ RuntimeList(itemType, values) ]
             | "list.append", [ RuntimeList(_, values); _ ] when values.Length >= maxCollectionLength ->
                 fail "RUNTIME_VALUE_LIMIT" $"Lists cannot contain more than {maxCollectionLength} values." (Some operation) None [ string maxCollectionLength ] [ string values.Length ]
             | "list.append", [ RuntimeList(itemType, values); value ] when runtimeValueType value = itemType ->

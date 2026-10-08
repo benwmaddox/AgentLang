@@ -22,6 +22,11 @@ module Program =
     let mutable private totalTests = 0
     let mutable private totalExamples = 0
     let mutable private reloadChecks = 0
+    let mutable private populatedDeliveryWords = 0
+    let mutable private populatedDeliveryTypes = 0
+    let mutable private populatedDeliveryTests = 0
+    let mutable private populatedDeliveryExamples = 0
+    let mutable private populatedDeliveryReloadChecks = 0
     let mutable private temporaryNames = Set.empty<string>
 
     let private check condition message =
@@ -1331,6 +1336,277 @@ word conformance.failed-delivery-input(seed: Store) -> Store {
         equal document.Tests.Length rows.Count "fresh test result inventory is complete"
         fresh
 
+    let private testPopulatedDeliveryExtension (engine: Runtime.Engine) projectPath root =
+        let extensionPath = Path.Combine(root, "examples", "business-populated-delivery.agent")
+        let source = File.ReadAllText extensionPath
+        let document =
+            FlowParser.parseDocumentWithVersion 2 "<business-populated-delivery>" source
+            |> Result.defaultWith (fun diagnostic -> failwith (Diagnostics.render diagnostic))
+        let names = document.Words |> List.map _.Name |> List.sort
+        let typeNames = document.Records |> List.map _.Name |> List.sort
+        let oldWordNames = [ "email.apply-delivery-result"; "email.delivery-fold-step" ]
+        let oldWordIds = wordIds engine oldWordNames
+        let oldWordSources = oldWordNames |> List.map (fun name -> name, sourceForWord engine name)
+        let oldPlanSource = sourceForType engine "EmailDeliveryPlan"
+
+        equal [ "email.apply-delivery-result-populated"; "email.populated-delivery-plan" ] names
+            "the isolated Flow/2 extension declares only the populated planner and transition"
+        equal [ "PopulatedEmailDeliveryPlan" ] typeNames
+            "the isolated Flow/2 extension adds one required-head plan type"
+        equal 7 document.Tests.Length "the populated delivery extension attaches seven focused cases"
+        equal 3 document.Examples.Length "the populated delivery extension attaches three examples"
+        populatedDeliveryWords <- names.Length
+        populatedDeliveryTypes <- typeNames.Length
+        populatedDeliveryTests <- document.Tests.Length
+        populatedDeliveryExamples <- document.Examples.Length
+
+        let defined =
+            dispatch engine "define"
+                [ "frontend", jstr "flow"
+                  "syntaxVersion", JsonValue.Create(2) :> JsonNode
+                  "source", jstr source ]
+            |> expectOk "define the populated email delivery extension after baseline persistence"
+        equal names
+            (defined.["data"].["words"].AsArray() |> Seq.map (fun row -> stringValue row.["name"]) |> Seq.toList |> List.sort)
+            "the extension stages exactly its two words"
+        equal typeNames (jsonStrings defined.["data"].["types"] |> List.sort)
+            "the extension stages its required-head record"
+        let rejectedOptionalHead =
+            dispatch engine "eval"
+                [ "frontend", jstr "flow"
+                  "syntaxVersion", JsonValue.Create(2) :> JsonNode
+                  "code", jstr "populatedEmailDeliveryPlan::new(first = option::none<EmailMessage>(), remaining = list::empty<EmailMessage>())" ]
+            |> expectError "reject Option<EmailMessage> where the populated plan requires an EmailMessage head"
+        equal "FLOW_ARGUMENT_TYPE" (stringValue rejectedOptionalHead.["error"].["code"])
+            "the generated plan constructor rejects the optional head as an argument-type error"
+        equal [ "EmailMessage" ] (jsonStrings rejectedOptionalHead.["error"].["expected"])
+            "the generated plan constructor requires one concrete email head"
+        equal [ "Option<EmailMessage>" ] (jsonStrings rejectedOptionalHead.["error"].["actual"])
+            "the rejected value is specifically an empty-capable email Option"
+        let inputProbeName = "email.populated-delivery-input-probe"
+        let inputProbeSource =
+            $"fn {inputProbeName}(store: Store, outcome: Result<Unit, BusinessError>) -> Store {{\n"
+            + "    let initial = store;\n"
+            + "    let ignored = email::apply-delivery-result-populated(initial, outcome);\n"
+            + "    initial\n"
+            + "}"
+        dispatch engine "define"
+            [ "frontend", jstr "flow"
+              "syntaxVersion", JsonValue.Create(2) :> JsonNode
+              "temporary", jbool true
+              "source", jstr inputProbeSource ]
+        |> expectOk "define an isolated temporary probe to observe the same input binding after application"
+        |> ignore
+
+        let testNames (target: Runtime.Engine) word =
+            dispatch target "tests" [ "word", jstr word ]
+            |> expectOk $"query attached tests for {word}"
+            |> fun response -> jsonStrings response.["data"]
+        let exampleNames (target: Runtime.Engine) word =
+            dispatch target "examples" [ "word", jstr word ]
+            |> expectOk $"query attached examples for {word}"
+            |> fun response -> jsonStrings response.["data"]
+        let testsBefore = names |> List.map (fun word -> word, testNames engine word)
+        let examplesBefore = names |> List.map (fun word -> word, exampleNames engine word)
+        equal document.Tests.Length (testsBefore |> List.sumBy (snd >> List.length))
+            "all seven new tests attach to the two extension words"
+        equal document.Examples.Length (examplesBefore |> List.sumBy (snd >> List.length))
+            "all three examples attach to the two extension words"
+
+        let runAttachedTests (target: Runtime.Engine) =
+            let mutable total = 0
+            for word in names do
+                let expectedCases =
+                    document.Tests
+                    |> List.filter (fun test -> test.Word = word)
+                    |> List.map _.CaseName
+                    |> List.sort
+                let response = dispatch target "test" [ "word", jstr word ] |> expectOk $"run tests for {word}"
+                let rows = response.["data"].["results"].AsArray()
+                equal expectedCases.Length rows.Count $"all attached cases run for {word}"
+                equal expectedCases
+                    (rows |> Seq.map (fun row -> stringValue row.["name"]) |> Seq.toList |> List.sort)
+                    $"attached test names match the extension source for {word}"
+                for row in rows do
+                    check (boolValue row.["passed"]) $"extension test passed for {word}: {row.ToJsonString()}"
+                let described = dispatch target "describe" [ "word", jstr word ] |> expectOk $"describe extension coverage for {word}"
+                let coverage = described.["data"].["coverage"]
+                equal "current" (stringValue coverage.["status"]) $"{word} has current structural coverage"
+                equal 0 (coverage.["uncoveredInstructions"].AsArray().Count) $"{word} has no uncovered instructions"
+                equal 0 (coverage.["uncoveredBranchOutcomes"].AsArray().Count) $"{word} has no uncovered branches"
+                let finite = coverage.["finiteCoverage"]
+                equal true (boolValue finite.["complete"]) $"{word} has complete finite input/output observations"
+                equal [] (jsonStrings finite.["missing"]) $"{word} has no missing finite outcomes"
+                equal [] (jsonStrings finite.["unsupported"]) $"{word} has no unsupported finite domain"
+                total <- total + rows.Count
+            equal document.Tests.Length total "all attached extension tests ran"
+            total
+
+        let runExamples (target: Runtime.Engine) =
+            let total = names |> List.sumBy (runExamplesForWord target)
+            equal document.Examples.Length total "all extension examples ran"
+            total
+
+        let messageCode address subject body =
+            $"emailMessage::new(to = Email::new({flowString address}), subject = {flowString subject}, body = {flowString body})"
+        let emailListCode values =
+            match values with
+            | [] -> "list::empty<EmailMessage>()"
+            | head :: tail ->
+                tail
+                |> List.fold (fun prior next -> $"list::append({prior}, {next})")
+                    $"list::singleton<EmailMessage>({head})"
+        let storeCode pending sent =
+            $"store::with-email-state(business::seed(unit), {emailListCode pending}, {emailListCode sent})"
+        let applyCode store outcome =
+            $"email::apply-delivery-result-populated({store}, {outcome})"
+        let errorOutcome code message =
+            $"result::error<Unit, BusinessError>(businessError::new(code = {flowString code}, message = {flowString message}))"
+        let successOutcome = "result::ok<Unit, BusinessError>(unit)"
+
+        let baseline = freshOracle ()
+        let customer = baseline.Known.Customers.Head
+        let queue label state subject body =
+            let updated, _ = Domain.EmailOutbox.queue state.Store customer subject body |> oracleOk label
+            { state with Store = updated }
+        let oracleDeliver state outcome =
+            Domain.EmailOutbox.deliverNext state.Store { Send = fun _ -> outcome }
+
+        let compareDelivery label store outcome expected known expectedLanguageErrorMessage =
+            let languageResult = eval engine (applyCode store outcome) |> outputValue
+            match expected, expectedLanguageErrorMessage with
+            | Error _, Some expectedMessage ->
+                // Domain.EmailOutbox prefixes provider failures; Flow preserves the original raw provider detail.
+                equal expectedMessage (resultErrorMessage languageResult) $"{label} language-side detail preserves the contract"
+            | Ok _, None -> ()
+            | Error _, None -> failwith $"{label}: missing expected language error detail"
+            | Ok _, Some _ -> failwith $"{label}: success cannot have a language error detail"
+            compareStoreResult label languageResult expected known |> ignore
+            let inputProjection = projectLangFromExpression engine store
+            let inputProbeCall = $"email::populated-delivery-input-probe({store}, {outcome})"
+            let returnedInitial = eval engine inputProbeCall |> outputValue |> readLanguageStore
+            equal inputProjection returnedInitial $"{label} leaves the same bound input Store unchanged after application"
+
+        let emptyStore = storeCode [] []
+        let emptyOracleResult = oracleDeliver baseline (Error "offline")
+        compareDelivery "populated delivery prioritizes empty outbox over provider error"
+            emptyStore (errorOutcome "TEMP" "offline") emptyOracleResult baseline.Known (Some "There is no queued email to deliver.")
+            |> ignore
+
+        let adaAddress = "ada@example.test"
+        let priorCode = messageCode adaAddress "Prior sent" "prior body"
+        let priorQueued = queue "oracle prior message" baseline "Prior sent" "prior body"
+        let priorSentStore = oracleDeliver priorQueued (Ok ()) |> oracleOk "oracle prior sent message"
+        let priorSent = { priorQueued with Store = priorSentStore }
+
+        let singletonCode = messageCode adaAddress "Singleton" "singleton body"
+        let singletonOracle = queue "oracle singleton pending message" priorSent "Singleton" "singleton body"
+        let singletonStoreCode = storeCode [ singletonCode ] [ priorCode ]
+        let singletonInput = projectLangFromExpression engine singletonStoreCode
+        equal (projectOracle singletonOracle) singletonInput "singleton language input matches the independent F# Store"
+        let singletonExpected = oracleDeliver singletonOracle (Ok ())
+        compareDelivery "populated delivery transfers the sole message"
+            singletonStoreCode successOutcome singletonExpected singletonOracle.Known None
+            |> ignore
+
+        let duplicateCode = messageCode adaAddress "Repeated" "same body"
+        let laterCode = messageCode adaAddress "Later" "later body"
+        let duplicateFirst = queue "oracle first duplicate" priorSent "Repeated" "same body"
+        let duplicateSecond = queue "oracle second duplicate" duplicateFirst "Repeated" "same body"
+        let threePending = queue "oracle third pending message" duplicateSecond "Later" "later body"
+        let threeStoreCode = storeCode [ duplicateCode; duplicateCode; laterCode ] [ priorCode ]
+        let threeInput = projectLangFromExpression engine threeStoreCode
+        equal (projectOracle threePending) threeInput "three-message duplicate language input matches F# order and positions"
+        let providerDetail = "mail gateway unavailable"
+        let providerFailure = oracleDeliver threePending (Error providerDetail)
+        compareDelivery "populated provider failure keeps all FIFO positions"
+            threeStoreCode (errorOutcome "TEMPORARY" providerDetail) providerFailure threePending.Known (Some providerDetail)
+            |> ignore
+
+        let threeSuccess = oracleDeliver threePending (Ok ())
+        compareDelivery "populated success removes exactly the first duplicate and preserves every Store field"
+            threeStoreCode successOutcome threeSuccess threePending.Known None
+            |> ignore
+
+        dispatch engine "discard" [ "word", jstr inputProbeName ]
+        |> expectOk "discard the temporary immutability probe before the aggregate library commit"
+        |> ignore
+        let wordsBeforeCommit = dispatch engine "words" [] |> expectOk "verify extension candidates before library commit" |> fun response -> response.["data"].["words"].AsArray()
+        check (wordsBeforeCommit |> Seq.forall (fun row -> stringValue row.["name"] <> inputProbeName))
+            "the temporary input probe is absent before library qualification"
+
+        let dependencyResponse =
+            dispatch engine "dependencies" [ "word", jstr "email.apply-delivery-result-populated" ]
+            |> expectOk "inspect the populated transition's direct dependencies"
+        check (jsonStrings dependencyResponse.["data"].["dependencies"] |> List.contains "email.populated-delivery-plan")
+            "the populated transition calls its plan builder directly"
+        let callerResponse =
+            dispatch engine "callers" [ "word", jstr "email.populated-delivery-plan" ]
+            |> expectOk "inspect callers of the populated plan builder"
+        check (jsonStrings callerResponse.["data"] |> List.contains "email.apply-delivery-result-populated")
+            "the populated transition is the plan builder's authored caller"
+        for word in names do
+            let effects = dispatch engine "effects" [ "word", jstr word ] |> expectOk $"inspect effects for {word}" |> fun response -> jsonStrings response.["data"]
+            equal [] effects $"{word} remains a pure transition"
+
+        runAttachedTests engine |> ignore
+        runExamples engine |> ignore
+
+        let newWordIds = wordIds engine names
+        let newWordSources = names |> List.map (fun name -> name, sourceForWord engine name)
+        let newTypeSources = typeNames |> List.map (fun name -> name, sourceForType engine name)
+        let newWordTests = names |> List.map (fun name -> name, testNames engine name)
+        let newWordExamples = names |> List.map (fun name -> name, exampleNames engine name)
+
+        dispatch engine "commit" [ "library", jbool true ]
+        |> expectOk "commit the tested populated delivery extension as library vocabulary"
+        |> ignore
+
+        let committedWords = dispatch engine "words" [] |> expectOk "inspect populated delivery library words" |> fun response -> response.["data"].["words"].AsArray()
+        for name in names do
+            let row = committedWords |> Seq.find (fun item -> stringValue item.["name"] = name)
+            equal "persistent" (stringValue row.["status"]) $"{name} persists after library qualification"
+            equal "library" (stringValue row.["maturity"]) $"{name} qualifies as a library word"
+        let oldAfterCommit = dispatch engine "words" [] |> expectOk "verify the original delivery maturity after extension commit" |> fun response -> response.["data"].["words"].AsArray()
+        for name in oldWordNames do
+            let row = oldAfterCommit |> Seq.find (fun item -> stringValue item.["name"] = name)
+            equal "project" (stringValue row.["maturity"]) $"original {name} remains project maturity"
+        equal oldWordIds (wordIds engine oldWordNames) "original delivery word IDs remain unchanged"
+        for name, oldSource in oldWordSources do
+            equal oldSource (sourceForWord engine name) $"original source remains unchanged for {name}"
+        equal oldPlanSource (sourceForType engine "EmailDeliveryPlan") "the original Option plan type remains unchanged"
+
+        let fresh = Runtime.Engine(projectPath, Set.empty, "2026-01-01T00:00:00.0000000+00:00")
+        equal newWordIds (wordIds fresh names) "both extension word identities persist across reload"
+        equal oldWordIds (wordIds fresh oldWordNames) "both original word identities persist across extension reload"
+        for name, expectedSource in newWordSources do
+            equal expectedSource (sourceForWord fresh name) $"populated delivery source reloads exactly for {name}"
+        for name, expectedSource in newTypeSources do
+            equal expectedSource (sourceForType fresh name) $"populated delivery type reloads exactly for {name}"
+        for name, expectedSource in oldWordSources do
+            equal expectedSource (sourceForWord fresh name) $"original source reloads exactly for {name}"
+        equal oldPlanSource (sourceForType fresh "EmailDeliveryPlan") "original plan type reloads unchanged"
+        for name, expectedCases in newWordTests do
+            equal expectedCases (testNames fresh name) $"attached test names reload exactly for {name}"
+        for name, expectedCases in newWordExamples do
+            equal expectedCases (exampleNames fresh name) $"attached example names reload exactly for {name}"
+
+        let reloadedWords = dispatch fresh "words" [] |> expectOk "inspect extension maturity after reload" |> fun response -> response.["data"].["words"].AsArray()
+        check (reloadedWords |> Seq.forall (fun row -> stringValue row.["name"] <> inputProbeName))
+            "the discarded temporary input probe is absent after fresh reload"
+        for name in names do
+            let row = reloadedWords |> Seq.find (fun item -> stringValue item.["name"] = name)
+            equal "library" (stringValue row.["maturity"]) $"{name} remains library-qualified after reload"
+        for name in oldWordNames do
+            let row = reloadedWords |> Seq.find (fun item -> stringValue item.["name"] = name)
+            equal "project" (stringValue row.["maturity"]) $"original {name} remains project maturity after reload"
+
+        runAttachedTests fresh |> ignore
+        runExamples fresh |> ignore
+
+        populatedDeliveryReloadChecks <- newWordIds.Length + newWordSources.Length + newTypeSources.Length + newWordTests.Length + newWordExamples.Length + oldWordSources.Length + 4
+        fresh
+
     let private gitValue arguments =
         try
             let start = ProcessStartInfo("git")
@@ -1365,17 +1641,25 @@ word conformance.failed-delivery-input(seed: Store) -> Store {
         report.["attachedTests"] <- System.Text.Json.JsonSerializer.SerializeToNode totalTests
         report.["examplesPerRun"] <- System.Text.Json.JsonSerializer.SerializeToNode totalExamples
         report.["reloadChecks"] <- System.Text.Json.JsonSerializer.SerializeToNode reloadChecks
-        report.["fidelityBoundary"] <- jstr "Provider results are explicit pure values; no external payment or email provider is invoked. Error codes and Store projections are compared to the F# oracle. AgentLang record constructors are public, so supplemental invalid Product and PaymentReceipt boundary cases cannot be represented as valid F# domain records."
+        let extension = JsonObject()
+        extension.["authoredWords"] <- System.Text.Json.JsonSerializer.SerializeToNode populatedDeliveryWords
+        extension.["authoredTypes"] <- System.Text.Json.JsonSerializer.SerializeToNode populatedDeliveryTypes
+        extension.["attachedTests"] <- System.Text.Json.JsonSerializer.SerializeToNode populatedDeliveryTests
+        extension.["examplesPerRun"] <- System.Text.Json.JsonSerializer.SerializeToNode populatedDeliveryExamples
+        extension.["reloadChecks"] <- System.Text.Json.JsonSerializer.SerializeToNode populatedDeliveryReloadChecks
+        extension.["coverageScope"] <- jstr "Coverage is checked immediately after each word's attached test batch; later runs reset the latest-batch evidence."
+        report.["populatedDeliveryExtension"] <- extension
+        report.["fidelityBoundary"] <- jstr "Provider results are explicit pure values; no external payment or email provider is invoked. Error codes and Store projections are compared to the F# oracle; Flow preserves raw provider error text while the F# DomainError formatter prefixes it. AgentLang record constructors are public, so supplemental invalid Product and PaymentReceipt boundary cases cannot be represented as valid F# domain records."
         File.WriteAllText(target, report.ToJsonString(System.Text.Json.JsonSerializerOptions(WriteIndented = true)) + Environment.NewLine, System.Text.UTF8Encoding(false))
 
     [<EntryPoint>]
     let main argv =
         let evidencePath, command =
             match argv |> Array.toList with
-            | [] -> None, "dotnet run --project tests/AgentLang.Business.Transitions.Tests/AgentLang.Business.Transitions.Tests.fsproj --configuration Release"
+            | [] -> None, "dotnet run --project tests/AgentLang.Business.Transitions.Tests/AgentLang.Business.Transitions.Tests.fsproj --configuration Debug"
             | [ "--evidence"; path ] ->
                 Some path,
-                $"dotnet run --project tests/AgentLang.Business.Transitions.Tests/AgentLang.Business.Transitions.Tests.fsproj --configuration Release -- --evidence {path}"
+                $"dotnet run --project tests/AgentLang.Business.Transitions.Tests/AgentLang.Business.Transitions.Tests.fsproj --configuration Debug -- --evidence {path}"
             | _ -> failwith "Usage: AgentLang.Business.Transitions.Tests [--evidence <relative-or-absolute-path>]"
 
         let root = Path.GetFullPath(Path.Combine(__SOURCE_DIRECTORY__, "..", ".."))
@@ -1408,6 +1692,7 @@ word conformance.failed-delivery-input(seed: Store) -> Store {
         let resolvedTempRoot =
             Path.GetFullPath(Path.GetTempPath()).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
             + string Path.DirectorySeparatorChar
+        let mutable baselineReloadedEngine: Runtime.Engine option = None
         try
           try
             let definition = dispatch engine "define" [ "frontend", jstr "flow"; "source", jstr source ] |> expectOk "define all six business fixture files in one Engine request"
@@ -1428,9 +1713,12 @@ word conformance.failed-delivery-input(seed: Store) -> Store {
             runGroup "stateful renewal, billing, payment, and FIFO retry" (fun () -> testEndToEndState engine)
             runGroup "dependency graph, effects, library coverage, and reload" (fun () ->
                 testMetadataGraphAndEffects engine
-                testLibraryPersistence engine projectPath document |> ignore)
+                baselineReloadedEngine <- Some(testLibraryPersistence engine projectPath document))
+            runGroup "Flow/2 populated delivery extension and independent FIFO oracle" (fun () ->
+                let reloaded = baselineReloadedEngine |> Option.defaultWith (fun () -> failwith "baseline persistence did not return its fresh Engine")
+                testPopulatedDeliveryExtension reloaded projectPath root |> ignore)
 
-            printfn "PASS %d groups, %d assertions; %d tests and %d examples per run; %d words and %d types persisted and reloaded." groups assertions totalTests totalExamples totalWords totalTypes
+            printfn "PASS %d groups, %d assertions; baseline: %d tests and %d examples per run, %d words and %d types; populated delivery extension: %d tests, %d examples, %d words, and %d types." groups assertions totalTests totalExamples totalWords totalTypes populatedDeliveryTests populatedDeliveryExamples populatedDeliveryWords populatedDeliveryTypes
             evidencePath |> Option.iter (fun path -> writeEvidence path command "passed" None)
             0
           with error ->

@@ -1,0 +1,15 @@
+PASS fixture tests and examples
+PASS deterministic seed, full-state projection, and strong types
+PASS subscription start, cancel, and error precedence
+PASS invoice lines, totals, and creation
+PASS payment and email transition contracts
+PASS stateful renewal, billing, payment, and FIFO retry
+FINITE AUDIT INCOMPLETE email.delivery-fold-step missing=[return[0] EmailDeliveryPlan: $.first: none] unsupported=[]
+PASS dependency graph, effects, library coverage, and reload
+FAIL after 7 groups and 4391 assertions: System.Exception: evaluate Flow/2 immutability probe: let initial = store::with-email-state(business::seed(unit), list::empty<EmailMessage>(), list::empty<EmailMessage>()); let ignored = email::apply-delivery-result-populated(initial, result::error<Unit, BusinessError>(businessError::new(code = "TEMP", message = "offline"))); initial: expected success, got FLOW_TRAILING_INPUT: Unexpected token follows the Flow expression.
+   at AgentLang.Business.Transitions.Tests.Program.expectOk[a](a label, JsonObject response) in D:\code\AgentLang\tests\AgentLang.Business.Transitions.Tests\Program.fs:line 64
+   at AgentLang.Business.Transitions.Tests.Program.compareDelivery@1461TT.Invoke(a label, String store, b outcome, FSharpResult`2 expected, KnownEntityIds known) in D:\code\AgentLang\tests\AgentLang.Business.Transitions.Tests\Program.fs:line 1478
+   at AgentLang.Business.Transitions.Tests.Program.testPopulatedDeliveryExtension(Engine engine, String projectPath, String root) in D:\code\AgentLang\tests\AgentLang.Business.Transitions.Tests\Program.fs:line 1485
+   at AgentLang.Business.Transitions.Tests.Program.main@1704-7.Invoke(Unit unitVar0) in D:\code\AgentLang\tests\AgentLang.Business.Transitions.Tests\Program.fs:line 1706
+   at AgentLang.Business.Transitions.Tests.Program.runGroup(String name, FSharpFunc`2 action) in D:\code\AgentLang\tests\AgentLang.Business.Transitions.Tests\Program.fs:line 151
+   at AgentLang.Business.Transitions.Tests.Program.main(String[] argv) in D:\code\AgentLang\tests\AgentLang.Business.Transitions.Tests\Program.fs:line 1704

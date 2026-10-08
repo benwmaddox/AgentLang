@@ -660,6 +660,66 @@ let private testListFoldFuelLimit () =
     expectDiagnostic "fold callback iterations and list construction share the interpreter instruction budget" "RUNTIME_STEP_LIMIT" (fun () ->
         IrInterpreter.executeBody (noOpHost ()) "fold-fuel" body |> ignore)
 
+let private testListTailExecution () =
+    let source = span "list-tail.agent"
+    let intContext = defaultContext ()
+    let run context name expressions =
+        let _, body = compileBody context name [] expressions
+        IrInterpreter.executeBody (noOpHost ()) name body
+    let intList values =
+        match values with
+        | [] -> [ ConstructContainer(ListEmpty, [ TInt ], source) ]
+        | first :: rest ->
+            [ Push(LInt first, source); ConstructContainer(ListSingleton, [ TInt ], source) ]
+            @ (rest |> List.collect (fun value -> [ Push(LInt value, source); Call("list.append", source) ]))
+
+    let emptyInt = run intContext "tail-empty-int" [ ConstructContainer(ListEmpty, [ TInt ], source); Call("list.tail", source) ]
+    check "list.tail preserves the type of an empty Int list" (emptyInt = [ ListValue(TInt, []) ])
+    let singletonInt = run intContext "tail-singleton-int" (intList [ 7L ] @ [ Call("list.tail", source) ])
+    check "list.tail maps a singleton list to a typed empty list" (singletonInt = [ ListValue(TInt, []) ])
+    let multipleInt = run intContext "tail-multiple-int" (intList [ 1L; 2L; 3L; 2L ] @ [ Call("dup", source); Call("list.tail", source) ])
+    check "list.tail returns all remaining values in order and leaves its input unchanged"
+        (multipleInt = [ ListValue(TInt, [ IntValue 1L; IntValue 2L; IntValue 3L; IntValue 2L ]); ListValue(TInt, [ IntValue 2L; IntValue 3L; IntValue 2L ]) ])
+
+    expectDiagnostic "list.tail rejects a non-list input during compilation" "TYPE_STACK_MISMATCH" (fun () ->
+        compileBody intContext "tail-non-list" [] [ Push(LInt 7L, source); Call("list.tail", source) ] |> ignore)
+
+    let tagSpan = span "Tag.agent"
+    let tag =
+        { Name = "Tag"
+          Fields = [ { Name = "label"; Type = TString } ]
+          SourceText = "record Tag"
+          Span = tagSpan }
+    let constructor = wordEntry "tag.new" [ TString ] [ TNamed "Tag" ] Set.empty [] (Some(RecordConstructor "Tag"))
+    let accessor = wordEntry "tag.label" [ TNamed "Tag" ] [ TString ] Set.empty [] (Some(RecordAccessor("Tag", "label")))
+    let stringListConsumer = wordEntry "string-list.consume" [ TList TString ] [] Set.empty [ Call("drop", source) ] None
+    let nominalContext = contextWith (Map.ofList [ "Tag", tag ]) [ constructor; accessor; stringListConsumer ]
+    expectDiagnostic "a List<Tag> tail cannot be passed to a List<String> caller" "TYPE_STACK_MISMATCH" (fun () ->
+        compileBody nominalContext "tail-nominal-list-mismatch" []
+            [ ConstructContainer(ListEmpty, [ TNamed "Tag" ], source)
+              Call("list.tail", source)
+              Call("string-list.consume", source) ]
+        |> ignore)
+    let makeTag label = [ Push(LString label, source); Call("tag.new", source) ]
+    let typedEmpty = run nominalContext "tail-empty-tag" [ ConstructContainer(ListEmpty, [ TNamed "Tag" ], source); Call("list.tail", source) ]
+    check "list.tail preserves a nominal element type even when the result is empty"
+        (typedEmpty = [ ListValue(TNamed "Tag", []) ])
+    let nominalSingleton =
+        makeTag "only"
+        @ [ ConstructContainer(ListSingleton, [ TNamed "Tag" ], source); Call("list.tail", source) ]
+    check "list.tail preserves nominal list typing for a singleton"
+        (run nominalContext "tail-singleton-tag" nominalSingleton = [ ListValue(TNamed "Tag", []) ])
+    let duplicateTag = RecordValue("Tag", Map.ofList [ "label", StringValue "duplicate" ])
+    let nominalMultiple =
+        makeTag "first"
+        @ [ ConstructContainer(ListSingleton, [ TNamed "Tag" ], source) ]
+        @ makeTag "duplicate"
+        @ [ Call("list.append", source) ]
+        @ makeTag "duplicate"
+        @ [ Call("list.append", source); Call("list.tail", source) ]
+    let taggedTail = run nominalContext "tail-multiple-tag" nominalMultiple
+    check "list.tail preserves duplicate nominal values and their order" (taggedTail = [ ListValue(TNamed "Tag", [ duplicateTag; duplicateTag ]) ])
+
 let private testBoundedRuntimeValues () =
     let site = span "bounded-values.agent"
     let chainRecord =
@@ -823,6 +883,7 @@ let main _ =
     testEmptyEffectfulCallbackPreflight ()
     testListFoldExecutionAndPreflight ()
     testListFoldFuelLimit ()
+    testListTailExecution ()
     testBoundedRuntimeValues ()
     testClosedEnumExecution ()
     printfn "IR Interpreter tests passed (%d assertions)." assertions
