@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "domain": "BatchBounds",
+  "validity": "minimum >= 1 and maximum >= minimum",
+  "span": "maximum - minimum",
+  "invalidConstructionError": "RECORD_VALIDATION_FAILED",
+  "cases": [
+    { "minimum": 1, "maximum": 1, "construction": "accepted", "span": 0 },
+    { "minimum": 1, "maximum": 7, "construction": "accepted", "span": 6 },
+    { "minimum": 3, "maximum": 8, "construction": "accepted", "span": 5 },
+    { "minimum": 9, "maximum": 9, "construction": "accepted", "span": 0 },
+    { "minimum": 0, "maximum": 0, "construction": "RECORD_VALIDATION_FAILED" },
+    { "minimum": 0, "maximum": 5, "construction": "RECORD_VALIDATION_FAILED" },
+    { "minimum": -3, "maximum": 4, "construction": "RECORD_VALIDATION_FAILED" },
+    { "minimum": 4, "maximum": 3, "construction": "RECORD_VALIDATION_FAILED" },
+    { "minimum": 2, "maximum": 0, "construction": "RECORD_VALIDATION_FAILED" },
+    { "minimum": -5, "maximum": -1, "construction": "RECORD_VALIDATION_FAILED" }
+  ]
+}

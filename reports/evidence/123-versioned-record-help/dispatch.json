@@ -1,0 +1,12 @@
+{
+  "actor": "/root/versioned_record_actor",
+  "model": "gpt-6-luna",
+  "reasoning": "max",
+  "inheritedConversation": false,
+  "implementationCommit": "ee97dda94c9328a4046029747076fa0a4248b67f",
+  "repositoryCommitAtDispatch": "c9c8fce471078b59b14fa0219feb296a2e9b529a",
+  "freezeSha256": "58097F04E01BE7DD6CFC97705BCCC7EC169912C01E425ED5FBB236C61472696D",
+  "dispatchRecordedUtc": "2026-10-08T09:32:49.287756+00:00",
+  "rootValidation": "Exact prompt delta, empty actor project, unchanged oracle/scorer and22runtime hashes verified before dispatch.",
+  "authorization": "Human authorized isolated experiments and local tests; no solution hints."
+}

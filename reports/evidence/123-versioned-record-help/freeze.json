@@ -1,0 +1,296 @@
+{
+  "schemaVersion": 1,
+  "status": "ready-for-coordinator-review-not-dispatched",
+  "trial": "record-validation-help-adoption-002",
+  "purpose": "Help-exposure usability observation; not causal inference.",
+  "capturedUtc": "2026-10-08T09:31:38.5777067Z",
+  "sourceTrial": {
+    "path": ".agentlang/record-validation-help-adoption-001",
+    "implementationCommit": "ee97dda94c9328a4046029747076fa0a4248b67f",
+    "baseRevisionBeforeReport121": "cbe91dd679670077cf695c5bc071b5f626aaf722",
+    "sourceActorPromptSha256": "C739D0534AA21B51BC13C2A1720D3E477E214E8CEE7CF0B8CA0015A46D5778A0",
+    "sourceOracleSha256": "A404FDD4D71E1704669C29164733C5AB4F9211FE87ED8ADE9C6773AF7CBDE9D0",
+    "sourceRuntimePinSha256": "E62DB00991D91F72EBFC76E327FC7E3E73387EA85CC3A1C95F28C9E9562B3DC6"
+  },
+  "inputs": {
+    "plan": {
+      "path": "D:\\code\\AgentLang\\.agentlang\\record-validation-help-adoption-002\\plan.md",
+      "bytes": 1049,
+      "sha256": "FC4235C0D80E8BAEC3D063FDAA5207346A77CAC75D490EE001D4D06EBFEBE419"
+    },
+    "actorPrompt": {
+      "path": "D:\\code\\AgentLang\\.agentlang\\record-validation-help-adoption-002\\actor-prompt.md",
+      "bytes": 3961,
+      "sha256": "605339A2F1CF652463CBE150824A2C61CC6701EF45D3FB90EC9EDBBA4A09ABBC"
+    },
+    "oracle": {
+      "path": "D:\\code\\AgentLang\\.agentlang\\record-validation-help-adoption-002\\oracle.json",
+      "bytes": 994,
+      "sha256": "A404FDD4D71E1704669C29164733C5AB4F9211FE87ED8ADE9C6773AF7CBDE9D0"
+    },
+    "runtimePin": {
+      "path": "D:\\code\\AgentLang\\.agentlang\\record-validation-help-adoption-002\\runtime-pin.json",
+      "bytes": 5845,
+      "sha256": "AF9BEC61BEBC2EE7D01443C4C2A9AE8372C2C39309DEA4BDDF4096B043285365"
+    }
+  },
+  "promptDelta": {
+    "allowedPathReplacement": "record-validation-help-adoption-001 -> record-validation-help-adoption-002",
+    "addedFlow2Instruction": "Before defining code, request `{\"op\":\"help\",\"topic\":\"define\",\"syntaxVersion\":2}` and verify the returned `syntaxVersion` is `2`. Use `syntaxVersion: 2` on later help requests.",
+    "normalizedPromptMatches001": true,
+    "pathOccurrenceCount": 3,
+    "noOtherPromptChanges": true
+  },
+  "oracle": {
+    "cases": 10,
+    "sha256Matches001": true
+  },
+  "runtime": {
+    "sourceDirectory": ".agentlang/record-validation-help-adoption-001/runtime/debug-artifacts",
+    "copiedDirectory": ".agentlang/record-validation-help-adoption-002/runtime/debug-artifacts",
+    "fileCount": 22,
+    "files": [
+      {
+        "path": "AgentLang.Cli.deps.json",
+        "bytes": 2903,
+        "sha256": "6382F6DC29BB8F827824839010E313B266E51A3F87A4FDB8C382931D2549E97E"
+      },
+      {
+        "path": "AgentLang.Cli.dll",
+        "bytes": 43008,
+        "sha256": "DA0A9677A7D9694B8B8E1D24D72F49CD8D7D4180F21A9077612A8D4B84373A02"
+      },
+      {
+        "path": "AgentLang.Cli.exe",
+        "bytes": 156160,
+        "sha256": "8D85CA1F3B44E8715C0F230241DEAB3A2B02222C7428D4A5D3ABE2B0A866822B"
+      },
+      {
+        "path": "AgentLang.Cli.pdb",
+        "bytes": 12932,
+        "sha256": "633CD91E742620ECAFA470B256853ED53DA8736223A9783B1317ED2E358FE492"
+      },
+      {
+        "path": "AgentLang.Cli.runtimeconfig.json",
+        "bytes": 268,
+        "sha256": "A45057885F807F4A337FDEA3CCDFA64E1675D22A6D6A6FC7C7394FD44BA9EEBE"
+      },
+      {
+        "path": "AgentLang.Core.dll",
+        "bytes": 2591232,
+        "sha256": "32ECE1BDAD77A8ABCFF9D81F0A6EBB913AC319706B8258F978FC0FCA2814B214"
+      },
+      {
+        "path": "AgentLang.Core.pdb",
+        "bytes": 902844,
+        "sha256": "AE6254707A274B3DF5B6FBD7A680E34F04D049C523B1220E18149863A60C9441"
+      },
+      {
+        "path": "AgentLang.Core.xml",
+        "bytes": 37131,
+        "sha256": "09AC15A5F53B3D6FD39E721BB9E7EDA22F7B2269A7676F95866F822C9BCCBE7A"
+      },
+      {
+        "path": "cs/FSharp.Core.resources.dll",
+        "bytes": 34600,
+        "sha256": "EB8BD755CFE0D39CE27615027FE22556E8B9DCB470F2B47A36F4BFBF3C31BE64"
+      },
+      {
+        "path": "de/FSharp.Core.resources.dll",
+        "bytes": 35592,
+        "sha256": "7419E4F5CEED9E03821686E865FED7D29C6217FDF5D3A46A2919A369C98C38CE"
+      },
+      {
+        "path": "es/FSharp.Core.resources.dll",
+        "bytes": 34600,
+        "sha256": "636866649564C72EB763EB3942E021B52B1F9B3869D037ACA48F73D4474353C5"
+      },
+      {
+        "path": "fr/FSharp.Core.resources.dll",
+        "bytes": 35128,
+        "sha256": "F38F2FD6BC4C4E233DD098A36B315A2BC87673CF2F07C6BA3DAF71A3264F4A64"
+      },
+      {
+        "path": "FSharp.Core.dll",
+        "bytes": 2314000,
+        "sha256": "BF72714C36DC21357A6530D59479E1D7FC5E6BC815A9AF9A872E5E41611C1E6F"
+      },
+      {
+        "path": "it/FSharp.Core.resources.dll",
+        "bytes": 34576,
+        "sha256": "61A0BE9C6A2ED95F8E98493B17C54A55C68CEF84E23A0D82114319E2C5F3C2CD"
+      },
+      {
+        "path": "ja/FSharp.Core.resources.dll",
+        "bytes": 37160,
+        "sha256": "DD7F36036D906E991DA5505B074EF889A603F449D3324750FDA5F5445BA2854F"
+      },
+      {
+        "path": "ko/FSharp.Core.resources.dll",
+        "bytes": 36104,
+        "sha256": "0F3EF625E379577E3B60C15D8CC3759D3DC8840F99894282DF1E702B4A166462"
+      },
+      {
+        "path": "pl/FSharp.Core.resources.dll",
+        "bytes": 35632,
+        "sha256": "755BAB9FBD85E5E4B4771870C9C4D655E91E3CE39CC1C2735FE0BC7CEC6B84C3"
+      },
+      {
+        "path": "pt-BR/FSharp.Core.resources.dll",
+        "bytes": 34096,
+        "sha256": "A4BBBDAABF2003A5FDFF5F5BC4143C3FD4A064F2681FC481F449D4558074DC61"
+      },
+      {
+        "path": "ru/FSharp.Core.resources.dll",
+        "bytes": 41232,
+        "sha256": "A1133F9AB7E661803D1AF0C2489626BD53AC33A11DFE891F5A02F3186F2F5D78"
+      },
+      {
+        "path": "tr/FSharp.Core.resources.dll",
+        "bytes": 34072,
+        "sha256": "6B0CBA5139A86EE681909FDFCEBAC07C99AFBA3BFCFF4FB8AB12B9C2112A0B31"
+      },
+      {
+        "path": "zh-Hans/FSharp.Core.resources.dll",
+        "bytes": 32552,
+        "sha256": "25F82F35A9234BCAAB272921B0D50054DDB4A669D96C111907C9D31F5B18C121"
+      },
+      {
+        "path": "zh-Hant/FSharp.Core.resources.dll",
+        "bytes": 32032,
+        "sha256": "AC03EE7C4112C755705776C700033794586F980FE9476E6A13811A7153BEABB8"
+      }
+    ],
+    "allHashesAndSizesMatchPin": true
+  },
+  "broker": {
+    "path": "scripts/Start-SubagentTrialHostV2.ps1",
+    "bytes": 81288,
+    "sha256": "6573321E8C0FC92926E43221AE10836FD5C62139E5FDB51CC34FF482FBC81F2B",
+    "sha256MatchesPin": true
+  },
+  "scripts": {
+    "scorer": {
+      "path": "D:\\code\\AgentLang\\.agentlang\\record-validation-help-adoption-002\\scoring\\Score-Actor.ps1",
+      "bytes": 13167,
+      "sha256": "27EF796BECB3DB9A872B9647A9AB84516207D7FD19D1D45DB115791300C30D07"
+    },
+    "scorerSourcePath": ".agentlang/record-validation-help-adoption-001/scoring/Score-Actor.ps1",
+    "scorerSourceSha256": "27EF796BECB3DB9A872B9647A9AB84516207D7FD19D1D45DB115791300C30D07",
+    "scorerMatchesFinalReview": true,
+    "scorerParseErrors": 0,
+    "traceSummarizer": {
+      "path": "D:\\code\\AgentLang\\.agentlang\\record-validation-help-adoption-002\\Summarize-Trace.ps1",
+      "bytes": 2044,
+      "sha256": "47E63C910EBDB46B1AB1044F482F22F10C50D479E3BE3E85C991A1FAB79D0900"
+    },
+    "traceSummarizerSourcePath": ".agentlang/record-validation-help-adoption-001/Summarize-Trace.ps1",
+    "traceSummarizerSourceSha256": "47E63C910EBDB46B1AB1044F482F22F10C50D479E3BE3E85C991A1FAB79D0900"
+  },
+  "priorPreflight": {
+    "purpose": "Reuse attempt-03 coordinator control evidence by reference only; no rerun or copy.",
+    "summaryPath": ".agentlang/record-validation-help-adoption-001/preflight/attempt-03/summary.json",
+    "summarySha256": "B2A63B2193FFE20F376AED3E0B108E57903A6D6FBFB6F46A6F3832BCC579F765",
+    "controls": [
+      {
+        "name": "correct",
+        "hostExitCode": 0,
+        "testsRun": 4,
+        "testsPassed": 4,
+        "testsFailed": 0,
+        "oracleCaseCount": 10,
+        "oraclePassed": true,
+        "predicateCoverageComplete": true,
+        "predicateObservedBoolReturns": [
+          "false",
+          "true"
+        ]
+      },
+      {
+        "name": "always-true",
+        "hostExitCode": 0,
+        "testsRun": 4,
+        "testsPassed": 2,
+        "testsFailed": 2,
+        "oracleCaseCount": 10,
+        "oraclePassed": true,
+        "predicateCoverageComplete": false,
+        "predicateObservedBoolReturns": [
+          "true"
+        ]
+      }
+    ],
+    "evidence": [
+      {
+        "path": "D:\\code\\AgentLang\\.agentlang\\record-validation-help-adoption-001\\preflight\\Run-Preflight.ps1",
+        "bytes": 11534,
+        "sha256": "1FEA8C09C7B768408CC9AE67C584CB45ECEE38DAE3A3475CD4AEAF1E6FC3053D"
+      },
+      {
+        "path": "D:\\code\\AgentLang\\.agentlang\\record-validation-help-adoption-001\\preflight\\attempt-03\\summary.json",
+        "bytes": 8180,
+        "sha256": "B2A63B2193FFE20F376AED3E0B108E57903A6D6FBFB6F46A6F3832BCC579F765"
+      },
+      {
+        "path": "D:\\code\\AgentLang\\.agentlang\\record-validation-help-adoption-001\\preflight\\attempt-03\\correct.requests.jsonl",
+        "bytes": 2331,
+        "sha256": "FF0DB3EC895443ED47461C1C7834CD04A9993E599E98BF01D7FFC853DA85BF7A"
+      },
+      {
+        "path": "D:\\code\\AgentLang\\.agentlang\\record-validation-help-adoption-001\\preflight\\attempt-03\\correct.responses.jsonl",
+        "bytes": 5801,
+        "sha256": "904B40ADA6049DF1D9DAE1E25146D67CD2640E1DF1DF3BDBD8792A31CB53F215"
+      },
+      {
+        "path": "D:\\code\\AgentLang\\.agentlang\\record-validation-help-adoption-001\\preflight\\attempt-03\\correct.trace.jsonl",
+        "bytes": 49695,
+        "sha256": "DF521A5C81B16709CE1EFDF6645BD1771517D4DDB1E6E27832F14EBC606B79E6"
+      },
+      {
+        "path": "D:\\code\\AgentLang\\.agentlang\\record-validation-help-adoption-001\\preflight\\attempt-03\\correct.stderr.log",
+        "bytes": 0,
+        "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+      },
+      {
+        "path": "D:\\code\\AgentLang\\.agentlang\\record-validation-help-adoption-001\\preflight\\attempt-03\\always-true.requests.jsonl",
+        "bytes": 2232,
+        "sha256": "D9F30EDE5E67B448694153AB0B73E02259D0A4D3D7F0E11ED7F8A39F1F6F1ACD"
+      },
+      {
+        "path": "D:\\code\\AgentLang\\.agentlang\\record-validation-help-adoption-001\\preflight\\attempt-03\\always-true.responses.jsonl",
+        "bytes": 6123,
+        "sha256": "E38E5390581EC362D69E762921D1B987738F60E86B7CC60F9C8C191039DE9C3B"
+      },
+      {
+        "path": "D:\\code\\AgentLang\\.agentlang\\record-validation-help-adoption-001\\preflight\\attempt-03\\always-true.trace.jsonl",
+        "bytes": 52736,
+        "sha256": "823B56DD0DFE5083134FA684C695DB8D4F7274A5E2A0362694F1E653AFED5C87"
+      },
+      {
+        "path": "D:\\code\\AgentLang\\.agentlang\\record-validation-help-adoption-001\\preflight\\attempt-03\\always-true.stderr.log",
+        "bytes": 0,
+        "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+      }
+    ],
+    "copiedInto002": false,
+    "rerun": false
+  },
+  "actorEntry": {
+    "model": "gpt-6-luna",
+    "reasoning": "max",
+    "inheritedConversation": false,
+    "maxExchanges": 100,
+    "project": "project/actor",
+    "projectEmpty": true,
+    "runtime": "runtime/debug-artifacts/AgentLang.Cli.dll",
+    "trace": "runtime/actor.trace.jsonl",
+    "dispatched": false
+  },
+  "preparationActions": {
+    "buildExecuted": false,
+    "preflightExecuted": false,
+    "newControlsExecuted": false,
+    "harnessExecuted": false,
+    "actorDispatched": false
+  }
+}

@@ -1,0 +1,4 @@
+test batchBounds.valid?/ordinary {
+    batchBounds::valid?(batchBounds::new(minimum = 2, maximum = 5))
+    => true
+}

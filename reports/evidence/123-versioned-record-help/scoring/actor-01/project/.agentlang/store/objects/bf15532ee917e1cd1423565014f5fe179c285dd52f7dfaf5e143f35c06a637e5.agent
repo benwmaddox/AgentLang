@@ -1,0 +1,8 @@
+fn batchBounds.valid?(value: BatchBounds) -> Bool {
+    doc "Returns whether the batch bounds have a positive minimum and an ordered maximum."
+
+    bool::and(
+        int::greater-or-equal(value.minimum, 1),
+        int::greater-or-equal(value.maximum, value.minimum)
+    )
+}

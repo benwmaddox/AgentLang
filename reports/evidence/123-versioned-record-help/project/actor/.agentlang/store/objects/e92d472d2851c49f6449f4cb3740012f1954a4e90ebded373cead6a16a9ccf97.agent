@@ -1,0 +1,4 @@
+test batch.span/equal-endpoints {
+    batch::span(batchBounds::new(minimum = 4, maximum = 4))
+    => 0
+}

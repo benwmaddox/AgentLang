@@ -104,3 +104,7 @@ reports/evidence/121-record-validation-guidance/** -text -whitespace
 
 # Preserve record-validation help-adoption evidence hashes.
 reports/evidence/122-record-validation-help-adoption/** -text -whitespace
+
+# Preserve versioned record-help trial and efficacy-review evidence hashes.
+reports/evidence/123-versioned-record-help/** -text -whitespace
+reports/evidence/124-efficacy-assessment/** -text -whitespace

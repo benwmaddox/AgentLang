@@ -1,0 +1,72 @@
+// frontend: flow/2
+
+record BatchBounds {
+    field minimum: Int;
+    field maximum: Int;
+    validate batchBounds::valid?;
+}
+
+// frontend: flow/2
+
+fn batch.span(value: BatchBounds) -> Int {
+    doc "Returns the difference between the maximum and minimum batch bounds."
+
+    ::subtract(value.maximum, value.minimum)
+}
+
+// frontend: flow/2
+
+fn batchBounds.valid?(value: BatchBounds) -> Bool {
+    doc "Returns whether the batch bounds have a positive minimum and an ordered maximum."
+
+    bool::and(int::greater-or-equal(value.minimum, 1), int::greater-or-equal(value.maximum, value.minimum))
+}
+
+// frontend: flow/2
+
+test batch.span/equal-endpoints {
+    batch::span(batchBounds::new(minimum = 4, maximum = 4))
+    => 0
+}
+
+// frontend: flow/2
+
+test batch.span/ordinary {
+    batch::span(batchBounds::new(minimum = 2, maximum = 5))
+    => 3
+}
+
+// frontend: flow/2
+
+test batch.span/positive-minimum {
+    batch::span(batchBounds::new(minimum = 1, maximum = 6))
+    => 5
+}
+
+// frontend: flow/2
+
+test batchBounds.valid?/equal-endpoints {
+    batchBounds::valid?(batchBounds::new(minimum = 4, maximum = 4))
+    => true
+}
+
+// frontend: flow/2
+
+test batchBounds.valid?/maximum-below-minimum {
+    batchBounds::new(minimum = 3, maximum = 2)
+    => error RECORD_VALIDATION_FAILED
+}
+
+// frontend: flow/2
+
+test batchBounds.valid?/minimum-below-one {
+    batchBounds::new(minimum = 0, maximum = 3)
+    => error RECORD_VALIDATION_FAILED
+}
+
+// frontend: flow/2
+
+test batchBounds.valid?/ordinary {
+    batchBounds::valid?(batchBounds::new(minimum = 2, maximum = 5))
+    => true
+}

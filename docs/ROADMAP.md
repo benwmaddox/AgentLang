@@ -205,10 +205,24 @@ pass. [Report 122](../reports/122-record-validation-help-adoption.md) completes 
 fresh bounds-invariant trial: all ten independent cases and six attached tests
 pass after reload, both functions qualify as library, and the durable validator
 binding matches. However, all three help requests returned Flow/1, so the new
-Flow/2 guidance was never exposed. Next keep the task/runtime/oracle fixed and
-make version-2 help selection explicit in the primer, verifying the returned
-version. Report this as another bounded observation, not a causal estimate.
-Separately assess
+Flow/2 guidance was never exposed.
+[Report 123](../reports/123-versioned-record-help.md) repeats that task with the
+same runtime, oracle and scorer, explicitly selecting version-2 help. The fresh
+agent saw the example, passed ten independent cases and seven own tests, qualified
+both functions and produced no structured errors. This is successful bounded
+adoption, not a causal improvement estimate. Pin and verify help versions in
+future trials.
+
+[Report 124](../reports/124-efficacy-assessment.md) consolidates efficacy evidence:
+reuse and workable edits are observed, but comparative reliability and context
+advantages remain unproven. Next prioritize a small replicated unfamiliar-rule
+repair/refactor comparison in current Flow/2 and conventional F#, with independent
+expectations and matched foundational/helper contracts. Keep retained versus
+reset helper availability explicit in the study design, without target/helper
+hints to actors. Reuse the existing harness; do not add more prerequisite
+features unless a concrete experiment blocker requires them. Provider-state,
+module closure and scoped overrides remain approved work, not prerequisites to
+completing all future comparisons. Separately assess
 whether unchecked construction inputs need a distinct type or field-based
 validation contract; report 120 exposes this reasoning tension but does not
 settle the design. Provider-state assertions,

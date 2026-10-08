@@ -1,0 +1,57 @@
+{
+  "purpose": "Exact repository sources cited by reports123/124; not new execution results",
+  "files": [
+    {
+      "path": "reports/122-record-validation-help-adoption.md",
+      "sha256": "DD7A8EB897C25E7E2DEDFBD1916C3229281EC95899E5019E8E7D6AF7CE7342A6"
+    },
+    {
+      "path": "reports/evidence/122-record-validation-help-adoption/index.json",
+      "sha256": "2D16E0B122B3377CA699B7F04DFAB93672409B2B502836F52545041AC974CC6C"
+    },
+    {
+      "path": "reports/124-efficacy-assessment.md",
+      "sha256": "3D4C40582CE316E5596229534D6C289D7939185B628C9485F9A40BF07CD31ABD"
+    },
+    {
+      "path": "reports/064-repeat-agent-purpose-review.md",
+      "sha256": "795E0FAD04CEBF75C01DCF47C051C601D562F4C6FD49AD7703F1A1251E4AEF50"
+    },
+    {
+      "path": "reports/111-current-syntax-stateful-comparison.md",
+      "sha256": "EB70C6F5958E09F139BD69E4DD890AC5112223BE5C63FF946069D836729EA7AB"
+    },
+    {
+      "path": "reports/099-quick-agent-comparison.md",
+      "sha256": "F4BB6DCD39B0A799554A88F68ED9291516F5209C8F9C06E0B09169E75B6A212B"
+    },
+    {
+      "path": "reports/109-location-unhinted-repair.md",
+      "sha256": "828E151354441720CBDFBE5B16411DDC559C3433B1DDB876EAF1696F09BB9F50"
+    },
+    {
+      "path": "reports/115-versioned-help-adoption.md",
+      "sha256": "5C6EEBBEFFDD0238E630E7BD4FAD834D946C5F524884082E4FF2A16E354C4DEF"
+    },
+    {
+      "path": "reports/117-finite-coverage-adoption.md",
+      "sha256": "D3D76C66DF43E326BAC1CCFF0C7C00A7C9B40ADAE9E610DBB67C86516E76EC0D"
+    },
+    {
+      "path": "reports/evidence/109-location-unhinted-repair/summaries/language-score-summary.json",
+      "sha256": "48EFB86F284B2EBAA8EC8C0C94C21F611B2BC0BAC37BC59E924D5F46DA1AB5D1"
+    },
+    {
+      "path": "reports/evidence/111-current-syntax-stateful-comparison/results/outcomes.json",
+      "sha256": "095B265188AE56F1AB2C8C7262CCC38442A9A9C49023BCED834E45C53E6E84D7"
+    },
+    {
+      "path": "reports/evidence/111-current-syntax-stateful-comparison/results/extra-write-acceptance.json",
+      "sha256": "FC79D32D3CDC9BFB38592F1464816336ABBA456B97023A5DCD3AFA200D839EA4"
+    },
+    {
+      "path": "reports/123-versioned-record-help.md",
+      "sha256": "A8D7D95C6E16F75A90964A71939DA2240046621F36B1F66A9B0F727B25C6EBB9"
+    }
+  ]
+}

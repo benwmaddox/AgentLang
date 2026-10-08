@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "fileCount": 5,
+  "files": [
+    {
+      "path": "cited-source-hashes.json",
+      "bytes": 2325,
+      "sha256": "F339E74B2D89193E188D7240117D4CB4B00F2C172208E044364C2C02BFFBD065"
+    },
+    {
+      "path": "draft.md",
+      "bytes": 9170,
+      "sha256": "C2F3D76509FB4197BFBADC41B6A06152799779E2C2CE166FB3892ECC0541C8EE"
+    },
+    {
+      "path": "final-review.md",
+      "bytes": 2262,
+      "sha256": "D7DB881BF136A01BF0E41CC8868D130F70FD6604E43DE84269939ED395C5D659"
+    },
+    {
+      "path": "review.md",
+      "bytes": 2951,
+      "sha256": "D6B32A522A474F1ACD7F773B540A16F8154ECBAA01E0761704F578055C15340E"
+    },
+    {
+      "path": "turn-plan.md",
+      "bytes": 1766,
+      "sha256": "7E533B71A1790C4E3DA8D5677EE40DD83ED5BA8C340A5B7DAC602272B0B6C49E"
+    }
+  ]
+}

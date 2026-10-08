@@ -37,9 +37,11 @@ the corresponding inspectable contracts.
 
 Flow/2 record-validation help includes executable predicate-owned rejection tests
 and library qualification requests; see [report 121](reports/121-record-validation-guidance.md).
-The [latest fresh-agent trial](reports/122-record-validation-help-adoption.md)
-passed independent behavior, reload and library-qualification checks. It requested
-older-version help, so the new guidance's benefit remains untested.
+The [versioned-help trial](reports/123-versioned-record-help.md) passed all ten
+independent cases and seven tests, with both functions library-qualified and no
+structured errors. The [efficacy assessment](reports/124-efficacy-assessment.md)
+finds demonstrated reuse and workable edits, but no established reliability
+advantage over F#. A matched comparison is the next research priority.
 
 The implementation targets .NET 9 and uses no external test framework or model API key.
 

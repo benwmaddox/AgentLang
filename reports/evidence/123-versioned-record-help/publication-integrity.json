@@ -1,0 +1,13 @@
+{
+  "auditedUtc": "2026-10-08T09:43:11.297403+00:00",
+  "dispatchFreezeMatch": true,
+  "runtimeFilesUnchanged": 22,
+  "priorControlEvidenceReferencesUnchanged": 10,
+  "scorerExitCode": 0,
+  "scorerRun": "scoring/actor-01",
+  "actorFilesUnchanged": 18,
+  "bothAuthoredFunctionsPure": true,
+  "productChanges": false,
+  "runtimeRebuilt": false,
+  "priorControlsRerun": false
+}

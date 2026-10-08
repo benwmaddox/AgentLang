@@ -1,0 +1,4 @@
+test batchBounds.valid?/maximum-below-minimum {
+    batchBounds::new(minimum = 3, maximum = 2)
+    => error RECORD_VALIDATION_FAILED
+}

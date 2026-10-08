@@ -1,0 +1,163 @@
+{
+  "schemaVersion": 1,
+  "label": "Fresh Debug runtime copied from the frozen report121 build; binary hashes identify the exact runtime.",
+  "report121Commit": "ee97dda94c9328a4046029747076fa0a4248b67f",
+  "baseRevisionBeforeReport121": "cbe91dd679670077cf695c5bc071b5f626aaf722",
+  "capturedUtc": "2026-10-08T09:04:20.742Z",
+  "buildResults": ".agentlang/record-validation-help-001/results.json",
+  "buildResultsSha256": "10692808D89C28DDA8046D3B725A16B67A03FE7ED0952EDA77F6DC4174B5CB40",
+  "sourceBuildArtifactDirectory": "src/AgentLang.Cli/bin/Debug/net9.0",
+  "copiedRuntimeDirectory": ".agentlang/record-validation-help-adoption-002/runtime/debug-artifacts",
+  "cliDllSha256": "DA0A9677A7D9694B8B8E1D24D72F49CD8D7D4180F21A9077612A8D4B84373A02",
+  "coreDllSha256": "32ECE1BDAD77A8ABCFF9D81F0A6EBB913AC319706B8258F978FC0FCA2814B214",
+  "broker": {
+    "path": "scripts/Start-SubagentTrialHostV2.ps1",
+    "bytes": 81288,
+    "sha256": "6573321E8C0FC92926E43221AE10836FD5C62139E5FDB51CC34FF482FBC81F2B"
+  },
+  "sourceHashes": [
+    {
+      "path": "src/AgentLang.Core/AuthoringHelp.fs",
+      "sha256": "3FF07FA9AEBD1E26907FA91A5189B09DDB9E7C41554C27EE333B834D46532316"
+    },
+    {
+      "path": "tests/AgentLang.Flow.Runtime.Tests/Program.fs",
+      "sha256": "4DE3A231759BDC2A1502F918F36D2AFF98D1FB485B35531DCC568956D459A947"
+    }
+  ],
+  "validation": [
+    {
+      "command": "dotnet build AgentLang.sln --configuration Debug",
+      "exitCode": 0,
+      "log": ".agentlang/record-validation-help-001/debug-build-final.log"
+    },
+    {
+      "command": "dotnet run --no-build -c Debug --project tests/AgentLang.Flow.Runtime.Tests",
+      "exitCode": 0,
+      "result": "30 groups, 1023 assertions passed",
+      "log": ".agentlang/record-validation-help-001/flow-runtime-tests.log"
+    },
+    {
+      "command": "dotnet run --no-build -c Debug --project tests/AgentLang.Cli.Tests",
+      "exitCode": 0,
+      "result": "11 groups, 145 assertions passed",
+      "log": ".agentlang/record-validation-help-001/cli-tests.log"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "runtimeFiles": [
+    {
+      "path": "AgentLang.Cli.deps.json",
+      "bytes": 2903,
+      "sha256": "6382F6DC29BB8F827824839010E313B266E51A3F87A4FDB8C382931D2549E97E"
+    },
+    {
+      "path": "AgentLang.Cli.dll",
+      "bytes": 43008,
+      "sha256": "DA0A9677A7D9694B8B8E1D24D72F49CD8D7D4180F21A9077612A8D4B84373A02"
+    },
+    {
+      "path": "AgentLang.Cli.exe",
+      "bytes": 156160,
+      "sha256": "8D85CA1F3B44E8715C0F230241DEAB3A2B02222C7428D4A5D3ABE2B0A866822B"
+    },
+    {
+      "path": "AgentLang.Cli.pdb",
+      "bytes": 12932,
+      "sha256": "633CD91E742620ECAFA470B256853ED53DA8736223A9783B1317ED2E358FE492"
+    },
+    {
+      "path": "AgentLang.Cli.runtimeconfig.json",
+      "bytes": 268,
+      "sha256": "A45057885F807F4A337FDEA3CCDFA64E1675D22A6D6A6FC7C7394FD44BA9EEBE"
+    },
+    {
+      "path": "AgentLang.Core.dll",
+      "bytes": 2591232,
+      "sha256": "32ECE1BDAD77A8ABCFF9D81F0A6EBB913AC319706B8258F978FC0FCA2814B214"
+    },
+    {
+      "path": "AgentLang.Core.pdb",
+      "bytes": 902844,
+      "sha256": "AE6254707A274B3DF5B6FBD7A680E34F04D049C523B1220E18149863A60C9441"
+    },
+    {
+      "path": "AgentLang.Core.xml",
+      "bytes": 37131,
+      "sha256": "09AC15A5F53B3D6FD39E721BB9E7EDA22F7B2269A7676F95866F822C9BCCBE7A"
+    },
+    {
+      "path": "cs/FSharp.Core.resources.dll",
+      "bytes": 34600,
+      "sha256": "EB8BD755CFE0D39CE27615027FE22556E8B9DCB470F2B47A36F4BFBF3C31BE64"
+    },
+    {
+      "path": "de/FSharp.Core.resources.dll",
+      "bytes": 35592,
+      "sha256": "7419E4F5CEED9E03821686E865FED7D29C6217FDF5D3A46A2919A369C98C38CE"
+    },
+    {
+      "path": "es/FSharp.Core.resources.dll",
+      "bytes": 34600,
+      "sha256": "636866649564C72EB763EB3942E021B52B1F9B3869D037ACA48F73D4474353C5"
+    },
+    {
+      "path": "fr/FSharp.Core.resources.dll",
+      "bytes": 35128,
+      "sha256": "F38F2FD6BC4C4E233DD098A36B315A2BC87673CF2F07C6BA3DAF71A3264F4A64"
+    },
+    {
+      "path": "FSharp.Core.dll",
+      "bytes": 2314000,
+      "sha256": "BF72714C36DC21357A6530D59479E1D7FC5E6BC815A9AF9A872E5E41611C1E6F"
+    },
+    {
+      "path": "it/FSharp.Core.resources.dll",
+      "bytes": 34576,
+      "sha256": "61A0BE9C6A2ED95F8E98493B17C54A55C68CEF84E23A0D82114319E2C5F3C2CD"
+    },
+    {
+      "path": "ja/FSharp.Core.resources.dll",
+      "bytes": 37160,
+      "sha256": "DD7F36036D906E991DA5505B074EF889A603F449D3324750FDA5F5445BA2854F"
+    },
+    {
+      "path": "ko/FSharp.Core.resources.dll",
+      "bytes": 36104,
+      "sha256": "0F3EF625E379577E3B60C15D8CC3759D3DC8840F99894282DF1E702B4A166462"
+    },
+    {
+      "path": "pl/FSharp.Core.resources.dll",
+      "bytes": 35632,
+      "sha256": "755BAB9FBD85E5E4B4771870C9C4D655E91E3CE39CC1C2735FE0BC7CEC6B84C3"
+    },
+    {
+      "path": "pt-BR/FSharp.Core.resources.dll",
+      "bytes": 34096,
+      "sha256": "A4BBBDAABF2003A5FDFF5F5BC4143C3FD4A064F2681FC481F449D4558074DC61"
+    },
+    {
+      "path": "ru/FSharp.Core.resources.dll",
+      "bytes": 41232,
+      "sha256": "A1133F9AB7E661803D1AF0C2489626BD53AC33A11DFE891F5A02F3186F2F5D78"
+    },
+    {
+      "path": "tr/FSharp.Core.resources.dll",
+      "bytes": 34072,
+      "sha256": "6B0CBA5139A86EE681909FDFCEBAC07C99AFBA3BFCFF4FB8AB12B9C2112A0B31"
+    },
+    {
+      "path": "zh-Hans/FSharp.Core.resources.dll",
+      "bytes": 32552,
+      "sha256": "25F82F35A9234BCAAB272921B0D50054DDB4A669D96C111907C9D31F5B18C121"
+    },
+    {
+      "path": "zh-Hant/FSharp.Core.resources.dll",
+      "bytes": 32032,
+      "sha256": "AC03EE7C4112C755705776C700033794586F980FE9476E6A13811A7153BEABB8"
+    }
+  ]
+}

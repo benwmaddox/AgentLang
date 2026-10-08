@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "causalComparison": false,
+  "actorProjectUnchanged": true,
+  "actorProjectFileCount": 18,
+  "scoringCopy": "D:\\code\\AgentLang\\.agentlang\\record-validation-help-adoption-002\\scoring\\actor-01\\project",
+  "freshReloadTestAllOk": true,
+  "freshReloadSourceReadsOk": true,
+  "freshReloadLoadedCommittedProject": true,
+  "allTestsPassed": true,
+  "testsRun": 7,
+  "testsPassed": 7,
+  "recordFields": [
+    "maximum:Int",
+    "minimum:Int"
+  ],
+  "recordFieldsMatch": true,
+  "spanSignatureMatch": true,
+  "validatorReference": "batchBounds::valid?",
+  "validatorName": "batchBounds.valid?",
+  "validatorPure": true,
+  "validatorSignatureMatch": true,
+  "validatorWordId": "word_6b836573426e4488abe20cd3c29d2773",
+  "validatorEffects": [],
+  "validatorOwnTrueTestCount": 2,
+  "validatorOwnRejectedConstructionTestCount": 2,
+  "validatorObservedBoolReturns": [
+    "false",
+    "true"
+  ],
+  "validatorCoverageComplete": true,
+  "validatorOwnBothValuesObserved": true,
+  "spanMaturity": "library",
+  "validatorMaturity": "library",
+  "bothWordsLibrary": true,
+  "spanOwnedPassingValueTestCount": 3,
+  "freshReloadManifest": {
+    "available": true,
+    "manifestHash": "5a0e52cb227b82e28673029ce65ba6f3c4a55905628b9632e4409245f3997b49",
+    "schemaFormatVersion": 3,
+    "typeValidatorTarget": {
+      "kind": "userWord",
+      "identity": "word_6b836573426e4488abe20cd3c29d2773"
+    },
+    "predicateWordId": "word_6b836573426e4488abe20cd3c29d2773",
+    "reloadedPredicateId": "word_6b836573426e4488abe20cd3c29d2773",
+    "stableTargetMatches": true,
+    "error": null
+  },
+  "persistedValidatorBindingMatches": true,
+  "oracle": [
+    {
+      "minimum": 1,
+      "maximum": 1,
+      "expected": "0",
+      "actual": "0",
+      "passed": true
+    },
+    {
+      "minimum": 1,
+      "maximum": 7,
+      "expected": "6",
+      "actual": "6",
+      "passed": true
+    },
+    {
+      "minimum": 3,
+      "maximum": 8,
+      "expected": "5",
+      "actual": "5",
+      "passed": true
+    },
+    {
+      "minimum": 9,
+      "maximum": 9,
+      "expected": "0",
+      "actual": "0",
+      "passed": true
+    },
+    {
+      "minimum": 0,
+      "maximum": 0,
+      "expected": "RECORD_VALIDATION_FAILED",
+      "actual": "RECORD_VALIDATION_FAILED",
+      "passed": true
+    },
+    {
+      "minimum": 0,
+      "maximum": 5,
+      "expected": "RECORD_VALIDATION_FAILED",
+      "actual": "RECORD_VALIDATION_FAILED",
+      "passed": true
+    },
+    {
+      "minimum": -3,
+      "maximum": 4,
+      "expected": "RECORD_VALIDATION_FAILED",
+      "actual": "RECORD_VALIDATION_FAILED",
+      "passed": true
+    },
+    {
+      "minimum": 4,
+      "maximum": 3,
+      "expected": "RECORD_VALIDATION_FAILED",
+      "actual": "RECORD_VALIDATION_FAILED",
+      "passed": true
+    },
+    {
+      "minimum": 2,
+      "maximum": 0,
+      "expected": "RECORD_VALIDATION_FAILED",
+      "actual": "RECORD_VALIDATION_FAILED",
+      "passed": true
+    },
+    {
+      "minimum": -5,
+      "maximum": -1,
+      "expected": "RECORD_VALIDATION_FAILED",
+      "actual": "RECORD_VALIDATION_FAILED",
+      "passed": true
+    }
+  ],
+  "oraclePassed": true,
+  "operations": [
+    "test-all",
+    "source type=BatchBounds",
+    "source word=batch.span",
+    "source word=<validator>",
+    "describe",
+    "eval"
+  ],
+  "actorProjectMutatedByScorer": false,
+  "scoringProjectWasCopy": true
+}
