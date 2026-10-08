@@ -1,13 +1,17 @@
 param(
     [string]$ReportPath = '.agentlang/reports/validation.json',
     [ValidateSet('Debug', 'Release')]
-    [string]$Configuration = 'Release'
+    [string]$Configuration = 'Release',
+    [switch]$SerialBuild,
+    [switch]$SkipPackageAudit
 )
 
 $ErrorActionPreference = 'Stop'
 $repositoryPath = Split-Path -Parent $PSScriptRoot
+$previousPackageAudit = $env:NuGetAudit
 Push-Location -LiteralPath $repositoryPath
 try {
+    if ($SkipPackageAudit) { $env:NuGetAudit = 'false' }
     $startedAt = [DateTimeOffset]::UtcNow
     $revision = (& git rev-parse HEAD | Out-String).Trim()
     $branch = (& git branch --show-current | Out-String).Trim()
@@ -43,7 +47,10 @@ try {
         return $code
     }
 
-    $buildCode = Invoke-ValidationCheck 'build' 'dotnet' @('build', 'AgentLang.sln', '--configuration', $Configuration)
+    $buildArguments = @('build', 'AgentLang.sln', '--configuration', $Configuration)
+    if ($SerialBuild) { $buildArguments += '-m:1' }
+    if ($SkipPackageAudit) { $buildArguments += '-p:NuGetAudit=false' }
+    $buildCode = Invoke-ValidationCheck 'build' 'dotnet' $buildArguments
     if ($buildCode -eq 0) {
         $null = Invoke-ValidationCheck 'language-acceptance' 'dotnet' @('run', '--no-build', '--configuration', $Configuration, '--project', 'tests/AgentLang.Acceptance')
         $acceptanceProjects = [ordered]@{
@@ -120,6 +127,8 @@ try {
         branch = $branch
         dirty = $dirty
         configuration = $Configuration
+        serialBuild = [bool]$SerialBuild
+        packageAuditSkipped = [bool]$SkipPackageAudit
         passed = $passed
         checks = $checks.ToArray()
     }
@@ -129,5 +138,6 @@ try {
     Write-Host "Saved validation evidence: $resolvedReportPath"
     if (-not $passed) { exit 1 }
 } finally {
+    $env:NuGetAudit = $previousPackageAudit
     Pop-Location
 }

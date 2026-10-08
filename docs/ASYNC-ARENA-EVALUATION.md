@@ -18,6 +18,37 @@ suspension, copy costs and retained-state interleaving in this evaluation.
 
 ## Candidates
 
+### Compiler-guided sizing
+
+User proposal, 2026-10-08: use a typed process-message entry function as a boundary
+for estimating working-stack and pool capacity. Analyze reachable calls, local
+layouts, branch maxima, returned values, construction/copy temporaries and
+cleanup boundaries. Repeated work that reclaims its frame should contribute its
+peak simultaneous storage, not the sum of every iteration's allocation.
+
+Produce inspectable metadata with three distinct states: proven upper bound
+under stated input/recursion limits, estimate under stated workload assumptions,
+or unknown with the unbounded dependency identified. Input strings/collections,
+recursive depth, retained accumulators and provider response sizes need bounds
+before their estimates become guarantees. Keep resource configuration separate
+from new source-level lifetime syntax. Link metadata to the actual backend/layout
+revision; compare predictions with instrumented execution.
+
+Pool capacity also depends on scheduling/admission configuration. A conservative
+reservation is the sum, across pool classes, of slot count times slot capacity,
+plus pool metadata and rounding. Returning stacks at suspension ties slot demand
+to executing turns; keeping stacks attached also counts suspended owners. Retained
+mailbox state, continuation storage, queue bytes and provider buffers remain
+separate budgets. Source analysis alone cannot predict arrival rate or I/O latency.
+
+Use estimates to suggest size classes and initial reservation, not as permission
+to overrun storage. Enforce actual runtime bounds and defined exhaustion behavior.
+Include atypical large messages, recursion limits, skewed handlers, slow I/O and
+cancellation in prediction-error tests. Compiler-guided sizing is planned; the
+first fixed-record ownership experiment does not implement a general analyzer.
+
+### Lifetime policies
+
 Use **per-turn scratch arenas as the main candidate**. A handler turn runs to
 completion. Before suspension it transfers only needed continuation data into
 explicit bounded retained storage; completion runs in a fresh scratch arena.

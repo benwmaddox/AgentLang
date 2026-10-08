@@ -114,3 +114,6 @@ reports/evidence/125-matched-pair-repair/** -text -whitespace
 
 # Preserve standalone native dispatch evidence and tested source byte hashes.
 reports/evidence/126-native-mailbox-dispatch/** -text -whitespace
+
+# Preserve owning-stack source snapshots, logs, and compressed evidence hashes.
+reports/evidence/128-owning-value-stack/** -text -whitespace

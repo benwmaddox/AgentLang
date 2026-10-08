@@ -1,0 +1,367 @@
+#requires -Version 7.0
+[CmdletBinding()]
+param()
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+
+$repo = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+$runId = [Guid]::NewGuid().ToString('N')
+$runDirectory = Join-Path $repo ".agentlang/owning-stack-001/verification-$runId"
+$buildDirectory = Join-Path $runDirectory 'dotnet-artifacts'
+$nativeDirectory = Join-Path $runDirectory 'native'
+$nativeOutputDirectory = Join-Path $runDirectory 'native-output'
+$clangTempDirectory = Join-Path $runDirectory 'compiler-temp'
+$evidencePath = Join-Path $runDirectory 'verification-evidence.json'
+$runnerProject = Join-Path $repo 'experiments/AgentLang.NativeValueStack/AgentLang.NativeValueStack.fsproj'
+$fixturePath = Join-Path $repo 'tests/fixtures/native-conformance/native-value-stack-v1.json'
+$nativeSourceDirectory = Join-Path $repo 'src/AgentLang.Llvm/native'
+$nativeTestSource = Join-Path $nativeSourceDirectory 'owning_stack_runtime_test.c'
+$nativeRuntimeSource = Join-Path $nativeSourceDirectory 'owning_stack_runtime.c'
+$clangDefault = 'C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\Llvm\x64\bin\clang.exe'
+$timeoutMilliseconds = 600000
+$utf8 = [Text.UTF8Encoding]::new($false)
+$processes = [Collections.Generic.List[object]]::new()
+$checks = [Collections.Generic.List[object]]::new()
+$nativeUnitBuilds = [Collections.Generic.List[object]]::new()
+$nativeUnitRuns = [Collections.Generic.List[object]]::new()
+$sourceInputPaths = @(
+    $runnerProject,
+    (Join-Path $repo 'experiments/AgentLang.NativeValueStack/Program.fs'),
+    (Join-Path $repo 'experiments/AgentLang.NativeValueStack/value-stack.flow'),
+    (Join-Path $repo 'scripts/Verify-NativeValueStack.ps1'),
+    $fixturePath,
+    (Join-Path $repo 'src/AgentLang.Llvm/AgentLang.Llvm.fsproj'),
+    (Join-Path $repo 'src/AgentLang.Core/AgentLang.Core.fsproj'),
+    (Join-Path $nativeSourceDirectory 'owning_stack_runtime.h'),
+    $nativeRuntimeSource,
+    $nativeTestSource,
+    (Join-Path $repo 'docs/STACK-ONLY-RESEARCH.md')
+)
+$sourceInputPaths += @(
+    Get-ChildItem -LiteralPath (Join-Path $repo 'src/AgentLang.Core') -File -Filter '*.fs' |
+    Sort-Object FullName |
+    ForEach-Object { [IO.Path]::GetFullPath($_.FullName) }
+)
+$sourceInputPaths += @(
+    Get-ChildItem -LiteralPath (Join-Path $repo 'src/AgentLang.Llvm') -File -Filter '*.fs' |
+    Sort-Object FullName |
+    ForEach-Object { [IO.Path]::GetFullPath($_.FullName) }
+)
+$report = [ordered]@{
+    schemaVersion = 1
+    kind = 'native-owning-value-stack-verification'
+    runId = $runId
+    startedUtc = [DateTime]::UtcNow.ToString('O')
+    completedUtc = $null
+    passed = $false
+    runDirectory = $runDirectory
+    evidencePath = $evidencePath
+    sourceInputHashesBefore = @()
+    sourceInputHashesAfter = @()
+    sourceInputsStable = $false
+    dependencyBuild = $null
+    compiler = $null
+    nativeUnitBuilds = @()
+    nativeUnitRuns = @()
+    ubsan = $null
+    experimentRun = $null
+    generatedArtifacts = @()
+    checks = @()
+    failure = $null
+}
+
+function Add-Check([string]$Name, [bool]$Passed, $Details = $null) {
+    $item = [ordered]@{ name = $Name; passed = $Passed }
+    if ($null -ne $Details) { $item.details = $Details }
+    $checks.Add($item)
+    if (-not $Passed) {
+        $detailText = if ($null -eq $Details) { '' } else { ConvertTo-Json -InputObject $Details -Depth 30 -Compress }
+        throw "$Name failed: $detailText"
+    }
+}
+
+function Get-Hash([string]$Path) {
+    (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+}
+
+function Get-SourceHashes {
+    foreach ($path in $sourceInputPaths) {
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+            throw "Required source input is missing: $path"
+        }
+        [ordered]@{
+            path = [IO.Path]::GetFullPath($path)
+            bytes = (Get-Item -LiteralPath $path).Length
+            sha256 = Get-Hash $path
+        }
+    }
+}
+
+function Resolve-Executable([string]$EnvironmentName, [string]$DefaultPath, [string]$CommandName) {
+    $override = [Environment]::GetEnvironmentVariable($EnvironmentName)
+    if (-not [string]::IsNullOrWhiteSpace($override)) {
+        if ([IO.Path]::IsPathFullyQualified($override)) {
+            if (-not (Test-Path -LiteralPath $override -PathType Leaf)) { throw "$EnvironmentName is not an executable: $override" }
+            return [IO.Path]::GetFullPath($override)
+        }
+        $foundOverride = Get-Command -Name $override -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($null -eq $foundOverride) { throw "$EnvironmentName is not an executable: $override" }
+        return [IO.Path]::GetFullPath($foundOverride.Source)
+    }
+    if (Test-Path -LiteralPath $DefaultPath -PathType Leaf) { return [IO.Path]::GetFullPath($DefaultPath) }
+    $found = Get-Command -Name $CommandName -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($null -eq $found) { throw "Required executable is missing: $CommandName" }
+    [IO.Path]::GetFullPath($found.Source)
+}
+
+function Invoke-CapturedProcess {
+    param(
+        [string]$Name,
+        [string]$File,
+        [string[]]$Arguments,
+        [string]$WorkingDirectory
+    )
+    $startInfo = [Diagnostics.ProcessStartInfo]::new()
+    $startInfo.FileName = $File
+    $startInfo.WorkingDirectory = $WorkingDirectory
+    $startInfo.UseShellExecute = $false
+    $startInfo.CreateNoWindow = $true
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    $startInfo.Environment['TMP'] = $clangTempDirectory
+    $startInfo.Environment['TEMP'] = $clangTempDirectory
+    foreach ($argument in $Arguments) { [void]$startInfo.ArgumentList.Add([string]$argument) }
+    $process = [Diagnostics.Process]::new()
+    $process.StartInfo = $startInfo
+    $started = [DateTime]::UtcNow
+    $stdout = ''
+    $stderr = ''
+    $exitCode = $null
+    $timedOut = $false
+    $startError = $null
+    try {
+        if (-not $process.Start()) { throw 'Process.Start returned false.' }
+        $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+        $stderrTask = $process.StandardError.ReadToEndAsync()
+        if (-not $process.WaitForExit($timeoutMilliseconds)) {
+            $timedOut = $true
+            try { $process.Kill($true) } catch { }
+            [void]$process.WaitForExit(5000)
+        }
+        if ($process.HasExited) { $exitCode = $process.ExitCode }
+        $stdout = $stdoutTask.GetAwaiter().GetResult()
+        $stderr = $stderrTask.GetAwaiter().GetResult()
+    } catch {
+        $startError = $_.Exception.Message
+        if ($process -and -not $process.HasExited) {
+            try { $process.Kill($true) } catch { }
+        }
+    } finally {
+        $process.Dispose()
+    }
+    $result = [ordered]@{
+        name = $Name
+        file = $File
+        arguments = @($Arguments)
+        workingDirectory = $WorkingDirectory
+        elapsedMilliseconds = [Math]::Round(([DateTime]::UtcNow - $started).TotalMilliseconds, 3)
+        exitCode = $exitCode
+        timedOut = $timedOut
+        startError = $startError
+        stdout = $stdout
+        stderr = $stderr
+    }
+    $processes.Add($result)
+    $safeName = ($Name -replace '[^a-zA-Z0-9_.-]', '_')
+    [IO.File]::WriteAllText((Join-Path $runDirectory "$safeName.stdout.txt"), $stdout, $utf8)
+    [IO.File]::WriteAllText((Join-Path $runDirectory "$safeName.stderr.txt"), $stderr, $utf8)
+    $result
+}
+
+function Require-ProcessSuccess($Result, [string]$Description) {
+    $success = -not $Result.timedOut -and $null -eq $Result.startError -and $Result.exitCode -eq 0
+    $stdoutTail = ($Result.stdout -split '\r?\n' | Select-Object -Last 24) -join [Environment]::NewLine
+    $stderrTail = ($Result.stderr -split '\r?\n' | Select-Object -Last 24) -join [Environment]::NewLine
+    Add-Check $Description $success ([ordered]@{ exitCode = $Result.exitCode; timedOut = $Result.timedOut; startError = $Result.startError; stdoutTail = $stdoutTail; stderrTail = $stderrTail })
+}
+
+function Read-JsonFile([string]$Path) {
+    Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json -AsHashtable -Depth 100 -ErrorAction Stop
+}
+
+try {
+    New-Item -ItemType Directory -Path $runDirectory -Force | Out-Null
+    New-Item -ItemType Directory -Path $buildDirectory -Force | Out-Null
+    New-Item -ItemType Directory -Path $nativeDirectory -Force | Out-Null
+    New-Item -ItemType Directory -Path $nativeOutputDirectory -Force | Out-Null
+    New-Item -ItemType Directory -Path $clangTempDirectory -Force | Out-Null
+
+    $report.sourceInputHashesBefore = @(Get-SourceHashes)
+    $dotnet = Resolve-Executable 'AGENTLANG_DOTNET' '' 'dotnet'
+    $clang = Resolve-Executable 'AGENTLANG_LLVM_CLANG' $clangDefault 'clang.exe'
+    $report.compiler = [ordered]@{
+        dotnetPath = $dotnet
+        dotnetSha256 = Get-Hash $dotnet
+        clangPath = $clang
+        clangSha256 = Get-Hash $clang
+    }
+
+    $build = Invoke-CapturedProcess 'fresh-dotnet-build' $dotnet @(
+        'build', $runnerProject, '--artifacts-path', $buildDirectory, '--configuration', 'Release', '--verbosity', 'minimal', '-p:NuGetAudit=false', '-m:1'
+    ) $repo
+    $report.dependencyBuild = $build
+    Require-ProcessSuccess $build 'fresh Release build of the comparison runner and dependencies'
+    $assemblies = @(Get-ChildItem -LiteralPath (Join-Path $buildDirectory 'bin') -Recurse -File -Filter 'AgentLang.NativeValueStack.dll')
+    Add-Check 'fresh build emitted exactly one comparison runner' ($assemblies.Count -eq 1) ([ordered]@{ count = $assemblies.Count })
+    $runnerAssembly = [IO.Path]::GetFullPath($assemblies[0].FullName)
+    Add-Check 'comparison runner assembly is inside fresh artifact root' $runnerAssembly.StartsWith([IO.Path]::GetFullPath($buildDirectory), [StringComparison]::OrdinalIgnoreCase) $runnerAssembly
+
+    $storageOracle = (Read-JsonFile $fixturePath).storageRuntimeTestOracle
+    foreach ($optimizationName in @('O0', 'O2')) {
+        $nativeUnitPath = Join-Path $nativeDirectory "owning_stack_runtime_test_$optimizationName.exe"
+        $nativeBuild = Invoke-CapturedProcess "fresh-owning-stack-c-build-$optimizationName" $clang @(
+            '--target=x86_64-pc-windows-msvc', '-std=c11', '-Wall', '-Wextra', '-Werror', "-$optimizationName",
+            "-I$nativeSourceDirectory", $nativeTestSource, $nativeRuntimeSource, '-o', $nativeUnitPath
+        ) $repo
+        $nativeUnitBuilds.Add($nativeBuild)
+        Require-ProcessSuccess $nativeBuild "$optimizationName fresh native owning-stack storage test build"
+        Add-Check "$optimizationName native storage test executable was freshly produced" (Test-Path -LiteralPath $nativeUnitPath -PathType Leaf) $nativeUnitPath
+        $nativeRun = Invoke-CapturedProcess "owning-stack-native-storage-tests-$optimizationName" $nativeUnitPath @() $nativeDirectory
+        $nativeUnitRuns.Add($nativeRun)
+        Require-ProcessSuccess $nativeRun "$optimizationName native owning-stack storage tests passed"
+        $jsonLine = @($nativeRun.stdout -split '\r?\n' | Where-Object { $_.TrimStart().StartsWith('{') } | Select-Object -Last 1)
+        if ($jsonLine.Count -ne 1) { throw "$optimizationName native storage test did not emit its final JSON metrics line." }
+        $nativeTestMetrics = $jsonLine[0] | ConvertFrom-Json -AsHashtable -Depth 50 -ErrorAction Stop
+        $metricsPassed = $nativeTestMetrics.suite -ceq $storageOracle.suite -and
+            $nativeTestMetrics.status -ceq 'pass' -and
+            $nativeTestMetrics.cases -eq $storageOracle.cases -and
+            $nativeTestMetrics.checks -eq $storageOracle.checks -and
+            $nativeTestMetrics.abi.event_size_bytes -eq $storageOracle.abi.eventSizeBytes -and
+            $nativeTestMetrics.abi.event_checksum_offset_bytes -eq $storageOracle.abi.eventChecksumOffsetBytes -and
+            $nativeTestMetrics.abi.context_size_bytes -eq $storageOracle.abi.contextSizeBytes -and
+            (ConvertTo-Json -InputObject $nativeTestMetrics.abi.context_offsets_bytes -Depth 20 -Compress) -ceq (ConvertTo-Json -InputObject $storageOracle.abi.contextOffsetsBytes -Depth 20 -Compress) -and
+            $nativeTestMetrics.payload.peak_operand_bytes -eq $storageOracle.payload.peakOperandBytes -and
+            $nativeTestMetrics.payload.peak_local_bytes -eq $storageOracle.payload.peakLocalBytes -and
+            $nativeTestMetrics.reserved.max_stack_capacity_bytes -eq $storageOracle.reserved.maxStackCapacityBytes -and
+            $nativeTestMetrics.reserved.peak_cursor_bytes -eq $storageOracle.reserved.peakCursorBytes -and
+            $nativeTestMetrics.reserved.peak_local_reserved_bytes -eq $storageOracle.reserved.peakLocalReservedBytes -and
+            $nativeTestMetrics.metadata.bitmap_bytes_each -eq $storageOracle.metadata.bitmapBytesEach -and
+            $nativeTestMetrics.metadata.bitmap_total_bytes -eq $storageOracle.metadata.bitmapTotalBytes -and
+            $nativeTestMetrics.metadata.trace_event_count -eq $storageOracle.metadata.traceEventCount -and
+            $nativeTestMetrics.metadata.trace_event_capacity -eq $storageOracle.metadata.traceEventCapacity -and
+            $nativeTestMetrics.metadata.trace_bytes -eq $storageOracle.metadata.traceBytes
+        Add-Check "$optimizationName native storage measurements match the independent fixture" $metricsPassed ([ordered]@{ expected = $storageOracle; actual = $nativeTestMetrics })
+        $nativeRun['metrics'] = $nativeTestMetrics
+    }
+    $o0Metrics = ConvertTo-Json -InputObject $nativeUnitRuns[0]['metrics'] -Depth 50 -Compress
+    $o2Metrics = ConvertTo-Json -InputObject $nativeUnitRuns[1]['metrics'] -Depth 50 -Compress
+    Add-Check 'O0 and O2 storage tests report the same deterministic ABI and byte categories' ($o0Metrics -ceq $o2Metrics)
+    $report.nativeUnitBuilds = @($nativeUnitBuilds)
+    $report.nativeUnitRuns = @($nativeUnitRuns)
+
+    $ubsanNormalPath = Join-Path $nativeDirectory 'owning_stack_runtime_test_ubsan_normal.exe'
+    $ubsanNormalBuild = Invoke-CapturedProcess 'owning-stack-ubsan-normal-build' $clang @(
+        '--target=x86_64-pc-windows-msvc', '-std=c11', '-Wall', '-Wextra', '-Werror', '-O1', '-fsanitize=undefined',
+        "-I$nativeSourceDirectory", $nativeTestSource, $nativeRuntimeSource, '-o', $ubsanNormalPath
+    ) $repo
+    $ubsanNormal = [ordered]@{ build = $ubsanNormalBuild; outcome = $null; run = $null; metrics = $null; limitation = $null }
+    if (-not $ubsanNormalBuild.timedOut -and $null -eq $ubsanNormalBuild.startError -and $ubsanNormalBuild.exitCode -eq 0) {
+        $ubsanNormal.outcome = 'linked-and-ran'
+        $ubsanNormalRun = Invoke-CapturedProcess 'owning-stack-ubsan-normal-run' $ubsanNormalPath @() $nativeDirectory
+        $ubsanNormal.run = $ubsanNormalRun
+        Require-ProcessSuccess $ubsanNormalRun 'normal UBSan owning-stack storage run passed'
+        $normalJsonLine = @($ubsanNormalRun.stdout -split '\r?\n' | Where-Object { $_.TrimStart().StartsWith('{') } | Select-Object -Last 1)
+        if ($normalJsonLine.Count -ne 1) { throw 'Normal UBSan run did not emit its final JSON metrics line.' }
+        $ubsanNormal.metrics = $normalJsonLine[0] | ConvertFrom-Json -AsHashtable -Depth 50 -ErrorAction Stop
+        Add-Check 'normal UBSan run preserved the storage oracle checks' ($ubsanNormal.metrics.status -ceq 'pass' -and $ubsanNormal.metrics.checks -eq $storageOracle.checks) $ubsanNormal.metrics
+    } else {
+        $normalLinkerOutput = $ubsanNormalBuild.stdout + "`n" + $ubsanNormalBuild.stderr
+        $knownLinkFailure = -not $ubsanNormalBuild.timedOut -and $null -eq $ubsanNormalBuild.startError -and $ubsanNormalBuild.exitCode -eq 1120 -and $normalLinkerOutput -match 'LNK2019' -and $normalLinkerOutput -match 'sanitizer_symbolizer|sanitizer_win'
+        Add-Check 'normal UBSan linker limitation is recorded separately from trap-mode success' $knownLinkFailure ([ordered]@{ exitCode = $ubsanNormalBuild.exitCode; linkerDiagnostic = $normalLinkerOutput })
+        $ubsanNormal.outcome = 'link-unavailable'
+        $ubsanNormal.limitation = 'The MSVC-target standalone UBSan runtime failed to link Windows symbolizer/runtime imports; the trap sanitizer is validated separately.'
+    }
+
+    $ubsanTrapPath = Join-Path $nativeDirectory 'owning_stack_runtime_test_ubsan_trap.exe'
+    $ubsanTrapBuild = Invoke-CapturedProcess 'owning-stack-ubsan-trap-build' $clang @(
+        '--target=x86_64-pc-windows-msvc', '-std=c11', '-Wall', '-Wextra', '-Werror', '-O1', '-fsanitize=undefined', '-fsanitize-trap=undefined',
+        "-I$nativeSourceDirectory", $nativeTestSource, $nativeRuntimeSource, '-o', $ubsanTrapPath
+    ) $repo
+    Require-ProcessSuccess $ubsanTrapBuild 'trap-mode UBSan owning-stack storage build passed'
+    $ubsanTrapRun = Invoke-CapturedProcess 'owning-stack-ubsan-trap-run' $ubsanTrapPath @() $nativeDirectory
+    Require-ProcessSuccess $ubsanTrapRun 'trap-mode UBSan owning-stack storage run passed'
+    $trapJsonLine = @($ubsanTrapRun.stdout -split '\r?\n' | Where-Object { $_.TrimStart().StartsWith('{') } | Select-Object -Last 1)
+    if ($trapJsonLine.Count -ne 1) { throw 'Trap-mode UBSan run did not emit its final JSON metrics line.' }
+    $ubsanTrapMetrics = $trapJsonLine[0] | ConvertFrom-Json -AsHashtable -Depth 50 -ErrorAction Stop
+    $trapMetricsPass = $ubsanTrapMetrics.suite -ceq $storageOracle.suite -and $ubsanTrapMetrics.status -ceq 'pass' -and $ubsanTrapMetrics.cases -eq $storageOracle.cases -and $ubsanTrapMetrics.checks -eq $storageOracle.checks
+    Add-Check 'trap-mode UBSan result matches the storage fixture' $trapMetricsPass $ubsanTrapMetrics
+    $report.ubsan = [ordered]@{ normalRuntime = $ubsanNormal; trapVariant = [ordered]@{ build = $ubsanTrapBuild; run = $ubsanTrapRun; metrics = $ubsanTrapMetrics } }
+
+    $experimentEvidencePath = Join-Path $runDirectory 'native-value-stack-evidence.json'
+    $experiment = Invoke-CapturedProcess 'same-ir-cross-backend-experiment' $dotnet @(
+        $runnerAssembly, $fixturePath, $nativeOutputDirectory, $experimentEvidencePath
+    ) $repo
+    $report.experimentRun = $experiment
+    Require-ProcessSuccess $experiment 'interpreter, ABI3 O0/O2, and owning-stack O0/O2 experiment passed'
+    Add-Check 'experiment evidence file exists' (Test-Path -LiteralPath $experimentEvidencePath -PathType Leaf) $experimentEvidencePath
+    $experimentEvidence = Read-JsonFile $experimentEvidencePath
+    Add-Check 'experiment evidence reports success' ([bool]$experimentEvidence.passed) ([ordered]@{ failureCount = $experimentEvidence.failureCount; failure = $experimentEvidence.failure })
+    Add-Check 'experiment used one compiler-authorized program instance' ([bool]$experimentEvidence.sameVerifiedProgramInstance) $experimentEvidence.backendScope
+    Add-Check 'two-turn retained publication boundary is accurately scoped' ($experimentEvidence.turnBoundaryScope -match 'not a persistent native controller') $experimentEvidence.turnBoundaryScope
+    Add-Check 'fixture declares no final memory-policy or throughput conclusion' (@($experimentEvidence.limitations | Where-Object { $_ -match 'No final memory-policy|throughput' }).Count -ge 1) $experimentEvidence.limitations
+
+    $report.experimentEvidencePath = $experimentEvidencePath
+    $report.experimentEvidenceSha256 = Get-Hash $experimentEvidencePath
+    $artifactPaths = [Collections.Generic.List[string]]::new()
+    foreach ($artifact in Get-ChildItem -LiteralPath (Join-Path $buildDirectory 'bin') -Recurse -File) {
+        $artifactPaths.Add([IO.Path]::GetFullPath($artifact.FullName))
+    }
+    foreach ($artifact in Get-ChildItem -LiteralPath $nativeDirectory -Recurse -File) {
+        $artifactPaths.Add([IO.Path]::GetFullPath($artifact.FullName))
+    }
+    foreach ($artifact in Get-ChildItem -LiteralPath $nativeOutputDirectory -Recurse -File) {
+        $artifactPaths.Add([IO.Path]::GetFullPath($artifact.FullName))
+    }
+    $report.generatedArtifacts = @(
+        $artifactPaths |
+        Sort-Object -Unique |
+        ForEach-Object { [ordered]@{ path = $_; bytes = (Get-Item -LiteralPath $_).Length; sha256 = Get-Hash $_ } }
+    )
+    $freshBuildArtifactCount = @($report.generatedArtifacts | Where-Object { $_.path.StartsWith([IO.Path]::GetFullPath((Join-Path $buildDirectory 'bin')), [StringComparison]::OrdinalIgnoreCase) }).Count
+    $freshNativeTestArtifactCount = @($report.generatedArtifacts | Where-Object { [IO.Path]::GetFileName($_.path) -match '^owning_stack_runtime_test_(O0|O2|ubsan_trap)\.exe$' }).Count
+    $candidateArtifactCount = @($report.generatedArtifacts | Where-Object { $_.path.StartsWith([IO.Path]::GetFullPath($nativeOutputDirectory), [StringComparison]::OrdinalIgnoreCase) }).Count
+    Add-Check 'fresh runner and dependency binaries are hashed' ($freshBuildArtifactCount -gt 0) ([ordered]@{ fileCount = $freshBuildArtifactCount })
+    Add-Check 'fresh native storage-test executables are hashed' ($freshNativeTestArtifactCount -ge 3) ([ordered]@{ fileCount = $freshNativeTestArtifactCount })
+    Add-Check 'fresh native output includes compiled candidate and ABI3 artifacts' ($candidateArtifactCount -gt 0) ([ordered]@{ fileCount = $candidateArtifactCount })
+
+    $report.sourceInputHashesAfter = @(Get-SourceHashes)
+    $beforeJson = ConvertTo-Json -InputObject $report.sourceInputHashesBefore -Depth 20 -Compress
+    $afterJson = ConvertTo-Json -InputObject $report.sourceInputHashesAfter -Depth 20 -Compress
+    $report.sourceInputsStable = $beforeJson -ceq $afterJson
+    Add-Check 'hashed source inputs stayed unchanged during the run' ([bool]$report.sourceInputsStable)
+    $report.passed = $true
+} catch {
+    $report.failure = $_.Exception.ToString()
+    if ($null -eq $report.sourceInputHashesAfter -or @($report.sourceInputHashesAfter).Count -eq 0) {
+        try { $report.sourceInputHashesAfter = @(Get-SourceHashes) } catch { }
+    }
+    if (@($report.sourceInputHashesBefore).Count -gt 0 -and @($report.sourceInputHashesAfter).Count -gt 0) {
+        $beforeJson = ConvertTo-Json -InputObject $report.sourceInputHashesBefore -Depth 20 -Compress
+        $afterJson = ConvertTo-Json -InputObject $report.sourceInputHashesAfter -Depth 20 -Compress
+        $report.sourceInputsStable = $beforeJson -ceq $afterJson
+    }
+} finally {
+    $report.completedUtc = [DateTime]::UtcNow.ToString('O')
+    $report.checks = @($checks)
+    $report.processes = @($processes)
+    [IO.File]::WriteAllText($evidencePath, (ConvertTo-Json -InputObject $report -Depth 100), $utf8)
+}
+
+if ($report.passed) {
+    Write-Output "Native owning-value-stack verification passed. Evidence: $evidencePath"
+    exit 0
+}
+
+Write-Error "Native owning-value-stack verification failed. Artifacts and failure evidence were retained at $runDirectory. $($report.failure)"
+exit 1

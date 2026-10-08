@@ -1,0 +1,72 @@
+record Leaf {
+    field value: Int;
+}
+
+record Envelope {
+    field leaf: Leaf;
+    field tag: Int;
+}
+
+record State {
+    field count: Int;
+    field last: Envelope;
+}
+
+fn mailbox.make-envelope(value: Int, tag: Int) -> Envelope {
+    effects none
+    let nestedLeaf = leaf::new(value = value);
+    envelope::new(leaf = nestedLeaf, tag = tag)
+}
+
+fn mailbox.exercise(value: Int) -> Int {
+    effects none
+    let (left, right) = dup(mailbox::make-envelope(value, add(value, 100)));
+    let left_value = left.leaf.value;
+    let right_value = right.leaf.value;
+    add(left_value, right_value)
+}
+
+fn mailbox.initialize() -> State {
+    effects none
+    let last = mailbox::make-envelope(5, 70);
+    state::new(count = 10, last = last)
+}
+
+fn mailbox.branch(value: Int, choose_left: Bool) -> Envelope {
+    effects none
+    let selected = if choose_left {
+        mailbox::make-envelope(value, 700)
+    } else {
+        mailbox::make-envelope(add(value, 1), 800)
+    };
+    selected
+}
+
+fn mailbox.unit-value() -> Unit {
+    effects none
+    unit
+}
+
+fn mailbox.empty-value() -> Empty {
+    effects none
+    empty::new()
+}
+
+fn mailbox.scoped-width(value: Int) -> Envelope {
+    effects none
+    let held = mailbox::make-envelope(value, 700);
+    let observed = if equals(value, 0) {
+        let narrow = leaf::new(value = value);
+        narrow.value
+    } else {
+        let wide = state::new(count = value, last = mailbox::make-envelope(value, 800));
+        wide.count
+    };
+    envelope::new(leaf = held.leaf, tag = add(held.tag, observed))
+}
+
+fn mailbox.fail-after-allocation(state: State, value: Int) -> Int {
+    effects none
+    let scratch = mailbox::make-envelope(value, add(value, 1));
+    divide(1, 0)
+}

@@ -8,12 +8,27 @@ Run `./scripts/Validate.ps1` from PowerShell to build the solution and run every
 
 Validation runs locally. The GitHub workflow is manual-only; milestone publication does not trigger a CI run. Human feedback and milestone conclusions belong in numbered Markdown reports here. Credentials must never appear in reports. Live provider traces can contain project information and should remain in the experiment's local output directory unless deliberately reviewed for publication.
 
+On hosts where parallel MSBuild restore fails, `Validate.ps1 -SerialBuild` uses
+one build worker without omitting acceptance checks. If NuGet's vulnerability
+service is unavailable, `-SkipPackageAudit` explicitly disables that network
+audit for the solution build and child verification processes; report this
+limitation. Both options are opt-in, and the evidence records the options and
+exact build arguments. `Verify-NativeDispatch.ps1` accepts the same options.
+
 Latest design research: [127 — Midori and Goose comparisons](127-memory-design-comparisons.md)
 records external architectural references and hypotheses for memory experiments.
 It is a documentation-only checkpoint; the owning-value implementation remains
 in progress and no external benchmark claim is treated as an AgentLang result.
 
-Latest native checkpoint: [126 — Standalone native mailbox dispatch](126-native-mailbox-dispatch.md)
+Latest owning-memory checkpoint: [128 — Owning value-stack comparison](128-owning-value-stack.md)
+passes 462 cross-backend checks, 189 C storage assertions per configuration, and
+the 37-check local Release gate. Fixed-size nested values are stored inline with
+independent ownership and frame cleanup. Working extent stays at 288 bytes across
+one/eight repetitions; high fixed overhead and diagnostic instrumentation prevent
+a total-memory or throughput advantage claim. Variable-sized values, native
+owning mailbox integration, async, and JIT remain pending.
+
+Previous native checkpoint: [126 — Standalone native mailbox dispatch](126-native-mailbox-dispatch.md)
 moves bounded turns and arena ownership out of the managed host. The native
 integration passes 353 checks, native conformance 476 assertions, and the full
 local Release gate all 37 checks. Real async I/O, throughput, JIT and general

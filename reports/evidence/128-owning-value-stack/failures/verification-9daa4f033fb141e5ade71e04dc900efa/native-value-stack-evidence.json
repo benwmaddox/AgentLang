@@ -1,0 +1,139 @@
+{
+  "source": {
+    "flowFixtureSha256": "2e3de7350309d43d2088d3c5c3a8796d9522f3b549af061f3f594066efca7920",
+    "expandedSourceSha256": "86963e22add8a25fadea212f09340058c0bd7439461bac58366b2f30937e620b",
+    "turnBodyHashes": [
+      {
+        "repetitions": 1,
+        "sha256": "a45ae840e5291591b19c8184dae502eedf8981c14271eb738dc40db36701d466"
+      },
+      {
+        "repetitions": 8,
+        "sha256": "10928efe685f3f8a9e649016db2e0a7f46d0fa4e16f4829c72dac6e87f00dd80"
+      }
+    ]
+  },
+  "fixturePath": "D:\\code\\AgentLang\\tests\\fixtures\\native-conformance\\native-value-stack-v1.json",
+  "sameVerifiedProgramInstance": true,
+  "backendScope": "The same VerifiedIrBody objects are executed by the interpreter, ABI3 control, and inline owning-stack candidate.",
+  "turnBoundaryScope": "Each owning-stack invocation publishes fixed State bytes into a caller-owned output buffer. Turn 2 is fed from an independent decode of turn 1\u0027s raw retained bytes through the Value input API; this validates publication and round-trip semantics across the host boundary, not a persistent native controller.",
+  "limitations": [
+    "Synchronous execution only; no async provider buffers or cancellation claims.",
+    "Fixed-size Int, Bool, Unit, and acyclic nested records only.",
+    "Candidate Value input/output marshaling is host-owned and reported separately.",
+    "No final memory-policy, cache-locality, or throughput claim."
+  ],
+  "passed": false,
+  "checks": [
+    {
+      "name": "fixture/source-hash",
+      "passed": true,
+      "details": {
+        "expected": "2e3de7350309d43d2088d3c5c3a8796d9522f3b549af061f3f594066efca7920",
+        "actual": "2e3de7350309d43d2088d3c5c3a8796d9522f3b549af061f3f594066efca7920"
+      }
+    },
+    {
+      "name": "interpreter/N=1/initialize",
+      "passed": true,
+      "details": "{\u0022formatVersion\u0022:1,\u0022values\u0022:[{\u0022kind\u0022:\u0022record\u0022,\u0022name\u0022:\u0022State\u0022,\u0022typeKey\u0022:2,\u0022fields\u0022:[{\u0022name\u0022:\u0022count\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022int\u0022},\u0022value\u0022:{\u0022kind\u0022:\u0022int\u0022,\u0022value\u0022:\u002210\u0022}},{\u0022name\u0022:\u0022last\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022nominal\u0022,\u0022name\u0022:\u0022Envelope\u0022,\u0022nominalKind\u0022:\u0022record\u0022,\u0022typeKey\u0022:0},\u0022value\u0022:{\u0022kind\u0022:\u0022record\u0022,\u0022name\u0022:\u0022Envelope\u0022,\u0022typeKey\u0022:0,\u0022fields\u0022:[{\u0022name\u0022:\u0022leaf\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022nominal\u0022,\u0022name\u0022:\u0022Leaf\u0022,\u0022nominalKind\u0022:\u0022record\u0022,\u0022typeKey\u0022:1},\u0022value\u0022:{\u0022kind\u0022:\u0022record\u0022,\u0022name\u0022:\u0022Leaf\u0022,\u0022typeKey\u0022:1,\u0022fields\u0022:[{\u0022name\u0022:\u0022value\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022int\u0022},\u0022value\u0022:{\u0022kind\u0022:\u0022int\u0022,\u0022value\u0022:\u00225\u0022}}]}},{\u0022name\u0022:\u0022tag\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022int\u0022},\u0022value\u0022:{\u0022kind\u0022:\u0022int\u0022,\u0022value\u0022:\u002270\u0022}}]}}]}]}"
+    },
+    {
+      "name": "interpreter/N=1/first-turn",
+      "passed": true,
+      "details": "{\u0022formatVersion\u0022:1,\u0022values\u0022:[{\u0022kind\u0022:\u0022record\u0022,\u0022name\u0022:\u0022State\u0022,\u0022typeKey\u0022:2,\u0022fields\u0022:[{\u0022name\u0022:\u0022count\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022int\u0022},\u0022value\u0022:{\u0022kind\u0022:\u0022int\u0022,\u0022value\u0022:\u002211\u0022}},{\u0022name\u0022:\u0022last\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022nominal\u0022,\u0022name\u0022:\u0022Envelope\u0022,\u0022nominalKind\u0022:\u0022record\u0022,\u0022typeKey\u0022:0},\u0022value\u0022:{\u0022kind\u0022:\u0022record\u0022,\u0022name\u0022:\u0022Envelope\u0022,\u0022typeKey\u0022:0,\u0022fields\u0022:[{\u0022name\u0022:\u0022leaf\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022nominal\u0022,\u0022name\u0022:\u0022Leaf\u0022,\u0022nominalKind\u0022:\u0022record\u0022,\u0022typeKey\u0022:1},\u0022value\u0022:{\u0022kind\u0022:\u0022record\u0022,\u0022name\u0022:\u0022Leaf\u0022,\u0022typeKey\u0022:1,\u0022fields\u0022:[{\u0022name\u0022:\u0022value\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022int\u0022},\u0022value\u0022:{\u0022kind\u0022:\u0022int\u0022,\u0022value\u0022:\u002217\u0022}}]}},{\u0022name\u0022:\u0022tag\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022int\u0022},\u0022value\u0022:{\u0022kind\u0022:\u0022int\u0022,\u0022value\u0022:\u00221017\u0022}}]}}]}]}"
+    },
+    {
+      "name": "interpreter/N=1/second-turn",
+      "passed": true,
+      "details": "{\u0022formatVersion\u0022:1,\u0022values\u0022:[{\u0022kind\u0022:\u0022record\u0022,\u0022name\u0022:\u0022State\u0022,\u0022typeKey\u0022:2,\u0022fields\u0022:[{\u0022name\u0022:\u0022count\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022int\u0022},\u0022value\u0022:{\u0022kind\u0022:\u0022int\u0022,\u0022value\u0022:\u002212\u0022}},{\u0022name\u0022:\u0022last\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022nominal\u0022,\u0022name\u0022:\u0022Envelope\u0022,\u0022nominalKind\u0022:\u0022record\u0022,\u0022typeKey\u0022:0},\u0022value\u0022:{\u0022kind\u0022:\u0022record\u0022,\u0022name\u0022:\u0022Envelope\u0022,\u0022typeKey\u0022:0,\u0022fields\u0022:[{\u0022name\u0022:\u0022leaf\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022nominal\u0022,\u0022name\u0022:\u0022Leaf\u0022,\u0022nominalKind\u0022:\u0022record\u0022,\u0022typeKey\u0022:1},\u0022value\u0022:{\u0022kind\u0022:\u0022record\u0022,\u0022name\u0022:\u0022Leaf\u0022,\u0022typeKey\u0022:1,\u0022fields\u0022:[{\u0022name\u0022:\u0022value\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022int\u0022},\u0022value\u0022:{\u0022kind\u0022:\u0022int\u0022,\u0022value\u0022:\u002229\u0022}}]}},{\u0022name\u0022:\u0022tag\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022int\u0022},\u0022value\u0022:{\u0022kind\u0022:\u0022int\u0022,\u0022value\u0022:\u00221029\u0022}}]}}]}]}"
+    },
+    {
+      "name": "interpreter/N=1/branch-0",
+      "passed": true,
+      "details": "{\u0022formatVersion\u0022:1,\u0022values\u0022:[{\u0022kind\u0022:\u0022record\u0022,\u0022name\u0022:\u0022Envelope\u0022,\u0022typeKey\u0022:0,\u0022fields\u0022:[{\u0022name\u0022:\u0022leaf\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022nominal\u0022,\u0022name\u0022:\u0022Leaf\u0022,\u0022nominalKind\u0022:\u0022record\u0022,\u0022typeKey\u0022:1},\u0022value\u0022:{\u0022kind\u0022:\u0022record\u0022,\u0022name\u0022:\u0022Leaf\u0022,\u0022typeKey\u0022:1,\u0022fields\u0022:[{\u0022name\u0022:\u0022value\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022int\u0022},\u0022value\u0022:{\u0022kind\u0022:\u0022int\u0022,\u0022value\u0022:\u002231\u0022}}]}},{\u0022name\u0022:\u0022tag\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022int\u0022},\u0022value\u0022:{\u0022kind\u0022:\u0022int\u0022,\u0022value\u0022:\u0022700\u0022}}]}]}"
+    },
+    {
+      "name": "interpreter/N=1/branch-1",
+      "passed": true,
+      "details": "{\u0022formatVersion\u0022:1,\u0022values\u0022:[{\u0022kind\u0022:\u0022record\u0022,\u0022name\u0022:\u0022Envelope\u0022,\u0022typeKey\u0022:0,\u0022fields\u0022:[{\u0022name\u0022:\u0022leaf\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022nominal\u0022,\u0022name\u0022:\u0022Leaf\u0022,\u0022nominalKind\u0022:\u0022record\u0022,\u0022typeKey\u0022:1},\u0022value\u0022:{\u0022kind\u0022:\u0022record\u0022,\u0022name\u0022:\u0022Leaf\u0022,\u0022typeKey\u0022:1,\u0022fields\u0022:[{\u0022name\u0022:\u0022value\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022int\u0022},\u0022value\u0022:{\u0022kind\u0022:\u0022int\u0022,\u0022value\u0022:\u002232\u0022}}]}},{\u0022name\u0022:\u0022tag\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022int\u0022},\u0022value\u0022:{\u0022kind\u0022:\u0022int\u0022,\u0022value\u0022:\u0022800\u0022}}]}]}"
+    },
+    {
+      "name": "interpreter/N=1/direct-top-dup-drop",
+      "passed": true,
+      "details": "{\u0022formatVersion\u0022:1,\u0022values\u0022:[{\u0022kind\u0022:\u0022record\u0022,\u0022name\u0022:\u0022Envelope\u0022,\u0022typeKey\u0022:0,\u0022fields\u0022:[{\u0022name\u0022:\u0022leaf\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022nominal\u0022,\u0022name\u0022:\u0022Leaf\u0022,\u0022nominalKind\u0022:\u0022record\u0022,\u0022typeKey\u0022:1},\u0022value\u0022:{\u0022kind\u0022:\u0022record\u0022,\u0022name\u0022:\u0022Leaf\u0022,\u0022typeKey\u0022:1,\u0022fields\u0022:[{\u0022name\u0022:\u0022value\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022int\u0022},\u0022value\u0022:{\u0022kind\u0022:\u0022int\u0022,\u0022value\u0022:\u002217\u0022}}]}},{\u0022name\u0022:\u0022tag\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022int\u0022},\u0022value\u0022:{\u0022kind\u0022:\u0022int\u0022,\u0022value\u0022:\u00221017\u0022}}]}]}"
+    },
+    {
+      "name": "interpreter/N=1/error-after-allocation",
+      "passed": true,
+      "details": "RUNTIME_DIVIDE_BY_ZERO"
+    },
+    {
+      "name": "abi3/O0/N=1/initialize",
+      "passed": true,
+      "details": "{\u0022formatVersion\u0022:1,\u0022values\u0022:[{\u0022kind\u0022:\u0022record\u0022,\u0022name\u0022:\u0022State\u0022,\u0022typeKey\u0022:2,\u0022fields\u0022:[{\u0022name\u0022:\u0022count\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022int\u0022},\u0022value\u0022:{\u0022kind\u0022:\u0022int\u0022,\u0022value\u0022:\u002210\u0022}},{\u0022name\u0022:\u0022last\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022nominal\u0022,\u0022name\u0022:\u0022Envelope\u0022,\u0022nominalKind\u0022:\u0022record\u0022,\u0022typeKey\u0022:0},\u0022value\u0022:{\u0022kind\u0022:\u0022record\u0022,\u0022name\u0022:\u0022Envelope\u0022,\u0022typeKey\u0022:0,\u0022fields\u0022:[{\u0022name\u0022:\u0022leaf\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022nominal\u0022,\u0022name\u0022:\u0022Leaf\u0022,\u0022nominalKind\u0022:\u0022record\u0022,\u0022typeKey\u0022:1},\u0022value\u0022:{\u0022kind\u0022:\u0022record\u0022,\u0022name\u0022:\u0022Leaf\u0022,\u0022typeKey\u0022:1,\u0022fields\u0022:[{\u0022name\u0022:\u0022value\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022int\u0022},\u0022value\u0022:{\u0022kind\u0022:\u0022int\u0022,\u0022value\u0022:\u00225\u0022}}]}},{\u0022name\u0022:\u0022tag\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022int\u0022},\u0022value\u0022:{\u0022kind\u0022:\u0022int\u0022,\u0022value\u0022:\u002270\u0022}}]}}]}]}"
+    },
+    {
+      "name": "abi3/O0/N=1/turn-1",
+      "passed": true,
+      "details": "{\u0022formatVersion\u0022:1,\u0022values\u0022:[{\u0022kind\u0022:\u0022record\u0022,\u0022name\u0022:\u0022State\u0022,\u0022typeKey\u0022:2,\u0022fields\u0022:[{\u0022name\u0022:\u0022count\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022int\u0022},\u0022value\u0022:{\u0022kind\u0022:\u0022int\u0022,\u0022value\u0022:\u002211\u0022}},{\u0022name\u0022:\u0022last\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022nominal\u0022,\u0022name\u0022:\u0022Envelope\u0022,\u0022nominalKind\u0022:\u0022record\u0022,\u0022typeKey\u0022:0},\u0022value\u0022:{\u0022kind\u0022:\u0022record\u0022,\u0022name\u0022:\u0022Envelope\u0022,\u0022typeKey\u0022:0,\u0022fields\u0022:[{\u0022name\u0022:\u0022leaf\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022nominal\u0022,\u0022name\u0022:\u0022Leaf\u0022,\u0022nominalKind\u0022:\u0022record\u0022,\u0022typeKey\u0022:1},\u0022value\u0022:{\u0022kind\u0022:\u0022record\u0022,\u0022name\u0022:\u0022Leaf\u0022,\u0022typeKey\u0022:1,\u0022fields\u0022:[{\u0022name\u0022:\u0022value\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022int\u0022},\u0022value\u0022:{\u0022kind\u0022:\u0022int\u0022,\u0022value\u0022:\u002217\u0022}}]}},{\u0022name\u0022:\u0022tag\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022int\u0022},\u0022value\u0022:{\u0022kind\u0022:\u0022int\u0022,\u0022value\u0022:\u00221017\u0022}}]}}]}]}"
+    },
+    {
+      "name": "abi3/O0/N=1/turn-2",
+      "passed": true,
+      "details": "{\u0022formatVersion\u0022:1,\u0022values\u0022:[{\u0022kind\u0022:\u0022record\u0022,\u0022name\u0022:\u0022State\u0022,\u0022typeKey\u0022:2,\u0022fields\u0022:[{\u0022name\u0022:\u0022count\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022int\u0022},\u0022value\u0022:{\u0022kind\u0022:\u0022int\u0022,\u0022value\u0022:\u002212\u0022}},{\u0022name\u0022:\u0022last\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022nominal\u0022,\u0022name\u0022:\u0022Envelope\u0022,\u0022nominalKind\u0022:\u0022record\u0022,\u0022typeKey\u0022:0},\u0022value\u0022:{\u0022kind\u0022:\u0022record\u0022,\u0022name\u0022:\u0022Envelope\u0022,\u0022typeKey\u0022:0,\u0022fields\u0022:[{\u0022name\u0022:\u0022leaf\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022nominal\u0022,\u0022name\u0022:\u0022Leaf\u0022,\u0022nominalKind\u0022:\u0022record\u0022,\u0022typeKey\u0022:1},\u0022value\u0022:{\u0022kind\u0022:\u0022record\u0022,\u0022name\u0022:\u0022Leaf\u0022,\u0022typeKey\u0022:1,\u0022fields\u0022:[{\u0022name\u0022:\u0022value\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022int\u0022},\u0022value\u0022:{\u0022kind\u0022:\u0022int\u0022,\u0022value\u0022:\u002229\u0022}}]}},{\u0022name\u0022:\u0022tag\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022int\u0022},\u0022value\u0022:{\u0022kind\u0022:\u0022int\u0022,\u0022value\u0022:\u00221029\u0022}}]}}]}]}"
+    },
+    {
+      "name": "abi3/O0/N=1/scratch-capacity-boundary",
+      "passed": true,
+      "details": {
+        "type": "NativeResourceLimitException",
+        "code": "NATIVE_SCRATCH_CAPACITY",
+        "boundary": "",
+        "arena": "scratch",
+        "requiredBytes": 104,
+        "availableBytes": 103,
+        "requiredNodes": 8,
+        "availableNodes": 8
+      }
+    },
+    {
+      "name": "abi3/O0/N=1/scratch-failure-preserves-owner",
+      "passed": true,
+      "details": "{\u0022formatVersion\u0022:1,\u0022values\u0022:[{\u0022kind\u0022:\u0022record\u0022,\u0022name\u0022:\u0022State\u0022,\u0022typeKey\u0022:2,\u0022fields\u0022:[{\u0022name\u0022:\u0022count\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022int\u0022},\u0022value\u0022:{\u0022kind\u0022:\u0022int\u0022,\u0022value\u0022:\u002210\u0022}},{\u0022name\u0022:\u0022last\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022nominal\u0022,\u0022name\u0022:\u0022Envelope\u0022,\u0022nominalKind\u0022:\u0022record\u0022,\u0022typeKey\u0022:0},\u0022value\u0022:{\u0022kind\u0022:\u0022record\u0022,\u0022name\u0022:\u0022Envelope\u0022,\u0022typeKey\u0022:0,\u0022fields\u0022:[{\u0022name\u0022:\u0022leaf\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022nominal\u0022,\u0022name\u0022:\u0022Leaf\u0022,\u0022nominalKind\u0022:\u0022record\u0022,\u0022typeKey\u0022:1},\u0022value\u0022:{\u0022kind\u0022:\u0022record\u0022,\u0022name\u0022:\u0022Leaf\u0022,\u0022typeKey\u0022:1,\u0022fields\u0022:[{\u0022name\u0022:\u0022value\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022int\u0022},\u0022value\u0022:{\u0022kind\u0022:\u0022int\u0022,\u0022value\u0022:\u00225\u0022}}]}},{\u0022name\u0022:\u0022tag\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022int\u0022},\u0022value\u0022:{\u0022kind\u0022:\u0022int\u0022,\u0022value\u0022:\u002270\u0022}}]}}]}]}"
+    },
+    {
+      "name": "abi3/O0/N=1/error-after-allocation",
+      "passed": true,
+      "details": "RUNTIME_DIVIDE_BY_ZERO"
+    },
+    {
+      "name": "abi3/O0/N=1/direct-top-dup-drop",
+      "passed": true,
+      "details": "{\u0022formatVersion\u0022:1,\u0022values\u0022:[{\u0022kind\u0022:\u0022record\u0022,\u0022name\u0022:\u0022Envelope\u0022,\u0022typeKey\u0022:0,\u0022fields\u0022:[{\u0022name\u0022:\u0022leaf\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022nominal\u0022,\u0022name\u0022:\u0022Leaf\u0022,\u0022nominalKind\u0022:\u0022record\u0022,\u0022typeKey\u0022:1},\u0022value\u0022:{\u0022kind\u0022:\u0022record\u0022,\u0022name\u0022:\u0022Leaf\u0022,\u0022typeKey\u0022:1,\u0022fields\u0022:[{\u0022name\u0022:\u0022value\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022int\u0022},\u0022value\u0022:{\u0022kind\u0022:\u0022int\u0022,\u0022value\u0022:\u002217\u0022}}]}},{\u0022name\u0022:\u0022tag\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022int\u0022},\u0022value\u0022:{\u0022kind\u0022:\u0022int\u0022,\u0022value\u0022:\u00221017\u0022}}]}]}"
+    },
+    {
+      "name": "abi3/O0/N=1/branch-0",
+      "passed": true,
+      "details": "{\u0022formatVersion\u0022:1,\u0022values\u0022:[{\u0022kind\u0022:\u0022record\u0022,\u0022name\u0022:\u0022Envelope\u0022,\u0022typeKey\u0022:0,\u0022fields\u0022:[{\u0022name\u0022:\u0022leaf\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022nominal\u0022,\u0022name\u0022:\u0022Leaf\u0022,\u0022nominalKind\u0022:\u0022record\u0022,\u0022typeKey\u0022:1},\u0022value\u0022:{\u0022kind\u0022:\u0022record\u0022,\u0022name\u0022:\u0022Leaf\u0022,\u0022typeKey\u0022:1,\u0022fields\u0022:[{\u0022name\u0022:\u0022value\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022int\u0022},\u0022value\u0022:{\u0022kind\u0022:\u0022int\u0022,\u0022value\u0022:\u002231\u0022}}]}},{\u0022name\u0022:\u0022tag\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022int\u0022},\u0022value\u0022:{\u0022kind\u0022:\u0022int\u0022,\u0022value\u0022:\u0022700\u0022}}]}]}"
+    },
+    {
+      "name": "abi3/O0/N=1/branch-1",
+      "passed": true,
+      "details": "{\u0022formatVersion\u0022:1,\u0022values\u0022:[{\u0022kind\u0022:\u0022record\u0022,\u0022name\u0022:\u0022Envelope\u0022,\u0022typeKey\u0022:0,\u0022fields\u0022:[{\u0022name\u0022:\u0022leaf\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022nominal\u0022,\u0022name\u0022:\u0022Leaf\u0022,\u0022nominalKind\u0022:\u0022record\u0022,\u0022typeKey\u0022:1},\u0022value\u0022:{\u0022kind\u0022:\u0022record\u0022,\u0022name\u0022:\u0022Leaf\u0022,\u0022typeKey\u0022:1,\u0022fields\u0022:[{\u0022name\u0022:\u0022value\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022int\u0022},\u0022value\u0022:{\u0022kind\u0022:\u0022int\u0022,\u0022value\u0022:\u002232\u0022}}]}},{\u0022name\u0022:\u0022tag\u0022,\u0022type\u0022:{\u0022kind\u0022:\u0022int\u0022},\u0022value\u0022:{\u0022kind\u0022:\u0022int\u0022,\u0022value\u0022:\u0022800\u0022}}]}]}"
+    },
+    {
+      "name": "fixture/N=1/initial-little-endian-layout-bytes",
+      "passed": true,
+      "details": {
+        "fixtureHex": "0a0000000000000005000000000000004600000000000000",
+        "independentValueEncodingHex": "0a0000000000000005000000000000004600000000000000"
+      }
+    }
+  ],
+  "failure": "AgentLang.Llvm.OwningStackExecutionException: The owning-stack runtime rejected an invalid or inconsistent native request.\r\n   at AgentLang.Llvm.OwningStackCompiledProgram.ExecuteIntoCore(FSharpList\u00601 inputs, Int32 stackByteCapacity, Byte[] retainedOutput, Int32 retainedCapacityBytes) in D:\\code\\AgentLang\\src\\AgentLang.Llvm\\OwningStackAot.fs:line 317\r\n   at AgentLang.Llvm.OwningStackCompiledProgram.ExecuteInto(FSharpList\u00601 inputs, Int32 stackByteCapacity, Byte[] retainedOutput) in D:\\code\\AgentLang\\src\\AgentLang.Llvm\\OwningStackAot.fs:line 343\r\n   at AgentLang.NativeValueStack.Program.runOwningStackChain(List\u00601 checks, List\u00601 failures, JsonSerializerOptions options, String artifactRoot, LlvmOptimization optimization, JsonElement fixture, EntryBodies entries, Int32 repetition, VerifiedIrBody turnBody, Dictionary\u00602 candidateSummaries) in D:\\code\\AgentLang\\experiments\\AgentLang.NativeValueStack\\Program.fs:line 589\r\n   at AgentLang.NativeValueStack.Program.main(String[] argv) in D:\\code\\AgentLang\\experiments\\AgentLang.NativeValueStack\\Program.fs:line 903",
+  "failureCount": 1,
+  "failureDetails": [
+    "AgentLang.Llvm.OwningStackExecutionException: The owning-stack runtime rejected an invalid or inconsistent native request.\r\n   at AgentLang.Llvm.OwningStackCompiledProgram.ExecuteIntoCore(FSharpList\u00601 inputs, Int32 stackByteCapacity, Byte[] retainedOutput, Int32 retainedCapacityBytes) in D:\\code\\AgentLang\\src\\AgentLang.Llvm\\OwningStackAot.fs:line 317\r\n   at AgentLang.Llvm.OwningStackCompiledProgram.ExecuteInto(FSharpList\u00601 inputs, Int32 stackByteCapacity, Byte[] retainedOutput) in D:\\code\\AgentLang\\src\\AgentLang.Llvm\\OwningStackAot.fs:line 343\r\n   at AgentLang.NativeValueStack.Program.runOwningStackChain(List\u00601 checks, List\u00601 failures, JsonSerializerOptions options, String artifactRoot, LlvmOptimization optimization, JsonElement fixture, EntryBodies entries, Int32 repetition, VerifiedIrBody turnBody, Dictionary\u00602 candidateSummaries) in D:\\code\\AgentLang\\experiments\\AgentLang.NativeValueStack\\Program.fs:line 589\r\n   at AgentLang.NativeValueStack.Program.main(String[] argv) in D:\\code\\AgentLang\\experiments\\AgentLang.NativeValueStack\\Program.fs:line 903"
+  ]
+}

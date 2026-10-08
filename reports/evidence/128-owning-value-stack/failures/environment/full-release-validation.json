@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-10-08T13:00:50.1148854+00:00",
+  "completedAt": "2026-10-08T13:00:56.5608114+00:00",
+  "revision": "60b4ceeb1a1f51de045df7babb33df6ee334b591",
+  "branch": "prototype",
+  "dirty": true,
+  "configuration": "Release",
+  "passed": false,
+  "checks": [
+    {
+      "name": "build",
+      "command": "dotnet build AgentLang.sln --configuration Release",
+      "exitCode": 1,
+      "durationMilliseconds": 5751,
+      "output": [
+        "",
+        "Build FAILED.",
+        "    0 Warning(s)",
+        "    0 Error(s)",
+        "",
+        "Time Elapsed 00:00:05.44"
+      ]
+    },
+    {
+      "name": "diff-whitespace",
+      "command": "git diff --check",
+      "exitCode": 0,
+      "durationMilliseconds": 186,
+      "output": []
+    },
+    {
+      "name": "staged-diff-whitespace",
+      "command": "git diff --cached --check",
+      "exitCode": 0,
+      "durationMilliseconds": 127,
+      "output": []
+    }
+  ]
+}

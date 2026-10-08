@@ -556,6 +556,14 @@ traversal/transformation workloads. Locality is a layout requirement, not proof
 of a speedup; byte packing and array-of-record versus field-wise layouts remain
 measured implementation choices.
 
+Keep this memory model mostly below the source language: use existing immutable
+values, functions and locals, with compiler-derived stack positions and layouts.
+Fixed-size offsets can be static; variable-size byte distances may use checked
+runtime lengths/offsets without scattered language objects. Do not introduce
+region/borrow annotations or storage-specific collection syntax simply to make
+the allocator implementable. See the [simplicity review](OWNING-STACK-DESIGN-REVIEW.md)
+for local cleanup, optimization and capacity-error boundaries.
+
 The current native backend uses handles and shared record DAGs in invocation-wide
 arenas. It is validated groundwork, not implementation of this owning-stack model.
 The alternative region/whole-turn designs remain comparison controls, not silent

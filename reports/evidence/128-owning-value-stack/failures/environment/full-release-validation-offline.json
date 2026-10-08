@@ -1,0 +1,732 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-10-08T13:04:56.9178235+00:00",
+  "completedAt": "2026-10-08T13:11:17.4740312+00:00",
+  "revision": "60b4ceeb1a1f51de045df7babb33df6ee334b591",
+  "branch": "prototype",
+  "dirty": true,
+  "configuration": "Release",
+  "passed": false,
+  "checks": [
+    {
+      "name": "build",
+      "command": "dotnet build AgentLang.sln --configuration Release -m:1 -p:NuGetAudit=false",
+      "exitCode": 0,
+      "durationMilliseconds": 14279,
+      "output": [
+        "  Determining projects to restore...",
+        "  Restored D:\\code\\AgentLang\\tests\\AgentLang.Discovery.Tests\\AgentLang.Discovery.Tests.fsproj (in 341 ms).",
+        "  Restored D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\AgentLang.Acceptance.fsproj (in 341 ms).",
+        "  Restored D:\\code\\AgentLang\\src\\AgentLang.Cli\\AgentLang.Cli.fsproj (in 341 ms).",
+        "  Restored D:\\code\\AgentLang\\tests\\AgentLang.TaskBank.Tests\\AgentLang.TaskBank.Tests.fsproj (in 341 ms).",
+        "  Restored D:\\code\\AgentLang\\experiments\\AgentLang.Conventional.Cli\\AgentLang.Conventional.Cli.fsproj (in 341 ms).",
+        "  Restored D:\\code\\AgentLang\\tests\\AgentLang.Flow.Runtime.Tests\\AgentLang.Flow.Runtime.Tests.fsproj (in 341 ms).",
+        "  Restored D:\\code\\AgentLang\\tests\\AgentLang.Source.Tests\\AgentLang.Source.Tests.fsproj (in 341 ms).",
+        "  Restored D:\\code\\AgentLang\\tests\\AgentLang.Conventional.Tests\\AgentLang.Conventional.Tests.fsproj (in 341 ms).",
+        "  Restored D:\\code\\AgentLang\\tests\\AgentLang.Business.Language.Tests\\AgentLang.Business.Language.Tests.fsproj (in 341 ms).",
+        "  Restored D:\\code\\AgentLang\\tests\\AgentLang.Business.Contracts.Tests\\AgentLang.Business.Contracts.Tests.fsproj (in 341 ms).",
+        "  Restored D:\\code\\AgentLang\\experiments\\AgentLang.Benchmarks\\AgentLang.Benchmarks.fsproj (in 341 ms).",
+        "  Restored D:\\code\\AgentLang\\tests\\AgentLang.ValueInspection.Tests\\AgentLang.ValueInspection.Tests.fsproj (in 341 ms).",
+        "  Restored D:\\code\\AgentLang\\tests\\AgentLang.Cli.Tests\\AgentLang.Cli.Tests.fsproj (in 341 ms).",
+        "  Restored D:\\code\\AgentLang\\src\\AgentLang.Llvm\\AgentLang.Llvm.fsproj (in 341 ms).",
+        "  Restored D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\matched-renewal-001\\fixtures\\conventional\\MatchedRenewal.fsproj (in 341 ms).",
+        "  Restored D:\\code\\AgentLang\\src\\AgentLang.Core\\AgentLang.Core.fsproj (in 341 ms).",
+        "  Restored D:\\code\\AgentLang\\experiments\\AgentLang.Business.Contracts\\AgentLang.Business.Contracts.fsproj (in 341 ms).",
+        "  Restored D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\AgentLang.Storage.Tests.fsproj (in 341 ms).",
+        "  Restored D:\\code\\AgentLang\\tests\\AgentLang.TrustedValues.Tests\\AgentLang.TrustedValues.Tests.fsproj (in 341 ms).",
+        "  Restored D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\matched-renewal-001\\fixtures\\flow\\conventional\\MatchedRenewal.Flow.fsproj (in 341 ms).",
+        "  Restored D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\AgentLang.Flow.Tests.fsproj (in 341 ms).",
+        "  Restored D:\\code\\AgentLang\\experiments\\AgentLang.Business\\AgentLang.Business.fsproj (in 341 ms).",
+        "  Restored D:\\code\\AgentLang\\tests\\AgentLang.IR.Interpreter.Tests\\AgentLang.IR.Interpreter.Tests.fsproj (in 12 ms).",
+        "  Restored D:\\code\\AgentLang\\experiments\\AgentLang.Conventional\\AgentLang.Conventional.fsproj (in 11 ms).",
+        "  Restored D:\\code\\AgentLang\\tests\\AgentLang.Business.Tests\\AgentLang.Business.Tests.fsproj (in 12 ms).",
+        "  Restored D:\\code\\AgentLang\\tests\\AgentLang.Vocabulary.Tests\\AgentLang.Vocabulary.Tests.fsproj (in 13 ms).",
+        "  Restored D:\\code\\AgentLang\\tests\\AgentLang.Llvm.Tests\\AgentLang.Llvm.Tests.fsproj (in 12 ms).",
+        "  Restored D:\\code\\AgentLang\\tests\\AgentLang.IR.Tests\\AgentLang.IR.Tests.fsproj (in 13 ms).",
+        "  Restored D:\\code\\AgentLang\\tests\\AgentLang.Flow.Lint.Tests\\AgentLang.Flow.Lint.Tests.fsproj (in 12 ms).",
+        "  Restored D:\\code\\AgentLang\\tests\\AgentLang.IR.Formatting.Tests\\AgentLang.IR.Formatting.Tests.fsproj (in 13 ms).",
+        "  Restored D:\\code\\AgentLang\\tests\\AgentLang.Conventional.Cli.Tests\\AgentLang.Conventional.Cli.Tests.fsproj (in 13 ms).",
+        "  Restored D:\\code\\AgentLang\\tests\\AgentLang.Harness.Tests\\AgentLang.Harness.Tests.fsproj (in 13 ms).",
+        "  Restored D:\\code\\AgentLang\\tests\\AgentLang.Business.Transitions.Tests\\AgentLang.Business.Transitions.Tests.fsproj (in 13 ms).",
+        "  AgentLang.Core -> D:\\code\\AgentLang\\src\\AgentLang.Core\\bin\\Release\\net9.0\\AgentLang.Core.dll",
+        "  AgentLang.Cli -> D:\\code\\AgentLang\\src\\AgentLang.Cli\\bin\\Release\\net9.0\\AgentLang.Cli.dll",
+        "  AgentLang.Acceptance -> D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\bin\\Release\\net9.0\\AgentLang.Acceptance.dll",
+        "  AgentLang.Benchmarks -> D:\\code\\AgentLang\\experiments\\AgentLang.Benchmarks\\bin\\Release\\net9.0\\AgentLang.Benchmarks.dll",
+        "  AgentLang.Business -> D:\\code\\AgentLang\\experiments\\AgentLang.Business\\bin\\Release\\net9.0\\AgentLang.Business.dll",
+        "  AgentLang.Harness.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.Harness.Tests\\bin\\Release\\net9.0\\AgentLang.Harness.Tests.dll",
+        "  AgentLang.Business.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.Business.Tests\\bin\\Release\\net9.0\\AgentLang.Business.Tests.dll",
+        "  AgentLang.Conventional -> D:\\code\\AgentLang\\experiments\\AgentLang.Conventional\\bin\\Release\\net9.0\\AgentLang.Conventional.dll",
+        "  AgentLang.Conventional.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.Conventional.Tests\\bin\\Release\\net9.0\\AgentLang.Conventional.Tests.dll",
+        "  AgentLang.Source.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.Source.Tests\\bin\\Release\\net9.0\\AgentLang.Source.Tests.dll",
+        "  AgentLang.Storage.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\bin\\Release\\net9.0\\AgentLang.Storage.Tests.dll",
+        "  AgentLang.Discovery.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.Discovery.Tests\\bin\\Release\\net9.0\\AgentLang.Discovery.Tests.dll",
+        "  AgentLang.IR.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.IR.Tests\\bin\\Release\\net9.0\\AgentLang.IR.Tests.dll",
+        "  AgentLang.Vocabulary.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.Vocabulary.Tests\\bin\\Release\\net9.0\\AgentLang.Vocabulary.Tests.dll",
+        "  AgentLang.IR.Formatting.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.IR.Formatting.Tests\\bin\\Release\\net9.0\\AgentLang.IR.Formatting.Tests.dll",
+        "  AgentLang.IR.Interpreter.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.IR.Interpreter.Tests\\bin\\Release\\net9.0\\AgentLang.IR.Interpreter.Tests.dll",
+        "  AgentLang.TaskBank.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.TaskBank.Tests\\bin\\Release\\net9.0\\AgentLang.TaskBank.Tests.dll",
+        "  AgentLang.Business.Contracts -> D:\\code\\AgentLang\\experiments\\AgentLang.Business.Contracts\\bin\\Release\\net9.0\\AgentLang.Business.Contracts.dll",
+        "  AgentLang.Business.Contracts.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.Business.Contracts.Tests\\bin\\Release\\net9.0\\AgentLang.Business.Contracts.Tests.dll",
+        "  AgentLang.ValueInspection.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.ValueInspection.Tests\\bin\\Release\\net9.0\\AgentLang.ValueInspection.Tests.dll",
+        "  AgentLang.Conventional.Cli -> D:\\code\\AgentLang\\experiments\\AgentLang.Conventional.Cli\\bin\\Release\\net9.0\\AgentLang.Conventional.Cli.dll",
+        "  MatchedRenewal -> D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\matched-renewal-001\\fixtures\\conventional\\bin\\Release\\net9.0\\MatchedRenewal.dll",
+        "  AgentLang.Conventional.Cli.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.Conventional.Cli.Tests\\bin\\Release\\net9.0\\AgentLang.Conventional.Cli.Tests.dll",
+        "  AgentLang.Flow.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.Flow.Tests\\bin\\Release\\net9.0\\AgentLang.Flow.Tests.dll",
+        "  AgentLang.Flow.Lint.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.Flow.Lint.Tests\\bin\\Release\\net9.0\\AgentLang.Flow.Lint.Tests.dll",
+        "  AgentLang.Flow.Runtime.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.Flow.Runtime.Tests\\bin\\Release\\net9.0\\AgentLang.Flow.Runtime.Tests.dll",
+        "  AgentLang.Cli.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.Cli.Tests\\bin\\Release\\net9.0\\AgentLang.Cli.Tests.dll",
+        "  MatchedRenewal.Flow -> D:\\code\\AgentLang\\experiments\\AgentLang.SubagentTrials\\matched-renewal-001\\fixtures\\flow\\conventional\\bin\\Release\\net9.0\\MatchedRenewal.Flow.dll",
+        "  AgentLang.TrustedValues.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.TrustedValues.Tests\\bin\\Release\\net9.0\\AgentLang.TrustedValues.Tests.dll",
+        "  AgentLang.Business.Language.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.Business.Language.Tests\\bin\\Release\\net9.0\\AgentLang.Business.Language.Tests.dll",
+        "  AgentLang.Business.Transitions.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.Business.Transitions.Tests\\bin\\Release\\net9.0\\AgentLang.Business.Transitions.Tests.dll",
+        "  AgentLang.Llvm -> D:\\code\\AgentLang\\src\\AgentLang.Llvm\\bin\\Release\\net9.0\\AgentLang.Llvm.dll",
+        "  AgentLang.Llvm.Tests -> D:\\code\\AgentLang\\tests\\AgentLang.Llvm.Tests\\bin\\Release\\net9.0\\AgentLang.Llvm.Tests.dll",
+        "",
+        "Build succeeded.",
+        "    0 Warning(s)",
+        "    0 Error(s)",
+        "",
+        "Time Elapsed 00:00:14.05"
+      ]
+    },
+    {
+      "name": "language-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Acceptance",
+      "exitCode": 1,
+      "durationMilliseconds": 3545,
+      "output": [
+        "PASS JSON-lines protocol and eval",
+        "PASS checked numeric boundaries",
+        "PASS effects and capability boundary",
+        "PASS Customer records, locals, and branches",
+        "FAIL test-gated project commits: System.Exception: commit project word: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied.",
+        "   at AgentLang.Acceptance.Program.expectOk[a](a label, JsonObject response) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 46",
+        "   at AgentLang.Acceptance.Program.testProjectCommitRequirements(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 243",
+        "   at AgentLang.Acceptance.Program.cases@2688-4.Invoke(String root)",
+        "   at AgentLang.Acceptance.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 2723",
+        "FAIL candidate dependency persistence: System.Exception: commit dependency first: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied.",
+        "   at AgentLang.Acceptance.Program.expectOk[a](a label, JsonObject response) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 46",
+        "   at AgentLang.Acceptance.Program.testCandidateDependenciesPersist(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 280",
+        "   at AgentLang.Acceptance.Program.cases@2689-5.Invoke(String root)",
+        "   at AgentLang.Acceptance.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 2723",
+        "FAIL selected metadata dependency closure: System.Exception: commit target with dependencies used only by attached metadata: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied.",
+        "   at AgentLang.Acceptance.Program.expectOk[a](a label, JsonObject response) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 46",
+        "   at AgentLang.Acceptance.Program.testSelectedMetadataDependenciesPersist(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 335",
+        "   at AgentLang.Acceptance.Program.cases@2690-6.Invoke(String root)",
+        "   at AgentLang.Acceptance.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 2723",
+        "PASS temporary metadata dependency rejection",
+        "FAIL temporary session isolation: System.Exception: commit unrelated candidate: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied.",
+        "   at AgentLang.Acceptance.Program.expectOk[a](a label, JsonObject response) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 46",
+        "   at AgentLang.Acceptance.Program.testTemporaryWordsStaySessionOnly(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 458",
+        "   at AgentLang.Acceptance.Program.cases@2692-8.Invoke(String root)",
+        "   at AgentLang.Acceptance.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 2723",
+        "FAIL scoped replacement and discard: System.Exception: commit original f: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied.",
+        "   at AgentLang.Acceptance.Program.expectOk[a](a label, JsonObject response) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 46",
+        "   at AgentLang.Acceptance.Program.testScopedReplacementAndDiscard(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 480",
+        "   at AgentLang.Acceptance.Program.cases@2693-9.Invoke(String root)",
+        "   at AgentLang.Acceptance.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 2723",
+        "FAIL scoped test metadata persistence: System.Exception: commit original g: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied.",
+        "   at AgentLang.Acceptance.Program.expectOk[a](a label, JsonObject response) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 46",
+        "   at AgentLang.Acceptance.Program.testScopedTestMetadataPersistence(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 557",
+        "   at AgentLang.Acceptance.Program.cases@2694-10.Invoke(String root)",
+        "   at AgentLang.Acceptance.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 2723",
+        "FAIL replacement caller tests gate durable updates: System.Exception: commit replacement dependency and caller: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied.",
+        "   at AgentLang.Acceptance.Program.expectOk[a](a label, JsonObject response) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 46",
+        "   at AgentLang.Acceptance.Program.testReplacementCallerTests(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 616",
+        "   at AgentLang.Acceptance.Program.cases@2695-11.Invoke(String root)",
+        "   at AgentLang.Acceptance.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 2723",
+        "FAIL stable word identity lifecycle: System.Exception: commit identity-bearing word: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied.",
+        "   at AgentLang.Acceptance.Program.expectOk[a](a label, JsonObject response) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 46",
+        "   at AgentLang.Acceptance.Program.testWordIdentityLifecycle(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 798",
+        "   at AgentLang.Acceptance.Program.cases@2696-12.Invoke(String root)",
+        "   at AgentLang.Acceptance.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 2723",
+        "PASS runtime error test expectations",
+        "PASS typed value-expression expectations",
+        "FAIL expectation-only dependency persistence: System.Exception: commit target with value-expectation dependencies: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied.",
+        "   at AgentLang.Acceptance.Program.expectOk[a](a label, JsonObject response) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 46",
+        "   at AgentLang.Acceptance.Program.testExpectedExpressionDependencies(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 1061",
+        "   at AgentLang.Acceptance.Program.cases@2699-15.Invoke(String root)",
+        "   at AgentLang.Acceptance.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 2723",
+        "FAIL expected-expression rename and coverage isolation: System.Exception: persist rename fixture: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied.",
+        "   at AgentLang.Acceptance.Program.expectOk[a](a label, JsonObject response) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 46",
+        "   at AgentLang.Acceptance.Program.testExpectedExpressionRenameAndCoverage(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 1159",
+        "   at AgentLang.Acceptance.Program.cases@2700-16.Invoke(String root)",
+        "   at AgentLang.Acceptance.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 2723",
+        "PASS strict structured eval and publication",
+        "PASS nominal and refined types",
+        "PASS validator rejection",
+        "FAIL type-only commit: System.Exception: commit type-only project: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied.",
+        "   at AgentLang.Acceptance.Program.expectOk[a](a label, JsonObject response) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 46",
+        "   at AgentLang.Acceptance.Program.testTypeOnlyCommit(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 1289",
+        "   at AgentLang.Acceptance.Program.cases@2704-20.Invoke(String root)",
+        "   at AgentLang.Acceptance.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 2723",
+        "FAIL frozen validator replacement: System.Exception: persist validator and type: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied.",
+        "   at AgentLang.Acceptance.Program.expectOk[a](a label, JsonObject response) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 46",
+        "   at AgentLang.Acceptance.Program.testValidatorTemporaryOverrideRejected(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 1315",
+        "   at AgentLang.Acceptance.Program.cases@2705-21.Invoke(String root)",
+        "   at AgentLang.Acceptance.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 2723",
+        "PASS raw source-site coverage identity",
+        "FAIL library coverage gate: System.Exception: commit fully covered library word: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied.",
+        "   at AgentLang.Acceptance.Program.expectOk[a](a label, JsonObject response) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 46",
+        "   at AgentLang.Acceptance.Program.testLibraryCoverageGate(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 1468",
+        "   at AgentLang.Acceptance.Program.cases@2707-23.Invoke(String root)",
+        "   at AgentLang.Acceptance.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 2723",
+        "FAIL task abort rollback: System.Exception: commit durable task baseline: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied.",
+        "   at AgentLang.Acceptance.Program.expectOk[a](a label, JsonObject response) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 46",
+        "   at AgentLang.Acceptance.Program.testTaskAbortRollsBackDictionary(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 1560",
+        "   at AgentLang.Acceptance.Program.cases@2708-24.Invoke(String root)",
+        "   at AgentLang.Acceptance.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 2723",
+        "PASS task commit temporary cleanup",
+        "FAIL task logs survive reload: System.Exception: persist task log: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied.",
+        "   at AgentLang.Acceptance.Program.expectOk[a](a label, JsonObject response) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 46",
+        "   at AgentLang.Acceptance.Program.completeTask@1685(Engine runtime, String goal) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 1688",
+        "   at AgentLang.Acceptance.Program.testTaskLogsSurviveReload(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 1690",
+        "   at AgentLang.Acceptance.Program.cases@2710-26.Invoke(String root)",
+        "   at AgentLang.Acceptance.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 2723",
+        "FAIL task log failures remain truthful warnings: System.Exception: task commit remains successful when log write fails: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied.",
+        "   at AgentLang.Acceptance.Program.expectOk[a](a label, JsonObject response) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 46",
+        "   at AgentLang.Acceptance.Program.testTaskLogWriteFailureIsWarning(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 1724",
+        "   at AgentLang.Acceptance.Program.cases@2711-27.Invoke(String root)",
+        "   at AgentLang.Acceptance.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 2723",
+        "FAIL named snapshot restores project and providers: System.Exception: commit snapshot baseline: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied.",
+        "   at AgentLang.Acceptance.Program.expectOk[a](a label, JsonObject response) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 46",
+        "   at AgentLang.Acceptance.Program.testNamedSnapshotRestoresProjectAndProviders(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 1775",
+        "   at AgentLang.Acceptance.Program.cases@2712-28.Invoke(String root)",
+        "   at AgentLang.Acceptance.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 2723",
+        "FAIL semantic rename and deprecation: System.Exception: commit vocabulary before semantic rename: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied.",
+        "   at AgentLang.Acceptance.Program.expectOk[a](a label, JsonObject response) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 46",
+        "   at AgentLang.Acceptance.Program.testSemanticRenameAndDeprecation(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 1874",
+        "   at AgentLang.Acceptance.Program.cases@2713-29.Invoke(String root)",
+        "   at AgentLang.Acceptance.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 2723",
+        "FAIL typed containers and syntax metadata: System.Exception: commit nested-container word and referenced nominal types: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied.",
+        "   at AgentLang.Acceptance.Program.expectOk[a](a label, JsonObject response) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 46",
+        "   at AgentLang.Acceptance.Program.testTypedContainersAndLanguageConstructs(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 2124",
+        "   at AgentLang.Acceptance.Program.cases@2714-30.Invoke(String root)",
+        "   at AgentLang.Acceptance.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 2723",
+        "FAIL container library coverage: System.Exception: commit option library after both cases: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied.",
+        "   at AgentLang.Acceptance.Program.expectOk[a](a label, JsonObject response) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 46",
+        "   at AgentLang.Acceptance.Program.testContainerLibraryCoverage(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 2174",
+        "   at AgentLang.Acceptance.Program.cases@2715-31.Invoke(String root)",
+        "   at AgentLang.Acceptance.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 2723",
+        "FAIL live bounded Discovery commands: System.Exception: abort read-only discovery task: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied.",
+        "   at AgentLang.Acceptance.Program.expectOk[a](a label, JsonObject response) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 46",
+        "   at AgentLang.Acceptance.Program.testDiscoveryCommands(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 2499",
+        "   at AgentLang.Acceptance.Program.cases@2716-32.Invoke(String root)",
+        "   at AgentLang.Acceptance.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 2723",
+        "FAIL compact word inventory: System.Exception: commit compact inventory schema: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied.",
+        "   at AgentLang.Acceptance.Program.expectOk[a](a label, JsonObject response) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 46",
+        "   at AgentLang.Acceptance.Program.testCompactWords(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 2520",
+        "   at AgentLang.Acceptance.Program.cases@2717-33.Invoke(String root)",
+        "   at AgentLang.Acceptance.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 2723",
+        "FAIL verified IR runtime snapshots and formatter: System.Exception: commit IR-backed word: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied.",
+        "   at AgentLang.Acceptance.Program.expectOk[a](a label, JsonObject response) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 46",
+        "   at AgentLang.Acceptance.Program.testVerifiedIrRuntimeSurface(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 2649",
+        "   at AgentLang.Acceptance.Program.cases@2718-34.Invoke(String root)",
+        "   at AgentLang.Acceptance.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Acceptance\\Program.fs:line 2723",
+        "23 acceptance group(s) failed: test-gated project commits: commit project word: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied. | candidate dependency persistence: commit dependency first: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied. | selected metadata dependency closure: commit target with dependencies used only by attached metadata: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied. | temporary session isolation: commit unrelated candidate: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied. | scoped replacement and discard: commit original f: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied. | scoped test metadata persistence: commit original g: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied. | replacement caller tests gate durable updates: commit replacement dependency and caller: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied. | stable word identity lifecycle: commit identity-bearing word: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied. | expectation-only dependency persistence: commit target with value-expectation dependencies: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied. | expected-expression rename and coverage isolation: persist rename fixture: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied. | type-only commit: commit type-only project: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied. | frozen validator replacement: persist validator and type: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied. | library coverage gate: commit fully covered library word: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied. | task abort rollback: commit durable task baseline: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied. | task logs survive reload: persist task log: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied. | task log failures remain truthful warnings: task commit remains successful when log write fails: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied. | named snapshot restores project and providers: commit snapshot baseline: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied. | semantic rename and deprecation: commit vocabulary before semantic rename: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied. | typed containers and syntax metadata: commit nested-container word and referenced nominal types: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied. | container library coverage: commit option library after both cases: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied. | live bounded Discovery commands: abort read-only discovery task: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied. | compact word inventory: commit compact inventory schema: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied. | verified IR runtime snapshots and formatter: commit IR-backed word: expected success, got STORAGE_ACCESS_DENIED: STORAGE_ACCESS_DENIED: Access to the path is denied."
+      ]
+    },
+    {
+      "name": "harness-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Harness.Tests",
+      "exitCode": -532462766,
+      "durationMilliseconds": 3945,
+      "output": [
+        "Unhandled exception. System.Exception: offline run passed its oracle (failure: ROLLBACK_FAILED: STORAGE_ACCESS_DENIED: Access to the path is denied.)",
+        "   at AgentLang.Harness.Tests.Program.check(Boolean condition, String message) in D:\\code\\AgentLang\\tests\\AgentLang.Harness.Tests\\Program.fs:line 19",
+        "   at AgentLang.Harness.Tests.Program.testStatelessToolLoopAndLogs(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Harness.Tests\\Program.fs:line 145",
+        "   at AgentLang.Harness.Tests.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Harness.Tests\\Program.fs:line 1131"
+      ]
+    },
+    {
+      "name": "business-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Business.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 780,
+      "output": [
+        "PASS nominal identifiers and Email policy",
+        "PASS checked minor-unit arithmetic and price invariants",
+        "PASS immutable store and lookup",
+        "PASS subscription lifecycle",
+        "PASS invoice totals and validation",
+        "PASS payment provider boundary and receipt",
+        "PASS email outbox and provider isolation",
+        "Business reference: 7 groups, 113 assertions"
+      ]
+    },
+    {
+      "name": "business-contracts-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Business.Contracts.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 859,
+      "output": [
+        "PASS deterministic baseline and canonical hash",
+        "PASS strict versioned document parsing",
+        "PASS identifiers, email policy, and normalization",
+        "PASS exact money, time, and quantity representations",
+        "PASS complete wire round-trip",
+        "PASS immutable Store projection and identity ledger",
+        "PASS fragment expansion and unsupported fields",
+        "PASS 7 groups, 69 assertions"
+      ]
+    },
+    {
+      "name": "trusted-values-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.TrustedValues.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 1071,
+      "output": [
+        "PASS GUID normalization and canonical storage",
+        "PASS Email validation against the conventional fixture",
+        "PASS checked Int64 arithmetic against BigInteger and Money",
+        "PASS exact ratio scaling against an independent BigInteger oracle",
+        "PASS instant parsing against the immutable contract",
+        "PASS canonical UTC comparison and day arithmetic",
+        "PASS primitive metadata and typed IR execution",
+        "PASS typed IR runtime and failure boundaries",
+        "Trusted values tests: 8 groups, 3206 assertions"
+      ]
+    },
+    {
+      "name": "business-language-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Business.Language.Tests",
+      "exitCode": -532462766,
+      "durationMilliseconds": 11303,
+      "output": [
+        "PASS fixture and authored cases",
+        "PASS nominal identifiers, Email, and normalized instants against oracle",
+        "PASS Money checked arithmetic and signed Int32 quantity against oracle",
+        "PASS constructor validation, trimming precedence, and public-record boundary",
+        "PASS Store empty, multi-add, duplicate rejection, lookup order, and nominal rejection",
+        "FAIL after 5 groups and 929 assertions: publish all authored words and candidate types to library maturity: expected success, got STORAGE_ACCESS_DENIED: Access to the path is denied.",
+        "Unhandled exception. System.Exception: publish all authored words and candidate types to library maturity: expected success, got STORAGE_ACCESS_DENIED: Access to the path is denied.",
+        "   at AgentLang.Business.Language.Tests.Program.expectOk[a](a label, JsonObject response) in D:\\code\\AgentLang\\tests\\AgentLang.Business.Language.Tests\\Program.fs:line 53",
+        "   at AgentLang.Business.Language.Tests.Program.testLibraryCommitAndReload(Engine engine, String projectPath, FlowProjectDocument document) in D:\\code\\AgentLang\\tests\\AgentLang.Business.Language.Tests\\Program.fs:line 674",
+        "   at AgentLang.Business.Language.Tests.Program.main@921-5.Invoke(Unit unitVar0) in D:\\code\\AgentLang\\tests\\AgentLang.Business.Language.Tests\\Program.fs:line 921",
+        "   at AgentLang.Business.Language.Tests.Program.runGroup(String name, FSharpFunc`2 action) in D:\\code\\AgentLang\\tests\\AgentLang.Business.Language.Tests\\Program.fs:line 129",
+        "   at AgentLang.Business.Language.Tests.Program.main(String[] argv) in D:\\code\\AgentLang\\tests\\AgentLang.Business.Language.Tests\\Program.fs:line 921"
+      ]
+    },
+    {
+      "name": "business-transitions-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Business.Transitions.Tests",
+      "exitCode": 1,
+      "durationMilliseconds": 63063,
+      "output": [
+        "PASS fixture tests and examples",
+        "PASS deterministic seed, full-state projection, and strong types",
+        "PASS subscription start, cancel, and error precedence",
+        "PASS invoice lines, totals, and creation",
+        "PASS payment and email transition contracts",
+        "PASS stateful renewal, billing, payment, and FIFO retry",
+        "FINITE AUDIT INCOMPLETE email.delivery-fold-step missing=[return[0] EmailDeliveryPlan: $.first: none] unsupported=[]",
+        "FAIL after 6 groups and 2846 assertions: System.Exception: commit all remaining business words and types at library maturity: expected success, got STORAGE_ACCESS_DENIED: Access to the path is denied.",
+        "   at AgentLang.Business.Transitions.Tests.Program.expectOk[a](a label, JsonObject response) in D:\\code\\AgentLang\\tests\\AgentLang.Business.Transitions.Tests\\Program.fs:line 69",
+        "   at AgentLang.Business.Transitions.Tests.Program.testLibraryPersistence(Engine engine, String projectPath, FlowProjectDocument document) in D:\\code\\AgentLang\\tests\\AgentLang.Business.Transitions.Tests\\Program.fs:line 1239",
+        "   at AgentLang.Business.Transitions.Tests.Program.main@1920-6.Invoke(Unit unitVar0) in D:\\code\\AgentLang\\tests\\AgentLang.Business.Transitions.Tests\\Program.fs:line 1922",
+        "   at AgentLang.Business.Transitions.Tests.Program.runGroup(String name, FSharpFunc`2 action) in D:\\code\\AgentLang\\tests\\AgentLang.Business.Transitions.Tests\\Program.fs:line 156",
+        "   at AgentLang.Business.Transitions.Tests.Program.main(String[] argv) in D:\\code\\AgentLang\\tests\\AgentLang.Business.Transitions.Tests\\Program.fs:line 1920"
+      ]
+    },
+    {
+      "name": "value-inspection-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.ValueInspection.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 816,
+      "output": [
+        "PASS nested values and snapshot schema",
+        "PASS nominal distinction and ordering",
+        "PASS lossless integer and float encoding",
+        "PASS invalid host values and snapshots",
+        "PASS deterministic limits",
+        "AgentLang.ValueInspection.Tests: 48 assertions passed."
+      ]
+    },
+    {
+      "name": "source-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Source.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 990,
+      "output": [
+        "All source tests passed (101 assertions)."
+      ]
+    },
+    {
+      "name": "flow-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Flow.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 2325,
+      "output": [
+        "Flow tests passed: 1110 assertions"
+      ]
+    },
+    {
+      "name": "flow-lint-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Flow.Lint.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 730,
+      "output": [
+        "AgentLang.Flow.Lint.Tests: 68 assertions passed."
+      ]
+    },
+    {
+      "name": "flow-runtime-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Flow.Runtime.Tests",
+      "exitCode": -532462766,
+      "durationMilliseconds": 3871,
+      "output": [
+        "Unhandled exception. System.Exception: execute the returned predicate library-commit request: expected success, got STORAGE_ACCESS_DENIED: Access to the path is denied.",
+        "   at AgentLang.Flow.Runtime.Tests.Program.expectOk[a](a label, JsonObject response) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Runtime.Tests\\Program.fs:line 58",
+        "   at AgentLang.Flow.Runtime.Tests.Program.testAuthoringHelpAndCanonicalLibrarySource(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Runtime.Tests\\Program.fs:line 285",
+        "   at AgentLang.Flow.Runtime.Tests.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Flow.Runtime.Tests\\Program.fs:line 3947"
+      ]
+    },
+    {
+      "name": "cli-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Cli.Tests",
+      "exitCode": 1,
+      "durationMilliseconds": 7743,
+      "output": [
+        "PASS CLI frontend selection and protocol authority",
+        "PASS compact and full words CLI requests",
+        "PASS Flow parser-driven interactive buffering",
+        "PASS Flow incomplete EOF and malformed recovery",
+        "PASS runtime help topics match protocol and recover from malformed input",
+        "FAIL after 5 groups and 94 assertions: Flow file definition commits after its attached test passes: expected to find 1 attached test(s) passed in output:",
+        "agentlang> Flow definition, tests, examples, and retained source bindings validated and staged.",
+        "{",
+        "  \"frontend\": \"flow\",",
+        "  \"name\": \"demo.increment\",",
+        "  \"id\": \"word_8a33308e37494cc7ae3db87bb9f1869c\",",
+        "  \"revision\": 1,",
+        "  \"tests\": [",
+        "    \"one\"",
+        "  ],",
+        "  \"examples\": []",
+        "}",
+        "agentlang> STORAGE_ACCESS_DENIED: Access to the path is denied.",
+        "  [STORAGE_ACCESS_DENIED]",
+        "agentlang> Description for demo.increment.",
+        "{",
+        "  \"name\": \"demo.increment\",",
+        "  \"flowReference\": \"demo::increment\",",
+        "  \"flowReferenceUnavailableReason\": null,",
+        "  \"inputs\": [",
+        "    \"Int\"",
+        "  ],",
+        "  \"outputs\": [",
+        "    \"Int\"",
+        "  ],",
+        "  \"parameters\": [",
+        "    {",
+        "      \"name\": \"value\",",
+        "      \"type\": \"Int\"",
+        "    }",
+        "  ],",
+        "  \"effects\": [],",
+        "  \"documentation\": \"\",",
+        "  \"id\": \"word_8a33308e37494cc7ae3db87bb9f1869c\",",
+        "  \"dependencies\": [",
+        "    \"add\"",
+        "  ],",
+        "  \"transitiveDependencies\": [",
+        "    \"add\"",
+        "  ],",
+        "  \"callers\": [],",
+        "  \"tests\": [",
+        "    \"one\"",
+        "  ],",
+        "  \"examples\": [],",
+        "  \"source\": \"\\u003Cflow:demo.increment/1\\u003E\",",
+        "  \"line\": 1,",
+        "  \"kind\": \"word\",",
+        "  \"status\": \"candidate\",",
+        "  \"maturity\": \"project\",",
+        "  \"deprecated\": false,",
+        "  \"revision\": 1,",
+        "  \"testCount\": 1,",
+        "  \"exampleCount\": 0,",
+        "  \"coverage\": {",
+        "    \"instructionsCovered\": 3,",
+        "    \"instructionsTotal\": 3,",
+        "    \"branchesCovered\": 0,",
+        "    \"branchesTotal\": 0,",
+        "    \"uncoveredInstructions\": [],",
+        "    \"uncoveredBranchOutcomes\": [],",
+        "    \"finiteCoverage\": {",
+        "      \"targetInvocations\": 1,",
+        "      \"inputs\": [],",
+        "      \"returns\": [",
+        "        {",
+        "          \"position\": 0,",
+        "          \"type\": \"Int\",",
+        "          \"required\": [],",
+        "          \"observed\": [],",
+        "          \"missing\": []",
+        "        }",
+        "      ],",
+        "      \"unsupported\": [],",
+        "      \"missing\": [],",
+        "      \"complete\": true",
+        "    },",
+        "    \"status\": \"current\"",
+        "  }",
+        "}",
+        "agentlang> "
+      ]
+    },
+    {
+      "name": "storage-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Storage.Tests",
+      "exitCode": -532462766,
+      "durationMilliseconds": 3652,
+      "output": [
+        "Unhandled exception. System.Exception: save named snapshot of frozen v1: STORAGE_ACCESS_DENIED: Access to the path is denied.",
+        "   at AgentLang.Storage.Tests.Program.ok[T](String label, FSharpResult`2 result) in D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\Program.fs:line 24",
+        "   at AgentLang.Storage.Tests.Program.testFrozenV1Compatibility(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\Program.fs:line 125",
+        "   at AgentLang.Storage.Tests.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Storage.Tests\\Program.fs:line 1399"
+      ]
+    },
+    {
+      "name": "conventional-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Conventional.Tests",
+      "exitCode": -532462766,
+      "durationMilliseconds": 3445,
+      "output": [
+        "SKIP symbolic-link fixture: this host does not permit creating links",
+        "Unhandled exception. System.Exception: replacement response: {\"ok\":false,\"kind\":\"error\",\"text\":\"The requested repository operation is not allowed by the host filesystem.\",\"data\":null,\"error\":{\"code\":\"ACCESS_DENIED\",\"message\":\"The requested repository operation is not allowed by the host filesystem.\"}}",
+        "   at AgentLang.Conventional.Tests.Program.testCompareAndSwapAtomicReplacement(String root) in D:\\code\\AgentLang\\tests\\AgentLang.Conventional.Tests\\Program.fs:line 194",
+        "   at AgentLang.Conventional.Tests.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Conventional.Tests\\Program.fs:line 414"
+      ]
+    },
+    {
+      "name": "conventional-cli-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Conventional.Cli.Tests",
+      "exitCode": -532462766,
+      "durationMilliseconds": 3289,
+      "output": [
+        "PASS default and custom exact limits",
+        "PASS excess mutation rejected before dispatch",
+        "Unhandled exception. System.Exception: flat top-level patch arguments are accepted",
+        "   at AgentLang.Conventional.Cli.Tests.Program.check(Boolean condition, String message) in D:\\code\\AgentLang\\tests\\AgentLang.Conventional.Cli.Tests\\Program.fs:line 21",
+        "   at AgentLang.Conventional.Cli.Tests.Program.testPatchTopLevelAndNestedJsonlRecovery@176.Invoke(String projectRoot, String target, String originalText, String changedText) in D:\\code\\AgentLang\\tests\\AgentLang.Conventional.Cli.Tests\\Program.fs:line 190",
+        "   at AgentLang.Conventional.Cli.Tests.Program.withScratchProject[a](FSharpFunc`2 action) in D:\\code\\AgentLang\\tests\\AgentLang.Conventional.Cli.Tests\\Program.fs:line 126",
+        "   at AgentLang.Conventional.Cli.Tests.Program.testPatchTopLevelAndNestedJsonlRecovery() in D:\\code\\AgentLang\\tests\\AgentLang.Conventional.Cli.Tests\\Program.fs:line 176",
+        "   at AgentLang.Conventional.Cli.Tests.Program.main@262-2.Invoke(Unit arg00@)",
+        "   at AgentLang.Conventional.Cli.Tests.Program.group(String name, FSharpFunc`2 action) in D:\\code\\AgentLang\\tests\\AgentLang.Conventional.Cli.Tests\\Program.fs:line 29",
+        "   at AgentLang.Conventional.Cli.Tests.Program.main(String[] _arg1) in D:\\code\\AgentLang\\tests\\AgentLang.Conventional.Cli.Tests\\Program.fs:line 262"
+      ]
+    },
+    {
+      "name": "discovery-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Discovery.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 687,
+      "output": [
+        "AgentLang.Discovery.Tests: 106 assertions passed."
+      ]
+    },
+    {
+      "name": "ir-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.IR.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 1667,
+      "output": [
+        "PASS closed effect vocabulary",
+        "PASS concrete primitive specializations",
+        "PASS list.tail primitive contract",
+        "PASS closed container constructors",
+        "PASS structured branches and coverage",
+        "PASS closed synthetic source classifications",
+        "PASS Option and Result payload scope",
+        "PASS closed enum verifier invariants",
+        "PASS finite Bool, Unit, Option, Result, and finite record domains",
+        "PASS finite independent inputs and nominal enum identity",
+        "PASS finite coverage projections in open and nested records",
+        "PASS finite unsupported and bounded domains",
+        "PASS finite coverage rejects malformed generic metadata",
+        "PASS generated record and scalar operations",
+        "PASS static callbacks and effects",
+        "PASS typed list fold verification",
+        "PASS identity and call-graph guards",
+        "PASS flat verifier stack safety",
+        "PASS compiler lowering and detached bodies",
+        "PASS attached Flow source origins",
+        "PASS compiler snapshot identity",
+        "AgentLang.IR.Tests: 191 assertions passed."
+      ]
+    },
+    {
+      "name": "ir-formatting-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.IR.Formatting.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 907,
+      "output": [
+        "PASS verified authored function and branches",
+        "PASS callbacks locals and nominal closure",
+        "PASS generated and primitive documents",
+        "PASS structured lookup errors",
+        "PASS protocol depth guard",
+        "AgentLang.IR.Formatting.Tests: 44 assertions passed."
+      ]
+    },
+    {
+      "name": "ir-interpreter-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.IR.Interpreter.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 1850,
+      "output": [
+        "IR Interpreter tests passed (93 assertions)."
+      ]
+    },
+    {
+      "name": "vocabulary-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.Vocabulary.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 703,
+      "output": [
+        "AgentLang.Vocabulary.Tests: 36 assertions passed."
+      ]
+    },
+    {
+      "name": "task-bank-acceptance",
+      "command": "dotnet run --no-build --configuration Release --project tests/AgentLang.TaskBank.Tests",
+      "exitCode": 0,
+      "durationMilliseconds": 756,
+      "output": [
+        "Task-bank validator passed: 2114 assertions, 60 tasks, 180 proposed vectors (minimum 3 / maximum 3 cases per task)."
+      ]
+    },
+    {
+      "name": "flow-call-binding-probe",
+      "command": "dotnet fsi --exec --reference:src/AgentLang.Core/bin/Release/net9.0/AgentLang.Core.dll scripts/Verify-FlowCallBindings.fsx",
+      "exitCode": 0,
+      "durationMilliseconds": 1821,
+      "output": [
+        "Core checkpoint: D:\\code\\AgentLang\\src\\AgentLang.Core\\bin\\Release\\net9.0\\AgentLang.Core.dll",
+        "Core LastWriteTimeUtc: 10/8/2026 12:46:22 PM",
+        "Core SHA256: aec4b95da9284092fc3815e94f0eb0cad0a87b2eba8b5801a119d7dd7637c639",
+        "Flow call-binding probe passed 31 assertions."
+      ]
+    },
+    {
+      "name": "fresh-process-projection",
+      "command": "pwsh -NoProfile -File scripts/Verify-PersistenceProjection.ps1 -CliDll src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll -EvidencePath .agentlang/owning-stack-001/full-release-validation-offline.projection.json",
+      "exitCode": 0,
+      "durationMilliseconds": 7293,
+      "output": [
+        "Persistence projection verification passed. Evidence: D:\\code\\AgentLang\\.agentlang\\owning-stack-001\\full-release-validation-offline.projection.json"
+      ]
+    },
+    {
+      "name": "matched-renewal-fixtures",
+      "command": "pwsh -NoProfile -File scripts/Verify-MatchedRenewalFixtures.ps1 -CliDll src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll -ConventionalDll experiments/AgentLang.SubagentTrials/matched-renewal-001/fixtures/conventional/bin/Release/net9.0/MatchedRenewal.dll -EvidencePath .agentlang/owning-stack-001/full-release-validation-offline.matched-fixtures.json",
+      "exitCode": 0,
+      "durationMilliseconds": 2957,
+      "output": [
+        "70 matched fixture checks passed. Evidence: D:\\code\\AgentLang\\.agentlang\\owning-stack-001\\full-release-validation-offline.matched-fixtures.json"
+      ]
+    },
+    {
+      "name": "flow-matched-renewal-fixtures",
+      "command": "pwsh -NoProfile -File scripts/Verify-FlowMatchedRenewalFixtures.ps1 -CliDll src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll -ConventionalDll experiments/AgentLang.SubagentTrials/matched-renewal-001/fixtures/flow/conventional/bin/Release/net9.0/MatchedRenewal.Flow.dll -EvidencePath .agentlang/owning-stack-001/full-release-validation-offline.flow-matched-fixtures.json",
+      "exitCode": 0,
+      "durationMilliseconds": 5313,
+      "output": [
+        "129 Flow matched fixture checks passed. Evidence: D:\\code\\AgentLang\\.agentlang\\owning-stack-001\\full-release-validation-offline.flow-matched-fixtures.json"
+      ]
+    },
+    {
+      "name": "matched-renewal-snapshots",
+      "command": "pwsh -NoProfile -File scripts/Verify-MatchedRenewalSnapshots.ps1 -CliDll src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll -EvidencePath .agentlang/owning-stack-001/full-release-validation-offline.matched-snapshots.json",
+      "exitCode": 0,
+      "durationMilliseconds": 2558,
+      "output": [
+        "26 frozen snapshot checks passed. Evidence: D:\\code\\AgentLang\\.agentlang\\owning-stack-001\\full-release-validation-offline.matched-snapshots.json"
+      ]
+    },
+    {
+      "name": "flow-renewal-acceptance-gate",
+      "command": "pwsh -NoProfile -File scripts/Verify-FlowRenewalAcceptanceGate.ps1 -CliDll src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll -EvidencePath .agentlang/owning-stack-001/full-release-validation-offline.renewal-acceptance-gate.json",
+      "exitCode": 0,
+      "durationMilliseconds": 9327,
+      "output": [
+        "70 renewal acceptance regression checks passed. Evidence: D:\\code\\AgentLang\\.agentlang\\owning-stack-001\\full-release-validation-offline.renewal-acceptance-gate.json"
+      ]
+    },
+    {
+      "name": "flow-renewal-replay",
+      "command": "pwsh -NoProfile -File scripts/Verify-FlowRenewalReplay.ps1 -CliDll src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll -EvidencePath .agentlang/owning-stack-001/full-release-validation-offline.renewal-replay.json",
+      "exitCode": 0,
+      "durationMilliseconds": 4066,
+      "output": [
+        "45 Flow renewal replay checks passed. Evidence: D:\\code\\AgentLang\\.agentlang\\owning-stack-001\\full-release-validation-offline.renewal-replay.json"
+      ]
+    },
+    {
+      "name": "early-agent-negative-controls",
+      "command": "pwsh -NoProfile -File scripts/Verify-EarlyAgentNegativeControls.ps1 -CliDll src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll -EvidencePath .agentlang/owning-stack-001/full-release-validation-offline.early-agent-negative.json",
+      "exitCode": 0,
+      "durationMilliseconds": 7044,
+      "output": [
+        "5 wrong library solutions rejected: 2 at finite-value library qualification and 3 by independent result acceptance. Evidence: D:\\code\\AgentLang\\.agentlang\\owning-stack-001\\full-release-validation-offline.early-agent-negative.json"
+      ]
+    },
+    {
+      "name": "subagent-trial-host",
+      "command": "pwsh -NoProfile -File scripts/Verify-SubagentTrialHost.ps1 -CliDll src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll -EvidencePath .agentlang/owning-stack-001/full-release-validation-offline.subagent-host.json",
+      "exitCode": 0,
+      "durationMilliseconds": 92409,
+      "output": [
+        "Verification passed: 33 checks. Evidence: D:\\code\\AgentLang\\.agentlang\\owning-stack-001\\full-release-validation-offline.subagent-host.json"
+      ]
+    },
+    {
+      "name": "subagent-trial-host-v2",
+      "command": "pwsh -NoProfile -File scripts/Verify-SubagentTrialHostV2.ps1 -CliDll src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll -EvidencePath .agentlang/owning-stack-001/full-release-validation-offline.subagent-host-v2.json",
+      "exitCode": 0,
+      "durationMilliseconds": 44401,
+      "output": [
+        "V2 focused verification passed: 29 checks. Evidence: D:\\code\\AgentLang\\.agentlang\\owning-stack-001\\full-release-validation-offline.subagent-host-v2.json"
+      ]
+    },
+    {
+      "name": "parser-process-limits",
+      "command": "pwsh -NoProfile -File scripts/Verify-ParserLimits.ps1 -CliDll src/AgentLang.Cli/bin/Release/net9.0/AgentLang.Cli.dll -EvidencePath .agentlang/owning-stack-001/full-release-validation-offline.parser-limits.json",
+      "exitCode": 0,
+      "durationMilliseconds": 3329,
+      "output": [
+        "D:\\code\\AgentLang\\.agentlang\\owning-stack-001\\full-release-validation-offline.parser-limits.json",
+        "[{\"name\":\"bounded host exited cleanly\",\"passed\":true},{\"name\":\"exactly three responses\",\"passed\":true},{\"name\":\"deep type rejected structurally\",\"passed\":true},{\"name\":\"deep block rejected structurally\",\"passed\":true},{\"name\":\"process remains usable after errors\",\"passed\":true}]"
+      ]
+    },
+    {
+      "name": "business-policy-preflight",
+      "command": "pwsh -NoProfile -File scripts/Verify-BusinessPolicyPreflight.ps1 -Isolated -Configuration Release -EvidencePath .agentlang/owning-stack-001/full-release-validation-offline.business-policy-preflight.json",
+      "exitCode": 1,
+      "durationMilliseconds": 67252,
+      "output": [
+        "Exception: D:\\code\\AgentLang\\scripts\\Verify-BusinessPolicyPreflight.ps1:210",
+        "Line |",
+        " 210 |  if (-not $passed) { throw $failure }",
+        "     |                      ~~~~~~~~~~~~~~",
+        "     | Conventional seed build failed with exit code 1.   Determining projects to restore...",
+        "     | D:\\code\\AgentLang\\.agentlang\\business-policy-preflight-5005aa6b5e824359b16235e0f2bdb80c\\seeds\\conventional\\project\\BusinessPolicy.fsproj : error NU1900: Warning As Error: Error occurred while getting package vulnerability data: Unable to load the service index for source https://api.nuget.org/v3/index.json.   Failed to restore D:\\code\\AgentLang\\.agentlang\\business-policy-preflight-5005aa6b5e824359b16235e0f2bdb80c\\seeds\\conventional\\project\\BusinessPolicy.fsproj (in 5.6 sec).  Build FAILED.  D:\\code\\AgentLang\\.agentlang\\business-policy-preflight-5005aa6b5e824359b16235e0f2bdb80c\\seeds\\conventional\\project\\BusinessPolicy.fsproj : error NU1900: Warning As Error: Error occurred while getting package vulnerability data: Unable to load the service index for source https://api.nuget.org/v3/index.json.     0 Warning(s)     1 Error(s)  Time Elapsed 00:00:06.13"
+      ]
+    },
+    {
+      "name": "diff-whitespace",
+      "command": "git diff --check",
+      "exitCode": 0,
+      "durationMilliseconds": 104,
+      "output": []
+    },
+    {
+      "name": "staged-diff-whitespace",
+      "command": "git diff --cached --check",
+      "exitCode": 0,
+      "durationMilliseconds": 62,
+      "output": []
+    }
+  ]
+}

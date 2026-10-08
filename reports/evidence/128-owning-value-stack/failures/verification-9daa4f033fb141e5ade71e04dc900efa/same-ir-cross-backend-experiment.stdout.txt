@@ -1,0 +1,1 @@
+Native owning-value-stack experiment: failed; evidence=D:\code\AgentLang\.agentlang\owning-stack-001\verification-9daa4f033fb141e5ade71e04dc900efa\native-value-stack-evidence.json

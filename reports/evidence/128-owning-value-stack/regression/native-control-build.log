@@ -1,0 +1,13 @@
+  Determining projects to restore...
+  Restored D:\code\AgentLang\tests\AgentLang.Llvm.Tests\AgentLang.Llvm.Tests.fsproj (in 147 ms).
+  Restored D:\code\AgentLang\src\AgentLang.Llvm\AgentLang.Llvm.fsproj (in 147 ms).
+  Restored D:\code\AgentLang\src\AgentLang.Core\AgentLang.Core.fsproj (in 147 ms).
+  AgentLang.Core -> D:\code\AgentLang\.agentlang\owning-stack-001\native-control-build\bin\AgentLang.Core\release\AgentLang.Core.dll
+  AgentLang.Llvm -> D:\code\AgentLang\.agentlang\owning-stack-001\native-control-build\bin\AgentLang.Llvm\release\AgentLang.Llvm.dll
+  AgentLang.Llvm.Tests -> D:\code\AgentLang\.agentlang\owning-stack-001\native-control-build\bin\AgentLang.Llvm.Tests\release\AgentLang.Llvm.Tests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:23.30

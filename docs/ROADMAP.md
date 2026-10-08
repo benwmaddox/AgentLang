@@ -117,8 +117,12 @@ The current invocation bump arena/shared record DAG does not implement this.
 The next bounded experiment must
 exercise variable-sized nested values, copy/move/pop, returned results, surviving
 outer values, branch joins and capacity failure, with exact storage oracles.
-Implementation starts with fixed-size nested records to establish copy/move/pop
-and return placement on actual verified IR. That first stage alone does not
+The fixed-size nested-record stage is complete in
+[report 128](../reports/128-owning-value-stack.md): 462 cross-backend checks cover
+inline ownership, copy/drop/return placement, local scope restoration and capacity
+failures. Working-stack extent stays at 288 bytes across one/eight repetitions,
+but fixed reservation and diagnostic overhead prevent a total-memory advantage
+claim. This stage alone does not
 satisfy the variable-size requirement or select the final representation.
 Exact byte encoding/source syntax remain open; shared-graph regions are comparison
 controls, not replacements for the owning-value goal. Keep the actual
@@ -136,6 +140,18 @@ source of testable alternatives, especially destination construction and
 variable-size layout tradeoffs. Review its inferred stack/lifetime rules against
 our stricter owning-value contract before adopting them. Repository benchmark
 claims require independent replication; no throughput advantage is inferred.
+
+The [owning-stack simplicity review](OWNING-STACK-DESIGN-REVIEW.md) keeps the
+source model unchanged while making static placement, dynamic size boundaries,
+local cleanup and resource exhaustion explicit. Prefer compiler-derived layout
+over adding region/borrow syntax or multiple collection-storage categories.
+
+Research compiler-guided pool sizing from each process-message entry point:
+derive fixed layouts and peak call/branch storage, incorporate explicit input
+and recursion bounds, and report proven bounds separately from estimates or
+unknowns. Combine per-handler sizes with configured executing/suspended owner
+counts, retained-state and queue/provider budgets. This follows basic owning-stack
+conformance; see [the sizing contract](ASYNC-ARENA-EVALUATION.md#compiler-guided-sizing).
 
 Keep the semantic IR authoritative. Development backends add LLVM
 JIT while release builds use LLVM AOT plus a minimal runtime. Research arenas,

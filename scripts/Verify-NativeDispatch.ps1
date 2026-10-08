@@ -1,6 +1,9 @@
 #requires -Version 7.0
 [CmdletBinding()]
-param()
+param(
+    [switch]$SerialBuild,
+    [switch]$SkipPackageAudit
+)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -327,6 +330,8 @@ try {
 
     $artifactsRoot = Join-Path $runDirectory 'dotnet-artifacts'
     $buildArguments = @('build', $projectPath, '--artifacts-path', $artifactsRoot, '--configuration', 'Release', '--verbosity', 'minimal')
+    if ($SerialBuild) { $buildArguments += '-m:1' }
+    if ($SkipPackageAudit) { $buildArguments += '-p:NuGetAudit=false' }
     $build = Invoke-CapturedProcess 'fresh-dotnet-dependency-build' $dotnet $buildArguments $repo
     $report.dependencyBuild = $build
     Require-ProcessSuccess $build 'Fresh bootstrap and project dependency build succeeded'

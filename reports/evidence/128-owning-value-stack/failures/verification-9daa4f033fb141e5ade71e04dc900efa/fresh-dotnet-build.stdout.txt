@@ -1,0 +1,13 @@
+  Determining projects to restore...
+  Restored D:\code\AgentLang\src\AgentLang.Llvm\AgentLang.Llvm.fsproj (in 131 ms).
+  Restored D:\code\AgentLang\experiments\AgentLang.NativeValueStack\AgentLang.NativeValueStack.fsproj (in 131 ms).
+  Restored D:\code\AgentLang\src\AgentLang.Core\AgentLang.Core.fsproj (in 131 ms).
+  AgentLang.Core -> D:\code\AgentLang\.agentlang\owning-stack-001\verification-9daa4f033fb141e5ade71e04dc900efa\dotnet-artifacts\bin\AgentLang.Core\release\AgentLang.Core.dll
+  AgentLang.Llvm -> D:\code\AgentLang\.agentlang\owning-stack-001\verification-9daa4f033fb141e5ade71e04dc900efa\dotnet-artifacts\bin\AgentLang.Llvm\release\AgentLang.Llvm.dll
+  AgentLang.NativeValueStack -> D:\code\AgentLang\.agentlang\owning-stack-001\verification-9daa4f033fb141e5ade71e04dc900efa\dotnet-artifacts\bin\AgentLang.NativeValueStack\release\AgentLang.NativeValueStack.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:21.97
