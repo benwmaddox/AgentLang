@@ -1,0 +1,1 @@
+{"ok":true,"kind":"source","text":"record BatchBounds {\n    field minimum: Int;\n    field maximum: Int;\n    validate batch::bounds-valid;\n}","data":"record BatchBounds {\n    field minimum: Int;\n    field maximum: Int;\n    validate batch::bounds-valid;\n}"}

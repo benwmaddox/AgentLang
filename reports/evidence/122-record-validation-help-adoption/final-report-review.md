@@ -1,0 +1,7 @@
+# Final report 122 review
+
+Read-only audit of the report, README/ROADMAP changes, and closed-trial evidence. The report’s result is supported: 47 exchanges and 11 error responses; all three help calls omitted `syntaxVersion` and returned version 1; full session duration 391.323416 seconds (first-to-last exchanges 369.785298 seconds); 10/10 oracle cases and 6/6 attached tests after fresh-process reload; both functions at library maturity; persisted target, manifest word ID, and reloaded predicate ID match; and the original actor project remained unchanged at 17 files. It correctly separates behavior/qualification from guidance efficacy and limits conclusions to one bounded observation.
+
+The earlier punctuation mojibake and commit-gate wording issues are fixed in the current README, ROADMAP, and report. The report now accurately says the final answer attributes the initial failure to missing validator tests, while the trace identifies the attempted `batch.span` commit as blocked on `batch.bounds-valid`. The error breakdown also matches the trace: two `search-type` errors, five definition errors, one commit dependency gate, and three source/type inspection errors. No other substantive report or documentation claim issue found.
+
+One packaging check remains intentionally pending: `reports/evidence/122-record-validation-help-adoption/index.json` is not present yet. After it is generated, verify that the report link resolves and that its file/hash inventory matches the archived evidence before finalizing the package.

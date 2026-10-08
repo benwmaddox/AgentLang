@@ -1,0 +1,1 @@
+test batch.span/rejects-zero-minimum { batch::span(BatchBounds(minimum = 0, maximum = 3)) => error RECORD_VALIDATION_FAILED }

@@ -1,0 +1,1 @@
+test batch.span/rejects-reversed-endpoints { batch::span(BatchBounds(minimum = 3, maximum = 2)) => error RECORD_VALIDATION_FAILED }

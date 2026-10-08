@@ -1,0 +1,1 @@
+test batch.bounds-valid/rejects-invalid-construction { BatchBounds(minimum = 0, maximum = 4) => error RECORD_VALIDATION_FAILED }

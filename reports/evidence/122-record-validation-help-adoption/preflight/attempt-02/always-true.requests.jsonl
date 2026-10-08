@@ -1,0 +1,14 @@
+{"op":"define","source":"record BatchBounds {\n    field minimum: Int;\n    field maximum: Int;\n    validate batch::valid?;\n}\n\nfn batch.valid?(value: BatchBounds) -> Bool {\n    true\n}\n\nfn batch.span(value: BatchBounds) -> Int {\n    subtract(value.maximum, value.minimum)\n}\n\ntest batch.valid?/minimum-boundary-valid {\n    batch::valid?(batchBounds::new(minimum = 1, maximum = 1))\n    => true\n}\n\ntest batch.valid?/zero-minimum-rejected {\n    batchBounds::new(minimum = 0, maximum = 5)\n    => error RECORD_VALIDATION_FAILED\n}\n\ntest batch.valid?/reversed-rejected {\n    batchBounds::new(minimum = 4, maximum = 3)\n    => error RECORD_VALIDATION_FAILED\n}\n\ntest batch.span/positive-span {\n    batch::span(batchBounds::new(minimum = 1, maximum = 7))\n    => 6\n}","syntaxVersion":2,"frontend":"flow"}
+{"op":"test-all"}
+{"op":"describe","word":"batch.valid?"}
+{"op":"eval","code":"int::to-string(batch::span(batchBounds::new(minimum = 1, maximum = 1)))","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"int::to-string(batch::span(batchBounds::new(minimum = 1, maximum = 7)))","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"int::to-string(batch::span(batchBounds::new(minimum = 3, maximum = 8)))","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"int::to-string(batch::span(batchBounds::new(minimum = 9, maximum = 9)))","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"batchBounds::new(minimum = 0, maximum = 0)","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"batchBounds::new(minimum = 0, maximum = 5)","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"batchBounds::new(minimum = -3, maximum = 4)","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"batchBounds::new(minimum = 4, maximum = 3)","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"batchBounds::new(minimum = 2, maximum = 0)","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"batchBounds::new(minimum = -5, maximum = -1)","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"host.close"}

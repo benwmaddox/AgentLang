@@ -1,0 +1,11 @@
+{
+  "actor": "/root/record_guidance_adoption_actor",
+  "model": "gpt-6-luna",
+  "reasoning": "max",
+  "inheritedConversation": false,
+  "implementationCommit": "ee97dda94c9328a4046029747076fa0a4248b67f",
+  "freezeSha256": "EF80E57B403149CFD4B70C90D965E0E232E617DAB6D2FB2410249E467D52A56C",
+  "dispatchRecordedUtc": "2026-10-08T09:11:33.393048+00:00",
+  "authorization": "Human authorized remaining isolated experiments and trial-local editing/test execution. No solution hints.",
+  "dispatchReview": "Root verified fixed input/runtime hashes, empty actor project and passing correct/fault controls; independent review in progress."
+}

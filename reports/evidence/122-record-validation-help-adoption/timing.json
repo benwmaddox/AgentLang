@@ -1,0 +1,9 @@
+{
+  "boundary": "Full broker session, including initial idle and close",
+  "startedUtc": "2026-10-08T09:11:45.1376103+00:00",
+  "finishedUtc": "2026-10-08T09:18:16.4610266+00:00",
+  "wallClockSeconds": 391.323416,
+  "firstToLastExchangeSeconds": 369.785298,
+  "runtimeExitCode": 0,
+  "hostExitCode": 0
+}

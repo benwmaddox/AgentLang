@@ -1,0 +1,5 @@
+record BatchBounds {
+    field minimum: Int;
+    field maximum: Int;
+    validate batch::bounds-valid;
+}

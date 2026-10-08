@@ -1,0 +1,71 @@
+// frontend: flow/2
+
+record BatchBounds {
+    field minimum: Int;
+    field maximum: Int;
+    validate batch::bounds-valid;
+}
+
+// frontend: flow/2
+
+fn batch.bounds-valid(value: BatchBounds) -> Bool {
+    effects none
+    doc "Return whether the minimum is positive and the maximum is at least the minimum."
+
+    if int::greater-or-equal(value.minimum, 1) {
+        int::greater-or-equal(value.maximum, value.minimum)
+    } else {
+        false
+    }
+}
+
+// frontend: flow/2
+
+fn batch.span(value: BatchBounds) -> Int {
+    effects none
+    doc "Return the difference between the maximum and minimum bounds."
+
+    ::subtract(value.maximum, value.minimum)
+}
+
+// frontend: flow/2
+
+test batch.bounds-valid/rejects-invalid-construction {
+    BatchBounds(minimum = 0, maximum = 4)
+    => error RECORD_VALIDATION_FAILED
+}
+
+// frontend: flow/2
+
+test batch.bounds-valid/valid-bounds {
+    batch::bounds-valid(BatchBounds(minimum = 2, maximum = 4))
+    => true
+}
+
+// frontend: flow/2
+
+test batch.span/equal-endpoints {
+    batch::span(BatchBounds(minimum = 3, maximum = 3))
+    => 0
+}
+
+// frontend: flow/2
+
+test batch.span/positive {
+    batch::span(BatchBounds(minimum = 1, maximum = 5))
+    => 4
+}
+
+// frontend: flow/2
+
+test batch.span/rejects-reversed-endpoints {
+    batch::span(BatchBounds(minimum = 3, maximum = 2))
+    => error RECORD_VALIDATION_FAILED
+}
+
+// frontend: flow/2
+
+test batch.span/rejects-zero-minimum {
+    batch::span(BatchBounds(minimum = 0, maximum = 3))
+    => error RECORD_VALIDATION_FAILED
+}

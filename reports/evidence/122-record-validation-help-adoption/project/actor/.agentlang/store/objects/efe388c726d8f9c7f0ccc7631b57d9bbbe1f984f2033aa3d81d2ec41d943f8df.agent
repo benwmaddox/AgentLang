@@ -1,0 +1,5 @@
+fn batch.span(value: BatchBounds) -> Int {
+    effects none
+    doc "Return the difference between the maximum and minimum bounds."
+    ::subtract(value.maximum, value.minimum)
+}

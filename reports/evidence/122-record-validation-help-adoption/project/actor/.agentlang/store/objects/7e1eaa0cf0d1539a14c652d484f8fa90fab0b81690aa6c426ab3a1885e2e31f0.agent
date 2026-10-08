@@ -1,0 +1,34 @@
+// frontend: flow/2
+
+record BatchBounds {
+    field minimum: Int;
+    field maximum: Int;
+    validate batch::bounds-valid;
+}
+
+// frontend: flow/2
+
+fn batch.bounds-valid(value: BatchBounds) -> Bool {
+    effects none
+    doc "Return whether the minimum is positive and the maximum is at least the minimum."
+
+    if int::greater-or-equal(value.minimum, 1) {
+        int::greater-or-equal(value.maximum, value.minimum)
+    } else {
+        false
+    }
+}
+
+// frontend: flow/2
+
+test batch.bounds-valid/rejects-invalid-construction {
+    BatchBounds(minimum = 0, maximum = 4)
+    => error RECORD_VALIDATION_FAILED
+}
+
+// frontend: flow/2
+
+test batch.bounds-valid/valid-bounds {
+    batch::bounds-valid(BatchBounds(minimum = 2, maximum = 4))
+    => true
+}

@@ -101,3 +101,6 @@ reports/evidence/120-record-validator-adoption/** -text -whitespace
 
 # Preserve record-validation guidance evidence hashes.
 reports/evidence/121-record-validation-guidance/** -text -whitespace
+
+# Preserve record-validation help-adoption evidence hashes.
+reports/evidence/122-record-validation-help-adoption/** -text -whitespace

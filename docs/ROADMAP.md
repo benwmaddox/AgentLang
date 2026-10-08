@@ -201,8 +201,14 @@ same predicate with one correctly owned rejection case.
 [Report 121](../reports/121-record-validation-guidance.md) supplies an executable
 Flow/2 validator example, exact request selectors and documented caller-view
 scopes. A fresh Debug build, 1,023 Flow Runtime assertions and 145 CLI assertions
-pass. Next test a fresh agent on a comparable bounds invariant before adding more
-structural mechanisms; no adoption result is claimed yet. Separately assess
+pass. [Report 122](../reports/122-record-validation-help-adoption.md) completes a
+fresh bounds-invariant trial: all ten independent cases and six attached tests
+pass after reload, both functions qualify as library, and the durable validator
+binding matches. However, all three help requests returned Flow/1, so the new
+Flow/2 guidance was never exposed. Next keep the task/runtime/oracle fixed and
+make version-2 help selection explicit in the primer, verifying the returned
+version. Report this as another bounded observation, not a causal estimate.
+Separately assess
 whether unchecked construction inputs need a distinct type or field-based
 validation contract; report 120 exposes this reasoning tension but does not
 settle the design. Provider-state assertions,

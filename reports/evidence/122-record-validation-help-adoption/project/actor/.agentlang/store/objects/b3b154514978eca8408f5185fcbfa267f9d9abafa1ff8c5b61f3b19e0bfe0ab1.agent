@@ -1,0 +1,1 @@
+test batch.bounds-valid/valid-bounds { batch::bounds-valid(BatchBounds(minimum = 2, maximum = 4)) => true }

@@ -1,0 +1,128 @@
+[
+  {
+    "path": ".agentlang",
+    "kind": "directory"
+  },
+  {
+    "path": ".agentlang/store",
+    "kind": "directory"
+  },
+  {
+    "path": ".agentlang/store/CURRENT",
+    "kind": "file",
+    "bytes": 134,
+    "sha256": "12FD13A47C05F43EB24AC93B03F1A69698560CFC6995656AAD23C197DA6B642F"
+  },
+  {
+    "path": ".agentlang/store/manifests",
+    "kind": "directory"
+  },
+  {
+    "path": ".agentlang/store/manifests/e44ea3c15cc3bb76b189a14b88b4aed636112e9fe0031224d83f48a74941250d.json",
+    "kind": "file",
+    "bytes": 4747,
+    "sha256": "E44EA3C15CC3BB76B189A14B88B4AED636112E9FE0031224D83F48A74941250D"
+  },
+  {
+    "path": ".agentlang/store/manifests/ef2f4278e8b30b09cc746ddb9588524f46d80df5ea1ac653c214ea60842ec3cb.json",
+    "kind": "file",
+    "bytes": 10037,
+    "sha256": "EF2F4278E8B30B09CC746DDB9588524F46D80DF5EA1AC653C214EA60842EC3CB"
+  },
+  {
+    "path": ".agentlang/store/objects",
+    "kind": "directory"
+  },
+  {
+    "path": ".agentlang/store/objects/2bdb18aef4045da62f163b6497f081a352fbfad5c9f03f1f395f22c751df9020.agent",
+    "kind": "file",
+    "bytes": 84,
+    "sha256": "2BDB18AEF4045DA62F163B6497F081A352FBFAD5C9F03F1F395F22C751DF9020"
+  },
+  {
+    "path": ".agentlang/store/objects/5f771231f00dcb5e26e68f1111ac6ea65fe53ff8562a1ccc5fbfe9e4b4b274ff.agent",
+    "kind": "file",
+    "bytes": 128,
+    "sha256": "5F771231F00DCB5E26E68F1111AC6EA65FE53FF8562A1CCC5FBFE9E4B4B274FF"
+  },
+  {
+    "path": ".agentlang/store/objects/647b61d87abbbab2fa71dd72a776a83bfe409ff9fb54dbdab8301b90baa4f8a2.agent",
+    "kind": "file",
+    "bytes": 125,
+    "sha256": "647B61D87ABBBAB2FA71DD72A776A83BFE409FF9FB54DBDAB8301B90BAA4F8A2"
+  },
+  {
+    "path": ".agentlang/store/objects/6dc83167b06439c27c1ae6b693b26bdf33006b7138b42e5ecc89ffc64d1c0a48.agent",
+    "kind": "file",
+    "bytes": 302,
+    "sha256": "6DC83167B06439C27C1AE6B693B26BDF33006B7138B42E5ECC89FFC64D1C0A48"
+  },
+  {
+    "path": ".agentlang/store/objects/727ba6f1fdcf38f584e73b3d1acf67cd047820402479b302d36575d6426dbd0a.agent",
+    "kind": "file",
+    "bytes": 131,
+    "sha256": "727BA6F1FDCF38F584E73B3D1ACF67CD047820402479B302D36575D6426DBD0A"
+  },
+  {
+    "path": ".agentlang/store/objects/7e1eaa0cf0d1539a14c652d484f8fa90fab0b81690aa6c426ab3a1885e2e31f0.agent",
+    "kind": "file",
+    "bytes": 749,
+    "sha256": "7E1EAA0CF0D1539A14C652D484F8FA90FAB0B81690AA6C426AB3A1885E2E31F0"
+  },
+  {
+    "path": ".agentlang/store/objects/872fe0af0a153f112d224f5322bcb52ca0c4fc8e099007c7eb45e320232378a6.agent",
+    "kind": "file",
+    "bytes": 1506,
+    "sha256": "872FE0AF0A153F112D224F5322BCB52CA0C4FC8E099007C7EB45E320232378A6"
+  },
+  {
+    "path": ".agentlang/store/objects/a045c47d6bfebe386801aa9578a7e09c53d7284b855eae6b0b238e689d40d881.agent",
+    "kind": "file",
+    "bytes": 104,
+    "sha256": "A045C47D6BFEBE386801AA9578A7E09C53D7284B855EAE6B0B238E689D40D881"
+  },
+  {
+    "path": ".agentlang/store/objects/b3b154514978eca8408f5185fcbfa267f9d9abafa1ff8c5b61f3b19e0bfe0ab1.agent",
+    "kind": "file",
+    "bytes": 107,
+    "sha256": "B3B154514978ECA8408F5185FCBFA267F9D9ABAFA1FF8C5B61F3B19E0BFE0AB1"
+  },
+  {
+    "path": ".agentlang/store/objects/c5a8e7623157dd56cc8c70dac77539c5c1ea852e8d79791da7fac795b8a60a17.agent",
+    "kind": "file",
+    "bytes": 91,
+    "sha256": "C5A8E7623157DD56CC8C70DAC77539C5C1EA852E8D79791DA7FAC795B8A60A17"
+  },
+  {
+    "path": ".agentlang/store/objects/efe388c726d8f9c7f0ccc7631b57d9bbbe1f984f2033aa3d81d2ec41d943f8df.agent",
+    "kind": "file",
+    "bytes": 178,
+    "sha256": "EFE388C726D8F9C7F0CCC7631B57D9BBBE1F984F2033AA3D81D2EC41D943F8DF"
+  },
+  {
+    "path": ".agentlang/store/snapshots",
+    "kind": "directory"
+  },
+  {
+    "path": ".agentlang/store/WRITE.lock",
+    "kind": "file",
+    "bytes": 0,
+    "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+  },
+  {
+    "path": "dictionary.agent",
+    "kind": "file",
+    "bytes": 1506,
+    "sha256": "872FE0AF0A153F112D224F5322BCB52CA0C4FC8E099007C7EB45E320232378A6"
+  },
+  {
+    "path": "history",
+    "kind": "directory"
+  },
+  {
+    "path": "history/task-0001.json",
+    "kind": "file",
+    "bytes": 2255,
+    "sha256": "5B80AB85A74742FC46C4124B25C027995A689A40D6BF1C2E2581AF379A1208D8"
+  }
+]

@@ -1,0 +1,1 @@
+test batch.span/positive { batch::span(BatchBounds(minimum = 1, maximum = 5)) => 4 }

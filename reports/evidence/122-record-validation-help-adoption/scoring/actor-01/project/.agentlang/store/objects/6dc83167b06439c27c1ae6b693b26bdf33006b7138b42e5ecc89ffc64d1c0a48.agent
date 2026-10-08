@@ -1,0 +1,9 @@
+fn batch.bounds-valid(value: BatchBounds) -> Bool {
+    effects none
+    doc "Return whether the minimum is positive and the maximum is at least the minimum."
+    if int::greater-or-equal(value.minimum, 1) {
+        int::greater-or-equal(value.maximum, value.minimum)
+    } else {
+        false
+    }
+}

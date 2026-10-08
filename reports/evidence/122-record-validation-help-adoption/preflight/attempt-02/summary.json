@@ -1,0 +1,305 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Coordinator-only direct-JSONL preflight; not actor evidence or a causal comparison.",
+  "runtimePin": ".agentlang/record-validation-help-adoption-001/runtime-pin.json",
+  "report121Commit": "ee97dda94c9328a4046029747076fa0a4248b67f",
+  "controls": [
+    {
+      "name": "correct",
+      "hostExitCode": 0,
+      "requestCount": 13,
+      "responseCount": 13,
+      "testsRun": 4,
+      "testsPassed": 4,
+      "testsFailed": 0,
+      "tests": [
+        {
+          "name": "positive-span",
+          "word": "batch.span",
+          "passed": true,
+          "expected": "6",
+          "actual": [
+            "6"
+          ]
+        },
+        {
+          "name": "minimum-boundary-valid",
+          "word": "batch.valid?",
+          "passed": true,
+          "expected": "true",
+          "actual": [
+            "true"
+          ]
+        },
+        {
+          "name": "reversed-rejected",
+          "word": "batch.valid?",
+          "passed": true,
+          "expected": "error RECORD_VALIDATION_FAILED",
+          "expectedErrorCode": "RECORD_VALIDATION_FAILED",
+          "actual": []
+        },
+        {
+          "name": "zero-minimum-rejected",
+          "word": "batch.valid?",
+          "passed": true,
+          "expected": "error RECORD_VALIDATION_FAILED",
+          "expectedErrorCode": "RECORD_VALIDATION_FAILED",
+          "actual": []
+        }
+      ],
+      "predicateCoverage": {
+        "targetInvocations": 4,
+        "inputs": [],
+        "returns": [
+          {
+            "position": 0,
+            "type": "Bool",
+            "required": [
+              "false",
+              "true"
+            ],
+            "observed": [
+              "false",
+              "true"
+            ],
+            "missing": []
+          }
+        ],
+        "unsupported": [],
+        "missing": [],
+        "complete": true
+      },
+      "oracle": [
+        {
+          "minimum": 1,
+          "maximum": 1,
+          "expected": "0",
+          "actual": "0",
+          "passed": true
+        },
+        {
+          "minimum": 1,
+          "maximum": 7,
+          "expected": "6",
+          "actual": "6",
+          "passed": true
+        },
+        {
+          "minimum": 3,
+          "maximum": 8,
+          "expected": "5",
+          "actual": "5",
+          "passed": true
+        },
+        {
+          "minimum": 9,
+          "maximum": 9,
+          "expected": "0",
+          "actual": "0",
+          "passed": true
+        },
+        {
+          "minimum": 0,
+          "maximum": 0,
+          "expected": "RECORD_VALIDATION_FAILED",
+          "actual": "RECORD_VALIDATION_FAILED",
+          "passed": true
+        },
+        {
+          "minimum": 0,
+          "maximum": 5,
+          "expected": "RECORD_VALIDATION_FAILED",
+          "actual": "RECORD_VALIDATION_FAILED",
+          "passed": true
+        },
+        {
+          "minimum": -3,
+          "maximum": 4,
+          "expected": "RECORD_VALIDATION_FAILED",
+          "actual": "RECORD_VALIDATION_FAILED",
+          "passed": true
+        },
+        {
+          "minimum": 4,
+          "maximum": 3,
+          "expected": "RECORD_VALIDATION_FAILED",
+          "actual": "RECORD_VALIDATION_FAILED",
+          "passed": true
+        },
+        {
+          "minimum": 2,
+          "maximum": 0,
+          "expected": "RECORD_VALIDATION_FAILED",
+          "actual": "RECORD_VALIDATION_FAILED",
+          "passed": true
+        },
+        {
+          "minimum": -5,
+          "maximum": -1,
+          "expected": "RECORD_VALIDATION_FAILED",
+          "actual": "RECORD_VALIDATION_FAILED",
+          "passed": true
+        }
+      ],
+      "requestsFile": "correct.requests.jsonl",
+      "responsesFile": "correct.responses.jsonl",
+      "traceFile": "correct.trace.jsonl",
+      "stderrFile": "correct.stderr.log"
+    },
+    {
+      "name": "always-true",
+      "hostExitCode": 0,
+      "requestCount": 13,
+      "responseCount": 13,
+      "testsRun": 4,
+      "testsPassed": 2,
+      "testsFailed": 2,
+      "tests": [
+        {
+          "name": "positive-span",
+          "word": "batch.span",
+          "passed": true,
+          "expected": "6",
+          "actual": [
+            "6"
+          ]
+        },
+        {
+          "name": "minimum-boundary-valid",
+          "word": "batch.valid?",
+          "passed": true,
+          "expected": "true",
+          "actual": [
+            "true"
+          ]
+        },
+        {
+          "name": "reversed-rejected",
+          "word": "batch.valid?",
+          "passed": false,
+          "expected": "error RECORD_VALIDATION_FAILED",
+          "expectedErrorCode": "RECORD_VALIDATION_FAILED",
+          "actual": [
+            "BatchBounds { maximum = 3, minimum = 4 }"
+          ],
+          "errorCode": "TEST_EXPECTED_RUNTIME_ERROR",
+          "message": "Expected runtime error 'RECORD_VALIDATION_FAILED', but the test expression completed normally."
+        },
+        {
+          "name": "zero-minimum-rejected",
+          "word": "batch.valid?",
+          "passed": false,
+          "expected": "error RECORD_VALIDATION_FAILED",
+          "expectedErrorCode": "RECORD_VALIDATION_FAILED",
+          "actual": [
+            "BatchBounds { maximum = 5, minimum = 0 }"
+          ],
+          "errorCode": "TEST_EXPECTED_RUNTIME_ERROR",
+          "message": "Expected runtime error 'RECORD_VALIDATION_FAILED', but the test expression completed normally."
+        }
+      ],
+      "predicateCoverage": {
+        "targetInvocations": 2,
+        "inputs": [],
+        "returns": [
+          {
+            "position": 0,
+            "type": "Bool",
+            "required": [
+              "false",
+              "true"
+            ],
+            "observed": [
+              "true"
+            ],
+            "missing": [
+              "false"
+            ]
+          }
+        ],
+        "unsupported": [],
+        "missing": [
+          "return[0] Bool: false"
+        ],
+        "complete": false
+      },
+      "oracle": [
+        {
+          "minimum": 1,
+          "maximum": 1,
+          "expected": "0",
+          "actual": "0",
+          "passed": true
+        },
+        {
+          "minimum": 1,
+          "maximum": 7,
+          "expected": "6",
+          "actual": "6",
+          "passed": true
+        },
+        {
+          "minimum": 3,
+          "maximum": 8,
+          "expected": "5",
+          "actual": "5",
+          "passed": true
+        },
+        {
+          "minimum": 9,
+          "maximum": 9,
+          "expected": "0",
+          "actual": "0",
+          "passed": true
+        },
+        {
+          "minimum": 0,
+          "maximum": 0,
+          "expected": "accepted by faulty predicate",
+          "actual": "accepted",
+          "passed": true
+        },
+        {
+          "minimum": 0,
+          "maximum": 5,
+          "expected": "accepted by faulty predicate",
+          "actual": "accepted",
+          "passed": true
+        },
+        {
+          "minimum": -3,
+          "maximum": 4,
+          "expected": "accepted by faulty predicate",
+          "actual": "accepted",
+          "passed": true
+        },
+        {
+          "minimum": 4,
+          "maximum": 3,
+          "expected": "accepted by faulty predicate",
+          "actual": "accepted",
+          "passed": true
+        },
+        {
+          "minimum": 2,
+          "maximum": 0,
+          "expected": "accepted by faulty predicate",
+          "actual": "accepted",
+          "passed": true
+        },
+        {
+          "minimum": -5,
+          "maximum": -1,
+          "expected": "accepted by faulty predicate",
+          "actual": "accepted",
+          "passed": true
+        }
+      ],
+      "requestsFile": "always-true.requests.jsonl",
+      "responsesFile": "always-true.responses.jsonl",
+      "traceFile": "always-true.trace.jsonl",
+      "stderrFile": "always-true.stderr.log"
+    }
+  ]
+}

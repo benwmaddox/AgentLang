@@ -1,0 +1,17 @@
+{"op":"test-all"}
+{"op":"source","type":"BatchBounds"}
+{"op":"source","word":"batch.span"}
+{"op":"source","word":"batch.bounds-valid"}
+{"op":"describe","word":"batch.span"}
+{"op":"describe","word":"batch.bounds-valid"}
+{"op":"eval","code":"int::to-string(batch::span(batchBounds::new(minimum = 1, maximum = 1)))","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"int::to-string(batch::span(batchBounds::new(minimum = 1, maximum = 7)))","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"int::to-string(batch::span(batchBounds::new(minimum = 3, maximum = 8)))","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"int::to-string(batch::span(batchBounds::new(minimum = 9, maximum = 9)))","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"batchBounds::new(minimum = 0, maximum = 0)","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"batchBounds::new(minimum = 0, maximum = 5)","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"batchBounds::new(minimum = -3, maximum = 4)","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"batchBounds::new(minimum = 4, maximum = 3)","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"batchBounds::new(minimum = 2, maximum = 0)","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"eval","code":"batchBounds::new(minimum = -5, maximum = -1)","syntaxVersion":2,"frontend":"flow","structured":true}
+{"op":"host.close"}
