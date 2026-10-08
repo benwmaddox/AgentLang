@@ -579,6 +579,24 @@ module Compiler =
                     Diagnostics.raiseError "TYPE_VALIDATOR_EFFECT" "Scalar validators must be pure." (Some scalar.Name) (Some scalar.Span) [] (Set.toList definition.Effects)
                 dependencies definition.Body
 
+    let checkRecordValidator (knownTypes: Set<string>) (words: Map<string, WordEntry>) (record: RecordDefinition) =
+        match record.Validator with
+        | None -> Set.empty
+        | Some name ->
+            match words.TryFind name with
+            | None -> Diagnostics.raiseError "TYPE_UNKNOWN_VALIDATOR" $"Validator word '{name}' is not defined." (Some record.Name) (Some record.Span) [ "known word" ] [ name ]
+            | Some entry ->
+                let definition = entry.Definition
+                let recordType = TNamed record.Name
+                validateType entry.Builtin.IsSome knownTypes (Some record.Span) record.Name recordType
+                if definition.Inputs <> [ recordType ] || definition.Outputs <> [ TBool ] then
+                    let actualInputs = String.concat " " (definition.Inputs |> List.map Types.format)
+                    let actualOutputs = String.concat " " (definition.Outputs |> List.map Types.format)
+                    Diagnostics.raiseError "TYPE_RECORD_VALIDATOR_SIGNATURE" $"Validator '{name}' must have signature {record.Name} -> Bool." (Some record.Name) (Some record.Span) [ $"{record.Name} -> Bool" ] [ $"{actualInputs} -> {actualOutputs}" ]
+                if not (Set.isEmpty definition.Effects) then
+                    Diagnostics.raiseError "TYPE_RECORD_VALIDATOR_EFFECT" "Record validators must be pure." (Some record.Name) (Some record.Span) [] (Set.toList definition.Effects)
+                dependencies definition.Body
+
     let rec sourceExpressions = function
         | [] -> ""
         | expression :: rest ->
@@ -904,6 +922,9 @@ module Compiler =
             for field in record.Fields do
                 appendText field.Name
                 appendType field.Type
+            match record.Validator with
+            | None -> appendText "no-validator"
+            | Some validator -> appendText "validator"; appendText validator
         for KeyValue(name, scalar) in context.Scalars do
             appendText "scalar"
             appendText name
@@ -1051,7 +1072,11 @@ module Compiler =
                         { FieldIndex = index
                           FieldName = field.Name
                           FieldType = closedIrType typeKeys name (Some record.Span) field.Type })
-                key, IrRecordDefinition { TypeKey = key; TypeName = name; RecordFields = fields })
+                let validator =
+                    record.Validator
+                    |> Option.map (fun validatorName ->
+                        resolveIrCall context typeKeys generatedByName validatorName (Some record.Span) [ TNamed name ] [ TBool ])
+                key, IrRecordDefinition { TypeKey = key; TypeName = name; RecordFields = fields; ValidatorCall = validator })
         let scalarTypes =
             context.Scalars
             |> Map.toList
@@ -1219,7 +1244,10 @@ module Compiler =
                             match context.Words[name].Builtin with
                             | Some(RecordConstructor typeName) ->
                                 match typeKeys.TryFind typeName with
-                                | Some key -> IrOperation.MakeRecord(call, key)
+                                | Some key ->
+                                    match nominalTypes.TryFind key with
+                                    | Some(IrRecordDefinition record) -> IrOperation.MakeRecord(call, key, record.ValidatorCall)
+                                    | _ -> irFailure "IR_GENERATED_TYPE_UNKNOWN" $"Record constructor '{name}' has no record type definition." (Some name) (Some span) [] [ typeName ]
                                 | None -> irFailure "IR_GENERATED_TYPE_UNKNOWN" $"Record constructor '{name}' has no nominal type key." (Some name) (Some span) [] [ typeName ]
                             | Some(RecordAccessor(typeName, fieldName)) ->
                                 match context.Records.TryFind typeName, typeKeys.TryFind typeName with
@@ -1377,6 +1405,7 @@ module Compiler =
         validateSourceOrigins sourceOrigins
         ensureExactOriginKeys (contextZeroWidthMarkers context) sourceOrigins None None
         let knownTypes = contextTypes context
+        for KeyValue(_, record) in context.Records do checkRecordValidator knownTypes context.Words record |> ignore
         for KeyValue(_, scalar) in context.Scalars do checkScalarValidator knownTypes context.Words scalar |> ignore
         let typeKeys = typeKeysForContext context
         let generatedByName, generatedById, generatedSourceMap = buildGeneratedTargets context typeKeys

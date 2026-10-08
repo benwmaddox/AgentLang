@@ -1,0 +1,4 @@
+Unhandled exception. System.Exception: define the Flow/2 complete-record CustomerLookup invariant: expected success, got FLOW_BATCH_UNKNOWN_TYPE: Batch word 'ValidatedCustomerLookup' refers to undeclared type 'CustomerId'.
+   at AgentLang.Flow.Runtime.Tests.Program.expectOk[a](a label, JsonObject response) in D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\Program.fs:line 58
+   at AgentLang.Flow.Runtime.Tests.Program.testRecordValidatorRuntimeAndPersistence(String root) in D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\Program.fs:line 3438
+   at AgentLang.Flow.Runtime.Tests.Program.main(String[] _arg1) in D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\Program.fs:line 3833

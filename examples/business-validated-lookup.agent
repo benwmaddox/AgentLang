@@ -1,0 +1,73 @@
+# A validated lookup pairs a requested customer with either no result or a
+# customer whose stable ID must match that request.
+
+record ValidatedCustomerLookup {
+    field target: CustomerId;
+    field found: Option<Customer>;
+    validate lookup::valid?;
+}
+
+fn lookup.valid?(value: ValidatedCustomerLookup) -> Bool {
+    doc "A found customer must match the requested ID; no match is a valid lookup result."
+
+    match value.found {
+        some customer => { customer.id == value.target }
+        none => { true }
+    }
+}
+
+test lookup.valid?/no-match {
+    lookup::valid?(validatedCustomerLookup::new(
+        target = CustomerId::new("10000000-0000-0000-0000-000000000031"),
+        found = option::none<Customer>()))
+    => true
+}
+
+test lookup.valid?/matching-customer {
+    let target = CustomerId::new("10000000-0000-0000-0000-000000000031");
+    let customer = customer::new(
+        id = target,
+        email = Email::new("lookup@example.test"),
+        kind = "regular",
+        balance = Money::new(0),
+        created-at = Instant::new("2026-01-02T00:00:00.0000000+00:00"));
+    lookup::valid?(validatedCustomerLookup::new(
+        target = target,
+        found = option::some<Customer>(customer)))
+    => true
+}
+
+test lookup.valid?/mismatching-customer-is-rejected {
+    let target = CustomerId::new("10000000-0000-0000-0000-000000000031");
+    let customer = customer::new(
+        id = CustomerId::new("20000000-0000-0000-0000-000000000031"),
+        email = Email::new("other@example.test"),
+        kind = "regular",
+        balance = Money::new(0),
+        created-at = Instant::new("2026-01-02T00:00:00.0000000+00:00"));
+    validatedCustomerLookup::new(
+        target = target,
+        found = option::some<Customer>(customer))
+    => error RECORD_VALIDATION_FAILED
+}
+
+example lookup.valid?/empty-result {
+    lookup::valid?(validatedCustomerLookup::new(
+        target = CustomerId::new("10000000-0000-0000-0000-000000000031"),
+        found = option::none<Customer>()))
+    => true
+}
+
+example lookup.valid?/matching-result {
+    let target = CustomerId::new("10000000-0000-0000-0000-000000000031");
+    let customer = customer::new(
+        id = target,
+        email = Email::new("lookup@example.test"),
+        kind = "regular",
+        balance = Money::new(0),
+        created-at = Instant::new("2026-01-02T00:00:00.0000000+00:00"));
+    lookup::valid?(validatedCustomerLookup::new(
+        target = target,
+        found = option::some<Customer>(customer)))
+    => true
+}

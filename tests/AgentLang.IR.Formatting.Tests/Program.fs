@@ -66,6 +66,7 @@ let private contextAndProgram () =
     let record =
         { Name = "Customer"
           Fields = [ { Name = "email"; Type = TNamed "Email" }; { Name = "active"; Type = TBool } ]
+          Validator = Some "customer.active?"
           SourceText = "record Customer"
           Span = span 2 }
     let scalar =
@@ -134,12 +135,13 @@ let private stringValue (node: JsonNode) = node.GetValue<string>()
 let private intValue (node: JsonNode) = node.GetValue<int>()
 let private stringField key node = node |> prop key |> stringValue
 let private intField key node = node |> prop key |> intValue
+let private boolField key node = node |> prop key |> fun value -> value.GetValue<bool>()
 
 let private testUserFunctionJson () =
     let context, verified = contextAndProgram ()
     let document = IrFormatting.toData verified (IrFormatTarget.UserWordName "customer.active?")
     check "user target serializes as function DTO" (stringField "kind" document = "function")
-    check "typed ListFold extends the formatter under schema version 3" (intField "formatVersion" document = 3)
+    check "record validator metadata is exposed under schema version 4" (intField "formatVersion" document = 4)
     let (WordId activeId) = context.WordIds["customer.active?"]
     check "function retains stable ID and revision" (stringField "wordId" document = activeId && intField "revision" document = 2)
     check "function signature uses nominal display name" (document |> prop "inputs" |> at 0 |> stringField "display" = "Customer")
@@ -176,8 +178,8 @@ let private testUserFunctionJson () =
             WordIds = Map.add "customer.scoped" (WordId "user-customer.scoped") context.WordIds }
     let scopedProgram = Compiler.compileIrProgram scopedContext
     let scopedDocument = IrFormatting.toData scopedProgram (IrFormatTarget.UserWordName "customer.scoped")
-    check "Scope operation is emitted under the explicit version 3 schema"
-        (intField "formatVersion" scopedDocument = 3
+    check "Scope operation is emitted under the explicit version 4 schema"
+        (intField "formatVersion" scopedDocument = 4
          && (scopedDocument |> prop "body" |> prop "instructions" |> at 0 |> prop "operation" |> stringField "kind") = "scope")
 
     let fold = IrFormatting.toData scopedProgram (IrFormatTarget.UserWordName "customers.fold-email")
@@ -217,6 +219,7 @@ let private testCallbacksLocalsAndNominalClosure () =
     check "nominal keys are paired with readable names" (nominalDtos |> List.forall (fun value -> intField "typeKey" value >= 0 && not (String.IsNullOrWhiteSpace(stringField "name" value))))
     let customerDto = nominalDtos |> List.find (fun value -> stringField "name" value = "Customer")
     check "record fields retain nominal Email type" (customerDto |> prop "fields" |> at 0 |> prop "type" |> stringField "display" = "Email")
+    check "record DTO preserves its validated predicate target" (boolField "hasValidator" customerDto && stringField "name" (prop "validator" customerDto) = "customer.active?")
 
     let copy = IrFormatting.toData verified (IrFormatTarget.UserWordName "customer.copy")
     let exitLocals = copy |> prop "body" |> prop "exit" |> prop "locals" |> fun node -> node.AsArray()
@@ -233,7 +236,7 @@ let private testGeneratedAndPrimitiveDocuments () =
     check "generated target includes source declaration location" (stringField "file" sourceSpanNode = "formatting.agent" && intField "line" sourceSpanNode = 2)
 
     let primitive = IrFormatting.toData verified (IrFormatTarget.PrimitiveContract(PrimitiveId "equals"))
-    check "primitive contracts use the same current top-level schema version" (intField "formatVersion" primitive = 3)
+    check "primitive contracts use the same current top-level schema version" (intField "formatVersion" primitive = 4)
     check "primitive output is explicitly a contract, not executable code" (stringField "kind" primitive = "primitive-contract" && prop "body" primitive = null)
     let inputPatterns = primitive |> prop "inputs" |> fun node -> node.AsArray()
     check "primitive contract retains generic type variable pattern" (stringField "kind" inputPatterns[0] = "variable" && intField "variableIndex" inputPatterns[0] = 0 && intField "variableIndex" inputPatterns[1] = 0)

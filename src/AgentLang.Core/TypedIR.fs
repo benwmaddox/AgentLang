@@ -106,7 +106,8 @@ type IrRecordField =
 type IrRecordDefinitionData =
     { TypeKey: ProgramTypeKey
       TypeName: string
-      RecordFields: IrRecordField list }
+      RecordFields: IrRecordField list
+      ValidatorCall: IrResolvedCall option }
 
 type IrScalarDefinitionData =
     { TypeKey: ProgramTypeKey
@@ -162,7 +163,7 @@ type IrOperation =
     | MatchOption of SomeLocal: LocalSlot * SomeBlock: IrBlock * NoneBlock: IrBlock
     | MatchResult of OkLocal: LocalSlot * ErrorLocal: LocalSlot * OkBlock: IrBlock * ErrorBlock: IrBlock
     | MatchEnum of TypeKey: ProgramTypeKey * Cases: (int * IrBlock) list
-    | MakeRecord of IrResolvedCall * ProgramTypeKey
+    | MakeRecord of IrResolvedCall * ProgramTypeKey * IrResolvedCall option
     | GetRecordField of IrResolvedCall * ProgramTypeKey * int
     | WrapScalar of IrResolvedCall * ProgramTypeKey * IrResolvedCall option
     | UnwrapScalar of IrResolvedCall * ProgramTypeKey
@@ -412,6 +413,14 @@ module IrVerifier =
                 if fieldNames |> List.exists String.IsNullOrWhiteSpace || (Set.ofList fieldNames).Count <> fieldNames.Length then
                     failure "IR_RECORD_FIELD_NAMES" $"Record '{record.TypeName}' has an empty or duplicate field name." [ "unique nonempty field names" ] fieldNames
                 for field in record.RecordFields do verifyIrType program (Some record.TypeName) None field.FieldType
+                match record.ValidatorCall with
+                | Some validator ->
+                    if validator.InputTypes <> [ IrNominal key ] || validator.OutputTypes <> [ IrBool ] then
+                        failure "IR_RECORD_VALIDATOR_SIGNATURE" $"Record '{record.TypeName}' validator has a malformed resolved signature." [ IrTypes.format (IrNominal key) + " -> Bool" ] [ String.concat " " (validator.InputTypes |> List.map IrTypes.format) + " -> " + String.concat " " (validator.OutputTypes |> List.map IrTypes.format) ]
+                    if not (Set.isEmpty validator.ResolvedEffects) then
+                        failure "IR_RECORD_VALIDATOR_EFFECT" $"Record '{record.TypeName}' validator must be pure." [] (IrEffects.names validator.ResolvedEffects)
+                    verifyCall program catalog record.TypeName (SourceSiteId(None, 0)) validator
+                | None -> ()
             | IrScalarDefinition scalar ->
                 if scalar.TypeKey <> key then failure "IR_TYPE_KEY_MISMATCH" "Scalar type table key does not match its definition." [] []
                 if key < ProgramTypeKey 0 then failure "IR_TYPE_KEY_INVALID" "ProgramTypeKey must be nonnegative." [ "nonnegative key" ] [ sprintf "%A" key ]
@@ -466,7 +475,10 @@ module IrVerifier =
         match target.Operation with
         | MakeRecordOperation key ->
             match program.NominalTypesByKey.TryFind key with
-            | Some(IrRecordDefinition record) when target.InputTypes = (record.RecordFields |> List.map (fun field -> field.FieldType)) && target.OutputTypes = [ IrNominal key ] -> ()
+            | Some(IrRecordDefinition record) when target.InputTypes = (record.RecordFields |> List.map (fun field -> field.FieldType)) && target.OutputTypes = [ IrNominal key ] ->
+                match record.ValidatorCall with
+                | Some validator when validator.ResolvedEffects <> target.TargetEffects -> failure "IR_GENERATED_EFFECT_MISMATCH" "Record constructor effects do not include its validator effects." (IrEffects.names validator.ResolvedEffects) (IrEffects.names target.TargetEffects)
+                | _ -> ()
             | _ -> failure "IR_GENERATED_SIGNATURE_MISMATCH" $"Generated record constructor '{target.TargetName}' disagrees with its type layout." [ "record fields -> record" ] (target.InputTypes |> List.map IrTypes.format)
         | GetRecordFieldOperation(key, fieldIndex) ->
             match program.NominalTypesByKey.TryFind key with
@@ -701,15 +713,22 @@ module IrVerifier =
                         | Some(IrEnumDefinition enumDefinition) when caseIndex >= 0 && caseIndex < enumDefinition.Cases.Length && call.InputTypes = [] && call.OutputTypes = [ IrNominal key ] -> ()
                         | _ -> operationError "IR_ENUM_CONSTRUCTION_TYPE" "Enum case construction must target a valid frozen case with a zero-input signature." [ "() -> enum case" ] [ call.ResolvedName ]
                         { shape with StackTypes = shape.StackTypes @ call.OutputTypes }, call.ResolvedEffects
-                    | IrOperation.MakeRecord(call, key) ->
+                    | IrOperation.MakeRecord(call, key, validator) ->
                         verifyCall program catalog owner.FunctionName instruction.Site call
                         requireGeneratedOperation (MakeRecordOperation key) call
                         match program.NominalTypesByKey.TryFind key with
-                        | Some(IrRecordDefinition record) when call.InputTypes = (record.RecordFields |> List.map (fun field -> field.FieldType)) && call.OutputTypes = [ IrNominal key ] -> ()
+                        | Some(IrRecordDefinition record) when call.InputTypes = (record.RecordFields |> List.map (fun field -> field.FieldType)) && call.OutputTypes = [ IrNominal key ] ->
+                            if validator <> record.ValidatorCall then operationError "IR_RECORD_VALIDATOR_MISMATCH" "Record construction validator differs from the immutable type table." [] []
+                            match validator with
+                            | Some checkedCall ->
+                                verifyCall program catalog owner.FunctionName instruction.Site checkedCall
+                                if checkedCall.InputTypes <> [ IrNominal key ] || checkedCall.OutputTypes <> [ IrBool ] || not (Set.isEmpty checkedCall.ResolvedEffects) then
+                                    operationError "IR_RECORD_VALIDATOR_INVALID" "Record validator must be pure and have signature Record -> Bool." [ IrTypes.format (IrNominal key) + " -> Bool" ] [ String.concat " " (checkedCall.InputTypes |> List.map IrTypes.format) + " -> " + String.concat " " (checkedCall.OutputTypes |> List.map IrTypes.format) ]
+                            | None -> ()
                         | _ -> operationError "IR_RECORD_CONSTRUCTION_TYPE" "Record construction does not match the snapshot type layout." [ "record fields -> nominal record" ] (call.OutputTypes |> List.map IrTypes.format)
                         let prefix, actual = pop call.InputTypes.Length
                         if actual <> call.InputTypes then operationError "IR_CALL_STACK_MISMATCH" "Record constructor inputs do not match the stack." (call.InputTypes |> List.map IrTypes.format) (actual |> List.map IrTypes.format)
-                        { shape with StackTypes = prefix @ call.OutputTypes }, call.ResolvedEffects
+                        { shape with StackTypes = prefix @ call.OutputTypes }, Set.union call.ResolvedEffects (validator |> Option.map (fun value -> value.ResolvedEffects) |> Option.defaultValue Set.empty)
                     | IrOperation.GetRecordField(call, key, index) ->
                         verifyCall program catalog owner.FunctionName instruction.Site call
                         requireGeneratedOperation (GetRecordFieldOperation(key, index)) call
@@ -825,8 +844,9 @@ module IrVerifier =
                     match instruction.Operation with
                     | IrOperation.Call call -> [ call.ResolvedTarget ]
                     | IrOperation.ListMap(call, _, _) | IrOperation.ListFilter(call, _) | IrOperation.ListEach(call, _) | IrOperation.ListFold(call, _, _) -> [ call.ResolvedTarget ]
-                    | IrOperation.MakeRecord(call, _) | IrOperation.GetRecordField(call, _, _) | IrOperation.UnwrapScalar(call, _)
+                    | IrOperation.GetRecordField(call, _, _) | IrOperation.UnwrapScalar(call, _)
                     | IrOperation.MakeEnumCase(call, _, _) -> [ call.ResolvedTarget ]
+                    | IrOperation.MakeRecord(call, _, validator) -> call.ResolvedTarget :: (validator |> Option.map (fun value -> value.ResolvedTarget) |> Option.toList)
                     | IrOperation.WrapScalar(call, _, validator) -> call.ResolvedTarget :: (validator |> Option.map (fun value -> value.ResolvedTarget) |> Option.toList)
                     | _ -> []
                 let nested =
@@ -858,6 +878,10 @@ module IrVerifier =
             |> List.map (fun (id, target) ->
                 let validatorTarget =
                     match target.Operation with
+                    | MakeRecordOperation key ->
+                        match program.NominalTypesByKey.TryFind key with
+                        | Some(IrRecordDefinition record) -> record.ValidatorCall |> Option.bind (fun validator -> targetNode validator.ResolvedTarget) |> Option.toList
+                        | _ -> []
                     | WrapScalarOperation key ->
                         match program.NominalTypesByKey.TryFind key with
                         | Some(IrScalarDefinition scalar) -> scalar.ValidatorCall |> Option.bind (fun validator -> targetNode validator.ResolvedTarget) |> Option.toList

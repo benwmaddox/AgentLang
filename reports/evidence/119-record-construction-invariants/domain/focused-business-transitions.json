@@ -1,0 +1,33 @@
+{
+  "name": "focused-business-transitions",
+  "status": "passed",
+  "revision": "db481e26d1bf5016aba6ff708d099b52a6d3e6ae",
+  "dirty": true,
+  "command": "dotnet run --project tests/AgentLang.Business.Transitions.Tests/AgentLang.Business.Transitions.Tests.fsproj --configuration Debug -- --evidence .agentlang/record-validator-001/domain/focused-business-transitions.json",
+  "result": "passed 9 groups and 5479 assertions",
+  "assertions": 5479,
+  "groups": 9,
+  "authoredWords": 53,
+  "authoredTypes": 31,
+  "attachedTests": 154,
+  "examplesPerRun": 44,
+  "reloadChecks": 255,
+  "populatedDeliveryExtension": {
+    "authoredWords": 2,
+    "authoredTypes": 1,
+    "attachedTests": 7,
+    "examplesPerRun": 3,
+    "reloadChecks": 15,
+    "coverageScope": "Coverage is checked immediately after each word\u0027s attached test batch; later runs reset the latest-batch evidence."
+  },
+  "validatedLookupExtension": {
+    "authoredWords": 1,
+    "authoredTypes": 1,
+    "attachedTests": 3,
+    "examplesPerRun": 2,
+    "reloadChecks": 8,
+    "libraryMaturity": "lookup.valid? is committed as a library function after complete branch and Bool-return coverage.",
+    "coverageScope": "Coverage is checked immediately after the validator\u0027s attached test batch; the mismatching record constructor is an expected test error that records the validator\u0027s false return."
+  },
+  "fidelityBoundary": "Provider results are explicit pure values; no external payment or email provider is invoked. Error codes and Store projections are compared to the F# oracle; Flow preserves raw provider error text while the F# DomainError formatter prefixes it. AgentLang record constructors are public, so supplemental invalid Product and PaymentReceipt boundary cases cannot be represented as valid F# domain records."
+}

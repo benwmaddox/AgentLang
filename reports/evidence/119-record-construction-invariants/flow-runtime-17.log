@@ -1,0 +1,4 @@
+D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\Program.fs(3543,42): error FS0752: The operator 'expr.[idx]' has been used on an object of indeterminate type based on information prior to this program point. Consider adding further type constraints [D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\AgentLang.Flow.Runtime.Tests.fsproj]
+D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\Program.fs(3543,42): error FS0752: The operator 'expr.[idx]' has been used on an object of indeterminate type based on information prior to this program point. Consider adding further type constraints [D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\AgentLang.Flow.Runtime.Tests.fsproj]
+
+The build failed. Fix the build errors and run again.

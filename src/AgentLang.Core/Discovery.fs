@@ -74,15 +74,20 @@ module Discovery =
                 visit (rest @ List.sort nested) (Set.add name found)
         visit (initial |> Set.toList) Set.empty
 
-    let private directDependencies (scalars: Map<string, ScalarEntry>) (entry: WordEntry) =
+    let private directDependencies (records: Map<string, RecordEntry>) (scalars: Map<string, ScalarEntry>) (entry: WordEntry) =
         match entry.Builtin with
         | None -> Compiler.dependencies entry.Definition.Body
+        | Some(RecordConstructor recordName) ->
+            records.TryFind recordName
+            |> Option.bind (fun record -> record.Definition.Validator)
+            |> Option.map Set.singleton
+            |> Option.defaultValue Set.empty
         | Some(ScalarConstructor scalarName) ->
             scalars.TryFind scalarName
             |> Option.bind (fun scalar -> scalar.Definition.Validator)
             |> Option.map Set.singleton
             |> Option.defaultValue Set.empty
-        | Some(BuiltinOp _ | RecordConstructor _ | RecordAccessor _ | ScalarAccessor _ | EnumCaseConstructor _) -> Set.empty
+        | Some(BuiltinOp _ | RecordAccessor _ | ScalarAccessor _ | EnumCaseConstructor _) -> Set.empty
 
     let private validateBuiltinReference (records: Map<string, RecordEntry>) (scalars: Map<string, ScalarEntry>) (enums: Map<string, EnumEntry>) name builtin =
         match builtin with
@@ -137,6 +142,10 @@ module Discovery =
             | Some(name, _) -> raiseDiscovery "DISCOVERY_DUPLICATE_FIELD" $"Record '{key}' declares field '{name}' more than once." (Some key) [ "unique field names" ] [ name ]
             | None -> ()
             for field in entry.Definition.Fields do validateNamedReferences records scalars enums key field.Type
+            match entry.Definition.Validator with
+            | Some validator when not (words.ContainsKey validator) ->
+                raiseDiscovery "DISCOVERY_UNKNOWN_VALIDATOR" $"Record '{key}' names missing validator word '{validator}'." (Some key) [ "known validator word" ] [ validator ]
+            | None | Some _ -> ()
 
         for KeyValue(key, entry) in scalars do
             if key <> entry.Definition.Name then
@@ -172,12 +181,12 @@ module Discovery =
         | None -> ()
 
         for KeyValue(name, entry) in words do
-            let direct = directDependencies scalars entry
+            let direct = directDependencies records scalars entry
             for dependency in direct do
                 if not (words.ContainsKey dependency) then
                     raiseDiscovery "DISCOVERY_UNKNOWN_WORD" $"Word '{name}' depends on missing word '{dependency}'." (Some name) [ "known word dependency" ] [ dependency ]
 
-        let dependencies = words |> Map.map (fun _ entry -> directDependencies scalars entry)
+        let dependencies = words |> Map.map (fun _ entry -> directDependencies records scalars entry)
         let callers =
             words
             |> Map.toSeq
@@ -355,6 +364,7 @@ module Discovery =
             fieldNode["type"] <- JsonValue.Create(Types.format field.Type)
             fields.Add fieldNode
         node["fields"] <- fields
+        node["validator"] <- record.Validator |> Option.map JsonValue.Create |> Option.defaultValue null
         node
 
     let private contextScalarNode (name: string) (scalar: ScalarTypeDefinition) =

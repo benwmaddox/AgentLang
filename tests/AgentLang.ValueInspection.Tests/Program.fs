@@ -35,6 +35,7 @@ let private snapshot () =
             [ { Name = "zeta"; Type = TString }
               { Name = "speed"; Type = TNamed "MetersPerSecond" }
               { Name = "alpha"; Type = TNamed "Email" } ]
+          Validator = None
           SourceText = "record Telemetry"
           Span = span "values.agent" 1 }
     let email =
@@ -55,6 +56,7 @@ let private snapshot () =
             [ { Name = "items"; Type = TList TInt }
               { Name = "optional"; Type = TOption TInt }
               { Name = "result"; Type = TResult(TInt, TString) } ]
+          Validator = None
           SourceText = "record ContainerBox"
           Span = span "values.agent" 4 }
     let renewalState =

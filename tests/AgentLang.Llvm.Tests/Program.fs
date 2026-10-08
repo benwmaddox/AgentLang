@@ -999,6 +999,7 @@ let private recordField name fieldType =
 let private recordDefinition name fields =
     { Name = name
       Fields = fields
+      Validator = None
       SourceText = "record " + name
       Span = span (name + ".agent") 1 }
 
@@ -1152,6 +1153,87 @@ let private testRecordConformance () =
         && emptyDiscardedNative.WorkspaceCapacity = emptyDiscardedFixture.GetProperty("requiredWorkspaceCapacity").GetInt32()
         && emptyDiscardedResult.Values.IsEmpty)
     sharingBody, [ firstBox; secondBox; sharedLeaf; distinctEqualLeaf; BoolValue true; BoolValue false; RecordValue("Empty", Map.empty) ]
+
+let private testRecordValidatorConformance () =
+    let boundsValidator =
+        wordEntry "range.bounds-valid?" [ TNamed "Range" ] [ TBool ] Set.empty [
+            Call("dup", span "range-bounds-valid.agent" 1)
+            Call("range.minimum", span "range-bounds-valid.agent" 2)
+            Call("swap", span "range-bounds-valid.agent" 3)
+            Call("range.maximum", span "range-bounds-valid.agent" 4)
+            Call("int.less-or-equal", span "range-bounds-valid.agent" 5)
+        ]
+    let rangeValidator =
+        wordEntry "range.valid?" [ TNamed "Range" ] [ TBool ] Set.empty [
+            Call("range.bounds-valid?", span "range-valid.agent" 1)
+        ]
+    let rangeMaker =
+        wordEntry "range.make" [ TInt; TInt ] [ TNamed "Range" ] Set.empty [
+            Call("range.new", span "range-maker.agent" 4)
+        ]
+    let rangeCopy =
+        wordEntry "range.copy" [ TNamed "Range" ] [ TNamed "Range" ] Set.empty [
+            Call("dup", span "range-copy.agent" 1)
+            Call("range.minimum", span "range-copy.agent" 2)
+            Call("swap", span "range-copy.agent" 3)
+            Call("range.maximum", span "range-copy.agent" 4)
+            Call("range.new", span "range-copy.agent" 5)
+        ]
+    let rangeBase = recordDefinition "Range" [ recordField "minimum" TInt; recordField "maximum" TInt ]
+    let rangeDefinition = { rangeBase with Validator = Some "range.valid?" }
+    let context = contextWithRecordDefinitions [ boundsValidator; rangeValidator; rangeMaker; rangeCopy ] [ rangeDefinition ] []
+    let program = Compiler.compileIrProgram context
+    let validBody =
+        Compiler.compileIrBodyAgainstProgram context program "range-valid" [] [
+            Push(LInt 2L, span "range-entry.agent" 1)
+            Push(LInt 8L, span "range-entry.agent" 2)
+            Call("range.make", span "range-entry.agent" 3)
+        ]
+    let invalidBody =
+        Compiler.compileIrBodyAgainstProgram context program "range-invalid" [] [
+            Push(LInt 8L, span "range-entry.agent" 10)
+            Push(LInt 2L, span "range-entry.agent" 11)
+            Call("range.make", span "range-entry.agent" 12)
+        ]
+    let expected = RecordValue("Range", Map.ofList [ "minimum", IntValue 2L; "maximum", IntValue 8L ])
+    let interpreted, expectedSteps = interpreterResultAndSteps "range-valid" validBody
+    check "record validator accepts a valid complete record" (interpreted = [ expected ])
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use native = compileNative "record-validator-valid" optimization validBody
+        let actual = native.Execute "range-valid"
+        check ($"{optimization} record validator valid constructor matches interpreter") (actual.Values = interpreted)
+        check ($"{optimization} record validator preserves instruction fuel") (actual.StepsConsumed = expectedSteps)
+
+    let interpretedError = errorOf (fun () -> interpreterResult "range-invalid" invalidBody |> ignore)
+    check "record validator rejects an invalid complete record with the constructor site" (
+        interpretedError.Code = "RECORD_VALIDATION_FAILED"
+        && interpretedError.Word = Some "range.new"
+        && interpretedError.Message = "Value does not satisfy Range's validation predicate."
+        && interpretedError.Expected = [ "validator returns true" ]
+        && interpretedError.Actual = [ "false" ]
+        && interpretedError.Span = Some(span "range-maker.agent" 4))
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use native = compileNative "record-validator-invalid" optimization invalidBody
+        let actualError = errorOf (fun () -> native.Execute "range-invalid" |> ignore)
+        check ($"{optimization} record validator failure matches interpreter diagnostic") (actualError = interpretedError)
+
+    let copyEntryBody =
+        Compiler.compileIrBodyAgainstProgram context program "range-copy-entry" [ TNamed "Range" ] [
+            Call("range.copy", span "range-copy-entry.agent" 1)
+        ]
+    check "record constructor and validator dependencies stay bound to one verified program" (
+        Object.ReferenceEquals(VerifiedIrBody.program validBody, program)
+        && Object.ReferenceEquals(VerifiedIrBody.program copyEntryBody, program))
+    for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+        use initializer = compileNative "record-validator-retained-init" optimization validBody
+        use initial = initializer.ExecuteRetained "range-valid"
+        use reentry = compileNative "record-validator-retained-reentry" optimization copyEntryBody
+        use copied =
+            reentry.ExecuteRetainedWithInputs(
+                "range-copy-entry",
+                Some initial,
+                [ IrEntryArgument.RetainedRoot 0 ])
+        check ($"{optimization} record validator rechecks a retained root during reentry") (copied.Decode() = [ expected ])
 
 let private testRecordValueMetrics () =
     let depthCase maxIndex executionName =
@@ -2351,6 +2433,8 @@ let main _ =
         testNominalScalarDepth ()
         printStage "record construction, accessors, aliases, and equality"
         let sharingBody, sharingExpected = testRecordConformance ()
+        printStage "record validator native parity and retained re-entry"
+        testRecordValidatorConformance ()
         printStage "record value depth and aggregate limits"
         testRecordValueMetrics ()
         printStage "record preflight diagnostics"

@@ -27,6 +27,11 @@ module Program =
     let mutable private populatedDeliveryTests = 0
     let mutable private populatedDeliveryExamples = 0
     let mutable private populatedDeliveryReloadChecks = 0
+    let mutable private validatedLookupWords = 0
+    let mutable private validatedLookupTypes = 0
+    let mutable private validatedLookupTests = 0
+    let mutable private validatedLookupExamples = 0
+    let mutable private validatedLookupReloadChecks = 0
     let mutable private temporaryNames = Set.empty<string>
 
     let private check condition message =
@@ -1607,6 +1612,197 @@ word conformance.failed-delivery-input(seed: Store) -> Store {
         populatedDeliveryReloadChecks <- newWordIds.Length + newWordSources.Length + newTypeSources.Length + newWordTests.Length + newWordExamples.Length + oldWordSources.Length + 4
         fresh
 
+    let private testValidatedLookupExtension (engine: Runtime.Engine) projectPath root =
+        let extensionPath = Path.Combine(root, "examples", "business-validated-lookup.agent")
+        let source = File.ReadAllText extensionPath
+        let document =
+            FlowParser.parseDocumentWithVersion 2 "<business-validated-lookup>" source
+            |> Result.defaultWith (fun diagnostic -> failwith (Diagnostics.render diagnostic))
+        let names = document.Words |> List.map _.Name |> List.sort
+        let typeNames = document.Records |> List.map _.Name |> List.sort
+        let validatorName = "lookup.valid?"
+        let recordName = "ValidatedCustomerLookup"
+        equal [ validatorName ] names "the isolated Flow/2 extension declares only its validated lookup predicate"
+        equal [ recordName ] typeNames "the isolated Flow/2 extension adds one validated lookup record"
+        equal 3 document.Tests.Length "the validated lookup extension attaches three focused cases"
+        equal 2 document.Examples.Length "the validated lookup extension attaches two examples"
+        validatedLookupWords <- names.Length
+        validatedLookupTypes <- typeNames.Length
+        validatedLookupTests <- document.Tests.Length
+        validatedLookupExamples <- document.Examples.Length
+
+        let defined =
+            dispatch engine "define"
+                [ "frontend", jstr "flow"
+                  "syntaxVersion", JsonValue.Create(2) :> JsonNode
+                  "source", jstr source ]
+            |> expectOk "define the validated customer lookup after the populated-delivery extension"
+        equal names
+            (defined.["data"].["words"].AsArray() |> Seq.map (fun row -> stringValue row.["name"]) |> Seq.toList |> List.sort)
+            "the validated lookup stages exactly its predicate"
+        equal typeNames (jsonStrings defined.["data"].["types"] |> List.sort)
+            "the validated lookup stages exactly its record type"
+
+        let targetId = "10000000-0000-0000-0000-000000000031"
+        let otherId = "20000000-0000-0000-0000-000000000031"
+        let customerCode id email =
+            $"customer::new(id = CustomerId::new({flowString id}), email = Email::new({flowString email}), kind = \"regular\", balance = Money::new(0), created-at = Instant::new(\"2026-01-02T00:00:00.0000000+00:00\"))"
+        let noneConstructor =
+            $"validatedCustomerLookup::new(target = CustomerId::new({flowString targetId}), found = option::none<Customer>())"
+        let matchingCustomer = customerCode targetId "lookup@example.test"
+        let mismatchingCustomer = customerCode otherId "other@example.test"
+        let matchingConstructor =
+            $"validatedCustomerLookup::new(target = CustomerId::new({flowString targetId}), found = option::some<Customer>({matchingCustomer}))"
+        let mismatchingConstructor =
+            $"validatedCustomerLookup::new(target = CustomerId::new({flowString targetId}), found = option::some<Customer>({mismatchingCustomer}))"
+
+        let emptyValue = eval engine noneConstructor |> outputValue
+        equal targetId (fieldScalar emptyValue "target") "a valid empty lookup constructor preserves its target"
+        equal "none" (stringValue (field emptyValue "found").["case"]) "a valid empty lookup stores the absent result"
+        let matchingValue = eval engine matchingConstructor |> outputValue
+        equal targetId (fieldScalar matchingValue "target") "a valid matching lookup constructor preserves its target"
+        let matchingOption = field matchingValue "found"
+        equal "some" (stringValue matchingOption.["case"]) "a valid matching lookup stores a present customer"
+        equal targetId (fieldScalar matchingOption.["value"] "id") "the accepted customer ID matches the lookup target"
+
+        let assertRejectedConstructor (target: Runtime.Engine) label =
+            let rejected = evalFailure target mismatchingConstructor
+            equal "RECORD_VALIDATION_FAILED" (stringValue rejected.["error"].["code"]) $"{label} rejects a customer whose ID differs from the target"
+            equal "validatedCustomerLookup.new" (stringValue rejected.["error"].["word"]) $"{label} attributes rejection to the generated record constructor"
+            equal [ "validator returns true" ] (jsonStrings rejected.["error"].["expected"]) $"{label} requires the validator to return true"
+            equal [ "false" ] (jsonStrings rejected.["error"].["actual"]) $"{label} reports the validator's actual false return"
+
+        assertRejectedConstructor engine "candidate lookup"
+
+        let testNames (target: Runtime.Engine) word =
+            dispatch target "tests" [ "word", jstr word ]
+            |> expectOk $"query attached tests for {word}"
+            |> fun response -> jsonStrings response.["data"]
+        let exampleNames (target: Runtime.Engine) word =
+            dispatch target "examples" [ "word", jstr word ]
+            |> expectOk $"query attached examples for {word}"
+            |> fun response -> jsonStrings response.["data"]
+        let testCases = names |> List.map (fun word -> word, testNames engine word)
+        let exampleCases = names |> List.map (fun word -> word, exampleNames engine word)
+        equal document.Tests.Length (testCases |> List.sumBy (snd >> List.length))
+            "all three new tests attach to lookup.valid?"
+        equal document.Examples.Length (exampleCases |> List.sumBy (snd >> List.length))
+            "both new examples attach to lookup.valid?"
+
+        let runExamples (target: Runtime.Engine) =
+            let total = names |> List.sumBy (runExamplesForWord target)
+            equal document.Examples.Length total "all validated lookup examples pass"
+            total
+
+        let runAttachedTests (target: Runtime.Engine) =
+            let response = dispatch target "test" [ "word", jstr validatorName ] |> expectOk "run all tests attached to lookup.valid?"
+            let rows = response.["data"].["results"].AsArray()
+            equal document.Tests.Length rows.Count "all three validated lookup test cases run"
+            equal (testNames target validatorName |> List.sort)
+                (rows |> Seq.map (fun row -> stringValue row.["name"]) |> Seq.toList |> List.sort)
+                "attached test names match the validated lookup source"
+            for row in rows do check (boolValue row.["passed"]) $"validated lookup test passed: {row.ToJsonString()}"
+
+            let described = dispatch target "describe" [ "word", jstr validatorName ] |> expectOk "inspect lookup.valid? coverage and documentation"
+            equal "A found customer must match the requested ID; no match is a valid lookup result." (stringValue described.["data"].["documentation"])
+                "the predicate carries its own concise documentation"
+            equal [ recordName ] (jsonStrings described.["data"].["inputs"]) "the predicate accepts the validated lookup record"
+            equal [ "Bool" ] (jsonStrings described.["data"].["outputs"]) "the predicate returns Bool"
+            equal document.Tests.Length (described.["data"].["testCount"].GetValue<int>()) "the predicate describes all three attached tests"
+            equal document.Examples.Length (described.["data"].["exampleCount"].GetValue<int>()) "the predicate describes both attached examples"
+            equal [] (jsonStrings described.["data"].["effects"]) "the lookup predicate remains pure"
+            let coverage = described.["data"].["coverage"]
+            equal "current" (stringValue coverage.["status"]) "lookup.valid? has current structural coverage"
+            equal 0 (coverage.["uncoveredInstructions"].AsArray().Count) "lookup.valid? executes every instruction"
+            equal 0 (coverage.["uncoveredBranchOutcomes"].AsArray().Count) "lookup.valid? executes both match outcomes"
+            let finite = coverage.["finiteCoverage"]
+            equal true (boolValue finite.["complete"]) "lookup.valid? observes every Bool return value"
+            equal [] (jsonStrings finite.["missing"]) "lookup.valid? has no missing finite outcomes"
+            equal [] (jsonStrings finite.["unsupported"]) "lookup.valid? uses no unsupported finite domain"
+            let observedReturns = jsonStrings finite.["returns"].[0].["observed"]
+            check (observedReturns |> List.contains "true") "valid no-result and matching lookups observe the true return"
+            check (observedReturns |> List.contains "false") "the rejected mismatching constructor observes the false return"
+            rows.Count
+
+        runExamples engine |> ignore
+        runAttachedTests engine |> ignore
+
+        let dependencies =
+            dispatch engine "search-dependency" [ "word", jstr validatorName ]
+            |> expectOk "inspect generated constructors that depend on lookup.valid?"
+            |> fun response -> jsonStrings response.["data"].["words"]
+        check (dependencies |> List.contains "validatedCustomerLookup.new")
+            "Discovery exposes the generated constructor's validator dependency"
+        let callers =
+            dispatch engine "transitive-callers" [ "word", jstr validatorName ]
+            |> expectOk "inspect callers of lookup.valid?"
+            |> fun response -> jsonStrings response.["data"].["callers"]
+        check (callers |> List.contains "validatedCustomerLookup.new")
+            "the generated constructor is discoverable as a validator caller"
+
+        let wordIdsBefore = wordIds engine names
+        let wordSourcesBefore = names |> List.map (fun name -> name, sourceForWord engine name)
+        let typeSourcesBefore = typeNames |> List.map (fun name -> name, sourceForType engine name)
+        let testsBefore = names |> List.map (fun name -> name, testNames engine name)
+        let examplesBefore = names |> List.map (fun name -> name, exampleNames engine name)
+        let projectStore = Storage.create projectPath
+        let statusBeforeCommit =
+            dispatch engine "storage.status" []
+            |> expectOk "capture durable status before qualifying lookup.valid?"
+            |> fun response -> response.["data"].ToJsonString()
+
+        dispatch engine "commit" [ "word", jstr validatorName; "library", jbool true ]
+        |> expectOk "qualify lookup.valid? itself as a tested library function"
+        |> ignore
+
+        let qualified = dispatch engine "describe" [ "word", jstr validatorName ] |> expectOk "inspect lookup.valid? library maturity"
+        equal "persistent" (stringValue qualified.["data"].["status"]) "lookup.valid? is persistent after library qualification"
+        equal "library" (stringValue qualified.["data"].["maturity"]) "lookup.valid? reaches library maturity"
+        let validatorId = stringValue qualified.["data"].["id"]
+        let manifest = Storage.load projectStore |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun loaded -> loaded.Manifest.Value
+        let storedType = manifest.Types |> List.find (fun item -> item.Name = recordName)
+        equal (Some(StoredCallTarget.UserWord validatorId)) storedType.ValidatorTarget
+            "the persistent record points to lookup.valid? by its stable WordId"
+        equal { Frontend = SourceFrontend.Flow; Version = 2 } storedType.SourceFormat
+            "the validated lookup record remains a Flow/2 source object"
+        for name, expectedSource in typeSourcesBefore do
+            let persistedType = manifest.Types |> List.find (fun item -> item.Name = name)
+            equal expectedSource (Storage.readSource projectStore persistedType.Definition |> Result.defaultWith (fun problem -> failwith problem.Message))
+                $"the validated record source persists byte-for-byte for {name}"
+        let statusAfterCommit =
+            dispatch engine "storage.status" []
+            |> expectOk "inspect durable status after lookup.valid? qualification"
+            |> fun response -> response.["data"].ToJsonString()
+        check (statusBeforeCommit <> statusAfterCommit) "successful library qualification writes the lookup vocabulary"
+
+        let committedWords = dispatch engine "words" [] |> expectOk "inspect the qualified lookup vocabulary" |> fun response -> response.["data"].["words"].AsArray()
+        let committed = committedWords |> Seq.find (fun row -> stringValue row.["name"] = validatorName)
+        equal "persistent" (stringValue committed.["status"]) "lookup.valid? is committed rather than a candidate"
+        equal "library" (stringValue committed.["maturity"]) "lookup.valid? is recorded as library maturity"
+
+        let fresh = Runtime.Engine(projectPath, Set.empty, "2026-01-01T00:00:00.0000000+00:00")
+        equal wordIdsBefore (wordIds fresh names) "lookup.valid? retains its stable identity after reload"
+        for name, expectedSource in wordSourcesBefore do
+            equal expectedSource (sourceForWord fresh name) $"lookup predicate source reloads exactly for {name}"
+        for name, expectedSource in typeSourcesBefore do
+            equal expectedSource (sourceForType fresh name) $"validated record source reloads exactly for {name}"
+        for name, expectedCases in testsBefore do
+            equal expectedCases (testNames fresh name) $"lookup tests reload exactly for {name}"
+        for name, expectedCases in examplesBefore do
+            equal expectedCases (exampleNames fresh name) $"lookup examples reload exactly for {name}"
+        let reloadedManifest = Storage.load projectStore |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun loaded -> loaded.Manifest.Value
+        let reloadedType = reloadedManifest.Types |> List.find (fun item -> item.Name = recordName)
+        equal (Some(StoredCallTarget.UserWord validatorId)) reloadedType.ValidatorTarget
+            "fresh storage load preserves the validator's exact stable WordId target"
+        let reloadedDescription = dispatch fresh "describe" [ "word", jstr validatorName ] |> expectOk "inspect lookup.valid? after reload"
+        equal "library" (stringValue reloadedDescription.["data"].["maturity"]) "library maturity reloads for lookup.valid?"
+        assertRejectedConstructor fresh "reloaded lookup"
+        runExamples fresh |> ignore
+        runAttachedTests fresh |> ignore
+
+        validatedLookupReloadChecks <- wordIdsBefore.Length + wordSourcesBefore.Length + typeSourcesBefore.Length + testsBefore.Length + examplesBefore.Length + 3
+        fresh
+
     let private gitValue arguments =
         try
             let start = ProcessStartInfo("git")
@@ -1649,6 +1845,15 @@ word conformance.failed-delivery-input(seed: Store) -> Store {
         extension.["reloadChecks"] <- System.Text.Json.JsonSerializer.SerializeToNode populatedDeliveryReloadChecks
         extension.["coverageScope"] <- jstr "Coverage is checked immediately after each word's attached test batch; later runs reset the latest-batch evidence."
         report.["populatedDeliveryExtension"] <- extension
+        let lookup = JsonObject()
+        lookup.["authoredWords"] <- System.Text.Json.JsonSerializer.SerializeToNode validatedLookupWords
+        lookup.["authoredTypes"] <- System.Text.Json.JsonSerializer.SerializeToNode validatedLookupTypes
+        lookup.["attachedTests"] <- System.Text.Json.JsonSerializer.SerializeToNode validatedLookupTests
+        lookup.["examplesPerRun"] <- System.Text.Json.JsonSerializer.SerializeToNode validatedLookupExamples
+        lookup.["reloadChecks"] <- System.Text.Json.JsonSerializer.SerializeToNode validatedLookupReloadChecks
+        lookup.["libraryMaturity"] <- jstr "lookup.valid? is committed as a library function after complete branch and Bool-return coverage."
+        lookup.["coverageScope"] <- jstr "Coverage is checked immediately after the validator's attached test batch; the mismatching record constructor is an expected test error that records the validator's false return."
+        report.["validatedLookupExtension"] <- lookup
         report.["fidelityBoundary"] <- jstr "Provider results are explicit pure values; no external payment or email provider is invoked. Error codes and Store projections are compared to the F# oracle; Flow preserves raw provider error text while the F# DomainError formatter prefixes it. AgentLang record constructors are public, so supplemental invalid Product and PaymentReceipt boundary cases cannot be represented as valid F# domain records."
         File.WriteAllText(target, report.ToJsonString(System.Text.Json.JsonSerializerOptions(WriteIndented = true)) + Environment.NewLine, System.Text.UTF8Encoding(false))
 
@@ -1693,6 +1898,7 @@ word conformance.failed-delivery-input(seed: Store) -> Store {
             Path.GetFullPath(Path.GetTempPath()).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
             + string Path.DirectorySeparatorChar
         let mutable baselineReloadedEngine: Runtime.Engine option = None
+        let mutable populatedDeliveryReloadedEngine: Runtime.Engine option = None
         try
           try
             let definition = dispatch engine "define" [ "frontend", jstr "flow"; "source", jstr source ] |> expectOk "define all six business fixture files in one Engine request"
@@ -1716,9 +1922,12 @@ word conformance.failed-delivery-input(seed: Store) -> Store {
                 baselineReloadedEngine <- Some(testLibraryPersistence engine projectPath document))
             runGroup "Flow/2 populated delivery extension and independent FIFO oracle" (fun () ->
                 let reloaded = baselineReloadedEngine |> Option.defaultWith (fun () -> failwith "baseline persistence did not return its fresh Engine")
-                testPopulatedDeliveryExtension reloaded projectPath root |> ignore)
+                populatedDeliveryReloadedEngine <- Some(testPopulatedDeliveryExtension reloaded projectPath root))
+            runGroup "Flow/2 validated record lookup and Bool path coverage" (fun () ->
+                let reloaded = populatedDeliveryReloadedEngine |> Option.defaultWith (fun () -> failwith "populated delivery persistence did not return its fresh Engine")
+                testValidatedLookupExtension reloaded projectPath root |> ignore)
 
-            printfn "PASS %d groups, %d assertions; baseline: %d tests and %d examples per run, %d words and %d types; populated delivery extension: %d tests, %d examples, %d words, and %d types." groups assertions totalTests totalExamples totalWords totalTypes populatedDeliveryTests populatedDeliveryExamples populatedDeliveryWords populatedDeliveryTypes
+            printfn "PASS %d groups, %d assertions; baseline: %d tests and %d examples per run, %d words and %d types; populated delivery extension: %d tests, %d examples, %d words, and %d types; validated lookup extension: %d tests, %d examples, %d words, and %d types." groups assertions totalTests totalExamples totalWords totalTypes populatedDeliveryTests populatedDeliveryExamples populatedDeliveryWords populatedDeliveryTypes validatedLookupTests validatedLookupExamples validatedLookupWords validatedLookupTypes
             evidencePath |> Option.iter (fun path -> writeEvidence path command "passed" None)
             0
           with error ->

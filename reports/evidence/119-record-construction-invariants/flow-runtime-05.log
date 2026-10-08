@@ -1,0 +1,4 @@
+Unhandled exception. System.Exception: Discovery exposes the generated constructor's validator dependency
+   at AgentLang.Flow.Runtime.Tests.Program.check(Boolean condition, String message) in D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\Program.fs:line 16
+   at AgentLang.Flow.Runtime.Tests.Program.testRecordValidatorRuntimeAndPersistence(String root) in D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\Program.fs:line 3465
+   at AgentLang.Flow.Runtime.Tests.Program.main(String[] _arg1) in D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\Program.fs:line 3832

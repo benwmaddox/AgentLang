@@ -1,0 +1,10 @@
+{
+  "command": "dotnet fsi --exec --reference:src/AgentLang.Core/bin/Debug/net9.0/AgentLang.Core.dll scripts/Verify-FlowCallBindings.fsx",
+  "exitCode": 0,
+  "scriptSha256Before": "53EF43900952C69C81BFE540B68C344E8EADB4B55C7BCB36F587A9DDBF710951",
+  "scriptSha256After": "53EF43900952C69C81BFE540B68C344E8EADB4B55C7BCB36F587A9DDBF710951",
+  "coreDllSha256Before": "6497DFF02632195A08CC51D0761CD0FF1B93BA70F2FA33D9ADBD51BB6C67528A",
+  "coreDllSha256After": "6497DFF02632195A08CC51D0761CD0FF1B93BA70F2FA33D9ADBD51BB6C67528A",
+  "sourceHashesStable": true,
+  "logPath": ".agentlang/record-validator-001/flow-call-binding-repair.log"
+}

@@ -1,0 +1,5 @@
+Unhandled exception. System.Exception: direct-cycle record validator is rejected: expected TYPE_VALIDATOR_RECURSION, got IR_RECURSIVE_CALL_GRAPH
+   at AgentLang.Flow.Runtime.Tests.Program.equal[a,b](a expected, a actual, b message) in D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\Program.fs:line 20
+   at AgentLang.Flow.Runtime.Tests.Program.rejectedFlow@3503.Invoke(String label, String expectedCode, String document) in D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\Program.fs:line 3505
+   at AgentLang.Flow.Runtime.Tests.Program.testRecordValidatorRuntimeAndPersistence(String root) in D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\Program.fs:line 3520
+   at AgentLang.Flow.Runtime.Tests.Program.main(String[] _arg1) in D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\Program.fs:line 3839

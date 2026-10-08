@@ -224,7 +224,7 @@ Standalone backend and baseline-audit evidence: [milestone 008](../reports/008-s
 | 6 | Partial: complete word metadata | Stable IDs, durable revision provenance/history now verified; full examples/test metadata query remains incomplete |
 | 7 | Verified: typed stack semantic IR execution | Flow and explicit Stack authoring share verified IR; report 052 |
 | 8 | Verified: typed scalar/nominal stack | Type mismatch and no-effects-on-type-error checks; closed container types independently probed |
-| 9 | Verified: Int/Float/Bool/String/Unit/List/Option/Result/Record foundation | Closed nested containers, static callbacks/cases, persistence and coverage checks |
+| 9 | Verified: Int/Float/Bool/String/Unit/List/Option/Result/Record foundation | Closed nested containers, callbacks/cases, persistence and coverage checks; report 119 adds validated records; aggregate 36/37 plus separately passing repaired inspection probe |
 | 10 | Verified: nominal refined scalar types | Email/unit distinctions, validators, reload and freeze checks |
 | 11 | Partial: explicit effect vocabulary | Declarations and transitive checks; complete providers pending |
 | 12 | Partial: effect capability restrictions | Default denial verified; resource/path-scoped policy pending |
@@ -479,3 +479,18 @@ and Reset-rich arms, shared help and nominal Money oracles, rotated fresh agents
 and explicit v2 termination. Implementation and focused controls are in progress;
 no study freeze, actor result, token reduction or general benefit is claimed.
 The full executed evaluation and remaining PRD requirements stay open.
+
+Report 119 implements optional pure validators on nominal records. Focused local
+results pass: Core IR 191, interpreter 93, formatter 44, Flow 1,110 and Source
+101 assertions; Runtime 30 groups / 979 assertions; Storage 16 groups / 370
+assertions; Business.Transitions 9 groups / 5,479 assertions; and LLVM 455
+assertions from a fresh stable Debug build. The business extension adds one
+predicate, one validated record, three tests and two examples. Its predicate is
+committed as library vocabulary after both Bool returns and match branches are
+covered, and its stable validator target survives reload. This is implementation
+evidence only, not a fresh-agent adoption or efficacy result. The aggregate
+Debug run passed 36/37 checks; the remaining inspection-script repair passed
+its exact 31-assertion probe separately. Finite coverage still
+does not enumerate refined record values; the predicate itself can qualify by
+observing true and false, while functions returning validated records with
+finite projections remain unsupported without a proven valid-value domain.

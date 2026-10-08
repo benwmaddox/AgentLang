@@ -167,9 +167,10 @@ module IrFormatting =
         | GeneratedDocument of GeneratedDocumentDto
         | PrimitiveContractDocument of PrimitiveContractDocumentDto
 
-    // Version 3 adds the typed ListFold operation. Emit one global
-    // version so consumers never misread an extended document as version 2.
-    let private formatVersion = 3
+    // Version 3 adds typed ListFold; version 4 exposes record validators in
+    // nominal metadata. Emit one global version so readers interpret the
+    // expanded semantics deliberately.
+    let private formatVersion = 4
     // The formatter rejects deep documents before JsonSerializer or the outer
     // Protocol response can throw. This conservative estimate reserves ten
     // JSON levels for the response envelope and fixed DTO nesting.
@@ -413,10 +414,13 @@ module IrFormatting =
                 addNode caseNode "block" (toNode (blockDto program names caseBlock))
                 caseNodes.Add caseNode
             node["cases"] <- caseNodes
-        | IrOperation.MakeRecord(call, key) ->
+        | IrOperation.MakeRecord(call, key, validator) ->
             addString node "kind" "make-record"
             addCall "call" call
             addKey "typeKey" key
+            match validator with
+            | Some value -> addCall "validator" value
+            | None -> ()
         | IrOperation.GetRecordField(call, key, fieldIndex) ->
             addString node "kind" "get-record-field"
             addCall "call" call
@@ -499,8 +503,10 @@ module IrFormatting =
         | IrOperation.ListMap(call, item, output) -> call.InputTypes @ call.OutputTypes @ [ item; output ]
         | IrOperation.ListFilter(call, item) | IrOperation.ListEach(call, item) -> call.InputTypes @ call.OutputTypes @ [ item ]
         | IrOperation.ListFold(call, item, accumulator) -> call.InputTypes @ call.OutputTypes @ [ item; accumulator ]
-        | IrOperation.MakeRecord(call, _) | IrOperation.GetRecordField(call, _, _) | IrOperation.UnwrapScalar(call, _)
+        | IrOperation.GetRecordField(call, _, _) | IrOperation.UnwrapScalar(call, _)
         | IrOperation.MakeEnumCase(call, _, _) -> call.InputTypes @ call.OutputTypes
+        | IrOperation.MakeRecord(call, _, validator) ->
+            call.InputTypes @ call.OutputTypes @ (validator |> Option.map (fun item -> item.InputTypes @ item.OutputTypes) |> Option.defaultValue [])
         | IrOperation.WrapScalar(call, _, validator) ->
             call.InputTypes @ call.OutputTypes @ (validator |> Option.map (fun item -> item.InputTypes @ item.OutputTypes) |> Option.defaultValue [])
         | IrOperation.If _ | IrOperation.MatchOption _ | IrOperation.MatchResult _ | IrOperation.MatchEnum _
@@ -524,7 +530,9 @@ module IrFormatting =
         |> Set.toList
         |> List.collect (fun key ->
             match program.NominalTypesByKey[key] with
-            | IrRecordDefinition record -> record.RecordFields |> List.map (fun field -> field.FieldType)
+            | IrRecordDefinition record ->
+                (record.RecordFields |> List.map (fun field -> field.FieldType))
+                @ (record.ValidatorCall |> Option.map (fun call -> call.InputTypes @ call.OutputTypes) |> Option.defaultValue [])
             | IrScalarDefinition scalar ->
                 scalar.BaseType :: (scalar.ValidatorCall |> Option.map (fun call -> call.InputTypes @ call.OutputTypes) |> Option.defaultValue [])
             | IrEnumDefinition _ -> [])
@@ -576,7 +584,9 @@ module IrFormatting =
                 | IrOperation.ListMap(call, item, output) -> collectTypeKeys (collectTypeKeys (collectCallTypeKeys found call) item) output
                 | IrOperation.ListFilter(call, item) | IrOperation.ListEach(call, item) -> collectTypeKeys (collectCallTypeKeys found call) item
                 | IrOperation.ListFold(call, item, accumulator) -> collectTypeKeys (collectTypeKeys (collectCallTypeKeys found call) item) accumulator
-                | IrOperation.MakeRecord(call, key) -> collectCallTypeKeys (Set.add key found) call
+                | IrOperation.MakeRecord(call, key, validator) ->
+                    let withCall = collectCallTypeKeys (Set.add key found) call
+                    validator |> Option.map (collectCallTypeKeys withCall) |> Option.defaultValue withCall
                 | IrOperation.GetRecordField(call, key, _) -> collectCallTypeKeys (Set.add key found) call
                 | IrOperation.WrapScalar(call, key, validator) ->
                     let withCall = collectCallTypeKeys (Set.add key found) call
@@ -615,7 +625,9 @@ module IrFormatting =
                         | None -> fail "IR_FORMAT_TYPE_MISSING" "Verified IR nominal key is absent from its type table." (string (wrapTypeKey key)) [ "known nominal type key" ] []
                     let dependencies =
                         match definition with
-                        | IrRecordDefinition record -> record.RecordFields |> List.fold (fun found field -> collectTypeKeys found field.FieldType) Set.empty
+                        | IrRecordDefinition record ->
+                            let fields = record.RecordFields |> List.fold (fun found field -> collectTypeKeys found field.FieldType) Set.empty
+                            record.ValidatorCall |> Option.map (collectCallTypeKeys fields) |> Option.defaultValue fields
                         | IrScalarDefinition scalar ->
                             let withBase = collectTypeKeys Set.empty scalar.BaseType
                             scalar.ValidatorCall |> Option.map (collectCallTypeKeys withBase) |> Option.defaultValue withBase
@@ -639,6 +651,7 @@ module IrFormatting =
             let generatedSources = generatedSourceDtos program (Set.singleton key)
             match program.NominalTypesByKey[key] with
             | IrRecordDefinition record ->
+                let validator = record.ValidatorCall |> Option.map (callDto program) |> Option.defaultValue Unchecked.defaultof<ResolvedCallDto>
                 { Kind = "record"
                   Name = record.TypeName
                   TypeKey = wrapTypeKey key
@@ -646,8 +659,8 @@ module IrFormatting =
                   Cases = []
                   BaseType = typeDto program IrUnit
                   HasBaseType = false
-                  Validator = Unchecked.defaultof<ResolvedCallDto>
-                  HasValidator = false
+                  Validator = validator
+                  HasValidator = record.ValidatorCall.IsSome
                   GeneratedSources = generatedSources }
             | IrScalarDefinition scalar ->
                 { Kind = "scalar"
@@ -932,7 +945,8 @@ module IrFormatting =
         match nominal.Kind with
         | "record" ->
             let fields = nominal.Fields |> List.map (fun field -> $"{field.Name}:{field.Type.Display}") |> String.concat ", "
-            $"record {nominal.Name} @type{nominal.TypeKey} {{ {fields} }}"
+            let validator = if nominal.HasValidator then "; validator=" + formatCall nominal.Validator else ""
+            $"record {nominal.Name} @type{nominal.TypeKey} {{ {fields} }}{validator}"
         | "enum" ->
             let cases = String.concat ", " nominal.Cases
             $"enum {nominal.Name} @type{nominal.TypeKey} {{ {cases} }}"

@@ -1,0 +1,16 @@
+{
+  "artifactsDirectory": "D:\\code\\AgentLang\\.agentlang\\record-validator-001\\build-02",
+  "buildCommand": "dotnet build tests/AgentLang.Llvm.Tests/AgentLang.Llvm.Tests.fsproj --configuration Debug --artifacts-path .agentlang/record-validator-001/build-02",
+  "buildExitCode": 0,
+  "testCommand": "dotnet D:\\code\\AgentLang\\.agentlang\\record-validator-001\\build-02\\bin\\AgentLang.Llvm.Tests\\debug\\AgentLang.Llvm.Tests.dll",
+  "testExitCode": 0,
+  "sourcesStableDuringBuild": true,
+  "sourcesStableThroughTest": true,
+  "logs": [
+    "D:\\code\\AgentLang\\.agentlang\\record-validator-001\\build-02\\debug-build.log",
+    "D:\\code\\AgentLang\\.agentlang\\record-validator-001\\build-02\\native-conformance.log",
+    "D:\\code\\AgentLang\\.agentlang\\record-validator-001\\build-02\\source-hashes-before.txt",
+    "D:\\code\\AgentLang\\.agentlang\\record-validator-001\\build-02\\source-hashes-after-build.txt",
+    "D:\\code\\AgentLang\\.agentlang\\record-validator-001\\build-02\\source-hashes-after-test.txt"
+  ]
+}

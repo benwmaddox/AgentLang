@@ -123,7 +123,7 @@ let rec authoredResolvedCallsInBlock (block: IrBlock) =
         | IrOperation.ListMap(call, _, _)
         | IrOperation.ListFilter(call, _)
         | IrOperation.ListEach(call, _) -> [ call ]
-        | IrOperation.MakeRecord(call, _)
+        | IrOperation.MakeRecord(call, _, _)
         | IrOperation.GetRecordField(call, _, _)
         | IrOperation.UnwrapScalar(call, _) -> [ call ]
         | IrOperation.WrapScalar(call, _, _) -> [ call ]

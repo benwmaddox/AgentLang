@@ -722,7 +722,20 @@ module FlowSource =
         let fields =
             definition.Fields
             |> List.map (fun field -> "    field " + field.Name + ": " + Types.format field.Type + ";")
-        String.concat "\n" ([ "record " + definition.Name + " {" ] @ fields @ [ "}" ])
+        let validatorLine =
+            match definition.Validator with
+            | None -> []
+            | Some name ->
+                let segments = if System.String.IsNullOrEmpty name then [||] else name.Split('.', System.StringSplitOptions.None)
+                let validSegment (segment: string) =
+                    not (System.String.IsNullOrWhiteSpace segment)
+                    && (System.Char.IsLetter segment[0] || segment[0] = '_')
+                    && (segment |> Seq.skip 1 |> Seq.forall (fun value -> System.Char.IsLetterOrDigit value || value = '_' || value = '-' || value = '?' || value = '!'))
+                if segments.Length = 0 || (segments |> Array.exists (validSegment >> not)) then
+                    Diagnostics.raiseError "FLOW_RECORD_VALIDATOR_REFERENCE" "A record validator must name one exact dictionary word using a root or namespace-qualified reference." (Some definition.Name) (Some definition.Span) [ "::word"; "namespace::word" ] [ name ]
+                let qualified = if segments.Length = 1 then "::" + segments[0] else String.concat "::" segments
+                [ "    validate " + qualified + ";" ]
+        String.concat "\n" ([ "record " + definition.Name + " {" ] @ fields @ validatorLine @ [ "}" ])
 
     let renderScalar (definition: ScalarTypeDefinition) =
         if not (validTypeName definition.Name) then

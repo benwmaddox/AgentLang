@@ -101,7 +101,8 @@ module Source =
         let fields =
             definition.Fields
             |> List.map (fun field -> indent 1 + "field " + field.Name + " " + Types.format field.Type)
-        String.concat "\n" ([ "record " + definition.Name ] @ fields @ [ "end" ])
+        let validator = definition.Validator |> Option.map (fun name -> [ indent 1 + "validate " + name ]) |> Option.defaultValue []
+        String.concat "\n" ([ "record " + definition.Name ] @ validator @ fields @ [ "end" ])
 
     let renderScalar (definition: ScalarTypeDefinition) =
         let body =
@@ -180,6 +181,12 @@ module Source =
         let validator = definition.Validator |> Option.map (fun name -> if name = oldName then newName else name)
         let renamed = { definition with Validator = validator }
         { renamed with SourceText = renderScalar renamed }
+
+    /// Rename a record validator reference when it names the renamed word exactly.
+    let renameRecordValidator oldName newName (definition: RecordDefinition) =
+        let validator = definition.Validator |> Option.map (fun name -> if name = oldName then newName else name)
+        let renamed = { definition with Validator = validator }
+        { renamed with SourceText = renderRecord renamed }
 
     /// Rename the owning word and executable calls in an attached test.
     let renameTestOwner oldName newName (definition: TestDefinition) =

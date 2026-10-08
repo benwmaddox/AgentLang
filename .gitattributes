@@ -92,3 +92,6 @@ reports/evidence/117-finite-coverage-adoption/** -text -whitespace
 
 # Preserve populated delivery validation evidence hashes.
 reports/evidence/118-populated-delivery-contract/** -text -whitespace
+
+# Preserve record-construction validation evidence hashes.
+reports/evidence/119-record-construction-invariants/** -text -whitespace

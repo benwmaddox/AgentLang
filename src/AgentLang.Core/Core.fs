@@ -108,6 +108,7 @@ type RecordField =
 type RecordDefinition =
     { Name: string
       Fields: RecordField list
+      Validator: string option
       SourceText: string
       Span: SourceSpan }
 

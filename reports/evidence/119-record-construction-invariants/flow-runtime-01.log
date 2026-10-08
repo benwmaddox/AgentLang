@@ -1,0 +1,5 @@
+Unhandled exception. System.Exception: runtime diagnostic code: expected LIBRARY_FINITE_COVERAGE_INCOMPLETE, got LIBRARY_COVERAGE_INCOMPLETE
+   at AgentLang.Flow.Runtime.Tests.Program.equal[a,b](a expected, a actual, b message) in D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\Program.fs:line 20
+   at AgentLang.Flow.Runtime.Tests.Program.expectError(String expectedCode, JsonObject response) in D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\Program.fs:line 64
+   at AgentLang.Flow.Runtime.Tests.Program.testFiniteCoverageInvocationAndNormalReturns(String root) in D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\Program.fs:line 2185
+   at AgentLang.Flow.Runtime.Tests.Program.main(String[] _arg1) in D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\Program.fs:line 3819

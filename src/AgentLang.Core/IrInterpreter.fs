@@ -510,7 +510,21 @@ module IrInterpreter =
                 if values.Length <> expectedFields.Length then
                     fail "RUNTIME_INTERNAL_TYPE" "Record constructor received an invalid field count." (Some resolvedName) (host.WordDefinitionSpan resolvedName)
                         [ string expectedFields.Length ] [ string values.Length ]
-                [ RuntimeRecord(key, values) ]
+                let recordValue = RuntimeRecord(key, values)
+                let validator =
+                    match program.NominalTypesByKey.TryFind key with
+                    | Some(IrRecordDefinition definition) -> definition.ValidatorCall
+                    | _ -> None
+                match validator with
+                | None -> [ recordValue ]
+                | Some checkedCall ->
+                    match invokeResolved (depth + 1) checkedCall [ recordValue ] site with
+                    | [ RuntimeBool true ] -> [ recordValue ]
+                    | [ RuntimeBool false ] ->
+                        let typeName = typeName program key
+                        fail "RECORD_VALIDATION_FAILED" $"Value does not satisfy {typeName}'s validation predicate." (Some resolvedName) (site |> Option.bind sourceSpan) [ "validator returns true" ] [ "false" ]
+                    | checkedResult ->
+                        fail "RUNTIME_VALIDATOR_RESULT" "Record validator did not return one Bool." (Some checkedCall.ResolvedName) (site |> Option.bind sourceSpan) [ "Bool" ] (runtimeTypeNames program checkedResult)
             | GetRecordFieldOperation(key, fieldIndex), [ RuntimeRecord(actualKey, values) ] when actualKey = key ->
                 match program.NominalTypesByKey.TryFind key with
                 | Some(IrRecordDefinition definition) ->
@@ -893,7 +907,7 @@ module IrInterpreter =
                         | _ -> fail "IR_BACKEND_ENUM_LAYOUT" "Enum value refers to a missing type or case in its frozen nominal table." (Some currentWord) instructionSpan [ "valid enum type and case" ] [ typeName program actualKey; string caseIndex ]
                     | RuntimeEnum(actualKey, _) -> fail "RUNTIME_INTERNAL_TYPE" "Enum match received a value of another enum type." (Some currentWord) instructionSpan [ typeName program typeKey ] [ typeName program actualKey ]
                     | actual -> fail "RUNTIME_INTERNAL_TYPE" "Enum match received a non-enum value after type checking." (Some currentWord) instructionSpan [ typeName program typeKey ] [ formatType program (runtimeValueType actual) ]
-                | IrOperation.MakeRecord(call, _) | IrOperation.GetRecordField(call, _, _) | IrOperation.WrapScalar(call, _, _) | IrOperation.UnwrapScalar(call, _) | IrOperation.MakeEnumCase(call, _, _) ->
+                | IrOperation.MakeRecord(call, _, _) | IrOperation.GetRecordField(call, _, _) | IrOperation.WrapScalar(call, _, _) | IrOperation.UnwrapScalar(call, _) | IrOperation.MakeEnumCase(call, _, _) ->
                     let prefix, arguments = popArguments call.ResolvedName call.InputTypes
                     let result = invokeResolved depth call arguments (Some instruction.Site)
                     stack <- prefix @ result

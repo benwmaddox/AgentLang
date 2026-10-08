@@ -133,6 +133,7 @@ let private testPublicBoundaryAndEmptyEntryOnly () =
     let point =
         { Name = "Point"
           Fields = [ { Name = "x"; Type = TInt }; { Name = "y"; Type = TInt } ]
+          Validator = None
           SourceText = "record Point"
           Span = pointSpan }
     let generated =
@@ -325,11 +326,13 @@ let private testOpaqueTypedInterpreterReentry () =
     let reading =
         { Name = "Reading"
           Fields = [ { Name = "current"; Type = TNamed "Meters" }; { Name = "count"; Type = TInt } ]
+          Validator = None
           SourceText = "record Reading"
           Span = source }
     let envelope =
         { Name = "Envelope"
           Fields = [ { Name = "reading"; Type = TNamed "Reading" }; { Name = "active"; Type = TBool } ]
+          Validator = None
           SourceText = "record Envelope"
           Span = source }
     let generated =
@@ -688,6 +691,7 @@ let private testListTailExecution () =
     let tag =
         { Name = "Tag"
           Fields = [ { Name = "label"; Type = TString } ]
+          Validator = None
           SourceText = "record Tag"
           Span = tagSpan }
     let constructor = wordEntry "tag.new" [ TString ] [ TNamed "Tag" ] Set.empty [] (Some(RecordConstructor "Tag"))
@@ -720,11 +724,96 @@ let private testListTailExecution () =
     let taggedTail = run nominalContext "tail-multiple-tag" nominalMultiple
     check "list.tail preserves duplicate nominal values and their order" (taggedTail = [ ListValue(TNamed "Tag", [ duplicateTag; duplicateTag ]) ])
 
+let private testRecordValidation () =
+    let predicateSpan = span "record-validator.agent"
+    let constructionSpan = { predicateSpan with Line = 24; Column = 9; Length = 19 }
+    let definition =
+        { Name = "Nonnegative"
+          Fields = [ { Name = "amount"; Type = TInt } ]
+          Validator = Some "nonnegative.valid?"
+          SourceText = "record Nonnegative"
+          Span = predicateSpan }
+    let constructor = wordEntry "nonnegative.new" [ TInt ] [ TNamed "Nonnegative" ] Set.empty [] (Some(RecordConstructor "Nonnegative"))
+    let accessor = wordEntry "nonnegative.amount" [ TNamed "Nonnegative" ] [ TInt ] Set.empty [] (Some(RecordAccessor("Nonnegative", "amount")))
+    let validator =
+        wordEntry "nonnegative.valid?" [ TNamed "Nonnegative" ] [ TBool ] Set.empty
+            [ Call("nonnegative.amount", predicateSpan)
+              Push(LInt 0L, predicateSpan)
+              Call("int.greater-or-equal", predicateSpan) ] None
+    let context = contextWith (Map.ofList [ definition.Name, definition ]) [ constructor; accessor; validator ]
+    let compile expressions = compileBody context "record-validation" [] expressions
+    let _, acceptedBody = compile [ Push(LInt 5L, constructionSpan); Call("nonnegative.new", constructionSpan) ]
+    let used = ResizeArray<string>()
+    let trackedHost = host (fun _ _ _ -> ()) (fun _ _ -> ()) (fun _ -> EffectUnit) used.Add
+    let accepted = IrInterpreter.executeBody trackedHost "record-validation" acceptedBody
+    check "record construction invokes its predicate and exposes the valid record" (
+        accepted = [ RecordValue("Nonnegative", Map.ofList [ "amount", IntValue 5L ]) ]
+        && used.Contains "nonnegative.valid?")
+
+    let _, rejectedBody = compile [ Push(LInt -1L, constructionSpan); Call("nonnegative.new", constructionSpan) ]
+    let mutable rejection: Diagnostic option = None
+    try IrInterpreter.executeBody (noOpHost ()) "record-validation" rejectedBody |> ignore
+    with LanguageException diagnostic -> rejection <- Some diagnostic
+    match rejection with
+    | Some diagnostic ->
+        check "false record predicates use the stable record-validation diagnostic" (diagnostic.Code = "RECORD_VALIDATION_FAILED")
+        check "record-validation failure identifies the generated constructor" (diagnostic.Word = Some "nonnegative.new")
+        check "record-validation failure points at the constructor call site" (diagnostic.Span = Some constructionSpan)
+        check "record-validation failure names the predicate result" (diagnostic.Expected = [ "validator returns true" ] && diagnostic.Actual = [ "false" ])
+    | None -> failwith "invalid record construction should not expose a record"
+
+    let signatureRecord = { definition with Validator = Some "nonnegative.wrong-signature?" }
+    let wrongSignature = wordEntry "nonnegative.wrong-signature?" [ TInt ] [ TBool ] Set.empty [ Call("drop", predicateSpan); Push(LBool true, predicateSpan) ] None
+    let signatureContext = contextWith (Map.ofList [ signatureRecord.Name, signatureRecord ]) [ constructor; accessor; wrongSignature ]
+    expectDiagnostic "record validators require the exact Record -> Bool signature" "TYPE_RECORD_VALIDATOR_SIGNATURE" (fun () ->
+        Compiler.compileIrProgram signatureContext |> ignore)
+
+    let impureRecord = { definition with Validator = Some "nonnegative.impure?" }
+    let impure =
+        wordEntry "nonnegative.impure?" [ TNamed "Nonnegative" ] [ TBool ] (Set.singleton "console.write")
+            [ Call("drop", predicateSpan); Push(LString "check", predicateSpan); Call("console.write", predicateSpan); Push(LBool true, predicateSpan) ] None
+    let impureContext = contextWith (Map.ofList [ impureRecord.Name, impureRecord ]) [ constructor; accessor; impure ]
+    expectDiagnostic "record validators must be pure" "TYPE_RECORD_VALIDATOR_EFFECT" (fun () ->
+        Compiler.compileIrProgram impureContext |> ignore)
+
+    let recursiveRecord = { Name = "Recursive"; Fields = [ { Name = "value"; Type = TInt } ]; Validator = Some "recursive.valid?"; SourceText = "record Recursive"; Span = predicateSpan }
+    let recursiveConstructor = wordEntry "recursive.new" [ TInt ] [ TNamed "Recursive" ] Set.empty [] (Some(RecordConstructor "Recursive"))
+    let recursiveAccessor = wordEntry "recursive.value" [ TNamed "Recursive" ] [ TInt ] Set.empty [] (Some(RecordAccessor("Recursive", "value")))
+    let recursiveValidator =
+        wordEntry "recursive.valid?" [ TNamed "Recursive" ] [ TBool ] Set.empty
+            [ Call("drop", predicateSpan); Push(LInt 1L, predicateSpan); Call("recursive.new", predicateSpan); Call("drop", predicateSpan); Push(LBool true, predicateSpan) ] None
+    let recursiveContext = contextWith (Map.ofList [ recursiveRecord.Name, recursiveRecord ]) [ recursiveConstructor; recursiveAccessor; recursiveValidator ]
+    expectDiagnostic "a record validator cannot recursively invoke its own constructor" "IR_RECURSIVE_CALL_GRAPH" (fun () ->
+        Compiler.compileIrProgram recursiveContext |> ignore)
+
+    let record name validatorName =
+        { Name = name
+          Fields = [ { Name = "value"; Type = TInt } ]
+          Validator = Some validatorName
+          SourceText = "record " + name
+          Span = predicateSpan }
+    let aRecord = record "CycleA" "cycle-a.valid?"
+    let bRecord = record "CycleB" "cycle-b.valid?"
+    let constructorAndAccessor (name: string) =
+        [ wordEntry (name.ToLowerInvariant() + ".new") [ TInt ] [ TNamed name ] Set.empty [] (Some(RecordConstructor name))
+          wordEntry (name.ToLowerInvariant() + ".value") [ TNamed name ] [ TInt ] Set.empty [] (Some(RecordAccessor(name, "value"))) ]
+    let cycleA =
+        wordEntry "cycle-a.valid?" [ TNamed "CycleA" ] [ TBool ] Set.empty
+            [ Call("drop", predicateSpan); Push(LInt 1L, predicateSpan); Call("cycleb.new", predicateSpan); Call("drop", predicateSpan); Push(LBool true, predicateSpan) ] None
+    let cycleB =
+        wordEntry "cycle-b.valid?" [ TNamed "CycleB" ] [ TBool ] Set.empty
+            [ Call("drop", predicateSpan); Push(LInt 1L, predicateSpan); Call("cyclea.new", predicateSpan); Call("drop", predicateSpan); Push(LBool true, predicateSpan) ] None
+    let indirectWords = constructorAndAccessor "CycleA" @ constructorAndAccessor "CycleB" @ [ cycleA; cycleB ]
+    let indirectContext = contextWith (Map.ofList [ aRecord.Name, aRecord; bRecord.Name, bRecord ]) indirectWords
+    expectDiagnostic "mutually recursive record validators are rejected" "IR_RECURSIVE_CALL_GRAPH" (fun () ->
+        Compiler.compileIrProgram indirectContext |> ignore)
+
 let private testBoundedRuntimeValues () =
     let site = span "bounded-values.agent"
     let chainRecord =
         { Name = "Chain"
           Fields = [ { Name = "tail"; Type = TOption(TNamed "Chain") } ]
+          Validator = None
           SourceText = "record Chain"
           Span = site }
     let chainConstructor =
@@ -760,6 +849,7 @@ let private testBoundedRuntimeValues () =
           Fields =
             [ { Name = "left"; Type = TOption(TNamed "Tree") }
               { Name = "right"; Type = TOption(TNamed "Tree") } ]
+          Validator = None
           SourceText = "record Tree"
           Span = site }
     let treeConstructor =
@@ -816,6 +906,7 @@ let private testClosedEnumExecution () =
     let point =
         { Name = "Point"
           Fields = [ { Name = "x"; Type = TInt } ]
+          Validator = None
           SourceText = "record Point"
           Span = sourceSpan }
     let constructors enumName cases =
@@ -884,6 +975,7 @@ let main _ =
     testListFoldExecutionAndPreflight ()
     testListFoldFuelLimit ()
     testListTailExecution ()
+    testRecordValidation ()
     testBoundedRuntimeValues ()
     testClosedEnumExecution ()
     printfn "IR Interpreter tests passed (%d assertions)." assertions

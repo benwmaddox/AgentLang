@@ -1273,7 +1273,7 @@ module FlowLowering =
                     | IrOperation.ListFilter(call, _)
                     | IrOperation.ListEach(call, _)
                     | IrOperation.ListFold(call, _, _)
-                    | IrOperation.MakeRecord(call, _)
+                    | IrOperation.MakeRecord(call, _, _)
                     | IrOperation.GetRecordField(call, _, _)
                     | IrOperation.UnwrapScalar(call, _) ->
                         [ { Site = instruction.Site; Call = call; Operation = instruction.Operation } ]

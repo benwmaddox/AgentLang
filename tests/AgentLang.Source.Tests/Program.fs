@@ -467,6 +467,17 @@ end
         equal (Some newName) renamedScalar.Validator "scalar validator is rewritten by exact name"
         equal "String" (Types.format renamedScalar.BaseType) "scalar underlying type is unchanged"
 
+        let recordSource = """record Archive
+    field entries Int
+    validate old.compute
+end
+"""
+        let record = parse recordSource |> fun document -> document.Records.Head
+        let renamedRecord = Source.renameRecordValidator oldName newName record
+        equal (Some newName) renamedRecord.Validator "record validator is rewritten by exact name"
+        equal record.Fields renamedRecord.Fields "record validator rename leaves the field layout unchanged"
+        check ((Source.renderRecord renamedRecord).Contains("validate new.compute", StringComparison.Ordinal)) "record source renderer preserves the renamed validator"
+
         let testSource = """test old.compute/works
     old.compute
     => value

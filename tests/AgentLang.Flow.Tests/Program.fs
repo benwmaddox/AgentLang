@@ -260,6 +260,7 @@ let private richTypeContext extraWords =
     let customer =
         { Name = "Customer"
           Fields = [ { Name = "email"; Type = TNamed "Email" } ]
+          Validator = None
           SourceText = "record Customer"
           Span = customerSpan }
     let generated =
@@ -299,7 +300,7 @@ let private resolvedCallsInBlock (block: IrBlock) =
             | IrOperation.ListFilter(call, _)
             | IrOperation.ListEach(call, _)
             | IrOperation.ListFold(call, _, _)
-            | IrOperation.MakeRecord(call, _)
+            | IrOperation.MakeRecord(call, _, _)
             | IrOperation.GetRecordField(call, _, _)
             | IrOperation.UnwrapScalar(call, _) -> [ call ]
             | IrOperation.WrapScalar(call, _, validator) -> call :: Option.toList validator
@@ -394,6 +395,7 @@ let private testIterativeAstDepthLimit () =
     let recordWithFieldType fieldType =
         { Name = "DepthRecord"
           Fields = [ { Name = "value"; Type = fieldType } ]
+          Validator = None
           SourceText = "host-built record"
           Span = sourceSpan }
     let scalarWithBaseType baseType =
@@ -597,6 +599,7 @@ fn customer.has-email(value: Customer) -> Bool {
     let recordDefinition =
         { Name = "Customer"
           Fields = [ { Name = "email"; Type = TString } ]
+          Validator = None
           SourceText = "record Customer { field email: String; }"
           Span = sourceSpan }
     let recordContext =
@@ -5016,6 +5019,33 @@ let private testFlowProjectDocumentParser () =
     expectError "standalone example parser still rejects trailing declarations" "FLOW_TRAILING_INPUT"
         (FlowParser.parseExample file (exampleSource + "\n" + exampleSource)) |> ignore
 
+let private testFlowRecordValidatorSyntax () =
+    let file = "validated-record.flow"
+    let source = "record Customer { field id: Int; validate customer::valid?; }"
+    let document =
+        match FlowParser.parseDocumentWithVersion 2 file source with
+        | Ok value -> value
+        | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+    equal "Flow record validator resolves namespace qualification to the exact word name" (Some "customer.valid?") document.Records.Head.Validator
+    equal "Flow record validator parse/render is canonical and stable"
+        "record Customer {\n    field id: Int;\n    validate customer::valid?;\n}"
+        (FlowSource.renderRecord document.Records.Head)
+    let canonical = FlowSource.renderDocument document
+    let reparsed =
+        match FlowParser.parseDocumentWithVersion 2 file canonical with
+        | Ok value -> value
+        | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+    equal "Flow record validator survives document round-trip" document.Records.Head.Validator reparsed.Records.Head.Validator
+
+    let expectRecordError name code badSource =
+        expectError name code (FlowParser.parseDocumentWithVersion 2 file badSource) |> ignore
+    expectRecordError "Flow record validator requires root or namespace qualification" "FLOW_RECORD_VALIDATOR_QUALIFICATION"
+        "record Customer { field id: Int; validate valid?; }"
+    expectRecordError "Flow record validator cannot be invoked in the type declaration" "FLOW_RECORD_VALIDATOR_CALL"
+        "record Customer { field id: Int; validate customer::valid?(); }"
+    expectRecordError "Flow record allows at most one validator" "FLOW_RECORD_VALIDATOR_DUPLICATE"
+        "record Customer { field id: Int; validate ::valid?; validate ::other?; }"
+
 [<EntryPoint>]
 let main _ =
     testParserLocationsAndQualification ()
@@ -5047,5 +5077,6 @@ let main _ =
     testFlowRewrite ()
     testFlowDiagnostics ()
     testFlowProjectDocumentParser ()
+    testFlowRecordValidatorSyntax ()
     printfn "Flow tests passed: %d assertions" assertions
     0

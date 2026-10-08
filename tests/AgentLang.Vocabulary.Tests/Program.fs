@@ -53,6 +53,7 @@ module Program =
         { Definition =
             { Name = name
               Fields = fields
+              Validator = None
               SourceText = ""
               Span = span "types" 1 }
           Status = Persistent }

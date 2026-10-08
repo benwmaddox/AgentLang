@@ -1,8 +1,11 @@
 # Finite library coverage
 
-Status: implemented and validated locally. All 37 full Debug gate checks pass.
-See the [implementation report](../reports/116-finite-library-coverage.md) for
-evidence, discovered fixture gaps and known observation limits.
+Status: implemented and validated locally for the finite-library-coverage
+milestone. The 37-check gate in [report 116](../reports/116-finite-library-coverage.md)
+is historical evidence for that milestone. The separate aggregate Debug gate
+for whole-record validators in [report 119](../reports/119-record-construction-invariants.md)
+passed 36/37 checks; the remaining inspection script was repaired and its exact
+probe passed 31 assertions separately. The full aggregate was not rerun.
 
 Authored library qualification requires three separate forms of evidence from the
 function's own passing attached tests: executable instruction/branch coverage,
@@ -38,6 +41,15 @@ proven valid-value set, and expansions beyond 4,096 values are unsupported.
 Qualification must fail explicitly; a partial enumeration must never be
 reported as complete coverage.
 
+The same rule applies to a function that returns a validated record with finite
+projections: until its complete valid-value domain is proven, exhaustive return
+qualification remains unsupported. This does not prevent a predicate whose
+input is that record from qualifying on a finite Bool result. Focused
+`lookup.valid?` tests cover both match branches and observe both `true` and
+`false`; the false return is recorded when the constructor raises its expected
+validation error. This qualifies that predicate, not a function returning the
+validated record.
+
 ## Observation boundary
 
 Observe the verified function identity and revision at entry and normal return.
@@ -46,8 +58,12 @@ or an earlier interactive evaluation cannot supply the target's evidence.
 Multiple actual target calls in one passing attached test may contribute. At least
 one actual invocation is required even for an empty identity body with open input
 and output types; an unrelated passing attachment is insufficient.
-Expected runtime errors have no normal return to count. Failed value or effect
-assertions cannot supply qualifying evidence.
+A target invocation that throws has no normal return to count. A passing
+expected-error test can still contribute returns from target invocations that
+completed before a later error—for example, a record validator returning false
+before its constructor rejects the record. An exception is never treated as a
+return value. Failed value, error-code, or effect assertions cannot supply
+qualifying evidence.
 
 Observation must not eagerly decode normal interpreter or retained mailbox
 values. The host requests decoded input/output observations only for a matching

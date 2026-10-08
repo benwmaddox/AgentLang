@@ -1,0 +1,4 @@
+Unhandled exception. System.Exception: a target that throws before return does not receive a fabricated true observation
+   at AgentLang.Flow.Runtime.Tests.Program.check(Boolean condition, String message) in D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\Program.fs:line 16
+   at AgentLang.Flow.Runtime.Tests.Program.testFiniteCoverageInvocationAndNormalReturns(String root) in D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\Program.fs:line 2186
+   at AgentLang.Flow.Runtime.Tests.Program.main(String[] _arg1) in D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\Program.fs:line 3819

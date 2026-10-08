@@ -64,9 +64,30 @@ Report 118 records a narrow populated-state application: a Flow/2 delivery plan
 builder returns a plan after a nonempty FIFO list yields a concrete head, and
 its `first` field is `EmailMessage` rather than `Option<EmailMessage>`. The
 transition derives that plan from its own Store. This removes an unreachable
-empty-head alternative for this contract; it does not validate arbitrary
-cross-field record invariants or close other public record-construction paths.
-Those broader checks remain pending.
+empty-head alternative for this contract.
+
+Report 119 adds an optional pure predicate over a complete nominal record.
+Verified `MakeRecord` operations freeze the exact validator target; the
+interpreter and supported LLVM constructor expose a record only after a true
+result, while false returns `RECORD_VALIDATION_FAILED`. Predicates may inspect
+the transient unchecked candidate only within their pure validator/helper call
+scope. The compiler does not use the predicate as a proof. The raw C allocator
+remains trusted internal machinery, not a public language-level construction
+path. Storage remains version 3 and native ABI is unchanged. Focused Core/interpreter, native, persistence, expected-error return
+observation and business extension checks pass. The aggregate passed 36/37 checks and its remaining inspection-script
+repair passed separately; see [report 119](../reports/119-record-construction-invariants.md).
+
+Finite qualification treats validated domains conservatively: a record with
+finite projections is unsupported without a proven valid-value set, including
+a zero-field record whose raw domain is a closed singleton. An authored
+function returning a validated record with Option, Bool or enum projections
+cannot currently qualify under that rule, even when the predicate itself is
+library-ready. The predicate can observe its completed true and rejected-case
+false returns; a target that throws before returning contributes no return
+observation. Runtime controls verify this expected-error coverage boundary, including
+failed assertions and targets that throw before returning. Fully open shapes with no finite obligations remain observable
+without enumeration. Provider-state assertions and broader module/library
+dependency-closure and test-local override rules remain pending.
 
 ## Properties and independent expectations
 

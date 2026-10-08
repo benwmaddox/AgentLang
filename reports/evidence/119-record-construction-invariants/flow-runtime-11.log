@@ -1,0 +1,4 @@
+Unhandled exception. System.Exception: define a Stack/1 validated record and its predicate: expected success, got TYPE_WORD_OUTPUT_MISMATCH: Word 'checkedNumber.valid?' does not leave its declared output stack.
+   at AgentLang.Flow.Runtime.Tests.Program.expectOk[a](a label, JsonObject response) in D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\Program.fs:line 58
+   at AgentLang.Flow.Runtime.Tests.Program.testRecordValidatorRuntimeAndPersistence(String root) in D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\Program.fs:line 3542
+   at AgentLang.Flow.Runtime.Tests.Program.main(String[] _arg1) in D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\Program.fs:line 3839

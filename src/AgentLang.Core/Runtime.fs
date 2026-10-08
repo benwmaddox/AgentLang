@@ -435,7 +435,7 @@ module Runtime =
                     let prefix = lowerFirst name
                     let constructorName = prefix + ".new"
                     let constructor =
-                        wordDef constructorName (record.Fields |> List.map (fun field -> field.Type)) [ TNamed name ] Set.empty "Constructs a value after all record fields pass their declared types." record.SourceText
+                        wordDef constructorName (record.Fields |> List.map (fun field -> field.Type)) [ TNamed name ] Set.empty "Constructs a value after all record fields pass their declared types and optional validator." record.SourceText
                     let constructorEntry = entry constructor (Some(RecordConstructor name)) recordEntry.Status LibraryWord 1
                     let getters =
                         record.Fields
@@ -594,6 +594,15 @@ module Runtime =
                 | Some item -> Some(storedTarget state item)
                 | None -> error "TYPE_VALIDATOR_UNKNOWN_WORD" $"Scalar type '{typeName}' validator '{name}' is not an exact dictionary word." (Some typeName) (Some definition.Span) [ "exact word key" ] [ name ]
 
+        let resolvedRecordValidatorTarget (state: DictionaryState) typeName (definition: RecordDefinition) =
+            match definition.Validator with
+            | None -> None
+            | Some name ->
+                let words = effectiveWords state
+                match words.TryFind name with
+                | Some item -> Some(storedTarget state item)
+                | None -> error "TYPE_VALIDATOR_UNKNOWN_WORD" $"Record type '{typeName}' validator '{name}' is not an exact dictionary word." (Some typeName) (Some definition.Span) [ "exact word key" ] [ name ]
+
         let validateTypeSourceMetadata (state: DictionaryState) =
             for KeyValue(name, source) in state.TypeSources do
                 match source.SourceFormat.Frontend, source.SourceFormat.Version with
@@ -605,9 +614,17 @@ module Runtime =
                     error "RUNTIME_UNSUPPORTED_TYPE_FRONTEND" $"Type '{name}' uses unsupported {frontendName} syntax version {version}." (Some name) None [ "Stack/1"; "Flow/1"; "Flow/2" ] [ $"{frontendName}/{version}" ]
                 match state.Records.TryFind name, state.Scalars.TryFind name, state.Enums.TryFind name with
                 | Some _, Some _, _ | Some _, _, Some _ | _, Some _, Some _ -> error "TYPE_SOURCE_OWNER_AMBIGUOUS" $"Type source '{name}' maps to more than one nominal type." (Some name) None [] []
-                | Some _, None, None when source.ValidatorTarget.IsSome ->
-                    error "TYPE_VALIDATOR_TARGET_INVALID" $"Record type '{name}' cannot carry a scalar validator target." (Some name) None [] [ string source.ValidatorTarget.Value ]
-                | Some _, None, None -> ()
+                | Some record, None, None ->
+                    match record.Definition.Validator, source.ValidatorTarget with
+                    | None, Some target -> error "TYPE_VALIDATOR_TARGET_INVALID" $"Record type '{name}' has a validator target but no validator declaration." (Some name) None [] [ string target ]
+                    | Some _, Some target ->
+                        let actual = resolvedRecordValidatorTarget state name record.Definition
+                        if actual <> Some target then
+                            error "TYPE_VALIDATOR_TARGET_MISMATCH" $"Record type '{name}' validator does not resolve to its stored stable target." (Some name) (Some record.Definition.Span)
+                                [ string target ] (actual |> Option.map string |> Option.toList)
+                    | Some _, None ->
+                        error "TYPE_VALIDATOR_TARGET_MISSING" $"Stored record type '{name}' requires a stable validator target binding." (Some name) (Some record.Definition.Span) [ "resolved user, generated, or primitive target" ] []
+                    | _ -> ()
                 | None, Some scalar, None ->
                     match scalar.Definition.Validator, source.ValidatorTarget with
                     | None, Some target -> error "TYPE_VALIDATOR_TARGET_INVALID" $"Scalar type '{name}' has a validator target but no validator declaration." (Some name) None [] [ string target ]
@@ -934,9 +951,14 @@ module Runtime =
                       if sourceObject.Reference <> authored.Reference then
                           error "TYPE_SOURCE_REFERENCE_MISMATCH" $"Type source '{name}' does not match its immutable source reference." (Some name) None [ authored.Reference.Hash ] [ sourceObject.Reference.Hash ]
                       sourceObjects.Add sourceObject
-                      if authored.ValidatorTarget.IsSome then
-                          error "TYPE_VALIDATOR_TARGET_INVALID" $"Record type '{name}' cannot carry a scalar validator target." (Some name) None [] []
-                      yield { Name = name; Definition = sourceObject.Reference; SourceFormat = authored.SourceFormat; ValidatorTarget = None }
+                      let resolved = resolvedRecordValidatorTarget durable name item.Definition
+                      match authored.ValidatorTarget, resolved with
+                      | Some stored, Some actual when stored <> actual ->
+                          error "TYPE_VALIDATOR_TARGET_MISMATCH" $"Record type '{name}' validator target changed since its authored source was accepted." (Some name) (Some item.Definition.Span) [ string stored ] [ string actual ]
+                      | Some _, None ->
+                          error "TYPE_VALIDATOR_TARGET_INVALID" $"Record type '{name}' has a stored validator target without a validator declaration." (Some name) (Some item.Definition.Span) [] []
+                      | _ -> ()
+                      yield { Name = name; Definition = sourceObject.Reference; SourceFormat = authored.SourceFormat; ValidatorTarget = resolved }
                   for KeyValue(name, item) in durable.Scalars do
                       let authored = durable.TypeSources.TryFind name |> Option.defaultValue (defaultTypeSource durable name)
                       let sourceObject = Storage.sourceObject StorageObjectKind.TypeDefinition authored.Content
@@ -1198,6 +1220,11 @@ module Runtime =
                     | TVar _ -> error "TYPE_UNSUPPORTED_GENERIC" "Record fields cannot contain free generic variables." (Some record.Name) (Some record.Span) [] [ Types.format field.Type ]
                     | _ -> ()
                 for field in record.Fields do validateFieldType field field.Type
+                let deps = Compiler.checkRecordValidator (knownTypes state) words record
+                match record.Validator with
+                | Some validator when deps.Contains(lowerFirst record.Name + ".new") ->
+                    error "TYPE_VALIDATOR_RECURSION" $"Validator '{validator}' cannot construct '{record.Name}'." (Some record.Name) (Some record.Span) [] (Set.toList deps)
+                | _ -> ()
             for scalar in state.Scalars |> Map.toSeq |> Seq.map (fun (_, item) -> item.Definition) do
                 let deps = Compiler.checkScalarValidator (knownTypes state) words scalar
                 match scalar.Validator with
@@ -1213,6 +1240,13 @@ module Runtime =
                     if value.Builtin.IsSome then None
                     else Some(name, Compiler.dependencies value.Definition.Body))
                 |> Map.ofSeq
+                |> fun initial ->
+                    state.Records
+                    |> Map.toSeq
+                    |> Seq.fold (fun found (_, record) ->
+                        match record.Definition.Validator with
+                        | Some validator -> Map.add (lowerFirst record.Definition.Name + ".new") (Set.singleton validator) found
+                        | None -> found) initial
                 |> fun initial ->
                     state.Scalars
                     |> Map.toSeq
@@ -2268,8 +2302,7 @@ module Runtime =
                 | LanguageException diagnostic ->
                     match test.Expected with
                     | ExpectedRuntimeError expectedCode when diagnostic.Code = expectedCode ->
-                        let result = makeResult true None [] None
-                        { result with TargetReturns = [] }
+                        makeResult true None [] None
                     | _ -> makeResult false (Some diagnostic) [] None
             match test.EffectAssertion with
             | None -> executionResult
@@ -2599,19 +2632,23 @@ module Runtime =
             | Some item ->
                 log "inspect" name
                 let definition = item.Definition
-                let direct =
-                    match item.Builtin with
-                    | Some(RecordConstructor record) -> Set.empty
-                    | Some(ScalarConstructor scalar) -> scalarDefinitions state |> Map.tryFind scalar |> Option.bind (fun value -> value.Validator) |> Option.map Set.singleton |> Option.defaultValue Set.empty
-                    | Some _ -> Set.empty
-                    | None -> Compiler.dependencies definition.Body
+                let dependenciesOf wordName =
+                    match words.TryFind wordName with
+                    | None -> Set.empty
+                    | Some value ->
+                        match value.Builtin with
+                        | Some(RecordConstructor record) -> recordDefinitions state |> Map.tryFind record |> Option.bind (fun item -> item.Validator) |> Option.map Set.singleton |> Option.defaultValue Set.empty
+                        | Some(ScalarConstructor scalar) -> scalarDefinitions state |> Map.tryFind scalar |> Option.bind (fun item -> item.Validator) |> Option.map Set.singleton |> Option.defaultValue Set.empty
+                        | Some _ -> Set.empty
+                        | None -> Compiler.dependencies value.Definition.Body
+                let direct = dependenciesOf name
                 let transitive =
                     let rec walk (pending: Set<string>) (found: Set<string>) =
                         match pending |> Set.toList with
                         | [] -> found
                         | head :: tail when found.Contains head -> walk (Set.ofList tail) found
                         | head :: tail ->
-                            let next = words.TryFind head |> Option.map (fun value -> if value.Builtin.IsNone then Compiler.dependencies value.Definition.Body else Set.empty) |> Option.defaultValue Set.empty
+                            let next = dependenciesOf head
                             walk (Set.union (Set.ofList tail) next) (Set.add head found)
                     walk direct Set.empty
                 let callers =
@@ -2687,13 +2724,27 @@ module Runtime =
                 | [] -> found
                 | head :: rest when found.Contains head -> reach (Set.ofList rest) found
                 | head :: rest ->
-                    let next = words.TryFind head |> Option.map (fun entry -> if entry.Builtin.IsNone then Compiler.dependencies entry.Definition.Body else Set.empty) |> Option.defaultValue Set.empty
+                    let next =
+                        match words.TryFind head with
+                        | None -> Set.empty
+                        | Some entry ->
+                            match entry.Builtin with
+                            | None -> Compiler.dependencies entry.Definition.Body
+                            | Some(RecordConstructor recordName) -> recordDefinitions state |> Map.tryFind recordName |> Option.bind (fun record -> record.Validator) |> Option.map Set.singleton |> Option.defaultValue Set.empty
+                            | Some(ScalarConstructor scalarName) -> scalarDefinitions state |> Map.tryFind scalarName |> Option.bind (fun scalar -> scalar.Validator) |> Option.map Set.singleton |> Option.defaultValue Set.empty
+                            | Some _ -> Set.empty
                     reach (Set.union (Set.ofList rest) next) (Set.add head found)
-            state.Scalars
-            |> Map.toSeq
-            |> Seq.choose (fun (_, scalar) ->
-                if scalar.Status <> Persistent then None
-                else scalar.Definition.Validator |> Option.map (fun validator -> reach (Set.singleton validator) Set.empty))
+            seq {
+                for KeyValue(_, record) in state.Records do
+                    if record.Status = Persistent then
+                        match record.Definition.Validator with
+                        | Some validator -> yield reach (Set.singleton validator) Set.empty
+                        | None -> ()
+                for KeyValue(_, scalar) in state.Scalars do
+                    if scalar.Status = Persistent then
+                        match scalar.Definition.Validator with
+                        | Some validator -> yield reach (Set.singleton validator) Set.empty
+                        | None -> () }
             |> Seq.fold Set.union Set.empty
 
         let registerParsed (parsed: ParsedSource) (temporary: bool) =
@@ -2816,7 +2867,7 @@ module Runtime =
             let changed = parsed.Words |> List.map (fun word -> word.Name) |> Set.ofList
             let conflict = Set.intersect frozen changed
             if not (Set.isEmpty conflict) then
-                error "TYPE_VALIDATOR_FROZEN" $"Cannot replace validator dependency '{Set.minElement conflict}' while a scalar type is persistent." None None [] (Set.toList conflict)
+                error "TYPE_VALIDATOR_FROZEN" $"Cannot replace validator dependency '{Set.minElement conflict}' while a nominal type is persistent." None None [] (Set.toList conflict)
             activateRuntimeSnapshot executable
             lastResults <- []
             for word in parsed.Words do log "create" word.Name
@@ -2997,7 +3048,11 @@ module Runtime =
                 let validatorWords =
                     selectedTypes
                     |> Set.toList
-                    |> List.choose (fun name -> candidateScalars.TryFind name |> Option.bind (fun value -> value.Definition.Validator))
+                    |> List.choose (fun name ->
+                        match candidateRecords.TryFind name, candidateScalars.TryFind name with
+                        | Some value, _ -> value.Definition.Validator
+                        | _, Some value -> value.Definition.Validator
+                        | _ -> None)
                     |> List.fold (fun found name -> Set.union found (wordClosure [ name ] Set.empty)) Set.empty
                 let owners = Set.union selectedWords (selectedTypeWordNames selectedTypes)
                 let metadata = selectedMetadata owners
@@ -3569,16 +3624,17 @@ module Runtime =
             let stableTypeSources =
                 proposed.TypeSources
                 |> Map.map (fun name authored ->
-                    match proposed.Scalars.TryFind name with
-                    | Some scalar -> { authored with ValidatorTarget = resolvedValidatorTarget proposed name scalar.Definition }
-                    | None -> authored)
+                    match proposed.Records.TryFind name, proposed.Scalars.TryFind name with
+                    | Some record, _ -> { authored with ValidatorTarget = resolvedRecordValidatorTarget proposed name record.Definition }
+                    | _, Some scalar -> { authored with ValidatorTarget = resolvedValidatorTarget proposed name scalar.Definition }
+                    | _ -> authored)
             let proposed = { proposed with TypeSources = stableTypeSources }
             validateTypeSourceMetadata proposed
             let executable = compileRuntimeSnapshot proposed
             let frozen = frozenValidatorWords old (effectiveWords old)
             let changedWords = Set.ofList wordNames
             match Set.intersect frozen changedWords |> Set.toList with
-            | name :: _ -> error "TYPE_VALIDATOR_FROZEN" $"Cannot replace validator dependency '{name}' while a scalar type is persistent." (Some name) None [] [ name ]
+            | name :: _ -> error "TYPE_VALIDATOR_FROZEN" $"Cannot replace validator dependency '{name}' while a nominal type is persistent." (Some name) None [] [ name ]
             | [] -> ()
             activateRuntimeSnapshot executable
             lastResults <- []
@@ -3840,7 +3896,7 @@ module Runtime =
                 rejectUncheckedEnumHelpers executable.State executable.Words parsedWord.Name
             let frozen = frozenValidatorWords old (effectiveWords old)
             if frozen.Contains parsedWord.Name then
-                error "TYPE_VALIDATOR_FROZEN" $"Cannot replace validator dependency '{parsedWord.Name}' while a scalar type is persistent." (Some parsedWord.Name) (Some parsedWord.Span) [] [ parsedWord.Name ]
+                error "TYPE_VALIDATOR_FROZEN" $"Cannot replace validator dependency '{parsedWord.Name}' while a nominal type is persistent." (Some parsedWord.Name) (Some parsedWord.Span) [] [ parsedWord.Name ]
             activateRuntimeSnapshot executable
             lastResults <- []
             log "create" parsedWord.Name
@@ -4448,7 +4504,7 @@ module Runtime =
                                 error "RENAME_COLLISION" $"The name '{newName}' is already used by a word or type." (Some newName) None [] []
                             let frozen = frozenValidatorWords data effective
                             if frozen.Contains oldName then
-                                error "TYPE_VALIDATOR_FROZEN" $"Cannot rename '{oldName}' because it belongs to a persistent scalar validator closure." (Some oldName) None [] [ oldName ]
+                                error "TYPE_VALIDATOR_FROZEN" $"Cannot rename '{oldName}' because it belongs to a persistent nominal-type validator closure." (Some oldName) None [] [ oldName ]
                             let baselineState = data
                             let data = (compileRuntimeSnapshot baselineState).State
                             let identity = data.WordIds.TryFind oldName |> Option.defaultWith (fun () -> error "WORD_ID_MISSING" $"Word '{oldName}' has no stable identity." (Some oldName) None [] [])
@@ -4727,6 +4783,12 @@ module Runtime =
                                     let definition = Source.renameScalarValidator oldName newName item.Definition
                                     if definition.Validator = item.Definition.Validator then item
                                     else { item with Definition = definition })
+                            let records =
+                                data.Records
+                                |> Map.map (fun _ item ->
+                                    let definition = Source.renameRecordValidator oldName newName item.Definition
+                                    if definition.Validator = item.Definition.Validator then item
+                                    else { item with Definition = definition })
                             let deprecated = if data.Deprecated.Contains oldName then data.Deprecated |> Set.remove oldName |> Set.add newName else data.Deprecated
                             let movedHistory: Map<string, WordDefinition list> =
                                 match data.History.TryFind oldName with
@@ -4737,6 +4799,7 @@ module Runtime =
                                     Words = words
                                     WordIds = wordIds
                                     Deprecated = deprecated
+                                    Records = records
                                     Scalars = scalars
                                     Tests = tests
                                     Examples = examples

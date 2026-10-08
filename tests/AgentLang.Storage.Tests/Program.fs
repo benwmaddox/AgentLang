@@ -652,6 +652,22 @@ module Program =
         for item in loadedManifest.Types do
             equal (Storage.readSource firstStore item.Definition |> ok "read v3 type source") (List.find (fun candidate -> candidate.Reference = item.Definition) sources).Content $"v3 type source {item.Name} remains hash-addressed"
 
+        let recordValidatorTarget = Some(StoredCallTarget.UserWord "word-stable-1")
+        let recordValidatorManifest =
+            { manifest with
+                Types =
+                    manifest.Types
+                    |> List.map (fun item ->
+                        if item.Name = "v3-roundtrip.Record" then { item with ValidatorTarget = recordValidatorTarget }
+                        else item) }
+        let recordValidatorProject = Path.Combine(root, "v3-record-validator-roundtrip")
+        let recordValidatorStore = Storage.create recordValidatorProject
+        let recordValidatorCommit = Storage.commit recordValidatorStore 0L recordValidatorManifest sources projectText |> ok "commit v3 record validator target"
+        let recordValidatorLoaded = Storage.load recordValidatorStore |> ok "load v3 record validator target"
+        equal recordValidatorCommit.ManifestHash recordValidatorLoaded.ManifestHash "v3 record validator target keeps its exact manifest identity"
+        let loadedRecordValidator = recordValidatorLoaded.Manifest.Value.Types |> List.find (fun item -> item.Name = "v3-roundtrip.Record")
+        equal recordValidatorTarget loadedRecordValidator.ValidatorTarget "v3 record validator target round trips without a schema-version change"
+
         let manifestPath = Path.Combine(storageRoot firstProject, "manifests", loaded.ManifestHash.Value + ".json")
         let rawText = File.ReadAllText manifestPath
         equal loaded.ManifestHash.Value (digest rawText) "v3 manifest bytes match the content-addressed filename"

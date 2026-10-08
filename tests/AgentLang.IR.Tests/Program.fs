@@ -543,7 +543,8 @@ let private testClosedEnumVerification () =
         IrRecordDefinition
             { TypeKey = recordKey
               TypeName = "Point"
-              RecordFields = [] }
+              RecordFields = []
+              ValidatorCall = None }
     let nominalTypes =
         [ enumKey, enumDefinition
           otherEnumKey, otherEnumDefinition
@@ -799,7 +800,8 @@ let private testFiniteCoverageClosedDomains () =
               TypeName = "Flags"
               RecordFields =
                 [ { FieldIndex = 0; FieldName = "left"; FieldType = IrBool }
-                  { FieldIndex = 1; FieldName = "right"; FieldType = IrBool } ] }
+                  { FieldIndex = 1; FieldName = "right"; FieldType = IrBool } ]
+              ValidatorCall = None }
     let boolOption = IrOption IrBool
     let boolUnitResult = IrResult(IrBool, IrUnit)
     let types = [ IrBool; IrUnit; boolOption; boolUnitResult; flagsType ]
@@ -887,7 +889,8 @@ let private testFiniteCoverageOpenAndNestedRecords () =
               TypeName = "Flags"
               RecordFields =
                 [ { FieldIndex = 0; FieldName = "left"; FieldType = IrBool }
-                  { FieldIndex = 1; FieldName = "right"; FieldType = IrBool } ] }
+                  { FieldIndex = 1; FieldName = "right"; FieldType = IrBool } ]
+              ValidatorCall = None }
     let mixedDefinition =
         mixedKey,
         IrRecordDefinition
@@ -896,7 +899,8 @@ let private testFiniteCoverageOpenAndNestedRecords () =
               RecordFields =
                 [ { FieldIndex = 0; FieldName = "active"; FieldType = IrBool }
                   { FieldIndex = 1; FieldName = "visible"; FieldType = IrBool }
-                  { FieldIndex = 2; FieldName = "attempts"; FieldType = IrInt } ] }
+                  { FieldIndex = 2; FieldName = "attempts"; FieldType = IrInt } ]
+              ValidatorCall = None }
     let outerDefinition =
         outerKey,
         IrRecordDefinition
@@ -904,7 +908,8 @@ let private testFiniteCoverageOpenAndNestedRecords () =
               TypeName = "Outer"
               RecordFields =
                 [ { FieldIndex = 0; FieldName = "flags"; FieldType = flagsType }
-                  { FieldIndex = 1; FieldName = "name"; FieldType = IrString } ] }
+                  { FieldIndex = 1; FieldName = "name"; FieldType = IrString } ]
+              ValidatorCall = None }
     let inspected, owner = verifiedFiniteFixture Map.empty [ flagsDefinition; mixedDefinition; outerDefinition ] [ mixedType; outerType ]
     let flags left right = RecordValue("Flags", Map.ofList [ "left", BoolValue left; "right", BoolValue right ])
     let mixed active visible attempts =
@@ -943,6 +948,60 @@ let private testFiniteCoverageUnsupportedAndBoundedDomains () =
     let refinedReport = FiniteCoverage.analyze refinedProgram refinedOwner [] []
     check "a refined finite-base scalar is explicitly unsupported" (refinedReport.Unsupported |> List.exists (fun issue -> issue.Contains("refined scalar RefinedFlag")))
     check "unsupported refined scalar does not report an enumerable return domain" refinedReport.Returns.IsEmpty
+
+    let recordValidatorId, recordValidatorContract = primitiveContract "finite.record.valid?" [ PatternVariable 0 ] [ PatternBool ] noEffects
+    let guardedFlagsKey = ProgramTypeKey 0
+    let guardedFlagsType = IrNominal guardedFlagsKey
+    let recordValidator = resolved (PrimitiveTarget recordValidatorId) "finite.record.valid?" [ guardedFlagsType ] [ IrBool ] noEffects
+    let guardedFlags =
+        guardedFlagsKey,
+        IrRecordDefinition
+            { TypeKey = guardedFlagsKey
+              TypeName = "GuardedFlags"
+              RecordFields = [ { FieldIndex = 0; FieldName = "enabled"; FieldType = IrBool } ]
+              ValidatorCall = Some recordValidator }
+    let guardedProgram, guardedOwner =
+        verifiedFiniteFixture (Map.ofList [ recordValidatorId, recordValidatorContract ]) [ guardedFlags ] [ guardedFlagsType ]
+    let guardedReport = FiniteCoverage.analyze guardedProgram guardedOwner [] []
+    check "a validated finite record is explicitly unsupported without predicate enumeration"
+        (guardedReport.Unsupported |> List.exists (fun issue -> issue.Contains("validated record GuardedFlags") && issue.Contains("no proven complete valid-value domain")))
+    check "a validated finite record does not expose its raw Cartesian product" guardedReport.Returns.IsEmpty
+
+    let emptyKey = ProgramTypeKey 0
+    let emptyType = IrNominal emptyKey
+    let emptyValidator = resolved (PrimitiveTarget recordValidatorId) "finite.record.valid?" [ emptyType ] [ IrBool ] noEffects
+    let emptyGuarded =
+        emptyKey,
+        IrRecordDefinition
+            { TypeKey = emptyKey
+              TypeName = "EmptyGuarded"
+              RecordFields = []
+              ValidatorCall = Some emptyValidator }
+    let emptyProgram, emptyOwner =
+        verifiedFiniteFixture (Map.ofList [ recordValidatorId, recordValidatorContract ]) [ emptyGuarded ] [ emptyType ]
+    let emptyReport = FiniteCoverage.analyze emptyProgram emptyOwner [] []
+    check "a validated zero-field record is unsupported rather than silently treated as open"
+        (emptyReport.Unsupported |> List.exists (fun issue -> issue.Contains("validated record EmptyGuarded") && issue.Contains("finite domain")))
+    check "a validated zero-field record does not claim its raw singleton as a complete domain" emptyReport.Returns.IsEmpty
+
+    let rangeKey = ProgramTypeKey 0
+    let rangeType = IrNominal rangeKey
+    let rangeValidator = resolved (PrimitiveTarget recordValidatorId) "finite.record.valid?" [ rangeType ] [ IrBool ] noEffects
+    let rangeDefinition =
+        rangeKey,
+        IrRecordDefinition
+            { TypeKey = rangeKey
+              TypeName = "Range"
+              RecordFields =
+                [ { FieldIndex = 0; FieldName = "start"; FieldType = IrInt }
+                  { FieldIndex = 1; FieldName = "end"; FieldType = IrInt } ]
+              ValidatorCall = Some rangeValidator }
+    let rangeProgram, rangeOwner =
+        verifiedFiniteFixture (Map.ofList [ recordValidatorId, recordValidatorContract ]) [ rangeDefinition ] [ rangeType ]
+    let rangeReport = FiniteCoverage.analyze rangeProgram rangeOwner [] []
+    let rangePosition = finitePosition "validated open-only Range" rangeReport.Returns 0
+    check "a validated open-only Range remains supported with no finite obligations"
+        (rangePosition.Required.IsEmpty && rangeReport.Unsupported.IsEmpty)
 
     let textValidatorId, textValidatorContract = primitiveContract "finite.text.valid?" [ PatternString ] [ PatternBool ] noEffects
     let countValidatorId, countValidatorContract = primitiveContract "finite.count.valid?" [ PatternInt ] [ PatternBool ] noEffects
@@ -999,7 +1058,8 @@ let private testFiniteCoverageUnsupportedAndBoundedDomains () =
         IrRecordDefinition
             { TypeKey = cycleKey
               TypeName = "Cycle"
-              RecordFields = [ { FieldIndex = 0; FieldName = "next"; FieldType = IrOption cycleType } ] }
+              RecordFields = [ { FieldIndex = 0; FieldName = "next"; FieldType = IrOption cycleType } ]
+              ValidatorCall = None }
     let cycleProgram, cycleOwner = verifiedFiniteFixture Map.empty [ cycleDefinition ] [ cycleType ]
     let cycleReport = FiniteCoverage.analyze cycleProgram cycleOwner [] []
     check "recursive record expansion terminates with an explicit unsupported result"
@@ -1015,7 +1075,8 @@ let private testFiniteCoverageUnsupportedAndBoundedDomains () =
                 [ for index in 0 .. fieldCount - 1 ->
                     { FieldIndex = index
                       FieldName = $"flag{index}"
-                      FieldType = IrBool } ] }
+                      FieldType = IrBool } ]
+              ValidatorCall = None }
     let atLimitKey = ProgramTypeKey 0
     let overLimitKey = ProgramTypeKey 1
     let atLimitProgram, atLimitOwner =
@@ -1051,13 +1112,17 @@ let private testGeneratedRecordAndScalarOperations () =
     let emailKey = ProgramTypeKey 1
     let customerType = IrNominal customerKey
     let emailType = IrNominal emailKey
+    let customerValidatorId, customerValidatorContract =
+        primitiveContract "customer.valid?" [ PatternVariable 0 ] [ PatternBool ] noEffects
+    let customerValidator = resolved (PrimitiveTarget customerValidatorId) "customer.valid?" [ customerType ] [ IrBool ] noEffects
     let customer =
         IrRecordDefinition
             { TypeKey = customerKey
               TypeName = "Customer"
               RecordFields =
                 [ { FieldIndex = 0; FieldName = "id"; FieldType = IrInt }
-                  { FieldIndex = 1; FieldName = "email"; FieldType = emailType } ] }
+                  { FieldIndex = 1; FieldName = "email"; FieldType = emailType } ]
+              ValidatorCall = Some customerValidator }
     let emailValidatorId, emailValidatorContract =
         primitiveContract "email.valid?" [ PatternString ] [ PatternBool ] noEffects
     let validator = resolved (PrimitiveTarget emailValidatorId) "email.valid?" [ IrString ] [ IrBool ] noEffects
@@ -1107,7 +1172,7 @@ let private testGeneratedRecordAndScalarOperations () =
     let functions =
         [ makeCustomerWord,
           functionWithCode makeCustomerWord 1 [ IrInt; emailType ] [ customerType ] noEffects noEffects Map.empty
-            [ { Site = makeSite; Operation = IrOperation.MakeRecord(makeCall, customerKey) } ]
+            [ { Site = makeSite; Operation = IrOperation.MakeRecord(makeCall, customerKey, Some customerValidator) } ]
           getCustomerIdWord,
           functionWithCode getCustomerIdWord 1 [ customerType ] [ IrInt ] noEffects noEffects Map.empty
             [ { Site = getSite; Operation = IrOperation.GetRecordField(getCall, customerKey, 0) } ]
@@ -1125,8 +1190,33 @@ let private testGeneratedRecordAndScalarOperations () =
               getCustomerIdWord, coverage getCustomerIdWord [ 0 ] []
               wrapEmailWord, coverage wrapEmailWord [ 0 ] []
               unwrapEmailWord, coverage unwrapEmailWord [ 0 ] [] ]
-    verify (Map.ofList [ emailValidatorId, emailValidatorContract ]) executable
+    let catalog = Map.ofList [ emailValidatorId, emailValidatorContract; customerValidatorId, customerValidatorContract ]
+    verify catalog executable
     check "record constructor/accessor and refined scalar wrap/unwrap verify against stable generated targets" true
+
+    let makeDefinition = functions |> List.find (fun (id, _) -> id = makeCustomerWord) |> snd
+    let missingValidator =
+        { makeDefinition with
+            FunctionBody = block [ IrInt; emailType ] Map.empty
+                [ { Site = makeSite; Operation = IrOperation.MakeRecord(makeCall, customerKey, None) } ] [ customerType ] Map.empty }
+    let missingValidatorProgram = { executable with FunctionsById = Map.add makeCustomerWord missingValidator executable.FunctionsById }
+    expectDiagnostic "MakeRecord must retain the immutable record validator" "IR_RECORD_VALIDATOR_MISMATCH" (fun () -> verify catalog missingValidatorProgram)
+
+    let malformedValidator = { customerValidator with OutputTypes = [ IrInt ] }
+    let malformedCustomer =
+        match customer with
+        | IrRecordDefinition definition -> IrRecordDefinition { definition with ValidatorCall = Some malformedValidator }
+        | other -> other
+    let malformedTypeProgram = { executable with NominalTypesByKey = Map.add customerKey malformedCustomer executable.NominalTypesByKey }
+    expectDiagnostic "record type table rejects a malformed validator signature" "IR_RECORD_VALIDATOR_SIGNATURE" (fun () -> verify catalog malformedTypeProgram)
+
+    let impureValidator = { customerValidator with ResolvedEffects = Set.singleton IrEffect.ConsoleWrite }
+    let impureCustomer =
+        match customer with
+        | IrRecordDefinition definition -> IrRecordDefinition { definition with ValidatorCall = Some impureValidator }
+        | other -> other
+    let impureTypeProgram = { executable with NominalTypesByKey = Map.add customerKey impureCustomer executable.NominalTypesByKey }
+    expectDiagnostic "record type table rejects an effectful validator" "IR_RECORD_VALIDATOR_EFFECT" (fun () -> verify catalog impureTypeProgram)
 
     let wrapDefinition = functions |> List.find (fun (id, _) -> id = wrapEmailWord) |> snd
     let wrongOperation =
@@ -1134,7 +1224,7 @@ let private testGeneratedRecordAndScalarOperations () =
             FunctionBody = block [ IrString ] Map.empty
                 [ { Site = wrapSite; Operation = IrOperation.UnwrapScalar(wrapCall, emailKey) } ] [ emailType ] Map.empty }
     let wrongProgram = { executable with FunctionsById = Map.add wrapEmailWord wrongOperation executable.FunctionsById }
-    expectDiagnostic "generated operation must match its exact target kind" "IR_GENERATED_OPERATION_MISMATCH" (fun () -> verify (Map.ofList [ emailValidatorId, emailValidatorContract ]) wrongProgram)
+    expectDiagnostic "generated operation must match its exact target kind" "IR_GENERATED_OPERATION_MISMATCH" (fun () -> verify catalog wrongProgram)
 
     let cyclicType = IrScalarDefinition { TypeKey = emailKey; TypeName = "Loop"; BaseType = IrOption emailType; ValidatorCall = None }
     let cyclicProgram =
@@ -1229,7 +1319,8 @@ let private testListFoldVerification () =
         IrRecordDefinition
             { TypeKey = itemKey
               TypeName = "Item"
-              RecordFields = [ { FieldIndex = 0; FieldName = "marker"; FieldType = IrInt } ] }
+              RecordFields = [ { FieldIndex = 0; FieldName = "marker"; FieldType = IrInt } ]
+              ValidatorCall = None }
     let stepId, stepContract = primitiveContract "fold.step" [ PatternVariable 0; PatternVariable 1 ] [ PatternVariable 0 ] noEffects
     let tripleId, tripleContract = primitiveContract "fold.triple" [ PatternVariable 0; PatternVariable 1; PatternVariable 2 ] [ PatternVariable 0 ] noEffects
     let boolResultId, boolResultContract = primitiveContract "fold.bool-result" [ PatternVariable 0; PatternVariable 1 ] [ PatternBool ] noEffects
@@ -1404,6 +1495,7 @@ let private testCompilerLowering () =
     let record =
         { Name = "Customer"
           Fields = [ { Name = "id"; Type = TInt }; { Name = "active"; Type = TBool } ]
+          Validator = None
           SourceText = "record Customer"
           Span = line 1 }
     let scalar =
@@ -1516,7 +1608,7 @@ let private testCompilerLowering () =
     let usesGeneratedRecordTarget =
         operations "customer-build"
         |> List.exists (function
-            | IrOperation.MakeRecord(call, _) ->
+            | IrOperation.MakeRecord(call, _, _) ->
                 match call.ResolvedTarget with
                 | GeneratedWordTarget _ -> true
                 | _ -> false
@@ -1785,11 +1877,31 @@ let private testCompilerSnapshotIdentity () =
                           Type = if index = 159 then lastFieldType else TInt } ]
         { Name = "Wide"
           Fields = fields
+          Validator = None
           SourceText = "record Wide"
           Span = span }
     let recordContext fieldType = loweringContext Map.empty (Map.ofList [ "Wide", makeRecord fieldType ]) Map.empty
     let recordSnapshot = Compiler.compileIrProgram (recordContext TInt)
     expectDiagnostic "record layout after the hundredth field invalidates cached body" "IR_STALE_COMPILER_SNAPSHOT" (fun () -> Compiler.compileIrBodyAgainstProgram (recordContext TBool) recordSnapshot "eval" [] [] |> ignore)
+
+    let validatorEntry name =
+        wordEntry name [ TNamed "ValidatedWide" ] [ TBool ] Set.empty
+            [ Call("drop", span); Push(LBool true, span) ] 1 Candidate
+    let makeValidatedRecord validator =
+        { Name = "ValidatedWide"
+          Fields = [ { Name = "value"; Type = TInt } ]
+          Validator = Some validator
+          SourceText = "record ValidatedWide"
+          Span = span }
+    let validatedRecordContext validator =
+        let words =
+            Map.ofList
+                [ "validated-wide.valid-a?", validatorEntry "validated-wide.valid-a?"
+                  "validated-wide.valid-b?", validatorEntry "validated-wide.valid-b?" ]
+        loweringContext words (Map.ofList [ "ValidatedWide", makeValidatedRecord validator ]) Map.empty
+    let validatorSnapshot = Compiler.compileIrProgram (validatedRecordContext "validated-wide.valid-a?")
+    expectDiagnostic "changing only a record validator target invalidates the compiler snapshot" "IR_STALE_COMPILER_SNAPSHOT"
+        (fun () -> Compiler.compileIrBodyAgainstProgram (validatedRecordContext "validated-wide.valid-b?") validatorSnapshot "eval" [] [] |> ignore)
 
     let deepType = [ 1 .. 140 ] |> List.fold (fun current _ -> TList current) TInt
     let deepEntry = wordEntry "deep" [ deepType ] [ deepType ] Set.empty [] 1 Candidate

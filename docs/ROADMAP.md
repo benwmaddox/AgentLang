@@ -183,10 +183,22 @@ Business Transitions runner passed 8 groups / 5,382 assertions, with the origina
 words, 1 type, 7 tests and 3 examples, plus 15 reload checks. All 37 full Debug
 checks and 444 separate LLVM assertions pass; no agent-adoption or native List
 claim is made. General
-cross-field record validation and provider-state assertions remain pending.
-Native enum execution is still pending. Use new fixtures and preserve historical
-research inputs.
-Cross-field record construction and decision/executor stateful properties follow.
+cross-field validation and provider-state assertions were pending at that
+checkpoint. [Report 119](../reports/119-record-construction-invariants.md)
+adds optional whole-record predicates enforced by verified IR, the interpreter
+and the supported native record constructor. Focused checks pass: 191 IR,
+93 interpreter, 44 formatting, 1,110 Flow, 101 Source, 979 Flow Runtime,
+370 Storage, 5,479 business-transition and 455 native assertions. Persistence
+and library qualification pass before and after reload. The full Debug run passed 36/37 checks; its sole inspection-script
+compatibility failure was repaired and passed 31 assertions separately. Functions returning validated records with finite projections
+remain unqualifiable without a proven valid-value domain. This is implementation
+evidence, not fresh-agent adoption.
+
+Next run a bounded fresh-agent trial of discovery and construction-invariant
+adoption before adding more structural mechanisms. Provider-state assertions,
+broader module/library closure, test-local overrides and native enums remain
+pending. Use new fixtures and preserve historical research inputs.
+
 Report 111's extra-write control passed full library coverage but violated the
 IO contract. Make provider-state and effect-count assertions straightforward in
 authored tests, and require that control to fail under the stronger tests.

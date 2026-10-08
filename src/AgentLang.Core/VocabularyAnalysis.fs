@@ -46,15 +46,20 @@ module VocabularyAnalysis =
             | TInt | TFloat | TBool | TString | TUnit | TVar _ -> Set.empty
         collect typeValue
 
-    let private dependenciesFor (scalars: Map<string, ScalarEntry>) (entry: WordEntry) =
+    let private dependenciesFor (records: Map<string, RecordEntry>) (scalars: Map<string, ScalarEntry>) (entry: WordEntry) =
         match entry.Builtin with
         | None -> Compiler.dependencies entry.Definition.Body
+        | Some(RecordConstructor recordName) ->
+            records.TryFind recordName
+            |> Option.bind (fun record -> record.Definition.Validator)
+            |> Option.map Set.singleton
+            |> Option.defaultValue Set.empty
         | Some(ScalarConstructor scalarName) ->
             scalars.TryFind scalarName
             |> Option.bind (fun scalar -> scalar.Definition.Validator)
             |> Option.map Set.singleton
             |> Option.defaultValue Set.empty
-        | Some(BuiltinOp _ | RecordConstructor _ | RecordAccessor _ | ScalarAccessor _ | EnumCaseConstructor _) -> Set.empty
+        | Some(BuiltinOp _ | RecordAccessor _ | ScalarAccessor _ | EnumCaseConstructor _) -> Set.empty
 
     let private validateGeneratedReference (records: Map<string, RecordEntry>) (scalars: Map<string, ScalarEntry>) (enums: Map<string, EnumEntry>) wordName builtin =
         match builtin with
@@ -244,6 +249,10 @@ module VocabularyAnalysis =
             if key <> entry.Definition.Name then
                 raiseVocabulary "VOCABULARY_RECORD_KEY_MISMATCH" $"Record map key '{key}' does not match definition name '{entry.Definition.Name}'." (Some key) [ key ] [ entry.Definition.Name ]
             for field in entry.Definition.Fields do validateNamedReferences records scalars enums key field.Type
+            match entry.Definition.Validator with
+            | Some validator when not (words.ContainsKey validator) ->
+                raiseVocabulary "VOCABULARY_UNKNOWN_VALIDATOR" $"Record '{key}' names missing validator word '{validator}'." (Some key) [ "known validator word" ] [ validator ]
+            | None | Some _ -> ()
 
         for KeyValue(key, entry) in scalars do
             if key <> entry.Definition.Name then
@@ -295,7 +304,7 @@ module VocabularyAnalysis =
         | None -> ()
 
         for KeyValue(name, entry) in words do
-            for dependency in dependenciesFor scalars entry do
+            for dependency in dependenciesFor records scalars entry do
                 if not (words.ContainsKey dependency) then
                     raiseVocabulary "VOCABULARY_UNKNOWN_WORD" $"Word '{name}' refers to missing word '{dependency}'." (Some name) [ "known word reference" ] [ dependency ]
 
@@ -391,7 +400,17 @@ module VocabularyAnalysis =
                 let computed =
                     match entry.Builtin with
                     | Some(BuiltinOp _) -> { emptyExpansion with PrimitiveCallSites = BigInteger.One }
-                    | Some(RecordConstructor _ | RecordAccessor _ | ScalarAccessor _ | EnumCaseConstructor _) -> addGeneratedInvocation emptyExpansion
+                    | Some(RecordConstructor recordName) ->
+                        let constructor = addGeneratedInvocation emptyExpansion
+                        match index.Records[recordName].Definition.Validator with
+                        | None -> constructor
+                        | Some validator ->
+                            let validatorExpansion = expandWord nextActive validator
+                            let validatorExpansion =
+                                if index.Words[validator].Builtin.IsNone then addAuthoredInvocation validatorExpansion
+                                else validatorExpansion
+                            addExpansion constructor validatorExpansion
+                    | Some(RecordAccessor _ | ScalarAccessor _ | EnumCaseConstructor _) -> addGeneratedInvocation emptyExpansion
                     | Some(ScalarConstructor scalarName) ->
                         let constructor = addGeneratedInvocation emptyExpansion
                         match index.Scalars[scalarName].Definition.Validator with

@@ -60,8 +60,18 @@ whose plan requires a real FIFO head. The focused business-transition run passed
 8 groups and 5,382 assertions, preserving the 53-word / 31-type baseline; the
 repository-wide Debug gate passes all 37 checks, and the separate LLVM suite
 passes 444 assertions. This is not an agent or native
-performance result. General cross-field validators and provider-state
-assertions remain pending.
+performance result. At that checkpoint, general cross-field validators and
+provider-state assertions remained pending.
+
+[119 — Whole-record construction invariants](119-record-construction-invariants.md)
+adds optional pure record predicates carried through verified IR construction,
+with focused Core/interpreter, persistence, library qualification and native
+O0/O2 evidence. The separate validated lookup rejects mismatched identifiers
+before and after reload. Focused business tests pass 5,479 assertions; native
+conformance passes 455. The full Debug run passed 36/37 checks; the remaining
+inspection-script repair passed its exact 31-assertion probe separately. The report is an
+implementation checkpoint, not fresh-agent adoption; provider-state assertions,
+broader module/library closure and test-local override rules remain open.
 
 The latest ownership demonstration is [108 — Native handler mailbox suspension](108-native-mailbox-suspension.md):
 120 checks across Core/O0/O2, with readable Flow/2 handlers and opaque retained

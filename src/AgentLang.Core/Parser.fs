@@ -564,28 +564,35 @@ module Parser =
                     let name = parseHeader file lines[cursor] "record"
                     if not (validTypeName name) then fail file lines[cursor].Number 1 "PARSE_INVALID_TYPE_NAME" "Record names must be identifiers and cannot shadow built-in types or reserved type variables."
                     let fields = ResizeArray<RecordField>()
+                    let mutable validator = None
                     for index = cursor + 1 to finish - 1 do
                         let line = lines[index]
                         if not (String.IsNullOrWhiteSpace(stripComment line.Text)) then
                             let fieldText = stripComment line.Text |> fun value -> value.Trim()
-                            let prefixValid =
-                                fieldText.StartsWith("field", StringComparison.Ordinal)
-                                && fieldText.Length > "field".Length
-                                && Char.IsWhiteSpace fieldText["field".Length]
-                            if not prefixValid then fail file line.Number 1 "PARSE_INVALID_FIELD" "Record fields use 'field name Type'."
-                            let rest = fieldText.Substring("field".Length).Trim()
-                            let separator = rest |> Seq.tryFindIndex Char.IsWhiteSpace
-                            match separator with
-                            | Some index when index > 0 ->
-                                let fieldName = rest.Substring(0, index)
-                                let typeText = rest.Substring(index).Trim()
-                                if not (validWordName fieldName) || typeText = "" then fail file line.Number 1 "PARSE_INVALID_FIELD" "Record fields use 'field name Type' with a valid field name and a closed type."
-                                fields.Add { Name = fieldName; Type = parseType file line.Number typeText }
-                            | _ -> fail file line.Number 1 "PARSE_INVALID_FIELD" "Record fields use 'field name Type'."
+                            if fieldText.StartsWith("validate ", StringComparison.Ordinal) then
+                                if validator.IsSome then fail file line.Number 1 "PARSE_DUPLICATE_RECORD_VALIDATOR" "A record may declare at most one validator."
+                                let name = fieldText.Substring("validate".Length).Trim()
+                                if not (validWordName name) then fail file line.Number 1 "PARSE_INVALID_RECORD_VALIDATOR" "Record validators use 'validate word.name'."
+                                validator <- Some name
+                            else
+                                let prefixValid =
+                                    fieldText.StartsWith("field", StringComparison.Ordinal)
+                                    && fieldText.Length > "field".Length
+                                    && Char.IsWhiteSpace fieldText["field".Length]
+                                if not prefixValid then fail file line.Number 1 "PARSE_INVALID_FIELD" "Record fields use 'field name Type'."
+                                let rest = fieldText.Substring("field".Length).Trim()
+                                let separator = rest |> Seq.tryFindIndex Char.IsWhiteSpace
+                                match separator with
+                                | Some index when index > 0 ->
+                                    let fieldName = rest.Substring(0, index)
+                                    let typeText = rest.Substring(index).Trim()
+                                    if not (validWordName fieldName) || typeText = "" then fail file line.Number 1 "PARSE_INVALID_FIELD" "Record fields use 'field name Type' with a valid field name and a closed type."
+                                    fields.Add { Name = fieldName; Type = parseType file line.Number typeText }
+                                | _ -> fail file line.Number 1 "PARSE_INVALID_FIELD" "Record fields use 'field name Type'."
                     if fields.Count = 0 then fail file lines[cursor].Number 1 "PARSE_EMPTY_RECORD" "A record must declare at least one field."
                     let duplicate = fields |> Seq.groupBy (fun field -> field.Name) |> Seq.tryFind (fun (_, values) -> Seq.length values > 1)
                     if duplicate.IsSome then fail file lines[cursor].Number 1 "PARSE_DUPLICATE_FIELD" "Record field names must be unique."
-                    records.Add { Name = name; Fields = List.ofSeq fields; SourceText = blockSource lines cursor finish; Span = span file lines[cursor].Number 1 lines[cursor].Text.Length }
+                    records.Add { Name = name; Fields = List.ofSeq fields; Validator = validator; SourceText = blockSource lines cursor finish; Span = span file lines[cursor].Number 1 lines[cursor].Text.Length }
                     cursor <- finish + 1
                 elif content.StartsWith("type ", StringComparison.Ordinal) then
                     let finish = blockEnd file lines cursor

@@ -952,6 +952,31 @@ module FlowParser =
         && (name |> Seq.forall (fun value -> Char.IsLetterOrDigit value || value = '.' || value = '-' || value = '_' || value = '?' || value = '!'))
         && not (name.Contains('.') || reservedWordNames.Contains name)
 
+    let private parseValidatorNameFor (kind: string) (state: State) =
+        let label = if kind = "RECORD" then "Record" else "Scalar"
+        let code = "FLOW_" + kind + "_VALIDATOR_QUALIFICATION"
+        match current state with
+        | Some root when root.Text = "::" ->
+            consume state |> ignore
+            let target = expectIdentifier state
+            if peek state = Some "::" then
+                let next = current state |> Option.get
+                fail state.File root.Line root.Column (next.Offset + next.Text.Length - root.Offset) code $"An absolute-root {label.ToLowerInvariant()} validator must name one unqualified dictionary key."
+            target.Text
+        | Some first when first.Kind = Identifier ->
+            consume state |> ignore
+            if not (accept state "::") then
+                fail state.File first.Line first.Column first.Text.Length code $"{label} validators require an explicit '::rootName' or 'namespace::wordName' reference."
+            let segments = ResizeArray<string>()
+            segments.Add first.Text
+            segments.Add((expectIdentifier state).Text)
+            while accept state "::" do segments.Add((expectIdentifier state).Text)
+            String.concat "." segments
+        | Some token -> fail state.File token.Line token.Column token.Text.Length code $"{label} validators require an explicit '::rootName' or 'namespace::wordName' reference."
+        | None -> tokenError state "FLOW_INCOMPLETE_INPUT" $"Expected a qualified {label.ToLowerInvariant()} validator reference."
+
+    let private parseValidatorName (state: State) = parseValidatorNameFor "SCALAR" state
+
     let private parseRecordState (state: State) =
         let startToken = expect state "record"
         let nameToken = expectIdentifier state
@@ -960,48 +985,42 @@ module FlowParser =
         expect state "{" |> ignore
         let fields = ResizeArray<RecordField>()
         let fieldNames = HashSet<string>(StringComparer.Ordinal)
+        let mutable validator = None
         while not (atEnd state) && peek state <> Some "}" do
-            expect state "field" |> ignore
-            let fieldName = expectIdentifier state
-            if not (validFieldName fieldName.Text) then
-                fail state.File fieldName.Line fieldName.Column fieldName.Text.Length "FLOW_RECORD_FIELD_NAME_INVALID" "Record fields must use non-reserved identifier names."
-            if not (fieldNames.Add fieldName.Text) then
-                fail state.File fieldName.Line fieldName.Column fieldName.Text.Length "FLOW_RECORD_DUPLICATE_FIELD" $"Record field '{fieldName.Text}' is repeated."
-            expect state ":" |> ignore
-            let fieldType = parseType state
-            match current state with
-            | Some token when token.Text = ";" -> consume state |> ignore
-            | Some token -> fail state.File token.Line token.Column token.Text.Length "FLOW_RECORD_FIELD_SEMICOLON" "Every Flow record field must end with ';'."
-            | None -> tokenError state "FLOW_INCOMPLETE_INPUT" "Expected ';' after the Flow record field."
-            fields.Add { Name = fieldName.Text; Type = fieldType }
+            match peek state with
+            | Some "field" ->
+                expect state "field" |> ignore
+                let fieldName = expectIdentifier state
+                if not (validFieldName fieldName.Text) then
+                    fail state.File fieldName.Line fieldName.Column fieldName.Text.Length "FLOW_RECORD_FIELD_NAME_INVALID" "Record fields must use non-reserved identifier names."
+                if not (fieldNames.Add fieldName.Text) then
+                    fail state.File fieldName.Line fieldName.Column fieldName.Text.Length "FLOW_RECORD_DUPLICATE_FIELD" $"Record field '{fieldName.Text}' is repeated."
+                expect state ":" |> ignore
+                let fieldType = parseType state
+                match current state with
+                | Some token when token.Text = ";" -> consume state |> ignore
+                | Some token -> fail state.File token.Line token.Column token.Text.Length "FLOW_RECORD_FIELD_SEMICOLON" "Every Flow record field must end with ';'."
+                | None -> tokenError state "FLOW_INCOMPLETE_INPUT" "Expected ';' after the Flow record field."
+                fields.Add { Name = fieldName.Text; Type = fieldType }
+            | Some "validate" ->
+                let validateToken = expect state "validate"
+                if validator.IsSome then
+                    fail state.File validateToken.Line validateToken.Column validateToken.Text.Length "FLOW_RECORD_VALIDATOR_DUPLICATE" "A record may declare at most one validator."
+                let validatorName = parseValidatorNameFor "RECORD" state
+                if peek state = Some "(" then
+                    let token = current state |> Option.get
+                    fail state.File token.Line token.Column token.Text.Length "FLOW_RECORD_VALIDATOR_CALL" "Record validator declarations name a word; they cannot invoke it."
+                expect state ";" |> ignore
+                validator <- Some validatorName
+            | _ -> tokenError state "FLOW_RECORD_DECLARATION" "Record bodies contain field declarations and at most one validator declaration."
         let endToken = expect state "}"
         if fields.Count = 0 then
             fail state.File startToken.Line startToken.Column (endToken.Offset + endToken.Text.Length - startToken.Offset) "FLOW_RECORD_EMPTY" "A Flow record must declare at least one field."
         { Name = nameToken.Text
           Fields = List.ofSeq fields
+          Validator = validator
           SourceText = sourceSlice state startToken endToken
           Span = sourceSpan state.File startToken (Some endToken) }
-
-    let private parseValidatorName (state: State) =
-        match current state with
-        | Some root when root.Text = "::" ->
-            consume state |> ignore
-            let target = expectIdentifier state
-            if peek state = Some "::" then
-                let next = current state |> Option.get
-                fail state.File root.Line root.Column (next.Offset + next.Text.Length - root.Offset) "FLOW_SCALAR_VALIDATOR_QUALIFICATION" "An absolute-root scalar validator must name one unqualified dictionary key."
-            target.Text
-        | Some first when first.Kind = Identifier ->
-            consume state |> ignore
-            if not (accept state "::") then
-                fail state.File first.Line first.Column first.Text.Length "FLOW_SCALAR_VALIDATOR_QUALIFICATION" "Scalar validators require an explicit '::rootName' or 'namespace::wordName' reference."
-            let segments = ResizeArray<string>()
-            segments.Add first.Text
-            segments.Add((expectIdentifier state).Text)
-            while accept state "::" do segments.Add((expectIdentifier state).Text)
-            String.concat "." segments
-        | Some token -> fail state.File token.Line token.Column token.Text.Length "FLOW_SCALAR_VALIDATOR_QUALIFICATION" "Scalar validators require an explicit '::rootName' or 'namespace::wordName' reference."
-        | None -> tokenError state "FLOW_INCOMPLETE_INPUT" "Expected a qualified scalar validator reference."
 
     let private parseScalarState (state: State) =
         let startToken = expect state "type"

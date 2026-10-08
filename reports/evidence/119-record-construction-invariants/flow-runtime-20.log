@@ -1,0 +1,5 @@
+Unhandled exception. System.Exception: direct recursive-call diagnostic includes both generated constructor and validator nodes: word:word_797b3bcd5bdb4a07b225591255269878 -> word:word_797b3bcd5bdb4a07b225591255269878
+   at AgentLang.Flow.Runtime.Tests.Program.check(Boolean condition, String message) in D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\Program.fs:line 16
+   at AgentLang.Flow.Runtime.Tests.Program.assertCycleContext@3542T.Invoke(a label, JsonObject response) in D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\Program.fs:line 3546
+   at AgentLang.Flow.Runtime.Tests.Program.testRecordValidatorRuntimeAndPersistence(String root) in D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\Program.fs:line 3549
+   at AgentLang.Flow.Runtime.Tests.Program.main(String[] _arg1) in D:\code\AgentLang\tests\AgentLang.Flow.Runtime.Tests\Program.fs:line 3869

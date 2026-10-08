@@ -37,6 +37,13 @@ module FiniteCoverage =
         | OpenNominalScalar of ProgramTypeKey * IrType * Shape
         | Unsupported of string
 
+    let rec private hasFiniteProjection = function
+        | Closed(_, values) -> not values.IsEmpty
+        | OpenScalar _ | OpenList _ | Unsupported _ -> false
+        | OpenOption _ | OpenResult _ -> true
+        | OpenRecord(_, _, fields) -> fields |> List.exists (fun (_, _, _, shape) -> hasFiniteProjection shape)
+        | OpenNominalScalar(_, _, shape) -> hasFiniteProjection shape
+
     let private typeName (program: IrProgram) key =
         match program.NominalTypesByKey.TryFind key with
         | Some(IrRecordDefinition definition) -> definition.TypeName
@@ -160,6 +167,9 @@ module FiniteCoverage =
                         |> List.map (fun field -> field.FieldIndex, field.FieldName, field.FieldType, buildShape program nextVisited field.FieldType)
                     match shaped |> List.tryPick (fun (_, _, _, shape) -> match shape with Unsupported reason -> Some reason | _ -> None) with
                     | Some reason -> Unsupported reason
+                    | None when definition.ValidatorCall.IsSome && (List.isEmpty shaped || (shaped |> List.exists (fun (_, _, _, shape) -> hasFiniteProjection shape))) ->
+                        Unsupported $"validated record {definition.TypeName} has a finite domain or finite projections but no proven complete valid-value domain"
+                    | None when definition.ValidatorCall.IsSome -> OpenRecord(key, definition.TypeName, shaped)
                     | None when shaped |> List.forall (fun (_, _, _, shape) -> match shape with Closed _ -> true | _ -> false) ->
                         let dimensions =
                             shaped

@@ -1,0 +1,121 @@
+{
+  "baseRevision": "db481e26d1bf5016aba6ff708d099b52a6d3e6ae",
+  "files": [
+    {
+      "path": "examples/business-validated-lookup.agent",
+      "sha256": "374cd3c2b9e8ee6fa2dc6bd946cafae8b368acdc295b9154781a4843bf28e6e8"
+    },
+    {
+      "path": "src/AgentLang.Core/AuthoringHelp.fs",
+      "sha256": "3994bb77e9dda3f3654744cd87bba3d4b7273a4a2ecf1f5df879ddb9d79543a5"
+    },
+    {
+      "path": "src/AgentLang.Core/Compiler.fs",
+      "sha256": "22d5f12ca4f68b199314db04b6f49658516e85765ba989e14c0aca3960929486"
+    },
+    {
+      "path": "src/AgentLang.Core/Core.fs",
+      "sha256": "57fe2d9512afa26fc920c06a8b4558bdf965157e27a2bd35ceda64dfabb85428"
+    },
+    {
+      "path": "src/AgentLang.Core/Discovery.fs",
+      "sha256": "e79746a41666d11acf928c201e054a4f7cccc0c2d04de3c95bd72db406624842"
+    },
+    {
+      "path": "src/AgentLang.Core/FiniteCoverage.fs",
+      "sha256": "cb3f072280035d004bcd573648e6da5b1b396c8ab6d0c2760cbf243793695e3c"
+    },
+    {
+      "path": "src/AgentLang.Core/FlowLowering.fs",
+      "sha256": "1d9c6871408b33b9d0a7eff51ee3f354093409234fc10c1e07f33a1655c1292c"
+    },
+    {
+      "path": "src/AgentLang.Core/FlowParser.fs",
+      "sha256": "6f0461fd29d689607190618880efdfdfaf8378af665ec7d68b0793767029408d"
+    },
+    {
+      "path": "src/AgentLang.Core/FlowSyntax.fs",
+      "sha256": "9ccff37dbc15983831b7f0120774c7878047ff1e8302fe0dd73aedd33cff72fc"
+    },
+    {
+      "path": "src/AgentLang.Core/IrFormatting.fs",
+      "sha256": "9f219735b931f4503ec0f8e5a217630b2fc8a38b8fb84931a17c5959316ecdb7"
+    },
+    {
+      "path": "src/AgentLang.Core/IrInterpreter.fs",
+      "sha256": "f223a37384ac014bef6c48dc920f034aba530761dcc441c46bba30f2151aa24a"
+    },
+    {
+      "path": "src/AgentLang.Core/Parser.fs",
+      "sha256": "996140b145d04314da8ae9755e926323ff71852d36a49383f75b0941aa304521"
+    },
+    {
+      "path": "src/AgentLang.Core/Runtime.fs",
+      "sha256": "f5bab04a89b8cd6c268e75e0bb9b265112843a81e388920af0942d9c783079d9"
+    },
+    {
+      "path": "src/AgentLang.Core/Source.fs",
+      "sha256": "f661d907d27be0627197e20cc0b008bbd562b7b14a33c0dd9a6ffd17c092f9fc"
+    },
+    {
+      "path": "src/AgentLang.Core/TypedIR.fs",
+      "sha256": "2994d472747c01c15b5e2091bd5dbaad6d07493ff10b781eb867712266fab013"
+    },
+    {
+      "path": "src/AgentLang.Core/VocabularyAnalysis.fs",
+      "sha256": "0be80d5bc6f5774151cc054e2c4225297c4bbfcb8d09d5f91b447f4d295bd826"
+    },
+    {
+      "path": "src/AgentLang.Llvm/LlvmAot.fs",
+      "sha256": "1a713d87c216ec0f0e41ef13072ae102797f5a612352c8d82e861be3e871ffe0"
+    },
+    {
+      "path": "tests/AgentLang.Business.Transitions.Tests/Program.fs",
+      "sha256": "8dc1e478cd1a20d18d2e3c7e057bb4777e6967e967dcdd2b3f3dcffd484f18ec"
+    },
+    {
+      "path": "tests/AgentLang.Discovery.Tests/Program.fs",
+      "sha256": "35a97fe5bec9bd7fbaf890479e5967a9f23c07050530d566376cda8d1339e720"
+    },
+    {
+      "path": "tests/AgentLang.Flow.Runtime.Tests/Program.fs",
+      "sha256": "889921b253589c572167bda767a3ceddc163a440d05d796a78b000958c44d8bf"
+    },
+    {
+      "path": "tests/AgentLang.Flow.Tests/Program.fs",
+      "sha256": "a95d52609fd4a5edf6751ab970cf6a0f4434084c2d7a425d0ddc7bd25eee2420"
+    },
+    {
+      "path": "tests/AgentLang.IR.Formatting.Tests/Program.fs",
+      "sha256": "1735817e9489bafb82269bdb3760e109e40fc89985c6aa0225df763e59095206"
+    },
+    {
+      "path": "tests/AgentLang.IR.Interpreter.Tests/Program.fs",
+      "sha256": "a3b1c4bbd11bf49f8588104983e7fd26ec60f41d4abb90bd6646693f5e4b2f50"
+    },
+    {
+      "path": "tests/AgentLang.IR.Tests/Program.fs",
+      "sha256": "49d0df0650f4ae2f13303778f3d7cb4f4b73198d23bdb70e1f5e67c54d3226a7"
+    },
+    {
+      "path": "tests/AgentLang.Llvm.Tests/Program.fs",
+      "sha256": "077c6520e7ed4faabf21b618cdfa118ee088aab447c962034dc3baf538b12029"
+    },
+    {
+      "path": "tests/AgentLang.Source.Tests/Program.fs",
+      "sha256": "1f8af582e59f7d4cab5bbe95989e44a80d948b575cf27ed1292b72e7bf74c2b4"
+    },
+    {
+      "path": "tests/AgentLang.Storage.Tests/Program.fs",
+      "sha256": "2529ac34c12ff635e3bb2f7feebba2761ef0557393e3a5538b13057443a0b17d"
+    },
+    {
+      "path": "tests/AgentLang.ValueInspection.Tests/Program.fs",
+      "sha256": "ae5bb9c619a1627e950f74cdb9f789c43fb39ab5552e293fb7db7242dba3a510"
+    },
+    {
+      "path": "tests/AgentLang.Vocabulary.Tests/Program.fs",
+      "sha256": "41d16b88aaeb3f68e06bab3640e349918ba753f2188ae7b1a6f59551971c65d1"
+    }
+  ]
+}

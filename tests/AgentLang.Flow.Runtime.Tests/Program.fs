@@ -2159,9 +2159,65 @@ fn renewal.dependent(state: RenewalState) -> String {
               "test coverage.bool-result/error-after-normal { coverage::bool-result(false); ::divide(1, 0) => error RUNTIME_DIVIDE_BY_ZERO }" ]
         let boolSource = boolWord + "\n\n" + String.concat "\n" boolTests
         defineFlowProject boolEngine boolSource [ "syntaxVersion", jint 2 ] |> expectOk "define Bool function with normal and expected-error test paths" |> ignore
-        let returnGap = commit boolEngine "commit" "coverage.bool-result" [ "library", jbool true ] |> expectError "LIBRARY_FINITE_COVERAGE_INCOMPLETE"
-        let missingReturn = jsonArrayStrings returnGap.["error"].["expected"]
-        check (missingReturn |> List.contains "return[0] Bool: false") "a passing expected-runtime-error test covers its Bool input but contributes no normal-return false value"
+        assertAllPassed 2 (dispatch boolEngine "test" [ "word", jstr "coverage.bool-result" ] |> expectOk "run normal-return and expected-error Bool cases")
+        let boolCoverage =
+            dispatch boolEngine "describe" [ "word", jstr "coverage.bool-result" ]
+            |> expectOk "inspect actual Bool returns from passing expected-error tests"
+            |> fun response -> response.["data"].["coverage"].["finiteCoverage"]
+        equal 2 (boolCoverage.["targetInvocations"].GetValue<int>()) "both actual function invocations are retained"
+        equal true (boolValue boolCoverage.["complete"]) "a completed false return before a later expected error contributes finite evidence"
+        commit boolEngine "commit" "coverage.bool-result" [ "library", jbool true ]
+        |> expectOk "qualify Bool function after retaining its completed return before the expected error"
+        |> ignore
+
+        let throwingProject = Path.Combine(root, "finite-coverage-throw-before-return")
+        let throwingEngine = Runtime.Engine(throwingProject, Set.empty)
+        let throwingSource =
+            "fn coverage.bool-before-throw(value: Bool) -> Bool {\n"
+            + "    if value { ::divide(1, 0); true } else { false }\n"
+            + "}\n\n"
+            + "test coverage.bool-before-throw/false { coverage::bool-before-throw(false) => false }\n"
+            + "test coverage.bool-before-throw/throw { coverage::bool-before-throw(true) => error RUNTIME_DIVIDE_BY_ZERO }"
+        defineFlowProject throwingEngine throwingSource [ "syntaxVersion", jint 2 ]
+        |> expectOk "define a target that can throw before producing a return"
+        |> ignore
+        assertAllPassed 2 (dispatch throwingEngine "test" [ "word", jstr "coverage.bool-before-throw" ] |> expectOk "run a normal false return and a throw-before-return case")
+        let throwingCoverage =
+            dispatch throwingEngine "describe" [ "word", jstr "coverage.bool-before-throw" ]
+            |> expectOk "inspect finite returns when the target throws before returning"
+            |> fun response -> response.["data"].["coverage"].["finiteCoverage"]
+        check
+            (jsonArrayStrings throwingCoverage.["returns"].[0].["missing"] |> List.contains "true")
+            "a target that throws before return does not receive a fabricated true observation"
+        let throwGap = commit throwingEngine "commit" "coverage.bool-before-throw" [ "library", jbool true ] |> expectError "LIBRARY_COVERAGE_INCOMPLETE"
+        equal "LIBRARY_COVERAGE_INCOMPLETE" (stringValue throwGap.["error"].["code"])
+            "the real missing instruction or branch still blocks publication"
+
+        let failedProject = Path.Combine(root, "finite-coverage-failed-assertion-control")
+        let failedEngine = Runtime.Engine(failedProject, Set.empty)
+        let failedSource =
+            "fn coverage.failed-assertion(value: Bool) -> Bool { if value { true } else { false } }\n\n"
+            + "test coverage.failed-assertion/wrong-value { coverage::failed-assertion(false) => true }\n"
+            + "test coverage.failed-assertion/wrong-error-code { coverage::failed-assertion(false); ::divide(1, 0) => error RUNTIME_NOT_FOUND }"
+        defineFlowProject failedEngine failedSource [ "syntaxVersion", jint 2 ]
+        |> expectOk "define a target with a failing expected-value assertion"
+        |> ignore
+        let failedRows =
+            dispatch failedEngine "test" [ "word", jstr "coverage.failed-assertion" ]
+            |> expectOk "run the deliberately failing assertion control"
+            |> fun response -> response.["data"].["results"].AsArray()
+        equal 2 failedRows.Count "failed assertion controls both run"
+        let rowFor name = failedRows |> Seq.find (fun row -> stringValue row.["name"] = name)
+        equal false (boolValue (rowFor "wrong-value").["passed"]) "wrong expected value leaves the test failed"
+        equal false (boolValue (rowFor "wrong-error-code").["passed"]) "wrong expected error code leaves the test failed"
+        let failedCoverage =
+            dispatch failedEngine "describe" [ "word", jstr "coverage.failed-assertion" ]
+            |> expectOk "inspect finite evidence after the failing assertion control"
+            |> fun response -> response.["data"].["coverage"].["finiteCoverage"]
+        equal 0 (failedCoverage.["targetInvocations"].GetValue<int>()) "failed assertions contribute no finite return observations"
+        commit failedEngine "commit" "coverage.failed-assertion" [ "library", jbool true ]
+        |> expectError "COMMIT_TESTS_FAILED"
+        |> ignore
 
         let refinedProject = Path.Combine(root, "finite-coverage-refined-string-result")
         let refinedEngine = Runtime.Engine(refinedProject, Set.empty)
@@ -3343,6 +3399,234 @@ fn renewal.dependent(state: RenewalState) -> String {
         equal emailTypeSource (stringValue (sourceType snapshotReload "Email" |> expectOk "read Flow scalar source after snapshot restore" |> fun response -> response.["data"])) "snapshot restore retains exact authored Flow type bytes"
         assertStructuredFailure "snapshot-removed Flow type source" (sourceType snapshotReload "SnapshotOnly")
 
+    let private testRecordValidatorRuntimeAndPersistence root =
+        let project = Path.Combine(root, "flow-record-validator-runtime")
+        let engine = Runtime.Engine(project, Set.empty, "2042-03-04T05:06:07Z")
+        let store = Storage.create project
+        let targetId = "10000000-0000-0000-0000-000000000031"
+        let matchingCustomer =
+            "customer::new(id = CustomerId::new(\"10000000-0000-0000-0000-000000000031\"))"
+        let mismatchCustomer =
+            "customer::new(id = CustomerId::new(\"20000000-0000-0000-0000-000000000031\"))"
+        let noneLookup =
+            $"customer::lookup-valid?(validatedCustomerLookup::new(target = CustomerId::new(\"{targetId}\"), found = option::none<Customer>()))"
+        let matchingLookup =
+            $"customer::lookup-valid?(validatedCustomerLookup::new(target = CustomerId::new(\"{targetId}\"), found = option::some<Customer>({matchingCustomer})))"
+        let invalidConstructor =
+            $"validatedCustomerLookup::new(target = CustomerId::new(\"{targetId}\"), found = option::some<Customer>({mismatchCustomer}))"
+        let recordSource =
+            "record ValidatedCustomerLookup {\n"
+            + "    field target: CustomerId;\n"
+            + "    field found: Option<Customer>;\n"
+            + "    validate customer::lookup-valid?;\n"
+            + "}"
+        let validatorSource =
+            "fn customer.lookup-valid?(value: ValidatedCustomerLookup) -> Bool {\n"
+            + "    doc \"A found customer must have the requested ID; no match is a valid lookup result.\"\n"
+            + "    match value.found {\n"
+            + "        some customer => { customer.id == value.target }\n"
+            + "        none => { true }\n"
+            + "    }\n"
+            + "}"
+        let tests =
+            [ "test customer.lookup-valid?/none {\n    " + noneLookup + "\n    => true\n}"
+              "test customer.lookup-valid?/matching {\n    " + matchingLookup + "\n    => true\n}"
+              "test customer.lookup-valid?/mismatch {\n    " + invalidConstructor + "\n    => error RECORD_VALIDATION_FAILED\n}" ]
+        let supportTypes =
+            "type CustomerId : String { }\n\n"
+            + "record Customer { field id: CustomerId; }"
+        let source = String.concat "\n\n" ([ supportTypes; recordSource; validatorSource ] @ tests)
+        defineFlowProject engine source [ "syntaxVersion", jint 2 ]
+        |> expectOk "define the Flow/2 complete-record CustomerLookup invariant"
+        |> ignore
+
+        assertAllPassed 3 (dispatch engine "test" [ "word", jstr "customer.lookup-valid?" ] |> expectOk "run none, matching, and rejecting record-validator cases")
+        let coverage =
+            dispatch engine "describe" [ "word", jstr "customer.lookup-valid?" ]
+            |> expectOk "inspect record-validator finite return coverage"
+            |> fun response -> response.["data"].["coverage"].["finiteCoverage"]
+        check (coverage.["targetInvocations"].GetValue<int>() > 0) "the validator is invoked by its generated record constructor"
+        equal true (boolValue coverage.["complete"]) "the validator's true and false Bool returns are observed"
+        let observedReturns = jsonArrayStrings coverage.["returns"].[0].["observed"]
+        check (observedReturns |> List.contains "true") "a valid none/matching lookup observes the validator's true return"
+        check (observedReturns |> List.contains "false") "the expected constructor rejection retains the validator's completed false return"
+
+        commit engine "commit" "customer.lookup-valid?" [ "library", jbool true ]
+        |> expectOk "qualify the predicate itself from its true and expected rejected-constructor tests"
+        |> ignore
+        let qualifiedValidator = dispatch engine "describe" [ "word", jstr "customer.lookup-valid?" ] |> expectOk "inspect predicate maturity after qualification"
+        equal "library" (stringValue qualifiedValidator.["data"].["maturity"]) "the complete-record predicate itself reaches library maturity"
+        let manifest = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun loaded -> loaded.Manifest.Value
+        let typeSource = manifest.Types |> List.find (fun item -> item.Name = "ValidatedCustomerLookup")
+        let validatorId = getWordId engine "customer.lookup-valid?"
+        equal (Some(StoredCallTarget.UserWord validatorId)) typeSource.ValidatorTarget "record type persists the predicate's stable WordId target"
+        equal { Frontend = SourceFrontend.Flow; Version = 2 } typeSource.SourceFormat "complete-record source remains Flow/2"
+        equal recordSource (Storage.readSource store typeSource.Definition |> Result.defaultWith (fun problem -> failwith problem.Message)) "validated record source is retained byte-for-byte"
+        let predicateRevision = manifest.Revisions |> List.find (fun revision -> revision.Name = "customer.lookup-valid?")
+        let mismatchBindings =
+            predicateRevision.CallBindings
+            |> List.filter (fun binding -> binding.CaseName = Some "mismatch" && binding.BodyRole = StoredCallBodyRole.Actual)
+        let recordConstructorBindings =
+            mismatchBindings
+            |> List.filter (fun binding ->
+                match binding.Target with
+                | StoredCallTarget.GeneratedWord identity -> identity.EndsWith("validatedCustomerLookup.new", StringComparison.Ordinal)
+                | _ -> false)
+        equal 1 recordConstructorBindings.Length "the rejection test persists its authored generated record-constructor call"
+        check
+            (recordConstructorBindings.Head.RequestedName.Contains("validatedCustomerLookup", StringComparison.Ordinal))
+            "the authored mismatch-test call binding retains the constructor request"
+        check
+            (mismatchBindings |> List.forall (fun binding -> binding.Target <> StoredCallTarget.UserWord validatorId))
+            "the implicit predicate invocation does not become an authored Flow binding"
+
+        let dependentConstructors =
+            dispatch engine "search-dependency" [ "word", jstr "customer.lookup-valid?" ]
+            |> expectOk "search generated constructors that depend on the predicate"
+            |> fun response -> jsonArrayStrings response.["data"].["words"]
+        check (dependentConstructors |> List.contains "validatedCustomerLookup.new") "Discovery exposes the generated constructor's validator edge"
+        let transitiveCallers =
+            dispatch engine "transitive-callers" [ "word", jstr "customer.lookup-valid?" ]
+            |> expectOk "inspect callers of the persisted predicate"
+            |> fun response -> jsonArrayStrings response.["data"].["callers"]
+        check (transitiveCallers |> List.contains "validatedCustomerLookup.new") "Discovery exposes the generated constructor as a validator caller"
+
+        let reloaded = Runtime.Engine(project, Set.empty, "2042-03-04T05:06:07Z")
+        equal validatorId (getWordId reloaded "customer.lookup-valid?") "record validator target WordId survives a fresh Engine load"
+        equal recordSource (stringValue (dispatch reloaded "source" [ "type", jstr "ValidatedCustomerLookup" ] |> expectOk "read validated record source after reload" |> fun response -> response.["data"]))
+            "fresh load retains the exact validated record source"
+        equal "library" (stringValue (dispatch reloaded "describe" [ "word", jstr "customer.lookup-valid?" ] |> expectOk "inspect predicate maturity after reload" |> fun response -> response.["data"].["maturity"]))
+            "fresh load retains the validator's library maturity"
+        assertAllPassed 3 (dispatch reloaded "test" [ "word", jstr "customer.lookup-valid?" ] |> expectOk "rerun record-validator tests after reload")
+        let invalidAfterReload = evalFlow reloaded invalidConstructor |> expectError "RECORD_VALIDATION_FAILED"
+        equal [ "validator returns true" ] (jsonArrayStrings invalidAfterReload.["error"].["expected"]) "record validation failure states the required predicate result"
+        equal [ "false" ] (jsonArrayStrings invalidAfterReload.["error"].["actual"]) "record validation failure reports the actual false result"
+
+        let beforeReplacement = Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun loaded -> loaded.ManifestHash
+        let replacementSource =
+            "fn customer.lookup-valid?(value: ValidatedCustomerLookup) -> Bool { true }\n\n"
+            + $"test customer.lookup-valid?/replacement {{ {noneLookup} => true }}"
+        defineFlowProject engine replacementSource
+            [ "syntaxVersion", jint 2; "replace", jbool true; "expectedRevision", jint 1 ]
+        |> expectError "TYPE_VALIDATOR_FROZEN"
+        |> ignore
+        equal beforeReplacement (Storage.load store |> Result.defaultWith (fun problem -> failwith problem.Message) |> fun loaded -> loaded.ManifestHash)
+            "rejected predicate replacement leaves the durable validator binding unchanged"
+        dispatch engine "rename" [ "word", jstr "customer.lookup-valid?"; "to", jstr "customer.lookup-valid-renamed"; "actor", jstr "client" ]
+        |> expectError "TYPE_VALIDATOR_FROZEN"
+        |> ignore
+
+        let rejectedFlow label expectedCode document : JsonObject =
+            let invalidEngine = Runtime.Engine(Path.Combine(root, "flow-record-validator-" + label), Set.empty)
+            let response = defineFlowProject invalidEngine document [ "syntaxVersion", jint 2 ]
+            equal expectedCode (errorCode response) $"{label} record validator is rejected"
+            response
+        rejectedFlow "unknown" "TYPE_VALIDATOR_UNKNOWN_WORD"
+            "record Lookup { field value: Int; validate absent::predicate?; }"
+        |> ignore
+        rejectedFlow "signature" "TYPE_RECORD_VALIDATOR_SIGNATURE"
+            ("record Lookup { field value: Int; validate lookup::valid?; }\n\n"
+             + "fn lookup.valid?(value: Int) -> Bool { true }")
+        |> ignore
+        rejectedFlow "effect" "TYPE_RECORD_VALIDATOR_EFFECT"
+            ("record Lookup { field value: Int; validate lookup::valid?; }\n\n"
+             + "fn lookup.valid?(value: Lookup) -> Bool {\n    effects fs.read\n    file::exists?(\"missing\")\n}")
+        |> ignore
+        rejectedFlow "duplicate" "FLOW_RECORD_VALIDATOR_DUPLICATE"
+            "record Lookup { field value: Int; validate lookup::first?; validate lookup::second?; }"
+        |> ignore
+
+        let directCycle =
+            "record RecursiveLookup { field value: Int; validate recursive::valid?; }\n\n"
+            + "fn recursive.valid?(value: RecursiveLookup) -> Bool { recursiveLookup::new(value = value.value) == value }"
+        let assertCycleContext label (response: JsonObject) =
+            let paths = jsonArrayStrings response.["error"].["actual"]
+            let closesCycle (path: string) =
+                let nodes = path.Split([| " -> " |], StringSplitOptions.None) |> Array.toList
+                nodes.Length >= 2 && nodes.Head = List.last nodes && (nodes |> List.forall (fun node -> node.StartsWith("word:", StringComparison.Ordinal)))
+            check
+                (paths |> List.exists closesCycle)
+                $"{label} recursive-call diagnostic includes a closed word cycle path"
+        let directCycleResponse = rejectedFlow "direct-cycle" "IR_RECURSIVE_CALL_GRAPH" directCycle
+        assertCycleContext "direct" directCycleResponse
+        let indirectCycle =
+            "record RecursiveLookup { field value: Int; validate recursive::valid?; }\n\n"
+            + "fn recursive.build(value: Int) -> RecursiveLookup { recursiveLookup::new(value = value) }\n\n"
+            + "fn recursive.valid?(value: RecursiveLookup) -> Bool { recursive::build(value.value) == value }"
+        let indirectCycleResponse = rejectedFlow "indirect-cycle" "IR_RECURSIVE_CALL_GRAPH" indirectCycle
+        assertCycleContext "indirect" indirectCycleResponse
+
+        let stackProject = Path.Combine(root, "stack-record-validator-target")
+        let stackEngine = Runtime.Engine(stackProject, Set.empty, "2042-03-04T05:06:07Z")
+        let stackSource =
+            "record CheckedNumber\n"
+            + "    validate checkedNumber.valid?\n"
+            + "    field value Int\n"
+            + "end\n\n"
+            + "word checkedNumber.valid? : CheckedNumber -> Bool\n"
+            + "    effects none\n"
+            + "    drop true\n"
+            + "end\n\n"
+            + "test checkedNumber.valid?/accept\n"
+            + "    1 checkedNumber.new checkedNumber.valid?\n"
+            + "    expect true\n"
+            + "end"
+        defineStack stackEngine stackSource [] |> expectOk "define a Stack/1 validated record and its predicate" |> ignore
+        commit stackEngine "commit" "CheckedNumber" [ "library", jbool true ]
+        |> expectOk "commit Stack/1 record validator with stable target metadata"
+        |> ignore
+        let stackStore = Storage.create stackProject
+        let stackLoaded = Storage.load stackStore |> Result.defaultWith (fun problem -> failwith problem.Message)
+        let stackManifest = stackLoaded.Manifest.Value
+        let stackType = stackManifest.Types |> List.find (fun item -> item.Name = "CheckedNumber")
+        let stackValidatorId = getWordId stackEngine "checkedNumber.valid?"
+        equal { Frontend = SourceFrontend.Stack; Version = 1 } stackType.SourceFormat "validated Stack record persists its frontend and version"
+        equal (Some(StoredCallTarget.UserWord stackValidatorId)) stackType.ValidatorTarget "validated Stack record persists its exact stable validator target"
+        assertAllPassed 1 (dispatch stackEngine "test" [ "word", jstr "checkedNumber.valid?" ] |> expectOk "run Stack record validator after commit")
+
+        let stackReferences =
+            [ stackManifest.ProjectSource ]
+            @ (stackManifest.Types |> List.map _.Definition)
+            @ (stackManifest.Revisions |> List.collect (fun revision -> revision.Definition :: revision.Tests @ revision.Examples))
+            |> List.distinct
+        let stackObjects =
+            stackReferences
+            |> List.map (fun reference ->
+                let content = Storage.readSource stackStore reference |> Result.defaultWith (fun problem -> failwith problem.Message)
+                Storage.sourceObject reference.Kind content)
+        let export = stackLoaded.ProjectSource.Value
+        let rejectStackMetadata label expectedCode replacement =
+            let candidateProject = Path.Combine(root, "stack-record-validator-" + label)
+            let candidateStore = Storage.create candidateProject
+            let forged =
+                { stackManifest with
+                    Types = stackManifest.Types |> List.map (fun item -> if item.Name = "CheckedNumber" then { item with ValidatorTarget = replacement } else item) }
+            Storage.commit candidateStore 0L forged stackObjects export
+            |> Result.defaultWith (fun problem -> failwith $"store well-shaped {label} target metadata: {problem.Code}: {problem.Message}")
+            |> ignore
+            try
+                Runtime.Engine(candidateProject, Set.empty, "2042-03-04T05:06:07Z") |> ignore
+                failwith $"fresh Engine accepted {label} record-validator metadata"
+            with
+            | LanguageException diagnostic -> equal expectedCode diagnostic.Code $"fresh Engine rejects {label} record-validator metadata"
+        rejectStackMetadata "missing" "TYPE_VALIDATOR_TARGET_MISSING" None
+        rejectStackMetadata "mismatched" "TYPE_VALIDATOR_TARGET_MISMATCH" (Some(StoredCallTarget.GeneratedWord "generated-forged-validator-target"))
+
+        let intervalProject = Path.Combine(root, "flow-record-validator-interval-smoke")
+        let intervalEngine = Runtime.Engine(intervalProject, Set.empty, "2042-03-04T05:06:07Z")
+        let intervalSource =
+            "record Interval { field start: Int; field finish: Int; validate interval::valid?; }\n\n"
+            + "fn interval.valid?(value: Interval) -> Bool {\n"
+            + "    doc \"An interval finishes at or after its start.\"\n"
+            + "    int::less-or-equal(value.start, value.finish)\n"
+            + "}\n\n"
+            + "test interval.valid?/ordered { interval::valid?(interval::new(start = 1, finish = 2)) => true }\n"
+            + "test interval.valid?/reversed { interval::new(start = 2, finish = 1) => error RECORD_VALIDATION_FAILED }"
+        defineFlowProject intervalEngine intervalSource [ "syntaxVersion", jint 2 ]
+        |> expectOk "run the documented Interval record-validator example"
+        |> ignore
+        assertAllPassed 2 (dispatch intervalEngine "test" [ "word", jstr "interval.valid?" ] |> expectOk "run Interval valid and expected-error tests")
+
     let private testEffectCountAssertions root =
         let project = Path.Combine(root, "effect-count-assertions")
         let engine = Runtime.Engine(project, Set.empty, "2041-02-03T04:05:06Z")
@@ -3584,8 +3868,9 @@ test persist.read/exact-count {
             testFlowStaticListFold root
             testFlowValidatorCannotBeRenamedAfterTypeCommit root
             testFlowProjectDocumentTypesCommitAndReload root
+            testRecordValidatorRuntimeAndPersistence root
             testEffectCountAssertions root
-            printfn $"Flow Runtime tests passed: 29 groups, {assertions} assertions."
+            printfn $"Flow Runtime tests passed: 30 groups, {assertions} assertions."
             0
         finally
             if Directory.Exists root then Directory.Delete(root, true)

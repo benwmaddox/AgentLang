@@ -37,7 +37,7 @@ type internal ErrorWord =
 type internal ErrorMetadata =
     { Diagnostic: Diagnostic
       WordSource: ErrorWord
-      HasOverflowOperands: bool }
+      DynamicActualOperandCount: int }
 
 type private EmittedValue =
     { Type: IrType
@@ -218,10 +218,11 @@ type NativeCompiledProgram internal
                                 | FixedWord value -> Some value
                                 | EntryExecutionName -> Some executionName
                             let actual =
-                                if item.HasOverflowOperands then
-                                    [ Marshal.ReadInt64(contextPointer, NativeAbi.ContextErrorArgument0Offset).ToString(CultureInfo.InvariantCulture)
-                                      Marshal.ReadInt64(contextPointer, NativeAbi.ContextErrorArgument1Offset).ToString(CultureInfo.InvariantCulture) ]
-                                else item.Diagnostic.Actual
+                                if item.DynamicActualOperandCount = 0 then item.Diagnostic.Actual
+                                else
+                                    List.init item.DynamicActualOperandCount (fun index ->
+                                        let offset = if index = 0 then NativeAbi.ContextErrorArgument0Offset else NativeAbi.ContextErrorArgument1Offset
+                                        Marshal.ReadInt64(contextPointer, offset).ToString(CultureInfo.InvariantCulture))
                             raise (LanguageException { item.Diagnostic with Word = word; Actual = actual })
                         | NativeAbi.StatusScratchCapacity
                         | NativeAbi.StatusRetainedCapacity as capacityStatus ->
@@ -477,29 +478,40 @@ module LlvmAot =
         let rec visitBlock (block: IrBlock) =
             for instruction in block.Code do
                 let add call = found.Add(call, instruction.Site)
-                let addConstructorValidator key =
-                    match program.NominalTypesByKey.TryFind key with
-                    | Some(IrScalarDefinition scalar) -> scalar.ValidatorCall |> Option.iter add
-                    | _ -> ()
+                let addConstructorValidator operation =
+                    let validator =
+                        match operation with
+                        | WrapScalarOperation key ->
+                            match program.NominalTypesByKey.TryFind key with
+                            | Some(IrScalarDefinition scalar) -> scalar.ValidatorCall
+                            | _ -> None
+                        | MakeRecordOperation key ->
+                            match program.NominalTypesByKey.TryFind key with
+                            | Some(IrRecordDefinition record) -> record.ValidatorCall
+                            | _ -> None
+                        | _ -> None
+                    validator |> Option.iter add
                 match instruction.Operation with
                 | IrOperation.Call call ->
                     add call
                     match call.ResolvedTarget with
                     | GeneratedWordTarget(id, _) ->
                         match program.GeneratedTargetsById.TryFind id with
-                        | Some { Operation = WrapScalarOperation key } -> addConstructorValidator key
+                        | Some target -> addConstructorValidator target.Operation
                         | _ -> ()
                     | _ -> ()
                 | IrOperation.ListMap(call, _, _)
                 | IrOperation.ListFilter(call, _)
                 | IrOperation.ListEach(call, _)
-                | IrOperation.ListFold(call, _, _)
-                | IrOperation.MakeRecord(call, _)
+                | IrOperation.ListFold(call, _, _) -> add call
+                | IrOperation.MakeRecord(call, _, validator) ->
+                    add call
+                    validator |> Option.iter add
                 | IrOperation.GetRecordField(call, _, _)
                 | IrOperation.UnwrapScalar(call, _) -> add call
                 | IrOperation.WrapScalar(call, key, _) ->
                     add call
-                    addConstructorValidator key
+                    addConstructorValidator (WrapScalarOperation key)
                 | IrOperation.Scope inner -> visitBlock inner
                 | IrOperation.If(thenBlock, elseBlock) ->
                     visitBlock thenBlock
@@ -639,6 +651,17 @@ module LlvmAot =
                             owner span
                             [ String.concat " " (fieldTypes |> List.map IrTypes.format) + " -> " + IrTypes.format (IrNominal key) ]
                             [ String.concat " " (target.InputTypes |> List.map IrTypes.format) + " -> " + String.concat " " (target.OutputTypes |> List.map IrTypes.format) ]
+                    match record.ValidatorCall with
+                    | Some validator ->
+                        if validator.InputTypes <> [ IrNominal key ] || validator.OutputTypes <> [ IrBool ] then
+                            callDiagnostic "IR_RECORD_VALIDATOR_SIGNATURE" "Record validator must have the exact Record -> Bool signature."
+                                owner span [ IrTypes.format (IrNominal key) + " -> Bool" ]
+                                [ String.concat " " (validator.InputTypes |> List.map IrTypes.format) + " -> " + String.concat " " (validator.OutputTypes |> List.map IrTypes.format) ]
+                        if not (Set.isEmpty validator.ResolvedEffects) then
+                            callDiagnostic "IR_RECORD_VALIDATOR_EFFECT" "Record validator must be pure."
+                                owner span [] (IrEffects.names validator.ResolvedEffects)
+                        validateCall program owner span validator
+                    | None -> ()
                     ensureNativeType program owner span (IrNominal key)
                 | _ ->
                     callDiagnostic "IR_LLVM_TARGET_SIGNATURE" "Generated record constructor refers to a non-record nominal type."
@@ -702,9 +725,30 @@ module LlvmAot =
                         "The LLVM scalar backend supports Int, Bool, and Unit constants only."
                         owner span [ "Int"; "Bool"; "Unit" ] [ sprintf "%A : %s" literal (IrTypes.format ty) ]
             | IrOperation.Call call -> validateCall program owner span call
-            | IrOperation.MakeRecord(call, key) ->
+            | IrOperation.MakeRecord(call, key, validator) ->
                 validateCall program owner span call
                 ensureNativeType program owner span (IrNominal key)
+                let record =
+                    match program.NominalTypesByKey.TryFind key with
+                    | Some(IrRecordDefinition record) -> record
+                    | _ ->
+                        callDiagnostic "IR_LLVM_TARGET_OPERATION" "Record construction refers to a non-record nominal type."
+                            owner span [ "record type" ] [ IrTypes.format (IrNominal key) ]
+                validator
+                |> Option.iter (fun checkedCall ->
+                    if checkedCall.InputTypes <> [ IrNominal key ] || checkedCall.OutputTypes <> [ IrBool ] then
+                        callDiagnostic "IR_RECORD_VALIDATOR_INVALID" "Operation-carried record validator must have the exact Record -> Bool signature."
+                            owner span [ IrTypes.format (IrNominal key) + " -> Bool" ]
+                            [ String.concat " " (checkedCall.InputTypes |> List.map IrTypes.format) + " -> " + String.concat " " (checkedCall.OutputTypes |> List.map IrTypes.format) ]
+                    if not (Set.isEmpty checkedCall.ResolvedEffects) then
+                        callDiagnostic "IR_RECORD_VALIDATOR_INVALID" "Operation-carried record validator must be pure."
+                            owner span [] (IrEffects.names checkedCall.ResolvedEffects)
+                    validateCall program owner span checkedCall)
+                if validator <> record.ValidatorCall then
+                    callDiagnostic "IR_RECORD_VALIDATOR_MISMATCH" "Record construction validator differs from the immutable type table."
+                        owner span
+                        (record.ValidatorCall |> Option.map (fun value -> [ value.ResolvedName ]) |> Option.defaultValue [ "no validator" ])
+                        (validator |> Option.map (fun value -> [ value.ResolvedName ]) |> Option.defaultValue [ "no validator" ])
                 match call.ResolvedTarget with
                 | GeneratedWordTarget(id, _) ->
                     match program.GeneratedTargetsById.TryFind id with
@@ -775,12 +819,12 @@ module LlvmAot =
                     [ "Constant"; "Call"; "StoreLocal"; "LoadLocal"; "Scope"; "If" ]
                     [ sprintf "%A" operation ]
 
-    let private metadataFor (metadata: ResizeArray<ErrorMetadata>) (diagnostic: Diagnostic) (wordSource: ErrorWord) (hasOverflowOperands: bool) =
+    let private metadataFor (metadata: ResizeArray<ErrorMetadata>) (diagnostic: Diagnostic) (wordSource: ErrorWord) (dynamicActualOperandCount: int) =
         let id = metadata.Count
         metadata.Add
             { Diagnostic = diagnostic
               WordSource = wordSource
-              HasOverflowOperands = hasOverflowOperands }
+              DynamicActualOperandCount = dynamicActualOperandCount }
         id
 
     let private operationDiagnostic (code: string) (message: string) (word: string) (span: SourceSpan option) (expected: string list) (actual: string list) =
@@ -888,7 +932,21 @@ module LlvmAot =
             pointer
 
         let emitFailure (builder: CodeBuilder) (diagnostic: Diagnostic) wordSource =
-            let metadataId = metadataFor metadata diagnostic wordSource false
+            let metadataId = metadataFor metadata diagnostic wordSource 0
+            let metadataPointer = emitFieldPointer builder 2
+            builder.Emit($"store i32 {metadataId}, ptr {metadataPointer}, align 4")
+            let statusPointer = builder.Fresh "status.diagnostic"
+            builder.Emit($"{statusPointer} = getelementptr inbounds i32, ptr %%status, i64 0")
+            builder.Emit($"store i32 {NativeAbi.StatusDiagnostic}, ptr {statusPointer}, align 4")
+            builder.Emit("ret void")
+
+        let emitFailureWithActualOperands (builder: CodeBuilder) (diagnostic: Diagnostic) wordSource (operands: string list) =
+            if operands.Length > 2 then invalidOp "Native diagnostic metadata supports at most two dynamic actual operands."
+            for index, operand in List.indexed operands do
+                let field = if index = 0 then 4 else 5
+                let pointer = emitFieldPointer builder field
+                builder.Emit($"store i64 {operand}, ptr {pointer}, align 8")
+            let metadataId = metadataFor metadata diagnostic wordSource operands.Length
             let metadataPointer = emitFieldPointer builder 2
             builder.Emit($"store i32 {metadataId}, ptr {metadataPointer}, align 4")
             let statusPointer = builder.Fresh "status.diagnostic"
@@ -1005,7 +1063,7 @@ module LlvmAot =
             let arg1Pointer = emitFieldPointer builder 5
             builder.Emit($"store i64 {left}, ptr {arg0Pointer}, align 8")
             builder.Emit($"store i64 {right}, ptr {arg1Pointer}, align 8")
-            let metadataId = metadataFor metadata diagnostic (FixedWord operation) true
+            let metadataId = metadataFor metadata diagnostic (FixedWord operation) 2
             let metadataPointer = emitFieldPointer builder 2
             builder.Emit($"store i32 {metadataId}, ptr {metadataPointer}, align 4")
             let statusPointer = builder.Fresh "status.diagnostic"
@@ -1126,14 +1184,20 @@ module LlvmAot =
                     let arguments = stack |> List.skip (stack.Length - count)
                     stack <- prefix
                     arguments
-                let rec emitResolvedCall (call: IrResolvedCall) (arguments: EmittedValue list) (depthValue: string) =
+                let rec emitResolvedCall
+                    (call: IrResolvedCall)
+                    (arguments: EmittedValue list)
+                    (depthValue: string)
+                    (callSiteSpan: SourceSpan option)
+                    (recordValidator: IrResolvedCall option) =
                     emitDepthGuardAt builder depthValue call
                     match call.ResolvedTarget with
                     | PrimitiveTarget(PrimitiveId operation) -> emitPrimitive builder call operation arguments
                     | UserWordTarget(id, revision) -> emitUserCall call id revision arguments depthValue
                     | GeneratedWordTarget(id, revision) ->
                         match program.GeneratedTargetsById.TryFind id with
-                        | Some target when target.TargetRevision = revision -> emitGeneratedScalarCall call target arguments depthValue
+                        | Some target when target.TargetRevision = revision ->
+                            emitGeneratedScalarCall call target arguments depthValue callSiteSpan recordValidator
                         | Some target -> invalidOp $"Validated generated target '{call.ResolvedName}' changed revision to {target.TargetRevision}."
                         | None -> invalidOp $"Validated generated target '{call.ResolvedName}' was absent from the bound program."
                 and emitUserCall (call: IrResolvedCall) (id: WordId) (revision: int) (arguments: EmittedValue list) (callerDepth: string) =
@@ -1163,7 +1227,13 @@ module LlvmAot =
                         builder.Emit($"{pointer} = getelementptr inbounds i64, ptr %%outputs, i64 {index}")
                         builder.Emit($"{value} = load i64, ptr {pointer}, align 8")
                         { Type = ty; Operand = value })
-                and emitGeneratedScalarCall (call: IrResolvedCall) (target: IrGeneratedTarget) (arguments: EmittedValue list) (depthValue: string) =
+                and emitGeneratedScalarCall
+                    (call: IrResolvedCall)
+                    (target: IrGeneratedTarget)
+                    (arguments: EmittedValue list)
+                    (depthValue: string)
+                    (callSiteSpan: SourceSpan option)
+                    (recordValidator: IrResolvedCall option) =
                     match target.Operation, arguments with
                     | WrapScalarOperation key, [ value ] ->
                         match program.NominalTypesByKey.TryFind key with
@@ -1176,7 +1246,7 @@ module LlvmAot =
                                 // The validator call is one level deeper, with a user body one beyond that.
                                 let validatorDepth = builder.Fresh "validator.depth"
                                 builder.Emit($"{validatorDepth} = add i32 {depthValue}, 1")
-                                match emitResolvedCall validator [ value ] validatorDepth with
+                                match emitResolvedCall validator [ value ] validatorDepth None None with
                                 | [ checkedValue ] ->
                                     let accepted = builder.Fresh "validator.accepted"
                                     builder.Emit($"{accepted} = icmp ne i64 {checkedValue.Operand}, 0")
@@ -1201,6 +1271,11 @@ module LlvmAot =
                             let declaredFields = record.RecordFields |> List.sortBy (fun field -> field.FieldIndex)
                             if fields.Length <> declaredFields.Length then
                                 invalidOp "Validated record constructor received a different field count."
+                            let validator =
+                                match recordValidator with
+                                | Some supplied when Some supplied = record.ValidatorCall -> Some supplied
+                                | Some _ -> invalidOp "Validated record-construction validator differs from its frozen type definition."
+                                | None -> record.ValidatorCall
                             for index, value in List.indexed fields do
                                 let fieldPointer = emitWorkspaceSlot builder index
                                 builder.Emit($"store i64 {value.Operand}, ptr {fieldPointer}, align 8")
@@ -1211,7 +1286,35 @@ module LlvmAot =
                             emitRuntimeResult builder runtimeResult
                             let handle = builder.Fresh "record.make.handle"
                             builder.Emit($"{handle} = load i64, ptr {outputPointer}, align 8")
-                            [ { Type = IrNominal key; Operand = handle } ]
+                            let constructed = { Type = IrNominal key; Operand = handle }
+                            match validator with
+                            | None -> [ constructed ]
+                            | Some checkedCall ->
+                                let validatorDepth = builder.Fresh "record.validator.depth"
+                                builder.Emit($"{validatorDepth} = add i32 {depthValue}, 1")
+                                match emitResolvedCall checkedCall [ constructed ] validatorDepth callSiteSpan None with
+                                | [ checkedValue ] ->
+                                    let acceptedLabel = builder.FreshLabel "record.validator.accepted"
+                                    let rejectedLabel = builder.FreshLabel "record.validator.rejected"
+                                    let malformedLabel = builder.FreshLabel "record.validator.malformed"
+                                    builder.Emit(
+                                        $"switch i64 {checkedValue.Operand}, label %%{malformedLabel} [ " +
+                                        $"i64 0, label %%{rejectedLabel} i64 1, label %%{acceptedLabel} ]")
+                                    builder.Switch rejectedLabel
+                                    let typeName = record.TypeName
+                                    let diagnostic =
+                                        operationDiagnostic "RECORD_VALIDATION_FAILED"
+                                            $"Value does not satisfy {typeName}'s validation predicate."
+                                            call.ResolvedName callSiteSpan [ "validator returns true" ] [ "false" ]
+                                    emitFailure builder diagnostic (FixedWord call.ResolvedName)
+                                    builder.Switch malformedLabel
+                                    let malformedDiagnostic =
+                                        operationDiagnostic "RUNTIME_VALIDATOR_RESULT" "Record validator did not return one Bool."
+                                            checkedCall.ResolvedName callSiteSpan [ "Bool" ] []
+                                    emitFailureWithActualOperands builder malformedDiagnostic (FixedWord checkedCall.ResolvedName) [ checkedValue.Operand ]
+                                    builder.Switch acceptedLabel
+                                    [ constructed ]
+                                | _ -> invalidOp "Validated record validator did not return exactly one Bool."
                         | _ -> invalidOp "Validated generated record constructor referred to a non-record type."
                     | GetRecordFieldOperation(key, fieldIndex), [ recordValue ] ->
                         match program.NominalTypesByKey.TryFind key with
@@ -1294,13 +1397,15 @@ module LlvmAot =
                                 builder.Emit($"{phi} = phi i64 [ {left.Operand}, %%{thenEnd} ], [ {right.Operand}, %%{elseEnd} ]")
                                 { Type = left.Type; Operand = phi })
                                 thenLocals
+                    | IrOperation.MakeRecord(call, _, validator) ->
+                        let arguments = popArguments call.InputTypes.Length
+                        stack <- stack @ emitResolvedCall call arguments "%depth" span validator
                     | IrOperation.Call call
-                    | IrOperation.MakeRecord(call, _)
                     | IrOperation.GetRecordField(call, _, _)
                     | IrOperation.WrapScalar(call, _, _)
                     | IrOperation.UnwrapScalar(call, _) ->
                         let arguments = popArguments call.InputTypes.Length
-                        stack <- stack @ emitResolvedCall call arguments "%depth"
+                        stack <- stack @ emitResolvedCall call arguments "%depth" span None
                     | _ -> invalidOp "LLVM validation missed an unsupported operation."
                     emitValueLimitCheck builder currentWord wordSource span stack localValues
                 stack, localValues
