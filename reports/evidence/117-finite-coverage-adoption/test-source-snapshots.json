@@ -1,0 +1,58 @@
+[
+  {
+    "word": "selection.accept",
+    "revision": 2,
+    "caseName": "preserves-first-item-over-new-item",
+    "sourceHash": "7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645",
+    "source": "test selection.accept/preserves-first-item-over-new-item { selection::first(selection::accept(selection::new(first = option::some<Int>(5)), 11)) => value option::some<Int>(5) }",
+    "sourceSha256": "7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645"
+  },
+  {
+    "word": "selection.accept",
+    "revision": 2,
+    "caseName": "records-first-item",
+    "sourceHash": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8",
+    "source": "test selection.accept/records-first-item {\n    selection::accept(selection::new(first = option::none<Int>()), 11).first\n    => value option::some<Int>(11)\n}",
+    "sourceSha256": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8"
+  },
+  {
+    "word": "selection.accept",
+    "revision": 2,
+    "caseName": "preserves-first-item",
+    "sourceHash": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd",
+    "source": "test selection.accept/preserves-first-item {\n    selection::accept(selection::new(first = option::some<Int>(5)), 11).first\n    => value option::some<Int>(5)\n}",
+    "sourceSha256": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd"
+  },
+  {
+    "word": "flags.agree",
+    "revision": 2,
+    "caseName": "false-true",
+    "sourceHash": "1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042",
+    "source": "test flags.agree/false-true { flags::agree(false, true) => false }",
+    "sourceSha256": "1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042"
+  },
+  {
+    "word": "flags.agree",
+    "revision": 2,
+    "caseName": "both-false",
+    "sourceHash": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225",
+    "source": "test flags.agree/both-false {\n    flags::agree(left = false, right = false)\n    => true\n}",
+    "sourceSha256": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225"
+  },
+  {
+    "word": "flags.agree",
+    "revision": 2,
+    "caseName": "both-true",
+    "sourceHash": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9",
+    "source": "test flags.agree/both-true {\n    flags::agree(left = true, right = true)\n    => true\n}",
+    "sourceSha256": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9"
+  },
+  {
+    "word": "flags.agree",
+    "revision": 2,
+    "caseName": "true-false",
+    "sourceHash": "c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23",
+    "source": "test flags.agree/true-false { flags::agree(true, false) => false }",
+    "sourceSha256": "c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23"
+  }
+]

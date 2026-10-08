@@ -1,0 +1,1 @@
+Host launch attempt 1 did not start the host: PowerShell rejected an empty -Capabilities @() argument; the host parameter defaults to an empty capability array.

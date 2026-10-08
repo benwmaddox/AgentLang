@@ -1,0 +1,46 @@
+record Selection {
+    field first: Option<Int>;
+}
+
+fn flags.agree(left: Bool, right: Bool) -> Bool {
+    effects none
+    doc "Returns whether the two flags agree."
+
+    left == right
+}
+
+fn selection.accept(state: Selection, item: Int) -> Selection {
+    effects none
+    doc "Preserves a selection that already has a first item; otherwise records the supplied item."
+
+    match state.first {
+        some existing => { state }
+        none => { selection::new(first = option::some<Int>(item)) }
+    }
+}
+
+test selection.accept/preserves-first-item-over-new-item { selection::first(selection::accept(selection::new(first = option::some<Int>(5)), 11)) => value option::some<Int>(5) }
+
+test selection.accept/records-first-item {
+    selection::accept(selection::new(first = option::none<Int>()), 11).first
+    => value option::some<Int>(11)
+}
+
+test selection.accept/preserves-first-item {
+    selection::accept(selection::new(first = option::some<Int>(5)), 11).first
+    => value option::some<Int>(5)
+}
+
+test flags.agree/false-true { flags::agree(false, true) => false }
+
+test flags.agree/both-false {
+    flags::agree(left = false, right = false)
+    => true
+}
+
+test flags.agree/both-true {
+    flags::agree(left = true, right = true)
+    => true
+}
+
+test flags.agree/true-false { flags::agree(true, false) => false }

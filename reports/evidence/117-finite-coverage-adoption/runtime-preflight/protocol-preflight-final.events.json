@@ -1,0 +1,32 @@
+[
+  {
+    "event": "session-start",
+    "terminationKind": null,
+    "runtimeExitCode": null
+  },
+  {
+    "event": "exchange",
+    "terminationKind": null,
+    "runtimeExitCode": null
+  },
+  {
+    "event": "exchange",
+    "terminationKind": null,
+    "runtimeExitCode": null
+  },
+  {
+    "event": "exchange",
+    "terminationKind": null,
+    "runtimeExitCode": null
+  },
+  {
+    "event": "host-close",
+    "terminationKind": null,
+    "runtimeExitCode": null
+  },
+  {
+    "event": "session-end",
+    "terminationKind": "host-close",
+    "runtimeExitCode": 0
+  }
+]

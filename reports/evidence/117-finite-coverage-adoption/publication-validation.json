@@ -1,0 +1,47 @@
+{
+  "sourceRevision": "a81a7aad74119f48d52f851e629d96f702ffda5d",
+  "productCodeChanged": false,
+  "preflightChecksPassed": 27,
+  "independentBehaviorCasesPassed": 14,
+  "actorOwnTestsPassed": 7,
+  "frozenMutantsRejected": 2,
+  "acceptance": {
+    "actorProjectUntouched": true,
+    "testsPassed": true,
+    "flagsAllFourTruthRowsBehavior": true,
+    "flagsLibraryStructuralAndFinite": true,
+    "selectionProjectAndSignature": true,
+    "independentSelectionBehavior": true
+  },
+  "archiveChecks": [
+    {
+      "archive": "preparation.zip",
+      "files": 10,
+      "bytesMatchSource": true
+    },
+    {
+      "archive": "seed-and-preflight.zip",
+      "files": 61,
+      "bytesMatchSource": true
+    },
+    {
+      "archive": "oracle-controls.zip",
+      "files": 180,
+      "bytesMatchSource": true
+    },
+    {
+      "archive": "scoring.zip",
+      "files": 71,
+      "bytesMatchSource": true
+    },
+    {
+      "archive": "actor-project.zip",
+      "files": 20,
+      "bytesMatchSource": true
+    }
+  ],
+  "diffCheckPassed": true,
+  "ci": "manual-only; no CI executed",
+  "fullRegressionReference": "reports/116-finite-library-coverage.md: 37/37 on the unchanged product source",
+  "validatedUtc": "2026-10-08T06:00:58.8746625Z"
+}

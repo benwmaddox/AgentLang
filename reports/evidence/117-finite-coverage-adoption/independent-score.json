@@ -1,0 +1,3846 @@
+{
+  "formatVersion": 1,
+  "study": "finite-adoption-001",
+  "mode": "independent-actor-score",
+  "actorProject": "D:\\code\\AgentLang\\.agentlang\\finite-adoption-001\\project\\actor-project",
+  "actorTreeSha256Before": "16a5d1033bbd000e04733ff787ddbbce1f4a992ef7e06d8f87e739fb7ef2174e",
+  "actorTreeSha256After": "16a5d1033bbd000e04733ff787ddbbce1f4a992ef7e06d8f87e739fb7ef2174e",
+  "actorUnchanged": true,
+  "scoreCopy": {
+    "path": ".agentlang/finite-adoption-001/scoring/score-copy",
+    "treeInventoryBefore": [
+      {
+        "path": ".agentlang/store/CURRENT",
+        "bytes": 134,
+        "sha256": "bc22181df6898bf539acfb62e440c5ba3f34e51eff6880fa23bf650d8c5e357b"
+      },
+      {
+        "path": ".agentlang/store/manifests/8c6d7a00bdf41532b286b5b858218d341bbeb8f3550108b6855519dcdf59a7e0.json",
+        "bytes": 6316,
+        "sha256": "8c6d7a00bdf41532b286b5b858218d341bbeb8f3550108b6855519dcdf59a7e0"
+      },
+      {
+        "path": ".agentlang/store/manifests/c122874676e4074803c2881990722b76735328b59beb4b518a7116817ed6300b.json",
+        "bytes": 8961,
+        "sha256": "c122874676e4074803c2881990722b76735328b59beb4b518a7116817ed6300b"
+      },
+      {
+        "path": ".agentlang/store/manifests/f8ba1cbcce124921e062977b0a816f029091e64d26f4ae7ce60f99f29099a27a.json",
+        "bytes": 14372,
+        "sha256": "f8ba1cbcce124921e062977b0a816f029091e64d26f4ae7ce60f99f29099a27a"
+      },
+      {
+        "path": ".agentlang/store/objects/1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042.agent",
+        "bytes": 66,
+        "sha256": "1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042"
+      },
+      {
+        "path": ".agentlang/store/objects/36377909f6b8dafe16337b442f149aede4f32c6829cb5f91341b38ce5e1191d1.agent",
+        "bytes": 1383,
+        "sha256": "36377909f6b8dafe16337b442f149aede4f32c6829cb5f91341b38ce5e1191d1"
+      },
+      {
+        "path": ".agentlang/store/objects/3e6b97554c8fb510abd12d92ff0ea4b7adc7a7f70e1c988adb5e44170a038a0d.agent",
+        "bytes": 1189,
+        "sha256": "3e6b97554c8fb510abd12d92ff0ea4b7adc7a7f70e1c988adb5e44170a038a0d"
+      },
+      {
+        "path": ".agentlang/store/objects/4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225.agent",
+        "bytes": 89,
+        "sha256": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225"
+      },
+      {
+        "path": ".agentlang/store/objects/749b3bdddfbabc9bcd0abf96ef657f3baab3cc83742890c9ad054c1868a48ee4.agent",
+        "bytes": 1590,
+        "sha256": "749b3bdddfbabc9bcd0abf96ef657f3baab3cc83742890c9ad054c1868a48ee4"
+      },
+      {
+        "path": ".agentlang/store/objects/7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645.agent",
+        "bytes": 176,
+        "sha256": "7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645"
+      },
+      {
+        "path": ".agentlang/store/objects/86d11e76e3fadb27b9a23e1edc2b2343576dedd388513258146c467fca650039.agent",
+        "bytes": 134,
+        "sha256": "86d11e76e3fadb27b9a23e1edc2b2343576dedd388513258146c467fca650039"
+      },
+      {
+        "path": ".agentlang/store/objects/9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8.agent",
+        "bytes": 156,
+        "sha256": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8"
+      },
+      {
+        "path": ".agentlang/store/objects/b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9.agent",
+        "bytes": 86,
+        "sha256": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9"
+      },
+      {
+        "path": ".agentlang/store/objects/c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23.agent",
+        "bytes": 66,
+        "sha256": "c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23"
+      },
+      {
+        "path": ".agentlang/store/objects/d6fccefb45cf21eabd027fbae51df54436d712157f67f01756e71f91d6bfdaa8.agent",
+        "bytes": 316,
+        "sha256": "d6fccefb45cf21eabd027fbae51df54436d712157f67f01756e71f91d6bfdaa8"
+      },
+      {
+        "path": ".agentlang/store/objects/da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd.agent",
+        "bytes": 158,
+        "sha256": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd"
+      },
+      {
+        "path": ".agentlang/store/objects/fcb9fdb110d63be14d0505ffd04bfa63df073fc1e8c0de5ecc4f19ce57eac0db.agent",
+        "bytes": 50,
+        "sha256": "fcb9fdb110d63be14d0505ffd04bfa63df073fc1e8c0de5ecc4f19ce57eac0db"
+      },
+      {
+        "path": ".agentlang/store/WRITE.lock",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "dictionary.agent",
+        "bytes": 1590,
+        "sha256": "749b3bdddfbabc9bcd0abf96ef657f3baab3cc83742890c9ad054c1868a48ee4"
+      },
+      {
+        "path": "history/task-0001.json",
+        "bytes": 649,
+        "sha256": "6dcf82538001699c73cfc4bce435dc9d197e9c27a650d9519f799c7ad53175b0"
+      }
+    ],
+    "treeInventoryAfter": [
+      {
+        "path": ".agentlang/store/CURRENT",
+        "bytes": 134,
+        "sha256": "bc22181df6898bf539acfb62e440c5ba3f34e51eff6880fa23bf650d8c5e357b"
+      },
+      {
+        "path": ".agentlang/store/manifests/8c6d7a00bdf41532b286b5b858218d341bbeb8f3550108b6855519dcdf59a7e0.json",
+        "bytes": 6316,
+        "sha256": "8c6d7a00bdf41532b286b5b858218d341bbeb8f3550108b6855519dcdf59a7e0"
+      },
+      {
+        "path": ".agentlang/store/manifests/c122874676e4074803c2881990722b76735328b59beb4b518a7116817ed6300b.json",
+        "bytes": 8961,
+        "sha256": "c122874676e4074803c2881990722b76735328b59beb4b518a7116817ed6300b"
+      },
+      {
+        "path": ".agentlang/store/manifests/f8ba1cbcce124921e062977b0a816f029091e64d26f4ae7ce60f99f29099a27a.json",
+        "bytes": 14372,
+        "sha256": "f8ba1cbcce124921e062977b0a816f029091e64d26f4ae7ce60f99f29099a27a"
+      },
+      {
+        "path": ".agentlang/store/objects/1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042.agent",
+        "bytes": 66,
+        "sha256": "1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042"
+      },
+      {
+        "path": ".agentlang/store/objects/36377909f6b8dafe16337b442f149aede4f32c6829cb5f91341b38ce5e1191d1.agent",
+        "bytes": 1383,
+        "sha256": "36377909f6b8dafe16337b442f149aede4f32c6829cb5f91341b38ce5e1191d1"
+      },
+      {
+        "path": ".agentlang/store/objects/3e6b97554c8fb510abd12d92ff0ea4b7adc7a7f70e1c988adb5e44170a038a0d.agent",
+        "bytes": 1189,
+        "sha256": "3e6b97554c8fb510abd12d92ff0ea4b7adc7a7f70e1c988adb5e44170a038a0d"
+      },
+      {
+        "path": ".agentlang/store/objects/4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225.agent",
+        "bytes": 89,
+        "sha256": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225"
+      },
+      {
+        "path": ".agentlang/store/objects/749b3bdddfbabc9bcd0abf96ef657f3baab3cc83742890c9ad054c1868a48ee4.agent",
+        "bytes": 1590,
+        "sha256": "749b3bdddfbabc9bcd0abf96ef657f3baab3cc83742890c9ad054c1868a48ee4"
+      },
+      {
+        "path": ".agentlang/store/objects/7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645.agent",
+        "bytes": 176,
+        "sha256": "7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645"
+      },
+      {
+        "path": ".agentlang/store/objects/86d11e76e3fadb27b9a23e1edc2b2343576dedd388513258146c467fca650039.agent",
+        "bytes": 134,
+        "sha256": "86d11e76e3fadb27b9a23e1edc2b2343576dedd388513258146c467fca650039"
+      },
+      {
+        "path": ".agentlang/store/objects/9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8.agent",
+        "bytes": 156,
+        "sha256": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8"
+      },
+      {
+        "path": ".agentlang/store/objects/b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9.agent",
+        "bytes": 86,
+        "sha256": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9"
+      },
+      {
+        "path": ".agentlang/store/objects/c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23.agent",
+        "bytes": 66,
+        "sha256": "c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23"
+      },
+      {
+        "path": ".agentlang/store/objects/d6fccefb45cf21eabd027fbae51df54436d712157f67f01756e71f91d6bfdaa8.agent",
+        "bytes": 316,
+        "sha256": "d6fccefb45cf21eabd027fbae51df54436d712157f67f01756e71f91d6bfdaa8"
+      },
+      {
+        "path": ".agentlang/store/objects/da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd.agent",
+        "bytes": 158,
+        "sha256": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd"
+      },
+      {
+        "path": ".agentlang/store/objects/fcb9fdb110d63be14d0505ffd04bfa63df073fc1e8c0de5ecc4f19ce57eac0db.agent",
+        "bytes": 50,
+        "sha256": "fcb9fdb110d63be14d0505ffd04bfa63df073fc1e8c0de5ecc4f19ce57eac0db"
+      },
+      {
+        "path": ".agentlang/store/WRITE.lock",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "dictionary.agent",
+        "bytes": 1590,
+        "sha256": "749b3bdddfbabc9bcd0abf96ef657f3baab3cc83742890c9ad054c1868a48ee4"
+      },
+      {
+        "path": "history/task-0001.json",
+        "bytes": 649,
+        "sha256": "6dcf82538001699c73cfc4bce435dc9d197e9c27a650d9519f799c7ad53175b0"
+      }
+    ],
+    "unchanged": true
+  },
+  "sourceSnapshots": {
+    "functions": [
+      {
+        "name": "flags.agree",
+        "source": "fn flags.agree(left: Bool, right: Bool) -> Bool {\n    effects none\n    doc \"Returns whether the two flags agree.\"\n\n    left == right\n}"
+      },
+      {
+        "name": "selection.accept",
+        "source": "fn selection.accept(state: Selection, item: Int) -> Selection {\n    effects none\n    doc \"Preserves a selection that already has a first item; otherwise records the supplied item.\"\n\n    match state.first {\n        some existing => { state }\n        none => { selection::new(first = option::some<Int>(item)) }\n    }\n}"
+      }
+    ],
+    "types": [
+      {
+        "name": "Selection",
+        "source": "record Selection {\n    field first: Option<Int>;\n}"
+      }
+    ],
+    "tests": [
+      {
+        "word": "selection.accept",
+        "revision": 2,
+        "caseName": "preserves-first-item-over-new-item",
+        "sourceHash": "7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645",
+        "source": "test selection.accept/preserves-first-item-over-new-item { selection::first(selection::accept(selection::new(first = option::some<Int>(5)), 11)) => value option::some<Int>(5) }",
+        "sourceSha256": "7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645"
+      },
+      {
+        "word": "selection.accept",
+        "revision": 2,
+        "caseName": "records-first-item",
+        "sourceHash": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8",
+        "source": "test selection.accept/records-first-item {\n    selection::accept(selection::new(first = option::none<Int>()), 11).first\n    => value option::some<Int>(11)\n}",
+        "sourceSha256": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8"
+      },
+      {
+        "word": "selection.accept",
+        "revision": 2,
+        "caseName": "preserves-first-item",
+        "sourceHash": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd",
+        "source": "test selection.accept/preserves-first-item {\n    selection::accept(selection::new(first = option::some<Int>(5)), 11).first\n    => value option::some<Int>(5)\n}",
+        "sourceSha256": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd"
+      },
+      {
+        "word": "flags.agree",
+        "revision": 2,
+        "caseName": "false-true",
+        "sourceHash": "1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042",
+        "source": "test flags.agree/false-true { flags::agree(false, true) => false }",
+        "sourceSha256": "1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042"
+      },
+      {
+        "word": "flags.agree",
+        "revision": 2,
+        "caseName": "both-false",
+        "sourceHash": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225",
+        "source": "test flags.agree/both-false {\n    flags::agree(left = false, right = false)\n    => true\n}",
+        "sourceSha256": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225"
+      },
+      {
+        "word": "flags.agree",
+        "revision": 2,
+        "caseName": "both-true",
+        "sourceHash": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9",
+        "source": "test flags.agree/both-true {\n    flags::agree(left = true, right = true)\n    => true\n}",
+        "sourceSha256": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9"
+      },
+      {
+        "word": "flags.agree",
+        "revision": 2,
+        "caseName": "true-false",
+        "sourceHash": "c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23",
+        "source": "test flags.agree/true-false { flags::agree(true, false) => false }",
+        "sourceSha256": "c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23"
+      }
+    ]
+  },
+  "testResults": {
+    "allPassed": true,
+    "total": 7,
+    "failed": [],
+    "flagsAgree": [
+      {
+        "name": "both-false",
+        "word": "flags.agree",
+        "passed": true,
+        "expected": "true",
+        "actual": [
+          "true"
+        ]
+      },
+      {
+        "name": "both-true",
+        "word": "flags.agree",
+        "passed": true,
+        "expected": "true",
+        "actual": [
+          "true"
+        ]
+      },
+      {
+        "name": "false-true",
+        "word": "flags.agree",
+        "passed": true,
+        "expected": "false",
+        "actual": [
+          "false"
+        ]
+      },
+      {
+        "name": "true-false",
+        "word": "flags.agree",
+        "passed": true,
+        "expected": "false",
+        "actual": [
+          "false"
+        ]
+      }
+    ],
+    "selectionAccept": [
+      {
+        "name": "preserves-first-item",
+        "word": "selection.accept",
+        "passed": true,
+        "expectedKind": "value-expression",
+        "actualStructured": {
+          "formatVersion": 1,
+          "values": [
+            {
+              "kind": "option",
+              "elementType": {
+                "kind": "int"
+              },
+              "case": "some",
+              "value": {
+                "kind": "int",
+                "value": "5"
+              }
+            }
+          ]
+        },
+        "expected": "some 5",
+        "expectedType": "Option<Int>",
+        "expectedStructured": {
+          "formatVersion": 1,
+          "values": [
+            {
+              "kind": "option",
+              "elementType": {
+                "kind": "int"
+              },
+              "case": "some",
+              "value": {
+                "kind": "int",
+                "value": "5"
+              }
+            }
+          ]
+        },
+        "actual": [
+          "some 5"
+        ]
+      },
+      {
+        "name": "preserves-first-item-over-new-item",
+        "word": "selection.accept",
+        "passed": true,
+        "expectedKind": "value-expression",
+        "actualStructured": {
+          "formatVersion": 1,
+          "values": [
+            {
+              "kind": "option",
+              "elementType": {
+                "kind": "int"
+              },
+              "case": "some",
+              "value": {
+                "kind": "int",
+                "value": "5"
+              }
+            }
+          ]
+        },
+        "expected": "some 5",
+        "expectedType": "Option<Int>",
+        "expectedStructured": {
+          "formatVersion": 1,
+          "values": [
+            {
+              "kind": "option",
+              "elementType": {
+                "kind": "int"
+              },
+              "case": "some",
+              "value": {
+                "kind": "int",
+                "value": "5"
+              }
+            }
+          ]
+        },
+        "actual": [
+          "some 5"
+        ]
+      },
+      {
+        "name": "records-first-item",
+        "word": "selection.accept",
+        "passed": true,
+        "expectedKind": "value-expression",
+        "actualStructured": {
+          "formatVersion": 1,
+          "values": [
+            {
+              "kind": "option",
+              "elementType": {
+                "kind": "int"
+              },
+              "case": "some",
+              "value": {
+                "kind": "int",
+                "value": "11"
+              }
+            }
+          ]
+        },
+        "expected": "some 11",
+        "expectedType": "Option<Int>",
+        "expectedStructured": {
+          "formatVersion": 1,
+          "values": [
+            {
+              "kind": "option",
+              "elementType": {
+                "kind": "int"
+              },
+              "case": "some",
+              "value": {
+                "kind": "int",
+                "value": "11"
+              }
+            }
+          ]
+        },
+        "actual": [
+          "some 11"
+        ]
+      }
+    ]
+  },
+  "flags": {
+    "persistentLibrary": true,
+    "signaturePreserved": true,
+    "literalAttachedTestSourceRows": [
+      "false,false",
+      "true,true"
+    ],
+    "allFourLiteralTruthRowsInOwnTestSources": false,
+    "independentTruthOracle": [
+      {
+        "row": "true,true",
+        "passed": true,
+        "response": {
+          "ok": true,
+          "kind": "eval",
+          "text": "true",
+          "data": {
+            "stack": [
+              "true"
+            ],
+            "stackTypes": [
+              "Bool"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "bool",
+                  "value": true
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "row": "true,false",
+        "passed": true,
+        "response": {
+          "ok": true,
+          "kind": "eval",
+          "text": "false",
+          "data": {
+            "stack": [
+              "false"
+            ],
+            "stackTypes": [
+              "Bool"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "bool",
+                  "value": false
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "row": "false,true",
+        "passed": true,
+        "response": {
+          "ok": true,
+          "kind": "eval",
+          "text": "false",
+          "data": {
+            "stack": [
+              "false"
+            ],
+            "stackTypes": [
+              "Bool"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "bool",
+                  "value": false
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "row": "false,false",
+        "passed": true,
+        "response": {
+          "ok": true,
+          "kind": "eval",
+          "text": "true",
+          "data": {
+            "stack": [
+              "true"
+            ],
+            "stackTypes": [
+              "Bool"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "bool",
+                  "value": true
+                }
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "structuralCoverageComplete": true,
+    "finiteCoverageComplete": true,
+    "coverage": {
+      "instructionsCovered": 3,
+      "instructionsTotal": 3,
+      "branchesCovered": 0,
+      "branchesTotal": 0,
+      "uncoveredInstructions": [],
+      "uncoveredBranchOutcomes": [],
+      "finiteCoverage": {
+        "targetInvocations": 4,
+        "inputs": [
+          {
+            "position": 0,
+            "type": "Bool",
+            "required": [
+              "false",
+              "true"
+            ],
+            "observed": [
+              "false",
+              "true"
+            ],
+            "missing": []
+          },
+          {
+            "position": 1,
+            "type": "Bool",
+            "required": [
+              "false",
+              "true"
+            ],
+            "observed": [
+              "false",
+              "true"
+            ],
+            "missing": []
+          }
+        ],
+        "returns": [
+          {
+            "position": 0,
+            "type": "Bool",
+            "required": [
+              "false",
+              "true"
+            ],
+            "observed": [
+              "false",
+              "true"
+            ],
+            "missing": []
+          }
+        ],
+        "unsupported": [],
+        "missing": [],
+        "complete": true
+      },
+      "status": "current"
+    },
+    "describe": {
+      "name": "flags.agree",
+      "flowReference": "flags::agree",
+      "flowReferenceUnavailableReason": null,
+      "inputs": [
+        "Bool",
+        "Bool"
+      ],
+      "outputs": [
+        "Bool"
+      ],
+      "parameters": [
+        {
+          "name": "left",
+          "type": "Bool"
+        },
+        {
+          "name": "right",
+          "type": "Bool"
+        }
+      ],
+      "effects": [],
+      "documentation": "Returns whether the two flags agree.",
+      "id": "word_888613e1ddb640499761907f8950fd18",
+      "dependencies": [
+        "equals"
+      ],
+      "transitiveDependencies": [
+        "equals"
+      ],
+      "callers": [],
+      "tests": [
+        "both-false",
+        "both-true",
+        "false-true",
+        "true-false"
+      ],
+      "examples": [],
+      "source": "<revision:flags.agree/2>",
+      "line": 1,
+      "kind": "word",
+      "status": "persistent",
+      "maturity": "library",
+      "deprecated": false,
+      "revision": 2,
+      "testCount": 4,
+      "exampleCount": 0,
+      "coverage": {
+        "instructionsCovered": 3,
+        "instructionsTotal": 3,
+        "branchesCovered": 0,
+        "branchesTotal": 0,
+        "uncoveredInstructions": [],
+        "uncoveredBranchOutcomes": [],
+        "finiteCoverage": {
+          "targetInvocations": 4,
+          "inputs": [
+            {
+              "position": 0,
+              "type": "Bool",
+              "required": [
+                "false",
+                "true"
+              ],
+              "observed": [
+                "false",
+                "true"
+              ],
+              "missing": []
+            },
+            {
+              "position": 1,
+              "type": "Bool",
+              "required": [
+                "false",
+                "true"
+              ],
+              "observed": [
+                "false",
+                "true"
+              ],
+              "missing": []
+            }
+          ],
+          "returns": [
+            {
+              "position": 0,
+              "type": "Bool",
+              "required": [
+                "false",
+                "true"
+              ],
+              "observed": [
+                "false",
+                "true"
+              ],
+              "missing": []
+            }
+          ],
+          "unsupported": [],
+          "missing": [],
+          "complete": true
+        },
+        "status": "current"
+      }
+    }
+  },
+  "selection": {
+    "persistentProject": true,
+    "signatureAndRecordPreserved": true,
+    "literalOwnTestArgumentValues": {
+      "noneInputItems": [
+        "11"
+      ],
+      "someExistingValues": [
+        "5"
+      ]
+    },
+    "structuralCoverageComplete": true,
+    "finiteCoverage": {
+      "targetInvocations": 3,
+      "inputs": [],
+      "returns": [
+        {
+          "position": 0,
+          "type": "Selection",
+          "required": [
+            "$.first: none",
+            "$.first: some"
+          ],
+          "observed": [
+            "$.first: some"
+          ],
+          "missing": [
+            "$.first: none"
+          ]
+        }
+      ],
+      "unsupported": [],
+      "missing": [
+        "return[0] Selection: $.first: none"
+      ],
+      "complete": false
+    },
+    "independentBehaviorChecks": [
+      {
+        "case": {
+          "input": "none",
+          "item": "-9223372036854775808",
+          "expectedCase": "some",
+          "expectedValue": "-9223372036854775808"
+        },
+        "passed": true,
+        "response": {
+          "ok": true,
+          "kind": "eval",
+          "text": "some -9223372036854775808",
+          "data": {
+            "stack": [
+              "some -9223372036854775808"
+            ],
+            "stackTypes": [
+              "Option<Int>"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "option",
+                  "elementType": {
+                    "kind": "int"
+                  },
+                  "case": "some",
+                  "value": {
+                    "kind": "int",
+                    "value": "-9223372036854775808"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "case": {
+          "input": "none",
+          "item": "-1",
+          "expectedCase": "some",
+          "expectedValue": "-1"
+        },
+        "passed": true,
+        "response": {
+          "ok": true,
+          "kind": "eval",
+          "text": "some -1",
+          "data": {
+            "stack": [
+              "some -1"
+            ],
+            "stackTypes": [
+              "Option<Int>"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "option",
+                  "elementType": {
+                    "kind": "int"
+                  },
+                  "case": "some",
+                  "value": {
+                    "kind": "int",
+                    "value": "-1"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "case": {
+          "input": "none",
+          "item": "0",
+          "expectedCase": "some",
+          "expectedValue": "0"
+        },
+        "passed": true,
+        "response": {
+          "ok": true,
+          "kind": "eval",
+          "text": "some 0",
+          "data": {
+            "stack": [
+              "some 0"
+            ],
+            "stackTypes": [
+              "Option<Int>"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "option",
+                  "elementType": {
+                    "kind": "int"
+                  },
+                  "case": "some",
+                  "value": {
+                    "kind": "int",
+                    "value": "0"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "case": {
+          "input": "none",
+          "item": "1",
+          "expectedCase": "some",
+          "expectedValue": "1"
+        },
+        "passed": true,
+        "response": {
+          "ok": true,
+          "kind": "eval",
+          "text": "some 1",
+          "data": {
+            "stack": [
+              "some 1"
+            ],
+            "stackTypes": [
+              "Option<Int>"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "option",
+                  "elementType": {
+                    "kind": "int"
+                  },
+                  "case": "some",
+                  "value": {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "case": {
+          "input": "none",
+          "item": "9223372036854775807",
+          "expectedCase": "some",
+          "expectedValue": "9223372036854775807"
+        },
+        "passed": true,
+        "response": {
+          "ok": true,
+          "kind": "eval",
+          "text": "some 9223372036854775807",
+          "data": {
+            "stack": [
+              "some 9223372036854775807"
+            ],
+            "stackTypes": [
+              "Option<Int>"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "option",
+                  "elementType": {
+                    "kind": "int"
+                  },
+                  "case": "some",
+                  "value": {
+                    "kind": "int",
+                    "value": "9223372036854775807"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "case": {
+          "input": "some",
+          "existing": "-9223372036854775808",
+          "item": "0",
+          "expectedCase": "some",
+          "expectedValue": "-9223372036854775808"
+        },
+        "passed": true,
+        "response": {
+          "ok": true,
+          "kind": "eval",
+          "text": "some -9223372036854775808",
+          "data": {
+            "stack": [
+              "some -9223372036854775808"
+            ],
+            "stackTypes": [
+              "Option<Int>"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "option",
+                  "elementType": {
+                    "kind": "int"
+                  },
+                  "case": "some",
+                  "value": {
+                    "kind": "int",
+                    "value": "-9223372036854775808"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "case": {
+          "input": "some",
+          "existing": "-1",
+          "item": "1",
+          "expectedCase": "some",
+          "expectedValue": "-1"
+        },
+        "passed": true,
+        "response": {
+          "ok": true,
+          "kind": "eval",
+          "text": "some -1",
+          "data": {
+            "stack": [
+              "some -1"
+            ],
+            "stackTypes": [
+              "Option<Int>"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "option",
+                  "elementType": {
+                    "kind": "int"
+                  },
+                  "case": "some",
+                  "value": {
+                    "kind": "int",
+                    "value": "-1"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "case": {
+          "input": "some",
+          "existing": "0",
+          "item": "9223372036854775807",
+          "expectedCase": "some",
+          "expectedValue": "0"
+        },
+        "passed": true,
+        "response": {
+          "ok": true,
+          "kind": "eval",
+          "text": "some 0",
+          "data": {
+            "stack": [
+              "some 0"
+            ],
+            "stackTypes": [
+              "Option<Int>"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "option",
+                  "elementType": {
+                    "kind": "int"
+                  },
+                  "case": "some",
+                  "value": {
+                    "kind": "int",
+                    "value": "0"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "case": {
+          "input": "some",
+          "existing": "1",
+          "item": "-9223372036854775808",
+          "expectedCase": "some",
+          "expectedValue": "1"
+        },
+        "passed": true,
+        "response": {
+          "ok": true,
+          "kind": "eval",
+          "text": "some 1",
+          "data": {
+            "stack": [
+              "some 1"
+            ],
+            "stackTypes": [
+              "Option<Int>"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "option",
+                  "elementType": {
+                    "kind": "int"
+                  },
+                  "case": "some",
+                  "value": {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "case": {
+          "input": "some",
+          "existing": "9223372036854775807",
+          "item": "-1",
+          "expectedCase": "some",
+          "expectedValue": "9223372036854775807"
+        },
+        "passed": true,
+        "response": {
+          "ok": true,
+          "kind": "eval",
+          "text": "some 9223372036854775807",
+          "data": {
+            "stack": [
+              "some 9223372036854775807"
+            ],
+            "stackTypes": [
+              "Option<Int>"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "option",
+                  "elementType": {
+                    "kind": "int"
+                  },
+                  "case": "some",
+                  "value": {
+                    "kind": "int",
+                    "value": "9223372036854775807"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "behaviorChecksAllPass": true,
+    "describe": {
+      "name": "selection.accept",
+      "flowReference": "selection::accept",
+      "flowReferenceUnavailableReason": null,
+      "inputs": [
+        "Selection",
+        "Int"
+      ],
+      "outputs": [
+        "Selection"
+      ],
+      "parameters": [
+        {
+          "name": "state",
+          "type": "Selection"
+        },
+        {
+          "name": "item",
+          "type": "Int"
+        }
+      ],
+      "effects": [],
+      "documentation": "Preserves a selection that already has a first item; otherwise records the supplied item.",
+      "id": "word_02c11c01a67a45439fb8226004774dee",
+      "dependencies": [
+        "selection.first",
+        "selection.new"
+      ],
+      "transitiveDependencies": [
+        "selection.first",
+        "selection.new"
+      ],
+      "callers": [],
+      "tests": [
+        "preserves-first-item",
+        "preserves-first-item-over-new-item",
+        "records-first-item"
+      ],
+      "examples": [],
+      "source": "<revision:selection.accept/2>",
+      "line": 1,
+      "kind": "word",
+      "status": "persistent",
+      "maturity": "project",
+      "deprecated": false,
+      "revision": 2,
+      "testCount": 3,
+      "exampleCount": 0,
+      "coverage": {
+        "instructionsCovered": 7,
+        "instructionsTotal": 7,
+        "branchesCovered": 2,
+        "branchesTotal": 2,
+        "uncoveredInstructions": [],
+        "uncoveredBranchOutcomes": [],
+        "finiteCoverage": {
+          "targetInvocations": 3,
+          "inputs": [],
+          "returns": [
+            {
+              "position": 0,
+              "type": "Selection",
+              "required": [
+                "$.first: none",
+                "$.first: some"
+              ],
+              "observed": [
+                "$.first: some"
+              ],
+              "missing": [
+                "$.first: none"
+              ]
+            }
+          ],
+          "unsupported": [],
+          "missing": [
+            "return[0] Selection: $.first: none"
+          ],
+          "complete": false
+        },
+        "status": "current"
+      }
+    }
+  },
+  "mutations": [
+    {
+      "mutant": "M_TF",
+      "defineResponse": {
+        "ok": true,
+        "kind": "defined",
+        "text": "Flow definition, tests, examples, and retained source bindings validated and staged.",
+        "data": {
+          "frontend": "flow",
+          "name": "flags.agree",
+          "id": "word_888613e1ddb640499761907f8950fd18",
+          "revision": 3,
+          "tests": [
+            "both-false",
+            "both-true",
+            "false-true",
+            "true-false"
+          ],
+          "examples": []
+        }
+      },
+      "replaceResponse": {
+        "ok": false,
+        "kind": "error",
+        "text": "COMMIT_TESTS_FAILED: Candidate tests must pass against the proposed dictionary before commit.",
+        "error": {
+          "code": "COMMIT_TESTS_FAILED",
+          "message": "Candidate tests must pass against the proposed dictionary before commit.",
+          "expected": [],
+          "actual": [
+            "flags.agree/true-false"
+          ]
+        }
+      },
+      "replaceAccepted": false,
+      "replaceErrorCode": "COMMIT_TESTS_FAILED",
+      "durableTreeUnchanged": true,
+      "attachedSourceUnchanged": true,
+      "testSourcesBefore": [
+        {
+          "word": "selection.accept",
+          "revision": 2,
+          "caseName": "preserves-first-item-over-new-item",
+          "sourceHash": "7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645",
+          "source": "test selection.accept/preserves-first-item-over-new-item { selection::first(selection::accept(selection::new(first = option::some<Int>(5)), 11)) => value option::some<Int>(5) }",
+          "sourceSha256": "7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645"
+        },
+        {
+          "word": "selection.accept",
+          "revision": 2,
+          "caseName": "records-first-item",
+          "sourceHash": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8",
+          "source": "test selection.accept/records-first-item {\n    selection::accept(selection::new(first = option::none<Int>()), 11).first\n    => value option::some<Int>(11)\n}",
+          "sourceSha256": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8"
+        },
+        {
+          "word": "selection.accept",
+          "revision": 2,
+          "caseName": "preserves-first-item",
+          "sourceHash": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd",
+          "source": "test selection.accept/preserves-first-item {\n    selection::accept(selection::new(first = option::some<Int>(5)), 11).first\n    => value option::some<Int>(5)\n}",
+          "sourceSha256": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd"
+        },
+        {
+          "word": "flags.agree",
+          "revision": 2,
+          "caseName": "false-true",
+          "sourceHash": "1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042",
+          "source": "test flags.agree/false-true { flags::agree(false, true) => false }",
+          "sourceSha256": "1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042"
+        },
+        {
+          "word": "flags.agree",
+          "revision": 2,
+          "caseName": "both-false",
+          "sourceHash": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225",
+          "source": "test flags.agree/both-false {\n    flags::agree(left = false, right = false)\n    => true\n}",
+          "sourceSha256": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225"
+        },
+        {
+          "word": "flags.agree",
+          "revision": 2,
+          "caseName": "both-true",
+          "sourceHash": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9",
+          "source": "test flags.agree/both-true {\n    flags::agree(left = true, right = true)\n    => true\n}",
+          "sourceSha256": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9"
+        },
+        {
+          "word": "flags.agree",
+          "revision": 2,
+          "caseName": "true-false",
+          "sourceHash": "c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23",
+          "source": "test flags.agree/true-false { flags::agree(true, false) => false }",
+          "sourceSha256": "c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23"
+        }
+      ],
+      "testSourcesAfter": [
+        {
+          "word": "selection.accept",
+          "revision": 2,
+          "caseName": "preserves-first-item-over-new-item",
+          "sourceHash": "7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645",
+          "source": "test selection.accept/preserves-first-item-over-new-item { selection::first(selection::accept(selection::new(first = option::some<Int>(5)), 11)) => value option::some<Int>(5) }",
+          "sourceSha256": "7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645"
+        },
+        {
+          "word": "selection.accept",
+          "revision": 2,
+          "caseName": "records-first-item",
+          "sourceHash": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8",
+          "source": "test selection.accept/records-first-item {\n    selection::accept(selection::new(first = option::none<Int>()), 11).first\n    => value option::some<Int>(11)\n}",
+          "sourceSha256": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8"
+        },
+        {
+          "word": "selection.accept",
+          "revision": 2,
+          "caseName": "preserves-first-item",
+          "sourceHash": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd",
+          "source": "test selection.accept/preserves-first-item {\n    selection::accept(selection::new(first = option::some<Int>(5)), 11).first\n    => value option::some<Int>(5)\n}",
+          "sourceSha256": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd"
+        },
+        {
+          "word": "flags.agree",
+          "revision": 2,
+          "caseName": "false-true",
+          "sourceHash": "1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042",
+          "source": "test flags.agree/false-true { flags::agree(false, true) => false }",
+          "sourceSha256": "1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042"
+        },
+        {
+          "word": "flags.agree",
+          "revision": 2,
+          "caseName": "both-false",
+          "sourceHash": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225",
+          "source": "test flags.agree/both-false {\n    flags::agree(left = false, right = false)\n    => true\n}",
+          "sourceSha256": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225"
+        },
+        {
+          "word": "flags.agree",
+          "revision": 2,
+          "caseName": "both-true",
+          "sourceHash": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9",
+          "source": "test flags.agree/both-true {\n    flags::agree(left = true, right = true)\n    => true\n}",
+          "sourceSha256": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9"
+        },
+        {
+          "word": "flags.agree",
+          "revision": 2,
+          "caseName": "true-false",
+          "sourceHash": "c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23",
+          "source": "test flags.agree/true-false { flags::agree(true, false) => false }",
+          "sourceSha256": "c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23"
+        }
+      ],
+      "treeBefore": [
+        {
+          "path": ".agentlang/store/CURRENT",
+          "bytes": 134,
+          "sha256": "bc22181df6898bf539acfb62e440c5ba3f34e51eff6880fa23bf650d8c5e357b"
+        },
+        {
+          "path": ".agentlang/store/manifests/8c6d7a00bdf41532b286b5b858218d341bbeb8f3550108b6855519dcdf59a7e0.json",
+          "bytes": 6316,
+          "sha256": "8c6d7a00bdf41532b286b5b858218d341bbeb8f3550108b6855519dcdf59a7e0"
+        },
+        {
+          "path": ".agentlang/store/manifests/c122874676e4074803c2881990722b76735328b59beb4b518a7116817ed6300b.json",
+          "bytes": 8961,
+          "sha256": "c122874676e4074803c2881990722b76735328b59beb4b518a7116817ed6300b"
+        },
+        {
+          "path": ".agentlang/store/manifests/f8ba1cbcce124921e062977b0a816f029091e64d26f4ae7ce60f99f29099a27a.json",
+          "bytes": 14372,
+          "sha256": "f8ba1cbcce124921e062977b0a816f029091e64d26f4ae7ce60f99f29099a27a"
+        },
+        {
+          "path": ".agentlang/store/objects/1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042.agent",
+          "bytes": 66,
+          "sha256": "1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042"
+        },
+        {
+          "path": ".agentlang/store/objects/36377909f6b8dafe16337b442f149aede4f32c6829cb5f91341b38ce5e1191d1.agent",
+          "bytes": 1383,
+          "sha256": "36377909f6b8dafe16337b442f149aede4f32c6829cb5f91341b38ce5e1191d1"
+        },
+        {
+          "path": ".agentlang/store/objects/3e6b97554c8fb510abd12d92ff0ea4b7adc7a7f70e1c988adb5e44170a038a0d.agent",
+          "bytes": 1189,
+          "sha256": "3e6b97554c8fb510abd12d92ff0ea4b7adc7a7f70e1c988adb5e44170a038a0d"
+        },
+        {
+          "path": ".agentlang/store/objects/4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225.agent",
+          "bytes": 89,
+          "sha256": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225"
+        },
+        {
+          "path": ".agentlang/store/objects/749b3bdddfbabc9bcd0abf96ef657f3baab3cc83742890c9ad054c1868a48ee4.agent",
+          "bytes": 1590,
+          "sha256": "749b3bdddfbabc9bcd0abf96ef657f3baab3cc83742890c9ad054c1868a48ee4"
+        },
+        {
+          "path": ".agentlang/store/objects/7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645.agent",
+          "bytes": 176,
+          "sha256": "7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645"
+        },
+        {
+          "path": ".agentlang/store/objects/86d11e76e3fadb27b9a23e1edc2b2343576dedd388513258146c467fca650039.agent",
+          "bytes": 134,
+          "sha256": "86d11e76e3fadb27b9a23e1edc2b2343576dedd388513258146c467fca650039"
+        },
+        {
+          "path": ".agentlang/store/objects/9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8.agent",
+          "bytes": 156,
+          "sha256": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8"
+        },
+        {
+          "path": ".agentlang/store/objects/b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9.agent",
+          "bytes": 86,
+          "sha256": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9"
+        },
+        {
+          "path": ".agentlang/store/objects/c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23.agent",
+          "bytes": 66,
+          "sha256": "c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23"
+        },
+        {
+          "path": ".agentlang/store/objects/d6fccefb45cf21eabd027fbae51df54436d712157f67f01756e71f91d6bfdaa8.agent",
+          "bytes": 316,
+          "sha256": "d6fccefb45cf21eabd027fbae51df54436d712157f67f01756e71f91d6bfdaa8"
+        },
+        {
+          "path": ".agentlang/store/objects/da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd.agent",
+          "bytes": 158,
+          "sha256": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd"
+        },
+        {
+          "path": ".agentlang/store/objects/fcb9fdb110d63be14d0505ffd04bfa63df073fc1e8c0de5ecc4f19ce57eac0db.agent",
+          "bytes": 50,
+          "sha256": "fcb9fdb110d63be14d0505ffd04bfa63df073fc1e8c0de5ecc4f19ce57eac0db"
+        },
+        {
+          "path": ".agentlang/store/WRITE.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "dictionary.agent",
+          "bytes": 1590,
+          "sha256": "749b3bdddfbabc9bcd0abf96ef657f3baab3cc83742890c9ad054c1868a48ee4"
+        },
+        {
+          "path": "history/task-0001.json",
+          "bytes": 649,
+          "sha256": "6dcf82538001699c73cfc4bce435dc9d197e9c27a650d9519f799c7ad53175b0"
+        }
+      ],
+      "treeAfter": [
+        {
+          "path": ".agentlang/store/CURRENT",
+          "bytes": 134,
+          "sha256": "bc22181df6898bf539acfb62e440c5ba3f34e51eff6880fa23bf650d8c5e357b"
+        },
+        {
+          "path": ".agentlang/store/manifests/8c6d7a00bdf41532b286b5b858218d341bbeb8f3550108b6855519dcdf59a7e0.json",
+          "bytes": 6316,
+          "sha256": "8c6d7a00bdf41532b286b5b858218d341bbeb8f3550108b6855519dcdf59a7e0"
+        },
+        {
+          "path": ".agentlang/store/manifests/c122874676e4074803c2881990722b76735328b59beb4b518a7116817ed6300b.json",
+          "bytes": 8961,
+          "sha256": "c122874676e4074803c2881990722b76735328b59beb4b518a7116817ed6300b"
+        },
+        {
+          "path": ".agentlang/store/manifests/f8ba1cbcce124921e062977b0a816f029091e64d26f4ae7ce60f99f29099a27a.json",
+          "bytes": 14372,
+          "sha256": "f8ba1cbcce124921e062977b0a816f029091e64d26f4ae7ce60f99f29099a27a"
+        },
+        {
+          "path": ".agentlang/store/objects/1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042.agent",
+          "bytes": 66,
+          "sha256": "1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042"
+        },
+        {
+          "path": ".agentlang/store/objects/36377909f6b8dafe16337b442f149aede4f32c6829cb5f91341b38ce5e1191d1.agent",
+          "bytes": 1383,
+          "sha256": "36377909f6b8dafe16337b442f149aede4f32c6829cb5f91341b38ce5e1191d1"
+        },
+        {
+          "path": ".agentlang/store/objects/3e6b97554c8fb510abd12d92ff0ea4b7adc7a7f70e1c988adb5e44170a038a0d.agent",
+          "bytes": 1189,
+          "sha256": "3e6b97554c8fb510abd12d92ff0ea4b7adc7a7f70e1c988adb5e44170a038a0d"
+        },
+        {
+          "path": ".agentlang/store/objects/4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225.agent",
+          "bytes": 89,
+          "sha256": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225"
+        },
+        {
+          "path": ".agentlang/store/objects/749b3bdddfbabc9bcd0abf96ef657f3baab3cc83742890c9ad054c1868a48ee4.agent",
+          "bytes": 1590,
+          "sha256": "749b3bdddfbabc9bcd0abf96ef657f3baab3cc83742890c9ad054c1868a48ee4"
+        },
+        {
+          "path": ".agentlang/store/objects/7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645.agent",
+          "bytes": 176,
+          "sha256": "7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645"
+        },
+        {
+          "path": ".agentlang/store/objects/86d11e76e3fadb27b9a23e1edc2b2343576dedd388513258146c467fca650039.agent",
+          "bytes": 134,
+          "sha256": "86d11e76e3fadb27b9a23e1edc2b2343576dedd388513258146c467fca650039"
+        },
+        {
+          "path": ".agentlang/store/objects/9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8.agent",
+          "bytes": 156,
+          "sha256": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8"
+        },
+        {
+          "path": ".agentlang/store/objects/b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9.agent",
+          "bytes": 86,
+          "sha256": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9"
+        },
+        {
+          "path": ".agentlang/store/objects/c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23.agent",
+          "bytes": 66,
+          "sha256": "c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23"
+        },
+        {
+          "path": ".agentlang/store/objects/d6fccefb45cf21eabd027fbae51df54436d712157f67f01756e71f91d6bfdaa8.agent",
+          "bytes": 316,
+          "sha256": "d6fccefb45cf21eabd027fbae51df54436d712157f67f01756e71f91d6bfdaa8"
+        },
+        {
+          "path": ".agentlang/store/objects/da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd.agent",
+          "bytes": 158,
+          "sha256": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd"
+        },
+        {
+          "path": ".agentlang/store/objects/fcb9fdb110d63be14d0505ffd04bfa63df073fc1e8c0de5ecc4f19ce57eac0db.agent",
+          "bytes": 50,
+          "sha256": "fcb9fdb110d63be14d0505ffd04bfa63df073fc1e8c0de5ecc4f19ce57eac0db"
+        },
+        {
+          "path": ".agentlang/store/WRITE.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "dictionary.agent",
+          "bytes": 1590,
+          "sha256": "749b3bdddfbabc9bcd0abf96ef657f3baab3cc83742890c9ad054c1868a48ee4"
+        },
+        {
+          "path": "history/task-0001.json",
+          "bytes": 649,
+          "sha256": "6dcf82538001699c73cfc4bce435dc9d197e9c27a650d9519f799c7ad53175b0"
+        }
+      ],
+      "testsCatchMutant": true,
+      "oracleTruthRowsPass": null,
+      "mismatchedTruthRows": []
+    },
+    {
+      "mutant": "M_FT",
+      "defineResponse": {
+        "ok": true,
+        "kind": "defined",
+        "text": "Flow definition, tests, examples, and retained source bindings validated and staged.",
+        "data": {
+          "frontend": "flow",
+          "name": "flags.agree",
+          "id": "word_888613e1ddb640499761907f8950fd18",
+          "revision": 3,
+          "tests": [
+            "both-false",
+            "both-true",
+            "false-true",
+            "true-false"
+          ],
+          "examples": []
+        }
+      },
+      "replaceResponse": {
+        "ok": false,
+        "kind": "error",
+        "text": "COMMIT_TESTS_FAILED: Candidate tests must pass against the proposed dictionary before commit.",
+        "error": {
+          "code": "COMMIT_TESTS_FAILED",
+          "message": "Candidate tests must pass against the proposed dictionary before commit.",
+          "expected": [],
+          "actual": [
+            "flags.agree/false-true"
+          ]
+        }
+      },
+      "replaceAccepted": false,
+      "replaceErrorCode": "COMMIT_TESTS_FAILED",
+      "durableTreeUnchanged": true,
+      "attachedSourceUnchanged": true,
+      "testSourcesBefore": [
+        {
+          "word": "selection.accept",
+          "revision": 2,
+          "caseName": "preserves-first-item-over-new-item",
+          "sourceHash": "7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645",
+          "source": "test selection.accept/preserves-first-item-over-new-item { selection::first(selection::accept(selection::new(first = option::some<Int>(5)), 11)) => value option::some<Int>(5) }",
+          "sourceSha256": "7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645"
+        },
+        {
+          "word": "selection.accept",
+          "revision": 2,
+          "caseName": "records-first-item",
+          "sourceHash": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8",
+          "source": "test selection.accept/records-first-item {\n    selection::accept(selection::new(first = option::none<Int>()), 11).first\n    => value option::some<Int>(11)\n}",
+          "sourceSha256": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8"
+        },
+        {
+          "word": "selection.accept",
+          "revision": 2,
+          "caseName": "preserves-first-item",
+          "sourceHash": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd",
+          "source": "test selection.accept/preserves-first-item {\n    selection::accept(selection::new(first = option::some<Int>(5)), 11).first\n    => value option::some<Int>(5)\n}",
+          "sourceSha256": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd"
+        },
+        {
+          "word": "flags.agree",
+          "revision": 2,
+          "caseName": "false-true",
+          "sourceHash": "1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042",
+          "source": "test flags.agree/false-true { flags::agree(false, true) => false }",
+          "sourceSha256": "1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042"
+        },
+        {
+          "word": "flags.agree",
+          "revision": 2,
+          "caseName": "both-false",
+          "sourceHash": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225",
+          "source": "test flags.agree/both-false {\n    flags::agree(left = false, right = false)\n    => true\n}",
+          "sourceSha256": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225"
+        },
+        {
+          "word": "flags.agree",
+          "revision": 2,
+          "caseName": "both-true",
+          "sourceHash": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9",
+          "source": "test flags.agree/both-true {\n    flags::agree(left = true, right = true)\n    => true\n}",
+          "sourceSha256": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9"
+        },
+        {
+          "word": "flags.agree",
+          "revision": 2,
+          "caseName": "true-false",
+          "sourceHash": "c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23",
+          "source": "test flags.agree/true-false { flags::agree(true, false) => false }",
+          "sourceSha256": "c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23"
+        }
+      ],
+      "testSourcesAfter": [
+        {
+          "word": "selection.accept",
+          "revision": 2,
+          "caseName": "preserves-first-item-over-new-item",
+          "sourceHash": "7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645",
+          "source": "test selection.accept/preserves-first-item-over-new-item { selection::first(selection::accept(selection::new(first = option::some<Int>(5)), 11)) => value option::some<Int>(5) }",
+          "sourceSha256": "7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645"
+        },
+        {
+          "word": "selection.accept",
+          "revision": 2,
+          "caseName": "records-first-item",
+          "sourceHash": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8",
+          "source": "test selection.accept/records-first-item {\n    selection::accept(selection::new(first = option::none<Int>()), 11).first\n    => value option::some<Int>(11)\n}",
+          "sourceSha256": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8"
+        },
+        {
+          "word": "selection.accept",
+          "revision": 2,
+          "caseName": "preserves-first-item",
+          "sourceHash": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd",
+          "source": "test selection.accept/preserves-first-item {\n    selection::accept(selection::new(first = option::some<Int>(5)), 11).first\n    => value option::some<Int>(5)\n}",
+          "sourceSha256": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd"
+        },
+        {
+          "word": "flags.agree",
+          "revision": 2,
+          "caseName": "false-true",
+          "sourceHash": "1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042",
+          "source": "test flags.agree/false-true { flags::agree(false, true) => false }",
+          "sourceSha256": "1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042"
+        },
+        {
+          "word": "flags.agree",
+          "revision": 2,
+          "caseName": "both-false",
+          "sourceHash": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225",
+          "source": "test flags.agree/both-false {\n    flags::agree(left = false, right = false)\n    => true\n}",
+          "sourceSha256": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225"
+        },
+        {
+          "word": "flags.agree",
+          "revision": 2,
+          "caseName": "both-true",
+          "sourceHash": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9",
+          "source": "test flags.agree/both-true {\n    flags::agree(left = true, right = true)\n    => true\n}",
+          "sourceSha256": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9"
+        },
+        {
+          "word": "flags.agree",
+          "revision": 2,
+          "caseName": "true-false",
+          "sourceHash": "c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23",
+          "source": "test flags.agree/true-false { flags::agree(true, false) => false }",
+          "sourceSha256": "c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23"
+        }
+      ],
+      "treeBefore": [
+        {
+          "path": ".agentlang/store/CURRENT",
+          "bytes": 134,
+          "sha256": "bc22181df6898bf539acfb62e440c5ba3f34e51eff6880fa23bf650d8c5e357b"
+        },
+        {
+          "path": ".agentlang/store/manifests/8c6d7a00bdf41532b286b5b858218d341bbeb8f3550108b6855519dcdf59a7e0.json",
+          "bytes": 6316,
+          "sha256": "8c6d7a00bdf41532b286b5b858218d341bbeb8f3550108b6855519dcdf59a7e0"
+        },
+        {
+          "path": ".agentlang/store/manifests/c122874676e4074803c2881990722b76735328b59beb4b518a7116817ed6300b.json",
+          "bytes": 8961,
+          "sha256": "c122874676e4074803c2881990722b76735328b59beb4b518a7116817ed6300b"
+        },
+        {
+          "path": ".agentlang/store/manifests/f8ba1cbcce124921e062977b0a816f029091e64d26f4ae7ce60f99f29099a27a.json",
+          "bytes": 14372,
+          "sha256": "f8ba1cbcce124921e062977b0a816f029091e64d26f4ae7ce60f99f29099a27a"
+        },
+        {
+          "path": ".agentlang/store/objects/1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042.agent",
+          "bytes": 66,
+          "sha256": "1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042"
+        },
+        {
+          "path": ".agentlang/store/objects/36377909f6b8dafe16337b442f149aede4f32c6829cb5f91341b38ce5e1191d1.agent",
+          "bytes": 1383,
+          "sha256": "36377909f6b8dafe16337b442f149aede4f32c6829cb5f91341b38ce5e1191d1"
+        },
+        {
+          "path": ".agentlang/store/objects/3e6b97554c8fb510abd12d92ff0ea4b7adc7a7f70e1c988adb5e44170a038a0d.agent",
+          "bytes": 1189,
+          "sha256": "3e6b97554c8fb510abd12d92ff0ea4b7adc7a7f70e1c988adb5e44170a038a0d"
+        },
+        {
+          "path": ".agentlang/store/objects/4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225.agent",
+          "bytes": 89,
+          "sha256": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225"
+        },
+        {
+          "path": ".agentlang/store/objects/749b3bdddfbabc9bcd0abf96ef657f3baab3cc83742890c9ad054c1868a48ee4.agent",
+          "bytes": 1590,
+          "sha256": "749b3bdddfbabc9bcd0abf96ef657f3baab3cc83742890c9ad054c1868a48ee4"
+        },
+        {
+          "path": ".agentlang/store/objects/7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645.agent",
+          "bytes": 176,
+          "sha256": "7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645"
+        },
+        {
+          "path": ".agentlang/store/objects/86d11e76e3fadb27b9a23e1edc2b2343576dedd388513258146c467fca650039.agent",
+          "bytes": 134,
+          "sha256": "86d11e76e3fadb27b9a23e1edc2b2343576dedd388513258146c467fca650039"
+        },
+        {
+          "path": ".agentlang/store/objects/9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8.agent",
+          "bytes": 156,
+          "sha256": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8"
+        },
+        {
+          "path": ".agentlang/store/objects/b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9.agent",
+          "bytes": 86,
+          "sha256": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9"
+        },
+        {
+          "path": ".agentlang/store/objects/c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23.agent",
+          "bytes": 66,
+          "sha256": "c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23"
+        },
+        {
+          "path": ".agentlang/store/objects/d6fccefb45cf21eabd027fbae51df54436d712157f67f01756e71f91d6bfdaa8.agent",
+          "bytes": 316,
+          "sha256": "d6fccefb45cf21eabd027fbae51df54436d712157f67f01756e71f91d6bfdaa8"
+        },
+        {
+          "path": ".agentlang/store/objects/da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd.agent",
+          "bytes": 158,
+          "sha256": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd"
+        },
+        {
+          "path": ".agentlang/store/objects/fcb9fdb110d63be14d0505ffd04bfa63df073fc1e8c0de5ecc4f19ce57eac0db.agent",
+          "bytes": 50,
+          "sha256": "fcb9fdb110d63be14d0505ffd04bfa63df073fc1e8c0de5ecc4f19ce57eac0db"
+        },
+        {
+          "path": ".agentlang/store/WRITE.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "dictionary.agent",
+          "bytes": 1590,
+          "sha256": "749b3bdddfbabc9bcd0abf96ef657f3baab3cc83742890c9ad054c1868a48ee4"
+        },
+        {
+          "path": "history/task-0001.json",
+          "bytes": 649,
+          "sha256": "6dcf82538001699c73cfc4bce435dc9d197e9c27a650d9519f799c7ad53175b0"
+        }
+      ],
+      "treeAfter": [
+        {
+          "path": ".agentlang/store/CURRENT",
+          "bytes": 134,
+          "sha256": "bc22181df6898bf539acfb62e440c5ba3f34e51eff6880fa23bf650d8c5e357b"
+        },
+        {
+          "path": ".agentlang/store/manifests/8c6d7a00bdf41532b286b5b858218d341bbeb8f3550108b6855519dcdf59a7e0.json",
+          "bytes": 6316,
+          "sha256": "8c6d7a00bdf41532b286b5b858218d341bbeb8f3550108b6855519dcdf59a7e0"
+        },
+        {
+          "path": ".agentlang/store/manifests/c122874676e4074803c2881990722b76735328b59beb4b518a7116817ed6300b.json",
+          "bytes": 8961,
+          "sha256": "c122874676e4074803c2881990722b76735328b59beb4b518a7116817ed6300b"
+        },
+        {
+          "path": ".agentlang/store/manifests/f8ba1cbcce124921e062977b0a816f029091e64d26f4ae7ce60f99f29099a27a.json",
+          "bytes": 14372,
+          "sha256": "f8ba1cbcce124921e062977b0a816f029091e64d26f4ae7ce60f99f29099a27a"
+        },
+        {
+          "path": ".agentlang/store/objects/1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042.agent",
+          "bytes": 66,
+          "sha256": "1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042"
+        },
+        {
+          "path": ".agentlang/store/objects/36377909f6b8dafe16337b442f149aede4f32c6829cb5f91341b38ce5e1191d1.agent",
+          "bytes": 1383,
+          "sha256": "36377909f6b8dafe16337b442f149aede4f32c6829cb5f91341b38ce5e1191d1"
+        },
+        {
+          "path": ".agentlang/store/objects/3e6b97554c8fb510abd12d92ff0ea4b7adc7a7f70e1c988adb5e44170a038a0d.agent",
+          "bytes": 1189,
+          "sha256": "3e6b97554c8fb510abd12d92ff0ea4b7adc7a7f70e1c988adb5e44170a038a0d"
+        },
+        {
+          "path": ".agentlang/store/objects/4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225.agent",
+          "bytes": 89,
+          "sha256": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225"
+        },
+        {
+          "path": ".agentlang/store/objects/749b3bdddfbabc9bcd0abf96ef657f3baab3cc83742890c9ad054c1868a48ee4.agent",
+          "bytes": 1590,
+          "sha256": "749b3bdddfbabc9bcd0abf96ef657f3baab3cc83742890c9ad054c1868a48ee4"
+        },
+        {
+          "path": ".agentlang/store/objects/7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645.agent",
+          "bytes": 176,
+          "sha256": "7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645"
+        },
+        {
+          "path": ".agentlang/store/objects/86d11e76e3fadb27b9a23e1edc2b2343576dedd388513258146c467fca650039.agent",
+          "bytes": 134,
+          "sha256": "86d11e76e3fadb27b9a23e1edc2b2343576dedd388513258146c467fca650039"
+        },
+        {
+          "path": ".agentlang/store/objects/9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8.agent",
+          "bytes": 156,
+          "sha256": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8"
+        },
+        {
+          "path": ".agentlang/store/objects/b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9.agent",
+          "bytes": 86,
+          "sha256": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9"
+        },
+        {
+          "path": ".agentlang/store/objects/c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23.agent",
+          "bytes": 66,
+          "sha256": "c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23"
+        },
+        {
+          "path": ".agentlang/store/objects/d6fccefb45cf21eabd027fbae51df54436d712157f67f01756e71f91d6bfdaa8.agent",
+          "bytes": 316,
+          "sha256": "d6fccefb45cf21eabd027fbae51df54436d712157f67f01756e71f91d6bfdaa8"
+        },
+        {
+          "path": ".agentlang/store/objects/da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd.agent",
+          "bytes": 158,
+          "sha256": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd"
+        },
+        {
+          "path": ".agentlang/store/objects/fcb9fdb110d63be14d0505ffd04bfa63df073fc1e8c0de5ecc4f19ce57eac0db.agent",
+          "bytes": 50,
+          "sha256": "fcb9fdb110d63be14d0505ffd04bfa63df073fc1e8c0de5ecc4f19ce57eac0db"
+        },
+        {
+          "path": ".agentlang/store/WRITE.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "dictionary.agent",
+          "bytes": 1590,
+          "sha256": "749b3bdddfbabc9bcd0abf96ef657f3baab3cc83742890c9ad054c1868a48ee4"
+        },
+        {
+          "path": "history/task-0001.json",
+          "bytes": 649,
+          "sha256": "6dcf82538001699c73cfc4bce435dc9d197e9c27a650d9519f799c7ad53175b0"
+        }
+      ],
+      "testsCatchMutant": true,
+      "oracleTruthRowsPass": null,
+      "mismatchedTruthRows": []
+    }
+  ],
+  "replaceWordMutationSummary": {
+    "attempted": [
+      "M_TF",
+      "M_FT"
+    ],
+    "rejected": [
+      "M_TF",
+      "M_FT"
+    ],
+    "accepted": [],
+    "results": [
+      {
+        "mutant": "M_TF",
+        "defineResponse": {
+          "ok": true,
+          "kind": "defined",
+          "text": "Flow definition, tests, examples, and retained source bindings validated and staged.",
+          "data": {
+            "frontend": "flow",
+            "name": "flags.agree",
+            "id": "word_888613e1ddb640499761907f8950fd18",
+            "revision": 3,
+            "tests": [
+              "both-false",
+              "both-true",
+              "false-true",
+              "true-false"
+            ],
+            "examples": []
+          }
+        },
+        "replaceResponse": {
+          "ok": false,
+          "kind": "error",
+          "text": "COMMIT_TESTS_FAILED: Candidate tests must pass against the proposed dictionary before commit.",
+          "error": {
+            "code": "COMMIT_TESTS_FAILED",
+            "message": "Candidate tests must pass against the proposed dictionary before commit.",
+            "expected": [],
+            "actual": [
+              "flags.agree/true-false"
+            ]
+          }
+        },
+        "replaceAccepted": false,
+        "replaceErrorCode": "COMMIT_TESTS_FAILED",
+        "durableTreeUnchanged": true,
+        "attachedSourceUnchanged": true,
+        "testSourcesBefore": [
+          {
+            "word": "selection.accept",
+            "revision": 2,
+            "caseName": "preserves-first-item-over-new-item",
+            "sourceHash": "7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645",
+            "source": "test selection.accept/preserves-first-item-over-new-item { selection::first(selection::accept(selection::new(first = option::some<Int>(5)), 11)) => value option::some<Int>(5) }",
+            "sourceSha256": "7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645"
+          },
+          {
+            "word": "selection.accept",
+            "revision": 2,
+            "caseName": "records-first-item",
+            "sourceHash": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8",
+            "source": "test selection.accept/records-first-item {\n    selection::accept(selection::new(first = option::none<Int>()), 11).first\n    => value option::some<Int>(11)\n}",
+            "sourceSha256": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8"
+          },
+          {
+            "word": "selection.accept",
+            "revision": 2,
+            "caseName": "preserves-first-item",
+            "sourceHash": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd",
+            "source": "test selection.accept/preserves-first-item {\n    selection::accept(selection::new(first = option::some<Int>(5)), 11).first\n    => value option::some<Int>(5)\n}",
+            "sourceSha256": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd"
+          },
+          {
+            "word": "flags.agree",
+            "revision": 2,
+            "caseName": "false-true",
+            "sourceHash": "1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042",
+            "source": "test flags.agree/false-true { flags::agree(false, true) => false }",
+            "sourceSha256": "1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042"
+          },
+          {
+            "word": "flags.agree",
+            "revision": 2,
+            "caseName": "both-false",
+            "sourceHash": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225",
+            "source": "test flags.agree/both-false {\n    flags::agree(left = false, right = false)\n    => true\n}",
+            "sourceSha256": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225"
+          },
+          {
+            "word": "flags.agree",
+            "revision": 2,
+            "caseName": "both-true",
+            "sourceHash": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9",
+            "source": "test flags.agree/both-true {\n    flags::agree(left = true, right = true)\n    => true\n}",
+            "sourceSha256": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9"
+          },
+          {
+            "word": "flags.agree",
+            "revision": 2,
+            "caseName": "true-false",
+            "sourceHash": "c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23",
+            "source": "test flags.agree/true-false { flags::agree(true, false) => false }",
+            "sourceSha256": "c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23"
+          }
+        ],
+        "testSourcesAfter": [
+          {
+            "word": "selection.accept",
+            "revision": 2,
+            "caseName": "preserves-first-item-over-new-item",
+            "sourceHash": "7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645",
+            "source": "test selection.accept/preserves-first-item-over-new-item { selection::first(selection::accept(selection::new(first = option::some<Int>(5)), 11)) => value option::some<Int>(5) }",
+            "sourceSha256": "7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645"
+          },
+          {
+            "word": "selection.accept",
+            "revision": 2,
+            "caseName": "records-first-item",
+            "sourceHash": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8",
+            "source": "test selection.accept/records-first-item {\n    selection::accept(selection::new(first = option::none<Int>()), 11).first\n    => value option::some<Int>(11)\n}",
+            "sourceSha256": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8"
+          },
+          {
+            "word": "selection.accept",
+            "revision": 2,
+            "caseName": "preserves-first-item",
+            "sourceHash": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd",
+            "source": "test selection.accept/preserves-first-item {\n    selection::accept(selection::new(first = option::some<Int>(5)), 11).first\n    => value option::some<Int>(5)\n}",
+            "sourceSha256": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd"
+          },
+          {
+            "word": "flags.agree",
+            "revision": 2,
+            "caseName": "false-true",
+            "sourceHash": "1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042",
+            "source": "test flags.agree/false-true { flags::agree(false, true) => false }",
+            "sourceSha256": "1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042"
+          },
+          {
+            "word": "flags.agree",
+            "revision": 2,
+            "caseName": "both-false",
+            "sourceHash": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225",
+            "source": "test flags.agree/both-false {\n    flags::agree(left = false, right = false)\n    => true\n}",
+            "sourceSha256": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225"
+          },
+          {
+            "word": "flags.agree",
+            "revision": 2,
+            "caseName": "both-true",
+            "sourceHash": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9",
+            "source": "test flags.agree/both-true {\n    flags::agree(left = true, right = true)\n    => true\n}",
+            "sourceSha256": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9"
+          },
+          {
+            "word": "flags.agree",
+            "revision": 2,
+            "caseName": "true-false",
+            "sourceHash": "c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23",
+            "source": "test flags.agree/true-false { flags::agree(true, false) => false }",
+            "sourceSha256": "c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23"
+          }
+        ],
+        "treeBefore": [
+          {
+            "path": ".agentlang/store/CURRENT",
+            "bytes": 134,
+            "sha256": "bc22181df6898bf539acfb62e440c5ba3f34e51eff6880fa23bf650d8c5e357b"
+          },
+          {
+            "path": ".agentlang/store/manifests/8c6d7a00bdf41532b286b5b858218d341bbeb8f3550108b6855519dcdf59a7e0.json",
+            "bytes": 6316,
+            "sha256": "8c6d7a00bdf41532b286b5b858218d341bbeb8f3550108b6855519dcdf59a7e0"
+          },
+          {
+            "path": ".agentlang/store/manifests/c122874676e4074803c2881990722b76735328b59beb4b518a7116817ed6300b.json",
+            "bytes": 8961,
+            "sha256": "c122874676e4074803c2881990722b76735328b59beb4b518a7116817ed6300b"
+          },
+          {
+            "path": ".agentlang/store/manifests/f8ba1cbcce124921e062977b0a816f029091e64d26f4ae7ce60f99f29099a27a.json",
+            "bytes": 14372,
+            "sha256": "f8ba1cbcce124921e062977b0a816f029091e64d26f4ae7ce60f99f29099a27a"
+          },
+          {
+            "path": ".agentlang/store/objects/1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042.agent",
+            "bytes": 66,
+            "sha256": "1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042"
+          },
+          {
+            "path": ".agentlang/store/objects/36377909f6b8dafe16337b442f149aede4f32c6829cb5f91341b38ce5e1191d1.agent",
+            "bytes": 1383,
+            "sha256": "36377909f6b8dafe16337b442f149aede4f32c6829cb5f91341b38ce5e1191d1"
+          },
+          {
+            "path": ".agentlang/store/objects/3e6b97554c8fb510abd12d92ff0ea4b7adc7a7f70e1c988adb5e44170a038a0d.agent",
+            "bytes": 1189,
+            "sha256": "3e6b97554c8fb510abd12d92ff0ea4b7adc7a7f70e1c988adb5e44170a038a0d"
+          },
+          {
+            "path": ".agentlang/store/objects/4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225.agent",
+            "bytes": 89,
+            "sha256": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225"
+          },
+          {
+            "path": ".agentlang/store/objects/749b3bdddfbabc9bcd0abf96ef657f3baab3cc83742890c9ad054c1868a48ee4.agent",
+            "bytes": 1590,
+            "sha256": "749b3bdddfbabc9bcd0abf96ef657f3baab3cc83742890c9ad054c1868a48ee4"
+          },
+          {
+            "path": ".agentlang/store/objects/7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645.agent",
+            "bytes": 176,
+            "sha256": "7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645"
+          },
+          {
+            "path": ".agentlang/store/objects/86d11e76e3fadb27b9a23e1edc2b2343576dedd388513258146c467fca650039.agent",
+            "bytes": 134,
+            "sha256": "86d11e76e3fadb27b9a23e1edc2b2343576dedd388513258146c467fca650039"
+          },
+          {
+            "path": ".agentlang/store/objects/9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8.agent",
+            "bytes": 156,
+            "sha256": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8"
+          },
+          {
+            "path": ".agentlang/store/objects/b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9.agent",
+            "bytes": 86,
+            "sha256": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9"
+          },
+          {
+            "path": ".agentlang/store/objects/c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23.agent",
+            "bytes": 66,
+            "sha256": "c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23"
+          },
+          {
+            "path": ".agentlang/store/objects/d6fccefb45cf21eabd027fbae51df54436d712157f67f01756e71f91d6bfdaa8.agent",
+            "bytes": 316,
+            "sha256": "d6fccefb45cf21eabd027fbae51df54436d712157f67f01756e71f91d6bfdaa8"
+          },
+          {
+            "path": ".agentlang/store/objects/da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd.agent",
+            "bytes": 158,
+            "sha256": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd"
+          },
+          {
+            "path": ".agentlang/store/objects/fcb9fdb110d63be14d0505ffd04bfa63df073fc1e8c0de5ecc4f19ce57eac0db.agent",
+            "bytes": 50,
+            "sha256": "fcb9fdb110d63be14d0505ffd04bfa63df073fc1e8c0de5ecc4f19ce57eac0db"
+          },
+          {
+            "path": ".agentlang/store/WRITE.lock",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "dictionary.agent",
+            "bytes": 1590,
+            "sha256": "749b3bdddfbabc9bcd0abf96ef657f3baab3cc83742890c9ad054c1868a48ee4"
+          },
+          {
+            "path": "history/task-0001.json",
+            "bytes": 649,
+            "sha256": "6dcf82538001699c73cfc4bce435dc9d197e9c27a650d9519f799c7ad53175b0"
+          }
+        ],
+        "treeAfter": [
+          {
+            "path": ".agentlang/store/CURRENT",
+            "bytes": 134,
+            "sha256": "bc22181df6898bf539acfb62e440c5ba3f34e51eff6880fa23bf650d8c5e357b"
+          },
+          {
+            "path": ".agentlang/store/manifests/8c6d7a00bdf41532b286b5b858218d341bbeb8f3550108b6855519dcdf59a7e0.json",
+            "bytes": 6316,
+            "sha256": "8c6d7a00bdf41532b286b5b858218d341bbeb8f3550108b6855519dcdf59a7e0"
+          },
+          {
+            "path": ".agentlang/store/manifests/c122874676e4074803c2881990722b76735328b59beb4b518a7116817ed6300b.json",
+            "bytes": 8961,
+            "sha256": "c122874676e4074803c2881990722b76735328b59beb4b518a7116817ed6300b"
+          },
+          {
+            "path": ".agentlang/store/manifests/f8ba1cbcce124921e062977b0a816f029091e64d26f4ae7ce60f99f29099a27a.json",
+            "bytes": 14372,
+            "sha256": "f8ba1cbcce124921e062977b0a816f029091e64d26f4ae7ce60f99f29099a27a"
+          },
+          {
+            "path": ".agentlang/store/objects/1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042.agent",
+            "bytes": 66,
+            "sha256": "1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042"
+          },
+          {
+            "path": ".agentlang/store/objects/36377909f6b8dafe16337b442f149aede4f32c6829cb5f91341b38ce5e1191d1.agent",
+            "bytes": 1383,
+            "sha256": "36377909f6b8dafe16337b442f149aede4f32c6829cb5f91341b38ce5e1191d1"
+          },
+          {
+            "path": ".agentlang/store/objects/3e6b97554c8fb510abd12d92ff0ea4b7adc7a7f70e1c988adb5e44170a038a0d.agent",
+            "bytes": 1189,
+            "sha256": "3e6b97554c8fb510abd12d92ff0ea4b7adc7a7f70e1c988adb5e44170a038a0d"
+          },
+          {
+            "path": ".agentlang/store/objects/4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225.agent",
+            "bytes": 89,
+            "sha256": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225"
+          },
+          {
+            "path": ".agentlang/store/objects/749b3bdddfbabc9bcd0abf96ef657f3baab3cc83742890c9ad054c1868a48ee4.agent",
+            "bytes": 1590,
+            "sha256": "749b3bdddfbabc9bcd0abf96ef657f3baab3cc83742890c9ad054c1868a48ee4"
+          },
+          {
+            "path": ".agentlang/store/objects/7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645.agent",
+            "bytes": 176,
+            "sha256": "7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645"
+          },
+          {
+            "path": ".agentlang/store/objects/86d11e76e3fadb27b9a23e1edc2b2343576dedd388513258146c467fca650039.agent",
+            "bytes": 134,
+            "sha256": "86d11e76e3fadb27b9a23e1edc2b2343576dedd388513258146c467fca650039"
+          },
+          {
+            "path": ".agentlang/store/objects/9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8.agent",
+            "bytes": 156,
+            "sha256": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8"
+          },
+          {
+            "path": ".agentlang/store/objects/b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9.agent",
+            "bytes": 86,
+            "sha256": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9"
+          },
+          {
+            "path": ".agentlang/store/objects/c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23.agent",
+            "bytes": 66,
+            "sha256": "c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23"
+          },
+          {
+            "path": ".agentlang/store/objects/d6fccefb45cf21eabd027fbae51df54436d712157f67f01756e71f91d6bfdaa8.agent",
+            "bytes": 316,
+            "sha256": "d6fccefb45cf21eabd027fbae51df54436d712157f67f01756e71f91d6bfdaa8"
+          },
+          {
+            "path": ".agentlang/store/objects/da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd.agent",
+            "bytes": 158,
+            "sha256": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd"
+          },
+          {
+            "path": ".agentlang/store/objects/fcb9fdb110d63be14d0505ffd04bfa63df073fc1e8c0de5ecc4f19ce57eac0db.agent",
+            "bytes": 50,
+            "sha256": "fcb9fdb110d63be14d0505ffd04bfa63df073fc1e8c0de5ecc4f19ce57eac0db"
+          },
+          {
+            "path": ".agentlang/store/WRITE.lock",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "dictionary.agent",
+            "bytes": 1590,
+            "sha256": "749b3bdddfbabc9bcd0abf96ef657f3baab3cc83742890c9ad054c1868a48ee4"
+          },
+          {
+            "path": "history/task-0001.json",
+            "bytes": 649,
+            "sha256": "6dcf82538001699c73cfc4bce435dc9d197e9c27a650d9519f799c7ad53175b0"
+          }
+        ],
+        "testsCatchMutant": true,
+        "oracleTruthRowsPass": null,
+        "mismatchedTruthRows": []
+      },
+      {
+        "mutant": "M_FT",
+        "defineResponse": {
+          "ok": true,
+          "kind": "defined",
+          "text": "Flow definition, tests, examples, and retained source bindings validated and staged.",
+          "data": {
+            "frontend": "flow",
+            "name": "flags.agree",
+            "id": "word_888613e1ddb640499761907f8950fd18",
+            "revision": 3,
+            "tests": [
+              "both-false",
+              "both-true",
+              "false-true",
+              "true-false"
+            ],
+            "examples": []
+          }
+        },
+        "replaceResponse": {
+          "ok": false,
+          "kind": "error",
+          "text": "COMMIT_TESTS_FAILED: Candidate tests must pass against the proposed dictionary before commit.",
+          "error": {
+            "code": "COMMIT_TESTS_FAILED",
+            "message": "Candidate tests must pass against the proposed dictionary before commit.",
+            "expected": [],
+            "actual": [
+              "flags.agree/false-true"
+            ]
+          }
+        },
+        "replaceAccepted": false,
+        "replaceErrorCode": "COMMIT_TESTS_FAILED",
+        "durableTreeUnchanged": true,
+        "attachedSourceUnchanged": true,
+        "testSourcesBefore": [
+          {
+            "word": "selection.accept",
+            "revision": 2,
+            "caseName": "preserves-first-item-over-new-item",
+            "sourceHash": "7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645",
+            "source": "test selection.accept/preserves-first-item-over-new-item { selection::first(selection::accept(selection::new(first = option::some<Int>(5)), 11)) => value option::some<Int>(5) }",
+            "sourceSha256": "7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645"
+          },
+          {
+            "word": "selection.accept",
+            "revision": 2,
+            "caseName": "records-first-item",
+            "sourceHash": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8",
+            "source": "test selection.accept/records-first-item {\n    selection::accept(selection::new(first = option::none<Int>()), 11).first\n    => value option::some<Int>(11)\n}",
+            "sourceSha256": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8"
+          },
+          {
+            "word": "selection.accept",
+            "revision": 2,
+            "caseName": "preserves-first-item",
+            "sourceHash": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd",
+            "source": "test selection.accept/preserves-first-item {\n    selection::accept(selection::new(first = option::some<Int>(5)), 11).first\n    => value option::some<Int>(5)\n}",
+            "sourceSha256": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd"
+          },
+          {
+            "word": "flags.agree",
+            "revision": 2,
+            "caseName": "false-true",
+            "sourceHash": "1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042",
+            "source": "test flags.agree/false-true { flags::agree(false, true) => false }",
+            "sourceSha256": "1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042"
+          },
+          {
+            "word": "flags.agree",
+            "revision": 2,
+            "caseName": "both-false",
+            "sourceHash": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225",
+            "source": "test flags.agree/both-false {\n    flags::agree(left = false, right = false)\n    => true\n}",
+            "sourceSha256": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225"
+          },
+          {
+            "word": "flags.agree",
+            "revision": 2,
+            "caseName": "both-true",
+            "sourceHash": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9",
+            "source": "test flags.agree/both-true {\n    flags::agree(left = true, right = true)\n    => true\n}",
+            "sourceSha256": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9"
+          },
+          {
+            "word": "flags.agree",
+            "revision": 2,
+            "caseName": "true-false",
+            "sourceHash": "c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23",
+            "source": "test flags.agree/true-false { flags::agree(true, false) => false }",
+            "sourceSha256": "c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23"
+          }
+        ],
+        "testSourcesAfter": [
+          {
+            "word": "selection.accept",
+            "revision": 2,
+            "caseName": "preserves-first-item-over-new-item",
+            "sourceHash": "7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645",
+            "source": "test selection.accept/preserves-first-item-over-new-item { selection::first(selection::accept(selection::new(first = option::some<Int>(5)), 11)) => value option::some<Int>(5) }",
+            "sourceSha256": "7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645"
+          },
+          {
+            "word": "selection.accept",
+            "revision": 2,
+            "caseName": "records-first-item",
+            "sourceHash": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8",
+            "source": "test selection.accept/records-first-item {\n    selection::accept(selection::new(first = option::none<Int>()), 11).first\n    => value option::some<Int>(11)\n}",
+            "sourceSha256": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8"
+          },
+          {
+            "word": "selection.accept",
+            "revision": 2,
+            "caseName": "preserves-first-item",
+            "sourceHash": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd",
+            "source": "test selection.accept/preserves-first-item {\n    selection::accept(selection::new(first = option::some<Int>(5)), 11).first\n    => value option::some<Int>(5)\n}",
+            "sourceSha256": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd"
+          },
+          {
+            "word": "flags.agree",
+            "revision": 2,
+            "caseName": "false-true",
+            "sourceHash": "1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042",
+            "source": "test flags.agree/false-true { flags::agree(false, true) => false }",
+            "sourceSha256": "1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042"
+          },
+          {
+            "word": "flags.agree",
+            "revision": 2,
+            "caseName": "both-false",
+            "sourceHash": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225",
+            "source": "test flags.agree/both-false {\n    flags::agree(left = false, right = false)\n    => true\n}",
+            "sourceSha256": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225"
+          },
+          {
+            "word": "flags.agree",
+            "revision": 2,
+            "caseName": "both-true",
+            "sourceHash": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9",
+            "source": "test flags.agree/both-true {\n    flags::agree(left = true, right = true)\n    => true\n}",
+            "sourceSha256": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9"
+          },
+          {
+            "word": "flags.agree",
+            "revision": 2,
+            "caseName": "true-false",
+            "sourceHash": "c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23",
+            "source": "test flags.agree/true-false { flags::agree(true, false) => false }",
+            "sourceSha256": "c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23"
+          }
+        ],
+        "treeBefore": [
+          {
+            "path": ".agentlang/store/CURRENT",
+            "bytes": 134,
+            "sha256": "bc22181df6898bf539acfb62e440c5ba3f34e51eff6880fa23bf650d8c5e357b"
+          },
+          {
+            "path": ".agentlang/store/manifests/8c6d7a00bdf41532b286b5b858218d341bbeb8f3550108b6855519dcdf59a7e0.json",
+            "bytes": 6316,
+            "sha256": "8c6d7a00bdf41532b286b5b858218d341bbeb8f3550108b6855519dcdf59a7e0"
+          },
+          {
+            "path": ".agentlang/store/manifests/c122874676e4074803c2881990722b76735328b59beb4b518a7116817ed6300b.json",
+            "bytes": 8961,
+            "sha256": "c122874676e4074803c2881990722b76735328b59beb4b518a7116817ed6300b"
+          },
+          {
+            "path": ".agentlang/store/manifests/f8ba1cbcce124921e062977b0a816f029091e64d26f4ae7ce60f99f29099a27a.json",
+            "bytes": 14372,
+            "sha256": "f8ba1cbcce124921e062977b0a816f029091e64d26f4ae7ce60f99f29099a27a"
+          },
+          {
+            "path": ".agentlang/store/objects/1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042.agent",
+            "bytes": 66,
+            "sha256": "1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042"
+          },
+          {
+            "path": ".agentlang/store/objects/36377909f6b8dafe16337b442f149aede4f32c6829cb5f91341b38ce5e1191d1.agent",
+            "bytes": 1383,
+            "sha256": "36377909f6b8dafe16337b442f149aede4f32c6829cb5f91341b38ce5e1191d1"
+          },
+          {
+            "path": ".agentlang/store/objects/3e6b97554c8fb510abd12d92ff0ea4b7adc7a7f70e1c988adb5e44170a038a0d.agent",
+            "bytes": 1189,
+            "sha256": "3e6b97554c8fb510abd12d92ff0ea4b7adc7a7f70e1c988adb5e44170a038a0d"
+          },
+          {
+            "path": ".agentlang/store/objects/4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225.agent",
+            "bytes": 89,
+            "sha256": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225"
+          },
+          {
+            "path": ".agentlang/store/objects/749b3bdddfbabc9bcd0abf96ef657f3baab3cc83742890c9ad054c1868a48ee4.agent",
+            "bytes": 1590,
+            "sha256": "749b3bdddfbabc9bcd0abf96ef657f3baab3cc83742890c9ad054c1868a48ee4"
+          },
+          {
+            "path": ".agentlang/store/objects/7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645.agent",
+            "bytes": 176,
+            "sha256": "7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645"
+          },
+          {
+            "path": ".agentlang/store/objects/86d11e76e3fadb27b9a23e1edc2b2343576dedd388513258146c467fca650039.agent",
+            "bytes": 134,
+            "sha256": "86d11e76e3fadb27b9a23e1edc2b2343576dedd388513258146c467fca650039"
+          },
+          {
+            "path": ".agentlang/store/objects/9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8.agent",
+            "bytes": 156,
+            "sha256": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8"
+          },
+          {
+            "path": ".agentlang/store/objects/b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9.agent",
+            "bytes": 86,
+            "sha256": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9"
+          },
+          {
+            "path": ".agentlang/store/objects/c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23.agent",
+            "bytes": 66,
+            "sha256": "c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23"
+          },
+          {
+            "path": ".agentlang/store/objects/d6fccefb45cf21eabd027fbae51df54436d712157f67f01756e71f91d6bfdaa8.agent",
+            "bytes": 316,
+            "sha256": "d6fccefb45cf21eabd027fbae51df54436d712157f67f01756e71f91d6bfdaa8"
+          },
+          {
+            "path": ".agentlang/store/objects/da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd.agent",
+            "bytes": 158,
+            "sha256": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd"
+          },
+          {
+            "path": ".agentlang/store/objects/fcb9fdb110d63be14d0505ffd04bfa63df073fc1e8c0de5ecc4f19ce57eac0db.agent",
+            "bytes": 50,
+            "sha256": "fcb9fdb110d63be14d0505ffd04bfa63df073fc1e8c0de5ecc4f19ce57eac0db"
+          },
+          {
+            "path": ".agentlang/store/WRITE.lock",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "dictionary.agent",
+            "bytes": 1590,
+            "sha256": "749b3bdddfbabc9bcd0abf96ef657f3baab3cc83742890c9ad054c1868a48ee4"
+          },
+          {
+            "path": "history/task-0001.json",
+            "bytes": 649,
+            "sha256": "6dcf82538001699c73cfc4bce435dc9d197e9c27a650d9519f799c7ad53175b0"
+          }
+        ],
+        "treeAfter": [
+          {
+            "path": ".agentlang/store/CURRENT",
+            "bytes": 134,
+            "sha256": "bc22181df6898bf539acfb62e440c5ba3f34e51eff6880fa23bf650d8c5e357b"
+          },
+          {
+            "path": ".agentlang/store/manifests/8c6d7a00bdf41532b286b5b858218d341bbeb8f3550108b6855519dcdf59a7e0.json",
+            "bytes": 6316,
+            "sha256": "8c6d7a00bdf41532b286b5b858218d341bbeb8f3550108b6855519dcdf59a7e0"
+          },
+          {
+            "path": ".agentlang/store/manifests/c122874676e4074803c2881990722b76735328b59beb4b518a7116817ed6300b.json",
+            "bytes": 8961,
+            "sha256": "c122874676e4074803c2881990722b76735328b59beb4b518a7116817ed6300b"
+          },
+          {
+            "path": ".agentlang/store/manifests/f8ba1cbcce124921e062977b0a816f029091e64d26f4ae7ce60f99f29099a27a.json",
+            "bytes": 14372,
+            "sha256": "f8ba1cbcce124921e062977b0a816f029091e64d26f4ae7ce60f99f29099a27a"
+          },
+          {
+            "path": ".agentlang/store/objects/1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042.agent",
+            "bytes": 66,
+            "sha256": "1de425376cd44b35f074b001cb89cebeffc27a39355d68b989a4fe91958c7042"
+          },
+          {
+            "path": ".agentlang/store/objects/36377909f6b8dafe16337b442f149aede4f32c6829cb5f91341b38ce5e1191d1.agent",
+            "bytes": 1383,
+            "sha256": "36377909f6b8dafe16337b442f149aede4f32c6829cb5f91341b38ce5e1191d1"
+          },
+          {
+            "path": ".agentlang/store/objects/3e6b97554c8fb510abd12d92ff0ea4b7adc7a7f70e1c988adb5e44170a038a0d.agent",
+            "bytes": 1189,
+            "sha256": "3e6b97554c8fb510abd12d92ff0ea4b7adc7a7f70e1c988adb5e44170a038a0d"
+          },
+          {
+            "path": ".agentlang/store/objects/4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225.agent",
+            "bytes": 89,
+            "sha256": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225"
+          },
+          {
+            "path": ".agentlang/store/objects/749b3bdddfbabc9bcd0abf96ef657f3baab3cc83742890c9ad054c1868a48ee4.agent",
+            "bytes": 1590,
+            "sha256": "749b3bdddfbabc9bcd0abf96ef657f3baab3cc83742890c9ad054c1868a48ee4"
+          },
+          {
+            "path": ".agentlang/store/objects/7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645.agent",
+            "bytes": 176,
+            "sha256": "7afd1a6170a1d3d97445d6ae8e24cc4668325c091c9c8e66d9e626f5d230a645"
+          },
+          {
+            "path": ".agentlang/store/objects/86d11e76e3fadb27b9a23e1edc2b2343576dedd388513258146c467fca650039.agent",
+            "bytes": 134,
+            "sha256": "86d11e76e3fadb27b9a23e1edc2b2343576dedd388513258146c467fca650039"
+          },
+          {
+            "path": ".agentlang/store/objects/9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8.agent",
+            "bytes": 156,
+            "sha256": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8"
+          },
+          {
+            "path": ".agentlang/store/objects/b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9.agent",
+            "bytes": 86,
+            "sha256": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9"
+          },
+          {
+            "path": ".agentlang/store/objects/c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23.agent",
+            "bytes": 66,
+            "sha256": "c9b8d161f35d3756788f51cf60f644f0f4a55da3f58c47b1dda1dbf6cb09ef23"
+          },
+          {
+            "path": ".agentlang/store/objects/d6fccefb45cf21eabd027fbae51df54436d712157f67f01756e71f91d6bfdaa8.agent",
+            "bytes": 316,
+            "sha256": "d6fccefb45cf21eabd027fbae51df54436d712157f67f01756e71f91d6bfdaa8"
+          },
+          {
+            "path": ".agentlang/store/objects/da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd.agent",
+            "bytes": 158,
+            "sha256": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd"
+          },
+          {
+            "path": ".agentlang/store/objects/fcb9fdb110d63be14d0505ffd04bfa63df073fc1e8c0de5ecc4f19ce57eac0db.agent",
+            "bytes": 50,
+            "sha256": "fcb9fdb110d63be14d0505ffd04bfa63df073fc1e8c0de5ecc4f19ce57eac0db"
+          },
+          {
+            "path": ".agentlang/store/WRITE.lock",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "dictionary.agent",
+            "bytes": 1590,
+            "sha256": "749b3bdddfbabc9bcd0abf96ef657f3baab3cc83742890c9ad054c1868a48ee4"
+          },
+          {
+            "path": "history/task-0001.json",
+            "bytes": 649,
+            "sha256": "6dcf82538001699c73cfc4bce435dc9d197e9c27a650d9519f799c7ad53175b0"
+          }
+        ],
+        "testsCatchMutant": true,
+        "oracleTruthRowsPass": null,
+        "mismatchedTruthRows": []
+      }
+    ]
+  },
+  "traceReview": {
+    "status": "root coordinator reviews actor trace for attempted promotion and missing-None diagnosis",
+    "finalSelectionMaturity": "project"
+  },
+  "testAcceptance": {
+    "actorProjectUntouched": true,
+    "testsPassed": true,
+    "flagsAllFourTruthRowsBehavior": true,
+    "flagsLibraryStructuralAndFinite": true,
+    "selectionProjectAndSignature": true,
+    "independentSelectionBehavior": true
+  },
+  "checks": [
+    {
+      "name": "actor-independent-score CLI exits successfully",
+      "passed": true,
+      "details": {
+        "stderrPath": "D:\\code\\AgentLang\\.agentlang\\finite-adoption-001\\scoring\\actor-independent-score.stderr.log",
+        "exitCode": 0
+      }
+    },
+    {
+      "name": "actor-independent-score returns one JSON response per request",
+      "passed": true,
+      "details": {
+        "responses": 20,
+        "requests": 20
+      }
+    },
+    {
+      "name": "actor-M_TF CLI exits successfully",
+      "passed": true,
+      "details": {
+        "stderrPath": "D:\\code\\AgentLang\\.agentlang\\finite-adoption-001\\scoring\\actor-M_TF.stderr.log",
+        "exitCode": 0
+      }
+    },
+    {
+      "name": "actor-M_TF returns one JSON response per request",
+      "passed": true,
+      "details": {
+        "responses": 2,
+        "requests": 2
+      }
+    },
+    {
+      "name": "actor-M_FT CLI exits successfully",
+      "passed": true,
+      "details": {
+        "stderrPath": "D:\\code\\AgentLang\\.agentlang\\finite-adoption-001\\scoring\\actor-M_FT.stderr.log",
+        "exitCode": 0
+      }
+    },
+    {
+      "name": "actor-M_FT returns one JSON response per request",
+      "passed": true,
+      "details": {
+        "responses": 2,
+        "requests": 2
+      }
+    }
+  ],
+  "invocations": [
+    {
+      "label": "actor-independent-score",
+      "project": "D:\\code\\AgentLang\\.agentlang\\finite-adoption-001\\scoring\\score-copy",
+      "requestCount": 20,
+      "responseCount": 20,
+      "exitCode": 0,
+      "requests": [
+        {
+          "op": "test-all"
+        },
+        {
+          "op": "describe",
+          "word": "flags.agree"
+        },
+        {
+          "op": "describe",
+          "word": "selection.accept"
+        },
+        {
+          "op": "source",
+          "word": "flags.agree"
+        },
+        {
+          "op": "source",
+          "word": "selection.accept"
+        },
+        {
+          "op": "source",
+          "type": "Selection"
+        },
+        {
+          "op": "eval",
+          "code": "flags::agree(left = true, right = true)",
+          "syntaxVersion": 2,
+          "frontend": "flow",
+          "structured": true
+        },
+        {
+          "op": "eval",
+          "code": "flags::agree(left = true, right = false)",
+          "syntaxVersion": 2,
+          "frontend": "flow",
+          "structured": true
+        },
+        {
+          "op": "eval",
+          "code": "flags::agree(left = false, right = true)",
+          "syntaxVersion": 2,
+          "frontend": "flow",
+          "structured": true
+        },
+        {
+          "op": "eval",
+          "code": "flags::agree(left = false, right = false)",
+          "syntaxVersion": 2,
+          "frontend": "flow",
+          "structured": true
+        },
+        {
+          "op": "eval",
+          "code": "selection::accept(selection::new(first = option::none<Int>()), -9223372036854775808).first()",
+          "syntaxVersion": 2,
+          "frontend": "flow",
+          "structured": true
+        },
+        {
+          "op": "eval",
+          "code": "selection::accept(selection::new(first = option::none<Int>()), -1).first()",
+          "syntaxVersion": 2,
+          "frontend": "flow",
+          "structured": true
+        },
+        {
+          "op": "eval",
+          "code": "selection::accept(selection::new(first = option::none<Int>()), 0).first()",
+          "syntaxVersion": 2,
+          "frontend": "flow",
+          "structured": true
+        },
+        {
+          "op": "eval",
+          "code": "selection::accept(selection::new(first = option::none<Int>()), 1).first()",
+          "syntaxVersion": 2,
+          "frontend": "flow",
+          "structured": true
+        },
+        {
+          "op": "eval",
+          "code": "selection::accept(selection::new(first = option::none<Int>()), 9223372036854775807).first()",
+          "syntaxVersion": 2,
+          "frontend": "flow",
+          "structured": true
+        },
+        {
+          "op": "eval",
+          "code": "selection::accept(selection::new(first = option::some<Int>(-9223372036854775808)), 0).first()",
+          "syntaxVersion": 2,
+          "frontend": "flow",
+          "structured": true
+        },
+        {
+          "op": "eval",
+          "code": "selection::accept(selection::new(first = option::some<Int>(-1)), 1).first()",
+          "syntaxVersion": 2,
+          "frontend": "flow",
+          "structured": true
+        },
+        {
+          "op": "eval",
+          "code": "selection::accept(selection::new(first = option::some<Int>(0)), 9223372036854775807).first()",
+          "syntaxVersion": 2,
+          "frontend": "flow",
+          "structured": true
+        },
+        {
+          "op": "eval",
+          "code": "selection::accept(selection::new(first = option::some<Int>(1)), -9223372036854775808).first()",
+          "syntaxVersion": 2,
+          "frontend": "flow",
+          "structured": true
+        },
+        {
+          "op": "eval",
+          "code": "selection::accept(selection::new(first = option::some<Int>(9223372036854775807)), -1).first()",
+          "syntaxVersion": 2,
+          "frontend": "flow",
+          "structured": true
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "test",
+          "text": "7/7 test(s) passed.",
+          "data": {
+            "results": [
+              {
+                "name": "both-false",
+                "word": "flags.agree",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "both-true",
+                "word": "flags.agree",
+                "passed": true,
+                "expected": "true",
+                "actual": [
+                  "true"
+                ]
+              },
+              {
+                "name": "false-true",
+                "word": "flags.agree",
+                "passed": true,
+                "expected": "false",
+                "actual": [
+                  "false"
+                ]
+              },
+              {
+                "name": "true-false",
+                "word": "flags.agree",
+                "passed": true,
+                "expected": "false",
+                "actual": [
+                  "false"
+                ]
+              },
+              {
+                "name": "preserves-first-item",
+                "word": "selection.accept",
+                "passed": true,
+                "expectedKind": "value-expression",
+                "actualStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "option",
+                      "elementType": {
+                        "kind": "int"
+                      },
+                      "case": "some",
+                      "value": {
+                        "kind": "int",
+                        "value": "5"
+                      }
+                    }
+                  ]
+                },
+                "expected": "some 5",
+                "expectedType": "Option<Int>",
+                "expectedStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "option",
+                      "elementType": {
+                        "kind": "int"
+                      },
+                      "case": "some",
+                      "value": {
+                        "kind": "int",
+                        "value": "5"
+                      }
+                    }
+                  ]
+                },
+                "actual": [
+                  "some 5"
+                ]
+              },
+              {
+                "name": "preserves-first-item-over-new-item",
+                "word": "selection.accept",
+                "passed": true,
+                "expectedKind": "value-expression",
+                "actualStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "option",
+                      "elementType": {
+                        "kind": "int"
+                      },
+                      "case": "some",
+                      "value": {
+                        "kind": "int",
+                        "value": "5"
+                      }
+                    }
+                  ]
+                },
+                "expected": "some 5",
+                "expectedType": "Option<Int>",
+                "expectedStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "option",
+                      "elementType": {
+                        "kind": "int"
+                      },
+                      "case": "some",
+                      "value": {
+                        "kind": "int",
+                        "value": "5"
+                      }
+                    }
+                  ]
+                },
+                "actual": [
+                  "some 5"
+                ]
+              },
+              {
+                "name": "records-first-item",
+                "word": "selection.accept",
+                "passed": true,
+                "expectedKind": "value-expression",
+                "actualStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "option",
+                      "elementType": {
+                        "kind": "int"
+                      },
+                      "case": "some",
+                      "value": {
+                        "kind": "int",
+                        "value": "11"
+                      }
+                    }
+                  ]
+                },
+                "expected": "some 11",
+                "expectedType": "Option<Int>",
+                "expectedStructured": {
+                  "formatVersion": 1,
+                  "values": [
+                    {
+                      "kind": "option",
+                      "elementType": {
+                        "kind": "int"
+                      },
+                      "case": "some",
+                      "value": {
+                        "kind": "int",
+                        "value": "11"
+                      }
+                    }
+                  ]
+                },
+                "actual": [
+                  "some 11"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "describe",
+          "text": "Description for flags.agree.",
+          "data": {
+            "name": "flags.agree",
+            "flowReference": "flags::agree",
+            "flowReferenceUnavailableReason": null,
+            "inputs": [
+              "Bool",
+              "Bool"
+            ],
+            "outputs": [
+              "Bool"
+            ],
+            "parameters": [
+              {
+                "name": "left",
+                "type": "Bool"
+              },
+              {
+                "name": "right",
+                "type": "Bool"
+              }
+            ],
+            "effects": [],
+            "documentation": "Returns whether the two flags agree.",
+            "id": "word_888613e1ddb640499761907f8950fd18",
+            "dependencies": [
+              "equals"
+            ],
+            "transitiveDependencies": [
+              "equals"
+            ],
+            "callers": [],
+            "tests": [
+              "both-false",
+              "both-true",
+              "false-true",
+              "true-false"
+            ],
+            "examples": [],
+            "source": "<revision:flags.agree/2>",
+            "line": 1,
+            "kind": "word",
+            "status": "persistent",
+            "maturity": "library",
+            "deprecated": false,
+            "revision": 2,
+            "testCount": 4,
+            "exampleCount": 0,
+            "coverage": {
+              "instructionsCovered": 3,
+              "instructionsTotal": 3,
+              "branchesCovered": 0,
+              "branchesTotal": 0,
+              "uncoveredInstructions": [],
+              "uncoveredBranchOutcomes": [],
+              "finiteCoverage": {
+                "targetInvocations": 4,
+                "inputs": [
+                  {
+                    "position": 0,
+                    "type": "Bool",
+                    "required": [
+                      "false",
+                      "true"
+                    ],
+                    "observed": [
+                      "false",
+                      "true"
+                    ],
+                    "missing": []
+                  },
+                  {
+                    "position": 1,
+                    "type": "Bool",
+                    "required": [
+                      "false",
+                      "true"
+                    ],
+                    "observed": [
+                      "false",
+                      "true"
+                    ],
+                    "missing": []
+                  }
+                ],
+                "returns": [
+                  {
+                    "position": 0,
+                    "type": "Bool",
+                    "required": [
+                      "false",
+                      "true"
+                    ],
+                    "observed": [
+                      "false",
+                      "true"
+                    ],
+                    "missing": []
+                  }
+                ],
+                "unsupported": [],
+                "missing": [],
+                "complete": true
+              },
+              "status": "current"
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "describe",
+          "text": "Description for selection.accept.",
+          "data": {
+            "name": "selection.accept",
+            "flowReference": "selection::accept",
+            "flowReferenceUnavailableReason": null,
+            "inputs": [
+              "Selection",
+              "Int"
+            ],
+            "outputs": [
+              "Selection"
+            ],
+            "parameters": [
+              {
+                "name": "state",
+                "type": "Selection"
+              },
+              {
+                "name": "item",
+                "type": "Int"
+              }
+            ],
+            "effects": [],
+            "documentation": "Preserves a selection that already has a first item; otherwise records the supplied item.",
+            "id": "word_02c11c01a67a45439fb8226004774dee",
+            "dependencies": [
+              "selection.first",
+              "selection.new"
+            ],
+            "transitiveDependencies": [
+              "selection.first",
+              "selection.new"
+            ],
+            "callers": [],
+            "tests": [
+              "preserves-first-item",
+              "preserves-first-item-over-new-item",
+              "records-first-item"
+            ],
+            "examples": [],
+            "source": "<revision:selection.accept/2>",
+            "line": 1,
+            "kind": "word",
+            "status": "persistent",
+            "maturity": "project",
+            "deprecated": false,
+            "revision": 2,
+            "testCount": 3,
+            "exampleCount": 0,
+            "coverage": {
+              "instructionsCovered": 7,
+              "instructionsTotal": 7,
+              "branchesCovered": 2,
+              "branchesTotal": 2,
+              "uncoveredInstructions": [],
+              "uncoveredBranchOutcomes": [],
+              "finiteCoverage": {
+                "targetInvocations": 3,
+                "inputs": [],
+                "returns": [
+                  {
+                    "position": 0,
+                    "type": "Selection",
+                    "required": [
+                      "$.first: none",
+                      "$.first: some"
+                    ],
+                    "observed": [
+                      "$.first: some"
+                    ],
+                    "missing": [
+                      "$.first: none"
+                    ]
+                  }
+                ],
+                "unsupported": [],
+                "missing": [
+                  "return[0] Selection: $.first: none"
+                ],
+                "complete": false
+              },
+              "status": "current"
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "source",
+          "text": "fn flags.agree(left: Bool, right: Bool) -> Bool {\n    effects none\n    doc \"Returns whether the two flags agree.\"\n\n    left == right\n}",
+          "data": "fn flags.agree(left: Bool, right: Bool) -> Bool {\n    effects none\n    doc \"Returns whether the two flags agree.\"\n\n    left == right\n}"
+        },
+        {
+          "ok": true,
+          "kind": "source",
+          "text": "fn selection.accept(state: Selection, item: Int) -> Selection {\n    effects none\n    doc \"Preserves a selection that already has a first item; otherwise records the supplied item.\"\n\n    match state.first {\n        some existing => { state }\n        none => { selection::new(first = option::some<Int>(item)) }\n    }\n}",
+          "data": "fn selection.accept(state: Selection, item: Int) -> Selection {\n    effects none\n    doc \"Preserves a selection that already has a first item; otherwise records the supplied item.\"\n\n    match state.first {\n        some existing => { state }\n        none => { selection::new(first = option::some<Int>(item)) }\n    }\n}"
+        },
+        {
+          "ok": true,
+          "kind": "source",
+          "text": "record Selection {\n    field first: Option<Int>;\n}",
+          "data": "record Selection {\n    field first: Option<Int>;\n}"
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "true",
+          "data": {
+            "stack": [
+              "true"
+            ],
+            "stackTypes": [
+              "Bool"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "bool",
+                  "value": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "false",
+          "data": {
+            "stack": [
+              "false"
+            ],
+            "stackTypes": [
+              "Bool"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "bool",
+                  "value": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "false",
+          "data": {
+            "stack": [
+              "false"
+            ],
+            "stackTypes": [
+              "Bool"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "bool",
+                  "value": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "true",
+          "data": {
+            "stack": [
+              "true"
+            ],
+            "stackTypes": [
+              "Bool"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "bool",
+                  "value": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "some -9223372036854775808",
+          "data": {
+            "stack": [
+              "some -9223372036854775808"
+            ],
+            "stackTypes": [
+              "Option<Int>"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "option",
+                  "elementType": {
+                    "kind": "int"
+                  },
+                  "case": "some",
+                  "value": {
+                    "kind": "int",
+                    "value": "-9223372036854775808"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "some -1",
+          "data": {
+            "stack": [
+              "some -1"
+            ],
+            "stackTypes": [
+              "Option<Int>"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "option",
+                  "elementType": {
+                    "kind": "int"
+                  },
+                  "case": "some",
+                  "value": {
+                    "kind": "int",
+                    "value": "-1"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "some 0",
+          "data": {
+            "stack": [
+              "some 0"
+            ],
+            "stackTypes": [
+              "Option<Int>"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "option",
+                  "elementType": {
+                    "kind": "int"
+                  },
+                  "case": "some",
+                  "value": {
+                    "kind": "int",
+                    "value": "0"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "some 1",
+          "data": {
+            "stack": [
+              "some 1"
+            ],
+            "stackTypes": [
+              "Option<Int>"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "option",
+                  "elementType": {
+                    "kind": "int"
+                  },
+                  "case": "some",
+                  "value": {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "some 9223372036854775807",
+          "data": {
+            "stack": [
+              "some 9223372036854775807"
+            ],
+            "stackTypes": [
+              "Option<Int>"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "option",
+                  "elementType": {
+                    "kind": "int"
+                  },
+                  "case": "some",
+                  "value": {
+                    "kind": "int",
+                    "value": "9223372036854775807"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "some -9223372036854775808",
+          "data": {
+            "stack": [
+              "some -9223372036854775808"
+            ],
+            "stackTypes": [
+              "Option<Int>"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "option",
+                  "elementType": {
+                    "kind": "int"
+                  },
+                  "case": "some",
+                  "value": {
+                    "kind": "int",
+                    "value": "-9223372036854775808"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "some -1",
+          "data": {
+            "stack": [
+              "some -1"
+            ],
+            "stackTypes": [
+              "Option<Int>"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "option",
+                  "elementType": {
+                    "kind": "int"
+                  },
+                  "case": "some",
+                  "value": {
+                    "kind": "int",
+                    "value": "-1"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "some 0",
+          "data": {
+            "stack": [
+              "some 0"
+            ],
+            "stackTypes": [
+              "Option<Int>"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "option",
+                  "elementType": {
+                    "kind": "int"
+                  },
+                  "case": "some",
+                  "value": {
+                    "kind": "int",
+                    "value": "0"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "some 1",
+          "data": {
+            "stack": [
+              "some 1"
+            ],
+            "stackTypes": [
+              "Option<Int>"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "option",
+                  "elementType": {
+                    "kind": "int"
+                  },
+                  "case": "some",
+                  "value": {
+                    "kind": "int",
+                    "value": "1"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "some 9223372036854775807",
+          "data": {
+            "stack": [
+              "some 9223372036854775807"
+            ],
+            "stackTypes": [
+              "Option<Int>"
+            ],
+            "console": [],
+            "effects": {},
+            "structuredStack": {
+              "formatVersion": 1,
+              "values": [
+                {
+                  "kind": "option",
+                  "elementType": {
+                    "kind": "int"
+                  },
+                  "case": "some",
+                  "value": {
+                    "kind": "int",
+                    "value": "9223372036854775807"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "label": "actor-M_TF",
+      "project": "D:\\code\\AgentLang\\.agentlang\\finite-adoption-001\\scoring\\actor-M_TF",
+      "requestCount": 2,
+      "responseCount": 2,
+      "exitCode": 0,
+      "requests": [
+        {
+          "op": "define",
+          "expectedRevision": 2,
+          "replace": true,
+          "syntaxVersion": 2,
+          "frontend": "flow",
+          "source": "fn flags.agree(left: Bool, right: Bool) -> Bool {\n    effects none\n    doc \"Returns whether the two flags agree.\"\n\n    if left { true } else { right == false }\n}\n"
+        },
+        {
+          "op": "replace-word",
+          "word": "flags.agree"
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "defined",
+          "text": "Flow definition, tests, examples, and retained source bindings validated and staged.",
+          "data": {
+            "frontend": "flow",
+            "name": "flags.agree",
+            "id": "word_888613e1ddb640499761907f8950fd18",
+            "revision": 3,
+            "tests": [
+              "both-false",
+              "both-true",
+              "false-true",
+              "true-false"
+            ],
+            "examples": []
+          }
+        },
+        {
+          "ok": false,
+          "kind": "error",
+          "text": "COMMIT_TESTS_FAILED: Candidate tests must pass against the proposed dictionary before commit.",
+          "error": {
+            "code": "COMMIT_TESTS_FAILED",
+            "message": "Candidate tests must pass against the proposed dictionary before commit.",
+            "expected": [],
+            "actual": [
+              "flags.agree/true-false"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "label": "actor-M_FT",
+      "project": "D:\\code\\AgentLang\\.agentlang\\finite-adoption-001\\scoring\\actor-M_FT",
+      "requestCount": 2,
+      "responseCount": 2,
+      "exitCode": 0,
+      "requests": [
+        {
+          "op": "define",
+          "expectedRevision": 2,
+          "replace": true,
+          "syntaxVersion": 2,
+          "frontend": "flow",
+          "source": "fn flags.agree(left: Bool, right: Bool) -> Bool {\n    effects none\n    doc \"Returns whether the two flags agree.\"\n\n    if right { true } else { left == false }\n}\n"
+        },
+        {
+          "op": "replace-word",
+          "word": "flags.agree"
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "defined",
+          "text": "Flow definition, tests, examples, and retained source bindings validated and staged.",
+          "data": {
+            "frontend": "flow",
+            "name": "flags.agree",
+            "id": "word_888613e1ddb640499761907f8950fd18",
+            "revision": 3,
+            "tests": [
+              "both-false",
+              "both-true",
+              "false-true",
+              "true-false"
+            ],
+            "examples": []
+          }
+        },
+        {
+          "ok": false,
+          "kind": "error",
+          "text": "COMMIT_TESTS_FAILED: Candidate tests must pass against the proposed dictionary before commit.",
+          "error": {
+            "code": "COMMIT_TESTS_FAILED",
+            "message": "Candidate tests must pass against the proposed dictionary before commit.",
+            "expected": [],
+            "actual": [
+              "flags.agree/false-true"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "scoredUtc": "2026-10-08T05:54:38.0627321Z"
+}

@@ -1,0 +1,1 @@
+Host launch attempt 2 did not start the host: launching the PowerShell script through a child `pwsh -File` flattened the string-array allowlist into positional arguments, placing `task.abort` in MaxRequestBytes. Invoke the existing script directly from PowerShell so AllowedOperations binds as String[].

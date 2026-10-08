@@ -86,3 +86,6 @@ reports/evidence/102-defect-repair/** -text -whitespace
 # Preserve frozen adoption-trial input and transport hashes.
 reports/evidence/114-effect-assertion-adoption/** -text -whitespace
 reports/evidence/115-versioned-help-adoption/** -text -whitespace
+
+# Preserve finite-coverage trial input and raw evidence hashes.
+reports/evidence/117-finite-coverage-adoption/** -text -whitespace

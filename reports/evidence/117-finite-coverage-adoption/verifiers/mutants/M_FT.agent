@@ -1,0 +1,6 @@
+fn flags.agree(left: Bool, right: Bool) -> Bool {
+    effects none
+    doc "Returns whether the two flags agree."
+
+    if right { true } else { left == false }
+}

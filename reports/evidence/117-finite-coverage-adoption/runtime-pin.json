@@ -1,0 +1,245 @@
+{
+  "schemaVersion": 1,
+  "sourceRevision": "a81a7aad74119f48d52f851e629d96f702ffda5d",
+  "configuration": "Debug",
+  "buildCommand": "dotnet build src/AgentLang.Cli/AgentLang.Cli.fsproj --configuration Debug --artifacts-path .agentlang/finite-adoption-001/runtime/debug-artifacts",
+  "cliPath": ".agentlang/finite-adoption-001/runtime/debug-artifacts/bin/AgentLang.Cli/debug/AgentLang.Cli.dll",
+  "cliSha256": "f95b93acca17decf8facbfd8eae8fa7c77fa271bc2c3f096858bcf308113a2e1",
+  "runtimeDirectoryFiles": [
+    {
+      "path": "AgentLang.Cli.deps.json",
+      "bytes": 2903,
+      "sha256": "6382f6dc29bb8f827824839010e313b266e51a3f87a4fdb8c382931d2549e97e"
+    },
+    {
+      "path": "AgentLang.Cli.dll",
+      "bytes": 43008,
+      "sha256": "f95b93acca17decf8facbfd8eae8fa7c77fa271bc2c3f096858bcf308113a2e1"
+    },
+    {
+      "path": "AgentLang.Cli.exe",
+      "bytes": 156160,
+      "sha256": "096fe829d6f497507c2a811255a92e51978d4fcfcd883e74afc9691d2660c2d7"
+    },
+    {
+      "path": "AgentLang.Cli.pdb",
+      "bytes": 12992,
+      "sha256": "1e899bcf7ead1bb813fd7334038481eef5f7fe4af2534396081b4767acd92e3c"
+    },
+    {
+      "path": "AgentLang.Cli.runtimeconfig.json",
+      "bytes": 268,
+      "sha256": "a45057885f807f4a337fdea3ccdfa64e1675d22a6d6a6fc7c7394fd44ba9eebe"
+    },
+    {
+      "path": "AgentLang.Core.dll",
+      "bytes": 2563072,
+      "sha256": "206bd1483f903a67ee9c89f9ba94515e9892b96b7efa88020080c9c4d3daff5c"
+    },
+    {
+      "path": "AgentLang.Core.pdb",
+      "bytes": 890920,
+      "sha256": "edfb4651fcf62947840db3b634e22e6e4fac5ecb495c958462b27a16efbea085"
+    },
+    {
+      "path": "AgentLang.Core.xml",
+      "bytes": 36905,
+      "sha256": "3a946f6b02c1557ec65fd0583d543a44582d10139334c8dca04bc0450d493bfe"
+    },
+    {
+      "path": "FSharp.Core.dll",
+      "bytes": 2314000,
+      "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+    }
+  ],
+  "hostPath": "scripts/Start-SubagentTrialHostV2.ps1",
+  "hostSha256": "6573321e8c0fc92926e43221ae10836fd5c62139e5fdb51cc34ff482fbc81f2b",
+  "hostProtocolVersion": "subagent-trial-host-v2",
+  "hostProfile": "agentlang",
+  "capabilities": [],
+  "allowedOperations": [
+    "task.begin",
+    "task.status",
+    "task.log",
+    "task.commit",
+    "task.abort",
+    "words",
+    "search",
+    "describe",
+    "type-of",
+    "search-type",
+    "search-output",
+    "search-effect",
+    "search-dependency",
+    "source",
+    "dependencies",
+    "callers",
+    "transitive-dependencies",
+    "transitive-callers",
+    "graph",
+    "context",
+    "effects",
+    "ir",
+    "tests",
+    "examples",
+    "example",
+    "history",
+    "diff",
+    "stack",
+    "help",
+    "eval",
+    "define",
+    "test",
+    "test-all",
+    "failed-tests",
+    "commit",
+    "replace-word",
+    "discard"
+  ],
+  "actorProjectPath": ".agentlang/finite-adoption-001/project/actor-project",
+  "actorPromptPath": ".agentlang/finite-adoption-001/preparation/task-prompt.md",
+  "primerPath": ".agentlang/finite-adoption-001/preparation/flow2-primer.md",
+  "preparationOnly": true,
+  "seedSourceSha256": "7e1b662d663dea1753c8b08c660578ca4ac3c275f73d419b7633750e23638108",
+  "seedProjectTreeSha256": "fbb2bc02dfecfed628a2de9d0532066995758fa5ebb54cc88486ebef1d66a46d",
+  "seedProjectFiles": [
+    {
+      "path": ".agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "336181dae795925046448a3d5d785732337cd0d4cceedc6bc84632055d3aed5d"
+    },
+    {
+      "path": ".agentlang/store/manifests/8c6d7a00bdf41532b286b5b858218d341bbeb8f3550108b6855519dcdf59a7e0.json",
+      "bytes": 6316,
+      "sha256": "8c6d7a00bdf41532b286b5b858218d341bbeb8f3550108b6855519dcdf59a7e0"
+    },
+    {
+      "path": ".agentlang/store/objects/3e6b97554c8fb510abd12d92ff0ea4b7adc7a7f70e1c988adb5e44170a038a0d.agent",
+      "bytes": 1189,
+      "sha256": "3e6b97554c8fb510abd12d92ff0ea4b7adc7a7f70e1c988adb5e44170a038a0d"
+    },
+    {
+      "path": ".agentlang/store/objects/4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225.agent",
+      "bytes": 89,
+      "sha256": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225"
+    },
+    {
+      "path": ".agentlang/store/objects/86d11e76e3fadb27b9a23e1edc2b2343576dedd388513258146c467fca650039.agent",
+      "bytes": 134,
+      "sha256": "86d11e76e3fadb27b9a23e1edc2b2343576dedd388513258146c467fca650039"
+    },
+    {
+      "path": ".agentlang/store/objects/9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8.agent",
+      "bytes": 156,
+      "sha256": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8"
+    },
+    {
+      "path": ".agentlang/store/objects/b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9.agent",
+      "bytes": 86,
+      "sha256": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9"
+    },
+    {
+      "path": ".agentlang/store/objects/d6fccefb45cf21eabd027fbae51df54436d712157f67f01756e71f91d6bfdaa8.agent",
+      "bytes": 316,
+      "sha256": "d6fccefb45cf21eabd027fbae51df54436d712157f67f01756e71f91d6bfdaa8"
+    },
+    {
+      "path": ".agentlang/store/objects/da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd.agent",
+      "bytes": 158,
+      "sha256": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd"
+    },
+    {
+      "path": ".agentlang/store/objects/fcb9fdb110d63be14d0505ffd04bfa63df073fc1e8c0de5ecc4f19ce57eac0db.agent",
+      "bytes": 50,
+      "sha256": "fcb9fdb110d63be14d0505ffd04bfa63df073fc1e8c0de5ecc4f19ce57eac0db"
+    },
+    {
+      "path": ".agentlang/store/WRITE.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "dictionary.agent",
+      "bytes": 1189,
+      "sha256": "3e6b97554c8fb510abd12d92ff0ea4b7adc7a7f70e1c988adb5e44170a038a0d"
+    }
+  ],
+  "actorProjectTreeSha256": "fbb2bc02dfecfed628a2de9d0532066995758fa5ebb54cc88486ebef1d66a46d",
+  "actorPromptSha256": "0d03d7f16b308b3f74efa7ed8768082996c846334279e99770a19d70e029734d",
+  "primerSha256": "0c4d12765bcca3bdf6008e6d5246f3b9a2ba794db9c43f3b540593a78369b716",
+  "protocolTraceSha256": "7a9c806c917735f96d3f6919e89d3297a956219be07ddfdddeb7efa4777a0356",
+  "protocolResponseSha256": "f492ca5a79e7fb10b18ce8f674904affc597eb9cd5de31bcad6dbfba3e35f409",
+  "actorDispatched": false,
+  "actorProjectFiles": [
+    {
+      "path": ".agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "336181dae795925046448a3d5d785732337cd0d4cceedc6bc84632055d3aed5d"
+    },
+    {
+      "path": ".agentlang/store/manifests/8c6d7a00bdf41532b286b5b858218d341bbeb8f3550108b6855519dcdf59a7e0.json",
+      "bytes": 6316,
+      "sha256": "8c6d7a00bdf41532b286b5b858218d341bbeb8f3550108b6855519dcdf59a7e0"
+    },
+    {
+      "path": ".agentlang/store/objects/3e6b97554c8fb510abd12d92ff0ea4b7adc7a7f70e1c988adb5e44170a038a0d.agent",
+      "bytes": 1189,
+      "sha256": "3e6b97554c8fb510abd12d92ff0ea4b7adc7a7f70e1c988adb5e44170a038a0d"
+    },
+    {
+      "path": ".agentlang/store/objects/4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225.agent",
+      "bytes": 89,
+      "sha256": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225"
+    },
+    {
+      "path": ".agentlang/store/objects/86d11e76e3fadb27b9a23e1edc2b2343576dedd388513258146c467fca650039.agent",
+      "bytes": 134,
+      "sha256": "86d11e76e3fadb27b9a23e1edc2b2343576dedd388513258146c467fca650039"
+    },
+    {
+      "path": ".agentlang/store/objects/9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8.agent",
+      "bytes": 156,
+      "sha256": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8"
+    },
+    {
+      "path": ".agentlang/store/objects/b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9.agent",
+      "bytes": 86,
+      "sha256": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9"
+    },
+    {
+      "path": ".agentlang/store/objects/d6fccefb45cf21eabd027fbae51df54436d712157f67f01756e71f91d6bfdaa8.agent",
+      "bytes": 316,
+      "sha256": "d6fccefb45cf21eabd027fbae51df54436d712157f67f01756e71f91d6bfdaa8"
+    },
+    {
+      "path": ".agentlang/store/objects/da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd.agent",
+      "bytes": 158,
+      "sha256": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd"
+    },
+    {
+      "path": ".agentlang/store/objects/fcb9fdb110d63be14d0505ffd04bfa63df073fc1e8c0de5ecc4f19ce57eac0db.agent",
+      "bytes": 50,
+      "sha256": "fcb9fdb110d63be14d0505ffd04bfa63df073fc1e8c0de5ecc4f19ce57eac0db"
+    },
+    {
+      "path": ".agentlang/store/WRITE.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "dictionary.agent",
+      "bytes": 1189,
+      "sha256": "3e6b97554c8fb510abd12d92ff0ea4b7adc7a7f70e1c988adb5e44170a038a0d"
+    }
+  ],
+  "actorLaunchPath": ".agentlang/finite-adoption-001/preparation/actor-launch.ps1.txt",
+  "actorLaunchSha256": "9403e48d5799d17e15ae3668ea7acb3b9e97dc89c9f9713aa313e3c649f54540",
+  "preflightLaunchSha256": "9cf0e075cfe45eb65075db542e28eea7cbfae50d277c3c2c49906c3a48e91b1d",
+  "protocolTracePath": ".agentlang/finite-adoption-001/runtime/protocol-preflight-final.trace.jsonl",
+  "protocolResponsePath": ".agentlang/finite-adoption-001/runtime/protocol-preflight-final.output.jsonl",
+  "seedValidationSha256": "b42a8061511abb22255f1a3a04aa296e65f78f22bb598490c397f148f9903590",
+  "promotionPreflightOutputSha256": {
+    "flags": "1cdf8ed2ca2a62368ae7146bbbf6302b2a48cbae4c75ad0cbe119fe5f9ea7199",
+    "selection": "d5575434fdb673281117f9f9f4a2acc6e700ccafd35dea4b599666a52fac6fab"
+  }
+}

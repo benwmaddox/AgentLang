@@ -28,8 +28,8 @@ The structural correctness checkpoints are
 [110 — Explicit arithmetic and domain contracts](110-structural-correctness.md)
 and [112 — Closed domain states](112-closed-domain-states.md): checked ratios,
 a validated bounded-rate library, and payload-free Flow/2 enums with exhaustive
-matching and durable project definitions. Enum library qualification remains
-blocked pending finite-value coverage.
+matching and durable project definitions. Report 116 below adds finite-value
+qualification for supported enum-bearing libraries; native enum execution remains pending.
 [113 — Effect-count assertions](113-effect-count-assertions.md) adds optional
 target-scoped provider counts to Flow/2 tests. Cross-field construction and
 provider-state assertions remain pending. These are implementation checks, not new
@@ -44,6 +44,15 @@ reported separately. [115 — Versioned-help adoption](115-versioned-help-adopti
 records a fresh actor using the same runtime with a corrected help primer: its
 tests reject the restored write and block publication. One actor per condition
 establishes bounded usability, not comparative superiority.
+
+[116 - Finite library coverage](116-finite-library-coverage.md) adds observed
+Bool/enum inputs, finite returns and atomic requalification; all 37 local Debug
+checks pass. [117 - Finite-coverage adoption](117-finite-coverage-adoption.md)
+records one fresh actor adding both missing Boolean combinations and honestly
+keeping an unreachable-None function at project maturity. Fourteen independent
+behavior cases pass; its tests reject both frozen Boolean mutants. A scripted
+three-row control still accepts one mutant, and the actor adds one redundant
+test. This supports bounded usability, not comparative reliability superiority.
 
 The latest ownership demonstration is [108 — Native handler mailbox suspension](108-native-mailbox-suspension.md):
 120 checks across Core/O0/O2, with readable Flow/2 handlers and opaque retained

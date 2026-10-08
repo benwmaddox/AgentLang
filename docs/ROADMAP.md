@@ -166,6 +166,15 @@ domains and requalifies durable libraries on load and named snapshot restore.
 Enum-bearing authored helpers must qualify independently before a library can
 reach them. All 37 full local Debug checks pass; see
 [the finite coverage contract](FINITE-COVERAGE.md) and [report 116](../reports/116-finite-library-coverage.md).
+[Report 117](../reports/117-finite-coverage-adoption.md) tests adoption with one
+fresh subagent: it tests both mixed Boolean combinations, qualifies that function,
+and honestly keeps an always-populated Option return at project maturity.
+Independent behavior and both frozen mutation checks pass. One added test is
+redundant; a scripted three-row control passes qualification while missing a
+Boolean interaction bug. Evaluate bounded Cartesian coverage separately; no new
+policy is adopted from this single trial. For the next structural slice, use
+explicit populated-state contracts where presence is guaranteed, then test
+legal state transitions without weakening unreachable-alternative diagnostics.
 Native enum execution is still pending. Use new fixtures and preserve historical
 research inputs.
 Cross-field record construction and decision/executor stateful properties follow.
@@ -187,8 +196,8 @@ Implement the remaining approved module boundaries and dependency-closure rules:
 cross-module authored calls require library qualification; library functions
 call only qualified authored library functions or trusted/generated operations.
 Qualification must become invalid when its bound dependency contracts change.
-These broader rules are distinct from the finite input/return gate now under
-validation. Deterministic injectable effects retain capability and declared-effect
+These broader rules are distinct from the implemented finite input/return gate.
+Deterministic injectable effects retain capability and declared-effect
 enforcement.
 Add test-local typed dictionary overrides as well: nested calls can see a scoped
 replacement of an IO or ordinary function, then automatic cleanup restores the

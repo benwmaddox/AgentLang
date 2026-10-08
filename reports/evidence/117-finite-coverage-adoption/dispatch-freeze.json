@@ -1,0 +1,241 @@
+{
+  "schemaVersion": 1,
+  "frozenUtc": "2026-10-08T05:48:31.8353232Z",
+  "sourceRevision": "a81a7aad74119f48d52f851e629d96f702ffda5d",
+  "model": "gpt-6-luna",
+  "reasoning": "max",
+  "history": "none",
+  "actorDispatched": false,
+  "files": [
+    {
+      "path": "actor-prompt.md",
+      "sha256": "f7fcd4bea8e17509a88fe6c70f14daf9f6c04d0b656f6cef958e308d78a880b1"
+    },
+    {
+      "path": "research-plan.md",
+      "sha256": "aeef211b1dc6000715ae38f4691be26fecb1b501ae023bf420e2ea6db185f4ff"
+    },
+    {
+      "path": "review-notes.md",
+      "sha256": "7d32cc37e4eeeb837f7b8cb83aeae881ec63f30d3fe8d0a4f9846c42c6cc46f9"
+    },
+    {
+      "path": "preparation/task-prompt.md",
+      "sha256": "0d03d7f16b308b3f74efa7ed8768082996c846334279e99770a19d70e029734d"
+    },
+    {
+      "path": "preparation/flow2-primer.md",
+      "sha256": "0c4d12765bcca3bdf6008e6d5246f3b9a2ba794db9c43f3b540593a78369b716"
+    },
+    {
+      "path": "preparation/actor-launch.ps1.txt",
+      "sha256": "9403e48d5799d17e15ae3668ea7acb3b9e97dc89c9f9713aa313e3c649f54540"
+    },
+    {
+      "path": "preparation/final-audit.json",
+      "sha256": "58a0b09ca4433b617bc8650d776a0ec9c49a011b325fa23c4dfbd40028ba9c40"
+    },
+    {
+      "path": "runtime/runtime-pin.json",
+      "sha256": "a440aa8638b87033e17a7022c4a24fd5a24a09397a71de192645f7c31fcc9141"
+    },
+    {
+      "path": "oracle-preflight/oracle-preflight.json",
+      "sha256": "32ac2bd705cd11a1b7dec2ba6d97a23f2c99b5e2cebffde253ec01d83fa0c238"
+    },
+    {
+      "path": "oracle-preflight/complete-score-smoke/independent-score.json",
+      "sha256": "9121ec5ccd5bb586713c10268551c2ab907400b4e1eb028a261bcb179fab9fcf"
+    },
+    {
+      "path": "verifiers/Verify-FiniteCoverageAdoption.ps1",
+      "sha256": "270dc7433d57e0a492ea4039e600fe53429aae3e2f3aa071e2a365ff0e9e205a"
+    },
+    {
+      "path": "verifiers/mutants/M_TF.agent",
+      "sha256": "884f48e75e5d8567a72b1f3ee7a5b8aa7f4aae1f6f70714bc74f3b2c277eff8d"
+    },
+    {
+      "path": "verifiers/mutants/M_FT.agent",
+      "sha256": "8aa032299b2b9d45762a47e951f2626bf27c2c7be15b8384faa520d599cb2433"
+    }
+  ],
+  "broker": {
+    "path": "scripts/Start-SubagentTrialHostV2.ps1",
+    "sha256": "6573321e8c0fc92926e43221ae10836fd5c62139e5fdb51cc34ff482fbc81f2b"
+  },
+  "runtimeFiles": [
+    {
+      "path": "AgentLang.Cli.deps.json",
+      "bytes": 2903,
+      "sha256": "6382f6dc29bb8f827824839010e313b266e51a3f87a4fdb8c382931d2549e97e"
+    },
+    {
+      "path": "AgentLang.Cli.dll",
+      "bytes": 43008,
+      "sha256": "f95b93acca17decf8facbfd8eae8fa7c77fa271bc2c3f096858bcf308113a2e1"
+    },
+    {
+      "path": "AgentLang.Cli.exe",
+      "bytes": 156160,
+      "sha256": "096fe829d6f497507c2a811255a92e51978d4fcfcd883e74afc9691d2660c2d7"
+    },
+    {
+      "path": "AgentLang.Cli.pdb",
+      "bytes": 12992,
+      "sha256": "1e899bcf7ead1bb813fd7334038481eef5f7fe4af2534396081b4767acd92e3c"
+    },
+    {
+      "path": "AgentLang.Cli.runtimeconfig.json",
+      "bytes": 268,
+      "sha256": "a45057885f807f4a337fdea3ccdfa64e1675d22a6d6a6fc7c7394fd44ba9eebe"
+    },
+    {
+      "path": "AgentLang.Core.dll",
+      "bytes": 2563072,
+      "sha256": "206bd1483f903a67ee9c89f9ba94515e9892b96b7efa88020080c9c4d3daff5c"
+    },
+    {
+      "path": "AgentLang.Core.pdb",
+      "bytes": 890920,
+      "sha256": "edfb4651fcf62947840db3b634e22e6e4fac5ecb495c958462b27a16efbea085"
+    },
+    {
+      "path": "AgentLang.Core.xml",
+      "bytes": 36905,
+      "sha256": "3a946f6b02c1557ec65fd0583d543a44582d10139334c8dca04bc0450d493bfe"
+    },
+    {
+      "path": "FSharp.Core.dll",
+      "bytes": 2314000,
+      "sha256": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+    }
+  ],
+  "seedInventory": [
+    {
+      "path": ".agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "336181dae795925046448a3d5d785732337cd0d4cceedc6bc84632055d3aed5d"
+    },
+    {
+      "path": ".agentlang/store/manifests/8c6d7a00bdf41532b286b5b858218d341bbeb8f3550108b6855519dcdf59a7e0.json",
+      "bytes": 6316,
+      "sha256": "8c6d7a00bdf41532b286b5b858218d341bbeb8f3550108b6855519dcdf59a7e0"
+    },
+    {
+      "path": ".agentlang/store/objects/3e6b97554c8fb510abd12d92ff0ea4b7adc7a7f70e1c988adb5e44170a038a0d.agent",
+      "bytes": 1189,
+      "sha256": "3e6b97554c8fb510abd12d92ff0ea4b7adc7a7f70e1c988adb5e44170a038a0d"
+    },
+    {
+      "path": ".agentlang/store/objects/4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225.agent",
+      "bytes": 89,
+      "sha256": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225"
+    },
+    {
+      "path": ".agentlang/store/objects/86d11e76e3fadb27b9a23e1edc2b2343576dedd388513258146c467fca650039.agent",
+      "bytes": 134,
+      "sha256": "86d11e76e3fadb27b9a23e1edc2b2343576dedd388513258146c467fca650039"
+    },
+    {
+      "path": ".agentlang/store/objects/9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8.agent",
+      "bytes": 156,
+      "sha256": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8"
+    },
+    {
+      "path": ".agentlang/store/objects/b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9.agent",
+      "bytes": 86,
+      "sha256": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9"
+    },
+    {
+      "path": ".agentlang/store/objects/d6fccefb45cf21eabd027fbae51df54436d712157f67f01756e71f91d6bfdaa8.agent",
+      "bytes": 316,
+      "sha256": "d6fccefb45cf21eabd027fbae51df54436d712157f67f01756e71f91d6bfdaa8"
+    },
+    {
+      "path": ".agentlang/store/objects/da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd.agent",
+      "bytes": 158,
+      "sha256": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd"
+    },
+    {
+      "path": ".agentlang/store/objects/fcb9fdb110d63be14d0505ffd04bfa63df073fc1e8c0de5ecc4f19ce57eac0db.agent",
+      "bytes": 50,
+      "sha256": "fcb9fdb110d63be14d0505ffd04bfa63df073fc1e8c0de5ecc4f19ce57eac0db"
+    },
+    {
+      "path": ".agentlang/store/WRITE.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "dictionary.agent",
+      "bytes": 1189,
+      "sha256": "3e6b97554c8fb510abd12d92ff0ea4b7adc7a7f70e1c988adb5e44170a038a0d"
+    }
+  ],
+  "actorStartingInventory": [
+    {
+      "path": ".agentlang/store/CURRENT",
+      "bytes": 134,
+      "sha256": "336181dae795925046448a3d5d785732337cd0d4cceedc6bc84632055d3aed5d"
+    },
+    {
+      "path": ".agentlang/store/manifests/8c6d7a00bdf41532b286b5b858218d341bbeb8f3550108b6855519dcdf59a7e0.json",
+      "bytes": 6316,
+      "sha256": "8c6d7a00bdf41532b286b5b858218d341bbeb8f3550108b6855519dcdf59a7e0"
+    },
+    {
+      "path": ".agentlang/store/objects/3e6b97554c8fb510abd12d92ff0ea4b7adc7a7f70e1c988adb5e44170a038a0d.agent",
+      "bytes": 1189,
+      "sha256": "3e6b97554c8fb510abd12d92ff0ea4b7adc7a7f70e1c988adb5e44170a038a0d"
+    },
+    {
+      "path": ".agentlang/store/objects/4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225.agent",
+      "bytes": 89,
+      "sha256": "4e93a24d0784dba18ad5adfd5fb1008e663e3b6c715f2aea3ba17d4c9524c225"
+    },
+    {
+      "path": ".agentlang/store/objects/86d11e76e3fadb27b9a23e1edc2b2343576dedd388513258146c467fca650039.agent",
+      "bytes": 134,
+      "sha256": "86d11e76e3fadb27b9a23e1edc2b2343576dedd388513258146c467fca650039"
+    },
+    {
+      "path": ".agentlang/store/objects/9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8.agent",
+      "bytes": 156,
+      "sha256": "9f963689a76044269233fc324379eb12eea1212dc2ddb23b22d642b8282f1ab8"
+    },
+    {
+      "path": ".agentlang/store/objects/b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9.agent",
+      "bytes": 86,
+      "sha256": "b15448ec5939aacc79decf9b627b5b29ad7b6f10709f4168b3850734eafcb8f9"
+    },
+    {
+      "path": ".agentlang/store/objects/d6fccefb45cf21eabd027fbae51df54436d712157f67f01756e71f91d6bfdaa8.agent",
+      "bytes": 316,
+      "sha256": "d6fccefb45cf21eabd027fbae51df54436d712157f67f01756e71f91d6bfdaa8"
+    },
+    {
+      "path": ".agentlang/store/objects/da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd.agent",
+      "bytes": 158,
+      "sha256": "da83d697763a31d0df8bdbf9afffcee27c64524f46964772c4456f7a0cc69bbd"
+    },
+    {
+      "path": ".agentlang/store/objects/fcb9fdb110d63be14d0505ffd04bfa63df073fc1e8c0de5ecc4f19ce57eac0db.agent",
+      "bytes": 50,
+      "sha256": "fcb9fdb110d63be14d0505ffd04bfa63df073fc1e8c0de5ecc4f19ce57eac0db"
+    },
+    {
+      "path": ".agentlang/store/WRITE.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "dictionary.agent",
+      "bytes": 1189,
+      "sha256": "3e6b97554c8fb510abd12d92ff0ea4b7adc7a7f70e1c988adb5e44170a038a0d"
+    }
+  ],
+  "seedActorEqual": true,
+  "preflightPassed": true,
+  "oracleChecks": 27
+}

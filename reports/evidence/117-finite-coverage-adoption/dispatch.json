@@ -1,0 +1,10 @@
+{
+  "dispatchedUtc": "2026-10-08T05:49:02.4917889Z",
+  "agent": "/root/finite_adoption_actor",
+  "model": "gpt-6-luna",
+  "reasoning": "max",
+  "forkTurns": "none",
+  "freezeSha256": "592a9c2f149a25900f427e4ac66f97f6636d74bd2b8e246efb7022d775b5b88d",
+  "promptSha256": "f7fcd4bea8e17509a88fe6c70f14daf9f6c04d0b656f6cef958e308d78a880b1",
+  "initialMessage": "You are the fresh external actor for an authorized isolated experiment. Read only D:\\code\\AgentLang\\.agentlang\\finite-adoption-001\\actor-prompt.md, then execute that prompt. The human explicitly authorized edits and local tests within this isolated trial project through the specified broker. Other agents share the checkout: do not read or edit their work or the main repository. The prompt specifies your full task, allowed broker interaction, and exact launch. Do not read research plans, verifiers, reports, seeds, other trials, or other instruction files; do not spawn agents. Use the single persistent broker session and close it cleanly as instructed. Return your actual outcome and remaining limitations."
+}

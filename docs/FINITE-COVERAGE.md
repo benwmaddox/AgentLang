@@ -79,3 +79,14 @@ replacement, rename, deprecation and reload. Exercise the lazy interpreter hooks
 separately, including faults and retained-state execution. Existing library
 fixtures must add real missing cases or use truthful narrower/project contracts;
 do not grandfather them merely to keep tests green.
+
+## Adoption evidence
+
+[Report 117](../reports/117-finite-coverage-adoption.md) records one fresh agent
+adding both missing Boolean combinations and leaving an unreachable declared
+Option alternative at project maturity. Its tests reject both frozen Boolean
+mutants. A scripted three-row control nevertheless passes this gate while
+missing one interaction bug. The current per-parameter rule is not Cartesian
+coverage. One redundant actor-added test also shows that passing qualification
+does not establish the value of every test. These are bounded observations,
+not a comparative correctness claim or a change to the qualification contract.

@@ -1,0 +1,133 @@
+{
+  "auditedUtc": "2026-10-08T05:56:22.8005986Z",
+  "frozenFiles": [
+    {
+      "path": "actor-prompt.md",
+      "unchanged": true
+    },
+    {
+      "path": "research-plan.md",
+      "unchanged": true
+    },
+    {
+      "path": "review-notes.md",
+      "unchanged": true
+    },
+    {
+      "path": "preparation/task-prompt.md",
+      "unchanged": true
+    },
+    {
+      "path": "preparation/flow2-primer.md",
+      "unchanged": true
+    },
+    {
+      "path": "preparation/actor-launch.ps1.txt",
+      "unchanged": true
+    },
+    {
+      "path": "preparation/final-audit.json",
+      "unchanged": true
+    },
+    {
+      "path": "runtime/runtime-pin.json",
+      "unchanged": true
+    },
+    {
+      "path": "oracle-preflight/oracle-preflight.json",
+      "unchanged": true
+    },
+    {
+      "path": "oracle-preflight/complete-score-smoke/independent-score.json",
+      "unchanged": true
+    },
+    {
+      "path": "verifiers/Verify-FiniteCoverageAdoption.ps1",
+      "unchanged": true
+    },
+    {
+      "path": "verifiers/mutants/M_TF.agent",
+      "unchanged": true
+    },
+    {
+      "path": "verifiers/mutants/M_FT.agent",
+      "unchanged": true
+    }
+  ],
+  "runtimeFiles": [
+    {
+      "path": "AgentLang.Cli.deps.json",
+      "unchanged": true
+    },
+    {
+      "path": "AgentLang.Cli.dll",
+      "unchanged": true
+    },
+    {
+      "path": "AgentLang.Cli.exe",
+      "unchanged": true
+    },
+    {
+      "path": "AgentLang.Cli.pdb",
+      "unchanged": true
+    },
+    {
+      "path": "AgentLang.Cli.runtimeconfig.json",
+      "unchanged": true
+    },
+    {
+      "path": "AgentLang.Core.dll",
+      "unchanged": true
+    },
+    {
+      "path": "AgentLang.Core.pdb",
+      "unchanged": true
+    },
+    {
+      "path": "AgentLang.Core.xml",
+      "unchanged": true
+    },
+    {
+      "path": "FSharp.Core.dll",
+      "unchanged": true
+    }
+  ],
+  "brokerUnchanged": true,
+  "functionPreservation": [
+    {
+      "name": "selection.accept",
+      "identityPreserved": true,
+      "definitionHashUnchanged": true,
+      "beforeTestCount": 2,
+      "afterTestCount": 3,
+      "seedTestHashesRetained": true,
+      "maturity": "project"
+    },
+    {
+      "name": "flags.agree",
+      "identityPreserved": true,
+      "definitionHashUnchanged": true,
+      "beforeTestCount": 2,
+      "afterTestCount": 4,
+      "seedTestHashesRetained": true,
+      "maturity": "library"
+    }
+  ],
+  "typesUnchanged": true,
+  "independentAcceptance": {
+    "actorProjectUntouched": true,
+    "testsPassed": true,
+    "flagsAllFourTruthRowsBehavior": true,
+    "flagsLibraryStructuralAndFinite": true,
+    "selectionProjectAndSignature": true,
+    "independentSelectionBehavior": true
+  },
+  "actorUntouchedByScoring": true,
+  "taskCommitSucceeded": true,
+  "honestUnreachableNoneExplanation": true,
+  "explanationEvidence": "actor-final.md plus exchange 33 finite-return refusal",
+  "mutationResistanceSeparate": true,
+  "redundantSelectionTest": "preserves-first-item-over-new-item repeats preserves-first-item: Some(5), incoming 11, expected Some(5).",
+  "transportOnlyIntervention": "dispatch-intervention.md",
+  "elapsedBrokerSeconds": 254.6004386
+}

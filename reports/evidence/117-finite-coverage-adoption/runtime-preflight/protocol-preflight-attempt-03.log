@@ -1,0 +1,1 @@
+Host launch attempt 3 did not start the host: piping request lines to the PowerShell script directly binds them as unsupported pipeline objects. The V2 host reads standard input; invoke it in a child pwsh and pass AllowedOperations as one comma-delimited string, which the script expands into its documented array.
