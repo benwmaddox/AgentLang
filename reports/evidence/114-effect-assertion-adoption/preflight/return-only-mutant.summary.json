@@ -1,0 +1,21 @@
+{
+  "passed": true,
+  "project": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\projects\\verifier-negative-mutant",
+  "originalDefinitionHash": "d451d3ea1d6c9386f39b8ca51c9829b589a25668a64c603f0dff49f93918df5f",
+  "revision": 3,
+  "retainedTests": [
+    "existing-custom-marker",
+    "existing-queued-marker",
+    "missing-reminder",
+    "non-open-status"
+  ],
+  "allOldTargetTests": 4,
+  "targetSourceContainsExtraWrite": true,
+  "runtimeSha256": "af2da9bfeaa706a4c67592465b23c48847aadbbd2d6d578342df1412662c3646",
+  "stdout": [
+    "{\"ok\":true,\"kind\":\"defined\",\"text\":\"Flow definition, tests, examples, and retained source bindings validated and staged.\",\"data\":{\"frontend\":\"flow\",\"name\":\"invoice.queue-reminder-once\",\"id\":\"word_e06f6118daa44ef994220e63548714eb\",\"revision\":3,\"tests\":[\"existing-custom-marker\",\"existing-queued-marker\",\"missing-reminder\",\"non-open-status\"],\"examples\":[\"queues-missing-reminder\"]}}",
+    "{\"ok\":true,\"kind\":\"replace-word\",\"text\":\"Replacement of \\u0027invoice.queue-reminder-once\\u0027 passed caller checks and was committed.\",\"data\":[\"invoice.queue-reminder-once/existing-custom-marker\",\"invoice.queue-reminder-once/existing-queued-marker\",\"invoice.queue-reminder-once/missing-reminder\",\"invoice.queue-reminder-once/non-open-status\"]}",
+    "{\"ok\":true,\"kind\":\"describe\",\"text\":\"Description for invoice.queue-reminder-once.\",\"data\":{\"name\":\"invoice.queue-reminder-once\",\"flowReference\":\"invoice::queue-reminder-once\",\"flowReferenceUnavailableReason\":null,\"inputs\":[\"Invoice\"],\"outputs\":[\"String\"],\"parameters\":[{\"name\":\"invoice\",\"type\":\"Invoice\"}],\"effects\":[\"fs.read\",\"fs.write\"],\"documentation\":\"Queues a reminder once for an open invoice and preserves any existing reminder contents.\",\"id\":\"word_e06f6118daa44ef994220e63548714eb\",\"dependencies\":[\"InvoiceStatus.value\",\"equals\",\"file.exists?\",\"file.read\",\"file.write\",\"invoice.id\",\"invoice.reminder-path\",\"invoice.status\"],\"transitiveDependencies\":[\"InvoiceId.value\",\"InvoiceStatus.value\",\"equals\",\"file.exists?\",\"file.read\",\"file.write\",\"invoice.id\",\"invoice.reminder-path\",\"invoice.status\",\"string.concat\"],\"callers\":[],\"tests\":[\"existing-custom-marker\",\"existing-queued-marker\",\"missing-reminder\",\"non-open-status\"],\"examples\":[\"queues-missing-reminder\"],\"source\":\"\\u003Cflow:invoice.queue-reminder-once/3\\u003E\",\"line\":1,\"kind\":\"word\",\"status\":\"persistent\",\"maturity\":\"library\",\"deprecated\":false,\"revision\":3,\"testCount\":4,\"exampleCount\":1,\"coverage\":{\"instructionsCovered\":25,\"instructionsTotal\":25,\"branchesCovered\":4,\"branchesTotal\":4,\"uncoveredInstructions\":[],\"uncoveredBranchOutcomes\":[],\"status\":\"current\"}}}"
+  ],
+  "stderr": ""
+}

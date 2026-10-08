@@ -82,3 +82,6 @@ reports/evidence/099-quick-comparison/** -text -whitespace
 reports/evidence/100-flow2/** -text -whitespace
 
 reports/evidence/102-defect-repair/** -text -whitespace
+
+# Preserve frozen adoption-trial input and transport hashes.
+reports/evidence/114-effect-assertion-adoption/** -text -whitespace

@@ -35,6 +35,13 @@ target-scoped provider counts to Flow/2 tests. Cross-field construction and
 provider-state assertions remain pending. These are implementation checks, not new
 agent-efficacy results.
 
+[114 — Effect-assertion adoption](114-effect-assertion-adoption.md) records a
+negative discovery result: one fresh actor repaired the reminder behavior but
+did not adopt Flow/2 count assertions; its help requests received Flow/1 guidance.
+Its seven tests
+accepted the extra-write mutant. Behavior acceptance and feature adoption are
+reported separately; a versioned-help primer and fresh probe come next.
+
 The latest ownership demonstration is [108 — Native handler mailbox suspension](108-native-mailbox-suspension.md):
 120 checks across Core/O0/O2, with readable Flow/2 handlers and opaque retained
 state across scratch reuse. Scheduling is still a .NET experiment host; no

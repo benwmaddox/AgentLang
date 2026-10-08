@@ -1,0 +1,947 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "failure": null,
+  "runtimePath": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\runtime\\AgentLang.Cli.dll",
+  "runtimeSha256": "af2da9bfeaa706a4c67592465b23c48847aadbbd2d6d578342df1412662c3646",
+  "sourceCheckpoint": "a8e7d34b9e8ae50ea3281a4df31fb8b17014028c",
+  "frozenControlManifest": "efafec711482ffd2c7b9bb11015b90b0e8a0bc5ef6be40eb870e955157aff536",
+  "actorStartProject": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\actors\\flow",
+  "checks": [
+    {
+      "name": "pinned CLI exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\runtime\\AgentLang.Cli.dll"
+    },
+    {
+      "name": "runtime pin source matches parent checkpoint",
+      "passed": true,
+      "details": "a8e7d34b9e8ae50ea3281a4df31fb8b17014028c"
+    },
+    {
+      "name": "pinned runtime file matches: AgentLang.Cli.deps.json",
+      "passed": true,
+      "details": "6382f6dc29bb8f827824839010e313b266e51a3f87a4fdb8c382931d2549e97e"
+    },
+    {
+      "name": "pinned runtime file matches: AgentLang.Cli.dll",
+      "passed": true,
+      "details": "af2da9bfeaa706a4c67592465b23c48847aadbbd2d6d578342df1412662c3646"
+    },
+    {
+      "name": "pinned runtime file matches: AgentLang.Cli.exe",
+      "passed": true,
+      "details": "95a8e4455fef6387c1703e95f240b81ffc000cf9b580b880339105f21f954bf9"
+    },
+    {
+      "name": "pinned runtime file matches: AgentLang.Cli.pdb",
+      "passed": true,
+      "details": "4e373f0574541c3aac4221f516136539df3a976a0460ffcfc9f8e0520e41bbf5"
+    },
+    {
+      "name": "pinned runtime file matches: AgentLang.Cli.runtimeconfig.json",
+      "passed": true,
+      "details": "a45057885f807f4a337fdea3ccdfa64e1675d22a6d6a6fc7c7394fd44ba9eebe"
+    },
+    {
+      "name": "pinned runtime file matches: AgentLang.Core.dll",
+      "passed": true,
+      "details": "cbbd43fe8ed4799de761d8ee7eccc4efbf21c818b9da2d98dbc29f04a0d053bc"
+    },
+    {
+      "name": "pinned runtime file matches: AgentLang.Core.pdb",
+      "passed": true,
+      "details": "17b7dcb82828d91f5463250311cef1fff28cb41b60aeccb5111c71e3b89eb211"
+    },
+    {
+      "name": "pinned runtime file matches: AgentLang.Core.xml",
+      "passed": true,
+      "details": "da40eed74e6080d79a34240cbc79cbbc748df538771ca6c7a28675409406a313"
+    },
+    {
+      "name": "pinned runtime file matches: cs\\FSharp.Core.resources.dll",
+      "passed": true,
+      "details": "eb8bd755cfe0d39ce27615027fe22556e8b9dcb470f2b47a36f4bfbf3c31be64"
+    },
+    {
+      "name": "pinned runtime file matches: de\\FSharp.Core.resources.dll",
+      "passed": true,
+      "details": "7419e4f5ceed9e03821686e865fed7d29c6217fdf5d3a46a2919a369c98c38ce"
+    },
+    {
+      "name": "pinned runtime file matches: es\\FSharp.Core.resources.dll",
+      "passed": true,
+      "details": "636866649564c72eb763eb3942e021b52b1f9b3869d037aca48f73d4474353c5"
+    },
+    {
+      "name": "pinned runtime file matches: fr\\FSharp.Core.resources.dll",
+      "passed": true,
+      "details": "f38f2fd6bc4c4e233dd098a36b315a2bc87673cf2f07c6ba3daf71a3264f4a64"
+    },
+    {
+      "name": "pinned runtime file matches: FSharp.Core.dll",
+      "passed": true,
+      "details": "bf72714c36dc21357a6530d59479e1d7fc5e6bc815a9af9a872e5e41611c1e6f"
+    },
+    {
+      "name": "pinned runtime file matches: it\\FSharp.Core.resources.dll",
+      "passed": true,
+      "details": "61a0be9c6a2ed95f8e98493b17c54a55c68cef84e23a0d82114319e2c5f3c2cd"
+    },
+    {
+      "name": "pinned runtime file matches: ja\\FSharp.Core.resources.dll",
+      "passed": true,
+      "details": "dd7f36036d906e991da5505b074ef889a603f449d3324750fda5f5445ba2854f"
+    },
+    {
+      "name": "pinned runtime file matches: ko\\FSharp.Core.resources.dll",
+      "passed": true,
+      "details": "0f3ef625e379577e3b60c15d8cc3759d3dc8840f99894282df1e702b4a166462"
+    },
+    {
+      "name": "pinned runtime file matches: pl\\FSharp.Core.resources.dll",
+      "passed": true,
+      "details": "755bab9fbd85e5e4b4771870c9c4d655e91e3ce39cc1c2735fe0bc7cec6b84c3"
+    },
+    {
+      "name": "pinned runtime file matches: pt-BR\\FSharp.Core.resources.dll",
+      "passed": true,
+      "details": "a4bbbdaabf2003a5fdff5f5bc4143c3fd4a064f2681fc481f449d4558074dc61"
+    },
+    {
+      "name": "pinned runtime file matches: ru\\FSharp.Core.resources.dll",
+      "passed": true,
+      "details": "a1133f9ab7e661803d1af0c2489626bd53ac33a11dfe891f5a02f3186f2f5d78"
+    },
+    {
+      "name": "pinned runtime file matches: tr\\FSharp.Core.resources.dll",
+      "passed": true,
+      "details": "6b0cba5139a86ee681909fdfcebac07c99afba3bfcff4fb8ab12b9c2112a0b31"
+    },
+    {
+      "name": "pinned runtime file matches: zh-Hans\\FSharp.Core.resources.dll",
+      "passed": true,
+      "details": "25f82f35a9234bcaab272921b0d50054ddb4a669d96c111907c9d31f5b18c121"
+    },
+    {
+      "name": "pinned runtime file matches: zh-Hant\\FSharp.Core.resources.dll",
+      "passed": true,
+      "details": "ac03ee7c4112c755705776c700033794586f980fe9476e6a13811a7153beabb8"
+    },
+    {
+      "name": "copied seed retains frozen report 111 manifest",
+      "passed": true,
+      "details": "efafec711482ffd2c7b9bb11015b90b0e8a0bc5ef6be40eb870e955157aff536"
+    },
+    {
+      "name": "actor-start project is separate from frozen seed",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\actors\\flow"
+    },
+    {
+      "name": "JSONL response count for runtime-help-v2-v1",
+      "passed": true,
+      "details": "requests=2, responses=2"
+    },
+    {
+      "name": "runtime process exit for runtime-help-v2-v1",
+      "passed": true,
+      "details": "exit=0; stderr="
+    },
+    {
+      "name": "Flow/2 runtime help exposes effect-count assertions",
+      "passed": true,
+      "details": "expected syntax in examples topic"
+    },
+    {
+      "name": "Flow/1 runtime help does not advertise Flow/2 assertion syntax",
+      "passed": true,
+      "details": "Flow/1 remains unchanged"
+    },
+    {
+      "name": "JSONL response count for seed-old-attached-tests",
+      "passed": true,
+      "details": "requests=1, responses=1"
+    },
+    {
+      "name": "runtime process exit for seed-old-attached-tests",
+      "passed": true,
+      "details": "exit=0; stderr="
+    },
+    {
+      "name": "old attached tests still pass on faulty seed",
+      "passed": true,
+      "details": "results=6"
+    },
+    {
+      "name": "all four old target return tests pass on faulty seed",
+      "passed": true,
+      "details": "targetResults=4"
+    },
+    {
+      "name": "JSONL response count for faulty-existing-marker-provider-count",
+      "passed": true,
+      "details": "requests=3, responses=3"
+    },
+    {
+      "name": "runtime process exit for faulty-existing-marker-provider-count",
+      "passed": true,
+      "details": "exit=0; stderr="
+    },
+    {
+      "name": "provider probe setup succeeds",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "faulty target preserves marker bytes",
+      "passed": true,
+      "details": "behavioral return and stored bytes remain unchanged"
+    },
+    {
+      "name": "faulty existing-marker path performs two reads and an extra write",
+      "passed": true,
+      "details": "fs.read=2, fs.write=1"
+    },
+    {
+      "name": "JSONL response count for negative-mutant-revision-3",
+      "passed": true,
+      "details": "requests=3, responses=3"
+    },
+    {
+      "name": "runtime process exit for negative-mutant-revision-3",
+      "passed": true,
+      "details": "exit=0; stderr="
+    },
+    {
+      "name": "negative mutant replacement stages as the next revision",
+      "passed": true,
+      "details": "Flow definition, tests, examples, and retained source bindings validated and staged."
+    },
+    {
+      "name": "negative mutant test includes all four old return cases",
+      "passed": true,
+      "details": "results=4"
+    },
+    {
+      "name": "negative exact effect assertion rejects the extra write",
+      "passed": true,
+      "details": "actual fs.read=2, fs.write=1; expected fs.write=0"
+    },
+    {
+      "name": "negative library replacement is blocked by the attached assertion",
+      "passed": true,
+      "details": "COMMIT_TESTS_FAILED"
+    },
+    {
+      "name": "JSONL response count for positive-corrected-revision-3",
+      "passed": true,
+      "details": "requests=3, responses=3"
+    },
+    {
+      "name": "runtime process exit for positive-corrected-revision-3",
+      "passed": true,
+      "details": "exit=0; stderr="
+    },
+    {
+      "name": "positive corrected replacement stages as the next revision",
+      "passed": true,
+      "details": "Flow definition, tests, examples, and retained source bindings validated and staged."
+    },
+    {
+      "name": "positive control passes all four attached tests",
+      "passed": true,
+      "details": "results=4"
+    },
+    {
+      "name": "positive corrected library replacement is accepted",
+      "passed": true,
+      "details": "Replacement of 'invoice.queue-reminder-once' passed caller checks and was committed."
+    },
+    {
+      "name": "frozen report 111 control remains unchanged",
+      "passed": true,
+      "details": "source control inventory before/after"
+    },
+    {
+      "name": "actor-start copy remains untouched during preflight",
+      "passed": true,
+      "details": "actor project inventory before/after"
+    }
+  ],
+  "sessions": [
+    {
+      "name": "runtime-help-v2-v1",
+      "project": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\projects\\preflight-help",
+      "requestPath": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\preflight\\runtime-help-v2-v1.requests.jsonl",
+      "responsePath": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\preflight\\runtime-help-v2-v1.responses.jsonl",
+      "requests": [
+        {
+          "op": "help",
+          "topic": "examples",
+          "syntaxVersion": 2
+        },
+        {
+          "op": "help",
+          "topic": "examples",
+          "syntaxVersion": 1
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "help",
+          "text": "Run tests and examples",
+          "data": {
+            "schemaVersion": 1,
+            "topics": [
+              "authoring",
+              "define",
+              "replacement",
+              "examples"
+            ],
+            "topic": "examples",
+            "syntaxVersion": 2,
+            "title": "Run tests and examples",
+            "documentation": "Use test with word to run one owner's attached tests; use test-all to run every attached test in the current dictionary. Test expectations support `=> <literal>`, `=> value <expression>`, and `=> error CODE`. A value-expression expectation runs in an isolated trace and does not count as coverage of the tested word. For a nominal result compared with an underlying literal, explicitly unwrap it with its accessor in the actual test body; a constructor call cannot follow a bare `=>`. Flow examples accept literal expectations only. Use example with word to run all of that owner's examples, or add caseName to select one. Examples are inspectable documentation metadata and are not a runtime commit gate by themselves. Effects are the declared effect names; inspect them with describe or effects. The latest test or test-all batch replaces the displayed coverage observations. After testing individual words, run test-all before inspecting coverage for several words together. Passing a test batch is not a proof of domain correctness; library maturity additionally requires complete supported own instruction, branch, and iteration outcome coverage. This help response is selected for Flow/2; write function declarations with `fn`. Flow/2 tests may add `effects { fs.read: 2; fs.write: 0; }` after the value or error expectation. This asserts exact counts of provider calls made while the attached user word is active, including nested helpers; omitted categories are zero. The observable categories are fs.read, fs.write, clock.read, and console.write. Other effect categories are unsupported, and examples cannot use this test-only suffix.",
+            "topicInstructions": [
+              {
+                "topic": "authoring",
+                "title": "Start here",
+                "description": "Runtime JSONL authoring basics and the available help topics."
+              },
+              {
+                "topic": "define",
+                "title": "Define Flow source",
+                "description": "Flow source syntax, documentation, request fields, tests, and a complete example."
+              },
+              {
+                "topic": "replacement",
+                "title": "Replace a word",
+                "description": "Revision compare-and-swap, staged publication, and caller test gates."
+              },
+              {
+                "topic": "examples",
+                "title": "Run tests and examples",
+                "description": "Attached cases, literal expectations, effects, and coverage inspection."
+              }
+            ],
+            "allowedFlowDefineFields": [],
+            "sourceExamples": [
+              {
+                "name": "tutorial-sign-test",
+                "description": "A Flow test with a literal expectation.",
+                "source": "test tutorial.sign/negative { tutorial::sign(-2) => -1 }"
+              },
+              {
+                "name": "value-expression-test-expectation",
+                "description": "A test may compare against an expression by writing the explicit value form.",
+                "source": "test tutorial.sign/value-expression { tutorial::sign(2) => value ::add(0, 1) }"
+              },
+              {
+                "name": "runtime-error-test-expectation",
+                "description": "A test may assert the divide-by-zero runtime error with the explicit error form.",
+                "source": "test tutorial.sign/divide-by-zero { ::divide(tutorial::sign(2), 0) => error RUNTIME_DIVIDE_BY_ZERO }"
+              },
+              {
+                "name": "tutorial-sign-example",
+                "description": "A Flow example with a literal expected result.",
+                "source": "example tutorial.sign/negative { tutorial::sign(-2) => -1 }"
+              },
+              {
+                "name": "effect-count-test-v2",
+                "description": "Flow/2 test with exact provider counts for the attached user word and its nested helper calls.",
+                "source": "test tutorial.queue/reads-once { tutorial::queue() => \"queued\" effects { fs.read: 2; fs.write: 0; } }"
+              }
+            ],
+            "requestExamples": [
+              {
+                "name": "test-one-word",
+                "description": "Run tests for one word.",
+                "request": {
+                  "op": "test",
+                  "word": "tutorial.sign"
+                }
+              },
+              {
+                "name": "test-all",
+                "description": "Run attached tests across the current dictionary.",
+                "request": {
+                  "op": "test-all"
+                }
+              },
+              {
+                "name": "list-examples",
+                "description": "List an owner's attached example case names.",
+                "request": {
+                  "op": "examples",
+                  "word": "tutorial.sign"
+                }
+              },
+              {
+                "name": "run-examples",
+                "description": "Run every example for an owner.",
+                "request": {
+                  "op": "example",
+                  "word": "tutorial.sign"
+                }
+              },
+              {
+                "name": "inspect-effects",
+                "description": "Read an owner's declared effects.",
+                "request": {
+                  "op": "effects",
+                  "word": "tutorial.sign"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "help",
+          "text": "Run tests and examples",
+          "data": {
+            "schemaVersion": 1,
+            "topics": [
+              "authoring",
+              "define",
+              "replacement",
+              "examples"
+            ],
+            "topic": "examples",
+            "syntaxVersion": 1,
+            "title": "Run tests and examples",
+            "documentation": "Use test with word to run one owner's attached tests; use test-all to run every attached test in the current dictionary. Test expectations support `=> <literal>`, `=> value <expression>`, and `=> error CODE`. A value-expression expectation runs in an isolated trace and does not count as coverage of the tested word. For a nominal result compared with an underlying literal, explicitly unwrap it with its accessor in the actual test body; a constructor call cannot follow a bare `=>`. Flow examples accept literal expectations only. Use example with word to run all of that owner's examples, or add caseName to select one. Examples are inspectable documentation metadata and are not a runtime commit gate by themselves. Effects are the declared effect names; inspect them with describe or effects. The latest test or test-all batch replaces the displayed coverage observations. After testing individual words, run test-all before inspecting coverage for several words together. Passing a test batch is not a proof of domain correctness; library maturity additionally requires complete supported own instruction, branch, and iteration outcome coverage.",
+            "topicInstructions": [
+              {
+                "topic": "authoring",
+                "title": "Start here",
+                "description": "Runtime JSONL authoring basics and the available help topics."
+              },
+              {
+                "topic": "define",
+                "title": "Define Flow source",
+                "description": "Flow source syntax, documentation, request fields, tests, and a complete example."
+              },
+              {
+                "topic": "replacement",
+                "title": "Replace a word",
+                "description": "Revision compare-and-swap, staged publication, and caller test gates."
+              },
+              {
+                "topic": "examples",
+                "title": "Run tests and examples",
+                "description": "Attached cases, literal expectations, effects, and coverage inspection."
+              }
+            ],
+            "allowedFlowDefineFields": [],
+            "sourceExamples": [
+              {
+                "name": "tutorial-sign-test",
+                "description": "A Flow test with a literal expectation.",
+                "source": "test tutorial.sign/negative { tutorial::sign(-2) => -1 }"
+              },
+              {
+                "name": "value-expression-test-expectation",
+                "description": "A test may compare against an expression by writing the explicit value form.",
+                "source": "test tutorial.sign/value-expression { tutorial::sign(2) => value ::add(0, 1) }"
+              },
+              {
+                "name": "runtime-error-test-expectation",
+                "description": "A test may assert the divide-by-zero runtime error with the explicit error form.",
+                "source": "test tutorial.sign/divide-by-zero { ::divide(tutorial::sign(2), 0) => error RUNTIME_DIVIDE_BY_ZERO }"
+              },
+              {
+                "name": "tutorial-sign-example",
+                "description": "A Flow example with a literal expected result.",
+                "source": "example tutorial.sign/negative { tutorial::sign(-2) => -1 }"
+              }
+            ],
+            "requestExamples": [
+              {
+                "name": "test-one-word",
+                "description": "Run tests for one word.",
+                "request": {
+                  "op": "test",
+                  "word": "tutorial.sign"
+                }
+              },
+              {
+                "name": "test-all",
+                "description": "Run attached tests across the current dictionary.",
+                "request": {
+                  "op": "test-all"
+                }
+              },
+              {
+                "name": "list-examples",
+                "description": "List an owner's attached example case names.",
+                "request": {
+                  "op": "examples",
+                  "word": "tutorial.sign"
+                }
+              },
+              {
+                "name": "run-examples",
+                "description": "Run every example for an owner.",
+                "request": {
+                  "op": "example",
+                  "word": "tutorial.sign"
+                }
+              },
+              {
+                "name": "inspect-effects",
+                "description": "Read an owner's declared effects.",
+                "request": {
+                  "op": "effects",
+                  "word": "tutorial.sign"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "name": "seed-old-attached-tests",
+      "project": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\projects\\preflight-negative",
+      "requestPath": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\preflight\\seed-old-attached-tests.requests.jsonl",
+      "responsePath": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\preflight\\seed-old-attached-tests.responses.jsonl",
+      "requests": [
+        {
+          "op": "test-all"
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "test",
+          "text": "6/6 test(s) passed.",
+          "data": {
+            "results": [
+              {
+                "name": "existing-custom-marker",
+                "word": "invoice.queue-reminder-once",
+                "passed": true,
+                "expected": "\"custom reminder marker\"",
+                "actual": [
+                  "\"custom reminder marker\""
+                ]
+              },
+              {
+                "name": "existing-queued-marker",
+                "word": "invoice.queue-reminder-once",
+                "passed": true,
+                "expected": "\"queued\"",
+                "actual": [
+                  "\"queued\""
+                ]
+              },
+              {
+                "name": "missing-reminder",
+                "word": "invoice.queue-reminder-once",
+                "passed": true,
+                "expected": "\"queued\"",
+                "actual": [
+                  "\"queued\""
+                ]
+              },
+              {
+                "name": "non-open-status",
+                "word": "invoice.queue-reminder-once",
+                "passed": true,
+                "expected": "\"not-open\"",
+                "actual": [
+                  "\"not-open\""
+                ]
+              },
+              {
+                "name": "basic",
+                "word": "invoice.reminder-path",
+                "passed": true,
+                "expected": "\"outbox/invoice-reminders/INV-001\"",
+                "actual": [
+                  "\"outbox/invoice-reminders/INV-001\""
+                ]
+              },
+              {
+                "name": "preserves-id-text",
+                "word": "invoice.reminder-path",
+                "passed": true,
+                "expected": "\"outbox/invoice-reminders/inv.alpha_2\"",
+                "actual": [
+                  "\"outbox/invoice-reminders/inv.alpha_2\""
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "name": "faulty-existing-marker-provider-count",
+      "project": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\projects\\preflight-provider-probe",
+      "requestPath": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\preflight\\faulty-existing-marker-provider-count.requests.jsonl",
+      "responsePath": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\preflight\\faulty-existing-marker-provider-count.responses.jsonl",
+      "requests": [
+        {
+          "code": "file::write(\"outbox/invoice-reminders/adoption-preflight-existing\", \"held for adoption preflight\")",
+          "op": "eval",
+          "frontend": "flow"
+        },
+        {
+          "code": "invoice::queue-reminder-once(invoice::new(id = InvoiceId::new(\"adoption-preflight-existing\"), status = InvoiceStatus::new(\"open\")))",
+          "op": "eval",
+          "frontend": "flow"
+        },
+        {
+          "code": "file::read(\"outbox/invoice-reminders/adoption-preflight-existing\")",
+          "op": "eval",
+          "frontend": "flow"
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "unit",
+          "data": {
+            "stack": [
+              "unit"
+            ],
+            "stackTypes": [
+              "Unit"
+            ],
+            "console": [],
+            "effects": {
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "\"held for adoption preflight\"",
+          "data": {
+            "stack": [
+              "\"held for adoption preflight\""
+            ],
+            "stackTypes": [
+              "String"
+            ],
+            "console": [],
+            "effects": {
+              "fs.read": 2,
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "eval",
+          "text": "\"held for adoption preflight\"",
+          "data": {
+            "stack": [
+              "\"held for adoption preflight\""
+            ],
+            "stackTypes": [
+              "String"
+            ],
+            "console": [],
+            "effects": {
+              "fs.read": 1
+            }
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "name": "negative-mutant-revision-3",
+      "project": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\projects\\preflight-negative",
+      "requestPath": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\preflight\\negative-mutant-revision-3.requests.jsonl",
+      "responsePath": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\preflight\\negative-mutant-revision-3.responses.jsonl",
+      "requests": [
+        {
+          "op": "define",
+          "frontend": "flow",
+          "source": "fn invoice.queue-reminder-once(invoice: Invoice) -> String {\n    effects fs.read, fs.write\n    doc \"Queues a reminder once for an open invoice and preserves any existing reminder contents.\"\n\n    if InvoiceStatus::value(invoice.status) == \"open\" {\n        let path = invoice::reminder-path(invoice.id);\n        if file::exists?(path) {\n            let current = file::read(path);\n            file::write(path, current);\n            current\n        } else {\n            file::write(path, \"queued\");\n            \"queued\"\n        }\n    } else {\n        \"not-open\"\n    }\n}\n\ntest invoice.queue-reminder-once/existing-custom-marker {\n    file::write(\"outbox/invoice-reminders/r2-existing-custom\", \"custom reminder marker\");\n    invoice::queue-reminder-once(invoice::new(InvoiceId::new(\"r2-existing-custom\"), InvoiceStatus::new(\"open\")))\n    => \"custom reminder marker\" effects { fs.read: 2; fs.write: 0; }\n}\n\ntest invoice.queue-reminder-once/existing-queued-marker {\n    file::write(\"outbox/invoice-reminders/r2-existing-queued\", \"queued\");\n    invoice::queue-reminder-once(invoice::new(InvoiceId::new(\"r2-existing-queued\"), InvoiceStatus::new(\"open\")))\n    => \"queued\"\n}\n\ntest invoice.queue-reminder-once/missing-reminder {\n    invoice::queue-reminder-once(invoice::new(InvoiceId::new(\"r2-missing\"), InvoiceStatus::new(\"open\")))\n    => \"queued\"\n}\n\ntest invoice.queue-reminder-once/non-open-status {\n    invoice::queue-reminder-once(invoice::new(InvoiceId::new(\"r2-not-open\"), InvoiceStatus::new(\"Open\")))\n    => \"not-open\"\n}",
+          "syntaxVersion": 2,
+          "replace": true,
+          "expectedRevision": 2
+        },
+        {
+          "op": "test",
+          "word": "invoice.queue-reminder-once"
+        },
+        {
+          "op": "replace-word",
+          "word": "invoice.queue-reminder-once"
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "defined",
+          "text": "Flow definition, tests, examples, and retained source bindings validated and staged.",
+          "data": {
+            "frontend": "flow",
+            "name": "invoice.queue-reminder-once",
+            "id": "word_e06f6118daa44ef994220e63548714eb",
+            "revision": 3,
+            "tests": [
+              "existing-custom-marker",
+              "existing-queued-marker",
+              "missing-reminder",
+              "non-open-status"
+            ],
+            "examples": [
+              "queues-missing-reminder"
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "test",
+          "text": "3/4 test(s) passed.",
+          "data": {
+            "results": [
+              {
+                "name": "existing-custom-marker",
+                "word": "invoice.queue-reminder-once",
+                "passed": false,
+                "expected": "\"custom reminder marker\"",
+                "actual": [
+                  "\"custom reminder marker\""
+                ],
+                "effectAssertion": {
+                  "passed": false,
+                  "expected": {
+                    "clock.read": 0,
+                    "console.write": 0,
+                    "fs.read": 2,
+                    "fs.write": 0
+                  },
+                  "actual": {
+                    "clock.read": 0,
+                    "console.write": 0,
+                    "fs.read": 2,
+                    "fs.write": 1
+                  },
+                  "targetInvocationCount": 1,
+                  "span": {
+                    "file": "<flow:invoice.queue-reminder-once/3>/test:3e9f18d9cbd0705510aa09edadaa81159c5a0b022a7250b797fece7f095aacab",
+                    "line": 4,
+                    "column": 33,
+                    "length": 36
+                  },
+                  "error": {
+                    "code": "TEST_EFFECT_ASSERTION_FAILED",
+                    "message": "Target-scoped provider effect counts did not match the exact assertion."
+                  }
+                },
+                "errorCode": "TEST_EFFECT_ASSERTION_FAILED",
+                "message": "Target-scoped provider effect counts did not match the exact assertion."
+              },
+              {
+                "name": "existing-queued-marker",
+                "word": "invoice.queue-reminder-once",
+                "passed": true,
+                "expected": "\"queued\"",
+                "actual": [
+                  "\"queued\""
+                ]
+              },
+              {
+                "name": "missing-reminder",
+                "word": "invoice.queue-reminder-once",
+                "passed": true,
+                "expected": "\"queued\"",
+                "actual": [
+                  "\"queued\""
+                ]
+              },
+              {
+                "name": "non-open-status",
+                "word": "invoice.queue-reminder-once",
+                "passed": true,
+                "expected": "\"not-open\"",
+                "actual": [
+                  "\"not-open\""
+                ]
+              }
+            ],
+            "coverage": {
+              "instructionsCovered": 25,
+              "instructionsTotal": 25,
+              "branchesCovered": 4,
+              "branchesTotal": 4,
+              "uncoveredInstructions": [],
+              "uncoveredBranchOutcomes": []
+            }
+          }
+        },
+        {
+          "ok": false,
+          "kind": "error",
+          "text": "COMMIT_TESTS_FAILED: Candidate tests must pass against the proposed dictionary before commit.",
+          "error": {
+            "code": "COMMIT_TESTS_FAILED",
+            "message": "Candidate tests must pass against the proposed dictionary before commit.",
+            "expected": [],
+            "actual": [
+              "invoice.queue-reminder-once/existing-custom-marker"
+            ]
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "name": "positive-corrected-revision-3",
+      "project": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\projects\\preflight-positive",
+      "requestPath": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\preflight\\positive-corrected-revision-3.requests.jsonl",
+      "responsePath": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\preflight\\positive-corrected-revision-3.responses.jsonl",
+      "requests": [
+        {
+          "op": "define",
+          "frontend": "flow",
+          "source": "fn invoice.queue-reminder-once(invoice: Invoice) -> String {\n    effects fs.read, fs.write\n    doc \"Queues a reminder once for an open invoice and preserves any existing reminder contents.\"\n\n    if InvoiceStatus::value(invoice.status) == \"open\" {\n        let path = invoice::reminder-path(invoice.id);\n        if file::exists?(path) {\n            let current = file::read(path);\n            current\n        } else {\n            file::write(path, \"queued\");\n            \"queued\"\n        }\n    } else {\n        \"not-open\"\n    }\n}\n\ntest invoice.queue-reminder-once/existing-custom-marker {\n    file::write(\"outbox/invoice-reminders/r2-existing-custom\", \"custom reminder marker\");\n    invoice::queue-reminder-once(invoice::new(InvoiceId::new(\"r2-existing-custom\"), InvoiceStatus::new(\"open\")))\n    => \"custom reminder marker\" effects { fs.read: 2; fs.write: 0; }\n}\n\ntest invoice.queue-reminder-once/existing-queued-marker {\n    file::write(\"outbox/invoice-reminders/r2-existing-queued\", \"queued\");\n    invoice::queue-reminder-once(invoice::new(InvoiceId::new(\"r2-existing-queued\"), InvoiceStatus::new(\"open\")))\n    => \"queued\"\n}\n\ntest invoice.queue-reminder-once/missing-reminder {\n    invoice::queue-reminder-once(invoice::new(InvoiceId::new(\"r2-missing\"), InvoiceStatus::new(\"open\")))\n    => \"queued\"\n}\n\ntest invoice.queue-reminder-once/non-open-status {\n    invoice::queue-reminder-once(invoice::new(InvoiceId::new(\"r2-not-open\"), InvoiceStatus::new(\"Open\")))\n    => \"not-open\"\n}",
+          "syntaxVersion": 2,
+          "replace": true,
+          "expectedRevision": 2
+        },
+        {
+          "op": "test",
+          "word": "invoice.queue-reminder-once"
+        },
+        {
+          "op": "replace-word",
+          "word": "invoice.queue-reminder-once"
+        }
+      ],
+      "responses": [
+        {
+          "ok": true,
+          "kind": "defined",
+          "text": "Flow definition, tests, examples, and retained source bindings validated and staged.",
+          "data": {
+            "frontend": "flow",
+            "name": "invoice.queue-reminder-once",
+            "id": "word_e06f6118daa44ef994220e63548714eb",
+            "revision": 3,
+            "tests": [
+              "existing-custom-marker",
+              "existing-queued-marker",
+              "missing-reminder",
+              "non-open-status"
+            ],
+            "examples": [
+              "queues-missing-reminder"
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "kind": "test",
+          "text": "4/4 test(s) passed.",
+          "data": {
+            "results": [
+              {
+                "name": "existing-custom-marker",
+                "word": "invoice.queue-reminder-once",
+                "passed": true,
+                "expected": "\"custom reminder marker\"",
+                "actual": [
+                  "\"custom reminder marker\""
+                ],
+                "effectAssertion": {
+                  "passed": true,
+                  "expected": {
+                    "clock.read": 0,
+                    "console.write": 0,
+                    "fs.read": 2,
+                    "fs.write": 0
+                  },
+                  "actual": {
+                    "clock.read": 0,
+                    "console.write": 0,
+                    "fs.read": 2,
+                    "fs.write": 0
+                  },
+                  "targetInvocationCount": 1,
+                  "span": {
+                    "file": "<flow:invoice.queue-reminder-once/3>/test:3e9f18d9cbd0705510aa09edadaa81159c5a0b022a7250b797fece7f095aacab",
+                    "line": 4,
+                    "column": 33,
+                    "length": 36
+                  }
+                }
+              },
+              {
+                "name": "existing-queued-marker",
+                "word": "invoice.queue-reminder-once",
+                "passed": true,
+                "expected": "\"queued\"",
+                "actual": [
+                  "\"queued\""
+                ]
+              },
+              {
+                "name": "missing-reminder",
+                "word": "invoice.queue-reminder-once",
+                "passed": true,
+                "expected": "\"queued\"",
+                "actual": [
+                  "\"queued\""
+                ]
+              },
+              {
+                "name": "non-open-status",
+                "word": "invoice.queue-reminder-once",
+                "passed": true,
+                "expected": "\"not-open\"",
+                "actual": [
+                  "\"not-open\""
+                ]
+              }
+            ],
+            "coverage": {
+              "instructionsCovered": 22,
+              "instructionsTotal": 22,
+              "branchesCovered": 4,
+              "branchesTotal": 4,
+              "uncoveredInstructions": [],
+              "uncoveredBranchOutcomes": []
+            }
+          }
+        },
+        {
+          "ok": true,
+          "kind": "replace-word",
+          "text": "Replacement of 'invoice.queue-reminder-once' passed caller checks and was committed.",
+          "data": [
+            "invoice.queue-reminder-once/existing-custom-marker",
+            "invoice.queue-reminder-once/existing-queued-marker",
+            "invoice.queue-reminder-once/missing-reminder",
+            "invoice.queue-reminder-once/non-open-status"
+          ]
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0
+    }
+  ],
+  "sourcePaths": [
+    "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\preflight\\negative-control.agent",
+    "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\preflight\\positive-control.agent"
+  ],
+  "scope": "Fresh-runtime capability/help preflight; old attached tests on the faulty seed; direct existing-marker provider count; revision-3 faulty and corrected effect-assertion controls. No actor launched."
+}

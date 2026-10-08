@@ -1,0 +1,53 @@
+{
+  "manifestHash": "e9212c7d95cdec7842a772d8ce4c9538998a69d3e63e118311cc25b74bad5860",
+  "wordId": "word_e06f6118daa44ef994220e63548714eb",
+  "revision": 4,
+  "definitionHash": "9c5de45c816a71968ee25620ff294bfca13d9b61f831030b6a78ffe0e9db841c",
+  "definition": "fn invoice.queue-reminder-once(invoice: Invoice) -> String {\n    effects fs.read, fs.write\n    doc \"Queues a reminder once for an invoice whose status is exactly open, preserving existing reminder contents.\"\n\n    if invoice.status == InvoiceStatus::new(\"open\") {\n        let path = invoice::reminder-path(invoice.id);\n        if file::exists?(path) {\n            file::read(path)\n        } else {\n            file::write(path, \"queued\");\n            \"queued\"\n        }\n    } else {\n        \"not-open\"\n    }\n}",
+  "tests": [
+    {
+      "hash": "0bfd321cb64c215cc5c1f8de5e1c13ab44678751570d0bb6236441c874b15c2e",
+      "caseName": "existing-custom-marker",
+      "containsEffectAssertion": false,
+      "source": "test invoice.queue-reminder-once/existing-custom-marker {\n    file::write(\"outbox/invoice-reminders/r2-existing-custom-fix\", \"custom reminder marker\");\n    invoice::queue-reminder-once(invoice::new(InvoiceId::new(\"r2-existing-custom-fix\"), InvoiceStatus::new(\"open\"))) => \"custom reminder marker\"\n}"
+    },
+    {
+      "hash": "6bbf88454d3602e26d687b8456451ebaa61139c8e2a6838f04de2b52c69d198a",
+      "caseName": "existing-queued-marker",
+      "containsEffectAssertion": false,
+      "source": "test invoice.queue-reminder-once/existing-queued-marker {\n    file::write(\"outbox/invoice-reminders/r2-existing-queued-fix\", \"queued\");\n    invoice::queue-reminder-once(invoice::new(InvoiceId::new(\"r2-existing-queued-fix\"), InvoiceStatus::new(\"open\"))) => \"queued\"\n}"
+    },
+    {
+      "hash": "9f7b2d167e64acb2b6d3ea7c7f951320d4349a927d1eee33d521044198bc8d7c",
+      "caseName": "existing-empty-marker",
+      "containsEffectAssertion": false,
+      "source": "test invoice.queue-reminder-once/existing-empty-marker {\n    file::write(\"outbox/invoice-reminders/r2-existing-empty\", \"\");\n    invoice::queue-reminder-once(invoice::new(InvoiceId::new(\"r2-existing-empty\"), InvoiceStatus::new(\"open\"))) => \"\"\n}"
+    },
+    {
+      "hash": "bac969238d6be32e5a28a3135a54cee7a36ef472dcd923dfe0438d44a3d2ebfc",
+      "caseName": "non-open-padded-status",
+      "containsEffectAssertion": false,
+      "source": "test invoice.queue-reminder-once/non-open-padded-status {\n    invoice::queue-reminder-once(invoice::new(InvoiceId::new(\"r2-not-open-padded\"), InvoiceStatus::new(\" open \"))) => \"not-open\"\n}"
+    },
+    {
+      "hash": "cbc97bece033a2a8cb7d70d4b7ff5ea88f5db0f78aeb0c0e9ee179a8ec23567e",
+      "caseName": "missing-reminder",
+      "containsEffectAssertion": false,
+      "source": "test invoice.queue-reminder-once/missing-reminder {\n    invoice::queue-reminder-once(invoice::new(InvoiceId::new(\"r2-missing-fix\"), InvoiceStatus::new(\"open\"))) => \"queued\"\n}"
+    },
+    {
+      "hash": "e3cfbbeb22446e9770a0e2fbfb7cd98777e091fed4451801132281b5214786d2",
+      "caseName": "non-open-status",
+      "containsEffectAssertion": false,
+      "source": "test invoice.queue-reminder-once/non-open-status {\n    invoice::queue-reminder-once(invoice::new(InvoiceId::new(\"r2-not-open-fix\"), InvoiceStatus::new(\"Open\"))) => \"not-open\"\n}"
+    },
+    {
+      "hash": "f2e2d48376864052f8cf490c722275c81403aa948b2c848202193ff305308594",
+      "caseName": "existing-marker-not-rewritten",
+      "containsEffectAssertion": false,
+      "source": "test invoice.queue-reminder-once/existing-marker-not-rewritten {\n    file::write(\"outbox/invoice-reminders/r2-existing-no-rewrite\", \"leave this marker\");\n    let first = invoice::queue-reminder-once(invoice::new(InvoiceId::new(\"r2-existing-no-rewrite\"), InvoiceStatus::new(\"open\")));\n    let second = invoice::queue-reminder-once(invoice::new(InvoiceId::new(\"r2-existing-no-rewrite\"), InvoiceStatus::new(\"open\")));\n    file::read(\"outbox/invoice-reminders/r2-existing-no-rewrite\") => \"leave this marker\"\n}"
+    }
+  ],
+  "testCount": 7,
+  "effectAssertionTestCount": 0
+}

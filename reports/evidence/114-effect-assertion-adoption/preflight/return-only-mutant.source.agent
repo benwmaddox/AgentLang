@@ -1,0 +1,18 @@
+fn invoice.queue-reminder-once(invoice: Invoice) -> String {
+    effects fs.read, fs.write
+    doc "Queues a reminder once for an open invoice and preserves any existing reminder contents."
+
+    if InvoiceStatus::value(invoice.status) == "open" {
+        let path = invoice::reminder-path(invoice.id);
+        if file::exists?(path) {
+            let current = file::read(path);
+            file::write(path, current);
+            current
+        } else {
+            file::write(path, "queued");
+            "queued"
+        }
+    } else {
+        "not-open"
+    }
+}

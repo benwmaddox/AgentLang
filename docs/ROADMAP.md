@@ -166,8 +166,13 @@ Report 111's extra-write control passed full library coverage but violated the
 IO contract. Make provider-state and effect-count assertions straightforward in
 authored tests, and require that control to fail under the stronger tests.
 Report 113 implements optional exact effect-count assertions scoped to the target
-function. Run a fresh-subagent adoption probe before expanding this mechanism;
-explicit provider-state assertions remain pending.
+function. Report 114's fresh-subagent probe repaired the behavior but failed to
+adopt the assertion: unversioned help returned Flow/1 guidance while the actor
+worked in Flow/2, and its seven tests still accepted the extra-write mutant.
+First repeat this bounded probe with explicit version-2 help requests in the
+primer, keeping runtime, seed and oracle fixed. This isolates the help-version
+confound without teaching assertion syntax or changing authoring semantics. Explicit
+provider-state assertions remain pending.
 
 Implement the approved module boundaries and stricter qualification rules:
 cross-module authored calls require library qualification; library functions

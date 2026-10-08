@@ -1,0 +1,39 @@
+fn invoice.queue-reminder-once(invoice: Invoice) -> String {
+    effects fs.read, fs.write
+    doc "Queues a reminder once for an open invoice and preserves any existing reminder contents."
+
+    if InvoiceStatus::value(invoice.status) == "open" {
+        let path = invoice::reminder-path(invoice.id);
+        if file::exists?(path) {
+            let current = file::read(path);
+            current
+        } else {
+            file::write(path, "queued");
+            "queued"
+        }
+    } else {
+        "not-open"
+    }
+}
+
+test invoice.queue-reminder-once/existing-custom-marker {
+    file::write("outbox/invoice-reminders/r2-existing-custom", "custom reminder marker");
+    invoice::queue-reminder-once(invoice::new(InvoiceId::new("r2-existing-custom"), InvoiceStatus::new("open")))
+    => "custom reminder marker" effects { fs.read: 2; fs.write: 0; }
+}
+
+test invoice.queue-reminder-once/existing-queued-marker {
+    file::write("outbox/invoice-reminders/r2-existing-queued", "queued");
+    invoice::queue-reminder-once(invoice::new(InvoiceId::new("r2-existing-queued"), InvoiceStatus::new("open")))
+    => "queued"
+}
+
+test invoice.queue-reminder-once/missing-reminder {
+    invoice::queue-reminder-once(invoice::new(InvoiceId::new("r2-missing"), InvoiceStatus::new("open")))
+    => "queued"
+}
+
+test invoice.queue-reminder-once/non-open-status {
+    invoice::queue-reminder-once(invoice::new(InvoiceId::new("r2-not-open"), InvoiceStatus::new("Open")))
+    => "not-open"
+}

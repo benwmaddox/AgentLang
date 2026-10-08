@@ -1,0 +1,150 @@
+{
+  "exchangeCount": 27,
+  "operations": [
+    {
+      "Name": "context",
+      "Count": 1
+    },
+    {
+      "Name": "define",
+      "Count": 2
+    },
+    {
+      "Name": "describe",
+      "Count": 4
+    },
+    {
+      "Name": "example",
+      "Count": 1
+    },
+    {
+      "Name": "help",
+      "Count": 5
+    },
+    {
+      "Name": "history",
+      "Count": 1
+    },
+    {
+      "Name": "replace-word",
+      "Count": 1
+    },
+    {
+      "Name": "source",
+      "Count": 2
+    },
+    {
+      "Name": "task.begin",
+      "Count": 1
+    },
+    {
+      "Name": "task.commit",
+      "Count": 1
+    },
+    {
+      "Name": "task.log",
+      "Count": 1
+    },
+    {
+      "Name": "task.status",
+      "Count": 2
+    },
+    {
+      "Name": "test",
+      "Count": 3
+    },
+    {
+      "Name": "tests",
+      "Count": 1
+    },
+    {
+      "Name": "words",
+      "Count": 1
+    }
+  ],
+  "help": [
+    {
+      "index": 1,
+      "request": "{\"op\":\"help\"}\r",
+      "syntaxVersion": 1,
+      "responseOk": true,
+      "advertisesEffectAssertion": false
+    },
+    {
+      "index": 2,
+      "request": "{\"op\":\"help\",\"topic\":\"define\"}\r",
+      "syntaxVersion": 1,
+      "responseOk": true,
+      "advertisesEffectAssertion": false
+    },
+    {
+      "index": 3,
+      "request": "{\"op\":\"help\",\"topic\":\"examples\"}\r",
+      "syntaxVersion": 1,
+      "responseOk": true,
+      "advertisesEffectAssertion": false
+    },
+    {
+      "index": 10,
+      "request": "{\"op\":\"help\",\"topic\":\"task\"}\r",
+      "syntaxVersion": null,
+      "responseOk": false,
+      "advertisesEffectAssertion": false
+    },
+    {
+      "index": 18,
+      "request": "{\"op\":\"help\",\"topic\":\"replacement\"}\r",
+      "syntaxVersion": 1,
+      "responseOk": true,
+      "advertisesEffectAssertion": false
+    }
+  ],
+  "protocolErrors": [
+    {
+      "index": 10,
+      "operation": "help",
+      "response": {
+        "ok": false,
+        "kind": "error",
+        "text": "HELP_UNKNOWN_TOPIC: Unknown help topic 'task'.",
+        "error": {
+          "code": "HELP_UNKNOWN_TOPIC",
+          "message": "Unknown help topic 'task'.",
+          "expected": [
+            "authoring",
+            "define",
+            "replacement",
+            "examples"
+          ],
+          "actual": [
+            "task"
+          ]
+        }
+      }
+    }
+  ],
+  "terminalEvents": [
+    {
+      "event": "host-close",
+      "atUtc": "2026-10-07T23:26:12.3947265-04:00",
+      "exchangeCount": 27,
+      "requestWireUtf8Bytes": 21,
+      "requestWireSha256": "67769e43602273314f617203ed27eced4816cbcb8d267bcfbabdd3689608a53d",
+      "requestWireBase64": "eyJvcCI6Imhvc3QuY2xvc2UifQ0K",
+      "requestRaw": "{\"op\":\"host.close\"}\r",
+      "requestCanonical": "{\"op\":\"host.close\"}"
+    },
+    {
+      "event": "session-end",
+      "finishedUtc": "2026-10-07T23:26:12.406969-04:00",
+      "exchangeCount": 27,
+      "terminationKind": "host-close",
+      "hostExitCode": 0,
+      "runtimeExitCode": 0,
+      "runtimeStderrPrefixBytes": 0,
+      "runtimeStderrTotalBytes": 0,
+      "runtimeStderrPrefixSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "runtimeStderrCaptureTruncated": false
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+Exception: D:\code\AgentLang\.agentlang\effect-contract-adoption-001\verifiers\verify-effect-contract-adoption.ps1:475
+Line |
+ 475 |  if ($failure) { throw $failure }
+     |                  ~~~~~~~~~~~~~~
+     | Acceptance check failed: repeat with existing queued marker exact provider effects (fs.read=2, fs.write=1;
+     | expected 2/0)

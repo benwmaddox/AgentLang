@@ -1,8 +1,8 @@
 # Authored effect-count assertions
 
-Implementation validated locally: all 37 full Debug gate checks pass. The
-external-agent adoption probe is separate and still running. This is not an
-efficacy result.
+Implementation validated locally: all 37 full Debug gate checks pass. This is not
+an efficacy result. The subsequent [adoption probe](114-effect-assertion-adoption.md)
+reports behavior repair but unsuccessful discovery of the assertion feature.
 
 ## Behavior
 

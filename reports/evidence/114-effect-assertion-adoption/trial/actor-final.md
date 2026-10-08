@@ -1,0 +1,5 @@
+Committed Flow/2 revision 4 of `invoice.queue-reminder-once` as a persistent library replacement. It uses nominal `InvoiceStatus` equality, calls the seeded path helper, checks existence once, returns existing contents without writing, and writes `"queued"` only when the reminder is absent. The helper and seeded types were left unchanged.
+
+The attached 7 tests passed with 20/20 instruction and 4/4 branch coverage; the example passed 1/1. `replace-word` and `task.commit` both succeeded with 0 test failures.
+
+One requested criterion remains unmet: the broker’s test DSL only asserts returned values or errors, and `file.write` returns `Unit`. The added repeated-call marker test checks that contents remain stable, but it would also pass if identical contents were rewritten. The baseline implementation’s tests likewise passed despite that rewrite. I found no broker-supported way to assert provider call counts. After `host.close`, polling returned “Unknown process id,” indicating the session had ended; no exit code was available.

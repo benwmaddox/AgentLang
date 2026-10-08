@@ -1,0 +1,42 @@
+{
+  "runtimeProcessExit": 0,
+  "requestCount": 4,
+  "responseCount": 4,
+  "defineOk": true,
+  "stagedRevision": 5,
+  "testOperationOk": true,
+  "attachedTestCount": 7,
+  "passingTests": 7,
+  "failingTests": 0,
+  "effectAssertionResults": 0,
+  "replacementOk": true,
+  "replacementErrorCode": null,
+  "mutationCommitted": true,
+  "mutantFinalRevision": 5,
+  "coverage": {
+    "instructionsCovered": 25,
+    "instructionsTotal": 25,
+    "branchesCovered": 4,
+    "branchesTotal": 4,
+    "uncoveredInstructions": [],
+    "uncoveredBranchOutcomes": []
+  },
+  "frozenDefinitionHash": "d451d3ea1d6c9386f39b8ca51c9829b589a25668a64c603f0dff49f93918df5f",
+  "actorRevision": 4,
+  "actorTests": [
+    "existing-custom-marker",
+    "existing-queued-marker",
+    "existing-empty-marker",
+    "non-open-padded-status",
+    "missing-reminder",
+    "non-open-status",
+    "existing-marker-not-rewritten"
+  ],
+  "actorEffectAssertionTestCount": 0,
+  "actorInventoryUnchanged": true,
+  "actorFilesBefore": 43,
+  "actorFilesAfter": 43,
+  "orchestrationExitFirstAttempt": 1,
+  "orchestrationIssue": "The pinned CLI session completed successfully and raw JSONL was saved; PowerShell summary construction then hit PSCustomObject.Contains(), so summary was reconstructed from the saved structured responses.",
+  "summaryRecoveryExit": 0
+}

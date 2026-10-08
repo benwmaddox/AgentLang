@@ -1,0 +1,1586 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "failure": null,
+  "sourceRevision": "a8e7d34b9e8ae50ea3281a4df31fb8b17014028c",
+  "cliPath": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\runtime\\AgentLang.Cli.dll",
+  "cliSha256": "af2da9bfeaa706a4c67592465b23c48847aadbbd2d6d578342df1412662c3646",
+  "seedProject": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\projects\\seed-control",
+  "finalProject": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\projects\\preflight-positive",
+  "helperWord": "invoice.reminder-path",
+  "targetWord": "invoice.queue-reminder-once",
+  "checks": [
+    {
+      "name": "pinned CLI assembly exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\runtime\\AgentLang.Cli.dll"
+    },
+    {
+      "name": "frozen starting project exists",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\projects\\seed-control"
+    },
+    {
+      "name": "final project is separate from frozen seed",
+      "passed": true,
+      "details": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\projects\\preflight-positive"
+    },
+    {
+      "name": "manifest hash validates for D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\projects\\seed-control",
+      "passed": true,
+      "details": "efafec711482ffd2c7b9bb11015b90b0e8a0bc5ef6be40eb870e955157aff536"
+    },
+    {
+      "name": "manifest hash validates for D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\projects\\preflight-positive",
+      "passed": true,
+      "details": "38b7a41ab5ad8a0f911216af66497c82fb031c9db9044f8c131092d38b021443"
+    },
+    {
+      "name": "frozen seed has exactly one target head",
+      "passed": true,
+      "details": "count=1"
+    },
+    {
+      "name": "committed target exists exactly once",
+      "passed": true,
+      "details": "count=1"
+    },
+    {
+      "name": "seeded nominal Invoice types remain byte-identical",
+      "passed": true,
+      "details": "type sources and stable validator bindings"
+    },
+    {
+      "name": "InvoiceId and InvoiceStatus types are present in the frozen seed",
+      "passed": true,
+      "details": "both semantic field types must already exist"
+    },
+    {
+      "name": "prior word identity/revision retained: invoice.reminder-path",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "target keeps its stable identity/name and advances its revision",
+      "passed": true,
+      "details": "seed=2, final=3"
+    },
+    {
+      "name": "target remains persistent library vocabulary and nondeprecated",
+      "passed": true,
+      "details": "current revisions=1"
+    },
+    {
+      "name": "prior revision retained: invoice.reminder-path/1",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "prior revision retained: invoice.queue-reminder-once/1",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "prior revision retained: invoice.queue-reminder-once/2",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "pure reminder-path helper head is unchanged",
+      "passed": true,
+      "details": "stable helper identity and current revision"
+    },
+    {
+      "name": "all helper revision/test/example references are retained",
+      "passed": true,
+      "details": "seed=1, final=1"
+    },
+    {
+      "name": "the existing target and all unrelated words remain the only persistent words",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "immutable seeded file retained: .agentlang\\store\\manifests\\18be761d37d08ce6fa3ea0d18dff0a11a6d8c632d11e3a2c8a3055d788629804.json",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "immutable seeded file retained: .agentlang\\store\\manifests\\2c7c90763f061da10e1d6b84fee9122dee16d8518d5d66d060aeb10818523a99.json",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "immutable seeded file retained: .agentlang\\store\\manifests\\c74c84babaae42d6abc69d931a2fabf439770f2fdb61672fa7a1164a4b50ee10.json",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "immutable seeded file retained: .agentlang\\store\\manifests\\c8d75a50e48e92a5f0fee1cfe79b2293ce9d585a958ab57053d1a75e78182a68.json",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "immutable seeded file retained: .agentlang\\store\\manifests\\dd1103a22280d244609a97798020c3af7565a866c8295066e16272575c8e2615.json",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "immutable seeded file retained: .agentlang\\store\\manifests\\efafec711482ffd2c7b9bb11015b90b0e8a0bc5ef6be40eb870e955157aff536.json",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "immutable seeded file retained: .agentlang\\store\\objects\\22ae677b4e86fa5418b719708df880c13766290928296d0d154f52b2777116ef.agent",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "immutable seeded file retained: .agentlang\\store\\objects\\2cda38473924693c02606465fb35778ad3504eba055db036f995ee6e57f9a6d3.agent",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "immutable seeded file retained: .agentlang\\store\\objects\\43c229edb237793d0ac0f055966abc4893bd918ea2b527ed47d9ac08ce477ab2.agent",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "immutable seeded file retained: .agentlang\\store\\objects\\5286f8acecc161d3ec1167b305a12710563b9efb08ff861ba4a40fb328bf9d9d.agent",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "immutable seeded file retained: .agentlang\\store\\objects\\65c046007d4f4b7d48b75a1df50d78d5a35d1ba88a53dce2be2d61f2d3dcbd6d.agent",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "immutable seeded file retained: .agentlang\\store\\objects\\65e8afc9b5bb1bfca243faef92c9b31d75f9f8b5d3e492244085f4fb86a4d351.agent",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "immutable seeded file retained: .agentlang\\store\\objects\\6af51409069f1231c4eb35864932d29bb686a6f88d99f8f8a62e2303a277f570.agent",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "immutable seeded file retained: .agentlang\\store\\objects\\703f97a26d496140a722582c6e3d70057e39d0c0e6ae3f798b0f306d76642be3.agent",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "immutable seeded file retained: .agentlang\\store\\objects\\721017c4716646db897ac8429bcd891e6b2c60cc9b88dc63417f97f664b181aa.agent",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "immutable seeded file retained: .agentlang\\store\\objects\\8e606ad519f1cd0d47fe413a2bfa4fc91d01cd53d1b2bec47817f790ddc7d594.agent",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "immutable seeded file retained: .agentlang\\store\\objects\\9dbd47589c4ad8febc73bf9496ee2504a1b88932689bedfa4914d5620e60e7f8.agent",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "immutable seeded file retained: .agentlang\\store\\objects\\a588ef7d356f5a9d0e41c53976e9fd39f536165c0fa252b4a176720b88651ae5.agent",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "immutable seeded file retained: .agentlang\\store\\objects\\a7eb921ddcaaad93b333b674f77761462ace62c9993de764d7a1259b61b081b8.agent",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "immutable seeded file retained: .agentlang\\store\\objects\\b366a091cfa52fbc44c231920223775e3a2a871560ef351c1c2876ab54bed420.agent",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "immutable seeded file retained: .agentlang\\store\\objects\\b656d29e11b2c6a71d0ad02999e3b7b6690bcea9a501ebe71ebe3186789d6e9c.agent",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "immutable seeded file retained: .agentlang\\store\\objects\\b8052339535ea4d981e37d84c6ada14f9b86365dfb1ffddb0e43999db37786cb.agent",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "immutable seeded file retained: .agentlang\\store\\objects\\c47a14b5cb86b9b370029edc05281850a463e876881f34caab5531ac6865f154.agent",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "immutable seeded file retained: .agentlang\\store\\objects\\c8be4e828baf76085c19dd2b562a5ca6451a7bfce349aa5e8f8df2247d84f6b7.agent",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "immutable seeded file retained: .agentlang\\store\\objects\\d451d3ea1d6c9386f39b8ca51c9829b589a25668a64c603f0dff49f93918df5f.agent",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "immutable seeded file retained: .agentlang\\store\\objects\\d605d9116a52a451c36202f9095b8c87eae8fda766a977fbb63fe5ab927ead2c.agent",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "immutable seeded file retained: .agentlang\\store\\WRITE.lock",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "immutable seeded file retained: history\\task-0001.json",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "immutable seeded file retained: history\\task-0002.json",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "target persisted source format is Flow/2",
+      "passed": true,
+      "details": "{\"frontend\":\"flow\",\"version\":2}"
+    },
+    {
+      "name": "source object hash validates word-definition/8c18c70a0e09731c7a8126713b00c9bbe24c0fe9571d5414bf050e04528ade47",
+      "passed": true,
+      "details": "8c18c70a0e09731c7a8126713b00c9bbe24c0fe9571d5414bf050e04528ade47"
+    },
+    {
+      "name": "source object hash validates test-definition/26782658c4412733a64d6614f6e27cee6200afa9264e58f0abd6816142d52742",
+      "passed": true,
+      "details": "26782658c4412733a64d6614f6e27cee6200afa9264e58f0abd6816142d52742"
+    },
+    {
+      "name": "source object hash validates test-definition/3e9f18d9cbd0705510aa09edadaa81159c5a0b022a7250b797fece7f095aacab",
+      "passed": true,
+      "details": "3e9f18d9cbd0705510aa09edadaa81159c5a0b022a7250b797fece7f095aacab"
+    },
+    {
+      "name": "source object hash validates test-definition/7b14e0a26b376a1f668606f29cd93c022eebf61fdec310269790be9fdaefe710",
+      "passed": true,
+      "details": "7b14e0a26b376a1f668606f29cd93c022eebf61fdec310269790be9fdaefe710"
+    },
+    {
+      "name": "source object hash validates test-definition/cdda321aee8df54fb7927b449ef793f94ec6c93ed22ef5a0c5e169dc7be90c3a",
+      "passed": true,
+      "details": "cdda321aee8df54fb7927b449ef793f94ec6c93ed22ef5a0c5e169dc7be90c3a"
+    },
+    {
+      "name": "source object hash validates example-definition/b366a091cfa52fbc44c231920223775e3a2a871560ef351c1c2876ab54bed420",
+      "passed": true,
+      "details": "b366a091cfa52fbc44c231920223775e3a2a871560ef351c1c2876ab54bed420"
+    },
+    {
+      "name": "target is a nondeprecated library revision with four or more attached tests",
+      "passed": true,
+      "details": "maturity=library, tests=4, deprecated=False"
+    },
+    {
+      "name": "target has at least one attached example",
+      "passed": true,
+      "details": "examples=1"
+    },
+    {
+      "name": "target source includes documentation metadata",
+      "passed": true,
+      "details": "documentation must be attached inside the Flow word definition"
+    },
+    {
+      "name": "target example source is attached to the requested word",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "target test case names are unique and attached to this word",
+      "passed": true,
+      "details": "missing-reminder, existing-custom-marker, non-open-status, existing-queued-marker"
+    },
+    {
+      "name": "frozen seed declares the Invoice record",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "source object hash validates type-definition/2cda38473924693c02606465fb35778ad3504eba055db036f995ee6e57f9a6d3",
+      "passed": true,
+      "details": "2cda38473924693c02606465fb35778ad3504eba055db036f995ee6e57f9a6d3"
+    },
+    {
+      "name": "Invoice contains nominal id and status fields",
+      "passed": true,
+      "details": "[{\"name\":\"id\",\"type\":\"InvoiceId\"},{\"name\":\"status\",\"type\":\"InvoiceStatus\"}]"
+    },
+    {
+      "name": "JSONL response count for seed attached-test baseline",
+      "passed": true,
+      "details": "requests=1, responses=1"
+    },
+    {
+      "name": "runtime process exit for seed attached-test baseline",
+      "passed": true,
+      "details": "exit=0; stderr="
+    },
+    {
+      "name": "all seeded tests pass before agent changes",
+      "passed": true,
+      "details": "tests=6"
+    },
+    {
+      "name": "JSONL response count for fresh-process own tests and reloaded description",
+      "passed": true,
+      "details": "requests=3, responses=3"
+    },
+    {
+      "name": "runtime process exit for fresh-process own tests and reloaded description",
+      "passed": true,
+      "details": "exit=0; stderr="
+    },
+    {
+      "name": "every attached target test passes in a fresh process",
+      "passed": true,
+      "details": "results=4, attachments=4"
+    },
+    {
+      "name": "library instruction coverage is complete",
+      "passed": true,
+      "details": "instructions=22/22"
+    },
+    {
+      "name": "library branch coverage is complete and includes branch outcomes",
+      "passed": true,
+      "details": "branches=4/4"
+    },
+    {
+      "name": "reloaded target has Invoice -> String signature",
+      "passed": true,
+      "details": "[\"Invoice\"] -> [\"String\"]"
+    },
+    {
+      "name": "reloaded target is persistent library vocabulary with exact effects",
+      "passed": true,
+      "details": "status=persistent, maturity=library, effects=[\"fs.read\",\"fs.write\"]"
+    },
+    {
+      "name": "compiled target depends on the seeded path abstraction",
+      "passed": true,
+      "details": "[\"InvoiceStatus.value\",\"equals\",\"file.exists?\",\"file.read\",\"file.write\",\"invoice.id\",\"invoice.reminder-path\",\"invoice.status\"]"
+    },
+    {
+      "name": "compiled target includes file existence/read/write provider calls",
+      "passed": true,
+      "details": "[\"InvoiceStatus.value\",\"equals\",\"file.exists?\",\"file.read\",\"file.write\",\"invoice.id\",\"invoice.reminder-path\",\"invoice.status\"]"
+    },
+    {
+      "name": "reloaded target carries documentation, tests, example and complete own coverage",
+      "passed": true,
+      "details": "test/describe are adjacent so this is the target-specific latest test coverage"
+    },
+    {
+      "name": "fresh-process test-all passes seeded and added cases",
+      "passed": true,
+      "details": "results=6, minimum=6"
+    },
+    {
+      "name": "JSONL response count for read helper path for id 1",
+      "passed": true,
+      "details": "requests=1, responses=1"
+    },
+    {
+      "name": "runtime process exit for read helper path for id 1",
+      "passed": true,
+      "details": "exit=0; stderr="
+    },
+    {
+      "name": "seeded reminder-path helper for id 1 succeeds",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "seeded reminder-path follows the documented outbox convention",
+      "passed": true,
+      "details": "outbox/invoice-reminders/acceptance-open-001"
+    },
+    {
+      "name": "JSONL response count for read helper path for id 2",
+      "passed": true,
+      "details": "requests=1, responses=1"
+    },
+    {
+      "name": "runtime process exit for read helper path for id 2",
+      "passed": true,
+      "details": "exit=0; stderr="
+    },
+    {
+      "name": "seeded reminder-path helper for id 2 succeeds",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "two distinct invoice ids produce independent marker paths",
+      "passed": true,
+      "details": "outbox/invoice-reminders/acceptance-open-002"
+    },
+    {
+      "name": "JSONL response count for new open invoice, repeat and independent id",
+      "passed": true,
+      "details": "requests=6, responses=6"
+    },
+    {
+      "name": "runtime process exit for new open invoice, repeat and independent id",
+      "passed": true,
+      "details": "exit=0; stderr="
+    },
+    {
+      "name": "open-path request 0 succeeds",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "open-path request 2 succeeds",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "open-path request 3 succeeds",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "open-path request 4 succeeds",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "open-path request 5 succeeds",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "new open invoice returns queued marker",
+      "passed": true,
+      "details": "[\"\\\"queued\\\"\"]"
+    },
+    {
+      "name": "new open invoice exact provider effects",
+      "passed": true,
+      "details": "fs.read=1, fs.write=1; expected 1/1"
+    },
+    {
+      "name": "new open invoice has no undeclared provider effects",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "repeat returns exact existing marker text",
+      "passed": true,
+      "details": "[\"\\\"queued\\\"\"]"
+    },
+    {
+      "name": "repeat with existing queued marker exact provider effects",
+      "passed": true,
+      "details": "fs.read=2, fs.write=0; expected 2/0"
+    },
+    {
+      "name": "repeat with existing queued marker has no undeclared provider effects",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "different invoice id receives its own queued marker",
+      "passed": true,
+      "details": "[\"\\\"queued\\\"\"]"
+    },
+    {
+      "name": "independent open invoice id exact provider effects",
+      "passed": true,
+      "details": "fs.read=1, fs.write=1; expected 1/1"
+    },
+    {
+      "name": "independent open invoice id has no undeclared provider effects",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "both independent outbox paths contain exactly queued",
+      "passed": true,
+      "details": "id1=queued, id2=queued"
+    },
+    {
+      "name": "snapshot saved after first marker creation",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "JSONL response count for fresh process restores virtual marker snapshot",
+      "passed": true,
+      "details": "requests=3, responses=3"
+    },
+    {
+      "name": "runtime process exit for fresh process restores virtual marker snapshot",
+      "passed": true,
+      "details": "exit=0; stderr="
+    },
+    {
+      "name": "load committed provider snapshot in a new process succeeds",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "repeat after loading persisted provider snapshot succeeds",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "repeat after fresh-process snapshot load exact provider effects",
+      "passed": true,
+      "details": "fs.read=2, fs.write=0; expected 2/0"
+    },
+    {
+      "name": "repeat after fresh-process snapshot load has no undeclared provider effects",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "fresh-process snapshot restores exact queued marker",
+      "passed": true,
+      "details": "call=queued, stored=queued"
+    },
+    {
+      "name": "JSONL response count for existing nonstandard marker is preserved",
+      "passed": true,
+      "details": "requests=3, responses=3"
+    },
+    {
+      "name": "runtime process exit for existing nonstandard marker is preserved",
+      "passed": true,
+      "details": "exit=0; stderr="
+    },
+    {
+      "name": "seed custom existing marker succeeds",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "read and return existing custom marker succeeds",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "independently read preserved marker succeeds",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "existing different marker exact provider effects",
+      "passed": true,
+      "details": "fs.read=2, fs.write=0; expected 2/0"
+    },
+    {
+      "name": "existing different marker has no undeclared provider effects",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "existing marker text is returned byte-for-byte and is not overwritten",
+      "passed": true,
+      "details": "returned=held for manual review; stored=held for manual review"
+    },
+    {
+      "name": "JSONL response count for non-open statuses do not touch providers",
+      "passed": true,
+      "details": "requests=6, responses=6"
+    },
+    {
+      "name": "runtime process exit for non-open statuses do not touch providers",
+      "passed": true,
+      "details": "exit=0; stderr="
+    },
+    {
+      "name": "non-open status paid succeeds",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "non-open status paid exact provider effects",
+      "passed": true,
+      "details": "fs.read=0, fs.write=0; expected 0/0"
+    },
+    {
+      "name": "non-open status paid has no undeclared provider effects",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "marker check for non-open status paid succeeds",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "non-open status paid creates no marker",
+      "passed": true,
+      "details": "[\"false\"]"
+    },
+    {
+      "name": "non-open status cancelled succeeds",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "non-open status cancelled exact provider effects",
+      "passed": true,
+      "details": "fs.read=0, fs.write=0; expected 0/0"
+    },
+    {
+      "name": "non-open status cancelled has no undeclared provider effects",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "marker check for non-open status cancelled succeeds",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "non-open status cancelled creates no marker",
+      "passed": true,
+      "details": "[\"false\"]"
+    },
+    {
+      "name": "non-open status OPEN succeeds",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "non-open status OPEN exact provider effects",
+      "passed": true,
+      "details": "fs.read=0, fs.write=0; expected 0/0"
+    },
+    {
+      "name": "non-open status OPEN has no undeclared provider effects",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "marker check for non-open status OPEN succeeds",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "non-open status OPEN creates no marker",
+      "passed": true,
+      "details": "[\"false\"]"
+    },
+    {
+      "name": "JSONL response count for host denies filesystem capabilities",
+      "passed": true,
+      "details": "requests=3, responses=3"
+    },
+    {
+      "name": "runtime process exit for host denies filesystem capabilities",
+      "passed": true,
+      "details": "exit=0; stderr="
+    },
+    {
+      "name": "host capability policy blocks the persisted effectful word",
+      "passed": true,
+      "details": "The expression requires effects not granted by the host."
+    },
+    {
+      "name": "capability denial executes no provider operations",
+      "passed": true,
+      "details": "{}"
+    },
+    {
+      "name": "JSONL response count for nominal Invoice parameter rejects plain String",
+      "passed": true,
+      "details": "requests=1, responses=1"
+    },
+    {
+      "name": "runtime process exit for nominal Invoice parameter rejects plain String",
+      "passed": true,
+      "details": "exit=0; stderr="
+    },
+    {
+      "name": "strongly typed target rejects a plain String before effects",
+      "passed": true,
+      "details": "FLOW_ARGUMENT_TYPE"
+    },
+    {
+      "name": "frozen seed is unchanged by acceptance",
+      "passed": true,
+      "details": "source seed inventory before/after"
+    },
+    {
+      "name": "actor final project is unchanged by acceptance",
+      "passed": true,
+      "details": "all tests and behavioral effects ran on disposable copies"
+    }
+  ],
+  "protocolSessions": [
+    {
+      "name": "seed attached-test baseline",
+      "project": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\scratch-flow-acceptance-532dc1a33f854a1d9171ce52ebc809a3\\seed-baseline",
+      "requests": [
+        {
+          "op": "test-all",
+          "word": null,
+          "code": null,
+          "goal": null,
+          "name": null
+        }
+      ],
+      "responses": [
+        {
+          "op": "test-all",
+          "word": null,
+          "ok": true,
+          "errorCode": null,
+          "data": {
+            "results": [
+              {
+                "word": "invoice.queue-reminder-once",
+                "name": "existing-custom-marker",
+                "passed": true,
+                "errorCode": null
+              },
+              {
+                "word": "invoice.queue-reminder-once",
+                "name": "existing-queued-marker",
+                "passed": true,
+                "errorCode": null
+              },
+              {
+                "word": "invoice.queue-reminder-once",
+                "name": "missing-reminder",
+                "passed": true,
+                "errorCode": null
+              },
+              {
+                "word": "invoice.queue-reminder-once",
+                "name": "non-open-status",
+                "passed": true,
+                "errorCode": null
+              },
+              {
+                "word": "invoice.reminder-path",
+                "name": "basic",
+                "passed": true,
+                "errorCode": null
+              },
+              {
+                "word": "invoice.reminder-path",
+                "name": "preserves-id-text",
+                "passed": true,
+                "errorCode": null
+              }
+            ],
+            "coverage": null
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "name": "fresh-process own tests and reloaded description",
+      "project": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\scratch-flow-acceptance-532dc1a33f854a1d9171ce52ebc809a3\\final-inspection",
+      "requests": [
+        {
+          "op": "test",
+          "word": "invoice.queue-reminder-once",
+          "code": null,
+          "goal": null,
+          "name": null
+        },
+        {
+          "op": "describe",
+          "word": "invoice.queue-reminder-once",
+          "code": null,
+          "goal": null,
+          "name": null
+        },
+        {
+          "op": "test-all",
+          "word": null,
+          "code": null,
+          "goal": null,
+          "name": null
+        }
+      ],
+      "responses": [
+        {
+          "op": "test",
+          "word": "invoice.queue-reminder-once",
+          "ok": true,
+          "errorCode": null,
+          "data": {
+            "results": [
+              {
+                "word": "invoice.queue-reminder-once",
+                "name": "existing-custom-marker",
+                "passed": true,
+                "errorCode": null
+              },
+              {
+                "word": "invoice.queue-reminder-once",
+                "name": "existing-queued-marker",
+                "passed": true,
+                "errorCode": null
+              },
+              {
+                "word": "invoice.queue-reminder-once",
+                "name": "missing-reminder",
+                "passed": true,
+                "errorCode": null
+              },
+              {
+                "word": "invoice.queue-reminder-once",
+                "name": "non-open-status",
+                "passed": true,
+                "errorCode": null
+              }
+            ],
+            "coverage": {
+              "instructionsCovered": 22,
+              "instructionsTotal": 22,
+              "branchesCovered": 4,
+              "branchesTotal": 4,
+              "uncoveredInstructions": [],
+              "uncoveredBranchOutcomes": []
+            }
+          }
+        },
+        {
+          "op": "describe",
+          "word": "invoice.queue-reminder-once",
+          "ok": true,
+          "errorCode": null,
+          "data": {
+            "name": "invoice.queue-reminder-once",
+            "id": "word_e06f6118daa44ef994220e63548714eb",
+            "inputs": [
+              "Invoice"
+            ],
+            "outputs": [
+              "String"
+            ],
+            "effects": [
+              "fs.read",
+              "fs.write"
+            ],
+            "dependencies": [
+              "InvoiceStatus.value",
+              "equals",
+              "file.exists?",
+              "file.read",
+              "file.write",
+              "invoice.id",
+              "invoice.reminder-path",
+              "invoice.status"
+            ],
+            "transitiveDependencies": [
+              "InvoiceId.value",
+              "InvoiceStatus.value",
+              "equals",
+              "file.exists?",
+              "file.read",
+              "file.write",
+              "invoice.id",
+              "invoice.reminder-path",
+              "invoice.status",
+              "string.concat"
+            ],
+            "documentation": "Queues a reminder once for an open invoice and preserves any existing reminder contents.",
+            "tests": [
+              "existing-custom-marker",
+              "existing-queued-marker",
+              "missing-reminder",
+              "non-open-status"
+            ],
+            "examples": [
+              "queues-missing-reminder"
+            ],
+            "status": "persistent",
+            "maturity": "library",
+            "deprecated": false,
+            "revision": 3,
+            "testCount": 4,
+            "exampleCount": 1,
+            "coverage": {
+              "instructionsCovered": 22,
+              "instructionsTotal": 22,
+              "branchesCovered": 4,
+              "branchesTotal": 4,
+              "uncoveredInstructions": [],
+              "uncoveredBranchOutcomes": [],
+              "status": "current"
+            }
+          }
+        },
+        {
+          "op": "test-all",
+          "word": null,
+          "ok": true,
+          "errorCode": null,
+          "data": {
+            "results": [
+              {
+                "word": "invoice.queue-reminder-once",
+                "name": "existing-custom-marker",
+                "passed": true,
+                "errorCode": null
+              },
+              {
+                "word": "invoice.queue-reminder-once",
+                "name": "existing-queued-marker",
+                "passed": true,
+                "errorCode": null
+              },
+              {
+                "word": "invoice.queue-reminder-once",
+                "name": "missing-reminder",
+                "passed": true,
+                "errorCode": null
+              },
+              {
+                "word": "invoice.queue-reminder-once",
+                "name": "non-open-status",
+                "passed": true,
+                "errorCode": null
+              },
+              {
+                "word": "invoice.reminder-path",
+                "name": "basic",
+                "passed": true,
+                "errorCode": null
+              },
+              {
+                "word": "invoice.reminder-path",
+                "name": "preserves-id-text",
+                "passed": true,
+                "errorCode": null
+              }
+            ],
+            "coverage": null
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "name": "read helper path for id 1",
+      "project": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\scratch-flow-acceptance-532dc1a33f854a1d9171ce52ebc809a3\\path-1",
+      "requests": [
+        {
+          "op": "eval",
+          "word": null,
+          "code": "invoice::reminder-path(InvoiceId::new(\"acceptance-open-001\"))",
+          "goal": null,
+          "name": null
+        }
+      ],
+      "responses": [
+        {
+          "op": "eval",
+          "word": null,
+          "ok": true,
+          "errorCode": null,
+          "data": {
+            "stack": [
+              "\"outbox/invoice-reminders/acceptance-open-001\""
+            ],
+            "stackTypes": [
+              "String"
+            ],
+            "effects": {}
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "name": "read helper path for id 2",
+      "project": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\scratch-flow-acceptance-532dc1a33f854a1d9171ce52ebc809a3\\path-1",
+      "requests": [
+        {
+          "op": "eval",
+          "word": null,
+          "code": "invoice::reminder-path(InvoiceId::new(\"acceptance-open-002\"))",
+          "goal": null,
+          "name": null
+        }
+      ],
+      "responses": [
+        {
+          "op": "eval",
+          "word": null,
+          "ok": true,
+          "errorCode": null,
+          "data": {
+            "stack": [
+              "\"outbox/invoice-reminders/acceptance-open-002\""
+            ],
+            "stackTypes": [
+              "String"
+            ],
+            "effects": {}
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "name": "new open invoice, repeat and independent id",
+      "project": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\scratch-flow-acceptance-532dc1a33f854a1d9171ce52ebc809a3\\open-and-repeat",
+      "requests": [
+        {
+          "op": "eval",
+          "word": null,
+          "code": "invoice::queue-reminder-once(invoice::new(id = InvoiceId::new(\"acceptance-open-001\"), status = InvoiceStatus::new(\"open\")))",
+          "goal": null,
+          "name": null
+        },
+        {
+          "op": "snapshot.save",
+          "word": null,
+          "code": null,
+          "goal": null,
+          "name": "after-first-reminder"
+        },
+        {
+          "op": "eval",
+          "word": null,
+          "code": "invoice::queue-reminder-once(invoice::new(id = InvoiceId::new(\"acceptance-open-001\"), status = InvoiceStatus::new(\"open\")))",
+          "goal": null,
+          "name": null
+        },
+        {
+          "op": "eval",
+          "word": null,
+          "code": "invoice::queue-reminder-once(invoice::new(id = InvoiceId::new(\"acceptance-open-002\"), status = InvoiceStatus::new(\"open\")))",
+          "goal": null,
+          "name": null
+        },
+        {
+          "op": "eval",
+          "word": null,
+          "code": "file::read(\"outbox/invoice-reminders/acceptance-open-001\")",
+          "goal": null,
+          "name": null
+        },
+        {
+          "op": "eval",
+          "word": null,
+          "code": "file::read(\"outbox/invoice-reminders/acceptance-open-002\")",
+          "goal": null,
+          "name": null
+        }
+      ],
+      "responses": [
+        {
+          "op": "eval",
+          "word": null,
+          "ok": true,
+          "errorCode": null,
+          "data": {
+            "stack": [
+              "\"queued\""
+            ],
+            "stackTypes": [
+              "String"
+            ],
+            "effects": {
+              "fs.read": 1,
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "op": "snapshot.save",
+          "word": null,
+          "ok": true,
+          "errorCode": null,
+          "data": {
+            "name": "after-first-reminder",
+            "excludedCandidates": []
+          }
+        },
+        {
+          "op": "eval",
+          "word": null,
+          "ok": true,
+          "errorCode": null,
+          "data": {
+            "stack": [
+              "\"queued\""
+            ],
+            "stackTypes": [
+              "String"
+            ],
+            "effects": {
+              "fs.read": 2
+            }
+          }
+        },
+        {
+          "op": "eval",
+          "word": null,
+          "ok": true,
+          "errorCode": null,
+          "data": {
+            "stack": [
+              "\"queued\""
+            ],
+            "stackTypes": [
+              "String"
+            ],
+            "effects": {
+              "fs.read": 1,
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "op": "eval",
+          "word": null,
+          "ok": true,
+          "errorCode": null,
+          "data": {
+            "stack": [
+              "\"queued\""
+            ],
+            "stackTypes": [
+              "String"
+            ],
+            "effects": {
+              "fs.read": 1
+            }
+          }
+        },
+        {
+          "op": "eval",
+          "word": null,
+          "ok": true,
+          "errorCode": null,
+          "data": {
+            "stack": [
+              "\"queued\""
+            ],
+            "stackTypes": [
+              "String"
+            ],
+            "effects": {
+              "fs.read": 1
+            }
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "name": "fresh process restores virtual marker snapshot",
+      "project": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\scratch-flow-acceptance-532dc1a33f854a1d9171ce52ebc809a3\\snapshot-reload",
+      "requests": [
+        {
+          "op": "snapshot.load",
+          "word": null,
+          "code": null,
+          "goal": null,
+          "name": "after-first-reminder"
+        },
+        {
+          "op": "eval",
+          "word": null,
+          "code": "invoice::queue-reminder-once(invoice::new(id = InvoiceId::new(\"acceptance-open-001\"), status = InvoiceStatus::new(\"open\")))",
+          "goal": null,
+          "name": null
+        },
+        {
+          "op": "eval",
+          "word": null,
+          "code": "file::read(\"outbox/invoice-reminders/acceptance-open-001\")",
+          "goal": null,
+          "name": null
+        }
+      ],
+      "responses": [
+        {
+          "op": "snapshot.load",
+          "word": null,
+          "ok": true,
+          "errorCode": null,
+          "data": {
+            "name": "after-first-reminder",
+            "manifestHash": "38b7a41ab5ad8a0f911216af66497c82fb031c9db9044f8c131092d38b021443",
+            "virtualFiles": 1
+          }
+        },
+        {
+          "op": "eval",
+          "word": null,
+          "ok": true,
+          "errorCode": null,
+          "data": {
+            "stack": [
+              "\"queued\""
+            ],
+            "stackTypes": [
+              "String"
+            ],
+            "effects": {
+              "fs.read": 2
+            }
+          }
+        },
+        {
+          "op": "eval",
+          "word": null,
+          "ok": true,
+          "errorCode": null,
+          "data": {
+            "stack": [
+              "\"queued\""
+            ],
+            "stackTypes": [
+              "String"
+            ],
+            "effects": {
+              "fs.read": 1
+            }
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "name": "existing nonstandard marker is preserved",
+      "project": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\scratch-flow-acceptance-532dc1a33f854a1d9171ce52ebc809a3\\existing-custom-marker",
+      "requests": [
+        {
+          "op": "eval",
+          "word": null,
+          "code": "file::write(\"outbox/invoice-reminders/acceptance-custom-001\", \"held for manual review\")",
+          "goal": null,
+          "name": null
+        },
+        {
+          "op": "eval",
+          "word": null,
+          "code": "invoice::queue-reminder-once(invoice::new(id = InvoiceId::new(\"acceptance-custom-001\"), status = InvoiceStatus::new(\"open\")))",
+          "goal": null,
+          "name": null
+        },
+        {
+          "op": "eval",
+          "word": null,
+          "code": "file::read(\"outbox/invoice-reminders/acceptance-custom-001\")",
+          "goal": null,
+          "name": null
+        }
+      ],
+      "responses": [
+        {
+          "op": "eval",
+          "word": null,
+          "ok": true,
+          "errorCode": null,
+          "data": {
+            "stack": [
+              "unit"
+            ],
+            "stackTypes": [
+              "Unit"
+            ],
+            "effects": {
+              "fs.write": 1
+            }
+          }
+        },
+        {
+          "op": "eval",
+          "word": null,
+          "ok": true,
+          "errorCode": null,
+          "data": {
+            "stack": [
+              "\"held for manual review\""
+            ],
+            "stackTypes": [
+              "String"
+            ],
+            "effects": {
+              "fs.read": 2
+            }
+          }
+        },
+        {
+          "op": "eval",
+          "word": null,
+          "ok": true,
+          "errorCode": null,
+          "data": {
+            "stack": [
+              "\"held for manual review\""
+            ],
+            "stackTypes": [
+              "String"
+            ],
+            "effects": {
+              "fs.read": 1
+            }
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "name": "non-open statuses do not touch providers",
+      "project": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\scratch-flow-acceptance-532dc1a33f854a1d9171ce52ebc809a3\\non-open-statuses",
+      "requests": [
+        {
+          "op": "eval",
+          "word": null,
+          "code": "invoice::queue-reminder-once(invoice::new(id = InvoiceId::new(\"acceptance-paid-001\"), status = InvoiceStatus::new(\"paid\")))",
+          "goal": null,
+          "name": null
+        },
+        {
+          "op": "eval",
+          "word": null,
+          "code": "file::exists?(\"outbox/invoice-reminders/acceptance-paid-001\")",
+          "goal": null,
+          "name": null
+        },
+        {
+          "op": "eval",
+          "word": null,
+          "code": "invoice::queue-reminder-once(invoice::new(id = InvoiceId::new(\"acceptance-cancelled-001\"), status = InvoiceStatus::new(\"cancelled\")))",
+          "goal": null,
+          "name": null
+        },
+        {
+          "op": "eval",
+          "word": null,
+          "code": "file::exists?(\"outbox/invoice-reminders/acceptance-cancelled-001\")",
+          "goal": null,
+          "name": null
+        },
+        {
+          "op": "eval",
+          "word": null,
+          "code": "invoice::queue-reminder-once(invoice::new(id = InvoiceId::new(\"acceptance-uppercase-001\"), status = InvoiceStatus::new(\"OPEN\")))",
+          "goal": null,
+          "name": null
+        },
+        {
+          "op": "eval",
+          "word": null,
+          "code": "file::exists?(\"outbox/invoice-reminders/acceptance-uppercase-001\")",
+          "goal": null,
+          "name": null
+        }
+      ],
+      "responses": [
+        {
+          "op": "eval",
+          "word": null,
+          "ok": true,
+          "errorCode": null,
+          "data": {
+            "stack": [
+              "\"not-open\""
+            ],
+            "stackTypes": [
+              "String"
+            ],
+            "effects": {}
+          }
+        },
+        {
+          "op": "eval",
+          "word": null,
+          "ok": true,
+          "errorCode": null,
+          "data": {
+            "stack": [
+              "false"
+            ],
+            "stackTypes": [
+              "Bool"
+            ],
+            "effects": {
+              "fs.read": 1
+            }
+          }
+        },
+        {
+          "op": "eval",
+          "word": null,
+          "ok": true,
+          "errorCode": null,
+          "data": {
+            "stack": [
+              "\"not-open\""
+            ],
+            "stackTypes": [
+              "String"
+            ],
+            "effects": {}
+          }
+        },
+        {
+          "op": "eval",
+          "word": null,
+          "ok": true,
+          "errorCode": null,
+          "data": {
+            "stack": [
+              "false"
+            ],
+            "stackTypes": [
+              "Bool"
+            ],
+            "effects": {
+              "fs.read": 1
+            }
+          }
+        },
+        {
+          "op": "eval",
+          "word": null,
+          "ok": true,
+          "errorCode": null,
+          "data": {
+            "stack": [
+              "\"not-open\""
+            ],
+            "stackTypes": [
+              "String"
+            ],
+            "effects": {}
+          }
+        },
+        {
+          "op": "eval",
+          "word": null,
+          "ok": true,
+          "errorCode": null,
+          "data": {
+            "stack": [
+              "false"
+            ],
+            "stackTypes": [
+              "Bool"
+            ],
+            "effects": {
+              "fs.read": 1
+            }
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "name": "host denies filesystem capabilities",
+      "project": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\scratch-flow-acceptance-532dc1a33f854a1d9171ce52ebc809a3\\capability-denied",
+      "requests": [
+        {
+          "op": "task.begin",
+          "word": null,
+          "code": null,
+          "goal": "Verify effect capability denial",
+          "name": null
+        },
+        {
+          "op": "eval",
+          "word": null,
+          "code": "invoice::queue-reminder-once(invoice::new(id = InvoiceId::new(\"acceptance-denied-001\"), status = InvoiceStatus::new(\"open\")))",
+          "goal": null,
+          "name": null
+        },
+        {
+          "op": "task.status",
+          "word": null,
+          "code": null,
+          "goal": null,
+          "name": null
+        }
+      ],
+      "responses": [
+        {
+          "op": "task.begin",
+          "word": null,
+          "ok": true,
+          "errorCode": null,
+          "data": {
+            "effects": {}
+          }
+        },
+        {
+          "op": "eval",
+          "word": null,
+          "ok": false,
+          "errorCode": "CAPABILITY_DENIED",
+          "data": null
+        },
+        {
+          "op": "task.status",
+          "word": null,
+          "ok": true,
+          "errorCode": null,
+          "data": {
+            "active": true,
+            "effects": {},
+            "errors": [
+              "CAPABILITY_DENIED"
+            ]
+          }
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "name": "nominal Invoice parameter rejects plain String",
+      "project": "D:\\code\\AgentLang\\.agentlang\\effect-contract-adoption-001\\scratch-flow-acceptance-532dc1a33f854a1d9171ce52ebc809a3\\wrong-invoice-type",
+      "requests": [
+        {
+          "op": "eval",
+          "word": null,
+          "code": "invoice::queue-reminder-once(\"not-an-invoice\")",
+          "goal": null,
+          "name": null
+        }
+      ],
+      "responses": [
+        {
+          "op": "eval",
+          "word": null,
+          "ok": false,
+          "errorCode": "FLOW_ARGUMENT_TYPE",
+          "data": null
+        }
+      ],
+      "stderr": "",
+      "exitCode": 0
+    }
+  ],
+  "scope": "Independent final-word/history/type/test coverage audit; fresh-process first-write, idempotent repeat and snapshot restoration; exact preservation of an existing custom marker; separate id, three non-open statuses, capability denial, nominal-parameter rejection, and seed/final immutability. All runtime probes execute on disposable copies."
+}

@@ -1,0 +1,3 @@
+{"ok":true,"kind":"eval","text":"unit","data":{"stack":["unit"],"stackTypes":["Unit"],"console":[],"effects":{"fs.write":1}}}
+{"ok":true,"kind":"eval","text":"\u0022held for adoption preflight\u0022","data":{"stack":["\u0022held for adoption preflight\u0022"],"stackTypes":["String"],"console":[],"effects":{"fs.read":2,"fs.write":1}}}
+{"ok":true,"kind":"eval","text":"\u0022held for adoption preflight\u0022","data":{"stack":["\u0022held for adoption preflight\u0022"],"stackTypes":["String"],"console":[],"effects":{"fs.read":1}}}
